@@ -1,0 +1,67 @@
+<html>
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.2.3/pixi.js"></script>   
+        <script src="lib/utils.js"></script>
+        <script src="classes/map.js"></script>
+        <script src="classes/cell.js"></script>
+        <script src="classes/player.js"></script>
+        <script src="classes/unit.js"></script>
+        <script src="classes/ressource.js"></script>
+        <style>
+            body{
+                margin: 0;
+                display: grid;
+                grid-template-columns: 150px 1fr;
+            }
+            .form{
+                padding: 15px;
+            }
+            form input {
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="form">
+            <form id="editorForm">
+                <label for="cols">Cols:</label>
+                <input type="number" min="0" id="cols" name="cols"><br><br>
+                <label for="rows">Rows:</label>
+                <input type="number" min="0" id="rows" name="rows"><br><br>
+                <label for="reliefRange">Relief range:</label>
+                <input type="number" step="1" min="0" id="reliefRangeMin" name="reliefRangeMin"> - 
+                <input type="number" step="1" min="0" id="reliefRangeMax" name="reliefRangeMax"><br><br>
+                <label for="chanceOfRelief">Change of relief:</label>
+                <input type="number" step="0.1" min="0" max="1" id="chanceOfRelief" name="chanceOfRelief"><br><br>
+            </form>
+            <button onclick="generateMap()" id="generateMap">Generate</button>
+        </div>
+        <div id="game">
+        </div>
+        <script src="script.js"></script>
+        <script>
+            //Set default values to form
+            let form = document.getElementById('editorForm');
+            form.elements['cols'].value = mapDefaultCols;
+            form.elements['rows'].value = mapDefaultRows;
+            form.elements['reliefRangeMin'].value = mapDefaultReliefRange[0];
+            form.elements['reliefRangeMax'].value = mapDefaultReliefRange[1];
+            form.elements['chanceOfRelief'].value = mapDefaultChanceOfRelief;
+
+            function generateMap(){
+                //Get values of form
+                let values = {};
+                Array.from(form.elements).forEach(element => {
+                    values[element.name] = element.type === 'number' ? element.value * 1 : element.value;
+                })
+                //Set map with values
+                map = new Map(values.cols, values.rows, [values.reliefRangeMin, values.reliefRangeMax], values.chanceOfRelief);
+                //Reset camera
+                camera.x = -appWidth / 2;
+                camera.y = -(appHeight / 2) + 200;	
+                instances.x = -camera.x;
+                instances.y = -camera.y;
+            }
+        </script>
+    </body>
+<html>
