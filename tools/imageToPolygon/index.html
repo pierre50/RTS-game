@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <title>Image to Polygons</title>
+        <style>
+            body{
+                margin:0;
+            }
+            #image{
+                background: #00ff00;
+            }
+            .point{
+                position: fixed;
+                border-radius: 50%;
+                width: 3px;
+                height: 3px;
+                background: red;
+                border: 1px solid black;
+            }
+            #results{
+                font-size: 11px;
+                background: darkblue;
+                padding: 5px 10px;
+                border: 2px groove;
+                color: white;
+                font-family: monospace;
+            }
+            .content{
+                margin: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <img id="image"/>
+        <div id="points"></div>
+        <div class="content">
+            <label for="image">Load image</label>
+            <input type="file" accept="image/*" name="image" onchange="loadFile(event)">
+            <br>
+            <label for="anchorX">Anchor x</label>
+            <input type="number" step="0.1" min="0" max="1" id="anchorX" name="anchorX">
+            <br>
+            <label for="anchorY">Anchor y</label>
+            <input type="number" step="0.1" min="0" max="1" id="anchorY" name="anchorY">
+            <br><br>
+            <div id="results"></div>
+            <button onclick="clearPoints()" id="clear">Clear points</button>
+        </div>
+        <script>
+        let image = document.getElementById('image');
+        let results = document.getElementById('results');
+        let points = document.getElementById('points');
+        let anchorX = document.getElementById('anchorX');
+        let anchorY = document.getElementById('anchorY');
+      
+        let loadFile = (event) => {
+            clearPoints();
+            image.src = URL.createObjectURL(event.target.files[0]);
+        };
+        image.addEventListener("click", addPoint);
+
+        function addPoint(evt){
+            if (points.childElementCount > 0){
+                results.textContent += ',';
+            }
+
+            let resultX = Math.round(evt.x - (image.width * (anchorX.value || 0)));
+            let resultY = Math.round(evt.y - (image.height * (anchorY.value || 0)));
+            results.textContent += ` ${resultX},${resultY}`;
+            let point = document.createElement('div')
+            point.className = 'point';
+            point.style.left = (evt.x-2) + 'px';
+            point.style.top = (evt.y-2) + 'px';
+            points.appendChild(point)
+        }
+        function clearPoints(){
+            points.textContent = '';
+            results.textContent = '';
+        }
+        </script>
+    </body>
+</html>

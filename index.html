@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <title>Rts</title>
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimum-scale=1, width=device-width, height=device-height">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="msapplication-tap-highlight" content="no" />
+
+        <script src="node_modules/pixi.js/dist/browser/pixi.js"></script>  
+        <script src="node_modules/pixi-filters/dist/pixi-filters.js"></script> 
+        <!--<script src="lib/pixi-layers.min.js"></script> -->
+        <script src="lib/utils.js"></script>
+        <script src="classes/interface.js"></script>
+        <script src="classes/map.js"></script>
+        <script src="classes/cell.js"></script>
+        <script src="classes/player.js"></script>
+        <script src="classes/building.js"></script>
+        <script src="classes/unit.js"></script>
+        <script src="classes/resource.js"></script>
+        <style>
+            html, body, input, textarea, select, button {
+                border-color: #5e5d5a;
+                color: #e5e0d8;
+                font-size: 12px;
+                text-shadow: 1px 1px black;
+                font-family: sans-serif;
+                -webkit-font-smoothing: none;
+                background-color: #242525;
+            }
+            body{
+                height: 100vh;
+                overflow: hidden;
+                margin: 0;
+                user-select: none;
+            }
+        </style>
+    </head>
+    <body ondragstart="return false;" ondrop="return false;">
+        <div id="game"></div>
+        <script src="game.js"></script>
+    </body>
+<html>

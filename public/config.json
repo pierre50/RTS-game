@@ -1,0 +1,125 @@
+{
+    "buildings": {
+        "Greek": {
+            "StoneAge": {
+                "TownCenter": {
+                    "size": 3,
+                    "sight": 7,
+                    "lifeMax": 600,
+                    "icon": "033_50705",
+                    "images": {
+                        "final": "000_280",
+                        "build": "000_261",
+                        "rubble": "000_155",
+                        "color": "000_230"
+                    },
+                    "cost": {
+                        "wood": 200
+                    }
+                },
+                "Barracks": {
+                    "size": 3,
+                    "sight": 5,
+                    "lifeMax": 350,
+                    "icon": "003_50705",
+                    "images": {
+                        "final": "000_254",
+                        "rubble": "000_155",
+                        "build": "000_261"
+                    },
+                    "cost": {
+                        "wood": 125
+                    }
+                },
+                "House": {
+                    "size": 1,
+                    "sight": 3,
+                    "lifeMax": 75,
+                    "icon": "015_50705",
+                    "images": {
+                        "final": "000_218",
+                        "build": "000_489",
+                        "rubble": "000_154",
+                        "color": "000_233"
+                    },
+                    "cost": {
+                        "wood": 50
+                    }
+                },
+                "Granary": {
+                    "size": 3,
+                    "sight": 5,
+                    "lifeMax": 350,
+                    "icon": "011_50705",
+                    "images": {
+                        "final": "000_64",
+                        "build": "000_261",
+                        "rubble": "000_155",
+                        "color": "000_83"
+                    },
+                    "cost": {
+                        "wood": 120
+                    }
+                },
+                "StoragePit": {
+                    "size": 3,
+                    "sight": 5,
+                    "lifeMax": 350,
+                    "icon": "028_50705",
+                    "images": {
+                        "final": "000_527",
+                        "build": "000_261",
+                        "rubble": "000_155",
+                        "color": "000_235"
+                    },
+                    "cost": {
+                        "wood": 120
+                    }
+                }
+            }
+        }
+    },
+    "units": {
+        "Villager": {
+            "lifeMax": 25,
+			"sight": 4,
+            "speed": 2.1,
+            "trainingTime": 20,
+            "icon": "000_50730",
+            "attack": 3,
+            "cost": {
+                "food": 30
+            }
+        },
+        "Clubman": {
+            "lifeMax": 40,
+			"sight": 4,
+            "speed": 1.2,
+            "trainingTime": 26,
+            "icon": "002_50730",
+            "attack": 3,
+            "cost": {
+                "food": 50
+            }
+        }
+    },
+    "resources": {
+        "Berrybush": {
+            "quantity": 200,
+            "icon": "036_50730"
+        },
+        "Tree": {
+            "quantity": 300,
+            "lifeMax": 25,
+            "icon": "035_50730"
+        },
+        "Gold": {
+            "quantity": 400,
+            "icon": "039_50730"
+        },
+        "Stone": {
+            "quantity": 250,
+            "icon": "038_50730"
+        }
+    }
+}

@@ -1,0 +1,211 @@
+<html>
+	<head>
+		<title>Map Editor</title>
+		<style>
+			body{
+				height: 100vh;
+				overflow: hidden;
+				display: grid;
+				margin: 0;
+				grid-template-columns: auto 1fr;
+			}
+			.sidebar{
+				z-index: 1;
+				padding: 10px;
+				background: lightblue;
+			}
+			#main{
+				margin: 10px;
+				position: relative;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			#control{
+				position: absolute;
+				top: 0;
+				left: 0;
+				z-index: 1;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="sidebar">
+			<form id="form">
+				<b>Size:</b>
+				<br>
+				<select type="number" id="size" name="size">
+					<option value="120">120</option>
+					<option value="144">144</option>
+					<option value="168">168</option>
+					<option value="200" selected>200</option>
+					<option value="220">220</option>
+					<option value="240">240</option>
+					<option value="480" >480</option>
+				</select>
+				<br><br>
+				<b>Cursor:</b>
+				<br>
+				<label for="grass">Grass</label>
+				<input type="radio" id="grass" name="cursor" value="0" checked>
+				<br>
+				<label for="desert">Desert</label>
+				<input type="radio" id="desert" name="cursor" value="1">
+				<br>
+				<label for="forest">Forest</label>
+				<input type="radio" id="forest" name="cursor" value="2">
+				<br>
+				<label for="water">Water</label>
+				<input type="radio" id="water" name="cursor" value="3">
+				<br>
+				<label for="palmdesert">Palm desert</label>
+				<input type="radio" id="palmdesert" name="cursor" value="4">
+				<br>
+				<label for="jungle">Jungle</label>
+				<input type="radio" id="jungle" name="cursor" value="5">
+				<br><br>
+				<b>Cursor size:</b>
+				<br>
+				<label for="small">Small</label>
+				<input type="radio" id="small" name="cursor_size" value="1" checked>
+				<br>
+				<label for="middle">Middle</label>
+				<input type="radio" id="middle" name="cursor_size" value="5">
+				<br>
+				<label for="big">Big</label>
+				<input type="radio" id="big" name="cursor_size" value="17">
+				<br><br>
+			</form>
+			<button onclick="init()" id="clear">Clear</button>
+			<button onclick="download()" id="download">Download</button>
+		</div>
+		<div id="main">
+			<div id="control">
+				<button onclick="zoom()" id="zoom">+</button>
+				<button onclick="unzoom()" id="unzoom">-</button>
+			</div>
+			<div id="editor">
+			</div>
+		</div>
+
+
+		<script>
+			const form = document.getElementById('form');
+			const editor = document.getElementById('editor');
+			const cursor_colors = {
+				0: "lightgreen",
+				1: "yellow",
+				2: "green",
+				3: "blue",
+				4: "darkkhaki",
+				5: "darkgreen"
+			}
+			let scale = 1;
+
+			form.elements.size.addEventListener('change', (evt) => {
+				size = event.target.value * 1;
+				init();
+			})
+
+			let grid = [];
+			let size = form.elements.size.value * 1;
+
+			init();
+
+			function init(){
+				// Generate canvas
+				editor.innerHTML = null;
+				let canvas = document.createElement("canvas");
+				canvas.id = "canvas";
+				canvas.width = size;
+				canvas.height = size;
+				canvas.addEventListener('mousemove', (evt) => {
+					if (evt.which == 1){
+						const context = canvas.getContext('2d');
+						const i = evt.offsetX;
+						const j = evt.offsetY;
+						const cursor_size = form.elements.cursor_size.value * 1;
+						const cursor_type = form.elements.cursor.value * 1;
+						setPointToGrid(i, j, cursor_size, cursor_type);
+						context.beginPath();
+						context.arc(i, j, cursor_size, 0, 2 * Math.PI, false);
+						context.fillStyle = cursor_colors[cursor_type];
+						context.fill();
+					}
+				})
+				editor.appendChild(canvas);
+
+				// Generate map
+				const type = 0;
+				const context = canvas.getContext('2d');
+				context.fillStyle = cursor_colors[type];
+				context.fillRect(0, 0, size, size);
+				for (let i = 0; i <= size; i++){
+					for (let j = 0; j <= size; j++){
+						if (!grid[i]){
+							grid[i] = [];
+						}
+						grid[i][j] = type; 
+					}
+				}
+				function setPointToGrid(startX, startY, dist, val){
+					for (let i = startX - dist; i <= startX + dist; i++){
+						for (let j = startY - dist; j <= startY + dist; j++){
+							if (pointsDistance(i, j, startX, startY) < dist && grid[i] && grid[i][j] !== undefined){
+								grid[i][j] = val;
+							}
+						}
+					}
+				}
+				function pointsDistance(x1, y1, x2, y2){
+					let a = x1 - x2;
+					let b = y1 - y2;
+					return Math.floor(Math.sqrt( a*a + b*b ));
+				}
+			}
+
+
+
+			function download(){
+				let link = document.createElement('a');
+				link.setAttribute('download', 'map.txt');
+				link.href = makeMapFile();
+				link.click();
+				function makeMapFile(){
+					let textFile;
+					let text = '';
+					for (let i = 0; i <= size; i++){
+						for (let j = 0; j <= size; j++){
+							text += grid[i][j];
+						}
+						text += '\n';
+					}
+					var data = new Blob([text], {type: 'text/plain'});
+					if (textFile) {
+						window.URL.revokeObjectURL(textFile);
+					}
+					textFile = window.URL.createObjectURL(data);
+					return textFile;
+				}
+			}
+
+			function zoom(){
+				const canvas = document.getElementById("canvas");
+				if (!canvas){
+					return;
+				}
+				scale = scale <= 3 ? scale += .5 : scale;
+				canvas.style.transform = "scale(" + scale + ")";
+			}
+
+			function unzoom(){
+				const canvas = document.getElementById("canvas");
+				if (!canvas){
+					return;
+				}
+				scale = scale > .5 ? scale -= .5 : scale;
+				canvas.style.transform = "scale(" + scale + ")";
+			}
+		</script>
+	</body>
+</html>
