@@ -11,10 +11,10 @@ let appWidth = window.innerWidth - 150;
 let appHeight = window.innerHeight;
 
 //Map default values
-const mapDefaultCols = 16;
-const mapDefaultRows = 16;
+const mapDefaultSize = 16;
 const mapDefaultReliefRange = [1, 3];
 const mapDefaultChanceOfRelief = .1;
+const mapDefaultChanceOfTree = .1;
 
 //Colors
 const colorRed = 0xff0000;
@@ -41,15 +41,8 @@ const texturesAnchor = {
 const spritesTree = Array.apply(null, Array(4)).map((val, index) => {
 	return { name: `000_00${index + 1}`, url: `tree/000_00${index + 1}.png` }
 });
-const spritesGrass = Array.apply(null, Array(24)).map((val, index) => {
-	let finalIndex = index + 1;
-	if (finalIndex < 10){
-		finalIndex = '00' + finalIndex;
-	}else if (finalIndex < 100){ 
-		finalIndex = '0' + finalIndex;
-	}
-	return { name: `${finalIndex}_15001`, url: `ground/${finalIndex}_15001.png` }
-});
+const spritesGrass = getSprites('terrain', '15001', 24);
+//const spritesVillagerWalking = //etSprites('unit', '657', 74)
 //Containers
 let instances = new PIXI.Container();
 instances.sortableChildren = true;
@@ -59,7 +52,12 @@ function preload(){
 	app = new PIXI.Application({
 		width: appWidth,
 		height: appHeight, 
-		antialias: false 
+		antialias: false,
+		forceFXAA: false,
+		forceCanvas: false,
+		clearBeforeRender: true,
+		preserveDrawingBuffer: false,
+		roundPixels: true
 	});
 
 	let div = document.getElementById('game');
@@ -70,10 +68,11 @@ function preload(){
 	});
 	
 	//Preload assets
-	app.loader.baseUrl = "assets/images";
+	app.loader.baseUrl = 'assets/images';
 	app.loader
-		.add('unit','unit.png')
 		.add(spritesTree)
+		.add('unit/657/texture.json')
+		.add('unit/418/texture.json')
 		.add(spritesGrass)
 	;
 
@@ -86,13 +85,14 @@ function showProgress(e){
 	console.log(e.progress)
 }
 function reportError(e){
-	console.log('ERROR: ' + e.message);
+	document.getElementById('loading').innerText = 'ERROR: ' + e.message;
 }
 function create(){
-	console.log('DONE LOADING !');
+	//Remove loading screen
+	document.getElementById('loading').remove();
 	app.stage.addChild(instances);
 	//Init map
-	map = new Map(mapDefaultCols, mapDefaultRows, mapDefaultReliefRange, mapDefaultChanceOfRelief);
+	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree);
 	
 	//Change camera position
 	camera.x = -appWidth / 2;
@@ -101,7 +101,7 @@ function create(){
 	instances.y = -camera.y;
 	//Start main loop
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
-	interactionManager.on('rightdown', (evt) => {
+	interactionManager.on('rightdown', () => {
 		for(let i = 0; i < player.selectedUnits.length; i++){
 			player.selectedUnits[i].unselect();
 		}
@@ -125,16 +125,16 @@ function moveCamera(){
 		y:-camera.y
 	};
 	let B = {
-		x:(cellWidth/2-(map.cols * cellWidth)/2)-camera.x,
-		y:((map.rows * cellHeight)/2)-camera.y
+		x:(cellWidth/2-(map.size * cellWidth)/2)-camera.x,
+		y:((map.size * cellHeight)/2)-camera.y
 	};
 	let D = {
-		x:(cellWidth/2+(map.cols * cellWidth)/2)-camera.x,
-		y:((map.rows * cellHeight)/2)-camera.y
+		x:(cellWidth/2+(map.size * cellWidth)/2)-camera.x,
+		y:((map.size * cellHeight)/2)-camera.y
 	};
 	let C = {
 		x:(cellWidth/2)-camera.x,
-		y:(map.rows * cellHeight)-camera.y
+		y:(map.size * cellHeight)-camera.y
 	};
 	let cameraCenter = {
 		x:((camera.x) + appWidth / 2)-camera.x,

@@ -19,7 +19,7 @@ class Tree extends Ressource{
 	constructor(x, y, z){
 		let nbrTexture = randomRange(1,4);
 		let texture = app.loader.resources[`000_00${nbrTexture}`].texture;
-		super(x, y, z, texture, "tree");
+		super(x, y, z, texture, 'tree');
 	}
 	step() {
 	}
