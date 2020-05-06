@@ -6,8 +6,8 @@ class Player{
 		this.units = [];
 		this.selectedUnits = [];
 	}
-	createUnit(x, y, z){	
-		let unit = new Unit(x, y, z);
+	createUnit(x, y, z, map){	
+		let unit = new Unit(x, y, z, map);
 		unit.on('click', (evt) => {
 			unit.select();
 			this.selectedUnits.push(unit);

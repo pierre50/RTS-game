@@ -56,12 +56,9 @@
                     values[element.name] = element.type === 'number' ? element.value * 1 : element.value;
                 })
                 //Set map with values
+                map.destroy();
                 map = new Map(values.size, [values.reliefRangeMin, values.reliefRangeMax], values.chanceOfRelief, values.chanceOfTree);
-                //Reset camera
-                camera.x = -appWidth / 2;
-                camera.y = -(appHeight / 2) + 200;	
-                instances.x = -camera.x;
-                instances.y = -camera.y;
+                app.stage.addChild(map);
             }
         </script>
     </body>

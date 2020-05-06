@@ -1,9 +1,9 @@
 //Game variables
 let app;
 let viewport;
-let cellWidth = 64;
-let cellHeight = 32;
-let cellDepth = 16;
+const cellWidth = 64;
+const cellHeight = 32;
+const cellDepth = 16;
 
 let appLeft = 0;
 let appTop = 0;
@@ -26,26 +26,8 @@ const colorIndigo = 0x4b0082;
 const colorViolet = 0xee82ee;
 
 //Players
+let player;
 let map;
-let player = new Player();
-let camera = {
-	x: 0,
-	y: 0
-}
-const texturesAnchor = {
-	'000_001': [.25,.6],
-	'000_002': [0,.6],
-	'000_003': [0,.6],
-	'000_004': [0,.7],
-}
-const spritesTree = Array.apply(null, Array(4)).map((val, index) => {
-	return { name: `000_00${index + 1}`, url: `tree/000_00${index + 1}.png` }
-});
-const spritesGrass = getSprites('terrain', '15001', 24);
-//const spritesVillagerWalking = //etSprites('unit', '657', 74)
-//Containers
-let instances = new PIXI.Container();
-instances.sortableChildren = true;
 
 window.onload = preload();
 function preload(){
@@ -70,10 +52,10 @@ function preload(){
 	//Preload assets
 	app.loader.baseUrl = 'assets/images';
 	app.loader
-		.add(spritesTree)
+		.add('ressource/texture.json')
 		.add('unit/657/texture.json')
 		.add('unit/418/texture.json')
-		.add(spritesGrass)
+		.add('terrain/15001/texture.json')
 	;
 
 	app.loader.onProgress.add(showProgress);
@@ -90,16 +72,12 @@ function reportError(e){
 function create(){
 	//Remove loading screen
 	document.getElementById('loading').remove();
-	app.stage.addChild(instances);
-	//Init map
-	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree);
 	
-	//Change camera position
-	camera.x = -appWidth / 2;
-	camera.y = -(appHeight / 2) + 200;	
-	instances.x = -camera.x;
-	instances.y = -camera.y;
-	//Start main loop
+	//Init game
+	player = new Player();
+	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree);
+	app.stage.addChild(map);
+	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('rightdown', () => {
 		for(let i = 0; i < player.selectedUnits.length; i++){
@@ -107,109 +85,13 @@ function create(){
 		}
 		player.selectedUnits = [];
 	})
+	//Start main loop
 	app.ticker.add(step);
 }
-function moveCamera(){
-	/**
-	 * 	/A\
-	 * /   \
-	 *B     D
-	 * \   /
-	 *  \C/ 
-	 */
-	let mousePos = app.renderer.plugins.interaction.mouse.global;
-	let moveSpeed = 10;
-	let moveDist = 100;
-	let A = {
-		x:(cellWidth/2)-camera.x,
-		y:-camera.y
-	};
-	let B = {
-		x:(cellWidth/2-(map.size * cellWidth)/2)-camera.x,
-		y:((map.size * cellHeight)/2)-camera.y
-	};
-	let D = {
-		x:(cellWidth/2+(map.size * cellWidth)/2)-camera.x,
-		y:((map.size * cellHeight)/2)-camera.y
-	};
-	let C = {
-		x:(cellWidth/2)-camera.x,
-		y:(map.size * cellHeight)-camera.y
-	};
-	let cameraCenter = {
-		x:((camera.x) + appWidth / 2)-camera.x,
-		y:((camera.y) + appHeight / 2)-camera.y
-	}
-	//Left 
-	if (mousePos.x >= appLeft && mousePos.x <= appLeft + moveDist && mousePos.y >= appTop && mousePos.y <= appHeight){
-		if (cameraCenter.x - 100 > B.x && pointIsBeetweenTwoPoint(A, B, cameraCenter, 50)){
-			camera.y += moveSpeed/(cellWidth/cellHeight);		
-			camera.x -= moveSpeed;
-		}else if (cameraCenter.x - 100 > B.x && pointIsBeetweenTwoPoint(B, C, cameraCenter, 50)){
-			camera.y -= moveSpeed/(cellWidth/cellHeight);		
-			camera.x -= moveSpeed;
-		}else if (cameraCenter.x - 100 > B.x){
-			camera.x -= moveSpeed;
-		}
-		refreshInstancesOnScreen();
-	}else //Right
-	if (mousePos.x > appWidth - moveDist && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appHeight){
-		if (cameraCenter.x + 100 < D.x && pointIsBeetweenTwoPoint(A,D,cameraCenter,50)){
-			camera.y += moveSpeed/(cellWidth/cellHeight);		
-			camera.x += moveSpeed;
-		}else if (cameraCenter.x + 100 < D.x && pointIsBeetweenTwoPoint(D,C,cameraCenter, 50)){
-			camera.y -= moveSpeed/(cellWidth/cellHeight);		
-			camera.x += moveSpeed;
-		}else if (cameraCenter.x + 100 < D.x){
-			camera.x += moveSpeed;
-		}
-		refreshInstancesOnScreen();
-	}
-	//Top
-	if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appTop + moveDist){
-		if (cameraCenter.y - 50 > A.y && pointIsBeetweenTwoPoint(A, B, cameraCenter, 50)){
-			camera.y -= moveSpeed/(cellWidth/cellHeight);		
-			camera.x += moveSpeed;
-		}else if (cameraCenter.y - 50 > A.y && pointIsBeetweenTwoPoint(A, D, cameraCenter, 50)){
-			camera.y -= moveSpeed/(cellWidth/cellHeight);		
-			camera.x -= moveSpeed;
-		}else if (cameraCenter.y - 50 > A.y){
-			camera.y -= moveSpeed;
-		}
-		refreshInstancesOnScreen();
-	}else //Bottom
-	if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y > appHeight - moveDist && mousePos.y <= appHeight){
-		if (cameraCenter.y + 50 < C.y && pointIsBeetweenTwoPoint(D, C, cameraCenter, 50)){
-			camera.y += moveSpeed/(cellWidth/cellHeight);		
-			camera.x -= moveSpeed;
-		}else if (cameraCenter.y + 50 < C.y && pointIsBeetweenTwoPoint(B, C, cameraCenter, 50)){
-			camera.y += moveSpeed/(cellWidth/cellHeight);		
-			camera.x += moveSpeed;
-		}else if (cameraCenter.y + 100 < C.y){
-			camera.y += moveSpeed;
-		}
-		refreshInstancesOnScreen();
-	}
-	function refreshInstancesOnScreen(){
-		instances.x = -camera.x;
-		instances.y = -camera.y;
-		for (let i = 0; i < instances.children.length; i++){
-			let instance = instances.children[i];
-			if (instance.x + cellWidth > camera.x && instance.x < camera.x + appWidth && instance.y + cellHeight > camera.y && instance.y - cellHeight < camera.y + appHeight){
-				instance.visible = true;
-			}else{
-				instance.visible = false;
-				instance.interaction = false;
-			}
-		}
-	}
-}
+
 
 function step(){
-	moveCamera();
-	for(let i = 0; i < instances.children.length; i++){
-		if (typeof instances.children[i].step === 'function'){
-			instances.children[i].step();
-		}
+	if (map){
+		map.step();
 	}
 }
