@@ -33,10 +33,6 @@ class Map extends PIXI.Container{
                 let cell = new Cell(i, j, level, this);
                 this.grid[i][j] = cell;
                 this.addChild(cell)
-                /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 10, fill : 0xffffff, align : 'center'});
-                text.x = 22;
-                text.y = 16;
-                cell.addChild(text);*/
             }
         }
         for(let i = 0; i < this.size; i++){
@@ -68,11 +64,13 @@ class Map extends PIXI.Container{
         //Place a unit
         for (let u = 0; u < 5; u++){
             let i = Math.floor(Math.random() * this.size);
-            let j = Math.floor(Math.random() * this.size)
-            if (this.grid[i][j].has){
+            let j = Math.floor(Math.random() * this.size);
+            let cell = this.grid[i][j];
+            if (cell.has){
                 this.removeChild(this.grid[i][j].has)
             }
             let unit = player.createUnit(i, j, this);
+            cell.solid = true;
             this.addChild(unit);
         }
     }
@@ -136,6 +134,10 @@ class Map extends PIXI.Container{
                     let nbrTexture = randomRange(1,8);
                     cell.setTexture(nbrTexture);
                 }
+                /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 10, fill : 0xffffff, align : 'center'});
+                text.x = 22;
+                text.y = 16;
+                cell.addChild(text);*/
             }
         }
     }
@@ -234,7 +236,22 @@ class Map extends PIXI.Container{
         }
     }
     step(){
-        this.moveCamera();
+        /*for(let i = 0; i < this.size; i++){
+            for(let j = 0; j < this.size; j++){
+                let cell = this.grid[i][j];
+                let sprite = cell.getChildByName('sprite');
+                if (cell.solid){
+                    sprite.tint = colorRed;
+                }else{
+                    sprite.tint = colorWhite;
+                }
+
+            }
+        }*/
+        if (!mouseRectangle){
+            this.moveCamera();
+        }
+
         for(let i = 0; i < this.children.length; i++){
             if (typeof this.children[i].step === 'function'){
                 this.children[i].step();

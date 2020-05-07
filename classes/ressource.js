@@ -17,13 +17,7 @@ class Ressource extends PIXI.Container{
 		sprite.on('click', () => {
 			this.flashSelection();
 			for(let u = 0; u < player.selectedUnits.length; u++){
-				let unit = player.selectedUnits[u];
-				unit.path = getInstanceClosestFreeCell(unit, this.i, this.j, this.parent);
-				debugger
-				if (unit.path.length){
-					unit.setAnimation('walkingSheet');
-				}
-
+				player.selectedUnits[u].setDestination(this);
 			}
 		})
 	}

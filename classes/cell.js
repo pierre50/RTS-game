@@ -3,7 +3,6 @@ class Cell extends PIXI.Container{
 	constructor(i, j, z, map){
         super();
 
-        //super(texture);
         this.setParent(map);
         this.name = 'cell';
         let pos = cartesianToIsometric(i, j);
@@ -16,6 +15,7 @@ class Cell extends PIXI.Container{
 		this.solid = false;
 		this.interactive = true;
         this.inclined = false;
+        this.has = null;
         let points = [0,(cellHeight/2), (cellWidth/2),0, cellWidth,(cellHeight/2), (cellWidth/2),cellHeight]
         /*const graphics = new PIXI.Graphics();
         graphics.lineStyle(0);
@@ -27,22 +27,7 @@ class Cell extends PIXI.Container{
         this.hitArea = new PIXI.Polygon(points);
 		this.on('click', () => {
 			for(let u = 0; u < player.selectedUnits.length; u++){
-                let unit = player.selectedUnits[u];
-                //this.getChildByName('sprite').tint = colorBlue;
-                unit.path = getInstancePath(unit, this.i, this.j, this.parent);
-                /*for (let i = 0; i < unit.path.length; i++){
-                    let path = unit.path[i];
-                    const graphics = new PIXI.Graphics();
-                    graphics.lineStyle(0);
-                    graphics.beginFill(0x3500FA, 1);
-                    graphics.drawCircle(path.x, path.y, 5);
-                    graphics.endFill();
-                    graphics.zIndex = 1000;
-                    this.parent.addChild(graphics);
-                }*/
-				if (unit.path.length){
-					unit.setAnimation('walkingSheet');
-				}
+                player.selectedUnits[u].setDestination(this);
 			}
 		})
     }

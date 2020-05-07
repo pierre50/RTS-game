@@ -4,6 +4,8 @@ class Unit extends PIXI.Container {
 
 		this.setParent(map);
 		this.name = 'unit'
+		this.i = i;
+		this.j = j;
 		this.x = this.parent.grid[i][j].x;
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
@@ -50,37 +52,58 @@ class Unit extends PIXI.Container {
 	hasPath(){
 		return this.path.length > 0;
 	}
-	step(){
-		if (this.hasPath()){
-			this.next = this.path[this.path.length - 1];
-			this.dest = this.path[0];
-			//Change move speed depend on ground inclination
-			let pos = isometricToCartesian(this.x,this.y + (this.z * cellDepth));
-			if (this.parent.grid[pos[0]][pos[1]].inclined){
+	setDestination(instance){
+		this.parent.grid[this.i][this.j].solid = false;
+		if (this.parent.grid[instance.i][instance.j].solid){
+			this.path = getInstanceClosestFreeCell(this, instance.i, instance.j, this.parent);
+		}else{
+			this.path = getInstancePath(this, instance.i, instance.j, this.parent);
+		}
+		if (this.path.length){
+			this.dest = instance;
+			this.setAnimation('walkingSheet');
+		}else{
+			this.parent.grid[this.i][this.j].solid = true;
+		}
+	}
+	moveToPath(){
+		this.next = this.path[this.path.length - 1];
+		if (this.path.length === 1 && this.parent.grid[this.next.i][this.next.j].solid){
+			this.path = getInstanceClosestFreeCell(this, this.dest.i, this.dest.j, this.parent);
+			return;
+		}
+		this.zIndex = getInstanceZIndex(this); 
+		if (pointDistance(this.x, this.y, this.next.x, this.next.y) < this.speed){
+			this.x = this.next.x;
+			this.y = this.next.y;
+			this.z = this.next.z;
+			this.i = this.next.i;
+			this.j = this.next.j;
+			if (this.parent.grid[this.i][this.j].inclined){
 				this.speed = this.slowSpeed;
 			}else{
 				this.speed = this.normalSpeed;
 			}
 			this.zIndex = getInstanceZIndex(this); 
-			if (pointDistance(this.x, this.y, this.next.x, this.next.y) < this.speed){
-				this.x = this.next.x;
-				this.y = this.next.y;
-				this.z = this.next.z;
-
-				this.zIndex = getInstanceZIndex(this); 
-				this.path.pop();
-				if (!this.path.length){
-					this.setAnimation('standingSheet');
-				}
-			}else{
-				moveTowardPoint(this, this.next.x, this.next.y, this.speed);
-				if (this.old.degree !== this.degree){	
-					//Change animation
-					this.setAnimation('walkingSheet');
-				}
+			this.path.pop();
+			if (!this.path.length){
+				this.parent.grid[this.i][this.j].solid = true;
+				this.setAnimation('standingSheet');
+				return;
 			}
-			this.old = {...this}
+		}else{
+			moveTowardPoint(this, this.next.x, this.next.y, this.speed);
+			if (this.old.degree !== this.degree){	
+				//Change animation
+				this.setAnimation('walkingSheet');
+			}
 		}
+	}
+	step(){
+		if (this.hasPath()){
+			this.moveToPath();
+		}
+		this.old = {...this}
 	}
 	setAnimation(sheet){
 		let sprite = this.getChildByName('sprite');

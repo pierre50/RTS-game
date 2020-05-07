@@ -13,10 +13,12 @@ let appHeight = window.innerHeight;
 //Map default values
 const mapDefaultSize = 16;
 const mapDefaultReliefRange = [1, 3];
-const mapDefaultChanceOfRelief = .1;
-const mapDefaultChanceOfTree = .1;
+const mapDefaultChanceOfRelief = .005;
+const mapDefaultChanceOfTree = .2;
 
 //Colors
+const colorWhite = 0xffffff;
+const colorBlack = 0x000000;
 const colorRed = 0xff0000;
 const colorOrange = 0xffa500;
 const colorYellow = 0xffff00;
@@ -28,6 +30,7 @@ const colorViolet = 0xee82ee;
 //Players
 let player;
 let map;
+let mouseRectangle;
 
 window.onload = preload();
 function preload(){
@@ -84,6 +87,39 @@ function create(){
 			player.selectedUnits[i].unselect();
 		}
 		player.selectedUnits = [];
+	})
+	interactionManager.on('mousedown', (evt) => {
+		mouseRectangle = {
+			x: evt.data.global.x,
+			y: evt.data.global.y,
+			width: 0,
+			height: 0,
+			graph: new PIXI.Graphics()
+		}
+		app.stage.addChild(mouseRectangle.graph);
+	})
+	interactionManager.on('mouseup', () => {
+		for(let i = 0; i < player.units.length; i++){
+			let unit = player.units[i];
+			if (pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
+				unit.select();
+				player.selectedUnits.push(unit);
+			}
+		}
+		mouseRectangle.graph.destroy();
+		mouseRectangle = null;
+	})
+	interactionManager.on('mousemove', (evt) => {
+		if (mouseRectangle){
+			let mousePos = evt.data.global;
+			mouseRectangle.graph.clear();
+			if (mousePos.x > mouseRectangle.x && mousePos.y > mouseRectangle.y){
+				mouseRectangle.width = Math.round(mousePos.x - mouseRectangle.x);
+				mouseRectangle.height = Math.round(mousePos.y - mouseRectangle.y);
+				mouseRectangle.graph.lineStyle(1, colorWhite, 1);
+				mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
+			}
+		}
 	})
 	//Start main loop
 	app.ticker.add(step);
