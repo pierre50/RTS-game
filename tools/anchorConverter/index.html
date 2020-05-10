@@ -1,0 +1,140 @@
+<html>
+    <header>
+        <title>Anchor json converter</title>
+        <style>
+        </style>
+    </header>
+    <body>
+        <label for="csv">Load csv anchors</label>
+        <input type="file" accept=".csv" name="csv" id="csv" onchange="loadAnchors(event)">
+        <br>
+        <label for="images">Load images</label>
+        <input type="file" accept="image/*" name="images" id="images" multiple onchange="loadImages(event)">
+        <br>
+        <label for="json">Load texture json</label>
+        <input type="file" accept="application/JSON" name="json" id="json" onchange="loadJson(event)">
+        <br>
+        <label for="allowAnimation">Generate animations</label>
+        <input type="checkbox" id="allowAnimation" name="allowAnimation" value="Boat" checked>
+        <br><br>
+        <button onclick="convertData()" id="convert">Convert</button>
+        <script>
+        let allowAnimation = document.getElementById('allowAnimation');
+        let sizes = [];
+        let json;
+        let anchors = [];
+
+        let loadAnchors = (event) => {
+            anchors = [];
+            let file = event.target.files[0];
+            let fr = new FileReader();
+            fr.onload = (e) => {
+                anchors = e.target.result.split('\n').map((anchor) => {
+                    return {
+                        x: anchor.split(', ')[0],
+                        y: anchor.split(', ')[1],
+                    }
+                })
+                anchors.pop();
+            }
+            fr.readAsText(file);
+        }
+
+        let loadJson = (event) => {
+            json = null;
+            let file = event.target.files[0];
+            let fr = new FileReader();
+            fr.onload = function(e) { 
+                json = JSON.parse(e.target.result);
+            }
+            fr.readAsText(file);
+        }
+
+        let loadImages = (event) => {
+            sizes = [];
+            for (let i = 0; i < event.target.files.length; i++){
+                let file = event.target.files[i];
+                let fr = new FileReader;
+                fr.onload = () => {
+                    let img = new Image;
+                    img.onload = () => {
+                        sizes.push({
+                            name: file.name,
+                            w: img.width, 
+                            h: img.height
+                        });
+                    };
+                    img.src = fr.result;
+                };
+                fr.readAsDataURL(file);
+            }
+        };
+
+        function convertData(){
+            if (anchors.length !== sizes.length){
+                alert('Csv and files must match');
+                return;
+            }
+            if (!json){
+                alert('Json required')
+                return;
+            }
+            let final_anchors = [];
+            for (let i = 0; i < anchors.length; i++){
+                const anchor = {
+                    x: anchors[i].x / sizes[i].w,
+                    y: anchors[i].y / sizes[i].h
+                }
+                final_anchors.push({
+                    name: sizes[i].name,
+                    x: anchor.x,
+                    y: anchor.y
+                });
+            }
+            Object.keys(json.frames).forEach((prop) => {
+                let founded_anchor = final_anchors.find(an => an.name === prop);
+                json.frames[prop].anchor = {
+                    x: founded_anchor.x,
+                    y: founded_anchor.y
+                }
+                delete json.frames[prop].pivot
+            })
+
+            if (allowAnimation.checked){
+                let name = final_anchors[0].name.split('_')[1];
+                let line = (sizes.length)/5
+                json['animations'] = getAnimations(name, line);
+            }
+            var a = document.createElement("a");
+            var file = new Blob([JSON.stringify(json, null, 2)], {type: 'text/plain'});
+            a.href = URL.createObjectURL(file);
+            a.download = 'texture.json';
+            a.click();
+        }
+      
+        function getAnimations(name, line){
+            let results = {
+                south: [],
+                southwest: [],
+                west: [],
+                northwest: [],
+                north: []
+            }
+            let cpt = 0;
+            Object.keys(results).forEach((prop) => {
+                for (let j = 0; j < line; j++){
+                    let number = cpt;
+                    if (number < 10){
+                        number = '00' + number;
+                    }else if (number < 100){
+                        number = '0' + number;
+                    } 
+                    results[prop].push(`${number}_${name}`);
+                    cpt++;
+                }
+            })
+            return results;
+        }
+        </script>
+    </body>
+</html>

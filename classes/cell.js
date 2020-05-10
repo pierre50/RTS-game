@@ -1,4 +1,3 @@
-//Cell
 class Cell extends PIXI.Container{
 	constructor(i, j, z, map){
         super();
@@ -16,41 +15,56 @@ class Cell extends PIXI.Container{
 		this.interactive = true;
         this.inclined = false;
         this.has = null;
-        let points = [0,(cellHeight/2), (cellWidth/2),0, cellWidth,(cellHeight/2), (cellWidth/2),cellHeight]
-        /*const graphics = new PIXI.Graphics();
+
+        let points = [-32, 0, 0,-16, 32,0, 0,16]
+        const graphics = new PIXI.Graphics();
         graphics.lineStyle(0);
         graphics.beginFill(0x3500FA, 1);
         graphics.drawPolygon(points);
         graphics.endFill();
-        this.addChild(graphics);*/
+        this.addChild(graphics);
         
         this.hitArea = new PIXI.Polygon(points);
-		this.on('click', () => {
-			for(let u = 0; u < player.selectedUnits.length; u++){
-                player.selectedUnits[u].setDestination(this);
+		this.on('click', (evt) => {
+            if (this.parent.player.selectedUnits.length){
+                //Pointer animation
+                let pointerSheet = app.loader.resources['50405'].spritesheet;
+                let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
+                pointer.animationSpeed = .2;
+                pointer.loop = false;
+                pointer.anchor.set(.5,.5)
+                pointer.x = evt.data.global.x;
+                pointer.y = evt.data.global.y;
+                pointer.onComplete = () => {
+                    pointer.destroy();
+                };
+                pointer.play();
+                app.stage.addChild(pointer);
+            }
+			for(let u = 0; u < this.parent.player.selectedUnits.length; u++){
+                this.parent.player.selectedUnits[u].setDestination(this);
 			}
 		})
     }
     setTexture(nbr, inclined = false, elevation = 0){
-        let spritesheet = app.loader.resources['terrain/15001/texture.json'].spritesheet;
+        let spritesheet = app.loader.resources['15001'].spritesheet;
         let texture = spritesheet.textures[nbr + '.png'];
-        this.pivot.x = texture.width/2;
-        this.pivot.y = texture.height/2;
         if (elevation){
             this.y -= elevation;
         }
         this.inclined = inclined;
         let sprite = new PIXI.Sprite(texture);
         sprite.name = 'sprite';
+        sprite.anchor.set(.5,.5);
         this.addChild(sprite);
     }
 	fillCellsAroundCell(){
         let grid = this.parent.grid;
-        let neighbours = getCellAroundPoint(this.i, this.j, grid, 2);
+        let neighbours = getCellsAroundPoint(this.i, this.j, grid, 2);
         for(let i = 0; i < neighbours.length; i++){
             let neighbour = neighbours[i];
             if (neighbour.z === this.z){
-                let dist = pointDistance(this.i, this.j, neighbour.i, neighbour.j);
+                let dist = instancesDistance(this, neighbour, true);
                 let velX = Math.round(((this.i - neighbour.i)/dist));
                 let velY = Math.round(((this.j - neighbour.j)/dist));
                 if (grid[neighbour.i+velX] && grid[neighbour.i+velX][neighbour.j+velY]){
@@ -59,7 +73,7 @@ class Cell extends PIXI.Container{
                     if (target.z > this.z || target.z === this.z || aside.z === this.z){
                         continue
                     }
-                    if ((Math.floor(pointDistance(this.i, this.j, neighbour.i, neighbour.j)) === 2)){
+                    if ((Math.floor(instancesDistance(this, neighbour, true)) === 2)){
                         target.setCellLevel(target.z + 1);
                     }
                 }
@@ -68,7 +82,7 @@ class Cell extends PIXI.Container{
     }
     setCellLevel(level, cpt = 1) {
         let grid = this.parent.grid;
-        let neighbours = getCellAroundPoint(this.i, this.j, grid, level - cpt);
+        let neighbours = getCellsAroundPoint(this.i, this.j, grid, level - cpt);
         for(let i = 0; i < neighbours.length; i++){
             let neighbour = neighbours[i];
             if (neighbour.z < cpt){

@@ -1,6 +1,5 @@
-//Unit
 class Ressource extends PIXI.Container{
-	constructor(i, j, map, sprite, type){
+	constructor(i, j, map, options){
 		super();
 
         this.setParent(map);
@@ -11,53 +10,91 @@ class Ressource extends PIXI.Container{
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
-		this.type = type;
 
-		this.addChild(sprite);
-		sprite.on('click', () => {
-			this.flashSelection();
-			for(let u = 0; u < player.selectedUnits.length; u++){
-				player.selectedUnits[u].setDestination(this);
-			}
-		})
-	}
-	flashSelection(){
-		let selection = new PIXI.Graphics();
-		selection.name = 'selection';
-		selection.zIndex = 3;
-		selection.lineStyle(1, 0x00FF00);
-		selection.drawEllipse(0, 0, cellHeight, 10);
-		this.addChildAt(selection, 0);
-		setTimeout(() => {
-			selection.alpha = 0;
-			setTimeout(() => {
-				selection.alpha = 1;
-				setTimeout(() => {
-					selection.alpha = 0;
-					setTimeout(() => {
-						selection.alpha = 1;
-						setTimeout(() => {
-							this.removeChild(selection);
-						}, 300)
-					}, 300)
-				}, 300)
-			}, 500)
-		}, 500)
+		this.type = options.type;
+		this.size = options.size;
+		this.life = options.life;
+		this.addChild(options.sprite);
 	}
 }
 
 class Tree extends Ressource{
 	constructor(i, j, map){
-		let spritesheet = app.loader.resources['ressource/texture.json'].spritesheet;
-		let textureName = randomRange(1,4) + '.png';
-		let texture = spritesheet.textures[textureName];
+		const randomSpritesheet = randomItem(['492', '493', '494', '503', '509'])
+		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
+		const textureName = '000_' + randomSpritesheet + '.png';
+		const texture = spritesheet.textures[textureName];
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.name = 'sprite';
-		sprite.pivot = spritesheet.data.frames[textureName].pivot;
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		super(i, j, map, sprite, 'tree');
+		sprite.on('click', () => {
+			if (this.parent.player.selectedUnits.length){
+				drawInstanceBlinkingSelection(this);
+			}
+			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
+				let unit = this.parent.player.selectedUnits[i];
+				if (unit.type === 'villager'){
+					if (unit.work !== 'woodcutter'){
+						unit.loading = 0;
+						unit.work = 'woodcutter';
+						unit.actionSheet = app.loader.resources['625'].spritesheet;
+						unit.standingSheet = app.loader.resources['440'].spritesheet;
+						unit.walkingSheet = app.loader.resources['682'].spritesheet;
+					}
+					unit.previousDest = null;
+					unit.setDestination(this, 'chopwood')
+				}else{
+					unit.setDestination(this)
+				}
+			}
+		})
+		const options = {
+			type: 'tree',
+			sprite: sprite,
+			size: 1,
+			life: 200,
+		}
+		super(i, j, map, options);
 	}
-	step() {
+}
+
+class Berrybush extends Ressource{
+	constructor(i, j, map){
+		const spritesheet = app.loader.resources['240'].spritesheet;
+		const texture = spritesheet.textures['000_240.png'];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames['000_240.png'].hitArea);
+		sprite.on('click', () => {
+			if (this.parent.player.selectedUnits.length){
+				drawInstanceBlinkingSelection(this);
+			}
+			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
+				let unit = this.parent.player.selectedUnits[i];
+				if (unit.type === 'villager'){
+					if (unit.work !== 'gatherer'){
+						unit.loading = 0;
+						unit.work = 'gatherer';
+						unit.actionSheet = app.loader.resources['632'].spritesheet;
+						unit.standingSheet = app.loader.resources['432'].spritesheet;
+						unit.walkingSheet = app.loader.resources['672'].spritesheet;
+					}
+					unit.previousDest = null;
+					unit.setDestination(this, 'forageberry')
+				}else{
+					unit.setDestination(this)
+				}
+			}
+		})
+		const options = {
+			type: 'berrybush',
+			sprite: sprite,
+			size: 1,
+			life: 200,
+		}
+		super(i, j, map, options);
 	}
 }

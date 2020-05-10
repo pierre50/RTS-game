@@ -1,20 +1,21 @@
 //Game variables
 let app;
-let viewport;
 const cellWidth = 64;
 const cellHeight = 32;
 const cellDepth = 16;
 
-let appLeft = 0;
-let appTop = 0;
-let appWidth = window.innerWidth - 150;
-let appHeight = window.innerHeight;
+const appLeft = 0;
+const appTop = 0;
+const appWidth = window.innerWidth - 150;
+const appHeight = window.innerHeight;
+
+const maxSelectUnits = 25;
 
 //Map default values
 const mapDefaultSize = 16;
 const mapDefaultReliefRange = [1, 3];
-const mapDefaultChanceOfRelief = .005;
-const mapDefaultChanceOfTree = .2;
+const mapDefaultChanceOfRelief = 0;
+const mapDefaultChanceOfTree = .1;
 
 //Colors
 const colorWhite = 0xffffff;
@@ -28,7 +29,6 @@ const colorIndigo = 0x4b0082;
 const colorViolet = 0xee82ee;
 
 //Players
-let player;
 let map;
 let mouseRectangle;
 
@@ -55,10 +55,24 @@ function preload(){
 	//Preload assets
 	app.loader.baseUrl = 'assets/images';
 	app.loader
-		.add('ressource/texture.json')
-		.add('unit/657/texture.json')
-		.add('unit/418/texture.json')
-		.add('terrain/15001/texture.json')
+		.add('50405','interface/50405/texture.json')
+		.add('240','ressource/240/texture.json')
+		.add('273','unit/273/texture.json')
+		.add('280','building/280/texture.json')
+		.add('418','unit/418/texture.json')
+		.add('432','unit/432/texture.json')
+		.add('440','unit/440/texture.json')
+		.add('492','ressource/492/texture.json')
+		.add('493','ressource/493/texture.json')
+		.add('494','ressource/494/texture.json')
+		.add('503','ressource/503/texture.json')
+		.add('509','ressource/509/texture.json')
+		.add('625','unit/625/texture.json')
+		.add('632','unit/632/texture.json')
+		.add('657','unit/657/texture.json')
+		.add('672','unit/672/texture.json')
+		.add('682','unit/682/texture.json')
+		.add('15001','terrain/15001/texture.json')
 	;
 
 	app.loader.onProgress.add(showProgress);
@@ -77,16 +91,15 @@ function create(){
 	document.getElementById('loading').remove();
 	
 	//Init game
-	player = new Player();
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree);
 	app.stage.addChild(map);
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('rightdown', () => {
-		for(let i = 0; i < player.selectedUnits.length; i++){
-			player.selectedUnits[i].unselect();
+		for(let i = 0; i < map.player.selectedUnits.length; i++){
+			map.player.selectedUnits[i].unselect();
 		}
-		player.selectedUnits = [];
+		map.player.selectedUnits = [];
 	})
 	interactionManager.on('mousedown', (evt) => {
 		mouseRectangle = {
@@ -99,15 +112,18 @@ function create(){
 		app.stage.addChild(mouseRectangle.graph);
 	})
 	interactionManager.on('mouseup', () => {
-		for(let i = 0; i < player.units.length; i++){
-			let unit = player.units[i];
-			if (pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
-				unit.select();
-				player.selectedUnits.push(unit);
+		if (mouseRectangle){
+			for(let i = 0; i < map.player.units.length; i++){
+				let unit = map.player.units[i];
+				if (map.player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
+					unit.select();
+					map.player.selectedUnits.push(unit);
+				}
 			}
+
+			mouseRectangle.graph.destroy();
+			mouseRectangle = null;
 		}
-		mouseRectangle.graph.destroy();
-		mouseRectangle = null;
 	})
 	interactionManager.on('mousemove', (evt) => {
 		if (mouseRectangle){
