@@ -17,12 +17,14 @@ class Cell extends PIXI.Container{
         this.has = null;
 
         let points = [-32, 0, 0,-16, 32,0, 0,16]
+        /*
+        MUST TO BE FIXED, HITPOINT ON TERRAIN INCLINAISON
         const graphics = new PIXI.Graphics();
         graphics.lineStyle(0);
         graphics.beginFill(0x3500FA, 1);
         graphics.drawPolygon(points);
         graphics.endFill();
-        this.addChild(graphics);
+        this.addChild(graphics);*/
         
         this.hitArea = new PIXI.Polygon(points);
 		this.on('click', (evt) => {

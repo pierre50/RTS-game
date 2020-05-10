@@ -12,7 +12,7 @@ const appHeight = window.innerHeight;
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 16;
+const mapDefaultSize = 52;
 const mapDefaultReliefRange = [1, 3];
 const mapDefaultChanceOfRelief = 0;
 const mapDefaultChanceOfTree = .1;
@@ -20,6 +20,7 @@ const mapDefaultChanceOfTree = .1;
 //Colors
 const colorWhite = 0xffffff;
 const colorBlack = 0x000000;
+const colorGrey = 0x808080;
 const colorRed = 0xff0000;
 const colorOrange = 0xffa500;
 const colorYellow = 0xffff00;
@@ -56,6 +57,7 @@ function preload(){
 	app.loader.baseUrl = 'assets/images';
 	app.loader
 		.add('50405','interface/50405/texture.json')
+		.add('230','building/230/texture.json')
 		.add('240','ressource/240/texture.json')
 		.add('273','unit/273/texture.json')
 		.add('280','building/280/texture.json')
@@ -96,10 +98,7 @@ function create(){
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('rightdown', () => {
-		for(let i = 0; i < map.player.selectedUnits.length; i++){
-			map.player.selectedUnits[i].unselect();
-		}
-		map.player.selectedUnits = [];
+		map.player.unselectAllUnit();
 	})
 	interactionManager.on('mousedown', (evt) => {
 		mouseRectangle = {
@@ -109,6 +108,11 @@ function create(){
 			height: 0,
 			graph: new PIXI.Graphics()
 		}
+		setTimeout(() => {
+			if (mouseRectangle){
+				map.player.unselectAllUnit();
+			}
+		}, 500)
 		app.stage.addChild(mouseRectangle.graph);
 	})
 	interactionManager.on('mouseup', () => {
@@ -120,7 +124,6 @@ function create(){
 					map.player.selectedUnits.push(unit);
 				}
 			}
-
 			mouseRectangle.graph.destroy();
 			mouseRectangle = null;
 		}

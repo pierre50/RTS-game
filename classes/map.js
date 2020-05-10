@@ -13,6 +13,7 @@ class Map extends PIXI.Container{
         }
         this.x = -this.camera.x;
         this.y = -this.camera.y;
+        this.resources = [];
 
         this.player = new Player();
         this.initMap();
@@ -53,6 +54,7 @@ class Map extends PIXI.Container{
                     let tree = new Tree(i, j, this);
                     cell.has = tree;
                     cell.solid = true;
+                    this.resources.push(tree);
                 }
             }
         }
@@ -62,30 +64,27 @@ class Map extends PIXI.Container{
                 let cell = this.grid[i][j];
                 if (!cell.solid && !cell.inclined && Math.random() < this.chanceOfTree){
                     let berrybush = new Berrybush(i, j, this);
-                    cell.has = berrybush;
-                    cell.solid = true;
+                    this.resources.push(berrybush);
                 }
             }
         }
         //Place a town center
         let i = Math.floor(randomRange(3, this.size-3));
         let j = Math.floor(randomRange(3, this.size-3));
-        let neighbours = getCellsAroundPoint(i, j, this.grid, 1, false, true);
-        for (let n = 0; n < neighbours.length; n ++){
-            neighbours[n].solid = true;
-            if (neighbours[n].has){
-                this.removeChild(neighbours[n].has);
-            }
-        }
-        let arounds = getCellsAroundPoint(i, j, this.grid, 2);
+        let arounds = getCellsAroundPoint(i, j, this.grid, 4, false, true);
         for (let n = 0; n < arounds.length; n ++){
             if (arounds[n].has){
-                this.removeChild(arounds[n].has);
-                arounds[n].solid = false;
+                if (arounds[n].has.name === 'ressource'){
+                    let resIndex = this.resources.findIndex(r => r.id === arounds[n].has.id);
+                    this.resources.splice(resIndex, 1);
+                    this.removeChild(arounds[n].has);
+                    arounds[n].has = null;
+                    arounds[n].solid = false;
+                }
             }
         }
-        this.player.createBuilding(i, j, 'TownCenter', this);
-
+        let towncenter = this.player.createBuilding(i, j, 'TownCenter', this);
+        this.setCamera(towncenter.x, towncenter.y);
     }
     formatCells(){
         for(let i = 0; i < this.size; i++){
@@ -147,7 +146,9 @@ class Map extends PIXI.Container{
                     let nbrTexture = randomRange(1,8);
                     cell.setTexture(nbrTexture);
                 }
-                /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 10, fill : 0xffffff, align : 'center'});
+                /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 12, fill : colorBlack, align : 'center'});
+                text.x = -10;
+                text.y = -10;
                 text.zIndex = 10000;
                 cell.addChild(text);*/
             }
@@ -248,6 +249,14 @@ class Map extends PIXI.Container{
                 }
             }
         }
+    }
+    setCamera(x, y){
+        this.camera = {
+            x: x-appWidth / 2,
+            y: y-appHeight / 2
+        }
+        this.x = -this.camera.x;
+        this.y = -this.camera.y;
     }
     step(){
         /*for(let i = 0; i < this.size; i++){

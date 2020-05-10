@@ -2,7 +2,8 @@ class Ressource extends PIXI.Container{
 	constructor(i, j, map, options){
 		super();
 
-        this.setParent(map);
+		this.setParent(map);
+		this.id = this.parent.children.length;
 		this.name = 'ressource';
 		this.i = i;
 		this.j = j;
@@ -10,6 +11,7 @@ class Ressource extends PIXI.Container{
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
+		this.parent.grid[i][j].has = this;
 
 		this.type = options.type;
 		this.size = options.size;
@@ -20,12 +22,14 @@ class Ressource extends PIXI.Container{
 
 class Tree extends Ressource{
 	constructor(i, j, map){
+		//Define sprite
 		const randomSpritesheet = randomItem(['492', '493', '494', '503', '509'])
 		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
 		const textureName = '000_' + randomSpritesheet + '.png';
 		const texture = spritesheet.textures[textureName];
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
+		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
 		sprite.on('click', () => {
@@ -49,18 +53,22 @@ class Tree extends Ressource{
 				}
 			}
 		})
-		const options = {
+		//Set solid zone
+		let cell = map.grid[i][j];
+		cell.solid = true;
+
+		super(i, j, map, {
 			type: 'tree',
 			sprite: sprite,
 			size: 1,
 			life: 200,
-		}
-		super(i, j, map, options);
+		});
 	}
 }
 
 class Berrybush extends Ressource{
 	constructor(i, j, map){
+		//Define sprite
 		const spritesheet = app.loader.resources['240'].spritesheet;
 		const texture = spritesheet.textures['000_240.png'];
 		let sprite = new PIXI.Sprite(texture);
@@ -89,12 +97,15 @@ class Berrybush extends Ressource{
 				}
 			}
 		})
-		const options = {
+		//Set solid zone
+		let cell = map.grid[i][j];
+		cell.solid = true;
+
+		super(i, j, map, {
 			type: 'berrybush',
 			sprite: sprite,
 			size: 1,
 			life: 200,
-		}
-		super(i, j, map, options);
+		});
 	}
 }

@@ -63,8 +63,8 @@
                 results.innerText += ',';
             }
 
-            let resultX = evt.x - (image.width * (anchorX.value || 0));
-            let resultY = evt.y - (image.height * (anchorY.value || 0));
+            let resultX = Math.round(evt.x - (image.width * (anchorX.value || 0)));
+            let resultY = Math.round(evt.y - (image.height * (anchorY.value || 0)));
             results.innerText += ` ${resultX},${resultY}`;
             let point = document.createElement('div')
             point.className = 'point';

@@ -3,6 +3,7 @@ class Unit extends PIXI.Container {
 		super();
 
 		this.setParent(map);
+		this.id = this.parent.children.length;
 		this.name = 'unit'
 		this.i = i;
 		this.j = j;
@@ -63,6 +64,10 @@ class Unit extends PIXI.Container {
 		return this.path.length > 0;
 	}
 	setDestination(instance, action){
+		if (!instance){
+			this.setAnimation('standingSheet');
+			return;
+		}
 		this.getChildByName('sprite').onLoop = null;
 		if (!action){
 			this.dest = null;
@@ -157,7 +162,27 @@ class Unit extends PIXI.Container {
 	moveToPath(){
 		this.next = this.path[this.path.length - 1];
 		if (this.path.length === 1 && this.parent.grid[this.next.i][this.next.j].solid){
-			this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
+			if (this.work && this.action){
+				let targets = [];
+				let target = null;
+				switch(this.action){
+					case 'chopwood' :
+						targets = filterInstancesByTypes(this.parent.resources, ['tree']);
+						target = getClosestInstance(this, targets);
+						this.setDestination(target, 'chopwood');
+						break;
+					case 'forageberry':
+						targets = filterInstancesByTypes(this.parent.resources, ['berrybush']);
+						target = getClosestInstance(this, targets);
+						this.setDestination(target, 'forageberry');
+						break;
+					default: 
+						this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
+				}
+				return;
+			}else{
+				this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
+			}
 			return;
 		}
 		this.zIndex = getInstanceZIndex(this); 

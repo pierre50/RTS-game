@@ -21,7 +21,7 @@ class Player{
 			TownCenter
 		}			
 		let building = new buildings[type](x, y, map);
-		building.on('click', (evt) => {
+		building.getChildByName('sprite').on('click', (evt) => {
 			if (!this.selectedUnits.length){
 				let spawnCell = getFreeCellAroundPoint(x, y, map.grid);
 				this.createUnit(spawnCell.i, spawnCell.j, map, this);
