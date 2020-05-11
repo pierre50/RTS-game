@@ -14,8 +14,9 @@ class Map extends PIXI.Container{
         this.x = -this.camera.x;
         this.y = -this.camera.y;
         this.resources = [];
-
-        this.player = new Player();
+        this.cursor = 'default';
+        this.player = new Player(this);
+        this.interface = new Interface(this);
         this.initMap();
 	}
     initMap(){
@@ -95,56 +96,56 @@ class Map extends PIXI.Container{
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z))){
-                    cell.setTexture('14', true, cellDepth/2);
+                    cell.setTexture('014', true, cellDepth/2);
                 }else if ((this.grid[i+1] && this.grid[i+1][j].z - cell.z === 1) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z))){
-                    cell.setTexture('15', true, cellDepth/2);
+                    cell.setTexture('015', true, cellDepth/2);
                 } else if ((this.grid[i][j-1] && this.grid[i][j-1].z - cell.z === 1) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('16', true, cellDepth/2);
+                    cell.setTexture('016', true, cellDepth/2);
                 }else if ((this.grid[i][j+1] && this.grid[i][j+1].z - cell.z === 1) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('13', true, cellDepth/2);
+                    cell.setTexture('013', true, cellDepth/2);
                 } //Corner
                 else if ((this.grid[i-1] && (this.grid[i-1][j-1] && this.grid[i-1][j-1].z - cell.z === 1)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('10', true, cellDepth/2);
+                    cell.setTexture('010', true, cellDepth/2);
                 }else if ((this.grid[i+1] && (this.grid[i+1][j-1] && this.grid[i+1][j-1].z - cell.z === 1)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z))){
-                    cell.setTexture('12', true);
+                    cell.setTexture('012', true);
                 }else if ((this.grid[i-1] && (this.grid[i-1][j+1] && this.grid[i-1][j+1].z - cell.z === 1)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('11', true);
+                    cell.setTexture('011', true);
                 }else if ((this.grid[i+1] && (this.grid[i+1][j+1] && this.grid[i+1][j+1].z - cell.z === 1)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z))){
-                    cell.setTexture('9', true, cellDepth/2);
+                    cell.setTexture('009', true, cellDepth/2);
                 }
                 //Deep corner
                 else if ((this.grid[i][j-1] && (this.grid[i][j-1].z && this.grid[i][j-1].z - cell.z === 1)) &&
                         (this.grid[i-1] && (this.grid[i-1][j].z && this.grid[i-1][j].z - cell.z === 1))){
-                    cell.setTexture('22', true, cellDepth/2);
+                    cell.setTexture('022', true, cellDepth/2);
                 }else if ((this.grid[i][j+1] && (this.grid[i][j+1].z && this.grid[i][j+1].z - cell.z === 1)) &&
                         (this.grid[i+1] && (this.grid[i+1][j].z && this.grid[i+1][j].z - cell.z === 1))){
-                    cell.setTexture('21', true, cellDepth/2);
+                    cell.setTexture('021', true, cellDepth/2);
                 }else if ((this.grid[i][j-1] && (this.grid[i][j-1].z && this.grid[i][j-1].z - cell.z === 1)) &&
                         (this.grid[i+1] && (this.grid[i+1][j].z && this.grid[i+1][j].z - cell.z === 1))){
-                    cell.setTexture('23', true, cellDepth);
+                    cell.setTexture('023', true, cellDepth);
                 }else if ((this.grid[i][j+1] && (this.grid[i][j+1].z && this.grid[i][j+1].z - cell.z === 1)) &&
                         (this.grid[i-1] && (this.grid[i-1][j].z && this.grid[i-1][j].z - cell.z === 1))){
-                    cell.setTexture('24', true, cellDepth);
+                    cell.setTexture('024', true, cellDepth);
                 }else{
                     let nbrTexture = randomRange(1,8);
-                    cell.setTexture(nbrTexture);
+                    cell.setTexture('00' + nbrTexture);
                 }
                 /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 12, fill : colorBlack, align : 'center'});
                 text.x = -10;

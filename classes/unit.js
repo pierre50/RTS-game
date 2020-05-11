@@ -113,6 +113,7 @@ class Unit extends PIXI.Container {
 				break;
 			case 'deliverywood':
 				this.player.wood += this.loading;
+				this.parent.interface.updateTopbar();
 				this.loading = 0;
 				this.walkingSheet = app.loader.resources['682'].spritesheet;
 				this.standingSheet = app.loader.resources['440'].spritesheet;
@@ -143,6 +144,7 @@ class Unit extends PIXI.Container {
 				break;
 			case 'deliveryberry':
 				this.player.food += this.loading;
+				this.parent.interface.updateTopbar();
 				this.loading = 0;
 				if (this.previousDest){
 					let previousCell = this.parent.grid[this.previousDest.i][this.previousDest.j];

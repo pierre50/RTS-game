@@ -1,5 +1,5 @@
-//Game variables
-let app;
+
+//Settings
 const cellWidth = 64;
 const cellHeight = 32;
 const cellDepth = 16;
@@ -8,6 +8,7 @@ const appLeft = 0;
 const appTop = 0;
 const appWidth = window.innerWidth - 150;
 const appHeight = window.innerHeight;
+const gamebox = document.getElementById('game');
 
 const maxSelectUnits = 25;
 
@@ -28,31 +29,45 @@ const colorGreen = 0x008000;
 const colorBlue = 0x0000ff;
 const colorIndigo = 0x4b0082;
 const colorViolet = 0xee82ee;
+const colorBone = 0xe2dac2;
+const colorShipgrey = 0x3c3b3d;
 
-//Players
+//Cursor icons
+const defaultIcon = "url('assets/images/interface/51000/000_51000.png'),auto";
+const hoverIcon = "url('assets/images/interface/51000/003_51000.png'),auto";
+
+//Game variables
+let app;
 let map;
 let mouseRectangle;
 
 window.onload = preload();
 function preload(){
+	PIXI.settings.ROUND_PIXELS = true;
 	app = new PIXI.Application({
 		width: appWidth,
 		height: appHeight, 
 		antialias: false,
-		forceFXAA: false,
-		forceCanvas: false,
-		clearBeforeRender: true,
-		preserveDrawingBuffer: false,
-		roundPixels: true
 	});
 
-	let div = document.getElementById('game');
-	div.appendChild(app.view);
+	//Set loading screen
+	let loading = document.createElement('div');
+	loading.id = 'loading';
+	loading.innerText = 'Loading..';
+	Object.assign(loading.style, {
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		height: '100%'
+	});
+	gamebox.appendChild(loading);
 
-	app.view.addEventListener('contextmenu', (e) => {
+	//Disable contextmenu on rightclick
+	gamebox.style.background = 'black';
+	gamebox.addEventListener('contextmenu', (e) => {
 		e.preventDefault();
 	});
-	
+
 	//Preload assets
 	app.loader.baseUrl = 'assets/images';
 	app.loader
@@ -83,7 +98,6 @@ function preload(){
 	app.loader.load();
 }
 function showProgress(e){
-	console.log(e.progress)
 }
 function reportError(e){
 	document.getElementById('loading').innerText = 'ERROR: ' + e.message;
@@ -91,10 +105,15 @@ function reportError(e){
 function create(){
 	//Remove loading screen
 	document.getElementById('loading').remove();
-	
-	//Init game
+
+	//Set our Pixi application
+	gamebox.style.cursor = defaultIcon;
+	gamebox.appendChild(app.view);
+
+	//Init map
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree);
 	app.stage.addChild(map);
+
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('rightdown', () => {
@@ -149,4 +168,7 @@ function step(){
 	if (map){
 		map.step();
 	}
+	
+	app.renderer.plugins.interaction.cursorStyles.default = defaultIcon;
+
 }

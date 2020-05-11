@@ -49,15 +49,18 @@ class Cell extends PIXI.Container{
 		})
     }
     setTexture(nbr, inclined = false, elevation = 0){
-        let spritesheet = app.loader.resources['15001'].spritesheet;
-        let texture = spritesheet.textures[nbr + '.png'];
+        let resourceName = '15001';
+        let spritesheet = app.loader.resources[resourceName].spritesheet;
+        let texture = spritesheet.textures[nbr + '_' + resourceName + '.png'];
         if (elevation){
             this.y -= elevation;
         }
         this.inclined = inclined;
         let sprite = new PIXI.Sprite(texture);
         sprite.name = 'sprite';
-        sprite.anchor.set(.5,.5);
+        sprite.anchor.set(.5, .5);
+        sprite.cursor = 'default';
+
         this.addChild(sprite);
     }
 	fillCellsAroundCell(){

@@ -32,9 +32,21 @@ class Tree extends Ressource{
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.on('mouseover', () => { 
+			if (this.parent.player.selectedUnits.length){
+				if (this.parent.player.selectedUnits.some(unit => unit.type === 'villager')){
+					gamebox.style.cursor = hoverIcon;
+				}
+			}
+		})
+		sprite.on('mouseout', () => {
+			gamebox.style.cursor = defaultIcon;
+		})
 		sprite.on('click', () => {
 			if (this.parent.player.selectedUnits.length){
-				drawInstanceBlinkingSelection(this);
+				if (this.parent.player.selectedUnits.some(unit => unit.type === 'villager')){
+					drawInstanceBlinkingSelection(this);
+				}
 			}
 			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
 				let unit = this.parent.player.selectedUnits[i];
@@ -76,6 +88,16 @@ class Berrybush extends Ressource{
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames['000_240.png'].hitArea);
+		sprite.on('mouseover', () => { 
+			if (this.parent.player.selectedUnits.length){
+				if (this.parent.player.selectedUnits.some(unit => unit.type === 'villager')){
+					gamebox.style.cursor = hoverIcon;
+				}
+			}
+		})
+		sprite.on('mouseout', () => {
+			gamebox.style.cursor = defaultIcon;
+		})
 		sprite.on('click', () => {
 			if (this.parent.player.selectedUnits.length){
 				drawInstanceBlinkingSelection(this);

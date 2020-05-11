@@ -1,7 +1,10 @@
 class Player{
 	constructor(){
-		this.wood = 0;
-		this.food = 0;
+		this.age = 'Stone Age';
+		this.wood = 200;
+		this.food = 200;
+		this.stone = 150;
+		this.gold = 0;
 		this.units = [];
 		this.buildings = [];
 		this.selectedUnits = [];
