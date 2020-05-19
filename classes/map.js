@@ -11,6 +11,8 @@ class Map extends PIXI.Container{
             x: -appWidth / 2,
             y: -(appHeight / 2) + 200
         }
+        this.top = appTop + 24;
+        this.bottom = appHeight - 100;
         this.x = -this.camera.x;
         this.y = -this.camera.y;
         this.resources = [];
@@ -84,8 +86,9 @@ class Map extends PIXI.Container{
                 }
             }
         }
-        let towncenter = this.player.createBuilding(i, j, 'TownCenter', this);
+        let towncenter = this.player.createBuilding(i, j, 'TownCenter', this, true);
         this.setCamera(towncenter.x, towncenter.y);
+        this.refreshInstancesOnScreen();
     }
     formatCells(){
         for(let i = 0; i < this.size; i++){
@@ -165,7 +168,7 @@ class Map extends PIXI.Container{
          */
         let mousePos = app.renderer.plugins.interaction.mouse.global;
         let moveSpeed = 10;
-        let moveDist = 100;
+        let moveDist = 10;
         let A = {
             x:(cellWidth/2)-this.camera.x,
             y:-this.camera.y
@@ -197,7 +200,7 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.x - 100 > B.x){
                 this.camera.x -= moveSpeed;
             }
-            refreshInstancesOnScreen(this);
+            this.refreshInstancesOnScreen();
         }else //Right
         if (mousePos.x > appWidth - moveDist && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appHeight){
             if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A,D,cameraCenter,50)){
@@ -209,7 +212,7 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.x + 100 < D.x){
                 this.camera.x += moveSpeed;
             }
-            refreshInstancesOnScreen(this);
+            this.refreshInstancesOnScreen();
         }
         //Top
         if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appTop + moveDist){
@@ -222,7 +225,7 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.y - 50 > A.y){
                 this.camera.y -= moveSpeed;
             }
-            refreshInstancesOnScreen(this);
+            this.refreshInstancesOnScreen();
         }else //Bottom
         if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y > appHeight - moveDist && mousePos.y <= appHeight){
             if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)){
@@ -234,19 +237,60 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.y + 100 < C.y){
                 this.camera.y += moveSpeed;
             }
-            refreshInstancesOnScreen(this);
+            this.refreshInstancesOnScreen();
         }
-        function refreshInstancesOnScreen(map){
-            map.x = -map.camera.x;
-            map.y = -map.camera.y;
-            for (let i = 0; i < map.children.length; i++){
-                let instance = map.children[i];
-                if (instance.x > map.camera.x && instance.x < map.camera.x + appWidth && instance.y > map.camera.y && instance.y < map.camera.y + appHeight){
-                    instance.visible = true;
-                    instance.interaction = true;
+    }
+    refreshInstancesOnScreen(){
+        this.x = -this.camera.x;
+        this.y = -this.camera.y;
+        /*let cameraCenter = {
+            x:((this.camera.x) + appWidth / 2),
+            y:((this.camera.y) + appHeight / 2)
+        }
+        let coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
+        let arounds = getCoordinatesAroundPoint(coordinate[0], coordinate[1], 20);
+        let size = Math.round(appWidth / cellWidth) + 2;
+        for (let i = coordinate[0]-size; i < coordinate[0]+size; i++){
+            for (let j = coordinate[1]-size; j < coordinate[1]+size; j++){
+                if (!this.grid[i] || !this.grid[i][j]){
+                    continue;
+                }
+                let instance = this.grid[i][j];
+                let child = this.grid[i][j].has;
+                if (instance.x > this.camera.x && instance.x < this.camera.x + appWidth && instance.y > this.camera.y + this.top && instance.y < this.camera.y + this.bottom - 16){
+                    instance.renderable = true;
+                    if (child){
+                        child.renderable = true;
+                    }
                 }else{
-                    instance.visible = false;
-                    instance.interaction = false;
+                    instance.renderable = false;
+                    instance.removeChildren();
+                    if (child){
+                        child.removeChildren();
+                        child.renderable = false;
+                    }
+                }
+            }
+        }
+        return;*/
+        for (let i = 0; i < this.children.length; i++){
+            let instance = this.children[i];
+            let sprite = instance.getChildByName('sprite');
+            if (instance.x + (cellWidth/2) > this.camera.x && instance.x - (cellWidth/2) < this.camera.x + appWidth && instance.y + (cellHeight/2) > this.camera.y + this.top && instance.y - (cellHeight/2) < this.camera.y + this.bottom){
+                instance.visible = true;
+                instance.interaction = true;
+                instance.renderable = true;
+                if (sprite){
+                    sprite.renderable = true;
+                    sprite.cacheAsBitmap = false;
+                }
+            }else{
+                instance.visible = false;
+                instance.interaction = false;
+                instance.renderable = false;
+                if (sprite){
+                    sprite.renderable = false;
+                    sprite.cacheAsBitmap = true;
                 }
             }
         }

@@ -13,6 +13,8 @@ class Ressource extends PIXI.Container{
 		this.zIndex = getInstanceZIndex(this);
 		this.parent.grid[i][j].has = this;
 
+		this.renderable = false;
+
 		this.type = options.type;
 		this.size = options.size;
 		this.life = options.life;
@@ -43,6 +45,9 @@ class Tree extends Ressource{
 			gamebox.style.cursor = defaultIcon;
 		})
 		sprite.on('click', () => {
+			if (mouseBuilding){
+				return;
+			}
 			if (this.parent.player.selectedUnits.length){
 				if (this.parent.player.selectedUnits.some(unit => unit.type === 'villager')){
 					drawInstanceBlinkingSelection(this);
@@ -99,6 +104,9 @@ class Berrybush extends Ressource{
 			gamebox.style.cursor = defaultIcon;
 		})
 		sprite.on('click', () => {
+			if (mouseBuilding){
+				return;
+			}
 			if (this.parent.player.selectedUnits.length){
 				drawInstanceBlinkingSelection(this);
 			}

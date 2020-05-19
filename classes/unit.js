@@ -1,5 +1,5 @@
 class Unit extends PIXI.Container {
-	constructor(i, j, map, player){
+	constructor(i, j, map, player, options = {}){
 		super();
 
 		this.setParent(map);
@@ -17,27 +17,27 @@ class Unit extends PIXI.Container {
 		this.path = [];
 		this.player = player;
 		this.zIndex = getInstanceZIndex(this);
-		this.normalSpeed = 1;
-		this.speed = 1;
-		this.slowSpeed = this.speed / 1.30;
 		this.interactive = true;
 		this.selected = false;
 		this.degree = randomRange(1,360);
 		this.currentFrame = randomRange(0, 4);
-		this.type = 'villager';
 		this.action = null;
 		this.work = null;
 		this.loading = 0;
 		this.maxLoading = 10;
 		this.old = {...this};
 
-		this.standingSheet = app.loader.resources['418'].spritesheet;
-		this.walkingSheet = app.loader.resources['657'].spritesheet;
+		Object.keys(options).forEach((prop) => {
+			this[prop] = options[prop];
+		})
+
+		this.originalSpeed = this.speed;		
 		this.actionSheet = null;
 		this.deliverySheet = null;
 
 		let sprite = new PIXI.AnimatedSprite(this.standingSheet.animations['south']);
 		sprite.name = 'sprite';
+		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.setAnimation('standingSheet');
 	}
@@ -88,12 +88,17 @@ class Unit extends PIXI.Container {
 			this.setAnimation('walkingSheet');
 		}else{
 			this.parent.grid[this.i][this.j].solid = true;
+			this.setAnimation('standingSheet');
 		}
 	}
 	getAction(name){
 		let sprite = this.getChildByName('sprite');
 		switch (name){
 			case 'chopwood':
+				if (this.dest.type !== 'tree'){
+					this.setAnimation('standingSheet');
+					return;
+				}
 				sprite.onLoop = () => {
 					if (this.loading === this.maxLoading){
 						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter']);
@@ -129,6 +134,10 @@ class Unit extends PIXI.Container {
 				}
 				break;
 			case 'forageberry':
+				if (this.dest.type !== 'berrybush'){
+					this.setAnimation('standingSheet');
+					return;
+				}
 				sprite.onLoop = () => {
 					if (this.loading === this.maxLoading){
 						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter']);
@@ -151,11 +160,32 @@ class Unit extends PIXI.Container {
 					if (previousCell.has && previousCell.has.type === 'berrybush'){
 						this.setDestination(previousCell.has, 'forageberry');
 					}else{
-						//TODO FIND ANOTHER TREE
+						//TODO FIND ANOTHER BUSH
 					}
 				}else{
 					this.setAnimation('standingSheet');
 				}
+				break;
+			case 'build':
+				sprite.onLoop = () => {
+					if (this.dest.name !== 'building'){
+						this.setAnimation('standingSheet');
+						return;
+					}
+					if (this.dest.life < this.dest.lifeMax){
+						this.dest.life++;
+						this.dest.updateTexture();
+					}else{
+						if (!this.dest.isBuilt){
+							this.dest.updateTexture();
+							this.dest.isBuilt = true;
+						}
+						this.setAnimation('standingSheet');	
+						//TODO FIND ANOTHER CONSTRUCTION
+					}
+		
+				}
+				this.setAnimation('actionSheet');
 				break;
 			default: 
 				this.setAnimation('standingSheet');	
@@ -195,9 +225,9 @@ class Unit extends PIXI.Container {
 			this.i = this.next.i;
 			this.j = this.next.j;
 			if (this.parent.grid[this.i][this.j].inclined){
-				this.speed = this.slowSpeed;
+				this.speed = this.originalSpeed / 1.30;
 			}else{
-				this.speed = this.normalSpeed;
+				this.speed = this.originalSpeed;
 			}
 			this.zIndex = getInstanceZIndex(this); 
 			this.path.pop();
@@ -231,8 +261,7 @@ class Unit extends PIXI.Container {
 			sprite.textures = [sprite.textures[sprite.currentFrame]];
 			return;
 		}
-		sprite.animationSpeed = this[sheet].data.animationSpeed || 0.2;
-		sprite.updateAnchor = true;
+		sprite.animationSpeed = this[sheet].data.animationSpeed || ( sheet === 'standingSheet' ? .1 : .2);
 		if (this.degree > 67.5 && this.degree < 112.5){
 			sprite.scale.x = 1;
 			sprite.textures = this[sheet].animations['north']
@@ -259,5 +288,103 @@ class Unit extends PIXI.Container {
 			sprite.textures = this[sheet].animations['southwest'];
 		}
 		sprite.play();
+	}
+}
+
+class Villager extends Unit {
+	constructor(i, j, map, player){
+		super(i, j, map, player, {
+			type: 'villager',
+			lifeMax: 25,
+			speed: 1.1,
+			standingSheet: app.loader.resources['418'].spritesheet,
+			walkingSheet: app.loader.resources['657'].spritesheet,
+			interface: {
+				icon: 'assets/images/interface/50730/000_50730.png',
+				menu: [
+					{
+						icon: 'assets/images/interface/50721/002_50721.png',
+						children : [
+							{
+								//House buy
+								icon: 'assets/images/interface/50705/015_50705.png',
+								onClick: (selection) => {
+									if (this.player.wood > 50){
+										const spritesheet = app.loader.resources['489'].spritesheet;
+										const textureName = '000_489.png';
+										const texture = spritesheet.textures[textureName];
+										map.interface.setMouseBuilding({
+											size: 1,
+											texture,
+											type: 'House',
+											onClick: () => {
+												this.player.wood -= 50; 
+												this.parent.interface.updateTopbar();
+											}
+										})
+									}
+								}
+							},
+							{
+								//Barracks buy
+								icon: 'assets/images/interface/50705/003_50705.png',
+								onClick: (selection) => {
+									if (this.player.wood > 125){
+										const spritesheet = app.loader.resources['254'].spritesheet;
+										const textureName = '000_254.png';
+										const texture = spritesheet.textures[textureName];
+										map.interface.setMouseBuilding({
+											size: 2,
+											texture,
+											type: 'Barracks',
+											onClick: () => {
+												this.player.wood -= 125; 
+												this.parent.interface.updateTopbar();
+											}
+										})
+									}
+								}
+							},
+							{
+								//Towncenter buy
+								icon: 'assets/images/interface/50705/033_50705.png',
+								onClick: (selection) => {
+									if (this.player.wood > 200){
+										const spritesheet = app.loader.resources['280'].spritesheet;
+										const textureName = '000_280.png';
+										const texture = spritesheet.textures[textureName];
+										map.interface.setMouseBuilding({
+											size: 2,
+											texture,
+											type: 'TownCenter',
+											onClick: () => {
+												this.player.wood -= 200; 
+												this.parent.interface.updateTopbar();
+											}
+										})
+									}
+								}
+							}
+						]
+					},
+				]
+			}
+		})
+	}
+}
+
+class Clubman extends Unit {
+	constructor(i, j, map, player){
+		super(i, j, map, player, {
+			type: 'clubman',
+			lifeMax: 40,
+			speed: 1.2,
+			standingSheet: app.loader.resources['425'].spritesheet,
+			walkingSheet: app.loader.resources['664'].spritesheet,
+			actionSheet: app.loader.resources['212'].spritesheet,
+			interface: {
+				icon: 'assets/images/interface/50730/002_50730.png',
+			}
+		})
 	}
 }

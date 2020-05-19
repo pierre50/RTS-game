@@ -1,5 +1,5 @@
 class Building extends PIXI.Container {
-	constructor(i, j, map, options){
+	constructor(i, j, map, player, options = {}){
 		super();
 
 		this.setParent(map);
@@ -11,19 +11,62 @@ class Building extends PIXI.Container {
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
+		this.player = player;
 
-		this.type = options.type;
-		this.size = options.size;
-		this.addChild(options.sprite);
-		this.addChild(options.spriteColor);
-    }
+		Object.keys(options).forEach((prop) => {
+			this[prop] = options[prop];
+		})
+		this.life = this.isBuilt ? this.lifeMax : 1;
+		if (options.sprite){
+			this.addChild(options.sprite);
+		}
+		if (options.spriteColor){
+			this.addChild(options.spriteColor);
+		}
+	}
+	updateTexture(){
+		if (!this.isBuilt){
+			const buildSpritesheet = app.loader.resources[this.buildSpritesheetId].spritesheet;
+			const finalSpritesheet = app.loader.resources[this.finalSpritesheetId].spritesheet;
+			let sprite = this.getChildByName('sprite');
+			let percentage = getPercentage(this.life, this.lifeMax);
+			if (percentage >= 25 && percentage < 50){
+				const textureName = `001_${this.buildSpritesheetId}.png`;
+				sprite.texture = buildSpritesheet.textures[textureName];
+			}
+			if (percentage >= 50 && percentage < 75){
+				const textureName = `002_${this.buildSpritesheetId}.png`;
+				sprite.texture = buildSpritesheet.textures[textureName];
+			}
+			if (percentage >= 75 && percentage < 99){
+				const textureName = `003_${this.buildSpritesheetId}.png`;
+				sprite.texture = buildSpritesheet.textures[textureName];
+			}
+			if (percentage >= 100){
+				const textureName = `000_${this.finalSpritesheetId}.png`;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+				//Set the color sprite if exist
+				if (this.colorSpritesheetId){
+					const spritesheetColor = app.loader.resources[this.colorSpritesheetId].spritesheet;
+					const textureNameColor = `000_${this.colorSpritesheetId}.png`;
+					const textureColor = spritesheetColor.textures[textureNameColor];
+					this.addChild(new PIXI.Sprite(textureColor));	
+				}
+			}
+		}
+	}
 }
 
 class TownCenter extends Building {
-	constructor(i, j, map){
+	constructor(i, j, map, player, isBuilt = false){
 		//Define sprite
-		const spritesheet = app.loader.resources['280'].spritesheet;
-		const textureName = '000_280.png';
+		const finalSpritesheetId = '280';
+		const buildSpritesheetId = '261';
+		const colorSpritesheetId = '230';
+		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
+		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
+		const textureName = `000_${spritesheetId}.png`;
 		const texture = spritesheet.textures[textureName];
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
@@ -36,16 +79,136 @@ class TownCenter extends Building {
             neighbours[n].solid = true;
 		}
 		//Set player color
-		const spritesheetColor = app.loader.resources['230'].spritesheet;
-		const textureNameColor = '000_230.png';
-		const textureColor = spritesheetColor.textures[textureNameColor];
-		let spriteColor =  new PIXI.Sprite(textureColor);
+		let spriteColor;
+		if (isBuilt){
+			const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+			const textureNameColor = `000_${colorSpritesheetId}.png`;
+			const textureColor = spritesheetColor.textures[textureNameColor];
+			spriteColor = new PIXI.Sprite(textureColor);	
+		}
 
-		super(i, j, map, {
+		super(i, j, map, player, {
 			type: 'towncenter',
 			sprite,
-			size: 2,
-			spriteColor
+			size: 3,
+			isBuilt,
+			spriteColor,
+			finalSpritesheetId,
+			buildSpritesheetId,
+			colorSpritesheetId,
+			lifeMax: 1,//600,
+			interface: {
+				icon: 'assets/images/interface/50705/033_50705.png',
+				menu: [
+					{
+						//Villager buy
+						icon: 'assets/images/interface/50730/000_50730.png',
+						onClick: (selection) => {
+							if (this.player.food > 30){
+								this.player.food -= 30;
+								this.parent.interface.updateTopbar();
+								let spawnCell = getFreeCellAroundPoint(selection.i, selection.j, selection.parent.grid);
+								this.player.createUnit(spawnCell.i, spawnCell.j, 'Villager', selection.parent);
+							}
+						}
+					}
+				]
+			}
+		});
+	}
+}
+
+class Barracks extends Building {
+	constructor(i, j, map, player, isBuilt = false){
+		//Define sprite
+		const finalSpritesheetId = '254';
+		const buildSpritesheetId = '261';
+		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
+		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
+		const textureName = `000_${spritesheetId}.png`;
+		const texture = spritesheet.textures[textureName];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		//Set solid zone
+		let neighbours = getCellsAroundPoint(i, j, map.grid, 1, false, true);
+        for (let n = 0; n < neighbours.length; n ++){
+            neighbours[n].solid = true;
+		}
+
+		super(i, j, map, player, {
+			type: 'barracks',
+			sprite,
+			size: 3,
+			isBuilt,
+			finalSpritesheetId,
+			buildSpritesheetId,
+			lifeMax: 5,//350,
+			interface: {
+				icon: 'assets/images/interface/50705/003_50705.png',
+				menu: [
+					{
+						//Clubman buy
+						icon: 'assets/images/interface/50730/002_50730.png',
+						onClick: (selection) => {
+							if (this.player.food > 50){
+								this.player.food -= 50;
+								this.parent.interface.updateTopbar();
+								let spawnCell = getFreeCellAroundPoint(selection.i, selection.j, selection.parent.grid);
+								this.player.createUnit(spawnCell.i, spawnCell.j, 'Clubman', selection.parent);
+							}
+						}
+					}
+				]
+			}
+		});
+	}
+}
+
+class House extends Building {
+	constructor(i, j, map, player, isBuilt = false){
+		//Define sprite
+		const finalSpritesheetId = '218';
+		const buildSpritesheetId = '489';
+		const colorSpritesheetId = '233';
+		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
+		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
+		const textureName = `000_${spritesheetId}.png`;
+		const texture = spritesheet.textures[textureName];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		//Set solid zone
+		let neighbours = getCellsAroundPoint(i, j, map.grid, 0, false, true);
+        for (let n = 0; n < neighbours.length; n ++){
+            neighbours[n].solid = true;
+		}
+		//Set player color
+		let spriteColor;
+		if (isBuilt){
+			const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+			const textureNameColor = `000_${colorSpritesheetId}.png`;
+			const textureColor = spritesheetColor.textures[textureNameColor];
+			spriteColor = new PIXI.Sprite(textureColor);	
+		}
+
+		super(i, j, map, player, {
+			type: 'house',
+			sprite,
+			size: 1,
+			isBuilt,
+			spriteColor,
+			finalSpritesheetId,
+			buildSpritesheetId,
+			colorSpritesheetId,
+			lifeMax: 75,
+			interface: {
+				icon: 'assets/images/interface/50705/015_50705.png',
+			}
 		});
 	}
 }
