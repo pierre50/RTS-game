@@ -5,7 +5,7 @@ class Interface {
             borderColor: '#686769',
             background: '#3c3b3d',
             width: '100%',
-        } 
+        }
         this.parent = map;
         this.topbar = document.createElement('div');
         this.topbar.id = 'topbar';
@@ -25,12 +25,12 @@ class Interface {
             ...barStyle
         });
         
-        this.ressources = document.createElement('div');
-        Object.assign(this.ressources.style, {
+        this.resources = document.createElement('div');
+        Object.assign(this.resources.style, {
             display: 'flex'
         });
         ['wood', 'food', 'stone', 'gold'].forEach((res) => {
-            this.setRessourcebox(res)
+            this.setresourcebox(res)
         })
 
         this.age = document.createElement('div');
@@ -41,7 +41,7 @@ class Interface {
         });
         this.options = document.createElement('div');
     
-        this.topbar.appendChild(this.ressources);
+        this.topbar.appendChild(this.resources);
         this.topbar.appendChild(this.age);
         this.topbar.appendChild(this.options);
         gamebox.appendChild(this.topbar)
@@ -72,7 +72,7 @@ class Interface {
 
         this.updateTopbar();
     }
-    setRessourcebox(name){
+    setresourcebox(name){
         let box = document.createElement('div');
         Object.assign(box.style, {
             display: 'flex',
@@ -92,7 +92,7 @@ class Interface {
         this[name] = document.createElement('div');
         box.appendChild(img);
         box.appendChild(this[name]);
-        this.ressources.appendChild(box);
+        this.resources.appendChild(box);
     }
     updateTopbar(){
         ['wood', 'food', 'stone', 'gold', 'age'].forEach((prop) => {
@@ -100,6 +100,14 @@ class Interface {
         })
     }
     setBottombar(selection){
+        const iconStyle = {
+            objectFit: 'none',
+            height: '50px',
+            width: '50px',
+            marginRight: '2px',
+            border: '1.5px inset #686769',
+            borderRadius: '2px'
+        }
         this.bottombarInfo.innerHTML = '';
         this.bottombarInfo.style.background = 'transparent';
         this.bottombarMenu.innerHTML = '';
@@ -111,38 +119,49 @@ class Interface {
             let img = document.createElement('img');
             img.src = selection.interface.icon;
             this.bottombarInfo.appendChild(img);
-            if (selection.interface.menu){
-                setMenuRecurs(this.bottombarMenu, selection.interface.menu)
-            }
+            setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || []);
         }
-        function setMenuRecurs(element, menu){
+        function setMenuRecurs(selection, element, menu, parent){
             menu.forEach((btn) => {
                 let img = document.createElement('img');
                 img.src = btn.icon;
-                Object.assign(img.style, {
-                    objectFit: 'none',
-                    height: '50px',
-                    width: '50px',
-                    marginRight: '2px',
-                    border: '1.5px inset #686769',
-                    borderRadius: '2px'
-                })
+                Object.assign(img.style, iconStyle);
                 if (btn.children){
-                    img.addEventListener('click', (evt) => {
+                    img.addEventListener('pointerdown', (evt) => {
                         element.innerHTML = '';
-                        setMenuRecurs(element, btn.children);
+                        setMenuRecurs(selection, element, btn.children, menu);
                     });
                 }else {
-                    img.addEventListener('click', (evt) => btn.onClick(selection, evt));
+                    img.addEventListener('pointerdown', (evt) => btn.onClick(selection, evt));
                 }
                 element.appendChild(img) 
             })
+            if (parent){
+                let back = document.createElement('img');
+                back.src = 'assets/images/interface/50721/010_50721.png';
+                Object.assign(back.style, iconStyle);
+                back.addEventListener('pointerdown', (evt) => {
+                    element.innerHTML = '';
+                    setMenuRecurs(selection, element, parent);
+                })
+                element.appendChild(back);
+            }else if (selection.selected){
+                let unselect = document.createElement('img');
+                unselect.src = 'assets/images/interface/50721/010_50721.png';
+                Object.assign(unselect.style, iconStyle);
+                unselect.addEventListener('pointerdown', (evt) => {
+                    selection.parent.player.unselectAll();
+                })
+                element.appendChild(unselect);
+            }
         }
     }
     setMouseBuilding(building){
         mouseBuilding = new PIXI.Sprite(building.texture);
         mouseBuilding.type = building.type;
         mouseBuilding.size = building.size;
+        mouseBuilding.x = window.event.clientX;
+        mouseBuilding.y = window.event.clientY;
         mouseBuilding.name = 'mouseBuilding';
         mouseBuilding.onClick = building.onClick;
         app.stage.addChild(mouseBuilding);

@@ -11,17 +11,32 @@ class Building extends PIXI.Container {
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
+		this.parent.grid[i][j].has = this;
 		this.player = player;
+		this.selected = false;
 
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
 		})
+
 		this.life = this.isBuilt ? this.lifeMax : 1;
-		if (options.sprite){
-			this.addChild(options.sprite);
+
+		//Set solid zone
+		const dist = this.size === 3 ? 1 : 0;
+		let neighbours = getCellsAroundPoint(i, j, map.grid, dist, false, true);
+		for (let n = 0; n < neighbours.length; n ++){
+			neighbours[n].solid = true;
+			neighbours[n].has = this;
 		}
-		if (options.spriteColor){
-			this.addChild(options.spriteColor);
+		
+		if (this.sprite){
+			this.addChild(this.sprite);
+		}
+		if (this.spriteColor){
+			this.addChild(this.spriteColor);
+		}
+		if (!this.parent.revealEverything){
+			renderCellOnInstanceSight(this);
 		}
 	}
 	updateTexture(){
@@ -56,6 +71,26 @@ class Building extends PIXI.Container {
 			}
 		}
 	}
+	select(){
+		if (this.selected){
+			return;
+		}
+		this.selected = true;
+		let selection = new PIXI.Graphics();
+		selection.name = 'selection';
+		selection.zIndex = 3;
+		selection.lineStyle(1, 0xffffff);
+		const path = [(-32*this.size), 0, 0,(-16*this.size), (32*this.size),0, 0,(16*this.size)];
+		selection.drawPolygon(path);
+		this.addChildAt(selection, 0);
+	}
+	unselect(){
+		this.selected = false;
+		let selection = this.getChildByName('selection');
+		if (selection){
+			this.removeChild(selection);
+		}
+	}
 }
 
 class TownCenter extends Building {
@@ -73,11 +108,6 @@ class TownCenter extends Building {
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		//Set solid zone
-		let neighbours = getCellsAroundPoint(i, j, map.grid, 1, false, true);
-        for (let n = 0; n < neighbours.length; n ++){
-            neighbours[n].solid = true;
-		}
 		//Set player color
 		let spriteColor;
 		if (isBuilt){
@@ -91,6 +121,7 @@ class TownCenter extends Building {
 			type: 'towncenter',
 			sprite,
 			size: 3,
+			sight: 7,
 			isBuilt,
 			spriteColor,
 			finalSpritesheetId,
@@ -132,16 +163,12 @@ class Barracks extends Building {
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		//Set solid zone
-		let neighbours = getCellsAroundPoint(i, j, map.grid, 1, false, true);
-        for (let n = 0; n < neighbours.length; n ++){
-            neighbours[n].solid = true;
-		}
 
 		super(i, j, map, player, {
 			type: 'barracks',
 			sprite,
 			size: 3,
+			sight: 5,
 			isBuilt,
 			finalSpritesheetId,
 			buildSpritesheetId,
@@ -182,11 +209,7 @@ class House extends Building {
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		//Set solid zone
-		let neighbours = getCellsAroundPoint(i, j, map.grid, 0, false, true);
-        for (let n = 0; n < neighbours.length; n ++){
-            neighbours[n].solid = true;
-		}
+
 		//Set player color
 		let spriteColor;
 		if (isBuilt){
@@ -200,6 +223,7 @@ class House extends Building {
 			type: 'house',
 			sprite,
 			size: 1,
+			sight: 3,
 			isBuilt,
 			spriteColor,
 			finalSpritesheetId,

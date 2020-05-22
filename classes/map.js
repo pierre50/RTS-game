@@ -1,10 +1,11 @@
 class Map extends PIXI.Container{
-	constructor(size, reliefRange, chanceOfRelief, chanceOfTree){
+	constructor(size, reliefRange, chanceOfRelief, chanceOfTree, revealEverything){
         super();
 		this.size = size;
         this.reliefRange = reliefRange;
         this.chanceOfRelief = chanceOfRelief;
         this.chanceOfTree = chanceOfTree;
+        this.revealEverything = revealEverything;
         this.grid = [];
         this.sortableChildren = true;
         this.camera = {
@@ -72,17 +73,13 @@ class Map extends PIXI.Container{
             }
         }
         //Place a town center
-        let i = Math.floor(randomRange(3, this.size-3));
-        let j = Math.floor(randomRange(3, this.size-3));
-        let arounds = getCellsAroundPoint(i, j, this.grid, 4, false, true);
+        const i = Math.floor(randomRange(3, this.size-3));
+        const j = Math.floor(randomRange(3, this.size-3));
+        const arounds = getCellsAroundPoint(i, j, this.grid, 4, false, true);
         for (let n = 0; n < arounds.length; n ++){
             if (arounds[n].has){
-                if (arounds[n].has.name === 'ressource'){
-                    let resIndex = this.resources.findIndex(r => r.id === arounds[n].has.id);
-                    this.resources.splice(resIndex, 1);
-                    this.removeChild(arounds[n].has);
-                    arounds[n].has = null;
-                    arounds[n].solid = false;
+                if (arounds[n].has.name === 'resource'){
+                    arounds[n].has.destroy();
                 }
             }
         }
@@ -167,28 +164,13 @@ class Map extends PIXI.Container{
          *  \C/ 
          */
         let mousePos = app.renderer.plugins.interaction.mouse.global;
-        let moveSpeed = 10;
-        let moveDist = 10;
-        let A = {
-            x:(cellWidth/2)-this.camera.x,
-            y:-this.camera.y
-        };
-        let B = {
-            x:(cellWidth/2-(this.size * cellWidth)/2)-this.camera.x,
-            y:((this.size * cellHeight)/2)-this.camera.y
-        };
-        let D = {
-            x:(cellWidth/2+(this.size * cellWidth)/2)-this.camera.x,
-            y:((this.size * cellHeight)/2)-this.camera.y
-        };
-        let C = {
-            x:(cellWidth/2)-this.camera.x,
-            y:(this.size * cellHeight)-this.camera.y
-        };
-        let cameraCenter = {
-            x:((this.camera.x) + appWidth / 2)-this.camera.x,
-            y:((this.camera.y) + appHeight / 2)-this.camera.y
-        }
+        const moveSpeed = 10;
+        const moveDist = 10;
+        const A = { x:(cellWidth/2)-this.camera.x,  y:-this.camera.y };
+        const B = { x:(cellWidth/2-(this.size * cellWidth)/2)-this.camera.x, y:((this.size * cellHeight)/2)-this.camera.y };
+        const D = { x:(cellWidth/2+(this.size * cellWidth)/2)-this.camera.x, y:((this.size * cellHeight)/2)-this.camera.y };
+        const C = { x:(cellWidth/2)-this.camera.x, y:(this.size * cellHeight)-this.camera.y };
+        const cameraCenter = { x:((this.camera.x) + appWidth / 2)-this.camera.x, y:((this.camera.y) + appHeight / 2)-this.camera.y }
         //Left 
         if (mousePos.x >= appLeft && mousePos.x <= appLeft + moveDist && mousePos.y >= appTop && mousePos.y <= appHeight){
             if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
@@ -243,54 +225,23 @@ class Map extends PIXI.Container{
     refreshInstancesOnScreen(){
         this.x = -this.camera.x;
         this.y = -this.camera.y;
-        /*let cameraCenter = {
+        if (!this.revealEverything){
+            return;
+        }
+        let cameraCenter = {
             x:((this.camera.x) + appWidth / 2),
             y:((this.camera.y) + appHeight / 2)
         }
         let coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
-        let arounds = getCoordinatesAroundPoint(coordinate[0], coordinate[1], 20);
         let size = Math.round(appWidth / cellWidth) + 2;
         for (let i = coordinate[0]-size; i < coordinate[0]+size; i++){
             for (let j = coordinate[1]-size; j < coordinate[1]+size; j++){
-                if (!this.grid[i] || !this.grid[i][j]){
-                    continue;
-                }
-                let instance = this.grid[i][j];
-                let child = this.grid[i][j].has;
-                if (instance.x > this.camera.x && instance.x < this.camera.x + appWidth && instance.y > this.camera.y + this.top && instance.y < this.camera.y + this.bottom - 16){
-                    instance.renderable = true;
-                    if (child){
-                        child.renderable = true;
+                if (this.grid[i] && this.grid[i][j]){
+                    const cell = this.grid[i][j];
+                    cell.visible = true;
+                    if (cell.has){
+                        cell.has.visible = true;
                     }
-                }else{
-                    instance.renderable = false;
-                    instance.removeChildren();
-                    if (child){
-                        child.removeChildren();
-                        child.renderable = false;
-                    }
-                }
-            }
-        }
-        return;*/
-        for (let i = 0; i < this.children.length; i++){
-            let instance = this.children[i];
-            let sprite = instance.getChildByName('sprite');
-            if (instance.x + (cellWidth/2) > this.camera.x && instance.x - (cellWidth/2) < this.camera.x + appWidth && instance.y + (cellHeight/2) > this.camera.y + this.top && instance.y - (cellHeight/2) < this.camera.y + this.bottom){
-                instance.visible = true;
-                instance.interaction = true;
-                instance.renderable = true;
-                if (sprite){
-                    sprite.renderable = true;
-                    sprite.cacheAsBitmap = false;
-                }
-            }else{
-                instance.visible = false;
-                instance.interaction = false;
-                instance.renderable = false;
-                if (sprite){
-                    sprite.renderable = false;
-                    sprite.cacheAsBitmap = true;
                 }
             }
         }
@@ -308,8 +259,12 @@ class Map extends PIXI.Container{
             for(let j = 0; j < this.size; j++){
                 let cell = this.grid[i][j];
                 let sprite = cell.getChildByName('sprite');
-                if (cell.solid){
+                if (cell.solid && cell.has && cell.has.name === 'unit'){
                     sprite.tint = colorRed;
+                }else if (cell.solid && cell.has && cell.has.name === 'resource'){
+                    sprite.tint = colorBlue;
+                }else if (cell.solid && cell.has && cell.has.name === 'building'){
+                    sprite.tint = colorViolet;
                 }else{
                     sprite.tint = colorWhite;
                 }

@@ -8,6 +8,7 @@ class Player{
 		this.units = [];
 		this.buildings = [];
 		this.selectedUnits = [];
+		this.selectedBuildings = [];
 		this.population = 0;
 		this.populationMax = 5;
 	}
@@ -18,12 +19,13 @@ class Player{
 		}	
 		let unit = new units[type](x, y, map, this);
 		unit.on('pointertap', (evt) => {
+			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;
 			}
-			this.unselectAllUnit();
-			map.interface.setBottombar(unit);
+			this.unselectAll();
 			unit.select();
+			map.interface.setBottombar(unit);
 			this.selectedUnits.push(unit);
 		})
 		this.units.push(unit);
@@ -37,6 +39,7 @@ class Player{
 		}			
 		let building = new buildings[type](x, y, map, this, isBuilt);
 		building.getChildByName('sprite').on('pointertap', (evt) => {
+			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;
 			}
@@ -59,36 +62,55 @@ class Player{
 				}
 				return;
 			}
-			//Create unit - TEST
-			if (!this.selectedUnits.length){
-				map.interface.setBottombar(building);
-				return;
-			}
-			//Send villager to give loading of ressources
-			for (let i = 0; i < this.selectedUnits.length; i++){
-				let unit = this.selectedUnits[i];
-				if (unit.type === 'villager' && unit.loading > 0){
-					drawInstanceBlinkingSelection(building);
-					unit.previousDest = null;
-					switch (unit.work){
-						case 'woodcutter':
-							unit.setDestination(building, 'deliverywood');
-							break;
-						case 'gatherer':
-							unit.setDestination(building, 'deliveryberry');
-							break;
+
+			//Send villager to give loading of resources
+			if (this.selectedUnits){
+				let hasVillagerLoaded = false;
+				for (let i = 0; i < this.selectedUnits.length; i++){
+					let unit = this.selectedUnits[i];
+					if (unit.type === 'villager' && unit.loading > 0){
+						hasVillagerLoaded = true;
+						drawInstanceBlinkingSelection(building);
+						unit.previousDest = null;
+						switch (unit.work){
+							case 'woodcutter':
+								unit.setDestination(building, 'deliverywood');
+								break;
+							case 'gatherer':
+								unit.setDestination(building, 'deliveryberry');
+								break;
+						}
 					}
 				}
+				if (hasVillagerLoaded){
+					return;
+				}
 			}
-			return;
+		
+			//Select
+			this.unselectAll();
+			building.select();
+			map.interface.setBottombar(building);
+			this.selectedBuildings.push(building);
 		})
 		this.buildings.push(building);
 		return building;
 	}
-	unselectAllUnit(){
+	unselectAllUnits(){
 		for (let i = 0; i < this.selectedUnits.length; i++){
 			this.selectedUnits[i].unselect();
 		}
 		this.selectedUnits = [];
+	}
+	unselectAllBuildings(){
+		for (let i = 0; i < this.selectedBuildings.length; i++){
+			this.selectedBuildings[i].unselect();
+		}
+		this.selectedBuildings = [];
+	}
+	unselectAll(){
+		this.unselectAllBuildings();
+		this.unselectAllUnits();
+		map.interface.setBottombar();
 	}
 }
