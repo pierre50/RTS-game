@@ -138,6 +138,7 @@ class Interface {
             })
             if (parent){
                 let back = document.createElement('img');
+                back.id = 'interfaceBackBtn';
                 back.src = 'assets/images/interface/50721/010_50721.png';
                 Object.assign(back.style, iconStyle);
                 back.addEventListener('pointerdown', (evt) => {

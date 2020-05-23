@@ -53,7 +53,7 @@ class resource extends PIXI.Container{
 class Tree extends resource{
 	constructor(i, j, map){
 		//Define sprite
-		const randomSpritesheet = randomItem(['492', '493', '494', '503', '509'])
+		const randomSpritesheet = randomItem(['492', '493', '494', '503', '509']);
 		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
 		const textureName = '000_' + randomSpritesheet + '.png';
 		const texture = spritesheet.textures[textureName];

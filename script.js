@@ -16,11 +16,11 @@ const gamebox = document.getElementById('game');
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 56;
+const mapDefaultSize = 100;
 const mapDefaultReliefRange = [1, 3];
 const mapDefaultChanceOfRelief = 0;
-const mapDefaultChanceOfTree = .01;
-const mapRevealEverything = false;
+const mapDefaultChanceOfSets = .02;
+const mapRevealEverything = true;
 
 //Colors
 const colorWhite = 0xffffff;
@@ -95,6 +95,16 @@ function preload(){
 		.add('261','graphics/261/texture.json')
 		.add('273','graphics/273/texture.json')
 		.add('280','graphics/280/texture.json')
+		.add('292','graphics/292/texture.json')
+		.add('293','graphics/293/texture.json')
+		.add('294','graphics/294/texture.json')
+		.add('295','graphics/295/texture.json')
+		.add('296','graphics/296/texture.json')
+		.add('297','graphics/297/texture.json')
+		.add('298','graphics/298/texture.json')
+		.add('299','graphics/299/texture.json')
+		.add('300','graphics/300/texture.json')
+		.add('301','graphics/301/texture.json')
 		.add('418','graphics/418/texture.json')
 		.add('419','graphics/419/texture.json')
 		.add('425','graphics/425/texture.json')
@@ -106,6 +116,10 @@ function preload(){
 		.add('494','graphics/494/texture.json')
 		.add('503','graphics/503/texture.json')
 		.add('509','graphics/509/texture.json')
+		.add('531','graphics/531/texture.json')
+		.add('532','graphics/532/texture.json')
+		.add('533','graphics/533/texture.json')
+		.add('534','graphics/534/texture.json')
 		.add('623','graphics/623/texture.json')
 		.add('625','graphics/625/texture.json')
 		.add('628','graphics/628/texture.json')
@@ -136,7 +150,7 @@ function create(){
 	gamebox.appendChild(app.view);
 
 	//Init map
-	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfTree, mapRevealEverything);
+	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
 
 	//Set-up global interactions
@@ -149,82 +163,94 @@ function create(){
 	})
 	interactionManager.on('pointerup', (evt) => {
 		pointerStart = null;
+		
+		//Select units on mouse rectangle
 		if (mouseRectangle){
-			//Select units on mouse selection
+			let selectVillager;
+			//Select units inside the rectangle
 			for(let i = 0; i < map.player.units.length; i++){
 				let unit = map.player.units[i];
 				if (map.player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
 					unit.select();
+					if (unit.type === 'villager'){
+						selectVillager = unit;
+					}
 					map.player.selectedUnits.push(unit);
 				}
 			}
 			//Set our bottombar
-			if (map.player.selectedUnits.length){
-				let villager = map.player.selectedUnits.find((unit) => unit.type === 'villager');
-				if (villager){
-					map.interface.setBottombar(villager);
-				}else{
-					//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
-					map.interface.setBottombar(map.player.selectedUnits[0]);
-				}
+			if (selectVillager){
+				map.interface.setBottombar(selectVillager);
+			}else{
+				//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
+				map.interface.setBottombar(map.player.selectedUnits[0]);
 			}
 			//Reset mouse selection
 			mouseRectangle.graph.destroy();
 			mouseRectangle = null;
-		}else{
-			const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
-			const i = Math.floor(pos[0]);
-			const j = Math.floor(pos[1]);
-			if (map.grid[i] && map.grid[i][j]){
-				const cell = map.grid[i][j];
-				if ((cell.has || gamebox.cursor !== 'default') && cell.visible){
-					return;
-				}
-				if (mouseBuilding){
-					if (mouseBuilding.isFree){
-						if (mouseBuilding.onClick){
-							mouseBuilding.onClick();
-						}
-						const building = map.player.createBuilding(i, j, mouseBuilding.type, map);
-							map.interface.removeMouseBuilding();
-						for(let u = 0; u < map.player.selectedUnits.length; u++){
-							let unit = map.player.selectedUnits[u];
-							if (unit.type === 'villager'){
-								drawInstanceBlinkingSelection(building);
-								if (unit.work !== 'builder'){
-									unit.loading = 0;
-									unit.work = 'builder';
-									unit.actionSheet = app.loader.resources['628'].spritesheet;
-									unit.standingSheet = app.loader.resources['419'].spritesheet;
-									unit.walkingSheet = app.loader.resources['658'].spritesheet;
-								}
-								unit.previousDest = null;
-								unit.setDestination(building, 'build');
-							}
-						}
+			return;
+		}
+		const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
+		const i = Math.floor(pos[0]);
+		const j = Math.floor(pos[1]);
+		if (map.grid[i] && map.grid[i][j]){
+			const cell = map.grid[i][j];
+			if ((cell.solid || gamebox.cursor !== 'default') && cell.visible){
+				return;
+			}
+			if (mouseBuilding){
+				if (mouseBuilding.isFree){
+					if (mouseBuilding.onClick){
+						mouseBuilding.onClick();
 					}
-					return;
-				}
-				if (map.player.selectedUnits.length){
-					//Pointer animation
-					let pointerSheet = app.loader.resources['50405'].spritesheet;
-					let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
-					pointer.animationSpeed = .2;
-					pointer.loop = false;
-					pointer.anchor.set(.5,.5)
-					pointer.x = evt.data.global.x;
-					pointer.y = evt.data.global.y;
-					pointer.onComplete = () => {
-						pointer.destroy();
-					};
-					pointer.play();
-					app.stage.addChild(pointer);
-					//Send units
+					const building = map.player.createBuilding(i, j, mouseBuilding.type, map);
+					let selectVillager;
+					map.interface.removeMouseBuilding();
 					for(let u = 0; u < map.player.selectedUnits.length; u++){
-						map.player.selectedUnits[u].setDestination(cell);
+						let unit = map.player.selectedUnits[u];
+						if (unit.type === 'villager'){
+							selectVillager = unit;
+							drawInstanceBlinkingSelection(building);
+							if (unit.work !== 'builder'){
+								unit.loading = 0;
+								unit.work = 'builder';
+								unit.actionSheet = app.loader.resources['628'].spritesheet;
+								unit.standingSheet = app.loader.resources['419'].spritesheet;
+								unit.walkingSheet = app.loader.resources['658'].spritesheet;
+							}
+							unit.previousDest = null;
+							unit.setDestination(building, 'build');
+						}
+					}
+					//Set our bottombar
+					if (selectVillager){
+						map.interface.setBottombar(selectVillager);
+					}else{
+						//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
+						map.interface.setBottombar(map.player.selectedUnits[0]);
 					}
 				}
-			}	
+				return;
+			}
+			if (map.player.selectedUnits.length){
+				//Pointer animation
+				let pointerSheet = app.loader.resources['50405'].spritesheet;
+				let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
+				pointer.animationSpeed = .2;
+				pointer.loop = false;
+				pointer.anchor.set(.5,.5)
+				pointer.x = evt.data.global.x;
+				pointer.y = evt.data.global.y;
+				pointer.onComplete = () => {
+					pointer.destroy();
+				};
+				pointer.play();
+				app.stage.addChild(pointer);
+				//Send units
+				for(let u = 0; u < map.player.selectedUnits.length; u++){
+					map.player.selectedUnits[u].setDestination(cell);
+				}
+			}
 		}
 	})
 	let hammertime = new Hammer(gamebox);
@@ -235,24 +261,26 @@ function create(){
 		const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
 		const i = Math.floor(pos[0]);
 		const j = Math.floor(pos[1]);
+		//Mouse building to place construction
 		if (map.grid[i] && map.grid[i][j]){
 			const cell = map.grid[i][j];
 			if (mouseBuilding){
 				mouseBuilding.x = cell.x - map.camera.x;
 				mouseBuilding.y = cell.y - map.camera.y;
 				let isFree = true;
-				let neighbours = getCellsAroundPoint(i, j, map.grid, mouseBuilding.size - 1, false, true);
-				for (let n = 0; n < neighbours.length; n ++){
-					if (neighbours[n].solid || !neighbours[n].visible){
+				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size - 1, (cell) => {
+					if (cell.solid || !cell.visible){
 						isFree = false;
-						break;
+						return;
 					}
-				}
+				});
 				mouseBuilding.tint = isFree ? colorWhite : colorRed;
 				mouseBuilding.isFree = isFree;
+				return;
 			}
 		}
 		
+		//Create and draw mouse selection
 		const mousePos = evt.data.global;
 		if (!mouseRectangle && pointerStart && pointsDistance(mousePos.x, mousePos.y, pointerStart.x, pointerStart.y) > 15){
 			mouseRectangle = {

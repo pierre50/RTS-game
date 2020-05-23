@@ -139,8 +139,7 @@ class Unit extends PIXI.Container {
 						if (this.dest){
 							this.previousDest = this.dest;
 						}else{
-							const pos = isometricToCartesian(this.x, this.y);
-							this.previousDest = this.parent.grid[pos[0]][pos[1]]
+							this.previousDest = this.parent.grid[this.i][this.j];
 						}
 						this.setDestination(target, 'deliverywood');
 						return;
@@ -170,7 +169,7 @@ class Unit extends PIXI.Container {
 							const texture = spritesheet.textures[textureName];
 							let sprite = new PIXI.Sprite(texture);
 							sprite.name = 'stump';
-							this.parent.grid[this.dest.i][this.dest.j].addChild(sprite)
+							this.parent.grid[this.dest.i][this.dest.j].addChild(sprite);
 							this.dest.destroy();
 						}
 						this.dest = null;
@@ -208,8 +207,7 @@ class Unit extends PIXI.Container {
 						if (this.dest){
 							this.previousDest = this.dest;
 						}else{
-							const pos = isometricToCartesian(this.x, this.y);
-							this.previousDest = this.parent.grid[pos[0]][pos[1]]
+							this.previousDest = this.parent.grid[this.i][this.j];
 						}
 						this.setDestination(target, 'deliveryberry');
 						return;
@@ -266,37 +264,40 @@ class Unit extends PIXI.Container {
 		this.next = this.path[this.path.length - 1];
 		const nextCell = this.parent.grid[this.next.i][this.next.j];
 		let sprite = this.getChildByName('sprite');
-
-		if (nextCell.solid && nextCell.has && nextCell.has.name === 'unit' 
-			&& nextCell.has.hasPath() && instancesDistance(this, nextCell.has) < 50
-			&& nextCell.has.getChildByName('sprite').playing){ 
-			sprite.stop();
-			return;
+		if (nextCell.solid){
+			if (nextCell.has && nextCell.has.name === 'unit' 
+				&& nextCell.has.hasPath() && instancesDistance(this, nextCell.has) < 50
+				&& nextCell.has.getChildByName('sprite').playing){ 
+				sprite.stop();
+				return;
+			}
+			if (this.path.length === 1){
+				if (this.work && this.action){
+					switch(this.action){
+						case 'chopwood' :
+							this.moveToNearestTree();
+							break;
+						case 'forageberry':
+							this.moveToNearestBerrybush();
+							break;
+						case 'built':
+							this.setAnimation('standingSheet');
+							break;
+						default: 
+							this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
+					}
+					return;
+				}else{
+					this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
+				}
+				return;
+			}
 		}
+
 		if (!sprite.playing){
 			sprite.play();
 		}
-		if (this.path.length === 1 && nextCell.solid){
-			if (this.work && this.action){
-				switch(this.action){
-					case 'chopwood' :
-						this.moveToNearestTree();
-						break;
-					case 'forageberry':
-						this.moveToNearestBerrybush();
-						break;
-					case 'built':
-						this.setAnimation('standingSheet');
-						break;
-					default: 
-						this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
-				}
-				return;
-			}else{
-				this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
-			}
-			return;
-		}
+
 		this.zIndex = getInstanceZIndex(this); 
 		if (instancesDistance(this, this.next) < this.speed){
 
@@ -311,7 +312,7 @@ class Unit extends PIXI.Container {
 			this.currentCell = this.parent.grid[this.i][this.j];
 			this.currentCell.has = this;
 			this.currentCell.solid = true;
-	
+			
 			if (!this.parent.revealEverything){
 				renderCellOnInstanceSight(this);
 			}
@@ -345,6 +346,7 @@ class Unit extends PIXI.Container {
 	}
 	setAnimation(sheet){
 		let sprite = this.getChildByName('sprite');
+		//Sheet don't exist we just block the current sheet
 		if (!this[sheet]){
 			if (this.currentSheet !== 'walkingSheet' && this.walkingSheet){
 				sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]];
@@ -354,6 +356,10 @@ class Unit extends PIXI.Container {
 			this.currentSheet = 'walkingSheet';
 			sprite.anchor.set(sprite.textures[sprite.currentFrame].defaultAnchor.x, sprite.textures[[sprite.currentFrame]].defaultAnchor.y)
 			return;
+		}
+		//Reset action loop
+		if (sheet !== 'actionSheet'){
+			sprite.onLoop = () => {};
 		}
 		this.currentSheet = sheet;
 		sprite.animationSpeed = this[sheet].data.animationSpeed || ( sheet === 'standingSheet' ? .1 : .2);

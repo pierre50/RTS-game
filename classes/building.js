@@ -11,7 +11,6 @@ class Building extends PIXI.Container {
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
-		this.parent.grid[i][j].has = this;
 		this.player = player;
 		this.selected = false;
 
@@ -23,11 +22,14 @@ class Building extends PIXI.Container {
 
 		//Set solid zone
 		const dist = this.size === 3 ? 1 : 0;
-		let neighbours = getCellsAroundPoint(i, j, map.grid, dist, false, true);
-		for (let n = 0; n < neighbours.length; n ++){
-			neighbours[n].solid = true;
-			neighbours[n].has = this;
-		}
+		getPlainCellsAroundPoint(i, j, map.grid, dist, (cell) => {
+			if (cell.has && cell.has.isSet){
+				cell.removeChild(cell.has);
+				cell.has = null;
+			}
+			cell.solid = true;
+			cell.has = this;
+		});
 		
 		if (this.sprite){
 			this.addChild(this.sprite);

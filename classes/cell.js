@@ -34,38 +34,33 @@ class Cell extends PIXI.Container{
     }
 	fillCellsAroundCell(){
         let grid = this.parent.grid;
-        let neighbours = getCellsAroundPoint(this.i, this.j, grid, 2);
-        for(let i = 0; i < neighbours.length; i++){
-            let neighbour = neighbours[i];
-            if (neighbour.z === this.z){
-                let dist = instancesDistance(this, neighbour, true);
-                let velX = Math.round(((this.i - neighbour.i)/dist));
-                let velY = Math.round(((this.j - neighbour.j)/dist));
-                if (grid[neighbour.i+velX] && grid[neighbour.i+velX][neighbour.j+velY]){
-                    let target = grid[neighbour.i+velX][neighbour.j+velY];
-                    let aside = grid[this.i + neighbour.i - target.i][this.j + neighbour.j - target.j]
-                    if (target.z > this.z || target.z === this.z || aside.z === this.z){
-                        continue
-                    }
-                    if ((Math.floor(instancesDistance(this, neighbour, true)) === 2)){
-                        target.setCellLevel(target.z + 1);
+        getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
+            if (cell.z === this.z){
+                let dist = instancesDistance(this, cell, true);
+                let velX = Math.round(((this.i - cell.i)/dist));
+                let velY = Math.round(((this.j - cell.j)/dist));
+                if (grid[cell.i+velX] && grid[cell.i+velX][cell.j+velY]){
+                    let target = grid[cell.i+velX][cell.j+velY];
+                    let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
+                    if (target.z <= this.z && target.z !== this.z && aside.z !== this.z){
+                        if ((Math.floor(instancesDistance(this, cell, true)) === 2)){
+                            target.setCellLevel(target.z + 1);
+                        }
                     }
                 }
             }
-        }
+        });
     }
     setCellLevel(level, cpt = 1) {
         let grid = this.parent.grid;
-        let neighbours = getCellsAroundPoint(this.i, this.j, grid, level - cpt);
-        for(let i = 0; i < neighbours.length; i++){
-            let neighbour = neighbours[i];
-            if (neighbour.z < cpt){
-                neighbour.y -= (cpt - neighbour.z) * cellDepth;
-                neighbour.z = cpt;
-                neighbour.zIndex = getInstanceZIndex(neighbour);
-                neighbour.fillCellsAroundCell(grid);
+        getCellsAroundPoint(this.i, this.j, grid, level - cpt, (cell) => {
+            if (cell.z < cpt){
+                cell.y -= (cpt - cell.z) * cellDepth;
+                cell.z = cpt;
+                cell.zIndex = getInstanceZIndex(cell);
+                cell.fillCellsAroundCell(grid);
             }
-        }
+        });
         if (cpt <= level){
             this.setCellLevel(level, cpt+1);	
         }

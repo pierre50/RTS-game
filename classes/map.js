@@ -1,10 +1,10 @@
 class Map extends PIXI.Container{
-	constructor(size, reliefRange, chanceOfRelief, chanceOfTree, revealEverything){
+	constructor(size, reliefRange, chanceOfRelief, chanceOfSets, revealEverything){
         super();
 		this.size = size;
         this.reliefRange = reliefRange;
         this.chanceOfRelief = chanceOfRelief;
-        this.chanceOfTree = chanceOfTree;
+        this.chanceOfSets = chanceOfSets;
         this.revealEverything = revealEverything;
         this.grid = [];
         this.sortableChildren = true;
@@ -25,8 +25,8 @@ class Map extends PIXI.Container{
     initMap(){
         this.removeChildren();
         //Set cell's to map
-        for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
                 if(this.grid[i] == null){
                     this.grid[i] = [];	
                 }
@@ -40,8 +40,8 @@ class Map extends PIXI.Container{
             }
         }
         //Format cell's
-        for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
                 if (cell.z > 0){
                     cell.setCellLevel(cell.z);
@@ -50,20 +50,46 @@ class Map extends PIXI.Container{
             }
         }
         this.formatCells();
-        //Set tree's to map
-        for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
+        //Set seed's to map
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
-                if (!cell.solid && !cell.inclined && Math.random() < this.chanceOfTree){
-                    let tree = new Tree(i, j, this);
-                    cell.has = tree;
-                    cell.solid = true;
-                    this.resources.push(tree);
+                if (Math.random() < .03 && i > 1 && j > 1 && i < this.size && j < this.size){
+                    const randomSpritesheet = randomRange(292, 301);
+                    const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
+                    const texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
+                    let floor = new PIXI.Sprite(texture);
+                    floor.name = 'floor';
+                    floor.updateAnchor = true;
+                    cell.addChild(floor);
+                }
+                if (!cell.solid && !cell.inclined && Math.random() < this.chanceOfSets){
+                    const type = randomItem(['tree', 'rock']);
+                    switch (type){
+                        case 'tree':
+                            let tree = new Tree(i, j, this);
+                            cell.has = tree;
+                            cell.solid = true;
+                            this.resources.push(tree);
+                            break;
+                        case 'rock':
+                            const randomSpritesheet = randomRange(531, 534);
+		                    const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
+		                    const texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
+                            let rock = new PIXI.Sprite(texture);
+                            rock.name = 'rock';
+                            rock.isSet = true;
+                            rock.updateAnchor = true;
+                            cell.has = rock;
+                            cell.addChild(rock);
+                            break;
+                    }
+            
                 }
             }
         }
         //Set berrybush's to map
-        for(let i = 0; i < this.size; i++){
+        /*for(let i = 0; i < this.size; i++){
             for(let j = 0; j < this.size; j++){
                 let cell = this.grid[i][j];
                 if (!cell.solid && !cell.inclined && Math.random() < this.chanceOfTree){
@@ -71,25 +97,24 @@ class Map extends PIXI.Container{
                     this.resources.push(berrybush);
                 }
             }
-        }
+        }*/
         //Place a town center
         const i = Math.floor(randomRange(3, this.size-3));
         const j = Math.floor(randomRange(3, this.size-3));
-        const arounds = getCellsAroundPoint(i, j, this.grid, 4, false, true);
-        for (let n = 0; n < arounds.length; n ++){
-            if (arounds[n].has){
-                if (arounds[n].has.name === 'resource'){
-                    arounds[n].has.destroy();
+        getPlainCellsAroundPoint(i, j, this.grid, 4, (cell) => {
+            if (cell.has){
+                if (cell.has.name === 'resource'){
+                    cell.has.destroy();
                 }
             }
-        }
+        });
         let towncenter = this.player.createBuilding(i, j, 'TownCenter', this, true);
         this.setCamera(towncenter.x, towncenter.y);
-        this.refreshInstancesOnScreen();
+        this.displayInstancesOnScreen();
     }
     formatCells(){
-        for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
                 //Side
                 if ((this.grid[i-1] && this.grid[i-1][j].z - cell.z === 1) &&
@@ -173,6 +198,7 @@ class Map extends PIXI.Container{
         const cameraCenter = { x:((this.camera.x) + appWidth / 2)-this.camera.x, y:((this.camera.y) + appHeight / 2)-this.camera.y }
         //Left 
         if (mousePos.x >= appLeft && mousePos.x <= appLeft + moveDist && mousePos.y >= appTop && mousePos.y <= appHeight){
+            this.clearInstancesOnScreen();
             if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
                 this.camera.x -= moveSpeed;
@@ -182,9 +208,10 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.x - 100 > B.x){
                 this.camera.x -= moveSpeed;
             }
-            this.refreshInstancesOnScreen();
+            this.displayInstancesOnScreen();
         }else //Right
         if (mousePos.x > appWidth - moveDist && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appHeight){
+            this.clearInstancesOnScreen();
             if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A,D,cameraCenter,50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
                 this.camera.x += moveSpeed;
@@ -194,10 +221,11 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.x + 100 < D.x){
                 this.camera.x += moveSpeed;
             }
-            this.refreshInstancesOnScreen();
+            this.displayInstancesOnScreen();
         }
         //Top
         if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y >= appTop && mousePos.y <= appTop + moveDist){
+            this.clearInstancesOnScreen();
             if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y -= moveSpeed/(cellWidth/cellHeight);		
                 this.camera.x += moveSpeed;
@@ -207,9 +235,10 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.y - 50 > A.y){
                 this.camera.y -= moveSpeed;
             }
-            this.refreshInstancesOnScreen();
+            this.displayInstancesOnScreen();
         }else //Bottom
         if (mousePos.x >= appLeft && mousePos.x <= appWidth && mousePos.y > appHeight - moveDist && mousePos.y <= appHeight){
+            this.clearInstancesOnScreen();
             if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
                 this.camera.x -= moveSpeed;
@@ -219,32 +248,46 @@ class Map extends PIXI.Container{
             }else if (cameraCenter.y + 100 < C.y){
                 this.camera.y += moveSpeed;
             }
-            this.refreshInstancesOnScreen();
+            this.displayInstancesOnScreen();
         }
     }
-    refreshInstancesOnScreen(){
+    clearInstancesOnScreen(){
         this.x = -this.camera.x;
         this.y = -this.camera.y;
         if (!this.revealEverything){
             return;
         }
-        let cameraCenter = {
+        const cameraCenter = {
             x:((this.camera.x) + appWidth / 2),
             y:((this.camera.y) + appHeight / 2)
         }
-        let coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
-        let size = Math.round(appWidth / cellWidth) + 2;
-        for (let i = coordinate[0]-size; i < coordinate[0]+size; i++){
-            for (let j = coordinate[1]-size; j < coordinate[1]+size; j++){
-                if (this.grid[i] && this.grid[i][j]){
-                    const cell = this.grid[i][j];
-                    cell.visible = true;
-                    if (cell.has){
-                        cell.has.visible = true;
-                    }
-                }
+        const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
+        const dist = Math.round(appWidth / cellWidth) + 2;
+        getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
+            cell.visible = false;
+            if (cell.has){
+                cell.has.visible = false;
             }
+        })
+    }
+    displayInstancesOnScreen(){
+        this.x = -this.camera.x;
+        this.y = -this.camera.y;
+        if (!this.revealEverything){
+            return;
         }
+        const cameraCenter = {
+            x:((this.camera.x) + appWidth / 2),
+            y:((this.camera.y) + appHeight / 2)
+        }
+        const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
+        const dist = Math.round(appWidth / cellWidth) + 2;
+        getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
+            cell.visible = true;
+            if (cell.has){
+                cell.has.visible = true;
+            }
+        })
     }
     setCamera(x, y){
         this.camera = {
@@ -255,8 +298,8 @@ class Map extends PIXI.Container{
         this.y = -this.camera.y;
     }
     step(){
-        /*for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
+        /*for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
                 let sprite = cell.getChildByName('sprite');
                 if (cell.solid && cell.has && cell.has.name === 'unit'){
