@@ -23,12 +23,12 @@ class Building extends PIXI.Container {
 		//Set solid zone
 		const dist = this.size === 3 ? 1 : 0;
 		getPlainCellsAroundPoint(i, j, map.grid, dist, (cell) => {
-			if (cell.has && cell.has.isSet){
-				cell.removeChild(cell.has);
-				cell.has = null;
+			const set = cell.getChildByName('set');
+			if (set){
+				cell.removeChild(set);
 			}
-			cell.solid = true;
 			cell.has = this;
+			cell.solid = true;
 		});
 		
 		if (this.sprite){

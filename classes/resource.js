@@ -62,7 +62,7 @@ class Tree extends resource{
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		sprite.on('pointerdown', () => {
+		sprite.on('pointerup', () => {
 			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;
@@ -95,8 +95,8 @@ class Tree extends resource{
 			type: 'tree',
 			sprite: sprite,
 			size: 1,
-			quantity: 3,//300,
-			life: 1//25,
+			quantity: 300,
+			life: 25,
 		});
 	}
 }
@@ -111,7 +111,7 @@ class Berrybush extends resource{
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames['000_240.png'].hitArea);
-		sprite.on('pointerdown', () => {
+		sprite.on('pointerup', () => {
 			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;

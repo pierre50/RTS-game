@@ -77,10 +77,8 @@ class Map extends PIXI.Container{
 		                    const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
 		                    const texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
                             let rock = new PIXI.Sprite(texture);
-                            rock.name = 'rock';
-                            rock.isSet = true;
+                            rock.name = 'set';
                             rock.updateAnchor = true;
-                            cell.has = rock;
                             cell.addChild(rock);
                             break;
                     }
@@ -281,7 +279,7 @@ class Map extends PIXI.Container{
             y:((this.camera.y) + appHeight / 2)
         }
         const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
-        const dist = Math.round(appWidth / cellWidth) + 2;
+        const dist = Math.round(appWidth / cellWidth);
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
             cell.visible = true;
             if (cell.has){
@@ -302,7 +300,7 @@ class Map extends PIXI.Container{
             for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
                 let sprite = cell.getChildByName('sprite');
-                if (cell.solid && cell.has && cell.has.name === 'unit'){
+                if (cell.has && cell.has.name === 'unit'){
                     sprite.tint = colorRed;
                 }else if (cell.solid && cell.has && cell.has.name === 'resource'){
                     sprite.tint = colorBlue;
@@ -311,7 +309,6 @@ class Map extends PIXI.Container{
                 }else{
                     sprite.tint = colorWhite;
                 }
-
             }
         }*/
         if (!mouseRectangle){

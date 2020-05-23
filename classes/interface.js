@@ -100,6 +100,7 @@ class Interface {
         })
     }
     setBottombar(selection){
+        let me = this;
         const iconStyle = {
             objectFit: 'none',
             height: '50px',
@@ -129,6 +130,7 @@ class Interface {
                 if (btn.children){
                     img.addEventListener('pointerdown', (evt) => {
                         element.innerHTML = '';
+                        me.removeMouseBuilding();
                         setMenuRecurs(selection, element, btn.children, menu);
                     });
                 }else {
@@ -143,6 +145,7 @@ class Interface {
                 Object.assign(back.style, iconStyle);
                 back.addEventListener('pointerdown', (evt) => {
                     element.innerHTML = '';
+                    me.removeMouseBuilding();
                     setMenuRecurs(selection, element, parent);
                 })
                 element.appendChild(back);
@@ -151,6 +154,7 @@ class Interface {
                 unselect.src = 'assets/images/interface/50721/010_50721.png';
                 Object.assign(unselect.style, iconStyle);
                 unselect.addEventListener('pointerdown', (evt) => {
+                    me.removeMouseBuilding();
                     selection.parent.player.unselectAll();
                 })
                 element.appendChild(unselect);

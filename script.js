@@ -247,8 +247,23 @@ function create(){
 				pointer.play();
 				app.stage.addChild(pointer);
 				//Send units
+				const minX = Math.min(...map.player.selectedUnits.map(unit => unit.i));
+				const minY = Math.min(...map.player.selectedUnits.map(unit => unit.j));
+				const maxX = Math.max(...map.player.selectedUnits.map(unit => unit.i));
+				const maxY = Math.max(...map.player.selectedUnits.map(unit => unit.j));
+				const centerX = minX + Math.round((maxX - minX)/2); 
+				const centerY = minY + Math.round((maxY - minY)/2);
 				for(let u = 0; u < map.player.selectedUnits.length; u++){
-					map.player.selectedUnits[u].setDestination(cell);
+					const unit = map.player.selectedUnits[u];
+					const distCenterX = unit.i - centerX;
+					const distCenterY = unit.j - centerY;
+					const finalX = cell.i+distCenterX;
+					const finalY = cell.j+distCenterY;
+					if (map.grid[finalX] && map.grid[finalX][finalY]){
+						map.player.selectedUnits[u].setDestination(map.grid[finalX][finalY]);
+					}else{
+						map.player.selectedUnits[u].setDestination(cell);
+					}
 				}
 			}
 		}
