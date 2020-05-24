@@ -35,7 +35,9 @@ class Player{
 		const buildings = {
 			Barracks,
 			TownCenter,
-			House
+			House,
+			StoragePit,
+			Granary
 		}			
 		let building = new buildings[type](x, y, map, this, isBuilt);
 		building.getChildByName('sprite').on('pointertap', (evt) => {

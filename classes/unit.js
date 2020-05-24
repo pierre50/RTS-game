@@ -155,7 +155,7 @@ class Unit extends PIXI.Container {
 				sprite.onLoop = () => {
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter']);
+						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter', 'storagepit']);
 						let target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
@@ -175,6 +175,8 @@ class Unit extends PIXI.Container {
 							const textureName = `00${randomRange(0,3)}_636.png`;
 							const texture = spritesheet.textures[textureName];
 							sprite.texture = texture;
+							const points = [-32, 0, 0,-16, 32,0, 0,16];
+							sprite.hitArea = new PIXI.Polygon(points);
 							sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
 						}
 						return;
@@ -223,7 +225,7 @@ class Unit extends PIXI.Container {
 				sprite.onLoop = () => {
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter']);
+						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter', 'granary']);
 						let target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
@@ -438,14 +440,14 @@ class Villager extends Unit {
 			standingSheet: app.loader.resources['418'].spritesheet,
 			walkingSheet: app.loader.resources['657'].spritesheet,
 			interface: {
-				icon: 'assets/images/interface/50730/000_50730.png',
+				icon: 'data/interface/50730/000_50730.png',
 				menu: [
 					{
-						icon: 'assets/images/interface/50721/002_50721.png',
+						icon: 'data/interface/50721/002_50721.png',
 						children : [
 							{
 								//House buy
-								icon: 'assets/images/interface/50705/015_50705.png',
+								icon: 'data/interface/50705/015_50705.png',
 								onClick: (selection) => {
 									if (this.player.wood > 50){
 										const spritesheet = app.loader.resources['489'].spritesheet;
@@ -465,7 +467,7 @@ class Villager extends Unit {
 							},
 							{
 								//Barracks buy
-								icon: 'assets/images/interface/50705/003_50705.png',
+								icon: 'data/interface/50705/003_50705.png',
 								onClick: (selection) => {
 									if (this.player.wood > 125){
 										const spritesheet = app.loader.resources['254'].spritesheet;
@@ -484,8 +486,48 @@ class Villager extends Unit {
 								}
 							},
 							{
+								//Granary buy
+								icon: 'data/interface/50705/011_50705.png',
+								onClick: (selection) => {
+									if (this.player.wood > 120){
+										const spritesheet = app.loader.resources['64'].spritesheet;
+										const textureName = '000_64.png';
+										const texture = spritesheet.textures[textureName];
+										map.interface.setMouseBuilding({
+											size: 2,
+											texture,
+											type: 'Granary',
+											onClick: () => {
+												this.player.wood -= 120; 
+												this.parent.interface.updateTopbar();
+											}
+										})
+									}
+								}
+							},
+							{
+								//Storage pit buy
+								icon: 'data/interface/50705/028_50705.png',
+								onClick: (selection) => {
+									if (this.player.wood > 120){
+										const spritesheet = app.loader.resources['527'].spritesheet;
+										const textureName = '000_527.png';
+										const texture = spritesheet.textures[textureName];
+										map.interface.setMouseBuilding({
+											size: 2,
+											texture,
+											type: 'StoragePit',
+											onClick: () => {
+												this.player.wood -= 120; 
+												this.parent.interface.updateTopbar();
+											}
+										})
+									}
+								}
+							},
+							/*{
 								//Towncenter buy
-								icon: 'assets/images/interface/50705/033_50705.png',
+								icon: 'data/interface/50705/033_50705.png',
 								onClick: (selection) => {
 									if (this.player.wood > 200){
 										const spritesheet = app.loader.resources['280'].spritesheet;
@@ -502,7 +544,7 @@ class Villager extends Unit {
 										})
 									}
 								}
-							}
+							}*/
 						]
 					},
 				]
@@ -522,7 +564,7 @@ class Clubman extends Unit {
 			walkingSheet: app.loader.resources['664'].spritesheet,
 			actionSheet: app.loader.resources['212'].spritesheet,
 			interface: {
-				icon: 'assets/images/interface/50730/002_50730.png',
+				icon: 'data/interface/50730/002_50730.png',
 			}
 		})
 	}

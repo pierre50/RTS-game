@@ -1,0 +1,147 @@
+<html>
+    <head>
+        <title>Map Editor</title>
+        <style>
+            body{
+                height: 100vh;
+                overflow: hidden;
+                margin: 0;
+                display: grid;
+                grid-template-columns: 150px 1fr;
+            }
+            #editor{
+                position: relative;
+            }
+            .cell{
+                width: 5;
+                height: 5;    
+                position: absolute;
+            }
+            .cell.c0{
+                background: lightgreen;
+            }
+            .cell.c1{
+                background: yellow;
+            }
+            .cell.c2{
+                background: green;
+            }
+            .cell.c3{
+                background: blue;
+            }
+            .cell.c4{
+                background: darkkhaki;
+            }
+            .cell.c5{
+                background: darkgreen;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <form id="form">
+                <b>Cursor:</b>
+                <br>
+                <label for="grass">Grass</label>
+                <input type="radio" id="grass" name="cursor" value="0" checked>
+                <br>
+                <label for="desert">Desert</label>
+                <input type="radio" id="desert" name="cursor" value="1">
+                <br>
+                <label for="forest">Forest</label>
+                <input type="radio" id="forest" name="cursor" value="2">
+                <br>
+                <label for="water">Water</label>
+                <input type="radio" id="water" name="cursor" value="3">
+                <br>
+                <label for="palmdesert">Palm desert</label>
+                <input type="radio" id="palmdesert" name="cursor" value="4">
+                <br>
+                <label for="jungle">Jungle</label>
+                <input type="radio" id="jungle" name="cursor" value="5">
+                <br><br>
+                <b>Cursor size:</b>
+                <br>
+                <label for="small">Small</label>
+                <input type="radio" id="small" name="size" value="0" checked>
+                <br>
+                <label for="middle">Middle</label>
+                <input type="radio" id="middle" name="size" value="1">
+                <br>
+                <label for="big">Big</label>
+                <input type="radio" id="big" name="size" value="2">
+                <br><br>
+            </form>
+            <button onclick="download()" id="clear">Download</button>
+        </div>
+        <div id="editor" onmousedown="return false">
+        </div>
+        <script>
+            let form = document.getElementById('form');
+            let editor = document.getElementById('editor');
+            let grid = [];
+            let size = 50;
+            for (let i = 0; i <= size; i++){
+                for (let j = 0; j <= size; j++){
+                    if (!grid[i]){
+                        grid[i] = [];
+                    }
+                    let cell = document.createElement('div');
+                    cell.className = 'cell c0';
+                    cell.value = 0;
+                    cell.style.left = i*5;
+                    cell.style.top = j*5;
+                    cell.addEventListener('mouseover', (evt) => {
+                        if(evt.buttons == 1 || evt.buttons == 3){
+                            getPlainCellsAroundPoint(i, j, form.elements.size.value * 1, (c) => {
+                                c.value = form.elements.cursor.value;
+                                c.className = 'cell c' + form.elements.cursor.value
+                            })
+                        }
+                    })
+                    grid[i][j] = cell; 
+                    editor.appendChild(cell);
+                }
+            }
+            function makeMapFile(){
+                let textFile;
+                let text = '';
+                for (let i = 0; i <= size; i++){
+                    for (let j = 0; j <= size; j++){
+                        text += grid[i][j].value;
+                    }
+                    text += '\n';
+                }
+                var data = new Blob([text], {type: 'text/plain'});
+                if (textFile) {
+                    window.URL.revokeObjectURL(textFile);
+                }
+                textFile = window.URL.createObjectURL(data);
+                return textFile;
+            }
+            function download(){
+                let link = document.createElement('a');
+                link.setAttribute('download', 'map.txt');
+                link.href = makeMapFile();
+                link.click();
+            }
+            function getPlainCellsAroundPoint(startX, startY, dist, callback){
+                if (!dist){
+                    if (typeof callback === 'function'){
+                        callback(grid[startX][startY]);
+                    }
+                }
+                for (let i = startX - dist; i <= startX + dist; i++){
+                    for (let j = startY - dist; j <= startY + dist; j++){
+                        if (grid[i] && grid[i][j]){
+                            const cell = grid[i][j];
+                            if (typeof callback === 'function'){
+                                callback(cell);
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>

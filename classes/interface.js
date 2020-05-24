@@ -10,10 +10,10 @@ class Interface {
         this.topbar = document.createElement('div');
         this.topbar.id = 'topbar';
         this.icons = {
-            'wood': 'assets/images/interface/50732/000_50732.png',
-            'food': 'assets/images/interface/50732/002_50732.png',
-            'stone': 'assets/images/interface/50732/001_50732.png',
-            'gold': 'assets/images/interface/50732/003_50732.png',
+            'wood': 'data/interface/50732/000_50732.png',
+            'food': 'data/interface/50732/002_50732.png',
+            'stone': 'data/interface/50732/001_50732.png',
+            'gold': 'data/interface/50732/003_50732.png',
         }
         Object.assign(this.topbar.style, {
             top: '0',
@@ -141,7 +141,7 @@ class Interface {
             if (parent){
                 let back = document.createElement('img');
                 back.id = 'interfaceBackBtn';
-                back.src = 'assets/images/interface/50721/010_50721.png';
+                back.src = 'data/interface/50721/010_50721.png';
                 Object.assign(back.style, iconStyle);
                 back.addEventListener('pointerdown', (evt) => {
                     element.innerHTML = '';
@@ -151,7 +151,7 @@ class Interface {
                 element.appendChild(back);
             }else if (selection.selected){
                 let unselect = document.createElement('img');
-                unselect.src = 'assets/images/interface/50721/010_50721.png';
+                unselect.src = 'data/interface/50721/010_50721.png';
                 Object.assign(unselect.style, iconStyle);
                 unselect.addEventListener('pointerdown', (evt) => {
                     me.removeMouseBuilding();

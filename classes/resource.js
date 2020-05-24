@@ -22,6 +22,7 @@ class resource extends PIXI.Container{
 		//Set solid zone
 		let cell = map.grid[i][j];
 		cell.solid = true;
+		cell.has = this;
 		
 		if (this.sprite){
 			//Change mouse icon if mouseover/mouseout events
@@ -41,19 +42,17 @@ class resource extends PIXI.Container{
 	}
 	destroy(){
 		if (this.parent){
-			const resIndex = this.parent.resources.indexOf(this);
 			this.parent.grid[this.i][this.j].has = null;
 			this.parent.grid[this.i][this.j].solid = false;
-			this.parent.resources.splice(resIndex, 1);
 			this.parent.removeChild(this);
 		}
 	}
 }
 
 class Tree extends resource{
-	constructor(i, j, map){
+	constructor(i, j, map, textureNames){
 		//Define sprite
-		const randomSpritesheet = randomItem(['492', '493', '494', '503', '509']);
+		const randomSpritesheet = randomItem(textureNames);
 		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
 		const textureName = '000_' + randomSpritesheet + '.png';
 		const texture = spritesheet.textures[textureName];

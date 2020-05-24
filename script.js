@@ -16,9 +16,9 @@ const gamebox = document.getElementById('game');
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 100;
-const mapDefaultReliefRange = [1, 3];
-const mapDefaultChanceOfRelief = 0;
+const mapDefaultSize = 50;
+const mapDefaultReliefRange = [0, 2];
+const mapDefaultChanceOfRelief = .005;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -69,8 +69,8 @@ function preload(){
 	//Disable contextmenu on rightclick
 	gamebox.setCursor = (status) => {
 		const icons = {
-			default: "url('assets/images/interface/51000/000_51000.png'),auto",
-			hover: "url('assets/images/interface/51000/003_51000.png'),auto",
+			default: "url('data/interface/51000/000_51000.png'),auto",
+			hover: "url('data/interface/51000/003_51000.png'),auto",
 		}
 		gamebox.style.cursor = icons[status];
 		gamebox.cursor = status;
@@ -82,14 +82,23 @@ function preload(){
 	});
 
 	//Preload assets
-	app.loader.baseUrl = 'assets/images';
+	app.loader.baseUrl = 'data';
 	app.loader
+		.add('0', 'seeds/0.txt')
+		.add('15000','terrain/15000/texture.json')
 		.add('15001','terrain/15001/texture.json')
+		.add('15002','terrain/15002/texture.json')
+		.add('15003','terrain/15003/texture.json')
+		.add('20000','border/20000/texture.json')
+		.add('20002','border/20002/texture.json')
 		.add('50405','interface/50405/texture.json')
+		.add('64','graphics/64/texture.json')
+		.add('83','graphics/83/texture.json')
 		.add('212','graphics/212/texture.json')
 		.add('218','graphics/218/texture.json')
 		.add('230','graphics/230/texture.json')
 		.add('233','graphics/233/texture.json')
+		.add('235','graphics/235/texture.json')
 		.add('240','graphics/240/texture.json')
 		.add('254','graphics/254/texture.json')
 		.add('261','graphics/261/texture.json')
@@ -105,17 +114,23 @@ function preload(){
 		.add('299','graphics/299/texture.json')
 		.add('300','graphics/300/texture.json')
 		.add('301','graphics/301/texture.json')
+		.add('347','graphics/347/texture.json')
 		.add('418','graphics/418/texture.json')
 		.add('419','graphics/419/texture.json')
 		.add('425','graphics/425/texture.json')
 		.add('432','graphics/432/texture.json')
 		.add('440','graphics/440/texture.json')
+		.add('463','graphics/463/texture.json')
+		.add('464','graphics/464/texture.json')
+		.add('465','graphics/465/texture.json')
+		.add('466','graphics/466/texture.json')
 		.add('489','graphics/489/texture.json')
 		.add('492','graphics/492/texture.json')
 		.add('493','graphics/493/texture.json')
 		.add('494','graphics/494/texture.json')
 		.add('503','graphics/503/texture.json')
 		.add('509','graphics/509/texture.json')
+		.add('527','graphics/527/texture.json')
 		.add('531','graphics/531/texture.json')
 		.add('532','graphics/532/texture.json')
 		.add('533','graphics/533/texture.json')
@@ -195,7 +210,7 @@ function create(){
 		const j = Math.floor(pos[1]);
 		if (map.grid[i] && map.grid[i][j]){
 			const cell = map.grid[i][j];
-			if ((cell.solid || gamebox.cursor !== 'default') && cell.visible){
+			if ((cell.solid || cell.border || gamebox.cursor !== 'default') && cell.visible){
 				return;
 			}
 			if (mouseBuilding){
@@ -284,7 +299,7 @@ function create(){
 				mouseBuilding.y = cell.y - map.camera.y;
 				let isFree = true;
 				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size - 1, (cell) => {
-					if (cell.solid || !cell.visible){
+					if (cell.solid || cell.border || !cell.visible){
 						isFree = false;
 						return;
 					}

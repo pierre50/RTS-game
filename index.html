@@ -30,60 +30,12 @@
                 height: 100vh;
                 overflow: hidden;
                 margin: 0;
-                display: grid;
-                grid-template-columns: 1fr/*150px 1fr*/;
                 user-select: none;
-            }
-            .form{
-                padding: 15px;
-                background: rgb(67, 61, 40);
-                border-style: inset;
-                border-color: rgb(86, 79, 57)
-            }
-            form input {
-                width: 100%;
             }
         </style>
     </head>
     <body>
-        <!--<div class="form">
-            <form id="editorForm">
-                <label for="size">Size:</label>
-                <input type="number" min="0" max="200" id="size" name="size"><br><br>
-                <label for="reliefRange">Relief range:</label>
-                <input type="number" step="1" min="0" id="reliefRangeMin" name="reliefRangeMin"> - 
-                <input type="number" step="1" min="0" id="reliefRangeMax" name="reliefRangeMax"><br><br>
-                <label for="chanceOfRelief">Chance of relief:</label>
-                <input type="number" step="0.1" min="0" max="1" id="chanceOfRelief" name="chanceOfRelief"><br><br>
-                <label for="chanceOfTree">Chance of tree:</label>
-                <input type="number" step="0.1" min="0" max="1" id="chanceOfTree" name="chanceOfTree"><br><br>
-            </form>
-            <button onclick="generateMap()" id="generateMap">Generate</button>
-        </div>-->
         <div id="game"></div>
         <script src="script.js"></script>
-        <script>
-            //Set default values to form
-            /*let form = document.getElementById('editorForm');
-            if (form){
-                form.elements['size'].value = mapDefaultSize;
-                form.elements['reliefRangeMin'].value = mapDefaultReliefRange[0];
-                form.elements['reliefRangeMax'].value = mapDefaultReliefRange[1];
-                form.elements['chanceOfRelief'].value = mapDefaultChanceOfRelief;
-                form.elements['chanceOfTree'].value = mapDefaultChanceOfTree;
-
-                function generateMap(){
-                    //Get values of form
-                    let values = {};
-                    Array.from(form.elements).forEach(element => {
-                        values[element.name] = element.type === 'number' ? element.value * 1 : element.value;
-                    })
-                    //Set map with values
-                    map.destroy();
-                    map = new Map(values.size, [values.reliefRangeMin, values.reliefRangeMax], values.chanceOfRelief, values.chanceOfTree);
-                    app.stage.addChild(map);
-                }
-            }*/
-        </script>
     </body>
 <html>

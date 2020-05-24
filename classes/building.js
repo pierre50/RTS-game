@@ -34,41 +34,36 @@ class Building extends PIXI.Container {
 		if (this.sprite){
 			this.addChild(this.sprite);
 		}
-		if (this.spriteColor){
-			this.addChild(this.spriteColor);
+
+		if (this.isBuilt && typeof this.onBuilt === 'function'){
+			this.onBuilt(this);
 		}
+
 		if (!this.parent.revealEverything){
 			renderCellOnInstanceSight(this);
 		}
 	}
 	updateTexture(){
 		if (!this.isBuilt){
-			const buildSpritesheet = app.loader.resources[this.buildSpritesheetId].spritesheet;
-			const finalSpritesheet = app.loader.resources[this.finalSpritesheetId].spritesheet;
 			let sprite = this.getChildByName('sprite');
+			const buildSpritesheetId = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0];
+			const buildSpritesheet = app.loader.resources[buildSpritesheetId].spritesheet;
 			let percentage = getPercentage(this.life, this.lifeMax);
 			if (percentage >= 25 && percentage < 50){
-				const textureName = `001_${this.buildSpritesheetId}.png`;
+				const textureName = `001_${buildSpritesheetId}.png`;
 				sprite.texture = buildSpritesheet.textures[textureName];
 			}
 			if (percentage >= 50 && percentage < 75){
-				const textureName = `002_${this.buildSpritesheetId}.png`;
+				const textureName = `002_${buildSpritesheetId}.png`;
 				sprite.texture = buildSpritesheet.textures[textureName];
 			}
 			if (percentage >= 75 && percentage < 99){
-				const textureName = `003_${this.buildSpritesheetId}.png`;
+				const textureName = `003_${buildSpritesheetId}.png`;
 				sprite.texture = buildSpritesheet.textures[textureName];
 			}
 			if (percentage >= 100){
-				const textureName = `000_${this.finalSpritesheetId}.png`;
-				sprite.texture = finalSpritesheet.textures[textureName];
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-				//Set the color sprite if exist
-				if (this.colorSpritesheetId){
-					const spritesheetColor = app.loader.resources[this.colorSpritesheetId].spritesheet;
-					const textureNameColor = `000_${this.colorSpritesheetId}.png`;
-					const textureColor = spritesheetColor.textures[textureNameColor];
-					this.addChild(new PIXI.Sprite(textureColor));	
+				if (typeof this.onBuilt === 'function'){
+					this.onBuilt(this);
 				}
 			}
 		}
@@ -110,14 +105,6 @@ class TownCenter extends Building {
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
-		//Set player color
-		let spriteColor;
-		if (isBuilt){
-			const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-			const textureNameColor = `000_${colorSpritesheetId}.png`;
-			const textureColor = spritesheetColor.textures[textureNameColor];
-			spriteColor = new PIXI.Sprite(textureColor);	
-		}
 
 		super(i, j, map, player, {
 			type: 'towncenter',
@@ -125,17 +112,27 @@ class TownCenter extends Building {
 			size: 3,
 			sight: 7,
 			isBuilt,
-			spriteColor,
-			finalSpritesheetId,
-			buildSpritesheetId,
-			colorSpritesheetId,
-			lifeMax: 1,//600,
+			lifeMax: 5,//600,
+			onBuilt: (building) => {
+				let sprite = building.getChildByName('sprite');
+				const textureName = `000_${finalSpritesheetId}.png`;
+				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+				const textureNameColor = `000_${colorSpritesheetId}.png`;
+				const textureColor = spritesheetColor.textures[textureNameColor];
+				let spriteColor =new PIXI.Sprite(textureColor);
+				spriteColor.name = 'color';
+				building.addChild(spriteColor);	
+			},
 			interface: {
-				icon: 'assets/images/interface/50705/033_50705.png',
+				icon: 'data/interface/50705/033_50705.png',
 				menu: [
 					{
 						//Villager buy
-						icon: 'assets/images/interface/50730/000_50730.png',
+						icon: 'data/interface/50730/000_50730.png',
 						onClick: (selection) => {
 							if (this.player.food > 30){
 								this.player.food -= 30;
@@ -172,15 +169,20 @@ class Barracks extends Building {
 			size: 3,
 			sight: 5,
 			isBuilt,
-			finalSpritesheetId,
-			buildSpritesheetId,
 			lifeMax: 5,//350,
+			onBuilt: (building) => {
+				let sprite = building.getChildByName('sprite');
+				const textureName = `000_${finalSpritesheetId}.png`;
+				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+			},
 			interface: {
-				icon: 'assets/images/interface/50705/003_50705.png',
+				icon: 'data/interface/50705/003_50705.png',
 				menu: [
 					{
 						//Clubman buy
-						icon: 'assets/images/interface/50730/002_50730.png',
+						icon: 'data/interface/50730/002_50730.png',
 						onClick: (selection) => {
 							if (this.player.food > 50){
 								this.player.food -= 50;
@@ -212,28 +214,126 @@ class House extends Building {
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
 
-		//Set player color
-		let spriteColor;
-		if (isBuilt){
-			const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-			const textureNameColor = `000_${colorSpritesheetId}.png`;
-			const textureColor = spritesheetColor.textures[textureNameColor];
-			spriteColor = new PIXI.Sprite(textureColor);	
-		}
-
 		super(i, j, map, player, {
 			type: 'house',
 			sprite,
 			size: 1,
 			sight: 3,
 			isBuilt,
-			spriteColor,
-			finalSpritesheetId,
-			buildSpritesheetId,
-			colorSpritesheetId,
-			lifeMax: 75,
+			lifeMax: 5,//75,
+			onBuilt: (building) => {
+				let sprite = building.getChildByName('sprite');
+				const textureName = `000_${finalSpritesheetId}.png`;
+				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+				const textureNameColor = `000_${colorSpritesheetId}.png`;
+				const textureColor = spritesheetColor.textures[textureNameColor];
+				let spriteColor = new PIXI.Sprite(textureColor);
+				spriteColor.name = 'color';
+				building.addChild(spriteColor);	
+				
+				const spritesheetFire = app.loader.resources["347"].spritesheet;
+				let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
+				spriteFire.name = 'fire';
+				spriteFire.x = 10;
+				spriteFire.y = 5;
+				spriteFire.play();
+				spriteFire.animationSpeed = .2;
+				building.addChild(spriteFire);
+			},
 			interface: {
-				icon: 'assets/images/interface/50705/015_50705.png',
+				icon: 'data/interface/50705/015_50705.png',
+			}
+		});
+	}
+}
+
+class Granary extends Building {
+	constructor(i, j, map, player, isBuilt = false){
+		//Define sprite
+		const finalSpritesheetId = '64';
+		const buildSpritesheetId = '261';
+		const colorSpritesheetId = '83';
+		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
+		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
+		const textureName = `000_${spritesheetId}.png`;
+		const texture = spritesheet.textures[textureName];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+
+		super(i, j, map, player, {
+			type: 'granary',
+			sprite,
+			size: 3,
+			sight: 5,
+			isBuilt,
+			lifeMax: 5,//350,
+			onBuilt: (building) => {
+				let sprite = building.getChildByName('sprite');
+				const textureName = `000_${finalSpritesheetId}.png`;
+				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+				const textureNameColor = `000_${colorSpritesheetId}.png`;
+				const textureColor = spritesheetColor.textures[textureNameColor];
+				let spriteColor = new PIXI.Sprite(textureColor);
+				spriteColor.name = 'color';
+				building.addChild(spriteColor);
+			},
+			interface: {
+				icon: 'data/interface/50705/011_50705.png',
+			}
+		});
+	}
+}
+
+class StoragePit extends Building {
+	constructor(i, j, map, player, isBuilt = false){
+		//Define sprite
+		const finalSpritesheetId = '527';
+		const buildSpritesheetId = '261';
+		const colorSpritesheetId = '235';
+		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
+		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
+		const textureName = `000_${spritesheetId}.png`;
+		const texture = spritesheet.textures[textureName];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+
+		super(i, j, map, player, {
+			type: 'storagepit',
+			sprite,
+			size: 3,
+			sight: 5,
+			isBuilt,
+			lifeMax: 5,//75,
+			onBuilt: (building) => {
+				let sprite = building.getChildByName('sprite');
+				const textureName = `000_${finalSpritesheetId}.png`;
+				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
+				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
+				const textureNameColor = `000_${colorSpritesheetId}.png`;
+				const textureColor = spritesheetColor.textures[textureNameColor];
+				let spriteColor = new PIXI.Sprite(textureColor);
+				spriteColor.name = 'color';
+				building.addChild(spriteColor);	
+			},
+			interface: {
+				icon: 'data/interface/50705/028_50705.png',
 			}
 		});
 	}
