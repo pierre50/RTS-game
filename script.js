@@ -16,9 +16,9 @@ const gamebox = document.getElementById('game');
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 50;
-const mapDefaultReliefRange = [0, 2];
-const mapDefaultChanceOfRelief = .005;
+const mapDefaultSize = 100;
+const mapDefaultReliefRange = [1, 2];
+const mapDefaultChanceOfRelief = .01;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -210,7 +210,7 @@ function create(){
 		const j = Math.floor(pos[1]);
 		if (map.grid[i] && map.grid[i][j]){
 			const cell = map.grid[i][j];
-			if ((cell.solid || cell.border || gamebox.cursor !== 'default') && cell.visible){
+			if ((cell.solid || cell.inclined || cell.border || gamebox.cursor !== 'default') && cell.visible){
 				return;
 			}
 			if (mouseBuilding){
@@ -299,7 +299,7 @@ function create(){
 				mouseBuilding.y = cell.y - map.camera.y;
 				let isFree = true;
 				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size - 1, (cell) => {
-					if (cell.solid || cell.border || !cell.visible){
+					if (cell.solid || cell.inclined || cell.border || !cell.visible){
 						isFree = false;
 						return;
 					}

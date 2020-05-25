@@ -1,5 +1,5 @@
 class Cell extends PIXI.Container{
-	constructor(i, j, z, map){
+	constructor(i, j, z, map, options){
         super();
 
         this.setParent(map);
@@ -11,15 +11,21 @@ class Cell extends PIXI.Container{
 		this.i = i;
 		this.j = j;
 		this.zIndex = getInstanceZIndex(this);
-		this.solid = false;
 		this.interactive = false;
         this.inclined = false;
         this.border = false;
         this.has = null;
         this.visible = false;
-        this.type = 'grass';
+
+		Object.keys(options).forEach((prop) => {
+			this[prop] = options[prop];
+        })
+        if (this.sprite){
+            this.sprite.anchor.set(.5,.5);
+			this.addChild(this.sprite);
+		}
     }
-    addDesertBorder(direction){
+    setDesertBorder(direction){
         const resourceName = '20002';
         let index;
         const cellSprite = this.getChildByName('sprite');
@@ -60,7 +66,7 @@ class Cell extends PIXI.Container{
         sprite.type = 'border';
         this.addChild(sprite);
     }
-    setBorder(cell, resourceName, index){
+    setWaterBorder(cell, resourceName, index){
         let sprite = this.getChildByName('sprite');
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[index + '_' + resourceName + '.png'];
@@ -71,41 +77,18 @@ class Cell extends PIXI.Container{
         }
         sprite.texture = texture;
     }
-    setResource(resourceName){
+    setReliefBorder(index, elevation = 0){
         let sprite = this.getChildByName('sprite');
-        const textureName = sprite.texture.textureCacheIds[0];
-        const spritesheet = app.loader.resources[resourceName].spritesheet;
-        let index = textureName.split('_')[0];
-        if (['15002', '15003'].indexOf(resourceName) >= 0){
-            //this.removeChild(sprite);
-            if (index * 1 < 9){
-                index = '00' + randomRange(0, 3);
-            }else{
-                index = '00' + (index *  1 - 4);
-            }
-            /*let animated = new PIXI.AnimatedSprite(spritesheet.animations['wave']);
-            animated.gotoAndPlay(randomRange(0, 3));
-            animated.animationSpeed = .01;
-            animated.name = 'sprite';
-            animated.anchor.set(.5, .5);
-            this.addChild(animated);
-            return;*/
-        }
-        sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png'];
-    }
-    setTexture(index, inclined = false, elevation = 0){
-        const resourceName = '15001';
+        const resourceName = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0];
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[index + '_' + resourceName + '.png'];
         if (elevation){
             this.y -= elevation;
         }
-        this.inclined = inclined;
-        let sprite = new PIXI.Sprite(texture);
+        this.inclined = true;
         sprite.name = 'sprite';
         sprite.anchor.set(.5, .5);
-
-        this.addChild(sprite);
+        sprite.texture = texture;
     }
     fillWaterCellsAroundCell(){
         let grid = this.parent.grid;
@@ -119,8 +102,12 @@ class Cell extends PIXI.Container{
                     let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
                     if (target.type !== this.type && aside.type !== this.type){
                         if ((Math.floor(instancesDistance(this, cell, true)) === 2)){
+                            let sprite = target.getChildByName('sprite')
+                            const index = formatNumber(randomRange(0, 3));
+                            const resourceName = '15002';
+                            const spritesheet = app.loader.resources[resourceName].spritesheet;
+                            sprite.texture = spritesheet.textures[ index + '_' + resourceName + '.png'];;
                             target.type = 'water';
-                            target.setResource('15002');
                             target.solid = true;
                         }
                     }
@@ -128,7 +115,7 @@ class Cell extends PIXI.Container{
             }
         });
     }
-	fillCellsAroundCell(){
+	fillReliefCellsAroundCell(){
         let grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
             if (cell.z === this.z){
@@ -154,11 +141,56 @@ class Cell extends PIXI.Container{
                 cell.y -= (cpt - cell.z) * cellDepth;
                 cell.z = cpt;
                 cell.zIndex = getInstanceZIndex(cell);
-                cell.fillCellsAroundCell(grid);
+                cell.fillReliefCellsAroundCell(grid);
             }
         });
         if (cpt <= level){
             this.setCellLevel(level, cpt+1);	
         }
+    }
+}
+class Grass extends Cell{
+    constructor(i, j, z, map){
+        const randomSpritesheet = randomRange(0, 8);
+        const resourceName = '15001';
+        const spritesheet = app.loader.resources[resourceName].spritesheet;
+        const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
+		let sprite = new PIXI.Sprite(texture);
+        sprite.name = 'sprite';
+        super(i, j, z, map, {
+            sprite,
+            solid: false,
+            type: 'grass'
+        })
+    }
+}
+class Desert extends Cell{
+    constructor(i, j, z, map){
+        const randomSpritesheet = randomRange(0, 8);
+        const resourceName = '15000';
+        const spritesheet = app.loader.resources[resourceName].spritesheet;
+        const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
+		let sprite = new PIXI.Sprite(texture);
+        sprite.name = 'sprite';
+        super(i, j, z, map, {
+            sprite,
+            solid: false,
+            type: 'desert'
+        })
+    }
+}
+class Water extends Cell{
+    constructor(i, j, z, map){
+        const randomSpritesheet = randomRange(0, 3);
+        const resourceName = '15002';
+        const spritesheet = app.loader.resources[resourceName].spritesheet;
+        const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
+		let sprite = new PIXI.Sprite(texture);
+        sprite.name = 'sprite';
+        super(i, j, z, map, {
+            sprite,
+            solid: true,
+            type: 'water'
+        })
     }
 }

@@ -21,107 +21,93 @@ class Map extends PIXI.Container{
         this.generateMap();
 	}
     generateMap(){
+        this.removeChildren();
+        this.generateCells();
+        this.generateMapRelief();
+        this.formatCellsRelief();
+        this.formatCellsWaterBorder();
+        this.formatCellsDesert();
+
+        //Place a town center
+        let playersPos = this.findTownCenterPlaces();
+        if (playersPos.length < 2){
+            alert('Cannot find players position')
+            return;
+        }
+        const towncenterPos = playersPos[randomRange(0, 1)];
+        let towncenter = this.player.createBuilding(towncenterPos.i, towncenterPos.j, 'TownCenter', this, true);
+        
+        for (let i = 0; i < playersPos.length; i ++){
+            const around = 15;
+            const zone = {
+                minX: playersPos[i].i - around,
+                minY: playersPos[i].j - around,
+                maxX: playersPos[i].i + around,
+                maxY: playersPos[i].j + around
+            }
+            let bushPos = getZoneInZoneWithCondition(zone, this.grid, 3, (cell) => {
+                return (
+                    instancesDistance(playersPos[i], cell, true) > 7 &&
+                    instancesDistance(playersPos[i], cell, true) < around && 
+                    !cell.solid && !cell.border);
+            });
+            if (!bushPos){
+                alert('Cannot place bushberry')
+            }
+            this.placeResourceGroup('Berrybush', bushPos.i, bushPos.j);
+        }
+        this.generateSets();
+
+
+        this.setCamera(towncenter.x, towncenter.y);
+        this.displayInstancesOnScreen();
+    }
+    generateCells(){
         const forestTrees = ['492', '493', '494', '503', '509'];
         const palmTrees = ['463', '464', '465', '466'];
 
-        this.removeChildren();
-        //Set cell's to map
-        for(let i = 0; i <= this.size; i++){
-            for(let j = 0; j <= this.size; j++){
-                if(!this.grid[i]){
-                    this.grid[i] = [];	
-                }
-                let level = 0;
-                if (Math.random() < this.chanceOfRelief){
-                    level = randomRange(this.reliefRange[0],this.reliefRange[1]);
-                }
-                
-                let cell = new Cell(i, j, level, this);
-                this.grid[i][j] = cell;
-            }
-        }
-        //Format cell's relief
-        for(let i = 0; i <= this.size; i++){
-            for(let j = 0; j <= this.size; j++){
-                let cell = this.grid[i][j];
-                if (cell.z > 0){
-                    cell.setCellLevel(cell.z);
-                }
-                cell.fillCellsAroundCell();
-            }
-        }
-        this.formatCellsRelief();
-        //Set berrybush's to map
-        /*for(let i = 0; i < this.size; i++){
-            for(let j = 0; j < this.size; j++){
-                let cell = this.grid[i][j];
-                if (!cell.solid && !cell.inclined && Math.random() < this.chanceOfTree){
-                    let berrybush = new Berrybush(i, j, this);
-                    this.resources.push(berrybush);
-                }
-            }
-        }*/
-
-        //Read map file
         let lines = app.loader.resources['0'].data.split('\n').filter(Boolean);
         for(let i = 0; i <= this.size; i++){
             let cols = lines[i].split('').filter(Boolean);
             for(let j = 0; j <= this.size; j++){
-                let cell = this.grid[i][j];
+                if(!this.grid[i]){
+                    this.grid[i] = [];	
+                }
                 switch (cols[j]){
                     case '0':
-                        cell.setResource('15001');
+                        this.grid[i][j] = new Grass(i, j, 0, this);
                         break;
                     case '1':
-                        cell.setResource('15000');
-                        cell.type = 'desert';
+                        this.grid[i][j] = new Desert(i, j, 0, this);
                         break;
                     case '2':
-                        cell.setResource('15001');
-                        if (!cell.inclined){
-                            new Tree(i, j, this, forestTrees);
-                        }
+                        this.grid[i][j] = new Grass(i, j, 0, this);
+                        new Tree(i, j, this, forestTrees);
                         break;
                     case '3':
-                        let hasInclined = false;
-                        getPlainCellsAroundPoint(i, j, this.grid, 2, (c) => {
-                            if (c.inclined){
-                                hasInclined = true;
-                            }
-                        })
-                        if (!hasInclined){
-                            cell.setResource('15002');
-                            cell.type = 'water';
-                            cell.solid = true;
-                        }
+                        this.grid[i][j] = new Water(i, j, 0, this);
                         break;
                     case '4': 
-                        cell.setResource('15000');
-                        cell.type = 'desert';
-                        if (!cell.inclined){
-                            new Tree(i, j, this, palmTrees);
-                        }
+                        this.grid[i][j] = new Desert(i, j, 0, this);
+                        new Tree(i, j, this, palmTrees);
                         break;
                     case '5': 
-                        cell.setResource('15001');
-                        if (!cell.inclined){
-                            new Tree(i, j, this, palmTrees);
-                        }
+                        this.grid[i][j] = new Grass(i, j, 0, this);
+                        new Tree(i, j, this, palmTrees);
                         break;
                 }
             }
         }
-
         for(let i = 0; i <= this.size; i++){
             for(let j = 0; j <= this.size; j++){
-                let cell = this.grid[i][j];
-                cell.fillWaterCellsAroundCell();
+                this.grid[i][j].fillWaterCellsAroundCell();
             }
         }
-        this.formatCellsWaterBorder();
-        this.formatCellsDesert();
+    }
+    generateSets(){
+        const forestTrees = ['492', '493', '494', '503', '509'];
+        const palmTrees = ['463', '464', '465', '466'];
 
-        //Set sets 
         for(let i = 0; i <= this.size; i++){
             for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
@@ -159,16 +145,32 @@ class Map extends PIXI.Container{
                 }
             }
         }
-
-        //Place a town center
-        let towncenterPos = this.findTownCenterPlace();
-        if (!towncenterPos){
-            this.generateMap();
-            return;
+    }
+    generateMapRelief(){
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
+                let cell = this.grid[i][j];
+                if (Math.random() < this.chanceOfRelief){
+                    let level = randomRange(this.reliefRange[0],this.reliefRange[1]);
+                    let hasWater = false;
+                    if (getPlainCellsAroundPoint(i, j, this.grid, level * 2, (cell) => {
+                        if (cell.type === 'water'){
+                            hasWater = true;
+                        }
+                    }));
+                    if (!hasWater){
+                        cell.setCellLevel(level);
+                    }
+                }
+            }
         }
-        let towncenter = this.player.createBuilding(towncenterPos.x, towncenterPos.y, 'TownCenter', this, true);
-        this.setCamera(towncenter.x, towncenter.y);
-        this.displayInstancesOnScreen();
+        //Format cell's relief
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
+                let cell = this.grid[i][j];
+                cell.fillReliefCellsAroundCell();
+            }
+        }
     }
     formatCellsRelief(){
         for(let i = 0; i <= this.size; i++){
@@ -179,56 +181,53 @@ class Map extends PIXI.Container{
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z))){
-                    cell.setTexture('014', true, cellDepth/2);
+                    cell.setReliefBorder('014', cellDepth/2);
                 }else if ((this.grid[i+1] && this.grid[i+1][j].z - cell.z === 1) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z))){
-                    cell.setTexture('015', true, cellDepth/2);
+                    cell.setReliefBorder('015', cellDepth/2);
                 } else if ((this.grid[i][j-1] && this.grid[i][j-1].z - cell.z === 1) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('016', true, cellDepth/2);
+                    cell.setReliefBorder('016', cellDepth/2);
                 }else if ((this.grid[i][j+1] && this.grid[i][j+1].z - cell.z === 1) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('013', true, cellDepth/2);
+                    cell.setReliefBorder('013', cellDepth/2);
                 } //Corner
                 else if ((this.grid[i-1] && (this.grid[i-1][j-1] && this.grid[i-1][j-1].z - cell.z === 1)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('010', true, cellDepth/2);
+                    cell.setReliefBorder('010', cellDepth/2);
                 }else if ((this.grid[i+1] && (this.grid[i+1][j-1] && this.grid[i+1][j-1].z - cell.z === 1)) &&
                         (!this.grid[i][j-1] || (this.grid[i][j-1].z <= cell.z)) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z))){
-                    cell.setTexture('012', true);
+                    cell.setReliefBorder('012');
                 }else if ((this.grid[i-1] && (this.grid[i-1][j+1] && this.grid[i-1][j+1].z - cell.z === 1)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i-1] || (this.grid[i-1][j].z <= cell.z))){
-                    cell.setTexture('011', true);
+                    cell.setReliefBorder('011');
                 }else if ((this.grid[i+1] && (this.grid[i+1][j+1] && this.grid[i+1][j+1].z - cell.z === 1)) &&
                         (!this.grid[i][j+1] || (this.grid[i][j+1].z <= cell.z)) &&
                         (!this.grid[i+1] || (this.grid[i+1][j].z <= cell.z))){
-                    cell.setTexture('009', true, cellDepth/2);
+                    cell.setReliefBorder('009', cellDepth/2);
                 }
                 //Deep corner
                 else if ((this.grid[i][j-1] && (this.grid[i][j-1].z - cell.z === 1)) &&
                         (this.grid[i-1] && (this.grid[i-1][j].z - cell.z === 1))){
-                    cell.setTexture('022', true, cellDepth/2);
+                    cell.setReliefBorder('022', cellDepth/2);
                 }else if ((this.grid[i][j+1] && (this.grid[i][j+1].z - cell.z === 1)) &&
                         (this.grid[i+1] && (this.grid[i+1][j].z - cell.z === 1))){
-                    cell.setTexture('021', true, cellDepth/2);
+                    cell.setReliefBorder('021', cellDepth/2);
                 }else if ((this.grid[i][j-1] && (this.grid[i][j-1].z - cell.z === 1)) &&
                         (this.grid[i+1] && (this.grid[i+1][j].z - cell.z === 1))){
-                    cell.setTexture('023', true, cellDepth);
+                    cell.setReliefBorder('023', cellDepth);
                 }else if ((this.grid[i][j+1] && (this.grid[i][j+1].z - cell.z === 1)) &&
                         (this.grid[i-1] && (this.grid[i-1][j].z - cell.z === 1))){
-                    cell.setTexture('024', true, cellDepth);
-                }else{
-                    let nbrTexture = randomRange(0,8);
-                    cell.setTexture('00' + nbrTexture);
+                    cell.setReliefBorder('024', cellDepth);
                 }
                 /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 12, fill : colorBlack, align : 'center'});
                 text.x = -10;
@@ -242,60 +241,59 @@ class Map extends PIXI.Container{
         for(let i = 0; i <= this.size; i++){
             for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
-
                 if (cell.type !== 'water'){
                     //Side
                     if ((this.grid[i-1] && this.grid[i-1][j].type === 'water') &&
                             (!this.grid[i+1] || (this.grid[i+1][j].type !== 'water')) &&
                             (!this.grid[i][j-1] || (this.grid[i][j-1].type !== 'water')) &&
                             (!this.grid[i][j+1] || (this.grid[i][j+1].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '008');
+                        cell.setWaterBorder(cell, '20000', '008');
                     }else if ((this.grid[i+1] && this.grid[i+1][j].type === 'water') &&
                             (!this.grid[i-1] || (this.grid[i-1][j].type !== 'water')) &&
                             (!this.grid[i][j-1] || (this.grid[i][j-1].type !== 'water')) &&
                             (!this.grid[i][j+1] || (this.grid[i][j+1].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '009');
+                        cell.setWaterBorder(cell, '20000', '009');
                     } else if ((this.grid[i][j-1] && this.grid[i][j-1].type === 'water') &&
                             (!this.grid[i+1] || (this.grid[i+1][j].type !== 'water')) &&
                             (!this.grid[i][j+1] || (this.grid[i][j+1].type !== 'water')) &&
                             (!this.grid[i-1] || (this.grid[i-1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '011');
+                        cell.setWaterBorder(cell, '20000', '011');
                     }else if ((this.grid[i][j+1] && this.grid[i][j+1].type === 'water') &&
                             (!this.grid[i+1] || (this.grid[i+1][j].type !== 'water')) &&
                             (!this.grid[i][j-1] || (this.grid[i][j-1].type !== 'water')) &&
                             (!this.grid[i-1] || (this.grid[i-1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '010');
+                        cell.setWaterBorder(cell, '20000', '010');
                     }//Corner
                     else if ((this.grid[i-1] && (this.grid[i-1][j-1] && this.grid[i-1][j-1].type === 'water')) &&
                             (!this.grid[i][j-1] || (this.grid[i][j-1].type !== 'water')) &&
                             (!this.grid[i-1] || (this.grid[i-1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '005');
+                        cell.setWaterBorder(cell, '20000', '005');
                     }else if ((this.grid[i+1] && (this.grid[i+1][j-1] && this.grid[i+1][j-1].type === 'water')) &&
                             (!this.grid[i][j-1] || (this.grid[i][j-1].type !== 'water')) &&
                             (!this.grid[i+1] || (this.grid[i+1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '007');
+                        cell.setWaterBorder(cell, '20000', '007');
                     }else if ((this.grid[i-1] && (this.grid[i-1][j+1] && this.grid[i-1][j+1].type === 'water')) &&
                             (!this.grid[i][j+1] || (this.grid[i][j+1].type !== 'water')) &&
                             (!this.grid[i-1] || (this.grid[i-1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '004');
+                        cell.setWaterBorder(cell, '20000', '004');
                     }else if ((this.grid[i+1] && (this.grid[i+1][j+1] && this.grid[i+1][j+1].type === 'water')) &&
                             (!this.grid[i][j+1] || (this.grid[i][j+1].type !== 'water')) &&
                             (!this.grid[i+1] || (this.grid[i+1][j].type !== 'water'))){
-                        cell.setBorder(cell, '20000', '006');
+                        cell.setWaterBorder(cell, '20000', '006');
                     }
                     //Deep corner
                     else if ((this.grid[i][j-1] && (this.grid[i][j-1].type === 'water')) &&
                             (this.grid[i-1] && (this.grid[i-1][j].type === 'water'))){
-                        cell.setBorder(cell, '20000', '001');
+                        cell.setWaterBorder(cell, '20000', '001');
                     }else if ((this.grid[i][j+1] && (this.grid[i][j+1].type === 'water')) &&
                             (this.grid[i+1] && (this.grid[i+1][j].type === 'water'))){
-                        cell.setBorder(cell, '20000', '002');
+                        cell.setWaterBorder(cell, '20000', '002');
                     }else if ((this.grid[i][j-1] && (this.grid[i][j-1].type === 'water')) &&
                             (this.grid[i+1] && (this.grid[i+1][j].type === 'water'))){
-                        cell.setBorder(cell, '20000', '003');
+                        cell.setWaterBorder(cell, '20000', '003');
                     }else if ((this.grid[i][j+1] && (this.grid[i][j+1].type === 'water')) &&
                             (this.grid[i-1] && (this.grid[i-1][j].type === 'water'))){
-                        cell.setBorder(cell, '20000', '000');
+                        cell.setWaterBorder(cell, '20000', '000');
                     }
                 }else{
                     if (cell.has){
@@ -305,50 +303,64 @@ class Map extends PIXI.Container{
             }
         }
     }
-    findTownCenterPlace(){
-        const place = randomRange(0, 3);
-        let minX;
-        let minY;
-        let maxX;
-        let maxY;
-        const border = 4;
-        switch (place){
-            case 0:
-                minX = border;
-                minY = this.size/2;
-                maxX = this.size/2;
-                maxY = this.size - border;
-                break;
-            case 1:
-                minX = border;
-                minY = border;
-                maxX = this.size/2;
-                maxY = this.size/2;
-                break;            
-            case 2:
-                minX = this.size/2;
-                minY = border;
-                maxX = this.size - border;
-                maxY = this.size/2;
-                break;            
-            case 3:
-                minX = this.size/2;
-                minY = this.size/2;
-                maxX = this.size - border;
-                maxY = this.size - border;
-                break;
+    findTownCenterPlaces(){
+        let results = [];
+        const outBorder = 10;
+        const inBorder = Math.floor(this.size / 4);
+        const zones = [{              
+                minX: outBorder,
+                minY: this.size/2 + inBorder,
+                maxX: this.size/2 - inBorder,
+                maxY: this.size - outBorder,
+            },
+            {
+                minX: outBorder,
+                minY: outBorder,
+                maxX: this.size/2 - inBorder,
+                maxY: this.size/2 - inBorder,
+            },
+            {
+                minX: this.size/2 + inBorder,
+                minY: outBorder,
+                maxX: this.size - outBorder,
+                maxY: this.size/2 - inBorder,
+            },
+            {
+                minX: this.size/2 + inBorder,
+                minY: this.size/2 + inBorder,
+                maxX: this.size - outBorder,
+                maxY: this.size - outBorder,
+            }
+        ]
+        for (let i = 0; i < zones.length; i ++){
+            let pos = getZoneInZoneWithCondition(zones[i], this.grid, 5, (cell) => {
+                return (!cell.border && !cell.solid && !cell.inclined);
+            });
+            if (pos){
+                results.push(pos);
+            }
         }
-        for(let i = minX; i <= maxX; i++){
-            for(let j = minY; j <= maxY; j++){
-                let isFree = true;
-                getPlainCellsAroundPoint(i, j, this.grid, 4, (cell) => {
-                    if (cell.border || cell.solid || cell.has || cell.inclined){
-                        isFree = false;
-                    }
-                });
-                if (isFree){
-                    return {x: i, y: j};
+        return results;
+    }
+    placeResourceGroup(instance, startX, startY){
+        const resources = {
+            Tree,
+            Berrybush
+        }
+        let cpt = 0;
+        const max = randomRange(5, 6);
+        for (let i = 0; i < 10; i++){
+            getCellsAroundPoint(startX, startY, this.grid, i, (cell) => {
+                if (cpt > max){
+                    return;
                 }
+                if (Math.random() < .5 && !cell.solid && !cell.border){
+                    cpt++;
+                    new resources[instance](cell.i, cell.j, this);
+                }
+            })
+            if (cpt > max){
+                return;
             }
         }
     }
@@ -358,16 +370,16 @@ class Map extends PIXI.Container{
                 let cell = this.grid[i][j];
                 if (cell.type === 'desert'){
                     if (this.grid[i-1] && this.grid[i-1][j] && this.grid[i-1][j].type === 'grass'){
-                        this.grid[i-1][j].addDesertBorder('est');
+                        this.grid[i-1][j].setDesertBorder('est');
                     }
                     if (this.grid[i+1] && this.grid[i+1][j] && this.grid[i+1][j].type === 'grass'){
-                        this.grid[i+1][j].addDesertBorder('west');
+                        this.grid[i+1][j].setDesertBorder('west');
                     }
                     if (this.grid[i][j-1] && this.grid[i][j-1].type === 'grass'){
-                        this.grid[i][j-1].addDesertBorder('south');
+                        this.grid[i][j-1].setDesertBorder('south');
                     }
                     if (this.grid[i][j+1] && this.grid[i][j+1].type === 'grass'){
-                        this.grid[i][j+1].addDesertBorder('north');
+                        this.grid[i][j+1].setDesertBorder('north');
                     }
                 }
             }
