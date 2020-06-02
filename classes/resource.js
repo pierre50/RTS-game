@@ -28,7 +28,7 @@ class resource extends PIXI.Container{
 			//Change mouse icon if mouseover/mouseout events
 			this.sprite.on('mouseover', () => { 
 				if (this.parent.player.selectedUnits.length && this.visible){
-					if (this.parent.player.selectedUnits.some(unit => unit.type === 'villager')){
+					if (this.parent.player.selectedUnits.some(unit => unit.type === 'Villager')){
 						gamebox.setCursor('hover');
 					}
 				}
@@ -66,11 +66,11 @@ class Tree extends resource{
 			if (mouseBuilding){
 				return;
 			}
-			//Send villager to cut the tree
+			//Send Villager to cut the tree
 			let hasVillager = false;
 			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
 				let unit = this.parent.player.selectedUnits[i];
-				if (unit.type === 'villager'){
+				if (unit.type === 'Villager'){
 					hasVillager = true;
 					if (unit.work !== 'woodcutter'){
 						unit.loading = 0;
@@ -115,11 +115,11 @@ class Berrybush extends resource{
 			if (mouseBuilding){
 				return;
 			}
-			//Send villager to forage the berry
+			//Send Villager to forage the berry
 			let hasVillager = false;
 			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
 				let unit = this.parent.player.selectedUnits[i];
-				if (unit.type === 'villager'){
+				if (unit.type === 'Villager'){
 					hasVillager = true;
 					if (unit.work !== 'gatherer'){
 						unit.loading = 0;

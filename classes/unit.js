@@ -40,6 +40,8 @@ class Unit extends PIXI.Container {
 
 		let sprite = new PIXI.AnimatedSprite(this.standingSheet.animations['south']);
 		sprite.name = 'sprite';
+		changeSpriteColor(sprite, player.color);
+
 		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.stop();
@@ -96,9 +98,9 @@ class Unit extends PIXI.Container {
 			return;
 		}
 		//Unit didn't find a way we wait and try again
-		if (cpt > 4){
+		this.stop();
+		if (cpt > 5){
 			this.action = null;
-			this.stop();
 		}else{
 			setTimeout(() => {
 				cpt++;
@@ -155,7 +157,7 @@ class Unit extends PIXI.Container {
 				sprite.onLoop = () => {
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter', 'storagepit']);
+						let targets = filterInstancesByTypes(this.player.buildings, ['TownCenter', 'StoragePit']);
 						let target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
@@ -225,7 +227,7 @@ class Unit extends PIXI.Container {
 				sprite.onLoop = () => {
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = filterInstancesByTypes(this.player.buildings, ['towncenter', 'granary']);
+						let targets = filterInstancesByTypes(this.player.buildings, ['TownCenter', 'Granary']);
 						let target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
@@ -267,7 +269,7 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					if (this.dest.life < this.dest.lifeMax){
-						this.dest.life++;
+						this.dest.life += this.attack;
 						this.dest.updateTexture();
 					}else{
 						if (!this.dest.isBuilt){
@@ -305,8 +307,8 @@ class Unit extends PIXI.Container {
 					case 'forageberry':
 						this.moveToNearestBerrybush();
 						break;
-					case 'built':
-						this.stop();
+					case 'build':
+						this.moveToNearestConstruction();
 						break;
 					default: 
 						this.path = getInstanceClosestFreeCellPath(this, this.dest.i, this.dest.j, this.parent);
@@ -432,119 +434,30 @@ class Unit extends PIXI.Container {
 
 class Villager extends Unit {
 	constructor(i, j, map, player){
+		const data = empires.units['Villager'];
 		super(i, j, map, player, {
-			type: 'villager',
-			lifeMax: 25,
-			sight: 4,
-			speed: 1.1,
+			type: 'Villager',
+			lifeMax: data.lifeMax,
+			sight: data.sight,
+			speed: data.speed,
+			attack: data.attack,
 			standingSheet: app.loader.resources['418'].spritesheet,
 			walkingSheet: app.loader.resources['657'].spritesheet,
 			interface: {
-				icon: 'data/interface/50730/000_50730.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				},
 				menu: [
 					{
 						icon: 'data/interface/50721/002_50721.png',
 						children : [
-							{
-								//House buy
-								icon: 'data/interface/50705/015_50705.png',
-								onClick: (selection) => {
-									if (this.player.wood > 50){
-										const spritesheet = app.loader.resources['489'].spritesheet;
-										const textureName = '000_489.png';
-										const texture = spritesheet.textures[textureName];
-										map.interface.setMouseBuilding({
-											size: 1,
-											texture,
-											type: 'House',
-											onClick: () => {
-												this.player.wood -= 50; 
-												this.parent.interface.updateTopbar();
-											}
-										})
-									}
-								}
-							},
-							{
-								//Barracks buy
-								icon: 'data/interface/50705/003_50705.png',
-								onClick: (selection) => {
-									if (this.player.wood > 125){
-										const spritesheet = app.loader.resources['254'].spritesheet;
-										const textureName = '000_254.png';
-										const texture = spritesheet.textures[textureName];
-										map.interface.setMouseBuilding({
-											size: 2,
-											texture,
-											type: 'Barracks',
-											onClick: () => {
-												this.player.wood -= 125; 
-												this.parent.interface.updateTopbar();
-											}
-										})
-									}
-								}
-							},
-							{
-								//Granary buy
-								icon: 'data/interface/50705/011_50705.png',
-								onClick: (selection) => {
-									if (this.player.wood > 120){
-										const spritesheet = app.loader.resources['64'].spritesheet;
-										const textureName = '000_64.png';
-										const texture = spritesheet.textures[textureName];
-										map.interface.setMouseBuilding({
-											size: 2,
-											texture,
-											type: 'Granary',
-											onClick: () => {
-												this.player.wood -= 120; 
-												this.parent.interface.updateTopbar();
-											}
-										})
-									}
-								}
-							},
-							{
-								//Storage pit buy
-								icon: 'data/interface/50705/028_50705.png',
-								onClick: (selection) => {
-									if (this.player.wood > 120){
-										const spritesheet = app.loader.resources['527'].spritesheet;
-										const textureName = '000_527.png';
-										const texture = spritesheet.textures[textureName];
-										map.interface.setMouseBuilding({
-											size: 2,
-											texture,
-											type: 'StoragePit',
-											onClick: () => {
-												this.player.wood -= 120; 
-												this.parent.interface.updateTopbar();
-											}
-										})
-									}
-								}
-							},
-							/*{
-								//Towncenter buy
-								icon: 'data/interface/50705/033_50705.png',
-								onClick: (selection) => {
-									if (this.player.wood > 200){
-										const spritesheet = app.loader.resources['280'].spritesheet;
-										const textureName = '000_280.png';
-										const texture = spritesheet.textures[textureName];
-										map.interface.setMouseBuilding({
-											size: 2,
-											texture,
-											type: 'TownCenter',
-											onClick: () => {
-												this.player.wood -= 200; 
-												this.parent.interface.updateTopbar();
-											}
-										})
-									}
-								}
-							}*/
+							map.interface.getBuildingButton(player, 'House'),
+							map.interface.getBuildingButton(player, 'Barracks'),
+							map.interface.getBuildingButton(player, 'Granary'),
+							map.interface.getBuildingButton(player, 'StoragePit'),
 						]
 					},
 				]
@@ -555,16 +468,23 @@ class Villager extends Unit {
 
 class Clubman extends Unit {
 	constructor(i, j, map, player){
+		const data = empires.units['Clubman'];
 		super(i, j, map, player, {
-			type: 'clubman',
-			lifeMax: 40,
-			sight: 4,
-			speed: 1.2,
+			type: 'Clubman',
+			lifeMax: data.lifeMax,
+			sight: data.sight,
+			speed: data.speed,
+			attack: data.attack,
 			standingSheet: app.loader.resources['425'].spritesheet,
 			walkingSheet: app.loader.resources['664'].spritesheet,
 			actionSheet: app.loader.resources['212'].spritesheet,
 			interface: {
-				icon: 'data/interface/50730/002_50730.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				},
 			}
 		})
 	}

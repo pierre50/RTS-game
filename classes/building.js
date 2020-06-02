@@ -13,7 +13,8 @@ class Building extends PIXI.Container {
 		this.zIndex = getInstanceZIndex(this);
 		this.player = player;
 		this.selected = false;
-
+		this.queue = [];
+		this.loading = null;
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
 		})
@@ -88,60 +89,104 @@ class Building extends PIXI.Container {
 			this.removeChild(selection);
 		}
 	}
+	placeUnit(type){
+		this.player.population++;
+		let spawnCell = getFreeCellAroundPoint(this.i, this.j, this.parent.grid);
+		this.player.createUnit(spawnCell.i, spawnCell.j, type, this.parent);
+
+		if (this.player.selectedBuilding){
+			if (this.player.selectedBuilding.selected && this.player.selectedBuilding.type === 'House'){
+				this.player.selectedBuilding.parent.interface.updateInfo('population', (element) => element.textContent = this.player.population + '/' + this.player.populationMax);
+			}
+		}
+	}
+	buyUnit(type){
+		const unit = empires.units[type];
+		if (canAfford(this.player, unit.cost)){	
+			if (this.loading === null){
+				let timesRun = 0;
+				if (this.selected){
+					this.parent.interface.updateInfo('loading', (element) => element.textContent = '0%');
+				}
+				if (this.player.population + 1 > this.player.populationMax ){
+					return true;
+				}
+				this.loading = 0;
+				let interval = setInterval(() => {
+					timesRun += 1;
+					this.loading = timesRun;
+					if(timesRun === 100){
+						payCost(this.player, unit.cost);
+						this.parent.interface.updateTopbar();
+						this.placeUnit(type)
+						this.loading = null;
+						this.queue.shift();
+						if (this.queue.length){
+							this.buyUnit(this.queue[0]);
+						}
+						clearInterval(interval);
+						if (this.selected){
+							this.parent.interface.updateButton(type,  (element) => element.textContent = this.queue.length);
+							if (!this.queue.length){
+								this.parent.interface.updateInfo('loading',  (element) => element.textContent = '');
+							}
+						}
+						return;
+					}
+					if (this.selected){
+						this.parent.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+					}
+				}, (unit.trainingTime * 1000) / 100);
+			}
+			return true;
+		}
+		return false;
+	}
 }
 
 class TownCenter extends Building {
 	constructor(i, j, map, player, isBuilt = false){
+		const data = empires.buildings[player.civ][player.age]['TownCenter'];
+
 		//Define sprite
-		const finalSpritesheetId = '280';
-		const buildSpritesheetId = '261';
-		const colorSpritesheetId = '230';
-		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
-		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
-		const textureName = `000_${spritesheetId}.png`;
-		const texture = spritesheet.textures[textureName];
+		const texture = getTexture(data.images.build);
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
-		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'towncenter',
+			type: 'TownCenter',
 			sprite,
-			size: 3,
-			sight: 7,
+			size: data.size,
+			sight: data.sight,
 			isBuilt,
-			lifeMax: 5,//600,
+			lifeMax: data.lifeMax,
 			onBuilt: (building) => {
 				let sprite = building.getChildByName('sprite');
-				const textureName = `000_${finalSpritesheetId}.png`;
-				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
-				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.texture = getTexture(data.images.final);
 				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-
-				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-				const textureNameColor = `000_${colorSpritesheetId}.png`;
-				const textureColor = spritesheetColor.textures[textureNameColor];
-				let spriteColor =new PIXI.Sprite(textureColor);
+				
+				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
 				spriteColor.name = 'color';
-				building.addChild(spriteColor);	
+				changeSpriteColor(spriteColor, player.color);
+				building.addChildAt(spriteColor, 0);	
 			},
 			interface: {
-				icon: 'data/interface/50705/033_50705.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+			
+					let loading = document.createElement('div');
+					loading.id = 'loading';
+					loading.textContent = '';
+					element.appendChild(loading);
+				},
 				menu: [
-					{
-						//Villager buy
-						icon: 'data/interface/50730/000_50730.png',
-						onClick: (selection) => {
-							if (this.player.food > 30){
-								this.player.food -= 30;
-								this.parent.interface.updateTopbar();
-								let spawnCell = getFreeCellAroundPoint(selection.i, selection.j, selection.parent.grid);
-								this.player.createUnit(spawnCell.i, spawnCell.j, 'Villager', selection.parent);
-							}
-						}
-					}
+					map.interface.getUnitButton(player, 'Villager')
 				]
 			}
 		});
@@ -150,48 +195,43 @@ class TownCenter extends Building {
 
 class Barracks extends Building {
 	constructor(i, j, map, player, isBuilt = false){
+		const data = empires.buildings[player.civ][player.age]['Barracks'];
+
 		//Define sprite
-		const finalSpritesheetId = '254';
-		const buildSpritesheetId = '261';
-		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
-		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
-		const textureName = `000_${spritesheetId}.png`;
-		const texture = spritesheet.textures[textureName];
+		const texture = getTexture(data.images.build);
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
-		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'barracks',
+			type: 'Barracks',
 			sprite,
-			size: 3,
-			sight: 5,
+			size: data.size,
+			sight: data.sight,
 			isBuilt,
-			lifeMax: 5,//350,
+			lifeMax: data.lifeMax,
 			onBuilt: (building) => {
 				let sprite = building.getChildByName('sprite');
-				const textureName = `000_${finalSpritesheetId}.png`;
-				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
-				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.texture = getTexture(data.images.final);
+				changeSpriteColor(sprite, player.color);
 				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 			},
 			interface: {
-				icon: 'data/interface/50705/003_50705.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+			
+					let loading = document.createElement('div');
+					loading.id = 'loading';
+					loading.textContent = '';
+					element.appendChild(loading);
+				},
 				menu: [
-					{
-						//Clubman buy
-						icon: 'data/interface/50730/002_50730.png',
-						onClick: (selection) => {
-							if (this.player.food > 50){
-								this.player.food -= 50;
-								this.parent.interface.updateTopbar();
-								let spawnCell = getFreeCellAroundPoint(selection.i, selection.j, selection.parent.grid);
-								this.player.createUnit(spawnCell.i, spawnCell.j, 'Clubman', selection.parent);
-							}
-						}
-					}
+					map.interface.getUnitButton(player, 'Clubman')
 				]
 			}
 		});
@@ -200,40 +240,32 @@ class Barracks extends Building {
 
 class House extends Building {
 	constructor(i, j, map, player, isBuilt = false){
+		const data = empires.buildings[player.civ][player.age]['House'];
+
 		//Define sprite
-		const finalSpritesheetId = '218';
-		const buildSpritesheetId = '489';
-		const colorSpritesheetId = '233';
-		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
-		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
-		const textureName = `000_${spritesheetId}.png`;
-		const texture = spritesheet.textures[textureName];
+		const texture = getTexture(data.images.build);
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
-		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'house',
+			type: 'House',
 			sprite,
-			size: 1,
-			sight: 3,
+			size: data.size,
+			sight: data.sight,
 			isBuilt,
-			lifeMax: 5,//75,
+			lifeMax: data.lifeMax,
 			onBuilt: (building) => {
 				let sprite = building.getChildByName('sprite');
-				const textureName = `000_${finalSpritesheetId}.png`;
-				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
-				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.texture = getTexture(data.images.final);
 				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 
-				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-				const textureNameColor = `000_${colorSpritesheetId}.png`;
-				const textureColor = spritesheetColor.textures[textureNameColor];
-				let spriteColor = new PIXI.Sprite(textureColor);
+				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
 				spriteColor.name = 'color';
-				building.addChild(spriteColor);	
+				changeSpriteColor(spriteColor, player.color);
+				building.addChildAt(spriteColor, 0);	
 				
 				const spritesheetFire = app.loader.resources["347"].spritesheet;
 				let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
@@ -242,10 +274,36 @@ class House extends Building {
 				spriteFire.y = 5;
 				spriteFire.play();
 				spriteFire.animationSpeed = .2;
+
 				building.addChild(spriteFire);
+
+				//Increase player population and continue all unit creation that was paused
+				player.populationMax += 4;
+				for (let i = 0; i < player.buildings.length; i++){
+					let b = player.buildings[i];
+					if (b.queue.length){
+						b.buyUnit(b.queue[0]);
+					}
+				}
+				//Update bottombar with populationmax if house selected
+				if (player.selectedBuilding){
+					if (player.selectedBuilding.selected && player.selectedBuilding.type === 'House'){
+						player.selectedBuilding.parent.interface.updateInfo('population', (element) => element.textContent = player.population + '/' + player.populationMax);
+					}
+				}
 			},
 			interface: {
-				icon: 'data/interface/50705/015_50705.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+
+					let population = document.createElement('div');
+					population.id = 'population';
+					population.textContent = player.population + '/' + player.populationMax;
+					element.appendChild(population);
+				}
 			}
 		});
 	}
@@ -253,43 +311,40 @@ class House extends Building {
 
 class Granary extends Building {
 	constructor(i, j, map, player, isBuilt = false){
+		const data = empires.buildings[player.civ][player.age]['Granary'];
+
 		//Define sprite
-		const finalSpritesheetId = '64';
-		const buildSpritesheetId = '261';
-		const colorSpritesheetId = '83';
-		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
-		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
-		const textureName = `000_${spritesheetId}.png`;
-		const texture = spritesheet.textures[textureName];
+		const texture = getTexture(data.images.build);
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
-		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'granary',
+			type: 'Granary',
 			sprite,
-			size: 3,
-			sight: 5,
+			size: data.size,
+			sight: data.sight,
 			isBuilt,
-			lifeMax: 5,//350,
+			lifeMax: data.lifeMax,
 			onBuilt: (building) => {
 				let sprite = building.getChildByName('sprite');
-				const textureName = `000_${finalSpritesheetId}.png`;
-				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
-				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.texture = getTexture(data.images.final);
 				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 
-				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-				const textureNameColor = `000_${colorSpritesheetId}.png`;
-				const textureColor = spritesheetColor.textures[textureNameColor];
-				let spriteColor = new PIXI.Sprite(textureColor);
+				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
 				spriteColor.name = 'color';
-				building.addChild(spriteColor);
+				changeSpriteColor(spriteColor, player.color);
+				building.addChildAt(spriteColor, 0);
 			},
 			interface: {
-				icon: 'data/interface/50705/011_50705.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				}
 			}
 		});
 	}
@@ -297,43 +352,40 @@ class Granary extends Building {
 
 class StoragePit extends Building {
 	constructor(i, j, map, player, isBuilt = false){
+		const data = empires.buildings[player.civ][player.age]['StoragePit'];
+
 		//Define sprite
-		const finalSpritesheetId = '527';
-		const buildSpritesheetId = '261';
-		const colorSpritesheetId = '235';
-		const spritesheetId = isBuilt ? finalSpritesheetId : buildSpritesheetId;
-		const spritesheet = app.loader.resources[spritesheetId].spritesheet;
-		const textureName = `000_${spritesheetId}.png`;
-		const texture = spritesheet.textures[textureName];
+		const texture = getTexture(data.images.build);
 		let sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
-		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'storagepit',
+			type: 'StoragePit',
 			sprite,
-			size: 3,
-			sight: 5,
+			size: data.size,
+			sight: data.sight,
 			isBuilt,
-			lifeMax: 5,//75,
+			lifeMax: data.lifeMax,
 			onBuilt: (building) => {
 				let sprite = building.getChildByName('sprite');
-				const textureName = `000_${finalSpritesheetId}.png`;
-				const finalSpritesheet = app.loader.resources[finalSpritesheetId].spritesheet;
-				sprite.texture = finalSpritesheet.textures[textureName];
+				sprite.texture = getTexture(data.images.final);
 				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 
-				const spritesheetColor = app.loader.resources[colorSpritesheetId].spritesheet;
-				const textureNameColor = `000_${colorSpritesheetId}.png`;
-				const textureColor = spritesheetColor.textures[textureNameColor];
-				let spriteColor = new PIXI.Sprite(textureColor);
+				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
 				spriteColor.name = 'color';
+				changeSpriteColor(spriteColor, player.color);
 				building.addChild(spriteColor);	
 			},
 			interface: {
-				icon: 'data/interface/50705/028_50705.png',
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				}
 			}
 		});
 	}

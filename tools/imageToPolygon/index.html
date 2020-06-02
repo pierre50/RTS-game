@@ -60,12 +60,12 @@
 
         function addPoint(evt){
             if (points.childElementCount > 0){
-                results.innerText += ',';
+                results.textContent += ',';
             }
 
             let resultX = Math.round(evt.x - (image.width * (anchorX.value || 0)));
             let resultY = Math.round(evt.y - (image.height * (anchorY.value || 0)));
-            results.innerText += ` ${resultX},${resultY}`;
+            results.textContent += ` ${resultX},${resultY}`;
             let point = document.createElement('div')
             point.className = 'point';
             point.style.left = (evt.x-2) + 'px';
@@ -73,8 +73,8 @@
             points.appendChild(point)
         }
         function clearPoints(){
-            points.innerHTML = '';
-            results.innerText = '';
+            points.textContent = '';
+            results.textContent = '';
         }
         </script>
     </body>

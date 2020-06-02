@@ -16,7 +16,7 @@ const gamebox = document.getElementById('game');
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 100;
+const mapDefaultSize = 200;
 const mapDefaultReliefRange = [1, 2];
 const mapDefaultChanceOfRelief = .01;
 const mapDefaultChanceOfSets = .02;
@@ -42,6 +42,7 @@ let map;
 let mouseRectangle;
 let mouseBuilding;
 let pointerStart;
+let empires;
 
 window.onload = preload();
 function preload(){
@@ -57,7 +58,7 @@ function preload(){
 	//Set loading screen
 	let loading = document.createElement('div');
 	loading.id = 'loading';
-	loading.innerText = 'Loading..';
+	loading.textContent = 'Loading..';
 	Object.assign(loading.style, {
 		display: 'flex',
 		alignItems: 'center',
@@ -85,6 +86,7 @@ function preload(){
 	app.loader.baseUrl = 'data';
 	app.loader
 		.add('0', 'seeds/0.txt')
+		.add('empires', 'empires.json')
 		.add('15000','terrain/15000/texture.json')
 		.add('15001','terrain/15001/texture.json')
 		.add('15002','terrain/15002/texture.json')
@@ -155,7 +157,7 @@ function preload(){
 function showProgress(e){
 }
 function reportError(e){
-	document.getElementById('loading').innerText = 'ERROR: ' + e.message;
+	document.getElementById('loading').textContent = 'ERROR: ' + e.message;
 }
 function create(){
 	//Remove loading screen
@@ -165,8 +167,11 @@ function create(){
 	gamebox.appendChild(app.view);
 
 	//Init map
+	empires = app.loader.resources['empires'].data;
+
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
+	
 
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
@@ -187,7 +192,7 @@ function create(){
 				let unit = map.player.units[i];
 				if (map.player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
 					unit.select();
-					if (unit.type === 'villager'){
+					if (unit.type === 'Villager'){
 						selectVillager = unit;
 					}
 					map.player.selectedUnits.push(unit);
@@ -223,7 +228,7 @@ function create(){
 					map.interface.removeMouseBuilding();
 					for(let u = 0; u < map.player.selectedUnits.length; u++){
 						let unit = map.player.selectedUnits[u];
-						if (unit.type === 'villager'){
+						if (unit.type === 'Villager'){
 							selectVillager = unit;
 							drawInstanceBlinkingSelection(building);
 							if (unit.work !== 'builder'){
@@ -298,13 +303,26 @@ function create(){
 				mouseBuilding.x = cell.x - map.camera.x;
 				mouseBuilding.y = cell.y - map.camera.y;
 				let isFree = true;
-				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size - 1, (cell) => {
+				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size === 3 ? 1 : 0, (cell) => {
 					if (cell.solid || cell.inclined || cell.border || !cell.visible){
 						isFree = false;
 						return;
 					}
 				});
-				mouseBuilding.tint = isFree ? colorWhite : colorRed;
+				//Color image of mouse building depend on buildable or not
+				let sprite = mouseBuilding.getChildByName('sprite');
+				let color = mouseBuilding.getChildByName('color');
+				if (isFree){
+					sprite.tint = colorWhite;
+					if (color){
+						color.tint = colorWhite;
+					}
+				}else{
+					sprite.tint = colorRed;
+					if (color){
+						color.tint = colorRed;
+					}
+				}
 				mouseBuilding.isFree = isFree;
 				return;
 			}
@@ -323,7 +341,7 @@ function create(){
 			app.stage.addChild(mouseRectangle.graph);
 		}
 		if (mouseRectangle && !mouseBuilding){
-			if (map.player.selectedUnits.length || map.player.selectedBuildings.length){
+			if (map.player.selectedUnits.length || map.player.selectedBuilding){
 				map.player.unselectAll();
 			}
 			mouseRectangle.graph.clear();

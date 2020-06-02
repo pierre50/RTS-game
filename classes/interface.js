@@ -1,11 +1,29 @@
 class Interface {
 	constructor(map){
-        const barStyle = {
-            borderStyle: 'inset',
-            borderColor: '#686769',
-            background: '#3c3b3d',
-            width: '100%',
-        }
+        this.style = {
+            bar : {
+                borderStyle: 'inset',
+                borderColor: '#686769',
+                background: '#3c3b3d',
+                width: '100%',
+            },
+            box:  {
+                height: '50px',
+                width: '50px',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '2px',
+                border: '1.5px inset #686769',
+                borderRadius: '2px'
+            },
+            img: {
+                objectFit: 'none',
+                height: '50px',
+                width: '50px'
+            }
+        } 
         this.parent = map;
         this.topbar = document.createElement('div');
         this.topbar.id = 'topbar';
@@ -22,7 +40,7 @@ class Interface {
             height: '20px',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            ...barStyle
+            ...this.style.bar
         });
         
         this.resources = document.createElement('div');
@@ -30,7 +48,7 @@ class Interface {
             display: 'flex'
         });
         ['wood', 'food', 'stone', 'gold'].forEach((res) => {
-            this.setresourcebox(res)
+            this.setResourceBox(res)
         })
 
         this.age = document.createElement('div');
@@ -55,7 +73,7 @@ class Interface {
             gridGap: '10px',
             padding: '5px',
             marginBottom: '1px',
-            ...barStyle
+            ...this.style.bar
         });
         this.bottombarInfo = document.createElement('div');
         Object.assign(this.bottombarInfo.style, {
@@ -66,13 +84,14 @@ class Interface {
             borderRadius: '2px'
         })
         this.bottombarMenu = document.createElement('div');
+        this.bottombarMenu.style.display = 'flex';
         bottombar.appendChild(this.bottombarInfo);
         bottombar.appendChild(this.bottombarMenu);
         gamebox.appendChild(bottombar);
 
         this.updateTopbar();
     }
-    setresourcebox(name){
+    setResourceBox(name){
         let box = document.createElement('div');
         Object.assign(box.style, {
             display: 'flex',
@@ -96,80 +115,157 @@ class Interface {
     }
     updateTopbar(){
         ['wood', 'food', 'stone', 'gold', 'age'].forEach((prop) => {
-            this[prop].innerText = this.parent.player[prop];
+            this[prop].textContent = this.parent.player[prop];
         })
+    }
+    resetInfo(){
+        this.bottombarInfo.textContent = '';
+        this.bottombarInfo.style.background = 'transparent';
+    }
+    generateInfo(selection){
+        this.resetInfo();
+		this.bottombarInfo.style.background = 'black';
+        if (typeof selection.interface.info === 'function'){
+            selection.interface.info(this.bottombarInfo);
+        }
+    }
+    updateInfo(target, action){
+        let targetElement = this.bottombarInfo.querySelector(`[id=${target}]`);
+        if (!targetElement || typeof action !== 'function'){
+            return;
+        }
+        return action(targetElement);
+    }
+    updateButton(target, action){
+        let targetElement = this.bottombarMenu.querySelector(`[id=${target}]`);
+        if (!targetElement || typeof action !== 'function'){
+            return;
+        }
+        let contentElement = targetElement.querySelector('[id=content');
+        if (!contentElement){
+            return;
+        }
+        return action(contentElement);
     }
     setBottombar(selection){
         let me = this;
-        const iconStyle = {
-            objectFit: 'none',
-            height: '50px',
-            width: '50px',
-            marginRight: '2px',
-            border: '1.5px inset #686769',
-            borderRadius: '2px'
-        }
-        this.bottombarInfo.innerHTML = '';
-        this.bottombarInfo.style.background = 'transparent';
-        this.bottombarMenu.innerHTML = '';
+        this.resetInfo();
+        this.bottombarMenu.textContent = '';
         if (mouseBuilding){
             this.parent.interface.removeMouseBuilding();
         }
         if (selection && selection.interface){
-            this.bottombarInfo.style.background = 'black';
-            let img = document.createElement('img');
-            img.src = selection.interface.icon;
-            this.bottombarInfo.appendChild(img);
+            this.generateInfo(selection);
             setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || []);
         }
         function setMenuRecurs(selection, element, menu, parent){
             menu.forEach((btn) => {
-                let img = document.createElement('img');
-                img.src = btn.icon;
-                Object.assign(img.style, iconStyle);
+                let box = document.createElement('div');
+                box.id = btn.id;
+                if (typeof btn.onCreate === 'function'){
+                    btn.onCreate(selection, box);
+                }else{
+                    let img = document.createElement('img');
+                    img.src = btn.icon;
+                    Object.assign(img.style, me.style.img);
+                    box.appendChild(img);
+                }
+                Object.assign(box.style, me.style.box);
+                if (typeof btn.onUpdate === 'function'){
+                    box.onUpdate = btn.onUpdate;
+                }
                 if (btn.children){
-                    img.addEventListener('pointerdown', (evt) => {
-                        element.innerHTML = '';
+                    box.addEventListener('pointerdown', (evt) => {
+                        element.textContent = '';
                         me.removeMouseBuilding();
                         setMenuRecurs(selection, element, btn.children, menu);
                     });
                 }else {
-                    img.addEventListener('pointerdown', (evt) => btn.onClick(selection, evt));
+                    box.addEventListener('pointerdown', (evt) => btn.onClick(selection, evt));
                 }
-                element.appendChild(img) 
+                element.appendChild(box);
             })
-            if (parent){
-                let back = document.createElement('img');
+            if (parent || selection.selected){
+                let back = document.createElement('div');
+                let img = document.createElement('img');
                 back.id = 'interfaceBackBtn';
-                back.src = 'data/interface/50721/010_50721.png';
-                Object.assign(back.style, iconStyle);
-                back.addEventListener('pointerdown', (evt) => {
-                    element.innerHTML = '';
-                    me.removeMouseBuilding();
-                    setMenuRecurs(selection, element, parent);
-                })
+                img.src = 'data/interface/50721/010_50721.png';
+                Object.assign(img.style, me.style.img);
+                Object.assign(back.style, me.style.box);
+                if (parent){
+                    back.addEventListener('pointerdown', (evt) => {
+                        element.textContent = '';
+                        me.removeMouseBuilding();
+                        setMenuRecurs(selection, element, parent);
+                    })
+                }else{
+                    back.addEventListener('pointerdown', (evt) => {
+                        me.removeMouseBuilding();
+                        selection.parent.player.unselectAll();
+                    })
+                }
+                back.appendChild(img);
                 element.appendChild(back);
-            }else if (selection.selected){
-                let unselect = document.createElement('img');
-                unselect.src = 'data/interface/50721/010_50721.png';
-                Object.assign(unselect.style, iconStyle);
-                unselect.addEventListener('pointerdown', (evt) => {
-                    me.removeMouseBuilding();
-                    selection.parent.player.unselectAll();
-                })
-                element.appendChild(unselect);
             }
         }
     }
-    setMouseBuilding(building){
-        mouseBuilding = new PIXI.Sprite(building.texture);
-        mouseBuilding.type = building.type;
-        mouseBuilding.size = building.size;
-        mouseBuilding.x = window.event.clientX;
-        mouseBuilding.y = window.event.clientY;
-        mouseBuilding.name = 'mouseBuilding';
-        mouseBuilding.onClick = building.onClick;
-        app.stage.addChild(mouseBuilding);
+    getUnitButton(player, type){
+		const unit = empires.units[type];
+        return {
+            icon: getIconPath(unit.icon),
+            id: type,
+            onCreate: (selection, element) => {
+                let img = document.createElement('img');
+                img.src = getIconPath(unit.icon);
+                Object.assign(img.style, this.style.img);
+
+                let counter = document.createElement('div');
+                counter.id = 'content';
+                counter.textContent = selection.queue.filter(queue => queue = type).length;
+                counter.style.position = 'absolute';
+                element.appendChild(img);
+                element.appendChild(counter);
+            },
+            onClick: (selection, evt) => {
+                if (selection.buyUnit(type, evt)){
+                    selection.queue.push(type);
+                    this.updateButton(type, (element) => element.textContent = selection.queue.length);
+                }
+            }
+        }
+    }
+    getBuildingButton(player, type){
+		const building = empires.buildings[player.civ][player.age][type];
+        return {
+            icon: getIconPath(building.icon),
+            onClick: (selection, evt) => {
+                this.removeMouseBuilding();
+                if (canAfford(player, building.cost)){
+                    mouseBuilding = new PIXI.Container();
+                    let sprite = new PIXI.Sprite(getTexture(building.images.final));
+                    sprite.name = 'sprite';
+                    if (building.images.color){
+                        let color = new PIXI.Sprite(getTexture(building.images.color));
+                        color.name = 'color';
+                        changeSpriteColor(color, player.color);
+                        mouseBuilding.addChild(color);
+                    }else{
+                        changeSpriteColor(sprite, player.color);
+                    }
+                    mouseBuilding.addChild(sprite);
+                    mouseBuilding.type = type;
+                    mouseBuilding.size = building.size;
+                    mouseBuilding.x = evt.x;
+                    mouseBuilding.y = evt.y;
+                    mouseBuilding.name = 'mouseBuilding';
+                    mouseBuilding.onClick = () => {
+                        payCost(player, building.cost);
+                        this.updateTopbar();
+                    };
+                    app.stage.addChild(mouseBuilding);
+                }
+            }
+        }
     }
     removeMouseBuilding(){
         if (!mouseBuilding){

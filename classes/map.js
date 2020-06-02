@@ -16,7 +16,9 @@ class Map extends PIXI.Container{
         this.bottom = appHeight - 100;
         this.x = -this.camera.x;
         this.y = -this.camera.y;
-        this.player = new Player(this);
+
+        this.player = new Human(this, 'StoneAge', 'Greek', 'blue');
+        
         this.interface = new Interface(this);
         this.generateMap();
 	}
@@ -36,7 +38,10 @@ class Map extends PIXI.Container{
         }
         const towncenterPos = playersPos[randomRange(0, 1)];
         let towncenter = this.player.createBuilding(towncenterPos.i, towncenterPos.j, 'TownCenter', this, true);
-        
+        for (let i = 0; i < 3; i++ ){
+            towncenter.placeUnit('Villager');
+        }
+
         for (let i = 0; i < playersPos.length; i ++){
             const around = 15;
             const zone = {
@@ -51,13 +56,10 @@ class Map extends PIXI.Container{
                     instancesDistance(playersPos[i], cell, true) < around && 
                     !cell.solid && !cell.border);
             });
-            if (!bushPos){
-                alert('Cannot place bushberry')
-            }
             this.placeResourceGroup('Berrybush', bushPos.i, bushPos.j);
         }
-        this.generateSets();
 
+        this.generateSets();
 
         this.setCamera(towncenter.x, towncenter.y);
         this.displayInstancesOnScreen();
@@ -67,6 +69,7 @@ class Map extends PIXI.Container{
         const palmTrees = ['463', '464', '465', '466'];
 
         let lines = app.loader.resources['0'].data.split('\n').filter(Boolean);
+        this.size = lines.length - 1;
         for(let i = 0; i <= this.size; i++){
             let cols = lines[i].split('').filter(Boolean);
             for(let j = 0; j <= this.size; j++){

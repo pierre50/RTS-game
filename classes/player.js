@@ -1,6 +1,8 @@
 class Player{
-	constructor(){
-		this.age = 'Stone Age';
+	constructor(map, age, civ, color){
+		this.parent = map;
+		this.civ = civ;
+		this.age = age;
 		this.wood = 2000;
 		this.food = 2000;
 		this.stone = 1500;
@@ -8,9 +10,17 @@ class Player{
 		this.units = [];
 		this.buildings = [];
 		this.selectedUnits = [];
-		this.selectedBuildings = [];
+		this.selectedBuilding = null;
 		this.population = 0;
 		this.populationMax = 5;
+		this.color = color;
+	}
+	
+}
+
+class Human extends Player{
+	constructor(map, age, civ, color){
+		super(map, age, civ, color)
 	}
 	createUnit(x, y, type, map){	
 		const units = {
@@ -20,7 +30,7 @@ class Player{
 		let unit = new units[type](x, y, map, this);
 		unit.on('pointertap', (evt) => {
 			//If we are placing a building don't permit click
-			if (mouseBuilding){
+			if (mouseBuilding || mouseRectangle){
 				return;
 			}
 			this.unselectAll();
@@ -42,14 +52,14 @@ class Player{
 		let building = new buildings[type](x, y, map, this, isBuilt);
 		building.getChildByName('sprite').on('pointertap', (evt) => {
 			//If we are placing a building don't permit click
-			if (mouseBuilding){
+			if (mouseBuilding || mouseRectangle){
 				return;
 			}
-			//Send villager to build the building
+			//Send Villager to build the building
 			if (!building.isBuilt){
 				for (let i = 0; i < this.selectedUnits.length; i++){
 					let unit = this.selectedUnits[i];
-					if (unit.type === 'villager'){
+					if (unit.type === 'Villager'){
 						drawInstanceBlinkingSelection(building);
 						if (unit.work !== 'builder'){
 							unit.loading = 0;
@@ -65,12 +75,12 @@ class Player{
 				return;
 			}
 
-			//Send villager to give loading of resources
+			//Send Villager to give loading of resources
 			if (this.selectedUnits){
 				let hasVillagerLoaded = false;
 				for (let i = 0; i < this.selectedUnits.length; i++){
 					let unit = this.selectedUnits[i];
-					if (unit.type === 'villager' && unit.loading > 0){
+					if (unit.type === 'Villager' && unit.loading > 0){
 						hasVillagerLoaded = true;
 						drawInstanceBlinkingSelection(building);
 						unit.previousDest = null;
@@ -93,7 +103,7 @@ class Player{
 			this.unselectAll();
 			building.select();
 			map.interface.setBottombar(building);
-			this.selectedBuildings.push(building);
+			this.selectedBuilding = building;
 		})
 		this.buildings.push(building);
 		return building;
@@ -104,14 +114,11 @@ class Player{
 		}
 		this.selectedUnits = [];
 	}
-	unselectAllBuildings(){
-		for (let i = 0; i < this.selectedBuildings.length; i++){
-			this.selectedBuildings[i].unselect();
-		}
-		this.selectedBuildings = [];
-	}
 	unselectAll(){
-		this.unselectAllBuildings();
+		if (this.selectedBuilding){
+			this.selectedBuilding.unselect();
+			this.selectedBuilding = null;
+		}
 		this.unselectAllUnits();
 		map.interface.setBottombar();
 	}
