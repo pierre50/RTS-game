@@ -5,6 +5,7 @@ class Cell extends PIXI.Container{
         this.setParent(map);
         this.name = 'cell';
         let pos = cartesianToIsometric(i, j);
+        
 		this.x = pos[0];
         this.y = pos[1] - (z * cellDepth);
 		this.z = z;
@@ -146,6 +147,39 @@ class Cell extends PIXI.Container{
         });
         if (cpt <= level){
             this.setCellLevel(level, cpt+1);	
+        }
+    }
+    setFog(){
+        let color = 0x666666;
+        this.viewed = true;
+        for (let i = 0; i < this.children.length; i++){
+            if (this.children[i].tint){
+                this.children[i].tint = color;
+            }
+        }
+        if (this.has){
+            for (let i = 0; i < this.has.children.length; i++){
+                if (this.has.children[i].tint){
+                    this.has.children[i].tint = color;
+                }
+            }
+        }
+    }
+    removeFog(){
+        if (!this.visible){
+            this.visible = true;
+        }
+        for (let i = 0; i < this.children.length; i++){
+            if (this.children[i].tint){
+                this.children[i].tint = colorWhite;
+            }
+        }
+        if (this.has){
+            for (let i = 0; i < this.has.children.length; i++){
+                if (this.has.children[i].tint){
+                    this.has.children[i].tint = colorWhite;
+                }
+            }
         }
     }
 }

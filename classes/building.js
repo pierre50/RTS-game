@@ -15,6 +15,8 @@ class Building extends PIXI.Container {
 		this.selected = false;
 		this.queue = [];
 		this.loading = null;
+		this.visible = true;
+
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
 		})
@@ -37,12 +39,12 @@ class Building extends PIXI.Container {
 		}
 
 		if (this.isBuilt && typeof this.onBuilt === 'function'){
-			this.onBuilt(this);
+			this.onBuilt();
 		}
 
-		if (!this.parent.revealEverything){
+		//if (this.player.type === 'Human'){
 			renderCellOnInstanceSight(this);
-		}
+		//}
 	}
 	updateTexture(){
 		if (!this.isBuilt){
@@ -64,7 +66,7 @@ class Building extends PIXI.Container {
 			}
 			if (percentage >= 100){
 				if (typeof this.onBuilt === 'function'){
-					this.onBuilt(this);
+					this.onBuilt();
 				}
 			}
 		}
@@ -92,7 +94,7 @@ class Building extends PIXI.Container {
 	placeUnit(type){
 		this.player.population++;
 		let spawnCell = getFreeCellAroundPoint(this.i, this.j, this.parent.grid);
-		this.player.createUnit(spawnCell.i, spawnCell.j, type, this.parent);
+		this.player.spawnUnit(spawnCell.i, spawnCell.j, type, this.parent);
 
 		if (this.player.selectedBuilding){
 			if (this.player.selectedBuilding.selected && this.player.selectedBuilding.type === 'House'){
@@ -102,7 +104,7 @@ class Building extends PIXI.Container {
 	}
 	buyUnit(type){
 		const unit = empires.units[type];
-		if (canAfford(this.player, unit.cost)){	
+		if (this.isBuilt && canAfford(this.player, unit.cost)){	
 			if (this.loading === null){
 				let timesRun = 0;
 				if (this.selected){
@@ -163,16 +165,6 @@ class TownCenter extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			onBuilt: (building) => {
-				let sprite = building.getChildByName('sprite');
-				sprite.texture = getTexture(data.images.final);
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-				
-				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
-				spriteColor.name = 'color';
-				changeSpriteColor(spriteColor, player.color);
-				building.addChildAt(spriteColor, 0);	
-			},
 			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
@@ -190,6 +182,19 @@ class TownCenter extends Building {
 				]
 			}
 		});
+	}
+	onBuilt() {
+		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+
+		let sprite = this.getChildByName('sprite');
+		sprite.texture = getTexture(data.images.final);
+		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+		
+		let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
+		spriteColor.name = 'color';
+		changeSpriteColor(spriteColor, this.player.color);
+
+		this.addChildAt(spriteColor, 0);	
 	}
 }
 
@@ -212,12 +217,6 @@ class Barracks extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			onBuilt: (building) => {
-				let sprite = building.getChildByName('sprite');
-				sprite.texture = getTexture(data.images.final);
-				changeSpriteColor(sprite, player.color);
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-			},
 			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
@@ -235,6 +234,13 @@ class Barracks extends Building {
 				]
 			}
 		});
+	}
+	onBuilt(){
+		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+		let sprite = this.getChildByName('sprite');
+		sprite.texture = getTexture(data.images.final);
+		changeSpriteColor(sprite, this.player.color);
+		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 	}
 }
 
@@ -257,41 +263,6 @@ class House extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			onBuilt: (building) => {
-				let sprite = building.getChildByName('sprite');
-				sprite.texture = getTexture(data.images.final);
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-
-				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
-				spriteColor.name = 'color';
-				changeSpriteColor(spriteColor, player.color);
-				building.addChildAt(spriteColor, 0);	
-				
-				const spritesheetFire = app.loader.resources["347"].spritesheet;
-				let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
-				spriteFire.name = 'fire';
-				spriteFire.x = 10;
-				spriteFire.y = 5;
-				spriteFire.play();
-				spriteFire.animationSpeed = .2;
-
-				building.addChild(spriteFire);
-
-				//Increase player population and continue all unit creation that was paused
-				player.populationMax += 4;
-				for (let i = 0; i < player.buildings.length; i++){
-					let b = player.buildings[i];
-					if (b.queue.length){
-						b.buyUnit(b.queue[0]);
-					}
-				}
-				//Update bottombar with populationmax if house selected
-				if (player.selectedBuilding){
-					if (player.selectedBuilding.selected && player.selectedBuilding.type === 'House'){
-						player.selectedBuilding.parent.interface.updateInfo('population', (element) => element.textContent = player.population + '/' + player.populationMax);
-					}
-				}
-			},
 			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
@@ -306,6 +277,44 @@ class House extends Building {
 				}
 			}
 		});
+	}
+	onBuilt() {
+		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+		let sprite = this.getChildByName('sprite');
+		sprite.texture = getTexture(data.images.final);
+		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+		let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
+		spriteColor.name = 'color';
+		changeSpriteColor(spriteColor, this.player.color);
+		this.addChildAt(spriteColor, 0);	
+		
+		const spritesheetFire = app.loader.resources["347"].spritesheet;
+		let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
+		spriteFire.name = 'fire';
+		spriteFire.x = 10;
+		spriteFire.y = 5;
+		spriteFire.play();
+		spriteFire.animationSpeed = .2;
+
+		this.addChild(spriteFire);
+
+		//Increase player population and continue all unit creation that was paused
+		this.player.populationMax += 4;
+		for (let i = 0; i < this.player.buildings.length; i++){
+			let building = this.player.buildings[i];
+			if (building.queue.length){
+				building.buyUnit(building.queue[0]);
+			}
+		}
+		//Update bottombar with populationmax if house selected
+		if (this.player.selectedBuilding){
+			if (this.player.selectedBuilding.selected && this.player.selectedBuilding.type === 'House'){
+				this.player.selectedBuilding.parent.interface.updateInfo('population', (element) => 
+					element.textContent = this.player.population + '/' + this.player.populationMax
+				);
+			}
+		}
 	}
 }
 
@@ -328,16 +337,6 @@ class Granary extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			onBuilt: (building) => {
-				let sprite = building.getChildByName('sprite');
-				sprite.texture = getTexture(data.images.final);
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-
-				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
-				spriteColor.name = 'color';
-				changeSpriteColor(spriteColor, player.color);
-				building.addChildAt(spriteColor, 0);
-			},
 			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
@@ -347,6 +346,18 @@ class Granary extends Building {
 				}
 			}
 		});
+	}
+	onBuilt(){
+		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+
+		let sprite = this.getChildByName('sprite');
+		sprite.texture = getTexture(data.images.final);
+		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+		let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
+		spriteColor.name = 'color';
+		changeSpriteColor(spriteColor, this.player.color);
+		this.addChildAt(spriteColor, 0);
 	}
 }
 
@@ -369,16 +380,6 @@ class StoragePit extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			onBuilt: (building) => {
-				let sprite = building.getChildByName('sprite');
-				sprite.texture = getTexture(data.images.final);
-				sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-
-				let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
-				spriteColor.name = 'color';
-				changeSpriteColor(spriteColor, player.color);
-				building.addChild(spriteColor);	
-			},
 			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
@@ -388,5 +389,17 @@ class StoragePit extends Building {
 				}
 			}
 		});
+	}
+	onBuilt(){
+		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+		
+		let sprite = building.getChildByName('sprite');
+		sprite.texture = getTexture(data.images.final);
+		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+
+		let spriteColor = new PIXI.Sprite(getTexture(data.images.color));
+		spriteColor.name = 'color';
+		changeSpriteColor(spriteColor, this.player.color);
+		this.addChild(spriteColor);	
 	}
 }

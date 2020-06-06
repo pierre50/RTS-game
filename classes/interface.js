@@ -258,10 +258,6 @@ class Interface {
                     mouseBuilding.x = evt.x;
                     mouseBuilding.y = evt.y;
                     mouseBuilding.name = 'mouseBuilding';
-                    mouseBuilding.onClick = () => {
-                        payCost(player, building.cost);
-                        this.updateTopbar();
-                    };
                     app.stage.addChild(mouseBuilding);
                 }
             }

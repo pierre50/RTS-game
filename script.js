@@ -18,7 +18,7 @@ const maxSelectUnits = 25;
 //Map default values
 const mapDefaultSize = 200;
 const mapDefaultReliefRange = [1, 2];
-const mapDefaultChanceOfRelief = .01;
+const mapDefaultChanceOfRelief = 0;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -98,6 +98,7 @@ function preload(){
 		.add('83','graphics/83/texture.json')
 		.add('212','graphics/212/texture.json')
 		.add('218','graphics/218/texture.json')
+		.add('224','graphics/224/texture.json')
 		.add('230','graphics/230/texture.json')
 		.add('233','graphics/233/texture.json')
 		.add('235','graphics/235/texture.json')
@@ -116,6 +117,7 @@ function preload(){
 		.add('299','graphics/299/texture.json')
 		.add('300','graphics/300/texture.json')
 		.add('301','graphics/301/texture.json')
+		.add('314','graphics/314/texture.json')
 		.add('347','graphics/347/texture.json')
 		.add('418','graphics/418/texture.json')
 		.add('419','graphics/419/texture.json')
@@ -172,7 +174,6 @@ function create(){
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
 	
-
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('pointerdown', (evt) => {
@@ -220,34 +221,8 @@ function create(){
 			}
 			if (mouseBuilding){
 				if (mouseBuilding.isFree){
-					if (mouseBuilding.onClick){
-						mouseBuilding.onClick();
-					}
-					const building = map.player.createBuilding(i, j, mouseBuilding.type, map);
-					let selectVillager;
-					map.interface.removeMouseBuilding();
-					for(let u = 0; u < map.player.selectedUnits.length; u++){
-						let unit = map.player.selectedUnits[u];
-						if (unit.type === 'Villager'){
-							selectVillager = unit;
-							drawInstanceBlinkingSelection(building);
-							if (unit.work !== 'builder'){
-								unit.loading = 0;
-								unit.work = 'builder';
-								unit.actionSheet = app.loader.resources['628'].spritesheet;
-								unit.standingSheet = app.loader.resources['419'].spritesheet;
-								unit.walkingSheet = app.loader.resources['658'].spritesheet;
-							}
-							unit.previousDest = null;
-							unit.setDestination(building, 'build');
-						}
-					}
-					//Set our bottombar
-					if (selectVillager){
-						map.interface.setBottombar(selectVillager);
-					}else{
-						//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
-						map.interface.setBottombar(map.player.selectedUnits[0]);
+					if (map.player.buyBuilding(i, j, mouseBuilding.type, map)){
+						map.interface.removeMouseBuilding();
 					}
 				}
 				return;

@@ -36,12 +36,20 @@ class resource extends PIXI.Container{
 			this.sprite.on('mouseout', () => {
 				gamebox.setCursor('default');
 			})
-
 			this.addChild(this.sprite);
 		}
 	}
 	destroy(){
 		if (this.parent){
+			if (typeof this.onDestroy === 'function'){
+				this.onDestroy();
+			}
+			let listName = 'founded' + this.type + 's';
+			for (let i = 0; i < this.parent.players.length; i++){
+				let list = this.parent.players[i][listName];
+				let index = list.indexOf(this);
+				list.splice(index, 1);
+			}
 			this.parent.grid[this.i][this.j].has = null;
 			this.parent.grid[this.i][this.j].solid = false;
 			this.parent.removeChild(this);
@@ -68,35 +76,42 @@ class Tree extends resource{
 			}
 			//Send Villager to cut the tree
 			let hasVillager = false;
-			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
-				let unit = this.parent.player.selectedUnits[i];
+			let dest = this;
+			for(let i = 0; i < map.player.selectedUnits.length; i++){
+				let unit = map.player.selectedUnits[i];
+				if (instanceIsSurroundedBySolid(this)){
+					let newDest = getNewInstanceClosestFreeCellPath(unit, this, this.parent);
+					if (newDest){
+						dest = newDest.target;
+					}
+				}
 				if (unit.type === 'Villager'){
 					hasVillager = true;
-					if (unit.work !== 'woodcutter'){
-						unit.loading = 0;
-						unit.work = 'woodcutter';
-						unit.actionSheet = app.loader.resources['625'].spritesheet;
-						unit.standingSheet = app.loader.resources['440'].spritesheet;
-						unit.walkingSheet = app.loader.resources['682'].spritesheet;
-					}
-					unit.previousDest = null;
-					unit.setDestination(this, 'chopwood')
+					unit.sendToTree(dest);
 				}else{
-					unit.setDestination(this);
+					unit.setDestination(dest);
 				}
 			}
 			if (hasVillager){
-				drawInstanceBlinkingSelection(this);
+				drawInstanceBlinkingSelection(dest);
 			}
 		})
 
 		super(i, j, map, {
-			type: 'tree',
+			type: 'Tree',
 			sprite: sprite,
 			size: 1,
-			quantity: 300,
-			life: 25,
+			quantity: 5,//300,
+			life: 1//25,
 		});
+	}
+	onDestroy(){
+		const spritesheet = app.loader.resources['623'].spritesheet;
+		const textureName = `00${randomRange(0,3)}_623.png`;
+		const texture = spritesheet.textures[textureName];
+		let sprite = new PIXI.Sprite(texture);
+		sprite.name = 'stump';
+		this.parent.grid[this.i][this.j].addChild(sprite);
 	}
 }
 
@@ -117,19 +132,11 @@ class Berrybush extends resource{
 			}
 			//Send Villager to forage the berry
 			let hasVillager = false;
-			for(let i = 0; i < this.parent.player.selectedUnits.length; i++){
-				let unit = this.parent.player.selectedUnits[i];
+			for(let i = 0; i < map.player.selectedUnits.length; i++){
+				let unit = map.player.selectedUnits[i];
 				if (unit.type === 'Villager'){
 					hasVillager = true;
-					if (unit.work !== 'gatherer'){
-						unit.loading = 0;
-						unit.work = 'gatherer';
-						unit.actionSheet = app.loader.resources['632'].spritesheet;
-						unit.standingSheet = app.loader.resources['432'].spritesheet;
-						unit.walkingSheet = app.loader.resources['672'].spritesheet;
-					}
-					unit.previousDest = null;
-					unit.setDestination(this, 'forageberry')
+					unit.sendToBerrybush(this);
 				}else{
 					unit.setDestination(this)
 				}
@@ -140,10 +147,10 @@ class Berrybush extends resource{
 		})
 
 		super(i, j, map, {
-			type: 'berrybush',
+			type: 'Berrybush',
 			sprite: sprite,
 			size: 1,
-			quantity: 15,//200,
+			quantity: 200,
 		});
 	}
 }

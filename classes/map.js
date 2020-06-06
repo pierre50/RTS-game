@@ -17,31 +17,68 @@ class Map extends PIXI.Container{
         this.x = -this.camera.x;
         this.y = -this.camera.y;
 
-        this.player = new Human(this, 'StoneAge', 'Greek', 'blue');
+        this.player = null;
+        this.AIs = [];
+        this.players = [];
         
-        this.interface = new Interface(this);
+        this.interface = null;
         this.generateMap();
 	}
     generateMap(){
         this.removeChildren();
-        this.generateCells();
-        this.generateMapRelief();
-        this.formatCellsRelief();
-        this.formatCellsWaterBorder();
-        this.formatCellsDesert();
 
-        //Place a town center
+        this.generateCells();
+                
         let playersPos = this.findTownCenterPlaces();
         if (playersPos.length < 2){
             alert('Cannot find players position')
             return;
         }
-        const towncenterPos = playersPos[randomRange(0, 1)];
-        let towncenter = this.player.createBuilding(towncenterPos.i, towncenterPos.j, 'TownCenter', this, true);
-        for (let i = 0; i < 3; i++ ){
-            towncenter.placeUnit('Villager');
+
+        this.player = new Human(this, 'StoneAge', 'Greek', 'cyan'),
+        this.AIs = [ 
+            new AI(this, 'StoneAge', 'Greek', 'brown')
+        ]
+        this.players = [
+            this.player,
+            ...this.AIs   
+        ]
+        this.interface = new Interface(this);
+        
+        this.generateMapRelief();
+        this.formatCellsRelief();
+        this.formatCellsWaterBorder();
+        this.formatCellsDesert();
+
+        this.generateSets();
+        
+        this.generateResourcesAroundPlayers(playersPos);
+
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
+				this.grid[i][j].setFog();
+            }
+        }
+        
+        //Place a town center
+        for (let i = 0; i < this.players.length; i++){
+            let player = this.players[i];
+            let towncenter = player.spawnBuilding(playersPos[i].i, playersPos[i].j, 'TownCenter', this, true);
+            for (let i = 0; i < 3; i++ ){
+                towncenter.placeUnit('Villager');
+            }
         }
 
+        //Set camera to player building else unit
+        if (this.player.buildings.length){
+            this.setCamera(this.player.buildings[0].x, this.player.buildings[0].y);
+        }else if (this.player.units.length){
+            this.setCamera(this.player.units[0].x, this.player.units[0].y);
+        }
+
+        this.displayInstancesOnScreen();
+    }
+    generateResourcesAroundPlayers(playersPos){
         for (let i = 0; i < playersPos.length; i ++){
             const around = 15;
             const zone = {
@@ -50,19 +87,17 @@ class Map extends PIXI.Container{
                 maxX: playersPos[i].i + around,
                 maxY: playersPos[i].j + around
             }
-            let bushPos = getZoneInZoneWithCondition(zone, this.grid, 3, (cell) => {
+            let pos = getZoneInZoneWithCondition(zone, this.grid, 3, (cell) => {
                 return (
+                    cell.i > 0 && cell.j > 0 && cell.i < cell.parent.size && cell.j < cell.parent.size &&
                     instancesDistance(playersPos[i], cell, true) > 7 &&
                     instancesDistance(playersPos[i], cell, true) < around && 
                     !cell.solid && !cell.border);
             });
-            this.placeResourceGroup('Berrybush', bushPos.i, bushPos.j);
+            if (pos){
+                this.placeResourceGroup('Berrybush', pos.i, pos.j);
+            }
         }
-
-        this.generateSets();
-
-        this.setCamera(towncenter.x, towncenter.y);
-        this.displayInstancesOnScreen();
     }
     generateCells(){
         const forestTrees = ['492', '493', '494', '503', '509'];
@@ -125,9 +160,9 @@ class Map extends PIXI.Container{
                         cell.addChild(floor);
                     }
                     if (Math.random() < this.chanceOfSets){
-                        const type = randomItem(['tree', 'rock']);
+                        const type = randomItem(['Tree', 'rock']);
                         switch (type){
-                            case 'tree':
+                            case 'Tree':
                                 if (cell.type === 'grass'){
                                     new Tree(i, j, this, forestTrees);
                                 }else if (cell.type === 'desert'){
@@ -154,14 +189,14 @@ class Map extends PIXI.Container{
             for(let j = 0; j <= this.size; j++){
                 let cell = this.grid[i][j];
                 if (Math.random() < this.chanceOfRelief){
-                    let level = randomRange(this.reliefRange[0],this.reliefRange[1]);
-                    let hasWater = false;
+                    const level = randomRange(this.reliefRange[0],this.reliefRange[1]);
+                    let canGenerate = true;
                     if (getPlainCellsAroundPoint(i, j, this.grid, level * 2, (cell) => {
-                        if (cell.type === 'water'){
-                            hasWater = true;
+                        if (cell.type === 'water' || cell.type === 'building'){
+                            canGenerate = false;
                         }
                     }));
-                    if (!hasWater){
+                    if (canGenerate){
                         cell.setCellLevel(level);
                     }
                 }
@@ -462,9 +497,6 @@ class Map extends PIXI.Container{
     clearInstancesOnScreen(){
         this.x = -this.camera.x;
         this.y = -this.camera.y;
-        if (!this.revealEverything){
-            return;
-        }
         const cameraCenter = {
             x:((this.camera.x) + appWidth / 2),
             y:((this.camera.y) + appHeight / 2)
@@ -481,9 +513,6 @@ class Map extends PIXI.Container{
     displayInstancesOnScreen(){
         this.x = -this.camera.x;
         this.y = -this.camera.y;
-        if (!this.revealEverything){
-            return;
-        }
         const cameraCenter = {
             x:((this.camera.x) + appWidth / 2),
             y:((this.camera.y) + appHeight / 2)
@@ -493,7 +522,11 @@ class Map extends PIXI.Container{
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
             cell.visible = true;
             if (cell.has){
-                cell.has.visible = true;
+                //if (!cell.has.player || cell.has.player === this.player 
+                //    || instanceIsInPlayerSight(cell.has, this.player) 
+                //    || (cell.has.name === 'building' && this.player.views[cell.i][cell.j].viewed)){
+                    cell.has.visible = true;
+                //}
             }
         })
     }
