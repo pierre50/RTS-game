@@ -11,7 +11,7 @@ class Cell extends PIXI.Container{
 		this.z = z;
 		this.i = i;
 		this.j = j;
-		this.zIndex = getInstanceZIndex(this);
+		this.zIndex = 0;
 		this.interactive = false;
         this.inclined = false;
         this.border = false;
@@ -95,14 +95,14 @@ class Cell extends PIXI.Container{
         let grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
             if (cell.type === 'water' && this.type === 'water'){
-                let dist = instancesDistance(this, cell, true);
+                let dist = instancesDistance(this, cell);
                 let velX = Math.round(((this.i - cell.i)/dist));
                 let velY = Math.round(((this.j - cell.j)/dist));
                 if (grid[cell.i+velX] && grid[cell.i+velX][cell.j+velY]){
                     let target = grid[cell.i+velX][cell.j+velY];
                     let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
                     if (target.type !== this.type && aside.type !== this.type){
-                        if ((Math.floor(instancesDistance(this, cell, true)) === 2)){
+                        if ((Math.floor(instancesDistance(this, cell)) === 2)){
                             let sprite = target.getChildByName('sprite')
                             const index = formatNumber(randomRange(0, 3));
                             const resourceName = '15002';
@@ -120,14 +120,14 @@ class Cell extends PIXI.Container{
         let grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
             if (cell.z === this.z){
-                let dist = instancesDistance(this, cell, true);
+                let dist = instancesDistance(this, cell);
                 let velX = Math.round(((this.i - cell.i)/dist));
                 let velY = Math.round(((this.j - cell.j)/dist));
                 if (grid[cell.i+velX] && grid[cell.i+velX][cell.j+velY]){
                     let target = grid[cell.i+velX][cell.j+velY];
                     let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
                     if (target.z <= this.z && target.z !== this.z && aside.z !== this.z){
-                        if ((Math.floor(instancesDistance(this, cell, true)) === 2)){
+                        if ((Math.floor(instancesDistance(this, cell)) === 2)){
                             target.setCellLevel(target.z + 1);
                         }
                     }
@@ -141,7 +141,6 @@ class Cell extends PIXI.Container{
             if (cell.z < cpt){
                 cell.y -= (cpt - cell.z) * cellDepth;
                 cell.z = cpt;
-                cell.zIndex = getInstanceZIndex(cell);
                 cell.fillReliefCellsAroundCell(grid);
             }
         });

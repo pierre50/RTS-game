@@ -18,7 +18,6 @@ class Map extends PIXI.Container{
         this.y = -this.camera.y;
 
         this.player = null;
-        this.AIs = [];
         this.players = [];
         
         this.interface = null;
@@ -29,19 +28,16 @@ class Map extends PIXI.Container{
 
         this.generateCells();
                 
-        let playersPos = this.findTownCenterPlaces();
-        if (playersPos.length < 2){
+       let playersPos = this.findTownCenterPlaces();
+        if (playersPos.length < 4){
             alert('Cannot find players position')
             return;
         }
 
-        this.player = new Human(this, 'StoneAge', 'Greek', 'cyan'),
-        this.AIs = [ 
-            new AI(this, 'StoneAge', 'Greek', 'brown')
-        ]
+        this.player = new Human(this, 'StoneAge', 'Greek', 'blue'),
         this.players = [
             this.player,
-            ...this.AIs   
+            new AI(this, 'StoneAge', 'Greek', 'red'),
         ]
         this.interface = new Interface(this);
         
@@ -80,20 +76,7 @@ class Map extends PIXI.Container{
     }
     generateResourcesAroundPlayers(playersPos){
         for (let i = 0; i < playersPos.length; i ++){
-            const around = 15;
-            const zone = {
-                minX: playersPos[i].i - around,
-                minY: playersPos[i].j - around,
-                maxX: playersPos[i].i + around,
-                maxY: playersPos[i].j + around
-            }
-            let pos = getZoneInZoneWithCondition(zone, this.grid, 3, (cell) => {
-                return (
-                    cell.i > 0 && cell.j > 0 && cell.i < cell.parent.size && cell.j < cell.parent.size &&
-                    instancesDistance(playersPos[i], cell, true) > 7 &&
-                    instancesDistance(playersPos[i], cell, true) < around && 
-                    !cell.solid && !cell.border);
-            });
+            let pos = getPositionInZoneAroundInstance(playersPos[i], this.grid, [7, 15], 3, true);
             if (pos){
                 this.placeResourceGroup('Berrybush', pos.i, pos.j);
             }
@@ -267,11 +250,6 @@ class Map extends PIXI.Container{
                         (this.grid[i-1] && (this.grid[i-1][j].z - cell.z === 1))){
                     cell.setReliefBorder('024', cellDepth);
                 }
-                /*let text = new PIXI.Text(i+'/'+j,{ fontSize: 12, fill : colorBlack, align : 'center'});
-                text.x = -10;
-                text.y = -10;
-                text.zIndex = 10000;
-                cell.addChild(text);*/
             }
         }
     }

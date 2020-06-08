@@ -72,6 +72,7 @@ function preload(){
 		const icons = {
 			default: "url('data/interface/51000/000_51000.png'),auto",
 			hover: "url('data/interface/51000/003_51000.png'),auto",
+			attack: "url('data/interface/51000/004_51000.png'),auto",
 		}
 		gamebox.style.cursor = icons[status];
 		gamebox.cursor = status;
@@ -96,6 +97,8 @@ function preload(){
 		.add('50405','interface/50405/texture.json')
 		.add('64','graphics/64/texture.json')
 		.add('83','graphics/83/texture.json')
+		.add('154','graphics/154/texture.json')
+		.add('155','graphics/155/texture.json')
 		.add('212','graphics/212/texture.json')
 		.add('218','graphics/218/texture.json')
 		.add('224','graphics/224/texture.json')
@@ -124,6 +127,8 @@ function preload(){
 		.add('425','graphics/425/texture.json')
 		.add('432','graphics/432/texture.json')
 		.add('440','graphics/440/texture.json')
+		.add('450','graphics/450/texture.json')
+		.add('452','graphics/452/texture.json')
 		.add('463','graphics/463/texture.json')
 		.add('464','graphics/464/texture.json')
 		.add('465','graphics/465/texture.json')
@@ -278,7 +283,7 @@ function create(){
 				mouseBuilding.x = cell.x - map.camera.x;
 				mouseBuilding.y = cell.y - map.camera.y;
 				let isFree = true;
-				getPlainCellsAroundPoint(i, j, map.grid, mouseBuilding.size === 3 ? 1 : 0, (cell) => {
+				getPlainCellsAroundPoint(i, j, map.grid, 1, (cell) => {
 					if (cell.solid || cell.inclined || cell.border || !cell.visible){
 						isFree = false;
 						return;

@@ -39,10 +39,10 @@ class resource extends PIXI.Container{
 			this.addChild(this.sprite);
 		}
 	}
-	destroy(){
+	die(){
 		if (this.parent){
-			if (typeof this.onDestroy === 'function'){
-				this.onDestroy();
+			if (typeof this.onDie === 'function'){
+				this.onDie();
 			}
 			let listName = 'founded' + this.type + 's';
 			for (let i = 0; i < this.parent.players.length; i++){
@@ -53,6 +53,7 @@ class resource extends PIXI.Container{
 			this.parent.grid[this.i][this.j].has = null;
 			this.parent.grid[this.i][this.j].solid = false;
 			this.parent.removeChild(this);
+			this.destroy();
 		}
 	}
 }
@@ -101,11 +102,11 @@ class Tree extends resource{
 			type: 'Tree',
 			sprite: sprite,
 			size: 1,
-			quantity: 5,//300,
-			life: 1//25,
+			quantity: 300,
+			life: 25,
 		});
 	}
-	onDestroy(){
+	onDie(){
 		const spritesheet = app.loader.resources['623'].spritesheet;
 		const textureName = `00${randomRange(0,3)}_623.png`;
 		const texture = spritesheet.textures[textureName];

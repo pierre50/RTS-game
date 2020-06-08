@@ -27,9 +27,10 @@ class Building extends PIXI.Container {
 		const dist = this.size === 3 ? 1 : 0;
 		getPlainCellsAroundPoint(i, j, map.grid, dist, (cell) => {
 			const set = cell.getChildByName('set');
-			if (set){
-				cell.removeChild(set);
-			}
+			if (set){ cell.removeChild(set); }
+			const rubble = cell.getChildByName('rubble');
+			cell.zIndex = 0;
+			if (rubble){ cell.removeChild(rubble); }
 			cell.has = this;
 			cell.solid = true;
 		});
@@ -42,16 +43,16 @@ class Building extends PIXI.Container {
 			this.onBuilt();
 		}
 
-		//if (this.player.type === 'Human'){
+		if (isPlayed(this)){
 			renderCellOnInstanceSight(this);
-		//}
+		}
 	}
 	updateTexture(){
+		const percentage = getPercentage(this.life, this.lifeMax);
 		if (!this.isBuilt){
 			let sprite = this.getChildByName('sprite');
 			const buildSpritesheetId = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0];
 			const buildSpritesheet = app.loader.resources[buildSpritesheetId].spritesheet;
-			let percentage = getPercentage(this.life, this.lifeMax);
 			if (percentage >= 25 && percentage < 50){
 				const textureName = `001_${buildSpritesheetId}.png`;
 				sprite.texture = buildSpritesheet.textures[textureName];
@@ -69,6 +70,82 @@ class Building extends PIXI.Container {
 					this.onBuilt();
 				}
 			}
+		}else{
+			if (percentage >= 0 && percentage < 25){
+				generateFire(this, 450);
+			}
+			if (percentage >= 25 && percentage < 50){
+				generateFire(this, 452);
+			}
+			if (percentage >= 50 && percentage < 75){
+				generateFire(this, 347);
+			}
+			if (percentage >= 75){
+				let fire = this.getChildByName('flame');
+				if (fire){
+					this.removeChild(fire);
+				}
+			}
+		}
+		function generateFire(building, spriteId){
+			let fire = building.getChildByName('flame');
+			const spritesheetFire = app.loader.resources[spriteId].spritesheet;
+			if (fire){
+				for (let i = 0; i < fire.children.length; i++){
+					fire.children[i].textures = spritesheetFire.animations['fire']
+				}
+			}else{
+				let newFire = new PIXI.Container();
+				newFire.name = 'fire';
+				let poses = [[0,0]]
+				if (building.size === 3){
+					poses = [[0,-32],[-64,0],[0,32],[64,0]];
+				}
+				for (let i = 0; i < poses.length; i++){
+					let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
+					spriteFire.x = poses[i][0];
+					spriteFire.y = poses[i][1];
+					spriteFire.play();
+					spriteFire.animationSpeed = .2;
+					newFire.addChild(spriteFire);
+				}
+				building.addChild(newFire);
+			}
+		}
+	}
+	die(){
+		if (this.parent){
+			const data = empires.buildings[this.player.civ][this.player.age][this.type];
+			if (isPlayed(this)){
+				this.parent.interface.setBottombar();
+			}
+			//Remove solid zone
+			const dist = this.size === 3 ? 1 : 0;
+			getPlainCellsAroundPoint(this.i, this.j, this.parent.grid, dist, (cell) => {
+				cell.has = this;
+				cell.solid = true;
+			});
+			//Remove from player buildings
+			let index = this.player.buildings.indexOf(this);
+			if (index >= 0){
+				this.player.buildings.splice(index, 1);
+			}
+			//Remove from player selected units
+			if (this.player.selectedBuilding){
+				this.player.selectedBuilding = null;
+			}
+			//Remove from view of others players
+			for (let i = 0; i < this.parent.players.length; i++){
+				let list = this.parent.players[i].foundedEnemyBuildings;
+				let index = list.indexOf(this);
+				list.splice(index, 1);
+			}
+			let rubble = new PIXI.Sprite(getTexture(data.images.rubble));
+			rubble.name = 'rubble';
+			this.parent.grid[this.i][this.j].addChild(rubble);
+			this.parent.grid[this.i][this.j].zIndex++;
+			this.parent.removeChild(this);
+			this.destroy();
 		}
 	}
 	select(){
@@ -115,11 +192,19 @@ class Building extends PIXI.Container {
 				}
 				this.loading = 0;
 				let interval = setInterval(() => {
+					//Building is dead while buying unit
+					if (!this.parent){
+						refundCost(this.player, unit.cost);
+						clearInterval(interval);
+						return;
+					}
 					timesRun += 1;
 					this.loading = timesRun;
 					if(timesRun === 100){
 						payCost(this.player, unit.cost);
-						this.parent.interface.updateTopbar();
+						if (isPlayed(this)){
+							this.parent.interface.updateTopbar();
+						}
 						this.placeUnit(type)
 						this.loading = null;
 						this.queue.shift();
@@ -127,7 +212,7 @@ class Building extends PIXI.Container {
 							this.buyUnit(this.queue[0]);
 						}
 						clearInterval(interval);
-						if (this.selected){
+						if (this.selected && isPlayed(this)){
 							this.parent.interface.updateButton(type,  (element) => element.textContent = this.queue.length);
 							if (!this.queue.length){
 								this.parent.interface.updateInfo('loading',  (element) => element.textContent = '');
@@ -135,7 +220,7 @@ class Building extends PIXI.Container {
 						}
 						return;
 					}
-					if (this.selected){
+					if (this.selected && isPlayed(this)){
 						this.parent.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
 					}
 				}, (unit.trainingTime * 1000) / 100);
@@ -291,7 +376,7 @@ class House extends Building {
 		
 		const spritesheetFire = app.loader.resources["347"].spritesheet;
 		let spriteFire = new PIXI.AnimatedSprite(spritesheetFire.animations['fire']);
-		spriteFire.name = 'fire';
+		spriteFire.name = 'deco';
 		spriteFire.x = 10;
 		spriteFire.y = 5;
 		spriteFire.play();
@@ -393,7 +478,7 @@ class StoragePit extends Building {
 	onBuilt(){
 		const data = empires.buildings[this.player.civ][this.player.age][this.type];
 		
-		let sprite = building.getChildByName('sprite');
+		let sprite = this.getChildByName('sprite');
 		sprite.texture = getTexture(data.images.final);
 		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
 

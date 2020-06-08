@@ -10,6 +10,7 @@
                     "images": {
                         "final": "000_280",
                         "build": "000_261",
+                        "rubble": "000_155",
                         "color": "000_230"
                     },
                     "cost": {
@@ -23,6 +24,7 @@
                     "icon": "003_50705",
                     "images": {
                         "final": "000_254",
+                        "rubble": "000_155",
                         "build": "000_261"
                     },
                     "cost": {
@@ -37,6 +39,7 @@
                     "images": {
                         "final": "000_218",
                         "build": "000_489",
+                        "rubble": "000_154",
                         "color": "000_233"
                     },
                     "cost": {
@@ -51,6 +54,7 @@
                     "images": {
                         "final": "000_64",
                         "build": "000_261",
+                        "rubble": "000_155",
                         "color": "000_83"
                     },
                     "cost": {
@@ -65,6 +69,7 @@
                     "images": {
                         "final": "000_527",
                         "build": "000_261",
+                        "rubble": "000_155",
                         "color": "000_235"
                     },
                     "cost": {
@@ -83,7 +88,8 @@
             "_trainingTime": 20,
             "trainingTime": 5,
             "icon": "000_50730",
-            "attack": 3,
+            "_attack": 3,
+            "attack": 100,
             "cost": {
                 "food": 30
             }
@@ -92,7 +98,8 @@
             "lifeMax": 40,
 			"sight": 4,
             "speed": 1.2,
-            "trainingTime": 26,
+            "_trainingTime": 26,
+            "trainingTime": 1,
             "icon": "002_50730",
             "attack": 3,
             "cost": {
