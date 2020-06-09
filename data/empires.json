@@ -88,8 +88,8 @@
             "_trainingTime": 20,
             "trainingTime": 5,
             "icon": "000_50730",
-            "_attack": 3,
-            "attack": 100,
+            "attack": 3,
+            "_attack": 100,
             "cost": {
                 "food": 30
             }

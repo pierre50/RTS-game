@@ -10,8 +10,8 @@ class Unit extends PIXI.Container {
 		this.x = this.parent.grid[i][j].x;
 		this.y = this.parent.grid[i][j].y;
 		this.z = this.parent.grid[i][j].z;
-		this.next = null;
 		this.dest = null;
+		this.realDest = null;
 		this.previousDest = null;
 		this.path = [];
 		this.player = player;
@@ -44,6 +44,7 @@ class Unit extends PIXI.Container {
 		sprite.name = 'sprite';
 		changeSpriteColor(sprite, player.color);
 
+		this.intervale = setInterval(() => this.step(), 1000);
 		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.stop();
@@ -74,16 +75,30 @@ class Unit extends PIXI.Container {
 	hasPath(){
 		return this.path.length > 0;
 	}
-	setDestination(dest, action){
-		this.stop();
-		this.inactif = false;
+	setDest(dest){
 		this.dest = dest;
+		this.realDest = {
+			i: dest.i,
+			j: dest.j
+		}
+	}
+	setPath(path){
+		clearInterval(this.intervale);
+		this.inactif = false;
+		this.setTextures('walkingSheet');
+		this.path = path;
+		this.intervale = setInterval(() => this.step(), 16.66);
+	}
+	sendTo(dest, action){
+		this.stop();
+		let path = [];
 		//No instance we cancel the destination
 		if (!dest){
 			return false;
 		}
 		//Unit is already beside our target
 		if (action && instanceContactInstance(this, dest)){
+			this.setDest(dest);
 			this.action = action;
 			this.degree = getInstanceDegree(this, dest.x, dest.y);
 			this.getAction(action);
@@ -91,14 +106,20 @@ class Unit extends PIXI.Container {
 		}
 		//Set unit path
 		if (this.parent.grid[dest.i][dest.j].solid){
-			this.path = getInstanceClosestFreeCellPath(this, dest, this.parent);
+			path = getInstanceClosestFreeCellPath(this, dest, this.parent);
+			if (!path.length && this.work){
+				this.action = action;
+				this.affectNewDest();
+				return;
+			}
 		}else{
-			this.path = getInstancePath(this, dest.i, dest.j, this.parent);
+			path = getInstancePath(this, dest.i, dest.j, this.parent);
 		}
 		//Unit found a path, set the action and play walking animation
-		if (this.path.length){
+		if (path.length){
+			this.setDest(dest);
 			this.action = action;
-			this.setAnimation('walkingSheet');
+			this.setPath(path);
 			return true;
 		}
 		return false;
@@ -127,7 +148,7 @@ class Unit extends PIXI.Container {
 						}else{
 							this.previousDest = this.parent.grid[this.i][this.j];
 						}
-						this.setDestination(target, 'deliverywood');
+						this.sendTo(target, 'deliverywood');
 						return;
 					}
 					//Tree destination is still alive we cut him until it's dead
@@ -152,7 +173,7 @@ class Unit extends PIXI.Container {
 					//Destroy tree if stump out of quantity
 					if (this.dest.quantity <= 0){
 						this.dest.die();
-						this.dest = null;
+						this.affectNewDest();
 					}
 					//Set the walking with wood animation
 					if (this.loading > 1){
@@ -160,7 +181,7 @@ class Unit extends PIXI.Container {
 						this.standingSheet = null;
 					}
 				}
-				this.setAnimation('actionSheet');
+				this.setTextures('actionSheet');
 				break;
 			case 'deliverywood':
 				this.player.wood += this.loading;
@@ -169,7 +190,7 @@ class Unit extends PIXI.Container {
 				this.walkingSheet = app.loader.resources['682'].spritesheet;
 				this.standingSheet = app.loader.resources['440'].spritesheet;
 				if (this.previousDest){
-					this.setDestination(this.previousDest, 'chopwood');
+					this.sendTo(this.previousDest, 'chopwood');
 				}else{
 					this.stop()
 				}
@@ -195,7 +216,7 @@ class Unit extends PIXI.Container {
 						}else{
 							this.previousDest = this.parent.grid[this.i][this.j];
 						}
-						this.setDestination(target, 'deliveryberry');
+						this.sendTo(target, 'deliveryberry');
 						return;
 					}
 					//Villager forage the berrybush
@@ -204,28 +225,28 @@ class Unit extends PIXI.Container {
 					//Destroy berrybush if it out of quantity
 					if (this.dest.quantity <= 0){
 						this.dest.die();
-						this.dest = null;
+						this.affectNewDest();
 					}
 				}
-				this.setAnimation('actionSheet');
+				this.setTextures('actionSheet');
 				break;
 			case 'deliveryberry':
 				this.player.food += this.loading;
 				this.parent.interface.updateTopbar();
 				this.loading = 0;
 				if (this.previousDest){
-					this.setDestination(this.previousDest, 'forageberry');
+					this.sendTo(this.previousDest, 'forageberry');
 				}else{
 					this.stop()
 				}
 				break;
 			case 'build':
-				if (!this.dest || this.dest.isBuilt){
+				if (!this.dest || this.dest.isBuilt || this.dest.life >= this.dest.lifeMax){
 					this.affectNewDest();
 					return;
 				}
 				sprite.onLoop = () => {
-					if (!this.dest || this.dest.isBuilt){
+					if (!this.dest || this.dest.isBuilt || this.dest.life >= this.dest.lifeMax){
 						this.affectNewDest();
 						return;
 					}
@@ -240,7 +261,7 @@ class Unit extends PIXI.Container {
 						this.affectNewDest();
 					}
 				}
-				this.setAnimation('actionSheet');
+				this.setTextures('actionSheet');
 				break;
 			case 'attack':
 				if (!this.dest || this.dest.life < 0){
@@ -253,20 +274,22 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					if (!instanceContactInstance(this.dest, this)){
-						this.setDestination(this.dest, 'attack');
+						this.sendTo(this.dest, 'attack');
 						return;
 					}
 					if (this.dest.life > 0){
 						this.dest.life -= this.attack;
 						if (this.dest.name === 'building'){
 							this.dest.updateTexture();							
+						}else{
+							this.dest.isAttacked(this);
 						}
 					}else{
 						this.dest.die();
 						this.affectNewDest();
 					}
 				}
-				this.setAnimation('actionSheet');
+				this.setTextures('actionSheet');
 				break;
 			default: 
 				this.stop()	
@@ -282,19 +305,24 @@ class Unit extends PIXI.Container {
 				condition = (instance) => (instance.name === 'resource' && instance.quantity > 0 && instance.type === 'Berrybush');
 				break;
 			case 'builder':
-				condition = (instance) => (instance.name === 'building' && (!instance.isBuilt || instance.life < 100) && instance.player === this.player);
+				condition = (instance) => (instance.name === 'building' && (!instance.isBuilt || instance.life < instance.lifeMax) && instance.player === this.player);
 				break;
 			case 'attacker':
 				condition = (instance) => ((instance.name === 'building' || instance.name === 'unit') && instance.life > 0 && instance.player !== this.player);
+				break;
 		}
 		if (condition){
 			const targets = findInstancesInSight(this, (instance) => condition(instance));
 			if (targets.length){
 				const target = getClosestInstanceWithPath(this, targets);
-				if (target){ 
-					this.inactif = false;
-					this.dest = target.instance;
-					this.path = target.path;
+				if (target){
+					if (instanceContactInstance(this, target)){
+						this.degree = getInstanceDegree(this, target.x, target.y);
+						this.getAction(this.action);
+						return;
+					}
+					this.setDest(target.instance);
+					this.setPath(target.path);
 					return;
 				}
 			}	
@@ -303,8 +331,8 @@ class Unit extends PIXI.Container {
 		return;
 	}
 	moveToPath(){
-		this.next = this.path[this.path.length - 1];
-		const nextCell = this.parent.grid[this.next.i][this.next.j];
+		const next = this.path[this.path.length - 1];
+		const nextCell = this.parent.grid[next.i][next.j];
 		let sprite = this.getChildByName('sprite');
 		//Collision with another walking unit, we block the mouvement
 		if (nextCell.has && nextCell.has.name === 'unit' && nextCell.has !== this
@@ -313,23 +341,23 @@ class Unit extends PIXI.Container {
 			sprite.stop();
 			return;
 		}
-		if (this.path.length === 1 && nextCell.solid){
-			this.affectNewDest();
+		
+		if (nextCell.solid){
+			this.sendTo(this.dest, this.action);
 		}
 
-		 
 		if (!sprite.playing){
 			sprite.play();
 		}
 
 		this.zIndex = getInstanceZIndex(this); 
 
-		if (instancesDistance(this, this.next, false) < 10){
+		if (instancesDistance(this, nextCell, false) < 10){
 			clearCellOnInstanceSight(this);
 
-			this.z = this.next.z;
-			this.i = this.next.i;
-			this.j = this.next.j;
+			this.z = nextCell.z;
+			this.i = nextCell.i;
+			this.j = nextCell.j;
 	
 			if (this.currentCell.has === this){
 				this.currentCell.has = null;
@@ -344,46 +372,74 @@ class Unit extends PIXI.Container {
 			renderCellOnInstanceSight(this);
 			this.path.pop();
 
-			if (this.action){
-				if (instanceContactInstance(this, this.dest)){
+			if (instanceContactInstance(this, this.dest)){
+				if (this.action){
 					this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
 					this.getAction(this.action);
-				}else if (!this.path.length){
-					this.setDestination(this.dest, this.action);
+					return;
+				}else{
+					this.stop();
+					return;
 				}
-			}else if (!this.path.length){
-				this.stop()
 			}
+			//Destination moved
+			if (this.dest.i !== this.realDest.i && this.dest.j !== this.realDest.j){
+				if (this.player.views[this.dest.i][this.dest.j].viewedBy.length > 1){
+					this.sendTo(this.dest, this.action);
+				}
+			}
+			if (!this.path.length){
+				this.stop();
+			}			
 		}else{
 			//Move to next
 			const oldDeg = this.degree;
 			let speed = this.speed;
 			if (this.loading > 1){
-				speed*=.75;
+				speed *= .75;
 			}
-			moveTowardPoint(this, this.next.x, this.next.y, speed);
+			moveTowardPoint(this, nextCell.x, nextCell.y, speed);
 			if (oldDeg !== this.degree){	
 				//Change animation according to degree
-				this.setAnimation('walkingSheet');
+				this.setTextures('walkingSheet');
 			}
+		}
+	}
+	isAttacked(instance){
+		//this.runaway();
+		//return;
+		if (!instance || this.action === 'attack'){
+			return;
+		}
+		if (this.type === 'Villager'){
+			this.sendToAttack(instance, 'attack');
+		}else{
+			this.sendTo(instance, 'attack');
 		}
 	}
 	stop(){
 		if (this.currentCell.has !== this && this.currentCell.solid){
-			this.setDestination(this.currentCell);
+			this.sendTo(this.currentCell);
 			return;
 		}
 		this.inactif = true;
 		this.action = null;
 		this.dest = null;
+		this.realDest = null;
 		this.currentCell.has = this;
 		this.currentCell.solid = true;
 		this.path = [];
-		this.setAnimation('standingSheet');
+		clearInterval(this.intervale);
+		this.intervale = setInterval(() => this.step(), 1000);
+		this.setTextures('standingSheet');
 	}
 	step(){
 		if (this.life < 0){
 			this.die();
+		}
+		if (this.work === 'attacker' && this.inactif){
+			this.action = 'attack';
+			this.affectNewDest();
 		}
 		if (this.hasPath()){
 			this.moveToPath();
@@ -399,7 +455,7 @@ class Unit extends PIXI.Container {
 				}
 			});
 			if (dest){
-				this.setDestination(dest);
+				this.sendTo(dest);
 				break;
 			}
 		}
@@ -414,22 +470,7 @@ class Unit extends PIXI.Container {
 				}
 			});
 			if (dest){
-				this.setDestination(dest);
-				break;
-			}
-		}
-	}
-	runaway(){
-		let dest;
-		for (let i = 5; i < 50; i++){
-			getCellsAroundPoint(this.i, this.j, this.parent.grid, i, (cell) => {
-				if (!cell.solid){
-					dest = this.player.views[cell.i][cell.j];
-					return;
-				}
-			});
-			if (dest){
-				this.setDestination(dest);
+				this.sendTo(dest);
 				break;
 			}
 		}
@@ -441,8 +482,8 @@ class Unit extends PIXI.Container {
 		if (isPlayed(this)){
 			this.parent.interface.setBottombar();
 		}
-		this.stop();
-		this.setAnimation('dyingSheet');
+		clearInterval(this.intervale);
+		this.setTextures('dyingSheet');
 		let sprite = this.getChildByName('sprite');
 		sprite.onLoop = () => {
 			if (this.parent){
@@ -463,11 +504,11 @@ class Unit extends PIXI.Container {
 				}
 
 				this.parent.removeChild(this);
-				this.destroy();
 			}
+			this.destroy();
 		}
 	}
-	setAnimation(sheet){
+	setTextures(sheet){
 		let sprite = this.getChildByName('sprite');
 		//Sheet don't exist we just block the current sheet
 		if (!this[sheet]){
@@ -486,7 +527,7 @@ class Unit extends PIXI.Container {
 			sprite.onLoop = () => {};
 		}
 		this.currentSheet = sheet;
-		sprite.animationSpeed = this[sheet].data.animationSpeed || ( sheet === 'standingSheet' ? .1 : .2);
+		sprite.animationSpeed = this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? .1 : .2);
 		if (this.degree > 67.5 && this.degree < 112.5){
 			sprite.scale.x = 1;
 			sprite.textures = this[sheet].animations['north']
@@ -551,12 +592,12 @@ class Villager extends Unit {
 	}
 	sendToAttack(target){
 		this.loading = 0;
-		this.work = null;
+		this.work = 'attacker';
 		this.actionSheet = app.loader.resources['224'].spritesheet;
 		this.standingSheet = app.loader.resources['418'].spritesheet;
 		this.walkingSheet = app.loader.resources['657'].spritesheet;
 		this.previousDest = null;
-		return this.setDestination(target, 'attack');
+		return this.sendTo(target, 'attack');
 	}
 	sendToBuilding(building){
 		if (this.work !== 'builder'){
@@ -567,7 +608,7 @@ class Villager extends Unit {
 			this.walkingSheet = app.loader.resources['658'].spritesheet;
 		}
 		this.previousDest = null;
-		return this.setDestination(building, 'build');
+		return this.sendTo(building, 'build');
 	}
 	sendToTree(tree){
 		if (this.work !== 'woodcutter'){
@@ -578,7 +619,7 @@ class Villager extends Unit {
 			this.walkingSheet = app.loader.resources['682'].spritesheet;
 		}
 		this.previousDest = null;
-		return this.setDestination(tree, 'chopwood')
+		return this.sendTo(tree, 'chopwood')
 	}
 	sendToBerrybush(berrybush){
 		if (this.work !== 'gatherer'){
@@ -589,7 +630,7 @@ class Villager extends Unit {
 			this.walkingSheet = app.loader.resources['672'].spritesheet;
 		}
 		this.previousDest = null;
-		return this.setDestination(berrybush, 'forageberry')
+		return this.sendTo(berrybush, 'forageberry')
 	}
 }
 

@@ -260,9 +260,9 @@ function create(){
 					const finalX = cell.i+distCenterX;
 					const finalY = cell.j+distCenterY;
 					if (map.grid[finalX] && map.grid[finalX][finalY]){
-						map.player.selectedUnits[u].setDestination(map.grid[finalX][finalY]);
+						map.player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
 					}else{
-						map.player.selectedUnits[u].setDestination(cell);
+						map.player.selectedUnits[u].sendTo(cell);
 					}
 				}
 			}
@@ -310,7 +310,7 @@ function create(){
 		
 		//Create and draw mouse selection
 		const mousePos = evt.data.global;
-		if (!mouseRectangle && pointerStart && pointsDistance(mousePos.x, mousePos.y, pointerStart.x, pointerStart.y) > 15){
+		if (!mouseRectangle && pointerStart && pointsDistance(mousePos.x, mousePos.y, pointerStart.x, pointerStart.y) > 5){
 			mouseRectangle = {
 				x: evt.data.global.x,
 				y: evt.data.global.y,

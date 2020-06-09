@@ -48,6 +48,9 @@ class Building extends PIXI.Container {
 		}
 	}
 	updateTexture(){
+		if (this.life > this.lifeMax){
+			this.life = this.lifeMax;
+		}
 		const percentage = getPercentage(this.life, this.lifeMax);
 		if (!this.isBuilt){
 			let sprite = this.getChildByName('sprite');
@@ -66,6 +69,7 @@ class Building extends PIXI.Container {
 				sprite.texture = buildSpritesheet.textures[textureName];
 			}
 			if (percentage >= 100){
+				this.isBuilt = true;
 				if (typeof this.onBuilt === 'function'){
 					this.onBuilt();
 				}
@@ -145,8 +149,8 @@ class Building extends PIXI.Container {
 			this.parent.grid[this.i][this.j].addChild(rubble);
 			this.parent.grid[this.i][this.j].zIndex++;
 			this.parent.removeChild(this);
-			this.destroy();
 		}
+		this.destroy();
 	}
 	select(){
 		if (this.selected){
@@ -268,7 +272,7 @@ class TownCenter extends Building {
 			}
 		});
 	}
-	onBuilt() {
+	onBuilt(){
 		const data = empires.buildings[this.player.civ][this.player.age][this.type];
 
 		let sprite = this.getChildByName('sprite');
@@ -322,6 +326,7 @@ class Barracks extends Building {
 	}
 	onBuilt(){
 		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+
 		let sprite = this.getChildByName('sprite');
 		sprite.texture = getTexture(data.images.final);
 		changeSpriteColor(sprite, this.player.color);
@@ -363,8 +368,9 @@ class House extends Building {
 			}
 		});
 	}
-	onBuilt() {
+	onBuilt(){
 		const data = empires.buildings[this.player.civ][this.player.age][this.type];
+
 		let sprite = this.getChildByName('sprite');
 		sprite.texture = getTexture(data.images.final);
 		sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);

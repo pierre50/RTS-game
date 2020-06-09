@@ -517,28 +517,8 @@ class Map extends PIXI.Container{
         this.y = -this.camera.y;
     }
     step(){
-        /*for(let i = 0; i <= this.size; i++){
-            for(let j = 0; j <= this.size; j++){
-                let cell = this.grid[i][j];
-                let sprite = cell.getChildByName('sprite');
-                if (cell.has && cell.has.name === 'unit'){
-                    sprite.tint = colorRed;
-                }else if (cell.solid && cell.has && cell.has.name === 'resource'){
-                    sprite.tint = colorBlue;
-                }else if (cell.solid && cell.has && cell.has.name === 'building'){
-                    sprite.tint = colorViolet;
-                }else{
-                    sprite.tint = colorWhite;
-                }
-            }
-        }*/
         if (!mouseRectangle){
             this.moveCamera();
-        }
-        for(let i = 0; i < this.children.length; i++){
-            if (typeof this.children[i].step === 'function'){
-                this.children[i].step();
-            }
         }
     }
 }

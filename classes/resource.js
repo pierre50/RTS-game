@@ -90,7 +90,7 @@ class Tree extends resource{
 					hasVillager = true;
 					unit.sendToTree(dest);
 				}else{
-					unit.setDestination(dest);
+					unit.sendTo(dest);
 				}
 			}
 			if (hasVillager){
@@ -139,7 +139,7 @@ class Berrybush extends resource{
 					hasVillager = true;
 					unit.sendToBerrybush(this);
 				}else{
-					unit.setDestination(this)
+					unit.sendTo(this)
 				}
 			}
 			if (hasVillager){

@@ -73,7 +73,7 @@ class Player{
 class AI extends Player{
 	constructor(map, age, civ, color){
 		super(map, age, civ, color, 'AI');
-		this.step();
+		this.interval = setInterval(() => this.step(), 1000);
 	}
 	spawnUnit(...args){
 		let unit = this.createUnit(...args);
@@ -97,7 +97,7 @@ class AI extends Player{
 					if (playerUnit.type === 'Villager'){
 						playerUnit.sendToAttack(unit);
 					}else{
-						playerUnit.setDestination(unit, 'attack');
+						playerUnit.sendTo(unit, 'attack');
 					}
 				}
 			}
@@ -127,7 +127,7 @@ class AI extends Player{
 					if (playerUnit.type === 'Villager'){
 						playerUnit.sendToAttack(building);
 					}else{
-						playerUnit.setDestination(building, 'attack');
+						playerUnit.sendTo(building, 'attack');
 					}
 				}
 			}
@@ -135,154 +135,149 @@ class AI extends Player{
 		return building;
 	}
 	step(){
-		/*
-			12-14 on food
-			6 on wood
-		*/
-		setInterval(() => {
-			const maxVillagers = 20;
-			const maxVillagersOnConstruction = 4;
-			const maxClubmans = 10;
-			const howManyVillagerBeforeBuyingABarracks = 10;
-			const howManySoldiersBeforeAttack = 2;
-			const villagers = this.units.filter(unit => unit.type === 'Villager');
-			const clubmans = this.units.filter(unit => unit.type === 'Clubman');
-			const towncenters = this.buildings.filter(building => building.type === 'TownCenter');
-			const storagepits = this.buildings.filter(building => building.type === 'StoragePit');
-			const granarys = this.buildings.filter(building => building.type === 'Granary');
-			const barracks = this.buildings.filter(building => building.type === 'Barracks');
-			const notBuiltBuildings = this.buildings.filter(building => !building.isBuilt);
-			const builderVillagers = villagers.filter(villager => !villager.inactif && villager.work === 'builder');
-			const villagersOnWood = villagers.filter(villager => !villager.inactif && villager.work === 'woodcutter');
-			const villagersOnFood = villagers.filter(villager => !villager.inactif && (villager.work === 'gatherer'));
-			const inactifVillagers = villagers.filter(villager => villager.inactif);
-			const inactifClubmans = clubmans.filter(clubman => clubman.inactif);
-			const maxVillagersOnWood = getValuePercentage(villagers.length, 30);
-			const maxVillagersOnFood = getValuePercentage(villagers.length, 70);
+		const maxVillagers = 20;
+		const maxVillagersOnConstruction = 4;
+		const maxClubmans = 10;
+		const howManyVillagerBeforeBuyingABarracks = 10;
+		const howManySoldiersBeforeAttack = 2;
+		const villagers = this.units.filter(unit => unit.type === 'Villager');
+		const clubmans = this.units.filter(unit => unit.type === 'Clubman');
+		const towncenters = this.buildings.filter(building => building.type === 'TownCenter');
+		const storagepits = this.buildings.filter(building => building.type === 'StoragePit');
+		const granarys = this.buildings.filter(building => building.type === 'Granary');
+		const barracks = this.buildings.filter(building => building.type === 'Barracks');
+		const notBuiltBuildings = this.buildings.filter(building => !building.isBuilt);
+		const builderVillagers = villagers.filter(villager => !villager.inactif && villager.work === 'builder');
+		const villagersOnWood = villagers.filter(villager => !villager.inactif && villager.work === 'woodcutter');
+		const villagersOnFood = villagers.filter(villager => !villager.inactif && (villager.work === 'gatherer'));
+		const inactifVillagers = villagers.filter(villager => villager.inactif);
+		const inactifClubmans = clubmans.filter(clubman => clubman.inactif);
+		const maxVillagersOnWood = getValuePercentage(villagers.length, 30);
+		const maxVillagersOnFood = getValuePercentage(villagers.length, 70);
 
-			//Player loosing
-			if (this.buildings.length === 0 && this.units.length === 0){
-				this.die();
+		//Player loosing
+		if (this.buildings.length === 0 && this.units.length === 0){
+			this.die();
+		}
+
+		/**
+		 * Units action
+		 */
+		//Look for food
+		if (villagersOnFood.length < maxVillagersOnFood && (towncenters.length || granarys.length)){
+			if (this.foundedBerrybushs.length){
+				for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
+					let bush = getClosestInstance(inactifVillagers[i], this.foundedBerrybushs);
+					inactifVillagers[i].sendToBerrybush(bush);
+					//Build a granary close to it, if to far
+					let closestTownCenter = getClosestInstance(bush, towncenters);
+					let closestGranary = getClosestInstance(bush, granarys);
+					if (instancesDistance(closestTownCenter, bush) > 10 && (!instancesDistance(closestGranary, bush) || instancesDistance(closestGranary, bush) > 10)){
+						let pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [1, 5], 1);
+						if (pos){
+							this.buyBuilding(pos.i, pos.j, 'Granary', this.parent);
+						}
+					}
+				}
+			}else{
+				for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
+					inactifVillagers[i].explore();
+				}
 			}
-
-			/**
-			 * Units action
-			 */
-			//Look for food
-			if (villagersOnFood.length < maxVillagersOnFood && (towncenters.length || granarys.length)){
-				if (this.foundedBerrybushs.length){
-					for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
-						let bush = getClosestInstance(inactifVillagers[i], this.foundedBerrybushs);
-						inactifVillagers[i].sendToBerrybush(bush);
-						//Build a granary close to it, if to far
-						let closestTownCenter = getClosestInstance(bush, towncenters);
-						let closestGranary = getClosestInstance(bush, granarys);
-						if (instancesDistance(closestTownCenter, bush) > 10 && (!instancesDistance(closestGranary, bush) || instancesDistance(closestGranary, bush) > 10)){
-							let pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [1, 5], 1);
+		}
+		//Look for wood
+		if (villagersOnWood.length < maxVillagersOnWood && (towncenters.length || storagepits.length)){
+			if (this.foundedTrees.length){
+				for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
+					let tree = getClosestInstance(inactifVillagers[i], this.foundedTrees);
+					inactifVillagers[i].sendToTree(tree);
+					//Build a storagepit close to it, if to far
+					let closestTownCenter = getClosestInstance(tree, towncenters);
+					let closestStoragepit = getClosestInstance(tree, storagepits);
+					if (instancesDistance(closestTownCenter, tree) > 10 
+						&& (!instancesDistance(closestStoragepit, tree) || instancesDistance(closestStoragepit, tree) > 10)){
+						let treeNeighbours = getPlainCellsAroundPoint(tree.i, tree.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Tree');
+						if (treeNeighbours.length > 5){
+							let pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [1, 5], 1);
 							if (pos){
-								this.buyBuilding(pos.i, pos.j, 'Granary', this.parent);
+								this.buyBuilding(pos.i, pos.j, 'StoragePit', this.parent);
 							}
 						}
 					}
-				}else{
-					for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
-						inactifVillagers[i].explore();
-					}
+				}
+			}else{
+				for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
+					inactifVillagers[i].explore();
 				}
 			}
-			//Look for wood
-			if (villagersOnWood.length < maxVillagersOnWood && (towncenters.length || storagepits.length)){
-				if (this.foundedTrees.length){
-					for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
-						let tree = getClosestInstance(inactifVillagers[i], this.foundedTrees);
-						inactifVillagers[i].sendToTree(tree);
-						//Build a storagepit close to it, if to far
-						let closestTownCenter = getClosestInstance(tree, towncenters);
-						let closestStoragepit = getClosestInstance(tree, storagepits);
-						if (instancesDistance(closestTownCenter, tree) > 10 
-							&& (!instancesDistance(closestStoragepit, tree) || instancesDistance(closestStoragepit, tree) > 10)){
-							let treeNeighbours = getPlainCellsAroundPoint(tree.i, tree.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Tree');
-							if (treeNeighbours.length > 5){
-								let pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [1, 5], 1);
-								if (pos){
-									this.buyBuilding(pos.i, pos.j, 'StoragePit', this.parent);
-								}
-							}
-						}
-					}
-				}else{
-					for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
-						inactifVillagers[i].explore();
-					}
+		}
+		//Send to construction
+		if (notBuiltBuildings.length > 0){
+			for (let i = 0; i < notBuiltBuildings.length; i++){
+				if (builderVillagers.length >= maxVillagersOnConstruction){
+					break;
+				}
+				const noWorkers = villagers.filter(villager => villager.work !== 'builder' || villager.inactif);
+				let villager = getClosestInstance(notBuiltBuildings[i], noWorkers);
+				if (villager){
+					villager.sendToBuilding(notBuiltBuildings[i]);
 				}
 			}
-			//Send to construction
-			if (notBuiltBuildings.length > 0){
-				for (let i = 0; i < notBuiltBuildings.length; i++){
-					if (builderVillagers.length >= maxVillagersOnConstruction){
-						break;
-					}
-					const noWorkers = villagers.filter(villager => villager.work !== 'builder' || villager.inactif);
-					let villager = getClosestInstance(notBuiltBuildings[i], noWorkers);
-					if (villager){
-						villager.sendToBuilding(notBuiltBuildings[i]);
-					}
+		}
+		//Send clubman to search and destroy
+		if (inactifClubmans.length >= howManySoldiersBeforeAttack){
+			if (!this.foundedEnemyBuildings.length){
+				for (let i = 0; i < clubmans.length; i++){
+					Math.random(0, this.parent.playerPos)
+				}
+			}else{
+				for (let i = 0; i < clubmans.length; i++){
+					clubmans[i].sendTo(this.foundedEnemyBuildings[0], 'search&destroy');
 				}
 			}
-			//Send clubman to search and destroy
-			if (inactifClubmans.length >= howManySoldiersBeforeAttack){
-				if (!this.foundedEnemyBuildings.length){
-					for (let i = 0; i < clubmans.length; i++){
-						Math.random(0, this.parent.playerPos)
-					}
-				}else{
-					for (let i = 0; i < clubmans.length; i++){
-						clubmans[i].setDestination(this.foundedEnemyBuildings[0], 'search&destroy');
-					}
-				}
-			}
+		}
 
-			/**
-			 * Units buying
-			 */
-			//Buy villager
-			if (villagers.length < maxVillagers){
-				for (let i = 0; i < maxVillagers - villagers.length; i++){
-					if (towncenters[i]){
-						towncenters[i].buyUnit('Villager');
-					}
+		/**
+		 * Units buying
+		 */
+		//Buy villager
+		if (villagers.length < maxVillagers){
+			for (let i = 0; i < maxVillagers - villagers.length; i++){
+				if (towncenters[i]){
+					towncenters[i].buyUnit('Villager');
 				}
 			}
-			//Buy clubman
-			if (clubmans.length < maxClubmans){
-				for (let i = 0; i < maxClubmans - clubmans.length; i++){
-					if (barracks[i]){
-						barracks[i].buyUnit('Clubman');
-					}
+		}
+		//Buy clubman
+		if (clubmans.length < maxClubmans){
+			for (let i = 0; i < maxClubmans - clubmans.length; i++){
+				if (barracks[i]){
+					barracks[i].buyUnit('Clubman');
 				}
 			}
+		}
 
 
-			/**
-			 * Building buying
-			 */
-			//Buy a house
-			if (this.populationMax - this.population < 3 && !notBuiltBuildings.length){
-				let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 8], 1);
-				if (pos){
-					this.buyBuilding(pos.i, pos.j, 'House', this.parent);
-				}
+		/**
+		 * Building buying
+		 */
+		//Buy a house
+		if (this.populationMax - this.population < 3 && !notBuiltBuildings.length){
+			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 8], 2);
+			if (pos){
+				this.buyBuilding(pos.i, pos.j, 'House', this.parent);
 			}
-			//Buy a barracks
-			if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0 && !notBuiltBuildings.length){
-				let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 16], 2, false);
-				if (pos){
-					this.buyBuilding(pos.i, pos.j, 'Barracks', this.parent);
-				}
+		}
+		//Buy a barracks
+		if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0 && !notBuiltBuildings.length){
+			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 16], 2);
+			if (pos){
+				this.buyBuilding(pos.i, pos.j, 'Barracks', this.parent);
 			}
-		}, 1000)
+		}
 	}
 	die(){
+		clearInterval(this.intervale);
 		this.parent.players.splice(this.parent.players.indexOf(this), 1);
 	}
 }
@@ -346,10 +341,10 @@ class Human extends Player{
 						unit.previousDest = null;
 						switch (unit.work){
 							case 'woodcutter':
-								unit.setDestination(building, 'deliverywood');
+								unit.sendTo(building, 'deliverywood');
 								break;
 							case 'gatherer':
-								unit.setDestination(building, 'deliveryberry');
+								unit.sendTo(building, 'deliveryberry');
 								break;
 						}
 					}
