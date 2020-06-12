@@ -83,13 +83,10 @@
         "Villager": {
             "lifeMax": 25,
 			"sight": 4,
-            "_speed": 1.1,
-            "speed": 3.1,
-            "_trainingTime": 20,
-            "trainingTime": 5,
+            "speed": 1.1,
+            "trainingTime": 20,
             "icon": "000_50730",
             "attack": 3,
-            "_attack": 100,
             "cost": {
                 "food": 30
             }
@@ -98,8 +95,7 @@
             "lifeMax": 40,
 			"sight": 4,
             "speed": 1.2,
-            "_trainingTime": 26,
-            "trainingTime": 1,
+            "trainingTime": 26,
             "icon": "002_50730",
             "attack": 3,
             "cost": {

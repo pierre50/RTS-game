@@ -1,7 +1,9 @@
 class Player{
-	constructor(map, age, civ, color, type){
+	constructor(i, j, map, age, civ, color, type, isPlayed = false){
 		this.name = 'player';
 		this.parent = map;
+		this.i = i;
+		this.j = j;
 		this.civ = civ;
 		this.age = age;
 		this.wood = 200;
@@ -14,10 +16,15 @@ class Player{
 		this.population = 0;
 		this.populationMax = 5;
 		this.color = color;
-
+		this.isPlayed = isPlayed
 		this.foundedTrees = [];
 		this.foundedBerrybushs = [];
 		this.foundedEnemyBuildings = [];
+
+		if (this.isPlayed){
+			player = this;
+			this.interface = new Interface(this);
+		}
 
 		let cloneGrid = [];
 		for (let i = 0; i <= map.size; i++){
@@ -35,13 +42,18 @@ class Player{
 		}
 		this.views = cloneGrid;
 	}
+	otherPlayers(){
+		let others = [ ...this.parent.players];
+		others.splice(this.parent.players.indexOf(this), 1);
+		return others;
+	}
 	buyBuilding(i, j, type, map){
 		const building = empires.buildings[this.civ][this.age][type];
 		if (canAfford(this, building.cost)){	
 			this.spawnBuilding(i, j, type, map);
 			payCost(this, building.cost);
-			if (this.type === 'Human'){
-				this.parent.interface.updateTopbar();
+			if (this.isPlayed){
+				this.interface.updateTopbar();
 			}
 			return true;
 		}
@@ -71,14 +83,17 @@ class Player{
 }
 
 class AI extends Player{
-	constructor(map, age, civ, color){
-		super(map, age, civ, color, 'AI');
+	constructor(i, j, map, age, civ, color){
+		super(i, j, map, age, civ, color, 'AI');
 		this.interval = setInterval(() => this.step(), 1000);
 	}
 	spawnUnit(...args){
 		let unit = this.createUnit(...args);
-		unit.on('mouseover', () => { 
-			if (unit.parent.player.selectedUnits.length && unit.visible){
+		unit.on('mouseover', () => {
+			if (!player){
+				return;
+			}
+			if (player.selectedUnits.length && unit.visible){
 				gamebox.setCursor('attack');
 			}
 		})
@@ -86,14 +101,17 @@ class AI extends Player{
 			gamebox.setCursor('default');
 		})
 		unit.on('pointertap', (evt) => {
+			if (!player){
+				return;
+			}
 			//If we are placing a building don't permit click
 			if (mouseBuilding || mouseRectangle){
 				return;
 			}
-			if (map.player.selectedUnits.length){
+			if (player.selectedUnits.length){
 				drawInstanceBlinkingSelection(unit);
-				for(let i = 0; i < map.player.selectedUnits.length; i++){
-					let playerUnit = map.player.selectedUnits[i];
+				for(let i = 0; i < player.selectedUnits.length; i++){
+					let playerUnit = player.selectedUnits[i];
 					if (playerUnit.type === 'Villager'){
 						playerUnit.sendToAttack(unit);
 					}else{
@@ -107,8 +125,11 @@ class AI extends Player{
 	spawnBuilding(...args){
 		let building = this.createBuilding(...args);
 		let sprite = building.getChildByName('sprite');
-		sprite.on('mouseover', () => { 
-			if (building.parent.player.selectedUnits.length && building.visible){
+		sprite.on('mouseover', () => {
+			if (!player){
+				return;
+			}
+			if (player.selectedUnits.length && building.visible){
 				gamebox.setCursor('attack');
 			}
 		})
@@ -116,14 +137,17 @@ class AI extends Player{
 			gamebox.setCursor('default');
 		})
 		sprite.on('pointertap', (evt) => {
+			if (!player){
+				return;
+			}
 			//If we are placing a building don't permit click
 			if (mouseBuilding || mouseRectangle){
 				return;
 			}
-			if (map.player.selectedUnits.length){
+			if (player.selectedUnits.length){
 				drawInstanceBlinkingSelection(building);
-				for(let i = 0; i < map.player.selectedUnits.length; i++){
-					let playerUnit = map.player.selectedUnits[i];
+				for(let i = 0; i < player.selectedUnits.length; i++){
+					let playerUnit = player.selectedUnits[i];
 					if (playerUnit.type === 'Villager'){
 						playerUnit.sendToAttack(building);
 					}else{
@@ -139,19 +163,20 @@ class AI extends Player{
 		const maxVillagersOnConstruction = 4;
 		const maxClubmans = 10;
 		const howManyVillagerBeforeBuyingABarracks = 10;
-		const howManySoldiersBeforeAttack = 2;
-		const villagers = this.units.filter(unit => unit.type === 'Villager');
-		const clubmans = this.units.filter(unit => unit.type === 'Clubman');
+		const howManySoldiersBeforeAttack = 5;
+		const villagers = this.units.filter(unit => unit.type === 'Villager' && unit.life > 0);
+		const clubmans = this.units.filter(unit => unit.type === 'Clubman' && unit.life > 0);
 		const towncenters = this.buildings.filter(building => building.type === 'TownCenter');
 		const storagepits = this.buildings.filter(building => building.type === 'StoragePit');
 		const granarys = this.buildings.filter(building => building.type === 'Granary');
 		const barracks = this.buildings.filter(building => building.type === 'Barracks');
-		const notBuiltBuildings = this.buildings.filter(building => !building.isBuilt);
+		const notBuiltBuildings = this.buildings.filter(building => !building.isBuilt || (building.life > 0 && building.life < building.lifeMax));
+		const notBuiltHouses = notBuiltBuildings.filter(building => building.type === 'House');
 		const builderVillagers = villagers.filter(villager => !villager.inactif && villager.work === 'builder');
 		const villagersOnWood = villagers.filter(villager => !villager.inactif && villager.work === 'woodcutter');
 		const villagersOnFood = villagers.filter(villager => !villager.inactif && (villager.work === 'gatherer'));
-		const inactifVillagers = villagers.filter(villager => villager.inactif);
-		const inactifClubmans = clubmans.filter(clubman => clubman.inactif);
+		const inactifVillagers = villagers.filter(villager => villager.inactif && villager.action !== 'attack');
+		const inactifClubmans = clubmans.filter(clubman => clubman.inactif && clubman.action !== 'attack');
 		const maxVillagersOnWood = getValuePercentage(villagers.length, 30);
 		const maxVillagersOnFood = getValuePercentage(villagers.length, 70);
 
@@ -164,7 +189,7 @@ class AI extends Player{
 		 * Units action
 		 */
 		//Look for food
-		if (villagersOnFood.length < maxVillagersOnFood && (towncenters.length || granarys.length)){
+		if (villagersOnFood.length <= maxVillagersOnFood && (towncenters.length || granarys.length)){
 			if (this.foundedBerrybushs.length){
 				for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
 					let bush = getClosestInstance(inactifVillagers[i], this.foundedBerrybushs);
@@ -172,10 +197,13 @@ class AI extends Player{
 					//Build a granary close to it, if to far
 					let closestTownCenter = getClosestInstance(bush, towncenters);
 					let closestGranary = getClosestInstance(bush, granarys);
-					if (instancesDistance(closestTownCenter, bush) > 10 && (!instancesDistance(closestGranary, bush) || instancesDistance(closestGranary, bush) > 10)){
-						let pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [1, 5], 1);
-						if (pos){
-							this.buyBuilding(pos.i, pos.j, 'Granary', this.parent);
+					if (instancesDistance(closestTownCenter, bush) > 6 && (!instancesDistance(closestGranary, bush) || instancesDistance(closestGranary, bush) > 15)){
+						let bushNeighbours = getPlainCellsAroundPoint(bush.i, bush.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Berrybush');
+						if (bushNeighbours.length > 3){
+							let pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [0, 6], 2);
+							if (pos){
+								this.buyBuilding(pos.i, pos.j, 'Granary', this.parent);
+							}
 						}
 					}
 				}
@@ -186,7 +214,7 @@ class AI extends Player{
 			}
 		}
 		//Look for wood
-		if (villagersOnWood.length < maxVillagersOnWood && (towncenters.length || storagepits.length)){
+		if (villagersOnWood.length <= maxVillagersOnWood && (towncenters.length || storagepits.length)){
 			if (this.foundedTrees.length){
 				for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
 					let tree = getClosestInstance(inactifVillagers[i], this.foundedTrees);
@@ -194,11 +222,10 @@ class AI extends Player{
 					//Build a storagepit close to it, if to far
 					let closestTownCenter = getClosestInstance(tree, towncenters);
 					let closestStoragepit = getClosestInstance(tree, storagepits);
-					if (instancesDistance(closestTownCenter, tree) > 10 
-						&& (!instancesDistance(closestStoragepit, tree) || instancesDistance(closestStoragepit, tree) > 10)){
+					if (instancesDistance(closestTownCenter, tree) > 6 && (!instancesDistance(closestStoragepit, tree) || instancesDistance(closestStoragepit, tree) > 15)){
 						let treeNeighbours = getPlainCellsAroundPoint(tree.i, tree.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Tree');
 						if (treeNeighbours.length > 5){
-							let pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [1, 5], 1);
+							let pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [0, 6], 2);
 							if (pos){
 								this.buyBuilding(pos.i, pos.j, 'StoragePit', this.parent);
 							}
@@ -224,15 +251,22 @@ class AI extends Player{
 				}
 			}
 		}
-		//Send clubman to search and destroy
+		//Send clubman to attack
 		if (inactifClubmans.length >= howManySoldiersBeforeAttack){
 			if (!this.foundedEnemyBuildings.length){
-				for (let i = 0; i < clubmans.length; i++){
-					Math.random(0, this.parent.playerPos)
+				let targetIndex = randomRange(0, this.otherPlayers().length - 1);
+				let target = this.otherPlayers()[targetIndex];
+				let i = target.i + randomRange(-5, 5);
+				let j = target.j + randomRange(-5, 5);
+				if (this.parent.grid[i] && this.parent.grid[i][j]){
+					let cell = this.parent.grid[i][j];
+					for (let i = 0; i < clubmans.length; i++){
+						clubmans[i].sendTo(cell, 'attack');
+					}
 				}
 			}else{
 				for (let i = 0; i < clubmans.length; i++){
-					clubmans[i].sendTo(this.foundedEnemyBuildings[0], 'search&destroy');
+					clubmans[i].sendTo(this.foundedEnemyBuildings[0], 'attack');
 				}
 			}
 		}
@@ -257,34 +291,41 @@ class AI extends Player{
 			}
 		}
 
-
 		/**
 		 * Building buying
 		 */
 		//Buy a house
-		if (this.populationMax - this.population < 3 && !notBuiltBuildings.length){
-			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 8], 2);
+		if (this.population + 3 > this.populationMax && !notBuiltHouses.length){
+			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 12], 2);
 			if (pos){
 				this.buyBuilding(pos.i, pos.j, 'House', this.parent);
 			}
 		}
 		//Buy a barracks
-		if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0 && !notBuiltBuildings.length){
-			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 16], 2);
+		if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0){
+			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 20], 3, false, (cell) => {
+				let isMiddle = true;
+				for (let i = 0; i < this.otherPlayers().length; i++){
+					if (instancesDistance(cell, this.otherPlayers()[i]) > instancesDistance(towncenters[0], this.otherPlayers()[i])){
+						isMiddle = false;
+					}
+				}
+				return isMiddle;
+			});
 			if (pos){
 				this.buyBuilding(pos.i, pos.j, 'Barracks', this.parent);
 			}
 		}
 	}
 	die(){
-		clearInterval(this.intervale);
+		clearInterval(this.interval);
 		this.parent.players.splice(this.parent.players.indexOf(this), 1);
 	}
 }
 
 class Human extends Player{
-	constructor(map, age, civ, color){
-		super(map, age, civ, color, 'Human');
+	constructor(i, j, map, age, civ, color, isPlayed){
+		super(i, j, map, age, civ, color, 'Human', isPlayed);
 		this.selectedUnits = [];
 		this.selectedBuilding = null;
 	}
@@ -297,7 +338,7 @@ class Human extends Player{
 			}
 			this.unselectAll();
 			unit.select();
-			map.interface.setBottombar(unit);
+			this.interface.setBottombar(unit);
 			this.selectedUnits.push(unit);
 		});
 		return unit;
@@ -357,7 +398,7 @@ class Human extends Player{
 			//Select
 			this.unselectAll();
 			building.select();
-			map.interface.setBottombar(building);
+			this.interface.setBottombar(building);
 			this.selectedBuilding = building;
 		});
 		return building;
@@ -374,6 +415,5 @@ class Human extends Player{
 			this.selectedBuilding = null;
 		}
 		this.unselectAllUnits();
-		map.interface.setBottombar();
 	}
 }

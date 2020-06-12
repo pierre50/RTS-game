@@ -43,16 +43,20 @@ class Building extends PIXI.Container {
 			this.onBuilt();
 		}
 
-		if (isPlayed(this)){
+		if (this.player.isPlayed){
 			renderCellOnInstanceSight(this);
 		}
 	}
-	updateTexture(){
+	updateTexture(action){
 		if (this.life > this.lifeMax){
 			this.life = this.lifeMax;
-		}
+		}		
 		const percentage = getPercentage(this.life, this.lifeMax);
-		if (!this.isBuilt){
+
+		if (percentage <= 0){
+			this.die();
+		}
+		if (action === 'build' && !this.isBuilt){
 			let sprite = this.getChildByName('sprite');
 			const buildSpritesheetId = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0];
 			const buildSpritesheet = app.loader.resources[buildSpritesheetId].spritesheet;
@@ -74,8 +78,9 @@ class Building extends PIXI.Container {
 					this.onBuilt();
 				}
 			}
-		}else{
-			if (percentage >= 0 && percentage < 25){
+		}
+		if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)){
+			if (percentage > 0 && percentage < 25){
 				generateFire(this, 450);
 			}
 			if (percentage >= 25 && percentage < 50){
@@ -85,18 +90,19 @@ class Building extends PIXI.Container {
 				generateFire(this, 347);
 			}
 			if (percentage >= 75){
-				let fire = this.getChildByName('flame');
+				let fire = this.getChildByName('fire');
 				if (fire){
 					this.removeChild(fire);
 				}
 			}
 		}
 		function generateFire(building, spriteId){
-			let fire = building.getChildByName('flame');
+			let fire = building.getChildByName('fire');
 			const spritesheetFire = app.loader.resources[spriteId].spritesheet;
 			if (fire){
 				for (let i = 0; i < fire.children.length; i++){
-					fire.children[i].textures = spritesheetFire.animations['fire']
+					fire.children[i].textures = spritesheetFire.animations['fire'];
+					fire.children[i].play();
 				}
 			}else{
 				let newFire = new PIXI.Container();
@@ -120,7 +126,7 @@ class Building extends PIXI.Container {
 	die(){
 		if (this.parent){
 			const data = empires.buildings[this.player.civ][this.player.age][this.type];
-			if (isPlayed(this)){
+			if (this.isPlayed){
 				this.parent.interface.setBottombar();
 			}
 			//Remove solid zone
@@ -150,7 +156,8 @@ class Building extends PIXI.Container {
 			this.parent.grid[this.i][this.j].zIndex++;
 			this.parent.removeChild(this);
 		}
-		this.destroy();
+		this.isDestroyed = true;
+		this.destroy({ child: true, texture: true });
 	}
 	select(){
 		if (this.selected){
@@ -179,7 +186,7 @@ class Building extends PIXI.Container {
 
 		if (this.player.selectedBuilding){
 			if (this.player.selectedBuilding.selected && this.player.selectedBuilding.type === 'House'){
-				this.player.selectedBuilding.parent.interface.updateInfo('population', (element) => element.textContent = this.player.population + '/' + this.player.populationMax);
+				this.player.selectedBuilding.player.interface.updateInfoupdateInfo('population', (element) => element.textContent = this.player.population + '/' + this.player.populationMax);
 			}
 		}
 	}
@@ -189,7 +196,7 @@ class Building extends PIXI.Container {
 			if (this.loading === null){
 				let timesRun = 0;
 				if (this.selected){
-					this.parent.interface.updateInfo('loading', (element) => element.textContent = '0%');
+					this.player.interface.updateInfo('loading', (element) => element.textContent = '0%');
 				}
 				if (this.player.population + 1 > this.player.populationMax ){
 					return true;
@@ -206,8 +213,8 @@ class Building extends PIXI.Container {
 					this.loading = timesRun;
 					if(timesRun === 100){
 						payCost(this.player, unit.cost);
-						if (isPlayed(this)){
-							this.parent.interface.updateTopbar();
+						if (this.player.isPlayed){
+							this.player.interface.updateTopbar();
 						}
 						this.placeUnit(type)
 						this.loading = null;
@@ -216,16 +223,16 @@ class Building extends PIXI.Container {
 							this.buyUnit(this.queue[0]);
 						}
 						clearInterval(interval);
-						if (this.selected && isPlayed(this)){
-							this.parent.interface.updateButton(type,  (element) => element.textContent = this.queue.length);
+						if (this.selected && this.player.isPlayed){
+							this.player.interface.updateButton(type,  (element) => element.textContent = this.queue.length);
 							if (!this.queue.length){
-								this.parent.interface.updateInfo('loading',  (element) => element.textContent = '');
+								this.player.interface.updateInfo('loading',  (element) => element.textContent = '');
 							}
 						}
 						return;
 					}
-					if (this.selected && isPlayed(this)){
-						this.parent.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+					if (this.selected && this.player.isPlayed){
+						this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
 					}
 				}, (unit.trainingTime * 1000) / 100);
 			}
@@ -254,22 +261,23 @@ class TownCenter extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: {
+			interface: player.isPlayed ? {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 			
+					
 					let loading = document.createElement('div');
 					loading.id = 'loading';
-					loading.textContent = '';
+					loading.textContent = this.loading ? this.loading + '%': '';
 					element.appendChild(loading);
 				},
 				menu: [
-					map.interface.getUnitButton(player, 'Villager')
+					player.interface.getUnitButton('Villager')
 				]
-			}
+			} : null
 		});
 	}
 	onBuilt(){
@@ -306,7 +314,7 @@ class Barracks extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: {
+			interface: player.isPlayed ? {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
@@ -315,13 +323,13 @@ class Barracks extends Building {
 			
 					let loading = document.createElement('div');
 					loading.id = 'loading';
-					loading.textContent = '';
+					loading.textContent = this.loading ? this.loading + '%': '';
 					element.appendChild(loading);
 				},
 				menu: [
-					map.interface.getUnitButton(player, 'Clubman')
+					player.interface.getUnitButton('Clubman')
 				]
-			}
+			} : null
 		});
 	}
 	onBuilt(){
@@ -353,7 +361,7 @@ class House extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: {
+			interface: player.isPlayed ? {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
@@ -365,7 +373,7 @@ class House extends Building {
 					population.textContent = player.population + '/' + player.populationMax;
 					element.appendChild(population);
 				}
-			}
+			} : null
 		});
 	}
 	onBuilt(){
@@ -428,14 +436,14 @@ class Granary extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: {
+			interface: player.isPlayed ? {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				}
-			}
+			} : null
 		});
 	}
 	onBuilt(){
@@ -471,14 +479,14 @@ class StoragePit extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: {
+			interface: player.isPlayed ? {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				}
-			}
+			} : null
 		});
 	}
 	onBuilt(){

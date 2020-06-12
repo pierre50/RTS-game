@@ -151,6 +151,7 @@ class Cell extends PIXI.Container{
     setFog(){
         let color = 0x666666;
         this.viewed = true;
+    
         for (let i = 0; i < this.children.length; i++){
             if (this.children[i].tint){
                 this.children[i].tint = color;

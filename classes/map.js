@@ -17,10 +17,7 @@ class Map extends PIXI.Container{
         this.x = -this.camera.x;
         this.y = -this.camera.y;
 
-        this.player = null;
         this.players = [];
-        
-        this.interface = null;
         this.generateMap();
 	}
     generateMap(){
@@ -28,33 +25,33 @@ class Map extends PIXI.Container{
 
         this.generateCells();
                 
-       let playersPos = this.findTownCenterPlaces();
+        let playersPos = this.findPlayerPlaces();
         if (playersPos.length < 4){
             alert('Cannot find players position')
             return;
         }
 
-        this.player = new Human(this, 'StoneAge', 'Greek', 'blue'),
         this.players = [
-            this.player,
-            new AI(this, 'StoneAge', 'Greek', 'red'),
+            new Human(playersPos[0].i, playersPos[0].j, this, 'StoneAge', 'Greek', 'green', true),
+            new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
+            new AI(playersPos[2].i, playersPos[2].j, this, 'StoneAge', 'Greek', 'yellow'),
+            new AI(playersPos[3].i, playersPos[3].j, this, 'StoneAge', 'Greek', 'brown'),
         ]
-        this.interface = new Interface(this);
-        
+
         this.generateMapRelief();
         this.formatCellsRelief();
         this.formatCellsWaterBorder();
         this.formatCellsDesert();
 
-        this.generateSets();
-        
         this.generateResourcesAroundPlayers(playersPos);
 
-        for(let i = 0; i <= this.size; i++){
+        this.generateSets();
+
+        /*for(let i = 0; i <= this.size; i++){
             for(let j = 0; j <= this.size; j++){
 				this.grid[i][j].setFog();
             }
-        }
+        }*/
         
         //Place a town center
         for (let i = 0; i < this.players.length; i++){
@@ -66,10 +63,10 @@ class Map extends PIXI.Container{
         }
 
         //Set camera to player building else unit
-        if (this.player.buildings.length){
-            this.setCamera(this.player.buildings[0].x, this.player.buildings[0].y);
-        }else if (this.player.units.length){
-            this.setCamera(this.player.units[0].x, this.player.units[0].y);
+        if (this.players[0].buildings.length){
+            this.setCamera(this.players[0].buildings[0].x, this.players[0].buildings[0].y);
+        }else if (this.players[0].units.length){
+            this.setCamera(this.players[0].units[0].x, this.players[0].units[0].y);
         }
 
         this.displayInstancesOnScreen();
@@ -319,9 +316,9 @@ class Map extends PIXI.Container{
             }
         }
     }
-    findTownCenterPlaces(){
+    findPlayerPlaces(){
         let results = [];
-        const outBorder = 10;
+        const outBorder = 20;
         const inBorder = Math.floor(this.size / 4);
         const zones = [{              
                 minX: outBorder,
@@ -500,9 +497,9 @@ class Map extends PIXI.Container{
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
             cell.visible = true;
             if (cell.has){
-                //if (!cell.has.player || cell.has.player === this.player 
-                //    || instanceIsInPlayerSight(cell.has, this.player) 
-                //    || (cell.has.name === 'building' && this.player.views[cell.i][cell.j].viewed)){
+                //if (!cell.has.player || cell.has.player.isPlayed
+                //    || instanceIsInPlayerSight(cell.has, player) 
+                //    || (cell.has.name === 'building' && player.views[cell.i][cell.j].viewed)){
                     cell.has.visible = true;
                 //}
             }

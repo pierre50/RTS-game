@@ -1,5 +1,5 @@
 class Interface {
-	constructor(map){
+	constructor(player){
         this.style = {
             bar : {
                 borderStyle: 'inset',
@@ -24,7 +24,7 @@ class Interface {
                 width: '50px'
             }
         } 
-        this.parent = map;
+        this.player = player;
         this.topbar = document.createElement('div');
         this.topbar.id = 'topbar';
         this.icons = {
@@ -89,6 +89,7 @@ class Interface {
         bottombar.appendChild(this.bottombarMenu);
         gamebox.appendChild(bottombar);
 
+        this.selection;
         this.updateTopbar();
     }
     setResourceBox(name){
@@ -115,7 +116,7 @@ class Interface {
     }
     updateTopbar(){
         ['wood', 'food', 'stone', 'gold', 'age'].forEach((prop) => {
-            this[prop].textContent = this.parent.player[prop];
+            this[prop].textContent = this.player[prop];
         })
     }
     resetInfo(){
@@ -147,12 +148,13 @@ class Interface {
         }
         return action(contentElement);
     }
-    setBottombar(selection){
+    setBottombar(selection = null){
         let me = this;
         this.resetInfo();
         this.bottombarMenu.textContent = '';
+        this.selection = selection;
         if (mouseBuilding){
-            this.parent.interface.removeMouseBuilding();
+            this.removeMouseBuilding();
         }
         if (selection && selection.interface){
             this.generateInfo(selection);
@@ -201,7 +203,7 @@ class Interface {
                 }else{
                     back.addEventListener('pointerdown', (evt) => {
                         me.removeMouseBuilding();
-                        selection.parent.player.unselectAll();
+                        me.player.unselectAll();
                     })
                 }
                 back.appendChild(img);
@@ -209,7 +211,7 @@ class Interface {
             }
         }
     }
-    getUnitButton(player, type){
+    getUnitButton(type){
 		const unit = empires.units[type];
         return {
             icon: getIconPath(unit.icon),
@@ -234,23 +236,23 @@ class Interface {
             }
         }
     }
-    getBuildingButton(player, type){
-		const building = empires.buildings[player.civ][player.age][type];
+    getBuildingButton(type){
+		const building = empires.buildings[this.player.civ][this.player.age][type];
         return {
             icon: getIconPath(building.icon),
             onClick: (selection, evt) => {
                 this.removeMouseBuilding();
-                if (canAfford(player, building.cost)){
+                if (canAfford(this.player, building.cost)){
                     mouseBuilding = new PIXI.Container();
                     let sprite = new PIXI.Sprite(getTexture(building.images.final));
                     sprite.name = 'sprite';
                     if (building.images.color){
                         let color = new PIXI.Sprite(getTexture(building.images.color));
                         color.name = 'color';
-                        changeSpriteColor(color, player.color);
+                        changeSpriteColor(color, this.player.color);
                         mouseBuilding.addChild(color);
                     }else{
-                        changeSpriteColor(sprite, player.color);
+                        changeSpriteColor(sprite, this.player.color);
                     }
                     mouseBuilding.addChild(sprite);
                     mouseBuilding.type = type;
@@ -270,5 +272,6 @@ class Interface {
         app.stage.removeChild(mouseBuilding);
         mouseBuilding.destroy();
         mouseBuilding = null;
+        this.setBottombar(this.selection);
     }
 }

@@ -43,6 +43,7 @@ let mouseRectangle;
 let mouseBuilding;
 let pointerStart;
 let empires;
+let player;
 
 window.onload = preload();
 function preload(){
@@ -121,6 +122,7 @@ function preload(){
 		.add('300','graphics/300/texture.json')
 		.add('301','graphics/301/texture.json')
 		.add('314','graphics/314/texture.json')
+		.add('321','graphics/321/texture.json')
 		.add('347','graphics/347/texture.json')
 		.add('418','graphics/418/texture.json')
 		.add('419','graphics/419/texture.json')
@@ -178,7 +180,12 @@ function create(){
 
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
-	
+
+	//Mobile interaction TODO
+	let hammertime = new Hammer(gamebox);
+	hammertime.on('swipe', (evt) => {
+	})
+
 	//Set-up global interactions
 	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
 	interactionManager.on('pointerdown', (evt) => {
@@ -189,27 +196,29 @@ function create(){
 	})
 	interactionManager.on('pointerup', (evt) => {
 		pointerStart = null;
-		
+		if (!player){
+			return;
+		}
 		//Select units on mouse rectangle
 		if (mouseRectangle){
 			let selectVillager;
 			//Select units inside the rectangle
-			for(let i = 0; i < map.player.units.length; i++){
-				let unit = map.player.units[i];
-				if (map.player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
+			for(let i = 0; i < player.units.length; i++){
+				let unit = player.units[i];
+				if (player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
 					unit.select();
 					if (unit.type === 'Villager'){
 						selectVillager = unit;
 					}
-					map.player.selectedUnits.push(unit);
+					player.selectedUnits.push(unit);
 				}
 			}
 			//Set our bottombar
 			if (selectVillager){
-				map.interface.setBottombar(selectVillager);
+				player.interface.setBottombar(selectVillager);
 			}else{
 				//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
-				map.interface.setBottombar(map.player.selectedUnits[0]);
+				player.interface.setBottombar(player.selectedUnits[0]);
 			}
 			//Reset mouse selection
 			mouseRectangle.graph.destroy();
@@ -226,13 +235,11 @@ function create(){
 			}
 			if (mouseBuilding){
 				if (mouseBuilding.isFree){
-					if (map.player.buyBuilding(i, j, mouseBuilding.type, map)){
-						map.interface.removeMouseBuilding();
+					if (player.buyBuilding(i, j, mouseBuilding.type, map)){
+						player.interface.removeMouseBuilding();
 					}
 				}
-				return;
-			}
-			if (map.player.selectedUnits.length){
+			}else if (player.selectedUnits.length){
 				//Pointer animation
 				let pointerSheet = app.loader.resources['50405'].spritesheet;
 				let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
@@ -247,32 +254,31 @@ function create(){
 				pointer.play();
 				app.stage.addChild(pointer);
 				//Send units
-				const minX = Math.min(...map.player.selectedUnits.map(unit => unit.i));
-				const minY = Math.min(...map.player.selectedUnits.map(unit => unit.j));
-				const maxX = Math.max(...map.player.selectedUnits.map(unit => unit.i));
-				const maxY = Math.max(...map.player.selectedUnits.map(unit => unit.j));
+				const minX = Math.min(...player.selectedUnits.map(unit => unit.i));
+				const minY = Math.min(...player.selectedUnits.map(unit => unit.j));
+				const maxX = Math.max(...player.selectedUnits.map(unit => unit.i));
+				const maxY = Math.max(...player.selectedUnits.map(unit => unit.j));
 				const centerX = minX + Math.round((maxX - minX)/2); 
 				const centerY = minY + Math.round((maxY - minY)/2);
-				for(let u = 0; u < map.player.selectedUnits.length; u++){
-					const unit = map.player.selectedUnits[u];
+				for(let u = 0; u < player.selectedUnits.length; u++){
+					const unit = player.selectedUnits[u];
 					const distCenterX = unit.i - centerX;
 					const distCenterY = unit.j - centerY;
 					const finalX = cell.i+distCenterX;
 					const finalY = cell.j+distCenterY;
 					if (map.grid[finalX] && map.grid[finalX][finalY]){
-						map.player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
+						player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
 					}else{
-						map.player.selectedUnits[u].sendTo(cell);
+						player.selectedUnits[u].sendTo(cell);
 					}
 				}
 			}
 		}
 	})
-	let hammertime = new Hammer(gamebox);
-	hammertime.on('swipe', (evt) => {
-		//app.stage.removeChildren();
-	})
 	interactionManager.on('pointermove', (evt) => {
+		if (!player){
+			return;
+		}
 		const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
 		const i = Math.floor(pos[0]);
 		const j = Math.floor(pos[1]);
@@ -321,8 +327,8 @@ function create(){
 			app.stage.addChild(mouseRectangle.graph);
 		}
 		if (mouseRectangle && !mouseBuilding){
-			if (map.player.selectedUnits.length || map.player.selectedBuilding){
-				map.player.unselectAll();
+			if (player.selectedUnits.length || player.selectedBuilding){
+				player.unselectAll();
 			}
 			mouseRectangle.graph.clear();
 			if (mousePos.x > mouseRectangle.x && mousePos.y > mouseRectangle.y){

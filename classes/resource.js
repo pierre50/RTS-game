@@ -27,8 +27,11 @@ class resource extends PIXI.Container{
 		if (this.sprite){
 			//Change mouse icon if mouseover/mouseout events
 			this.sprite.on('mouseover', () => { 
-				if (this.parent.player.selectedUnits.length && this.visible){
-					if (this.parent.player.selectedUnits.some(unit => unit.type === 'Villager')){
+				if (!player){
+					return;
+				}
+				if (player.selectedUnits.length && this.visible){
+					if (player.selectedUnits.some(unit => unit.type === 'Villager')){
 						gamebox.setCursor('hover');
 					}
 				}
@@ -53,8 +56,9 @@ class resource extends PIXI.Container{
 			this.parent.grid[this.i][this.j].has = null;
 			this.parent.grid[this.i][this.j].solid = false;
 			this.parent.removeChild(this);
-			this.destroy();
 		}
+		this.isDestroyed = true;
+		this.destroy({ child: true, texture: true });
 	}
 }
 
@@ -71,6 +75,9 @@ class Tree extends resource{
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
 		sprite.on('pointerup', () => {
+			if (!player){
+				return;
+			}
 			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;
@@ -78,8 +85,8 @@ class Tree extends resource{
 			//Send Villager to cut the tree
 			let hasVillager = false;
 			let dest = this;
-			for(let i = 0; i < map.player.selectedUnits.length; i++){
-				let unit = map.player.selectedUnits[i];
+			for(let i = 0; i < player.selectedUnits.length; i++){
+				let unit = player.selectedUnits[i];
 				if (instanceIsSurroundedBySolid(this)){
 					let newDest = getNewInstanceClosestFreeCellPath(unit, this, this.parent);
 					if (newDest){
@@ -127,14 +134,17 @@ class Berrybush extends resource{
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames['000_240.png'].hitArea);
 		sprite.on('pointerup', () => {
+			if (!player){
+				return;
+			}
 			//If we are placing a building don't permit click
 			if (mouseBuilding){
 				return;
 			}
 			//Send Villager to forage the berry
 			let hasVillager = false;
-			for(let i = 0; i < map.player.selectedUnits.length; i++){
-				let unit = map.player.selectedUnits[i];
+			for(let i = 0; i < player.selectedUnits.length; i++){
+				let unit = player.selectedUnits[i];
 				if (unit.type === 'Villager'){
 					hasVillager = true;
 					unit.sendToBerrybush(this);
