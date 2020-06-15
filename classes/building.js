@@ -33,6 +33,8 @@ class Building extends PIXI.Container {
 			if (rubble){ cell.removeChild(rubble); }
 			cell.has = this;
 			cell.solid = true;
+			player.views[cell.i][cell.j].viewedBy.push(this);
+			cell.removeFog();
 		});
 		
 		if (this.sprite){
@@ -41,11 +43,9 @@ class Building extends PIXI.Container {
 
 		if (this.isBuilt && typeof this.onBuilt === 'function'){
 			this.onBuilt();
-		}
-
-		if (this.player.isPlayed){
 			renderCellOnInstanceSight(this);
 		}
+
 	}
 	updateTexture(action){
 		if (this.life > this.lifeMax){
@@ -53,7 +53,7 @@ class Building extends PIXI.Container {
 		}		
 		const percentage = getPercentage(this.life, this.lifeMax);
 
-		if (percentage <= 0){
+		if (this.life <= 0){
 			this.die();
 		}
 		if (action === 'build' && !this.isBuilt){
@@ -76,6 +76,7 @@ class Building extends PIXI.Container {
 				this.isBuilt = true;
 				if (typeof this.onBuilt === 'function'){
 					this.onBuilt();
+					renderCellOnInstanceSight(this);
 				}
 			}
 		}
@@ -147,8 +148,7 @@ class Building extends PIXI.Container {
 			//Remove from view of others players
 			for (let i = 0; i < this.parent.players.length; i++){
 				let list = this.parent.players[i].foundedEnemyBuildings;
-				let index = list.indexOf(this);
-				list.splice(index, 1);
+				list.splice(list.indexOf(this), 1);
 			}
 			let rubble = new PIXI.Sprite(getTexture(data.images.rubble));
 			rubble.name = 'rubble';
@@ -156,6 +156,7 @@ class Building extends PIXI.Container {
 			this.parent.grid[this.i][this.j].zIndex++;
 			this.parent.removeChild(this);
 		}
+		clearCellOnInstanceSight(this);
 		this.isDestroyed = true;
 		this.destroy({ child: true, texture: true });
 	}
@@ -291,7 +292,7 @@ class TownCenter extends Building {
 		spriteColor.name = 'color';
 		changeSpriteColor(spriteColor, this.player.color);
 
-		this.addChildAt(spriteColor, 0);	
+		this.addChildAt(spriteColor, 0);
 	}
 }
 

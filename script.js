@@ -237,6 +237,9 @@ function create(){
 				if (mouseBuilding.isFree){
 					if (player.buyBuilding(i, j, mouseBuilding.type, map)){
 						player.interface.removeMouseBuilding();
+						if (player.interface.selection){
+							player.interface.setBottombar(player.interface.selection);
+						}
 					}
 				}
 			}else if (player.selectedUnits.length){

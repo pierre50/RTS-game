@@ -272,6 +272,5 @@ class Interface {
         app.stage.removeChild(mouseBuilding);
         mouseBuilding.destroy();
         mouseBuilding = null;
-        this.setBottombar(this.selection);
     }
 }

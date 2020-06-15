@@ -6,8 +6,8 @@ class Player{
 		this.j = j;
 		this.civ = civ;
 		this.age = age;
-		this.wood = 200;
-		this.food = 200;
+		this.wood = 2000;
+		this.food = 2000;
 		this.stone = 150;
 		this.gold = 0;
 		this.type = type;
@@ -176,7 +176,8 @@ class AI extends Player{
 		const villagersOnWood = villagers.filter(villager => !villager.inactif && villager.work === 'woodcutter');
 		const villagersOnFood = villagers.filter(villager => !villager.inactif && (villager.work === 'gatherer'));
 		const inactifVillagers = villagers.filter(villager => villager.inactif && villager.action !== 'attack');
-		const inactifClubmans = clubmans.filter(clubman => clubman.inactif && clubman.action !== 'attack');
+		const inactifClubmans = clubmans.filter(clubman => clubman.inactif && clubman.action !== 'attack' && clubman.assault);
+		const waitingClubmans = clubmans.filter(clubman => clubman.inactif && clubman.action !== 'attack' && !clubman.assault);
 		const maxVillagersOnWood = getValuePercentage(villagers.length, 30);
 		const maxVillagersOnFood = getValuePercentage(villagers.length, 70);
 
@@ -244,7 +245,7 @@ class AI extends Player{
 				if (builderVillagers.length >= maxVillagersOnConstruction){
 					break;
 				}
-				const noWorkers = villagers.filter(villager => villager.work !== 'builder' || villager.inactif);
+				const noWorkers = villagers.filter(villager => (villager.action !== 'attack' && villager.work !== 'builder') || villager.inactif);
 				let villager = getClosestInstance(notBuiltBuildings[i], noWorkers);
 				if (villager){
 					villager.sendToBuilding(notBuiltBuildings[i]);
@@ -252,7 +253,7 @@ class AI extends Player{
 			}
 		}
 		//Send clubman to attack
-		if (inactifClubmans.length >= howManySoldiersBeforeAttack){
+		if (waitingClubmans.length >= howManySoldiersBeforeAttack){
 			if (!this.foundedEnemyBuildings.length){
 				let targetIndex = randomRange(0, this.otherPlayers().length - 1);
 				let target = this.otherPlayers()[targetIndex];
@@ -260,17 +261,28 @@ class AI extends Player{
 				let j = target.j + randomRange(-5, 5);
 				if (this.parent.grid[i] && this.parent.grid[i][j]){
 					let cell = this.parent.grid[i][j];
-					for (let i = 0; i < clubmans.length; i++){
-						clubmans[i].sendTo(cell, 'attack');
+					for (let i = 0; i < waitingClubmans.length; i++){
+						waitingClubmans[i].assault = true;
+						waitingClubmans[i].sendTo(cell, 'attack');
 					}
 				}
 			}else{
-				for (let i = 0; i < clubmans.length; i++){
-					clubmans[i].sendTo(this.foundedEnemyBuildings[0], 'attack');
+				for (let i = 0; i < waitingClubmans.length; i++){
+					waitingClubmans[i].sendTo(this.foundedEnemyBuildings[0], 'attack');
 				}
 			}
 		}
-
+		if (inactifClubmans.length){
+			if (!this.foundedEnemyBuildings.length){
+				for (let i = 0; i < inactifClubmans.length; i++){
+					inactifClubmans[i].explore();
+				}
+			}else{
+				for (let i = 0; i < inactifClubmans.length; i++){
+					inactifClubmans[i].sendTo(this.foundedEnemyBuildings[0], 'attack');
+				}
+			}
+		}
 		/**
 		 * Units buying
 		 */
@@ -408,6 +420,7 @@ class Human extends Player{
 			this.selectedUnits[i].unselect();
 		}
 		this.selectedUnits = [];
+		this.interface.setBottombar();
 	}
 	unselectAll(){
 		if (this.selectedBuilding){
@@ -415,5 +428,6 @@ class Human extends Player{
 			this.selectedBuilding = null;
 		}
 		this.unselectAllUnits();
+		this.interface.setBottombar();
 	}
 }

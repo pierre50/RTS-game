@@ -44,7 +44,7 @@ class Unit extends PIXI.Container {
 		sprite.name = 'sprite';
 		changeSpriteColor(sprite, player.color);
 
-		this.interval = setInterval(() => this.step(), 10);
+		this.interval = setInterval(() => this.step(), 3);
 		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.stop();
@@ -133,13 +133,13 @@ class Unit extends PIXI.Container {
 		if (!this.action){
 			return;
 		}
-		let conditions = {
-			'chopwood': (instance) => instance && instance.type === 'Tree' && instance.quantity > 0,
-			'forageberry': (instance) => instance && instance.type === 'Berrybush' && instance.quantity > 0,
-			'build': (instance) => instance && instance.player === this.player && instance.name === 'building' && instance.life > 0 && (!instance.isBuilt || instance.life < instance.lifeMax),
-			'attack': (instance) => instance && instance.player !== this.player && (instance.name === 'building' || instance.name === 'unit') && instance.life > 0
+		const conditions = {
+			'chopwood': (instance) => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
+			'forageberry': (instance) => instance && instance.type === 'Berrybush' && instance.quantity > 0 && !instance.isDestroyed,
+			'build': (instance) => instance && instance.player === this.player && instance.name === 'building' && instance.life > 0 && (!instance.isBuilt || instance.life < instance.lifeMax) && !instance.isDestroyed,
+			'attack': (instance) => instance && instance.player !== this.player && (instance.name === 'building' || instance.name === 'unit') && instance.life > 0 && !instance.isDestroyed
 		}
-		return conditions[this.action](target);
+		return conditions[this.action] ? conditions[this.action](target) : this.stop();
 	}
 	getAction(name){
 		let sprite = this.getChildByName('sprite');
@@ -367,9 +367,7 @@ class Unit extends PIXI.Container {
 		this.zIndex = getInstanceZIndex(this); 
 
 		if (instancesDistance(this, nextCell, false) < 10){
-			if (this.player.isPlayed){
-				clearCellOnInstanceSight(this);
-			}
+			clearCellOnInstanceSight(this);
 
 			this.z = nextCell.z;
 			this.i = nextCell.i;
@@ -424,7 +422,7 @@ class Unit extends PIXI.Container {
 	isAttacked(instance){
 		//this.runaway();
 		//return;
-		if (!instance || this.dest.name === 'unit' && this.action === 'attack'){
+		if (!instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')){
 			return;
 		}
 		if (this.type === 'Villager'){
@@ -523,6 +521,7 @@ class Unit extends PIXI.Container {
 
 				this.parent.removeChild(this);
 			}
+			clearCellOnInstanceSight(this);
 			this.isDestroyed = true;
 			this.destroy({ child: true, texture: true });
 			clearInterval(this.interval);

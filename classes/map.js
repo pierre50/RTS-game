@@ -34,8 +34,8 @@ class Map extends PIXI.Container{
         this.players = [
             new Human(playersPos[0].i, playersPos[0].j, this, 'StoneAge', 'Greek', 'green', true),
             new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
-            new AI(playersPos[2].i, playersPos[2].j, this, 'StoneAge', 'Greek', 'yellow'),
-            new AI(playersPos[3].i, playersPos[3].j, this, 'StoneAge', 'Greek', 'brown'),
+            //new AI(playersPos[2].i, playersPos[2].j, this, 'StoneAge', 'Greek', 'yellow'),
+            //new AI(playersPos[3].i, playersPos[3].j, this, 'StoneAge', 'Greek', 'brown'),
         ]
 
         this.generateMapRelief();
@@ -47,11 +47,11 @@ class Map extends PIXI.Container{
 
         this.generateSets();
 
-        /*for(let i = 0; i <= this.size; i++){
+        for(let i = 0; i <= this.size; i++){
             for(let j = 0; j <= this.size; j++){
 				this.grid[i][j].setFog();
             }
-        }*/
+        }
         
         //Place a town center
         for (let i = 0; i < this.players.length; i++){

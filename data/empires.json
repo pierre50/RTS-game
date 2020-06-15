@@ -84,7 +84,8 @@
             "lifeMax": 25,
 			"sight": 4,
             "speed": 1.1,
-            "trainingTime": 20,
+            "_trainingTime": 20,
+            "trainingTime": 1,
             "icon": "000_50730",
             "attack": 3,
             "cost": {
@@ -95,7 +96,8 @@
             "lifeMax": 40,
 			"sight": 4,
             "speed": 1.2,
-            "trainingTime": 26,
+            "_trainingTime": 26,
+            "trainingTime": 1,
             "icon": "002_50730",
             "attack": 3,
             "cost": {
