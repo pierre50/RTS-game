@@ -187,7 +187,7 @@ function create(){
 	})
 
 	//Set-up global interactions
-	const interactionManager = new PIXI.interaction.InteractionManager(app.renderer);
+	const interactionManager = new PIXI.InteractionManager(app.renderer);
 	interactionManager.on('pointerdown', (evt) => {
 		pointerStart = {
 			x: evt.data.global.x,

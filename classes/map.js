@@ -34,9 +34,7 @@ class Map extends PIXI.Container{
         this.players = [
             new Human(playersPos[0].i, playersPos[0].j, this, 'StoneAge', 'Greek', 'green', true),
             new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
-            //new AI(playersPos[2].i, playersPos[2].j, this, 'StoneAge', 'Greek', 'yellow'),
-            //new AI(playersPos[3].i, playersPos[3].j, this, 'StoneAge', 'Greek', 'brown'),
-        ]
+       ]
 
         this.generateMapRelief();
         this.formatCellsRelief();
@@ -497,11 +495,11 @@ class Map extends PIXI.Container{
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
             cell.visible = true;
             if (cell.has){
-                //if (!cell.has.player || cell.has.player.isPlayed
-                //    || instanceIsInPlayerSight(cell.has, player) 
-                //    || (cell.has.name === 'building' && player.views[cell.i][cell.j].viewed)){
+                if (!cell.has.player || cell.has.player.isPlayed
+                    || instanceIsInPlayerSight(cell.has, player) 
+                    || (cell.has.name === 'building' && player.views[cell.i][cell.j].viewed)){
                     cell.has.visible = true;
-                //}
+                }
             }
         })
     }

@@ -17,7 +17,8 @@ class Cell extends PIXI.Container{
         this.border = false;
         this.has = null;
         this.visible = false;
-
+        this.viewed = false;
+        this.viewedBy = [];
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
         })
@@ -158,6 +159,9 @@ class Cell extends PIXI.Container{
             }
         }
         if (this.has){
+            if (this.has.name === 'unit' && !this.has.player.isPlayed){
+                this.has.visible = false;
+            }
             for (let i = 0; i < this.has.children.length; i++){
                 if (this.has.children[i].tint){
                     this.has.children[i].tint = color;
@@ -175,6 +179,7 @@ class Cell extends PIXI.Container{
             }
         }
         if (this.has){
+            this.has.visible = true;
             for (let i = 0; i < this.has.children.length; i++){
                 if (this.has.children[i].tint){
                     this.has.children[i].tint = colorWhite;

@@ -44,7 +44,7 @@ class Unit extends PIXI.Container {
 		sprite.name = 'sprite';
 		changeSpriteColor(sprite, player.color);
 
-		this.interval = setInterval(() => this.step(), 3);
+		this.interval = setInterval(() => this.step(), 30);
 		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.stop();
@@ -385,23 +385,20 @@ class Unit extends PIXI.Container {
 	
 			renderCellOnInstanceSight(this);
 			this.path.pop();
-			
-			if (instanceContactInstance(this, this.dest)){
-				if (this.action){
-					this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
-					this.getAction(this.action);
-					return;
-				}else{
-					this.stop();
-					return;
-				}
-			}
-			//Destination moved
-			if (this.dest.i !== this.realDest.i && this.dest.j !== this.realDest.j){
+            
+            //Destination moved
+			if (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j){
 				if (this.player.views[this.dest.i][this.dest.j].viewedBy.length > 1){
-					this.sendTo(this.dest, this.action);
+                    this.sendTo(this.dest, this.action);
+                    return;
 				}
 			}
+			if (this.action && instanceContactInstance(this, this.dest)){
+                this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
+                this.getAction(this.action);
+                return;
+			}
+			
 			if (!this.path.length){
 				this.stop();
 			}			

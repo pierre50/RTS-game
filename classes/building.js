@@ -33,8 +33,10 @@ class Building extends PIXI.Container {
 			if (rubble){ cell.removeChild(rubble); }
 			cell.has = this;
 			cell.solid = true;
-			player.views[cell.i][cell.j].viewedBy.push(this);
-			cell.removeFog();
+            player.views[cell.i][cell.j].viewedBy.push(this);
+            if (player.isPlayed){
+                cell.removeFog();
+            }
 		});
 		
 		if (this.sprite){
