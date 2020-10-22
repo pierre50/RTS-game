@@ -26,7 +26,7 @@ class Unit extends PIXI.Container {
 		this.maxLoading = 10;
 		this.currentSheet = null;
 		this.size = 1;
-		this.visible = true;
+		this.visible = false;
 		this.currentCell = this.parent.grid[this.i][this.j];
 		this.currentCell.has = this;
 		this.currentCell.solid = true;
@@ -44,7 +44,7 @@ class Unit extends PIXI.Container {
 		sprite.name = 'sprite';
 		changeSpriteColor(sprite, player.color);
 
-		this.interval = setInterval(() => this.step(), 30);
+		this.interval = setInterval(() => this.step(), 15);
 		sprite.updateAnchor = true;
 		this.addChild(sprite);
 		this.stop();
@@ -500,6 +500,8 @@ class Unit extends PIXI.Container {
 		}
 		sprite.onLoop = () => {
 			if (this.parent){
+                this.player.population--;
+                
 				this.parent.grid[this.i][this.j].has = null;
 				this.parent.grid[this.i][this.j].solid = false;
 	

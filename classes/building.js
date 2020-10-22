@@ -15,7 +15,7 @@ class Building extends PIXI.Container {
 		this.selected = false;
 		this.queue = [];
 		this.loading = null;
-		this.visible = true;
+		this.visible = false;
 
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
@@ -172,7 +172,10 @@ class Building extends PIXI.Container {
 		selection.zIndex = 3;
 		selection.lineStyle(1, 0xffffff);
 		const path = [(-32*this.size), 0, 0,(-16*this.size), (32*this.size),0, 0,(16*this.size)];
-		selection.drawPolygon(path);
+        selection.drawPolygon(path);
+        if (this.loading){
+            this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+        }
 		this.addChildAt(selection, 0);
 	}
 	unselect(){
@@ -193,55 +196,61 @@ class Building extends PIXI.Container {
 			}
 		}
 	}
-	buyUnit(type){
+	buyUnit(type, alreadyPaid = false){
 		const unit = empires.units[type];
-		if (this.isBuilt && canAfford(this.player, unit.cost)){	
-			if (this.loading === null){
-				let timesRun = 0;
-				if (this.selected){
-					this.player.interface.updateInfo('loading', (element) => element.textContent = '0%');
-				}
-				if (this.player.population + 1 > this.player.populationMax ){
-					return true;
-				}
-				this.loading = 0;
-				let interval = setInterval(() => {
-					//Building is dead while buying unit
-					if (!this.parent){
-						refundCost(this.player, unit.cost);
-						clearInterval(interval);
-						return;
-					}
-					timesRun += 1;
-					this.loading = timesRun;
-					if(timesRun === 100){
-						payCost(this.player, unit.cost);
-						if (this.player.isPlayed){
-							this.player.interface.updateTopbar();
-						}
-						this.placeUnit(type)
-						this.loading = null;
-						this.queue.shift();
-						if (this.queue.length){
-							this.buyUnit(this.queue[0]);
-						}
-						clearInterval(interval);
-						if (this.selected && this.player.isPlayed){
-							this.player.interface.updateButton(type,  (element) => element.textContent = this.queue.length);
-							if (!this.queue.length){
-								this.player.interface.updateInfo('loading',  (element) => element.textContent = '');
-							}
-						}
-						return;
-					}
-					if (this.selected && this.player.isPlayed){
-						this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
-					}
-				}, (unit.trainingTime * 1000) / 100);
-			}
-			return true;
+		if (this.isBuilt && (canAfford(this.player, unit.cost) || alreadyPaid)){
+            if (!alreadyPaid){
+                if (this.player.type === 'AI' && this.loading === null){
+                    payCost(this.player, unit.cost);
+                } else {
+                    payCost(this.player, unit.cost);
+                    this.queue.push(type);
+                    if (this.selected && this.player.isPlayed){
+                        this.player.interface.updateButton(type, (element) => element.textContent = this.queue.length);
+                    }
+                }
+                if (this.player.isPlayed){
+                    this.player.interface.updateTopbar();
+                }
+            }
+            if (this.loading === null){
+                let timesRun = 0;
+                this.loading = 0;
+                if (this.selected && this.player.isPlayed){
+                    this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+                }
+                let interval = setInterval(() => {
+                    //Building is dead while buying unit
+                    if (!this.parent){
+                        clearInterval(interval);
+                        return;
+                    }
+                    if (this.loading === 0 && this.player.population >= this.player.populationMax){
+                        this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+                        return;
+                    }
+                    if (timesRun < 100){
+                        timesRun += 1;
+                        this.loading = timesRun;
+                    }
+                    if (timesRun === 100 && this.player.population < this.player.populationMax){
+                        this.placeUnit(type)
+                        this.loading = null;
+                        this.queue.shift();
+                        if (this.queue.length){
+                            this.buyUnit(this.queue[0], true);
+                        }
+                        clearInterval(interval);
+                        if (this.selected && this.player.isPlayed){
+                            this.player.interface.updateButton(type, (element) => element.textContent = this.queue.length);
+                            this.player.interface.updateInfo('loading', (element) => element.textContent = '');
+                        }
+                    }else if (this.selected && this.player.isPlayed){
+                        this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
+                    }
+                }, (unit.trainingTime * 1000) / 100);
+            }
 		}
-		return false;
 	}
 }
 
@@ -271,7 +280,6 @@ class TownCenter extends Building {
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 			
-					
 					let loading = document.createElement('div');
 					loading.id = 'loading';
 					loading.textContent = this.loading ? this.loading + '%': '';

@@ -6,8 +6,8 @@ class Player{
 		this.j = j;
 		this.civ = civ;
 		this.age = age;
-		this.wood = 2000;
-		this.food = 2000;
+		this.wood = 200;
+		this.food = 200;
 		this.stone = 150;
 		this.gold = 0;
 		this.type = type;
@@ -126,10 +126,7 @@ class AI extends Player{
 		let building = this.createBuilding(...args);
 		let sprite = building.getChildByName('sprite');
 		sprite.on('mouseover', () => {
-			if (!player){
-				return;
-			}
-			if (player.selectedUnits.length && building.visible){
+			if (player && player.selectedUnits.length && building.visible){
 				gamebox.setCursor('attack');
 			}
 		})

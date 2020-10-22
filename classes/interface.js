@@ -229,10 +229,7 @@ class Interface {
                 element.appendChild(counter);
             },
             onClick: (selection, evt) => {
-                if (selection.buyUnit(type, evt)){
-                    selection.queue.push(type);
-                    this.updateButton(type, (element) => element.textContent = selection.queue.length);
-                }
+                selection.buyUnit(type);
             }
         }
     }

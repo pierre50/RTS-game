@@ -17,8 +17,8 @@ const maxSelectUnits = 25;
 
 //Map default values
 const mapDefaultSize = 200;
-const mapDefaultReliefRange = [1, 2];
-const mapDefaultChanceOfRelief = 0;
+const mapDefaultReliefRange = [1, 3];
+const mapDefaultChanceOfRelief = .001;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -39,6 +39,11 @@ const colorShipgrey = 0x3c3b3d;
 //Game variables
 let app;
 let map;
+let mouse = {
+    x: 0,
+    y: 0,
+    out: false
+};
 let mouseRectangle;
 let mouseBuilding;
 let pointerStart;
@@ -80,8 +85,8 @@ function preload(){
 	}
 	gamebox.setCursor('default');
 	gamebox.style.background = 'black';
-	gamebox.addEventListener('contextmenu', (e) => {
-		e.preventDefault();
+	gamebox.addEventListener('contextmenu', (evt) => {
+		evt.preventDefault();
 	});
 
 	//Preload assets
@@ -177,17 +182,30 @@ function create(){
 
 	//Init map
 	empires = app.loader.resources['empires'].data;
-
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
 
 	//Mobile interaction TODO
-	let hammertime = new Hammer(gamebox);
+	const hammertime = new Hammer(gamebox);
 	hammertime.on('swipe', (evt) => {
 	})
 
-	//Set-up global interactions
-	const interactionManager = new PIXI.InteractionManager(app.renderer);
+    //Set-up global interactions
+    const interactionManager = new PIXI.InteractionManager(app.renderer);
+    document.addEventListener('onload', (evt) => {
+        mouse.x = evt.pageX;
+        mouse.y = evt.pageY;    
+    })
+    document.addEventListener('mouseleave', (evt) => {
+        mouse.x = evt.pageX;
+        mouse.y = evt.pageY;
+        mouse.out = true;
+    })
+    document.addEventListener('mouseenter', (evt) => {
+        mouse.x = evt.pageX;
+        mouse.y = evt.pageY;        
+        mouse.out = false;
+    })
 	interactionManager.on('pointerdown', (evt) => {
 		pointerStart = {
 			x: evt.data.global.x,
@@ -277,8 +295,10 @@ function create(){
 				}
 			}
 		}
-	})
+    })
 	interactionManager.on('pointermove', (evt) => {
+        mouse.x = evt.data.global.x;
+        mouse.y = evt.data.global.y;
 		if (!player){
 			return;
 		}
@@ -318,11 +338,10 @@ function create(){
 		}
 		
 		//Create and draw mouse selection
-		const mousePos = evt.data.global;
-		if (!mouseRectangle && pointerStart && pointsDistance(mousePos.x, mousePos.y, pointerStart.x, pointerStart.y) > 5){
+		if (!mouseRectangle && pointerStart && pointsDistance(mouse.x, mouse.y, pointerStart.x, pointerStart.y) > 5){
 			mouseRectangle = {
-				x: evt.data.global.x,
-				y: evt.data.global.y,
+				x: mouse.x,
+				y: mouse.y,
 				width: 0,
 				height: 0,
 				graph: new PIXI.Graphics()
@@ -334,9 +353,9 @@ function create(){
 				player.unselectAll();
 			}
 			mouseRectangle.graph.clear();
-			if (mousePos.x > mouseRectangle.x && mousePos.y > mouseRectangle.y){
-				mouseRectangle.width = Math.round(mousePos.x - mouseRectangle.x);
-				mouseRectangle.height = Math.round(mousePos.y - mouseRectangle.y);
+			if (mouse.x > mouseRectangle.x && mouse.y > mouseRectangle.y){
+				mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
+				mouseRectangle.height = Math.round(mouse.y - mouseRectangle.y);
 				mouseRectangle.graph.lineStyle(1, colorWhite, 1);
 				mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
 			}
@@ -345,7 +364,6 @@ function create(){
 	//Start main loop
 	app.ticker.add(step);
 }
-
 
 function step(){
 	if (map){
