@@ -75,11 +75,14 @@ class Building extends PIXI.Container {
 				sprite.texture = buildSpritesheet.textures[textureName];
 			}
 			if (percentage >= 100){
-				this.isBuilt = true;
+                this.isBuilt = true;
+                if (this.player && this.player.isPlayed && this.selected){
+                    this.player.interface.setBottombar(this);
+                }
 				if (typeof this.onBuilt === 'function'){
 					this.onBuilt();
-					renderCellOnInstanceSight(this);
-				}
+                }
+                renderCellOnInstanceSight(this);
 			}
 		}
 		if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)){
@@ -192,7 +195,7 @@ class Building extends PIXI.Container {
 
 		if (this.player.selectedBuilding){
 			if (this.player.selectedBuilding.selected && this.player.selectedBuilding.type === 'House'){
-				this.player.selectedBuilding.player.interface.updateInfoupdateInfo('population', (element) => element.textContent = this.player.population + '/' + this.player.populationMax);
+				this.player.selectedBuilding.player.interface.updateInfo('population', (element) => element.textContent = this.player.population + '/' + this.player.populationMax);
 			}
 		}
 	}
@@ -225,16 +228,12 @@ class Building extends PIXI.Container {
                         clearInterval(interval);
                         return;
                     }
-                    if (this.loading === 0 && this.player.population >= this.player.populationMax){
-                        this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
-                        return;
-                    }
-                    if (timesRun < 100){
+                    if (timesRun < 100 && this.player.population < this.player.populationMax){
                         timesRun += 1;
                         this.loading = timesRun;
                     }
-                    if (timesRun === 100 && this.player.population < this.player.populationMax){
-                        this.placeUnit(type)
+                    if (timesRun === 100){
+                        this.placeUnit(type);
                         this.loading = null;
                         this.queue.shift();
                         if (this.queue.length){
@@ -242,7 +241,7 @@ class Building extends PIXI.Container {
                         }
                         clearInterval(interval);
                         if (this.selected && this.player.isPlayed){
-                            this.player.interface.updateButton(type, (element) => element.textContent = this.queue.length);
+                            this.player.interface.updateButton(type, (element) => element.textContent = this.queue.length || '');
                             this.player.interface.updateInfo('loading', (element) => element.textContent = '');
                         }
                     }else if (this.selected && this.player.isPlayed){
@@ -273,22 +272,24 @@ class TownCenter extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
-			
-					let loading = document.createElement('div');
-					loading.id = 'loading';
-					loading.textContent = this.loading ? this.loading + '%': '';
-					element.appendChild(loading);
+            
+                    if (player.isPlayed){
+                        let loading = document.createElement('div');
+                        loading.id = 'loading';
+                        loading.textContent = this.loading ? this.loading + '%': '';
+                        element.appendChild(loading);
+                    }
 				},
-				menu: [
+				menu: player.isPlayed ? [
 					player.interface.getUnitButton('Villager')
-				]
-			} : null
+				]: []
+			}
 		});
 	}
 	onBuilt(){
@@ -325,22 +326,24 @@ class Barracks extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
-					element.appendChild(img);
-			
-					let loading = document.createElement('div');
-					loading.id = 'loading';
-					loading.textContent = this.loading ? this.loading + '%': '';
-					element.appendChild(loading);
+                    element.appendChild(img);
+                    
+                    if (player.isPlayed){
+                        let loading = document.createElement('div');
+                        loading.id = 'loading';
+                        loading.textContent = this.loading ? this.loading + '%': '';
+                        element.appendChild(loading);
+                    }
 				},
-				menu: [
+				menu: player.isPlayed ? [
 					player.interface.getUnitButton('Clubman')
-				]
-			} : null
+				]: []
+			}
 		});
 	}
 	onBuilt(){
@@ -372,19 +375,23 @@ class House extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 
-					let population = document.createElement('div');
-					population.id = 'population';
-					population.textContent = player.population + '/' + player.populationMax;
-					element.appendChild(population);
+                    if (player.isPlayed){
+                        if (this.isBuilt){
+                            let population = document.createElement('div');
+                            population.id = 'population';
+                            population.textContent = player.population + '/' + player.populationMax;
+                            element.appendChild(population);
+                        }
+                    }
 				}
-			} : null
+			}
 		});
 	}
 	onBuilt(){
@@ -447,14 +454,14 @@ class Granary extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				}
-			} : null
+			}
 		});
 	}
 	onBuilt(){
@@ -490,14 +497,14 @@ class StoragePit extends Building {
 			sight: data.sight,
 			isBuilt,
 			lifeMax: data.lifeMax,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				}
-			} : null
+			}
 		});
 	}
 	onBuilt(){

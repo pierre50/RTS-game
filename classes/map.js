@@ -408,7 +408,7 @@ class Map extends PIXI.Container{
         if (mouse.out){
             return;
         }
-        const moveSpeed = 10;
+        let moveSpeed;
         const moveDist = 20;
         const A = { x:(cellWidth/2)-this.camera.x,  y:-this.camera.y };
         const B = { x:(cellWidth/2-(this.size * cellWidth)/2)-this.camera.x, y:((this.size * cellHeight)/2)-this.camera.y };
@@ -417,6 +417,7 @@ class Map extends PIXI.Container{
         const cameraCenter = { x:((this.camera.x) + appWidth / 2)-this.camera.x, y:((this.camera.y) + appHeight / 2)-this.camera.y }
         //Left 
         if (mouse.x >= appLeft && mouse.x <= appLeft + moveDist && mouse.y >= appTop && mouse.y <= appHeight){
+            moveSpeed = ((appLeft + moveDist) - mouse.x) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
@@ -430,6 +431,7 @@ class Map extends PIXI.Container{
             this.displayInstancesOnScreen();
         }else //Right
         if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouse.y >= appTop && mouse.y <= appHeight){
+            moveSpeed = (mouse.x - (appWidth - moveDist)) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A,D,cameraCenter,50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
@@ -444,6 +446,7 @@ class Map extends PIXI.Container{
         }
         //Top
         if (mouse.x >= appLeft && mouse.x <= appWidth && mouse.y >= appTop && mouse.y <= appTop + moveDist){
+            moveSpeed = ((appTop + moveDist) - mouse.y) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y -= moveSpeed/(cellWidth/cellHeight);		
@@ -457,6 +460,7 @@ class Map extends PIXI.Container{
             this.displayInstancesOnScreen();
         }else //Bottom
         if (mouse.x >= appLeft && mouse.x <= appWidth && mouse.y > appHeight - moveDist && mouse.y <= appHeight){
+            moveSpeed = (mouse.y - (appHeight - moveDist)) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		

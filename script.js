@@ -18,7 +18,7 @@ const maxSelectUnits = 25;
 //Map default values
 const mapDefaultSize = 200;
 const mapDefaultReliefRange = [1, 3];
-const mapDefaultChanceOfRelief = .001;
+const mapDefaultChanceOfRelief = 0;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -219,7 +219,8 @@ function create(){
 		}
 		//Select units on mouse rectangle
 		if (mouseRectangle){
-			let selectVillager;
+            let selectVillager;
+            player.unselectAll();
 			//Select units inside the rectangle
 			for(let i = 0; i < player.units.length; i++){
 				let unit = player.units[i];

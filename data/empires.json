@@ -102,5 +102,16 @@
                 "food": 50
             }
         }
+    },
+    "resources": {
+        "Berrybush": {
+            "quantity": 200,
+            "icon": "036_50730"
+        },
+        "Tree": {
+            "quantity": 300,
+            "life": 25,
+            "icon": "035_50730"
+        }
     }
 }

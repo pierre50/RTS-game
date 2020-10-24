@@ -12,7 +12,7 @@ class resource extends PIXI.Container{
 		this.z = this.parent.grid[i][j].z;
 		this.zIndex = getInstanceZIndex(this);
 		this.parent.grid[i][j].has = this;
-
+        this.selected = false;
 		this.visible = false;
 
 		Object.keys(options).forEach((prop) => {
@@ -27,10 +27,7 @@ class resource extends PIXI.Container{
 		if (this.sprite){
 			//Change mouse icon if mouseover/mouseout events
 			this.sprite.on('mouseover', () => { 
-				if (!player){
-					return;
-				}
-				if (player.selectedUnits.length && this.visible){
+				if (player && player.selectedUnits.length && this.visible){
 					if (player.selectedUnits.some(unit => unit.type === 'Villager')){
 						gamebox.setCursor('hover');
 					}
@@ -38,8 +35,36 @@ class resource extends PIXI.Container{
 			})
 			this.sprite.on('mouseout', () => {
 				gamebox.setCursor('default');
-			})
+            })
+            this.sprite.on('pointertap', () => {
+                if (!player.selectedUnits.length){
+                    player.unselectAll();
+                    this.select();
+                    player.interface.setBottombar(this);
+                    player.selectedResource = this;
+                }
+            });
 			this.addChild(this.sprite);
+        }
+    }
+    select(){
+        if (this.selected){
+			return;
+		}
+		this.selected = true;
+		let selection = new PIXI.Graphics();
+		selection.name = 'selection';
+		selection.zIndex = 3;
+		selection.lineStyle(1, 0xffffff);
+		const path = [(-32*this.size), 0, 0,(-16*this.size), (32*this.size),0, 0,(16*this.size)];
+        selection.drawPolygon(path);
+		this.addChildAt(selection, 0);
+    }
+    unselect(){
+		this.selected = false;
+		let selection = this.getChildByName('selection');
+		if (selection){
+			this.removeChild(selection);
 		}
 	}
 	die(){
@@ -64,6 +89,8 @@ class resource extends PIXI.Container{
 
 class Tree extends resource{
 	constructor(i, j, map, textureNames){
+		const data = empires.resources['Tree'];
+
 		//Define sprite
 		const randomSpritesheet = randomItem(textureNames);
 		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
@@ -109,8 +136,16 @@ class Tree extends resource{
 			type: 'Tree',
 			sprite: sprite,
 			size: 1,
-			quantity: 300,
-			life: 25,
+			quantity: data.quantity,
+            life: data.life,
+            interface: {
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				}
+			}
 		});
 	}
 	onDie(){
@@ -125,6 +160,8 @@ class Tree extends resource{
 
 class Berrybush extends resource{
 	constructor(i, j, map){
+		const data = empires.resources['Berrybush'];
+
 		//Define sprite
 		const spritesheet = app.loader.resources['240'].spritesheet;
 		const texture = spritesheet.textures['000_240.png'];
@@ -161,7 +198,15 @@ class Berrybush extends resource{
 			type: 'Berrybush',
 			sprite: sprite,
 			size: 1,
-			quantity: 200,
+            quantity: data.quantity,
+            interface: {
+				info: (element) => {
+					let img = document.createElement('img');
+					img.id = 'icon';
+					img.src = getIconPath(data.icon);
+					element.appendChild(img);
+				}
+			}
 		});
 	}
 }

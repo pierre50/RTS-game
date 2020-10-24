@@ -336,11 +336,12 @@ class Human extends Player{
 	constructor(i, j, map, age, civ, color, isPlayed){
 		super(i, j, map, age, civ, color, 'Human', isPlayed);
 		this.selectedUnits = [];
-		this.selectedBuilding = null;
+        this.selectedBuilding = null;
+        this.selectedResource = null;
 	}
 	spawnUnit(...args){
 		let unit = this.createUnit(...args);
-		unit.on('pointertap', (evt) => {
+		unit.on('pointertap', () => {
 			//If we are placing a building don't permit click
 			if (mouseBuilding || mouseRectangle){
 				return;
@@ -363,7 +364,7 @@ class Human extends Player{
 			}
 		}
 
-		building.getChildByName('sprite').on('pointertap', (evt) => {
+		building.getChildByName('sprite').on('pointertap', () => {
 			//If we are placing a building don't permit click
 			if (mouseBuilding || mouseRectangle){
 				return;
@@ -377,11 +378,8 @@ class Human extends Player{
 						unit.sendToBuilding(building);
 					}
 				}
-				return;
-			}
-
-			//Send Villager to give loading of resources
-			if (this.selectedUnits){
+			}else if (this.selectedUnits){
+			    //Send Villager to give loading of resources
 				let hasVillagerLoaded = false;
 				for (let i = 0; i < this.selectedUnits.length; i++){
 					let unit = this.selectedUnits[i];
@@ -423,7 +421,11 @@ class Human extends Player{
 		if (this.selectedBuilding){
 			this.selectedBuilding.unselect();
 			this.selectedBuilding = null;
-		}
+        }
+        if (this.selectedResource){
+            this.selectedResource.unselect();
+            this.selectedResource = null;
+        }
 		this.unselectAllUnits();
 		this.interface.setBottombar();
 	}

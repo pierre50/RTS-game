@@ -158,6 +158,12 @@ class Interface {
         }
         if (selection && selection.interface){
             this.generateInfo(selection);
+            if (selection.name === 'building'){
+                if (!selection.isBuilt){
+                    setMenuRecurs(selection, this.bottombarMenu, []);
+                    return;
+                }
+            }
             setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || []);
         }
         function setMenuRecurs(selection, element, menu, parent){
@@ -221,9 +227,10 @@ class Interface {
                 img.src = getIconPath(unit.icon);
                 Object.assign(img.style, this.style.img);
 
+                const queue = selection.queue.filter(queue => queue === type).length;
                 let counter = document.createElement('div');
                 counter.id = 'content';
-                counter.textContent = selection.queue.filter(queue => queue = type).length;
+                counter.textContent = queue || '';
                 counter.style.position = 'absolute';
                 element.appendChild(img);
                 element.appendChild(counter);
