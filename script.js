@@ -283,16 +283,16 @@ function create(){
 				const centerX = minX + Math.round((maxX - minX)/2); 
 				const centerY = minY + Math.round((maxY - minY)/2);
 				for(let u = 0; u < player.selectedUnits.length; u++){
-					const unit = player.selectedUnits[u];
-					const distCenterX = unit.i - centerX;
-					const distCenterY = unit.j - centerY;
-					const finalX = cell.i+distCenterX;
-					const finalY = cell.j+distCenterY;
-					if (map.grid[finalX] && map.grid[finalX][finalY]){
-						player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
-					}else{
-						player.selectedUnits[u].sendTo(cell);
-					}
+                    const unit = player.selectedUnits[u];
+                    const distCenterX = unit.i - centerX;
+                    const distCenterY = unit.j - centerY;
+                    const finalX = cell.i+distCenterX;
+                    const finalY = cell.j+distCenterY;
+                    if (map.grid[finalX] && map.grid[finalX][finalY]){
+                        player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
+                    }else{
+                        player.selectedUnits[u].sendTo(cell);
+                    }
 				}
 			}
 		}

@@ -590,14 +590,14 @@ class Villager extends Unit {
 			standingSheet: app.loader.resources['418'].spritesheet,
 			walkingSheet: app.loader.resources['657'].spritesheet,
 			dyingSheet: app.loader.resources['314'].spritesheet,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				},
-				menu: [
+				menu: player.isPlayed ? [
 					{
 						icon: 'data/interface/50721/002_50721.png',
 						children : [
@@ -607,8 +607,8 @@ class Villager extends Unit {
 							player.interface.getBuildingButton('StoragePit'),
 						]
 					},
-				]
-			} : null
+				] : []
+			}
 		})
 	}
 	sendToAttack(target){
@@ -669,14 +669,14 @@ class Clubman extends Unit {
 			walkingSheet: app.loader.resources['664'].spritesheet,
 			actionSheet: app.loader.resources['212'].spritesheet,
 			dyingSheet: app.loader.resources['321'].spritesheet,
-			interface: player.isPlayed ? {
+			interface: {
 				info: (element) => {
 					let img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
 				},
-			} : null
+			}
 		})
 	}
 }

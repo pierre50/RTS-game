@@ -23,7 +23,6 @@ class Map extends PIXI.Container{
 	}
     generateMap(){
         this.removeChildren();
-
         this.generateCells();
                 
         let playersPos = this.findPlayerPlaces();
@@ -34,7 +33,7 @@ class Map extends PIXI.Container{
 
         this.players = [
             new Human(playersPos[0].i, playersPos[0].j, this, 'StoneAge', 'Greek', 'blue', true),
-            //new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
+            new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
         ]
 
         this.generateMapRelief();
@@ -46,9 +45,11 @@ class Map extends PIXI.Container{
 
         this.generateSets();
 
-        for(let i = 0; i <= this.size; i++){
-            for(let j = 0; j <= this.size; j++){
-				this.grid[i][j].setFog();
+        if (!this.revealEverything){
+            for(let i = 0; i <= this.size; i++){
+                for(let j = 0; j <= this.size; j++){
+                    this.grid[i][j].setFog();
+                }
             }
         }
         
@@ -502,7 +503,7 @@ class Map extends PIXI.Container{
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
             cell.visible = true;
             if (cell.has){
-                if (!cell.has.player || cell.has.player.isPlayed
+                if (this.revealEverything || !cell.has.player || cell.has.player.isPlayed
                     || instanceIsInPlayerSight(cell.has, player) 
                     || (cell.has.name === 'building' && player.views[cell.i][cell.j].viewed)){
                     cell.has.visible = true;

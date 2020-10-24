@@ -41,6 +41,171 @@ class Player{
 			}
 		}
 		this.views = cloneGrid;
+    }
+    spawnUnit(...args){
+        let unit = this.createUnit(...args);
+        if (this.isPlayed){
+            unit.on('pointertap', () => {
+                //If we are placing a building don't permit click
+                if (mouseBuilding || mouseRectangle){
+                    return;
+                }
+                this.unselectAll();
+                unit.select();
+                this.interface.setBottombar(unit);
+                this.selectedUnits.push(unit);
+            });
+        }else{
+            unit.on('mouseover', () => {
+                if (!player){
+                    return;
+                }
+                if (player.selectedUnits.length && unit.visible){
+                    gamebox.setCursor('attack');
+                }
+            })
+            unit.on('mouseout', () => {
+                gamebox.setCursor('default');
+            })
+            unit.on('pointertap', (evt) => {
+                if (!player){
+                    return;
+                }
+                //If we are placing a building don't permit click
+                if (mouseBuilding || mouseRectangle){
+                    return;
+                }
+                if (player.selectedUnits.length){
+                    drawInstanceBlinkingSelection(unit);
+                    for(let i = 0; i < player.selectedUnits.length; i++){
+                        let playerUnit = player.selectedUnits[i];
+                        if (playerUnit.type === 'Villager'){
+                            playerUnit.sendToAttack(unit);
+                        }else{
+                            playerUnit.sendTo(unit, 'attack');
+                        }
+                    }
+                }
+                player.unselectAll();
+                unit.select();
+                player.interface.setBottombar(unit);
+                player.selectedOther = unit;
+            });
+        }
+		return unit;
+	}
+    spawnBuilding(...args){
+        let building = this.createBuilding(...args);
+        let sprite = building.getChildByName('sprite');
+        //building.visible = this.isPlayed || this.parent.revealEverything;
+        if (this.isPlayed){
+            for(let u = 0; u < this.selectedUnits.length; u++){
+                let unit = this.selectedUnits[u];
+                if (unit.type === 'Villager'){
+                    drawInstanceBlinkingSelection(building);
+                    unit.sendToBuilding(building);
+                }
+            }
+            sprite.on('mouseover', () => {
+                let hasVillager = false;
+                for (let i = 0; i < this.selectedUnits.length; i++){
+                    let unit = this.selectedUnits[i];
+                    if (unit.type === 'Villager'){
+                        hasVillager = true;
+                        break;
+                    }
+                }
+                if (hasVillager){
+                    gamebox.setCursor('hover');
+                }
+            })
+            sprite.on('mouseout', () => {
+                gamebox.setCursor('default');
+            })
+            sprite.on('pointertap', () => {
+                //If we are placing a building don't permit click
+                if (mouseBuilding || mouseRectangle){
+                    return;
+                }
+                //Send Villager to build the building
+                if (!building.isBuilt){
+                    let hasVillager = false;
+                    for (let i = 0; i < this.selectedUnits.length; i++){
+                        let unit = this.selectedUnits[i];
+                        if (unit.type === 'Villager'){
+                            hasVillager = true;
+                            drawInstanceBlinkingSelection(building);
+                            unit.sendToBuilding(building);
+                        }
+                    }
+                    if (hasVillager){
+                        return;
+                    }
+                }else if (this.selectedUnits){
+                    //Send Villager to give loading of resources
+                    let hasVillagerLoaded = false;
+                    for (let i = 0; i < this.selectedUnits.length; i++){
+                        let unit = this.selectedUnits[i];
+                        if (unit.type === 'Villager' && unit.loading > 0){
+                            hasVillagerLoaded = true;
+                            drawInstanceBlinkingSelection(building);
+                            unit.previousDest = null;
+                            switch (unit.work){
+                                case 'woodcutter':
+                                    unit.sendTo(building, 'deliverywood');
+                                    break;
+                                case 'gatherer':
+                                    unit.sendTo(building, 'deliveryberry');
+                                    break;
+                            }
+                        }
+                    }
+                    if (hasVillagerLoaded){
+                        return;
+                    }
+                }
+                //Select
+                this.unselectAll();
+                building.select();
+                this.interface.setBottombar(building);
+                this.selectedBuilding = building;
+            });
+        }else{
+            sprite.on('mouseover', () => {
+                if (player && player.selectedUnits.length && building.visible){
+                    gamebox.setCursor('attack');
+                }
+            })
+            sprite.on('mouseout', () => {
+                gamebox.setCursor('default');
+            })
+            sprite.on('pointertap', () => {
+                if (!player){
+                    return;
+                }
+                //If we are placing a building don't permit click
+                if (mouseBuilding || mouseRectangle){
+                    return;
+                }
+                if (player.selectedUnits.length){
+                    drawInstanceBlinkingSelection(building);
+                    for(let i = 0; i < player.selectedUnits.length; i++){
+                        let playerUnit = player.selectedUnits[i];
+                        if (playerUnit.type === 'Villager'){
+                            playerUnit.sendToAttack(building);
+                        }else{
+                            playerUnit.sendTo(building, 'attack');
+                        }
+                    }
+                }
+                //Select
+                player.unselectAll();
+                building.select();
+                player.interface.setBottombar(building);
+                player.selectedOther = building;
+            });
+        }
+		return building;
 	}
 	otherPlayers(){
 		let others = [ ...this.parent.players];
@@ -86,74 +251,6 @@ class AI extends Player{
 	constructor(i, j, map, age, civ, color){
 		super(i, j, map, age, civ, color, 'AI');
 		this.interval = setInterval(() => this.step(), 1000);
-	}
-	spawnUnit(...args){
-		let unit = this.createUnit(...args);
-		unit.on('mouseover', () => {
-			if (!player){
-				return;
-			}
-			if (player.selectedUnits.length && unit.visible){
-				gamebox.setCursor('attack');
-			}
-		})
-		unit.on('mouseout', () => {
-			gamebox.setCursor('default');
-		})
-		unit.on('pointertap', (evt) => {
-			if (!player){
-				return;
-			}
-			//If we are placing a building don't permit click
-			if (mouseBuilding || mouseRectangle){
-				return;
-			}
-			if (player.selectedUnits.length){
-				drawInstanceBlinkingSelection(unit);
-				for(let i = 0; i < player.selectedUnits.length; i++){
-					let playerUnit = player.selectedUnits[i];
-					if (playerUnit.type === 'Villager'){
-						playerUnit.sendToAttack(unit);
-					}else{
-						playerUnit.sendTo(unit, 'attack');
-					}
-				}
-			}
-		});
-		return unit;
-	}
-	spawnBuilding(...args){
-		let building = this.createBuilding(...args);
-		let sprite = building.getChildByName('sprite');
-		sprite.on('mouseover', () => {
-			if (player && player.selectedUnits.length && building.visible){
-				gamebox.setCursor('attack');
-			}
-		})
-		sprite.on('mouseout', () => {
-			gamebox.setCursor('default');
-		})
-		sprite.on('pointertap', (evt) => {
-			if (!player){
-				return;
-			}
-			//If we are placing a building don't permit click
-			if (mouseBuilding || mouseRectangle){
-				return;
-			}
-			if (player.selectedUnits.length){
-				drawInstanceBlinkingSelection(building);
-				for(let i = 0; i < player.selectedUnits.length; i++){
-					let playerUnit = player.selectedUnits[i];
-					if (playerUnit.type === 'Villager'){
-						playerUnit.sendToAttack(building);
-					}else{
-						playerUnit.sendTo(building, 'attack');
-					}
-				}
-			}
-		});
-		return building;
 	}
 	step(){
 		const maxVillagers = 20;
@@ -337,78 +434,7 @@ class Human extends Player{
 		super(i, j, map, age, civ, color, 'Human', isPlayed);
 		this.selectedUnits = [];
         this.selectedBuilding = null;
-        this.selectedResource = null;
-	}
-	spawnUnit(...args){
-		let unit = this.createUnit(...args);
-		unit.on('pointertap', () => {
-			//If we are placing a building don't permit click
-			if (mouseBuilding || mouseRectangle){
-				return;
-			}
-			this.unselectAll();
-			unit.select();
-			this.interface.setBottombar(unit);
-			this.selectedUnits.push(unit);
-		});
-		return unit;
-	}
-	spawnBuilding(...args){
-		let building = this.createBuilding(...args);
-		building.visible = true;
-		for(let u = 0; u < this.selectedUnits.length; u++){
-			let unit = this.selectedUnits[u];
-			if (unit.type === 'Villager'){
-				drawInstanceBlinkingSelection(building);
-				unit.sendToBuilding(building);
-			}
-		}
-
-		building.getChildByName('sprite').on('pointertap', () => {
-			//If we are placing a building don't permit click
-			if (mouseBuilding || mouseRectangle){
-				return;
-			}
-			//Send Villager to build the building
-			if (!building.isBuilt){
-				for (let i = 0; i < this.selectedUnits.length; i++){
-					let unit = this.selectedUnits[i];
-					if (unit.type === 'Villager'){
-						drawInstanceBlinkingSelection(building);
-						unit.sendToBuilding(building);
-					}
-				}
-			}else if (this.selectedUnits){
-			    //Send Villager to give loading of resources
-				let hasVillagerLoaded = false;
-				for (let i = 0; i < this.selectedUnits.length; i++){
-					let unit = this.selectedUnits[i];
-					if (unit.type === 'Villager' && unit.loading > 0){
-						hasVillagerLoaded = true;
-						drawInstanceBlinkingSelection(building);
-						unit.previousDest = null;
-						switch (unit.work){
-							case 'woodcutter':
-								unit.sendTo(building, 'deliverywood');
-								break;
-							case 'gatherer':
-								unit.sendTo(building, 'deliveryberry');
-								break;
-						}
-					}
-				}
-				if (hasVillagerLoaded){
-					return;
-				}
-			}
-		
-			//Select
-			this.unselectAll();
-			building.select();
-			this.interface.setBottombar(building);
-			this.selectedBuilding = building;
-		});
-		return building;
+        this.selectedOther = null;
 	}
 	unselectAllUnits(){
 		for (let i = 0; i < this.selectedUnits.length; i++){
@@ -422,9 +448,9 @@ class Human extends Player{
 			this.selectedBuilding.unselect();
 			this.selectedBuilding = null;
         }
-        if (this.selectedResource){
-            this.selectedResource.unselect();
-            this.selectedResource = null;
+        if (this.selectedOther){
+            this.selectedOther.unselect();
+            this.selectedOther = null;
         }
 		this.unselectAllUnits();
 		this.interface.setBottombar();

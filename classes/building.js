@@ -45,9 +45,8 @@ class Building extends PIXI.Container {
 
 		if (this.isBuilt && typeof this.onBuilt === 'function'){
 			this.onBuilt();
-			renderCellOnInstanceSight(this);
 		}
-
+        renderCellOnInstanceSight(this);
 	}
 	updateTexture(action){
 		if (this.life > this.lifeMax){
@@ -176,7 +175,7 @@ class Building extends PIXI.Container {
 		selection.lineStyle(1, 0xffffff);
 		const path = [(-32*this.size), 0, 0,(-16*this.size), (32*this.size),0, 0,(16*this.size)];
         selection.drawPolygon(path);
-        if (this.loading){
+        if (this.loading && this.player.isPlayed){
             this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
         }
 		this.addChildAt(selection, 0);

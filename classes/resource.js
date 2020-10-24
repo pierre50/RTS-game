@@ -41,7 +41,7 @@ class resource extends PIXI.Container{
                     player.unselectAll();
                     this.select();
                     player.interface.setBottombar(this);
-                    player.selectedResource = this;
+                    player.selectedOther = this;
                 }
             });
 			this.addChild(this.sprite);
