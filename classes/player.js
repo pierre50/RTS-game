@@ -46,10 +46,10 @@ class Player{
         let unit = this.createUnit(...args);
         if (this.isPlayed){
             unit.on('pointertap', () => {
-                //If we are placing a building don't permit click
-                if (mouseBuilding || mouseRectangle){
+                if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
+
                 this.unselectAll();
                 unit.select();
                 this.interface.setBottombar(unit);
@@ -68,11 +68,7 @@ class Player{
                 gamebox.setCursor('default');
             })
             unit.on('pointertap', (evt) => {
-                if (!player){
-                    return;
-                }
-                //If we are placing a building don't permit click
-                if (mouseBuilding || mouseRectangle){
+                if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
                 if (player.selectedUnits.length){
@@ -97,7 +93,6 @@ class Player{
     spawnBuilding(...args){
         let building = this.createBuilding(...args);
         let sprite = building.getChildByName('sprite');
-        //building.visible = this.isPlayed || this.parent.revealEverything;
         if (this.isPlayed){
             for(let u = 0; u < this.selectedUnits.length; u++){
                 let unit = this.selectedUnits[u];
@@ -123,8 +118,7 @@ class Player{
                 gamebox.setCursor('default');
             })
             sprite.on('pointertap', () => {
-                //If we are placing a building don't permit click
-                if (mouseBuilding || mouseRectangle){
+                if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
                 //Send Villager to build the building
@@ -180,11 +174,7 @@ class Player{
                 gamebox.setCursor('default');
             })
             sprite.on('pointertap', () => {
-                if (!player){
-                    return;
-                }
-                //If we are placing a building don't permit click
-                if (mouseBuilding || mouseRectangle){
+                if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
                 if (player.selectedUnits.length){

@@ -7,8 +7,7 @@ const cellDepth = 16;
 const ua = window.navigator.userAgent.toLowerCase();
 const isMobile = ua.indexOf('mobile') !== -1 || ua.indexOf('android') !== -1;
 
-const appLeft = 0;
-const appTop = 0;
+const appTop = 24;
 const appWidth = window.innerWidth;
 const appHeight = window.innerHeight;
 const gamebox = document.getElementById('game');
@@ -42,7 +41,7 @@ let map;
 let mouse = {
     x: 0,
     y: 0,
-    out: false
+    out: true
 };
 let mouseRectangle;
 let mouseBuilding;
@@ -50,12 +49,13 @@ let pointerStart;
 let empires;
 let player;
 
-window.onload = preload();
+window.onload = preload;
 function preload(){
 	PIXI.settings.ROUND_PIXELS = true;
 	app = new PIXI.Application({
+        top: 40,
 		width: appWidth,
-		height: appHeight, 
+		height: appHeight - appTop - 136, 
 		antialias: false,
 		resolution: window.devicePixelRatio, 
 		autoResize: true
@@ -191,28 +191,88 @@ function create(){
 	})
 
     //Set-up global interactions
-    const interactionManager = new PIXI.InteractionManager(app.renderer);
-    document.addEventListener('onload', (evt) => {
-        mouse.x = evt.pageX;
-        mouse.y = evt.pageY;    
-    })
     document.addEventListener('mouseleave', (evt) => {
         mouse.x = evt.pageX;
-        mouse.y = evt.pageY;
+        mouse.y = evt.pageY - 20;
         mouse.out = true;
     })
     document.addEventListener('mouseenter', (evt) => {
         mouse.x = evt.pageX;
-        mouse.y = evt.pageY;        
+        mouse.y = evt.pageY - 20;        
         mouse.out = false;
     })
-	interactionManager.on('pointerdown', (evt) => {
+    document.addEventListener('mousemove', (evt) => {
+        mouse.x = evt.pageX;
+        mouse.y = evt.pageY - 20;     
+        if (!player){
+			return;
+        }
+		//Mouse building to place construction
+		if (mouseBuilding){
+            const pos = isometricToCartesian(mouse.x - map.x, mouse.y >= app.screen.height ? app.screen.height - map.y : mouse.y - map.y);
+            const i = Math.floor(pos[0]);
+            const j = Math.floor(pos[1]);
+            if (map.grid[i] && map.grid[i][j]){
+                const cell = map.grid[i][j];
+                mouseBuilding.x = cell.x - map.camera.x;
+                mouseBuilding.y = cell.y - map.camera.y;
+                let isFree = true;
+                getPlainCellsAroundPoint(i, j, map.grid, 1, (cell) => {
+                    if (cell.solid || cell.inclined || cell.border || !cell.visible){
+                        isFree = false;
+                        return;
+                    }
+                });
+                //Color image of mouse building depend on buildable or not
+                let sprite = mouseBuilding.getChildByName('sprite');
+                let color = mouseBuilding.getChildByName('color');
+                if (isFree){
+                    sprite.tint = colorWhite;
+                    if (color){
+                        color.tint = colorWhite;
+                    }
+                }else{
+                    sprite.tint = colorRed;
+                    if (color){
+                        color.tint = colorRed;
+                    }
+                }
+                mouseBuilding.isFree = isFree;
+            }
+            return;
+		}
+		
+		//Create and draw mouse selection
+		if (!mouseRectangle && pointerStart && pointsDistance(mouse.x, mouse.y, pointerStart.x, pointerStart.y) > 5){
+			mouseRectangle = {
+				x: mouse.x,
+				y: mouse.y,
+				width: 0,
+				height: 0,
+				graph: new PIXI.Graphics()
+			}
+			app.stage.addChild(mouseRectangle.graph);
+		}
+		if (mouseRectangle && !mouseBuilding){
+			if (player.selectedUnits.length || player.selectedBuilding){
+				player.unselectAll();
+			}
+			mouseRectangle.graph.clear();
+			if (mouse.x > mouseRectangle.x && mouse.y > mouseRectangle.y){
+				mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
+				mouseRectangle.height = mouse.y >= app.screen.height ? Math.round(app.screen.height - 2 - mouseRectangle.y) : Math.round(mouse.y - mouseRectangle.y);
+				mouseRectangle.graph.lineStyle(1, colorWhite, 1);
+				mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
+			}
+		}   
+    })
+	document.addEventListener('pointerdown', () => {
 		pointerStart = {
-			x: evt.data.global.x,
-			y: evt.data.global.y,
+			x: mouse.x,
+			y: mouse.y,
 		}
 	})
-	interactionManager.on('pointerup', (evt) => {
+	document.addEventListener('pointerup', () => {
 		pointerStart = null;
 		if (!player){
 			return;
@@ -243,125 +303,62 @@ function create(){
 			mouseRectangle.graph.destroy();
 			mouseRectangle = null;
 			return;
-		}
-		const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
-		const i = Math.floor(pos[0]);
-		const j = Math.floor(pos[1]);
-		if (map.grid[i] && map.grid[i][j]){
-			const cell = map.grid[i][j];
-			if ((cell.solid || cell.inclined || cell.border || gamebox.cursor !== 'default') && cell.visible){
-				return;
-			}
-			if (mouseBuilding){
-				if (mouseBuilding.isFree){
-					if (player.buyBuilding(i, j, mouseBuilding.type, map)){
-						player.interface.removeMouseBuilding();
-						if (player.interface.selection){
-							player.interface.setBottombar(player.interface.selection);
-						}
-					}
-				}
-			}else if (player.selectedUnits.length){
-				//Pointer animation
-				let pointerSheet = app.loader.resources['50405'].spritesheet;
-				let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
-				pointer.animationSpeed = .2;
-				pointer.loop = false;
-				pointer.anchor.set(.5,.5)
-				pointer.x = evt.data.global.x;
-				pointer.y = evt.data.global.y;
-				pointer.onComplete = () => {
-					pointer.destroy();
-				};
-				pointer.play();
-				app.stage.addChild(pointer);
-				//Send units
-				const minX = Math.min(...player.selectedUnits.map(unit => unit.i));
-				const minY = Math.min(...player.selectedUnits.map(unit => unit.j));
-				const maxX = Math.max(...player.selectedUnits.map(unit => unit.i));
-				const maxY = Math.max(...player.selectedUnits.map(unit => unit.j));
-				const centerX = minX + Math.round((maxX - minX)/2); 
-				const centerY = minY + Math.round((maxY - minY)/2);
-				for(let u = 0; u < player.selectedUnits.length; u++){
-                    const unit = player.selectedUnits[u];
-                    const distCenterX = unit.i - centerX;
-                    const distCenterY = unit.j - centerY;
-                    const finalX = cell.i+distCenterX;
-                    const finalY = cell.j+distCenterY;
-                    if (map.grid[finalX] && map.grid[finalX][finalY]){
-                        player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
-                    }else{
-                        player.selectedUnits[u].sendTo(cell);
+        }
+        if (mouseIsInApp()){
+            const pos = isometricToCartesian(mouse.x - map.x, mouse.y - map.y);
+            const i = Math.floor(pos[0]);
+            const j = Math.floor(pos[1]);
+            if (map.grid[i] && map.grid[i][j]){
+                const cell = map.grid[i][j];
+                if ((cell.solid || cell.inclined || cell.border || gamebox.cursor !== 'default') && cell.visible){
+                    return;
+                }
+                if (mouseBuilding){
+                    if (mouseBuilding.isFree){
+                        if (player.buyBuilding(i, j, mouseBuilding.type, map)){
+                            player.interface.removeMouseBuilding();
+                            if (player.interface.selection){
+                                player.interface.setBottombar(player.interface.selection);
+                            }
+                        }
                     }
-				}
-			}
+                }else if (player.selectedUnits.length){
+                    //Pointer animation
+                    let pointerSheet = app.loader.resources['50405'].spritesheet;
+                    let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
+                    pointer.animationSpeed = .2;
+                    pointer.loop = false;
+                    pointer.anchor.set(.5,.5)
+                    pointer.x = mouse.x;
+                    pointer.y = mouse.y;
+                    pointer.onComplete = () => {
+                        pointer.destroy();
+                    };
+                    pointer.play();
+                    app.stage.addChild(pointer);
+                    //Send units
+                    const minX = Math.min(...player.selectedUnits.map(unit => unit.i));
+                    const minY = Math.min(...player.selectedUnits.map(unit => unit.j));
+                    const maxX = Math.max(...player.selectedUnits.map(unit => unit.i));
+                    const maxY = Math.max(...player.selectedUnits.map(unit => unit.j));
+                    const centerX = minX + Math.round((maxX - minX)/2); 
+                    const centerY = minY + Math.round((maxY - minY)/2);
+                    for(let u = 0; u < player.selectedUnits.length; u++){
+                        const unit = player.selectedUnits[u];
+                        const distCenterX = unit.i - centerX;
+                        const distCenterY = unit.j - centerY;
+                        const finalX = cell.i+distCenterX;
+                        const finalY = cell.j+distCenterY;
+                        if (map.grid[finalX] && map.grid[finalX][finalY]){
+                            player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
+                        }else{
+                            player.selectedUnits[u].sendTo(cell);
+                        }
+                    }
+                }
+            }
 		}
     })
-	interactionManager.on('pointermove', (evt) => {
-        mouse.x = evt.data.global.x;
-        mouse.y = evt.data.global.y;
-		if (!player){
-			return;
-		}
-		const pos = isometricToCartesian(evt.data.global.x - map.x, evt.data.global.y - map.y);
-		const i = Math.floor(pos[0]);
-		const j = Math.floor(pos[1]);
-		//Mouse building to place construction
-		if (map.grid[i] && map.grid[i][j]){
-			const cell = map.grid[i][j];
-			if (mouseBuilding){
-				mouseBuilding.x = cell.x - map.camera.x;
-				mouseBuilding.y = cell.y - map.camera.y;
-				let isFree = true;
-				getPlainCellsAroundPoint(i, j, map.grid, 1, (cell) => {
-					if (cell.solid || cell.inclined || cell.border || !cell.visible){
-						isFree = false;
-						return;
-					}
-				});
-				//Color image of mouse building depend on buildable or not
-				let sprite = mouseBuilding.getChildByName('sprite');
-				let color = mouseBuilding.getChildByName('color');
-				if (isFree){
-					sprite.tint = colorWhite;
-					if (color){
-						color.tint = colorWhite;
-					}
-				}else{
-					sprite.tint = colorRed;
-					if (color){
-						color.tint = colorRed;
-					}
-				}
-				mouseBuilding.isFree = isFree;
-				return;
-			}
-		}
-		
-		//Create and draw mouse selection
-		if (!mouseRectangle && pointerStart && pointsDistance(mouse.x, mouse.y, pointerStart.x, pointerStart.y) > 5){
-			mouseRectangle = {
-				x: mouse.x,
-				y: mouse.y,
-				width: 0,
-				height: 0,
-				graph: new PIXI.Graphics()
-			}
-			app.stage.addChild(mouseRectangle.graph);
-		}
-		if (mouseRectangle && !mouseBuilding){
-			if (player.selectedUnits.length || player.selectedBuilding){
-				player.unselectAll();
-			}
-			mouseRectangle.graph.clear();
-			if (mouse.x > mouseRectangle.x && mouse.y > mouseRectangle.y){
-				mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
-				mouseRectangle.height = Math.round(mouse.y - mouseRectangle.y);
-				mouseRectangle.graph.lineStyle(1, colorWhite, 1);
-				mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
-			}
-		}
-	})
 	//Start main loop
 	app.ticker.add(step);
 }

@@ -102,11 +102,7 @@ class Tree extends resource{
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
 		sprite.on('pointerup', () => {
-			if (!player){
-				return;
-			}
-			//If we are placing a building don't permit click
-			if (mouseBuilding){
+			if (!player || mouseBuilding || !mouseIsInApp()){
 				return;
 			}
 			//Send Villager to cut the tree
@@ -171,11 +167,7 @@ class Berrybush extends resource{
 		sprite.name = 'sprite';
 		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames['000_240.png'].hitArea);
 		sprite.on('pointerup', () => {
-			if (!player){
-				return;
-			}
-			//If we are placing a building don't permit click
-			if (mouseBuilding){
+			if (!player || mouseBuilding || !mouseIsInApp()){
 				return;
 			}
 			//Send Villager to forage the berry

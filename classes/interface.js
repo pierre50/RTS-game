@@ -35,7 +35,6 @@ class Interface {
         }
         Object.assign(this.topbar.style, {
             top: '0',
-            position: 'absolute',
             padding: '0 5px',
             height: '20px',
             display: 'grid',
@@ -62,13 +61,13 @@ class Interface {
         this.topbar.appendChild(this.resources);
         this.topbar.appendChild(this.age);
         this.topbar.appendChild(this.options);
-        gamebox.appendChild(this.topbar)
+        gamebox.prepend(this.topbar)
 
         let bottombar = document.createElement('div');
         Object.assign(bottombar.style, {
             bottom: '0',
-            position: 'absolute',
             display: 'grid',
+            height: '122px',
             gridTemplateColumns: '120px auto',
             gridGap: '10px',
             padding: '5px',

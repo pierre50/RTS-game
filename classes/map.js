@@ -1,3 +1,10 @@
+/**
+ * 
+ *  Map size	    Tiny	    Small	    Medium	    Normal	    Large	
+    Player count	2	        3	        4	        6	        8
+    Dimensions	    120×120	    144×144 	168×168	    200×200	    220×220
+ */
+
 class Map extends PIXI.Container{
 	constructor(size, reliefRange, chanceOfRelief, chanceOfSets, revealEverything){
         super();
@@ -30,10 +37,17 @@ class Map extends PIXI.Container{
             alert('Cannot find players position')
             return;
         }
+        let poses = [];
+        let randoms = Array.from(Array(playersPos.length).keys());
+        for (let i = 0; i < 2; i++){
+            let pos = randomItem(randoms);
+            poses.push(pos);
+            randoms.splice(pos, 1);
+        }
 
         this.players = [
-            new Human(playersPos[0].i, playersPos[0].j, this, 'StoneAge', 'Greek', 'blue', true),
-            new AI(playersPos[1].i, playersPos[1].j, this, 'StoneAge', 'Greek', 'red'),
+            new Human(playersPos[poses[0]].i, playersPos[poses[0]].j, this, 'StoneAge', 'Greek', 'blue', true),
+            new AI(playersPos[poses[1]].i, playersPos[poses[1]].j, this, 'StoneAge', 'Greek', 'red'),
         ]
 
         this.generateMapRelief();
@@ -56,7 +70,7 @@ class Map extends PIXI.Container{
         //Place a town center
         for (let i = 0; i < this.players.length; i++){
             let player = this.players[i];
-            let towncenter = player.spawnBuilding(playersPos[i].i, playersPos[i].j, 'TownCenter', this, true);
+            let towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', this, true);
             for (let i = 0; i < 3; i++ ){
                 towncenter.placeUnit('Villager');
             }
@@ -411,14 +425,15 @@ class Map extends PIXI.Container{
         }
         let moveSpeed;
         const moveDist = 20;
+        const mouseY = mouse.y + 20;
         const A = { x:(cellWidth/2)-this.camera.x,  y:-this.camera.y };
         const B = { x:(cellWidth/2-(this.size * cellWidth)/2)-this.camera.x, y:((this.size * cellHeight)/2)-this.camera.y };
         const D = { x:(cellWidth/2+(this.size * cellWidth)/2)-this.camera.x, y:((this.size * cellHeight)/2)-this.camera.y };
         const C = { x:(cellWidth/2)-this.camera.x, y:(this.size * cellHeight)-this.camera.y };
         const cameraCenter = { x:((this.camera.x) + appWidth / 2)-this.camera.x, y:((this.camera.y) + appHeight / 2)-this.camera.y }
         //Left 
-        if (mouse.x >= appLeft && mouse.x <= appLeft + moveDist && mouse.y >= appTop && mouse.y <= appHeight){
-            moveSpeed = ((appLeft + moveDist) - mouse.x) / 2;
+        if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouseY >= 0 && mouseY <= appHeight){
+            moveSpeed = ((0 + moveDist) - mouse.x) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
@@ -431,7 +446,7 @@ class Map extends PIXI.Container{
             }
             this.displayInstancesOnScreen();
         }else //Right
-        if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouse.y >= appTop && mouse.y <= appHeight){
+        if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouseY >= 0 && mouseY <= appHeight){
             moveSpeed = (mouse.x - (appWidth - moveDist)) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A,D,cameraCenter,50)){
@@ -446,8 +461,8 @@ class Map extends PIXI.Container{
             this.displayInstancesOnScreen();
         }
         //Top
-        if (mouse.x >= appLeft && mouse.x <= appWidth && mouse.y >= appTop && mouse.y <= appTop + moveDist){
-            moveSpeed = ((appTop + moveDist) - mouse.y) / 2;
+        if (mouse.x >= 0 && mouse.x <= appWidth && mouseY >= 0 && mouseY <= 0 + moveDist){
+            moveSpeed = ((0 + moveDist) - mouseY) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)){
                 this.camera.y -= moveSpeed/(cellWidth/cellHeight);		
@@ -460,8 +475,8 @@ class Map extends PIXI.Container{
             }
             this.displayInstancesOnScreen();
         }else //Bottom
-        if (mouse.x >= appLeft && mouse.x <= appWidth && mouse.y > appHeight - moveDist && mouse.y <= appHeight){
-            moveSpeed = (mouse.y - (appHeight - moveDist)) / 2;
+        if (mouse.x >= 0 && mouse.x <= appWidth && mouseY > appHeight - moveDist && mouseY <= appHeight){
+            moveSpeed = (mouseY - (appHeight - moveDist)) / 2;
             this.clearInstancesOnScreen();
             if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)){
                 this.camera.y += moveSpeed/(cellWidth/cellHeight);		
@@ -479,8 +494,8 @@ class Map extends PIXI.Container{
         this.x = -this.camera.x;
         this.y = -this.camera.y;
         const cameraCenter = {
-            x:((this.camera.x) + appWidth / 2),
-            y:((this.camera.y) + appHeight / 2)
+            x:((this.camera.x) + app.screen.width / 2),
+            y:((this.camera.y) + app.screen.height / 2)
         }
         const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
         const dist = Math.round(appWidth / cellWidth) + 2;
@@ -495,8 +510,8 @@ class Map extends PIXI.Container{
         this.x = -this.camera.x;
         this.y = -this.camera.y;
         const cameraCenter = {
-            x:((this.camera.x) + appWidth / 2),
-            y:((this.camera.y) + appHeight / 2)
+            x:((this.camera.x) + app.screen.width / 2),
+            y:((this.camera.y) + app.screen.height / 2)
         }
         const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
         const dist = Math.round(appWidth / cellWidth);
