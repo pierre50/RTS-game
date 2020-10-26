@@ -20,7 +20,7 @@ class resource extends PIXI.Container{
 		})
 
 		//Set solid zone
-		let cell = map.grid[i][j];
+		const cell = map.grid[i][j];
 		cell.solid = true;
 		cell.has = this;
 		
@@ -52,7 +52,7 @@ class resource extends PIXI.Container{
 			return;
 		}
 		this.selected = true;
-		let selection = new PIXI.Graphics();
+		const selection = new PIXI.Graphics();
 		selection.name = 'selection';
 		selection.zIndex = 3;
 		selection.lineStyle(1, 0xffffff);
@@ -62,7 +62,7 @@ class resource extends PIXI.Container{
     }
     unselect(){
 		this.selected = false;
-		let selection = this.getChildByName('selection');
+		const selection = this.getChildByName('selection');
 		if (selection){
 			this.removeChild(selection);
 		}
@@ -72,10 +72,10 @@ class resource extends PIXI.Container{
 			if (typeof this.onDie === 'function'){
 				this.onDie();
 			}
-			let listName = 'founded' + this.type + 's';
+			const listName = 'founded' + this.type + 's';
 			for (let i = 0; i < this.parent.players.length; i++){
-				let list = this.parent.players[i][listName];
-				let index = list.indexOf(this);
+				const list = this.parent.players[i][listName];
+				const index = list.indexOf(this);
 				list.splice(index, 1);
 			}
 			this.parent.grid[this.i][this.j].has = null;
@@ -96,7 +96,7 @@ class Tree extends resource{
 		const spritesheet = app.loader.resources[randomSpritesheet].spritesheet;
 		const textureName = '000_' + randomSpritesheet + '.png';
 		const texture = spritesheet.textures[textureName];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
@@ -109,9 +109,9 @@ class Tree extends resource{
 			let hasVillager = false;
 			let dest = this;
 			for(let i = 0; i < player.selectedUnits.length; i++){
-				let unit = player.selectedUnits[i];
+				const unit = player.selectedUnits[i];
 				if (instanceIsSurroundedBySolid(this)){
-					let newDest = getNewInstanceClosestFreeCellPath(unit, this, this.parent);
+					const newDest = getNewInstanceClosestFreeCellPath(unit, this, this.parent);
 					if (newDest){
 						dest = newDest.target;
 					}
@@ -136,7 +136,7 @@ class Tree extends resource{
             life: data.life,
             interface: {
 				info: (element) => {
-					let img = document.createElement('img');
+					const img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);
@@ -148,7 +148,7 @@ class Tree extends resource{
 		const spritesheet = app.loader.resources['623'].spritesheet;
 		const textureName = `00${randomRange(0,3)}_623.png`;
 		const texture = spritesheet.textures[textureName];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
 		sprite.name = 'stump';
 		this.parent.grid[this.i][this.j].addChild(sprite);
 	}
@@ -161,7 +161,7 @@ class Berrybush extends resource{
 		//Define sprite
 		const spritesheet = app.loader.resources['240'].spritesheet;
 		const texture = spritesheet.textures['000_240.png'];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
 		sprite.interactive = true;
 		sprite.updateAnchor = true;
 		sprite.name = 'sprite';
@@ -173,7 +173,7 @@ class Berrybush extends resource{
 			//Send Villager to forage the berry
 			let hasVillager = false;
 			for(let i = 0; i < player.selectedUnits.length; i++){
-				let unit = player.selectedUnits[i];
+				const unit = player.selectedUnits[i];
 				if (unit.type === 'Villager'){
 					hasVillager = true;
 					unit.sendToBerrybush(this);
@@ -193,7 +193,7 @@ class Berrybush extends resource{
             quantity: data.quantity,
             interface: {
 				info: (element) => {
-					let img = document.createElement('img');
+					const img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
 					element.appendChild(img);

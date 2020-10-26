@@ -26,7 +26,7 @@ class Player{
 			this.interface = new Interface(this);
 		}
 
-		let cloneGrid = [];
+		const cloneGrid = [];
 		for (let i = 0; i <= map.size; i++){
 			for (let j = 0; j <= map.size; j++){
 				if(cloneGrid[i] == null){
@@ -34,8 +34,9 @@ class Player{
 				}
 				cloneGrid[i][j] = {
 					i,
-					j,
-					viewedBy: [],
+                    j,
+                    has: null,
+					viewBy: [],
 					viewed: false
 				}
 			}
@@ -43,7 +44,7 @@ class Player{
 		this.views = cloneGrid;
     }
     spawnUnit(...args){
-        let unit = this.createUnit(...args);
+        const unit = this.createUnit(...args);
         if (this.isPlayed){
             unit.on('pointertap', () => {
                 if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
@@ -74,28 +75,31 @@ class Player{
                 if (player.selectedUnits.length){
                     drawInstanceBlinkingSelection(unit);
                     for(let i = 0; i < player.selectedUnits.length; i++){
-                        let playerUnit = player.selectedUnits[i];
+                        const playerUnit = player.selectedUnits[i];
                         if (playerUnit.type === 'Villager'){
                             playerUnit.sendToAttack(unit);
                         }else{
                             playerUnit.sendTo(unit, 'attack');
                         }
                     }
+                    return;
                 }
-                player.unselectAll();
-                unit.select();
-                player.interface.setBottombar(unit);
-                player.selectedOther = unit;
+                if (instanceIsInPlayerSight(unit, player) || this.parent.revealEverything){
+                    player.unselectAll();
+                    unit.select();
+                    player.interface.setBottombar(unit);
+                    player.selectedOther = unit;
+                }
             });
         }
 		return unit;
 	}
     spawnBuilding(...args){
-        let building = this.createBuilding(...args);
-        let sprite = building.getChildByName('sprite');
+        const building = this.createBuilding(...args);
+        const sprite = building.getChildByName('sprite');
         if (this.isPlayed){
             for(let u = 0; u < this.selectedUnits.length; u++){
-                let unit = this.selectedUnits[u];
+                const unit = this.selectedUnits[u];
                 if (unit.type === 'Villager'){
                     drawInstanceBlinkingSelection(building);
                     unit.sendToBuilding(building);
@@ -104,7 +108,7 @@ class Player{
             sprite.on('mouseover', () => {
                 let hasVillager = false;
                 for (let i = 0; i < this.selectedUnits.length; i++){
-                    let unit = this.selectedUnits[i];
+                    const unit = this.selectedUnits[i];
                     if (unit.type === 'Villager'){
                         hasVillager = true;
                         break;
@@ -125,7 +129,7 @@ class Player{
                 if (!building.isBuilt){
                     let hasVillager = false;
                     for (let i = 0; i < this.selectedUnits.length; i++){
-                        let unit = this.selectedUnits[i];
+                        const unit = this.selectedUnits[i];
                         if (unit.type === 'Villager'){
                             hasVillager = true;
                             drawInstanceBlinkingSelection(building);
@@ -139,7 +143,7 @@ class Player{
                     //Send Villager to give loading of resources
                     let hasVillagerLoaded = false;
                     for (let i = 0; i < this.selectedUnits.length; i++){
-                        let unit = this.selectedUnits[i];
+                        const unit = this.selectedUnits[i];
                         if (unit.type === 'Villager' && unit.loading > 0){
                             hasVillagerLoaded = true;
                             drawInstanceBlinkingSelection(building);
@@ -158,7 +162,6 @@ class Player{
                         return;
                     }
                 }
-                //Select
                 this.unselectAll();
                 building.select();
                 this.interface.setBottombar(building);
@@ -180,25 +183,27 @@ class Player{
                 if (player.selectedUnits.length){
                     drawInstanceBlinkingSelection(building);
                     for(let i = 0; i < player.selectedUnits.length; i++){
-                        let playerUnit = player.selectedUnits[i];
+                        const playerUnit = player.selectedUnits[i];
                         if (playerUnit.type === 'Villager'){
                             playerUnit.sendToAttack(building);
                         }else{
                             playerUnit.sendTo(building, 'attack');
                         }
                     }
+                    return;
                 }
-                //Select
-                player.unselectAll();
-                building.select();
-                player.interface.setBottombar(building);
-                player.selectedOther = building;
+                if (instanceIsInPlayerSight(building, player) || this.parent.revealEverything){
+                    player.unselectAll();
+                    building.select();
+                    player.interface.setBottombar(building);
+                    player.selectedOther = building;
+                }
             });
         }
 		return building;
 	}
 	otherPlayers(){
-		let others = [ ...this.parent.players];
+		const others = [ ...this.parent.players];
 		others.splice(this.parent.players.indexOf(this), 1);
 		return others;
 	}
@@ -219,7 +224,7 @@ class Player{
 			Clubman,
 			Villager
 		}	
-		let unit = new units[type](x, y, map, this);
+		const unit = new units[type](x, y, map, this);
 		this.units.push(unit);
 		return unit;
 	}
@@ -231,7 +236,7 @@ class Player{
 			StoragePit,
 			Granary
 		}			
-		let building = new buildings[type](x, y, map, this, isBuilt);
+		const building = new buildings[type](x, y, map, this, isBuilt);
 		this.buildings.push(building);
 		return building;
 	}
@@ -277,15 +282,15 @@ class AI extends Player{
 		if (villagersOnFood.length <= maxVillagersOnFood && (towncenters.length || granarys.length)){
 			if (this.foundedBerrybushs.length){
 				for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i ++){
-					let bush = getClosestInstance(inactifVillagers[i], this.foundedBerrybushs);
+					const bush = getClosestInstance(inactifVillagers[i], this.foundedBerrybushs);
 					inactifVillagers[i].sendToBerrybush(bush);
 					//Build a granary close to it, if to far
-					let closestTownCenter = getClosestInstance(bush, towncenters);
-					let closestGranary = getClosestInstance(bush, granarys);
+					const closestTownCenter = getClosestInstance(bush, towncenters);
+					const closestGranary = getClosestInstance(bush, granarys);
 					if (instancesDistance(closestTownCenter, bush) > 6 && (!instancesDistance(closestGranary, bush) || instancesDistance(closestGranary, bush) > 15)){
-						let bushNeighbours = getPlainCellsAroundPoint(bush.i, bush.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Berrybush');
+						const bushNeighbours = getPlainCellsAroundPoint(bush.i, bush.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Berrybush');
 						if (bushNeighbours.length > 3){
-							let pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [0, 6], 2);
+							const pos = getPositionInZoneAroundInstance(bush, this.parent.grid, [0, 6], 2);
 							if (pos){
 								this.buyBuilding(pos.i, pos.j, 'Granary', this.parent);
 							}
@@ -302,15 +307,15 @@ class AI extends Player{
 		if (villagersOnWood.length <= maxVillagersOnWood && (towncenters.length || storagepits.length)){
 			if (this.foundedTrees.length){
 				for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i ++){
-					let tree = getClosestInstance(inactifVillagers[i], this.foundedTrees);
+					const tree = getClosestInstance(inactifVillagers[i], this.foundedTrees);
 					inactifVillagers[i].sendToTree(tree);
 					//Build a storagepit close to it, if to far
-					let closestTownCenter = getClosestInstance(tree, towncenters);
-					let closestStoragepit = getClosestInstance(tree, storagepits);
+					const closestTownCenter = getClosestInstance(tree, towncenters);
+					const closestStoragepit = getClosestInstance(tree, storagepits);
 					if (instancesDistance(closestTownCenter, tree) > 6 && (!instancesDistance(closestStoragepit, tree) || instancesDistance(closestStoragepit, tree) > 15)){
-						let treeNeighbours = getPlainCellsAroundPoint(tree.i, tree.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Tree');
+						const treeNeighbours = getPlainCellsAroundPoint(tree.i, tree.j, this.parent.grid, 2, (cell) => cell.has && cell.has.type === 'Tree');
 						if (treeNeighbours.length > 5){
-							let pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [0, 6], 2);
+							const pos = getPositionInZoneAroundInstance(tree, this.parent.grid, [0, 6], 2);
 							if (pos){
 								this.buyBuilding(pos.i, pos.j, 'StoragePit', this.parent);
 							}
@@ -330,7 +335,7 @@ class AI extends Player{
 					break;
 				}
 				const noWorkers = villagers.filter(villager => (villager.action !== 'attack' && villager.work !== 'builder') || villager.inactif);
-				let villager = getClosestInstance(notBuiltBuildings[i], noWorkers);
+				const villager = getClosestInstance(notBuiltBuildings[i], noWorkers);
 				if (villager){
 					villager.sendToBuilding(notBuiltBuildings[i]);
 				}
@@ -339,12 +344,12 @@ class AI extends Player{
 		//Send clubman to attack
 		if (waitingClubmans.length >= howManySoldiersBeforeAttack){
 			if (!this.foundedEnemyBuildings.length){
-				let targetIndex = randomRange(0, this.otherPlayers().length - 1);
-				let target = this.otherPlayers()[targetIndex];
-				let i = target.i + randomRange(-5, 5);
-				let j = target.j + randomRange(-5, 5);
+				const targetIndex = randomRange(0, this.otherPlayers().length - 1);
+				const target = this.otherPlayers()[targetIndex];
+				const i = target.i + randomRange(-5, 5);
+				const j = target.j + randomRange(-5, 5);
 				if (this.parent.grid[i] && this.parent.grid[i][j]){
-					let cell = this.parent.grid[i][j];
+					const cell = this.parent.grid[i][j];
 					for (let i = 0; i < waitingClubmans.length; i++){
 						waitingClubmans[i].assault = true;
 						waitingClubmans[i].sendTo(cell, 'attack');
@@ -392,14 +397,14 @@ class AI extends Player{
 		 */
 		//Buy a house
 		if (this.population + 3 > this.populationMax && !notBuiltHouses.length){
-			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 12], 2);
+			const pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [3, 12], 2);
 			if (pos){
 				this.buyBuilding(pos.i, pos.j, 'House', this.parent);
 			}
 		}
 		//Buy a barracks
 		if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0){
-			let pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 20], 3, false, (cell) => {
+			const pos = getPositionInZoneAroundInstance(towncenters[0], this.parent.grid, [4, 20], 3, false, (cell) => {
 				let isMiddle = true;
 				for (let i = 0; i < this.otherPlayers().length; i++){
 					if (instancesDistance(cell, this.otherPlayers()[i]) > instancesDistance(towncenters[0], this.otherPlayers()[i])){

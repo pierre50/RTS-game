@@ -40,7 +40,7 @@ class Unit extends PIXI.Container {
 		this.originalSpeed = this.speed;		
 		this.inactif = true;
 
-		let sprite = new PIXI.AnimatedSprite(this.standingSheet.animations['south']);
+		const sprite = new PIXI.AnimatedSprite(this.standingSheet.animations['south']);
 		sprite.name = 'sprite';
 		changeSpriteColor(sprite, player.color);
 
@@ -56,7 +56,7 @@ class Unit extends PIXI.Container {
 			return;
 		}
 		this.selected = true;
-		let selection = new PIXI.Graphics();
+		const selection = new PIXI.Graphics();
 		selection.name = 'selection';
 		selection.zIndex = 3;
 		selection.lineStyle(1, 0xffffff);		
@@ -66,7 +66,7 @@ class Unit extends PIXI.Container {
 	}
 	unselect(){
 		this.selected = false;
-		let selection = this.getChildByName('selection');
+		const selection = this.getChildByName('selection');
 		if (selection){
 			this.removeChild(selection);
 		}
@@ -142,7 +142,7 @@ class Unit extends PIXI.Container {
 		return conditions[this.action] ? conditions[this.action](target) : this.stop();
 	}
 	getAction(name){
-		let sprite = this.getChildByName('sprite');
+		const sprite = this.getChildByName('sprite');
 		if (!sprite){
 			return;
 		}
@@ -159,10 +159,10 @@ class Unit extends PIXI.Container {
 					}
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = this.player.buildings.filter((building) => {
-							return building.life > 0 && building.isBuilt && building.type === 'TownCenter' || building.type === 'StoragePit';
+						const targets = this.player.buildings.filter((building) => {
+							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'StoragePit');
 						});
-						let target = getClosestInstance(this, targets);
+						const target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
 						}else{
@@ -176,7 +176,7 @@ class Unit extends PIXI.Container {
 						this.dest.life--;
 						if (this.dest.life <= 0){
 							//Set cutted tree texture
-							let sprite = this.dest.getChildByName('sprite');
+							const sprite = this.dest.getChildByName('sprite');
 							const spritesheet = app.loader.resources['636'].spritesheet;
 							const textureName = `00${randomRange(0,3)}_636.png`;
 							const texture = spritesheet.textures[textureName];
@@ -229,10 +229,10 @@ class Unit extends PIXI.Container {
 					}
 					//Villager is full we send him delivery first
 					if (this.loading === this.maxLoading || !this.dest){
-						let targets = this.player.buildings.filter((building) => {
-							return building.life > 0 && building.isBuilt && building.type === 'TownCenter' || building.type === 'Granary';
+						const targets = this.player.buildings.filter((building) => {
+							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'Granary');
 						});
-						let target = getClosestInstance(this, targets);
+						const target = getClosestInstance(this, targets);
 						if (this.dest){
 							this.previousDest = this.dest;
 						}else{
@@ -275,11 +275,14 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					if (this.dest.life < this.dest.lifeMax){
-						this.dest.life += this.attack;
-						this.dest.updateTexture(this.action);
+                        this.dest.life += this.attack;
+                        if (this.dest.selected && player){
+                            player.interface.updateInfo('life', (element) => element.textContent = this.dest.life + '/' + this.dest.lifeMax);
+                        }
+						this.dest.updateLife(this.action);
 					}else{
 						if (!this.dest.isBuilt){
-							this.dest.updateTexture(this.action);
+							this.dest.updateLife(this.action);
 							this.dest.isBuilt = true;
 						}
 						this.affectNewDest();
@@ -302,9 +305,12 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					if (this.dest.life > 0){
-						this.dest.life -= this.attack;
+                        this.dest.life -= this.attack;
+                        if (this.dest.selected && player){
+                            player.interface.updateInfo('life', (element) => element.textContent = this.dest.life + '/' + this.dest.lifeMax);
+                        }
 						if (this.dest.name === 'building'){
-							this.dest.updateTexture(this.action);							
+							this.dest.updateLife(this.action);							
 						}else{
 							this.dest.isAttacked(this);
 						}
@@ -340,7 +346,7 @@ class Unit extends PIXI.Container {
 	moveToPath(){
 		const next = this.path[this.path.length - 1];
 		const nextCell = this.parent.grid[next.i][next.j];
-		let sprite = this.getChildByName('sprite');
+		const sprite = this.getChildByName('sprite');
 		if (!sprite){
 			return;
 		}
@@ -388,7 +394,7 @@ class Unit extends PIXI.Container {
             
             //Destination moved
 			if (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j){
-				if (this.player.views[this.dest.i][this.dest.j].viewedBy.length > 1){
+				if (this.player.views[this.dest.i][this.dest.j].viewBy.length > 1){
                     this.sendTo(this.dest, this.action);
                     return;
 				}
@@ -488,13 +494,13 @@ class Unit extends PIXI.Container {
 		if (this.currentSheet === 'dyingSheet'){
 			return;
 		}
-		if (this.player.isPlayed){
-			this.player.interface.setBottombar();
+		if (this.selected && player){
+            player.unselectAll();
 		}
 		this.path = [];
 		this.action = null;
 		this.setTextures('dyingSheet');
-		let sprite = this.getChildByName('sprite');
+		const sprite = this.getChildByName('sprite');
 		if (!sprite){
 			return;
 		}
@@ -506,7 +512,7 @@ class Unit extends PIXI.Container {
 				this.parent.grid[this.i][this.j].solid = false;
 	
 				//Remove from player units
-				let index = this.player.units.indexOf(this);
+				const index = this.player.units.indexOf(this);
 				if (index >= 0){
 					this.player.units.splice(index, 1);
 				}
@@ -527,7 +533,7 @@ class Unit extends PIXI.Container {
 		}
 	}
 	setTextures(sheet){
-		let sprite = this.getChildByName('sprite');
+		const sprite = this.getChildByName('sprite');
 		if (!sprite){
 			return;
 		}
@@ -592,10 +598,15 @@ class Villager extends Unit {
 			dyingSheet: app.loader.resources['314'].spritesheet,
 			interface: {
 				info: (element) => {
-					let img = document.createElement('img');
+					const img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
-					element.appendChild(img);
+                    element.appendChild(img);
+
+                    const life = document.createElement('div');
+                    life.id = 'life';
+                    life.textContent = this.life + '/' + this.lifeMax;
+                    element.appendChild(life);
 				},
 				menu: player.isPlayed ? [
 					{
@@ -671,10 +682,15 @@ class Clubman extends Unit {
 			dyingSheet: app.loader.resources['321'].spritesheet,
 			interface: {
 				info: (element) => {
-					let img = document.createElement('img');
+					const img = document.createElement('img');
 					img.id = 'icon';
 					img.src = getIconPath(data.icon);
-					element.appendChild(img);
+                    element.appendChild(img);
+                    
+                    const life = document.createElement('div');
+                    life.id = 'life';
+                    life.textContent = this.life + '/' + this.lifeMax;
+                    element.appendChild(life);
 				},
 			}
 		})

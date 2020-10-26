@@ -53,16 +53,15 @@ window.onload = preload;
 function preload(){
 	PIXI.settings.ROUND_PIXELS = true;
 	app = new PIXI.Application({
-        top: 40,
 		width: appWidth,
 		height: appHeight - appTop - 136, 
-		antialias: false,
 		resolution: window.devicePixelRatio, 
-		autoResize: true
+        autoResize: true,
+        powerPreference: "high-performance"
 	});
 
 	//Set loading screen
-	let loading = document.createElement('div');
+	const loading = document.createElement('div');
 	loading.id = 'loading';
 	loading.textContent = 'Loading..';
 	Object.assign(loading.style, {
@@ -191,14 +190,26 @@ function create(){
 	})
 
     //Set-up global interactions
-    document.addEventListener('mouseleave', (evt) => {
-        mouse.x = evt.pageX;
-        mouse.y = evt.pageY - 20;
+    document.addEventListener('keydown', (evt) => {
+        switch (evt.code){
+            case 'ArrowLeft': 
+                map.moveCamera('left');
+                break;
+            case 'ArrowRight': 
+                map.moveCamera('right');
+                break;  
+            case 'ArrowUp': 
+                map.moveCamera('up');
+                break;  
+            case 'ArrowDown': 
+                map.moveCamera('down');
+                break;
+        }
+    })
+    document.addEventListener('mouseleave', () => {
         mouse.out = true;
     })
-    document.addEventListener('mouseenter', (evt) => {
-        mouse.x = evt.pageX;
-        mouse.y = evt.pageY - 20;        
+    document.addEventListener('mouseenter', () => {
         mouse.out = false;
     })
     document.addEventListener('mousemove', (evt) => {
@@ -224,8 +235,8 @@ function create(){
                     }
                 });
                 //Color image of mouse building depend on buildable or not
-                let sprite = mouseBuilding.getChildByName('sprite');
-                let color = mouseBuilding.getChildByName('color');
+                const sprite = mouseBuilding.getChildByName('sprite');
+                const color = mouseBuilding.getChildByName('color');
                 if (isFree){
                     sprite.tint = colorWhite;
                     if (color){
@@ -283,7 +294,7 @@ function create(){
             player.unselectAll();
 			//Select units inside the rectangle
 			for(let i = 0; i < player.units.length; i++){
-				let unit = player.units[i];
+				const unit = player.units[i];
 				if (player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
 					unit.select();
 					if (unit.type === 'Villager'){
@@ -324,8 +335,8 @@ function create(){
                     }
                 }else if (player.selectedUnits.length){
                     //Pointer animation
-                    let pointerSheet = app.loader.resources['50405'].spritesheet;
-                    let pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
+                    const pointerSheet = app.loader.resources['50405'].spritesheet;
+                    const pointer = new PIXI.AnimatedSprite(pointerSheet.animations['animation']);
                     pointer.animationSpeed = .2;
                     pointer.loop = false;
                     pointer.anchor.set(.5,.5)

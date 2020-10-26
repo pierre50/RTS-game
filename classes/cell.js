@@ -4,7 +4,7 @@ class Cell extends PIXI.Container{
 
         this.setParent(map);
         this.name = 'cell';
-        let pos = cartesianToIsometric(i, j);
+        const pos = cartesianToIsometric(i, j);
         
 		this.x = pos[0];
         this.y = pos[1] - (z * cellDepth);
@@ -18,7 +18,7 @@ class Cell extends PIXI.Container{
         this.has = null;
         this.visible = false;
         this.viewed = false;
-        this.viewedBy = [];
+        this.viewBy = [];
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
         })
@@ -62,14 +62,14 @@ class Cell extends PIXI.Container{
         }
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[formatNumber(index) + '_' + resourceName + '.png'];
-        let sprite = new PIXI.Sprite(texture);
+        const sprite = new PIXI.Sprite(texture);
         sprite.direction = direction;
         sprite.anchor.set(0.5, 0.5);
         sprite.type = 'border';
         this.addChild(sprite);
     }
     setWaterBorder(cell, resourceName, index){
-        let sprite = this.getChildByName('sprite');
+        const sprite = this.getChildByName('sprite');
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[index + '_' + resourceName + '.png'];
         cell.type = 'desert';
@@ -80,7 +80,7 @@ class Cell extends PIXI.Container{
         sprite.texture = texture;
     }
     setReliefBorder(index, elevation = 0){
-        let sprite = this.getChildByName('sprite');
+        const sprite = this.getChildByName('sprite');
         const resourceName = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0];
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[index + '_' + resourceName + '.png'];
@@ -93,18 +93,18 @@ class Cell extends PIXI.Container{
         sprite.texture = texture;
     }
     fillWaterCellsAroundCell(){
-        let grid = this.parent.grid;
+        const grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
             if (cell.type === 'water' && this.type === 'water'){
-                let dist = instancesDistance(this, cell);
-                let velX = Math.round(((this.i - cell.i)/dist));
-                let velY = Math.round(((this.j - cell.j)/dist));
+                const dist = instancesDistance(this, cell);
+                const velX = Math.round(((this.i - cell.i)/dist));
+                const velY = Math.round(((this.j - cell.j)/dist));
                 if (grid[cell.i+velX] && grid[cell.i+velX][cell.j+velY]){
-                    let target = grid[cell.i+velX][cell.j+velY];
-                    let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
+                    const target = grid[cell.i+velX][cell.j+velY];
+                    const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
                     if (target.type !== this.type && aside.type !== this.type){
                         if ((Math.floor(instancesDistance(this, cell)) === 2)){
-                            let sprite = target.getChildByName('sprite')
+                            const sprite = target.getChildByName('sprite')
                             const index = formatNumber(randomRange(0, 3));
                             const resourceName = '15002';
                             const spritesheet = app.loader.resources[resourceName].spritesheet;
@@ -118,15 +118,15 @@ class Cell extends PIXI.Container{
         });
     }
 	fillReliefCellsAroundCell(){
-        let grid = this.parent.grid;
+        const grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, 2, (cell) => {
             if (cell.z === this.z){
-                let dist = instancesDistance(this, cell);
-                let velX = Math.round(((this.i - cell.i)/dist));
-                let velY = Math.round(((this.j - cell.j)/dist));
+                const dist = instancesDistance(this, cell);
+                const velX = Math.round(((this.i - cell.i)/dist));
+                const velY = Math.round(((this.j - cell.j)/dist));
                 if (grid[cell.i+velX] && grid[cell.i+velX][cell.j+velY]){
-                    let target = grid[cell.i+velX][cell.j+velY];
-                    let aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
+                    const target = grid[cell.i+velX][cell.j+velY];
+                    const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
                     if (target.z <= this.z && target.z !== this.z && aside.z !== this.z){
                         if ((Math.floor(instancesDistance(this, cell)) === 2)){
                             target.setCellLevel(target.z + 1);
@@ -137,7 +137,7 @@ class Cell extends PIXI.Container{
         });
     }
     setCellLevel(level, cpt = 1) {
-        let grid = this.parent.grid;
+        const grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, level - cpt, (cell) => {
             if (cell.z < cpt){
                 cell.y -= (cpt - cell.z) * cellDepth;
@@ -150,9 +150,7 @@ class Cell extends PIXI.Container{
         }
     }
     setFog(){
-        let color = 0x666666;
-        this.viewed = true;
-    
+        const color = 0x666666;
         for (let i = 0; i < this.children.length; i++){
             if (this.children[i].tint){
                 this.children[i].tint = color;
@@ -161,10 +159,11 @@ class Cell extends PIXI.Container{
         if (this.has){
             if (this.has.name === 'unit' && !this.has.player.isPlayed){
                 this.has.visible = false;
-            }
-            for (let i = 0; i < this.has.children.length; i++){
-                if (this.has.children[i].tint){
-                    this.has.children[i].tint = color;
+            }else{
+                for (let i = 0; i < this.has.children.length; i++){
+                    if (this.has.children[i].tint){
+                        this.has.children[i].tint = color;
+                    }
                 }
             }
         }
@@ -179,7 +178,12 @@ class Cell extends PIXI.Container{
             }
         }
         if (this.has){
-            this.has.visible = true;
+            if (instanceInCamera(this.has)){
+                this.has.visible = true;
+                if (this.has.player && !this.has.player.isPlayed && this.has.name === 'building'){
+                    this.has.updateTexture();
+                }
+            }
             for (let i = 0; i < this.has.children.length; i++){
                 if (this.has.children[i].tint){
                     this.has.children[i].tint = colorWhite;
@@ -194,7 +198,7 @@ class Grass extends Cell{
         const resourceName = '15001';
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
         sprite.name = 'sprite';
         super(i, j, z, map, {
             sprite,
@@ -209,7 +213,7 @@ class Desert extends Cell{
         const resourceName = '15000';
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
         sprite.name = 'sprite';
         super(i, j, z, map, {
             sprite,
@@ -224,7 +228,7 @@ class Water extends Cell{
         const resourceName = '15002';
         const spritesheet = app.loader.resources[resourceName].spritesheet;
         const texture = spritesheet.textures[formatNumber(randomSpritesheet) + '_' + resourceName + '.png'];
-		let sprite = new PIXI.Sprite(texture);
+		const sprite = new PIXI.Sprite(texture);
         sprite.name = 'sprite';
         super(i, j, z, map, {
             sprite,

@@ -63,7 +63,7 @@ class Interface {
         this.topbar.appendChild(this.options);
         gamebox.prepend(this.topbar)
 
-        let bottombar = document.createElement('div');
+        const bottombar = document.createElement('div');
         Object.assign(bottombar.style, {
             bottom: '0',
             display: 'grid',
@@ -92,13 +92,13 @@ class Interface {
         this.updateTopbar();
     }
     setResourceBox(name){
-        let box = document.createElement('div');
+        const box = document.createElement('div');
         Object.assign(box.style, {
             display: 'flex',
             marginRight: '40px',
             alignItems: 'center',
         })
-        let img = document.createElement('img');
+        const img = document.createElement('img');
         Object.assign(img.style, {
             objectFit: 'none',
             height: '13px',
@@ -130,18 +130,18 @@ class Interface {
         }
     }
     updateInfo(target, action){
-        let targetElement = this.bottombarInfo.querySelector(`[id=${target}]`);
+        const targetElement = this.bottombarInfo.querySelector(`[id=${target}]`);
         if (!targetElement || typeof action !== 'function'){
             return;
         }
         return action(targetElement);
     }
     updateButton(target, action){
-        let targetElement = this.bottombarMenu.querySelector(`[id=${target}]`);
+        const targetElement = this.bottombarMenu.querySelector(`[id=${target}]`);
         if (!targetElement || typeof action !== 'function'){
             return;
         }
-        let contentElement = targetElement.querySelector('[id=content');
+        const contentElement = targetElement.querySelector('[id=content');
         if (!contentElement){
             return;
         }
@@ -167,12 +167,12 @@ class Interface {
         }
         function setMenuRecurs(selection, element, menu, parent){
             menu.forEach((btn) => {
-                let box = document.createElement('div');
+                const box = document.createElement('div');
                 box.id = btn.id;
                 if (typeof btn.onCreate === 'function'){
                     btn.onCreate(selection, box);
                 }else{
-                    let img = document.createElement('img');
+                    const img = document.createElement('img');
                     img.src = btn.icon;
                     Object.assign(img.style, me.style.img);
                     box.appendChild(img);
@@ -193,8 +193,8 @@ class Interface {
                 element.appendChild(box);
             })
             if (parent || selection.selected){
-                let back = document.createElement('div');
-                let img = document.createElement('img');
+                const back = document.createElement('div');
+                const img = document.createElement('img');
                 back.id = 'interfaceBackBtn';
                 img.src = 'data/interface/50721/010_50721.png';
                 Object.assign(img.style, me.style.img);
@@ -222,19 +222,19 @@ class Interface {
             icon: getIconPath(unit.icon),
             id: type,
             onCreate: (selection, element) => {
-                let img = document.createElement('img');
+                const img = document.createElement('img');
                 img.src = getIconPath(unit.icon);
                 Object.assign(img.style, this.style.img);
 
                 const queue = selection.queue.filter(queue => queue === type).length;
-                let counter = document.createElement('div');
+                const counter = document.createElement('div');
                 counter.id = 'content';
                 counter.textContent = queue || '';
                 counter.style.position = 'absolute';
                 element.appendChild(img);
                 element.appendChild(counter);
             },
-            onClick: (selection, evt) => {
+            onClick: (selection) => {
                 selection.buyUnit(type);
             }
         }
@@ -247,10 +247,10 @@ class Interface {
                 this.removeMouseBuilding();
                 if (canAfford(this.player, building.cost)){
                     mouseBuilding = new PIXI.Container();
-                    let sprite = new PIXI.Sprite(getTexture(building.images.final));
+                    const sprite = new PIXI.Sprite(getTexture(building.images.final));
                     sprite.name = 'sprite';
                     if (building.images.color){
-                        let color = new PIXI.Sprite(getTexture(building.images.color));
+                        const color = new PIXI.Sprite(getTexture(building.images.color));
                         color.name = 'color';
                         changeSpriteColor(color, this.player.color);
                         mouseBuilding.addChild(color);
