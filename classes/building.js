@@ -122,7 +122,7 @@ class Building extends PIXI.Container {
 			}else{
 				const newFire = new PIXI.Container();
 				newFire.name = 'fire';
-				const poses = [[0,0]]
+				let poses = [[0,0]]
 				if (building.size === 3){
 					poses = [[0,-32],[-64,0],[0,32],[64,0]];
 				}
@@ -257,11 +257,40 @@ class Building extends PIXI.Container {
             }
 		}
 	}
+	setDefaultInterface(element, data){
+		const civ = document.createElement('div');
+		civ.id = 'civ';
+		civ.textContent = this.player.civ;
+		element.appendChild(civ);
+
+		const type = document.createElement('div');
+		type.id = 'type';
+		type.textContent = this.type;
+		element.appendChild(type);
+
+		const img = document.createElement('img');
+		img.id = 'icon';
+		img.src = getIconPath(data.icon);
+		element.appendChild(img);
+
+		const life = document.createElement('div');
+		life.id = 'life';
+		life.textContent = this.life + '/' + this.lifeMax;
+		element.appendChild(life);
+
+		if (this.player.isPlayed){
+			const loading = document.createElement('div');
+			loading.id = 'loading';
+			loading.textContent = this.loading ? this.loading + '%': '';
+			element.appendChild(loading);
+		}
+	}
 }
 
 class TownCenter extends Building {
 	constructor(i, j, map, player, isBuilt = false){
-		const data = empires.buildings[player.civ][player.age]['TownCenter'];
+		const type = 'TownCenter';
+		const data = empires.buildings[player.civ][player.age][type];
 
 		//Define sprite
 		const texture = getTexture(data.images.build);
@@ -272,7 +301,7 @@ class TownCenter extends Building {
 		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'TownCenter',
+			type,
 			sprite,
 			size: data.size,
 			sight: data.sight,
@@ -280,22 +309,7 @@ class TownCenter extends Building {
 			lifeMax: data.lifeMax,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-					element.appendChild(img);
-            
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
-
-                    if (player.isPlayed){
-                        const loading = document.createElement('div');
-                        loading.id = 'loading';
-                        loading.textContent = this.loading ? this.loading + '%': '';
-                        element.appendChild(loading);
-                    }
+					this.setDefaultInterface(element, data);
 				},
 				menu: player.isPlayed ? [
 					player.interface.getUnitButton('Villager')
@@ -321,7 +335,8 @@ class TownCenter extends Building {
 
 class Barracks extends Building {
 	constructor(i, j, map, player, isBuilt = false){
-		const data = empires.buildings[player.civ][player.age]['Barracks'];
+		const type = 'Barracks';
+		const data = empires.buildings[player.civ][player.age][type];
 
 		//Define sprite
 		const texture = getTexture(data.images.build);
@@ -332,7 +347,7 @@ class Barracks extends Building {
 		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'Barracks',
+			type,
 			sprite,
 			size: data.size,
 			sight: data.sight,
@@ -340,22 +355,7 @@ class Barracks extends Building {
 			lifeMax: data.lifeMax,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-                    element.appendChild(img);
-                    
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
-
-                    if (player.isPlayed){
-                        const loading = document.createElement('div');
-                        loading.id = 'loading';
-                        loading.textContent = this.loading ? this.loading + '%': '';
-                        element.appendChild(loading);
-                    }
+					this.setDefaultInterface(element, data);
 				},
 				menu: player.isPlayed ? [
 					player.interface.getUnitButton('Clubman')
@@ -375,7 +375,8 @@ class Barracks extends Building {
 
 class House extends Building {
 	constructor(i, j, map, player, isBuilt = false){
-		const data = empires.buildings[player.civ][player.age]['House'];
+		const type = 'House';
+		const data = empires.buildings[player.civ][player.age][type];
 
 		//Define sprite
 		const texture = getTexture(data.images.build);
@@ -386,7 +387,7 @@ class House extends Building {
 		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'House',
+			type,
 			sprite,
 			size: data.size,
 			sight: data.sight,
@@ -394,23 +395,13 @@ class House extends Building {
 			lifeMax: data.lifeMax,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-					element.appendChild(img);
+					this.setDefaultInterface(element, data);
 
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
-
-                    if (player.isPlayed){
-                        if (this.isBuilt){
-                            const population = document.createElement('div');
-                            population.id = 'population';
-                            population.textContent = player.population + '/' + player.populationMax;
-                            element.appendChild(population);
-                        }
+                    if (player.isPlayed && this.isBuilt){
+						const population = document.createElement('div');
+						population.id = 'population';
+						population.textContent = player.population + '/' + player.populationMax;
+						element.appendChild(population);
                     }
 				}
 			}
@@ -452,7 +443,8 @@ class House extends Building {
 
 class Granary extends Building {
 	constructor(i, j, map, player, isBuilt = false){
-		const data = empires.buildings[player.civ][player.age]['Granary'];
+		const type = 'Granary';
+		const data = empires.buildings[player.civ][player.age][type];
 
 		//Define sprite
 		const texture = getTexture(data.images.build);
@@ -463,7 +455,7 @@ class Granary extends Building {
 		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'Granary',
+			type,
 			sprite,
 			size: data.size,
 			sight: data.sight,
@@ -471,15 +463,7 @@ class Granary extends Building {
 			lifeMax: data.lifeMax,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-                    element.appendChild(img);
-
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
+					this.setDefaultInterface(element, data);
 				}
 			}
 		});
@@ -500,7 +484,8 @@ class Granary extends Building {
 
 class StoragePit extends Building {
 	constructor(i, j, map, player, isBuilt = false){
-		const data = empires.buildings[player.civ][player.age]['StoragePit'];
+		const type = 'StoragePit';
+		const data = empires.buildings[player.civ][player.age][type];
 
 		//Define sprite
 		const texture = getTexture(data.images.build);
@@ -511,7 +496,7 @@ class StoragePit extends Building {
 		sprite.hitArea = new PIXI.Polygon(texture.hitArea);
 
 		super(i, j, map, player, {
-			type: 'StoragePit',
+			type,
 			sprite,
 			size: data.size,
 			sight: data.sight,
@@ -519,15 +504,7 @@ class StoragePit extends Building {
 			lifeMax: data.lifeMax,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-                    element.appendChild(img);
-                    
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
+					this.setDefaultInterface(element, data);
 				}
 			}
 		});

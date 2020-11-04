@@ -23,7 +23,7 @@ class Unit extends PIXI.Container {
 		this.action = null;
 		this.work = null;
 		this.loading = 0;
-		this.maxLoading = 10;
+		this.loadingMax = 10;
 		this.currentSheet = null;
 		this.size = 1;
 		this.visible = false;
@@ -158,7 +158,7 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					//Villager is full we send him delivery first
-					if (this.loading === this.maxLoading || !this.dest){
+					if (this.loading === this.loadingMax || !this.dest){
 						const targets = this.player.buildings.filter((building) => {
 							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'StoragePit');
 						});
@@ -173,9 +173,13 @@ class Unit extends PIXI.Container {
 					}
 					//Tree destination is still alive we cut him until it's dead
 					if (this.dest.life > 0){
-						this.dest.life--;
+						this.dest.life -= this.attack;
+						if (this.dest.selected && player){
+                            player.interface.updateInfo('life', (element) => this.dest.life > 0 ? (element.textContent = this.dest.life + '/' + this.dest.lifeMax) : (element.textContent = ''));
+                        }
 						if (this.dest.life <= 0){
 							//Set cutted tree texture
+							this.dest.life = 0;
 							const sprite = this.dest.getChildByName('sprite');
 							const spritesheet = app.loader.resources['636'].spritesheet;
 							const textureName = `00${randomRange(0,3)}_636.png`;
@@ -189,7 +193,12 @@ class Unit extends PIXI.Container {
 					}
 					//Villager cut the stump
 					this.loading++;
+					this.updateInterfaceLoading();
+
 					this.dest.quantity--;
+					if (this.dest.selected && player){
+						player.interface.updateInfo('quantity-text', (element) => element.textContent = this.dest.quantity);
+					}
 					//Destroy tree if stump out of quantity
 					if (this.dest.quantity <= 0){
 						this.dest.die();
@@ -209,6 +218,8 @@ class Unit extends PIXI.Container {
 					this.player.interface.updateTopbar();
 				}
 				this.loading = 0;
+				this.updateInterfaceLoading();
+
 				this.walkingSheet = app.loader.resources['682'].spritesheet;
 				this.standingSheet = app.loader.resources['440'].spritesheet;
 				if (this.previousDest){
@@ -228,7 +239,7 @@ class Unit extends PIXI.Container {
 						return;
 					}
 					//Villager is full we send him delivery first
-					if (this.loading === this.maxLoading || !this.dest){
+					if (this.loading === this.loadingMax || !this.dest){
 						const targets = this.player.buildings.filter((building) => {
 							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'Granary');
 						});
@@ -243,7 +254,12 @@ class Unit extends PIXI.Container {
 					}
 					//Villager forage the berrybush
 					this.loading++;
+					this.updateInterfaceLoading();
+
 					this.dest.quantity--;
+					if (this.dest.selected && player){
+						player.interface.updateInfo('quantity-text', (element) => element.textContent = this.dest.quantity);
+					}
 					//Destroy berrybush if it out of quantity
 					if (this.dest.quantity <= 0){
 						this.dest.die();
@@ -258,6 +274,8 @@ class Unit extends PIXI.Container {
 					this.player.interface.updateTopbar();
 				}
 				this.loading = 0;
+				this.updateInterfaceLoading();
+
 				if (this.previousDest){
 					this.sendTo(this.previousDest, 'forageberry');
 				}else{
@@ -277,7 +295,7 @@ class Unit extends PIXI.Container {
 					if (this.dest.life < this.dest.lifeMax){
                         this.dest.life += this.attack;
                         if (this.dest.selected && player){
-                            player.interface.updateInfo('life', (element) => element.textContent = this.dest.life + '/' + this.dest.lifeMax);
+                            player.interface.updateInfo('life', (element) => element.textContent = Math.min(this.dest.life, this.dest.lifeMax) + '/' + this.dest.lifeMax);
                         }
 						this.dest.updateLife(this.action);
 					}else{
@@ -582,13 +600,35 @@ class Unit extends PIXI.Container {
 		}
 		sprite.play();
 	}
+	setDefaultInterface(element, data){
+		const civ = document.createElement('div');
+		civ.id = 'civ';
+		civ.textContent = this.player.civ;
+		element.appendChild(civ);
+
+		const type = document.createElement('div');
+		type.id = 'type';
+		type.textContent = this.type;
+		element.appendChild(type);
+
+		const img = document.createElement('img');
+		img.id = 'icon';
+		img.src = getIconPath(data.icon);
+		element.appendChild(img);
+
+		const life = document.createElement('div');
+		life.id = 'life';
+		life.textContent = this.life + '/' + this.lifeMax;
+		element.appendChild(life);
+	}
 }
 
 class Villager extends Unit {
 	constructor(i, j, map, player){
-		const data = empires.units['Villager'];
+		const type = 'Villager';
+		const data = empires.units[type];
 		super(i, j, map, player, {
-			type: 'Villager',
+			type,
 			lifeMax: data.lifeMax,
 			sight: data.sight,
 			speed: data.speed,
@@ -598,15 +638,10 @@ class Villager extends Unit {
 			dyingSheet: app.loader.resources['314'].spritesheet,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-                    element.appendChild(img);
-
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
+					this.setDefaultInterface(element, data);
+					if (player.isPlayed){
+						element.appendChild(this.getLoadingElement());
+					}
 				},
 				menu: player.isPlayed ? [
 					{
@@ -622,8 +657,57 @@ class Villager extends Unit {
 			}
 		})
 	}
+	updateInterfaceLoading(){
+		if (this.selected && player){
+			if (this.loading === 1){
+				player.interface.updateInfo('loading', (element) => element.innerHTML = this.getLoadingElement().outerHTML);
+			}else if (this.loading > 1){
+				player.interface.updateInfo('loading-text', (element) => element.textContent = this.loading);
+			}else{
+				player.interface.updateInfo('loading', (element) => element.innerHTML = '');
+			}
+		}
+	}
+	getLoadingElement(){
+		const loading = document.createElement('div');
+		Object.assign(loading.style, {
+			display: 'flex',
+			alignItems: 'center',
+		})
+		loading.id = 'loading';
+		if (this.loading){
+			let iconToUse;
+			switch (this.work){
+				case 'woodcutter':
+					iconToUse = player.interface.icons['wood'];
+					break;
+				case 'gatherer':
+					iconToUse = player.interface.icons['food'];
+					break;
+			} 
+			const icon = document.createElement('img');
+			Object.assign(icon.style, {
+				objectFit: 'none',
+				height: '13px',
+				width: '20px',
+				marginRight: '2px',
+				border: '1.5px inset #686769',
+				borderRadius: '2px'
+			})
+			icon.src = iconToUse;
+			const text = document.createElement('div');
+			text.id = 'loading-text';
+			text.textContent = this.loading;
+			loading.appendChild(icon);
+			loading.appendChild(text);
+		}
+		return loading;
+	}
 	sendToAttack(target){
 		this.loading = 0;
+		if (this.selected && player){
+			player.interface.updateInfo('loading', (element) => element.innerHTML = '');
+		}
 		this.work = null;
 		this.actionSheet = app.loader.resources['224'].spritesheet;
 		this.standingSheet = app.loader.resources['418'].spritesheet;
@@ -634,6 +718,7 @@ class Villager extends Unit {
 	sendToBuilding(building){
 		if (this.work !== 'builder'){
 			this.loading = 0;
+			this.updateInterfaceLoading();
 			this.work = 'builder';
 			this.actionSheet = app.loader.resources['628'].spritesheet;
 			this.standingSheet = app.loader.resources['419'].spritesheet;
@@ -645,6 +730,7 @@ class Villager extends Unit {
 	sendToTree(tree){
 		if (this.work !== 'woodcutter'){
 			this.loading = 0;
+			this.updateInterfaceLoading();
 			this.work = 'woodcutter';
 			this.actionSheet = app.loader.resources['625'].spritesheet;
 			this.standingSheet = app.loader.resources['440'].spritesheet;
@@ -656,6 +742,7 @@ class Villager extends Unit {
 	sendToBerrybush(berrybush){
 		if (this.work !== 'gatherer'){
 			this.loading = 0;
+			this.updateInterfaceLoading();
 			this.work = 'gatherer';
 			this.actionSheet = app.loader.resources['632'].spritesheet;
 			this.standingSheet = app.loader.resources['432'].spritesheet;
@@ -668,9 +755,10 @@ class Villager extends Unit {
 
 class Clubman extends Unit {
 	constructor(i, j, map, player){
-		const data = empires.units['Clubman'];
+		const type = 'Clubman';
+		const data = empires.units[type];
 		super(i, j, map, player, {
-			type: 'Clubman',
+			type,
 			lifeMax: data.lifeMax,
 			sight: data.sight,
 			speed: data.speed,
@@ -682,15 +770,7 @@ class Clubman extends Unit {
 			dyingSheet: app.loader.resources['321'].spritesheet,
 			interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-                    element.appendChild(img);
-                    
-                    const life = document.createElement('div');
-                    life.id = 'life';
-                    life.textContent = this.life + '/' + this.lifeMax;
-                    element.appendChild(life);
+					this.setDefaultInterface(element, data);
 				},
 			}
 		})

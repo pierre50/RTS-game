@@ -106,15 +106,19 @@ class Player{
                 }
             }
             sprite.on('mouseover', () => {
-                let hasVillager = false;
+				let hasVillager = false;
+				let hasVillagerLoading = false;
                 for (let i = 0; i < this.selectedUnits.length; i++){
                     const unit = this.selectedUnits[i];
                     if (unit.type === 'Villager'){
-                        hasVillager = true;
-                        break;
+						hasVillager = true;
+						if (unit.loading > 0){
+							hasVillagerLoading = true;
+							break;
+						}
                     }
                 }
-                if (hasVillager){
+                if (hasVillager && (building.life < building.lifeMax || hasVillagerLoading)){
                     gamebox.setCursor('hover');
                 }
             })
@@ -245,7 +249,7 @@ class Player{
 class AI extends Player{
 	constructor(i, j, map, age, civ, color){
 		super(i, j, map, age, civ, color, 'AI');
-		this.interval = setInterval(() => this.step(), 1000);
+		this.interval = setInterval(() => this.step(), 3000);
 	}
 	step(){
 		const maxVillagers = 20;

@@ -19,6 +19,8 @@ class resource extends PIXI.Container{
 			this[prop] = options[prop];
 		})
 
+		this.life = this.lifeMax;
+
 		//Set solid zone
 		const cell = map.grid[i][j];
 		cell.solid = true;
@@ -85,11 +87,63 @@ class resource extends PIXI.Container{
 		this.isDestroyed = true;
 		this.destroy({ child: true, texture: true });
 	}
+	setDefaultInterface(element, data){
+		const type = document.createElement('div');
+		type.id = 'type';
+		type.textContent = this.type;
+		element.appendChild(type);
+
+		const img = document.createElement('img');
+		img.id = 'icon';
+		img.src = getIconPath(data.icon);
+		element.appendChild(img);
+
+		if (this.life){
+			const life = document.createElement('div');
+			life.id = 'life';
+			life.textContent = this.life + '/' + this.lifeMax;
+			element.appendChild(life);
+		}
+		if (this.quantity){
+			const quantity = document.createElement('div');
+			Object.assign(quantity.style, {
+				display: 'flex',
+				alignItems: 'center',
+			})
+			quantity.id = 'quantity';
+			let iconToUse;
+			switch (this.type){
+				case 'Tree':
+					iconToUse = player.interface.icons['wood'];
+					break;
+				case 'Berrybush':
+					iconToUse = player.interface.icons['food'];
+					break;
+			} 
+			const icon = document.createElement('img');
+			Object.assign(icon.style, {
+				objectFit: 'none',
+				height: '13px',
+				width: '20px',
+				marginRight: '2px',
+				border: '1.5px inset #686769',
+				borderRadius: '2px'
+			})
+			icon.src = iconToUse;
+			const text = document.createElement('div');
+			text.id = 'quantity-text';
+			text.textContent = this.quantity;
+			quantity.appendChild(icon);
+			quantity.appendChild(text);
+			element.appendChild(quantity);
+		}
+	}
 }
 
 class Tree extends resource{
 	constructor(i, j, map, textureNames){
-		const data = empires.resources['Tree'];
+		const type = 'Tree';
+		const data = empires.resources[type];
 
 		//Define sprite
 		const randomSpritesheet = randomItem(textureNames);
@@ -129,17 +183,14 @@ class Tree extends resource{
 		})
 
 		super(i, j, map, {
-			type: 'Tree',
+			type,
 			sprite: sprite,
 			size: 1,
 			quantity: data.quantity,
-            life: data.life,
+			lifeMax: data.lifeMax,
             interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-					element.appendChild(img);
+					this.setDefaultInterface(element, data);
 				}
 			}
 		});
@@ -156,7 +207,8 @@ class Tree extends resource{
 
 class Berrybush extends resource{
 	constructor(i, j, map){
-		const data = empires.resources['Berrybush'];
+		const type = 'Berrybush';
+		const data = empires.resources[type];
 
 		//Define sprite
 		const spritesheet = app.loader.resources['240'].spritesheet;
@@ -187,16 +239,13 @@ class Berrybush extends resource{
 		})
 
 		super(i, j, map, {
-			type: 'Berrybush',
+			type,
 			sprite: sprite,
 			size: 1,
             quantity: data.quantity,
             interface: {
 				info: (element) => {
-					const img = document.createElement('img');
-					img.id = 'icon';
-					img.src = getIconPath(data.icon);
-					element.appendChild(img);
+					this.setDefaultInterface(element, data);
 				}
 			}
 		});

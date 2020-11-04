@@ -8,8 +8,8 @@ class Interface {
                 width: '100%',
             },
             box:  {
-                height: '50px',
-                width: '50px',
+                height: '45px',
+                width: '45px',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
@@ -20,8 +20,8 @@ class Interface {
             },
             img: {
                 objectFit: 'none',
-                height: '50px',
-                width: '50px'
+                height: '45px',
+                width: '45px'
             }
         } 
         this.player = player;

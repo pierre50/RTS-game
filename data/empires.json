@@ -110,7 +110,7 @@
         },
         "Tree": {
             "quantity": 300,
-            "life": 25,
+            "lifeMax": 25,
             "icon": "035_50730"
         }
     }

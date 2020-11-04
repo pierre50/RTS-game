@@ -256,8 +256,8 @@ function create(){
 		//Create and draw mouse selection
 		if (!mouseRectangle && pointerStart && pointsDistance(mouse.x, mouse.y, pointerStart.x, pointerStart.y) > 5){
 			mouseRectangle = {
-				x: mouse.x,
-				y: mouse.y,
+				x: pointerStart.x,
+				y: pointerStart.y,
 				width: 0,
 				height: 0,
 				graph: new PIXI.Graphics()
@@ -269,12 +269,10 @@ function create(){
 				player.unselectAll();
 			}
 			mouseRectangle.graph.clear();
-			if (mouse.x > mouseRectangle.x && mouse.y > mouseRectangle.y){
-				mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
-				mouseRectangle.height = mouse.y >= app.screen.height ? Math.round(app.screen.height - 2 - mouseRectangle.y) : Math.round(mouse.y - mouseRectangle.y);
-				mouseRectangle.graph.lineStyle(1, colorWhite, 1);
-				mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
-			}
+			mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
+			mouseRectangle.height = mouse.y >= app.screen.height ? Math.round(app.screen.height - 2 - mouseRectangle.y) : Math.round(mouse.y - mouseRectangle.y);
+			mouseRectangle.graph.lineStyle(1, colorWhite, 1);
+			mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
 		}   
     })
 	document.addEventListener('pointerdown', () => {
@@ -295,7 +293,7 @@ function create(){
 			//Select units inside the rectangle
 			for(let i = 0; i < player.units.length; i++){
 				const unit = player.units[i];
-				if (player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height)){
+				if (player.selectedUnits.length < maxSelectUnits && pointInRectangle(unit.x-map.camera.x, unit.y-map.camera.y, mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height, true)){
 					unit.select();
 					if (unit.type === 'Villager'){
 						selectVillager = unit;
