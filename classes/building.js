@@ -222,7 +222,8 @@ class Building extends PIXI.Container {
                 }
             }
             if (this.loading === null){
-                let timesRun = 0;
+				let timesRun = 0;
+				let hasShowedMessage = false;
                 this.loading = 0;
                 if (this.selected && this.player.isPlayed){
                     this.player.interface.updateInfo('loading', (element) => element.textContent = this.loading + '%');
@@ -232,10 +233,15 @@ class Building extends PIXI.Container {
                     if (!this.parent){
                         clearInterval(interval);
                         return;
-                    }
-                    if (timesRun < 100 && this.player.population < this.player.populationMax){
-                        timesRun += 1;
-                        this.loading = timesRun;
+                    }   
+                    if (timesRun < 100){
+						if (this.player.population < this.player.populationMax){
+							timesRun += 1;
+							this.loading = timesRun;
+						}else if (this.player.isPlayed && !hasShowedMessage){
+							this.player.interface.showMessage('You need to build more houses');
+							hasShowedMessage = true;
+						}
                     }
                     if (timesRun === 100){
                         this.placeUnit(type);
@@ -245,7 +251,8 @@ class Building extends PIXI.Container {
                             this.buyUnit(this.queue[0], true);
                         }
                         clearInterval(interval);
-                        interval = null;
+						interval = null;
+						hasShowedMessage = false;
                         if (this.selected && this.player.isPlayed){
                             this.player.interface.updateButton(type, (element) => element.textContent = this.queue.length || '');
                             this.player.interface.updateInfo('loading', (element) => element.textContent = '');

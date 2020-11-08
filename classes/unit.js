@@ -431,7 +431,7 @@ class Unit extends PIXI.Container {
 			const oldDeg = this.degree;
 			let speed = this.speed;
 			if (this.loading > 1){
-				speed *= .75;
+				speed *= .80;
 			}
 			moveTowardPoint(this, nextCell.x, nextCell.y, speed);
 			if (oldDeg !== this.degree){	
@@ -441,8 +441,6 @@ class Unit extends PIXI.Container {
 		}
 	}
 	isAttacked(instance){
-		//this.runaway();
-		//return;
 		if (!instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')){
 			return;
 		}
@@ -467,7 +465,7 @@ class Unit extends PIXI.Container {
 		this.setTextures('standingSheet');
 	}
 	step(){
-		if (this.life < 0){
+		if (this.life <= 0){
 			this.die();
 		}
 		if (this.work === 'attacker' && this.inactif){
@@ -530,7 +528,7 @@ class Unit extends PIXI.Container {
 				this.parent.grid[this.i][this.j].solid = false;
 	
 				//Remove from player units
-				const index = this.player.units.indexOf(this);
+				let index = this.player.units.indexOf(this);
 				if (index >= 0){
 					this.player.units.splice(index, 1);
 				}
@@ -541,7 +539,6 @@ class Unit extends PIXI.Container {
 						this.player.selectedUnits.splice(index, 1);
 					}
 				}
-
 				this.parent.removeChild(this);
 			}
 			clearCellOnInstanceSight(this);

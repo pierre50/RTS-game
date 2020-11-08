@@ -1,7 +1,7 @@
 
 //Settings
-const cellWidth = 64;
-const cellHeight = 32;
+const cellWidth = 63;
+const cellHeight = 30;
 const cellDepth = 16;
 
 const ua = window.navigator.userAgent.toLowerCase();
@@ -10,6 +10,7 @@ const isMobile = ua.indexOf('mobile') !== -1 || ua.indexOf('android') !== -1;
 const appTop = 24;
 const appWidth = window.innerWidth;
 const appHeight = window.innerHeight;
+const appBottom = 136;
 const gamebox = document.getElementById('game');
 
 const maxSelectUnits = 25;
@@ -19,7 +20,7 @@ const mapDefaultSize = 200;
 const mapDefaultReliefRange = [1, 3];
 const mapDefaultChanceOfRelief = 0;
 const mapDefaultChanceOfSets = .02;
-const mapRevealEverything = true;
+const mapRevealEverything = false;
 
 //Colors
 const colorWhite = 0xffffff;
@@ -54,7 +55,7 @@ function preload(){
 	PIXI.settings.ROUND_PIXELS = true;
 	app = new PIXI.Application({
 		width: appWidth,
-		height: appHeight - appTop - 136, 
+		height: appHeight - appTop - appBottom, 
 		resolution: window.devicePixelRatio, 
         autoResize: true,
         powerPreference: "high-performance"
@@ -71,19 +72,9 @@ function preload(){
 		height: '100%'
 	});
 	gamebox.appendChild(loading);
+	gamebox.style.background = 'black';
 
 	//Disable contextmenu on rightclick
-	gamebox.setCursor = (status) => {
-		const icons = {
-			default: "url('data/interface/51000/000_51000.png'),auto",
-			hover: "url('data/interface/51000/003_51000.png'),auto",
-			attack: "url('data/interface/51000/004_51000.png'),auto",
-		}
-		gamebox.style.cursor = icons[status];
-		gamebox.cursor = status;
-	}
-	gamebox.setCursor('default');
-	gamebox.style.background = 'black';
 	gamebox.addEventListener('contextmenu', (evt) => {
 		evt.preventDefault();
 	});
@@ -214,7 +205,7 @@ function create(){
     })
     document.addEventListener('mousemove', (evt) => {
         mouse.x = evt.pageX;
-        mouse.y = evt.pageY - 20;     
+        mouse.y = evt.pageY;     
         if (!player){
 			return;
         }
@@ -257,7 +248,7 @@ function create(){
 		if (!mouseRectangle && pointerStart && pointsDistance(mouse.x, mouse.y, pointerStart.x, pointerStart.y) > 5){
 			mouseRectangle = {
 				x: pointerStart.x,
-				y: pointerStart.y,
+				y: pointerStart.y - 20,
 				width: 0,
 				height: 0,
 				graph: new PIXI.Graphics()
@@ -270,12 +261,15 @@ function create(){
 			}
 			mouseRectangle.graph.clear();
 			mouseRectangle.width = Math.round(mouse.x - mouseRectangle.x);
-			mouseRectangle.height = mouse.y >= app.screen.height ? Math.round(app.screen.height - 2 - mouseRectangle.y) : Math.round(mouse.y - mouseRectangle.y);
+			mouseRectangle.height = mouse.y >= app.screen.height ? Math.round(app.screen.height - 2 - mouseRectangle.y) : Math.round(mouse.y - 20 - mouseRectangle.y);
 			mouseRectangle.graph.lineStyle(1, colorWhite, 1);
 			mouseRectangle.graph.drawRect(mouseRectangle.x, mouseRectangle.y, mouseRectangle.width, mouseRectangle.height);
 		}   
     })
 	document.addEventListener('pointerdown', () => {
+		if ((mouse.y < appTop) || (mouse.y > appHeight - appBottom)){
+			return;
+		}
 		pointerStart = {
 			x: mouse.x,
 			y: mouse.y,
@@ -319,7 +313,7 @@ function create(){
             const j = Math.floor(pos[1]);
             if (map.grid[i] && map.grid[i][j]){
                 const cell = map.grid[i][j];
-                if ((cell.solid || cell.inclined || cell.border || gamebox.cursor !== 'default') && cell.visible){
+                if ((cell.solid || cell.inclined || cell.border) && cell.visible){
                     return;
                 }
                 if (mouseBuilding){
@@ -339,7 +333,7 @@ function create(){
                     pointer.loop = false;
                     pointer.anchor.set(.5,.5)
                     pointer.x = mouse.x;
-                    pointer.y = mouse.y;
+                    pointer.y = mouse.y - 20;
                     pointer.onComplete = () => {
                         pointer.destroy();
                     };

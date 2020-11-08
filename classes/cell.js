@@ -155,6 +155,7 @@ class Cell extends PIXI.Container{
             if (this.children[i].tint){
                 this.children[i].tint = color;
             }
+            this.children[i].cacheAsBitmap = true;
         }
         if (this.has){
             if (this.has.name === 'unit' && !this.has.player.isPlayed){
@@ -164,6 +165,7 @@ class Cell extends PIXI.Container{
                     if (this.has.children[i].tint){
                         this.has.children[i].tint = color;
                     }
+                    this.has.children[i].cacheAsBitmap = true;
                 }
             }
         }
@@ -176,6 +178,7 @@ class Cell extends PIXI.Container{
             if (this.children[i].tint){
                 this.children[i].tint = colorWhite;
             }
+            this.children[i].cacheAsBitmap = false;
         }
         if (this.has){
             if (instanceInCamera(this.has)){
@@ -188,6 +191,7 @@ class Cell extends PIXI.Container{
                 if (this.has.children[i].tint){
                     this.has.children[i].tint = colorWhite;
                 }
+                this.has.children[i].cacheAsBitmap = false;
             }
         }
     }

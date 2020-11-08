@@ -57,18 +57,7 @@ class Player{
                 this.selectedUnits.push(unit);
             });
         }else{
-            unit.on('mouseover', () => {
-                if (!player){
-                    return;
-                }
-                if (player.selectedUnits.length && unit.visible){
-                    gamebox.setCursor('attack');
-                }
-            })
-            unit.on('mouseout', () => {
-                gamebox.setCursor('default');
-            })
-            unit.on('pointertap', (evt) => {
+            unit.on('pointertap', () => {
                 if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
@@ -105,26 +94,6 @@ class Player{
                     unit.sendToBuilding(building);
                 }
             }
-            sprite.on('mouseover', () => {
-				let hasVillager = false;
-				let hasVillagerLoading = false;
-                for (let i = 0; i < this.selectedUnits.length; i++){
-                    const unit = this.selectedUnits[i];
-                    if (unit.type === 'Villager'){
-						hasVillager = true;
-						if (unit.loading > 0){
-							hasVillagerLoading = true;
-							break;
-						}
-                    }
-                }
-                if (hasVillager && (building.life < building.lifeMax || hasVillagerLoading)){
-                    gamebox.setCursor('hover');
-                }
-            })
-            sprite.on('mouseout', () => {
-                gamebox.setCursor('default');
-            })
             sprite.on('pointertap', () => {
                 if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
@@ -172,14 +141,6 @@ class Player{
                 this.selectedBuilding = building;
             });
         }else{
-            sprite.on('mouseover', () => {
-                if (player && player.selectedUnits.length && building.visible){
-                    gamebox.setCursor('attack');
-                }
-            })
-            sprite.on('mouseout', () => {
-                gamebox.setCursor('default');
-            })
             sprite.on('pointertap', () => {
                 if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
@@ -249,7 +210,7 @@ class Player{
 class AI extends Player{
 	constructor(i, j, map, age, civ, color){
 		super(i, j, map, age, civ, color, 'AI');
-		this.interval = setInterval(() => this.step(), 3000);
+		this.interval = setInterval(() => this.step(), 4000);
 	}
 	step(){
 		const maxVillagers = 20;
@@ -277,6 +238,7 @@ class AI extends Player{
 		//Player loosing
 		if (this.buildings.length === 0 && this.units.length === 0){
 			this.die();
+			return;
 		}
 
 		/**

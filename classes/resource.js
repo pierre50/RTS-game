@@ -28,16 +28,6 @@ class resource extends PIXI.Container{
 		
 		if (this.sprite){
 			//Change mouse icon if mouseover/mouseout events
-			this.sprite.on('mouseover', () => { 
-				if (player && player.selectedUnits.length && this.visible){
-					if (player.selectedUnits.some(unit => unit.type === 'Villager')){
-						gamebox.setCursor('hover');
-					}
-				}
-			})
-			this.sprite.on('mouseout', () => {
-				gamebox.setCursor('default');
-            })
             this.sprite.on('pointertap', () => {
                 if (!player.selectedUnits.length){
                     player.unselectAll();

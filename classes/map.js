@@ -477,16 +477,15 @@ class Map extends PIXI.Container{
             return;
         }
         const moveDist = 10;
-        const mouseY = mouse.y + 20;
-        if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouseY >= 0 && mouseY <= appHeight){
+        if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= appHeight){
             this.moveCamera('left', (0 + moveDist) - mouse.x);
-        }else if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouseY >= 0 && mouseY <= appHeight){
+        }else if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouse.y >= 0 && mouse.y <= appHeight){
             this.moveCamera('right',  mouse.x - (appWidth - moveDist));
         }
-        if (mouse.x >= 0 && mouse.x <= appWidth && mouseY >= 0 && mouseY <= 0 + moveDist){
-            this.moveCamera('up', (0 + moveDist) - mouseY);
-        }else if (mouse.x >= 0 && mouse.x <= appWidth && mouseY > appHeight - moveDist && mouseY <= appHeight){
-            this.moveCamera('down', mouseY - (appHeight - moveDist));
+        if (mouse.x >= 0 && mouse.x <= appWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist){
+            this.moveCamera('up', (0 + moveDist) - mouse.y);
+        }else if (mouse.x >= 0 && mouse.x <= appWidth && mouse.y > appHeight - moveDist && mouse.y <= appHeight){
+            this.moveCamera('down', mouse.y - (appHeight - moveDist));
         }
     }
     clearInstancesOnScreen(){
@@ -515,6 +514,10 @@ class Map extends PIXI.Container{
         const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
         const dist = Math.round(appWidth / cellWidth);
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
+            if (!player.views[cell.i][
+                cell.j].viewed){
+                return;
+            }
             cell.visible = true;
             if (cell.has){
                 if (this.revealEverything 

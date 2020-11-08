@@ -12,8 +12,6 @@ class Interface {
                 width: '45px',
                 position: 'relative',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 marginRight: '2px',
                 border: '1.5px inset #686769',
                 borderRadius: '2px'
@@ -38,6 +36,7 @@ class Interface {
             padding: '0 5px',
             height: '20px',
             display: 'grid',
+            fontWeight: 'bold',
             gridTemplateColumns: '1fr 1fr 1fr',
             ...this.style.bar
         });
@@ -90,6 +89,36 @@ class Interface {
 
         this.selection;
         this.updateTopbar();
+    }
+    getMessage(cost){
+        const resource = Object.keys(cost).find(prop => (player[prop] < cost[prop]));
+        return `You need more ${resource} !`;
+    }
+    showMessage(message){
+        if (document.getElementById('msg')){
+            document.getElementById('msg').remove();
+        }
+        const box = document.createElement('div');
+        box.id = 'msg';
+        Object.assign(box.style, {
+            zIndex: '1000',
+            bottom: appBottom + 'px',
+            position: 'fixed',
+            width: '100%',
+            textAlign: 'center'
+        });
+        const msg = document.createElement('span');
+        msg.textContent = message;
+        Object.assign(msg.style, {
+            color: '#ca2e2e',
+            background: 'rgba(0,0,0,.4)'
+        });
+        
+        box.appendChild(msg);
+        gamebox.appendChild(box);
+        setTimeout(() => {
+            box.remove();
+        }, 3000)
     }
     setResourceBox(name){
         const box = document.createElement('div');
@@ -224,18 +253,23 @@ class Interface {
             onCreate: (selection, element) => {
                 const img = document.createElement('img');
                 img.src = getIconPath(unit.icon);
+                debugger
                 Object.assign(img.style, this.style.img);
-
                 const queue = selection.queue.filter(queue => queue === type).length;
                 const counter = document.createElement('div');
                 counter.id = 'content';
+                counter.style.padding = '1px';
                 counter.textContent = queue || '';
                 counter.style.position = 'absolute';
                 element.appendChild(img);
                 element.appendChild(counter);
             },
             onClick: (selection) => {
-                selection.buyUnit(type);
+                if (canAfford(this.player, unit.cost)){
+                    selection.buyUnit(type);
+                }else{
+                    this.showMessage(this.getMessage(unit.cost));
+                }
             }
         }
     }
@@ -264,6 +298,8 @@ class Interface {
                     mouseBuilding.y = evt.y;
                     mouseBuilding.name = 'mouseBuilding';
                     app.stage.addChild(mouseBuilding);
+                }else{
+                    this.showMessage(this.getMessage(building.cost));
                 }
             }
         }
