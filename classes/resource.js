@@ -27,7 +27,12 @@ class resource extends PIXI.Container{
 		cell.has = this;
 		
 		if (this.sprite){
-			//Change mouse icon if mouseover/mouseout events
+			this.sprite.on('mouseover', () => { 
+				mouse.hover = this;
+			})
+			this.sprite.on('mouseout', () => {
+				mouse.hover = null;
+            })
             this.sprite.on('pointertap', () => {
                 if (!player.selectedUnits.length){
                     player.unselectAll();
