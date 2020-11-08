@@ -42,7 +42,8 @@ let map;
 let mouse = {
     x: 0,
     y: 0,
-    out: true
+	out: true,
+	hover: null
 };
 let mouseRectangle;
 let mouseBuilding;
@@ -313,7 +314,7 @@ function create(){
             const j = Math.floor(pos[1]);
             if (map.grid[i] && map.grid[i][j]){
                 const cell = map.grid[i][j];
-                if ((cell.solid || cell.inclined || cell.border) && cell.visible){
+                if ((cell.solid || cell.inclined || cell.border || mouse.hover) && cell.visible){
                     return;
                 }
                 if (mouseBuilding){

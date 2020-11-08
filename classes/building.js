@@ -40,6 +40,12 @@ class Building extends PIXI.Container {
 		});
 		
 		if (this.sprite){
+			this.sprite.on('mouseover', () => { 
+				mouse.hover = this;
+			})
+			this.sprite.on('mouseout', () => {
+				mouse.hover = null;
+            })
 			this.addChild(this.sprite);
 		}
 

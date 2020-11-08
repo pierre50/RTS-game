@@ -42,6 +42,12 @@ class Unit extends PIXI.Container {
 
 		const sprite = new PIXI.AnimatedSprite(this.standingSheet.animations['south']);
 		sprite.name = 'sprite';
+		sprite.on('mouseover', () => { 
+			mouse.hover = this;
+		})
+		sprite.on('mouseout', () => {
+			mouse.hover = null;
+		})
 		changeSpriteColor(sprite, player.color);
 
 		this.interval = setInterval(() => this.step(), 15);
