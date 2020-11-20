@@ -50,12 +50,13 @@ class Building extends PIXI.Container {
 		}
 
 		if (this.isBuilt){
-            this.updateTexture();
+			this.updateTexture();
+			renderCellOnInstanceSight(this);
+			
             if (typeof this.onBuilt === 'function'){
                 this.onBuilt();
             }
 		}
-        renderCellOnInstanceSight(this);
     }
     updateTexture(){
         const sprite = this.getChildByName('sprite');
@@ -163,8 +164,10 @@ class Building extends PIXI.Container {
 			}
 			//Remove from view of others players
 			for (let i = 0; i < this.parent.players.length; i++){
-				const list = this.parent.players[i].foundedEnemyBuildings;
-				list.splice(list.indexOf(this), 1);
+				if (this.parent.players[i].type === 'AI'){
+					const list = this.parent.players[i].foundedEnemyBuildings;
+					list.splice(list.indexOf(this), 1);
+				}
 			}
 			const rubble = new PIXI.Sprite(getTexture(data.images.rubble));
 			rubble.name = 'rubble';

@@ -298,9 +298,11 @@ function create(){
 			}
 			//Set our bottombar
 			if (selectVillager){
+				player.selectedUnit = selectVillager;
 				player.interface.setBottombar(selectVillager);
 			}else{
 				//TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
+				player.selectedUnit = player.selectedUnits[0];
 				player.interface.setBottombar(player.selectedUnits[0]);
 			}
 			//Reset mouse selection

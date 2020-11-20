@@ -34,7 +34,7 @@ class resource extends PIXI.Container{
 				mouse.hover = null;
             })
             this.sprite.on('pointertap', () => {
-                if (!player.selectedUnits.length){
+                if (!player.selectedUnits.length && instanceIsInPlayerSight(this, player)){
                     player.unselectAll();
                     this.select();
                     player.interface.setBottombar(this);
@@ -65,15 +65,20 @@ class resource extends PIXI.Container{
 		}
 	}
 	die(){
+		if (this.selected && player){
+			player.unselectAll();
+		}
 		if (this.parent){
 			if (typeof this.onDie === 'function'){
 				this.onDie();
 			}
 			const listName = 'founded' + this.type + 's';
 			for (let i = 0; i < this.parent.players.length; i++){
-				const list = this.parent.players[i][listName];
-				const index = list.indexOf(this);
-				list.splice(index, 1);
+				if (this.parent.players[i].type === 'AI'){
+					const list = this.parent.players[i][listName];
+					const index = list.indexOf(this);
+					list.splice(index, 1);
+				}
 			}
 			this.parent.grid[this.i][this.j].has = null;
 			this.parent.grid[this.i][this.j].solid = false;
@@ -190,11 +195,24 @@ class Tree extends resource{
 			}
 		});
 	}
+	setCuttedTreeTexture(){
+		const sprite = this.getChildByName('sprite');
+		const spritesheet = app.loader.resources['636'].spritesheet;
+		const textureName = `00${randomRange(0,3)}_636.png`;
+		const texture = spritesheet.textures[textureName];
+		sprite.texture = texture;
+		const points = [-32, 0, 0,-16, 32,0, 0,16];
+		sprite.hitArea = new PIXI.Polygon(points);
+		sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
+	}
 	onDie(){
 		const spritesheet = app.loader.resources['623'].spritesheet;
 		const textureName = `00${randomRange(0,3)}_623.png`;
 		const texture = spritesheet.textures[textureName];
 		const sprite = new PIXI.Sprite(texture);
+		if (!instanceIsInPlayerSight(this, player)){
+			sprite.visible = false;
+		}
 		sprite.name = 'stump';
 		this.parent.grid[this.i][this.j].addChild(sprite);
 	}

@@ -165,16 +165,7 @@ class Unit extends PIXI.Container {
 					}
 					//Villager is full we send him delivery first
 					if (this.loading === this.loadingMax || !this.dest){
-						const targets = this.player.buildings.filter((building) => {
-							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'StoragePit');
-						});
-						const target = getClosestInstance(this, targets);
-						if (this.dest){
-							this.previousDest = this.dest;
-						}else{
-							this.previousDest = this.parent.grid[this.i][this.j];
-						}
-						this.sendTo(target, 'deliverywood');
+						this.sendToDelivery('StoragePit', 'deliverywood');
 						return;
 					}
 					//Tree destination is still alive we cut him until it's dead
@@ -186,14 +177,9 @@ class Unit extends PIXI.Container {
 						if (this.dest.life <= 0){
 							//Set cutted tree texture
 							this.dest.life = 0;
-							const sprite = this.dest.getChildByName('sprite');
-							const spritesheet = app.loader.resources['636'].spritesheet;
-							const textureName = `00${randomRange(0,3)}_636.png`;
-							const texture = spritesheet.textures[textureName];
-							sprite.texture = texture;
-							const points = [-32, 0, 0,-16, 32,0, 0,16];
-							sprite.hitArea = new PIXI.Polygon(points);
-							sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
+							if (instanceIsInPlayerSight(this.dest, player)){
+								this.setCuttedTreeTexture();
+							}
 						}
 						return;
 					}
@@ -246,16 +232,7 @@ class Unit extends PIXI.Container {
 					}
 					//Villager is full we send him delivery first
 					if (this.loading === this.loadingMax || !this.dest){
-						const targets = this.player.buildings.filter((building) => {
-							return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === 'Granary');
-						});
-						const target = getClosestInstance(this, targets);
-						if (this.dest){
-							this.previousDest = this.dest;
-						}else{
-							this.previousDest = this.parent.grid[this.i][this.j];
-						}
-						this.sendTo(target, 'deliveryberry');
+						this.sendToDelivery('Granary', 'deliveryberry');
 						return;
 					}
 					//Villager forage the berrybush
@@ -330,7 +307,7 @@ class Unit extends PIXI.Container {
 					}
 					if (this.dest.life > 0){
                         this.dest.life -= this.attack;
-                        if (this.dest.selected && player){
+                        if (this.dest.selected && player && player.selectedUnit === this.dest){
                             player.interface.updateInfo('life', (element) => element.textContent = this.dest.life + '/' + this.dest.lifeMax);
                         }
 						if (this.dest.name === 'building'){
@@ -362,6 +339,16 @@ class Unit extends PIXI.Container {
 				this.setDest(target.instance);
 				this.setPath(target.path);
 				return;
+			}
+		}
+		if (this.loading){
+			switch(this.work){
+				case 'woodcutter':
+					this.sendToDelivery('StoragePit', 'deliverywood');
+					return;
+				case 'gatherer':
+					this.sendToDelivery('Granary', 'deliveryberry')
+					return;
 			}
 		}
 		this.stop();
@@ -661,7 +648,7 @@ class Villager extends Unit {
 		})
 	}
 	updateInterfaceLoading(){
-		if (this.selected && player){
+		if (this.selected && player && player.selectedUnit === this){
 			if (this.loading === 1){
 				player.interface.updateInfo('loading', (element) => element.innerHTML = this.getLoadingElement().outerHTML);
 			}else if (this.loading > 1){
@@ -717,6 +704,18 @@ class Villager extends Unit {
 		this.walkingSheet = app.loader.resources['657'].spritesheet;
 		this.previousDest = null;
 		return this.sendTo(target, 'attack');
+	}
+	sendToDelivery(type, action){
+		const targets = this.player.buildings.filter((building) => {
+			return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === type);
+		});
+		const target = getClosestInstance(this, targets);
+		if (this.dest){
+			this.previousDest = this.dest;
+		}else{
+			this.previousDest = this.parent.grid[this.i][this.j];
+		}
+		this.sendTo(target, action);
 	}
 	sendToBuilding(building){
 		if (this.work !== 'builder'){

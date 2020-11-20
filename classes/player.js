@@ -16,10 +16,7 @@ class Player{
 		this.population = 0;
 		this.populationMax = 5;
 		this.color = color;
-		this.isPlayed = isPlayed
-		this.foundedTrees = [];
-		this.foundedBerrybushs = [];
-		this.foundedEnemyBuildings = [];
+		this.isPlayed = isPlayed;
 
 		if (this.isPlayed){
 			player = this;
@@ -50,10 +47,10 @@ class Player{
                 if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
                     return;
                 }
-
                 this.unselectAll();
                 unit.select();
-                this.interface.setBottombar(unit);
+				this.interface.setBottombar(unit);
+				this.selectedUnit = unit;
                 this.selectedUnits.push(unit);
             });
         }else{
@@ -210,6 +207,9 @@ class Player{
 class AI extends Player{
 	constructor(i, j, map, age, civ, color){
 		super(i, j, map, age, civ, color, 'AI');
+		this.foundedTrees = [];
+		this.foundedBerrybushs = [];
+		this.foundedEnemyBuildings = [];
 		this.interval = setInterval(() => this.step(), 4000);
 	}
 	step(){
@@ -394,6 +394,7 @@ class Human extends Player{
 	constructor(i, j, map, age, civ, color, isPlayed){
 		super(i, j, map, age, civ, color, 'Human', isPlayed);
 		this.selectedUnits = [];
+		this.selectedUnit = null;
         this.selectedBuilding = null;
         this.selectedOther = null;
 	}
@@ -401,6 +402,7 @@ class Human extends Player{
 		for (let i = 0; i < this.selectedUnits.length; i++){
 			this.selectedUnits[i].unselect();
 		}
+		this.selectedUnit = null;
 		this.selectedUnits = [];
 		this.interface.setBottombar();
 	}
