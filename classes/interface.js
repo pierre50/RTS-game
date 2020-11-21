@@ -102,7 +102,7 @@ class Interface {
         box.id = 'msg';
         Object.assign(box.style, {
             zIndex: '1000',
-            bottom: appBottom + 'px',
+            bottom: (appBottom + 5) + 'px',
             position: 'fixed',
             width: '100%',
             textAlign: 'center'
@@ -110,8 +110,9 @@ class Interface {
         const msg = document.createElement('span');
         msg.textContent = message;
         Object.assign(msg.style, {
-            color: '#ca2e2e',
-            background: 'rgba(0,0,0,.4)'
+            color: '#DA2424',
+            background: 'rgba(0,0,0,.4)',
+            padding: '3px'
         });
         
         box.appendChild(msg);

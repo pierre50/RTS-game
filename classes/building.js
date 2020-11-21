@@ -15,7 +15,9 @@ class Building extends PIXI.Container {
 		this.selected = false;
 		this.queue = [];
 		this.loading = null;
-		this.visible = false;
+		if (!this.parent.revealEverything){
+			this.visible = false;
+		}
 
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
@@ -74,7 +76,15 @@ class Building extends PIXI.Container {
             const textureName = `003_${buildSpritesheetId}.png`;
             sprite.texture = buildSpritesheet.textures[textureName];
         }else if (percentage >= 100){
-            this.finalTexture();
+			this.finalTexture();
+			this.isBuilt = true;
+			if (this.player && this.player.isPlayed && this.selected){
+				this.player.interface.setBottombar(this);
+			}
+			if (typeof this.onBuilt === 'function'){
+				this.onBuilt();
+			}
+			renderCellOnInstanceSight(this);
         }
     }
 	updateLife(action){
@@ -87,21 +97,8 @@ class Building extends PIXI.Container {
 			this.die();
 		}
 		if (action === 'build' && !this.isBuilt){
-            if (this.player.isPlayed || instanceIsInPlayerSight(this, player) || this.parent.revealEverything){
-                this.updateTexture();
-            }
-			if (percentage >= 100){
-                this.isBuilt = true;
-                if (this.player && this.player.isPlayed && this.selected){
-                    this.player.interface.setBottombar(this);
-                }
-				if (typeof this.onBuilt === 'function'){
-					this.onBuilt();
-                }
-                renderCellOnInstanceSight(this);
-			}
-		}
-		if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)){
+			this.updateTexture();
+		}else if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)){
 			if (percentage > 0 && percentage < 25){
 				generateFire(this, 450);
 			}

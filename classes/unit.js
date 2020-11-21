@@ -179,9 +179,7 @@ class Unit extends PIXI.Container {
 						if (this.dest.life <= 0){
 							//Set cutted tree texture
 							this.dest.life = 0;
-							if (instanceIsInPlayerSight(this.dest, player)){
-								this.setCuttedTreeTexture();
-							}
+							this.dest.setCuttedTreeTexture();
 						}
 						return;
 					}
@@ -785,6 +783,12 @@ class Villager extends Unit {
 					break;
 				case 'gatherer':
 					iconToUse = player.interface.icons['food'];
+					break;
+				case 'stoneminer':
+					iconToUse = player.interface.icons['stone'];
+					break;
+				case 'goldminer':
+					iconToUse = player.interface.icons['gold'];
 					break;
 			} 
 			const icon = document.createElement('img');

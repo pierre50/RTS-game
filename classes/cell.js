@@ -184,9 +184,6 @@ class Cell extends PIXI.Container{
         if (this.has){
             if (instanceInCamera(this.has)){
                 this.has.visible = true;
-                if (this.has.player && !this.has.player.isPlayed && this.has.name === 'building'){
-                    this.has.updateTexture();
-                }
             }
             for (let i = 0; i < this.has.children.length; i++){
                 if (this.has.children[i].tint){

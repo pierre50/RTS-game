@@ -34,7 +34,7 @@ class resource extends PIXI.Container{
 				mouse.hover = null;
             })
             this.sprite.on('pointertap', () => {
-                if (!player.selectedUnits.length && instanceIsInPlayerSight(this, player)){
+                if (!player.selectedUnits.length && (instanceIsInPlayerSight(this, player) || this.parent.revealEverything)){
                     player.unselectAll();
                     this.select();
                     player.interface.setBottombar(this);
