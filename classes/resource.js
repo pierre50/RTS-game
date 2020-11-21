@@ -119,6 +119,12 @@ class resource extends PIXI.Container{
 				case 'Berrybush':
 					iconToUse = player.interface.icons['food'];
 					break;
+				case 'Stone':
+					iconToUse = player.interface.icons['stone'];
+					break;
+				case 'Gold':
+					iconToUse = player.interface.icons['gold'];
+					break;
 			} 
 			const icon = document.createElement('img');
 			Object.assign(icon.style, {
@@ -242,6 +248,104 @@ class Berrybush extends resource{
 				if (unit.type === 'Villager'){
 					hasVillager = true;
 					unit.sendToBerrybush(this);
+				}else{
+					unit.sendTo(this)
+				}
+			}
+			if (hasVillager){
+				drawInstanceBlinkingSelection(this);
+			}
+		})
+
+		super(i, j, map, {
+			type,
+			sprite: sprite,
+			size: 1,
+            quantity: data.quantity,
+            interface: {
+				info: (element) => {
+					this.setDefaultInterface(element, data);
+				}
+			}
+		});
+	}
+}
+
+class Stone extends resource{
+	constructor(i, j, map){
+		const type = 'Stone';
+		const data = empires.resources[type];
+
+		//Define sprite
+		const randomSprite = randomRange(0, 6);
+		const spritesheet = app.loader.resources['622'].spritesheet;
+		const textureName = `00${randomSprite}_622.png`;
+		const texture = spritesheet.textures[textureName];
+		const sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.on('pointerup', () => {
+			if (!player || mouseBuilding || !mouseIsInApp()){
+				return;
+			}
+			//Send Villager to forage the berry
+			let hasVillager = false;
+			for(let i = 0; i < player.selectedUnits.length; i++){
+				const unit = player.selectedUnits[i];
+				if (unit.type === 'Villager'){
+					hasVillager = true;
+					unit.sendToStone(this);
+				}else{
+					unit.sendTo(this)
+				}
+			}
+			if (hasVillager){
+				drawInstanceBlinkingSelection(this);
+			}
+		})
+
+		super(i, j, map, {
+			type,
+			sprite: sprite,
+			size: 1,
+            quantity: data.quantity,
+            interface: {
+				info: (element) => {
+					this.setDefaultInterface(element, data);
+				}
+			}
+		});
+	}
+}
+
+class Gold extends resource{
+	constructor(i, j, map){
+		const type = 'Gold';
+		const data = empires.resources[type];
+
+		//Define sprite
+		const randomSprite = randomRange(0, 6);
+		const spritesheet = app.loader.resources['481'].spritesheet;
+		const textureName = `00${randomSprite}_481.png`;
+		const texture = spritesheet.textures[textureName];
+		const sprite = new PIXI.Sprite(texture);
+		sprite.interactive = true;
+		sprite.updateAnchor = true;
+		sprite.name = 'sprite';
+		sprite.hitArea = new PIXI.Polygon(spritesheet.data.frames[textureName].hitArea);
+		sprite.on('pointerup', () => {
+			if (!player || mouseBuilding || !mouseIsInApp()){
+				return;
+			}
+			//Send Villager to forage the berry
+			let hasVillager = false;
+			for(let i = 0; i < player.selectedUnits.length; i++){
+				const unit = player.selectedUnits[i];
+				if (unit.type === 'Villager'){
+					hasVillager = true;
+					unit.sendToGold(this);
 				}else{
 					unit.sendTo(this)
 				}

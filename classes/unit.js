@@ -142,6 +142,8 @@ class Unit extends PIXI.Container {
 		const conditions = {
 			'chopwood': (instance) => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
 			'forageberry': (instance) => instance && instance.type === 'Berrybush' && instance.quantity > 0 && !instance.isDestroyed,
+			'minestone': (instance) => instance && instance.type === 'Stone' && instance.quantity > 0 && !instance.isDestroyed,
+			'minegold': (instance) => instance && instance.type === 'Gold' && instance.quantity > 0 && !instance.isDestroyed,
 			'build': (instance) => instance && instance.player === this.player && instance.name === 'building' && instance.life > 0 && (!instance.isBuilt || instance.life < instance.lifeMax) && !instance.isDestroyed,
 			'attack': (instance) => instance && instance.player !== this.player && (instance.name === 'building' || instance.name === 'unit') && instance.life > 0 && !instance.isDestroyed
 		}
@@ -265,6 +267,110 @@ class Unit extends PIXI.Container {
 					this.stop()
 				}
 				break;
+			case 'minestone':
+				if (!this.getActionCondition(this.dest)){
+					this.affectNewDest();
+					return;
+				}
+				sprite.onLoop = () => {
+					if (!this.getActionCondition(this.dest)){
+						this.affectNewDest();
+						return;
+					}
+					//Villager is full we send him delivery first
+					if (this.loading === this.loadingMax || !this.dest){
+						this.sendToDelivery('StoragePit', 'deliverystone');
+						return;
+					}
+					//Villager mine the stone
+					this.loading++;
+					this.updateInterfaceLoading();
+
+					this.dest.quantity--;
+					if (this.dest.selected && player){
+						player.interface.updateInfo('quantity-text', (element) => element.textContent = this.dest.quantity);
+					}
+					//Destroy stone if it out of quantity
+					if (this.dest.quantity <= 0){
+						this.dest.die();
+						this.affectNewDest();
+					}
+					//Set the walking with stone animation
+					if (this.loading > 1){
+						this.walkingSheet = app.loader.resources['274'].spritesheet;
+						this.standingSheet = null;
+					}
+				}
+				this.setTextures('actionSheet');
+				break;
+			case 'deliverystone':
+				this.player.stone += this.loading;
+				if (this.player.isPlayed){
+					this.player.interface.updateTopbar();
+				}
+				this.loading = 0;
+				this.updateInterfaceLoading();
+
+				this.walkingSheet = app.loader.resources['683'].spritesheet;
+				this.standingSheet = app.loader.resources['441'].spritesheet;
+				if (this.previousDest){
+					this.sendTo(this.previousDest, 'minestone');
+				}else{
+					this.stop()
+				}
+				break;
+			case 'minegold':
+				if (!this.getActionCondition(this.dest)){
+					this.affectNewDest();
+					return;
+				}
+				sprite.onLoop = () => {
+					if (!this.getActionCondition(this.dest)){
+						this.affectNewDest();
+						return;
+					}
+					//Villager is full we send him delivery first
+					if (this.loading === this.loadingMax || !this.dest){
+						this.sendToDelivery('StoragePit', 'deliverygold');
+						return;
+					}
+					//Villager mine the gold
+					this.loading++;
+					this.updateInterfaceLoading();
+
+					this.dest.quantity--;
+					if (this.dest.selected && player){
+						player.interface.updateInfo('quantity-text', (element) => element.textContent = this.dest.quantity);
+					}
+					//Destroy gold if it out of quantity
+					if (this.dest.quantity <= 0){
+						this.dest.die();
+						this.affectNewDest();
+					}
+					//Set the walking with gold animation
+					if (this.loading > 1){
+						this.walkingSheet = app.loader.resources['281'].spritesheet;
+						this.standingSheet = null;
+					}
+				}
+				this.setTextures('actionSheet');
+				break;
+			case 'deliverygold':
+				this.player.gold += this.loading;
+				if (this.player.isPlayed){
+					this.player.interface.updateTopbar();
+				}
+				this.loading = 0;
+				this.updateInterfaceLoading();
+
+				this.walkingSheet = app.loader.resources['683'].spritesheet;
+				this.standingSheet = app.loader.resources['441'].spritesheet;
+				if (this.previousDest){
+					this.sendTo(this.previousDest, 'minegold');
+				}else{
+					this.stop()
+				}
+				break;
 			case 'build':
 				if (!this.getActionCondition(this.dest)){
 					this.affectNewDest();
@@ -348,6 +454,12 @@ class Unit extends PIXI.Container {
 					return;
 				case 'gatherer':
 					this.sendToDelivery('Granary', 'deliveryberry')
+					return;
+				case 'stoneminer':
+					this.sendToDelivery('StoragePit', 'deliverystone');
+					return;
+				case 'goldminer':
+					this.sendToDelivery('StoragePit', 'deliverygold');
 					return;
 			}
 		}
@@ -752,6 +864,30 @@ class Villager extends Unit {
 		}
 		this.previousDest = null;
 		return this.sendTo(berrybush, 'forageberry')
+	}
+	sendToStone(stone){
+		if (this.work !== 'stoneminer'){
+			this.loading = 0;
+			this.updateInterfaceLoading();
+			this.work = 'stoneminer';
+			this.actionSheet = app.loader.resources['633'].spritesheet;
+			this.standingSheet = app.loader.resources['441'].spritesheet;
+			this.walkingSheet = app.loader.resources['683'].spritesheet;
+		}
+		this.previousDest = null;
+		return this.sendTo(stone, 'minestone')
+	}
+	sendToGold(gold){
+		if (this.work !== 'goldminer'){
+			this.loading = 0;
+			this.updateInterfaceLoading();
+			this.work = 'goldminer';
+			this.actionSheet = app.loader.resources['633'].spritesheet;
+			this.standingSheet = app.loader.resources['441'].spritesheet;
+			this.walkingSheet = app.loader.resources['683'].spritesheet;
+		}
+		this.previousDest = null;
+		return this.sendTo(gold, 'minegold')
 	}
 }
 

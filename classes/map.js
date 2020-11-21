@@ -47,9 +47,9 @@ class Map extends PIXI.Container{
 
         this.players = [
             new Human(playersPos[poses[0]].i, playersPos[poses[0]].j, this, 'StoneAge', 'Greek', 'blue', true),
-            new AI(playersPos[poses[1]].i, playersPos[poses[1]].j, this, 'StoneAge', 'Greek', 'red'),
-            new AI(playersPos[poses[2]].i, playersPos[poses[2]].j, this, 'StoneAge', 'Greek', 'green'),
-            new AI(playersPos[poses[3]].i, playersPos[poses[3]].j, this, 'StoneAge', 'Greek', 'orange'),
+            //new AI(playersPos[poses[1]].i, playersPos[poses[1]].j, this, 'StoneAge', 'Greek', 'red'),
+            //new AI(playersPos[poses[2]].i, playersPos[poses[2]].j, this, 'StoneAge', 'Greek', 'green'),
+            //new AI(playersPos[poses[3]].i, playersPos[poses[3]].j, this, 'StoneAge', 'Greek', 'orange'),
         ]
 
         this.generateMapRelief();
@@ -92,6 +92,18 @@ class Map extends PIXI.Container{
             const pos = getPositionInZoneAroundInstance(playersPos[i], this.grid, [7, 15], 3, true);
             if (pos){
                 this.placeResourceGroup('Berrybush', pos.i, pos.j);
+            }
+        }
+        for (let i = 0; i < playersPos.length; i ++){
+            const pos = getPositionInZoneAroundInstance(playersPos[i], this.grid, [7, 15], 3, true);
+            if (pos){
+                this.placeResourceGroup('Stone', pos.i, pos.j);
+            }
+        }
+        for (let i = 0; i < playersPos.length; i ++){
+            const pos = getPositionInZoneAroundInstance(playersPos[i], this.grid, [7, 15], 3, true);
+            if (pos){
+                this.placeResourceGroup('Gold', pos.i, pos.j);
             }
         }
     }
@@ -374,7 +386,9 @@ class Map extends PIXI.Container{
     placeResourceGroup(instance, startX, startY){
         const resources = {
             Tree,
-            Berrybush
+            Berrybush,
+            Stone,
+            Gold
         }
         let cpt = 0;
         const max = randomRange(5, 6);
@@ -514,8 +528,7 @@ class Map extends PIXI.Container{
         const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y);
         const dist = Math.round(appWidth / cellWidth);
         getPlainCellsAroundPoint(coordinate[0], coordinate[1], this.grid, dist, (cell) => {
-            if (!player.views[cell.i][
-                cell.j].viewed){
+            if (!this.revealEverything && !player.views[cell.i][cell.j].viewed){
                 return;
             }
             cell.visible = true;

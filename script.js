@@ -20,7 +20,7 @@ const mapDefaultSize = 200;
 const mapDefaultReliefRange = [1, 3];
 const mapDefaultChanceOfRelief = 0;
 const mapDefaultChanceOfSets = .02;
-const mapRevealEverything = false;
+const mapRevealEverything = true;
 
 //Colors
 const colorWhite = 0xffffff;
@@ -106,7 +106,9 @@ function preload(){
 		.add('254','graphics/254/texture.json')
 		.add('261','graphics/261/texture.json')
 		.add('273','graphics/273/texture.json')
+		.add('274','graphics/274/texture.json')
 		.add('280','graphics/280/texture.json')
+		.add('281','graphics/281/texture.json')
 		.add('292','graphics/292/texture.json')
 		.add('293','graphics/293/texture.json')
 		.add('294','graphics/294/texture.json')
@@ -119,18 +121,22 @@ function preload(){
 		.add('301','graphics/301/texture.json')
 		.add('314','graphics/314/texture.json')
 		.add('321','graphics/321/texture.json')
+		.add('339','graphics/339/texture.json')
 		.add('347','graphics/347/texture.json')
+		.add('400','graphics/400/texture.json')
 		.add('418','graphics/418/texture.json')
 		.add('419','graphics/419/texture.json')
 		.add('425','graphics/425/texture.json')
 		.add('432','graphics/432/texture.json')
 		.add('440','graphics/440/texture.json')
+		.add('441','graphics/441/texture.json')
 		.add('450','graphics/450/texture.json')
 		.add('452','graphics/452/texture.json')
 		.add('463','graphics/463/texture.json')
 		.add('464','graphics/464/texture.json')
 		.add('465','graphics/465/texture.json')
 		.add('466','graphics/466/texture.json')
+		.add('481','graphics/481/texture.json')
 		.add('489','graphics/489/texture.json')
 		.add('492','graphics/492/texture.json')
 		.add('493','graphics/493/texture.json')
@@ -142,16 +148,19 @@ function preload(){
 		.add('532','graphics/532/texture.json')
 		.add('533','graphics/533/texture.json')
 		.add('534','graphics/534/texture.json')
+		.add('622','graphics/622/texture.json')
 		.add('623','graphics/623/texture.json')
 		.add('625','graphics/625/texture.json')
 		.add('628','graphics/628/texture.json')
 		.add('632','graphics/632/texture.json')
+		.add('633','graphics/633/texture.json')
 		.add('636','graphics/636/texture.json')
 		.add('657','graphics/657/texture.json')
 		.add('658','graphics/658/texture.json')
 		.add('664','graphics/664/texture.json')
 		.add('672','graphics/672/texture.json')
 		.add('682','graphics/682/texture.json')
+		.add('683','graphics/683/texture.json')
 	;
 
 	app.loader.onProgress.add(showProgress);

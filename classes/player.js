@@ -124,7 +124,13 @@ class Player{
                                     break;
                                 case 'gatherer':
                                     unit.sendTo(building, 'deliveryberry');
-                                    break;
+									break;
+								case 'stoneminer':
+									unit.sendTo(building, 'deliverystone');
+									break;
+								case 'goldminer':
+									unit.sendTo(building, 'deliverygold');
+									break;
                             }
                         }
                     }

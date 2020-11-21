@@ -17,6 +17,7 @@ class Cell extends PIXI.Container{
         this.border = false;
         this.has = null;
         this.visible = false;
+
         this.viewed = false;
         this.viewBy = [];
 		Object.keys(options).forEach((prop) => {
