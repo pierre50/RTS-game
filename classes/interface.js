@@ -12,14 +12,14 @@ class Interface {
                 width: '45px',
                 position: 'relative',
                 display: 'flex',
-                marginRight: '2px',
-                border: '1.5px inset #686769',
-                borderRadius: '2px'
+                marginRight: '3px',
             },
             img: {
                 objectFit: 'none',
                 height: '45px',
-                width: '45px'
+                width: '45px',
+                border: '1.5px inset #686769',
+                borderRadius: '2px'
             }
         } 
         this.player = player;
@@ -166,16 +166,23 @@ class Interface {
         }
         return action(targetElement);
     }
-    updateButton(target, action){
+    updateButtonContent(target, action){
         const targetElement = this.bottombarMenu.querySelector(`[id=${target}]`);
         if (!targetElement || typeof action !== 'function'){
             return;
         }
-        const contentElement = targetElement.querySelector('[id=content');
+        const contentElement = targetElement.querySelector('[id=content]');
         if (!contentElement){
             return;
         }
         return action(contentElement);
+    }
+    toggleButtonCancel(target, value){
+        const element = this.bottombarMenu.querySelector(`[id=${target}-cancel]`);
+        if (!element){
+            return;
+        }
+        element.style.display = value ? 'block' : 'none';
     }
     setBottombar(selection = null){
         let me = this;
@@ -208,16 +215,14 @@ class Interface {
                     box.appendChild(img);
                 }
                 Object.assign(box.style, me.style.box);
-                if (typeof btn.onUpdate === 'function'){
-                    box.onUpdate = btn.onUpdate;
-                }
+
                 if (btn.children){
                     box.addEventListener('pointerdown', (evt) => {
                         element.textContent = '';
                         me.removeMouseBuilding();
                         setMenuRecurs(selection, element, btn.children, menu);
                     });
-                }else {
+                }else if (typeof btn.onClick === 'function'){
                     box.addEventListener('pointerdown', (evt) => btn.onClick(selection, evt));
                 }
                 element.appendChild(box);
@@ -252,9 +257,40 @@ class Interface {
             icon: getIconPath(unit.icon),
             id: type,
             onCreate: (selection, element) => {
+                const div = document.createElement('div');
+                const cancel = document.createElement('img');
+                cancel.id = `${type}-cancel`;
+                cancel.src = 'data/interface/50721/003_50721.png';
+                if (!selection.queue.filter(q => q === type).length){
+                    cancel.style.display = 'none';
+                }
+                cancel.addEventListener('pointerdown', () => {
+                    for (let i = 0; i < selection.queue.length; i++){
+                        if (selection.queue[i] === type){
+                            refundCost(this.player, unit.cost);
+                        }
+                    }
+                    this.updateTopbar();
+                    selection.queue = selection.queue.filter(q => q !== type);
+                    if (selection.queue[0] !== type){
+                        this.updateButtonContent(type, (element) => element.textContent = '');
+                        this.toggleButtonCancel(type, false);
+                    }
+                });
+                Object.assign(cancel.style, this.style.img);
                 const img = document.createElement('img');
                 img.src = getIconPath(unit.icon);
-                debugger
+                img.addEventListener('pointerdown', () => {
+                    if (canAfford(this.player, unit.cost)){
+                        if (this.player.population >= this.player.populationMax){
+							this.showMessage('You need to build more houses');
+                        }
+					    this.toggleButtonCancel(type, true);
+                        selection.buyUnit(type);
+                    }else{
+                        this.showMessage(this.getMessage(unit.cost));
+                    }
+                });
                 Object.assign(img.style, this.style.img);
                 const queue = selection.queue.filter(queue => queue === type).length;
                 const counter = document.createElement('div');
@@ -262,16 +298,11 @@ class Interface {
                 counter.style.padding = '1px';
                 counter.textContent = queue || '';
                 counter.style.position = 'absolute';
-                element.appendChild(img);
+                div.appendChild(img);
+                div.appendChild(cancel);
+                element.appendChild(div);
                 element.appendChild(counter);
             },
-            onClick: (selection) => {
-                if (canAfford(this.player, unit.cost)){
-                    selection.buyUnit(type);
-                }else{
-                    this.showMessage(this.getMessage(unit.cost));
-                }
-            }
         }
     }
     getBuildingButton(type){

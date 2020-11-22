@@ -192,6 +192,15 @@ function create(){
 
     //Set-up global interactions
     document.addEventListener('keydown', (evt) => {
+		if (evt.key === 'Delete'){
+			for (let i = 0; i < player.selectedUnits.length; i++){
+				player.selectedUnits[i].die();
+			}
+			if (player.selectedBuilding){
+				player.selectedBuilding.die();
+			}
+			return;
+		}
         switch (evt.code){
             case 'ArrowLeft': 
                 map.moveCamera('left');
