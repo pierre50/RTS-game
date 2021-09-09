@@ -490,16 +490,17 @@ class Map extends PIXI.Container{
         if (mouse.out){
             return;
         }
+        const coef = 1.2;
         const moveDist = 10;
         if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= appHeight){
-            this.moveCamera('left', (0 + moveDist) - mouse.x);
+            this.moveCamera('left', ((0 + moveDist) - mouse.x) * coef);
         }else if (mouse.x > appWidth - moveDist && mouse.x <= appWidth && mouse.y >= 0 && mouse.y <= appHeight){
-            this.moveCamera('right',  mouse.x - (appWidth - moveDist));
+            this.moveCamera('right',  (mouse.x - (appWidth - moveDist)) * coef);
         }
         if (mouse.x >= 0 && mouse.x <= appWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist){
-            this.moveCamera('up', (0 + moveDist) - mouse.y);
+            this.moveCamera('up', ((0 + moveDist) - mouse.y) * coef);
         }else if (mouse.x >= 0 && mouse.x <= appWidth && mouse.y > appHeight - moveDist && mouse.y <= appHeight){
-            this.moveCamera('down', mouse.y - (appHeight - moveDist));
+            this.moveCamera('down', (mouse.y - (appHeight - moveDist)) * coef);
         }
     }
     clearInstancesOnScreen(){

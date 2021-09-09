@@ -31,99 +31,99 @@ class Player{
 				}
 				cloneGrid[i][j] = {
 					i,
-                    j,
-                    has: null,
+					j,
+					has: null,
 					viewBy: [],
 					viewed: false
 				}
 			}
 		}
 		this.views = cloneGrid;
-    }
-    spawnUnit(...args){
-        const unit = this.createUnit(...args);
-        if (this.isPlayed){
-            unit.on('pointertap', () => {
-                if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
-                    return;
-                }
-                this.unselectAll();
-                unit.select();
+	}
+	spawnUnit(...args){
+		const unit = this.createUnit(...args);
+		if (this.isPlayed){
+			unit.on('pointertap', () => {
+				if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
+					return;
+				}
+				this.unselectAll();
+				unit.select();
 				this.interface.setBottombar(unit);
 				this.selectedUnit = unit;
-                this.selectedUnits.push(unit);
-            });
-        }else{
-            unit.on('pointertap', () => {
-                if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
-                    return;
-                }
-                if (player.selectedUnits.length){
-                    drawInstanceBlinkingSelection(unit);
-                    for(let i = 0; i < player.selectedUnits.length; i++){
-                        const playerUnit = player.selectedUnits[i];
-                        if (playerUnit.type === 'Villager'){
-                            playerUnit.sendToAttack(unit);
-                        }else{
-                            playerUnit.sendTo(unit, 'attack');
-                        }
-                    }
-                    return;
-                }
-                if (instanceIsInPlayerSight(unit, player) || this.parent.revealEverything){
-                    player.unselectAll();
-                    unit.select();
-                    player.interface.setBottombar(unit);
-                    player.selectedOther = unit;
-                }
-            });
-        }
+				this.selectedUnits.push(unit);
+			});
+		}else{
+			unit.on('pointertap', () => {
+				if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
+					return;
+				}
+				if (player.selectedUnits.length){
+					drawInstanceBlinkingSelection(unit);
+					for(let i = 0; i < player.selectedUnits.length; i++){
+						const playerUnit = player.selectedUnits[i];
+						if (playerUnit.type === 'Villager'){
+							playerUnit.sendToAttack(unit);
+						}else{
+							playerUnit.sendTo(unit, 'attack');
+						}
+					}
+					return;
+				}
+				if (instanceIsInPlayerSight(unit, player) || this.parent.revealEverything){
+					player.unselectAll();
+					unit.select();
+					player.interface.setBottombar(unit);
+					player.selectedOther = unit;
+				}
+			});
+		}
 		return unit;
 	}
-    spawnBuilding(...args){
-        const building = this.createBuilding(...args);
-        const sprite = building.getChildByName('sprite');
-        if (this.isPlayed){
-            for(let u = 0; u < this.selectedUnits.length; u++){
-                const unit = this.selectedUnits[u];
-                if (unit.type === 'Villager'){
-                    drawInstanceBlinkingSelection(building);
-                    unit.sendToBuilding(building);
-                }
-            }
-            sprite.on('pointertap', () => {
-                if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
-                    return;
-                }
-                //Send Villager to build the building
-                if (!building.isBuilt){
-                    let hasVillager = false;
-                    for (let i = 0; i < this.selectedUnits.length; i++){
-                        const unit = this.selectedUnits[i];
-                        if (unit.type === 'Villager'){
-                            hasVillager = true;
-                            drawInstanceBlinkingSelection(building);
-                            unit.sendToBuilding(building);
-                        }
-                    }
-                    if (hasVillager){
-                        return;
-                    }
-                }else if (this.selectedUnits){
-                    //Send Villager to give loading of resources
-                    let hasVillagerLoaded = false;
-                    for (let i = 0; i < this.selectedUnits.length; i++){
-                        const unit = this.selectedUnits[i];
-                        if (unit.type === 'Villager' && unit.loading > 0){
-                            hasVillagerLoaded = true;
-                            drawInstanceBlinkingSelection(building);
-                            unit.previousDest = null;
-                            switch (unit.work){
-                                case 'woodcutter':
-                                    unit.sendTo(building, 'deliverywood');
-                                    break;
-                                case 'gatherer':
-                                    unit.sendTo(building, 'deliveryberry');
+	spawnBuilding(...args){
+		const building = this.createBuilding(...args);
+		const sprite = building.getChildByName('sprite');
+		if (this.isPlayed){
+			for(let u = 0; u < this.selectedUnits.length; u++){
+				const unit = this.selectedUnits[u];
+				if (unit.type === 'Villager'){
+					drawInstanceBlinkingSelection(building);
+					unit.sendToBuilding(building);
+				}
+			}
+			sprite.on('pointertap', () => {
+				if (mouseBuilding || mouseRectangle || !mouseIsInApp()){
+					return;
+				}
+				//Send Villager to build the building
+				if (!building.isBuilt){
+					let hasVillager = false;
+					for (let i = 0; i < this.selectedUnits.length; i++){
+						const unit = this.selectedUnits[i];
+						if (unit.type === 'Villager'){
+							hasVillager = true;
+							drawInstanceBlinkingSelection(building);
+							unit.sendToBuilding(building);
+						}
+					}
+					if (hasVillager){
+						return;
+					}
+				}else if (this.selectedUnits){
+					//Send Villager to give loading of resources
+					let hasVillagerLoaded = false;
+					for (let i = 0; i < this.selectedUnits.length; i++){
+						const unit = this.selectedUnits[i];
+						if (unit.type === 'Villager' && unit.loading > 0){
+							hasVillagerLoaded = true;
+							drawInstanceBlinkingSelection(building);
+							unit.previousDest = null;
+							switch (unit.work){
+								case 'woodcutter':
+									unit.sendTo(building, 'deliverywood');
+									break;
+								case 'gatherer':
+									unit.sendTo(building, 'deliveryberry');
 									break;
 								case 'stoneminer':
 									unit.sendTo(building, 'deliverystone');
@@ -131,43 +131,43 @@ class Player{
 								case 'goldminer':
 									unit.sendTo(building, 'deliverygold');
 									break;
-                            }
-                        }
-                    }
-                    if (hasVillagerLoaded){
-                        return;
-                    }
-                }
-                this.unselectAll();
-                building.select();
-                this.interface.setBottombar(building);
-                this.selectedBuilding = building;
-            });
-        }else{
-            sprite.on('pointertap', () => {
-                if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
-                    return;
-                }
-                if (player.selectedUnits.length){
-                    drawInstanceBlinkingSelection(building);
-                    for(let i = 0; i < player.selectedUnits.length; i++){
-                        const playerUnit = player.selectedUnits[i];
-                        if (playerUnit.type === 'Villager'){
-                            playerUnit.sendToAttack(building);
-                        }else{
-                            playerUnit.sendTo(building, 'attack');
-                        }
-                    }
-                    return;
-                }
-                if (instanceIsInPlayerSight(building, player) || this.parent.revealEverything){
-                    player.unselectAll();
-                    building.select();
-                    player.interface.setBottombar(building);
-                    player.selectedOther = building;
-                }
-            });
-        }
+							}
+						}
+					}
+					if (hasVillagerLoaded){
+						return;
+					}
+				}
+				this.unselectAll();
+				building.select();
+				this.interface.setBottombar(building);
+				this.selectedBuilding = building;
+			});
+		}else{
+			sprite.on('pointertap', () => {
+				if (!player || mouseBuilding || mouseRectangle || !mouseIsInApp()){
+					return;
+				}
+				if (player.selectedUnits.length){
+					drawInstanceBlinkingSelection(building);
+					for(let i = 0; i < player.selectedUnits.length; i++){
+						const playerUnit = player.selectedUnits[i];
+						if (playerUnit.type === 'Villager'){
+							playerUnit.sendToAttack(building);
+						}else{
+							playerUnit.sendTo(building, 'attack');
+						}
+					}
+					return;
+				}
+				if (instanceIsInPlayerSight(building, player) || this.parent.revealEverything){
+					player.unselectAll();
+					building.select();
+					player.interface.setBottombar(building);
+					player.selectedOther = building;
+				}
+			});
+		}
 		return building;
 	}
 	otherPlayers(){
@@ -401,8 +401,8 @@ class Human extends Player{
 		super(i, j, map, age, civ, color, 'Human', isPlayed);
 		this.selectedUnits = [];
 		this.selectedUnit = null;
-        this.selectedBuilding = null;
-        this.selectedOther = null;
+		this.selectedBuilding = null;
+		this.selectedOther = null;
 	}
 	unselectAllUnits(){
 		for (let i = 0; i < this.selectedUnits.length; i++){
@@ -416,11 +416,11 @@ class Human extends Player{
 		if (this.selectedBuilding){
 			this.selectedBuilding.unselect();
 			this.selectedBuilding = null;
-        }
-        if (this.selectedOther){
-            this.selectedOther.unselect();
-            this.selectedOther = null;
-        }
+		}
+		if (this.selectedOther){
+			this.selectedOther.unselect();
+			this.selectedOther = null;
+		}
 		this.unselectAllUnits();
 		this.interface.setBottombar();
 	}

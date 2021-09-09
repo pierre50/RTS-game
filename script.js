@@ -185,11 +185,6 @@ function create(){
 	map = new Map(mapDefaultSize, mapDefaultReliefRange, mapDefaultChanceOfRelief, mapDefaultChanceOfSets, mapRevealEverything);
 	app.stage.addChild(map);
 
-	//Mobile interaction TODO
-	const hammertime = new Hammer(gamebox);
-	hammertime.on('swipe', (evt) => {
-	})
-
     //Set-up global interactions
     document.addEventListener('keydown', (evt) => {
 		if (evt.key === 'Delete'){
