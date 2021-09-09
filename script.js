@@ -16,9 +16,12 @@ const gamebox = document.getElementById('game');
 const maxSelectUnits = 25;
 
 //Map default values
-const mapDefaultSize = 200;
-const mapDefaultReliefRange = [1, 3];
-const mapDefaultChanceOfRelief = 0;
+const mapDefaultSize = 168;
+const mapDefaultReliefRange = [
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 , 1,
+2, 2, 
+3];
+const mapDefaultChanceOfRelief = .06;
 const mapDefaultChanceOfSets = .02;
 const mapRevealEverything = true;
 
@@ -59,7 +62,7 @@ function preload(){
 		height: appHeight - appTop - appBottom, 
 		resolution: window.devicePixelRatio, 
         autoResize: true,
-        powerPreference: "high-performance"
+        powerPreference: 'high-performance'
 	});
 
 	//Set loading screen
@@ -329,10 +332,13 @@ function create(){
             const j = Math.floor(pos[1]);
             if (map.grid[i] && map.grid[i][j]){
                 const cell = map.grid[i][j];
-                if ((cell.solid || cell.inclined || cell.border || mouse.hover) && cell.visible){
+                if ((cell.solid || mouse.hover) && cell.visible){
                     return;
                 }
                 if (mouseBuilding){
+					if ( cell.inclined || cell.border){
+						return;
+					}
                     if (mouseBuilding.isFree){
                         if (player.buyBuilding(i, j, mouseBuilding.type, map)){
                             player.interface.removeMouseBuilding();

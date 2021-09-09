@@ -47,19 +47,8 @@ class Map extends PIXI.Container{
 
         this.players = [
             new Human(playersPos[poses[0]].i, playersPos[poses[0]].j, this, 'StoneAge', 'Greek', 'blue', true),
-            //new AI(playersPos[poses[1]].i, playersPos[poses[1]].j, this, 'StoneAge', 'Greek', 'red'),
-            //new AI(playersPos[poses[2]].i, playersPos[poses[2]].j, this, 'StoneAge', 'Greek', 'green'),
-            //new AI(playersPos[poses[3]].i, playersPos[poses[3]].j, this, 'StoneAge', 'Greek', 'orange'),
+            new AI(playersPos[poses[1]].i, playersPos[poses[1]].j, this, 'StoneAge', 'Greek', 'red'),
         ]
-
-        this.generateMapRelief();
-        this.formatCellsRelief();
-        this.formatCellsWaterBorder();
-        this.formatCellsDesert();
-
-        this.generateResourcesAroundPlayers(playersPos);
-
-        this.generateSets();
 
         if (!this.revealEverything){
             for(let i = 0; i <= this.size; i++){
@@ -77,6 +66,15 @@ class Map extends PIXI.Container{
                 towncenter.placeUnit('Villager');
             }
         }
+
+        this.generateMapRelief();
+        this.formatCellsRelief();
+        this.formatCellsWaterBorder();
+        this.formatCellsDesert();
+
+        this.generateResourcesAroundPlayers(playersPos);
+
+        this.generateSets();
 
         //Set camera to player building else unit
         if (this.players[0].buildings.length){
@@ -197,10 +195,10 @@ class Map extends PIXI.Container{
             for(let j = 0; j <= this.size; j++){
                 const cell = this.grid[i][j];
                 if (Math.random() < this.chanceOfRelief){
-                    const level = randomRange(this.reliefRange[0],this.reliefRange[1]);
+                    const level = randomItem(this.reliefRange);
                     let canGenerate = true;
                     if (getPlainCellsAroundPoint(i, j, this.grid, level * 2, (cell) => {
-                        if (cell.type === 'water' || cell.type === 'building'){
+                        if (cell.type === 'water'|| cell.has && cell.has.name === "building"){
                             canGenerate = false;
                         }
                     }));
@@ -208,6 +206,27 @@ class Map extends PIXI.Container{
                         cell.setCellLevel(level);
                     }
                 }
+            }
+        }
+        for(let i = 0; i <= this.size; i++){
+            for(let j = 0; j <= this.size; j++){
+                const cell = this.grid[i][j];
+                if (cell.z === 1){
+                    let toRemove = true;
+                    let cpt = 0;
+                    if (getCellsAroundPoint(i, j, this.grid, 2, (cell) => {
+                        if (cell.z > 0){
+                            cpt++;
+                        }
+                        if (cpt >= 3){
+                            toRemove = false;
+                        }
+                    }));
+                    if (toRemove){
+                        cell.setCellLevel(0);
+                    }
+                }
+
             }
         }
         //Format cell's relief

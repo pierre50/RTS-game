@@ -138,6 +138,10 @@ class Cell extends PIXI.Container{
         });
     }
     setCellLevel(level, cpt = 1) {
+        if (level === 0){
+            this.y += cellDepth;
+            this.z = level;
+        }
         const grid = this.parent.grid;
         getCellsAroundPoint(this.i, this.j, grid, level - cpt, (cell) => {
             if (cell.z < cpt){
