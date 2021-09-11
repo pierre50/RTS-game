@@ -65,6 +65,7 @@ class Interface {
         const bottombar = document.createElement('div');
         Object.assign(bottombar.style, {
             bottom: '0',
+            position: 'absolute',
             display: 'grid',
             height: '122px',
             gridTemplateColumns: '120px auto',

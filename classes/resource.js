@@ -14,7 +14,7 @@ class resource extends PIXI.Container{
 		this.parent.grid[i][j].has = this;
         this.selected = false;
 		this.visible = false;
-
+		
 		Object.keys(options).forEach((prop) => {
 			this[prop] = options[prop];
 		})
@@ -27,6 +27,7 @@ class resource extends PIXI.Container{
 		cell.has = this;
 		
 		if (this.sprite){
+            this.sprite.cacheAsBitmap = true;
 			this.sprite.on('mouseover', () => { 
 				mouse.hover = this;
 			})

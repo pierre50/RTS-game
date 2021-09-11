@@ -1,0 +1,32 @@
+{
+	"name": "rts-game",
+	"version": "1.0.0",
+	"description": "RTS game",
+	"main": "script.js",
+	"directories": {
+		"lib": "lib"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"electron": "electron .",
+    "start": "http-server -c-1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/pierre50/RTS-game.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/pierre50/RTS-game/issues"
+	},
+	"homepage": "https://github.com/pierre50/RTS-game#readme",
+	"dependencies": {
+		"http-server": "^13.0.1",
+		"pixi-filters": "^4.1.4",
+		"pixi.js": "^6.1.2"
+	},
+	"devDependencies": {
+		"electron": "^14.0.0"
+	}
+}
