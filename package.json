@@ -27,6 +27,6 @@
 		"pixi.js": "^6.1.2"
 	},
 	"devDependencies": {
-		"electron": "^14.0.0"
+		"electron": "^15.5.5"
 	}
 }
