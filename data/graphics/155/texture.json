@@ -1,0 +1,39 @@
+{
+  "frames": {
+    "000_155.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 137,
+        "h": 75
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 137,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 137,
+        "h": 75
+      },
+      "anchor": {
+        "x": 0.5182481751824818,
+        "y": 0.5333333333333333
+      }
+    }
+  },
+  "meta": {
+    "app": "http://free-tex-packer.com",
+    "version": "0.6.5",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 137,
+      "h": 75
+    },
+    "scale": 1
+  }
+}

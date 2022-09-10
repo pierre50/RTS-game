@@ -9,7 +9,7 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"electron": "electron .",
-    "start": "http-server -c-1"
+		"start": "http-server -c-1"
 	},
 	"repository": {
 		"type": "git",
