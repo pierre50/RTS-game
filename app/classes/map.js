@@ -11,7 +11,7 @@ import {
   getPositionInGridAroundInstance,
   getCellsAroundPoint,
 } from '../lib'
-import { cellDepth, appTop } from '../constants'
+import { cellDepth } from '../constants'
 
 /**
  * 
@@ -36,8 +36,6 @@ export default class Map extends Container {
     this.grid = []
     this.sortableChildren = true
 
-    this.top = appTop + 24
-    this.bottom = window.innerHeight - 100
     this.x = 0
     this.y = 0
     this.startingUnits = 3
@@ -47,8 +45,8 @@ export default class Map extends Container {
 
     this.players = []
 
-    //this.interactive = false
-    //this.allowMove = false
+    this.interactive = false
+    this.allowMove = false
     this.allowClick = false
   }
 
@@ -129,10 +127,10 @@ export default class Map extends Container {
         },
         context
       ),
-      new AI(
+      /*new AI(
         { i: this.playersPos[poses[1]].i, j: this.playersPos[poses[1]].j, age: 'StoneAge', civ: 'Greek', color: 'red' },
         context
-      ),
+      ),*/
     ]
     return players
   }

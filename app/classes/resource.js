@@ -185,6 +185,7 @@ export class Tree extends resource {
       if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
         return
       }
+      controls.mouse.prevent = true
       //Send Villager to cut the tree
       let hasVillager = false
       let dest = this
@@ -206,7 +207,6 @@ export class Tree extends resource {
       if (hasVillager) {
         drawInstanceBlinkingSelection(dest)
       }
-      controls.mouse.prevent = true
     })
 
     super(
@@ -274,6 +274,7 @@ export class Berrybush extends resource {
       if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
         return
       }
+      controls.mouse.prevent = true
       //Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -331,6 +332,7 @@ export class Stone extends resource {
       if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
         return
       }
+      controls.mouse.prevent = true
       //Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -378,9 +380,9 @@ export class Gold extends resource {
     const textureName = `00${randomSprite}_${resourceName}.png`
     const texture = spritesheet.textures[textureName]
     const sprite = Sprite.from(texture)
-    //sprite.updateAnchor = true
+    sprite.updateAnchor = true
     sprite.name = 'sprite'
-    //sprite.hitArea = new Polygon(spritesheet.data.frames[textureName].hitArea)
+    sprite.hitArea = new Polygon(spritesheet.data.frames[textureName].hitArea)
     sprite.on('pointerup', () => {
       const {
         context: { player, controls },
@@ -388,6 +390,7 @@ export class Gold extends resource {
       if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
         return
       }
+      controls.mouse.prevent = true
       //Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {

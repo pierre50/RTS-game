@@ -1,5 +1,12 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { randomRange, formatNumber, cartesianToIsometric, getCellsAroundPoint, instancesDistance } from '../lib'
+import {
+  randomRange,
+  formatNumber,
+  cartesianToIsometric,
+  getCellsAroundPoint,
+  instanceIsInPlayerSight,
+  instancesDistance,
+} from '../lib'
 import { cellDepth, colorWhite } from '../constants'
 
 class Cell extends Container {
@@ -35,12 +42,35 @@ class Cell extends Container {
       this.addChild(sprite)
     }
 
-    /*
     this.interactive = false
     this.allowMove = false
     this.allowClick = false
-    this.cacheAsBitmap = true*/
+    this.cacheAsBitmap = true
   }
+
+  updateVisible() {
+    const {
+      context: { map, player },
+    } = this
+    if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
+      return
+    }
+    this.visible = true
+    if (this.has) {
+      if (
+        map.revealEverything ||
+        !this.has.owner ||
+        this.has.owner.isPlayed ||
+        instanceIsInPlayerSight(this.has, this) ||
+        (this.has.name === 'building' &&
+          player.views[this.i][this.j].has &&
+          player.views[this.i][this.j].has.id === this.has.id)
+      ) {
+        this.has.visible = true
+      }
+    }
+  }
+
   setDesertBorder(direction) {
     const resourceName = '20002'
     const cellSprite = this.getChildByName('sprite')
@@ -82,6 +112,7 @@ class Cell extends Container {
     sprite.type = 'border'
     this.addChild(sprite)
   }
+
   setWaterBorder(cell, resourceName, index) {
     const sprite = this.getChildByName('sprite')
     const spritesheet = Assets.cache.get(resourceName)
@@ -93,6 +124,7 @@ class Cell extends Container {
     }
     sprite.texture = texture
   }
+
   setReliefBorder(index, elevation = 0) {
     const sprite = this.getChildByName('sprite')
     const resourceName = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
@@ -106,6 +138,7 @@ class Cell extends Container {
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
   }
+
   fillWaterCellsAroundCell() {
     const grid = this.parent.grid
     getCellsAroundPoint(this.i, this.j, grid, 2, cell => {
@@ -131,6 +164,7 @@ class Cell extends Container {
       }
     })
   }
+
   fillReliefCellsAroundCell() {
     const grid = this.parent.grid
     getCellsAroundPoint(this.i, this.j, grid, 2, cell => {
@@ -150,6 +184,7 @@ class Cell extends Container {
       }
     })
   }
+
   setCellLevel(level, cpt = 1) {
     if (level === 0) {
       this.y += cellDepth
@@ -167,6 +202,7 @@ class Cell extends Container {
       this.setCellLevel(level, cpt + 1)
     }
   }
+
   setFog() {
     const color = 0x666666
     for (let i = 0; i < this.children.length; i++) {
@@ -188,6 +224,7 @@ class Cell extends Container {
       }
     }
   }
+
   removeFog() {
     const {
       context: { controls },
@@ -214,6 +251,7 @@ class Cell extends Container {
     }
   }
 }
+
 export class Grass extends Cell {
   constructor({ i, j, z }, context) {
     const randomSpritesheet = randomRange(0, 8)
@@ -235,6 +273,7 @@ export class Grass extends Cell {
     )
   }
 }
+
 export class Desert extends Cell {
   constructor({ i, j, z }, context) {
     const randomSpritesheet = randomRange(0, 8)

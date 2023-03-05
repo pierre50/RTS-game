@@ -9,7 +9,11 @@ import { Assets, Container } from 'pixi.js'
 export default class LoaderScreen extends Container {
   constructor() {
     super()
+    this.app
 
+    this.loadingDiv = document.createElement('div')
+    this.loadingDiv.className = 'loading'
+    document.body.prepend(this.loadingDiv)
     this.done = () => {}
   }
 
@@ -120,17 +124,24 @@ export default class LoaderScreen extends Container {
       )
     )
 
+    this.loadingDiv.innerHTML = 'Loading config..'
     await Assets.loadBundle('config')
+    this.loadingDiv.innerHTML = 'Loading interface..'
     await Assets.loadBundle('interface')
+    this.loadingDiv.innerHTML = 'Loading seeds..'
     await Assets.loadBundle('seeds')
+    this.loadingDiv.innerHTML = 'Loading terrain..'
     await Assets.loadBundle('terrain')
+    this.loadingDiv.innerHTML = 'Loading border..'
     await Assets.loadBundle('border')
+    this.loadingDiv.innerHTML = 'Loading graphics..'
     await Assets.loadBundle('graphics')
 
     this.onComplete()
   }
 
   onComplete() {
+    this.loadingDiv.remove()
     this.done()
   }
 

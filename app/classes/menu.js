@@ -1,64 +1,27 @@
 import { Assets } from 'pixi.js'
 import { getIconPath, canAfford, refundCost } from '../lib'
-import { appBottom } from '../constants'
 
 export default class Menu {
   constructor(context) {
     this.context = context
-    this.style = {
-      bar: {
-        borderStyle: 'inset',
-        borderColor: '#686769',
-        background: '#3c3b3d',
-        width: '100%',
-      },
-      box: {
-        height: '45px',
-        width: '45px',
-        position: 'relative',
-        display: 'flex',
-        marginRight: '3px',
-      },
-      img: {
-        objectFit: 'none',
-        height: '45px',
-        width: '45px',
-        border: '1.5px inset #686769',
-        borderRadius: '2px',
-      },
-    }
     this.topbar = document.createElement('div')
     this.topbar.id = 'topbar'
+    this.topbar.className = 'topbar bar'
     this.icons = {
       wood: 'interface/50732/000_50732.png',
       food: 'interface/50732/002_50732.png',
       stone: 'interface/50732/001_50732.png',
       gold: 'interface/50732/003_50732.png',
     }
-    Object.assign(this.topbar.style, {
-      top: '0',
-      padding: '0 5px',
-      height: '20px',
-      display: 'grid',
-      fontWeight: 'bold',
-      gridTemplateColumns: '1fr 1fr 1fr',
-      ...this.style.bar,
-    })
 
     this.resources = document.createElement('div')
-    Object.assign(this.resources.style, {
-      display: 'flex',
-    })
+    this.resources.className = 'resources'
     ;['wood', 'food', 'stone', 'gold'].forEach(res => {
       this.setResourceBox(res)
     })
 
     this.age = document.createElement('div')
-    Object.assign(this.age.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    })
+    this.age.className = 'age'
     this.options = document.createElement('div')
 
     this.topbar.appendChild(this.resources)
@@ -66,29 +29,19 @@ export default class Menu {
     this.topbar.appendChild(this.options)
     document.body.prepend(this.topbar)
 
-    const bottombar = document.createElement('div')
-    Object.assign(bottombar.style, {
-      display: 'grid',
-      height: '122px',
-      gridTemplateColumns: '120px auto',
-      gridGap: '10px',
-      padding: '5px',
-      marginBottom: '1px',
-      ...this.style.bar,
-    })
+    this.bottombar = document.createElement('div')
+    this.bottombar.className = 'bottombar bar'
     this.bottombarInfo = document.createElement('div')
-    Object.assign(this.bottombarInfo.style, {
-      height: '114px',
-      width: '120px',
-      position: 'relative',
-      border: '4px inset #686769',
-      borderRadius: '2px',
-    })
+    this.bottombarInfo.className = 'bottombar-info'
     this.bottombarMenu = document.createElement('div')
-    this.bottombarMenu.style.display = 'flex'
-    bottombar.appendChild(this.bottombarInfo)
-    bottombar.appendChild(this.bottombarMenu)
-    document.body.appendChild(bottombar)
+    this.bottombarMenu.className = 'bottombar-menu'
+    this.bottombarMap = document.createElement('div')
+    this.bottombarMap.className = 'bottombar-map'
+
+    this.bottombar.appendChild(this.bottombarInfo)
+    this.bottombar.appendChild(this.bottombarMenu)
+    this.bottombar.appendChild(this.bottombarMap)
+    document.body.appendChild(this.bottombar)
 
     this.updateTopbar()
   }
@@ -107,20 +60,13 @@ export default class Menu {
     }
     const box = document.createElement('div')
     box.id = 'msg'
+    box.className = 'message'
     Object.assign(box.style, {
-      zIndex: '1000',
-      bottom: appBottom + 5 + 'px',
-      position: 'fixed',
-      width: '100%',
-      textAlign: 'center',
+      bottom: this.bottombar.clientHeight + 5 + 'px',
     })
     const msg = document.createElement('span')
     msg.textContent = message
-    Object.assign(msg.style, {
-      color: '#DA2424',
-      background: 'rgba(0,0,0,.4)',
-      padding: '3px',
-    })
+    msg.className = 'message-content'
 
     box.appendChild(msg)
     window.gamebox.appendChild(box)
@@ -131,21 +77,12 @@ export default class Menu {
 
   setResourceBox(name) {
     const box = document.createElement('div')
-    Object.assign(box.style, {
-      display: 'flex',
-      marginRight: '40px',
-      alignItems: 'center',
-    })
+    box.className = 'resource'
+
     const img = document.createElement('img')
-    Object.assign(img.style, {
-      objectFit: 'none',
-      height: '13px',
-      width: '20px',
-      marginRight: '2px',
-      border: '1.5px inset #686769',
-      borderRadius: '2px',
-    })
+    img.className = 'resource-content'
     img.src = this.icons[name]
+
     this[name] = document.createElement('div')
     box.appendChild(img)
     box.appendChild(this[name])
@@ -220,43 +157,43 @@ export default class Menu {
     function setMenuRecurs(selection, element, menu, parent) {
       menu.forEach(btn => {
         const box = document.createElement('div')
+        box.className = 'bottombar-menu-box'
         box.id = btn.id
         if (typeof btn.onCreate === 'function') {
           btn.onCreate(selection, box)
         } else {
           const img = document.createElement('img')
           img.src = btn.icon
-          Object.assign(img.style, me.style.img)
+          img.className = 'img'
           box.appendChild(img)
         }
-        Object.assign(box.style, me.style.box)
 
         if (btn.children) {
-          box.addEventListener('pointerdown', () => {
+          box.addEventListener('pointerup', () => {
             element.textContent = ''
             controls.removeMouseBuilding()
             setMenuRecurs(selection, element, btn.children, menu)
           })
         } else if (typeof btn.onClick === 'function') {
-          box.addEventListener('pointerdown', evt => btn.onClick(selection, evt))
+          box.addEventListener('pointerup', evt => btn.onClick(selection, evt))
         }
         element.appendChild(box)
       })
       if (parent || selection.selected) {
         const back = document.createElement('div')
+        back.className = 'bottombar-menu-box'
         const img = document.createElement('img')
+        img.className = 'img'
         back.id = 'interfaceBackBtn'
         img.src = 'interface/50721/010_50721.png'
-        Object.assign(img.style, me.style.img)
-        Object.assign(back.style, me.style.box)
         if (parent) {
-          back.addEventListener('pointerdown', () => {
+          back.addEventListener('pointerup', () => {
             element.textContent = ''
             controls.removeMouseBuilding()
             setMenuRecurs(selection, element, parent)
           })
         } else {
-          back.addEventListener('pointerdown', () => {
+          back.addEventListener('pointerup', () => {
             controls.removeMouseBuilding()
             player.unselectAll()
           })
@@ -276,13 +213,15 @@ export default class Menu {
       id: type,
       onCreate: (selection, element) => {
         const div = document.createElement('div')
+        div.className='bottombar-menu-column'
         const cancel = document.createElement('img')
         cancel.id = `${type}-cancel`
+        cancel.className = 'img'
         cancel.src = 'interface/50721/003_50721.png'
         if (!selection.queue.filter(q => q === type).length) {
           cancel.style.display = 'none'
         }
-        cancel.addEventListener('pointerdown', () => {
+        cancel.addEventListener('pointerup', () => {
           for (let i = 0; i < selection.queue.length; i++) {
             if (selection.queue[i] === type) {
               refundCost(player, unit.cost)
@@ -295,10 +234,10 @@ export default class Menu {
             this.toggleButtonCancel(type, false)
           }
         })
-        Object.assign(cancel.style, this.style.img)
         const img = document.createElement('img')
         img.src = getIconPath(unit.icon)
-        img.addEventListener('pointerdown', () => {
+        img.className = 'img'
+        img.addEventListener('pointerup', () => {
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.populationMax) {
               this.showMessage('You need to build more houses')
@@ -309,12 +248,11 @@ export default class Menu {
             this.showMessage(this.getMessage(unit.cost))
           }
         })
-        Object.assign(img.style, this.style.img)
         const queue = selection.queue.filter(queue => queue === type).length
         const counter = document.createElement('div')
         counter.id = 'content'
-        counter.style.padding = '1px'
         counter.textContent = queue || ''
+        counter.style.padding = '1px'
         counter.style.position = 'absolute'
         div.appendChild(img)
         div.appendChild(cancel)

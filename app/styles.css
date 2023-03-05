@@ -1,0 +1,153 @@
+:root {
+  --main-background-color: #3c3b3d;
+  --main-border-color: #686769;
+  --main-border-radius: 2px;
+  --main-border-size: 4px;
+  --main-border-style: inset;
+}
+
+html,
+body,
+input,
+textarea,
+select,
+button {
+  border-color: #5e5d5a;
+  color: #e5e0d8;
+  font-size: 12px;
+  text-shadow: 1px 1px black;
+  font-family: sans-serif;
+  -webkit-font-smoothing: none;
+  background: var(--main-background-color);
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  user-select: none;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+#game {
+  flex: 1;
+}
+
+.bar {
+  background: var(--main-background-color);
+  width: 100%;
+}
+
+.img {
+  object-fit: none;
+  height: 45px;
+  width: 45px;
+  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  border-radius: var(--main-border-radius);
+}
+
+.topbar {
+  position: absolute;
+  top: 0;
+  padding: 5px 10px;
+  display: grid;
+  font-weight: bold;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: calc(100% - 20px);
+}
+
+.bottombar {
+  position: absolute;
+  bottom: 0;
+  display: grid;
+  height: 122px;
+  grid-template-columns: 120px auto 120px;
+  width: calc(100% - 10px);
+  grid-gap: 5px;
+  padding: 5px;
+}
+
+.bottombar-info {
+  position: relative;
+  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  border-radius: var(--main-border-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  gap: 1px;
+}
+
+.bottombar-info #icon {
+  object-fit: none;
+  height: 45px;
+  width: 45px;
+}
+
+.bottombar-menu {
+  display: flex;
+  gap: 5px;
+  padding: 5px 0;
+}
+
+.bottombar-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bottombar-menu-box {
+  position: relative;
+  display: flex;
+}
+
+.bottombar-map {
+  position: relative;
+  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  background-color: black;
+  overflow: hidden;
+}
+
+.age {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resources {
+  display: flex;
+}
+
+.resource {
+  display: flex;
+  margin-right: 40px;
+  gap: 2px;
+  align-items: center;
+}
+
+.resource-content {
+  object-fit: none;
+  height: 13px;
+  width: 20px;
+  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  border-radius: var(--main-border-radius);
+}
+
+.message {
+  z-index: 1000;
+  position: fixed;
+  width: 100%;
+  text-align: center;
+}
+
+.message-content {
+  color: #da2424;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 3px;
+}

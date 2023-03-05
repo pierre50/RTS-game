@@ -1,12 +1,6 @@
-export const canvasWidth = 800
-export const canvasHeight = 600
-
 export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
-
-export const appTop = 24
-export const appBottom = 136
 
 export const colorWhite = 0xffffff
 export const colorBlack = 0x000000

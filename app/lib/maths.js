@@ -24,8 +24,8 @@ export function cartesianToIsometric(x, y) {
  */
 export function isometricToCartesian(x, y) {
   return [
-    Math.round((x / (cellWidth / 2) + y / (cellHeight / 2)) / 2) - 1,
-    Math.round((y / (cellHeight / 2) - x / (cellWidth / 2)) / 2) - 1,
+    Math.round((x / (cellWidth / 2) + y / (cellHeight / 2)) / 2),
+    Math.round((y / (cellHeight / 2) - x / (cellWidth / 2)) / 2),
   ]
 }
 

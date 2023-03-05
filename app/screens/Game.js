@@ -10,16 +10,17 @@ import Controls from '../classes/controls'
  */
 
 export default class Game extends Container {
-  constructor(...args) {
-    super(...args)
+  constructor(app) {
+    super()
 
-    this.players = null
-    this.create()
+    this.app = app
+    this.start()
   }
 
-  create() {
+  start() {
     //Init map
     const context = {
+      app: this.app,
       menu: null,
       player: null,
       players: [],

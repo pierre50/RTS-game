@@ -1,10 +1,14 @@
 import { Application } from 'pixi.js'
 import './index.html'
+import "./styles.css"
 import Game from './screens/Game'
 import Loader from './screens/Loader'
 
 const app = new Application({
   antialias: false,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  resizeTo: window,
   powerPreference: 'high-performance',
 })
 
@@ -28,7 +32,7 @@ loader.start()
 
 // remove loader then show example once asset loading is complete
 loader.onLoaded(() => {
-  const game = new Game()
+  const game = new Game(app)
   app.stage.removeChild(loader)
   app.stage.addChild(game)
 })
