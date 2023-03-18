@@ -25,7 +25,7 @@ export default class Game extends Container {
       player: null,
       players: [],
       map: null,
-      controls: null
+      controls: null,
     }
 
     context.map = new Map(context)
@@ -36,9 +36,9 @@ export default class Game extends Container {
 
     context.players = context.map.generatePlayers()
     context.player = context.players[0]
+    context.menu.init()
     context.map.placePlayers()
-    context.menu.updateTopbar()
-    context.controls.initCamera()
+    context.controls.init()
 
     this.addChild(context.map)
     this.addChild(context.controls)

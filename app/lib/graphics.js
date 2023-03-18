@@ -16,6 +16,22 @@ export function getTexture(name, assets) {
   return spritesheet.textures[textureName]
 }
 
+export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan']
+
+export function getHexColor(name) {
+  const colors = {
+    blue: '#3f5f9f',
+    red: '#e30b00',
+    yellow: '#c3a31b',
+    brown: '#8b5b37',
+    orange: '#ef6307',
+    green: '#4b6b2b',
+    grey: '#8f8f8f',
+    cyan: '#00837b',
+  }
+  return colors[name] || '#ffffff'
+}
+
 export function changeSpriteColor(sprite, color) {
   if (color === 'blue') {
     return

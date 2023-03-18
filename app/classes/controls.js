@@ -99,8 +99,8 @@ export default class Controls extends Container {
         this.mouse.x - map.x,
         this.mouse.y >= app.screen.height ? app.screen.height - map.y : this.mouse.y - map.y
       )
-      const i = Math.floor(pos[0] - 1)
-      const j = Math.floor(pos[1] - 1)
+      const i = Math.min(Math.max(pos[0], 0), map.size)
+      const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
         const cell = map.grid[i][j]
         this.mouseBuilding.x = cell.x - this.camera.x
@@ -234,8 +234,8 @@ export default class Controls extends Container {
     }
     if (this.isMouseInApp()) {
       const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
-      const i = Math.floor(pos[0] - 1)
-      const j = Math.floor(pos[1] - 1)
+      const i = Math.min(Math.max(pos[0], 0), map.size)
+      const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
         const cell = map.grid[i][j]
         if ((cell.solid || cell.has) && cell.visible) {
@@ -479,7 +479,7 @@ export default class Controls extends Container {
       : getPlainCellsAroundPoint(coordinate[0], coordinate[1], map.grid, dist, cell => cell.updateVisible())
   }
 
-  initCamera() {
+  init() {
     const {
       context: { player },
     } = this

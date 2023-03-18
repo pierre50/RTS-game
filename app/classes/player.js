@@ -10,6 +10,8 @@ import {
   getPositionInGridAroundInstance,
   getClosestInstance,
   instancesDistance,
+  uuidv4,
+  getHexColor,
 } from '../lib'
 
 class Player {
@@ -18,6 +20,7 @@ class Player {
     this.context = context
 
     const { map } = context
+    this.id = uuidv4()
     this.parent = map
     this.i = i
     this.j = j
@@ -33,6 +36,7 @@ class Player {
     this.population = 0
     this.populationMax = 5
     this.color = color
+    this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
 
     const cloneGrid = []
@@ -95,6 +99,7 @@ class Player {
     }
     const unit = new units[type]({ i, j, owner: this }, context)
     this.units.push(unit)
+    context.menu.updatePlayerMiniMap(this)
     return unit
   }
   createBuilding(i, j, type, isBuilt = false) {
@@ -108,6 +113,7 @@ class Player {
     }
     const building = new buildings[type]({ i, j, owner: this, isBuilt }, context)
     this.buildings.push(building)
+    context.menu.updatePlayerMiniMap(this)
     return building
   }
 }

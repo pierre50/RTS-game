@@ -2,6 +2,8 @@ export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
 
+export const accelerator = 2
+
 export const colorWhite = 0xffffff
 export const colorBlack = 0x000000
 export const colorGrey = 0x808080
@@ -14,5 +16,12 @@ export const colorIndigo = 0x4b0082
 export const colorViolet = 0xee82ee
 export const colorBone = 0xe2dac2
 export const colorShipgrey = 0x3c3b3d
+
+export const colorGrass = '#647B2F'
+export const colorWater = '#17277B'
+export const colorDesert = '#CFA443'
+export const colorTree = '#274F1F'
+export const colorGold = '#DECF10'
+export const colorStone = '#B3B3B3'
 
 export const maxSelectUnits = 10

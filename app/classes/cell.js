@@ -7,7 +7,7 @@ import {
   instanceIsInPlayerSight,
   instancesDistance,
 } from '../lib'
-import { cellDepth, colorWhite } from '../constants'
+import { cellDepth, colorWhite, colorDesert, colorWater, colorGrass } from '../constants'
 
 class Cell extends Container {
   constructor(options, context) {
@@ -266,6 +266,7 @@ export class Grass extends Cell {
         j,
         z,
         sprite,
+        color: colorGrass,
         solid: false,
         type: 'grass',
       },
@@ -289,12 +290,14 @@ export class Desert extends Cell {
         z,
         sprite,
         solid: false,
+        color: colorDesert,
         type: 'desert',
       },
       context
     )
   }
 }
+
 export class Water extends Cell {
   constructor({ i, j, z }, context) {
     const randomSpritesheet = randomRange(0, 3)
@@ -310,6 +313,7 @@ export class Water extends Cell {
         z,
         sprite,
         solid: true,
+        color: colorWater,
         type: 'water',
       },
       context

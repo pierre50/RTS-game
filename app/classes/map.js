@@ -10,6 +10,7 @@ import {
   getPlainCellsAroundPoint,
   getPositionInGridAroundInstance,
   getCellsAroundPoint,
+  colors
 } from '../lib'
 import { cellDepth } from '../constants'
 
@@ -70,10 +71,10 @@ export default class Map extends Container {
         this.positionsCount = 4
         break
       case 200:
-        this.positionsCount = 6
+        this.positionsCount = 4//6
         break
       case 220:
-        this.positionsCount = 8
+        this.positionsCount = 4//8
         break
       default:
         this.positionsCount = 2
@@ -106,6 +107,7 @@ export default class Map extends Container {
   generatePlayers() {
     const { context } = this
 
+    const players = []
     const poses = []
     const randoms = Array.from(Array(this.playersPos.length).keys())
 
@@ -115,23 +117,28 @@ export default class Map extends Container {
       randoms.splice(randoms.indexOf(pos), 1)
     }
 
-    const players = [
-      new Human(
-        {
-          i: this.playersPos[poses[0]].i,
-          j: this.playersPos[poses[0]].j,
-          age: 'StoneAge',
-          civ: 'Greek',
-          color: 'blue',
-          isPlayed: true,
-        },
-        context
-      ),
-      /*new AI(
-        { i: this.playersPos[poses[1]].i, j: this.playersPos[poses[1]].j, age: 'StoneAge', civ: 'Greek', color: 'red' },
-        context
-      ),*/
-    ]
+    for (let i = 0; i < this.positionsCount; i++) {
+      const posI = this.playersPos[poses[i]].i
+      const posJ = this.playersPos[poses[i]].j
+      const color = colors[i]
+      if (!i) {
+        players.push(
+          new Human(
+            {
+              i: posI,
+              j: posJ,
+              age: 'StoneAge',
+              civ: 'Greek',
+              color,
+              isPlayed: true,
+            },
+            context
+          )
+        )
+      } else {
+        players.push(new AI({ i: posI, j: posJ, age: 'StoneAge', civ: 'Greek', color }, context))
+      }
+    }
     return players
   }
 

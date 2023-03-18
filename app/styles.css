@@ -67,7 +67,7 @@ body {
   bottom: 0;
   display: grid;
   height: 122px;
-  grid-template-columns: 120px auto 120px;
+  grid-template-columns: 120px auto 242px;
   width: calc(100% - 10px);
   grid-gap: 5px;
   padding: 5px;
@@ -112,6 +112,14 @@ body {
   border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
   background-color: black;
   overflow: hidden;
+}
+
+.bottombar-map canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .age {

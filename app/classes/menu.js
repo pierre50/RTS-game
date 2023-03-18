@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
-import { getIconPath, canAfford, refundCost } from '../lib'
+import { getIconPath, canAfford, refundCost, throttle } from '../lib'
+import { cellWidth, cellHeight } from '../constants'
 
 export default class Menu {
   constructor(context) {
@@ -24,6 +25,8 @@ export default class Menu {
     this.age.className = 'age'
     this.options = document.createElement('div')
 
+    this.minimapFactor
+
     this.topbar.appendChild(this.resources)
     this.topbar.appendChild(this.age)
     this.topbar.appendChild(this.options)
@@ -37,13 +40,161 @@ export default class Menu {
     this.bottombarMenu.className = 'bottombar-menu'
     this.bottombarMap = document.createElement('div')
     this.bottombarMap.className = 'bottombar-map'
+    this.bottombarMap.addEventListener('pointerup', evt => {
+      const {
+        context: { controls, map },
+      } = this
+      this.minimapFactor = this.getMinimapFactor()
+      const rect = evt.target.getBoundingClientRect()
+      const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+      const t = (mapWidth / 234) * 2
+      const x = (evt.clientX - rect.left - rect.width / 2) * t
+      const y = (evt.clientY - rect.top) * t
+      controls.setCamera(x, y)
+    })
+    this.terrainMinimap = document.createElement('canvas')
+    this.playersMinimap = []
 
+    this.bottombarMap.appendChild(this.terrainMinimap)
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
     this.bottombar.appendChild(this.bottombarMap)
     document.body.appendChild(this.bottombar)
 
+    this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
+
     this.updateTopbar()
+  }
+
+  init() {
+    this.createMiniMap()
+    this.updateTopbar()
+  }
+
+  getMinimapFactor() {
+    const {
+      context: { map },
+    } = this
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const t = (mapWidth / 234) * 2
+    return t
+    switch (map.size) {
+      case 120:
+        return 25.3
+      case 144:
+        return 30
+      case 168:
+        return 36
+      case 200:
+        return 42
+      case 220:
+        return 46
+    }
+  }
+
+  createMiniMap() {
+    function drawDiamond(context, x, y, width, height, color) {
+      context.save()
+      context.beginPath()
+      context.moveTo(x, y)
+
+      context.lineTo(x - width / 2, y + height / 2)
+      context.lineTo(x, y + height)
+      context.lineTo(x + width / 2, y + height / 2)
+      context.closePath()
+
+      context.fillStyle = color
+      context.fill()
+      context.restore()
+    }
+    const canvasElement = this.terrainMinimap
+    const context = canvasElement.getContext('2d')
+
+    const {
+      context: { map },
+    } = this
+
+    this.minimapFactor = this.getMinimapFactor() / 1.284
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / this.minimapFactor
+    context.translate(translate, 0)
+
+    for (let i = 0; i <= map.size; i++) {
+      for (let j = 0; j <= map.size; j++) {
+        const cell = map.grid[i][j]
+        const x = cell.x
+        const y = cell.y
+        const color = (cell.has && cell.has.color) || cell.color
+        drawDiamond(
+          context,
+          x / this.minimapFactor + translate,
+          y / this.minimapFactor,
+          cellWidth / this.minimapFactor + 1,
+          cellHeight / this.minimapFactor + 1,
+          color
+        )
+      }
+    }
+    context.restore()
+  }
+
+  updatePlayerMiniMapEvt(owner) {
+    function drawRectangle(context, x, y, width, height, color) {
+      context.fillStyle = color
+      context.fillRect(x, y, width, height)
+      context.fill()
+    }
+
+    if (!owner) {
+      return
+    }
+
+    const {
+      context: { map },
+    } = this
+
+    const squareSize = 5
+    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.id}`)
+    const color = owner.colorHex
+
+    let canvas
+    let context
+
+    this.minimapFactor = this.getMinimapFactor() / 1.284
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / this.minimapFactor
+
+    if (playerMinimap) {
+      canvas = playerMinimap.canvas
+      context = playerMinimap.context
+    } else {
+      canvas = document.createElement('canvas')
+      context = canvas.getContext('2d')
+      context.translate(translate, 0)
+      this.playersMinimap.push({
+        id: `minimap-${owner.id}`,
+        canvas,
+        context,
+      })
+      this.bottombarMap.appendChild(canvas)
+    }
+
+    context.clearRect(-translate, 0, canvas.width, canvas.height)
+
+    owner.buildings.forEach(({ x, y, size }) => {
+      const finalSize = squareSize + size
+      const finalX = x / this.minimapFactor - finalSize / 2
+      const finalY = y / this.minimapFactor - finalSize / 2
+      drawRectangle(context, finalX + translate, finalY, finalSize, finalSize, color)
+    })
+
+    owner.units.forEach(({ x, y }) => {
+      const finalX = x / this.minimapFactor - squareSize / 2
+      const finalY = y / this.minimapFactor - squareSize / 2
+      drawRectangle(context, finalX + translate, finalY, squareSize, squareSize, color)
+    })
+
+    context.restore()
   }
 
   getMessage(cost) {
@@ -88,6 +239,7 @@ export default class Menu {
     box.appendChild(this[name])
     this.resources.appendChild(box)
   }
+
   updateTopbar() {
     const {
       context: { player },
@@ -96,10 +248,12 @@ export default class Menu {
       this[prop].textContent = (player && player[prop]) || 0
     })
   }
+
   resetInfo() {
     this.bottombarInfo.textContent = ''
     this.bottombarInfo.style.background = 'transparent'
   }
+
   generateInfo(selection) {
     this.resetInfo()
     this.bottombarInfo.style.background = 'black'
@@ -107,6 +261,7 @@ export default class Menu {
       selection.interface.info(this.bottombarInfo)
     }
   }
+
   updateInfo(target, action) {
     const targetElement = this.bottombarInfo.querySelector(`[id=${target}]`)
     if (!targetElement || typeof action !== 'function') {
@@ -114,6 +269,7 @@ export default class Menu {
     }
     return action(targetElement)
   }
+
   updateButtonContent(target, action) {
     const targetElement = this.bottombarMenu.querySelector(`[id=${target}]`)
     if (!targetElement || typeof action !== 'function') {
@@ -125,6 +281,7 @@ export default class Menu {
     }
     return action(contentElement)
   }
+
   toggleButtonCancel(target, value) {
     const element = this.bottombarMenu.querySelector(`[id=${target}-cancel]`)
     if (!element) {
@@ -132,11 +289,11 @@ export default class Menu {
     }
     element.style.display = value ? 'block' : 'none'
   }
+
   setBottombar(selection = null) {
     const {
       context: { controls, player },
     } = this
-    const me = this
 
     this.resetInfo()
     this.bottombarMenu.textContent = ''
@@ -203,6 +360,7 @@ export default class Menu {
       }
     }
   }
+
   getUnitButton(type) {
     const {
       context: { player },
@@ -213,7 +371,7 @@ export default class Menu {
       id: type,
       onCreate: (selection, element) => {
         const div = document.createElement('div')
-        div.className='bottombar-menu-column'
+        div.className = 'bottombar-menu-column'
         const cancel = document.createElement('img')
         cancel.id = `${type}-cancel`
         cancel.className = 'img'

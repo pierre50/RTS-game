@@ -1,4 +1,5 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
+import { accelerator } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -16,6 +17,7 @@ import {
   findInstancesInSight,
   getClosestInstanceWithPath,
   getCellsAroundPoint,
+  instanceIsInPlayerSight,
 } from '../lib'
 
 class Unit extends Container {
@@ -104,6 +106,7 @@ class Unit extends Container {
     this.interval = setInterval(() => this.step(), 40)
     sprite.updateAnchor = true
     this.addChild(sprite)
+
     this.stop()
 
     renderCellOnInstanceSight(this)
@@ -273,7 +276,7 @@ class Unit extends Container {
           //Destroy tree if stump out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
-            affectNewDest()
+            this.affectNewDest()
           }
           //Set the walking with wood animation
           if (this.loading > 1) {
@@ -616,6 +619,9 @@ class Unit extends Container {
         this.stop()
       }
     } else {
+      const {
+        context: { menu },
+      } = this
       //Move to next
       const oldDeg = this.degree
       let speed = this.speed
@@ -623,6 +629,7 @@ class Unit extends Container {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
+      menu.updatePlayerMiniMap(this.owner)
       if (oldDeg !== this.degree) {
         //Change animation according to degree
         this.setTextures('walkingSheet')
@@ -826,7 +833,7 @@ export class Villager extends Unit {
         type,
         lifeMax: data.lifeMax,
         sight: data.sight,
-        speed: data.speed,
+        speed: data.speed * accelerator,
         attack: data.attack,
         standingSheet: Assets.cache.get('418'),
         walkingSheet: Assets.cache.get('657'),

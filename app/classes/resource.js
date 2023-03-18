@@ -9,6 +9,7 @@ import {
   drawInstanceBlinkingSelection,
   getNewInstanceClosestFreeCellPath,
 } from '../lib'
+import { colorTree, colorGold, colorStone } from '../constants'
 
 class resource extends Container {
   constructor(options, context) {
@@ -216,6 +217,7 @@ export class Tree extends resource {
         type,
         sprite: sprite,
         size: 1,
+        color: colorTree,
         quantity: data.quantity,
         lifeMax: data.lifeMax,
         interface: {
@@ -356,6 +358,7 @@ export class Stone extends resource {
         type,
         sprite: sprite,
         size: 1,
+        color: colorStone,
         quantity: data.quantity,
         interface: {
           info: element => {
@@ -413,6 +416,7 @@ export class Gold extends resource {
         j,
         type,
         sprite: sprite,
+        color: colorGold,
         size: 1,
         quantity: data.quantity,
         interface: {

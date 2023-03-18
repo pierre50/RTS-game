@@ -134,7 +134,7 @@ class Building extends Container {
             return
           }
           if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
-            this.unselectAll()
+            player.unselectAll()
             this.select()
             menu.setBottombar(this)
             player.selectedOther = this
@@ -427,10 +427,12 @@ class Building extends Container {
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
-    const lifeDiv = document.createElement('div')
-    lifeDiv.id = 'life'
-    lifeDiv.textContent = this.life + '/' + this.lifeMax
-    element.appendChild(lifeDiv)
+    if (this.owner && this.owner.isPlayed){
+      const lifeDiv = document.createElement('div')
+      lifeDiv.id = 'life'
+      lifeDiv.textContent = this.life + '/' + this.lifeMax
+      element.appendChild(lifeDiv)
+    }
 
     if (this.owner.isPlayed) {
       const loadingDiv = document.createElement('div')
