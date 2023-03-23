@@ -63,9 +63,14 @@ class Unit extends Container {
     this.originalSpeed = this.peed
     this.inactif = true
 
+    this.allowMove = false
     this.interactive = true
     const sprite = new AnimatedSprite(this.standingSheet.animations['south'])
     sprite.name = 'sprite'
+    sprite.allowMove = false
+    sprite.interactive = false
+    sprite.allowClick = false
+    sprite.roundPixels = true
 
     this.on('pointertap', () => {
       const {
@@ -157,10 +162,17 @@ class Unit extends Container {
     this.path = path
   }
 
+  handleChangeDest() {
+    if (this.dest && this.dest.isUsedBy === this) {
+      this.dest.isUsedBy = null
+    }
+  }
+
   sendTo(dest, action) {
     const {
       context: { map },
     } = this
+    this.handleChangeDest()
     let path = []
     //No instance we cancel the destination
     if (!dest) {
@@ -203,6 +215,13 @@ class Unit extends Container {
     }
     const conditions = {
       chopwood: instance => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
+      farm: instance =>
+        instance &&
+        instance.type === 'Farm' &&
+        instance.life > 0 &&
+        instance.quantity > 0 &&
+        (!instance.isUsedBy || instance.isUsedBy === this) &&
+        !instance.isDestroyed,
       forageberry: instance =>
         instance && instance.type === 'Berrybush' && instance.quantity > 0 && !instance.isDestroyed,
       minestone: instance => instance && instance.type === 'Stone' && instance.quantity > 0 && !instance.isDestroyed,
@@ -233,6 +252,54 @@ class Unit extends Container {
       return
     }
     switch (name) {
+      case 'farm':
+        if (!this.getActionCondition(this.dest)) {
+          this.affectNewDest()
+          return
+        }
+        this.dest.isUsedBy = this
+        sprite.onLoop = () => {
+          if (!this.getActionCondition(this.dest)) {
+            this.affectNewDest()
+            return
+          }
+          this.dest.isUsedBy = this
+          //Villager is full we send him delivery first
+          if (this.loading === this.loadingMax || !this.dest) {
+            this.sendToDelivery('Granary', 'deliveryfood')
+            this.dest.isUsedBy = null
+            return
+          }
+          //Villager farm the farm
+          this.loading++
+          this.updateInterfaceLoading()
+
+          this.dest.quantity--
+          if (this.dest.selected && this.owner.isPlayed) {
+            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+          }
+          //Destroy farm if it out of quantity
+          if (this.dest.quantity <= 0) {
+            this.dest.die()
+            this.affectNewDest()
+          }
+        }
+        this.setTextures('actionSheet')
+        break
+      case 'deliveryfood':
+        this.owner.food += this.loading
+        if (this.owner.isPlayed) {
+          menu.updateTopbar()
+        }
+        this.loading = 0
+        this.updateInterfaceLoading()
+
+        if (this.previousDest) {
+          this.sendToFarm(this.previousDest)
+        } else {
+          this.stop()
+        }
+        break
       case 'chopwood':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -297,7 +364,7 @@ class Unit extends Container {
         this.walkingSheet = Assets.cache.get('682')
         this.standingSheet = Assets.cache.get('440')
         if (this.previousDest) {
-          this.sendTo(this.previousDest, 'chopwood')
+          this.sendToTree(this.previousDest)
         } else {
           this.stop()
         }
@@ -342,7 +409,7 @@ class Unit extends Container {
         this.updateInterfaceLoading()
 
         if (this.previousDest) {
-          this.sendTo(this.previousDest, 'forageberry')
+          this.sendToBerrybush(this.previousDest)
         } else {
           this.stop()
         }
@@ -394,7 +461,7 @@ class Unit extends Container {
         this.walkingSheet = Assets.cache.get('683')
         this.standingSheet = Assets.cache.get('441')
         if (this.previousDest) {
-          this.sendTo(this.previousDest, 'minestone')
+          this.sendToStone(this.previousDest)
         } else {
           this.stop()
         }
@@ -446,7 +513,7 @@ class Unit extends Container {
         this.walkingSheet = Assets.cache.get('683')
         this.standingSheet = Assets.cache.get('441')
         if (this.previousDest) {
-          this.sendTo(this.previousDest, 'minegold')
+          this.sendToGold(this.previousDest)
         } else {
           this.stop()
         }
@@ -458,6 +525,9 @@ class Unit extends Container {
         }
         sprite.onLoop = () => {
           if (!this.getActionCondition(this.dest)) {
+            if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
+              this.sendToFarm(this.dest)
+            }
             this.affectNewDest()
             return
           }
@@ -474,6 +544,9 @@ class Unit extends Container {
             if (!this.dest.isBuilt) {
               this.dest.updateLife(this.action)
               this.dest.isBuilt = true
+              if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
+                this.sendToFarm(this.dest)
+              }
             }
             this.affectNewDest()
           }
@@ -515,6 +588,7 @@ class Unit extends Container {
         this.stop()
     }
   }
+
   affectNewDest() {
     const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
     if (targets.length) {
@@ -532,6 +606,9 @@ class Unit extends Container {
     }
     if (this.loading) {
       switch (this.work) {
+        case 'farm':
+          this.sendToDelivery('Granary', 'deliveryfood')
+          return
         case 'woodcutter':
           this.sendToDelivery('StoragePit', 'deliverywood')
           return
@@ -549,6 +626,7 @@ class Unit extends Container {
     this.stop()
     return
   }
+
   moveToPath() {
     const next = this.path[this.path.length - 1]
     const nextCell = this.parent.grid[next.i][next.j]
@@ -636,6 +714,7 @@ class Unit extends Container {
       }
     }
   }
+
   isAttacked(instance) {
     if (!instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
       return
@@ -646,11 +725,13 @@ class Unit extends Container {
       this.sendTo(instance, 'attack')
     }
   }
+
   stop() {
     if (this.currentCell.has !== this && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }
+    this.handleChangeDest()
     this.inactif = true
     this.action = null
     this.dest = null
@@ -660,6 +741,7 @@ class Unit extends Container {
     this.path = []
     this.setTextures('standingSheet')
   }
+
   step() {
     if (this.life <= 0) {
       this.die()
@@ -672,6 +754,7 @@ class Unit extends Container {
       this.moveToPath()
     }
   }
+
   explore() {
     let dest
     for (let i = 3; i < 50; i++) {
@@ -687,6 +770,7 @@ class Unit extends Container {
       }
     }
   }
+
   runaway() {
     let dest
     for (let i = 5; i < 50; i++) {
@@ -702,12 +786,19 @@ class Unit extends Container {
       }
     }
   }
+
   die() {
+    const {
+      context: { player },
+    } = this
     if (this.currentSheet === 'dyingSheet') {
       return
     }
     if (this.selected && player) {
       player.unselectAll()
+    }
+    if (this.dest && this.dest.isUsedBy === this) {
+      this.dest.isUsedBy = null
     }
     this.path = []
     this.action = null
@@ -743,6 +834,7 @@ class Unit extends Container {
       clearInterval(this.interval)
     }
   }
+
   setTextures(sheet) {
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
@@ -834,7 +926,7 @@ export class Villager extends Unit {
         lifeMax: data.lifeMax,
         sight: data.sight,
         speed: data.speed * accelerator,
-        attack: data.attack,
+        attack: data.attack * accelerator,
         standingSheet: Assets.cache.get('418'),
         walkingSheet: Assets.cache.get('657'),
         dyingSheet: Assets.cache.get('314'),
@@ -855,6 +947,7 @@ export class Villager extends Unit {
                     menu.getBuildingButton('Barracks'),
                     menu.getBuildingButton('Granary'),
                     menu.getBuildingButton('StoragePit'),
+                    menu.getBuildingButton('Farm'),
                   ],
                 },
               ]
@@ -868,7 +961,7 @@ export class Villager extends Unit {
     const {
       context: { player, menu },
     } = this
-    if (this.selected && player && player.selectedUnit === this) {
+    if (this.selected && this.owner === player) {
       if (this.loading === 1) {
         menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().outerHTML))
       } else if (this.loading > 1) {
@@ -883,10 +976,7 @@ export class Villager extends Unit {
       context: { menu },
     } = this
     const loadingDiv = document.createElement('div')
-    Object.assign(loadingDiv.style, {
-      display: 'flex',
-      alignItems: 'center',
-    })
+    loadingDiv.className = 'unit-loading'
     loadingDiv.id = 'loading'
     if (this.loading) {
       let iconToUse
@@ -894,6 +984,7 @@ export class Villager extends Unit {
         case 'woodcutter':
           iconToUse = menu.icons['wood']
           break
+        case 'farmer':
         case 'gatherer':
           iconToUse = menu.icons['food']
           break
@@ -905,14 +996,7 @@ export class Villager extends Unit {
           break
       }
       const iconImg = document.createElement('img')
-      Object.assign(iconImg.style, {
-        objectFit: 'none',
-        height: '13px',
-        width: '20px',
-        marginRight: '2px',
-        border: '1.5px inset #686769',
-        borderRadius: '2px',
-      })
+      iconImg.className = 'unit-loading-icon'
       iconImg.src = iconToUse
       const textDiv = document.createElement('div')
       textDiv.id = 'loading-text'
@@ -960,6 +1044,18 @@ export class Villager extends Unit {
     }
     this.previousDest = null
     return this.sendTo(building, 'build')
+  }
+  sendToFarm(farm) {
+    if (this.work !== 'farmer') {
+      this.loading = 0
+      this.updateInterfaceLoading()
+      this.work = 'farmer'
+      this.actionSheet = Assets.cache.get('632')
+      this.standingSheet = Assets.cache.get('432')
+      this.walkingSheet = Assets.cache.get('672')
+    }
+    this.previousDest = null
+    return this.sendTo(farm, 'farm')
   }
   sendToTree(tree) {
     if (this.work !== 'woodcutter') {

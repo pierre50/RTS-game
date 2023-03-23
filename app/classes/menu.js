@@ -50,6 +50,7 @@ export default class Menu {
       const t = (mapWidth / 234) * 2
       const x = (evt.clientX - rect.left - rect.width / 2) * t
       const y = (evt.clientY - rect.top) * t
+      controls.clearInstancesOnScreen()
       controls.setCamera(x, y)
     })
     this.terrainMinimap = document.createElement('canvas')

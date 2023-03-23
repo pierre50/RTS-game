@@ -12,6 +12,7 @@ import {
   drawInstanceBlinkingSelection,
   payCost,
   instanceIsInPlayerSight,
+  clearCellOnInstanceSight
 } from '../lib'
 
 class Building extends Container {
@@ -62,8 +63,11 @@ class Building extends Container {
       }
     })
 
+    this.allowMove = false
     if (this.sprite) {
+      this.sprite.allowMove = false
       this.sprite.interactive = true
+      this.sprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
         const {
@@ -89,30 +93,66 @@ class Building extends Container {
             }
           } else if (player.selectedUnits) {
             //Send Villager to give loading of resources
-            let hasVillagerLoaded = false
+            let hasSendedVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
-              if (unit.type === 'Villager' && unit.loading > 0) {
-                hasVillagerLoaded = true
-                drawInstanceBlinkingSelection(this)
-                unit.previousDest = null
-                switch (unit.work) {
-                  case 'woodcutter':
-                    unit.sendTo(this, 'deliverywood')
-                    break
-                  case 'gatherer':
-                    unit.sendTo(this, 'deliveryberry')
-                    break
-                  case 'stoneminer':
-                    unit.sendTo(this, 'deliverystone')
-                    break
-                  case 'goldminer':
-                    unit.sendTo(this, 'deliverygold')
-                    break
+              if (unit.type === 'Villager') {
+                if (this.life < this.lifeMax) {
+                  hasSendedVillager = true
+                  unit.previousDest = null
+                  unit.sendToBuilding(this)
+                } else {
+                  switch (this.type) {
+                    case 'Farm':
+                      hasSendedVillager = true
+                      unit.previousDest = null
+                      unit.sendToFarm(this)
+                      break
+                    case 'StoragePit':
+                      if (unit.loading > 0) {
+                        if (unit.work === 'woodcutter' || unit.work === 'stoneminer' || unit.work === 'goldminer') {
+                          hasSendedVillager = true
+                          unit.previousDest = null
+                        }
+                        unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
+                        unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
+                        unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')
+                      }
+                      break
+                    case 'Granary':
+                      if (unit.loading > 0) {
+                        if (unit.work === 'gatherer') {
+                          hasSendedVillager = true
+                          unit.previousDest = null
+                        }
+                        unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
+                      }
+                      break
+                    case 'TownCenter':
+                      if (unit.loading > 0) {
+                        if (
+                          unit.work === 'gatherer' ||
+                          unit.work === 'farmer' ||
+                          unit.work === 'woodcutter' ||
+                          unit.work === 'stoneminer' ||
+                          unit.work === 'goldminer'
+                        ) {
+                          hasSendedVillager = true
+                          unit.previousDest = null
+                        }
+                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
+                        unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
+                        unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
+                        unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
+                        unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')
+                      }
+                      break
+                  }
                 }
               }
             }
-            if (hasVillagerLoaded) {
+            if (hasSendedVillager) {
+              drawInstanceBlinkingSelection(this)
               return
             }
           }
@@ -120,25 +160,21 @@ class Building extends Container {
           this.select()
           menu.setBottombar(this)
           player.selectedBuilding = this
-        } else {
-          if (player.selectedUnits.length) {
-            drawInstanceBlinkingSelection(this)
-            for (let i = 0; i < player.selectedUnits.length; i++) {
-              const playerUnit = player.selectedUnits[i]
-              if (playerUnit.type === 'Villager') {
-                playerUnit.sendToAttack(this)
-              } else {
-                playerUnit.sendTo(this, 'attack')
-              }
+        } else if (player.selectedUnits.length) {
+          drawInstanceBlinkingSelection(this)
+          for (let i = 0; i < player.selectedUnits.length; i++) {
+            const playerUnit = player.selectedUnits[i]
+            if (playerUnit.type === 'Villager') {
+              playerUnit.sendToAttack(this)
+            } else {
+              playerUnit.sendTo(this, 'attack')
             }
-            return
           }
-          if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
-            player.unselectAll()
-            this.select()
-            menu.setBottombar(this)
-            player.selectedOther = this
-          }
+        } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+          player.unselectAll()
+          this.select()
+          menu.setBottombar(this)
+          player.selectedOther = this
         }
       })
 
@@ -246,7 +282,7 @@ class Building extends Container {
   }
   die() {
     const {
-      context: { map },
+      context: { map, player },
     } = this
     if (this.parent) {
       const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
@@ -412,6 +448,10 @@ class Building extends Container {
     }
   }
   setDefaultInterface(element, data) {
+    const {
+      context: { menu },
+    } = this
+
     const civDiv = document.createElement('div')
     civDiv.id = 'civ'
     civDiv.textContent = this.owner.civ
@@ -427,18 +467,41 @@ class Building extends Container {
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
-    if (this.owner && this.owner.isPlayed){
+    if (this.owner && this.owner.isPlayed) {
       const lifeDiv = document.createElement('div')
       lifeDiv.id = 'life'
       lifeDiv.textContent = this.life + '/' + this.lifeMax
       element.appendChild(lifeDiv)
-    }
 
-    if (this.owner.isPlayed) {
       const loadingDiv = document.createElement('div')
       loadingDiv.id = 'loading'
       loadingDiv.textContent = this.loading ? this.loading + '%' : ''
       element.appendChild(loadingDiv)
+
+      if (this.type === 'Farm' && this.isBuilt && this.quantity) {
+        const quantityDiv = document.createElement('div')
+        Object.assign(quantityDiv.style, {
+          display: 'flex',
+          alignItems: 'center',
+        })
+        quantityDiv.id = 'quantity'
+        const smallIconImg = document.createElement('img')
+        Object.assign(smallIconImg.style, {
+          objectFit: 'none',
+          height: '13px',
+          width: '20px',
+          marginRight: '2px',
+          border: '1.5px inset #686769',
+          borderRadius: '2px',
+        })
+        smallIconImg.src = menu.icons['food']
+        const textDiv = document.createElement('div')
+        textDiv.id = 'quantity-text'
+        textDiv.textContent = this.quantity
+        quantityDiv.appendChild(smallIconImg)
+        quantityDiv.appendChild(textDiv)
+        element.appendChild(quantityDiv)
+      }
     }
   }
 }
@@ -709,10 +772,59 @@ export class StoragePit extends Building {
   }
 }
 
+export class Farm extends Building {
+  constructor({ i, j, owner, isBuilt = false }, context) {
+    const type = 'Farm'
+    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
+
+    //Define sprite
+    const texture = getTexture(data.images.build, Assets)
+    const sprite = Sprite.from(texture)
+    sprite.updateAnchor = true
+    sprite.name = 'sprite'
+    sprite.hitArea = new Polygon(texture.hitArea)
+
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        sprite,
+        size: data.size,
+        sight: data.sight,
+        isBuilt,
+        isUsedBy: null,
+        lifeMax: data.lifeMax,
+        quantity: data.lifeMax,
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+  finalTexture() {
+    const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
+
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = getTexture(data.images.final, Assets)
+    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+
+    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
+    spriteColor.name = 'color'
+    changeSpriteColor(spriteColor, this.owner.color)
+    this.addChild(spriteColor)
+  }
+}
+
 export default {
   Barracks,
   TownCenter,
   House,
   StoragePit,
   Granary,
+  Farm,
 }

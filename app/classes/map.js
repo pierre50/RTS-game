@@ -10,7 +10,7 @@ import {
   getPlainCellsAroundPoint,
   getPositionInGridAroundInstance,
   getCellsAroundPoint,
-  colors
+  colors,
 } from '../lib'
 import { cellDepth } from '../constants'
 
@@ -34,6 +34,7 @@ export default class Map extends Container {
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
     this.revealEverything = true
+    this.noAI = true
     this.grid = []
     this.sortableChildren = true
 
@@ -71,10 +72,10 @@ export default class Map extends Container {
         this.positionsCount = 4
         break
       case 200:
-        this.positionsCount = 4//6
+        this.positionsCount = 4 //6
         break
       case 220:
-        this.positionsCount = 4//8
+        this.positionsCount = 4 //8
         break
       default:
         this.positionsCount = 2
@@ -135,7 +136,7 @@ export default class Map extends Container {
             context
           )
         )
-      } else {
+      } else if (!this.noAI) {
         players.push(new AI({ i: posI, j: posJ, age: 'StoneAge', civ: 'Greek', color }, context))
       }
     }

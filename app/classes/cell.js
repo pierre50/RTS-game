@@ -39,6 +39,10 @@ class Cell extends Container {
 
     if (sprite) {
       sprite.anchor.set(0.5, 0.5)
+      sprite.roundPixels = true
+      sprite.allowMove = false
+      sprite.interactive = false
+      sprite.allowClick = false
       this.addChild(sprite)
     }
 

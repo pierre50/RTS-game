@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { Barracks, TownCenter, House, StoragePit, Granary } from './building'
+import { Barracks, TownCenter, Farm, House, StoragePit, Granary } from './building'
 import { Villager, Clubman } from './unit'
 import {
   getPlainCellsAroundPoint,
@@ -110,6 +110,7 @@ class Player {
       House,
       StoragePit,
       Granary,
+      Farm,
     }
     const building = new buildings[type]({ i, j, owner: this, isBuilt }, context)
     this.buildings.push(building)

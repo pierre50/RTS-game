@@ -4,7 +4,6 @@ import {
   pointIsBetweenTwoPoint,
   pointsDistance,
   pointInRectangle,
-  getCellsAroundPoint,
   getPlainCellsAroundPoint,
   changeSpriteColor,
   getTexture,
@@ -32,6 +31,8 @@ export default class Controls extends Container {
 
     this.keysPressed = {}
     this.interactive = false
+    this.allowMove = false
+    this.allowClick = false
 
     document.addEventListener('keydown', evt => this.onKeyDown(evt))
     document.addEventListener('keyup', evt => this.onKeyUp(evt))
@@ -407,7 +408,7 @@ export default class Controls extends Container {
 
     map.setCoordinate(-this.camera.x, -this.camera.y)
 
-    this.displayInstancesOnScreen(true)
+    this.displayInstancesOnScreen()
   }
 
   /*moveCameraWithMouse() {
@@ -436,26 +437,6 @@ export default class Controls extends Container {
     }
   }*/
 
-  clearInstancesOnScreen() {
-    const {
-      context: { map, app },
-    } = this
-
-    map.setCoordinate(-this.camera.x, -this.camera.y)
-    const cameraCenter = {
-      x: this.camera.x + app.screen.width / 2,
-      y: this.camera.y + app.screen.height / 2,
-    }
-    const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y)
-    const dist = Math.round(window.innerWidth / cellWidth) + 2
-    getCellsAroundPoint(coordinate[0], coordinate[1], map.grid, dist, cell => {
-      cell.visible = false
-      if (cell.has) {
-        cell.has.visible = false
-      }
-    })
-  }
-
   instanceInCamera(instance) {
     const {
       context: { app },
@@ -463,20 +444,37 @@ export default class Controls extends Container {
     return pointInRectangle(instance.x, instance.y, this.camera.x, this.camera.y, app.screen.width, app.screen.height)
   }
 
-  displayInstancesOnScreen(light = false) {
+  getCellOnCamera(callback) {
     const {
       context: { map, app },
     } = this
-
-    const cameraCenter = {
-      x: this.camera.x + app.screen.width / 2,
-      y: this.camera.y + app.screen.height / 2,
+    const cameraFloor = {
+      x: Math.floor(this.camera.x),
+      y: Math.floor(this.camera.y),
     }
-    const coordinate = isometricToCartesian(cameraCenter.x, cameraCenter.y)
-    const dist = Math.round(app.screen.width / cellWidth) + 1
-    light
-      ? getCellsAroundPoint(coordinate[0], coordinate[1], map.grid, dist, cell => cell.updateVisible())
-      : getPlainCellsAroundPoint(coordinate[0], coordinate[1], map.grid, dist, cell => cell.updateVisible())
+    for (let i = cameraFloor.x; i <= cameraFloor.x + app.screen.width; i += cellWidth / 2) {
+      for (let j = cameraFloor.y; j <= cameraFloor.y + app.screen.height - 120; j += cellHeight / 2) {
+        const coordinate = isometricToCartesian(i, j)
+        const x = Math.min(Math.max(coordinate[0], 0), map.size)
+        const y = Math.min(Math.max(coordinate[1], 0), map.size)
+        if (map.grid[x] && map.grid[x][y]) {
+          callback(map.grid[x][y])
+        }
+      }
+    }
+  }
+
+  clearInstancesOnScreen() {
+    this.getCellOnCamera(cell => {
+      cell.visible = false
+      if (cell.has) {
+        cell.has.visible = false
+      }
+    })
+  }
+
+  displayInstancesOnScreen() {
+    this.getCellOnCamera(cell => cell.updateVisible())
   }
 
   init() {

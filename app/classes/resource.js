@@ -42,8 +42,13 @@ class resource extends Container {
     cell.solid = true
     cell.has = this
 
+    this.interactive = false
+    this.allowClick = false
+    this.allowMove = false
     if (this.sprite) {
+      this.sprite.allowMove = false
       this.sprite.interactive = true
+      this.sprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
         const {
