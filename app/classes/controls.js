@@ -34,6 +34,9 @@ export default class Controls extends Container {
     this.allowMove = false
     this.allowClick = false
 
+    this.minimapRectangle = new Graphics()
+    this.addChild(this.minimapRectangle)
+
     document.addEventListener('keydown', evt => this.onKeyDown(evt))
     document.addEventListener('keyup', evt => this.onKeyUp(evt))
     document.addEventListener('pointermove', evt => this.onPointerMove(evt))
@@ -90,9 +93,6 @@ export default class Controls extends Container {
 
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
-    if (!this.mouseRectangle) {
-      //this.moveCameraWithMouse()
-    }
 
     //Mouse building to place construction
     if (this.mouseBuilding) {
@@ -342,7 +342,7 @@ export default class Controls extends Container {
      */
 
     const {
-      context: { map, app },
+      context: { map, app, menu },
     } = this
 
     const dividedSpeed = isSpeedDiveded ? 2 : 1
@@ -406,8 +406,8 @@ export default class Controls extends Container {
       }
     }
 
+    menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
-
     this.displayInstancesOnScreen()
   }
 
@@ -491,11 +491,16 @@ export default class Controls extends Container {
 
   setCamera(x, y) {
     const {
-      context: { map, app },
+      context: { map, app, menu },
     } = this
+
     this.camera = {
       x: x - app.screen.width / 2,
       y: y - app.screen.height / 2,
+    }
+
+    if (menu) {
+      menu.updateCameraMiniMap()
     }
     map.setCoordinate(-this.camera.x, -this.camera.y)
     this.displayInstancesOnScreen()

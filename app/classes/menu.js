@@ -25,8 +25,6 @@ export default class Menu {
     this.age.className = 'age'
     this.options = document.createElement('div')
 
-    this.minimapFactor
-
     this.topbar.appendChild(this.resources)
     this.topbar.appendChild(this.age)
     this.topbar.appendChild(this.options)
@@ -42,27 +40,29 @@ export default class Menu {
     this.bottombarMap.className = 'bottombar-map'
     this.bottombarMap.addEventListener('pointerup', evt => {
       const {
-        context: { controls, map },
+        context: { controls },
       } = this
-      this.minimapFactor = this.getMinimapFactor()
+      const minimapFactor = this.getMinimapFactor()
       const rect = evt.target.getBoundingClientRect()
-      const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
-      const t = (mapWidth / 234) * 2
-      const x = (evt.clientX - rect.left - rect.width / 2) * t
-      const y = (evt.clientY - rect.top) * t
+      const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
+      const y = (evt.clientY - rect.top) * minimapFactor
       controls.clearInstancesOnScreen()
       controls.setCamera(x, y)
     })
     this.terrainMinimap = document.createElement('canvas')
     this.playersMinimap = []
+    this.cameraMinimap = document.createElement('canvas')
+    this.cameraMinimap.style.zIndex = 1
 
     this.bottombarMap.appendChild(this.terrainMinimap)
+    this.bottombarMap.appendChild(this.cameraMinimap)
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
     this.bottombar.appendChild(this.bottombarMap)
     document.body.appendChild(this.bottombar)
 
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
+    this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)
 
     this.updateTopbar()
   }
@@ -77,20 +77,7 @@ export default class Menu {
       context: { map },
     } = this
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
-    const t = (mapWidth / 234) * 2
-    return t
-    switch (map.size) {
-      case 120:
-        return 25.3
-      case 144:
-        return 30
-      case 168:
-        return 36
-      case 200:
-        return 42
-      case 220:
-        return 46
-    }
+    return (mapWidth / 234) * 2
   }
 
   createMiniMap() {
@@ -110,15 +97,17 @@ export default class Menu {
     }
     const canvasElement = this.terrainMinimap
     const context = canvasElement.getContext('2d')
+    const cameraContext = this.cameraMinimap.getContext('2d')
 
     const {
       context: { map },
     } = this
 
-    this.minimapFactor = this.getMinimapFactor() / 1.284
+    const minimapFactor = this.getMinimapFactor() / 1.284
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
-    const translate = mapWidth / 2 / this.minimapFactor
+    const translate = mapWidth / 2 / minimapFactor
     context.translate(translate, 0)
+    cameraContext.translate(translate, 0)
 
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
@@ -128,15 +117,41 @@ export default class Menu {
         const color = (cell.has && cell.has.color) || cell.color
         drawDiamond(
           context,
-          x / this.minimapFactor + translate,
-          y / this.minimapFactor,
-          cellWidth / this.minimapFactor + 1,
-          cellHeight / this.minimapFactor + 1,
+          x / minimapFactor + translate,
+          y / minimapFactor,
+          cellWidth / minimapFactor + 1,
+          cellHeight / minimapFactor + 1,
           color
         )
       }
     }
     context.restore()
+  }
+
+  updateCameraMiniMapEvt() {
+    function drawStrokeRectangle(context, x, y, width, height, color) {
+      context.strokeStyle = color
+      context.strokeRect(x, y, width, height)
+    }
+
+    const {
+      context: { app, map, controls },
+    } = this
+
+    const canvas = this.cameraMinimap
+    const context = canvas.getContext('2d')
+
+    const minimapFactor = this.getMinimapFactor() / 1.284
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / minimapFactor
+
+    context.clearRect(-translate, 0, canvas.width, canvas.height)
+
+    const x = controls.camera.x / minimapFactor
+    const y = controls.camera.y / minimapFactor
+    const w = app.screen.width / minimapFactor
+    const h = app.screen.height / minimapFactor
+    drawStrokeRectangle(context, x + translate, y, w, h, 'white')
   }
 
   updatePlayerMiniMapEvt(owner) {
@@ -161,9 +176,9 @@ export default class Menu {
     let canvas
     let context
 
-    this.minimapFactor = this.getMinimapFactor() / 1.284
+    const minimapFactor = this.getMinimapFactor() / 1.284
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
-    const translate = mapWidth / 2 / this.minimapFactor
+    const translate = mapWidth / 2 / minimapFactor
 
     if (playerMinimap) {
       canvas = playerMinimap.canvas
@@ -182,17 +197,17 @@ export default class Menu {
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
-    owner.buildings.forEach(({ x, y, size }) => {
+    owner.buildings.forEach(({ x, y, size, selected }) => {
       const finalSize = squareSize + size
-      const finalX = x / this.minimapFactor - finalSize / 2
-      const finalY = y / this.minimapFactor - finalSize / 2
-      drawRectangle(context, finalX + translate, finalY, finalSize, finalSize, color)
+      const finalX = x / minimapFactor - finalSize / 2
+      const finalY = y / minimapFactor - finalSize / 2
+      drawRectangle(context, finalX + translate, finalY, finalSize, finalSize, selected ? 'white' : color)
     })
 
-    owner.units.forEach(({ x, y }) => {
-      const finalX = x / this.minimapFactor - squareSize / 2
-      const finalY = y / this.minimapFactor - squareSize / 2
-      drawRectangle(context, finalX + translate, finalY, squareSize, squareSize, color)
+    owner.units.forEach(({ x, y, selected }) => {
+      const finalX = x / minimapFactor - squareSize / 2
+      const finalY = y / minimapFactor - squareSize / 2
+      drawRectangle(context, finalX + translate, finalY, squareSize, squareSize, selected ? 'white' : color)
     })
 
     context.restore()

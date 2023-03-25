@@ -78,6 +78,9 @@ class resource extends Container {
     this.addChildAt(selection, 0)
   }
   unselect() {
+    if (!this.selected) {
+      return
+    }
     this.selected = false
     const selection = this.getChildByName('selection')
     if (selection) {
@@ -188,7 +191,7 @@ export class Tree extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
+      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true
@@ -278,7 +281,7 @@ export class Berrybush extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
+      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true
@@ -336,7 +339,7 @@ export class Stone extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
+      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true
@@ -395,7 +398,7 @@ export class Gold extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || !controls.isMouseInApp()) {
+      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true

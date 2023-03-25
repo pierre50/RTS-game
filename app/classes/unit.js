@@ -120,6 +120,10 @@ class Unit extends Container {
     if (this.selected) {
       return
     }
+    const {
+      context: { menu },
+    } = this
+
     this.selected = true
     const selection = new Graphics()
     selection.name = 'selection'
@@ -128,13 +132,23 @@ class Unit extends Container {
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
     selection.drawPolygon(path)
     this.addChildAt(selection, 0)
+
+    menu.updatePlayerMiniMapEvt(this.owner)
   }
   unselect() {
+    if (!this.selected) {
+      return
+    }
+    const {
+      context: { menu },
+    } = this
+    
     this.selected = false
     const selection = this.getChildByName('selection')
     if (selection) {
       this.removeChild(selection)
     }
+    menu.updatePlayerMiniMapEvt(this.owner)
   }
   hasPath() {
     return this.path.length > 0

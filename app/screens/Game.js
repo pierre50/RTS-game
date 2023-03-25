@@ -18,7 +18,6 @@ export default class Game extends Container {
   }
 
   start() {
-    //Init map
     const context = {
       app: this.app,
       menu: null,
@@ -44,8 +43,13 @@ export default class Game extends Container {
     this.addChild(context.controls)
 
     window.addEventListener('resize', () => {
-      context.controls.clearInstancesOnScreen()
-      context.controls.displayInstancesOnScreen()
+      if (context.controls) {
+        context.controls.clearInstancesOnScreen()
+        context.controls.displayInstancesOnScreen()
+      }
+      if (context.menu) {
+        context.menu.updateCameraMiniMap()
+      }
     })
   }
 }

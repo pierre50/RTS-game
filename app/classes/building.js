@@ -12,7 +12,7 @@ import {
   drawInstanceBlinkingSelection,
   payCost,
   instanceIsInPlayerSight,
-  clearCellOnInstanceSight
+  clearCellOnInstanceSight,
 } from '../lib'
 
 class Building extends Container {
@@ -292,8 +292,10 @@ class Building extends Container {
       //Remove solid zone
       const dist = this.size === 3 ? 1 : 0
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-        cell.has = this
-        cell.solid = true
+        if (cell.has === this) {
+          cell.has = null
+          cell.solid = false
+        }
       })
       //Remove from player buildings
       const index = this.owner.buildings.indexOf(this)
@@ -336,13 +338,23 @@ class Building extends Container {
       menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
     }
     this.addChildAt(selection, 0)
+
+    menu.updatePlayerMiniMapEvt(this.owner)
   }
   unselect() {
+    if (!this.selected){
+      return
+    }
+    const {
+      context: { menu },
+    } = this
+
     this.selected = false
     const selection = this.getChildByName('selection')
     if (selection) {
       this.removeChild(selection)
     }
+    menu.updatePlayerMiniMapEvt(this.owner)
   }
   placeUnit(type) {
     const {

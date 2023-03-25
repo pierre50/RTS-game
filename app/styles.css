@@ -18,7 +18,6 @@ button {
   text-shadow: 1px 1px black;
   font-family: sans-serif;
   -webkit-font-smoothing: none;
-  background: var(--main-background-color);
 }
 
 body {
@@ -26,6 +25,7 @@ body {
   overflow: hidden;
   margin: 0;
   user-select: none;
+  background-color: black;
 }
 
 .loading {
