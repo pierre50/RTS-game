@@ -1252,7 +1252,6 @@ export class Villager extends Unit {
 
   sendToBuilding(building) {
     if (this.work !== 'builder') {
-      this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'builder'
       this.actionSheet = Assets.cache.get('628')
