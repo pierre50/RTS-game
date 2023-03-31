@@ -43,7 +43,7 @@ class Building extends Container {
 
     this.life = this.isBuilt ? this.lifeMax : 1
 
-    //Set solid zone
+    // Set solid zone
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
       const set = cell.getChildByName('set')
@@ -73,11 +73,11 @@ class Building extends Container {
         const {
           context: { controls, player, menu },
         } = this
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+        if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
           return
         }
         if (this.owner.isPlayed) {
-          //Send Villager to build the building
+          // Send Villager to build the building
           if (!this.isBuilt) {
             let hasVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -92,7 +92,7 @@ class Building extends Container {
               return
             }
           } else if (player.selectedUnits) {
-            //Send Villager to give loading of resources
+            // Send Villager to give loading of resources
             let hasSendedVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
@@ -190,6 +190,7 @@ class Building extends Container {
       }
     }
   }
+
   updateTexture() {
     const {
       context: { menu },
@@ -220,6 +221,7 @@ class Building extends Container {
       renderCellOnInstanceSight(this)
     }
   }
+
   updateLife(action) {
     if (this.life > this.lifeMax) {
       this.life = this.lifeMax
@@ -280,6 +282,7 @@ class Building extends Container {
       }
     }
   }
+
   die() {
     const {
       context: { map, player },
@@ -289,7 +292,7 @@ class Building extends Container {
       if (this.selected && player) {
         player.unselectAll()
       }
-      //Remove solid zone
+      // Remove solid zone
       const dist = this.size === 3 ? 1 : 0
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
         if (cell.has === this) {
@@ -297,12 +300,12 @@ class Building extends Container {
           cell.solid = false
         }
       })
-      //Remove from player buildings
+      // Remove from player buildings
       const index = this.owner.buildings.indexOf(this)
       if (index >= 0) {
         this.owner.buildings.splice(index, 1)
       }
-      //Remove from view of others players
+      // Remove from view of others players
       for (let i = 0; i < map.players.length; i++) {
         if (map.players[i].type === 'AI') {
           const list = map.players[i].foundedEnemyBuildings
@@ -319,6 +322,7 @@ class Building extends Container {
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
   }
+
   select() {
     const {
       context: { menu },
@@ -341,8 +345,9 @@ class Building extends Container {
 
     menu.updatePlayerMiniMapEvt(this.owner)
   }
+
   unselect() {
-    if (!this.selected){
+    if (!this.selected) {
       return
     }
     const {
@@ -356,6 +361,7 @@ class Building extends Container {
     }
     menu.updatePlayerMiniMapEvt(this.owner)
   }
+
   placeUnit(type) {
     const {
       context: { map, menu },
@@ -374,6 +380,7 @@ class Building extends Container {
       )
     }
   }
+
   buyUnit(type, alreadyPaid = false) {
     const {
       context: { menu },
@@ -402,7 +409,7 @@ class Building extends Container {
           menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
         }
         let interval = setInterval(() => {
-          //Building is dead while buying unit
+          // Building is dead while buying unit
           if (!this.parent) {
             clearInterval(interval)
             return
@@ -459,6 +466,7 @@ class Building extends Container {
       }
     }
   }
+
   setDefaultInterface(element, data) {
     const {
       context: { menu },
@@ -482,7 +490,7 @@ class Building extends Container {
     if (this.owner && this.owner.isPlayed) {
       const lifeDiv = document.createElement('div')
       lifeDiv.id = 'life'
-      lifeDiv.textContent = this.life + '/' + this.lifeMax
+      lifeDiv.textContent = Math.max(this.life, 0) + '/' + this.lifeMax
       element.appendChild(lifeDiv)
 
       const loadingDiv = document.createElement('div')
@@ -492,24 +500,14 @@ class Building extends Container {
 
       if (this.type === 'Farm' && this.isBuilt && this.quantity) {
         const quantityDiv = document.createElement('div')
-        Object.assign(quantityDiv.style, {
-          display: 'flex',
-          alignItems: 'center',
-        })
         quantityDiv.id = 'quantity'
+        quantityDiv.className = 'resource-quantity'
         const smallIconImg = document.createElement('img')
-        Object.assign(smallIconImg.style, {
-          objectFit: 'none',
-          height: '13px',
-          width: '20px',
-          marginRight: '2px',
-          border: '1.5px inset #686769',
-          borderRadius: '2px',
-        })
         smallIconImg.src = menu.icons['food']
+        smallIconImg.className = 'resource-quantity-icon'
         const textDiv = document.createElement('div')
         textDiv.id = 'quantity-text'
-        textDiv.textContent = this.quantity
+        textDiv.textContent = Math.max(this.quantity, 0)
         quantityDiv.appendChild(smallIconImg)
         quantityDiv.appendChild(textDiv)
         element.appendChild(quantityDiv)
@@ -523,7 +521,7 @@ export class TownCenter extends Building {
     const type = 'TownCenter'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -551,6 +549,7 @@ export class TownCenter extends Building {
       context
     )
   }
+
   finalTexture() {
     const { owner, type } = this
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
@@ -573,7 +572,7 @@ export class Barracks extends Building {
     const type = 'Barracks'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -601,6 +600,7 @@ export class Barracks extends Building {
       context
     )
   }
+
   finalTexture() {
     const { owner, type } = this
 
@@ -618,7 +618,7 @@ export class House extends Building {
     const type = 'House'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -652,6 +652,7 @@ export class House extends Building {
       context
     )
   }
+
   finalTexture() {
     const { owner, type } = this
 
@@ -676,13 +677,14 @@ export class House extends Building {
 
     this.addChild(spriteFire)
   }
+
   onBuilt() {
     const {
       context: { menu },
     } = this
-    //Increase player population and continue all unit creation that was paused
+    // Increase player population and continue all unit creation that was paused
     this.owner.populationMax += 4
-    //Update bottombar with populationmax if house selected
+    // Update bottombar with populationmax if house selected
     if (this.selected && this.owner.isPlayed) {
       menu.updateInfo(
         'population',
@@ -697,7 +699,7 @@ export class Granary extends Building {
     const type = 'Granary'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -724,6 +726,7 @@ export class Granary extends Building {
       context
     )
   }
+
   finalTexture() {
     const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
 
@@ -743,7 +746,7 @@ export class StoragePit extends Building {
     const type = 'StoragePit'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -770,6 +773,7 @@ export class StoragePit extends Building {
       context
     )
   }
+
   finalTexture() {
     const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
 
@@ -789,7 +793,7 @@ export class Farm extends Building {
     const type = 'Farm'
     const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
 
-    //Define sprite
+    // Define sprite
     const texture = getTexture(data.images.build, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
@@ -818,6 +822,7 @@ export class Farm extends Building {
       context
     )
   }
+
   finalTexture() {
     const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
 

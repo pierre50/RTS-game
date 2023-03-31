@@ -36,7 +36,7 @@ export function changeSpriteColor(sprite, color) {
   if (color === 'blue') {
     return
   }
-  //8 Hex
+  // 8 Hex
   const source = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057]
   const colors = {
     red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
@@ -84,4 +84,29 @@ export function drawInstanceBlinkingSelection(instance) {
       }, 300)
     }, 500)
   }, 500)
+}
+
+export function canvasDrawRectangle(context, x, y, width, height, color) {
+  context.fillStyle = color
+  context.fillRect(x, y, width, height)
+  context.fill()
+}
+
+export function canvasDrawStrokeRectangle(context, x, y, width, height, color) {
+  context.strokeStyle = color
+  context.strokeRect(x, y, width, height)
+}
+
+export function canvasDrawDiamond(context, x, y, width, height, color) {
+  context.save()
+  context.beginPath()
+  context.moveTo(x, y)
+
+  context.lineTo(x - width / 2, y + height / 2)
+  context.lineTo(x, y + height)
+  context.lineTo(x + width / 2, y + height / 2)
+  context.closePath()
+
+  context.fillStyle = color
+  context.fill()
 }

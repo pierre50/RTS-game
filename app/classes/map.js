@@ -1,7 +1,8 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { Grass, Water, Desert } from './cell'
+import { Grass, Water, Desert, Jungle } from './cell'
 import { Tree, Berrybush, Stone, Gold } from './resource'
-import { Human, AI } from './player'
+import { Human, AI, Gaia } from './player'
+import { Gazelle } from './animal'
 
 import {
   randomRange,
@@ -42,10 +43,9 @@ export default class Map extends Container {
     this.y = 0
     this.startingUnits = 3
 
-    this.forestTrees = ['492', '493', '494', '503', '509']
-    this.palmTrees = ['463', '464', '465', '466']
-
     this.players = []
+    this.gaia = null
+    this.resources = []
 
     this.interactive = false
     this.allowMove = false
@@ -57,7 +57,7 @@ export default class Map extends Container {
     this.y = y
   }
 
-  generateMap() {
+  generateMap(repeat = 0) {
     this.removeChildren()
     this.generateCells()
 
@@ -72,10 +72,10 @@ export default class Map extends Container {
         this.positionsCount = 4
         break
       case 200:
-        this.positionsCount = 4 //6
+        this.positionsCount = 4
         break
       case 220:
-        this.positionsCount = 4 //8
+        this.positionsCount = 4
         break
       default:
         this.positionsCount = 2
@@ -83,7 +83,10 @@ export default class Map extends Container {
     this.playersPos = this.findPlayerPlaces()
 
     if (this.playersPos.length < this.positionsCount) {
-      alert('Cannot find players position')
+      if (repeat >= 10) {
+        alert('Error while generating the map')
+      }
+      this.generateMap(repeat + 1)
       return
     }
 
@@ -95,14 +98,25 @@ export default class Map extends Container {
       }
     }
 
+    this.generateResourcesAroundPlayers(this.playersPos)
+  }
+
+  stylishMap() {
+    const {
+      context: { menu },
+    } = this
+
+    this.gaia = new Gaia(this.context)
+
+    //this.generateSets()
+
     this.generateMapRelief()
+
     this.formatCellsRelief()
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
 
-    this.generateResourcesAroundPlayers(this.playersPos)
-
-    this.generateSets()
+    menu.updateResourcesMiniMap()
   }
 
   generatePlayers() {
@@ -148,7 +162,7 @@ export default class Map extends Container {
       context: { players },
     } = this
 
-    //Place a town center
+    // Place a town center
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
       const towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', true)
@@ -160,22 +174,12 @@ export default class Map extends Container {
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      const pos = getPositionInGridAroundInstance(playersPos[i], this.grid, [7, 15], 3, true)
-      if (pos) {
-        this.placeResourceGroup('Berrybush', pos.i, pos.j)
-      }
-    }
-    for (let i = 0; i < playersPos.length; i++) {
-      const pos = getPositionInGridAroundInstance(playersPos[i], this.grid, [7, 15], 3, true)
-      if (pos) {
-        this.placeResourceGroup('Stone', pos.i, pos.j)
-      }
-    }
-    for (let i = 0; i < playersPos.length; i++) {
-      const pos = getPositionInGridAroundInstance(playersPos[i], this.grid, [7, 15], 3, true)
-      if (pos) {
-        this.placeResourceGroup('Gold', pos.i, pos.j)
-      }
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 'close', 5)
+      this.placeResourceGroup(playersPos[i], 'Stone', 'close', 5)
+      this.placeResourceGroup(playersPos[i], 'Gold', 'close', 5)
+      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
+      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
+      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
     }
   }
 
@@ -198,18 +202,18 @@ export default class Map extends Container {
             break
           case '2':
             this.grid[i][j] = new Grass({ i, j, z }, this.context)
-            new Tree({ i, j, textureNames: this.forestTrees }, this.context)
+            this.resources.push(new Tree({ i, j }, this.context))
             break
           case '3':
             this.grid[i][j] = new Water({ i, j, z }, this.context)
             break
           case '4':
             this.grid[i][j] = new Desert({ i, j, z }, this.context)
-            new Tree({ i, j, textureNames: this.palmTrees }, this.context)
+            this.resources.push(new Tree({ i, j }, this.context))
             break
           case '5':
-            this.grid[i][j] = new Grass({ i, j, z }, this.context)
-            new Tree({ i, j, textureNames: this.palmTrees }, this.context)
+            this.grid[i][j] = new Jungle({ i, j, z }, this.context)
+            this.resources.push(new Tree({ i, j }, this.context))
             break
         }
       }
@@ -225,7 +229,7 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        if (cell.type !== 'water' && !cell.solid && !cell.border && !cell.inclined) {
+        if (cell.type && cell.type !== 'water' && !cell.has && !cell.solid && !cell.border && !cell.inclined) {
           if (Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
@@ -236,14 +240,10 @@ export default class Map extends Container {
             cell.addChild(floor)
           }
           if (Math.random() < this.chanceOfSets) {
-            const type = randomItem(['Tree', 'rock'])
+            const type = randomItem(['tree', 'rock', 'animal'])
             switch (type) {
-              case 'Tree':
-                if (cell.type === 'grass') {
-                  new Tree({ i, j, textureNames: this.forestTrees }, this.context)
-                } else if (cell.type === 'desert') {
-                  new Tree({ i, j, textureNames: this.palmTrees }, this.context)
-                }
+              case 'tree':
+                this.resources.push(new Tree({ i, j }, this.context))
                 break
               case 'rock':
                 const randomSpritesheet = randomRange(531, 534).toString()
@@ -253,6 +253,9 @@ export default class Map extends Container {
                 rock.name = 'set'
                 rock.updateAnchor = true
                 cell.addChild(rock)
+                break
+              case 'animal':
+                new Gazelle({ i, j, owner: this.gaia }, this.context)
                 break
             }
           }
@@ -303,7 +306,7 @@ export default class Map extends Container {
         }
       }
     }
-    //Format cell's relief
+    // Format cell's relief
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
@@ -316,7 +319,7 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        //Side
+        // Side
         if (
           this.grid[i - 1] &&
           this.grid[i - 1][j].z - cell.z === 1 &&
@@ -349,7 +352,7 @@ export default class Map extends Container {
           (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)
         ) {
           cell.setReliefBorder('013', cellDepth / 2)
-        } //Corner
+        } // Corner
         else if (
           this.grid[i - 1] &&
           this.grid[i - 1][j - 1] &&
@@ -383,7 +386,7 @@ export default class Map extends Container {
         ) {
           cell.setReliefBorder('009', cellDepth / 2)
         }
-        //Deep corner
+        // Deep corner
         else if (
           this.grid[i][j - 1] &&
           this.grid[i][j - 1].z - cell.z === 1 &&
@@ -422,7 +425,7 @@ export default class Map extends Container {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
         if (cell.type !== 'water') {
-          //Side
+          // Side
           if (
             this.grid[i - 1] &&
             this.grid[i - 1][j].type === 'water' &&
@@ -455,7 +458,7 @@ export default class Map extends Container {
             (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
           ) {
             cell.setWaterBorder(cell, '20000', '010')
-          } //Corner
+          } // Corner
           else if (
             this.grid[i - 1] &&
             this.grid[i - 1][j - 1] &&
@@ -489,7 +492,7 @@ export default class Map extends Container {
           ) {
             cell.setWaterBorder(cell, '20000', '006')
           }
-          //Deep corner
+          // Deep corner
           else if (
             this.grid[i][j - 1] &&
             this.grid[i][j - 1].type === 'water' &&
@@ -569,7 +572,7 @@ export default class Map extends Container {
     return results
   }
 
-  placeResourceGroup(instance, startX, startY) {
+  placeResourceGroup(player, instance, distance, quantity) {
     const { context, grid } = this
     const resources = {
       Tree,
@@ -577,20 +580,37 @@ export default class Map extends Container {
       Stone,
       Gold,
     }
-    let cpt = 0
-    const max = randomRange(5, 6)
-    for (let i = 0; i < 10; i++) {
-      getCellsAroundPoint(startX, startY, grid, i, cell => {
+    let cartesianDistance
+    switch (distance) {
+      case 'close':
+        cartesianDistance = [7, 15]
+        break
+      default:
+        cartesianDistance = [7, 15]
+    }
+    const pos = getPositionInGridAroundInstance(
+      player,
+      this.grid,
+      cartesianDistance,
+      3,
+      false
+    )
+    if (pos) {
+      let cpt = 0
+      const max = quantity
+      for (let i = 0; i < quantity * 100; i++) {
+        getCellsAroundPoint(pos.i, pos.j, grid, i, cell => {
+          if (cpt > max) {
+            return
+          }
+          if (Math.random() < 0.5 && !cell.solid && !cell.border) {
+            cpt++
+            this.resources.push(new resources[instance]({ i: cell.i, j: cell.j }, context))
+          }
+        })
         if (cpt > max) {
           return
         }
-        if (Math.random() < 0.5 && !cell.solid && !cell.border) {
-          cpt++
-          new resources[instance]({ i: cell.i, j: cell.j }, context)
-        }
-      })
-      if (cpt > max) {
-        return
       }
     }
   }
@@ -599,17 +619,18 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
+        const typeToFormat = ['grass', 'jungle']
         if (cell.type === 'desert') {
-          if (this.grid[i - 1] && this.grid[i - 1][j] && this.grid[i - 1][j].type === 'grass') {
+          if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
             this.grid[i - 1][j].setDesertBorder('est')
           }
-          if (this.grid[i + 1] && this.grid[i + 1][j] && this.grid[i + 1][j].type === 'grass') {
+          if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
             this.grid[i + 1][j].setDesertBorder('west')
           }
-          if (this.grid[i][j - 1] && this.grid[i][j - 1].type === 'grass') {
+          if (this.grid[i][j - 1] && typeToFormat.includes(this.grid[i][j - 1].type)) {
             this.grid[i][j - 1].setDesertBorder('south')
           }
-          if (this.grid[i][j + 1] && this.grid[i][j + 1].type === 'grass') {
+          if (this.grid[i][j + 1] && typeToFormat.includes(this.grid[i][j + 1].type)) {
             this.grid[i][j + 1].setDesertBorder('north')
           }
         }

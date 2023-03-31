@@ -9,7 +9,7 @@ import {
   drawInstanceBlinkingSelection,
   getNewInstanceClosestFreeCellPath,
 } from '../lib'
-import { colorTree, colorGold, colorStone } from '../constants'
+import { colorTree, colorGold, colorStone, colorBerry } from '../constants'
 
 class resource extends Container {
   constructor(options, context) {
@@ -37,7 +37,7 @@ class resource extends Container {
 
     this.life = this.lifeMax
 
-    //Set solid zone
+    // Set solid zone
     const cell = map.grid[this.i][this.j]
     cell.solid = true
     cell.has = this
@@ -89,7 +89,7 @@ class resource extends Container {
   }
   die() {
     const {
-      context: { player, players, map },
+      context: { player, players, map, menu },
     } = this
     if (this.selected && player) {
       player.unselectAll()
@@ -105,6 +105,13 @@ class resource extends Container {
         list.splice(index, 1)
       }
     }
+
+    // Remove from map resources
+    let index = this.map.resources.indexOf(this)
+    if (index >= 0) {
+      this.map.resources.splice(index, 1)
+    }
+    menu.updateResourcesMiniMap()
     map.grid[this.i][this.j].has = null
     map.grid[this.i][this.j].solid = false
     map.removeChild(this)
@@ -133,11 +140,10 @@ class resource extends Container {
     }
     if (this.quantity) {
       const quantityDiv = document.createElement('div')
-      Object.assign(quantityDiv.style, {
-        display: 'flex',
-        alignItems: 'center',
-      })
+
       quantityDiv.id = 'quantity'
+      quantityDiv.className = 'resource-quantity'
+
       let iconToUse
       switch (this.type) {
         case 'Tree':
@@ -154,15 +160,8 @@ class resource extends Container {
           break
       }
       const smallIconImg = document.createElement('img')
-      Object.assign(smallIconImg.style, {
-        objectFit: 'none',
-        height: '13px',
-        width: '20px',
-        marginRight: '2px',
-        border: '1.5px inset #686769',
-        borderRadius: '2px',
-      })
       smallIconImg.src = iconToUse
+      smallIconImg.className = 'resource-quantity-icon'
       const textDiv = document.createElement('div')
       textDiv.id = 'quantity-text'
       textDiv.textContent = this.quantity
@@ -174,11 +173,27 @@ class resource extends Container {
 }
 
 export class Tree extends resource {
-  constructor({ i, j, textureNames }, context) {
+  constructor({ i, j }, context) {
     const type = 'Tree'
     const data = Assets.cache.get('config').resources[type]
 
-    //Define sprite
+    // Define sprite
+    const forestTrees = ['492', '493', '494', '503', '509']
+    const palmTrees = ['463', '464', '465', '466']
+
+    const { map } = context
+    const cell = map.grid[i][j]
+
+    let textureNames = forestTrees
+    switch (cell.type) {
+      case 'desert':
+      case 'jungle':
+        textureNames = palmTrees
+        break
+      default:
+        textureNames = forestTrees
+    }
+
     const randomSpritesheet = randomItem(textureNames)
     const spritesheet = Assets.cache.get(randomSpritesheet)
     const textureName = `000_${randomSpritesheet}.png`
@@ -195,7 +210,7 @@ export class Tree extends resource {
         return
       }
       controls.mouse.prevent = true
-      //Send Villager to cut the tree
+      // Send Villager to cut the tree
       let hasVillager = false
       let dest = this
       for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -269,7 +284,7 @@ export class Berrybush extends resource {
     const data = Assets.cache.get('config').resources[type]
     const resourceName = '240'
 
-    //Define sprite
+    // Define sprite
     const spritesheet = Assets.cache.get(resourceName)
     const textureName = `000_${resourceName}.png`
     const texture = spritesheet.textures[textureName]
@@ -285,7 +300,7 @@ export class Berrybush extends resource {
         return
       }
       controls.mouse.prevent = true
-      //Send Villager to forage the berry
+      // Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
         const unit = player.selectedUnits[i]
@@ -308,6 +323,7 @@ export class Berrybush extends resource {
         type,
         sprite: sprite,
         size: 1,
+        color: colorBerry,
         quantity: data.quantity,
         interface: {
           info: element => {
@@ -326,7 +342,7 @@ export class Stone extends resource {
     const data = Assets.cache.get('config').resources[type]
     const resourceName = '622'
 
-    //Define sprite
+    // Define sprite
     const randomSprite = randomRange(0, 6)
     const spritesheet = Assets.cache.get(resourceName)
     const textureName = `00${randomSprite}_${resourceName}.png`
@@ -343,7 +359,7 @@ export class Stone extends resource {
         return
       }
       controls.mouse.prevent = true
-      //Send Villager to forage the berry
+      // Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
         const unit = player.selectedUnits[i]
@@ -385,7 +401,7 @@ export class Gold extends resource {
     const data = Assets.cache.get('config').resources[type]
     const resourceName = '481'
 
-    //Define sprite
+    // Define sprite
     const randomSprite = randomRange(0, 6)
     const spritesheet = Assets.cache.get(resourceName)
     const textureName = `00${randomSprite}_${resourceName}.png`
@@ -402,7 +418,7 @@ export class Gold extends resource {
         return
       }
       controls.mouse.prevent = true
-      //Send Villager to forage the berry
+      // Send Villager to forage the berry
       let hasVillager = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
         const unit = player.selectedUnits[i]

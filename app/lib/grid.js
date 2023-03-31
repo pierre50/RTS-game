@@ -154,7 +154,7 @@ export function getInstancePath(instance, x, y, map) {
   openCells.push(cloneStart)
   while (!isFinish) {
     if (openCells.length > 0) {
-      //find the lowest f in open cells
+      // find the lowest f in open cells
       let lowestF = 0
       for (let i = 0; i < openCells.length; i++) {
         if (openCells[i].f < openCells[lowestF].f) {
@@ -169,10 +169,10 @@ export function getInstancePath(instance, x, y, map) {
       }
       let current = openCells[lowestF]
       if (current === cloneEnd) {
-        //reached the end cell
+        // reached the end cell
         isFinish = true
       }
-      //calculate path
+      // calculate path
       path = [cloneEnd]
       let temp = current
 
@@ -182,7 +182,7 @@ export function getInstancePath(instance, x, y, map) {
       }
       openCells.splice(openCells.indexOf(current), 1)
       closedCells.push(current)
-      //check neighbours
+      // check neighbours
       getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
         const validDiag =
           !cellIsDiag(current, neighbour) ||
@@ -199,7 +199,7 @@ export function getInstancePath(instance, x, y, map) {
         }
       })
     } else {
-      //no solution
+      // no solution
       path = []
       isFinish = true
     }

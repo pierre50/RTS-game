@@ -94,7 +94,7 @@ export default class Controls extends Container {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
-    //Mouse building to place construction
+    // Mouse building to place construction
     if (this.mouseBuilding) {
       const pos = isometricToCartesian(
         this.mouse.x - map.x,
@@ -113,7 +113,7 @@ export default class Controls extends Container {
             return
           }
         })
-        //Color image of mouse building depend on buildable or not
+        // Color image of mouse building depend on buildable or not
         const sprite = this.mouseBuilding.getChildByName('sprite')
         const color = this.mouseBuilding.getChildByName('color')
         if (isFree) {
@@ -132,7 +132,7 @@ export default class Controls extends Container {
       return
     }
 
-    //Create and draw mouse selection
+    // Create and draw mouse selection
     if (
       !this.mouseRectangle &&
       this.pointerStart &&
@@ -187,12 +187,12 @@ export default class Controls extends Container {
       this.mouse.prevent = false
       return
     }
-    //Select units on mouse rectangle
+    // Select units on mouse rectangle
     if (this.mouseRectangle) {
       let selectVillager
       let countSelect = 0
       player.unselectAll()
-      //Select units inside the rectangle
+      // Select units inside the rectangle
       for (let i = 0; i < player.units.length; i++) {
         const unit = player.units[i]
         if (
@@ -215,18 +215,18 @@ export default class Controls extends Container {
           player.selectedUnits.push(unit)
         }
       }
-      //Set our bottombar
+      // Set our bottombar
       if (countSelect) {
         if (selectVillager) {
           player.selectedUnit = selectVillager
           menu.setBottombar(selectVillager)
         } else {
-          //TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
+          // TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
           player.selectedUnit = player.selectedUnits[0]
           menu.setBottombar(player.selectedUnits[0])
         }
       }
-      //Reset mouse selection
+      // Reset mouse selection
       if (this.mouseRectangle) {
         this.mouseRectangle.graph.destroy(true)
         this.mouseRectangle = null
@@ -255,7 +255,7 @@ export default class Controls extends Container {
             }
           }
         } else if (player.selectedUnits.length) {
-          //Pointer animation
+          // Pointer animation
           const pointerSheet = Assets.cache.get('50405')
           const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
           pointer.animationSpeed = 0.2
@@ -268,7 +268,7 @@ export default class Controls extends Container {
           }
           pointer.play()
           this.addChild(pointer)
-          //Send units
+          // Send units
           const minX = Math.min(...player.selectedUnits.map(unit => unit.i))
           const minY = Math.min(...player.selectedUnits.map(unit => unit.j))
           const maxX = Math.max(...player.selectedUnits.map(unit => unit.i))
@@ -481,7 +481,7 @@ export default class Controls extends Container {
     const {
       context: { player },
     } = this
-    //Set camera to player building else unit
+    // Set camera to player building else unit
     if (player.buildings.length) {
       this.setCamera(player.buildings[0].x, player.buildings[0].y)
     } else if (player.units.length) {

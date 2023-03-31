@@ -1,9 +1,9 @@
 import { cellWidth, cellHeight, cellDepth } from '../constants'
 
 export function uuidv4() {
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  );
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+  )
 }
 
 /**
@@ -126,9 +126,24 @@ export function diff(a, b) {
  * @param {number} y
  */
 export function getInstanceDegree(instance, x, y) {
-  let tX = x - instance.x
-  let tY = y - instance.y
+  return getPointsDegree(instance.x, instance.y, x, y)
+}
+
+/**
+ * Get degree of instance according to a point
+ * @param {object} instance
+ * @param {number} x
+ * @param {number} y
+ */
+export function getPointsDegree(x1, y1, x2, y2) {
+  let tX = x2 - x1
+  let tY = y2 - y1
   return Math.round((Math.atan2(tY, tX) * 180) / Math.PI + 180)
+}
+
+export function degreesToRadians(degrees) {
+  var pi = Math.PI
+  return degrees * (pi / 180)
 }
 
 /**

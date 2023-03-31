@@ -1,5 +1,13 @@
 import { Assets } from 'pixi.js'
-import { getIconPath, canAfford, refundCost, throttle } from '../lib'
+import {
+  getIconPath,
+  canAfford,
+  refundCost,
+  throttle,
+  canvasDrawDiamond,
+  canvasDrawRectangle,
+  canvasDrawStrokeRectangle,
+} from '../lib'
 import { cellWidth, cellHeight } from '../constants'
 
 export default class Menu {
@@ -51,10 +59,12 @@ export default class Menu {
     })
     this.terrainMinimap = document.createElement('canvas')
     this.playersMinimap = []
+    this.resourcesMinimap = document.createElement('canvas')
     this.cameraMinimap = document.createElement('canvas')
     this.cameraMinimap.style.zIndex = 1
 
     this.bottombarMap.appendChild(this.terrainMinimap)
+    this.bottombarMap.appendChild(this.resourcesMinimap)
     this.bottombarMap.appendChild(this.cameraMinimap)
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
@@ -62,8 +72,10 @@ export default class Menu {
     document.body.appendChild(this.bottombar)
 
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
+    this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)
 
+    this.miniMapAlpha = 1.284
     this.updateTopbar()
   }
 
@@ -81,59 +93,64 @@ export default class Menu {
   }
 
   createMiniMap() {
-    function drawDiamond(context, x, y, width, height, color) {
-      context.save()
-      context.beginPath()
-      context.moveTo(x, y)
-
-      context.lineTo(x - width / 2, y + height / 2)
-      context.lineTo(x, y + height)
-      context.lineTo(x + width / 2, y + height / 2)
-      context.closePath()
-
-      context.fillStyle = color
-      context.fill()
-      context.restore()
-    }
     const canvasElement = this.terrainMinimap
     const context = canvasElement.getContext('2d')
     const cameraContext = this.cameraMinimap.getContext('2d')
+    const resourceContext = this.resourcesMinimap.getContext('2d')
 
     const {
       context: { map },
     } = this
 
-    const minimapFactor = this.getMinimapFactor() / 1.284
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
     const translate = mapWidth / 2 / minimapFactor
     context.translate(translate, 0)
     cameraContext.translate(translate, 0)
+    resourceContext.translate(translate, 0)
 
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
         const cell = map.grid[i][j]
         const x = cell.x
         const y = cell.y
-        const color = (cell.has && cell.has.color) || cell.color
-        drawDiamond(
+        canvasDrawDiamond(
           context,
           x / minimapFactor + translate,
           y / minimapFactor,
           cellWidth / minimapFactor + 1,
           cellHeight / minimapFactor + 1,
-          color
+          cell.color
         )
       }
     }
-    context.restore()
+  }
+
+  updateResourcesMiniMapEvt() {
+    const {
+      context: { map },
+    } = this
+
+    const canvas = this.resourcesMinimap
+    const context = canvas.getContext('2d')
+
+    const squareSize = 4
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / minimapFactor
+
+    context.clearRect(-translate, 0, canvas.width, canvas.height)
+
+    map.resources.forEach(tree => {
+      if (tree.x) {
+        const finalX = tree.x / minimapFactor - squareSize / 2
+        const finalY = tree.y / minimapFactor - squareSize / 2
+        canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, tree.color)
+      }
+    })
   }
 
   updateCameraMiniMapEvt() {
-    function drawStrokeRectangle(context, x, y, width, height, color) {
-      context.strokeStyle = color
-      context.strokeRect(x, y, width, height)
-    }
-
     const {
       context: { app, map, controls },
     } = this
@@ -141,7 +158,7 @@ export default class Menu {
     const canvas = this.cameraMinimap
     const context = canvas.getContext('2d')
 
-    const minimapFactor = this.getMinimapFactor() / 1.284
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
     const translate = mapWidth / 2 / minimapFactor
 
@@ -151,16 +168,10 @@ export default class Menu {
     const y = controls.camera.y / minimapFactor
     const w = app.screen.width / minimapFactor
     const h = app.screen.height / minimapFactor
-    drawStrokeRectangle(context, x + translate, y, w, h, 'white')
+    canvasDrawStrokeRectangle(context, x + translate, y, w, h, 'white')
   }
 
   updatePlayerMiniMapEvt(owner) {
-    function drawRectangle(context, x, y, width, height, color) {
-      context.fillStyle = color
-      context.fillRect(x, y, width, height)
-      context.fill()
-    }
-
     if (!owner) {
       return
     }
@@ -169,14 +180,14 @@ export default class Menu {
       context: { map },
     } = this
 
-    const squareSize = 5
+    const squareSize = 4
     const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.id}`)
     const color = owner.colorHex
 
     let canvas
     let context
 
-    const minimapFactor = this.getMinimapFactor() / 1.284
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
     const translate = mapWidth / 2 / minimapFactor
 
@@ -201,16 +212,14 @@ export default class Menu {
       const finalSize = squareSize + size
       const finalX = x / minimapFactor - finalSize / 2
       const finalY = y / minimapFactor - finalSize / 2
-      drawRectangle(context, finalX + translate, finalY, finalSize, finalSize, selected ? 'white' : color)
+      canvasDrawRectangle(context, finalX + translate, finalY, finalSize, finalSize, selected ? 'white' : color)
     })
 
     owner.units.forEach(({ x, y, selected }) => {
       const finalX = x / minimapFactor - squareSize / 2
       const finalY = y / minimapFactor - squareSize / 2
-      drawRectangle(context, finalX + translate, finalY, squareSize, squareSize, selected ? 'white' : color)
+      canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, selected ? 'white' : color)
     })
-
-    context.restore()
   }
 
   getMessage(cost) {

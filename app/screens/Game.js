@@ -37,6 +37,7 @@ export default class Game extends Container {
     context.player = context.players[0]
     context.menu.init()
     context.map.placePlayers()
+    context.map.stylishMap()
     context.controls.init()
 
     this.addChild(context.map)

@@ -1,5 +1,6 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator } from '../constants'
+import { accelerator, stepTime } from '../constants'
+import { Arrow } from './projectile'
 import {
   getInstanceZIndex,
   randomRange,
@@ -17,6 +18,7 @@ import {
   findInstancesInSight,
   getClosestInstanceWithPath,
   getCellsAroundPoint,
+  drawInstanceBlinkingSelection,
   instanceIsInPlayerSight,
 } from '../lib'
 
@@ -60,7 +62,7 @@ class Unit extends Container {
     this.currentCell.solid = true
 
     this.life = this.lifeMax
-    this.originalSpeed = this.peed
+    this.originalSpeed = this.speed
     this.inactif = true
 
     this.allowMove = false
@@ -72,13 +74,14 @@ class Unit extends Container {
     sprite.allowClick = false
     sprite.roundPixels = true
 
-    this.on('pointertap', () => {
+    this.on('pointerup', () => {
       const {
         context: { controls, player, menu },
       } = this
       if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
+      controls.mouse.prevent = true
       if (this.owner.isPlayed) {
         this.owner.unselectAll()
         this.select()
@@ -87,28 +90,28 @@ class Unit extends Container {
         this.owner.selectedUnits = [this]
       } else {
         if (player.selectedUnits.length) {
-          drawInstanceBlinkingSelection(unit)
+          drawInstanceBlinkingSelection(this)
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
             if (playerUnit.type === 'Villager') {
-              playerUnit.sendToAttack(unit)
+              playerUnit.sendToAttack(this)
             } else {
-              playerUnit.sendTo(unit, 'attack')
+              playerUnit.sendTo(this, 'attack')
             }
           }
           return
         }
         if (instanceIsInPlayerSight(unit, player) || map.revealEverything) {
           player.unselectAll()
-          unit.select()
-          menu.setBottombar(unit)
-          player.selectedOther = unit
+          this.select()
+          menu.setBottombar(this)
+          player.selectedOther = this
         }
       }
     })
     changeSpriteColor(sprite, this.owner.color)
 
-    this.interval = setInterval(() => this.step(), 40)
+    this.interval = null
     sprite.updateAnchor = true
     this.addChild(sprite)
 
@@ -116,6 +119,7 @@ class Unit extends Container {
 
     renderCellOnInstanceSight(this)
   }
+
   select() {
     if (this.selected) {
       return
@@ -135,6 +139,7 @@ class Unit extends Container {
 
     menu.updatePlayerMiniMapEvt(this.owner)
   }
+
   unselect() {
     if (!this.selected) {
       return
@@ -142,7 +147,7 @@ class Unit extends Container {
     const {
       context: { menu },
     } = this
-    
+
     this.selected = false
     const selection = this.getChildByName('selection')
     if (selection) {
@@ -150,6 +155,7 @@ class Unit extends Container {
     }
     menu.updatePlayerMiniMapEvt(this.owner)
   }
+
   hasPath() {
     return this.path.length > 0
   }
@@ -171,6 +177,7 @@ class Unit extends Container {
       this.stop()
       return
     }
+    this.startInterval()
     this.inactif = false
     this.setTextures('walkingSheet')
     this.path = path
@@ -188,20 +195,20 @@ class Unit extends Container {
     } = this
     this.handleChangeDest()
     let path = []
-    //No instance we cancel the destination
+    // No instance we cancel the destination
     if (!dest) {
       return false
     }
-    //Unit is already beside our target
-    if (action && instanceContactInstance(this, dest)) {
+    // Unit is already beside our target
+    if (this.isUnitAtDest(action, dest)) {
       this.setDest(dest)
       this.action = action
       this.degree = getInstanceDegree(this, dest.x, dest.y)
       this.getAction(action)
       return true
     }
-    //Set unit path
-    if (this.parent.grid[dest.i][dest.j].solid) {
+    // Set unit path
+    if (this.parent.grid[dest.i] && this.parent.grid[dest.i][dest.j] && this.parent.grid[dest.i][dest.j].solid) {
       path = getInstanceClosestFreeCellPath(this, dest, map)
       if (!path.length && this.work) {
         this.action = action
@@ -211,7 +218,7 @@ class Unit extends Container {
     } else {
       path = getInstancePath(this, dest.i, dest.j, map)
     }
-    //Unit found a path, set the action and play walking animation
+    // Unit found a path, set the action and play walking animation
     if (path.length) {
       this.setDest(dest)
       this.action = action
@@ -228,6 +235,8 @@ class Unit extends Container {
       return
     }
     const conditions = {
+      takemeat: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDestroyed,
+      hunt: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDestroyed,
       chopwood: instance => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
       farm: instance =>
         instance &&
@@ -259,7 +268,7 @@ class Unit extends Container {
 
   getAction(name) {
     const {
-      context: { menu, player },
+      context: { menu, player, map },
     } = this
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
@@ -278,21 +287,21 @@ class Unit extends Container {
             return
           }
           this.dest.isUsedBy = this
-          //Villager is full we send him delivery first
+          // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
             this.sendToDelivery('Granary', 'deliveryfood')
             this.dest.isUsedBy = null
             return
           }
-          //Villager farm the farm
+          // Villager farm the farm
           this.loading++
           this.updateInterfaceLoading()
 
           this.dest.quantity--
           if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
           }
-          //Destroy farm if it out of quantity
+          // Destroy farm if it out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
@@ -324,42 +333,42 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
-          //Villager is full we send him delivery first
+          // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
             this.sendToDelivery('StoragePit', 'deliverywood')
             return
           }
-          //Tree destination is still alive we cut him until it's dead
+          // Tree destination is still alive we cut him until it's dead
           if (this.dest.life > 0) {
             this.dest.life -= this.attack
             if (this.dest.selected && this.owner.isPlayed) {
               menu.updateInfo('life', element =>
                 this.dest.life > 0
-                  ? (element.textContent = this.dest.life + '/' + this.dest.lifeMax)
+                  ? (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
                   : (element.textContent = '')
               )
             }
             if (this.dest.life <= 0) {
-              //Set cutted tree texture
+              // Set cutted tree texture
               this.dest.life = 0
               this.dest.setCuttedTreeTexture()
             }
             return
           }
-          //Villager cut the stump
+          // Villager cut the stump
           this.loading++
           this.updateInterfaceLoading()
 
           this.dest.quantity--
           if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
           }
-          //Destroy tree if stump out of quantity
+          // Destroy tree if stump out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
           }
-          //Set the walking with wood animation
+          // Set the walking with wood animation
           if (this.loading > 1) {
             this.walkingSheet = Assets.cache.get('273')
             this.standingSheet = null
@@ -393,20 +402,20 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
-          //Villager is full we send him delivery first
+          // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
             this.sendToDelivery('Granary', 'deliveryberry')
             return
           }
-          //Villager forage the berrybush
+          // Villager forage the berrybush
           this.loading++
           this.updateInterfaceLoading()
 
           this.dest.quantity--
           if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
           }
-          //Destroy berrybush if it out of quantity
+          // Destroy berrybush if it out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
@@ -438,25 +447,25 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
-          //Villager is full we send him delivery first
+          // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
             this.sendToDelivery('StoragePit', 'deliverystone')
             return
           }
-          //Villager mine the stone
+          // Villager mine the stone
           this.loading++
           this.updateInterfaceLoading()
 
           this.dest.quantity--
           if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
           }
-          //Destroy stone if it out of quantity
+          // Destroy stone if it out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
           }
-          //Set the walking with stone animation
+          // Set the walking with stone animation
           if (this.loading > 1) {
             this.walkingSheet = Assets.cache.get('274')
             this.standingSheet = null
@@ -490,25 +499,25 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
-          //Villager is full we send him delivery first
+          // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
             this.sendToDelivery('StoragePit', 'deliverygold')
             return
           }
-          //Villager mine the gold
+          // Villager mine the gold
           this.loading++
           this.updateInterfaceLoading()
 
           this.dest.quantity--
           if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
           }
-          //Destroy gold if it out of quantity
+          // Destroy gold if it out of quantity
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
           }
-          //Set the walking with gold animation
+          // Set the walking with gold animation
           if (this.loading > 1) {
             this.walkingSheet = Assets.cache.get('281')
             this.standingSheet = null
@@ -577,14 +586,17 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
-          if (!instanceContactInstance(this, this.dest)) {
+          if (!this.isUnitAtDest(this.action, this.dest)) {
             this.sendTo(this.dest, 'attack')
             return
           }
           if (this.dest.life > 0) {
             this.dest.life -= this.attack
             if (this.dest.selected && player && player.selectedUnit === this.dest) {
-              menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
+              menu.updateInfo(
+                'life',
+                element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+              )
             }
             if (this.dest.name === 'building') {
               this.dest.updateLife(this.action)
@@ -594,6 +606,105 @@ class Unit extends Container {
           } else {
             this.dest.die()
             this.affectNewDest()
+          }
+        }
+        this.setTextures('actionSheet')
+        break
+      case 'deliverymeat':
+        this.owner.food += this.loading
+        if (this.owner.isPlayed) {
+          menu.updateTopbar()
+        }
+        this.loading = 0
+        this.updateInterfaceLoading()
+
+        if (this.previousDest) {
+          this.sendToTakeMeat(this.previousDest)
+        } else {
+          this.stop()
+        }
+        break
+      case 'takemeat':
+        if (!this.getActionCondition(this.dest)) {
+          this.affectNewDest()
+          return
+        }
+        sprite.onLoop = () => {
+          if (!this.getActionCondition(this.dest)) {
+            this.affectNewDest()
+            return
+          }
+          // Villager is full we send him delivery first
+          if (this.loading === this.loadingMax || !this.dest) {
+            this.sendToDelivery('Granary', 'deliverymeat')
+            return
+          }
+          // Villager take meat
+          this.loading++
+          this.updateInterfaceLoading()
+
+          this.dest.quantity--
+          if (this.dest.selected && this.owner.isPlayed) {
+            menu.updateInfo('quantity-text', element => (element.textContent = Math.max(this.dest.quantity, 0)))
+          }
+          // Destroy corps if it out of quantity
+          if (this.dest.quantity <= 0) {
+            this.dest.clear()
+            this.affectNewDest()
+          }
+          // Set the walking with meat animation
+          if (this.loading > 1) {
+            this.walkingSheet = Assets.cache.get('281')
+            this.standingSheet = null
+          }
+        }
+        this.setTextures('actionSheet')
+        break
+      case 'hunt':
+        if (!this.getActionCondition(this.dest)) {
+          this.affectNewDest()
+          return
+        }
+        if (this.dest.isDead) {
+          this.sendToTakeMeat(this.dest)
+        }
+        sprite.onLoop = () => {
+          if (!this.getActionCondition(this.dest)) {
+            this.affectNewDest()
+            return
+          }
+          if (this.destHasMoved()) {
+            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+            this.setTextures('actionSheet')
+          }
+          if (!this.isUnitAtDest(this.action, this.dest)) {
+            this.sendToHunt(this.dest)
+            return
+          }
+          if (this.dest.life > 0) {
+            const arrow = new Arrow(
+              {
+                owner: this,
+                target: this.dest,
+                onHit: () => {
+                  this.dest.life -= this.attack
+                  if (this.dest.selected && player && player.selectedOther === this.dest) {
+                    menu.updateInfo(
+                      'life',
+                      element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+                    )
+                  }
+                  typeof this.dest.isAttacked === 'function' && this.dest.isAttacked(this)
+                },
+              },
+              this.context
+            )
+            map.addChild(arrow)
+          } else if (!this.dest.isDead) {
+            this.dest.die()
+            this.sendToTakeMeat(this.dest)
+          } else {
+            this.sendToTakeMeat(this.dest)
           }
         }
         this.setTextures('actionSheet')
@@ -608,14 +719,11 @@ class Unit extends Container {
     if (targets.length) {
       const target = getClosestInstanceWithPath(this, targets)
       if (target) {
-        if (instanceContactInstance(this, target)) {
-          this.degree = getInstanceDegree(this, target.x, target.y)
-          this.getAction(this.action)
-          return
+        if (this.action === 'takemeat' && !target.isDead) {
+          this.sendToHunt(target)
+        } else {
+          this.sendTo(target, this.action)
         }
-        this.setDest(target.instance)
-        this.setPath(target.path)
-        return
       }
     }
     if (this.loading) {
@@ -629,6 +737,9 @@ class Unit extends Container {
         case 'gatherer':
           this.sendToDelivery('Granary', 'deliveryberry')
           return
+        case 'takemeat':
+          this.sendToDelivery('Granary', 'deliverymeat')
+          return
         case 'stoneminer':
           this.sendToDelivery('StoragePit', 'deliverystone')
           return
@@ -639,6 +750,27 @@ class Unit extends Container {
     }
     this.stop()
     return
+  }
+
+  isUnitAtDest(action, dest) {
+    if (!action) {
+      return false
+    }
+    if (!dest) {
+      this.affectNewDest()
+      return false
+    }
+    if (action === 'hunt' && instancesDistance(this, dest) < 7) {
+      return true
+    }
+    return instanceContactInstance(this, dest)
+  }
+
+  destHasMoved() {
+    return (
+      (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) &&
+      this.owner.views[this.dest.i][this.dest.j].viewBy.length > 1
+    )
   }
 
   moveToPath() {
@@ -652,10 +784,10 @@ class Unit extends Container {
       this.affectNewDest()
       return
     }
-    //Collision with another walking unit, we block the mouvement
+    // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      nextCell.has.name === 'unit' &&
+      (nextCell.has.name === 'unit' || nextCell.has.name === 'animal') &&
       nextCell.has !== this &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
@@ -694,14 +826,14 @@ class Unit extends Container {
       renderCellOnInstanceSight(this)
       this.path.pop()
 
-      //Destination moved
-      if (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) {
-        if (this.owner.views[this.dest.i][this.dest.j].viewBy.length > 1) {
-          this.sendTo(this.dest, this.action)
-          return
-        }
+      // Destination moved
+      if (this.destHasMoved()) {
+        this.sendTo(this.dest, this.action)
+        return
       }
-      if (this.action && instanceContactInstance(this, this.dest)) {
+      if (this.isUnitAtDest(this.action, this.dest)) {
+        this.path = []
+        this.stopInterval()
         this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
         this.getAction(this.action)
         return
@@ -714,7 +846,7 @@ class Unit extends Container {
       const {
         context: { menu },
       } = this
-      //Move to next
+      // Move to next
       const oldDeg = this.degree
       let speed = this.speed
       if (this.loading > 1) {
@@ -723,7 +855,7 @@ class Unit extends Container {
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
       menu.updatePlayerMiniMap(this.owner)
       if (oldDeg !== this.degree) {
-        //Change animation according to degree
+        // Change animation according to degree
         this.setTextures('walkingSheet')
       }
     }
@@ -753,7 +885,21 @@ class Unit extends Container {
     this.currentCell.has = this
     this.currentCell.solid = true
     this.path = []
+    this.stopInterval()
     this.setTextures('standingSheet')
+  }
+
+  startInterval() {
+    if (!this.interval) {
+      this.interval = setInterval(() => this.step(), stepTime)
+    }
+  }
+
+  stopInterval() {
+    if (this.interval) {
+      clearInterval(this.interval)
+      this.interval = null
+    }
   }
 
   step() {
@@ -828,12 +974,12 @@ class Unit extends Container {
         this.parent.grid[this.i][this.j].has = null
         this.parent.grid[this.i][this.j].solid = false
 
-        //Remove from player units
+        // Remove from player units
         let index = this.owner.units.indexOf(this)
         if (index >= 0) {
           this.owner.units.splice(index, 1)
         }
-        //Remove from player selected units
+        // Remove from player selected units
         if (this.owner.selectedUnits) {
           index = this.owner.selectedUnits.indexOf(this)
           if (index >= 0) {
@@ -854,7 +1000,7 @@ class Unit extends Container {
     if (!sprite) {
       return
     }
-    //Sheet don't exist we just block the current sheet
+    // Sheet don't exist we just block the current sheet
     if (!this[sheet]) {
       if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
         sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
@@ -869,7 +1015,7 @@ class Unit extends Container {
       )
       return
     }
-    //Reset action loop
+    // Reset action loop
     if (sheet !== 'actionSheet') {
       sprite.onLoop = () => {}
     }
@@ -921,7 +1067,7 @@ class Unit extends Container {
 
     const lifeDiv = document.createElement('div')
     lifeDiv.id = 'life'
-    lifeDiv.textContent = this.life + '/' + this.lifeMax
+    lifeDiv.textContent = Math.max(this.life, 0) + '/' + this.lifeMax
     element.appendChild(lifeDiv)
   }
 }
@@ -971,11 +1117,12 @@ export class Villager extends Unit {
       context
     )
   }
+
   updateInterfaceLoading() {
     const {
-      context: { player, menu },
+      context: { menu },
     } = this
-    if (this.selected && this.owner === player) {
+    if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
       if (this.loading === 1) {
         menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().outerHTML))
       } else if (this.loading > 1) {
@@ -985,6 +1132,7 @@ export class Villager extends Unit {
       }
     }
   }
+
   getLoadingElement() {
     const {
       context: { menu },
@@ -998,6 +1146,7 @@ export class Villager extends Unit {
         case 'woodcutter':
           iconToUse = menu.icons['wood']
           break
+        case 'hunter':
         case 'farmer':
         case 'gatherer':
           iconToUse = menu.icons['food']
@@ -1020,14 +1169,10 @@ export class Villager extends Unit {
     }
     return loadingDiv
   }
+
   sendToAttack(target) {
-    const {
-      context: { menu },
-    } = this
     this.loading = 0
-    if (this.selected && this.owner.isPlayed) {
-      menu.updateInfo('loading', element => (element.innerHTML = ''))
-    }
+    this.updateInterfaceLoading()
     this.work = null
     this.actionSheet = Assets.cache.get('224')
     this.standingSheet = Assets.cache.get('418')
@@ -1035,6 +1180,37 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(target, 'attack')
   }
+
+  sendToTakeMeat(target) {
+    if (this.work !== 'hunter') {
+      this.loading = 0
+      this.updateInterfaceLoading()
+    }
+    if (this.work !== 'hunter' || this.action !== 'takemeat') {
+      this.work = 'hunter'
+      this.actionSheet = Assets.cache.get('632')
+      this.standingSheet = Assets.cache.get('418')
+      this.walkingSheet = Assets.cache.get('657')
+    }
+    this.previousDest = null
+    return this.sendTo(target, 'takemeat')
+  }
+
+  sendToHunt(target) {
+    if (this.work !== 'hunter') {
+      this.loading = 0
+      this.updateInterfaceLoading()
+    }
+    if (this.work !== 'hunter' || this.action !== 'hunt') {
+      this.work = 'hunter'
+      this.actionSheet = Assets.cache.get('224')
+      this.standingSheet = Assets.cache.get('418')
+      this.walkingSheet = Assets.cache.get('657')
+    }
+    this.previousDest = null
+    return this.sendTo(target, 'hunt')
+  }
+
   sendToDelivery(type, action) {
     const targets = this.owner.buildings.filter(building => {
       return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === type)
@@ -1047,6 +1223,7 @@ export class Villager extends Unit {
     }
     this.sendTo(target, action)
   }
+
   sendToBuilding(building) {
     if (this.work !== 'builder') {
       this.loading = 0
@@ -1059,6 +1236,7 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(building, 'build')
   }
+
   sendToFarm(farm) {
     if (this.work !== 'farmer') {
       this.loading = 0
@@ -1071,6 +1249,7 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(farm, 'farm')
   }
+
   sendToTree(tree) {
     if (this.work !== 'woodcutter') {
       this.loading = 0
@@ -1083,6 +1262,7 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(tree, 'chopwood')
   }
+
   sendToBerrybush(berrybush) {
     if (this.work !== 'gatherer') {
       this.loading = 0
@@ -1095,6 +1275,7 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(berrybush, 'forageberry')
   }
+
   sendToStone(stone) {
     if (this.work !== 'stoneminer') {
       this.loading = 0
@@ -1107,6 +1288,7 @@ export class Villager extends Unit {
     this.previousDest = null
     return this.sendTo(stone, 'minestone')
   }
+
   sendToGold(gold) {
     if (this.work !== 'goldminer') {
       this.loading = 0
