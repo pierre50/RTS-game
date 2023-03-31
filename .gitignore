@@ -2,7 +2,4 @@ node_modules
 /build
 *.log*
 .DS_Store
-tools/Age_Of_Empires_Expansion_Fixed/
-tools/Free texture packer/
-tools/pixelator-win32-x86/
-tools/imageBatch/
+tools/

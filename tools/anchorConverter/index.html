@@ -71,6 +71,7 @@
         };
 
         function convertData(){
+            sizes = sizes.sort((a,b) => a.name.localeCompare(b.name))
             if (anchors.length !== sizes.length){
                 alert('Csv and files must match');
                 return;

@@ -108,7 +108,7 @@ export default class Map extends Container {
 
     this.gaia = new Gaia(this.context)
 
-    //this.generateSets()
+    this.generateSets()
 
     this.generateMapRelief()
 

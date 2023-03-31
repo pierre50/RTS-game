@@ -69,7 +69,7 @@ class Animal extends Container {
     sprite.interactive = false
     sprite.allowClick = false
     sprite.roundPixels = true
-
+    
     this.on('pointerup', () => {
       const {
         context: { controls, player, menu },
@@ -463,9 +463,6 @@ class Animal extends Container {
   }
 
   die() {
-    const {
-      context: { player },
-    } = this
     if (this.currentSheet === 'dyingSheet') {
       return
     }
@@ -480,8 +477,8 @@ class Animal extends Container {
     sprite.onLoop = () => {
       if (this.parent) {
         this.owner.population--
-
-        this.setTextures('corpsSheet')
+        this.setTextures('corpseSheet')
+        sprite.animationSpeed = 0
       }
     }
     clearInterval(this.interval)
@@ -517,7 +514,7 @@ class Animal extends Container {
       sprite.stop()
       sprite.anchor.set(
         sprite.textures[sprite.currentFrame].defaultAnchor.x,
-        sprite.textures[[sprite.currentFrame]].defaultAnchor.y
+        sprite.textures[sprite.currentFrame].defaultAnchor.y
       )
       return
     }
@@ -610,10 +607,10 @@ export class Gazelle extends Animal {
         speed: data.speed * accelerator,
         attack: data.attack * accelerator,
         quantity: data.quantity,
-        standingSheet: Assets.cache.get('418'),
-        walkingSheet: Assets.cache.get('657'),
-        dyingSheet: Assets.cache.get('314'),
-        corpseSheet: Assets.cache.get('314'),
+        standingSheet: Assets.cache.get('479'),
+        walkingSheet: Assets.cache.get('480'),
+        dyingSheet: Assets.cache.get('331'),
+        corpseSheet: Assets.cache.get('392'),
         interface: {
           info: element => {
             const { owner } = this

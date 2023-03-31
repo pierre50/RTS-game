@@ -53,6 +53,7 @@ class Unit extends Container {
     this.action = null
     this.work = null
     this.loading = 0
+    this.loadingType = null
     this.loadingMax = 10
     this.currentSheet = null
     this.size = 1
@@ -295,6 +296,7 @@ class Unit extends Container {
           }
           // Villager farm the farm
           this.loading++
+          this.loadingType = 'food'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -357,6 +359,7 @@ class Unit extends Container {
           }
           // Villager cut the stump
           this.loading++
+          this.loadingType = 'wood'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -409,6 +412,7 @@ class Unit extends Container {
           }
           // Villager forage the berrybush
           this.loading++
+          this.loadingType = 'food'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -419,6 +423,11 @@ class Unit extends Container {
           if (this.dest.quantity <= 0) {
             this.dest.die()
             this.affectNewDest()
+          }
+          // Set the walking with wood animation
+          if (this.loading > 1) {
+            this.walkingSheet = Assets.cache.get('672')
+            this.standingSheet = null
           }
         }
         this.setTextures('actionSheet')
@@ -454,6 +463,7 @@ class Unit extends Container {
           }
           // Villager mine the stone
           this.loading++
+          this.loadingType = 'stone'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -506,6 +516,7 @@ class Unit extends Container {
           }
           // Villager mine the gold
           this.loading++
+          this.loadingType = 'gold'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -641,6 +652,7 @@ class Unit extends Container {
           }
           // Villager take meat
           this.loading++
+          this.loadingType = 'food'
           this.updateInterfaceLoading()
 
           this.dest.quantity--
@@ -654,7 +666,7 @@ class Unit extends Container {
           }
           // Set the walking with meat animation
           if (this.loading > 1) {
-            this.walkingSheet = Assets.cache.get('281')
+            this.walkingSheet = Assets.cache.get('272')
             this.standingSheet = null
           }
         }
@@ -720,10 +732,20 @@ class Unit extends Container {
       const target = getClosestInstanceWithPath(this, targets)
       if (target) {
         if (this.action === 'takemeat' && !target.isDead) {
-          this.sendToHunt(target)
-        } else {
-          this.sendTo(target, this.action)
+          this.action = 'hunt'
+          this.work = 'hunter'
+          this.actionSheet = Assets.cache.get('624')
+          this.standingSheet = Assets.cache.get('418')
+          this.walkingSheet = Assets.cache.get('657')
         }
+        if (instanceContactInstance(this, target)) {
+          this.degree = getInstanceDegree(this, target.x, target.y)
+          this.getAction(this.action)
+          return
+        }
+        this.setDest(target.instance)
+        this.setPath(target.path)
+        return
       }
     }
     if (this.loading) {
@@ -1011,7 +1033,7 @@ class Unit extends Container {
       sprite.stop()
       sprite.anchor.set(
         sprite.textures[sprite.currentFrame].defaultAnchor.x,
-        sprite.textures[[sprite.currentFrame]].defaultAnchor.y
+        sprite.textures[sprite.currentFrame].defaultAnchor.y
       )
       return
     }
@@ -1182,30 +1204,34 @@ export class Villager extends Unit {
   }
 
   sendToTakeMeat(target) {
-    if (this.work !== 'hunter') {
+    if (this.loadingType !== 'food') {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'hunter' || this.action !== 'takemeat') {
       this.work = 'hunter'
-      this.actionSheet = Assets.cache.get('632')
-      this.standingSheet = Assets.cache.get('418')
-      this.walkingSheet = Assets.cache.get('657')
+      this.actionSheet = Assets.cache.get('626')
+      this.standingSheet = Assets.cache.get('435')
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get('676')
+      }
     }
     this.previousDest = null
     return this.sendTo(target, 'takemeat')
   }
 
   sendToHunt(target) {
-    if (this.work !== 'hunter') {
+    if (this.loadingType !== 'food') {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'hunter' || this.action !== 'hunt') {
       this.work = 'hunter'
-      this.actionSheet = Assets.cache.get('224')
-      this.standingSheet = Assets.cache.get('418')
-      this.walkingSheet = Assets.cache.get('657')
+      this.actionSheet = Assets.cache.get('624')
+      this.standingSheet = Assets.cache.get('435')
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get('676')
+      }
     }
     this.previousDest = null
     return this.sendTo(target, 'hunt')
@@ -1238,13 +1264,17 @@ export class Villager extends Unit {
   }
 
   sendToFarm(farm) {
-    if (this.work !== 'farmer') {
+    if (this.loadingType !== 'food') {
       this.loading = 0
       this.updateInterfaceLoading()
+    }
+    if (this.work !== 'farmer') {
       this.work = 'farmer'
-      this.actionSheet = Assets.cache.get('632')
-      this.standingSheet = Assets.cache.get('432')
-      this.walkingSheet = Assets.cache.get('672')
+      this.actionSheet = Assets.cache.get('630')
+      this.standingSheet = Assets.cache.get('430')
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get('670')
+      }
     }
     this.previousDest = null
     return this.sendTo(farm, 'farm')
@@ -1264,13 +1294,17 @@ export class Villager extends Unit {
   }
 
   sendToBerrybush(berrybush) {
-    if (this.work !== 'gatherer') {
+    if (this.loadingType !== 'food') {
       this.loading = 0
       this.updateInterfaceLoading()
+    }
+    if (this.work !== 'gatherer') {
       this.work = 'gatherer'
       this.actionSheet = Assets.cache.get('632')
       this.standingSheet = Assets.cache.get('432')
-      this.walkingSheet = Assets.cache.get('672')
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get('672')
+      }
     }
     this.previousDest = null
     return this.sendTo(berrybush, 'forageberry')
