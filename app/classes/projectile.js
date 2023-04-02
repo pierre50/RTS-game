@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance, degreeToDirection } from '../lib'
-import { colorArrow, stepTime } from '../constants'
+import { accelerator, colorArrow, stepTime } from '../constants'
 
 class Projectile extends Container {
   constructor(options, context) {
@@ -36,7 +36,7 @@ class Projectile extends Container {
 
     const interval = setInterval(() => {
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
-        if (this.target && !this.target.isDestroyed && this.target.life > 0 && typeof this.onHit === 'function') {
+        if (this.target && this.target.life > 0) {
           this.onHit()
         }
         clearInterval(interval)
@@ -47,6 +47,20 @@ class Projectile extends Container {
     }, stepTime)
   }
 
+  onHit() {
+    const {
+      context: { menu, player },
+    } = this
+    this.target.life -= this.owner.attack
+    if (this.target.selected && player && player.selectedOther === this.target) {
+      menu.updateInfo(
+        'life',
+        element => (element.textContent = Math.max(this.target.life, 0) + '/' + this.target.lifeMax)
+      )
+    }
+    typeof this.target.isAttacked === 'function' && this.target.isAttacked(this.owner)
+  }
+
   die() {
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
@@ -54,7 +68,7 @@ class Projectile extends Container {
 }
 
 export class Arrow extends Projectile {
-  constructor({ owner, target, onHit }, context) {
+  constructor({ owner, target }, context) {
     const type = 'Arrow'
     const ownerSprite = owner.getChildByName('sprite')
     const { height, width } = ownerSprite
@@ -100,9 +114,9 @@ export class Arrow extends Projectile {
         y: position.y,
         type,
         target,
+        owner,
         size: 4,
-        speed: 14,
-        onHit,
+        speed: 14 * accelerator,
       },
       context
     )

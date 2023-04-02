@@ -262,7 +262,7 @@ class Unit extends Container {
       attack: instance =>
         instance &&
         instance.owner !== owner &&
-        (instance.name === 'building' || instance.name === 'unit') &&
+        (instance.name === 'building' || instance.name === 'unit' || instance.name === 'animal') &&
         instance.life > 0 &&
         !instance.isDestroyed,
     }
@@ -310,6 +310,11 @@ class Unit extends Container {
             this.dest.die()
             this.affectNewDest()
           }
+          // Set the walking with berrybush animation
+          if (this.loading > 0) {
+            this.walkingSheet = Assets.cache.get('672')
+            this.standingSheet = null
+          }
         }
         this.setTextures('actionSheet')
         break
@@ -320,6 +325,8 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
+        this.standingSheet = Assets.cache.get('430')
+        this.walkingSheet = Assets.cache.get('670')
 
         if (this.previousDest) {
           this.sendToFarm(this.previousDest)
@@ -374,7 +381,7 @@ class Unit extends Container {
             this.affectNewDest()
           }
           // Set the walking with wood animation
-          if (this.loading > 1) {
+          if (this.loading > 0) {
             this.walkingSheet = Assets.cache.get('273')
             this.standingSheet = null
           }
@@ -388,9 +395,9 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
-
         this.walkingSheet = Assets.cache.get('682')
         this.standingSheet = Assets.cache.get('440')
+
         if (this.previousDest) {
           this.sendToTree(this.previousDest)
         } else {
@@ -426,8 +433,8 @@ class Unit extends Container {
             this.dest.die()
             this.affectNewDest()
           }
-          // Set the walking with wood animation
-          if (this.loading > 1) {
+          // Set the walking with berrybush animation
+          if (this.loading > 0) {
             this.walkingSheet = Assets.cache.get('672')
             this.standingSheet = null
           }
@@ -441,6 +448,8 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
+        this.standingSheet = Assets.cache.get('432')
+        this.walkingSheet = Assets.cache.get('672')
 
         if (this.previousDest) {
           this.sendToBerrybush(this.previousDest)
@@ -478,7 +487,7 @@ class Unit extends Container {
             this.affectNewDest()
           }
           // Set the walking with stone animation
-          if (this.loading > 1) {
+          if (this.loading > 0) {
             this.walkingSheet = Assets.cache.get('274')
             this.standingSheet = null
           }
@@ -492,9 +501,9 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
-
         this.walkingSheet = Assets.cache.get('683')
         this.standingSheet = Assets.cache.get('441')
+
         if (this.previousDest) {
           this.sendToStone(this.previousDest)
         } else {
@@ -531,7 +540,7 @@ class Unit extends Container {
             this.affectNewDest()
           }
           // Set the walking with gold animation
-          if (this.loading > 1) {
+          if (this.loading > 0) {
             this.walkingSheet = Assets.cache.get('281')
             this.standingSheet = null
           }
@@ -545,9 +554,9 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
-
         this.walkingSheet = Assets.cache.get('683')
         this.standingSheet = Assets.cache.get('441')
+
         if (this.previousDest) {
           this.sendToGold(this.previousDest)
         } else {
@@ -599,13 +608,26 @@ class Unit extends Container {
             this.affectNewDest()
             return
           }
+          if (this.destHasMoved()) {
+            this.realDest.i = this.dest.i
+            this.realDest.j = this.dest.j
+            const oldDeg = this.degree
+            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+            if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
+              this.setTextures('actionSheet')
+            }
+          }
           if (!this.isUnitAtDest(this.action, this.dest)) {
             this.sendTo(this.dest, 'attack')
             return
           }
           if (this.dest.life > 0) {
             this.dest.life -= this.attack
-            if (this.dest.selected && player && player.selectedUnit === this.dest) {
+            if (
+              this.dest.selected &&
+              player &&
+              (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+            ) {
               menu.updateInfo(
                 'life',
                 element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
@@ -616,7 +638,8 @@ class Unit extends Container {
             } else {
               this.dest.isAttacked(this)
             }
-          } else {
+          }
+          if (this.dest.life <= 0) {
             this.dest.die()
             this.affectNewDest()
           }
@@ -630,6 +653,8 @@ class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
+        this.standingSheet = Assets.cache.get('435')
+        this.walkingSheet = Assets.cache.get('676')
 
         if (this.previousDest) {
           this.sendToTakeMeat(this.previousDest)
@@ -667,7 +692,7 @@ class Unit extends Container {
             this.affectNewDest()
           }
           // Set the walking with meat animation
-          if (this.loading > 1) {
+          if (this.loading > 0) {
             this.walkingSheet = Assets.cache.get('272')
             this.standingSheet = null
           }
@@ -688,8 +713,13 @@ class Unit extends Container {
             return
           }
           if (this.destHasMoved()) {
+            this.realDest.i = this.dest.i
+            this.realDest.j = this.dest.j
+            const oldDeg = this.degree
             this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
-            this.setTextures('actionSheet')
+            if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
+              this.setTextures('actionSheet')
+            }
           }
           if (!this.isUnitAtDest(this.action, this.dest)) {
             this.sendToHunt(this.dest)
@@ -700,24 +730,15 @@ class Unit extends Container {
               {
                 owner: this,
                 target: this.dest,
-                onHit: () => {
-                  this.dest.life -= this.attack
-                  if (this.dest.selected && player && player.selectedOther === this.dest) {
-                    menu.updateInfo(
-                      'life',
-                      element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
-                    )
-                  }
-                  typeof this.dest.isAttacked === 'function' && this.dest.isAttacked(this)
-                },
               },
               this.context
             )
             map.addChild(arrow)
-          } else if (!this.dest.isDead) {
-            this.dest.die()
-            this.sendToTakeMeat(this.dest)
-          } else {
+          }
+          if (this.dest.life <= 0) {
+            if (!this.dest.isDead) {
+              this.dest.die()
+            }
             this.sendToTakeMeat(this.dest)
           }
         })
@@ -752,6 +773,9 @@ class Unit extends Container {
     }
     if (this.loading) {
       switch (this.work) {
+        case 'hunter':
+          this.sendToDelivery('Granary', 'deliverymeat')
+          return
         case 'farm':
           this.sendToDelivery('Granary', 'deliveryfood')
           return
@@ -793,7 +817,7 @@ class Unit extends Container {
   destHasMoved() {
     return (
       (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) &&
-      this.owner.views[this.dest.i][this.dest.j].viewBy.length > 1
+      instancesDistance(this, this.dest) <= this.sight
     )
   }
 
@@ -873,12 +897,12 @@ class Unit extends Container {
       // Move to next
       const oldDeg = this.degree
       let speed = this.speed
-      if (this.loading > 1) {
+      if (this.loading > 0) {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
       menu.updatePlayerMiniMap(this.owner)
-      if (oldDeg !== this.degree) {
+      if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
         this.setTextures('walkingSheet')
       }
@@ -886,11 +910,15 @@ class Unit extends Container {
   }
 
   isAttacked(instance) {
-    if (!instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
+    if (!instance || this.dest === instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
       return
     }
     if (this.type === 'Villager') {
-      this.sendToAttack(instance, 'attack')
+      if (instance.name === 'animal') {
+        this.sendToHunt(instance)
+      } else {
+        this.sendToAttack(instance)
+      }
     } else {
       this.sendTo(instance, 'attack')
     }
@@ -1041,11 +1069,11 @@ class Unit extends Container {
     }
     // Reset action loop
     if (sheet !== 'actionSheet') {
-      sprite.onLoop = () => {}
-      sprite.onFrameChange = () => {}
+      sprite.onLoop = null
+      sprite.onFrameChange = null
     }
     this.currentSheet = sheet
-    sprite.animationSpeed = this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)
+    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)) * accelerator
     const direction = degreeToDirection(this.degree)
     switch (direction) {
       case 'southest':
@@ -1104,7 +1132,7 @@ export class Villager extends Unit {
         lifeMax: data.lifeMax,
         sight: data.sight,
         speed: data.speed * accelerator,
-        attack: data.attack * accelerator,
+        attack: data.attack,
         standingSheet: Assets.cache.get('418'),
         walkingSheet: Assets.cache.get('657'),
         dyingSheet: Assets.cache.get('314'),
@@ -1172,12 +1200,13 @@ export class Villager extends Unit {
   }
 
   sendToAttack(target) {
-    this.loading = 0
     this.updateInterfaceLoading()
     this.work = null
     this.actionSheet = Assets.cache.get('224')
     this.standingSheet = Assets.cache.get('418')
-    this.walkingSheet = Assets.cache.get('657')
+    if (!this.loading) {
+      this.walkingSheet = Assets.cache.get('657')
+    }
     this.previousDest = null
     return this.sendTo(target, 'attack')
   }
@@ -1235,7 +1264,9 @@ export class Villager extends Unit {
       this.work = 'builder'
       this.actionSheet = Assets.cache.get('628')
       this.standingSheet = Assets.cache.get('419')
-      this.walkingSheet = Assets.cache.get('658')
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get('658')
+      }
     }
     this.previousDest = null
     return this.sendTo(building, 'build')
@@ -1250,6 +1281,7 @@ export class Villager extends Unit {
       this.work = 'farmer'
       this.actionSheet = Assets.cache.get('630')
       this.standingSheet = Assets.cache.get('430')
+      this.dyingSheet = Assets.cache.get('326')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('670')
       }
@@ -1327,7 +1359,7 @@ export class Clubman extends Unit {
         type,
         lifeMax: data.lifeMax,
         sight: data.sight,
-        speed: data.speed,
+        speed: data.speed * accelerator,
         attack: data.attack,
         work: 'attacker',
         standingSheet: Assets.cache.get('425'),

@@ -3,7 +3,7 @@ export const cellHeight = 30
 export const cellDepth = 16
 
 export const accelerator = 5
-export const stepTime = 40
+export const stepTime = 10
 
 export const colorWhite = 0xffffff
 export const colorBlack = 0x000000

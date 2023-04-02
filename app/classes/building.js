@@ -1,4 +1,5 @@
 import { Container, Assets, Sprite, AnimatedSprite, Graphics, Polygon } from 'pixi.js'
+import { accelerator } from '../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -239,13 +240,13 @@ class Building extends Container {
       this.updateTexture()
     } else if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)) {
       if (percentage > 0 && percentage < 25) {
-        generateFire(this, 450)
+        generateFire(this, '450')
       }
       if (percentage >= 25 && percentage < 50) {
-        generateFire(this, 452)
+        generateFire(this, '452')
       }
       if (percentage >= 50 && percentage < 75) {
-        generateFire(this, 347)
+        generateFire(this, '347')
       }
       if (percentage >= 75) {
         const fire = this.getChildByName('fire')
@@ -466,7 +467,7 @@ class Building extends Container {
               menu.updateInfo('loading', element => (element.textContent = ''))
             }
           }
-        }, (unit.trainingTime * 1000) / 100)
+        }, (unit.trainingTime * 1000) / 100 / accelerator)
       }
     }
   }

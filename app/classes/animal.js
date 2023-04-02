@@ -259,13 +259,21 @@ class Animal extends Container {
             this.affectNewDest()
             return
           }
+          if (this.destHasMoved()) {
+            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+            this.setTextures('actionSheet')
+          }
           if (!instanceContactInstance(this, this.dest)) {
             this.sendTo(this.dest, 'attack')
             return
           }
           if (this.dest.life > 0) {
             this.dest.life -= this.attack
-            if (this.dest.selected && player && player.selectedUnit === this.dest) {
+            if (
+              this.dest.selected &&
+              player &&
+              (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+            ) {
               menu.updateInfo(
                 'life',
                 element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
@@ -307,6 +315,13 @@ class Animal extends Container {
     }
     this.stop()
     return
+  }
+
+  destHasMoved() {
+    return (
+      (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) &&
+      instancesDistance(this, this.dest) <= this.sight
+    )
   }
 
   moveToPath() {
@@ -363,11 +378,9 @@ class Animal extends Container {
       this.path.pop()
 
       // Destination moved
-      if (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) {
-        if (this.owner.views[this.dest.i][this.dest.j].viewBy.length > 1) {
-          this.sendTo(this.dest, this.action)
-          return
-        }
+      if (this.destHasMoved()) {
+        this.sendTo(this.dest, this.action)
+        return
       }
       if (this.action && instanceContactInstance(this, this.dest)) {
         this.path = []
@@ -388,7 +401,7 @@ class Animal extends Container {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
-      if (oldDeg !== this.degree) {
+      if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
         this.setTextures('walkingSheet')
       }
@@ -396,7 +409,7 @@ class Animal extends Container {
   }
 
   isAttacked(instance) {
-    if (!instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
+    if (!instance || this.dest === instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
       return
     }
     if (this.type === 'Gazelle') {
@@ -432,22 +445,6 @@ class Animal extends Container {
     }
     if (this.hasPath()) {
       this.moveToPath()
-    }
-  }
-
-  explore() {
-    let dest
-    for (let i = 3; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, this.parent.grid, i, cell => {
-        if (!this.owner.views[cell.i][cell.j].viewed && !cell.solid) {
-          dest = this.owner.views[cell.i][cell.j]
-          return
-        }
-      })
-      if (dest) {
-        this.sendTo(dest)
-        break
-      }
     }
   }
 
@@ -531,7 +528,7 @@ class Animal extends Container {
       sprite.onLoop = () => {}
     }
     this.currentSheet = sheet
-    sprite.animationSpeed = this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)
+    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)) * accelerator
     if (this.degree > 67.5 && this.degree < 112.5) {
       sprite.scale.x = 1
       sprite.textures = this[sheet].animations['north']
@@ -613,7 +610,7 @@ export class Gazelle extends Animal {
         lifeMax: data.lifeMax,
         sight: data.sight,
         speed: data.speed * accelerator,
-        attack: data.attack * accelerator,
+        attack: data.attack,
         quantity: data.quantity,
         standingSheet: Assets.cache.get('479'),
         walkingSheet: Assets.cache.get('478'),
@@ -644,7 +641,7 @@ export class Elephant extends Animal {
         lifeMax: data.lifeMax,
         sight: data.sight,
         speed: data.speed * accelerator,
-        attack: data.attack * accelerator,
+        attack: data.attack,
         quantity: data.quantity,
         actionSheet: Assets.cache.get('479'),
         standingSheet: Assets.cache.get('479'),
