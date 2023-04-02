@@ -20,6 +20,8 @@ import {
   getCellsAroundPoint,
   drawInstanceBlinkingSelection,
   instanceIsInPlayerSight,
+  degreeToDirection,
+  onSpriteLoopAtFrame,
 } from '../lib'
 
 class Unit extends Container {
@@ -680,7 +682,7 @@ class Unit extends Container {
         if (this.dest.isDead) {
           this.sendToTakeMeat(this.dest)
         }
-        sprite.onLoop = () => {
+        onSpriteLoopAtFrame(sprite, 6, () => {
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest()
             return
@@ -718,7 +720,7 @@ class Unit extends Container {
           } else {
             this.sendToTakeMeat(this.dest)
           }
-        }
+        })
         this.setTextures('actionSheet')
         break
       default:
@@ -1040,33 +1042,27 @@ class Unit extends Container {
     // Reset action loop
     if (sheet !== 'actionSheet') {
       sprite.onLoop = () => {}
+      sprite.onFrameChange = () => {}
     }
     this.currentSheet = sheet
     sprite.animationSpeed = this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)
-    if (this.degree > 67.5 && this.degree < 112.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['north']
-    } else if (this.degree > 247.5 && this.degree < 292.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['south']
-    } else if (this.degree > 337.5 || this.degree < 22.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['west']
-    } else if (this.degree >= 22.5 && this.degree <= 67.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['northwest']
-    } else if (this.degree >= 292.5 && this.degree <= 337.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['southwest']
-    } else if (this.degree > 157.5 && this.degree < 202.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['west']
-    } else if (this.degree > 112.5 && this.degree < 157.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['northwest']
-    } else if (this.degree > 202.5 && this.degree < 247.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['southwest']
+    const direction = degreeToDirection(this.degree)
+    switch (direction) {
+      case 'southest':
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['southwest']
+        break
+      case 'northest':
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['northwest']
+        break
+      case 'est':
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['west']
+        break
+      default:
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations[direction]
     }
     sprite.play()
   }
@@ -1163,26 +1159,9 @@ export class Villager extends Unit {
     loadingDiv.className = 'unit-loading'
     loadingDiv.id = 'loading'
     if (this.loading) {
-      let iconToUse
-      switch (this.work) {
-        case 'woodcutter':
-          iconToUse = menu.icons['wood']
-          break
-        case 'hunter':
-        case 'farmer':
-        case 'gatherer':
-          iconToUse = menu.icons['food']
-          break
-        case 'stoneminer':
-          iconToUse = menu.icons['stone']
-          break
-        case 'goldminer':
-          iconToUse = menu.icons['gold']
-          break
-      }
       const iconImg = document.createElement('img')
       iconImg.className = 'unit-loading-icon'
-      iconImg.src = iconToUse
+      iconImg.src = menu.icons[this.loadingType]
       const textDiv = document.createElement('div')
       textDiv.id = 'loading-text'
       textDiv.textContent = this.loading

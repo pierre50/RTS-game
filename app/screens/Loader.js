@@ -27,7 +27,7 @@ export default class LoaderScreen extends Container {
     })
 
     Assets.addBundle('seeds', {
-      0: 'seeds/3.txt',
+      0: 'seeds/0.txt',
     })
 
     Assets.addBundle('terrain', {

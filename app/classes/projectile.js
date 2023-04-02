@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance } from '../lib'
+import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance, degreeToDirection } from '../lib'
 import { colorArrow, stepTime } from '../constants'
 
 class Projectile extends Container {
@@ -18,14 +18,13 @@ class Projectile extends Container {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
-    this.x = this.owner.x
-    this.y = this.owner.y - 40
     const { x: targetX, y: targetY } = this.target
 
     this.distance = instancesDistance(this, this.target, false)
     const degree = getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = new Graphics()
-    sprite.lineStyle(1, colorArrow, 1)
+    sprite.beginFill(colorArrow)
+    //sprite.lineStyle(1, colorArrow, 1)
     sprite.drawRect(1, 1, this.size, 1)
     sprite.rotation = degreesToRadians(degree)
     sprite.name = 'sprite'
@@ -57,11 +56,50 @@ class Projectile extends Container {
 export class Arrow extends Projectile {
   constructor({ owner, target, onHit }, context) {
     const type = 'Arrow'
+    const ownerSprite = owner.getChildByName('sprite')
+    const { height, width } = ownerSprite
+    const anchoredWidth = width * ownerSprite.anchor.x
+    const anchoredHeight = height * ownerSprite.anchor.y
+    const direction = degreeToDirection(owner.degree)
+    const position = {
+      x: owner.x,
+      y: owner.y,
+    }
+    switch (direction) {
+      case 'north':
+        position.y = owner.y - anchoredHeight
+        break
+      case 'west':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x - anchoredWidth
+        break
+      case 'northwest':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x - anchoredWidth
+        break
+      case 'southwest':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x - anchoredWidth
+        break
+      case 'est':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x + anchoredWidth * 2
+        break
+      case 'northest':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x + anchoredWidth
+        break
+      case 'southest':
+        position.y = owner.y - anchoredHeight
+        position.x = owner.x + anchoredWidth
+        break
+    }
     super(
       {
+        x: position.x,
+        y: position.y,
         type,
         target,
-        owner,
         size: 4,
         speed: 14,
         onHit,

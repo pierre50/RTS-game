@@ -110,3 +110,7 @@ export function canvasDrawDiamond(context, x, y, width, height, color) {
   context.fillStyle = color
   context.fill()
 }
+
+export function onSpriteLoopAtFrame(sprite, frame, cb) {
+  sprite.onFrameChange = currentFrame => currentFrame === frame && cb()
+}

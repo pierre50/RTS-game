@@ -144,6 +144,14 @@
       "speed": 1.2,
       "icon": "037_50730",
       "quantity": 150
+    },
+    "Elephant": {
+      "lifeMax": 45,
+      "sight": 4,
+      "speed": 1,
+      "attack": 10,
+      "icon": "033_50730",
+      "quantity": 300
     }
   }
 }

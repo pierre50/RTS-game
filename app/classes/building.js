@@ -121,11 +121,13 @@ class Building extends Container {
                       break
                     case 'Granary':
                       if (unit.loading > 0) {
-                        if (unit.work === 'gatherer') {
+                        if (unit.work === 'gatherer' || unit.work === 'farmer' || unit.work === 'hunter') {
                           hasSendedVillager = true
                           unit.previousDest = null
                         }
                         unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
+                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
+                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
                       }
                       break
                     case 'TownCenter':
@@ -133,6 +135,7 @@ class Building extends Container {
                         if (
                           unit.work === 'gatherer' ||
                           unit.work === 'farmer' ||
+                          unit.work === 'hunter' ||
                           unit.work === 'woodcutter' ||
                           unit.work === 'stoneminer' ||
                           unit.work === 'goldminer'
@@ -140,8 +143,9 @@ class Building extends Container {
                           hasSendedVillager = true
                           unit.previousDest = null
                         }
-                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
                         unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
+                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
+                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
                         unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
                         unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
                         unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')

@@ -69,7 +69,7 @@ class Animal extends Container {
     sprite.interactive = false
     sprite.allowClick = false
     sprite.roundPixels = true
-    
+
     this.on('pointerup', () => {
       const {
         context: { controls, player, menu },
@@ -194,7 +194,7 @@ class Animal extends Container {
     if (!dest) {
       return false
     }
-    // Unit is already beside our target
+    // Animal is already beside our target
     if (action && instanceContactInstance(this, dest)) {
       this.setDest(dest)
       this.action = action
@@ -202,7 +202,7 @@ class Animal extends Container {
       this.getAction(action)
       return true
     }
-    // Set unit path
+    // Set animal path
     if (this.parent.grid[dest.i] && this.parent.grid[dest.i][dest.j] && this.parent.grid[dest.i][dest.j].solid) {
       path = getInstanceClosestFreeCellPath(this, dest, map)
       if (!path.length && this.work) {
@@ -213,7 +213,7 @@ class Animal extends Container {
     } else {
       path = getInstancePath(this, dest.i, dest.j, map)
     }
-    // Unit found a path, set the action and play walking animation
+    // Animal found a path, set the action and play walking animation
     if (path.length) {
       this.setDest(dest)
       this.action = action
@@ -266,14 +266,19 @@ class Animal extends Container {
           if (this.dest.life > 0) {
             this.dest.life -= this.attack
             if (this.dest.selected && player && player.selectedUnit === this.dest) {
-              menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
+              menu.updateInfo(
+                'life',
+                element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+              )
             }
             if (this.dest.name === 'building') {
               this.dest.updateLife(this.action)
             } else {
               this.dest.isAttacked(this)
             }
-          } else {
+          }
+
+          if (this.dest.life <= 0) {
             this.dest.die()
             this.affectNewDest()
           }
@@ -485,6 +490,11 @@ class Animal extends Container {
   }
 
   clear() {
+    const {
+      context: { player },
+    } = this
+    this.parent.grid[this.i][this.j].has = null
+    this.parent.grid[this.i][this.j].solid = false
     if (this.parent) {
       this.parent.removeChild(this)
     }
@@ -492,8 +502,6 @@ class Animal extends Container {
       player.unselectAll()
     }
     clearCellOnInstanceSight(this)
-    this.parent.grid[this.i][this.j].has = null
-    this.parent.grid[this.i][this.j].solid = false
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
   }
@@ -608,16 +616,44 @@ export class Gazelle extends Animal {
         attack: data.attack * accelerator,
         quantity: data.quantity,
         standingSheet: Assets.cache.get('479'),
+        walkingSheet: Assets.cache.get('478'),
+        runningSheet: Assets.cache.get('480'),
+        dyingSheet: Assets.cache.get('331'),
+        corpseSheet: Assets.cache.get('392'),
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+}
+
+export class Elephant extends Animal {
+  constructor({ i, j, owner }, context) {
+    const type = 'Elephant'
+    const data = Assets.cache.get('config').animals[type]
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        lifeMax: data.lifeMax,
+        sight: data.sight,
+        speed: data.speed * accelerator,
+        attack: data.attack * accelerator,
+        quantity: data.quantity,
+        actionSheet: Assets.cache.get('479'),
+        standingSheet: Assets.cache.get('479'),
         walkingSheet: Assets.cache.get('480'),
         dyingSheet: Assets.cache.get('331'),
         corpseSheet: Assets.cache.get('392'),
         interface: {
           info: element => {
-            const { owner } = this
             this.setDefaultInterface(element, data)
-            if (owner.isPlayed) {
-              element.appendChild(this.getLoadingElement())
-            }
           },
         },
       },
@@ -628,4 +664,5 @@ export class Gazelle extends Animal {
 
 export default {
   Gazelle,
+  Elephant,
 }

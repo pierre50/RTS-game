@@ -2,7 +2,7 @@ import { Container, Assets, Sprite } from 'pixi.js'
 import { Grass, Water, Desert, Jungle } from './cell'
 import { Tree, Berrybush, Stone, Gold } from './resource'
 import { Human, AI, Gaia } from './player'
-import { Gazelle } from './animal'
+import { Elephant, Gazelle } from './animal'
 
 import {
   randomRange,
@@ -174,12 +174,10 @@ export default class Map extends Container {
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 'close', 5)
-      this.placeResourceGroup(playersPos[i], 'Stone', 'close', 5)
-      this.placeResourceGroup(playersPos[i], 'Gold', 'close', 5)
-      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
-      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
-      this.placeResourceGroup(playersPos[i], 'Tree', 'far', 20)
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 5)
+      this.placeResourceGroup(playersPos[i], 'Stone', 5)
+      this.placeResourceGroup(playersPos[i], 'Gold', 5)
+      this.placeResourceGroup(playersPos[i], 'Tree', 20)
     }
   }
 
@@ -255,7 +253,7 @@ export default class Map extends Container {
                 cell.addChild(rock)
                 break
               case 'animal':
-                new Gazelle({ i, j, owner: this.gaia }, this.context)
+                new Elephant({ i, j, owner: this.gaia }, this.context)
                 break
             }
           }
@@ -572,7 +570,7 @@ export default class Map extends Container {
     return results
   }
 
-  placeResourceGroup(player, instance, distance, quantity) {
+  placeResourceGroup(player, instance, quantity) {
     const { context, grid } = this
     const resources = {
       Tree,
@@ -580,21 +578,8 @@ export default class Map extends Container {
       Stone,
       Gold,
     }
-    let cartesianDistance
-    switch (distance) {
-      case 'close':
-        cartesianDistance = [7, 15]
-        break
-      default:
-        cartesianDistance = [7, 15]
-    }
-    const pos = getPositionInGridAroundInstance(
-      player,
-      this.grid,
-      cartesianDistance,
-      3,
-      false
-    )
+    const cartesianDistance = [10, 25]
+    const pos = getPositionInGridAroundInstance(player, this.grid, cartesianDistance, 3, false)
     if (pos) {
       let cpt = 0
       const max = quantity

@@ -18,7 +18,8 @@ export const colorViolet = 0xee82ee
 export const colorBone = 0xe2dac2
 export const colorShipgrey = 0x3c3b3d
 
-export const colorArrow = 0xb8b0ad
+//export const colorArrow = 0xb8b0ad
+export const colorArrow = 0xFF0000
 
 export const colorGrass = '#647B2F'
 export const colorWater = '#17277B'

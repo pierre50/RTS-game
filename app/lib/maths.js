@@ -185,3 +185,23 @@ export function pointInRectangle(x, y, left, top, width, height, allDirection = 
 export function cellIsDiag(src, target) {
   return Math.abs(target.i - src.i) === Math.abs(target.j - src.j)
 }
+
+export function degreeToDirection(degree) {
+  if (degree > 67.5 && degree < 112.5) {
+    return 'north'
+  } else if (degree > 247.5 && degree < 292.5) {
+    return 'south'
+  } else if (degree > 337.5 || degree < 22.5) {
+    return 'west'
+  } else if (degree >= 22.5 && degree <= 67.5) {
+    return 'northwest'
+  } else if (degree >= 292.5 && degree <= 337.5) {
+    return 'southwest'
+  } else if (degree > 157.5 && degree < 202.5) {
+    return 'est'
+  } else if (degree > 112.5 && degree < 157.5) {
+    return 'northest'
+  } else if (degree > 202.5 && degree < 247.5) {
+    return 'southest'
+  }
+}
