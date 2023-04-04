@@ -62,7 +62,7 @@ class Projectile extends Container {
   }
 
   die() {
-    this.isDestroyed = true
+    this.isDead = true
     this.destroy({ child: true, texture: true })
   }
 }

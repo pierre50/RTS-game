@@ -1,5 +1,5 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime } from '../constants'
+import { accelerator, stepTime, corpseTime } from '../constants'
 import * as projectiles from './projectile'
 import {
   getInstanceZIndex,
@@ -63,6 +63,8 @@ class Unit extends Container {
     this.currentCell = map.grid[this.i][this.j]
     this.currentCell.has = this
     this.currentCell.solid = true
+    this.isDead = false
+    this.isDestroyed = false
 
     this.life = this.lifeMax
     this.originalSpeed = this.speed
@@ -209,7 +211,7 @@ class Unit extends Container {
       return true
     }
     // Set unit path
-    if (this.parent.grid[dest.i] && this.parent.grid[dest.i][dest.j] && this.parent.grid[dest.i][dest.j].solid) {
+    if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
       path = getInstanceClosestFreeCellPath(this, dest, map)
       if (!path.length && this.work) {
         this.action = action
@@ -230,14 +232,15 @@ class Unit extends Container {
     return false
   }
 
-  getActionCondition(target) {
-    const { action, owner } = this
+  getActionCondition(target, action = this.action) {
+    const { owner } = this
     if (!action) {
       return
     }
     const conditions = {
-      takemeat: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDestroyed,
-      hunt: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDestroyed,
+      takemeat: instance =>
+        instance && instance.name === 'animal' && instance.quantity > 0 && instance.isDead && !instance.isDestroyed,
+      hunt: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDead,
       chopwood: instance => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
       farm: instance =>
         instance &&
@@ -245,7 +248,7 @@ class Unit extends Container {
         instance.life > 0 &&
         instance.quantity > 0 &&
         (!instance.isUsedBy || instance.isUsedBy === this) &&
-        !instance.isDestroyed,
+        !instance.isDead,
       forageberry: instance =>
         instance && instance.type === 'Berrybush' && instance.quantity > 0 && !instance.isDestroyed,
       minestone: instance => instance && instance.type === 'Stone' && instance.quantity > 0 && !instance.isDestroyed,
@@ -256,13 +259,13 @@ class Unit extends Container {
         instance.name === 'building' &&
         instance.life > 0 &&
         (!instance.isBuilt || instance.life < instance.lifeMax) &&
-        !instance.isDestroyed,
+        !instance.isDead,
       attack: instance =>
         instance &&
         instance.owner !== owner &&
         (instance.name === 'building' || instance.name === 'unit' || instance.name === 'animal') &&
         instance.life > 0 &&
-        !instance.isDestroyed,
+        !instance.isDead,
     }
     return conditions[action] ? conditions[action](target) : this.stop()
   }
@@ -754,53 +757,93 @@ class Unit extends Container {
     }
   }
 
-  affectNewDest() {
-    const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
-    if (targets.length) {
-      const target = getClosestInstanceWithPath(this, targets)
+  handleAffectNewDestHunter() {
+    const firstTargets = findInstancesInSight(this, instance => this.getActionCondition(instance, 'takemeat'))
+    if (firstTargets.length) {
+      const target = getClosestInstanceWithPath(this, firstTargets)
       if (target) {
-        if (this.action === 'takemeat' && !target.isDead) {
-          this.action = 'hunt'
-          this.work = 'hunter'
-          this.actionSheet = Assets.cache.get('624')
-          this.standingSheet = Assets.cache.get('418')
-          this.walkingSheet = Assets.cache.get('657')
+        if (this.action !== 'takemeat') {
+          this.action = 'takemeat'
+          this.actionSheet = Assets.cache.get('626')
         }
         if (instanceContactInstance(this, target)) {
           this.degree = getInstanceDegree(this, target.x, target.y)
           this.getAction(this.action)
-          return
+          return true
         }
         this.setDest(target.instance)
         this.setPath(target.path)
-        return
+        return true
       }
     }
-    if (this.loading) {
-      switch (this.work) {
-        case 'farm':
-          this.sendToDelivery('Granary', 'deliveryfood')
-          return
-        case 'woodcutter':
-          this.sendToDelivery('StoragePit', 'deliverywood')
-          return
-        case 'gatherer':
-          this.sendToDelivery('Granary', 'deliveryberry')
-          return
-        case 'hunter':
-        case 'takemeat':
-          this.sendToDelivery('StoragePit', 'deliverymeat')
-          return
-        case 'stoneminer':
-          this.sendToDelivery('StoragePit', 'deliverystone')
-          return
-        case 'goldminer':
-          this.sendToDelivery('StoragePit', 'deliverygold')
-          return
+    const secondTargets = findInstancesInSight(this, instance => this.getActionCondition(instance, 'hunt'))
+    if (secondTargets.length) {
+      const target = getClosestInstanceWithPath(this, secondTargets)
+      if (target) {
+        if (this.action !== 'hunt') {
+          this.action = 'hunt'
+          this.actionSheet = Assets.cache.get('624')
+        }
+        if (instanceContactInstance(this, target)) {
+          this.degree = getInstanceDegree(this, target.x, target.y)
+          this.getAction(this.action)
+          return true
+        }
+        this.setDest(target.instance)
+        this.setPath(target.path)
+        return true
       }
     }
-    this.stop()
-    return
+    return false
+  }
+
+  affectNewDest() {
+    let handleSuccess = false
+    if (this.type === 'Villager' && (this.action === 'takemeat' || this.action === 'hunt')) {
+      handleSuccess = this.handleAffectNewDestHunter()
+    } else {
+      const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
+      if (targets.length) {
+        const target = getClosestInstanceWithPath(this, targets)
+        if (target) {
+          if (instanceContactInstance(this, target)) {
+            this.degree = getInstanceDegree(this, target.x, target.y)
+            this.getAction(this.action)
+            return
+          }
+          this.setDest(target.instance)
+          this.setPath(target.path)
+          return
+        }
+      }
+    }
+    if (!handleSuccess) {
+      if (this.loading) {
+        switch (this.work) {
+          case 'farm':
+            this.sendToDelivery('Granary', 'deliveryfood')
+            return
+          case 'woodcutter':
+            this.sendToDelivery('StoragePit', 'deliverywood')
+            return
+          case 'gatherer':
+            this.sendToDelivery('Granary', 'deliveryberry')
+            return
+          case 'hunter':
+          case 'takemeat':
+            this.sendToDelivery('StoragePit', 'deliverymeat')
+            return
+          case 'stoneminer':
+            this.sendToDelivery('StoragePit', 'deliverystone')
+            return
+          case 'goldminer':
+            this.sendToDelivery('StoragePit', 'deliverygold')
+            return
+        }
+      }
+      this.stop()
+      return
+    }
   }
 
   isUnitAtDest(action, dest) {
@@ -825,8 +868,11 @@ class Unit extends Container {
   }
 
   moveToPath() {
+    const {
+      context: { map },
+    } = this
     const next = this.path[this.path.length - 1]
-    const nextCell = this.parent.grid[next.i][next.j]
+    const nextCell = map.grid[next.i][next.j]
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
       return
@@ -868,7 +914,7 @@ class Unit extends Container {
         this.currentCell.has = null
         this.currentCell.solid = false
       }
-      this.currentCell = this.parent.grid[this.i][this.j]
+      this.currentCell = map.grid[this.i][this.j]
       if (this.currentCell.has === null) {
         this.currentCell.has = this
         this.currentCell.solid = true
@@ -971,9 +1017,12 @@ class Unit extends Container {
   }
 
   explore() {
+    const {
+      context: { map },
+    } = this
     let dest
     for (let i = 3; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, this.parent.grid, i, cell => {
+      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
         if (!this.owner.views[cell.i][cell.j].viewed && !cell.solid) {
           dest = this.owner.views[cell.i][cell.j]
           return
@@ -987,9 +1036,12 @@ class Unit extends Container {
   }
 
   runaway() {
+    const {
+      context: { map },
+    } = this
     let dest
     for (let i = 5; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, this.parent.grid, i, cell => {
+      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
         if (!cell.solid) {
           dest = this.owner.views[cell.i][cell.j]
           return
@@ -1023,16 +1075,7 @@ class Unit extends Container {
       return
     }
     sprite.onLoop = () => {
-      const direction = degreeToDirection(this.degree)
-      const corpse = new AnimatedSprite(this.corpseSheet.animations[direction])
-      corpse.x = this.x
-      corpse.y = this.y
-      corpse.name = 'corpse'
-      corpse.allowMove = false
-      corpse.interactive = false
-      corpse.allowClick = false
-      corpse.roundPixels = true
-      map.addChild(corpse)
+      this.unselect()
 
       if (this.owner) {
         this.owner.population--
@@ -1052,13 +1095,26 @@ class Unit extends Container {
 
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].solid = false
-      map.removeChild(this)
 
+      this.interactive = false
+      this.isDead = true
       clearCellOnInstanceSight(this)
-      this.isDestroyed = true
-      this.destroy({ child: true, texture: true })
       clearInterval(this.interval)
+
+      this.setTextures('corpseSheet')
+      sprite.animationSpeed = corpseTime * accelerator
+      sprite.onLoop = () => {
+        this.clear()
+      }
     }
+  }
+
+  clear() {
+    const {
+      context: { map },
+    } = this
+    map.removeChild(this)
+    this.destroy({ child: true, texture: true })
   }
 
   setTextures(sheet) {
@@ -1268,6 +1324,9 @@ export class Villager extends Unit {
   }
 
   sendToDelivery(type, action) {
+    const {
+      context: { map },
+    } = this
     const targets = this.owner.buildings.filter(building => {
       return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === type)
     })
@@ -1275,7 +1334,7 @@ export class Villager extends Unit {
     if (this.dest) {
       this.previousDest = this.dest
     } else {
-      this.previousDest = this.parent.grid[this.i][this.j]
+      this.previousDest = map.grid[this.i][this.j]
     }
     this.sendTo(target, action)
   }

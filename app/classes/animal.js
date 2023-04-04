@@ -1,5 +1,5 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime } from '../constants'
+import { accelerator, stepTime, corpseTime } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -56,6 +56,7 @@ class Animal extends Container {
     this.currentCell.has = this
     this.currentCell.solid = true
     this.isDead = false
+    this.isDestroyed = false
 
     this.life = this.lifeMax
     this.originalSpeed = this.speed
@@ -77,9 +78,7 @@ class Animal extends Container {
       if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
-
       controls.mouse.prevent = true
-
       let drawDestinationRectangle = false
       if (player.selectedUnits.length) {
         for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -206,7 +205,7 @@ class Animal extends Container {
       return true
     }
     // Set animal path
-    if (this.parent.grid[dest.i] && this.parent.grid[dest.i][dest.j] && this.parent.grid[dest.i][dest.j].solid) {
+    if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
       path = getInstanceClosestFreeCellPath(this, dest, map)
       if (!path.length && this.work) {
         this.action = action
@@ -324,8 +323,11 @@ class Animal extends Container {
   }
 
   moveToPath() {
+    const {
+      context: { map },
+    } = this
     const next = this.path[this.path.length - 1]
-    const nextCell = this.parent.grid[next.i][next.j]
+    const nextCell = map.grid[next.i][next.j]
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
       return
@@ -367,7 +369,7 @@ class Animal extends Container {
         this.currentCell.has = null
         this.currentCell.solid = false
       }
-      this.currentCell = this.parent.grid[this.i][this.j]
+      this.currentCell = map.grid[this.i][this.j]
       if (this.currentCell.has === null) {
         this.currentCell.has = this
         this.currentCell.solid = true
@@ -448,9 +450,12 @@ class Animal extends Container {
   }
 
   runaway() {
+    const {
+      context: { map },
+    } = this
     let dest
     for (let i = 5; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, this.parent.grid, i, cell => {
+      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
         if (!cell.solid) {
           dest = this.owner.views[cell.i][cell.j]
           return
@@ -476,10 +481,11 @@ class Animal extends Container {
       return
     }
     sprite.onLoop = () => {
-      if (this.parent) {
-        this.owner.population--
-        this.setTextures('corpseSheet')
-        sprite.animationSpeed = 0
+      this.owner.population--
+      this.setTextures('corpseSheet')
+      sprite.animationSpeed = corpseTime * accelerator
+      sprite.onLoop = () => {
+        this.clear()
       }
     }
     clearInterval(this.interval)
@@ -487,13 +493,11 @@ class Animal extends Container {
 
   clear() {
     const {
-      context: { player },
+      context: { player, map },
     } = this
-    this.parent.grid[this.i][this.j].has = null
-    this.parent.grid[this.i][this.j].solid = false
-    if (this.parent) {
-      this.parent.removeChild(this)
-    }
+    map.grid[this.i][this.j].has = null
+    map.grid[this.i][this.j].solid = false
+    map.removeChild(this)
     if (this.selected && player) {
       player.unselectAll()
     }

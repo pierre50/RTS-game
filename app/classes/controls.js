@@ -263,6 +263,10 @@ export default class Controls extends Container {
           pointer.anchor.set(0.5, 0.5)
           pointer.x = this.mouse.x
           pointer.y = this.mouse.y
+          pointer.allowMove = false
+          pointer.allowClick = false
+          pointer.interactive = false
+          pointer.roundPixels = true
           pointer.onComplete = () => {
             pointer.destroy()
           }

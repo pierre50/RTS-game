@@ -2,7 +2,7 @@ import { Container, Assets, Sprite } from 'pixi.js'
 import { Grass, Water, Desert, Jungle } from './cell'
 import { Tree, Berrybush, Stone, Gold } from './resource'
 import { Human, AI, Gaia } from './player'
-import { Elephant, Gazelle } from './animal'
+import { Elephant, Lion, Gazelle } from './animal'
 
 import {
   randomRange,
@@ -41,7 +41,7 @@ export default class Map extends Container {
 
     this.x = 0
     this.y = 0
-    this.startingUnits = 3
+    this.startingUnits = 5
 
     this.players = []
     this.gaia = null
@@ -253,7 +253,7 @@ export default class Map extends Container {
                 cell.addChild(rock)
                 break
               case 'animal':
-                new Elephant({ i, j, owner: this.gaia }, this.context)
+                new Lion({ i, j, owner: this.gaia }, this.context)
                 break
             }
           }

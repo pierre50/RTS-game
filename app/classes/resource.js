@@ -34,6 +34,7 @@ class resource extends Container {
     map.grid[this.i][this.j].has = this
     this.selected = false
     this.visible = false
+    this.isDestroyed = false
 
     this.life = this.lifeMax
 

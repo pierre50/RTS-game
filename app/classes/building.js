@@ -38,6 +38,8 @@ class Building extends Container {
     this.selected = false
     this.queue = []
     this.loading = null
+    this.isDead = false
+    this.isDestroyed = false
     if (!map.revealEverything) {
       this.visible = false
     }
@@ -275,6 +277,9 @@ class Building extends Container {
       } else {
         const newFire = new Container()
         newFire.name = 'fire'
+        newFire.allowMove = false
+        newFire.allowClick = false
+        newFire.interactive = false
         let poses = [[0, 0]]
         if (building.size === 3) {
           poses = [
@@ -286,6 +291,10 @@ class Building extends Container {
         }
         for (let i = 0; i < poses.length; i++) {
           const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+          spriteFire.allowMove = false
+          spriteFire.allowClick = false
+          spriteFire.interactive = false
+          spriteFire.roundPixels = true
           spriteFire.x = poses[i][0]
           spriteFire.y = poses[i][1]
           spriteFire.play()
@@ -776,6 +785,10 @@ export class House extends Building {
     const spritesheetFire = Assets.cache.get('347')
     const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
     spriteFire.name = 'deco'
+    spriteFire.allowMove = false
+    spriteFire.allowClick = false
+    spriteFire.interactive = false
+    spriteFire.roundPixels = true
     spriteFire.x = 10
     spriteFire.y = 5
     spriteFire.play()
