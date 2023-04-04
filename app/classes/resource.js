@@ -107,9 +107,9 @@ class resource extends Container {
     }
 
     // Remove from map resources
-    let index = this.map.resources.indexOf(this)
+    let index = map.resources.indexOf(this)
     if (index >= 0) {
-      this.map.resources.splice(index, 1)
+      map.resources.splice(index, 1)
     }
     menu.updateResourcesMiniMap()
     map.grid[this.i][this.j].has = null

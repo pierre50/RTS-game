@@ -44,6 +44,8 @@ export default class Menu {
     this.bottombarInfo.className = 'bottombar-info'
     this.bottombarMenu = document.createElement('div')
     this.bottombarMenu.className = 'bottombar-menu'
+    const bottombarMapWrap = document.createElement('div')
+    bottombarMapWrap.className = 'bottombar-map-wrap'
     this.bottombarMap = document.createElement('div')
     this.bottombarMap.className = 'bottombar-map'
     this.bottombarMap.addEventListener('pointerup', evt => {
@@ -57,6 +59,8 @@ export default class Menu {
       controls.clearInstancesOnScreen()
       controls.setCamera(x, y)
     })
+    bottombarMapWrap.appendChild(this.bottombarMap)
+
     this.terrainMinimap = document.createElement('canvas')
     this.playersMinimap = []
     this.resourcesMinimap = document.createElement('canvas')
@@ -68,7 +72,7 @@ export default class Menu {
     this.bottombarMap.appendChild(this.cameraMinimap)
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
-    this.bottombar.appendChild(this.bottombarMap)
+    this.bottombar.appendChild(bottombarMapWrap)
     document.body.appendChild(this.bottombar)
 
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
@@ -328,19 +332,17 @@ export default class Menu {
     }
     if (selection && selection.interface) {
       this.generateInfo(selection)
-      if (selection.name === 'building') {
-        if (!selection.isBuilt) {
-          setMenuRecurs(selection, this.bottombarMenu, [])
-          return
-        }
+      if (selection.name === 'building' && !selection.isBuilt) {
+        setMenuRecurs(selection, this.bottombarMenu, [])
+      } else {
+        setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || [])
       }
-      setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || [])
     }
     function setMenuRecurs(selection, element, menu, parent) {
-      menu.forEach(btn => {
+      menu.forEach((btn, index) => {
         const box = document.createElement('div')
         box.className = 'bottombar-menu-box'
-        box.id = btn.id
+        box.id = btn.id || `btn-${index}`
         if (typeof btn.onCreate === 'function') {
           btn.onCreate(selection, box)
         } else {
@@ -452,6 +454,7 @@ export default class Menu {
     const building = Assets.cache.get('config').buildings[player.civ][player.age][type]
     return {
       icon: getIconPath(building.icon),
+      id: type,
       onClick: () => {
         controls.removeMouseBuilding()
         if (canAfford(player, building.cost)) {

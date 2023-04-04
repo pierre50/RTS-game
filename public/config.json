@@ -48,7 +48,7 @@
         },
         "Granary": {
           "size": 3,
-          "sight": 5,
+          "sight": 4,
           "lifeMax": 350,
           "icon": "011_50705",
           "images": {
@@ -63,7 +63,7 @@
         },
         "StoragePit": {
           "size": 3,
-          "sight": 5,
+          "sight": 4,
           "lifeMax": 350,
           "icon": "028_50705",
           "images": {
@@ -78,7 +78,7 @@
         },
         "Farm": {
           "size": 3,
-          "sight": 5,
+          "sight": 3,
           "lifeMax": 50,
           "icon": "010_50705",
           "images": {
@@ -89,6 +89,36 @@
           },
           "cost": {
             "wood": 75
+          }
+        },
+        "Stable": {
+          "size": 3,
+          "sight": 4,
+          "lifeMax": 350,
+          "icon": "025_50705",
+          "images": {
+            "final": "000_447",
+            "build": "000_261",
+            "rubble": "000_155",
+            "color": "000_232"
+          },
+          "cost": {
+            "wood": 150
+          }
+        },
+        "ArcheryRange": {
+          "size": 3,
+          "sight": 4,
+          "lifeMax": 350,
+          "icon": "001_50705",
+          "images": {
+            "final": "000_447",
+            "build": "000_261",
+            "rubble": "000_155",
+            "color": "000_232"
+          },
+          "cost": {
+            "wood": 150
           }
         }
       }
@@ -102,6 +132,7 @@
       "trainingTime": 20,
       "icon": "000_50730",
       "attack": 3,
+      "range": 5,
       "cost": {
         "food": 30
       }
@@ -115,6 +146,30 @@
       "attack": 3,
       "cost": {
         "food": 50
+      }
+    },
+    "Scout": {
+      "lifeMax": 60,
+      "sight": 7,
+      "speed": 2,
+      "trainingTime": 30,
+      "icon": "031_50730",
+      "attack": 3,
+      "cost": {
+        "food": 90
+      }
+    },
+    "Bowman": {
+      "lifeMax": 35,
+      "sight": 7,
+      "speed": 1.2,
+      "trainingTime": 30,
+      "icon": "006_50730",
+      "attack": 3,
+      "range": 5,
+      "cost": {
+        "food": 40,
+        "wood": 20
       }
     }
   },
@@ -152,6 +207,22 @@
       "attack": 10,
       "icon": "033_50730",
       "quantity": 300
+    },
+    "Crocodile": {
+      "lifeMax": 20,
+      "sight": 5,
+      "speed": 0.5,
+      "attack": 4,
+      "icon": "041_50730",
+      "quantity": 100
+    },
+    "Lion": {
+      "lifeMax": 20,
+      "sight": 4,
+      "speed": 1.1,
+      "attack": 2,
+      "icon": "040_50730",
+      "quantity": 100
     }
   }
 }

@@ -1,6 +1,6 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator, stepTime } from '../constants'
-import { Arrow } from './projectile'
+import * as projectiles from './projectile'
 import {
   getInstanceZIndex,
   randomRange,
@@ -102,9 +102,7 @@ class Unit extends Container {
               playerUnit.sendTo(this, 'attack')
             }
           }
-          return
-        }
-        if (instanceIsInPlayerSight(unit, player) || map.revealEverything) {
+        } else if (instanceIsInPlayerSight(unit, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -622,20 +620,27 @@ class Unit extends Container {
             return
           }
           if (this.dest.life > 0) {
-            this.dest.life -= this.attack
-            if (
-              this.dest.selected &&
-              player &&
-              (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
-            ) {
-              menu.updateInfo(
-                'life',
-                element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+            if (this.projectile) {
+              const projectile = new projectiles[this.projectile](
+                {
+                  owner: this,
+                  target: this.dest,
+                },
+                this.context
               )
-            }
-            if (this.dest.name === 'building') {
-              this.dest.updateLife(this.action)
+              map.addChild(projectile)
             } else {
+              this.dest.life -= this.attack
+              if (
+                this.dest.selected &&
+                player &&
+                (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+              ) {
+                menu.updateInfo(
+                  'life',
+                  element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+                )
+              }
               this.dest.isAttacked(this)
             }
           }
@@ -674,7 +679,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('Granary', 'deliverymeat')
+            this.sendToDelivery('StoragePit', 'deliverymeat')
             return
           }
           // Villager take meat
@@ -726,14 +731,14 @@ class Unit extends Container {
             return
           }
           if (this.dest.life > 0) {
-            const arrow = new Arrow(
+            const projectile = new projectiles.Arrow(
               {
                 owner: this,
                 target: this.dest,
               },
               this.context
             )
-            map.addChild(arrow)
+            map.addChild(projectile)
           }
           if (this.dest.life <= 0) {
             if (!this.dest.isDead) {
@@ -773,9 +778,6 @@ class Unit extends Container {
     }
     if (this.loading) {
       switch (this.work) {
-        case 'hunter':
-          this.sendToDelivery('Granary', 'deliverymeat')
-          return
         case 'farm':
           this.sendToDelivery('Granary', 'deliveryfood')
           return
@@ -785,8 +787,9 @@ class Unit extends Container {
         case 'gatherer':
           this.sendToDelivery('Granary', 'deliveryberry')
           return
+        case 'hunter':
         case 'takemeat':
-          this.sendToDelivery('Granary', 'deliverymeat')
+          this.sendToDelivery('StoragePit', 'deliverymeat')
           return
         case 'stoneminer':
           this.sendToDelivery('StoragePit', 'deliverystone')
@@ -808,7 +811,7 @@ class Unit extends Container {
       this.affectNewDest()
       return false
     }
-    if (action === 'hunt' && instancesDistance(this, dest) < 7) {
+    if ((action === 'hunt' || action === 'attack') && this.range && instancesDistance(this, dest) < this.range) {
       return true
     }
     return instanceContactInstance(this, dest)
@@ -1007,7 +1010,7 @@ class Unit extends Container {
       return
     }
     if (this.selected && player) {
-      player.unselectAll()
+      player.unselectUnit(this)
     }
     if (this.dest && this.dest.isUsedBy === this) {
       this.dest.isUsedBy = null
@@ -1133,6 +1136,7 @@ export class Villager extends Unit {
         sight: data.sight,
         speed: data.speed * accelerator,
         attack: data.attack,
+        range: data.range,
         standingSheet: Assets.cache.get('418'),
         walkingSheet: Assets.cache.get('657'),
         dyingSheet: Assets.cache.get('314'),
@@ -1154,6 +1158,8 @@ export class Villager extends Unit {
                     menu.getBuildingButton('Granary'),
                     menu.getBuildingButton('StoragePit'),
                     menu.getBuildingButton('Farm'),
+                    menu.getBuildingButton('Stable'),
+                    menu.getBuildingButton('ArcheryRange'),
                   ],
                 },
               ]
@@ -1377,7 +1383,71 @@ export class Clubman extends Unit {
   }
 }
 
+export class Scout extends Unit {
+  constructor({ i, j, owner }, context) {
+    const type = 'Scout'
+    const data = Assets.cache.get('config').units[type]
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        lifeMax: data.lifeMax,
+        sight: data.sight,
+        speed: data.speed * accelerator,
+        attack: data.attack,
+        work: 'attacker',
+        standingSheet: Assets.cache.get('425'),
+        walkingSheet: Assets.cache.get('664'),
+        actionSheet: Assets.cache.get('212'),
+        dyingSheet: Assets.cache.get('321'),
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+}
+
+export class Bowman extends Unit {
+  constructor({ i, j, owner }, context) {
+    const type = 'Bowman'
+    const data = Assets.cache.get('config').units[type]
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        lifeMax: data.lifeMax,
+        sight: data.sight,
+        speed: data.speed * accelerator,
+        attack: data.attack,
+        range: data.range,
+        work: 'attacker',
+        projectile: 'Arrow',
+        standingSheet: Assets.cache.get('425'),
+        walkingSheet: Assets.cache.get('664'),
+        actionSheet: Assets.cache.get('212'),
+        dyingSheet: Assets.cache.get('321'),
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+}
+
 export default {
   Villager,
   Clubman,
+  Bowman,
+  Scout,
 }

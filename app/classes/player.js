@@ -1,6 +1,6 @@
 import { Assets } from 'pixi.js'
-import { Barracks, TownCenter, Farm, House, StoragePit, Granary } from './building'
-import { Villager, Clubman } from './unit'
+import * as buildings from './building'
+import * as units from './unit'
 import {
   getPlainCellsAroundPoint,
   canAfford,
@@ -96,10 +96,6 @@ class Player {
 
   createUnit(i, j, type) {
     const { context } = this
-    const units = {
-      Clubman,
-      Villager,
-    }
     const unit = new units[type]({ i, j, owner: this }, context)
     this.units.push(unit)
     context.menu.updatePlayerMiniMap(this)
@@ -108,14 +104,6 @@ class Player {
 
   createBuilding(i, j, type, isBuilt = false) {
     const { context } = this
-    const buildings = {
-      Barracks,
-      TownCenter,
-      House,
-      StoragePit,
-      Granary,
-      Farm,
-    }
     const building = new buildings[type]({ i, j, owner: this, isBuilt }, context)
     this.buildings.push(building)
     context.menu.updatePlayerMiniMap(this)
@@ -349,6 +337,33 @@ export class Human extends Player {
     this.selectedUnit = null
     this.selectedBuilding = null
     this.selectedOther = null
+  }
+
+  unselectUnit(unit) {
+    const {
+      context: { menu },
+    } = this
+    const index = this.selectedUnits.indexOf(unit)
+    this.selectedUnits.splice(index, 1)
+
+    if (!this.selectedUnits.length) {
+      this.selectedUnit = null
+      this.selectedUnits = []
+      menu.setBottombar()
+      return
+    }
+
+    let nextVillager
+    if (this.selectedUnit === unit) {
+      for (let i = 0; i < this.selectedUnits.length; i++) {
+        if (this.selectedUnits[i].type === 'Villager') {
+          nextVillager = this.selectedUnits[i].type
+          break
+        }
+      }
+    }
+    this.selectedUnit = nextVillager || this.selectedUnits[0]
+    menu.setBottombar(this.selectedUnit)
   }
 
   unselectAllUnits() {

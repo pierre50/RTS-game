@@ -94,41 +94,46 @@ class Building extends Container {
             }
           } else if (player.selectedUnits) {
             // Send Villager to give loading of resources
-            let hasSendedVillager = false
+            let hasSentVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === 'Villager') {
                 if (this.life < this.lifeMax) {
-                  hasSendedVillager = true
+                  hasSentVillager = true
                   unit.previousDest = null
                   unit.sendToBuilding(this)
                 } else {
                   switch (this.type) {
                     case 'Farm':
-                      hasSendedVillager = true
+                      hasSentVillager = true
                       unit.previousDest = null
                       unit.sendToFarm(this)
                       break
                     case 'StoragePit':
                       if (unit.loading > 0) {
-                        if (unit.work === 'woodcutter' || unit.work === 'stoneminer' || unit.work === 'goldminer') {
-                          hasSendedVillager = true
+                        if (
+                          unit.work === 'woodcutter' ||
+                          unit.work === 'stoneminer' ||
+                          unit.work === 'goldminer' ||
+                          unit.work === 'hunter'
+                        ) {
+                          hasSentVillager = true
                           unit.previousDest = null
                         }
                         unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
                         unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
                         unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')
+                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
                       }
                       break
                     case 'Granary':
                       if (unit.loading > 0) {
-                        if (unit.work === 'gatherer' || unit.work === 'farmer' || unit.work === 'hunter') {
-                          hasSendedVillager = true
+                        if (unit.work === 'gatherer' || unit.work === 'farmer') {
+                          hasSentVillager = true
                           unit.previousDest = null
                         }
                         unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
                         unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
-                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
                       }
                       break
                     case 'TownCenter':
@@ -141,7 +146,7 @@ class Building extends Container {
                           unit.work === 'stoneminer' ||
                           unit.work === 'goldminer'
                         ) {
-                          hasSendedVillager = true
+                          hasSentVillager = true
                           unit.previousDest = null
                         }
                         unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
@@ -156,7 +161,7 @@ class Building extends Container {
                 }
               }
             }
-            if (hasSendedVillager) {
+            if (hasSentVillager) {
               drawInstanceBlinkingSelection(this)
               return
             }
@@ -194,6 +199,10 @@ class Building extends Container {
         this.onBuilt()
       }
     }
+  }
+
+  isAttacked(instance){
+    this.updateLife('attack')
   }
 
   updateTexture() {
@@ -618,6 +627,98 @@ export class Barracks extends Building {
   }
 }
 
+export class Stable extends Building {
+  constructor({ i, j, owner, isBuilt = false }, context) {
+    const type = 'Stable'
+    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
+
+    // Define sprite
+    const texture = getTexture(data.images.build, Assets)
+    const sprite = Sprite.from(texture)
+    sprite.updateAnchor = true
+    sprite.name = 'sprite'
+    sprite.hitArea = new Polygon(texture.hitArea)
+
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        sprite,
+        size: data.size,
+        sight: data.sight,
+        isBuilt,
+        lifeMax: data.lifeMax,
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+          menu: owner.isPlayed ? [context.menu.getUnitButton('Scout')] : [],
+        },
+      },
+      context
+    )
+  }
+
+  finalTexture() {
+    const { owner, type } = this
+
+    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
+
+    const spriteColor = this.getChildByName('sprite')
+    spriteColor.texture = getTexture(data.images.final, Assets)
+    changeSpriteColor(spriteColor, owner.color)
+    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
+  }
+}
+
+export class ArcheryRange extends Building {
+  constructor({ i, j, owner, isBuilt = false }, context) {
+    const type = 'ArcheryRange'
+    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
+
+    // Define sprite
+    const texture = getTexture(data.images.build, Assets)
+    const sprite = Sprite.from(texture)
+    sprite.updateAnchor = true
+    sprite.name = 'sprite'
+    sprite.hitArea = new Polygon(texture.hitArea)
+
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        sprite,
+        size: data.size,
+        sight: data.sight,
+        isBuilt,
+        lifeMax: data.lifeMax,
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+          menu: owner.isPlayed ? [context.menu.getUnitButton('Bowman')] : [],
+        },
+      },
+      context
+    )
+  }
+
+  finalTexture() {
+    const { owner, type } = this
+
+    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
+
+    const spriteColor = this.getChildByName('sprite')
+    spriteColor.texture = getTexture(data.images.final, Assets)
+    changeSpriteColor(spriteColor, owner.color)
+    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
+  }
+}
+
 export class House extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
     const type = 'House'
@@ -849,4 +950,5 @@ export default {
   StoragePit,
   Granary,
   Farm,
+  Stable
 }

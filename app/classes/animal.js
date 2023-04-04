@@ -80,11 +80,12 @@ class Animal extends Container {
 
       controls.mouse.prevent = true
 
+      let drawDestinationRectangle = false
       if (player.selectedUnits.length) {
-        drawInstanceBlinkingSelection(this)
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
           if (!this.isDead) {
+            drawDestinationRectangle = true
             if (playerUnit.type === 'Villager') {
               playerUnit.sendToHunt(this)
             } else {
@@ -93,12 +94,14 @@ class Animal extends Container {
           } else {
             if (playerUnit.type === 'Villager') {
               playerUnit.sendToTakeMeat(this)
+              drawDestinationRectangle = true
             }
           }
         }
-        return
-      }
-      if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+        if (drawDestinationRectangle) {
+          drawInstanceBlinkingSelection(this)
+        }
+      } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
@@ -279,11 +282,7 @@ class Animal extends Container {
                 element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
               )
             }
-            if (this.dest.name === 'building') {
-              this.dest.updateLife(this.action)
-            } else {
-              this.dest.isAttacked(this)
-            }
+            this.dest.isAttacked(this)
           }
 
           if (this.dest.life <= 0) {
@@ -659,7 +658,71 @@ export class Elephant extends Animal {
   }
 }
 
+export class Lion extends Animal {
+  constructor({ i, j, owner }, context) {
+    const type = 'Lion'
+    const data = Assets.cache.get('config').animals[type]
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        lifeMax: data.lifeMax,
+        sight: data.sight,
+        speed: data.speed * accelerator,
+        attack: data.attack,
+        quantity: data.quantity,
+        actionSheet: Assets.cache.get('479'),
+        standingSheet: Assets.cache.get('479'),
+        walkingSheet: Assets.cache.get('480'),
+        dyingSheet: Assets.cache.get('331'),
+        corpseSheet: Assets.cache.get('392'),
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+}
+
+export class Crocodile extends Animal {
+  constructor({ i, j, owner }, context) {
+    const type = 'Crocodile'
+    const data = Assets.cache.get('config').animals[type]
+    super(
+      {
+        i,
+        j,
+        owner,
+        type,
+        lifeMax: data.lifeMax,
+        sight: data.sight,
+        speed: data.speed * accelerator,
+        attack: data.attack,
+        quantity: data.quantity,
+        actionSheet: Assets.cache.get('479'),
+        standingSheet: Assets.cache.get('479'),
+        walkingSheet: Assets.cache.get('480'),
+        dyingSheet: Assets.cache.get('331'),
+        corpseSheet: Assets.cache.get('392'),
+        interface: {
+          info: element => {
+            this.setDefaultInterface(element, data)
+          },
+        },
+      },
+      context
+    )
+  }
+}
+
 export default {
   Gazelle,
   Elephant,
+  Lion,
+  Crocodile,
 }
