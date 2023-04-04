@@ -642,11 +642,11 @@ export class Elephant extends Animal {
         speed: data.speed * accelerator,
         attack: data.attack,
         quantity: data.quantity,
-        actionSheet: Assets.cache.get('479'),
-        standingSheet: Assets.cache.get('479'),
-        walkingSheet: Assets.cache.get('480'),
+        actionSheet: Assets.cache.get('215'),
+        standingSheet: Assets.cache.get('428'),
+        walkingSheet: Assets.cache.get('667'),
         dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('392'),
+        corpseSheet: Assets.cache.get('386'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -673,11 +673,11 @@ export class Lion extends Animal {
         speed: data.speed * accelerator,
         attack: data.attack,
         quantity: data.quantity,
-        actionSheet: Assets.cache.get('479'),
-        standingSheet: Assets.cache.get('479'),
-        walkingSheet: Assets.cache.get('480'),
+        actionSheet: Assets.cache.get('222'),
+        standingSheet: Assets.cache.get('497'),
+        walkingSheet: Assets.cache.get('680'),
         dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('392'),
+        corpseSheet: Assets.cache.get('397'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -704,11 +704,11 @@ export class Crocodile extends Animal {
         speed: data.speed * accelerator,
         attack: data.attack,
         quantity: data.quantity,
-        actionSheet: Assets.cache.get('479'),
-        standingSheet: Assets.cache.get('479'),
-        walkingSheet: Assets.cache.get('480'),
-        dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('392'),
+        actionSheet: Assets.cache.get('217'),
+        standingSheet: Assets.cache.get('433'),
+        walkingSheet: Assets.cache.get('673'),
+        dyingSheet: Assets.cache.get('330'),
+        corpseSheet: Assets.cache.get('391'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)

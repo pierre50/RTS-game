@@ -201,7 +201,7 @@ class Building extends Container {
     }
   }
 
-  isAttacked(instance){
+  isAttacked(instance) {
     this.updateLife('attack')
   }
 
@@ -950,5 +950,6 @@ export default {
   StoragePit,
   Granary,
   Farm,
-  Stable
+  Stable,
+  ArcheryRange,
 }

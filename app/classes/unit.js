@@ -1004,7 +1004,7 @@ class Unit extends Container {
 
   die() {
     const {
-      context: { player },
+      context: { player, map },
     } = this
     if (this.currentSheet === 'dyingSheet') {
       return
@@ -1023,12 +1023,19 @@ class Unit extends Container {
       return
     }
     sprite.onLoop = () => {
-      if (this.parent) {
+      const direction = degreeToDirection(this.degree)
+      const corpse = new AnimatedSprite(this.corpseSheet.animations[direction])
+      corpse.x = this.x
+      corpse.y = this.y
+      corpse.name = 'corpse'
+      corpse.allowMove = false
+      corpse.interactive = false
+      corpse.allowClick = false
+      corpse.roundPixels = true
+      map.addChild(corpse)
+
+      if (this.owner) {
         this.owner.population--
-
-        this.parent.grid[this.i][this.j].has = null
-        this.parent.grid[this.i][this.j].solid = false
-
         // Remove from player units
         let index = this.owner.units.indexOf(this)
         if (index >= 0) {
@@ -1041,8 +1048,12 @@ class Unit extends Container {
             this.owner.selectedUnits.splice(index, 1)
           }
         }
-        this.parent.removeChild(this)
       }
+
+      map.grid[this.i][this.j].has = null
+      map.grid[this.i][this.j].solid = false
+      map.removeChild(this)
+
       clearCellOnInstanceSight(this)
       this.isDestroyed = true
       this.destroy({ child: true, texture: true })
@@ -1140,6 +1151,7 @@ export class Villager extends Unit {
         standingSheet: Assets.cache.get('418'),
         walkingSheet: Assets.cache.get('657'),
         dyingSheet: Assets.cache.get('314'),
+        corpseSheet: Assets.cache.get('373'),
         interface: {
           info: element => {
             const { owner } = this
@@ -1228,6 +1240,8 @@ export class Villager extends Unit {
       this.standingSheet = Assets.cache.get('435')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('676')
+        this.dyingSheet = Assets.cache.get('332')
+        this.corpseSheet = Assets.cache.get('389')
       }
     }
     this.previousDest = null
@@ -1245,6 +1259,8 @@ export class Villager extends Unit {
       this.standingSheet = Assets.cache.get('435')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('676')
+        this.dyingSheet = Assets.cache.get('332')
+        this.corpseSheet = Assets.cache.get('389')
       }
     }
     this.previousDest = null
@@ -1272,6 +1288,8 @@ export class Villager extends Unit {
       this.standingSheet = Assets.cache.get('419')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('658')
+        this.dyingSheet = Assets.cache.get('315')
+        this.corpseSheet = Assets.cache.get('374')
       }
     }
     this.previousDest = null
@@ -1287,9 +1305,10 @@ export class Villager extends Unit {
       this.work = 'farmer'
       this.actionSheet = Assets.cache.get('630')
       this.standingSheet = Assets.cache.get('430')
-      this.dyingSheet = Assets.cache.get('326')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('670')
+        this.dyingSheet = Assets.cache.get('326')
+        this.corpseSheet = Assets.cache.get('388')
       }
     }
     this.previousDest = null
@@ -1304,6 +1323,7 @@ export class Villager extends Unit {
       this.actionSheet = Assets.cache.get('625')
       this.standingSheet = Assets.cache.get('440')
       this.walkingSheet = Assets.cache.get('682')
+      this.corpseSheet = Assets.cache.get('399')
     }
     this.previousDest = null
     return this.sendTo(tree, 'chopwood')
@@ -1320,6 +1340,8 @@ export class Villager extends Unit {
       this.standingSheet = Assets.cache.get('432')
       if (!this.loading) {
         this.walkingSheet = Assets.cache.get('672')
+        this.dyingSheet = Assets.cache.get('328')
+        this.corpseSheet = Assets.cache.get('390')
       }
     }
     this.previousDest = null
@@ -1334,6 +1356,7 @@ export class Villager extends Unit {
       this.actionSheet = Assets.cache.get('633')
       this.standingSheet = Assets.cache.get('441')
       this.walkingSheet = Assets.cache.get('683')
+      this.corpseSheet = Assets.cache.get('400')
     }
     this.previousDest = null
     return this.sendTo(stone, 'minestone')
@@ -1347,6 +1370,7 @@ export class Villager extends Unit {
       this.actionSheet = Assets.cache.get('633')
       this.standingSheet = Assets.cache.get('441')
       this.walkingSheet = Assets.cache.get('683')
+      this.corpseSheet = Assets.cache.get('400')
     }
     this.previousDest = null
     return this.sendTo(gold, 'minegold')
@@ -1372,6 +1396,7 @@ export class Clubman extends Unit {
         walkingSheet: Assets.cache.get('664'),
         actionSheet: Assets.cache.get('212'),
         dyingSheet: Assets.cache.get('321'),
+        corpseSheet: Assets.cache.get('380'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -1398,10 +1423,11 @@ export class Scout extends Unit {
         speed: data.speed * accelerator,
         attack: data.attack,
         work: 'attacker',
-        standingSheet: Assets.cache.get('425'),
-        walkingSheet: Assets.cache.get('664'),
-        actionSheet: Assets.cache.get('212'),
-        dyingSheet: Assets.cache.get('321'),
+        standingSheet: Assets.cache.get('445'),
+        walkingSheet: Assets.cache.get('651'),
+        actionSheet: Assets.cache.get('227'),
+        dyingSheet: Assets.cache.get('343'),
+        corpseSheet: Assets.cache.get('403'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -1430,10 +1456,11 @@ export class Bowman extends Unit {
         range: data.range,
         work: 'attacker',
         projectile: 'Arrow',
-        standingSheet: Assets.cache.get('425'),
-        walkingSheet: Assets.cache.get('664'),
-        actionSheet: Assets.cache.get('212'),
-        dyingSheet: Assets.cache.get('321'),
+        standingSheet: Assets.cache.get('413'),
+        walkingSheet: Assets.cache.get('652'),
+        actionSheet: Assets.cache.get('203'),
+        dyingSheet: Assets.cache.get('308'),
+        corpseSheet: Assets.cache.get('367'),
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
