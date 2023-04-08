@@ -1,5 +1,5 @@
-import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime } from '../constants'
+import { Container, AnimatedSprite, Graphics } from 'pixi.js'
+import { accelerator, stepTime, corpseTime } from '../../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -17,9 +17,10 @@ import {
   getClosestInstanceWithPath,
   getCellsAroundPoint,
   instanceIsInPlayerSight,
-} from '../lib'
+  getActionCondition,
+} from '../../lib'
 
-class Animal extends Container {
+export class Animal extends Container {
   constructor(options, context) {
     super()
 
@@ -83,28 +84,34 @@ class Animal extends Container {
       if (player.selectedUnits.length) {
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
-          if (!this.isDead) {
+          if (getActionCondition(playerUnit, this, 'hunt')) {
+            playerUnit.sendToHunt(this)
             drawDestinationRectangle = true
-            if (playerUnit.type === 'Villager') {
-              playerUnit.sendToHunt(this)
-            } else {
-              playerUnit.sendTo(this, 'attack')
-            }
-          } else {
-            if (playerUnit.type === 'Villager') {
-              playerUnit.sendToTakeMeat(this)
-              drawDestinationRectangle = true
-            }
+          } else if (getActionCondition(playerUnit, this, 'attack')) {
+            playerUnit.sendTo(this, 'attack')
+            drawDestinationRectangle = true
+          } else if (getActionCondition(playerUnit, this, 'takemeat')) {
+            playerUnit.sendToTakeMeat(this)
+            drawDestinationRectangle = true
           }
         }
-        if (drawDestinationRectangle) {
-          drawInstanceBlinkingSelection(this)
+      } else if (player.selectedBuilding && player.selectedBuilding.range) {
+        if (
+          getActionCondition(player.selectedBuilding, this, 'attack') &&
+          instancesDistance(player.selectedBuilding, this) <= player.selectedBuilding.range
+        ) {
+          player.selectedBuilding.attackAction(this)
+          drawDestinationRectangle = true
         }
       } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
         player.selectedOther = this
+      }
+
+      if (drawDestinationRectangle) {
+        drawInstanceBlinkingSelection(this)
       }
     })
 
@@ -227,19 +234,7 @@ class Animal extends Container {
   }
 
   getActionCondition(target) {
-    const { action, owner } = this
-    if (!action) {
-      return
-    }
-    const conditions = {
-      attack: instance =>
-        instance &&
-        instance.owner !== owner &&
-        (instance.name === 'building' || instance.name === 'unit') &&
-        instance.life > 0 &&
-        !instance.isDestroyed,
-    }
-    return conditions[action] ? conditions[action](target) : this.stop()
+    return getActionCondition(this, target, this.action)
   }
 
   getAction(name) {
@@ -531,7 +526,7 @@ class Animal extends Container {
       sprite.onLoop = () => {}
     }
     this.currentSheet = sheet
-    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)) * accelerator
+    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.3)) * accelerator
     if (this.degree > 67.5 && this.degree < 112.5) {
       sprite.scale.x = 1
       sprite.textures = this[sheet].animations['north']
@@ -598,135 +593,4 @@ class Animal extends Container {
     quantityDiv.appendChild(textDiv)
     element.appendChild(quantityDiv)
   }
-}
-
-export class Gazelle extends Animal {
-  constructor({ i, j, owner }, context) {
-    const type = 'Gazelle'
-    const data = Assets.cache.get('config').animals[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        quantity: data.quantity,
-        standingSheet: Assets.cache.get('479'),
-        walkingSheet: Assets.cache.get('478'),
-        runningSheet: Assets.cache.get('480'),
-        dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('392'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export class Elephant extends Animal {
-  constructor({ i, j, owner }, context) {
-    const type = 'Elephant'
-    const data = Assets.cache.get('config').animals[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        quantity: data.quantity,
-        actionSheet: Assets.cache.get('215'),
-        standingSheet: Assets.cache.get('428'),
-        walkingSheet: Assets.cache.get('667'),
-        dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('386'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export class Lion extends Animal {
-  constructor({ i, j, owner }, context) {
-    const type = 'Lion'
-    const data = Assets.cache.get('config').animals[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        quantity: data.quantity,
-        actionSheet: Assets.cache.get('222'),
-        standingSheet: Assets.cache.get('497'),
-        walkingSheet: Assets.cache.get('680'),
-        dyingSheet: Assets.cache.get('331'),
-        corpseSheet: Assets.cache.get('397'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export class Crocodile extends Animal {
-  constructor({ i, j, owner }, context) {
-    const type = 'Crocodile'
-    const data = Assets.cache.get('config').animals[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        quantity: data.quantity,
-        actionSheet: Assets.cache.get('217'),
-        standingSheet: Assets.cache.get('433'),
-        walkingSheet: Assets.cache.get('673'),
-        dyingSheet: Assets.cache.get('330'),
-        corpseSheet: Assets.cache.get('391'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export default {
-  Gazelle,
-  Elephant,
-  Lion,
-  Crocodile,
 }

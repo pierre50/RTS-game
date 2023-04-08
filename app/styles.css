@@ -61,8 +61,10 @@ body {
   padding: 5px 10px;
   display: grid;
   font-weight: bold;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 33% 33% 33%;
   width: calc(100% - 20px);
+  align-items: center;
+  justify-content: center;
 }
 
 .bottombar {
@@ -141,13 +143,20 @@ body {
 
 .resources {
   display: flex;
+  gap: 10px;
 }
 
 .resource {
   display: flex;
-  margin-right: 40px;
   gap: 2px;
   align-items: center;
+}
+
+.resource > div {
+  width: 40px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .resource-content {

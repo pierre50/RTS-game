@@ -451,16 +451,17 @@ export default class Menu {
     const {
       context: { controls, player },
     } = this
-    const building = Assets.cache.get('config').buildings[player.civ][player.age][type]
+    const config = Assets.cache.get('config').buildings[type]
+    const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
     return {
-      icon: getIconPath(building.icon),
+      icon: getIconPath(assets.icon),
       id: type,
       onClick: () => {
         controls.removeMouseBuilding()
-        if (canAfford(player, building.cost)) {
-          controls.setMouseBuilding({ ...building, type })
+        if (canAfford(player, config.cost)) {
+          controls.setMouseBuilding({ ...config, ...assets, type })
         } else {
-          this.showMessage(this.getMessage(building.cost))
+          this.showMessage(this.getMessage(config.cost))
         }
       },
     }

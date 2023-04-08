@@ -1,126 +1,81 @@
 {
   "buildings": {
-    "Greek": {
-      "StoneAge": {
-        "TownCenter": {
-          "size": 3,
-          "sight": 7,
-          "lifeMax": 600,
-          "icon": "033_50705",
-          "images": {
-            "final": "000_280",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_230"
-          },
-          "cost": {
-            "wood": 200
-          }
-        },
-        "Barracks": {
-          "size": 3,
-          "sight": 5,
-          "lifeMax": 350,
-          "icon": "003_50705",
-          "images": {
-            "final": "000_254",
-            "rubble": "000_155",
-            "build": "000_261"
-          },
-          "cost": {
-            "wood": 125
-          }
-        },
-        "House": {
-          "size": 1,
-          "sight": 3,
-          "lifeMax": 75,
-          "icon": "015_50705",
-          "images": {
-            "final": "000_218",
-            "build": "000_489",
-            "rubble": "000_154",
-            "color": "000_233"
-          },
-          "cost": {
-            "wood": 50
-          }
-        },
-        "Granary": {
-          "size": 3,
-          "sight": 4,
-          "lifeMax": 350,
-          "icon": "011_50705",
-          "images": {
-            "final": "000_64",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_83"
-          },
-          "cost": {
-            "wood": 120
-          }
-        },
-        "StoragePit": {
-          "size": 3,
-          "sight": 4,
-          "lifeMax": 350,
-          "icon": "028_50705",
-          "images": {
-            "final": "000_527",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_235"
-          },
-          "cost": {
-            "wood": 120
-          }
-        },
-        "Farm": {
-          "size": 3,
-          "sight": 3,
-          "lifeMax": 50,
-          "icon": "010_50705",
-          "images": {
-            "final": "000_447",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_232"
-          },
-          "cost": {
-            "wood": 75
-          }
-        },
-        "Stable": {
-          "size": 3,
-          "sight": 4,
-          "lifeMax": 350,
-          "icon": "025_50705",
-          "images": {
-            "final": "000_447",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_232"
-          },
-          "cost": {
-            "wood": 150
-          }
-        },
-        "ArcheryRange": {
-          "size": 3,
-          "sight": 4,
-          "lifeMax": 350,
-          "icon": "001_50705",
-          "images": {
-            "final": "000_447",
-            "build": "000_261",
-            "rubble": "000_155",
-            "color": "000_232"
-          },
-          "cost": {
-            "wood": 150
-          }
-        }
+    "TownCenter": {
+      "size": 3,
+      "sight": 7,
+      "lifeMax": 600,
+      "cost": {
+        "wood": 200
+      }
+    },
+    "Barracks": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 125
+      }
+    },
+    "House": {
+      "size": 1,
+      "sight": 3,
+      "lifeMax": 75,
+      "cost": {
+        "wood": 50
+      }
+    },
+    "Granary": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 120
+      },
+      "accept": ["gatherer", "farmer"]
+    },
+    "StoragePit": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 120
+      },
+      "accept": ["woodcutter", "stoneminer", "goldminer", "hunter"]
+    },
+    "Farm": {
+      "size": 3,
+      "sight": 3,
+      "lifeMax": 50,
+      "quantity": 250,
+      "cost": {
+        "wood": 75
+      }
+    },
+    "Stable": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      }
+    },
+    "ArcheryRange": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      }
+    },
+    "WatchTower": {
+      "size": 2,
+      "sight": 8,
+      "lifeMax": 125,
+      "range": 5,
+      "attack": 3,
+      "rateOfFire": 1.5,
+      "cost": {
+        "stone": 150
       }
     }
   },

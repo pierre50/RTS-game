@@ -1,0 +1,86 @@
+{
+  "buildings": {
+    "StoneAge": {
+      "TownCenter": {
+        "icon": "033_50705",
+        "images": {
+          "final": "000_280",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_230"
+        }
+      },
+      "Barracks": {
+        "icon": "003_50705",
+        "images": {
+          "final": "000_254",
+          "rubble": "000_155",
+          "build": "000_261"
+        }
+      },
+      "House": {
+        "icon": "015_50705",
+        "images": {
+          "final": "000_218",
+          "build": "000_489",
+          "rubble": "000_154",
+          "color": "000_233"
+        }
+      },
+      "Granary": {
+        "icon": "011_50705",
+        "images": {
+          "final": "000_64",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_83"
+        }
+      },
+      "StoragePit": {
+        "icon": "028_50705",
+        "images": {
+          "final": "000_527",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_235"
+        }
+      },
+      "Farm": {
+        "icon": "010_50705",
+        "images": {
+          "final": "000_447",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_232"
+        }
+      },
+      "Stable": {
+        "icon": "025_50705",
+        "images": {
+          "final": "000_447",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_232"
+        }
+      },
+      "ArcheryRange": {
+        "icon": "001_50705",
+        "images": {
+          "final": "000_447",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_232"
+        }
+      },
+      "WatchTower": {
+        "icon": "026_50705",
+        "images": {
+          "final": "000_447",
+          "build": "000_261",
+          "rubble": "000_155",
+          "color": "000_232"
+        }
+      }
+    }
+  }
+}

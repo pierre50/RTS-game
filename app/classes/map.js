@@ -1,8 +1,8 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { Grass, Water, Desert, Jungle } from './cell'
-import { Tree, Berrybush, Stone, Gold } from './resource'
-import { Human, AI, Gaia } from './player'
-import { Elephant, Lion, Gazelle } from './animal'
+import { Grass, Water, Desert, Jungle } from './cells/'
+import { Tree, Berrybush, Stone, Gold } from './resources/'
+import { Human, AI, Gaia } from './players/'
+import { Elephant, Lion, Gazelle } from './animals/'
 
 import {
   randomRange,

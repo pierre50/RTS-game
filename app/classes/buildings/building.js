@@ -1,11 +1,10 @@
 import { Container, Assets, Sprite, AnimatedSprite, Graphics, Polygon } from 'pixi.js'
-import { accelerator } from '../constants'
+import { accelerator } from '../../constants'
 import {
   getTexture,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
   getPercentage,
-  changeSpriteColor,
   renderCellOnInstanceSight,
   getFreeCellAroundPoint,
   getIconPath,
@@ -14,9 +13,10 @@ import {
   payCost,
   instanceIsInPlayerSight,
   clearCellOnInstanceSight,
-} from '../lib'
+  getActionCondition,
+} from '../../lib'
 
-class Building extends Container {
+export class Building extends Container {
   constructor(options, context) {
     super()
 
@@ -79,24 +79,24 @@ class Building extends Container {
         if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
           return
         }
+        let hasSentVillager = false
+        controls.mouse.prevent = true
         if (this.owner.isPlayed) {
           // Send Villager to build the building
           if (!this.isBuilt) {
-            let hasVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
-              if (unit.type === 'Villager') {
-                hasVillager = true
-                drawInstanceBlinkingSelection(this)
+              if (getActionCondition(unit, this, 'build')) {
+                hasSentVillager = true
                 unit.sendToBuilding(this)
+                drawInstanceBlinkingSelection(this)
               }
             }
-            if (hasVillager) {
+            if (hasSentVillager) {
               return
             }
           } else if (player.selectedUnits) {
             // Send Villager to give loading of resources
-            let hasSentVillager = false
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === 'Villager') {
@@ -108,55 +108,18 @@ class Building extends Container {
                   switch (this.type) {
                     case 'Farm':
                       hasSentVillager = true
-                      unit.previousDest = null
                       unit.sendToFarm(this)
                       break
                     case 'StoragePit':
-                      if (unit.loading > 0) {
-                        if (
-                          unit.work === 'woodcutter' ||
-                          unit.work === 'stoneminer' ||
-                          unit.work === 'goldminer' ||
-                          unit.work === 'hunter'
-                        ) {
-                          hasSentVillager = true
-                          unit.previousDest = null
-                        }
-                        unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
-                        unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
-                        unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')
-                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
-                      }
-                      break
                     case 'Granary':
-                      if (unit.loading > 0) {
-                        if (unit.work === 'gatherer' || unit.work === 'farmer') {
-                          hasSentVillager = true
-                          unit.previousDest = null
-                        }
-                        unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
-                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
-                      }
-                      break
                     case 'TownCenter':
-                      if (unit.loading > 0) {
-                        if (
-                          unit.work === 'gatherer' ||
-                          unit.work === 'farmer' ||
-                          unit.work === 'hunter' ||
-                          unit.work === 'woodcutter' ||
-                          unit.work === 'stoneminer' ||
-                          unit.work === 'goldminer'
-                        ) {
-                          hasSentVillager = true
-                          unit.previousDest = null
-                        }
-                        unit.work === 'gatherer' && unit.sendTo(this, 'deliveryberry')
-                        unit.work === 'farmer' && unit.sendTo(this, 'deliveryfood')
-                        unit.work === 'hunter' && unit.sendTo(this, 'deliverymeat')
-                        unit.work === 'woodcutter' && unit.sendTo(this, 'deliverywood')
-                        unit.work === 'stoneminer' && unit.sendTo(this, 'deliverystone')
-                        unit.work === 'goldminer' && unit.sendTo(this, 'deliverygold')
+                      if (
+                        unit.loading > 0 &&
+                        (this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.work)))
+                      ) {
+                        hasSentVillager = true
+                        unit.previousDest = null
+                        unit.sendToDelivery()
                       }
                       break
                   }
@@ -298,7 +261,7 @@ class Building extends Container {
           spriteFire.x = poses[i][0]
           spriteFire.y = poses[i][1]
           spriteFire.play()
-          spriteFire.animationSpeed = 0.2
+          spriteFire.animationSpeed = 0.2 * accelerator
           newFire.addChild(spriteFire)
         }
         building.addChild(newFire)
@@ -311,7 +274,6 @@ class Building extends Container {
       context: { map, player },
     } = this
     if (this.parent) {
-      const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
       if (this.selected && player) {
         player.unselectAll()
       }
@@ -335,7 +297,7 @@ class Building extends Container {
           list.splice(list.indexOf(this), 1)
         }
       }
-      const rubble = Sprite.from(getTexture(data.images.rubble, Assets))
+      const rubble = Sprite.from(getTexture(this.assets.images.rubble, Assets))
       rubble.name = 'rubble'
       map.grid[this.i][this.j].addChild(rubble)
       map.grid[this.i][this.j].zIndex++
@@ -539,430 +501,3 @@ class Building extends Container {
   }
 }
 
-export class TownCenter extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'TownCenter'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Villager')] : [],
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const { owner, type } = this
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(data.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
-    spriteColor.name = 'color'
-
-    changeSpriteColor(spriteColor, owner.color)
-
-    this.addChildAt(spriteColor, 0)
-  }
-}
-
-export class Barracks extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'Barracks'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Clubman')] : [],
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const { owner, type } = this
-
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(data.images.final, Assets)
-    changeSpriteColor(spriteColor, owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
-  }
-}
-
-export class Stable extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'Stable'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Scout')] : [],
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const { owner, type } = this
-
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(data.images.final, Assets)
-    changeSpriteColor(spriteColor, owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
-  }
-}
-
-export class ArcheryRange extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'ArcheryRange'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Bowman')] : [],
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const { owner, type } = this
-
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(data.images.final, Assets)
-    changeSpriteColor(spriteColor, owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
-  }
-}
-
-export class House extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'House'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-
-            if (this.owner.isPlayed && this.isBuilt) {
-              const populationDiv = document.createElement('div')
-              populationDiv.id = 'population'
-              populationDiv.textContent = this.owner.population + '/' + this.owner.populationMax
-              element.appendChild(populationDiv)
-            }
-          },
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const { owner, type } = this
-
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(data.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, owner.color)
-    this.addChildAt(spriteColor, 0)
-
-    const spritesheetFire = Assets.cache.get('347')
-    const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-    spriteFire.name = 'deco'
-    spriteFire.allowMove = false
-    spriteFire.allowClick = false
-    spriteFire.interactive = false
-    spriteFire.roundPixels = true
-    spriteFire.x = 10
-    spriteFire.y = 5
-    spriteFire.play()
-    spriteFire.animationSpeed = 0.2
-
-    this.addChild(spriteFire)
-  }
-
-  onBuilt() {
-    const {
-      context: { menu },
-    } = this
-    // Increase player population and continue all unit creation that was paused
-    this.owner.populationMax += 4
-    // Update bottombar with populationmax if house selected
-    if (this.selected && this.owner.isPlayed) {
-      menu.updateInfo(
-        'population',
-        element => (element.textContent = this.owner.population + '/' + this.owner.populationMax)
-      )
-    }
-  }
-}
-
-export class Granary extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'Granary'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(data.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, this.owner.color)
-    this.addChildAt(spriteColor, 0)
-  }
-}
-
-export class StoragePit extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'StoragePit'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        lifeMax: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(data.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, this.owner.color)
-    this.addChild(spriteColor)
-  }
-}
-
-export class Farm extends Building {
-  constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'Farm'
-    const data = Assets.cache.get('config').buildings[owner.civ][owner.age][type]
-
-    // Define sprite
-    const texture = getTexture(data.images.build, Assets)
-    const sprite = Sprite.from(texture)
-    sprite.updateAnchor = true
-    sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
-
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        sprite,
-        size: data.size,
-        sight: data.sight,
-        isBuilt,
-        isUsedBy: null,
-        lifeMax: data.lifeMax,
-        quantity: data.lifeMax,
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-
-  finalTexture() {
-    const data = Assets.cache.get('config').buildings[this.owner.civ][this.owner.age][this.type]
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(data.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(data.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, this.owner.color)
-    this.addChild(spriteColor)
-  }
-}
-
-export default {
-  Barracks,
-  TownCenter,
-  House,
-  StoragePit,
-  Granary,
-  Farm,
-  Stable,
-  ArcheryRange,
-}

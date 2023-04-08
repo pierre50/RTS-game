@@ -1,6 +1,6 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime } from '../constants'
-import * as projectiles from './projectile'
+import { accelerator, stepTime, corpseTime } from '../../constants'
+import * as projectiles from '../projectiles/'
 import {
   getInstanceZIndex,
   randomRange,
@@ -13,7 +13,6 @@ import {
   getInstanceClosestFreeCellPath,
   instanceContactInstance,
   getInstanceDegree,
-  getClosestInstance,
   changeSpriteColor,
   findInstancesInSight,
   getClosestInstanceWithPath,
@@ -22,9 +21,10 @@ import {
   instanceIsInPlayerSight,
   degreeToDirection,
   onSpriteLoopAtFrame,
-} from '../lib'
+  getActionCondition,
+} from '../../lib'
 
-class Unit extends Container {
+export class Unit extends Container {
   constructor(options, context) {
     super()
 
@@ -233,41 +233,7 @@ class Unit extends Container {
   }
 
   getActionCondition(target, action = this.action) {
-    const { owner } = this
-    if (!action) {
-      return
-    }
-    const conditions = {
-      takemeat: instance =>
-        instance && instance.name === 'animal' && instance.quantity > 0 && instance.isDead && !instance.isDestroyed,
-      hunt: instance => instance && instance.name === 'animal' && instance.quantity > 0 && !instance.isDead,
-      chopwood: instance => instance && instance.type === 'Tree' && instance.quantity > 0 && !instance.isDestroyed,
-      farm: instance =>
-        instance &&
-        instance.type === 'Farm' &&
-        instance.life > 0 &&
-        instance.quantity > 0 &&
-        (!instance.isUsedBy || instance.isUsedBy === this) &&
-        !instance.isDead,
-      forageberry: instance =>
-        instance && instance.type === 'Berrybush' && instance.quantity > 0 && !instance.isDestroyed,
-      minestone: instance => instance && instance.type === 'Stone' && instance.quantity > 0 && !instance.isDestroyed,
-      minegold: instance => instance && instance.type === 'Gold' && instance.quantity > 0 && !instance.isDestroyed,
-      build: instance =>
-        instance &&
-        instance.owner === owner &&
-        instance.name === 'building' &&
-        instance.life > 0 &&
-        (!instance.isBuilt || instance.life < instance.lifeMax) &&
-        !instance.isDead,
-      attack: instance =>
-        instance &&
-        instance.owner !== owner &&
-        (instance.name === 'building' || instance.name === 'unit' || instance.name === 'animal') &&
-        instance.life > 0 &&
-        !instance.isDead,
-    }
-    return conditions[action] ? conditions[action](target) : this.stop()
+    return getActionCondition(this, target, action)
   }
 
   getAction(name) {
@@ -279,6 +245,32 @@ class Unit extends Container {
       return
     }
     switch (name) {
+      case 'delivery':
+        if (!this.getActionCondition(this.dest)) {
+          this.stop()
+          return
+        }
+        this.owner[this.loadingType] += this.loading
+        if (this.owner.isPlayed) {
+          menu.updateTopbar()
+        }
+        this.loading = 0
+        this.updateInterfaceLoading()
+        if (this.assets[this.work]) {
+          this.standingSheet = Assets.cache.get(this.assets[this.work].standingSheet)
+          this.walkingSheet = Assets.cache.get(this.assets[this.work].walkingSheet)
+        }
+        if (this.previousDest) {
+          if (this.previousDest.name === 'animal') {
+            this.sendToTakeMeat(this.previousDest)
+          } else {
+            const sendToFunc = `sendTo${this.previousDest.type}`
+            typeof this[sendToFunc] === 'function' ? this[sendToFunc](this.previousDest) : this.stop()
+          }
+        } else {
+          this.stop()
+        }
+        break
       case 'farm':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -293,7 +285,7 @@ class Unit extends Container {
           this.dest.isUsedBy = this
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('Granary', 'deliveryfood')
+            this.sendToDelivery()
             this.dest.isUsedBy = null
             return
           }
@@ -319,22 +311,6 @@ class Unit extends Container {
         }
         this.setTextures('actionSheet')
         break
-      case 'deliveryfood':
-        this.owner.food += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.standingSheet = Assets.cache.get('430')
-        this.walkingSheet = Assets.cache.get('670')
-
-        if (this.previousDest) {
-          this.sendToFarm(this.previousDest)
-        } else {
-          this.stop()
-        }
-        break
       case 'chopwood':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -347,7 +323,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('StoragePit', 'deliverywood')
+            this.sendToDelivery()
             return
           }
           // Tree destination is still alive we cut him until it's dead
@@ -389,22 +365,6 @@ class Unit extends Container {
         }
         this.setTextures('actionSheet')
         break
-      case 'deliverywood':
-        this.owner.wood += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.walkingSheet = Assets.cache.get('682')
-        this.standingSheet = Assets.cache.get('440')
-
-        if (this.previousDest) {
-          this.sendToTree(this.previousDest)
-        } else {
-          this.stop()
-        }
-        break
       case 'forageberry':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -417,7 +377,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('Granary', 'deliveryberry')
+            this.sendToDelivery()
             return
           }
           // Villager forage the berrybush
@@ -442,22 +402,6 @@ class Unit extends Container {
         }
         this.setTextures('actionSheet')
         break
-      case 'deliveryberry':
-        this.owner.food += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.standingSheet = Assets.cache.get('432')
-        this.walkingSheet = Assets.cache.get('672')
-
-        if (this.previousDest) {
-          this.sendToBerrybush(this.previousDest)
-        } else {
-          this.stop()
-        }
-        break
       case 'minestone':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -470,7 +414,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('StoragePit', 'deliverystone')
+            this.sendToDelivery()
             return
           }
           // Villager mine the stone
@@ -495,22 +439,6 @@ class Unit extends Container {
         }
         this.setTextures('actionSheet')
         break
-      case 'deliverystone':
-        this.owner.stone += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.walkingSheet = Assets.cache.get('683')
-        this.standingSheet = Assets.cache.get('441')
-
-        if (this.previousDest) {
-          this.sendToStone(this.previousDest)
-        } else {
-          this.stop()
-        }
-        break
       case 'minegold':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -523,7 +451,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('StoragePit', 'deliverygold')
+            this.sendToDelivery()
             return
           }
           // Villager mine the gold
@@ -547,22 +475,6 @@ class Unit extends Container {
           }
         }
         this.setTextures('actionSheet')
-        break
-      case 'deliverygold':
-        this.owner.gold += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.walkingSheet = Assets.cache.get('683')
-        this.standingSheet = Assets.cache.get('441')
-
-        if (this.previousDest) {
-          this.sendToGold(this.previousDest)
-        } else {
-          this.stop()
-        }
         break
       case 'build':
         if (!this.getActionCondition(this.dest)) {
@@ -654,22 +566,6 @@ class Unit extends Container {
         }
         this.setTextures('actionSheet')
         break
-      case 'deliverymeat':
-        this.owner.food += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
-        this.loading = 0
-        this.updateInterfaceLoading()
-        this.standingSheet = Assets.cache.get('435')
-        this.walkingSheet = Assets.cache.get('676')
-
-        if (this.previousDest) {
-          this.sendToTakeMeat(this.previousDest)
-        } else {
-          this.stop()
-        }
-        break
       case 'takemeat':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -682,7 +578,7 @@ class Unit extends Container {
           }
           // Villager is full we send him delivery first
           if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery('StoragePit', 'deliverymeat')
+            this.sendToDelivery()
             return
           }
           // Villager take meat
@@ -734,7 +630,7 @@ class Unit extends Container {
             return
           }
           if (this.dest.life > 0) {
-            const projectile = new projectiles.Arrow(
+            const projectile = new projectiles.Spear(
               {
                 owner: this,
                 target: this.dest,
@@ -819,30 +715,10 @@ class Unit extends Container {
     }
     if (!handleSuccess) {
       if (this.loading) {
-        switch (this.work) {
-          case 'farm':
-            this.sendToDelivery('Granary', 'deliveryfood')
-            return
-          case 'woodcutter':
-            this.sendToDelivery('StoragePit', 'deliverywood')
-            return
-          case 'gatherer':
-            this.sendToDelivery('Granary', 'deliveryberry')
-            return
-          case 'hunter':
-          case 'takemeat':
-            this.sendToDelivery('StoragePit', 'deliverymeat')
-            return
-          case 'stoneminer':
-            this.sendToDelivery('StoragePit', 'deliverystone')
-            return
-          case 'goldminer':
-            this.sendToDelivery('StoragePit', 'deliverygold')
-            return
-        }
+        this.sendToDelivery()
+      } else {
+        this.stop()
       }
-      this.stop()
-      return
     }
   }
 
@@ -854,7 +730,7 @@ class Unit extends Container {
       this.affectNewDest()
       return false
     }
-    if ((action === 'hunt' || action === 'attack') && this.range && instancesDistance(this, dest) < this.range) {
+    if ((action === 'hunt' || action === 'attack') && this.range && instancesDistance(this, dest) <= this.range) {
       return true
     }
     return instanceContactInstance(this, dest)
@@ -1143,7 +1019,7 @@ class Unit extends Container {
       sprite.onFrameChange = null
     }
     this.currentSheet = sheet
-    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.2)) * accelerator
+    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.3)) * accelerator
     const direction = degreeToDirection(this.degree)
     switch (direction) {
       case 'southest':
@@ -1186,354 +1062,4 @@ class Unit extends Container {
     lifeDiv.textContent = Math.max(this.life, 0) + '/' + this.lifeMax
     element.appendChild(lifeDiv)
   }
-}
-
-export class Villager extends Unit {
-  constructor({ i, j, owner }, context) {
-    const type = 'Villager'
-    const data = Assets.cache.get('config').units[type]
-    const { menu } = context
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        range: data.range,
-        standingSheet: Assets.cache.get('418'),
-        walkingSheet: Assets.cache.get('657'),
-        dyingSheet: Assets.cache.get('314'),
-        corpseSheet: Assets.cache.get('373'),
-        interface: {
-          info: element => {
-            const { owner } = this
-            this.setDefaultInterface(element, data)
-            if (owner.isPlayed) {
-              element.appendChild(this.getLoadingElement())
-            }
-          },
-          menu: owner.isPlayed
-            ? [
-                {
-                  icon: 'interface/50721/002_50721.png',
-                  children: [
-                    menu.getBuildingButton('House'),
-                    menu.getBuildingButton('Barracks'),
-                    menu.getBuildingButton('Granary'),
-                    menu.getBuildingButton('StoragePit'),
-                    menu.getBuildingButton('Farm'),
-                    menu.getBuildingButton('Stable'),
-                    menu.getBuildingButton('ArcheryRange'),
-                  ],
-                },
-              ]
-            : [],
-        },
-      },
-      context
-    )
-  }
-
-  updateInterfaceLoading() {
-    const {
-      context: { menu },
-    } = this
-    if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
-      if (this.loading === 1) {
-        menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().outerHTML))
-      } else if (this.loading > 1) {
-        menu.updateInfo('loading-text', element => (element.textContent = this.loading))
-      } else {
-        menu.updateInfo('loading', element => (element.innerHTML = ''))
-      }
-    }
-  }
-
-  getLoadingElement() {
-    const {
-      context: { menu },
-    } = this
-    const loadingDiv = document.createElement('div')
-    loadingDiv.className = 'unit-loading'
-    loadingDiv.id = 'loading'
-    if (this.loading) {
-      const iconImg = document.createElement('img')
-      iconImg.className = 'unit-loading-icon'
-      iconImg.src = menu.icons[this.loadingType]
-      const textDiv = document.createElement('div')
-      textDiv.id = 'loading-text'
-      textDiv.textContent = this.loading
-      loadingDiv.appendChild(iconImg)
-      loadingDiv.appendChild(textDiv)
-    }
-    return loadingDiv
-  }
-
-  sendToAttack(target) {
-    this.updateInterfaceLoading()
-    this.work = null
-    this.actionSheet = Assets.cache.get('224')
-    this.standingSheet = Assets.cache.get('418')
-    if (!this.loading) {
-      this.walkingSheet = Assets.cache.get('657')
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'attack')
-  }
-
-  sendToTakeMeat(target) {
-    if (this.loadingType !== 'food') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'hunter' || this.action !== 'takemeat') {
-      this.work = 'hunter'
-      this.actionSheet = Assets.cache.get('626')
-      this.standingSheet = Assets.cache.get('435')
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get('676')
-        this.dyingSheet = Assets.cache.get('332')
-        this.corpseSheet = Assets.cache.get('389')
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'takemeat')
-  }
-
-  sendToHunt(target) {
-    if (this.loadingType !== 'food') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'hunter' || this.action !== 'hunt') {
-      this.work = 'hunter'
-      this.actionSheet = Assets.cache.get('624')
-      this.standingSheet = Assets.cache.get('435')
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get('676')
-        this.dyingSheet = Assets.cache.get('332')
-        this.corpseSheet = Assets.cache.get('389')
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'hunt')
-  }
-
-  sendToDelivery(type, action) {
-    const {
-      context: { map },
-    } = this
-    const targets = this.owner.buildings.filter(building => {
-      return building.life > 0 && building.isBuilt && (building.type === 'TownCenter' || building.type === type)
-    })
-    const target = getClosestInstance(this, targets)
-    if (this.dest) {
-      this.previousDest = this.dest
-    } else {
-      this.previousDest = map.grid[this.i][this.j]
-    }
-    this.sendTo(target, action)
-  }
-
-  sendToBuilding(building) {
-    if (this.work !== 'builder') {
-      this.updateInterfaceLoading()
-      this.work = 'builder'
-      this.actionSheet = Assets.cache.get('628')
-      this.standingSheet = Assets.cache.get('419')
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get('658')
-        this.dyingSheet = Assets.cache.get('315')
-        this.corpseSheet = Assets.cache.get('374')
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(building, 'build')
-  }
-
-  sendToFarm(farm) {
-    if (this.loadingType !== 'food') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'farmer') {
-      this.work = 'farmer'
-      this.actionSheet = Assets.cache.get('630')
-      this.standingSheet = Assets.cache.get('430')
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get('670')
-        this.dyingSheet = Assets.cache.get('326')
-        this.corpseSheet = Assets.cache.get('388')
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(farm, 'farm')
-  }
-
-  sendToTree(tree) {
-    if (this.work !== 'woodcutter') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'woodcutter'
-      this.actionSheet = Assets.cache.get('625')
-      this.standingSheet = Assets.cache.get('440')
-      this.walkingSheet = Assets.cache.get('682')
-      this.corpseSheet = Assets.cache.get('399')
-    }
-    this.previousDest = null
-    return this.sendTo(tree, 'chopwood')
-  }
-
-  sendToBerrybush(berrybush) {
-    if (this.loadingType !== 'food') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'gatherer') {
-      this.work = 'gatherer'
-      this.actionSheet = Assets.cache.get('632')
-      this.standingSheet = Assets.cache.get('432')
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get('672')
-        this.dyingSheet = Assets.cache.get('328')
-        this.corpseSheet = Assets.cache.get('390')
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(berrybush, 'forageberry')
-  }
-
-  sendToStone(stone) {
-    if (this.work !== 'stoneminer') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'stoneminer'
-      this.actionSheet = Assets.cache.get('633')
-      this.standingSheet = Assets.cache.get('441')
-      this.walkingSheet = Assets.cache.get('683')
-      this.corpseSheet = Assets.cache.get('400')
-    }
-    this.previousDest = null
-    return this.sendTo(stone, 'minestone')
-  }
-
-  sendToGold(gold) {
-    if (this.work !== 'goldminer') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'goldminer'
-      this.actionSheet = Assets.cache.get('633')
-      this.standingSheet = Assets.cache.get('441')
-      this.walkingSheet = Assets.cache.get('683')
-      this.corpseSheet = Assets.cache.get('400')
-    }
-    this.previousDest = null
-    return this.sendTo(gold, 'minegold')
-  }
-}
-
-export class Clubman extends Unit {
-  constructor({ i, j, owner }, context) {
-    const type = 'Clubman'
-    const data = Assets.cache.get('config').units[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        work: 'attacker',
-        standingSheet: Assets.cache.get('425'),
-        walkingSheet: Assets.cache.get('664'),
-        actionSheet: Assets.cache.get('212'),
-        dyingSheet: Assets.cache.get('321'),
-        corpseSheet: Assets.cache.get('380'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export class Scout extends Unit {
-  constructor({ i, j, owner }, context) {
-    const type = 'Scout'
-    const data = Assets.cache.get('config').units[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        work: 'attacker',
-        standingSheet: Assets.cache.get('445'),
-        walkingSheet: Assets.cache.get('651'),
-        actionSheet: Assets.cache.get('227'),
-        dyingSheet: Assets.cache.get('343'),
-        corpseSheet: Assets.cache.get('403'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export class Bowman extends Unit {
-  constructor({ i, j, owner }, context) {
-    const type = 'Bowman'
-    const data = Assets.cache.get('config').units[type]
-    super(
-      {
-        i,
-        j,
-        owner,
-        type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
-        speed: data.speed * accelerator,
-        attack: data.attack,
-        range: data.range,
-        work: 'attacker',
-        projectile: 'Arrow',
-        standingSheet: Assets.cache.get('413'),
-        walkingSheet: Assets.cache.get('652'),
-        actionSheet: Assets.cache.get('203'),
-        dyingSheet: Assets.cache.get('308'),
-        corpseSheet: Assets.cache.get('367'),
-        interface: {
-          info: element => {
-            this.setDefaultInterface(element, data)
-          },
-        },
-      },
-      context
-    )
-  }
-}
-
-export default {
-  Villager,
-  Clubman,
-  Bowman,
-  Scout,
 }

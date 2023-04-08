@@ -1,3 +1,4 @@
+import { accelerator } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -21,8 +22,8 @@ export function moveTowardPoint(instance, x, y, speed) {
   let dist = pointsDistance(x, y, instance.x, instance.y)
   let tX = x - instance.x
   let tY = y - instance.y
-  let velX = (tX / dist) * speed
-  let velY = (tY / dist) * speed
+  let velX = (tX / dist) * speed * 2
+  let velY = (tY / dist) * speed * 2
   instance.degree = getInstanceDegree(instance, x, y)
   instance.x += velX
   instance.y += velY

@@ -20,6 +20,7 @@ export default class LoaderScreen extends Container {
   async start() {
     Assets.addBundle('config', {
       config: 'config.json',
+      greek: 'greek.json',
     })
 
     Assets.addBundle('interface', {

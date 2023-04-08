@@ -1,8 +1,8 @@
 import { Container, Graphics } from 'pixi.js'
-import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance, degreeToDirection } from '../lib'
-import { accelerator, colorArrow, stepTime } from '../constants'
+import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance } from '../../lib'
+import { colorArrow, stepTime } from '../../constants'
 
-class Projectile extends Container {
+export class Projectile extends Container {
   constructor(options, context) {
     super()
 
@@ -65,64 +65,4 @@ class Projectile extends Container {
     this.isDead = true
     this.destroy({ child: true, texture: true })
   }
-}
-
-export class Arrow extends Projectile {
-  constructor({ owner, target }, context) {
-    const type = 'Arrow'
-    const ownerSprite = owner.getChildByName('sprite')
-    const { height, width } = ownerSprite
-    const anchoredWidth = width * ownerSprite.anchor.x
-    const anchoredHeight = height * ownerSprite.anchor.y
-    const direction = degreeToDirection(owner.degree)
-    const position = {
-      x: owner.x,
-      y: owner.y,
-    }
-    switch (direction) {
-      case 'north':
-        position.y = owner.y - anchoredHeight
-        break
-      case 'west':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x - anchoredWidth
-        break
-      case 'northwest':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x - anchoredWidth
-        break
-      case 'southwest':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x - anchoredWidth
-        break
-      case 'est':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x + anchoredWidth * 2
-        break
-      case 'northest':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x + anchoredWidth
-        break
-      case 'southest':
-        position.y = owner.y - anchoredHeight
-        position.x = owner.x + anchoredWidth
-        break
-    }
-    super(
-      {
-        x: position.x,
-        y: position.y,
-        type,
-        target,
-        owner,
-        size: 4,
-        speed: 14 * accelerator,
-      },
-      context
-    )
-  }
-}
-
-export default {
-  Arrow,
 }

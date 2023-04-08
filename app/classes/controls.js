@@ -8,7 +8,7 @@ import {
   changeSpriteColor,
   getTexture,
 } from '../lib'
-import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits } from '../constants'
+import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -258,7 +258,7 @@ export default class Controls extends Container {
           // Pointer animation
           const pointerSheet = Assets.cache.get('50405')
           const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
-          pointer.animationSpeed = 0.2
+          pointer.animationSpeed = 0.2 * accelerator
           pointer.loop = false
           pointer.anchor.set(0.5, 0.5)
           pointer.x = this.mouse.x
