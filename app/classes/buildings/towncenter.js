@@ -29,7 +29,14 @@ export class TownCenter extends Building {
           info: element => {
             this.setDefaultInterface(element, assets)
           },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Villager')] : [],
+          menu: owner.isPlayed
+            ? [
+                context.menu.getUnitButton('Villager'),
+                context.menu.getEvolutionButton('ToolAge'),
+                context.menu.getEvolutionButton('BronzeAge'),
+                context.menu.getEvolutionButton('IronAge'),
+              ]
+            : [],
         },
       },
       context

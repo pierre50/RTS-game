@@ -14,6 +14,8 @@ import {
   instanceIsInPlayerSight,
   clearCellOnInstanceSight,
   getActionCondition,
+  capitalizeFirstLetter,
+  refundCost,
 } from '../../lib'
 
 export class Building extends Container {
@@ -37,9 +39,11 @@ export class Building extends Container {
     this.zIndex = getInstanceZIndex(this)
     this.selected = false
     this.queue = []
+    this.evolution = null
     this.loading = null
     this.isDead = false
     this.isDestroyed = false
+    this.interval
     if (!map.revealEverything) {
       this.visible = false
     }
@@ -166,6 +170,19 @@ export class Building extends Container {
     }
   }
 
+  startInterval(cb, time) {
+    if (!this.interval) {
+      this.interval = setInterval(() => cb(), (time * 1000) / 100 / accelerator)
+    }
+  }
+
+  stopInterval() {
+    if (this.interval) {
+      clearInterval(this.interval)
+      this.interval = null
+    }
+  }
+
   isAttacked(instance) {
     this.updateLife('attack')
   }
@@ -274,6 +291,7 @@ export class Building extends Container {
       context: { map, player },
     } = this
     if (this.parent) {
+      this.stopInterval()
       if (this.selected && player) {
         player.unselectAll()
       }
@@ -371,7 +389,7 @@ export class Building extends Container {
       context: { menu },
     } = this
     const unit = Assets.cache.get('config').units[type]
-    if (this.isBuilt && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
+    if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (this.owner.type === 'AI' && this.loading === null) {
           payCost(this.owner, unit.cost)
@@ -387,25 +405,18 @@ export class Building extends Container {
         }
       }
       if (this.loading === null) {
-        let timesRun = 0
         let hasShowedMessage = false
         this.loading = 0
         if (this.selected && this.owner.isPlayed) {
           menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
         }
-        let interval = setInterval(() => {
-          // Building is dead while buying unit
-          if (!this.parent) {
-            clearInterval(interval)
-            return
-          }
+        this.startInterval(() => {
           if (this.queue[0] !== type) {
+            this.stopInterval()
             this.loading = null
             if (this.queue.length) {
               this.buyUnit(this.queue[0], true)
             }
-            clearInterval(interval)
-            interval = null
             hasShowedMessage = false
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
@@ -415,12 +426,9 @@ export class Building extends Container {
               }
               menu.updateInfo('loading', element => (element.textContent = ''))
             }
-            return
-          }
-          if (timesRun < 100) {
+          } else if (this.loading < 100) {
             if (this.owner.population < this.owner.populationMax) {
-              timesRun += 1
-              this.loading = timesRun
+              this.loading += 1
             } else if (this.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage('You need to build more houses')
               hasShowedMessage = true
@@ -428,15 +436,14 @@ export class Building extends Container {
             if (this.selected && this.owner.isPlayed) {
               menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
             }
-          } else if (timesRun === 100) {
+          } else if (this.loading >= 100) {
+            this.stopInterval()
             this.placeUnit(type)
             this.loading = null
             this.queue.shift()
             if (this.queue.length) {
               this.buyUnit(this.queue[0], true)
             }
-            clearInterval(interval)
-            interval = null
             hasShowedMessage = false
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
@@ -447,8 +454,64 @@ export class Building extends Container {
               menu.updateInfo('loading', element => (element.textContent = ''))
             }
           }
-        }, (unit.trainingTime * 1000) / 100 / accelerator)
+        }, unit.trainingTime)
       }
+    }
+  }
+
+  cancelEvolution() {
+    const {
+      context: { player, menu },
+    } = this
+    this.stopInterval()
+    refundCost(player, this.evolution.cost)
+    this.evolution = null
+    this.loading = null
+    if (this.selected && this.owner.isPlayed) {
+      menu.setBottombar(this)
+    }
+    menu.updateTopbar()
+  }
+
+  buyEvolution(evolution) {
+    const {
+      context: { player, menu },
+    } = this
+    if (
+      !this.queue.length &&
+      this.isBuilt &&
+      this.loading === null &&
+      !this.isDead &&
+      canAfford(this.owner, evolution.cost)
+    ) {
+      payCost(this.owner, evolution.cost)
+      if (this.owner.isPlayed) {
+        menu.updateTopbar()
+      }
+      this.loading = 0
+      this.evolution = evolution
+      if (this.selected && this.owner.isPlayed) {
+        menu.setBottombar(this)
+      }
+      this.startInterval(() => {
+        if (this.loading < 100) {
+          this.loading += 1
+          if (this.selected && this.owner.isPlayed) {
+            menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
+          }
+        } else if (this.loading >= 100) {
+          this.stopInterval()
+          this.loading = null
+          this.evolution = null
+          player[evolution.key] = evolution.value
+          const functionName = `on${capitalizeFirstLetter(evolution.key)}Change`
+          typeof player[functionName] === 'function' && player[functionName](evolution.value)
+          if (this.selected && this.owner.isPlayed) {
+            menu.setBottombar(this)
+          }
+          menu.updateTopbar()
+        }
+      }, evolution.loadingTime)
     }
   }
 
@@ -500,4 +563,3 @@ export class Building extends Container {
     }
   }
 }
-

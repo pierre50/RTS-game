@@ -1,0 +1,51 @@
+{
+  "ToolAge": {
+    "icon": "012_50721",
+    "key": "age",
+    "value": 1,
+    "displayConditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 0
+      }
+    ],
+    "loadingTime": 120,
+    "cost": {
+      "food": 500
+    }
+  },
+  "BronzeAge": {
+    "icon": "012_50721",
+    "key": "age",
+    "value": 2,
+    "displayConditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 1
+      }
+    ],
+    "loadingTime": 140,
+    "cost": {
+      "food": 800
+    }
+  },
+  "IronAge": {
+    "icon": "012_50721",
+    "key": "age",
+    "value": 3,
+    "displayConditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 2
+      }
+    ],
+    "loadingTime": 160,
+    "cost": {
+      "food": 1000,
+      "gold": 800
+    }
+  }
+}

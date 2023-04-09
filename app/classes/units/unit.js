@@ -197,6 +197,7 @@ export class Unit extends Container {
       context: { map },
     } = this
     this.handleChangeDest()
+    this.stop()
     let path = []
     // No instance we cancel the destination
     if (!dest) {
@@ -714,7 +715,8 @@ export class Unit extends Container {
       }
     }
     if (!handleSuccess) {
-      if (this.loading) {
+      const notDeliveryWork = ['builder', 'attacker']
+      if (this.loading && !notDeliveryWork.includes(this.work)) {
         this.sendToDelivery()
       } else {
         this.stop()
@@ -883,10 +885,6 @@ export class Unit extends Container {
     if (this.life <= 0) {
       this.die()
     }
-    if (this.work === 'attacker' && this.inactif) {
-      this.action = 'attack'
-      this.affectNewDest()
-    }
     if (this.hasPath()) {
       this.moveToPath()
     }
@@ -937,6 +935,7 @@ export class Unit extends Container {
     if (this.currentSheet === 'dyingSheet') {
       return
     }
+    this.stopInterval()
     if (this.selected && player) {
       player.unselectUnit(this)
     }

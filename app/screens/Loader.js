@@ -21,6 +21,7 @@ export default class LoaderScreen extends Container {
     Assets.addBundle('config', {
       config: 'config.json',
       greek: 'greek.json',
+      evolution: 'evolution.json',
     })
 
     Assets.addBundle('interface', {

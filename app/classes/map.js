@@ -142,7 +142,7 @@ export default class Map extends Container {
             {
               i: posI,
               j: posJ,
-              age: 'StoneAge',
+              age: 0,
               civ: 'Greek',
               color,
               isPlayed: true,
@@ -151,7 +151,7 @@ export default class Map extends Container {
           )
         )
       } else if (!this.noAI) {
-        players.push(new AI({ i: posI, j: posJ, age: 'StoneAge', civ: 'Greek', color }, context))
+        players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color }, context))
       }
     }
     return players

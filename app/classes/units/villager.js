@@ -149,7 +149,7 @@ export class Villager extends Unit {
 
   sendToAttack(target) {
     this.updateInterfaceLoading()
-    this.work = null
+    this.work = 'attacker'
     this.actionSheet = Assets.cache.get('224')
     this.standingSheet = Assets.cache.get('418')
     if (!this.loading) {

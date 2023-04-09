@@ -49,7 +49,14 @@
       "quantity": 250,
       "cost": {
         "wood": 75
-      }
+      },
+      "displayConditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        }
+      ]
     },
     "Stable": {
       "size": 3,
@@ -57,7 +64,14 @@
       "lifeMax": 350,
       "cost": {
         "wood": 150
-      }
+      },
+      "displayConditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        }
+      ]
     },
     "ArcheryRange": {
       "size": 3,
@@ -65,7 +79,14 @@
       "lifeMax": 350,
       "cost": {
         "wood": 150
-      }
+      },
+      "displayConditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        }
+      ]
     },
     "WatchTower": {
       "size": 2,
@@ -76,7 +97,14 @@
       "rateOfFire": 1.5,
       "cost": {
         "stone": 150
-      }
+      },
+      "displayConditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        }
+      ]
     }
   },
   "units": {

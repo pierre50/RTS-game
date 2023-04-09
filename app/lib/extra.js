@@ -32,6 +32,53 @@ export const debounce = (callback, wait) => {
   }
 }
 
+export function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+export const intervalForDuration = (duration, loading, ending) => {
+  let cpt = 0
+  let interval = setInterval(() => {
+    const percentage = Math.floor(Math.min(100, (100 * cpt) / duration))
+    loading(percentage, cpt)
+    cpt++
+    if (percentage >= 100) {
+      clearInterval(interval)
+      ending()
+    }
+  }, 1000)
+}
+
+export const isValidCondition = (condition, values) => {
+  if (!condition) {
+    return true
+  }
+
+  const { op, key, value } = condition
+  const exceptedValue = values[key]
+
+  switch (op) {
+    case '=':
+    case '!=': {
+      const result = Array.isArray(value)
+        ? JSON.stringify(value.sort()) === JSON.stringify(exceptedValue).sort()
+        : value === exceptedValue
+
+      return op === '!=' ? !result : result
+    }
+    case '<':
+      return exceptedValue < value
+    case '<=':
+      return exceptedValue <= value
+    case '>=':
+      return exceptedValue >= value
+    case '>':
+      return exceptedValue > value
+    default:
+      throw new Error(`Invalid condition operation provided (${op})`)
+  }
+}
+
 export const timeoutRecurs = (second, condition, callback) => {
   if (condition()) {
     setTimeout(() => {
@@ -49,9 +96,7 @@ export const getActionCondition = (source, target, action, props = {}) => {
   }
   const conditions = {
     delivery: props =>
-      target.life > 0 &&
-      target.isBuilt &&
-      (target.type === 'TownCenter' || target.type === props.buildingType),
+      target.life > 0 && target.isBuilt && (target.type === 'TownCenter' || target.type === props.buildingType),
     takemeat: () =>
       source.type === 'Villager' &&
       target.name === 'animal' &&

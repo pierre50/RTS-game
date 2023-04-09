@@ -2,7 +2,7 @@ export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
 
-export const accelerator = 1
+export const accelerator = 3
 export const stepTime = 30
 
 export const colorWhite = 0xffffff

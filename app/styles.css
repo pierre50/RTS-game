@@ -154,9 +154,6 @@ body {
 
 .resource > div {
   width: 40px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .resource-content {

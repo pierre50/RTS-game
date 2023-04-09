@@ -7,6 +7,7 @@ import {
   canvasDrawDiamond,
   canvasDrawRectangle,
   canvasDrawStrokeRectangle,
+  isValidCondition,
 } from '../lib'
 import { cellWidth, cellHeight } from '../constants'
 
@@ -273,8 +274,15 @@ export default class Menu {
     const {
       context: { player },
     } = this
+    const t = {
+      0: 'Stone Age',
+      1: 'Tool Age',
+      2: 'Bronze Age',
+      3: 'Iron Age',
+    }
     ;['wood', 'food', 'stone', 'gold', 'age'].forEach(prop => {
-      this[prop].textContent = (player && player[prop]) || 0
+      const val = Math.min((player && player[prop]) || 0, 99999)
+      this[prop].textContent = prop === 'age' ? t[val] : val
     })
   }
 
@@ -332,37 +340,53 @@ export default class Menu {
     }
     if (selection && selection.interface) {
       this.generateInfo(selection)
-      if (selection.name === 'building' && !selection.isBuilt) {
-        setMenuRecurs(selection, this.bottombarMenu, [])
+      if (selection.name === 'building') {
+        if (!selection.isBuilt) {
+          setMenuRecurs(selection, this.bottombarMenu, [])
+        } else if (selection.evolution) {
+          setMenuRecurs(selection, this.bottombarMenu, [
+            {
+              icon: 'interface/50721/003_50721.png',
+              id: `${type}-cancel`,
+              onClick: selection => {
+                selection.cancelEvolution()
+              },
+            },
+          ])
+        } else {
+          setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || [])
+        }
       } else {
         setMenuRecurs(selection, this.bottombarMenu, selection.interface.menu || [])
       }
     }
     function setMenuRecurs(selection, element, menu, parent) {
-      menu.forEach((btn, index) => {
-        const box = document.createElement('div')
-        box.className = 'bottombar-menu-box'
-        box.id = btn.id || `btn-${index}`
-        if (typeof btn.onCreate === 'function') {
-          btn.onCreate(selection, box)
-        } else {
-          const img = document.createElement('img')
-          img.src = btn.icon
-          img.className = 'img'
-          box.appendChild(img)
-        }
+      menu
+        .filter(btn => !btn.hide || !btn.hide())
+        .forEach((btn, index) => {
+          const box = document.createElement('div')
+          box.className = 'bottombar-menu-box'
+          box.id = btn.id || `btn-${index}`
+          if (typeof btn.onCreate === 'function') {
+            btn.onCreate(selection, box)
+          } else {
+            const img = document.createElement('img')
+            img.src = btn.icon
+            img.className = 'img'
+            box.appendChild(img)
+          }
 
-        if (btn.children) {
-          box.addEventListener('pointerup', () => {
-            element.textContent = ''
-            controls.removeMouseBuilding()
-            setMenuRecurs(selection, element, btn.children, menu)
-          })
-        } else if (typeof btn.onClick === 'function') {
-          box.addEventListener('pointerup', evt => btn.onClick(selection, evt))
-        }
-        element.appendChild(box)
-      })
+          if (btn.children) {
+            box.addEventListener('pointerup', () => {
+              element.textContent = ''
+              controls.removeMouseBuilding()
+              setMenuRecurs(selection, element, btn.children, menu)
+            })
+          } else if (typeof btn.onClick === 'function') {
+            box.addEventListener('pointerup', evt => btn.onClick(selection, evt))
+          }
+          element.appendChild(box)
+        })
       if (parent || selection.selected) {
         const back = document.createElement('div')
         back.className = 'bottombar-menu-box'
@@ -456,10 +480,34 @@ export default class Menu {
     return {
       icon: getIconPath(assets.icon),
       id: type,
+      hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })
+        } else {
+          this.showMessage(this.getMessage(config.cost))
+        }
+      },
+    }
+  }
+
+  getEvolutionButton(type) {
+    const {
+      context: { controls, player },
+    } = this
+    const config = Assets.cache.get('evolution')[type]
+    !config.displayConditions.map(condition => {
+      isValidCondition(condition, player)
+    }).length
+    return {
+      icon: getIconPath(config.icon),
+      id: type,
+      hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
+      onClick: selection => {
+        controls.removeMouseBuilding()
+        if (canAfford(player, config.cost)) {
+          selection.buyEvolution(config)
         } else {
           this.showMessage(this.getMessage(config.cost))
         }

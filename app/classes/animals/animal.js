@@ -435,10 +435,6 @@ export class Animal extends Container {
     if (this.life <= 0) {
       this.die()
     }
-    if (this.work === 'attacker' && this.inactif) {
-      this.action = 'attack'
-      this.affectNewDest()
-    }
     if (this.hasPath()) {
       this.moveToPath()
     }
