@@ -47,6 +47,8 @@ export class Barracks extends Building {
       spriteColor.name = 'color'
       changeSpriteColor(spriteColor, this.owner.color)
       this.addChildAt(spriteColor, 0)
+    } else {
+      changeSpriteColor(sprite, this.owner.color)
     }
   }
 }
