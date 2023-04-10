@@ -32,17 +32,6 @@ export const debounce = (callback, wait) => {
   }
 }
 
-export function getBuildingTextureNameWithSize(size) {
-  switch (size) {
-    case 1:
-      return '000_489'
-    case 2:
-      return '000_489'
-    case 3:
-      return '000_261'
-  }
-}
-
 export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }

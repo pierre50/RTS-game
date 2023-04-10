@@ -102,6 +102,7 @@ body {
   flex-wrap: wrap;
   gap: 5px;
   padding: 5px 0;
+  overflow: auto;
 }
 
 .bottombar-menu-column {

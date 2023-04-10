@@ -1,6 +1,6 @@
 import { Building } from './building'
 import { Assets, Sprite, Polygon } from 'pixi.js'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize } from '../../lib'
+import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class ArcheryRange extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -12,7 +12,6 @@ export class ArcheryRange extends Building {
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
 
     super(
       {
@@ -23,10 +22,9 @@ export class ArcheryRange extends Building {
         sprite,
         isBuilt,
         ...config,
-        assets,
         interface: {
           info: element => {
-            const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+            const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
           menu: owner.isPlayed ? [context.menu.getUnitButton('Bowman')] : [],
@@ -37,11 +35,15 @@ export class ArcheryRange extends Building {
   }
 
   finalTexture() {
-    const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
 
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(assets.images.final, Assets)
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = getTexture(assets.images.final, Assets)
+    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+
+    const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
+    spriteColor.name = 'color'
     changeSpriteColor(spriteColor, this.owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
+    this.addChildAt(spriteColor, 0)
   }
 }

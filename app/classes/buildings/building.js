@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite, AnimatedSprite, Graphics, Polygon } from 'pixi.js'
+import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator } from '../../constants'
 import {
   getTexture,
@@ -16,7 +16,7 @@ import {
   getActionCondition,
   capitalizeFirstLetter,
   refundCost,
-  getBuildingTextureNameWithSize,
+  getBuildingAsset,
 } from '../../lib'
 
 export class Building extends Container {
@@ -319,7 +319,7 @@ export class Building extends Container {
           list.splice(list.indexOf(this), 1)
         }
       }
-      const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+      const assets = getBuildingAsset(this.type, this.owner, Assets)
       const rubble = Sprite.from(getTexture(assets.images.rubble, Assets))
       rubble.name = 'rubble'
       map.grid[this.i][this.j].addChild(rubble)
@@ -508,7 +508,11 @@ export class Building extends Container {
           this.stopInterval()
           this.loading = null
           this.technology = null
-          player[technology.key] = technology.value
+          if (Array.isArray(player[technology.key])) {
+            player[technology.key].push(technology.value)
+          } else {
+            player[technology.key] = technology.value
+          }
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)
           if (this.selected && this.owner.isPlayed) {

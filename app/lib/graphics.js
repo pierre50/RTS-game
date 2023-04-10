@@ -7,12 +7,34 @@ export function getIconPath(name) {
   return `interface/${id}/${index}_${id}.png`
 }
 
+export function getBuildingTextureNameWithSize(size) {
+  switch (size) {
+    case 1:
+      return '000_256'
+    case 2:
+      return '000_258'
+    case 3:
+      return '000_261'
+  }
+}
+
+export function getBuildingAsset(type, owner, assets) {
+  const path = assets.cache.get(owner.civ.toLowerCase()).buildings
+  if (path[owner.age][type]) {
+    return path[owner.age][type]
+  } else if (path[owner.age - 1][type]) {
+    return path[owner.age - 1][type]
+  } else if (path[owner.age - 2][type]) {
+    return path[owner.age - 2][type]
+  }
+}
+
 export function getTexture(name, assets) {
   const id = name.split('_')[1]
   const index = name.split('_')[0]
   const spritesheet = assets.cache.get(id)
   const textureName = `${index}_${id}.png`
-  spritesheet.textures[textureName].hitArea = spritesheet.data.frames[textureName].hitArea
+  //spritesheet.textures[textureName].hitArea = spritesheet.data.frames[textureName].hitArea
   return spritesheet.textures[textureName]
 }
 

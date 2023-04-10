@@ -1,6 +1,6 @@
 import { Building } from './building'
 import { Assets, Sprite, Polygon } from 'pixi.js'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize } from '../../lib'
+import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class StoragePit extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -12,7 +12,7 @@ export class StoragePit extends Building {
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
+    //sprite.hitArea = new Polygon(texture.hitArea)
 
     super(
       {
@@ -25,7 +25,7 @@ export class StoragePit extends Building {
         ...config,
         interface: {
           info: element => {
-            const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+            const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
         },
@@ -35,7 +35,7 @@ export class StoragePit extends Building {
   }
 
   finalTexture() {
-    const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
 
     const sprite = this.getChildByName('sprite')
     sprite.texture = getTexture(assets.images.final, Assets)

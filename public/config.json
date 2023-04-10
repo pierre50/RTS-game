@@ -75,6 +75,11 @@
           "key": "age",
           "op": ">=",
           "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
         }
       ]
     },
@@ -89,7 +94,7 @@
         {
           "key": "age",
           "op": ">=",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -104,7 +109,7 @@
         {
           "key": "age",
           "op": ">=",
-          "value": 1
+          "value": 2
         }
       ]
     },

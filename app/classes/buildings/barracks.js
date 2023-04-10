@@ -1,6 +1,6 @@
 import { Building } from './building'
 import { Assets, Sprite, Polygon } from 'pixi.js'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize } from '../../lib'
+import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class Barracks extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -12,7 +12,7 @@ export class Barracks extends Building {
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
+    //sprite.hitArea = new Polygon(texture.hitArea)
 
     super(
       {
@@ -25,7 +25,7 @@ export class Barracks extends Building {
         ...config,
         interface: {
           info: element => {
-            const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+            const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
           menu: owner.isPlayed ? [context.menu.getUnitButton('Clubman')] : [],
@@ -36,11 +36,17 @@ export class Barracks extends Building {
   }
 
   finalTexture() {
-    const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
 
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(assets.images.final, Assets)
-    changeSpriteColor(spriteColor, this.owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = getTexture(assets.images.final, Assets)
+    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+
+    if (assets.images.color) {
+      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
+      spriteColor.name = 'color'
+      changeSpriteColor(spriteColor, this.owner.color)
+      this.addChildAt(spriteColor, 0)
+    }
   }
 }

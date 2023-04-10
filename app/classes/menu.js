@@ -8,6 +8,7 @@ import {
   canvasDrawRectangle,
   canvasDrawStrokeRectangle,
   isValidCondition,
+  getBuildingAsset,
 } from '../lib'
 import { cellWidth, cellHeight } from '../constants'
 
@@ -479,12 +480,12 @@ export default class Menu {
     return {
       id: type,
       icon: () => {
-        const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
+        const assets = getBuildingAsset(type, player, Assets)
         return getIconPath(assets.icon)
       },
       hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
-        const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
+        const assets = getBuildingAsset(type, player, Assets)
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })

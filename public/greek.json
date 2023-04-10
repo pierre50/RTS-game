@@ -20,7 +20,7 @@
         "icon": "015_50705",
         "images": {
           "final": "000_218",
-          "rubble": "000_154",
+          "rubble": "000_153",
           "color": "000_233"
         }
       },
@@ -43,54 +43,73 @@
     },
     "1": {
       "TownCenter": {
-        "icon": "033_50705",
+        "icon": "035_50705",
         "images": {
           "final": "001_280",
           "rubble": "000_155",
-          "color": "000_230"
-        }
-      },
-      "Barracks": {
-        "icon": "003_50705",
-        "images": {
-          "final": "000_61",
-          "rubble": "000_155"
+          "color": "001_230"
         }
       },
       "House": {
-        "icon": "015_50705",
+        "icon": "016_50705",
         "images": {
           "final": "000_65",
-          "rubble": "000_154",
+          "rubble": "000_153",
           "color": "000_233"
-        }
-      },
-      "Granary": {
-        "icon": "011_50705",
-        "images": {
-          "final": "000_64",
-          "rubble": "000_155",
-          "color": "000_83"
-        }
-      },
-      "StoragePit": {
-        "icon": "028_50705",
-        "images": {
-          "final": "000_527",
-          "rubble": "000_155",
-          "color": "000_235"
         }
       },
       "Farm": {
         "icon": "010_50705",
         "images": {
           "final": "000_447",
-          "rubble": "000_155",
+          "rubble": "000_239",
           "color": "000_232"
         }
       },
+      "WatchTower": {
+        "icon": "026_50705",
+        "images": {
+          "final": "000_688",
+          "rubble": "000_155",
+          "color": "000_237"
+        }
+      },
+      "Market": {
+        "icon": "021_50705",
+        "images": {
+          "final": "000_500",
+          "rubble": "000_155",
+          "color": "000_234"
+        }
+      }
+    },
+    "2": {
+      "Barracks": {
+        "icon": "004_50705",
+        "images": {
+          "final": "000_61",
+          "rubble": "000_155",
+          "color": "000_79"
+        }
+      },
+      "TownCenter": {
+        "icon": "036_50705",
+        "images": {
+          "final": "000_62",
+          "rubble": "000_155",
+          "color": "001_80"
+        }
+      },
+      "House": {
+        "icon": "017_50705",
+        "images": {
+          "final": "001_65",
+          "rubble": "000_153",
+          "color": "000_233"
+        }
+      },
       "Stable": {
-        "icon": "025_50705",
+        "icon": "024_50705",
         "images": {
           "final": "000_609",
           "rubble": "000_155",
@@ -100,25 +119,41 @@
       "ArcheryRange": {
         "icon": "001_50705",
         "images": {
-          "final": "000_447",
+          "final": "000_71",
           "rubble": "000_155",
-          "color": "000_232"
-        }
-      },
-      "WatchTower": {
-        "icon": "026_50705",
-        "images": {
-          "final": "000_688",
-          "rubble": "000_155",
-          "color": "000_232"
+          "color": "000_90"
         }
       },
       "Market": {
-        "icon": "021_50705",
+        "icon": "022_50705",
         "images": {
-          "final": "000_500",
+          "final": "000_68",
           "rubble": "000_155",
           "color": "000_232"
+        }
+      },
+      "StoragePit": {
+        "icon": "029_50705",
+        "images": {
+          "final": "000_70",
+          "rubble": "000_155",
+          "color": "000_89"
+        }
+      },
+      "Academy": {
+        "icon": "028_50705",
+        "images": {
+          "final": "000_66",
+          "rubble": "000_155",
+          "color": "000_235"
+        }
+      },
+      "SiegeWorkshop": {
+        "icon": "028_50705",
+        "images": {
+          "final": "000_63",
+          "rubble": "000_155",
+          "color": "000_235"
         }
       }
     }

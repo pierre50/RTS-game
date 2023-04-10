@@ -1,7 +1,7 @@
 import { Building } from './building'
 import { Assets, Sprite, AnimatedSprite, Polygon } from 'pixi.js'
 import { accelerator } from '../../constants'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize } from '../../lib'
+import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class House extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -9,11 +9,12 @@ export class House extends Building {
     const config = Assets.cache.get('config').buildings[type]
 
     // Define sprite
-    const texture = getTexture(getBuildingTextureNameWithSize(config.size), Assets)
+    const sheet = owner.age === 0 ? '000_489' : getBuildingTextureNameWithSize(config.size)
+    const texture = getTexture(sheet, Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    sprite.hitArea = new Polygon(texture.hitArea)
+    //sprite.hitArea = new Polygon(texture.hitArea)
 
     super(
       {
@@ -26,7 +27,7 @@ export class House extends Building {
         ...config,
         interface: {
           info: element => {
-            const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+            const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
 
             if (this.owner.isPlayed && this.isBuilt) {
@@ -43,7 +44,7 @@ export class House extends Building {
   }
 
   finalTexture() {
-    const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
 
     const sprite = this.getChildByName('sprite')
     sprite.texture = getTexture(assets.images.final, Assets)
@@ -54,19 +55,25 @@ export class House extends Building {
     changeSpriteColor(spriteColor, this.owner.color)
     this.addChildAt(spriteColor, 0)
 
-    const spritesheetFire = Assets.cache.get('347')
-    const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-    spriteFire.name = 'deco'
-    spriteFire.allowMove = false
-    spriteFire.allowClick = false
-    spriteFire.interactive = false
-    spriteFire.roundPixels = true
-    spriteFire.x = 10
-    spriteFire.y = 5
-    spriteFire.play()
-    spriteFire.animationSpeed = 0.2 * accelerator
-
-    this.addChild(spriteFire)
+    if (this.owner.age === 0) {
+      const spritesheetFire = Assets.cache.get('347')
+      const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+      spriteFire.name = 'deco'
+      spriteFire.allowMove = false
+      spriteFire.allowClick = false
+      spriteFire.interactive = false
+      spriteFire.roundPixels = true
+      spriteFire.x = 10
+      spriteFire.y = 5
+      spriteFire.play()
+      spriteFire.animationSpeed = 0.2 * accelerator
+      this.addChild(spriteFire)
+    } else {
+      const fire = this.getChildByName('deco')
+      if (fire) {
+        fire.destroy()
+      }
+    }
   }
 
   onBuilt() {
