@@ -142,7 +142,7 @@ export default class Map extends Container {
             {
               i: posI,
               j: posJ,
-              age: 0,
+              age: 1,
               civ: 'Greek',
               color,
               isPlayed: true,

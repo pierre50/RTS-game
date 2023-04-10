@@ -21,7 +21,7 @@ export default class LoaderScreen extends Container {
     Assets.addBundle('config', {
       config: 'config.json',
       greek: 'greek.json',
-      evolution: 'evolution.json',
+      technology: 'technology.json',
     })
 
     Assets.addBundle('interface', {
@@ -44,7 +44,17 @@ export default class LoaderScreen extends Container {
     })
 
     const graphics = [
+      '61',
+      '62',
+      '63',
       '64',
+      '65',
+      '66',
+      '67',
+      '68',
+      '69',
+      '70',
+      '71',
       '83',
       '154',
       '155',
@@ -133,6 +143,7 @@ export default class LoaderScreen extends Container {
       '493',
       '494',
       '497',
+      '500',
       '503',
       '509',
       '527',
@@ -140,6 +151,7 @@ export default class LoaderScreen extends Container {
       '532',
       '533',
       '534',
+      '609',
       '622',
       '623',
       '624',
@@ -163,6 +175,7 @@ export default class LoaderScreen extends Container {
       '680',
       '682',
       '683',
+      '688',
     ]
 
     Assets.addBundle(

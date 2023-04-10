@@ -16,6 +16,7 @@ import {
   getActionCondition,
   capitalizeFirstLetter,
   refundCost,
+  getBuildingTextureNameWithSize,
 } from '../../lib'
 
 export class Building extends Container {
@@ -39,7 +40,7 @@ export class Building extends Container {
     this.zIndex = getInstanceZIndex(this)
     this.selected = false
     this.queue = []
-    this.evolution = null
+    this.technology = null
     this.loading = null
     this.isDead = false
     this.isDestroyed = false
@@ -208,6 +209,9 @@ export class Building extends Container {
     } else if (percentage >= 100) {
       this.finalTexture()
       this.isBuilt = true
+      if (!this.owner.hasBuilt.includes(this.type)) {
+        this.owner.hasBuilt.push(this.type)
+      }
       if (this.owner && this.owner.isPlayed && this.selected) {
         menu.setBottombar(this)
       }
@@ -315,7 +319,8 @@ export class Building extends Container {
           list.splice(list.indexOf(this), 1)
         }
       }
-      const rubble = Sprite.from(getTexture(this.assets.images.rubble, Assets))
+      const assets = Assets.cache.get(this.owner.civ.toLowerCase()).buildings[this.owner.age][this.type]
+      const rubble = Sprite.from(getTexture(assets.images.rubble, Assets))
       rubble.name = 'rubble'
       map.grid[this.i][this.j].addChild(rubble)
       map.grid[this.i][this.j].zIndex++
@@ -459,13 +464,13 @@ export class Building extends Container {
     }
   }
 
-  cancelEvolution() {
+  cancelTechnology() {
     const {
       context: { player, menu },
     } = this
     this.stopInterval()
-    refundCost(player, this.evolution.cost)
-    this.evolution = null
+    refundCost(player, this.technology.cost)
+    this.technology = null
     this.loading = null
     if (this.selected && this.owner.isPlayed) {
       menu.setBottombar(this)
@@ -473,7 +478,7 @@ export class Building extends Container {
     menu.updateTopbar()
   }
 
-  buyEvolution(evolution) {
+  buyTechnology(technology) {
     const {
       context: { player, menu },
     } = this
@@ -482,14 +487,14 @@ export class Building extends Container {
       this.isBuilt &&
       this.loading === null &&
       !this.isDead &&
-      canAfford(this.owner, evolution.cost)
+      canAfford(this.owner, technology.cost)
     ) {
-      payCost(this.owner, evolution.cost)
+      payCost(this.owner, technology.cost)
       if (this.owner.isPlayed) {
         menu.updateTopbar()
       }
       this.loading = 0
-      this.evolution = evolution
+      this.technology = technology
       if (this.selected && this.owner.isPlayed) {
         menu.setBottombar(this)
       }
@@ -502,16 +507,16 @@ export class Building extends Container {
         } else if (this.loading >= 100) {
           this.stopInterval()
           this.loading = null
-          this.evolution = null
-          player[evolution.key] = evolution.value
-          const functionName = `on${capitalizeFirstLetter(evolution.key)}Change`
-          typeof player[functionName] === 'function' && player[functionName](evolution.value)
+          this.technology = null
+          player[technology.key] = technology.value
+          const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
+          typeof player[functionName] === 'function' && player[functionName](technology.value)
           if (this.selected && this.owner.isPlayed) {
             menu.setBottombar(this)
           }
           menu.updateTopbar()
         }
-      }, evolution.loadingTime)
+      }, technology.loadingTime)
     }
   }
 

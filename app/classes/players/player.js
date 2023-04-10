@@ -28,7 +28,7 @@ export class Player {
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
     this.hasBuilt = []
-    this.evolutions = []
+    this.technologies = []
 
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
@@ -61,6 +61,15 @@ export class Player {
     }
 
     return building
+  }
+
+  onAgeChange() {
+    for (let i = 0; i < this.buildings.length; i++) {
+      const building = this.buildings[i]
+      if (building.isBuilt && !building.isDead) {
+        building.finalTexture()
+      }
+    }
   }
 
   otherPlayers() {
@@ -96,9 +105,6 @@ export class Player {
   createBuilding(i, j, type, isBuilt = false) {
     const { context } = this
     const building = new buildings[type]({ i, j, owner: this, isBuilt }, context)
-    if (!this.hasBuilt.includes(type)) {
-      this.hasBuilt.push(type)
-    }
     this.buildings.push(building)
     context.menu.updatePlayerMiniMap(this)
     return building

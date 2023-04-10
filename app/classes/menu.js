@@ -343,13 +343,13 @@ export default class Menu {
       if (selection.name === 'building') {
         if (!selection.isBuilt) {
           setMenuRecurs(selection, this.bottombarMenu, [])
-        } else if (selection.evolution) {
+        } else if (selection.technology) {
           setMenuRecurs(selection, this.bottombarMenu, [
             {
               icon: 'interface/50721/003_50721.png',
               id: `${type}-cancel`,
               onClick: selection => {
-                selection.cancelEvolution()
+                selection.cancelTechnology()
               },
             },
           ])
@@ -495,11 +495,11 @@ export default class Menu {
     }
   }
 
-  getEvolutionButton(type) {
+  getTechnologyButton(type) {
     const {
       context: { controls, player },
     } = this
-    const config = Assets.cache.get('evolution')[type]
+    const config = Assets.cache.get('technology')[type]
     !config.displayConditions.map(condition => {
       isValidCondition(condition, player)
     }).length
@@ -510,7 +510,7 @@ export default class Menu {
       onClick: selection => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
-          selection.buyEvolution(config)
+          selection.buyTechnology(config)
         } else {
           this.showMessage(this.getMessage(config.cost))
         }
