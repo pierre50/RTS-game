@@ -42,6 +42,26 @@
       },
       "accept": ["woodcutter", "stoneminer", "goldminer", "hunter"]
     },
+    "Market": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      },
+      "displayConditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Granary"
+        }
+      ]
+    },
     "Farm": {
       "size": 3,
       "sight": 3,

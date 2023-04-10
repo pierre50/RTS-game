@@ -102,6 +102,7 @@ export class Villager extends Unit {
                     menu.getBuildingButton('Stable'),
                     menu.getBuildingButton('ArcheryRange'),
                     menu.getBuildingButton('WatchTower'),
+                    menu.getBuildingButton('Market'),
                   ],
                 },
               ]

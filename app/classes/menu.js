@@ -371,7 +371,7 @@ export default class Menu {
             btn.onCreate(selection, box)
           } else {
             const img = document.createElement('img')
-            img.src = btn.icon
+            img.src = typeof btn.icon === 'function' ? btn.icon() : btn.icon
             img.className = 'img'
             box.appendChild(img)
           }
@@ -476,12 +476,15 @@ export default class Menu {
       context: { controls, player },
     } = this
     const config = Assets.cache.get('config').buildings[type]
-    const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
     return {
-      icon: getIconPath(assets.icon),
       id: type,
+      icon: () => {
+        const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
+        return getIconPath(assets.icon)
+      },
       hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
+        const assets = Assets.cache.get(player.civ.toLowerCase()).buildings[player.age][type]
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })

@@ -47,5 +47,27 @@
       "food": 1000,
       "gold": 800
     }
+  },
+  "Woodworking": {
+    "icon": "012_50721",
+    "key": "evolutions",
+    "value": 3,
+    "displayConditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "evolutions",
+        "op": "!includes",
+        "value": "Woodworking"
+      }
+    ],
+    "loadingTime": 160,
+    "cost": {
+      "food": 1000,
+      "gold": 800
+    }
   }
 }

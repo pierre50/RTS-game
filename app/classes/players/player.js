@@ -27,6 +27,8 @@ export class Player {
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
+    this.hasBuilt = []
+    this.evolutions = []
 
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
@@ -94,6 +96,9 @@ export class Player {
   createBuilding(i, j, type, isBuilt = false) {
     const { context } = this
     const building = new buildings[type]({ i, j, owner: this, isBuilt }, context)
+    if (!this.hasBuilt.includes(type)) {
+      this.hasBuilt.push(type)
+    }
     this.buildings.push(building)
     context.menu.updatePlayerMiniMap(this)
     return building
