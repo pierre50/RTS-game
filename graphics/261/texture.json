@@ -1,0 +1,123 @@
+{
+  "frames": {
+    "000_261.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 165,
+        "h": 87
+      },
+      "anchor": {
+        "x": 0.5212121212121212,
+        "y": 0.5287356321839081
+      },
+      "hitArea": [
+        -2,39, -85,-2, -3,-42, 78,-1
+      ]
+    },
+    "001_261.png": {
+      "frame": {
+        "x": 165,
+        "y": 0,
+        "w": 165,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 165,
+        "h": 87
+      },
+      "anchor": {
+        "x": 0.5212121212121212,
+        "y": 0.5287356321839081
+      },
+      "hitArea": [
+        -2,39, -85,-2, -3,-42, 78,-1
+      ]
+    },
+    "003_261.png": {
+      "frame": {
+        "x": 330,
+        "y": 0,
+        "w": 164,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 164,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 164,
+        "h": 87
+      },
+      "anchor": {
+        "x": 0.5182926829268293,
+        "y": 0.5402298850574713
+      },
+      "hitArea": [
+        -2,39, -85,-2, -3,-42, 78,-1
+      ]
+    },
+    "002_261.png": {
+      "frame": {
+        "x": 494,
+        "y": 0,
+        "w": 164,
+        "h": 86
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 164,
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 164,
+        "h": 86
+      },
+      "anchor": {
+        "x": 0.5182926829268293,
+        "y": 0.5348837209302325
+      },
+      "hitArea": [
+        -2,39, -85,-2, -3,-42, 78,-1
+      ]
+    }
+  },
+  "meta": {
+    "app": "http://free-tex-packer.com",
+    "version": "0.6.5",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 658,
+      "h": 87
+    },
+    "scale": 1
+  }
+}

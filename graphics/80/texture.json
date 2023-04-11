@@ -1,0 +1,87 @@
+{
+  "frames": {
+    "002_80.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 174,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 174,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 174,
+        "h": 36
+      },
+      "anchor": {
+        "x": 0.5114942528735632,
+        "y": 0.5
+      }
+    },
+    "000_80.png": {
+      "frame": {
+        "x": 174,
+        "y": 0,
+        "w": 158,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 158,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 158,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "001_80.png": {
+      "frame": {
+        "x": 0,
+        "y": 36,
+        "w": 118,
+        "h": 60
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 118,
+        "h": 60
+      },
+      "sourceSize": {
+        "w": 118,
+        "h": 60
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6833333333333333
+      }
+    }
+  },
+  "meta": {
+    "app": "http://free-tex-packer.com",
+    "version": "0.6.7",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 332,
+      "h": 96
+    },
+    "scale": 1
+  }
+}

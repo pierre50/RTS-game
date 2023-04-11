@@ -1,0 +1,73 @@
+{
+  "ToolAge": {
+    "icon": "065_50729",
+    "key": "age",
+    "value": 1,
+    "conditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 0
+      }
+    ],
+    "loadingTime": 120,
+    "cost": {
+      "food": 500
+    }
+  },
+  "BronzeAge": {
+    "icon": "066_50729",
+    "key": "age",
+    "value": 2,
+    "conditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 1
+      }
+    ],
+    "loadingTime": 140,
+    "cost": {
+      "food": 800
+    }
+  },
+  "IronAge": {
+    "icon": "067_50729",
+    "key": "age",
+    "value": 3,
+    "conditions": [
+      {
+        "key": "age",
+        "op": "=",
+        "value": 2
+      }
+    ],
+    "loadingTime": 160,
+    "cost": {
+      "food": 1000,
+      "gold": 800
+    }
+  },
+  "Woodworking": {
+    "icon": "012_50721",
+    "key": "technologies",
+    "value": 3,
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "technologies",
+        "op": "!includes",
+        "value": "Woodworking"
+      }
+    ],
+    "loadingTime": 160,
+    "cost": {
+      "food": 1000,
+      "gold": 800
+    }
+  }
+}

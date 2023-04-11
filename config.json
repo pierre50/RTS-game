@@ -1,0 +1,324 @@
+{
+  "buildings": {
+    "TownCenter": {
+      "size": 3,
+      "sight": 7,
+      "lifeMax": 600,
+      "cost": {
+        "wood": 200
+      },
+      "conditions": [
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "GovernmentCenter"
+        }
+      ]
+    },
+    "Barracks": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 125
+      }
+    },
+    "House": {
+      "size": 1,
+      "sight": 3,
+      "lifeMax": 75,
+      "cost": {
+        "wood": 50
+      }
+    },
+    "Granary": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 120
+      },
+      "accept": ["gatherer", "farmer"]
+    },
+    "StoragePit": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 120
+      },
+      "accept": ["woodcutter", "stoneminer", "goldminer", "hunter"]
+    },
+    "Market": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Granary"
+        }
+      ]
+    },
+    "Farm": {
+      "size": 3,
+      "sight": 3,
+      "lifeMax": 50,
+      "quantity": 10,
+      "quantityReal": 250,
+      "cost": {
+        "wood": 75
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ]
+    },
+    "Stable": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        }
+      ]
+    },
+    "ArcheryRange": {
+      "size": 3,
+      "sight": 4,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        }
+      ]
+    },
+    "WatchTower": {
+      "size": 2,
+      "sight": 8,
+      "lifeMax": 125,
+      "range": 5,
+      "attack": 3,
+      "rateOfFire": 1.5,
+      "cost": {
+        "stone": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        }
+      ]
+    },
+    "GovernmentCenter": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 175
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ]
+    },
+    "Temple": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 200
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ]
+    },
+    "Academy": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Stable"
+        }
+      ]
+    },
+    "SiegeWorkshop": {
+      "size": 3,
+      "sight": 5,
+      "lifeMax": 350,
+      "cost": {
+        "wood": 200
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "ArcheryRange"
+        }
+      ]
+    }
+  },
+  "units": {
+    "Villager": {
+      "lifeMax": 25,
+      "sight": 4,
+      "speed": 1.1,
+      "trainingTime": 20,
+      "icon": "000_50730",
+      "attack": 3,
+      "range": 5,
+      "cost": {
+        "food": 30
+      }
+    },
+    "Clubman": {
+      "lifeMax": 40,
+      "sight": 4,
+      "speed": 1.2,
+      "trainingTime": 26,
+      "icon": "002_50730",
+      "attack": 3,
+      "cost": {
+        "food": 50
+      }
+    },
+    "Scout": {
+      "lifeMax": 60,
+      "sight": 7,
+      "speed": 2,
+      "trainingTime": 30,
+      "icon": "031_50730",
+      "attack": 3,
+      "cost": {
+        "food": 90
+      }
+    },
+    "Bowman": {
+      "lifeMax": 35,
+      "sight": 7,
+      "speed": 1.2,
+      "trainingTime": 30,
+      "icon": "006_50730",
+      "attack": 3,
+      "range": 5,
+      "cost": {
+        "food": 40,
+        "wood": 20
+      }
+    }
+  },
+  "resources": {
+    "Berrybush": {
+      "quantity": 200,
+      "icon": "036_50730"
+    },
+    "Tree": {
+      "quantity": 300,
+      "lifeMax": 25,
+      "icon": "035_50730"
+    },
+    "Gold": {
+      "quantity": 400,
+      "icon": "039_50730"
+    },
+    "Stone": {
+      "quantity": 250,
+      "icon": "038_50730"
+    }
+  },
+  "animals": {
+    "Gazelle": {
+      "lifeMax": 25,
+      "sight": 2,
+      "speed": 1.2,
+      "icon": "037_50730",
+      "quantity": 150
+    },
+    "Elephant": {
+      "lifeMax": 45,
+      "sight": 4,
+      "speed": 1,
+      "attack": 10,
+      "icon": "033_50730",
+      "quantity": 300
+    },
+    "Crocodile": {
+      "lifeMax": 20,
+      "sight": 5,
+      "speed": 0.5,
+      "attack": 4,
+      "icon": "041_50730",
+      "quantity": 100
+    },
+    "Lion": {
+      "lifeMax": 20,
+      "sight": 4,
+      "speed": 1.1,
+      "attack": 2,
+      "icon": "040_50730",
+      "quantity": 100
+    }
+  }
+}
