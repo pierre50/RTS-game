@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "webpack serve",
+    "deploy": "npm run build && gh-pages -d build",
     "webpack": "webpack --mode development",
     "build": "webpack --mode production",
     "format": "find app -name '*.js' | xargs -I{} ./node_modules/.bin/prettier --write --single-quote {}",
@@ -38,6 +39,7 @@
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
     "file-loader": "^6.2.0",
+    "gh-pages": "^5.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.2",
     "prettier": "2.8.4",
