@@ -1,5 +1,5 @@
 import { Building } from './building'
-import { Assets, Sprite, Polygon } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
 import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class Barracks extends Building {

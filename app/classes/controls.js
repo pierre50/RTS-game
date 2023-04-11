@@ -319,6 +319,12 @@ export default class Controls extends Container {
     this.mouseBuilding = new Container()
     const sprite = Sprite.from(getTexture(building.images.final, Assets))
     sprite.name = 'sprite'
+    this.mouseBuilding.addChild(sprite)
+    this.mouseBuilding.type = building.type
+    this.mouseBuilding.size = building.size
+    this.mouseBuilding.x = this.mouse.x
+    this.mouseBuilding.y = this.mouse.y
+    this.mouseBuilding.name = 'mouseBuilding'
     if (building.images.color) {
       const color = Sprite.from(getTexture(building.images.color, Assets))
       color.name = 'color'
@@ -327,12 +333,6 @@ export default class Controls extends Container {
     } else {
       changeSpriteColor(sprite, player.color)
     }
-    this.mouseBuilding.addChild(sprite)
-    this.mouseBuilding.type = building.type
-    this.mouseBuilding.size = building.size
-    this.mouseBuilding.x = this.mouse.x
-    this.mouseBuilding.y = this.mouse.y
-    this.mouseBuilding.name = 'mouseBuilding'
     this.addChild(this.mouseBuilding)
   }
 

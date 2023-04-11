@@ -27,7 +27,7 @@ export class Player {
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
-    this.hasBuilt = []
+    this.hasBuilt = Object.keys(buildings) //[]
     this.technologies = []
 
     const cloneGrid = []
@@ -64,10 +64,25 @@ export class Player {
   }
 
   onAgeChange() {
+    const {
+      context: { players, menu },
+    } = this
     for (let i = 0; i < this.buildings.length; i++) {
       const building = this.buildings[i]
       if (building.isBuilt && !building.isDead) {
         building.finalTexture()
+      }
+    }
+    for (let i = 0; i < players.length; i++) {
+      const player = players[i]
+      if (player.type === 'Human') {
+        if (player.selectedUnit && player.selectedUnit.owner === this) {
+          menu.setBottombar(player.selectedUnit)
+        } else if (player.selectedBuilding && player.selectedBuilding.owner === this) {
+          menu.setBottombar(player.selectedBuilding)
+        } else if (player.selectedOther && player.selectedOther.owner === this) {
+          menu.setBottombar(player.selectedOther)
+        }
       }
     }
   }

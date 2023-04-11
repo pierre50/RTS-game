@@ -1,5 +1,5 @@
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator } from '../../constants'
+import { accelerator, rubbleTime } from '../../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -17,6 +17,8 @@ import {
   capitalizeFirstLetter,
   refundCost,
   getBuildingAsset,
+  changeSpriteColor,
+  getBuildingRubbleTextureNameWithSize,
 } from '../../lib'
 
 export class Building extends Container {
@@ -45,6 +47,7 @@ export class Building extends Container {
     this.isDead = false
     this.isDestroyed = false
     this.interval
+    this.timeout
     if (!map.revealEverything) {
       this.visible = false
     }
@@ -184,6 +187,19 @@ export class Building extends Container {
     }
   }
 
+  startTimeout(cb, time) {
+    if (!this.timeout) {
+      this.timeout = setTimeout(() => cb(), (time * 1000) / accelerator)
+    }
+  }
+
+  stopTimeout() {
+    if (this.timeout) {
+      clearInterval(this.timeout)
+      this.timeout = null
+    }
+  }
+
   isAttacked(instance) {
     this.updateLife('attack')
   }
@@ -220,6 +236,29 @@ export class Building extends Container {
       }
       renderCellOnInstanceSight(this)
     }
+  }
+
+  finalTexture() {
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
+
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = getTexture(assets.images.final, Assets)
+    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+
+    const color = this.getChildByName('color')
+    if (color) {
+      color.destroy()
+    }
+
+    if (assets.images.color) {
+      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
+      spriteColor.name = 'color'
+      changeSpriteColor(spriteColor, this.owner.color)
+      this.addChild(spriteColor)
+    } else {
+      changeSpriteColor(sprite, this.owner.color)
+    }
+    typeof this.afterFinalTextures === 'function' && this.afterFinalTextures()
   }
 
   updateLife(action) {
@@ -296,6 +335,7 @@ export class Building extends Container {
     } = this
     if (this.parent) {
       this.stopInterval()
+      this.isDead = true
       if (this.selected && player) {
         player.unselectAll()
       }
@@ -319,14 +359,31 @@ export class Building extends Container {
           list.splice(list.indexOf(this), 1)
         }
       }
-      const assets = getBuildingAsset(this.type, this.owner, Assets)
-      const rubble = Sprite.from(getTexture(assets.images.rubble, Assets))
-      rubble.name = 'rubble'
-      map.grid[this.i][this.j].addChild(rubble)
-      map.grid[this.i][this.j].zIndex++
-      map.removeChild(this)
+      const color = this.getChildByName('color')
+      color && color.destroy()
+      const deco = this.getChildByName('deco')
+      deco && deco.destroy()
+      const fire = this.getChildByName('fire')
+      fire && fire.destroy()
+
+      const sprite = this.getChildByName('sprite')
+      let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
+      if (this.type === 'Farm') {
+        rubbleSheet = '000_239'
+      }
+      sprite.texture = getTexture(rubbleSheet, Assets)
+      if (this.type === 'Farm') {
+        changeSpriteColor(sprite, this.owner.color)
+      }
+      this.zIndex--
+      this.startTimeout(() => this.clear(), rubbleTime)
+      this.sprite.interactive = false
+      this.interactive = false
     }
     clearCellOnInstanceSight(this)
+  }
+
+  clear() {
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
   }

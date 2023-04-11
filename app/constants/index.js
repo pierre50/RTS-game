@@ -29,4 +29,5 @@ export const colorStone = '#B3B3B3'
 export const colorBerry = '#7B9051'
 
 export const corpseTime = 0.001
+export const rubbleTime = 120
 export const maxSelectUnits = 10

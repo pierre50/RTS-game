@@ -3,7 +3,7 @@
     "icon": "065_50729",
     "key": "age",
     "value": 1,
-    "displayConditions": [
+    "conditions": [
       {
         "key": "age",
         "op": "=",
@@ -19,7 +19,7 @@
     "icon": "066_50729",
     "key": "age",
     "value": 2,
-    "displayConditions": [
+    "conditions": [
       {
         "key": "age",
         "op": "=",
@@ -35,7 +35,7 @@
     "icon": "067_50729",
     "key": "age",
     "value": 3,
-    "displayConditions": [
+    "conditions": [
       {
         "key": "age",
         "op": "=",
@@ -52,7 +52,7 @@
     "icon": "012_50721",
     "key": "technologies",
     "value": 3,
-    "displayConditions": [
+    "conditions": [
       {
         "key": "age",
         "op": ">=",

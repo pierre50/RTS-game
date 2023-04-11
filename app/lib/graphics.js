@@ -18,6 +18,17 @@ export function getBuildingTextureNameWithSize(size) {
   }
 }
 
+export function getBuildingRubbleTextureNameWithSize(size) {
+  switch (size) {
+    case 1:
+      return '000_153'
+    case 2:
+      return '000_154'
+    case 3:
+      return '000_155'
+  }
+}
+
 export function getBuildingAsset(type, owner, assets) {
   const path = assets.cache.get(owner.civ.toLowerCase()).buildings
   if (path[owner.age][type]) {

@@ -34,13 +34,4 @@ export class Stable extends Building {
       context
     )
   }
-
-  finalTexture() {
-    const assets = getBuildingAsset(this.type, this.owner, Assets)
-
-    const spriteColor = this.getChildByName('sprite')
-    spriteColor.texture = getTexture(assets.images.final, Assets)
-    changeSpriteColor(spriteColor, this.owner.color)
-    spriteColor.anchor.set(spriteColor.texture.defaultAnchor.x, spriteColor.texture.defaultAnchor.y)
-  }
 }

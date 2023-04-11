@@ -54,6 +54,9 @@ export default class Menu {
       const {
         context: { controls },
       } = this
+      if (controls.mouseBuilding || controls.mouseRectangle) {
+        return
+      }
       const minimapFactor = this.getMinimapFactor()
       const rect = evt.target.getBoundingClientRect()
       const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
@@ -483,7 +486,7 @@ export default class Menu {
         const assets = getBuildingAsset(type, player, Assets)
         return getIconPath(assets.icon)
       },
-      hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
         const assets = getBuildingAsset(type, player, Assets)
         controls.removeMouseBuilding()
@@ -501,13 +504,13 @@ export default class Menu {
       context: { controls, player },
     } = this
     const config = Assets.cache.get('technology')[type]
-    !config.displayConditions.map(condition => {
+    !config.conditions.map(condition => {
       isValidCondition(condition, player)
     }).length
     return {
       icon: getIconPath(config.icon),
       id: type,
-      hide: () => (config.displayConditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: selection => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {

@@ -2,6 +2,7 @@ import { Unit } from './unit'
 import { Assets } from 'pixi.js'
 import { accelerator } from '../../constants'
 import { getClosestInstance, getActionCondition } from '../../lib'
+import * as buildings from '../buildings/'
 
 const assets = {
   default: {
@@ -68,6 +69,7 @@ export class Villager extends Unit {
     for (const [key, value] of Object.entries(assets.default)) {
       defaultAssets[key] = Assets.cache.get(value)
     }
+    const children = Object.keys(buildings).map(key => menu.getBuildingButton(key))
     super(
       {
         i,
@@ -93,17 +95,7 @@ export class Villager extends Unit {
             ? [
                 {
                   icon: 'interface/50721/002_50721.png',
-                  children: [
-                    menu.getBuildingButton('House'),
-                    menu.getBuildingButton('Barracks'),
-                    menu.getBuildingButton('Granary'),
-                    menu.getBuildingButton('StoragePit'),
-                    menu.getBuildingButton('Farm'),
-                    menu.getBuildingButton('Stable'),
-                    menu.getBuildingButton('ArcheryRange'),
-                    menu.getBuildingButton('WatchTower'),
-                    menu.getBuildingButton('Market'),
-                  ],
+                  children,
                 },
               ]
             : [],

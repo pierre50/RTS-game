@@ -100,7 +100,9 @@ export const getActionCondition = (source, target, action, props = {}) => {
   }
   const conditions = {
     delivery: props =>
-      target.life > 0 && target.isBuilt && (target.type === 'TownCenter' || target.type === props.buildingType),
+      target.life > 0 &&
+      target.isBuilt &&
+      (target.type === 'TownCenter' || (props.buildingType ? target.type === props.buildingType : true)),
     takemeat: () =>
       source.type === 'Villager' &&
       target.name === 'animal' &&

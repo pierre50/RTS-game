@@ -70,17 +70,4 @@ export class WatchTower extends Building {
       }
     )
   }
-
-  finalTexture() {
-    const assets = getBuildingAsset(this.type, this.owner, Assets)
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(assets.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, this.owner.color)
-    this.addChild(spriteColor)
-  }
 }

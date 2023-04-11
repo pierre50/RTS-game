@@ -1,10 +1,10 @@
 import { Building } from './building'
-import { Assets, Sprite, Polygon } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
 import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
-export class StoragePit extends Building {
+export class GovernmentCenter extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
-    const type = 'StoragePit'
+    const type = 'GovernmentCenter'
     const config = Assets.cache.get('config').buildings[type]
 
     // Define sprite
@@ -12,7 +12,6 @@ export class StoragePit extends Building {
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    //sprite.hitArea = new Polygon(texture.hitArea)
 
     super(
       {
@@ -28,6 +27,7 @@ export class StoragePit extends Building {
             const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
+          menu: owner.isPlayed ? [] : [],
         },
       },
       context

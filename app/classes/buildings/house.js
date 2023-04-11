@@ -43,18 +43,7 @@ export class House extends Building {
     )
   }
 
-  finalTexture() {
-    const assets = getBuildingAsset(this.type, this.owner, Assets)
-
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(assets.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-
-    const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-    spriteColor.name = 'color'
-    changeSpriteColor(spriteColor, this.owner.color)
-    this.addChildAt(spriteColor, 0)
-
+  afterFinalTextures() {
     if (this.owner.age === 0) {
       const spritesheetFire = Assets.cache.get('347')
       const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])

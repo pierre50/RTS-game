@@ -463,6 +463,7 @@ export class Animal extends Container {
     if (this.currentSheet === 'dyingSheet') {
       return
     }
+    this.stopInterval()
     this.isDead = true
     this.path = []
     this.action = null
@@ -479,7 +480,6 @@ export class Animal extends Container {
         this.clear()
       }
     }
-    clearInterval(this.interval)
   }
 
   clear() {
