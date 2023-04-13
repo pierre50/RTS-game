@@ -36,19 +36,6 @@ export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-export const intervalForDuration = (duration, loading, ending) => {
-  let cpt = 0
-  let interval = setInterval(() => {
-    const percentage = Math.floor(Math.min(100, (100 * cpt) / duration))
-    loading(percentage, cpt)
-    cpt++
-    if (percentage >= 100) {
-      clearInterval(interval)
-      ending()
-    }
-  }, 1000)
-}
-
 export const isValidCondition = (condition, values) => {
   if (!condition) {
     return true
@@ -90,7 +77,7 @@ export const timeoutRecurs = (second, condition, callback) => {
         callback()
         timeoutRecurs(second, condition, callback)
       }
-    }, (second * 1000) / 100 / accelerator)
+    }, (second * 1000) / accelerator)
   }
 }
 

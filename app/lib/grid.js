@@ -1,4 +1,3 @@
-import { accelerator } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -263,14 +262,15 @@ export function findInstancesInSight(instance, condition) {
  * Render cell if is on sight of instance
  * @param {object} instance
  */
-export function renderCellOnInstanceSight(instance) {
+export function renderCellOnInstanceSight(instance, player) {
   if (
     instance.parent.revealEverything ||
     instance.owner.isPlayed ||
     instanceIsInPlayerSight(instance, player) ||
     (instance.name === 'building' &&
-      player.views[instance.i][instance.j].has &&
-      player.views[instance.i][instance.j].has.id === instance.id)
+      !instance.isDead &&
+      instance.owner.views[instance.i][instance.j].has &&
+      instance.owner.views[instance.i][instance.j].has.id === instance.id)
   ) {
     instance.visible = true
   } else {
@@ -309,7 +309,10 @@ export function renderCellOnInstanceSight(instance) {
       if (cell.viewBy.indexOf(instance) === -1) {
         cell.viewBy.push(instance)
       }
-      cell.viewed = true
+      if (!cell.viewed) {
+        cell.onViewed()
+        cell.viewed = true
+      }
     }
   })
 }

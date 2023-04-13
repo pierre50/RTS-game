@@ -49,12 +49,11 @@ export class Cell extends Container {
     this.interactive = false
     this.allowMove = false
     this.allowClick = false
-    this.cacheAsBitmap = true
   }
 
   updateVisible() {
     const {
-      context: { map, player },
+      context: { map, player, menu },
     } = this
     if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
       return
@@ -65,7 +64,7 @@ export class Cell extends Container {
         map.revealEverything ||
         !this.has.owner ||
         this.has.owner.isPlayed ||
-        instanceIsInPlayerSight(this.has, this) ||
+        instanceIsInPlayerSight(this.has, player) ||
         (this.has.name === 'building' &&
           player.views[this.i][this.j].has &&
           player.views[this.i][this.j].has.id === this.has.id)

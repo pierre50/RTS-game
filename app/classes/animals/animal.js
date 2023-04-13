@@ -18,6 +18,7 @@ import {
   getCellsAroundPoint,
   instanceIsInPlayerSight,
   getActionCondition,
+  timeoutRecurs,
 } from '../../lib'
 
 export class Animal extends Container {
@@ -27,7 +28,7 @@ export class Animal extends Container {
     this.context = context
 
     const {
-      context: { map },
+      context: { map, player },
     } = this
     this.setParent(map)
     this.id = map.children.length
@@ -121,7 +122,7 @@ export class Animal extends Container {
 
     this.stop()
 
-    renderCellOnInstanceSight(this)
+    renderCellOnInstanceSight(this, player)
   }
 
   startInterval() {
@@ -188,28 +189,42 @@ export class Animal extends Container {
       this.stop()
       return
     }
-    this.startInterval()
-    this.inactif = false
-    this.setTextures('walkingSheet')
-    this.path = path
+
+    this.setTextures('walkingSheet', () => {
+      this.inactif = false
+      this.path = path
+      this.startInterval()
+    })
+  }
+
+  isAnimalAtDest(action, dest) {
+    if (!action) {
+      return false
+    }
+    if (!dest) {
+      this.affectNewDest()
+      return false
+    }
+    return instanceContactInstance(this, dest)
   }
 
   sendTo(dest, action) {
     const {
       context: { map },
     } = this
+    this.stop()
     let path = []
     // No instance we cancel the destination
     if (!dest) {
-      return false
+      return
     }
     // Animal is already beside our target
-    if (action && instanceContactInstance(this, dest)) {
+    if (this.isAnimalAtDest(action, dest)) {
       this.setDest(dest)
       this.action = action
       this.degree = getInstanceDegree(this, dest.x, dest.y)
       this.getAction(action)
-      return true
+      return
     }
     // Set animal path
     if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
@@ -227,10 +242,9 @@ export class Animal extends Container {
       this.setDest(dest)
       this.action = action
       this.setPath(path)
-      return true
+    } else {
+      this.stop()
     }
-    this.stop()
-    return false
   }
 
   getActionCondition(target) {
@@ -251,40 +265,41 @@ export class Animal extends Container {
           this.affectNewDest()
           return
         }
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest()
-            return
-          }
-          if (this.destHasMoved()) {
-            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
-            this.setTextures('actionSheet')
-          }
-          if (!instanceContactInstance(this, this.dest)) {
-            this.sendTo(this.dest, 'attack')
-            return
-          }
-          if (this.dest.life > 0) {
-            this.dest.life -= this.attack
-            if (
-              this.dest.selected &&
-              player &&
-              (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
-            ) {
-              menu.updateInfo(
-                'life',
-                element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
-              )
-            }
-            this.dest.isAttacked(this)
-          }
+        this.setTextures('actionSheet', () => {
+          timeoutRecurs(
+            this.rateOfFire,
+            () => this.getActionCondition(this.dest),
+            () => {
+              if (this.destHasMoved()) {
+                this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+                this.setTextures('actionSheet')
+              }
+              if (!instanceContactInstance(this, this.dest)) {
+                this.sendTo(this.dest, 'attack')
+                return
+              }
+              if (this.dest.life > 0) {
+                this.dest.life -= this.attack
+                if (
+                  this.dest.selected &&
+                  player &&
+                  (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+                ) {
+                  menu.updateInfo(
+                    'life',
+                    element => (element.textContent = Math.max(this.dest.life, 0) + '/' + this.dest.lifeMax)
+                  )
+                }
+                this.dest.isAttacked(this)
+              }
 
-          if (this.dest.life <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-        }
-        this.setTextures('actionSheet')
+              if (this.dest.life <= 0) {
+                this.dest.die()
+                this.affectNewDest()
+              }
+            }
+          )
+        })
         break
       default:
         this.stop()
@@ -319,7 +334,7 @@ export class Animal extends Container {
 
   moveToPath() {
     const {
-      context: { map },
+      context: { map, player },
     } = this
     const next = this.path[this.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
@@ -370,7 +385,7 @@ export class Animal extends Container {
         this.currentCell.solid = true
       }
 
-      renderCellOnInstanceSight(this)
+      renderCellOnInstanceSight(this, player)
       this.path.pop()
 
       // Destination moved
@@ -378,7 +393,7 @@ export class Animal extends Container {
         this.sendTo(this.dest, this.action)
         return
       }
-      if (this.action && instanceContactInstance(this, this.dest)) {
+      if (this.isAnimalAtDest(this.action, this.dest)) {
         this.path = []
         this.stopInterval()
         this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
@@ -390,13 +405,17 @@ export class Animal extends Container {
         this.stop()
       }
     } else {
+      const {
+        context: { menu },
+      } = this
       // Move to next
       const oldDeg = this.degree
       let speed = this.speed
-      if (this.loading > 1) {
+      if (this.loading > 0) {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
+      menu.updatePlayerMiniMap(this.owner)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
         this.setTextures('walkingSheet')
@@ -405,7 +424,7 @@ export class Animal extends Container {
   }
 
   isAttacked(instance) {
-    if (!instance || this.dest === instance || (this.dest && this.dest.name === 'unit' && this.action === 'attack')) {
+    if (!instance || this.dest) {
       return
     }
     if (this.type === 'Gazelle') {
@@ -467,19 +486,21 @@ export class Animal extends Container {
     this.isDead = true
     this.path = []
     this.action = null
-    this.setTextures('dyingSheet')
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
       return
     }
-    sprite.onLoop = () => {
-      this.owner.population--
-      this.setTextures('corpseSheet')
-      sprite.animationSpeed = corpseTime * accelerator
+    this.setTextures('dyingSheet', () => {
       sprite.onLoop = () => {
-        this.clear()
+        this.owner.population--
+        this.setTextures('corpseSheet', () => {
+          sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
+          sprite.onLoop = () => {
+            this.clear()
+          }
+        })
       }
-    }
+    })
   }
 
   clear() {
@@ -497,58 +518,67 @@ export class Animal extends Container {
     this.destroy({ child: true, texture: true })
   }
 
-  setTextures(sheet) {
+  setTextures(sheet, callback) {
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
       return
     }
-    // Sheet don't exist we just block the current sheet
-    if (!this[sheet]) {
-      if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
-        sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
-      } else {
-        sprite.textures = [sprite.textures[sprite.currentFrame]]
+    const changeTexture = () => {
+      // Sheet don't exist we just block the current sheet
+      if (!this[sheet]) {
+        if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
+          sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
+        } else {
+          sprite.textures = [sprite.textures[sprite.currentFrame]]
+        }
+        this.currentSheet = 'walkingSheet'
+        sprite.stop()
+        sprite.anchor.set(
+          sprite.textures[sprite.currentFrame].defaultAnchor.x,
+          sprite.textures[sprite.currentFrame].defaultAnchor.y
+        )
+        return
       }
-      this.currentSheet = 'walkingSheet'
-      sprite.stop()
-      sprite.anchor.set(
-        sprite.textures[sprite.currentFrame].defaultAnchor.x,
-        sprite.textures[sprite.currentFrame].defaultAnchor.y
-      )
-      return
+      // Reset action loop
+      if (sheet !== 'actionSheet') {
+        sprite.onLoop = null
+      }
+      this.currentSheet = sheet
+      sprite.animationSpeed =
+        (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
+      if (this.degree > 67.5 && this.degree < 112.5) {
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations['north']
+      } else if (this.degree > 247.5 && this.degree < 292.5) {
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations['south']
+      } else if (this.degree > 337.5 || this.degree < 22.5) {
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations['west']
+      } else if (this.degree >= 22.5 && this.degree <= 67.5) {
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations['northwest']
+      } else if (this.degree >= 292.5 && this.degree <= 337.5) {
+        sprite.scale.x = 1
+        sprite.textures = this[sheet].animations['southwest']
+      } else if (this.degree > 157.5 && this.degree < 202.5) {
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['west']
+      } else if (this.degree > 112.5 && this.degree < 157.5) {
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['northwest']
+      } else if (this.degree > 202.5 && this.degree < 247.5) {
+        sprite.scale.x = -1
+        sprite.textures = this[sheet].animations['southwest']
+      }
+      sprite.play()
+      typeof callback === 'function' && callback()
     }
-    // Reset action loop
-    if (sheet !== 'actionSheet') {
-      sprite.onLoop = () => {}
+    if (this.currentSheet === 'actionSheet' && sprite.currentFrame > 0) {
+      sprite.onLoop = () => changeTexture()
+    } else {
+      changeTexture()
     }
-    this.currentSheet = sheet
-    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.1 : 0.3)) * accelerator
-    if (this.degree > 67.5 && this.degree < 112.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['north']
-    } else if (this.degree > 247.5 && this.degree < 292.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['south']
-    } else if (this.degree > 337.5 || this.degree < 22.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['west']
-    } else if (this.degree >= 22.5 && this.degree <= 67.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['northwest']
-    } else if (this.degree >= 292.5 && this.degree <= 337.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['southwest']
-    } else if (this.degree > 157.5 && this.degree < 202.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['west']
-    } else if (this.degree > 112.5 && this.degree < 157.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['northwest']
-    } else if (this.degree > 202.5 && this.degree < 247.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['southwest']
-    }
-    sprite.play()
   }
 
   setDefaultInterface(element, data) {

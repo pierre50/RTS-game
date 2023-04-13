@@ -27,7 +27,7 @@ export class Building extends Container {
 
     this.context = context
 
-    const { map } = context
+    const { map, player } = context
     this.setParent(map)
     this.id = map.children.length
     this.name = 'building'
@@ -126,8 +126,7 @@ export class Building extends Container {
                         (this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.work)))
                       ) {
                         hasSentVillager = true
-                        unit.previousDest = null
-                        unit.sendToDelivery()
+                        unit.sendTo(this, 'delivery')
                       }
                       break
                   }
@@ -166,7 +165,7 @@ export class Building extends Container {
 
     if (this.isBuilt) {
       this.updateTexture()
-      renderCellOnInstanceSight(this)
+      renderCellOnInstanceSight(this, player)
 
       if (typeof this.onBuilt === 'function') {
         this.onBuilt()
@@ -206,7 +205,7 @@ export class Building extends Container {
 
   updateTexture() {
     const {
-      context: { menu },
+      context: { menu, player },
     } = this
     const sprite = this.getChildByName('sprite')
     const percentage = getPercentage(this.life, this.lifeMax)
@@ -234,7 +233,7 @@ export class Building extends Container {
       if (typeof this.onBuilt === 'function') {
         this.onBuilt()
       }
-      renderCellOnInstanceSight(this)
+      renderCellOnInstanceSight(this, player)
     }
   }
 

@@ -2,7 +2,7 @@ import { Container, Assets, Sprite } from 'pixi.js'
 import { Grass, Water, Desert, Jungle } from './cells/'
 import { Tree, Berrybush, Stone, Gold } from './resources/'
 import { Human, AI, Gaia } from './players/'
-import { Elephant, Lion, Gazelle } from './animals/'
+import * as animals from './animals/'
 
 import {
   randomRange,
@@ -34,7 +34,7 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = true
+    this.revealEverything = false
     this.noAI = true
     this.grid = []
     this.sortableChildren = true
@@ -234,6 +234,10 @@ export default class Map extends Container {
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
             const floor = Sprite.from(texture)
             floor.name = 'floor'
+            floor.roundPixels = true
+            floor.allowMove = false
+            floor.interactive = false
+            floor.allowClick = false
             floor.updateAnchor = true
             cell.addChild(floor)
           }
@@ -249,11 +253,16 @@ export default class Map extends Container {
                 const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
                 const rock = Sprite.from(texture)
                 rock.name = 'set'
+                rock.roundPixels = true
+                rock.allowMove = false
+                rock.interactive = false
+                rock.allowClick = false
                 rock.updateAnchor = true
                 cell.addChild(rock)
                 break
               case 'animal':
-                new Lion({ i, j, owner: this.gaia }, this.context)
+                const animal = randomItem(Object.keys(animals))
+                new animals[animal]({ i, j, owner: this.gaia }, this.context)
                 break
             }
           }

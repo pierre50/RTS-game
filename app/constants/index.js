@@ -2,7 +2,7 @@ export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
 
-export const accelerator = 5
+export const accelerator = 2
 export const stepTime = 30
 
 export const colorWhite = 0xffffff
@@ -28,6 +28,6 @@ export const colorGold = '#DECF10'
 export const colorStone = '#B3B3B3'
 export const colorBerry = '#7B9051'
 
-export const corpseTime = 0.001
+export const corpseTime = 120
 export const rubbleTime = 120
 export const maxSelectUnits = 10

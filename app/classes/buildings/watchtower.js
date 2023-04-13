@@ -1,7 +1,14 @@
 import { Building } from './building'
-import { Assets, Sprite, Polygon } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
 import * as projectiles from '../projectiles/'
-import { getTexture, changeSpriteColor, timeoutRecurs, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
+import {
+  getTexture,
+  timeoutRecurs,
+  getBuildingTextureNameWithSize,
+  getBuildingAsset,
+  instancesDistance,
+  getActionCondition,
+} from '../../lib'
 
 export class WatchTower extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -41,20 +48,9 @@ export class WatchTower extends Building {
       context: { map },
     } = this
 
-    const conditions = {
-      attack: instance =>
-        this.life > 0 &&
-        !this.isDead &&
-        instance &&
-        instance.owner !== this.owner &&
-        (instance.name === 'building' || instance.name === 'unit' || instance.name === 'animal') &&
-        instance.life > 0 &&
-        !instance.isDead,
-    }
-
     timeoutRecurs(
       this.rateOfFire,
-      () => conditions.attack(target),
+      () => getActionCondition(this, target, 'attack') && instancesDistance(this, target) <= this.range,
       () => {
         const projectile = new projectiles.Arrow(
           {

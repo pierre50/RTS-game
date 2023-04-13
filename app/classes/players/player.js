@@ -41,6 +41,14 @@ export class Player {
           j,
           has: null,
           viewBy: [],
+          onViewed: () => {
+            const {
+              context: { menu },
+            } = this
+            if (this.isPlayed) {
+              menu.updateTerrainMiniMap(i, j)
+            }
+          },
           viewed: false,
         }
       }

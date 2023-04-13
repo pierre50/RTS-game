@@ -456,8 +456,9 @@ export default class Controls extends Container {
       x: Math.floor(this.camera.x),
       y: Math.floor(this.camera.y),
     }
-    for (let i = cameraFloor.x; i <= cameraFloor.x + app.screen.width; i += cellWidth / 2) {
-      for (let j = cameraFloor.y; j <= cameraFloor.y + app.screen.height - 120; j += cellHeight / 2) {
+    const margin = cellWidth
+    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += cellWidth / 2) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height - 120 + margin; j += cellHeight / 2) {
         const coordinate = isometricToCartesian(i, j)
         const x = Math.min(Math.max(coordinate[0], 0), map.size)
         const y = Math.min(Math.max(coordinate[1], 0), map.size)

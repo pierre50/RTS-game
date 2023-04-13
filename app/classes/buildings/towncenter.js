@@ -1,6 +1,6 @@
 import { Building } from './building'
-import { Assets, Sprite, Polygon } from 'pixi.js'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
+import { Assets, Sprite } from 'pixi.js'
+import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class TownCenter extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {

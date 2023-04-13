@@ -60,7 +60,7 @@ export default class Menu {
       const minimapFactor = this.getMinimapFactor()
       const rect = evt.target.getBoundingClientRect()
       const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
-      const y = (evt.clientY - rect.top) * minimapFactor
+      const y = (evt.clientY - rect.top - 3) * minimapFactor
       controls.clearInstancesOnScreen()
       controls.setCamera(x, y)
     })
@@ -80,6 +80,7 @@ export default class Menu {
     this.bottombar.appendChild(bottombarMapWrap)
     document.body.appendChild(this.bottombar)
 
+    //this.updateTerrainMiniMap = throttle(this.updateTerrainMiniMapEvt, 0)
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)
@@ -89,7 +90,7 @@ export default class Menu {
   }
 
   init() {
-    this.createMiniMap()
+    this.initMiniMap()
     this.updateTopbar()
   }
 
@@ -101,15 +102,14 @@ export default class Menu {
     return (mapWidth / 234) * 2
   }
 
-  createMiniMap() {
-    const canvasElement = this.terrainMinimap
-    const context = canvasElement.getContext('2d')
-    const cameraContext = this.cameraMinimap.getContext('2d')
-    const resourceContext = this.resourcesMinimap.getContext('2d')
-
+  initMiniMap() {
     const {
       context: { map },
     } = this
+
+    const context = this.terrainMinimap.getContext('2d')
+    const cameraContext = this.cameraMinimap.getContext('2d')
+    const resourceContext = this.resourcesMinimap.getContext('2d')
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
@@ -117,6 +117,21 @@ export default class Menu {
     context.translate(translate, 0)
     cameraContext.translate(translate, 0)
     resourceContext.translate(translate, 0)
+  }
+
+  revealTerrainMinimap() {
+    const {
+      context: { map },
+    } = this
+
+    const canvas = this.terrainMinimap
+    const context = canvas.getContext('2d')
+
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / minimapFactor
+
+    context.clearRect(-translate, 0, canvas.width, canvas.height)
 
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
@@ -135,7 +150,38 @@ export default class Menu {
     }
   }
 
-  updateResourcesMiniMapEvt() {
+  updateTerrainMiniMap(i, j) {
+    const {
+      context: { map },
+    } = this
+
+    const canvas = this.terrainMinimap
+    const context = canvas.getContext('2d')
+
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / minimapFactor
+
+    const cell = map.grid[i][j]
+    let color = cell.color
+
+    const x = cell.x
+    const y = cell.y
+    canvasDrawDiamond(
+      context,
+      x / minimapFactor + translate,
+      y / minimapFactor,
+      cellWidth / minimapFactor + 1,
+      cellHeight / minimapFactor + 1,
+      color
+    )
+
+    if (cell.has && cell.has.name === 'resource') {
+      this.updateResourceMiniMap(cell.has)
+    }
+  }
+
+  updateResourceMiniMap(resource) {
     const {
       context: { map },
     } = this
@@ -148,13 +194,32 @@ export default class Menu {
     const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
     const translate = mapWidth / 2 / minimapFactor
 
+    const finalX = resource.x / minimapFactor - squareSize / 2
+    const finalY = resource.y / minimapFactor - squareSize / 2
+    canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)
+  }
+
+  updateResourcesMiniMapEvt() {
+    const {
+      context: { map, player },
+    } = this
+
+    const canvas = this.resourcesMinimap
+    const context = canvas.getContext('2d')
+
+    const squareSize = 4
+    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
+    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const translate = mapWidth / 2 / minimapFactor
+
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
-    map.resources.forEach(tree => {
-      if (tree.x) {
-        const finalX = tree.x / minimapFactor - squareSize / 2
-        const finalY = tree.y / minimapFactor - squareSize / 2
-        canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, tree.color)
+    map.resources.forEach(resource => {
+      const cell = player.views[resource.i][resource.j]
+      if (cell.viewed || map.revealEverything) {
+        const finalX = resource.x / minimapFactor - squareSize / 2
+        const finalY = resource.y / minimapFactor - squareSize / 2
+        canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)
       }
     })
   }
