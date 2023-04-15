@@ -486,6 +486,7 @@ export class Animal extends Container {
     this.isDead = true
     this.path = []
     this.action = null
+    this.zIndex--
     const sprite = this.getChildByName('sprite')
     if (!sprite) {
       return

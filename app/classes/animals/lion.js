@@ -17,7 +17,7 @@ export class Lion extends Animal {
         actionSheet: Assets.cache.get('222'),
         standingSheet: Assets.cache.get('497'),
         walkingSheet: Assets.cache.get('680'),
-        dyingSheet: Assets.cache.get('331'),
+        dyingSheet: Assets.cache.get('336'),
         corpseSheet: Assets.cache.get('397'),
         interface: {
           info: element => {
