@@ -80,7 +80,6 @@ export default class Menu {
     this.bottombar.appendChild(bottombarMapWrap)
     document.body.appendChild(this.bottombar)
 
-    //this.updateTerrainMiniMap = throttle(this.updateTerrainMiniMapEvt, 0)
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)
@@ -117,6 +116,10 @@ export default class Menu {
     context.translate(translate, 0)
     cameraContext.translate(translate, 0)
     resourceContext.translate(translate, 0)
+
+    if (map.revealEverything){
+      this.revealTerrainMinimap()
+    }
   }
 
   revealTerrainMinimap() {

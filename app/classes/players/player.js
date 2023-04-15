@@ -43,9 +43,9 @@ export class Player {
           viewBy: [],
           onViewed: () => {
             const {
-              context: { menu },
+              context: { menu, map },
             } = this
-            if (this.isPlayed) {
+            if (this.isPlayed && !map.revealEverything) {
               menu.updateTerrainMiniMap(i, j)
             }
           },

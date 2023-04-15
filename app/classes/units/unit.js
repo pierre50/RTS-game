@@ -979,14 +979,16 @@ export class Unit extends Container {
           }
         }
 
-        map.grid[this.i][this.j].has = null
-        map.grid[this.i][this.j].solid = false
-
         this.interactive = false
         this.isDead = true
         this.zIndex--
-        clearCellOnInstanceSight(this)
         clearInterval(this.interval)
+        clearCellOnInstanceSight(this)
+        if (map.grid[this.i][this.j].has === this) {
+          map.grid[this.i][this.j].has = null
+          map.grid[this.i][this.j].corpses.push(this)
+          map.grid[this.i][this.j].solid = false
+        }
 
         this.setTextures('corpseSheet', () => {
           sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
@@ -1002,6 +1004,7 @@ export class Unit extends Container {
     const {
       context: { map },
     } = this
+    map.grid[this.i][this.j].corpses.splice(map.grid[this.i][this.j].corpses.indexOf(this), 1)
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }

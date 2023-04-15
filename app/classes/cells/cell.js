@@ -33,6 +33,7 @@ export class Cell extends Container {
     this.inclined = false
     this.border = false
     this.has = null
+    this.corpses = []
     this.visible = false
     this.viewed = false
     this.viewBy = []
@@ -226,6 +227,21 @@ export class Cell extends Container {
         }
       }
     }
+    if (this.corpses.length) {
+      for (let i = 0; i < this.corpses.length; i++) {
+        const corpse = this.corpses[i]
+        if (corpse.name === 'unit' && !corpse.owner.isPlayed) {
+          corpse.visible = false
+        } else {
+          for (let j = 0; j < corpse.children.length; j++) {
+            if (corpse.children[j].tint) {
+              corpse.children[j].tint = color
+            }
+            corpse.children[j].cacheAsBitmap = true
+          }
+        }
+      }
+    }
   }
 
   removeFog() {
@@ -250,6 +266,21 @@ export class Cell extends Container {
           this.has.children[i].tint = colorWhite
         }
         this.has.children[i].cacheAsBitmap = false
+      }
+    }
+    if (this.corpses.length) {
+      for (let i = 0; i < this.corpses.length; i++) {
+        const corpse = this.corpses[i]
+        if (corpse.name === 'unit' && !corpse.owner.isPlayed) {
+          corpse.visible = true
+        } else {
+          for (let j = 0; j < corpse.children.length; j++) {
+            if (corpse.children[j].tint) {
+              corpse.children[j].tint = colorWhite
+            }
+            corpse.children[j].cacheAsBitmap = false
+          }
+        }
       }
     }
   }

@@ -263,18 +263,20 @@ export function findInstancesInSight(instance, condition) {
  * @param {object} instance
  */
 export function renderCellOnInstanceSight(instance, player) {
+  if (instance.parent.revealEverything){
+    return
+  }
+  const instanceCell = instance.parent.grid[instance.i][instance.j]
   if (
-    instance.parent.revealEverything ||
     instance.owner.isPlayed ||
     instanceIsInPlayerSight(instance, player) ||
     (instance.name === 'building' &&
-      !instance.isDead &&
       instance.owner.views[instance.i][instance.j].has &&
       instance.owner.views[instance.i][instance.j].has.id === instance.id)
   ) {
-    instance.visible = true
+    instanceCell.removeFog()
   } else {
-    instance.visible = false
+    instanceCell.setFog()
   }
   getPlainCellsAroundPoint(instance.i, instance.j, instance.owner.views, instance.sight, cell => {
     if (pointsDistance(instance.i, instance.j, cell.i, cell.j) <= instance.sight) {
@@ -318,6 +320,9 @@ export function renderCellOnInstanceSight(instance, player) {
 }
 
 export function clearCellOnInstanceSight(instance) {
+  if (instance.parent.revealEverything){
+    return
+  }
   getPlainCellsAroundPoint(instance.i, instance.j, instance.owner.views, instance.sight, cell => {
     if (pointsDistance(instance.i, instance.j, cell.i, cell.j) <= instance.sight) {
       cell.viewBy.splice(cell.viewBy.indexOf(instance), 1)

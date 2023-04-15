@@ -332,57 +332,61 @@ export class Building extends Container {
     const {
       context: { map, player },
     } = this
-    if (this.parent) {
-      this.stopInterval()
-      this.isDead = true
-      if (this.selected && player) {
-        player.unselectAll()
-      }
-      // Remove solid zone
-      const dist = this.size === 3 ? 1 : 0
-      getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-        if (cell.has === this) {
-          cell.has = null
-          cell.solid = false
-        }
-      })
-      // Remove from player buildings
-      const index = this.owner.buildings.indexOf(this)
-      if (index >= 0) {
-        this.owner.buildings.splice(index, 1)
-      }
-      // Remove from view of others players
-      for (let i = 0; i < map.players.length; i++) {
-        if (map.players[i].type === 'AI') {
-          const list = map.players[i].foundedEnemyBuildings
-          list.splice(list.indexOf(this), 1)
-        }
-      }
-      const color = this.getChildByName('color')
-      color && color.destroy()
-      const deco = this.getChildByName('deco')
-      deco && deco.destroy()
-      const fire = this.getChildByName('fire')
-      fire && fire.destroy()
-
-      const sprite = this.getChildByName('sprite')
-      let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
-      if (this.type === 'Farm') {
-        rubbleSheet = '000_239'
-      }
-      sprite.texture = getTexture(rubbleSheet, Assets)
-      if (this.type === 'Farm') {
-        changeSpriteColor(sprite, this.owner.color)
-      }
-      this.zIndex--
-      this.startTimeout(() => this.clear(), rubbleTime)
-      this.sprite.interactive = false
-      this.interactive = false
+    this.stopInterval()
+    this.isDead = true
+    if (this.selected && player) {
+      player.unselectAll()
     }
+
+    // Remove from player buildings
+    const index = this.owner.buildings.indexOf(this)
+    if (index >= 0) {
+      this.owner.buildings.splice(index, 1)
+    }
+    // Remove from view of others players
+    for (let i = 0; i < map.players.length; i++) {
+      if (map.players[i].type === 'AI') {
+        const list = map.players[i].foundedEnemyBuildings
+        list.splice(list.indexOf(this), 1)
+      }
+    }
+    const color = this.getChildByName('color')
+    color && color.destroy()
+    const deco = this.getChildByName('deco')
+    deco && deco.destroy()
+    const fire = this.getChildByName('fire')
+    fire && fire.destroy()
+
+    const sprite = this.getChildByName('sprite')
+    let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
+    if (this.type === 'Farm') {
+      rubbleSheet = '000_239'
+    }
+    sprite.texture = getTexture(rubbleSheet, Assets)
+    sprite.allowMove = false
+    sprite.interactive = false
+    sprite.allowClick = false
+    this.zIndex--
+    if (this.type === 'Farm') {
+      changeSpriteColor(sprite, this.owner.color)
+    }
+    // Remove solid zone
     clearCellOnInstanceSight(this)
+    const dist = this.size === 3 ? 1 : 0
+    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
+      if (cell.has === this) {
+        cell.has = null
+        cell.solid = false
+        cell.corpses.push(this)
+      }
+    })
+    this.startTimeout(() => this.clear(), rubbleTime)
   }
 
   clear() {
+    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
+      cell.corpses.splice(cell.corpses.indexof(this), 1)
+    })
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
   }
