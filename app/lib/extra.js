@@ -1,5 +1,3 @@
-import { accelerator } from '../constants'
-
 export function throttle(callback, wait, immediate = false) {
   let timeout = null
   let initialCall = true
@@ -70,18 +68,7 @@ export const isValidCondition = (condition, values) => {
   }
 }
 
-export const timeoutRecurs = (second, condition, callback) => {
-  if (condition()) {
-    setTimeout(() => {
-      if (condition()) {
-        callback()
-        timeoutRecurs(second, condition, callback)
-      }
-    }, (second * 1000) / accelerator)
-  }
-}
-
-export const getActionCondition = (source, target, action, props = {}) => {
+export const getActionCondition = (source, target, action, props) => {
   if (!action) {
     return false
   }
@@ -89,14 +76,19 @@ export const getActionCondition = (source, target, action, props = {}) => {
     delivery: props =>
       target.life > 0 &&
       target.isBuilt &&
-      (target.type === 'TownCenter' || (props.buildingType ? target.type === props.buildingType : true)),
+      (target.type === 'TownCenter' || (!props ? true : props.buildingType && target.type === props.buildingType)),
     takemeat: () =>
       source.type === 'Villager' &&
       target.name === 'animal' &&
       target.quantity > 0 &&
       target.isDead &&
       !target.isDestroyed,
-    hunt: () => source.type === 'Villager' && target.name === 'animal' && target.quantity > 0 && !target.isDead,
+    hunt: () =>
+      source.type === 'Villager' &&
+      target.name === 'animal' &&
+      target.quantity > 0 &&
+      target.life > 0 &&
+      !target.isDead,
     chopwood: () => source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDestroyed,
     farm: () =>
       source.type === 'Villager' &&
@@ -124,6 +116,13 @@ export const getActionCondition = (source, target, action, props = {}) => {
       (target.name === 'building' || target.name === 'unit' || target.name === 'animal') &&
       target.life > 0 &&
       !target.isDead,
+    heal: () =>
+      target &&
+      target.owner === source.owner &&
+      target.name === 'unit' &&
+      target.life > 0 &&
+      target.life < target.lifeMax &&
+      !target.isDead,
   }
-  return target && source.life > 0 && !source.isDead && conditions[action](props)
+  return target && target !== source && source.life > 0 && !source.isDead && conditions[action](props)
 }

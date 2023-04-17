@@ -27,7 +27,7 @@ export class Temple extends Building {
             const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
-          menu: owner.isPlayed ? [] : [],
+          menu: owner.isPlayed ? [context.menu.getUnitButton('Priest')] : [],
         },
       },
       context

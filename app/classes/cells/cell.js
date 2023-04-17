@@ -54,23 +54,33 @@ export class Cell extends Container {
 
   updateVisible() {
     const {
-      context: { map, player, menu },
+      context: { map, player },
     } = this
+
+    function updateChild(instance) {
+      if (
+        map.revealEverything ||
+        !instance.owner ||
+        instance.owner.isPlayed ||
+        instanceIsInPlayerSight(instance, player) ||
+        (instance.name === 'building' &&
+          player.views[this.i][this.j].has &&
+          player.views[this.i][this.j].has.id === instance.id)
+      ) {
+        instance.visible = true
+      }
+    }
+
     if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
       return
     }
     this.visible = true
     if (this.has) {
-      if (
-        map.revealEverything ||
-        !this.has.owner ||
-        this.has.owner.isPlayed ||
-        instanceIsInPlayerSight(this.has, player) ||
-        (this.has.name === 'building' &&
-          player.views[this.i][this.j].has &&
-          player.views[this.i][this.j].has.id === this.has.id)
-      ) {
-        this.has.visible = true
+      updateChild(this.has)
+    }
+    if (this.corpses.length) {
+      for (let i = 0; i < this.corpses.length; i++) {
+        updateChild(this.corpses[i])
       }
     }
   }
@@ -209,6 +219,18 @@ export class Cell extends Container {
 
   setFog() {
     const color = 0x666666
+    function setFogChildren(instance) {
+      if ((instance.name === 'unit' || instance.name === 'animal') && !instance.owner.isPlayed) {
+        instance.visible = false
+      } else {
+        for (let i = 0; i < instance.children.length; i++) {
+          if (instance.children[i].tint) {
+            instance.children[i].tint = color
+          }
+          instance.children[i].cacheAsBitmap = true
+        }
+      }
+    }
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i].tint) {
         this.children[i].tint = color
@@ -216,30 +238,11 @@ export class Cell extends Container {
       this.children[i].cacheAsBitmap = true
     }
     if (this.has) {
-      if (this.has.name === 'unit' && !this.has.owner.isPlayed) {
-        this.has.visible = false
-      } else {
-        for (let i = 0; i < this.has.children.length; i++) {
-          if (this.has.children[i].tint) {
-            this.has.children[i].tint = color
-          }
-          this.has.children[i].cacheAsBitmap = true
-        }
-      }
+      setFogChildren(this.has)
     }
     if (this.corpses.length) {
       for (let i = 0; i < this.corpses.length; i++) {
-        const corpse = this.corpses[i]
-        if (corpse.name === 'unit' && !corpse.owner.isPlayed) {
-          corpse.visible = false
-        } else {
-          for (let j = 0; j < corpse.children.length; j++) {
-            if (corpse.children[j].tint) {
-              corpse.children[j].tint = color
-            }
-            corpse.children[j].cacheAsBitmap = true
-          }
-        }
+        setFogChildren(this.corpses[i])
       }
     }
   }
@@ -248,6 +251,17 @@ export class Cell extends Container {
     const {
       context: { controls },
     } = this
+    function setRemoveChildren(instance) {
+      if (controls.instanceInCamera(instance)) {
+        instance.visible = true
+      }
+      for (let i = 0; i < instance.children.length; i++) {
+        if (instance.children[i].tint) {
+          instance.children[i].tint = colorWhite
+        }
+        instance.children[i].cacheAsBitmap = false
+      }
+    }
     if (!this.visible) {
       this.visible = true
     }
@@ -258,29 +272,11 @@ export class Cell extends Container {
       this.children[i].cacheAsBitmap = false
     }
     if (this.has) {
-      if (controls.instanceInCamera(this.has)) {
-        this.has.visible = true
-      }
-      for (let i = 0; i < this.has.children.length; i++) {
-        if (this.has.children[i].tint) {
-          this.has.children[i].tint = colorWhite
-        }
-        this.has.children[i].cacheAsBitmap = false
-      }
+      setRemoveChildren(this.has)
     }
     if (this.corpses.length) {
       for (let i = 0; i < this.corpses.length; i++) {
-        const corpse = this.corpses[i]
-        if (corpse.name === 'unit' && !corpse.owner.isPlayed) {
-          corpse.visible = true
-        } else {
-          for (let j = 0; j < corpse.children.length; j++) {
-            if (corpse.children[j].tint) {
-              corpse.children[j].tint = colorWhite
-            }
-            corpse.children[j].cacheAsBitmap = false
-          }
-        }
+        setRemoveChildren(this.corpses[i])
       }
     }
   }

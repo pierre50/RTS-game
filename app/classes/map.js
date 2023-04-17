@@ -34,7 +34,7 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = true
+    this.revealEverything = false
     this.noAI = true
     this.grid = []
     this.sortableChildren = true
@@ -243,7 +243,9 @@ export default class Map extends Container {
           }
           if (Math.random() < this.chanceOfSets) {
             const type = randomItem(['tree', 'rock', 'animal'])
-            switch (type) {
+            const animal = randomItem(Object.keys(animals))
+            new animals[animal]({ i, j, owner: this.gaia }, this.context)
+            /* switch (type) {
               case 'tree':
                 this.resources.push(new Tree({ i, j }, this.context))
                 break
@@ -264,7 +266,7 @@ export default class Map extends Container {
                 const animal = randomItem(Object.keys(animals))
                 new animals[animal]({ i, j, owner: this.gaia }, this.context)
                 break
-            }
+            }*/
           }
         }
       }

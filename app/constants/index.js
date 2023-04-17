@@ -2,8 +2,10 @@ export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
 
-export const accelerator = 2
-export const stepTime = 30
+export const accelerator = 1
+export const stepTime = 20
+
+export const loadingFoodTypes = ['meat', 'wheat', 'berry']
 
 export const colorWhite = 0xffffff
 export const colorBlack = 0x000000
@@ -18,7 +20,7 @@ export const colorViolet = 0xee82ee
 export const colorBone = 0xe2dac2
 export const colorShipgrey = 0x3c3b3d
 
-export const colorArrow = 0xb8b0ad
+export const colorArrow = 0xe8e3df
 
 export const colorGrass = '#647B2F'
 export const colorWater = '#17277B'

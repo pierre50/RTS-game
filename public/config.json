@@ -38,7 +38,7 @@
       "cost": {
         "wood": 120
       },
-      "accept": ["gatherer", "farmer"]
+      "accept": ["berry", "wheat"]
     },
     "StoragePit": {
       "size": 3,
@@ -47,7 +47,7 @@
       "cost": {
         "wood": 120
       },
-      "accept": ["woodcutter", "stoneminer", "goldminer", "hunter"]
+      "accept": ["wood", "stone", "gold", "meat"]
     },
     "Market": {
       "size": 3,
@@ -224,6 +224,7 @@
       "lifeMax": 25,
       "sight": 4,
       "speed": 1.1,
+      "rateOfFire": 1.5,
       "trainingTime": 20,
       "icon": "000_50730",
       "attack": 3,
@@ -265,6 +266,18 @@
       "cost": {
         "food": 40,
         "wood": 20
+      }
+    },
+    "Priest": {
+      "lifeMax": 25,
+      "sight": 12,
+      "speed": 0.8,
+      "trainingTime": 50,
+      "icon": "001_50730",
+      "healing": 1,
+      "range": 10,
+      "cost": {
+        "gold": 125
       }
     }
   },

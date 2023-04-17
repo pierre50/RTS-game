@@ -21,8 +21,8 @@ export function moveTowardPoint(instance, x, y, speed) {
   let dist = pointsDistance(x, y, instance.x, instance.y)
   let tX = x - instance.x
   let tY = y - instance.y
-  let velX = (tX / dist) * speed * 2
-  let velY = (tY / dist) * speed * 2
+  let velX = (tX / dist) * speed
+  let velY = (tY / dist) * speed
   instance.degree = getInstanceDegree(instance, x, y)
   instance.x += velX
   instance.y += velY
@@ -262,13 +262,12 @@ export function findInstancesInSight(instance, condition) {
  * Render cell if is on sight of instance
  * @param {object} instance
  */
-export function renderCellOnInstanceSight(instance, player) {
-  if (instance.parent.revealEverything){
-    return
-  }
+export function renderCellOnInstanceSight(instance) {
+  const { player } = instance.context
   const instanceCell = instance.parent.grid[instance.i][instance.j]
   if (
     instance.owner.isPlayed ||
+    instance.parent.revealEverything ||
     instanceIsInPlayerSight(instance, player) ||
     (instance.name === 'building' &&
       instance.owner.views[instance.i][instance.j].has &&
@@ -320,7 +319,7 @@ export function renderCellOnInstanceSight(instance, player) {
 }
 
 export function clearCellOnInstanceSight(instance) {
-  if (instance.parent.revealEverything){
+  if (instance.parent.revealEverything) {
     return
   }
   getPlainCellsAroundPoint(instance.i, instance.j, instance.owner.views, instance.sight, cell => {

@@ -1,6 +1,6 @@
 import { Unit } from './unit'
 import { Assets } from 'pixi.js'
-import { accelerator } from '../../constants'
+import { accelerator, loadingFoodTypes } from '../../constants'
 import { getClosestInstance, getActionCondition } from '../../lib'
 import * as buildings from '../buildings/'
 
@@ -76,11 +76,8 @@ export class Villager extends Unit {
         j,
         owner,
         type,
-        lifeMax: data.lifeMax,
-        sight: data.sight,
+        ...data,
         speed: data.speed * accelerator,
-        attack: data.attack,
-        range: data.range,
         ...defaultAssets,
         assets,
         interface: {
@@ -130,7 +127,7 @@ export class Villager extends Unit {
     if (this.loading) {
       const iconImg = document.createElement('img')
       iconImg.className = 'unit-loading-icon'
-      iconImg.src = menu.icons[this.loadingType]
+      iconImg.src = menu.icons[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType]
       const textDiv = document.createElement('div')
       textDiv.id = 'loading-text'
       textDiv.textContent = this.loading
@@ -153,7 +150,7 @@ export class Villager extends Unit {
   }
 
   sendToTakeMeat(target) {
-    if (this.loadingType !== 'food') {
+    if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
@@ -172,7 +169,7 @@ export class Villager extends Unit {
   }
 
   sendToHunt(target) {
-    if (this.loadingType !== 'food') {
+    if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
@@ -197,7 +194,11 @@ export class Villager extends Unit {
     let buildingType = null
     const buildings = Assets.cache.get('config').buildings
     for (const [key, value] of Object.entries(buildings)) {
-      if (key !== 'TownCenter' && value.accept && value.accept.includes(this.work)) {
+      if (
+        key !== 'TownCenter' &&
+        value.accept &&
+        value.accept.includes(this.loadingType)
+      ) {
         buildingType = key
         break
       }
@@ -219,8 +220,9 @@ export class Villager extends Unit {
       this.updateInterfaceLoading()
       this.work = 'builder'
       this.actionSheet = Assets.cache.get('628')
-      this.standingSheet = Assets.cache.get('419')
       if (!this.loading) {
+        this.standingSheet = Assets.cache.get('419')
+
         this.walkingSheet = Assets.cache.get('658')
         this.dyingSheet = Assets.cache.get('315')
         this.corpseSheet = Assets.cache.get('374')
@@ -231,15 +233,15 @@ export class Villager extends Unit {
   }
 
   sendToFarm(farm) {
-    if (this.loadingType !== 'food') {
+    if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'farmer') {
       this.work = 'farmer'
       this.actionSheet = Assets.cache.get('630')
-      this.standingSheet = Assets.cache.get('430')
       if (!this.loading) {
+        this.standingSheet = Assets.cache.get('430')
         this.walkingSheet = Assets.cache.get('670')
         this.dyingSheet = Assets.cache.get('326')
         this.corpseSheet = Assets.cache.get('388')
@@ -264,15 +266,15 @@ export class Villager extends Unit {
   }
 
   sendToBerrybush(berrybush) {
-    if (this.loadingType !== 'food') {
+    if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'gatherer') {
       this.work = 'gatherer'
       this.actionSheet = Assets.cache.get('632')
-      this.standingSheet = Assets.cache.get('432')
       if (!this.loading) {
+        this.standingSheet = Assets.cache.get('432')
         this.walkingSheet = Assets.cache.get('672')
         this.dyingSheet = Assets.cache.get('328')
         this.corpseSheet = Assets.cache.get('390')

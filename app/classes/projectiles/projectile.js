@@ -18,13 +18,12 @@ export class Projectile extends Container {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
-    const { x: targetX, y: targetY } = this.target
+    const { x: targetX, y: targetY } = this.destination || this.target
 
     this.distance = instancesDistance(this, this.target, false)
-    const degree = getPointsDegree(this.x, this.y, targetX, targetY)
+    const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = new Graphics()
     sprite.beginFill(colorArrow)
-    //sprite.lineStyle(1, colorArrow, 1)
     sprite.drawRect(1, 1, this.size, 1)
     sprite.rotation = degreesToRadians(degree)
     sprite.name = 'sprite'
@@ -36,8 +35,8 @@ export class Projectile extends Container {
 
     const interval = setInterval(() => {
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
-        if (this.target && this.target.life > 0) {
-          this.onHit()
+        if (pointsDistance(targetX, targetY, this.target.x, this.target.y) <= this.size) {
+          this.onHit(this.target)
         }
         clearInterval(interval)
         this.die()
@@ -47,18 +46,18 @@ export class Projectile extends Container {
     }, stepTime)
   }
 
-  onHit() {
+  onHit(instance) {
     const {
       context: { menu, player },
     } = this
-    this.target.life -= this.owner.attack
-    if (this.target.selected && player && player.selectedOther === this.target) {
-      menu.updateInfo(
-        'life',
-        element => (element.textContent = Math.max(this.target.life, 0) + '/' + this.target.lifeMax)
-      )
+    instance.life = Math.max(instance.life - this.owner.attack, 0)
+    if (instance.selected && player.selectedOther === instance) {
+      menu.updateInfo('life', element => (element.textContent = instance.life + '/' + instance.lifeMax))
     }
-    typeof this.target.isAttacked === 'function' && this.target.isAttacked(this.owner)
+    if (instance.life <= 0) {
+      instance.die()
+    }
+    typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)
   }
 
   die() {

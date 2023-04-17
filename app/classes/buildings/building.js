@@ -1,5 +1,6 @@
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator, rubbleTime } from '../../constants'
+import * as projectiles from '../projectiles/'
 import {
   getTexture,
   getInstanceZIndex,
@@ -19,6 +20,7 @@ import {
   getBuildingAsset,
   changeSpriteColor,
   getBuildingRubbleTextureNameWithSize,
+  instancesDistance,
 } from '../../lib'
 
 export class Building extends Container {
@@ -47,6 +49,7 @@ export class Building extends Container {
     this.isDead = false
     this.isDestroyed = false
     this.interval
+    this.attackInterval
     this.timeout
     if (!map.revealEverything) {
       this.visible = false
@@ -123,9 +126,10 @@ export class Building extends Container {
                     case 'TownCenter':
                       if (
                         unit.loading > 0 &&
-                        (this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.work)))
+                        (this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType)))
                       ) {
                         hasSentVillager = true
+                        unit.previousDest = null
                         unit.sendTo(this, 'delivery')
                       }
                       break
@@ -165,7 +169,7 @@ export class Building extends Container {
 
     if (this.isBuilt) {
       this.updateTexture()
-      renderCellOnInstanceSight(this, player)
+      renderCellOnInstanceSight(this)
 
       if (typeof this.onBuilt === 'function') {
         this.onBuilt()
@@ -173,10 +177,34 @@ export class Building extends Container {
     }
   }
 
-  startInterval(cb, time) {
-    if (!this.interval) {
-      this.interval = setInterval(() => cb(), (time * 1000) / 100 / accelerator)
-    }
+  attackAction(target) {
+    const {
+      context: { map },
+    } = this
+
+    this.startAttackInterval(() => {
+      if (getActionCondition(this, target, 'attack') && instancesDistance(this, target) <= this.range) {
+        if (target.life <= 0) {
+          target.die()
+        } else {
+          const projectile = new projectiles.Arrow(
+            {
+              owner: this,
+              target,
+            },
+            this.context
+          )
+          map.addChild(projectile)
+        }
+      } else {
+        this.stopAttackInterval()
+      }
+    }, this.rateOfFire)
+  }
+
+  startInterval(callback, time) {
+    this.stopInterval()
+    this.interval = setInterval(callback, (time * 1000) / 100 / accelerator)
   }
 
   stopInterval() {
@@ -186,10 +214,22 @@ export class Building extends Container {
     }
   }
 
-  startTimeout(cb, time) {
-    if (!this.timeout) {
-      this.timeout = setTimeout(() => cb(), (time * 1000) / accelerator)
+  startAttackInterval(callback, time) {
+    this.stopAttackInterval()
+    callback()
+    this.attackInterval = setInterval(callback, time * 1000)
+  }
+
+  stopAttackInterval() {
+    if (this.attackInterval) {
+      clearInterval(this.attackInterval)
+      this.attackInterval = null
     }
+  }
+
+  startTimeout(cb, time) {
+    this.stopTimeout()
+    this.timeout = setTimeout(() => cb(), (time * 1000) / accelerator)
   }
 
   stopTimeout() {
@@ -200,12 +240,15 @@ export class Building extends Container {
   }
 
   isAttacked(instance) {
+    if (this.range && getActionCondition(this, instance, 'attack') && instancesDistance(this, instance) <= this.range) {
+      this.attackAction(instance)
+    }
     this.updateLife('attack')
   }
 
   updateTexture() {
     const {
-      context: { menu, player },
+      context: { menu },
     } = this
     const sprite = this.getChildByName('sprite')
     const percentage = getPercentage(this.life, this.lifeMax)
@@ -233,7 +276,7 @@ export class Building extends Container {
       if (typeof this.onBuilt === 'function') {
         this.onBuilt()
       }
-      renderCellOnInstanceSight(this, player)
+      renderCellOnInstanceSight(this)
     }
   }
 
@@ -384,6 +427,9 @@ export class Building extends Container {
   }
 
   clear() {
+    const {
+      context: { map },
+    } = this
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
       cell.corpses.splice(cell.corpses.indexof(this), 1)
     })
@@ -607,7 +653,7 @@ export class Building extends Container {
     if (this.owner && this.owner.isPlayed) {
       const lifeDiv = document.createElement('div')
       lifeDiv.id = 'life'
-      lifeDiv.textContent = Math.max(this.life, 0) + '/' + this.lifeMax
+      lifeDiv.textContent = this.life + '/' + this.lifeMax
       element.appendChild(lifeDiv)
 
       const loadingDiv = document.createElement('div')
@@ -624,7 +670,7 @@ export class Building extends Container {
         smallIconImg.className = 'resource-quantity-icon'
         const textDiv = document.createElement('div')
         textDiv.id = 'quantity-text'
-        textDiv.textContent = Math.max(this.quantity, 0)
+        textDiv.textContent = this.quantity
         quantityDiv.appendChild(smallIconImg)
         quantityDiv.appendChild(textDiv)
         element.appendChild(quantityDiv)
