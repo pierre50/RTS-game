@@ -55,7 +55,7 @@ export class Building extends Container {
       this.visible = false
     }
 
-    this.life = this.isBuilt ? this.lifeMax : 1
+    this.hitPoints = this.isBuilt ? this.totalHitPoints : 1
 
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
@@ -64,10 +64,8 @@ export class Building extends Container {
       if (set) {
         cell.removeChild(set)
       }
-      const rubble = cell.getChildByName('rubble')
-      cell.zIndex = 0
-      if (rubble) {
-        cell.removeChild(rubble)
+      for (let i = 0; i < cell.corpses.length; i++) {
+        typeof cell.corpses[i].clear === 'function' && cell.corpses[i].clear()
       }
       cell.has = this
       cell.solid = true
@@ -87,7 +85,7 @@ export class Building extends Container {
         const {
           context: { controls, player, menu },
         } = this
-        if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
           return
         }
         let hasSentVillager = false
@@ -111,7 +109,7 @@ export class Building extends Container {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === 'Villager') {
-                if (this.life < this.lifeMax) {
+                if (this.hitPoints < this.totalHitPoints) {
                   hasSentVillager = true
                   unit.previousDest = null
                   unit.sendToBuilding(this)
@@ -184,7 +182,7 @@ export class Building extends Container {
 
     this.startAttackInterval(() => {
       if (getActionCondition(this, target, 'attack') && instancesDistance(this, target) <= this.range) {
-        if (target.life <= 0) {
+        if (target.hitPoints <= 0) {
           target.die()
         } else {
           const projectile = new projectiles.Arrow(
@@ -250,31 +248,30 @@ export class Building extends Container {
     const {
       context: { menu },
     } = this
-    const sprite = this.getChildByName('sprite')
-    const percentage = getPercentage(this.life, this.lifeMax)
-    const buildSpritesheetId = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
+    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
+    const buildSpritesheetId = this.sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
     const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
 
     if (percentage >= 25 && percentage < 50) {
       const textureName = `001_${buildSpritesheetId}.png`
-      sprite.texture = buildSpritesheet.textures[textureName]
+      this.sprite.texture = buildSpritesheet.textures[textureName]
     } else if (percentage >= 50 && percentage < 75) {
       const textureName = `002_${buildSpritesheetId}.png`
-      sprite.texture = buildSpritesheet.textures[textureName]
+      this.sprite.texture = buildSpritesheet.textures[textureName]
     } else if (percentage >= 75 && percentage < 99) {
       const textureName = `003_${buildSpritesheetId}.png`
-      sprite.texture = buildSpritesheet.textures[textureName]
+      this.sprite.texture = buildSpritesheet.textures[textureName]
     } else if (percentage >= 100) {
       this.finalTexture()
+      if (!this.isBuilt && typeof this.onBuilt === 'function') {
+        this.onBuilt()
+      }
       this.isBuilt = true
       if (!this.owner.hasBuilt.includes(this.type)) {
         this.owner.hasBuilt.push(this.type)
       }
       if (this.owner && this.owner.isPlayed && this.selected) {
         menu.setBottombar(this)
-      }
-      if (typeof this.onBuilt === 'function') {
-        this.onBuilt()
       }
       renderCellOnInstanceSight(this)
     }
@@ -283,9 +280,8 @@ export class Building extends Container {
   finalTexture() {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
 
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(assets.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+    this.sprite.texture = getTexture(assets.images.final, Assets)
+    this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
 
     const color = this.getChildByName('color')
     if (color) {
@@ -298,18 +294,18 @@ export class Building extends Container {
       changeSpriteColor(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
-      changeSpriteColor(sprite, this.owner.color)
+      changeSpriteColor(this.sprite, this.owner.color)
     }
     typeof this.afterFinalTextures === 'function' && this.afterFinalTextures()
   }
 
   updateLife(action) {
-    if (this.life > this.lifeMax) {
-      this.life = this.lifeMax
+    if (this.hitPoints > this.totalHitPoints) {
+      this.hitPoints = this.totalHitPoints
     }
-    const percentage = getPercentage(this.life, this.lifeMax)
+    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
 
-    if (this.life <= 0) {
+    if (this.hitPoints <= 0) {
       this.die()
     }
     if (action === 'build' && !this.isBuilt) {
@@ -372,6 +368,9 @@ export class Building extends Container {
   }
 
   die() {
+    if (this.isDead) {
+      return
+    }
     const {
       context: { map, player },
     } = this
@@ -400,18 +399,17 @@ export class Building extends Container {
     const fire = this.getChildByName('fire')
     fire && fire.destroy()
 
-    const sprite = this.getChildByName('sprite')
     let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
     if (this.type === 'Farm') {
       rubbleSheet = '000_239'
     }
-    sprite.texture = getTexture(rubbleSheet, Assets)
-    sprite.allowMove = false
-    sprite.interactive = false
-    sprite.allowClick = false
+    this.sprite.texture = getTexture(rubbleSheet, Assets)
+    this.sprite.allowMove = false
+    this.sprite.interactive = false
+    this.sprite.allowClick = false
     this.zIndex--
     if (this.type === 'Farm') {
-      changeSpriteColor(sprite, this.owner.color)
+      changeSpriteColor(this.sprite, this.owner.color)
     }
     // Remove solid zone
     clearCellOnInstanceSight(this)
@@ -427,6 +425,9 @@ export class Building extends Container {
   }
 
   clear() {
+    if (this.isDestroyed) {
+      return
+    }
     const {
       context: { map },
     } = this
@@ -584,7 +585,7 @@ export class Building extends Container {
     menu.updateTopbar()
   }
 
-  buyTechnology(technology) {
+  buyTechnology(technology, type) {
     const {
       context: { player, menu },
     } = this
@@ -600,6 +601,7 @@ export class Building extends Container {
         menu.updateTopbar()
       }
       this.loading = 0
+
       this.technology = technology
       if (this.selected && this.owner.isPlayed) {
         menu.setBottombar(this)
@@ -615,9 +617,9 @@ export class Building extends Container {
           this.loading = null
           this.technology = null
           if (Array.isArray(player[technology.key])) {
-            player[technology.key].push(technology.value)
+            player[technology.key].push(technology.value || type)
           } else {
-            player[technology.key] = technology.value
+            player[technology.key] = technology.value || type
           }
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)
@@ -626,7 +628,7 @@ export class Building extends Container {
           }
           menu.updateTopbar()
         }
-      }, technology.loadingTime)
+      }, technology.researchTime)
     }
   }
 
@@ -652,8 +654,8 @@ export class Building extends Container {
 
     if (this.owner && this.owner.isPlayed) {
       const lifeDiv = document.createElement('div')
-      lifeDiv.id = 'life'
-      lifeDiv.textContent = this.life + '/' + this.lifeMax
+      lifeDiv.id = 'hitPoints'
+      lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
       element.appendChild(lifeDiv)
 
       const loadingDiv = document.createElement('div')

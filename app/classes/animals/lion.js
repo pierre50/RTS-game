@@ -28,4 +28,10 @@ export class Lion extends Animal {
       context
     )
   }
+
+  detect(instance) {
+    if (instance.name === 'unit' && !this.isDead && !this.path.length && !this.dest) {
+      this.sendTo(instance, 'attack')
+    }
+  }
 }

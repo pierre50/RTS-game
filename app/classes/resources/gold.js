@@ -22,7 +22,7 @@ export class Gold extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true

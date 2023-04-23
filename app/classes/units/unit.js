@@ -31,7 +31,7 @@ export class Unit extends Container {
     this.context = context
 
     const {
-      context: { map, player },
+      context: { map },
     } = this
     this.setParent(map)
     this.id = map.children.length
@@ -65,18 +65,18 @@ export class Unit extends Container {
     this.isDead = false
     this.isDestroyed = false
 
-    this.life = this.lifeMax
+    this.hitPoints = this.totalHitPoints
     this.originalSpeed = this.speed
     this.inactif = true
 
     this.allowMove = false
     this.interactive = true
-    const sprite = new AnimatedSprite(this.standingSheet.animations['south'])
-    sprite.name = 'sprite'
-    sprite.allowMove = false
-    sprite.interactive = false
-    sprite.allowClick = false
-    sprite.roundPixels = true
+    this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
+    this.sprite.name = 'sprite'
+    this.sprite.allowMove = false
+    this.sprite.interactive = false
+    this.sprite.allowClick = false
+    this.sprite.roundPixels = true
 
     this.on('pointerup', () => {
       const {
@@ -131,11 +131,11 @@ export class Unit extends Container {
         }
       }
     })
-    changeSpriteColor(sprite, this.owner.color)
+    changeSpriteColor(this.sprite, this.owner.color)
 
     this.interval = null
-    sprite.updateAnchor = true
-    this.addChild(sprite)
+    this.sprite.updateAnchor = true
+    this.addChild(this.sprite)
 
     this.stop()
 
@@ -262,7 +262,8 @@ export class Unit extends Container {
     const {
       context: { menu, player, map },
     } = this
-    const sprite = this.getChildByName('sprite')
+    this.sprite.onLoop = null
+    this.sprite.onFrameChange = null
     switch (name) {
       case 'delivery':
         if (!this.getActionCondition(this.dest, this.action)) {
@@ -279,12 +280,28 @@ export class Unit extends Container {
           this.standingSheet = Assets.cache.get(this.assets[this.work].standingSheet)
           this.walkingSheet = Assets.cache.get(this.assets[this.work].walkingSheet)
         }
+        const typeAction = {
+          Stone: 'minestone',
+          Gold: 'minegold',
+          Berrybush: 'forageberry',
+          Tree: 'chopwood',
+        }
         if (this.previousDest) {
           if (this.previousDest.name === 'animal') {
-            this.sendToTakeMeat(this.previousDest)
+            if (this.getActionCondition(this.previousDest, 'takemeat')) {
+              this.sendToTakeMeat(this.previousDest)
+            } else {
+              this.sendTo(map.grid[this.previousDest.i][this.previousDest.j], 'hunt')
+            }
+          } else if (typeAction[this.previousDest.type]) {
+            if (this.getActionCondition(this.previousDest, typeAction[this.previousDest.type])) {
+              const sendToFunc = `sendTo${this.previousDest.type}`
+              typeof this[sendToFunc] === 'function' ? this[sendToFunc](this.previousDest) : this.stop()
+            } else {
+              this.sendTo(map.grid[this.previousDest.i][this.previousDest.j], typeAction[this.previousDest.type])
+            }
           } else {
-            const sendToFunc = `sendTo${this.previousDest.type}`
-            typeof this[sendToFunc] === 'function' ? this[sendToFunc](this.previousDest) : this.stop()
+            this.sendTo(map.grid[this.previousDest.i][this.previousDest.j])
           }
         } else {
           this.stop()
@@ -297,41 +314,45 @@ export class Unit extends Container {
         }
         this.dest.isUsedBy = this
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.quantity <= 0) {
+                this.dest.die()
+              }
+              this.affectNewDest()
+              return
+            }
+            this.dest.isUsedBy = this
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              this.dest.isUsedBy = null
+              return
+            }
+            // Villager farm the farm
+            this.loading++
+            this.loadingType = 'wheat'
+            this.updateInterfaceLoading()
+
+            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            }
+            // Destroy farm if it out of quantity
             if (this.dest.quantity <= 0) {
               this.dest.die()
+              this.affectNewDest()
             }
-            this.affectNewDest()
-            return
-          }
-          this.dest.isUsedBy = this
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            this.dest.isUsedBy = null
-            return
-          }
-          // Villager farm the farm
-          this.loading++
-          this.loadingType = 'wheat'
-          this.updateInterfaceLoading()
-
-          this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-          if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-          }
-          // Destroy farm if it out of quantity
-          if (this.dest.quantity <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-          // Set the walking with berrybush animation
-          if (this.loading > 0) {
-            this.walkingSheet = Assets.cache.get('672')
-            this.standingSheet = null
-          }
-        }
+            // Set the walking with berrybush animation
+            if (this.loading > 0) {
+              this.walkingSheet = Assets.cache.get('672')
+              this.standingSheet = null
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'chopwood':
         if (!this.getActionCondition(this.dest)) {
@@ -339,57 +360,61 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
-            if (this.dest.quantity <= 0) {
-              this.dest.die()
-            }
-            this.affectNewDest()
-            return
-          }
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            return
-          }
-          // Tree destination is still alive we cut him until it's dead
-          if (this.dest.life > 0) {
-            this.dest.life = Math.max(this.dest.life - this.attack, 0)
-
-            if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('life', element =>
-                this.dest.life > 0
-                  ? (element.textContent = this.dest.life + '/' + this.dest.lifeMax)
-                  : (element.textContent = '')
-              )
-            }
-            if (this.dest.life <= 0) {
-              // Set cutted tree texture
-              this.dest.life = 0
-              this.dest.setCuttedTreeTexture()
-            }
-          } else {
-            // Villager cut the stump
-            this.loading++
-            this.loadingType = 'wood'
-            this.updateInterfaceLoading()
-
-            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-            }
-            // Destroy tree if stump out of quantity
-            if (this.dest.quantity <= 0) {
-              this.dest.die()
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.quantity <= 0) {
+                this.dest.die()
+              }
               this.affectNewDest()
+              return
             }
-            // Set the walking with wood animation
-            if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('273')
-              this.standingSheet = null
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              return
             }
-          }
-        }
+            // Tree destination is still alive we cut him until it's dead
+            if (this.dest.hitPoints > 0) {
+              this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
+
+              if (this.dest.selected && this.owner.isPlayed) {
+                menu.updateInfo('hitPoints', element =>
+                  this.dest.hitPoints > 0
+                    ? (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+                    : (element.textContent = '')
+                )
+              }
+              if (this.dest.hitPoints <= 0) {
+                // Set cutted tree texture
+                this.dest.hitPoints = 0
+                this.dest.setCuttedTreeTexture()
+              }
+            } else {
+              // Villager cut the stump
+              this.loading++
+              this.loadingType = 'wood'
+              this.updateInterfaceLoading()
+
+              this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+              if (this.dest.selected && this.owner.isPlayed) {
+                menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              }
+              // Destroy tree if stump out of quantity
+              if (this.dest.quantity <= 0) {
+                this.dest.die()
+                this.affectNewDest()
+              }
+              // Set the walking with wood animation
+              if (this.loading > 0) {
+                this.walkingSheet = Assets.cache.get('273')
+                this.standingSheet = null
+              }
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'forageberry':
         if (!this.getActionCondition(this.dest)) {
@@ -397,39 +422,43 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.quantity <= 0) {
+                this.dest.die()
+              }
+              this.affectNewDest()
+              return
+            }
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              return
+            }
+            // Villager forage the berrybush
+            this.loading++
+            this.loadingType = 'berry'
+            this.updateInterfaceLoading()
+
+            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            }
+            // Destroy berrybush if it out of quantity
             if (this.dest.quantity <= 0) {
               this.dest.die()
+              this.affectNewDest()
             }
-            this.affectNewDest()
-            return
-          }
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            return
-          }
-          // Villager forage the berrybush
-          this.loading++
-          this.loadingType = 'berry'
-          this.updateInterfaceLoading()
-
-          this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-          if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-          }
-          // Destroy berrybush if it out of quantity
-          if (this.dest.quantity <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-          // Set the walking with berrybush animation
-          if (this.loading > 0) {
-            this.walkingSheet = Assets.cache.get('672')
-            this.standingSheet = null
-          }
-        }
+            // Set the walking with berrybush animation
+            if (this.loading > 0) {
+              this.walkingSheet = Assets.cache.get('672')
+              this.standingSheet = null
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'minestone':
         if (!this.getActionCondition(this.dest)) {
@@ -437,39 +466,43 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.quantity <= 0) {
+                this.dest.die()
+              }
+              this.affectNewDest()
+              return
+            }
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              return
+            }
+            // Villager mine the stone
+            this.loading++
+            this.loadingType = 'stone'
+            this.updateInterfaceLoading()
+
+            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            }
+            // Destroy stone if it out of quantity
             if (this.dest.quantity <= 0) {
               this.dest.die()
+              this.affectNewDest()
             }
-            this.affectNewDest()
-            return
-          }
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            return
-          }
-          // Villager mine the stone
-          this.loading++
-          this.loadingType = 'stone'
-          this.updateInterfaceLoading()
-
-          this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-          if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-          }
-          // Destroy stone if it out of quantity
-          if (this.dest.quantity <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-          // Set the walking with stone animation
-          if (this.loading > 0) {
-            this.walkingSheet = Assets.cache.get('274')
-            this.standingSheet = null
-          }
-        }
+            // Set the walking with stone animation
+            if (this.loading > 0) {
+              this.walkingSheet = Assets.cache.get('274')
+              this.standingSheet = null
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'minegold':
         if (!this.getActionCondition(this.dest)) {
@@ -477,36 +510,40 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest()
-            return
-          }
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            return
-          }
-          // Villager mine the gold
-          this.loading++
-          this.loadingType = 'gold'
-          this.updateInterfaceLoading()
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              this.affectNewDest()
+              return
+            }
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              return
+            }
+            // Villager mine the gold
+            this.loading++
+            this.loadingType = 'gold'
+            this.updateInterfaceLoading()
 
-          this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-          if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-          }
-          // Destroy gold if it out of quantity
-          if (this.dest.quantity <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-          // Set the walking with gold animation
-          if (this.loading > 0) {
-            this.walkingSheet = Assets.cache.get('281')
-            this.standingSheet = null
-          }
-        }
+            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            }
+            // Destroy gold if it out of quantity
+            if (this.dest.quantity <= 0) {
+              this.dest.die()
+              this.affectNewDest()
+            }
+            // Set the walking with gold animation
+            if (this.loading > 0) {
+              this.walkingSheet = Assets.cache.get('281')
+              this.standingSheet = null
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'build':
         if (!this.getActionCondition(this.dest)) {
@@ -514,32 +551,41 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
-            if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
-              this.sendToFarm(this.dest)
-            }
-            this.affectNewDest()
-            return
-          }
-          if (this.dest.life < this.dest.lifeMax) {
-            this.dest.life = Math.min(this.dest.life + this.attack, this.dest.lifeMax)
-
-            if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
-            }
-            this.dest.updateLife(this.action)
-          } else {
-            if (!this.dest.isBuilt) {
-              this.dest.updateLife(this.action)
-              this.dest.isBuilt = true
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
               if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
                 this.sendToFarm(this.dest)
               }
+              this.affectNewDest()
+              return
             }
-            this.affectNewDest()
-          }
-        }
+            if (this.dest.hitPoints < this.dest.totalHitPoints) {
+              this.dest.hitPoints = Math.min(
+                Math.round(this.dest.hitPoints + this.dest.totalHitPoints / this.dest.constructionTime),
+                this.dest.totalHitPoints
+              )
+              if (this.dest.selected && this.owner.isPlayed) {
+                menu.updateInfo(
+                  'hitPoints',
+                  element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+                )
+              }
+              this.dest.updateLife(this.action)
+            } else {
+              if (!this.dest.isBuilt) {
+                this.dest.updateLife(this.action)
+                this.dest.isBuilt = true
+                if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
+                  this.sendToFarm(this.dest)
+                }
+              }
+              this.affectNewDest()
+            }
+          },
+          1000,
+          false
+        )
         break
       case 'attack':
         if (!this.getActionCondition(this.dest)) {
@@ -547,57 +593,89 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (this.projectile) {
+        if (this.range) {
+          this.sprite.onLoop = () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.hitPoints <= 0) {
+                this.dest.die()
+              }
+              this.affectNewDest()
+              return
+            }
+            if (!this.isUnitAtDest(this.action, this.dest)) {
+              this.stop()
+              return
+            }
+            if (this.destHasMoved()) {
+              this.realDest.i = this.dest.i
+              this.realDest.j = this.dest.j
+              this.realDest.x = this.dest.x
+              this.realDest.y = this.dest.y
+              const oldDeg = this.degree
+              this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+              if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
+                this.setTextures('actionSheet')
+              }
+            }
+          }
+          onSpriteLoopAtFrame(this.sprite, 6, () => {
             const projectile = new projectiles[this.projectile](
               {
                 owner: this,
-                destination: this.realDest,
                 target: this.dest,
+                destination: this.realDest,
               },
               this.context
             )
             map.addChild(projectile)
-          }
-          if (!this.getActionCondition(this.dest)) {
-            if (this.dest.life <= 0) {
-              this.dest.die()
-            }
-            this.affectNewDest()
-            return
-          }
-          if (this.destHasMoved()) {
-            this.realDest.i = this.dest.i
-            this.realDest.j = this.dest.j
-            this.realDest.x = this.dest.x
-            this.realDest.y = this.dest.y
-            const oldDeg = this.degree
-            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
-            if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
-              this.setTextures('actionSheet')
-            }
-          }
-          if (!this.isUnitAtDest(this.action, this.dest)) {
-            this.sendTo(this.dest, 'attack')
-            return
-          }
-          if (this.dest.life > 0) {
-            if (!this.projectile) {
-              this.dest.life = Math.max(this.dest.life - this.attack, 0)
-              if (
-                this.dest.selected &&
-                player &&
-                (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
-              ) {
-                menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
-              }
-              this.dest.isAttacked(this)
-              if (this.dest.life <= 0) {
-                this.dest.die()
+          })
+        } else {
+          this.startInterval(
+            () => {
+              if (!this.getActionCondition(this.dest)) {
+                if (this.dest.hitPoints <= 0) {
+                  this.dest.die()
+                }
                 this.affectNewDest()
+                return
               }
-            }
-          }
+              if (this.destHasMoved()) {
+                this.realDest.i = this.dest.i
+                this.realDest.j = this.dest.j
+                this.realDest.x = this.dest.x
+                this.realDest.y = this.dest.y
+                const oldDeg = this.degree
+                this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+                if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
+                  this.setTextures('actionSheet')
+                }
+              }
+              if (!this.isUnitAtDest(this.action, this.dest)) {
+                this.sendTo(this.dest, 'attack')
+                return
+              }
+              if (this.dest.hitPoints > 0) {
+                this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
+                if (
+                  this.dest.selected &&
+                  player &&
+                  (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+                ) {
+                  menu.updateInfo(
+                    'hitPoints',
+                    element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+                  )
+                }
+                this.dest.isAttacked(this)
+                if (this.dest.hitPoints <= 0) {
+                  this.dest.die()
+                  this.affectNewDest()
+                }
+              }
+            },
+            this.rateOfFire * 1000,
+            false
+          )
         }
         break
       case 'heal':
@@ -606,7 +684,7 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
+        this.sprite.onLoop = () => {
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest()
             return
@@ -626,10 +704,13 @@ export class Unit extends Container {
             this.sendTo(this.dest, 'heal')
             return
           }
-          if (this.dest.life < this.dest.lifeMax) {
-            this.dest.life = Math.min(this.dest.life + this.healing, this.dest.lifeMax)
+          if (this.dest.hitPoints < this.dest.totalHitPoints) {
+            this.dest.hitPoints = Math.min(this.dest.hitPoints + this.healing, this.dest.totalHitPoints)
             if (this.dest.selected && player.selectedUnit === this.dest) {
-              menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
+              menu.updateInfo(
+                'hitPoints',
+                element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+              )
             }
           }
         }
@@ -640,40 +721,40 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
-          if (!this.getActionCondition(this.dest)) {
-            if (this.dest.quantity <= 0) {
-              this.dest.clear()
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              this.affectNewDest()
+              return
             }
-            this.affectNewDest()
-            return
-          }
-          // Villager is full we send him delivery first
-          if (this.loading === this.loadingMax || !this.dest) {
-            this.sendToDelivery()
-            return
-          }
-          // Villager take meat
-          this.loading++
-          this.loadingType = 'meat'
-          this.updateInterfaceLoading()
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax || !this.dest) {
+              this.sendToDelivery()
+              return
+            }
+            // Villager take meat
+            this.loading++
+            this.loadingType = 'meat'
+            this.updateInterfaceLoading()
 
-          this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
-
-          if (this.dest.selected && this.owner.isPlayed) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
-          }
-          // Set the walking with meat animation
-          if (this.loading > 0) {
-            this.walkingSheet = Assets.cache.get('272')
-            this.standingSheet = null
-          }
-          // Destroy corps if it out of quantity
-          if (this.dest.quantity <= 0) {
-            this.dest.clear()
-            this.affectNewDest()
-          }
-        }
+            this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
+            this.dest.updateTexture()
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+            }
+            // Set the walking with meat animation
+            if (this.loading > 0) {
+              this.walkingSheet = Assets.cache.get('272')
+              this.standingSheet = null
+            }
+            // Destroy corps if it out of quantity
+            if (this.dest.quantity <= 0) {
+              this.affectNewDest()
+            }
+          },
+          this.gatheringRate[this.work] * 1000,
+          false
+        )
         break
       case 'hunt':
         if (!this.getActionCondition(this.dest)) {
@@ -684,9 +765,9 @@ export class Unit extends Container {
           this.sendToTakeMeat(this.dest)
         }
         this.setTextures('actionSheet')
-        sprite.onLoop = () => {
+        this.sprite.onLoop = () => {
           if (!this.getActionCondition(this.dest)) {
-            if (this.dest.life <= 0) {
+            if (this.dest.hitPoints <= 0) {
               this.dest.die()
               this.sendToTakeMeat(this.dest)
               return
@@ -710,12 +791,13 @@ export class Unit extends Container {
             }
           }
         }
-        onSpriteLoopAtFrame(sprite, 6, () => {
+        onSpriteLoopAtFrame(this.sprite, 6, () => {
           const projectile = new projectiles.Spear(
             {
               owner: this,
               target: this.dest,
               destination: this.realDest,
+              attack: 4,
             },
             this.context
           )
@@ -825,7 +907,6 @@ export class Unit extends Container {
     } = this
     const next = this.path[this.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
-    const sprite = this.getChildByName('sprite')
     if (!this.dest || this.dest.isDestroyed) {
       this.affectNewDest()
       return
@@ -837,9 +918,9 @@ export class Unit extends Container {
       nextCell.has !== this &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
-      nextCell.has.getChildByName('sprite').playing
+      nextCell.has.sprite.playing
     ) {
-      sprite.stop()
+      this.sprite.stop()
       return
     }
     if (nextCell.solid && this.dest) {
@@ -847,8 +928,8 @@ export class Unit extends Container {
       return
     }
 
-    if (!sprite.playing) {
-      sprite.play()
+    if (!this.sprite.playing) {
+      this.sprite.play()
     }
 
     this.zIndex = getInstanceZIndex(this)
@@ -952,7 +1033,7 @@ export class Unit extends Container {
   }
 
   step() {
-    if (this.life <= 0) {
+    if (this.hitPoints <= 0) {
       this.die()
     }
     if (this.hasPath()) {
@@ -1006,7 +1087,7 @@ export class Unit extends Container {
       return
     }
     this.stopInterval()
-    if (this.selected && player) {
+    if (this.selected && player.selectedOther === this) {
       player.unselectUnit(this)
     }
     if (this.dest && this.dest.isUsedBy === this) {
@@ -1035,9 +1116,8 @@ export class Unit extends Container {
     }
 
     this.setTextures('dyingSheet')
-    const sprite = this.getChildByName('sprite')
-    sprite.loop = false
-    sprite.onComplete = () => {
+    this.sprite.loop = false
+    this.sprite.onComplete = () => {
       clearCellOnInstanceSight(this)
       this.setTextures('corpseSheet')
       this.zIndex--
@@ -1046,66 +1126,70 @@ export class Unit extends Container {
         map.grid[this.i][this.j].corpses.push(this)
         map.grid[this.i][this.j].solid = false
       }
-      sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
-      sprite.onComplete = () => {
+      this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
+      this.sprite.onComplete = () => {
         this.clear()
       }
     }
   }
 
   clear() {
+    if (this.isDestroyed) {
+      return
+    }
     const {
       context: { map },
     } = this
+    this.isDestroyed = true
     map.grid[this.i][this.j].corpses.splice(map.grid[this.i][this.j].corpses.indexOf(this), 1)
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }
 
   setTextures(sheet) {
-    const sprite = this.getChildByName('sprite')
     const sheetToReset = ['actionSheet']
     // Sheet don't exist we just block the current sheet
     if (!this[sheet]) {
       if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
-        sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
+        this.sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
       } else {
-        sprite.textures = [sprite.textures[sprite.currentFrame]]
+        this.sprite.textures = [this.sprite.textures[this.sprite.currentFrame]]
       }
       this.currentSheet = 'walkingSheet'
-      sprite.stop()
-      sprite.anchor.set(
-        sprite.textures[sprite.currentFrame].defaultAnchor.x,
-        sprite.textures[sprite.currentFrame].defaultAnchor.y
+      this.sprite.stop()
+      this.sprite.anchor.set(
+        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.x,
+        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.y
       )
       return
     }
     // Reset action loop
     if (!sheetToReset.includes(sheet)) {
-      sprite.onLoop = null
-      sprite.onFrameChange = null
+      this.sprite.onLoop = null
+      this.sprite.onFrameChange = null
     }
     this.currentSheet = sheet
     const direction = degreeToDirection(this.degree)
     switch (direction) {
       case 'southest':
-        sprite.scale.x = -1
-        sprite.textures = this[sheet].animations['southwest']
+        this.sprite.scale.x = -1
+        this.sprite.textures = this[sheet].animations['southwest']
         break
       case 'northest':
-        sprite.scale.x = -1
-        sprite.textures = this[sheet].animations['northwest']
+        this.sprite.scale.x = -1
+        this.sprite.textures = this[sheet].animations['northwest']
         break
       case 'est':
-        sprite.scale.x = -1
-        sprite.textures = this[sheet].animations['west']
+        this.sprite.scale.x = -1
+        this.sprite.textures = this[sheet].animations['west']
         break
       default:
-        sprite.scale.x = 1
-        sprite.textures = this[sheet].animations[direction]
+        this.sprite.scale.x = 1
+        this.sprite.textures = this[sheet].animations[direction]
     }
-    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
-    sprite.play()
+    this.sprite.animationSpeed =
+      (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
+    this.sprite.play()
   }
 
   setDefaultInterface(element, data) {
@@ -1125,8 +1209,8 @@ export class Unit extends Container {
     element.appendChild(iconImg)
 
     const lifeDiv = document.createElement('div')
-    lifeDiv.id = 'life'
-    lifeDiv.textContent = this.life + '/' + this.lifeMax
+    lifeDiv.id = 'hitPoints'
+    lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
     element.appendChild(lifeDiv)
   }
 }

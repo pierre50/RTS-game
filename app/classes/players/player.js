@@ -23,7 +23,7 @@ export class Player {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.populationMax = 1000 //5
+    this.populationMax = (1000) - 4 //5
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed

@@ -99,7 +99,7 @@ export function getNewInstanceClosestFreeCellPath(instance, target, map) {
 export function getInstanceClosestFreeCellPath(instance, target, map) {
   let size = target.size || (target.has && target.has.size) || 1
   let paths = []
-  getPlainCellsAroundPoint(target.i, target.j, map.grid, size === 3 ? 2 : 1, cell => {
+  getCellsAroundPoint(target.i, target.j, map.grid, size === 3 ? 2 : 1, cell => {
     let path = getInstancePath(instance, cell.i, cell.j, map)
     if (path.length) {
       paths.push(path)
@@ -300,12 +300,20 @@ export function renderCellOnInstanceSight(instance) {
         }
         if (
           globalCell.has.name === 'building' &&
-          globalCell.has.life > 0 &&
+          globalCell.has.hitPoints > 0 &&
           globalCell.has.owner !== instance.owner &&
           instance.owner.foundedEnemyBuildings.indexOf(globalCell.has) === -1
         ) {
           instance.owner.foundedEnemyBuildings.push(globalCell.has)
         }
+      }
+      if (
+        globalCell.has &&
+        globalCell.has.sight &&
+        instancesDistance(instance, globalCell.has) <= globalCell.has.sight &&
+        typeof globalCell.has.detect === 'function'
+      ) {
+        globalCell.has.detect(instance)
       }
       if (cell.viewBy.indexOf(instance) === -1) {
         cell.viewBy.push(instance)

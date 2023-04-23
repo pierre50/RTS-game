@@ -142,7 +142,7 @@ export default class Map extends Container {
             {
               i: posI,
               j: posJ,
-              age: 3,
+              age: 1,
               civ: 'Greek',
               color: 'cyan',
               isPlayed: true,
@@ -168,6 +168,7 @@ export default class Map extends Container {
       const towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', true)
       for (let i = 0; i < this.startingUnits; i++) {
         towncenter.placeUnit('Villager')
+        towncenter.placeUnit('Bowman')
       }
     }
   }
@@ -242,10 +243,11 @@ export default class Map extends Container {
             cell.addChild(floor)
           }
           if (Math.random() < this.chanceOfSets) {
-            const type = randomItem(['tree', 'rock', 'animal'])
             const animal = randomItem(Object.keys(animals))
             new animals[animal]({ i, j, owner: this.gaia }, this.context)
-            /* switch (type) {
+            continue
+            const type = randomItem(['tree', 'rock', 'animal'])
+            switch (type) {
               case 'tree':
                 this.resources.push(new Tree({ i, j }, this.context))
                 break
@@ -266,7 +268,7 @@ export default class Map extends Container {
                 const animal = randomItem(Object.keys(animals))
                 new animals[animal]({ i, j, owner: this.gaia }, this.context)
                 break
-            }*/
+            }
           }
         }
       }

@@ -582,7 +582,7 @@ export default class Menu {
       onClick: selection => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
-          selection.buyTechnology(config)
+          selection.buyTechnology(config, type)
         } else {
           this.showMessage(this.getMessage(config.cost))
         }

@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance } from '../../lib'
+import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance, average } from '../../lib'
 import { colorArrow, stepTime } from '../../constants'
 
 export class Projectile extends Container {
@@ -35,7 +35,10 @@ export class Projectile extends Container {
 
     const interval = setInterval(() => {
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
-        if (pointsDistance(targetX, targetY, this.target.x, this.target.y) <= this.size) {
+        if (
+          pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
+          average(this.target.width, this.target.height)
+        ) {
           this.onHit(this.target)
         }
         clearInterval(interval)
@@ -50,14 +53,19 @@ export class Projectile extends Container {
     const {
       context: { menu, player },
     } = this
-    instance.life = Math.max(instance.life - this.owner.attack, 0)
+    console.log('hit')
+    instance.hitPoints = Math.max(instance.hitPoints - (this.attack || this.owner.attack), 0)
     if (instance.selected && player.selectedOther === instance) {
-      menu.updateInfo('life', element => (element.textContent = instance.life + '/' + instance.lifeMax))
+      menu.updateInfo(
+        'hitPoints',
+        element => (element.textContent = instance.hitPoints + '/' + instance.totalHitPoints)
+      )
     }
-    if (instance.life <= 0) {
+    if (instance.hitPoints <= 0) {
       instance.die()
+    } else {
+      typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)
     }
-    typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)
   }
 
   die() {

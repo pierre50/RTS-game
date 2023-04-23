@@ -41,4 +41,19 @@ export class TownCenter extends Building {
       context
     )
   }
+
+  onBuilt() {
+    const {
+      context: { menu },
+    } = this
+    // Increase player population and continue all unit creation that was paused
+    this.owner.populationMax += 4
+    // Update bottombar with populationmax if house selected
+    if (this.selected && this.owner.isPlayed) {
+      menu.updateInfo(
+        'population',
+        element => (element.textContent = this.owner.population + '/' + this.owner.populationMax)
+      )
+    }
+  }
 }

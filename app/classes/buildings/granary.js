@@ -13,6 +13,7 @@ export class Granary extends Building {
     sprite.updateAnchor = true
     sprite.name = 'sprite'
     //sprite.hitArea = new Polygon(texture.hitArea)
+    const children = ['ResearchWatchTower', 'ResearchSmallWall'].map(key => context.menu.getTechnologyButton(key))
 
     super(
       {
@@ -28,6 +29,7 @@ export class Granary extends Building {
             const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
+          menu: owner.isPlayed ? children : [],
         },
       },
       context

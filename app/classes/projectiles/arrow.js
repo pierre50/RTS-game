@@ -8,7 +8,7 @@ export class Arrow extends Projectile {
     super(
       {
         x: owner.x,
-        y: owner.y,
+        y: owner.y - owner.sprite.height / 2,
         type,
         ...props,
         size: 3,

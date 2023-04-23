@@ -24,9 +24,10 @@ export class resource extends Container {
     map.grid[this.i][this.j].has = this
     this.selected = false
     this.visible = false
+    this.isDead = false
     this.isDestroyed = false
 
-    this.life = this.lifeMax
+    this.hitPoints = this.totalHitPoints
 
     // Set solid zone
     const cell = map.grid[this.i][this.j]
@@ -36,6 +37,7 @@ export class resource extends Container {
     this.interactive = false
     this.allowClick = false
     this.allowMove = false
+
     if (this.sprite) {
       this.sprite.allowMove = false
       this.sprite.interactive = true
@@ -55,6 +57,7 @@ export class resource extends Container {
       this.addChild(this.sprite)
     }
   }
+
   select() {
     if (this.selected) {
       return
@@ -68,6 +71,7 @@ export class resource extends Container {
     selection.drawPolygon(path)
     this.addChildAt(selection, 0)
   }
+
   unselect() {
     if (!this.selected) {
       return
@@ -78,15 +82,16 @@ export class resource extends Container {
       this.removeChild(selection)
     }
   }
+
   die() {
+    if (this.isDead) {
+      return
+    }
     const {
       context: { player, players, map, menu },
     } = this
-    if (this.selected && player) {
+    if (this.selected && player.selectedOther === this) {
       player.unselectAll()
-    }
-    if (typeof this.onDie === 'function') {
-      this.onDie()
     }
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
@@ -96,19 +101,38 @@ export class resource extends Container {
         list.splice(index, 1)
       }
     }
-
     // Remove from map resources
     let index = map.resources.indexOf(this)
     if (index >= 0) {
       map.resources.splice(index, 1)
     }
     menu.updateResourcesMiniMap()
-    map.grid[this.i][this.j].has = null
-    map.grid[this.i][this.j].solid = false
-    map.removeChild(this)
+    this.isDead = true
+    if (typeof this.onDie === 'function') {
+      this.onDie()
+    } else {
+      this.clear()
+    }
+  }
+
+  clear() {
+    if (this.isDestroyed) {
+      return
+    }
+    const {
+      context: { map },
+    } = this
     this.isDestroyed = true
+    if (map.grid[this.i][this.j].has === this) {
+      map.grid[this.i][this.j].has = null
+      map.grid[this.i][this.j].solid = false
+    }
+    const corpseIndex = map.grid[this.i][this.j].corpses.indexOf(this)
+    corpseIndex >= 0 && map.grid[this.i][this.j].corpses.splice(corpseIndex, 1)
+    map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }
+
   setDefaultInterface(element, data) {
     const {
       context: { menu },
@@ -123,10 +147,10 @@ export class resource extends Container {
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
-    if (this.life) {
+    if (this.hitPoints) {
       const lifeDiv = document.createElement('div')
-      lifeDiv.id = 'life'
-      lifeDiv.textContent = this.life + '/' + this.lifeMax
+      lifeDiv.id = 'hitPoints'
+      lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
       element.appendChild(lifeDiv)
     }
     if (this.quantity) {

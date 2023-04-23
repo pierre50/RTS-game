@@ -74,7 +74,7 @@ export const getActionCondition = (source, target, action, props) => {
   }
   const conditions = {
     delivery: props =>
-      target.life > 0 &&
+      target.hitPoints > 0 &&
       target.isBuilt &&
       (target.type === 'TownCenter' || (!props ? true : props.buildingType && target.type === props.buildingType)),
     takemeat: () =>
@@ -87,42 +87,41 @@ export const getActionCondition = (source, target, action, props) => {
       source.type === 'Villager' &&
       target.name === 'animal' &&
       target.quantity > 0 &&
-      target.life > 0 &&
+      target.hitPoints > 0 &&
       !target.isDead,
-    chopwood: () => source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDestroyed,
+    chopwood: () => source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDead,
     farm: () =>
       source.type === 'Villager' &&
       target.type === 'Farm' &&
-      target.life > 0 &&
+      target.hitPoints > 0 &&
       target.owner === source.owner &&
       target.quantity > 0 &&
       (!target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
-      source.type === 'Villager' && target.type === 'Berrybush' && target.quantity > 0 && !target.isDestroyed,
-    minestone: () =>
-      source.type === 'Villager' && target.type === 'Stone' && target.quantity > 0 && !target.isDestroyed,
-    minegold: () => source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDestroyed,
+      source.type === 'Villager' && target.type === 'Berrybush' && target.quantity > 0 && !target.isDead,
+    minestone: () => source.type === 'Villager' && target.type === 'Stone' && target.quantity > 0 && !target.isDead,
+    minegold: () => source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDead,
     build: () =>
       source.type === 'Villager' &&
       target.owner === source.owner &&
       target.name === 'building' &&
-      target.life > 0 &&
-      (!target.isBuilt || target.life < target.lifeMax) &&
+      target.hitPoints > 0 &&
+      (!target.isBuilt || target.hitPoints < target.totalHitPoints) &&
       !target.isDead,
     attack: () =>
       target &&
       target.owner !== source.owner &&
       (target.name === 'building' || target.name === 'unit' || target.name === 'animal') &&
-      target.life > 0 &&
+      target.hitPoints > 0 &&
       !target.isDead,
     heal: () =>
       target &&
       target.owner === source.owner &&
       target.name === 'unit' &&
-      target.life > 0 &&
-      target.life < target.lifeMax &&
+      target.hitPoints > 0 &&
+      target.hitPoints < target.totalHitPoints &&
       !target.isDead,
   }
-  return target && target !== source && source.life > 0 && !source.isDead && conditions[action](props)
+  return target && target !== source && source.hitPoints > 0 && !source.isDead && conditions[action](props)
 }

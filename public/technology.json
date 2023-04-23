@@ -10,7 +10,7 @@
         "value": 0
       }
     ],
-    "loadingTime": 120,
+    "researchTime": 120,
     "cost": {
       "food": 500
     }
@@ -26,7 +26,7 @@
         "value": 1
       }
     ],
-    "loadingTime": 140,
+    "researchTime": 140,
     "cost": {
       "food": 800
     }
@@ -42,7 +42,7 @@
         "value": 2
       }
     ],
-    "loadingTime": 160,
+    "researchTime": 160,
     "cost": {
       "food": 1000,
       "gold": 800
@@ -51,7 +51,6 @@
   "Woodworking": {
     "icon": "076_50729",
     "key": "technologies",
-    "value": 3,
     "conditions": [
       {
         "key": "age",
@@ -64,10 +63,50 @@
         "value": "Woodworking"
       }
     ],
-    "loadingTime": 160,
+    "researchTime": 160,
     "cost": {
       "food": 1000,
       "gold": 800
+    }
+  },
+  "ResearchSmallWall": {
+    "icon": "029_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "technologies",
+        "op": "!includes",
+        "value": "ResearchSmallWall"
+      }
+    ],
+    "researchTime": 10,
+    "cost": {
+      "food": 50
+    }
+  },
+  "ResearchWatchTower": {
+    "icon": "034_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "technologies",
+        "op": "!includes",
+        "value": "ResearchWatchTower"
+      }
+    ],
+    "researchTime": 10,
+    "cost": {
+      "food": 50
     }
   }
 }

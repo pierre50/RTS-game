@@ -38,9 +38,8 @@ export class Barracks extends Building {
   finalTexture() {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
 
-    const sprite = this.getChildByName('sprite')
-    sprite.texture = getTexture(assets.images.final, Assets)
-    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+    this.sprite.texture = getTexture(assets.images.final, Assets)
+    this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
 
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
@@ -48,7 +47,7 @@ export class Barracks extends Building {
       changeSpriteColor(spriteColor, this.owner.color)
       this.addChildAt(spriteColor, 0)
     } else {
-      changeSpriteColor(sprite, this.owner.color)
+      changeSpriteColor(this.sprite, this.owner.color)
     }
   }
 }

@@ -23,19 +23,19 @@ export class AI extends Player {
     const maxClubmans = 10
     const howManyVillagerBeforeBuyingABarracks = 10
     const howManySoldiersBeforeAttack = 5
-    const villagers = this.units.filter(unit => unit.type === 'Villager' && unit.life > 0)
-    const clubmans = this.units.filter(unit => unit.type === 'Clubman' && unit.life > 0)
+    const villagers = this.units.filter(unit => unit.type === 'Villager' && unit.hitPoints > 0)
+    const clubmans = this.units.filter(unit => unit.type === 'Clubman' && unit.hitPoints > 0)
     const towncenters = this.buildings.filter(building => building.type === 'TownCenter')
     const storagepits = this.buildings.filter(building => building.type === 'StoragePit')
     const granarys = this.buildings.filter(building => building.type === 'Granary')
     const barracks = this.buildings.filter(building => building.type === 'Barracks')
     const notBuiltBuildings = this.buildings.filter(
-      building => !building.isBuilt || (building.life > 0 && building.life < building.lifeMax)
+      building => !building.isBuilt || (building.hitPoints > 0 && building.hitPoints < building.totalHitPoints)
     )
     const notBuiltHouses = notBuiltBuildings.filter(building => building.type === 'House')
     const builderVillagers = villagers.filter(villager => !villager.inactif && villager.work === 'builder')
     const villagersOnWood = villagers.filter(villager => !villager.inactif && villager.work === 'woodcutter')
-    const villagersOnFood = villagers.filter(villager => !villager.inactif && villager.work === 'gatherer')
+    const villagersOnFood = villagers.filter(villager => !villager.inactif && villager.work === 'forager')
     const inactifVillagers = villagers.filter(villager => villager.inactif && villager.action !== 'attack')
     const inactifClubmans = clubmans.filter(
       clubman => clubman.inactif && clubman.action !== 'attack' && clubman.assault

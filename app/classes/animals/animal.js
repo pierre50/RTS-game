@@ -27,7 +27,7 @@ export class Animal extends Container {
     this.context = context
 
     const {
-      context: { map, player },
+      context: { map },
     } = this
     this.setParent(map)
     this.id = map.children.length
@@ -59,24 +59,25 @@ export class Animal extends Container {
     this.isDead = false
     this.isDestroyed = false
 
-    this.life = this.lifeMax
+    this.hitPoints = this.totalHitPoints
+    this.quantityMax = this.quantity
     this.originalSpeed = this.speed
     this.inactif = true
 
     this.allowMove = false
     this.interactive = true
-    const sprite = new AnimatedSprite(this.standingSheet.animations['south'])
-    sprite.name = 'sprite'
-    sprite.allowMove = false
-    sprite.interactive = false
-    sprite.allowClick = false
-    sprite.roundPixels = true
+    this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
+    this.sprite.name = 'sprite'
+    this.sprite.allowMove = false
+    this.sprite.interactive = false
+    this.sprite.allowClick = false
+    this.sprite.roundPixels = true
 
     this.on('pointerup', () => {
       const {
         context: { controls, player, menu },
       } = this
-      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true
@@ -103,7 +104,7 @@ export class Animal extends Container {
           player.selectedBuilding.attackAction(this)
           drawDestinationRectangle = true
         }
-      } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+      } else if ((instanceIsInPlayerSight(this, player) || map.revealEverything) && this.quantity > 0) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
@@ -116,8 +117,8 @@ export class Animal extends Container {
     })
 
     this.interval = null
-    sprite.updateAnchor = true
-    this.addChild(sprite)
+    this.sprite.updateAnchor = true
+    this.addChild(this.sprite)
 
     this.stop()
 
@@ -156,6 +157,7 @@ export class Animal extends Container {
 
     menu.updatePlayerMiniMapEvt(this.owner)
   }
+
   unselect() {
     if (!this.selected) {
       return
@@ -167,6 +169,7 @@ export class Animal extends Container {
       this.removeChild(selection)
     }
   }
+
   hasPath() {
     return this.path.length > 0
   }
@@ -261,39 +264,46 @@ export class Animal extends Container {
           return
         }
         this.setTextures('actionSheet')
-        this.startInterval(() => {
-          if (!this.getActionCondition(this.dest)) {
-            if (this.dest.life <= 0) {
-              this.dest.die()
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              if (this.dest.hitPoints <= 0) {
+                this.dest.die()
+              }
+              this.affectNewDest()
+              return
             }
-            this.affectNewDest()
-            return
-          }
-          if (this.destHasMoved()) {
-            this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
-            this.setTextures('actionSheet')
-          }
-          if (!instanceContactInstance(this, this.dest)) {
-            this.sendTo(this.dest, 'attack')
-            return
-          }
-          if (this.dest.life > 0) {
-            this.dest.life = Math.max(this.dest.life - this.attack, 0)
-            if (
-              this.dest.selected &&
-              player &&
-              (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
-            ) {
-              menu.updateInfo('life', element => (element.textContent = this.dest.life + '/' + this.dest.lifeMax))
+            if (this.destHasMoved()) {
+              this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
+              this.setTextures('actionSheet')
             }
-            this.dest.isAttacked(this)
-          }
+            if (!instanceContactInstance(this, this.dest)) {
+              this.sendTo(this.dest, 'attack')
+              return
+            }
+            if (this.dest.hitPoints > 0) {
+              this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
+              if (
+                this.dest.selected &&
+                player &&
+                (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+              ) {
+                menu.updateInfo(
+                  'hitPoints',
+                  element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+                )
+              }
+              this.dest.isAttacked(this)
+            }
 
-          if (this.dest.life <= 0) {
-            this.dest.die()
-            this.affectNewDest()
-          }
-        }, this.rateOfFire * 1000)
+            if (this.dest.hitPoints <= 0) {
+              this.dest.die()
+              this.affectNewDest()
+            }
+          },
+          this.rateOfFire * 1000,
+          false
+        )
         break
       default:
         this.stop()
@@ -329,14 +339,10 @@ export class Animal extends Container {
 
   moveToPath() {
     const {
-      context: { map, player },
+      context: { map },
     } = this
     const next = this.path[this.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
-    const sprite = this.getChildByName('sprite')
-    if (!sprite) {
-      return
-    }
     if (!this.dest || this.dest.isDestroyed) {
       this.affectNewDest()
       return
@@ -348,9 +354,9 @@ export class Animal extends Container {
       nextCell.has !== this &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
-      nextCell.has.getChildByName('sprite').playing
+      nextCell.has.sprite.playing
     ) {
-      sprite.stop()
+      this.sprite.stop()
       return
     }
     if (nextCell.solid && this.dest) {
@@ -358,8 +364,8 @@ export class Animal extends Container {
       return
     }
 
-    if (!sprite.playing) {
-      sprite.play()
+    if (!this.sprite.playing) {
+      this.sprite.play()
     }
 
     this.zIndex = getInstanceZIndex(this)
@@ -446,7 +452,7 @@ export class Animal extends Container {
   }
 
   step() {
-    if (this.life <= 0) {
+    if (this.hitPoints <= 0) {
       this.die()
     }
     if (this.hasPath()) {
@@ -474,6 +480,9 @@ export class Animal extends Container {
   }
 
   die() {
+    const {
+      context: { player, menu },
+    } = this
     if (this.isDead) {
       return
     }
@@ -482,84 +491,114 @@ export class Animal extends Container {
     this.path = []
     this.action = null
     this.zIndex--
-    const sprite = this.getChildByName('sprite')
     this.setTextures('dyingSheet')
-    sprite.loop = false
-    sprite.onComplete = () => {
+    this.sprite.loop = false
+    this.sprite.onComplete = () => {
       this.owner.population--
       this.setTextures('corpseSheet')
-      sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
-      sprite.onComplete = () => {
-        this.clear()
+      this.sprite.animationSpeed = 0
+      this.startInterval(() => {
+        if (this.quantity > 0) {
+          this.quantity--
+          if (this.selected && player.selectedOther === this) {
+            menu.updateInfo('quantity-text', element => (element.textContent = this.quantity))
+          }
+        }
+        this.updateTexture()
+      }, 5000)
+    }
+  }
+
+  updateTexture() {
+    const {
+      context: { player, map },
+    } = this
+    const percentage = getPercentage(this.quantity, this.quantityMax)
+
+    if (percentage > 25 && percentage < 50) {
+      this.sprite.currentFrame = 1
+    } else if (percentage > 0 && percentage <= 25) {
+      this.sprite.currentFrame = 2
+    } else if (percentage <= 0) {
+      this.stopInterval()
+      if (map.grid[this.i][this.j].has === this) {
+        map.grid[this.i][this.j].has = null
+        map.grid[this.i][this.j].corpses.push(this)
+        map.grid[this.i][this.j].solid = false
       }
+      if (this.selected && player.selectedOther === this) {
+        player.unselectAll()
+      }
+      this.sprite.currentFrame = 3
+      setTimeout(() => {
+        this.clear()
+      }, corpseTime * 1000)
     }
   }
 
   clear() {
-    const {
-      context: { player, map },
-    } = this
-    clearCellOnInstanceSight(this)
-    map.grid[this.i][this.j].has = null
-    map.grid[this.i][this.j].solid = false
-    map.removeChild(this)
-    if (this.selected && player) {
-      player.unselectAll()
+    if (this.isDestroyed) {
+      return
     }
+    const {
+      context: { map },
+    } = this
     this.isDestroyed = true
+    map.grid[this.i][this.j].corpses.splice(map.grid[this.i][this.j].corpses.indexOf(this), 1)
+    map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }
 
   setTextures(sheet) {
-    const sprite = this.getChildByName('sprite')
     const sheetToReset = ['actionSheet']
     // Sheet don't exist we just block the current sheet
     if (!this[sheet]) {
       if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
-        sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
+        this.sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
       } else {
-        sprite.textures = [sprite.textures[sprite.currentFrame]]
+        this.sprite.textures = [this.sprite.textures[this.sprite.currentFrame]]
       }
       this.currentSheet = 'walkingSheet'
-      sprite.stop()
-      sprite.anchor.set(
-        sprite.textures[sprite.currentFrame].defaultAnchor.x,
-        sprite.textures[sprite.currentFrame].defaultAnchor.y
+      this.sprite.stop()
+      this.sprite.anchor.set(
+        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.x,
+        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.y
       )
       return
     }
     // Reset action loop
     if (!sheetToReset.includes(sheet)) {
-      sprite.onLoop = null
+      this.sprite.onLoop = null
     }
     this.currentSheet = sheet
     if (this.degree > 67.5 && this.degree < 112.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['north']
+      this.sprite.scale.x = 1
+      this.sprite.textures = this[sheet].animations['north']
     } else if (this.degree > 247.5 && this.degree < 292.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['south']
+      this.sprite.scale.x = 1
+      this.sprite.textures = this[sheet].animations['south']
     } else if (this.degree > 337.5 || this.degree < 22.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['west']
+      this.sprite.scale.x = 1
+      this.sprite.textures = this[sheet].animations['west']
     } else if (this.degree >= 22.5 && this.degree <= 67.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['northwest']
+      this.sprite.scale.x = 1
+      this.sprite.textures = this[sheet].animations['northwest']
     } else if (this.degree >= 292.5 && this.degree <= 337.5) {
-      sprite.scale.x = 1
-      sprite.textures = this[sheet].animations['southwest']
+      this.sprite.scale.x = 1
+      this.sprite.textures = this[sheet].animations['southwest']
     } else if (this.degree > 157.5 && this.degree < 202.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['west']
+      this.sprite.scale.x = -1
+      this.sprite.textures = this[sheet].animations['west']
     } else if (this.degree > 112.5 && this.degree < 157.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['northwest']
+      this.sprite.scale.x = -1
+      this.sprite.textures = this[sheet].animations['northwest']
     } else if (this.degree > 202.5 && this.degree < 247.5) {
-      sprite.scale.x = -1
-      sprite.textures = this[sheet].animations['southwest']
+      this.sprite.scale.x = -1
+      this.sprite.textures = this[sheet].animations['southwest']
     }
-    sprite.animationSpeed = (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
-    sprite.play()
+    this.sprite.animationSpeed =
+      (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
+    this.sprite.play()
   }
 
   setDefaultInterface(element, data) {
@@ -583,8 +622,8 @@ export class Animal extends Container {
     element.appendChild(iconImg)
 
     const lifeDiv = document.createElement('div')
-    lifeDiv.id = 'life'
-    lifeDiv.textContent = this.life + '/' + this.lifeMax
+    lifeDiv.id = 'hitPoints'
+    lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
     element.appendChild(lifeDiv)
 
     const quantityDiv = document.createElement('div')

@@ -54,6 +54,15 @@ export function getValuePercentage(val, perc) {
 }
 
 /**
+ * Get average between two numbers
+ * @param {number} a
+ * @param {number} b
+ */
+export function average(a, b) {
+  return (a + b) / 2
+}
+
+/**
  * Check if point is between two points can be used with line thickness
  * @param {object} line1
  * @param {object} line2

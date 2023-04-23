@@ -3,12 +3,11 @@ import { Assets, Sprite, Polygon } from 'pixi.js'
 import {
   randomItem,
   randomRange,
-  instanceIsInPlayerSight,
   instanceIsSurroundedBySolid,
   drawInstanceBlinkingSelection,
   getNewInstanceClosestFreeCellPath,
 } from '../../lib'
-import { colorTree } from '../../constants'
+import { cellHeight, cellWidth, colorTree } from '../../constants'
 
 export class Tree extends resource {
   constructor({ i, j }, context) {
@@ -44,7 +43,7 @@ export class Tree extends resource {
       const {
         context: { player, controls },
       } = this
-      if (!player || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
       controls.mouse.prevent = true
@@ -80,7 +79,7 @@ export class Tree extends resource {
         size: 1,
         color: colorTree,
         quantity: data.quantity,
-        lifeMax: data.lifeMax,
+        totalHitPoints: data.totalHitPoints,
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -96,22 +95,25 @@ export class Tree extends resource {
     const textureName = `00${randomRange(0, 3)}_636.png`
     const texture = spritesheet.textures[textureName]
     sprite.texture = texture
-    const points = [-32, 0, 0, -16, 32, 0, 0, 16]
+    const points = [-cellWidth / 2, 0, 0, -cellHeight / 2, cellWidth / 2, 0, 0, cellHeight / 2]
     sprite.hitArea = new Polygon(points)
     sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
   }
   onDie() {
     const {
-      context: { player, map },
+      context: { map },
     } = this
     const spritesheet = Assets.cache.get('623')
     const textureName = `00${randomRange(0, 3)}_623.png`
     const texture = spritesheet.textures[textureName]
-    const sprite = Sprite.from(texture)
-    if (!instanceIsInPlayerSight(this, player)) {
-      sprite.visible = false
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = texture
+    sprite.interactive = false
+    this.zIndex--
+    if (map.grid[this.i][this.j].has === this) {
+      map.grid[this.i][this.j].has = null
+      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].solid = false
     }
-    sprite.name = 'stump'
-    map.grid[this.i][this.j].addChild(sprite)
   }
 }

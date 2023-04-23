@@ -1,40 +1,28 @@
 {
   "buildings": {
-    "TownCenter": {
-      "size": 3,
-      "sight": 7,
-      "lifeMax": 600,
+    "House": {
+      "size": 1,
+      "sight": 3,
+      "totalHitPoints": 75,
+      "constructionTime": 20,
       "cost": {
-        "wood": 200
-      },
-      "conditions": [
-        {
-          "key": "hasBuilt",
-          "op": "includes",
-          "value": "GovernmentCenter"
-        }
-      ]
+        "wood": 50
+      }
     },
     "Barracks": {
       "size": 3,
       "sight": 5,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
       "cost": {
         "wood": 125
-      }
-    },
-    "House": {
-      "size": 1,
-      "sight": 3,
-      "lifeMax": 75,
-      "cost": {
-        "wood": 50
       }
     },
     "Granary": {
       "size": 3,
       "sight": 4,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
       "cost": {
         "wood": 120
       },
@@ -43,16 +31,27 @@
     "StoragePit": {
       "size": 3,
       "sight": 4,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
       "cost": {
         "wood": 120
       },
       "accept": ["wood", "stone", "gold", "meat"]
     },
-    "Market": {
+    "Dock": {
       "size": 3,
       "sight": 5,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 50,
+      "cost": {
+        "wood": 150
+      }
+    },
+    "ArcheryRange": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
       "cost": {
         "wood": 150
       },
@@ -65,14 +64,36 @@
         {
           "key": "hasBuilt",
           "op": "includes",
-          "value": "Granary"
+          "value": "Barracks"
+        }
+      ]
+    },
+    "Stable": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Barracks"
         }
       ]
     },
     "Farm": {
       "size": 3,
       "sight": 3,
-      "lifeMax": 50,
+      "totalHitPoints": 50,
+      "constructionTime": 24,
       "quantity": 250,
       "cost": {
         "wood": 75
@@ -90,40 +111,11 @@
         }
       ]
     },
-    "Stable": {
-      "size": 3,
-      "sight": 4,
-      "lifeMax": 350,
-      "cost": {
-        "wood": 150
-      },
-      "conditions": [
-        {
-          "key": "age",
-          "op": ">=",
-          "value": 2
-        }
-      ]
-    },
-    "ArcheryRange": {
-      "size": 3,
-      "sight": 4,
-      "lifeMax": 350,
-      "cost": {
-        "wood": 150
-      },
-      "conditions": [
-        {
-          "key": "age",
-          "op": ">=",
-          "value": 2
-        }
-      ]
-    },
     "WatchTower": {
       "size": 2,
       "sight": 8,
-      "lifeMax": 125,
+      "totalHitPoints": 125,
+      "constructionTime": 72,
       "range": 5,
       "attack": 3,
       "rateOfFire": 1.5,
@@ -135,13 +127,82 @@
           "key": "age",
           "op": ">=",
           "value": 1
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchWatchTower"
+        }
+      ]
+    },
+    "SmallWall": {
+      "size": 1,
+      "sight": 3,
+      "totalHitPoints": 200,
+      "constructionTime": 7,
+      "cost": {
+        "stone": 5
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchSmallWall"
+        }
+      ]
+    },
+    "Market": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Granary"
+        }
+      ]
+    },
+    "Temple": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 200
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
         }
       ]
     },
     "GovernmentCenter": {
       "size": 3,
       "sight": 5,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
       "cost": {
         "wood": 175
       },
@@ -158,10 +219,11 @@
         }
       ]
     },
-    "Temple": {
+    "TownCenter": {
       "size": 3,
-      "sight": 5,
-      "lifeMax": 350,
+      "sight": 7,
+      "totalHitPoints": 600,
+      "constructionTime": 60,
       "cost": {
         "wood": 200
       },
@@ -174,34 +236,15 @@
         {
           "key": "hasBuilt",
           "op": "includes",
-          "value": "Market"
-        }
-      ]
-    },
-    "Academy": {
-      "size": 3,
-      "sight": 5,
-      "lifeMax": 350,
-      "cost": {
-        "wood": 150
-      },
-      "conditions": [
-        {
-          "key": "age",
-          "op": ">=",
-          "value": 2
-        },
-        {
-          "key": "hasBuilt",
-          "op": "includes",
-          "value": "Stable"
+          "value": "GovernmentCenter"
         }
       ]
     },
     "SiegeWorkshop": {
       "size": 3,
       "sight": 5,
-      "lifeMax": 350,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
       "cost": {
         "wood": 200
       },
@@ -217,11 +260,32 @@
           "value": "ArcheryRange"
         }
       ]
+    },
+    "Academy": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Stable"
+        }
+      ]
     }
   },
   "units": {
     "Villager": {
-      "lifeMax": 25,
+      "totalHitPoints": 25,
       "sight": 4,
       "speed": 1.1,
       "rateOfFire": 1.5,
@@ -234,9 +298,10 @@
       }
     },
     "Clubman": {
-      "lifeMax": 40,
+      "totalHitPoints": 40,
       "sight": 4,
       "speed": 1.2,
+      "rateOfFire": 1.5,
       "trainingTime": 26,
       "icon": "002_50730",
       "attack": 3,
@@ -245,9 +310,10 @@
       }
     },
     "Scout": {
-      "lifeMax": 60,
+      "totalHitPoints": 60,
       "sight": 7,
       "speed": 2,
+      "rateOfFire": 1.5,
       "trainingTime": 30,
       "icon": "031_50730",
       "attack": 3,
@@ -256,9 +322,10 @@
       }
     },
     "Bowman": {
-      "lifeMax": 35,
+      "totalHitPoints": 35,
       "sight": 7,
       "speed": 1.2,
+      "rateOfFire": 1.4,
       "trainingTime": 30,
       "icon": "006_50730",
       "attack": 3,
@@ -269,7 +336,7 @@
       }
     },
     "Priest": {
-      "lifeMax": 25,
+      "totalHitPoints": 25,
       "sight": 12,
       "speed": 0.8,
       "trainingTime": 50,
@@ -288,7 +355,7 @@
     },
     "Tree": {
       "quantity": 300,
-      "lifeMax": 25,
+      "totalHitPoints": 25,
       "icon": "035_50730"
     },
     "Gold": {
@@ -302,14 +369,14 @@
   },
   "animals": {
     "Gazelle": {
-      "lifeMax": 25,
+      "totalHitPoints": 8,
       "sight": 2,
       "speed": 1.2,
       "icon": "037_50730",
       "quantity": 150
     },
     "Elephant": {
-      "lifeMax": 45,
+      "totalHitPoints": 45,
       "sight": 4,
       "speed": 1,
       "attack": 10,
@@ -318,7 +385,7 @@
       "quantity": 300
     },
     "Crocodile": {
-      "lifeMax": 20,
+      "totalHitPoints": 20,
       "sight": 5,
       "speed": 0.5,
       "attack": 4,
@@ -327,10 +394,10 @@
       "quantity": 100
     },
     "Lion": {
-      "lifeMax": 20,
+      "totalHitPoints": 20,
       "sight": 4,
       "speed": 1.1,
-      "attack": 2,      
+      "attack": 2,
       "rateOfFire": 1,
       "icon": "040_50730",
       "quantity": 100
