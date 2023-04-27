@@ -23,7 +23,7 @@ export class Player {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.populationMax = (1000) - 4 //5
+    this.populationMax = 1000 - 4 //5
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
@@ -96,8 +96,11 @@ export class Player {
   }
 
   otherPlayers() {
-    const others = [...this.parent.players]
-    others.splice(this.parent.players.indexOf(this), 1)
+    const {
+      context: { players },
+    } = this
+    const others = [...players]
+    others.splice(players.indexOf(this), 1)
     return others
   }
 

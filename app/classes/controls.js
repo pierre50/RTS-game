@@ -29,6 +29,9 @@ export default class Controls extends Container {
     this.camera
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
+    this.clicked = false
+    this.double = null
+    this.doubleClicked = false
     this.keysPressed = {}
     this.interactive = false
     this.allowMove = false
@@ -160,10 +163,10 @@ export default class Controls extends Container {
           : Math.round(this.mouse.y - this.mouseRectangle.y)
       this.mouseRectangle.graph.lineStyle(1, colorWhite, 1)
       this.mouseRectangle.graph.drawRect(
-        this.mouseRectangle.x,
-        this.mouseRectangle.y,
-        this.mouseRectangle.width,
-        this.mouseRectangle.height
+        Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width),
+        Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height),
+        Math.abs(this.mouseRectangle.width),
+        Math.abs(this.mouseRectangle.height)
       )
     }
   }
@@ -183,7 +186,7 @@ export default class Controls extends Container {
       context: { menu, map, player },
     } = this
     this.pointerStart = null
-    if (!this.isMouseInApp() || this.mouse.prevent) {
+    if (!this.isMouseInApp() || this.mouse.prevent || this.doubleClicked) {
       this.mouse.prevent = false
       return
     }
@@ -283,8 +286,8 @@ export default class Controls extends Container {
             const unit = player.selectedUnits[u]
             const distCenterX = unit.i - centerX
             const distCenterY = unit.j - centerY
-            const finalX = cell.i + 1 + distCenterX
-            const finalY = cell.j + 1 + distCenterY
+            const finalX = cell.i + distCenterX
+            const finalY = cell.j + distCenterY
             if (map.grid[finalX] && map.grid[finalX][finalY]) {
               player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
             } else {

@@ -1,6 +1,5 @@
 import { Animal } from './animal'
 import { Assets } from 'pixi.js'
-import { accelerator } from '../../constants'
 
 export class Gazelle extends Animal {
   constructor({ i, j, owner }, context) {
@@ -13,7 +12,6 @@ export class Gazelle extends Animal {
         owner,
         type,
         ...data,
-        speed: data.speed * accelerator,
         standingSheet: Assets.cache.get('479'),
         walkingSheet: Assets.cache.get('478'),
         runningSheet: Assets.cache.get('480'),
@@ -27,11 +25,5 @@ export class Gazelle extends Animal {
       },
       context
     )
-  }
-
-  detect(instance) {
-    if (instance.name === 'unit' && !this.isDead && !this.path.length && !this.dest) {
-      this.runaway()
-    }
   }
 }

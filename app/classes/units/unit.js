@@ -1,5 +1,5 @@
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime, loadingFoodTypes } from '../../constants'
+import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits } from '../../constants'
 import * as projectiles from '../projectiles/'
 import {
   getInstanceZIndex,
@@ -65,8 +65,11 @@ export class Unit extends Container {
     this.isDead = false
     this.isDestroyed = false
 
+    for (const [key, value] of Object.entries(this.assets)) {
+      this[key] = Assets.cache.get(value)
+    }
+
     this.hitPoints = this.totalHitPoints
-    this.originalSpeed = this.speed
     this.inactif = true
 
     this.allowMove = false
@@ -78,14 +81,46 @@ export class Unit extends Container {
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
 
-    this.on('pointerup', () => {
+    this.on('pointerdown', () => {
       const {
-        context: { controls, player, menu },
+        context: { controls, player },
       } = this
       if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
         return
       }
+      if (controls.clicked) {
+        if (this.owner.isPlayed) {
+          controls.getCellOnCamera(cell => {
+            if (
+              player.selectedUnits.length < maxSelectUnits &&
+              cell.has &&
+              cell.has.owner === this.owner &&
+              cell.has.type === this.type
+            ) {
+              cell.has.select()
+              player.selectedUnits.push(cell.has)
+            }
+          })
+        }
+        controls.doubleClicked = true
+      }
+      controls.clicked = false
+    })
+    this.on('pointerup', () => {
+      const {
+        context: { controls, player, menu },
+      } = this
+      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+        return
+      }
+
       controls.mouse.prevent = true
+      controls.clicked = true
+      controls.double = setTimeout(() => {
+        controls.clicked = false
+        controls.doubleClicked = false
+      }, 600)
+
       if (this.owner.isPlayed) {
         let hasSentHealer = false
         if (player.selectedUnits.length) {
@@ -123,7 +158,7 @@ export class Unit extends Container {
         }
         if (hasSentAttacker) {
           drawInstanceBlinkingSelection(this)
-        } else if (instanceIsInPlayerSight(unit, player) || map.revealEverything) {
+        } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -258,6 +293,40 @@ export class Unit extends Container {
     return getActionCondition(this, target, action, props)
   }
 
+  goBackToPrevious() {
+    const {
+      context: { map },
+    } = this
+    const typeAction = {
+      Stone: 'minestone',
+      Gold: 'minegold',
+      Berrybush: 'forageberry',
+      Tree: 'chopwood',
+    }
+    if (!this.previousDest) {
+      this.stop()
+      return
+    }
+    const dest = this.previousDest
+    this.previousDest = null
+    if (dest.name === 'animal') {
+      if (this.getActionCondition(dest, 'takemeat')) {
+        this.sendToTakeMeat(dest)
+      } else {
+        this.sendTo(map.grid[dest.i][dest.j], 'hunt')
+      }
+    } else if (typeAction[dest.type]) {
+      if (this.getActionCondition(dest, typeAction[dest.type])) {
+        const sendToFunc = `sendTo${dest.type}`
+        typeof this[sendToFunc] === 'function' ? this[sendToFunc](dest) : this.stop()
+      } else {
+        this.sendTo(map.grid[dest.i][dest.j], typeAction[dest.type])
+      }
+    } else {
+      this.sendTo(map.grid[dest.i][dest.j])
+    }
+  }
+
   getAction(name) {
     const {
       context: { menu, player, map },
@@ -276,33 +345,13 @@ export class Unit extends Container {
         }
         this.loading = 0
         this.updateInterfaceLoading()
-        if (this.assets[this.work]) {
-          this.standingSheet = Assets.cache.get(this.assets[this.work].standingSheet)
-          this.walkingSheet = Assets.cache.get(this.assets[this.work].walkingSheet)
+        if (this.allAssets[this.work]) {
+          this.standingSheet = Assets.cache.get(this.allAssets[this.work].standingSheet)
+          this.walkingSheet = Assets.cache.get(this.allAssets[this.work].walkingSheet)
         }
-        const typeAction = {
-          Stone: 'minestone',
-          Gold: 'minegold',
-          Berrybush: 'forageberry',
-          Tree: 'chopwood',
-        }
+
         if (this.previousDest) {
-          if (this.previousDest.name === 'animal') {
-            if (this.getActionCondition(this.previousDest, 'takemeat')) {
-              this.sendToTakeMeat(this.previousDest)
-            } else {
-              this.sendTo(map.grid[this.previousDest.i][this.previousDest.j], 'hunt')
-            }
-          } else if (typeAction[this.previousDest.type]) {
-            if (this.getActionCondition(this.previousDest, typeAction[this.previousDest.type])) {
-              const sendToFunc = `sendTo${this.previousDest.type}`
-              typeof this[sendToFunc] === 'function' ? this[sendToFunc](this.previousDest) : this.stop()
-            } else {
-              this.sendTo(map.grid[this.previousDest.i][this.previousDest.j], typeAction[this.previousDest.type])
-            }
-          } else {
-            this.sendTo(map.grid[this.previousDest.i][this.previousDest.j])
-          }
+          this.goBackToPrevious()
         } else {
           this.stop()
         }
@@ -346,7 +395,9 @@ export class Unit extends Container {
             }
             // Set the walking with berrybush animation
             if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('672')
+              if (this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
               this.standingSheet = null
             }
           },
@@ -407,7 +458,9 @@ export class Unit extends Container {
               }
               // Set the walking with wood animation
               if (this.loading > 0) {
-                this.walkingSheet = Assets.cache.get('273')
+                if (this.allAssets[this.work]) {
+                  this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+                }
                 this.standingSheet = null
               }
             }
@@ -452,7 +505,9 @@ export class Unit extends Container {
             }
             // Set the walking with berrybush animation
             if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('672')
+              if (this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
               this.standingSheet = null
             }
           },
@@ -496,7 +551,9 @@ export class Unit extends Container {
             }
             // Set the walking with stone animation
             if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('274')
+              if (this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
               this.standingSheet = null
             }
           },
@@ -537,7 +594,9 @@ export class Unit extends Container {
             }
             // Set the walking with gold animation
             if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('281')
+              if (this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
               this.standingSheet = null
             }
           },
@@ -593,10 +652,10 @@ export class Unit extends Container {
           return
         }
         this.setTextures('actionSheet')
-        if (this.range) {
+        if (this.range && this.type !== 'Villager') {
           this.sprite.onLoop = () => {
             if (!this.getActionCondition(this.dest)) {
-              if (this.dest.hitPoints <= 0) {
+              if (this.dest && this.dest.hitPoints <= 0) {
                 this.dest.die()
               }
               this.affectNewDest()
@@ -633,7 +692,7 @@ export class Unit extends Container {
           this.startInterval(
             () => {
               if (!this.getActionCondition(this.dest)) {
-                if (this.dest.hitPoints <= 0) {
+                if (this.dest && this.dest.hitPoints <= 0) {
                   this.dest.die()
                 }
                 this.affectNewDest()
@@ -658,8 +717,9 @@ export class Unit extends Container {
                 this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
                 if (
                   this.dest.selected &&
-                  player &&
-                  (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
+                  (player.selectedUnit === this.dest ||
+                    player.selectedBuilding === this.dest ||
+                    player.selectedOther === this.dest)
                 ) {
                   menu.updateInfo(
                     'hitPoints',
@@ -744,7 +804,9 @@ export class Unit extends Container {
             }
             // Set the walking with meat animation
             if (this.loading > 0) {
-              this.walkingSheet = Assets.cache.get('272')
+              if (this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
               this.standingSheet = null
             }
             // Destroy corps if it out of quantity
@@ -762,14 +824,14 @@ export class Unit extends Container {
           return
         }
         if (this.dest.isDead) {
-          this.sendToTakeMeat(this.dest)
+          this.previousDest ? this.goBackToPrevious() : this.sendToTakeMeat(this.dest)
         }
         this.setTextures('actionSheet')
         this.sprite.onLoop = () => {
           if (!this.getActionCondition(this.dest)) {
-            if (this.dest.hitPoints <= 0) {
+            if (this.dest && this.dest.hitPoints <= 0) {
               this.dest.die()
-              this.sendToTakeMeat(this.dest)
+              this.previousDest ? this.goBackToPrevious() : this.sendToTakeMeat(this.dest)
               return
             }
             this.affectNewDest()
@@ -816,7 +878,9 @@ export class Unit extends Container {
       if (target) {
         if (this.action !== 'takemeat') {
           this.action = 'takemeat'
-          this.actionSheet = Assets.cache.get('626')
+          if (this.allAssets[this.work]) {
+            this.actionSheet = Assets.cache.get(this.allAssets[this.work].harvestSheet)
+          }
         }
         if (instanceContactInstance(this, target)) {
           this.degree = getInstanceDegree(this, target.x, target.y)
@@ -834,7 +898,9 @@ export class Unit extends Container {
       if (target) {
         if (this.action !== 'hunt') {
           this.action = 'hunt'
-          this.actionSheet = Assets.cache.get('624')
+          if (this.allAssets[this.work]) {
+            this.actionSheet = Assets.cache.get(this.allAssets[this.work].actionSheet)
+          }
         }
         if (instanceContactInstance(this, target)) {
           this.degree = getInstanceDegree(this, target.x, target.y)
@@ -849,12 +915,38 @@ export class Unit extends Container {
     return false
   }
 
+  upgrade(type) {
+    const {
+      context: { player, menu },
+    } = this
+    const data = Assets.cache.get('config').units[type]
+    this.type = type
+    for (const [key, value] of Object.entries(data)) {
+      this[key] = value
+    }
+    for (const [key, value] of Object.entries(this.assets)) {
+      this[key] = Assets.cache.get(value)
+    }
+    if (player.selectedUnit === this) {
+      menu.setBottombar(this)
+    }
+    if (this.action && !this.path.length) {
+      this.getAction(this.action)
+    } else {
+      this.setTextures(this.currentSheet)
+    }
+  }
+
   affectNewDest() {
     this.stopInterval()
+    if (this.previousDest && this.work !== 'delivery') {
+      this.goBackToPrevious()
+      return
+    }
     let handleSuccess = false
     if (this.type === 'Villager' && (this.action === 'takemeat' || this.action === 'hunt')) {
       handleSuccess = this.handleAffectNewDestHunter()
-    } else if (!(this.type !== 'Villager' && this.dest.name === 'animal')) {
+    } else if (!this.dest || this.dest.name !== 'animal') {
       const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
       if (targets.length) {
         const target = getClosestInstanceWithPath(this, targets)
@@ -871,7 +963,7 @@ export class Unit extends Container {
       }
     }
     if (!handleSuccess) {
-      const notDeliveryWork = ['builder', 'attacker']
+      const notDeliveryWork = ['builder', 'attacker', 'healer']
       if (this.loading && !notDeliveryWork.includes(this.work)) {
         this.sendToDelivery()
       } else {
@@ -988,9 +1080,10 @@ export class Unit extends Container {
   }
 
   isAttacked(instance) {
-    if (!instance || this.dest) {
+    if (!instance || this.dest === instance) {
       return
     }
+    const currentDest = this.dest
     if (this.type === 'Villager') {
       if (instance.name === 'animal') {
         this.sendToHunt(instance)
@@ -1000,6 +1093,7 @@ export class Unit extends Container {
     } else {
       this.sendTo(instance, 'attack')
     }
+    this.previousDest = currentDest
   }
 
   stop() {
@@ -1060,22 +1154,26 @@ export class Unit extends Container {
     }
   }
 
-  runaway() {
+  runaway(instance) {
     const {
       context: { map },
     } = this
-    let dest
-    for (let i = 5; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
-        if (!cell.solid) {
-          dest = this.owner.views[cell.i][cell.j]
-          return
-        }
-      })
-      if (dest) {
-        this.sendTo(dest)
-        break
+    let dest = null
+    getCellsAroundPoint(this.i, this.j, map.grid, this.sight, cell => {
+      if (
+        !cell.solid &&
+        (!dest ||
+          pointsDistance(cell.i, cell.j, instance.i, instance.j) >
+            pointsDistance(dest.i, dest.j, instance.i, instance.j))
+      ) {
+        dest = this.owner.views[cell.i][cell.j]
+        return
       }
+    })
+    if (dest) {
+      this.sendTo(dest)
+    } else {
+      this.stop()
     }
   }
 

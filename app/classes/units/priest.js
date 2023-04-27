@@ -1,6 +1,5 @@
 import { Unit } from './unit'
 import { Assets } from 'pixi.js'
-import { accelerator } from '../../constants'
 
 export class Priest extends Unit {
   constructor({ i, j, owner }, context) {
@@ -13,7 +12,6 @@ export class Priest extends Unit {
         owner,
         type,
         ...data,
-        speed: data.speed * accelerator,
         work: 'healer',
         standingSheet: Assets.cache.get('445'),
         walkingSheet: Assets.cache.get('651'),

@@ -481,7 +481,7 @@ export class Building extends Container {
     const {
       context: { map, menu },
     } = this
-    const spawnCell = getFreeCellAroundPoint(this.i, this.j, map.grid)
+    const spawnCell = getFreeCellAroundPoint(this.i, this.j, this.size, map.grid)
     if (!spawnCell) {
       return
     }
@@ -620,6 +620,18 @@ export class Building extends Container {
             player[technology.key].push(technology.value || type)
           } else {
             player[technology.key] = technology.value || type
+          }
+          if (technology.action) {
+            switch (technology.action.type) {
+              case 'upgrade':
+                for (let i = 0; i < player.units.length; i++){
+                  const unit = player.units[i]
+                  if (unit.type === technology.action.source){
+                    unit.upgrade(technology.action.target)
+                  }
+                }
+                break
+            }
           }
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)

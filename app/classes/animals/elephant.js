@@ -1,6 +1,5 @@
 import { Animal } from './animal'
 import { Assets } from 'pixi.js'
-import { accelerator } from '../../constants'
 
 export class Elephant extends Animal {
   constructor({ i, j, owner }, context) {
@@ -13,7 +12,6 @@ export class Elephant extends Animal {
         owner,
         type,
         ...data,
-        speed: data.speed * accelerator,
         actionSheet: Assets.cache.get('215'),
         standingSheet: Assets.cache.get('428'),
         walkingSheet: Assets.cache.get('667'),

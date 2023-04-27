@@ -117,7 +117,7 @@ export default class Menu {
     cameraContext.translate(translate, 0)
     resourceContext.translate(translate, 0)
 
-    if (map.revealEverything){
+    if (map.revealEverything) {
       this.revealTerrainMinimap()
     }
   }
@@ -572,13 +572,13 @@ export default class Menu {
       context: { controls, player },
     } = this
     const config = Assets.cache.get('technology')[type]
-    !config.conditions.map(condition => {
-      isValidCondition(condition, player)
-    }).length
     return {
       icon: getIconPath(config.icon),
       id: type,
-      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () =>
+        (config.conditions || []).some(
+          condition => player.technologies.includes(type) || !isValidCondition(condition, player)
+        ),
       onClick: selection => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {

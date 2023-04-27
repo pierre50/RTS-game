@@ -12,7 +12,7 @@ export class Arrow extends Projectile {
         type,
         ...props,
         size: 3,
-        speed: 14 * accelerator,
+        speed: 14,
       },
       context
     )

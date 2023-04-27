@@ -9,7 +9,6 @@ import {
   getZoneInGridWithCondition,
   randomItem,
   getPlainCellsAroundPoint,
-  getPositionInGridAroundInstance,
   getCellsAroundPoint,
   colors,
 } from '../lib'
@@ -34,7 +33,7 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = false
+    this.revealEverything = true
     this.noAI = true
     this.grid = []
     this.sortableChildren = true
@@ -144,7 +143,7 @@ export default class Map extends Container {
               j: posJ,
               age: 1,
               civ: 'Greek',
-              color: 'cyan',
+              color,
               isPlayed: true,
             },
             context
@@ -168,17 +167,21 @@ export default class Map extends Container {
       const towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', true)
       for (let i = 0; i < this.startingUnits; i++) {
         towncenter.placeUnit('Villager')
-        towncenter.placeUnit('Bowman')
+        towncenter.placeUnit('Clubman')
       }
     }
   }
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 5)
-      this.placeResourceGroup(playersPos[i], 'Stone', 5)
-      this.placeResourceGroup(playersPos[i], 'Gold', 5)
-      this.placeResourceGroup(playersPos[i], 'Tree', 20)
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 6, [5, 10])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [10, 15])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [10, 15])
+      this.placeResourceGroup(playersPos[i], 'Tree', 20, [10, 25])
+      this.placeResourceGroup(playersPos[i], 'Tree', 30, [10, 25])
+      this.placeResourceGroup(playersPos[i], 'Tree', 20, [10, 25])
+      this.placeResourceGroup(playersPos[i], 'Tree', 30, [10, 25])
+      this.placeResourceGroup(playersPos[i], 'Tree', 50, [10, 30])
     }
   }
 
@@ -228,6 +231,9 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
+        if (getCellsAroundPoint(i, j, this.grid, 1, neighbour => neighbour.solid).length > 0) {
+          continue
+        }
         if (cell.type && cell.type !== 'water' && !cell.has && !cell.solid && !cell.border && !cell.inclined) {
           if (Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
@@ -243,9 +249,6 @@ export default class Map extends Container {
             cell.addChild(floor)
           }
           if (Math.random() < this.chanceOfSets) {
-            const animal = randomItem(Object.keys(animals))
-            new animals[animal]({ i, j, owner: this.gaia }, this.context)
-            continue
             const type = randomItem(['tree', 'rock', 'animal'])
             switch (type) {
               case 'tree':
@@ -302,7 +305,7 @@ export default class Map extends Container {
           let toRemove = true
           let cpt = 0
           if (
-            getCellsAroundPoint(i, j, this.grid, 2, cell => {
+            getCellsAroundPoint(i, j, this.grid, 1, cell => {
               if (cell.z > 0) {
                 cpt++
               }
@@ -583,7 +586,7 @@ export default class Map extends Container {
     return results
   }
 
-  placeResourceGroup(player, instance, quantity) {
+  placeResourceGroup(player, instance, quantity, range) {
     const { context, grid } = this
     const resources = {
       Tree,
@@ -591,25 +594,34 @@ export default class Map extends Container {
       Stone,
       Gold,
     }
-    const cartesianDistance = [10, 25]
-    const pos = getPositionInGridAroundInstance(player, this.grid, cartesianDistance, 3, false)
-    if (pos) {
+    function getRandomCells() {
+      const randomI = randomRange(range[0], range[1])
+      const randomJ = randomRange(range[0], range[1])
+      const finalI = player.i + randomItem([-randomI, randomI])
+      const finalJ = player.j + randomItem([-randomJ, randomJ])
       let cpt = 0
-      const max = quantity
-      for (let i = 0; i < quantity * 100; i++) {
-        getCellsAroundPoint(pos.i, pos.j, grid, i, cell => {
-          if (cpt > max) {
-            return
-          }
-          if (Math.random() < 0.5 && !cell.solid && !cell.border) {
-            cpt++
-            this.resources.push(new resources[instance]({ i: cell.i, j: cell.j }, context))
+      if (grid[finalI] && grid[finalI][finalJ]) {
+        const dist = Math.round(Math.sqrt(quantity, 2))
+        const cells = getPlainCellsAroundPoint(finalI, finalJ, grid, dist, cell => {
+          cpt++
+          if (!cell.solid && !cell.has && !cell.border) {
+            return true
           }
         })
-        if (cpt > max) {
-          return
+        if (cells.length >= cpt) {
+          return cells
+        } else {
+          return getRandomCells()
         }
+      } else {
+        return getRandomCells()
       }
+    }
+    const cells = getRandomCells()
+    for (let i = 0; i < quantity; i++) {
+      const item = randomItem(cells)
+      cells.splice(cells.indexOf(item), 1)
+      this.resources.push(new resources[instance]({ i: item.i, j: item.j }, context))
     }
   }
 

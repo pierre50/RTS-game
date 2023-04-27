@@ -18,6 +18,7 @@ import {
   getCellsAroundPoint,
   instanceIsInPlayerSight,
   getActionCondition,
+  pointsDistance,
 } from '../../lib'
 
 export class Animal extends Container {
@@ -61,7 +62,6 @@ export class Animal extends Container {
 
     this.hitPoints = this.totalHitPoints
     this.quantityMax = this.quantity
-    this.originalSpeed = this.speed
     this.inactif = true
 
     this.allowMove = false
@@ -154,8 +154,6 @@ export class Animal extends Container {
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
     selection.drawPolygon(path)
     this.addChildAt(selection, 0)
-
-    menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   unselect() {
@@ -267,7 +265,7 @@ export class Animal extends Container {
         this.startInterval(
           () => {
             if (!this.getActionCondition(this.dest)) {
-              if (this.dest.hitPoints <= 0) {
+              if (this.dest && this.dest.hitPoints <= 0) {
                 this.dest.die()
               }
               this.affectNewDest()
@@ -416,7 +414,6 @@ export class Animal extends Container {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, speed)
-      menu.updatePlayerMiniMap(this.owner)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
         this.setTextures('walkingSheet')
@@ -424,15 +421,25 @@ export class Animal extends Container {
     }
   }
 
+  getReaction(instance) {
+    if (this.strategy === 'runaway') {
+      this.runaway(instance)
+    } else {
+      this.sendTo(instance, 'attack')
+    }
+  }
+
+  detect(instance) {
+    if (this.strategy && instance && instance.name === 'unit' && !this.isDead && !this.path.length && !this.dest) {
+      this.getReaction(instance)
+    }
+  }
+
   isAttacked(instance) {
     if (!instance || this.dest) {
       return
     }
-    if (this.type === 'Gazelle') {
-      this.runaway()
-    } else {
-      this.sendTo(instance, 'attack')
-    }
+    this.getReaction(instance)
   }
 
   stop() {
@@ -460,32 +467,36 @@ export class Animal extends Container {
     }
   }
 
-  runaway() {
+  runaway(instance) {
     const {
       context: { map },
     } = this
-    let dest
-    for (let i = 5; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
-        if (!cell.solid) {
-          dest = this.owner.views[cell.i][cell.j]
-          return
-        }
-      })
-      if (dest) {
-        this.sendTo(dest)
-        break
+    let dest = null
+    getCellsAroundPoint(this.i, this.j, map.grid, this.sight, cell => {
+      if (
+        !cell.solid &&
+        (!dest ||
+          pointsDistance(cell.i, cell.j, instance.i, instance.j) >
+            pointsDistance(dest.i, dest.j, instance.i, instance.j))
+      ) {
+        dest = this.owner.views[cell.i][cell.j]
+        return
       }
+    })
+    if (dest) {
+      this.sendTo(dest)
+    } else {
+      this.stop()
     }
   }
 
   die() {
-    const {
-      context: { player, menu },
-    } = this
     if (this.isDead) {
       return
     }
+    const {
+      context: { player, menu },
+    } = this
     this.stopInterval()
     this.isDead = true
     this.path = []

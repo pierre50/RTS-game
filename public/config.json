@@ -307,6 +307,13 @@
       "attack": 3,
       "cost": {
         "food": 50
+      },
+      "assets": {
+        "standingSheet": "425",
+        "walkingSheet": "664",
+        "actionSheet": "212",
+        "dyingSheet": "321",
+        "corpseSheet": "380"
       }
     },
     "Scout": {
@@ -319,6 +326,13 @@
       "attack": 3,
       "cost": {
         "food": 90
+      },
+      "assets": {
+        "standingSheet": "445",
+        "walkingSheet": "651",
+        "actionSheet": "227",
+        "dyingSheet": "343",
+        "corpseSheet": "403"
       }
     },
     "Bowman": {
@@ -330,9 +344,17 @@
       "icon": "006_50730",
       "attack": 3,
       "range": 5,
+      "projectile": "Arrow",
       "cost": {
         "food": 40,
         "wood": 20
+      },
+      "assets": {
+        "standingSheet": "413",
+        "walkingSheet": "652",
+        "actionSheet": "203",
+        "dyingSheet": "308",
+        "corpseSheet": "367"
       }
     },
     "Priest": {
@@ -345,6 +367,18 @@
       "range": 10,
       "cost": {
         "gold": 125
+      }
+    },
+    "Axeman": {
+      "totalHitPoints": 50,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "003_50730",
+      "attack": 5,
+      "cost": {
+        "food": 50
       }
     }
   },
@@ -372,6 +406,7 @@
       "totalHitPoints": 8,
       "sight": 2,
       "speed": 1.2,
+      "strategy": "runaway",
       "icon": "037_50730",
       "quantity": 150
     },
@@ -389,6 +424,7 @@
       "sight": 5,
       "speed": 0.5,
       "attack": 4,
+      "strategy": "attack",
       "icon": "041_50730",
       "rateOfFire": 2,
       "quantity": 100
@@ -398,6 +434,7 @@
       "sight": 4,
       "speed": 1.1,
       "attack": 2,
+      "strategy": "attack",
       "rateOfFire": 1,
       "icon": "040_50730",
       "quantity": 100

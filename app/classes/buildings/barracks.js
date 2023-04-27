@@ -13,6 +13,7 @@ export class Barracks extends Building {
     sprite.updateAnchor = true
     sprite.name = 'sprite'
     //sprite.hitArea = new Polygon(texture.hitArea)
+    const technologies = ['BattleAxe'].map(key => context.menu.getTechnologyButton(key))
 
     super(
       {
@@ -28,7 +29,7 @@ export class Barracks extends Building {
             const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Clubman')] : [],
+          menu: owner.isPlayed ? [context.menu.getUnitButton('Clubman'), ...technologies] : [],
         },
       },
       context

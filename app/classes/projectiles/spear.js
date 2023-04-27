@@ -16,7 +16,7 @@ export class Spear extends Projectile {
         type,
         ...props,
         size: 10,
-        speed: 8 * accelerator,
+        speed: 8,
       },
       context
     )

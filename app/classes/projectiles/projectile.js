@@ -53,7 +53,6 @@ export class Projectile extends Container {
     const {
       context: { menu, player },
     } = this
-    console.log('hit')
     instance.hitPoints = Math.max(instance.hitPoints - (this.attack || this.owner.attack), 0)
     if (instance.selected && player.selectedOther === instance) {
       menu.updateInfo(

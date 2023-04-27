@@ -1,3 +1,4 @@
+import { accelerator } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -21,8 +22,8 @@ export function moveTowardPoint(instance, x, y, speed) {
   let dist = pointsDistance(x, y, instance.x, instance.y)
   let tX = x - instance.x
   let tY = y - instance.y
-  let velX = (tX / dist) * speed
-  let velY = (tY / dist) * speed
+  let velX = (tX / dist) * (speed * accelerator)
+  let velY = (tY / dist) * (speed * accelerator)
   instance.degree = getInstanceDegree(instance, x, y)
   instance.x += velX
   instance.y += velY
@@ -34,24 +35,18 @@ export function moveTowardPoint(instance, x, y, speed) {
  * @param {number} y
  * @param {object} grid
  */
-export function getFreeCellAroundPoint(x, y, grid) {
-  let founded
-
-  for (let i = 1; i < 100; i++) {
-    getCellsAroundPoint(x, y, grid, i, cell => {
-      if (!cell.solid) {
-        founded = cell
-      }
-    })
-    if (founded) {
-      return founded
+export function getFreeCellAroundPoint(x, y, size, grid) {
+  for (let i = size - 1; i < 50; i++) {
+    let cells = getCellsAroundPoint(x, y, grid, i, cell => !cell.solid)
+    if (cells.length) {
+      return randomItem(cells)
     }
   }
   return null
 }
 
 export function instanceIsSurroundedBySolid(instance) {
-  let size = (instance.size || 1) === 3 ? 2 : 1
+  let size = instance.size - 1 || 1
   let solids = 0
   let neighbours = getCellsAroundPoint(instance.i, instance.j, instance.parent.grid, size, cell => {
     if (cell.solid) {
@@ -64,7 +59,7 @@ export function instanceIsSurroundedBySolid(instance) {
 
 export function getNewInstanceClosestFreeCellPath(instance, target, map) {
   for (let i = 1; i < 100; i++) {
-    let size = (target.size || 1) === 3 ? 2 : 1
+    let size = instance.size - 1 || 1
     let paths = []
     getCellsAroundPoint(target.i, target.j, map.grid, size * i, cell => {
       if (cell.has && cell.has.type === target.type) {
@@ -421,6 +416,7 @@ export function getPlainCellsAroundPoint(startX, startY, grid, dist, callback) {
  * @param {number} dist
  */
 export function getCellsAroundPoint(startX, startY, grid, dist, callback) {
+  const finalDist = dist - 1
   let result = []
   if (!dist) {
     const cell = grid[startX][startY]
@@ -439,7 +435,7 @@ export function getCellsAroundPoint(startX, startY, grid, dist, callback) {
   let velX = 1
   let velY = 0
   let line = 0
-  for (let i = 0; i < 8 + (dist - 1) * 8; i++) {
+  for (let i = 0; i < 8 + finalDist * 8; i++) {
     x += velX
     y += velY
     if (grid[x] && grid[x][y]) {

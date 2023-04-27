@@ -56,11 +56,6 @@
         "key": "age",
         "op": ">=",
         "value": 1
-      },
-      {
-        "key": "technologies",
-        "op": "!includes",
-        "value": "Woodworking"
       }
     ],
     "researchTime": 160,
@@ -77,11 +72,6 @@
         "key": "age",
         "op": ">=",
         "value": 1
-      },
-      {
-        "key": "technologies",
-        "op": "!includes",
-        "value": "ResearchSmallWall"
       }
     ],
     "researchTime": 10,
@@ -97,16 +87,31 @@
         "key": "age",
         "op": ">=",
         "value": 1
-      },
-      {
-        "key": "technologies",
-        "op": "!includes",
-        "value": "ResearchWatchTower"
       }
     ],
     "researchTime": 10,
     "cost": {
       "food": 50
+    }
+  },
+  "BattleAxe": {
+    "icon": "045_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      }
+    ],
+    "researchTime": 40,
+    "cost": {
+      "food": 100
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "Clubman",
+      "target": "Bowman"
     }
   }
 }

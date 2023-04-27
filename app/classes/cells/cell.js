@@ -6,6 +6,7 @@ import {
   getCellsAroundPoint,
   instanceIsInPlayerSight,
   instancesDistance,
+  getInstanceZIndex,
 } from '../../lib'
 import { cellDepth, colorWhite } from '../../constants'
 
@@ -203,6 +204,7 @@ export class Cell extends Container {
     if (level === 0) {
       this.y += cellDepth
       this.z = level
+      return
     }
     const grid = this.parent.grid
     getCellsAroundPoint(this.i, this.j, grid, level - cpt, cell => {
@@ -212,8 +214,11 @@ export class Cell extends Container {
         cell.fillReliefCellsAroundCell(grid)
       }
     })
-    if (cpt <= level) {
+    if (cpt + 1 < level) {
       this.setCellLevel(level, cpt + 1)
+    }
+    if (this.has) {
+      this.has.zIndex = getInstanceZIndex(this.has)
     }
   }
 

@@ -21,7 +21,6 @@ export class resource extends Container {
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
-    map.grid[this.i][this.j].has = this
     this.selected = false
     this.visible = false
     this.isDead = false

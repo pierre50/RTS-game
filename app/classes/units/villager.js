@@ -1,9 +1,9 @@
 import { Unit } from './unit'
 import { Assets } from 'pixi.js'
-import { accelerator, loadingFoodTypes } from '../../constants'
+import { loadingFoodTypes } from '../../constants'
 import { getClosestInstance, getActionCondition } from '../../lib'
 
-const assets = {
+const allAssets = {
   default: {
     standingSheet: '418',
     walkingSheet: '657',
@@ -14,7 +14,7 @@ const assets = {
     actionSheet: '224',
     standingSheet: '418',
     dyingSheet: '314', // missing
-    walkingSheet: '657',
+    walkingSheet: '657', // missing
     corpseSheet: '373', // missing
   },
   hunter: {
@@ -32,6 +32,7 @@ const assets = {
     walkingSheet: '670',
     dyingSheet: '326',
     corpseSheet: '388',
+    loadedSheet: '672',
   },
   forager: {
     actionSheet: '632',
@@ -39,6 +40,7 @@ const assets = {
     walkingSheet: '672',
     dyingSheet: '328',
     corpseSheet: '390',
+    loadedSheet: '672',
   },
   stoneminer: {
     actionSheet: '633',
@@ -46,6 +48,7 @@ const assets = {
     walkingSheet: '683',
     dyingSheet: '315', // missing
     corpseSheet: '400',
+    loadedSheet: '274',
   },
   goldminer: {
     actionSheet: '633',
@@ -53,6 +56,7 @@ const assets = {
     walkingSheet: '683',
     dyingSheet: '315', // missing
     corpseSheet: '400',
+    loadedSheet: '281',
   },
   woodcutter: {
     actionSheet: '625',
@@ -60,6 +64,7 @@ const assets = {
     walkingSheet: '682',
     dyingSheet: '315', // missing
     corpseSheet: '399',
+    loadedSheet: '273',
   },
   builder: {
     actionSheet: '628',
@@ -76,19 +81,15 @@ export class Villager extends Unit {
     const data = Assets.cache.get('config').units[type]
     const buildings = Assets.cache.get('config').buildings
     const { menu } = context
-    const defaultAssets = {}
-    for (const [key, value] of Object.entries(assets.default)) {
-      defaultAssets[key] = Assets.cache.get(value)
-    }
     const children = Object.keys(buildings).map(key => menu.getBuildingButton(key))
     const gatheringRate = {
-      forager: 1/0.45,
-      hunter: 1/0.4725,
-      fisherman: 1/0.6,
-      farmer: 1/0.45,
-      woodcutter: 1/0.55,
-      stoneminer: 1/0.5175,
-      goldminer: 1/0.5175,
+      forager: 1 / 0.45,
+      hunter: 1 / 0.4725,
+      fisherman: 1 / 0.6,
+      farmer: 1 / 0.45,
+      woodcutter: 1 / 0.55,
+      stoneminer: 1 / 0.5175,
+      goldminer: 1 / 0.5175,
     }
 
     super(
@@ -99,9 +100,8 @@ export class Villager extends Unit {
         type,
         gatheringRate,
         ...data,
-        speed: data.speed * accelerator,
-        ...defaultAssets,
-        assets,
+        assets: allAssets.default,
+        allAssets,
         interface: {
           info: element => {
             const { owner } = this
@@ -162,10 +162,12 @@ export class Villager extends Unit {
   sendToAttack(target) {
     this.updateInterfaceLoading()
     this.work = 'attacker'
-    this.actionSheet = Assets.cache.get(assets.attack.actionSheet)
-    this.standingSheet = Assets.cache.get(assets.attack.standingSheet)
+    this.actionSheet = Assets.cache.get(allAssets.attack.actionSheet)
+    this.standingSheet = Assets.cache.get(allAssets.attack.standingSheet)
     if (!this.loading) {
-      this.walkingSheet = Assets.cache.get(assets.attack.dyingSheet)
+      this.walkingSheet = Assets.cache.get(allAssets.attack.walkingSheet)
+      this.dyingSheet = Assets.cache.get(allAssets.attack.dyingSheet)
+      this.corpseSheet = Assets.cache.get(allAssets.attack.corpseSheet)
     }
     this.previousDest = null
     return this.sendTo(target, 'attack')
@@ -178,12 +180,12 @@ export class Villager extends Unit {
     }
     if (this.work !== 'hunter' || this.action !== 'takemeat') {
       this.work = 'hunter'
-      this.actionSheet = Assets.cache.get(assets.hunter.harvestSheet)
-      this.standingSheet = Assets.cache.get(assets.hunter.standingSheet)
+      this.actionSheet = Assets.cache.get(allAssets.hunter.harvestSheet)
+      this.standingSheet = Assets.cache.get(allAssets.hunter.standingSheet)
       if (!this.loading) {
-        this.walkingSheet = Assets.cache.get(assets.hunter.walkingSheet)
-        this.dyingSheet = Assets.cache.get(assets.hunter.dyingSheet)
-        this.corpseSheet = Assets.cache.get(assets.hunter.corpseSheet)
+        this.walkingSheet = Assets.cache.get(allAssets.hunter.walkingSheet)
+        this.dyingSheet = Assets.cache.get(allAssets.hunter.dyingSheet)
+        this.corpseSheet = Assets.cache.get(allAssets.hunter.corpseSheet)
       }
     }
     this.previousDest = null
@@ -197,12 +199,12 @@ export class Villager extends Unit {
     }
     if (this.work !== 'hunter' || this.action !== 'hunt') {
       this.work = 'hunter'
-      this.actionSheet = Assets.cache.get(assets.hunter.actionSheet)
-      this.standingSheet = Assets.cache.get(assets.hunter.standingSheet)
+      this.actionSheet = Assets.cache.get(allAssets.hunter.actionSheet)
+      this.standingSheet = Assets.cache.get(allAssets.hunter.standingSheet)
       if (!this.loading) {
-        this.walkingSheet = Assets.cache.get(assets.hunter.walkingSheet)
-        this.dyingSheet = Assets.cache.get(assets.hunter.dyingSheet)
-        this.corpseSheet = Assets.cache.get(assets.hunter.corpseSheet)
+        this.walkingSheet = Assets.cache.get(allAssets.hunter.walkingSheet)
+        this.dyingSheet = Assets.cache.get(allAssets.hunter.dyingSheet)
+        this.corpseSheet = Assets.cache.get(allAssets.hunter.corpseSheet)
       }
     }
     this.previousDest = null
@@ -237,12 +239,12 @@ export class Villager extends Unit {
     if (this.work !== 'builder') {
       this.updateInterfaceLoading()
       this.work = 'builder'
-      this.actionSheet = Assets.cache.get(assets.builder.actionSheet)
+      this.actionSheet = Assets.cache.get(allAssets.builder.actionSheet)
       if (!this.loading) {
-        this.standingSheet = Assets.cache.get(assets.builder.standingSheet)
-        this.walkingSheet = Assets.cache.get(assets.builder.walkingSheet)
-        this.dyingSheet = Assets.cache.get(assets.builder.dyingSheet)
-        this.corpseSheet = Assets.cache.get(assets.builder.corpseSheet)
+        this.standingSheet = Assets.cache.get(allAssets.builder.standingSheet)
+        this.walkingSheet = Assets.cache.get(allAssets.builder.walkingSheet)
+        this.dyingSheet = Assets.cache.get(allAssets.builder.dyingSheet)
+        this.corpseSheet = Assets.cache.get(allAssets.builder.corpseSheet)
       }
     }
     this.previousDest = null
@@ -256,12 +258,12 @@ export class Villager extends Unit {
     }
     if (this.work !== 'farmer') {
       this.work = 'farmer'
-      this.actionSheet = Assets.cache.get(assets.farmer.actionSheet)
+      this.actionSheet = Assets.cache.get(allAssets.farmer.actionSheet)
       if (!this.loading) {
-        this.standingSheet = Assets.cache.get(assets.farmer.standingSheet)
-        this.walkingSheet = Assets.cache.get(assets.farmer.walkingSheet)
-        this.dyingSheet = Assets.cache.get(assets.farmer.dyingSheet)
-        this.corpseSheet = Assets.cache.get(assets.farmer.corpseSheet)
+        this.standingSheet = Assets.cache.get(allAssets.farmer.standingSheet)
+        this.walkingSheet = Assets.cache.get(allAssets.farmer.walkingSheet)
+        this.dyingSheet = Assets.cache.get(allAssets.farmer.dyingSheet)
+        this.corpseSheet = Assets.cache.get(allAssets.farmer.corpseSheet)
       }
     }
     this.previousDest = null
@@ -273,11 +275,11 @@ export class Villager extends Unit {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'woodcutter'
-      this.actionSheet = Assets.cache.get(assets.woodcutter.actionSheet)
-      this.standingSheet = Assets.cache.get(assets.woodcutter.standingSheet)
-      this.walkingSheet = Assets.cache.get(assets.woodcutter.walkingSheet)
-      this.dyingSheet = Assets.cache.get(assets.woodcutter.dyingSheet)
-      this.corpseSheet = Assets.cache.get(assets.woodcutter.corpseSheet)
+      this.actionSheet = Assets.cache.get(allAssets.woodcutter.actionSheet)
+      this.standingSheet = Assets.cache.get(allAssets.woodcutter.standingSheet)
+      this.walkingSheet = Assets.cache.get(allAssets.woodcutter.walkingSheet)
+      this.dyingSheet = Assets.cache.get(allAssets.woodcutter.dyingSheet)
+      this.corpseSheet = Assets.cache.get(allAssets.woodcutter.corpseSheet)
     }
     this.previousDest = null
     return this.sendTo(tree, 'chopwood')
@@ -290,12 +292,12 @@ export class Villager extends Unit {
     }
     if (this.work !== 'forager') {
       this.work = 'forager'
-      this.actionSheet = Assets.cache.get(assets.forager.actionSheet)
+      this.actionSheet = Assets.cache.get(allAssets.forager.actionSheet)
       if (!this.loading) {
-        this.standingSheet = Assets.cache.get(assets.forager.standingSheet)
-        this.walkingSheet = Assets.cache.get(assets.forager.walkingSheet)
-        this.dyingSheet = Assets.cache.get(assets.forager.dyingSheet)
-        this.corpseSheet = Assets.cache.get(assets.forager.corpseSheet)
+        this.standingSheet = Assets.cache.get(allAssets.forager.standingSheet)
+        this.walkingSheet = Assets.cache.get(allAssets.forager.walkingSheet)
+        this.dyingSheet = Assets.cache.get(allAssets.forager.dyingSheet)
+        this.corpseSheet = Assets.cache.get(allAssets.forager.corpseSheet)
       }
     }
     this.previousDest = null
@@ -307,11 +309,11 @@ export class Villager extends Unit {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'stoneminer'
-      this.actionSheet = Assets.cache.get(assets.stoneminer.actionSheet)
-      this.standingSheet = Assets.cache.get(assets.stoneminer.standingSheet)
-      this.walkingSheet = Assets.cache.get(assets.stoneminer.walkingSheet)
-      this.dyingSheet = Assets.cache.get(assets.stoneminer.dyingSheet)
-      this.corpseSheet = Assets.cache.get(assets.stoneminer.corpseSheet)
+      this.actionSheet = Assets.cache.get(allAssets.stoneminer.actionSheet)
+      this.standingSheet = Assets.cache.get(allAssets.stoneminer.standingSheet)
+      this.walkingSheet = Assets.cache.get(allAssets.stoneminer.walkingSheet)
+      this.dyingSheet = Assets.cache.get(allAssets.stoneminer.dyingSheet)
+      this.corpseSheet = Assets.cache.get(allAssets.stoneminer.corpseSheet)
     }
     this.previousDest = null
     return this.sendTo(stone, 'minestone')
@@ -322,11 +324,11 @@ export class Villager extends Unit {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'goldminer'
-      this.actionSheet = Assets.cache.get(assets.goldminer.actionSheet)
-      this.standingSheet = Assets.cache.get(assets.goldminer.standingSheet)
-      this.walkingSheet = Assets.cache.get(assets.goldminer.walkingSheet)
-      this.dyingSheet = Assets.cache.get(assets.goldminer.dyingSheet)
-      this.corpseSheet = Assets.cache.get(assets.goldminer.corpseSheet)
+      this.actionSheet = Assets.cache.get(allAssets.goldminer.actionSheet)
+      this.standingSheet = Assets.cache.get(allAssets.goldminer.standingSheet)
+      this.walkingSheet = Assets.cache.get(allAssets.goldminer.walkingSheet)
+      this.dyingSheet = Assets.cache.get(allAssets.goldminer.dyingSheet)
+      this.corpseSheet = Assets.cache.get(allAssets.goldminer.corpseSheet)
     }
     this.previousDest = null
     return this.sendTo(gold, 'minegold')
