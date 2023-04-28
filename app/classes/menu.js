@@ -490,8 +490,9 @@ export default class Menu {
     } = this
     const unit = Assets.cache.get('config').units[type]
     return {
-      icon: getIconPath(unit.icon),
       id: type,
+      icon: getIconPath(unit.icon),
+      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onCreate: (selection, element) => {
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'

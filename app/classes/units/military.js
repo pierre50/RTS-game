@@ -1,9 +1,8 @@
 import { Unit } from './unit'
 import { Assets } from 'pixi.js'
 
-export class Bowman extends Unit {
-  constructor({ i, j, owner }, context) {
-    const type = 'Bowman'
+export class Military extends Unit {
+  constructor({ i, j, type, owner }, context) {
     const data = Assets.cache.get('config').units[type]
     super(
       {
@@ -12,7 +11,7 @@ export class Bowman extends Unit {
         owner,
         type,
         ...data,
-        work: 'attacker',
+        work: type === 'Priest' ? 'healer' : 'attacker',
         interface: {
           info: element => {
             this.setDefaultInterface(element, data)
@@ -23,3 +22,4 @@ export class Bowman extends Unit {
     )
   }
 }
+

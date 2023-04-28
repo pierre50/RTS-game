@@ -315,6 +315,12 @@ export class Unit extends Container {
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'hunt')
       }
+    } else if (dest.name === 'building') {
+      if (this.getActionCondition(dest, 'build')) {
+        this.sendToBuild(dest)
+      } else {
+        this.sendTo(map.grid[dest.i][dest.j], 'build')
+      }
     } else if (typeAction[dest.type]) {
       if (this.getActionCondition(dest, typeAction[dest.type])) {
         const sendToFunc = `sendTo${dest.type}`

@@ -111,7 +111,132 @@
     "action": {
       "type": "upgrade",
       "source": "Clubman",
-      "target": "Bowman"
+      "target": "Axeman"
+    }
+  },
+  "ShortSword": {
+    "icon": "046_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BattleAxe"
+      }
+    ],
+    "researchTime": 50,
+    "cost": {
+      "food": 120,
+      "gold": 50
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "Axeman",
+      "target": "ShortSwordsman"
+    }
+  },
+  "BroadSword": {
+    "icon": "047_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ShortSword"
+      }
+    ],
+    "researchTime": 90,
+    "cost": {
+      "food": 140,
+      "gold": 50
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "ShortSwordsman",
+      "target": "BroadSwordsman"
+    }
+  },
+  "LongSword": {
+    "icon": "048_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BroadSword"
+      }
+    ],
+    "researchTime": 150,
+    "cost": {
+      "food": 160,
+      "gold": 50
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "BroadSwordsman",
+      "target": "LongSwordsman"
+    }
+  },
+  "ImprovedBow": {
+    "icon": "051_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 60,
+    "cost": {
+      "food": 140,
+      "wood": 80
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "Bowman",
+      "target": "ImprovedBowman"
+    }
+  },
+  "CompositeBow": {
+    "icon": "052_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ImprovedBow"
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 180,
+      "wood": 100
+    },
+    "action": {
+      "type": "upgrade",
+      "source": "ImprovedBowman",
+      "target": "CompositeBowman"
     }
   }
 }

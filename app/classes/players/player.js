@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import * as buildings from '../buildings'
-import * as units from '../units'
 import { canAfford, drawInstanceBlinkingSelection, payCost, uuidv4, getHexColor } from '../../lib'
+import { Military, Villager } from '../units'
 
 export class Player {
   constructor({ i, j, age, civ, color, type, isPlayed = false }, context) {
@@ -122,7 +122,14 @@ export class Player {
 
   createUnit(i, j, type) {
     const { context } = this
-    const unit = new units[type]({ i, j, owner: this }, context)
+    let unit
+    switch (type) {
+      case 'Villager':
+        unit = new Villager({ i, j, owner: this }, context)
+        break
+      default:
+        unit = new Military({ i, j, type, owner: this }, context)
+    }
     this.units.push(unit)
     context.menu.updatePlayerMiniMap(this)
     return unit

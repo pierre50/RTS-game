@@ -1,5 +1,2 @@
-export * from './bowman'
-export * from './clubman'
-export * from './priest'
-export * from './scout'
+export * from './military'
 export * from './villager'

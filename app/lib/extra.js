@@ -61,7 +61,7 @@ export const isValidCondition = (condition, values) => {
       return exceptedValue > value
     case 'includes':
       return exceptedValue.includes(value)
-    case '!includes':
+    case 'notincludes':
       return !exceptedValue.includes(value)
     default:
       throw new Error(`Invalid condition operation provided (${op})`)

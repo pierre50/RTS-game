@@ -308,6 +308,13 @@
       "cost": {
         "food": 50
       },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "BattleAxe"
+        }
+      ],
       "assets": {
         "standingSheet": "425",
         "walkingSheet": "664",
@@ -367,6 +374,13 @@
       "range": 10,
       "cost": {
         "gold": 125
+      },
+      "assets": {
+        "standingSheet": "413",
+        "walkingSheet": "685",
+        "actionSheet": "634",
+        "dyingSheet": "341",
+        "corpseSheet": "402"
       }
     },
     "Axeman": {
@@ -379,6 +393,213 @@
       "attack": 5,
       "cost": {
         "food": 50
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "ShortSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "BattleAxe"
+        }
+      ],
+      "assets": {
+        "standingSheet": "415",
+        "walkingSheet": "654",
+        "actionSheet": "205",
+        "dyingSheet": "311",
+        "corpseSheet": "370"
+      }
+    },
+    "ShortSwordsman": {
+      "totalHitPoints": 60,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "004_50730",
+      "attack": 7,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "BroadSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ShortSword"
+        }
+      ],
+      "assets": {
+        "standingSheet": "416",
+        "walkingSheet": "655",
+        "actionSheet": "206",
+        "dyingSheet": "312",
+        "corpseSheet": "371"
+      }
+    },
+    "BroadSwordsman": {
+      "totalHitPoints": 80,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "005_50730",
+      "attack": 9,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "LongSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ShortSword"
+        }
+      ],
+      "assets": {
+        "standingSheet": "437",
+        "walkingSheet": "678",
+        "actionSheet": "220",
+        "dyingSheet": "334",
+        "corpseSheet": "371"
+      }
+    },
+    "LongSwordsman": {
+      "totalHitPoints": 100,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "005_50730",
+      "attack": 11,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "Fanaticism"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "LongSword"
+        }
+      ],
+      "assets": {
+        "standingSheet": "436",
+        "walkingSheet": "677",
+        "actionSheet": "219",
+        "dyingSheet": "333",
+        "corpseSheet": "394"
+      }
+    },
+    "ImprovedBowman": {
+      "totalHitPoints": 40,
+      "sight": 8,
+      "speed": 1.2,
+      "rateOfFire": 1.4,
+      "trainingTime": 30,
+      "icon": "007_50730",
+      "attack": 4,
+      "range": 6,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 40,
+        "gold": 20
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "CompositeBow"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ImprovedBow"
+        }
+      ],
+      "assets": {
+        "standingSheet": "414",
+        "walkingSheet": "653",
+        "actionSheet": "204",
+        "dyingSheet": "309",
+        "corpseSheet": "368"
+      }
+    },
+    "CompositeBowman": {
+      "totalHitPoints": 45,
+      "sight": 9,
+      "speed": 1.2,
+      "rateOfFire": 1.4,
+      "trainingTime": 30,
+      "icon": "008_50730",
+      "attack": 5,
+      "range": 7,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 40,
+        "gold": 20
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "CompositeBow"
+        }
+      ],
+      "assets": {
+        "standingSheet": "439",
+        "walkingSheet": "681",
+        "actionSheet": "223",
+        "dyingSheet": "337",
+        "corpseSheet": "398"
+      }
+    },
+    "ChariotArcher": {
+      "totalHitPoints": 70,
+      "sight": 9,
+      "speed": 2,
+      "rateOfFire": 1.4,
+      "trainingTime": 40,
+      "icon": "028_50730",
+      "attack": 4,
+      "range": 7,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 70,
+        "wood": 40
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "Wheel"
+        }
+      ],
+      "assets": {
+        "standingSheet": "412",
+        "walkingSheet": "650",
+        "actionSheet": "202",
+        "dyingSheet": "310",
+        "corpseSheet": "369"
       }
     }
   },

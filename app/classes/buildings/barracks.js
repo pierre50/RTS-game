@@ -1,6 +1,6 @@
 import { Building } from './building'
 import { Assets, Sprite } from 'pixi.js'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
+import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class Barracks extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
@@ -13,7 +13,8 @@ export class Barracks extends Building {
     sprite.updateAnchor = true
     sprite.name = 'sprite'
     //sprite.hitArea = new Polygon(texture.hitArea)
-    const technologies = ['BattleAxe'].map(key => context.menu.getTechnologyButton(key))
+    const units = ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman'].map(key => context.menu.getUnitButton(key))
+    const technologies = ['BattleAxe', 'ShortSword', 'BroadSword'].map(key => context.menu.getTechnologyButton(key))
 
     super(
       {
@@ -29,26 +30,10 @@ export class Barracks extends Building {
             const assets = getBuildingAsset(this.type, this.owner, Assets)
             this.setDefaultInterface(element, assets)
           },
-          menu: owner.isPlayed ? [context.menu.getUnitButton('Clubman'), ...technologies] : [],
+          menu: owner.isPlayed ? [...units, ...technologies] : [],
         },
       },
       context
     )
-  }
-
-  finalTexture() {
-    const assets = getBuildingAsset(this.type, this.owner, Assets)
-
-    this.sprite.texture = getTexture(assets.images.final, Assets)
-    this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
-
-    if (assets.images.color) {
-      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.name = 'color'
-      changeSpriteColor(spriteColor, this.owner.color)
-      this.addChildAt(spriteColor, 0)
-    } else {
-      changeSpriteColor(this.sprite, this.owner.color)
-    }
   }
 }

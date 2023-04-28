@@ -1,7 +1,7 @@
 import { Building } from './building'
 import { Assets, Sprite, AnimatedSprite, Polygon } from 'pixi.js'
 import { accelerator } from '../../constants'
-import { getTexture, changeSpriteColor, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
+import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '../../lib'
 
 export class House extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
