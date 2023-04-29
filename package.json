@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@pixi/filter-multi-color-replace": "^5.1.1",
+    "@pixi/sound": "^5.1.2",
     "pixi.js": "^7.2.0-beta",
     "popmotion": "^11.0.5",
     "redux": "^4.2.1"

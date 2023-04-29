@@ -299,6 +299,18 @@ export class Building extends Container {
     typeof this.afterFinalTextures === 'function' && this.afterFinalTextures()
   }
 
+  detect(instance) {
+    if (
+      this.range &&
+      instance.name !== 'animal' &&
+      !this.attackInterval &&
+      getActionCondition(this, instance, 'attack') &&
+      instancesDistance(this, instance) <= this.range
+    ) {
+      this.attackAction(instance)
+    }
+  }
+
   updateLife(action) {
     if (this.hitPoints > this.totalHitPoints) {
       this.hitPoints = this.totalHitPoints

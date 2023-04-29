@@ -18,6 +18,7 @@ export default class LoaderScreen extends Container {
   }
 
   async start() {
+    
     Assets.addBundle('config', {
       config: 'config.json',
       greek: 'greek.json',
@@ -29,7 +30,7 @@ export default class LoaderScreen extends Container {
     })
 
     Assets.addBundle('seeds', {
-      0: 'seeds/2.txt',
+      0: 'seeds/0.txt',
     })
 
     Assets.addBundle('terrain', {
@@ -234,6 +235,10 @@ export default class LoaderScreen extends Container {
       )
     )
 
+    Assets.addBundle('audio', {
+      'test': 'audio/test.mp3',
+    })
+
     this.loadingDiv.innerHTML = 'Loading config..'
     await Assets.loadBundle('config')
     this.loadingDiv.innerHTML = 'Loading interface..'
@@ -246,6 +251,9 @@ export default class LoaderScreen extends Container {
     await Assets.loadBundle('border')
     this.loadingDiv.innerHTML = 'Loading graphics..'
     await Assets.loadBundle('graphics')
+    this.loadingDiv.innerHTML = 'Loading Audio..'
+    await Assets.loadBundle('audio')
+
 
     this.onComplete()
   }
