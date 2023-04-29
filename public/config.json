@@ -467,7 +467,7 @@
         {
           "key": "technologies",
           "op": "includes",
-          "value": "ShortSword"
+          "value": "BroadSwordsman"
         }
       ],
       "assets": {
@@ -475,7 +475,7 @@
         "walkingSheet": "678",
         "actionSheet": "220",
         "dyingSheet": "334",
-        "corpseSheet": "371"
+        "corpseSheet": "395"
       }
     },
     "LongSwordsman": {
