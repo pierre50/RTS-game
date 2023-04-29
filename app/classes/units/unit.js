@@ -317,7 +317,7 @@ export class Unit extends Container {
       }
     } else if (dest.name === 'building') {
       if (this.getActionCondition(dest, 'build')) {
-        this.sendToBuild(dest)
+        this.sendToBuilding(dest)
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'build')
       }
@@ -927,6 +927,7 @@ export class Unit extends Container {
     } = this
     const data = Assets.cache.get('config').units[type]
     this.type = type
+    this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints)
     for (const [key, value] of Object.entries(data)) {
       this[key] = value
     }

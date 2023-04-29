@@ -82,7 +82,7 @@ export class resource extends Container {
     }
   }
 
-  die() {
+  die(immediate) {
     if (this.isDead) {
       return
     }
@@ -107,7 +107,7 @@ export class resource extends Container {
     }
     menu.updateResourcesMiniMap()
     this.isDead = true
-    if (typeof this.onDie === 'function') {
+    if (typeof this.onDie === 'function' && !immediate) {
       this.onDie()
     } else {
       this.clear()

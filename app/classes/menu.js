@@ -491,7 +491,7 @@ export default class Menu {
     const unit = Assets.cache.get('config').units[type]
     return {
       id: type,
-      icon: getIconPath(unit.icon),
+      icon: () => getIconPath(unit.icon),
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onCreate: (selection, element) => {
         const div = document.createElement('div')

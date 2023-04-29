@@ -14,6 +14,7 @@ export class Military extends Unit {
         work: type === 'Priest' ? 'healer' : 'attacker',
         interface: {
           info: element => {
+            const data = Assets.cache.get('config').units[this.type]
             this.setDefaultInterface(element, data)
           },
         },
@@ -22,4 +23,3 @@ export class Military extends Unit {
     )
   }
 }
-

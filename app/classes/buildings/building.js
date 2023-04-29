@@ -431,8 +431,12 @@ export class Building extends Container {
     const {
       context: { map },
     } = this
+    const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-      cell.corpses.splice(cell.corpses.indexof(this), 1)
+      const index = cell.corpses.indexOf(this)
+      if (index >= 0) {
+        cell.corpses.splice(index, 1)
+      }
     })
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
@@ -624,9 +628,9 @@ export class Building extends Container {
           if (technology.action) {
             switch (technology.action.type) {
               case 'upgrade':
-                for (let i = 0; i < player.units.length; i++){
+                for (let i = 0; i < player.units.length; i++) {
                   const unit = player.units[i]
-                  if (unit.type === technology.action.source){
+                  if (unit.type === technology.action.source) {
                     unit.upgrade(technology.action.target)
                   }
                 }

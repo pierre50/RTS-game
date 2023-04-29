@@ -79,6 +79,7 @@ export default class Map extends Container {
       default:
         this.positionsCount = 2
     }
+
     this.playersPos = this.findPlayerPlaces()
 
     if (this.playersPos.length < this.positionsCount) {
@@ -96,7 +97,6 @@ export default class Map extends Container {
         }
       }
     }
-
     this.generateResourcesAroundPlayers(this.playersPos)
   }
 
@@ -107,14 +107,12 @@ export default class Map extends Container {
 
     this.gaia = new Gaia(this.context)
 
-    this.generateSets()
-
     this.generateMapRelief()
-
     this.formatCellsRelief()
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
 
+    this.generateSets()
     menu.updateResourcesMiniMap()
   }
 
@@ -447,7 +445,7 @@ export default class Map extends Container {
             (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
             (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '008')
+            cell.setWaterBorder('20000', '008')
           } else if (
             this.grid[i + 1] &&
             this.grid[i + 1][j].type === 'water' &&
@@ -455,7 +453,7 @@ export default class Map extends Container {
             (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
             (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '009')
+            cell.setWaterBorder('20000', '009')
           } else if (
             this.grid[i][j - 1] &&
             this.grid[i][j - 1].type === 'water' &&
@@ -463,7 +461,7 @@ export default class Map extends Container {
             (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
             (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '011')
+            cell.setWaterBorder('20000', '011')
           } else if (
             this.grid[i][j + 1] &&
             this.grid[i][j + 1].type === 'water' &&
@@ -471,7 +469,7 @@ export default class Map extends Container {
             (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
             (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '010')
+            cell.setWaterBorder('20000', '010')
           } // Corner
           else if (
             this.grid[i - 1] &&
@@ -480,7 +478,7 @@ export default class Map extends Container {
             (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
             (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '005')
+            cell.setWaterBorder('20000', '005')
           } else if (
             this.grid[i + 1] &&
             this.grid[i + 1][j - 1] &&
@@ -488,7 +486,7 @@ export default class Map extends Container {
             (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
             (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '007')
+            cell.setWaterBorder('20000', '007')
           } else if (
             this.grid[i - 1] &&
             this.grid[i - 1][j + 1] &&
@@ -496,7 +494,7 @@ export default class Map extends Container {
             (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
             (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '004')
+            cell.setWaterBorder('20000', '004')
           } else if (
             this.grid[i + 1] &&
             this.grid[i + 1][j + 1] &&
@@ -504,7 +502,7 @@ export default class Map extends Container {
             (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
             (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water')
           ) {
-            cell.setWaterBorder(cell, '20000', '006')
+            cell.setWaterBorder('20000', '006')
           }
           // Deep corner
           else if (
@@ -513,28 +511,28 @@ export default class Map extends Container {
             this.grid[i - 1] &&
             this.grid[i - 1][j].type === 'water'
           ) {
-            cell.setWaterBorder(cell, '20000', '001')
+            cell.setWaterBorder('20000', '001')
           } else if (
             this.grid[i][j + 1] &&
             this.grid[i][j + 1].type === 'water' &&
             this.grid[i + 1] &&
             this.grid[i + 1][j].type === 'water'
           ) {
-            cell.setWaterBorder(cell, '20000', '002')
+            cell.setWaterBorder('20000', '002')
           } else if (
             this.grid[i][j - 1] &&
             this.grid[i][j - 1].type === 'water' &&
             this.grid[i + 1] &&
             this.grid[i + 1][j].type === 'water'
           ) {
-            cell.setWaterBorder(cell, '20000', '003')
+            cell.setWaterBorder('20000', '003')
           } else if (
             this.grid[i][j + 1] &&
             this.grid[i][j + 1].type === 'water' &&
             this.grid[i - 1] &&
             this.grid[i - 1][j].type === 'water'
           ) {
-            cell.setWaterBorder(cell, '20000', '000')
+            cell.setWaterBorder('20000', '000')
           }
         } else {
           if (cell.has) {
@@ -594,7 +592,10 @@ export default class Map extends Container {
       Stone,
       Gold,
     }
-    function getRandomCells() {
+    function getRandomCells(loop = 0) {
+      if (loop > 100) {
+        return []
+      }
       const randomI = randomRange(range[0], range[1])
       const randomJ = randomRange(range[0], range[1])
       const finalI = player.i + randomItem([-randomI, randomI])
@@ -604,20 +605,23 @@ export default class Map extends Container {
         const dist = Math.round(Math.sqrt(quantity, 2))
         const cells = getPlainCellsAroundPoint(finalI, finalJ, grid, dist, cell => {
           cpt++
-          if (!cell.solid && !cell.has && !cell.border) {
+          if (!cell.solid && !cell.has && !cell.border && !cell.inclined) {
             return true
           }
         })
         if (cells.length >= cpt) {
           return cells
         } else {
-          return getRandomCells()
+          return getRandomCells(loop + 1)
         }
       } else {
-        return getRandomCells()
+        return getRandomCells(loop + 1)
       }
     }
     const cells = getRandomCells()
+    if (!cells.length) {
+      return
+    }
     for (let i = 0; i < quantity; i++) {
       const item = randomItem(cells)
       cells.splice(cells.indexOf(item), 1)

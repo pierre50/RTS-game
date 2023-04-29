@@ -128,14 +128,14 @@ export class Cell extends Container {
     this.addChild(sprite)
   }
 
-  setWaterBorder(cell, resourceName, index) {
+  setWaterBorder(resourceName, index) {
     const sprite = this.getChildByName('sprite')
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
-    cell.type = 'desert'
-    cell.border = true
-    if (cell.has && typeof cell.has.destroy === 'function') {
-      cell.has.destroy()
+    this.type = 'desert'
+    this.border = true
+    if (this.has && typeof this.has.die === 'function') {
+      this.has.die(true)
     }
     sprite.texture = texture
   }
@@ -149,6 +149,9 @@ export class Cell extends Container {
       this.y -= elevation
     }
     this.inclined = true
+    if (this.has && typeof this.has.die === 'function') {
+      this.has.die(true)
+    }
     sprite.name = 'sprite'
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
