@@ -34,11 +34,25 @@
           "final": "000_527",
           "color": "000_235"
         }
+      },
+      "Dock": {
+        "icon": "006_50705",
+        "images": {
+          "final": "000_527",
+          "color": "000_235"
+        }
       }
     },
     "1": {
       "TownCenter": {
         "icon": "035_50705",
+        "images": {
+          "final": "001_280",
+          "color": "001_230"
+        }
+      },
+      "SmallWall": {
+        "icon": "042_50705",
         "images": {
           "final": "001_280",
           "color": "001_230"
@@ -71,6 +85,20 @@
           "final": "000_500",
           "color": "000_234"
         }
+      },
+      "Stable": {
+        "icon": "024_50705",
+        "images": {
+          "final": "000_72",
+          "color": "000_91"
+        }
+      },
+      "ArcheryRange": {
+        "icon": "001_50705",
+        "images": {
+          "final": "000_71",
+          "color": "000_90"
+        }
       }
     },
     "2": {
@@ -92,20 +120,7 @@
         "icon": "017_50705",
         "images": {
           "final": "001_65",
-          "color": "000_233"
-        }
-      },
-      "Stable": {
-        "icon": "024_50705",
-        "images": {
-          "final": "000_609"
-        }
-      },
-      "ArcheryRange": {
-        "icon": "001_50705",
-        "images": {
-          "final": "000_71",
-          "color": "000_90"
+          "color": "001_84"
         }
       },
       "Market": {
@@ -132,8 +147,8 @@
       "Academy": {
         "icon": "000_50705",
         "images": {
-          "final": "000_66",
-          "color": "000_235"
+          "final": "000_60",
+          "color": "000_78"
         }
       },
       "SiegeWorkshop": {
@@ -146,8 +161,80 @@
       "Temple": {
         "icon": "031_50705",
         "images": {
-          "final": "000_63",
-          "color": "000_235"
+          "final": "000_73",
+          "color": "000_92"
+        }
+      }
+    },
+    "3": {
+      "Granary": {
+        "icon": "012_50705",
+        "images": {
+          "final": "001_64",
+          "color": "001_83"
+        }
+      },
+      "Barracks": {
+        "icon": "005_50705",
+        "images": {
+          "final": "001_61",
+          "color": "001_79"
+        }
+      },
+      "TownCenter": {
+        "icon": "038_50705",
+        "images": {
+          "final": "002_62",
+          "color": "002_80"
+        }
+      },
+      "House": {
+        "icon": "018_50705",
+        "images": {
+          "final": "002_65",
+          "color": "002_84"
+        }
+      },
+      "Stable": {
+        "icon": "024_50705",
+        "images": {
+          "final": "000_72",
+          "color": "000_91"
+        }
+      },
+      "ArcheryRange": {
+        "icon": "002_50705",
+        "images": {
+          "final": "001_71",
+          "color": "001_90"
+        }
+      },
+      "Market": {
+        "icon": "023_50705",
+        "images": {
+          "final": "001_68",
+          "color": "001_87"
+        }
+      },
+      "StoragePit": {
+        "icon": "030_50705",
+        "images": {
+          "final": "001_70",
+          "color": "001_89"
+        }
+      },
+      "GovernmentCenter": {
+        "icon": "020_50705",
+        "images": {
+          "final": "001_66",
+          "color": "001_85"
+        }
+      },
+      "Temple": {
+        "icon": "032_50705",
+        "images": {
+          "final": "001_73",
+          "color": "001_92"
         }
       }
     }
