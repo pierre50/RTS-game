@@ -23,6 +23,7 @@ import {
   onSpriteLoopAtFrame,
   getActionCondition,
 } from '../../lib'
+import { sound} from '@pixi/sound'
 
 export class Unit extends Container {
   constructor(options, context) {
@@ -41,6 +42,7 @@ export class Unit extends Container {
       this[prop] = options[prop]
     })
 
+    sound.play('5144')
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z

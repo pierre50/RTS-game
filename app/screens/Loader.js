@@ -18,7 +18,6 @@ export default class LoaderScreen extends Container {
   }
 
   async start() {
-    
     Assets.addBundle('config', {
       config: 'config.json',
       greek: 'greek.json',
@@ -235,9 +234,18 @@ export default class LoaderScreen extends Container {
       )
     )
 
-    Assets.addBundle('audio', {
-      'test': 'audio/test.mp3',
-    })
+    const sounds = ['5144']
+
+    Assets.addBundle(
+      'sounds',
+      sounds.reduce(
+        (acc, g) => ({
+          ...acc,
+          [g]: `sounds/${g}.wav`,
+        }),
+        {}
+      )
+    )
 
     this.loadingDiv.innerHTML = 'Loading config..'
     await Assets.loadBundle('config')
@@ -251,9 +259,8 @@ export default class LoaderScreen extends Container {
     await Assets.loadBundle('border')
     this.loadingDiv.innerHTML = 'Loading graphics..'
     await Assets.loadBundle('graphics')
-    this.loadingDiv.innerHTML = 'Loading Audio..'
-    await Assets.loadBundle('audio')
-
+    this.loadingDiv.innerHTML = 'Loading sounds..'
+    await Assets.loadBundle('sounds')
 
     this.onComplete()
   }
