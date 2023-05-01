@@ -11,6 +11,7 @@ import {
   getBuildingAsset,
 } from '../lib'
 import { cellWidth, cellHeight } from '../constants'
+import { sound } from '@pixi/sound'
 
 export default class Menu {
   constructor(context) {
@@ -421,6 +422,7 @@ export default class Menu {
               icon: 'interface/50721/003_50721.png',
               id: `${type}-cancel`,
               onClick: selection => {
+                sound.play('5036')
                 selection.cancelTechnology()
               },
             },
@@ -450,12 +452,16 @@ export default class Menu {
 
           if (btn.children) {
             box.addEventListener('pointerup', () => {
+              sound.play('5036')
               element.textContent = ''
               controls.removeMouseBuilding()
               setMenuRecurs(selection, element, btn.children, menu)
             })
           } else if (typeof btn.onClick === 'function') {
-            box.addEventListener('pointerup', evt => btn.onClick(selection, evt))
+            box.addEventListener('pointerup', evt => {
+              sound.play('5036')
+              btn.onClick(selection, evt)
+            })
           }
           element.appendChild(box)
         })
@@ -468,12 +474,14 @@ export default class Menu {
         img.src = 'interface/50721/010_50721.png'
         if (parent) {
           back.addEventListener('pointerup', () => {
+            sound.play('5036')
             element.textContent = ''
             controls.removeMouseBuilding()
             setMenuRecurs(selection, element, parent)
           })
         } else {
           back.addEventListener('pointerup', () => {
+            sound.play('5036')
             controls.removeMouseBuilding()
             player.unselectAll()
           })
@@ -504,6 +512,7 @@ export default class Menu {
           cancel.style.display = 'none'
         }
         cancel.addEventListener('pointerup', () => {
+          sound.play('5036')
           for (let i = 0; i < selection.queue.length; i++) {
             if (selection.queue[i] === type) {
               refundCost(player, unit.cost)
@@ -520,6 +529,7 @@ export default class Menu {
         img.src = getIconPath(unit.icon)
         img.className = 'img'
         img.addEventListener('pointerup', () => {
+          sound.play('5036')
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.populationMax) {
               this.showMessage('You need to build more houses')

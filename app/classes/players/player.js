@@ -2,6 +2,7 @@ import { Assets } from 'pixi.js'
 import * as buildings from '../buildings'
 import { canAfford, drawInstanceBlinkingSelection, payCost, uuidv4, getHexColor } from '../../lib'
 import { Military, Villager } from '../units'
+import { sound } from '@pixi/sound'
 
 export class Player {
   constructor({ i, j, age, civ, color, type, isPlayed = false }, context) {
@@ -62,6 +63,7 @@ export class Player {
       for (let u = 0; u < this.selectedUnits.length; u++) {
         const unit = this.selectedUnits[u]
         if (unit.type === 'Villager') {
+          sound.play('5118')
           drawInstanceBlinkingSelection(building)
           unit.sendToBuilding(building)
         }
@@ -75,6 +77,9 @@ export class Player {
     const {
       context: { players, menu },
     } = this
+    if (this.isPlayed) {
+      sound.play('5169')
+    }
     for (let i = 0; i < this.buildings.length; i++) {
       const building = this.buildings[i]
       if (building.isBuilt && !building.isDead) {

@@ -66,6 +66,7 @@ export class Tree extends resource {
         }
       }
       if (hasVillager) {
+        sound.play('5180')
         drawInstanceBlinkingSelection(dest)
       }
     })

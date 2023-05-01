@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { Container, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator, stepTime, corpseTime } from '../../constants'
 import {
@@ -142,9 +143,6 @@ export class Animal extends Container {
     if (this.selected) {
       return
     }
-    const {
-      context: { menu },
-    } = this
 
     this.selected = true
     const selection = new Graphics()
@@ -280,6 +278,9 @@ export class Animal extends Container {
               return
             }
             if (this.dest.hitPoints > 0) {
+              if (this.sounds && this.sounds.attack){
+                sound.play(this.sounds.attack)
+              }
               this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
               if (
                 this.dest.selected &&
@@ -497,6 +498,9 @@ export class Animal extends Container {
     const {
       context: { player, menu },
     } = this
+    if (this.sounds && this.sounds.dead){
+      sound.play(this.sounds.dead)
+    }
     this.stopInterval()
     this.isDead = true
     this.path = []

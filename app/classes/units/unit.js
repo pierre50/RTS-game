@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits } from '../../constants'
 import * as projectiles from '../projectiles/'
@@ -22,8 +23,8 @@ import {
   degreeToDirection,
   onSpriteLoopAtFrame,
   getActionCondition,
+  randomItem,
 } from '../../lib'
-import { sound} from '@pixi/sound'
 
 export class Unit extends Container {
   constructor(options, context) {
@@ -42,7 +43,6 @@ export class Unit extends Container {
       this[prop] = options[prop]
     })
 
-    sound.play('5144')
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
@@ -69,6 +69,10 @@ export class Unit extends Container {
 
     for (const [key, value] of Object.entries(this.assets)) {
       this[key] = Assets.cache.get(value)
+    }
+
+    if (this.owner.isPlayed) {
+      sound.play((this.sounds && this.sounds.create) || 5144)
     }
 
     this.hitPoints = this.totalHitPoints
@@ -392,6 +396,7 @@ export class Unit extends Container {
             this.loadingType = 'wheat'
             this.updateInterfaceLoading()
 
+            sound.play('5178')
             this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
             if (this.dest.selected && this.owner.isPlayed) {
               menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
@@ -433,6 +438,8 @@ export class Unit extends Container {
               this.sendToDelivery()
               return
             }
+            sound.play('5048')
+
             // Tree destination is still alive we cut him until it's dead
             if (this.dest.hitPoints > 0) {
               this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
@@ -502,6 +509,8 @@ export class Unit extends Container {
             this.loadingType = 'berry'
             this.updateInterfaceLoading()
 
+            sound.play('5085')
+
             this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
             if (this.dest.selected && this.owner.isPlayed) {
               menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
@@ -548,6 +557,8 @@ export class Unit extends Container {
             this.loadingType = 'stone'
             this.updateInterfaceLoading()
 
+            sound.play('5159')
+
             this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
             if (this.dest.selected && this.owner.isPlayed) {
               menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
@@ -591,6 +602,7 @@ export class Unit extends Container {
             this.loadingType = 'gold'
             this.updateInterfaceLoading()
 
+            sound.play('5159')
             this.dest.quantity = Math.max(this.dest.quantity - this.attack, 0)
             if (this.dest.selected && this.owner.isPlayed) {
               menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
@@ -628,6 +640,7 @@ export class Unit extends Container {
               return
             }
             if (this.dest.hitPoints < this.dest.totalHitPoints) {
+              sound.play('5107')
               this.dest.hitPoints = Math.min(
                 Math.round(this.dest.hitPoints + this.dest.totalHitPoints / this.dest.constructionTime),
                 this.dest.totalHitPoints
@@ -722,6 +735,9 @@ export class Unit extends Container {
                 return
               }
               if (this.dest.hitPoints > 0) {
+                if (this.sounds && this.sounds.attack) {
+                  sound.play(Array.isArray(this.sounds.attack) ? randomItem(this.sounds.attack) : this.sounds.attack)
+                }
                 this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
                 if (
                   this.dest.selected &&
@@ -801,6 +817,8 @@ export class Unit extends Container {
               return
             }
             // Villager take meat
+            sound.play('5178')
+
             this.loading++
             this.loadingType = 'meat'
             this.updateInterfaceLoading()
@@ -862,6 +880,7 @@ export class Unit extends Container {
           }
         }
         onSpriteLoopAtFrame(this.sprite, 6, () => {
+          sound.play('5125')
           const projectile = new projectiles.Spear(
             {
               owner: this,
@@ -1187,11 +1206,15 @@ export class Unit extends Container {
   }
 
   die() {
+    if (this.isDead) {
+      return
+    }
     const {
       context: { player, map },
     } = this
-    if (this.isDead) {
-      return
+
+    if (this.sounds && this.sounds.dead) {
+      sound.play(this.sounds.dead)
     }
     this.stopInterval()
     if (this.selected && player.selectedOther === this) {

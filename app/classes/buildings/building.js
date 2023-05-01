@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
 import { accelerator, rubbleTime } from '../../constants'
 import * as projectiles from '../projectiles/'
@@ -102,6 +103,7 @@ export class Building extends Container {
               }
             }
             if (hasSentVillager) {
+              sound.play('5118')
               return
             }
           } else if (player.selectedUnits) {
@@ -136,6 +138,7 @@ export class Building extends Container {
               }
             }
             if (hasSentVillager) {
+              sound.play('5118')
               drawInstanceBlinkingSelection(this)
               return
             }
@@ -263,8 +266,11 @@ export class Building extends Container {
       this.sprite.texture = buildSpritesheet.textures[textureName]
     } else if (percentage >= 100) {
       this.finalTexture()
-      if (!this.isBuilt && typeof this.onBuilt === 'function') {
-        this.onBuilt()
+      if (!this.isBuilt) {
+        if (this.owner.isPlayed && this.sounds && this.sounds.create) {
+          sound.play(this.sounds.create)
+        }
+        typeof this.onBuilt === 'function' && this.onBuilt()
       }
       this.isBuilt = true
       if (!this.owner.hasBuilt.includes(this.type)) {
@@ -455,13 +461,17 @@ export class Building extends Container {
   }
 
   select() {
+    if (this.selected) {
+      return
+    }
     const {
       context: { menu },
     } = this
 
-    if (this.selected) {
-      return
+    if (this.owner.isPlayed && this.sounds && this.sounds.create) {
+      sound.play(this.sounds.create)
     }
+
     this.selected = true
     const selection = new Graphics()
     selection.name = 'selection'
