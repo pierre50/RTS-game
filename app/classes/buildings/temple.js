@@ -5,7 +5,7 @@ import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '..
 export class Temple extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
     const type = 'Temple'
-    const config = Assets.cache.get('config').buildings[type]
+    const config = owner.config[type]
 
     // Define sprite
     const texture = getTexture(getBuildingTextureNameWithSize(config.size), Assets)

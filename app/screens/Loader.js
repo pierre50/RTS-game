@@ -252,12 +252,15 @@ export default class LoaderScreen extends Container {
     const sounds = [
       '5002',
       '5003',
+      '5005',
+      '5006',
       '5008',
       '5022',
       '5036',
-      '5044', 
+      '5044',
       '5048',
       '5070',
+      '5075',
       '5085',
       '5096',
       '5107',
@@ -281,6 +284,8 @@ export default class LoaderScreen extends Container {
       '5186',
       '5196',
       '5201',
+      '5216',
+      '5217',
       '5239',
     ]
 

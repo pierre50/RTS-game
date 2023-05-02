@@ -83,16 +83,19 @@ export class Animal extends Container {
       }
       controls.mouse.prevent = true
       let drawDestinationRectangle = false
+      let hasSentVillager = false
       if (player.selectedUnits.length) {
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
           if (getActionCondition(playerUnit, this, 'hunt')) {
+            hasSentVillager = true
             playerUnit.sendToHunt(this)
             drawDestinationRectangle = true
           } else if (getActionCondition(playerUnit, this, 'attack')) {
             playerUnit.sendTo(this, 'attack')
             drawDestinationRectangle = true
           } else if (getActionCondition(playerUnit, this, 'takemeat')) {
+            hasSentVillager = true
             playerUnit.sendToTakeMeat(this)
             drawDestinationRectangle = true
           }
@@ -112,6 +115,9 @@ export class Animal extends Container {
         player.selectedOther = this
       }
 
+      if (hasSentVillager) {
+        sound.play('5005')
+      }
       if (drawDestinationRectangle) {
         drawInstanceBlinkingSelection(this)
       }
@@ -278,7 +284,7 @@ export class Animal extends Container {
               return
             }
             if (this.dest.hitPoints > 0) {
-              if (this.sounds && this.sounds.attack){
+              if (this.sounds && this.sounds.attack) {
                 sound.play(this.sounds.attack)
               }
               this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
@@ -498,8 +504,9 @@ export class Animal extends Container {
     const {
       context: { player, menu },
     } = this
-    if (this.sounds && this.sounds.dead){
-      sound.play(this.sounds.dead)
+    if (this.sounds) {
+      this.sounds.dead && sound.play(this.sounds.dead)
+      this.sounds.fall && sound.play(this.sounds.fall)
     }
     this.stopInterval()
     this.isDead = true

@@ -57,7 +57,6 @@ export class Unit extends Container {
     this.action = null
     this.loading = 0
     this.loadingType = null
-    this.loadingMax = 10
     this.currentSheet = null
     this.size = 1
     this.visible = false
@@ -140,12 +139,12 @@ export class Unit extends Container {
         }
         if (hasSentHealer) {
           drawInstanceBlinkingSelection(this)
-        } else {
+        } else if (player.selectedUnit !== this) {
           this.owner.unselectAll()
           this.select()
           menu.setBottombar(this)
-          this.owner.selectedUnit = this
-          this.owner.selectedUnits = [this]
+          player.selectedUnit = this
+          player.selectedUnits = [this]
         }
       } else {
         let hasSentAttacker = false
@@ -164,7 +163,7 @@ export class Unit extends Container {
         }
         if (hasSentAttacker) {
           drawInstanceBlinkingSelection(this)
-        } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+        } else if ((player.selectedOther !== this && instanceIsInPlayerSight(this, player)) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -324,6 +323,8 @@ export class Unit extends Container {
     } else if (dest.name === 'building') {
       if (this.getActionCondition(dest, 'build')) {
         this.sendToBuilding(dest)
+      } else if (this.getActionCondition(dest, 'farm')) {
+        this.sendToFarm(dest)
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'build')
       }
@@ -386,7 +387,7 @@ export class Unit extends Container {
             }
             this.dest.isUsedBy = this
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               this.dest.isUsedBy = null
               return
@@ -414,7 +415,7 @@ export class Unit extends Container {
               this.standingSheet = null
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -434,7 +435,7 @@ export class Unit extends Container {
               return
             }
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               return
             }
@@ -480,7 +481,7 @@ export class Unit extends Container {
               }
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -500,7 +501,7 @@ export class Unit extends Container {
               return
             }
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               return
             }
@@ -528,7 +529,7 @@ export class Unit extends Container {
               this.standingSheet = null
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -548,7 +549,7 @@ export class Unit extends Container {
               return
             }
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               return
             }
@@ -576,7 +577,7 @@ export class Unit extends Container {
               this.standingSheet = null
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -593,7 +594,7 @@ export class Unit extends Container {
               return
             }
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               return
             }
@@ -620,7 +621,7 @@ export class Unit extends Container {
               this.standingSheet = null
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -812,7 +813,7 @@ export class Unit extends Container {
               return
             }
             // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax || !this.dest) {
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
               this.sendToDelivery()
               return
             }
@@ -840,7 +841,7 @@ export class Unit extends Container {
               this.affectNewDest()
             }
           },
-          this.gatheringRate[this.work] * 1000,
+          (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
         break
@@ -946,7 +947,7 @@ export class Unit extends Container {
     const {
       context: { player, menu },
     } = this
-    const data = Assets.cache.get('config').units[type]
+    const data = this.owner.config[type]
     this.type = type
     this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints)
     for (const [key, value] of Object.entries(data)) {

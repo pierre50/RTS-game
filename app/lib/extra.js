@@ -34,6 +34,24 @@ export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
+export const updateObject = (target, operation) => {
+  function setToValue(obj, value, path) {
+    var i
+    path = path.split('.')
+    for (i = 0; i < path.length - 1; i++) obj = obj[path[i]]
+
+    obj[path[i]] = value
+  }
+  const result = operation.key.split('.').reduce((previous, current) => previous[current], target)
+  switch (operation.op) {
+    case '*':
+      setToValue(target, result * Number(operation.value), operation.key)
+      break
+    case '+':
+      setToValue(target, result + Number(operation.value), operation.key)
+      break
+  }
+}
 export const isValidCondition = (condition, values) => {
   if (!condition) {
     return true

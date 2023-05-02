@@ -9,7 +9,7 @@ import {
 export class WatchTower extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
     const type = 'WatchTower'
-    const config = Assets.cache.get('config').buildings[type]
+    const config = owner.config[type]
 
     // Define sprite
     const texture = getTexture(getBuildingTextureNameWithSize(config.size), Assets)

@@ -78,19 +78,12 @@ const allAssets = {
 export class Villager extends Unit {
   constructor({ i, j, owner }, context) {
     const type = 'Villager'
-    const data = Assets.cache.get('config').units[type]
-    const buildings = Assets.cache.get('config').buildings
+    const data = owner.config[type]
+    const config = owner.config
     const { menu } = context
-    const children = Object.keys(buildings).map(key => menu.getBuildingButton(key))
-    const gatheringRate = {
-      forager: 1 / 0.45,
-      hunter: 1 / 0.4725,
-      fisherman: 1 / 0.6,
-      farmer: 1 / 0.45,
-      woodcutter: 1 / 0.55,
-      stoneminer: 1 / 0.5175,
-      goldminer: 1 / 0.5175,
-    }
+    const children = Object.keys(config)
+      .filter(key => config[key].class === 'Building')
+      .map(key => menu.getBuildingButton(key))
 
     super(
       {
@@ -98,7 +91,6 @@ export class Villager extends Unit {
         j,
         owner,
         type,
-        gatheringRate,
         ...data,
         assets: allAssets.default,
         allAssets,
@@ -216,7 +208,10 @@ export class Villager extends Unit {
       context: { map },
     } = this
     let buildingType = null
-    const buildings = Assets.cache.get('config').buildings
+    const buildings = {
+      Granary: this.owner.config.Granary,
+      StoragePit: this.owner.config.StoragePit,
+    }
     for (const [key, value] of Object.entries(buildings)) {
       if (key !== 'TownCenter' && value.accept && value.accept.includes(this.loadingType)) {
         buildingType = key

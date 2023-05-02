@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { Container, Graphics, AnimatedSprite, Assets, Sprite } from 'pixi.js'
 import {
   isometricToCartesian,
@@ -282,17 +283,24 @@ export default class Controls extends Container {
           const maxY = Math.max(...player.selectedUnits.map(unit => unit.j))
           const centerX = minX + Math.round((maxX - minX) / 2)
           const centerY = minY + Math.round((maxY - minY) / 2)
+          let hasSentVillager = false
           for (let u = 0; u < player.selectedUnits.length; u++) {
             const unit = player.selectedUnits[u]
             const distCenterX = unit.i - centerX
             const distCenterY = unit.j - centerY
             const finalX = cell.i + distCenterX
             const finalY = cell.j + distCenterY
+            if (unit.type === 'Villager'){
+              hasSentVillager = true
+            }
             if (map.grid[finalX] && map.grid[finalX][finalY]) {
               player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
             } else {
               player.selectedUnits[u].sendTo(cell)
             }
+          }
+          if (hasSentVillager) {
+            sound.play('5006')
           }
         }
       }

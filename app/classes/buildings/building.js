@@ -143,10 +143,12 @@ export class Building extends Container {
               return
             }
           }
-          player.unselectAll()
-          this.select()
-          menu.setBottombar(this)
-          player.selectedBuilding = this
+          if (player.selectedBuilding !== this) {
+            player.unselectAll()
+            this.select()
+            menu.setBottombar(this)
+            player.selectedBuilding = this
+          }
         } else if (player.selectedUnits.length) {
           drawInstanceBlinkingSelection(this)
           for (let i = 0; i < player.selectedUnits.length; i++) {
@@ -526,7 +528,7 @@ export class Building extends Container {
     const {
       context: { menu },
     } = this
-    const unit = Assets.cache.get('config').units[type]
+    const unit = this.owner.config[type]
     if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (this.owner.type === 'AI' && this.loading === null) {
@@ -656,6 +658,9 @@ export class Building extends Container {
                     unit.upgrade(technology.action.target)
                   }
                 }
+                break
+              case 'improve':
+                this.owner.updateConfig(technology.action.operations)
                 break
             }
           }

@@ -58,10 +58,49 @@
         "value": 1
       }
     ],
-    "researchTime": 160,
+    "researchTime2": 160,
+    "researchTime": 5,
     "cost": {
       "food": 1000,
       "gold": 800
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "gatheringRate.woodcutter",
+          "op": "*",
+          "value": "1.2",
+          "type": "Villager"
+        },
+        {
+          "key": "loadingMax.wood",
+          "op": "+",
+          "value": "2",
+          "type": "Villager"
+        },
+        {
+          "key": "attack",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher",
+            "ScoutShip",
+            "WarGalley",
+            "Trireme",
+            "WatchTower",
+            "SentryTower",
+            "GuardTower",
+            "BallistaTower"
+          ]
+        }
+      ]
     }
   },
   "ResearchSmallWall": {

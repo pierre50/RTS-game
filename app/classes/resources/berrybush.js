@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { resource } from './resource'
 import { Assets, Sprite, Polygon } from 'pixi.js'
 import { drawInstanceBlinkingSelection } from '../../lib'
@@ -37,6 +38,7 @@ export class Berrybush extends resource {
         }
       }
       if (hasVillager) {
+        sound.play('5217')
         drawInstanceBlinkingSelection(this)
       }
     })

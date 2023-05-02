@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { resource } from './resource'
 import { Assets, Sprite, Polygon } from 'pixi.js'
 import { randomRange, drawInstanceBlinkingSelection } from '../../lib'
@@ -38,6 +39,7 @@ export class Gold extends resource {
         }
       }
       if (hasVillager) {
+        sound.play('5075')
         drawInstanceBlinkingSelection(this)
       }
     })

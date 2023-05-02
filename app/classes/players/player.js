@@ -1,6 +1,6 @@
 import { Assets } from 'pixi.js'
 import * as buildings from '../buildings'
-import { canAfford, drawInstanceBlinkingSelection, payCost, uuidv4, getHexColor } from '../../lib'
+import { canAfford, drawInstanceBlinkingSelection, payCost, uuidv4, getHexColor, updateObject } from '../../lib'
 import { Military, Villager } from '../units'
 import { sound } from '@pixi/sound'
 
@@ -30,6 +30,7 @@ export class Player {
     this.isPlayed = isPlayed
     this.hasBuilt = Object.keys(buildings) //[]
     this.technologies = []
+    this.config = { ...Assets.cache.get('config') }
 
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
@@ -60,13 +61,19 @@ export class Player {
   spawnBuilding(...args) {
     const building = this.createBuilding(...args)
     if (this.isPlayed) {
+      let hasSentVillager = false
+
       for (let u = 0; u < this.selectedUnits.length; u++) {
         const unit = this.selectedUnits[u]
         if (unit.type === 'Villager') {
-          sound.play('5118')
+          hasSentVillager = true
           drawInstanceBlinkingSelection(building)
           unit.sendToBuilding(building)
         }
+      }
+
+      if (hasSentVillager) {
+        sound.play('5118')
       }
     }
 
@@ -109,11 +116,30 @@ export class Player {
     return others
   }
 
+  updateConfig(operations) {
+    for (let i = 0; i < operations.length; i++) {
+      const operation = operations[i]
+      const types = Array.isArray(operation.type) ? operation.type : [operation.type]
+      for (let j = 0; j < types.length; j++) {
+        const type = types[j]
+        this.config[type] && updateObject(this.config[type], operation)
+        /*for (let u = 0; u < this.units.length; u++) {
+          const unit = this.units[u]
+          unit.type === type && updateObject(unit, operation)
+        }
+        for (let u = 0; u < this.buildings.length; u++) {
+          const building = this.buildings[u]
+          building.type === type && updateObject(building, operation)
+        }*/
+      }
+    }
+  }
+
   buyBuilding(i, j, type) {
     const {
       context: { menu },
     } = this
-    const config = Assets.cache.get('config').buildings[type]
+    const config = this.config[type]
     if (canAfford(this, config.cost)) {
       this.spawnBuilding(i, j, type)
       payCost(this, config.cost)

@@ -3,7 +3,7 @@ import { Assets } from 'pixi.js'
 
 export class Military extends Unit {
   constructor({ i, j, type, owner }, context) {
-    const data = Assets.cache.get('config').units[type]
+    const data = owner.config[type]
     super(
       {
         i,
@@ -14,7 +14,7 @@ export class Military extends Unit {
         work: type === 'Priest' ? 'healer' : 'attacker',
         interface: {
           info: element => {
-            const data = Assets.cache.get('config').units[this.type]
+            const data = owner.config[this.type]
             this.setDefaultInterface(element, data)
           },
         },

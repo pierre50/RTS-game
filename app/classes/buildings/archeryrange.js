@@ -5,15 +5,17 @@ import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '..
 export class ArcheryRange extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
     const type = 'ArcheryRange'
-    const config = Assets.cache.get('config').buildings[type]
+    const config = owner.config[type]
 
     // Define sprite
     const texture = getTexture(getBuildingTextureNameWithSize(config.size), Assets)
     const sprite = Sprite.from(texture)
     sprite.updateAnchor = true
     sprite.name = 'sprite'
-    const units = ['Bowman', 'ImprovedBowman', 'CompositeBowman', 'ChariotArcher'].map(key => context.menu.getUnitButton(key))
-    const technologies = ['ImprovedBow', 'ShortSword', 'BroadSword'].map(key => context.menu.getTechnologyButton(key))
+    const units = ['Bowman', 'ImprovedBowman', 'CompositeBowman', 'ChariotArcher'].map(key =>
+      context.menu.getUnitButton(key)
+    )
+    const technologies = ['ImprovedBow', 'CompositeBow'].map(key => context.menu.getTechnologyButton(key))
 
     super(
       {

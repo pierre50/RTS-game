@@ -1,3 +1,4 @@
+import { sound } from '@pixi/sound'
 import { resource } from './resource'
 import { Assets, Sprite, Polygon } from 'pixi.js'
 import {

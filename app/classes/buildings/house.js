@@ -6,7 +6,7 @@ import { getTexture, getBuildingTextureNameWithSize, getBuildingAsset } from '..
 export class House extends Building {
   constructor({ i, j, owner, isBuilt = false }, context) {
     const type = 'House'
-    const config = Assets.cache.get('config').buildings[type]
+    const config = owner.config[type]
 
     // Define sprite
     const sheet = owner.age === 0 ? '000_489' : getBuildingTextureNameWithSize(config.size)
