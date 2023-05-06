@@ -8,6 +8,7 @@ import {
   getPlainCellsAroundPoint,
   changeSpriteColor,
   getTexture,
+  randomItem,
 } from '../lib'
 import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
@@ -284,6 +285,7 @@ export default class Controls extends Container {
           const centerX = minX + Math.round((maxX - minX) / 2)
           const centerY = minY + Math.round((maxY - minY) / 2)
           let hasSentVillager = false
+          let hasSentSoldier = false
           for (let u = 0; u < player.selectedUnits.length; u++) {
             const unit = player.selectedUnits[u]
             const distCenterX = unit.i - centerX
@@ -292,6 +294,8 @@ export default class Controls extends Container {
             const finalY = cell.j + distCenterY
             if (unit.type === 'Villager'){
               hasSentVillager = true
+            }else{
+              hasSentSoldier = true
             }
             if (map.grid[finalX] && map.grid[finalX][finalY]) {
               player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
@@ -299,7 +303,10 @@ export default class Controls extends Container {
               player.selectedUnits[u].sendTo(cell)
             }
           }
-          if (hasSentVillager) {
+          if (hasSentSoldier){
+            const sounds = randomItem(['5075','5076','5128', '5164'])
+            sound.play(sounds)
+          }else if (hasSentVillager) {
             sound.play('5006')
           }
         }

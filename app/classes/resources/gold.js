@@ -29,6 +29,7 @@ export class Gold extends resource {
       controls.mouse.prevent = true
       // Send Villager to forage the berry
       let hasVillager = false
+      let hasOther = false
       for (let i = 0; i < player.selectedUnits.length; i++) {
         const unit = player.selectedUnits[i]
         if (unit.type === 'Villager') {
@@ -38,7 +39,10 @@ export class Gold extends resource {
           unit.sendTo(this)
         }
       }
-      if (hasVillager) {
+      if (hasOther) {
+        const sounds = randomItem(['5075', '5076', '5128', '5164'])
+        sound.play(sounds)
+      } else if (hasVillager) {
         sound.play('5075')
         drawInstanceBlinkingSelection(this)
       }

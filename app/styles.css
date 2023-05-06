@@ -97,10 +97,17 @@ body {
   width: 45px;
 }
 
-.bottombar-info #info {
+.bottombar-info #infos {
   position: absolute;
   left: 50%;
-  top: 40px;
+  top: 30px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+
+.bottombar-info #info {
   display: flex;
   align-items: center;
   gap: 5px;

@@ -24,7 +24,7 @@ import {
   getActionCondition,
   randomItem,
   getHitPointsWithDamage,
-  getClosestInstance
+  getClosestInstance,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -1673,19 +1673,22 @@ export class Unit extends Container {
     hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
     element.appendChild(hitPointsDiv)
 
-    const infoDiv = document.createElement('div')
-    infoDiv.id = 'info'
+    const infosDiv = document.createElement('div')
+    infosDiv.id = 'infos'
 
     const infos = [
-      ['meleeAttack', '000_50732'],
-      ['pierceAttack', '000_50732'],
-      ['meleeArmor', '000_50732'],
-      ['pierceArmor', '000_50732'],
+      ['meleeAttack', '007_50731'],
+      ['pierceAttack', '006_50731'],
+      ['meleeArmor', '008_50731'],
+      ['pierceArmor', '010_50731'],
     ]
 
     for (let i = 0; i < infos.length; i++) {
       const info = infos[i]
       if (data[info[0]]) {
+        const infoDiv = document.createElement('div')
+        infoDiv.id = 'info'
+
         const attackImg = document.createElement('img')
         attackImg.src = getIconPath(info[1])
         const attackDiv = document.createElement('div')
@@ -1693,9 +1696,10 @@ export class Unit extends Container {
         attackDiv.textContent = data[info[0]]
         infoDiv.appendChild(attackImg)
         infoDiv.appendChild(attackDiv)
+        infosDiv.appendChild(infoDiv)
       }
     }
 
-    element.appendChild(infoDiv)
+    element.appendChild(infosDiv)
   }
 }
