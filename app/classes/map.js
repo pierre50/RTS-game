@@ -2,8 +2,6 @@ import { Container, Assets, Sprite } from 'pixi.js'
 import { Grass, Water, Desert, Jungle } from './cells/'
 import { Tree, Berrybush, Stone, Gold } from './resources/'
 import { Human, AI, Gaia } from './players/'
-import * as animals from './animals/'
-
 import {
   randomRange,
   getZoneInGridWithCondition,
@@ -13,6 +11,7 @@ import {
   colors,
 } from '../lib'
 import { cellDepth } from '../constants'
+import { Animal } from './animal'
 
 /**
  * 
@@ -266,8 +265,9 @@ export default class Map extends Container {
                 cell.addChild(rock)
                 break
               case 'animal':
+                const animals = Assets.cache.get('config').animals
                 const animal = randomItem(Object.keys(animals))
-                new animals[animal]({ i, j, owner: this.gaia }, this.context)
+                new Animal({ i, j, type: animal, owner: this.gaia }, this.context)
                 break
             }
           }

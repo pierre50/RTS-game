@@ -1,685 +1,785 @@
 {
-  "House": {
-    "class": "Building",
-    "size": 1,
-    "sight": 3,
-    "totalHitPoints": 75,
-    "constructionTime": 20,
-    "cost": {
-      "wood": 50
-    },
-    "sounds": {
-      "create": 5126
-    }
-  },
-  "Barracks": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 30,
-    "cost": {
-      "wood": 125
-    },
-    "sounds": {
-      "create": 5022
-    }
-  },
-  "Granary": {
-    "class": "Building",
-    "size": 3,
-    "sight": 4,
-    "totalHitPoints": 350,
-    "constructionTime": 30,
-    "cost": {
-      "wood": 120
-    },
-    "accept": ["berry", "wheat"],
-    "sounds": {
-      "create": 5096
-    }
-  },
-  "StoragePit": {
-    "class": "Building",
-    "size": 3,
-    "sight": 4,
-    "totalHitPoints": 350,
-    "constructionTime": 30,
-    "cost": {
-      "wood": 120
-    },
-    "accept": ["wood", "stone", "gold", "meat"],
-    "sounds": {
-      "create": 5186
-    }
-  },
-  "Dock": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 50,
-    "cost": {
-      "wood": 150
-    }
-  },
-  "ArcheryRange": {
-    "class": "Building",
-    "size": 3,
-    "sight": 4,
-    "totalHitPoints": 350,
-    "constructionTime": 40,
-    "cost": {
-      "wood": 150
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+  "buildings": {
+    "House": {
+      "size": 1,
+      "sight": 3,
+      "totalHitPoints": 75,
+      "constructionTime": 20,
+      "displayPopulation": true,
+      "increasePopulation": true,
+      "cost": {
+        "wood": 50
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Barracks"
+      "sounds": {
+        "create": 5126
       }
-    ],
-    "sounds": {
-      "create": 5008
-    }
-  },
-  "Stable": {
-    "class": "Building",
-    "size": 3,
-    "sight": 4,
-    "totalHitPoints": 350,
-    "constructionTime": 40,
-    "cost": {
-      "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+    "Barracks": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
+      "cost": {
+        "wood": 125
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Barracks"
+      "units": ["Clubman", "Axeman", "ShortSwordsman", "BroadSwordsman"],
+      "technologies": ["BattleAxe", "ShortSword", "BroadSword"],
+      "sounds": {
+        "create": 5022
       }
-    ],
-    "sounds": {
-      "create": 5123
-    }
-  },
-  "Farm": {
-    "class": "Building",
-    "size": 3,
-    "sight": 3,
-    "totalHitPoints": 50,
-    "constructionTime": 24,
-    "quantity": 250,
-    "cost": {
-      "wood": 75
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+    "Granary": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
+      "cost": {
+        "wood": 120
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
+      "accept": ["berry", "wheat"],
+      "technologies": ["ResearchWatchTower", "ResearchSmallWall"],
+      "sounds": {
+        "create": 5096
       }
-    ],
-    "sounds": {
-      "create": 5176
-    }
-  },
-  "WatchTower": {
-    "class": "Building",
-    "size": 2,
-    "sight": 8,
-    "totalHitPoints": 125,
-    "constructionTime": 72,
-    "range": 5,
-    "attack": 3,
-    "rateOfFire": 1.5,
-    "cost": {
-      "stone": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+    "StoragePit": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 30,
+      "cost": {
+        "wood": 120
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchWatchTower"
+      "accept": ["wood", "stone", "gold", "meat"],
+      "technologies": ["Toolworking", "LeatherArmorInfantry", "LeatherArmorArchers", "LeatherArmorCavalry"],
+      "sounds": {
+        "create": 5186
       }
-    ],
-    "sounds": {
-      "create": 5201
-    }
-  },
-  "SmallWall": {
-    "class": "Building",
-    "size": 1,
-    "sight": 3,
-    "totalHitPoints": 200,
-    "constructionTime": 7,
-    "cost": {
-      "stone": 5
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+    "Dock": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 50,
+      "cost": {
+        "wood": 150
+      }
+    },
+    "ArcheryRange": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
+      "cost": {
+        "wood": 150
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchSmallWall"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Barracks"
+        }
+      ],
+      "units": ["Bowman", "ImprovedBowman", "CompositeBowman", "ChariotArcher"],
+      "technologies": ["ImprovedBow", "CompositeBow"],
+      "sounds": {
+        "create": 5008
       }
-    ]
-  },
-  "Market": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 40,
-    "cost": {
-      "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
+    "Stable": {
+      "size": 3,
+      "sight": 4,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
+      "cost": {
+        "wood": 150
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Granary"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Barracks"
+        }
+      ],
+      "units": ["Scout"],
+      "sounds": {
+        "create": 5123
       }
-    ],
-    "sounds": {
-      "create": 5142
-    }
-  },
-  "Temple": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 200
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
+    "Farm": {
+      "size": 3,
+      "sight": 3,
+      "totalHitPoints": 50,
+      "constructionTime": 24,
+      "quantity": 250,
+      "cost": {
+        "wood": 75
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ],
+      "sounds": {
+        "create": 5176
       }
-    ],
-    "sounds": {
-      "create": 5196
-    }
-  },
-  "GovernmentCenter": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 175
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
+    "WatchTower": {
+      "size": 2,
+      "sight": 8,
+      "totalHitPoints": 125,
+      "constructionTime": 72,
+      "range": 5,
+      "projectile": "Arrow",
+      "pierceAttack": 3,
+      "rateOfFire": 1.5,
+      "cost": {
+        "stone": 150
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchWatchTower"
+        }
+      ],
+      "sounds": {
+        "create": 5201
       }
-    ],
-    "sounds": {
-      "create": 5129
-    }
-  },
-  "TownCenter": {
-    "class": "Building",
-    "size": 3,
-    "sight": 7,
-    "totalHitPoints": 600,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 200
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
+    "SmallWall": {
+      "size": 1,
+      "sight": 3,
+      "totalHitPoints": 200,
+      "constructionTime": 7,
+      "cost": {
+        "stone": 5
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "GovernmentCenter"
-      }
-    ],
-    "sounds": {
-      "create": 5044
-    }
-  },
-  "SiegeWorkshop": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 200
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchSmallWall"
+        }
+      ]
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
+    "Market": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 40,
+      "cost": {
+        "wood": 150
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "ArcheryRange"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Granary"
+        }
+      ],
+      "technologies": ["Woodworking", "StoneMining", "GoldMining", "Domestication"],
+      "sounds": {
+        "create": 5142
       }
-    ]
-  },
-  "Academy": {
-    "class": "Building",
-    "size": 3,
-    "sight": 5,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
+    "Temple": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 200
       },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Stable"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ],
+      "units": ["Priest"],
+      "sounds": {
+        "create": 5196
       }
-    ],
-    "sounds": {
-      "create": 5002
-    }
-  },
-  "Villager": {
-    "totalHitPoints": 25,
-    "sight": 4,
-    "speed": 1.1,
-    "rateOfFire": 1.5,
-    "trainingTime": 20,
-    "icon": "000_50730",
-    "attack": 3,
-    "range": 4,
-    "cost": {
-      "food": 30
     },
-    "loadingMax": {
-      "wheat": 10,
-      "wood": 10,
-      "berry": 10,
-      "stone": 10,
-      "gold": 10,
-      "meat": 10
-    },
-    "gatheringRate": {
-      "forager": 0.45,
-      "hunter": 0.4725,
-      "fisherman": 0.6,
-      "farmer": 0.45,
-      "woodcutter": 0.55,
-      "stoneminer": 0.5175,
-      "goldminer": 0.5175
-    },
-    "sounds": {
-      "create": 5166,
-      "attack": [5138, 5139, 5140]
-    }
-  },
-  "Clubman": {
-    "totalHitPoints": 40,
-    "sight": 4,
-    "speed": 1.2,
-    "rateOfFire": 1.5,
-    "trainingTime": 26,
-    "icon": "002_50730",
-    "attack": 3,
-    "cost": {
-      "food": 50
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "BattleAxe"
-      }
-    ],
-    "assets": {
-      "standingSheet": "425",
-      "walkingSheet": "664",
-      "actionSheet": "212",
-      "dyingSheet": "321",
-      "corpseSheet": "380"
-    },
-    "sounds": {
-      "attack": [5138, 5139, 5140]
-    }
-  },
-  "Scout": {
-    "totalHitPoints": 60,
-    "sight": 7,
-    "speed": 2,
-    "rateOfFire": 1.5,
-    "trainingTime": 30,
-    "icon": "031_50730",
-    "attack": 3,
-    "cost": {
-      "food": 90
-    },
-    "assets": {
-      "standingSheet": "445",
-      "walkingSheet": "651",
-      "actionSheet": "227",
-      "dyingSheet": "343",
-      "corpseSheet": "403"
-    },
-    "sounds": {
-      "die": 5108,
-      "attack": [5138, 5139, 5140]
-    }
-  },
-  "Bowman": {
-    "totalHitPoints": 35,
-    "sight": 7,
-    "speed": 1.2,
-    "rateOfFire": 1.4,
-    "trainingTime": 30,
-    "icon": "006_50730",
-    "attack": 3,
-    "range": 5,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 40,
-      "wood": 20
-    },
-    "assets": {
-      "standingSheet": "413",
-      "walkingSheet": "652",
-      "actionSheet": "203",
-      "dyingSheet": "308",
-      "corpseSheet": "367"
-    }
-  },
-  "Priest": {
-    "totalHitPoints": 25,
-    "sight": 12,
-    "speed": 0.8,
-    "trainingTime": 50,
-    "icon": "001_50730",
-    "healing": 1,
-    "range": 10,
-    "cost": {
-      "gold": 125
-    },
-    "assets": {
-      "standingSheet": "443",
-      "walkingSheet": "685",
-      "actionSheet": "634",
-      "dyingSheet": "341",
-      "corpseSheet": "402"
-    }
-  },
-  "Axeman": {
-    "totalHitPoints": 50,
-    "sight": 4,
-    "speed": 1.2,
-    "rateOfFire": 1.5,
-    "trainingTime": 26,
-    "icon": "003_50730",
-    "attack": 5,
-    "cost": {
-      "food": 50
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "ShortSword"
+    "GovernmentCenter": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 175
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BattleAxe"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Market"
+        }
+      ],
+      "sounds": {
+        "create": 5129
       }
-    ],
-    "assets": {
-      "standingSheet": "415",
-      "walkingSheet": "654",
-      "actionSheet": "205",
-      "dyingSheet": "311",
-      "corpseSheet": "370"
-    }
-  },
-  "ShortSwordsman": {
-    "totalHitPoints": 60,
-    "sight": 4,
-    "speed": 1.2,
-    "rateOfFire": 1.5,
-    "trainingTime": 26,
-    "icon": "004_50730",
-    "attack": 7,
-    "cost": {
-      "food": 35,
-      "gold": 15
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "BroadSword"
+    "TownCenter": {
+      "size": 3,
+      "sight": 7,
+      "totalHitPoints": 600,
+      "constructionTime": 60,
+      "increasePopulation": true,
+      "cost": {
+        "wood": 200
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ShortSword"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "GovernmentCenter"
+        }
+      ],
+      "units": ["Villager"],
+      "technologies": ["ToolAge", "BronzeAge", "IronAge"],
+      "sounds": {
+        "create": 5044
       }
-    ],
-    "assets": {
-      "standingSheet": "416",
-      "walkingSheet": "655",
-      "actionSheet": "206",
-      "dyingSheet": "312",
-      "corpseSheet": "371"
-    }
-  },
-  "BroadSwordsman": {
-    "totalHitPoints": 80,
-    "sight": 4,
-    "speed": 1.2,
-    "rateOfFire": 1.5,
-    "trainingTime": 26,
-    "icon": "005_50730",
-    "attack": 9,
-    "cost": {
-      "food": 35,
-      "gold": 15
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "LongSword"
+    "SiegeWorkshop": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 200
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BroadSwordsman"
-      }
-    ],
-    "assets": {
-      "standingSheet": "437",
-      "walkingSheet": "678",
-      "actionSheet": "220",
-      "dyingSheet": "334",
-      "corpseSheet": "395"
-    }
-  },
-  "LongSwordsman": {
-    "totalHitPoints": 100,
-    "sight": 4,
-    "speed": 1.2,
-    "rateOfFire": 1.5,
-    "trainingTime": 26,
-    "icon": "005_50730",
-    "attack": 11,
-    "cost": {
-      "food": 35,
-      "gold": 15
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "ArcheryRange"
+        }
+      ]
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "Fanaticism"
+    "Academy": {
+      "size": 3,
+      "sight": 5,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "cost": {
+        "wood": 150
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "LongSword"
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "hasBuilt",
+          "op": "includes",
+          "value": "Stable"
+        }
+      ],
+      "sounds": {
+        "create": 5002
       }
-    ],
-    "assets": {
-      "standingSheet": "436",
-      "walkingSheet": "677",
-      "actionSheet": "219",
-      "dyingSheet": "333",
-      "corpseSheet": "394"
     }
   },
-  "ImprovedBowman": {
-    "totalHitPoints": 40,
-    "sight": 8,
-    "speed": 1.2,
-    "rateOfFire": 1.4,
-    "trainingTime": 30,
-    "icon": "007_50730",
-    "attack": 4,
-    "range": 6,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 40,
-      "gold": 20
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "CompositeBow"
+  "units": {
+    "Villager": {
+      "totalHitPoints": 25,
+      "sight": 4,
+      "speed": 1.1,
+      "rateOfFire": 1.5,
+      "trainingTime": 20,
+      "icon": "000_50730",
+      "meleeAttack": 3,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 4,
+      "cost": {
+        "food": 30
       },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ImprovedBow"
+      "showBuildings": true,
+      "showLoading": true,
+      "loadingMax": {
+        "wheat": 10,
+        "wood": 10,
+        "berry": 10,
+        "stone": 10,
+        "gold": 10,
+        "meat": 10
+      },
+      "allAssets": {
+        "default": {
+          "standingSheet": "418",
+          "walkingSheet": "657",
+          "dyingSheet": "314",
+          "corpseSheet": "373"
+        },
+        "attack": {
+          "actionSheet": "224",
+          "standingSheet": "418",
+          "dyingSheet": "314",
+          "walkingSheet": "657",
+          "corpseSheet": "373"
+        },
+        "hunter": {
+          "actionSheet": "624",
+          "harvestSheet": "626",
+          "standingSheet": "435",
+          "walkingSheet": "676",
+          "dyingSheet": "332",
+          "corpseSheet": "389",
+          "loadedSheet": "272"
+        },
+        "farmer": {
+          "actionSheet": "630",
+          "standingSheet": "430",
+          "walkingSheet": "670",
+          "dyingSheet": "326",
+          "corpseSheet": "388",
+          "loadedSheet": "672"
+        },
+        "forager": {
+          "actionSheet": "632",
+          "standingSheet": "432",
+          "walkingSheet": "672",
+          "dyingSheet": "328",
+          "corpseSheet": "390",
+          "loadedSheet": "672"
+        },
+        "stoneminer": {
+          "actionSheet": "633",
+          "standingSheet": "441",
+          "walkingSheet": "683",
+          "dyingSheet": "315",
+          "corpseSheet": "400",
+          "loadedSheet": "274"
+        },
+        "goldminer": {
+          "actionSheet": "633",
+          "standingSheet": "441",
+          "walkingSheet": "683",
+          "dyingSheet": "315",
+          "corpseSheet": "400",
+          "loadedSheet": "281"
+        },
+        "woodcutter": {
+          "actionSheet": "625",
+          "standingSheet": "440",
+          "walkingSheet": "682",
+          "dyingSheet": "315",
+          "corpseSheet": "399",
+          "loadedSheet": "273"
+        },
+        "builder": {
+          "actionSheet": "628",
+          "standingSheet": "419",
+          "walkingSheet": "658",
+          "dyingSheet": "315",
+          "corpseSheet": "374"
+        }
+      },
+      "gatheringRate": {
+        "forager": 0.45,
+        "hunter": 0.4725,
+        "fisherman": 0.6,
+        "farmer": 0.45,
+        "woodcutter": 0.55,
+        "stoneminer": 0.5175,
+        "goldminer": 0.5175
+      },
+      "sounds": {
+        "create": 5166,
+        "attack": [5138, 5139, 5140]
       }
-    ],
-    "assets": {
-      "standingSheet": "414",
-      "walkingSheet": "653",
-      "actionSheet": "204",
-      "dyingSheet": "309",
-      "corpseSheet": "368"
-    }
-  },
-  "CompositeBowman": {
-    "totalHitPoints": 45,
-    "sight": 9,
-    "speed": 1.2,
-    "rateOfFire": 1.4,
-    "trainingTime": 30,
-    "icon": "008_50730",
-    "attack": 5,
-    "range": 7,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 40,
-      "gold": 20
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "CompositeBow"
+    "Clubman": {
+      "totalHitPoints": 40,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "002_50730",
+      "meleeAttack": 3,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 50
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "BattleAxe"
+        }
+      ],
+      "assets": {
+        "standingSheet": "425",
+        "walkingSheet": "664",
+        "actionSheet": "212",
+        "dyingSheet": "321",
+        "corpseSheet": "380"
+      },
+      "sounds": {
+        "attack": [5138, 5139, 5140]
       }
-    ],
-    "assets": {
-      "standingSheet": "439",
-      "walkingSheet": "681",
-      "actionSheet": "223",
-      "dyingSheet": "337",
-      "corpseSheet": "398"
-    }
-  },
-  "ChariotArcher": {
-    "totalHitPoints": 70,
-    "sight": 9,
-    "speed": 2,
-    "rateOfFire": 1.4,
-    "trainingTime": 40,
-    "icon": "028_50730",
-    "attack": 4,
-    "range": 7,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 70,
-      "wood": 40
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "Wheel"
+    "Scout": {
+      "totalHitPoints": 60,
+      "sight": 7,
+      "speed": 2,
+      "rateOfFire": 1.5,
+      "trainingTime": 30,
+      "icon": "031_50730",
+      "meleeAttack": 3,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 90
+      },
+      "assets": {
+        "standingSheet": "445",
+        "walkingSheet": "651",
+        "actionSheet": "227",
+        "dyingSheet": "343",
+        "corpseSheet": "403"
+      },
+      "sounds": {
+        "die": 5108,
+        "attack": [5138, 5139, 5140]
       }
-    ],
-    "assets": {
-      "standingSheet": "412",
-      "walkingSheet": "650",
-      "actionSheet": "202",
-      "dyingSheet": "310",
-      "corpseSheet": "369"
+    },
+    "Bowman": {
+      "totalHitPoints": 35,
+      "sight": 7,
+      "speed": 1.2,
+      "rateOfFire": 1.4,
+      "trainingTime": 30,
+      "icon": "006_50730",
+      "pierceAttack": 3,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 5,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 40,
+        "wood": 20
+      },
+      "assets": {
+        "standingSheet": "413",
+        "walkingSheet": "652",
+        "actionSheet": "203",
+        "dyingSheet": "308",
+        "corpseSheet": "367"
+      }
+    },
+    "Priest": {
+      "totalHitPoints": 25,
+      "sight": 12,
+      "speed": 0.8,
+      "trainingTime": 50,
+      "icon": "001_50730",
+      "healing": 1,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 10,
+      "cost": {
+        "gold": 125
+      },
+      "assets": {
+        "standingSheet": "443",
+        "walkingSheet": "685",
+        "actionSheet": "634",
+        "dyingSheet": "341",
+        "corpseSheet": "402"
+      }
+    },
+    "Axeman": {
+      "totalHitPoints": 50,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "003_50730",
+      "meleeAttack": 5,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 50
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "ShortSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "BattleAxe"
+        }
+      ],
+      "assets": {
+        "standingSheet": "415",
+        "walkingSheet": "654",
+        "actionSheet": "205",
+        "dyingSheet": "311",
+        "corpseSheet": "370"
+      }
+    },
+    "ShortSwordsman": {
+      "totalHitPoints": 60,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "004_50730",
+      "meleeAttack": 7,
+      "meleeArmor": 1,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "BroadSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ShortSword"
+        }
+      ],
+      "assets": {
+        "standingSheet": "416",
+        "walkingSheet": "655",
+        "actionSheet": "206",
+        "dyingSheet": "312",
+        "corpseSheet": "371"
+      }
+    },
+    "BroadSwordsman": {
+      "totalHitPoints": 80,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "005_50730",
+      "meleeAttack": 9,
+      "meleeArmor": 1,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "LongSword"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "BroadSwordsman"
+        }
+      ],
+      "assets": {
+        "standingSheet": "437",
+        "walkingSheet": "678",
+        "actionSheet": "220",
+        "dyingSheet": "334",
+        "corpseSheet": "395"
+      }
+    },
+    "LongSwordsman": {
+      "totalHitPoints": 100,
+      "sight": 4,
+      "speed": 1.2,
+      "rateOfFire": 1.5,
+      "trainingTime": 26,
+      "icon": "005_50730",
+      "meleeAttack": 11,
+      "meleeArmor": 2,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 35,
+        "gold": 15
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "Fanaticism"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "LongSword"
+        }
+      ],
+      "assets": {
+        "standingSheet": "436",
+        "walkingSheet": "677",
+        "actionSheet": "219",
+        "dyingSheet": "333",
+        "corpseSheet": "394"
+      }
+    },
+    "ImprovedBowman": {
+      "totalHitPoints": 40,
+      "sight": 8,
+      "speed": 1.2,
+      "rateOfFire": 1.4,
+      "trainingTime": 30,
+      "icon": "007_50730",
+      "pierceAttack": 4,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 6,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 40,
+        "gold": 20
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "CompositeBow"
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ImprovedBow"
+        }
+      ],
+      "assets": {
+        "standingSheet": "414",
+        "walkingSheet": "653",
+        "actionSheet": "204",
+        "dyingSheet": "309",
+        "corpseSheet": "368"
+      }
+    },
+    "CompositeBowman": {
+      "totalHitPoints": 45,
+      "sight": 9,
+      "speed": 1.2,
+      "rateOfFire": 1.4,
+      "trainingTime": 30,
+      "icon": "008_50730",
+      "pierceAttack": 5,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 7,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 40,
+        "gold": 20
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "CompositeBow"
+        }
+      ],
+      "assets": {
+        "standingSheet": "439",
+        "walkingSheet": "681",
+        "actionSheet": "223",
+        "dyingSheet": "337",
+        "corpseSheet": "398"
+      }
+    },
+    "ChariotArcher": {
+      "totalHitPoints": 70,
+      "sight": 9,
+      "speed": 2,
+      "rateOfFire": 1.4,
+      "trainingTime": 40,
+      "icon": "028_50730",
+      "pierceAttack": 4,
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "range": 7,
+      "projectile": "Arrow",
+      "cost": {
+        "food": 70,
+        "wood": 40
+      },
+      "conditions": [
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "Wheel"
+        }
+      ],
+      "assets": {
+        "standingSheet": "412",
+        "walkingSheet": "650",
+        "actionSheet": "202",
+        "dyingSheet": "310",
+        "corpseSheet": "369"
+      }
     }
   },
   "resources": {
@@ -709,6 +809,13 @@
       "strategy": "runaway",
       "icon": "037_50730",
       "quantity": 150,
+      "assets": {
+        "standingSheet": "479",
+        "walkingSheet": "478",
+        "runningSheet": "480",
+        "dyingSheet": "331",
+        "corpseSheet": "392"
+      },
       "sounds": {
         "fall": 5003
       }
@@ -717,10 +824,17 @@
       "totalHitPoints": 45,
       "sight": 4,
       "speed": 1,
-      "attack": 10,
+      "meleeAttack": 10,
       "icon": "033_50730",
       "rateOfFire": 1,
       "quantity": 300,
+      "assets": {
+        "actionSheet": "215",
+        "standingSheet": "428",
+        "walkingSheet": "667",
+        "dyingSheet": "324",
+        "corpseSheet": "386"
+      },
       "sounds": {
         "dead": 5216,
         "fall": 5239,
@@ -731,11 +845,18 @@
       "totalHitPoints": 20,
       "sight": 5,
       "speed": 0.5,
-      "attack": 4,
+      "meleeAttack": 4,
       "strategy": "attack",
       "icon": "041_50730",
       "rateOfFire": 2,
       "quantity": 100,
+      "assets": {
+        "actionSheet": "217",
+        "standingSheet": "433",
+        "walkingSheet": "673",
+        "dyingSheet": "330",
+        "corpseSheet": "391"
+      },
       "sounds": {
         "fall": 5239
       }
@@ -744,14 +865,31 @@
       "totalHitPoints": 20,
       "sight": 4,
       "speed": 1.1,
-      "attack": 2,
+      "meleeAttack": 2,
       "strategy": "attack",
       "rateOfFire": 1,
       "icon": "040_50730",
       "quantity": 100,
+      "assets": {
+        "actionSheet": "222",
+        "standingSheet": "497",
+        "walkingSheet": "680",
+        "dyingSheet": "336",
+        "corpseSheet": "397"
+      },
       "sounds": {
         "fall": 5003
       }
+    }
+  },
+  "projectiles": {
+    "spear": {
+      "size": 10,
+      "speed": 8
+    },
+    "arrow": {
+      "size": 3,
+      "speed": 14
     }
   }
 }

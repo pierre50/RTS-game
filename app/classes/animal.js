@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
-import { Container, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime } from '../../constants'
+import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
+import { accelerator, stepTime, corpseTime } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -20,7 +20,8 @@ import {
   instanceIsInPlayerSight,
   getActionCondition,
   pointsDistance,
-} from '../../lib'
+  getHitPointsWithDamage,
+} from '../lib'
 
 export class Animal extends Container {
   constructor(options, context) {
@@ -37,6 +38,9 @@ export class Animal extends Container {
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
+    })
+    Object.keys(this.owner.config.animals[this.type]).forEach(prop => {
+      this[prop] = this.owner.config.animals[this.type][prop]
     })
 
     this.x = map.grid[this.i][this.j].x
@@ -64,6 +68,17 @@ export class Animal extends Container {
     this.hitPoints = this.totalHitPoints
     this.quantityMax = this.quantity
     this.inactif = true
+
+    for (const [key, value] of Object.entries(this.assets)) {
+      this[key] = Assets.cache.get(value)
+    }
+
+    this.interface = {
+      info: element => {
+        const data = this.owner.config.animals[this.type]
+        this.setDefaultInterface(element, data)
+      },
+    }
 
     this.allowMove = false
     this.interactive = true
@@ -287,7 +302,7 @@ export class Animal extends Container {
               if (this.sounds && this.sounds.attack) {
                 sound.play(this.sounds.attack)
               }
-              this.dest.hitPoints = Math.max(this.dest.hitPoints - this.attack, 0)
+              this.dest.hitPoints = getHitPointsWithDamage(this, this.dest)
               if (
                 this.dest.selected &&
                 player &&
@@ -643,10 +658,10 @@ export class Animal extends Container {
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
-    const lifeDiv = document.createElement('div')
-    lifeDiv.id = 'hitPoints'
-    lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
-    element.appendChild(lifeDiv)
+    const hitPointsDiv = document.createElement('div')
+    hitPointsDiv.id = 'hitPoints'
+    hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
+    element.appendChild(hitPointsDiv)
 
     const quantityDiv = document.createElement('div')
     quantityDiv.id = 'quantity'

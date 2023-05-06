@@ -34,6 +34,19 @@ export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
+export function getDamage(source, target) {
+  const meleeAttack = source.meleeAttack || 0
+  const pierceAttack = source.pierceAttack || 0
+  const meleeArmor = target.meleeArmor || 0
+  const pierceArmor = target.pierceArmor || 0
+  return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor))
+}
+
+export function getHitPointsWithDamage(source, target, defaultDamage) {
+  const damage = defaultDamage || getDamage(source, target)
+  return Math.max(0, target.hitPoints - damage)
+}
+
 export const updateObject = (target, operation) => {
   function setToValue(obj, value, path) {
     var i

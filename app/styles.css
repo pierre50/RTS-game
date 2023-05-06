@@ -97,6 +97,15 @@ body {
   width: 45px;
 }
 
+.bottombar-info #info {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .bottombar-menu {
   display: flex;
   flex-wrap: wrap;

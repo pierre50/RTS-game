@@ -1,6 +1,13 @@
 import { Container, Graphics } from 'pixi.js'
-import { degreesToRadians, moveTowardPoint, pointsDistance, instancesDistance, average } from '../../lib'
-import { colorArrow, stepTime } from '../../constants'
+import {
+  degreesToRadians,
+  getHitPointsWithDamage,
+  moveTowardPoint,
+  pointsDistance,
+  instancesDistance,
+  average,
+} from '../lib'
+import { colorArrow, stepTime } from '../constants'
 
 export class Projectile extends Container {
   constructor(options, context) {
@@ -18,6 +25,12 @@ export class Projectile extends Container {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
+    Object.keys(this.owner.owner.config.projectiles[this.type]).forEach(prop => {
+      this[prop] = this.owner.owner.config.projectiles[this.type][prop]
+    })
+
+    this.x = this.owner.x
+    this.y = this.owner.y - this.owner.sprite.height / 2
     const { x: targetX, y: targetY } = this.destination || this.target
 
     this.distance = instancesDistance(this, this.target, false)
@@ -53,7 +66,7 @@ export class Projectile extends Container {
     const {
       context: { menu, player },
     } = this
-    instance.hitPoints = Math.max(instance.hitPoints - (this.attack || this.owner.attack), 0)
+    instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected && player.selectedOther === instance) {
       menu.updateInfo(
         'hitPoints',

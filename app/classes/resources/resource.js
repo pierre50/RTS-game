@@ -147,10 +147,10 @@ export class resource extends Container {
     element.appendChild(iconImg)
 
     if (this.hitPoints) {
-      const lifeDiv = document.createElement('div')
-      lifeDiv.id = 'hitPoints'
-      lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
-      element.appendChild(lifeDiv)
+      const hitPointsDiv = document.createElement('div')
+      hitPointsDiv.id = 'hitPoints'
+      hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
+      element.appendChild(hitPointsDiv)
     }
     if (this.quantity) {
       const quantityDiv = document.createElement('div')

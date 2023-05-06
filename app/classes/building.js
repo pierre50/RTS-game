@@ -1,7 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, rubbleTime } from '../../constants'
-import * as projectiles from '../projectiles/'
+import { accelerator, rubbleTime } from '../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -22,7 +21,9 @@ import {
   changeSpriteColor,
   getBuildingRubbleTextureNameWithSize,
   instancesDistance,
-} from '../../lib'
+  getBuildingTextureNameWithSize,
+} from '../lib'
+import { Projectile } from './projectile'
 
 export class Building extends Container {
   constructor(options, context) {
@@ -30,13 +31,16 @@ export class Building extends Container {
 
     this.context = context
 
-    const { map, player } = context
+    const { map } = context
     this.setParent(map)
     this.id = map.children.length
     this.name = 'building'
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
+    })
+    Object.keys(this.owner.config.buildings[this.type]).forEach(prop => {
+      this[prop] = this.owner.config.buildings[this.type][prop]
     })
 
     this.x = map.grid[this.i][this.j].x
@@ -52,8 +56,33 @@ export class Building extends Container {
     this.interval
     this.attackInterval
     this.timeout
+    this.isUsedBy = null
+
     if (!map.revealEverything) {
       this.visible = false
+    }
+    const texture = getTexture(
+      this.type === 'House' && this.owner.age === 0 ? '000_489' : getBuildingTextureNameWithSize(this.size),
+      Assets
+    )
+    this.sprite = Sprite.from(texture)
+    this.sprite.updateAnchor = true
+    this.sprite.name = 'sprite'
+
+    const units = (this.units || []).map(key => context.menu.getUnitButton(key))
+    const technologies = (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
+    this.interface = {
+      info: element => {
+        const assets = getBuildingAsset(this.type, this.owner, Assets)
+        this.setDefaultInterface(element, assets)
+        if (this.displayPopulation && this.owner.isPlayed && this.isBuilt) {
+          const populationDiv = document.createElement('div')
+          populationDiv.id = 'population'
+          populationDiv.textContent = this.owner.population + '/' + this.owner.populationMax
+          element.appendChild(populationDiv)
+        }
+      },
+      menu: this.owner.isPlayed ? [...units, ...technologies] : [],
     }
 
     this.hitPoints = this.isBuilt ? this.totalHitPoints : 1
@@ -173,10 +202,7 @@ export class Building extends Container {
     if (this.isBuilt) {
       this.updateTexture()
       renderCellOnInstanceSight(this)
-
-      if (typeof this.onBuilt === 'function') {
-        this.onBuilt()
-      }
+      this.onBuilt()
     }
   }
 
@@ -190,9 +216,10 @@ export class Building extends Container {
         if (target.hitPoints <= 0) {
           target.die()
         } else {
-          const projectile = new projectiles.Arrow(
+          const projectile = new Projectile(
             {
               owner: this,
+              type: this.projectile,
               target,
             },
             this.context
@@ -246,7 +273,7 @@ export class Building extends Container {
     if (this.range && getActionCondition(this, instance, 'attack') && instancesDistance(this, instance) <= this.range) {
       this.attackAction(instance)
     }
-    this.updateLife('attack')
+    this.updateHitPoints('attack')
   }
 
   updateTexture() {
@@ -272,19 +299,38 @@ export class Building extends Container {
         if (this.owner.isPlayed && this.sounds && this.sounds.create) {
           sound.play(this.sounds.create)
         }
-        typeof this.onBuilt === 'function' && this.onBuilt()
+        this.onBuilt()
       }
       this.isBuilt = true
       if (!this.owner.hasBuilt.includes(this.type)) {
         this.owner.hasBuilt.push(this.type)
       }
-      if (this.owner && this.owner.isPlayed && this.selected) {
+      if (this.owner.isPlayed && this.selected) {
         menu.setBottombar(this)
       }
       renderCellOnInstanceSight(this)
     }
   }
 
+  onBuilt() {
+    const {
+      context: { menu },
+    } = this
+    if (this.increasePopulation) {
+      // Increase player population and continue all unit creation that was paused
+      this.owner.populationMax += 4
+      // Update bottombar with populationmax if house selected
+      if (this.selected && this.owner.isPlayed) {
+        menu.updateInfo(
+          'population',
+          element => (element.textContent = this.owner.population + '/' + this.owner.populationMax)
+        )
+      }
+    }
+    if (this.owner.isPlayed && this.selected) {
+      menu.setBottombar(this)
+    }
+  }
   finalTexture() {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
 
@@ -304,7 +350,28 @@ export class Building extends Container {
     } else {
       changeSpriteColor(this.sprite, this.owner.color)
     }
-    typeof this.afterFinalTextures === 'function' && this.afterFinalTextures()
+
+    if (this.type === 'House') {
+      if (this.owner.age === 0) {
+        const spritesheetFire = Assets.cache.get('347')
+        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        spriteFire.name = 'deco'
+        spriteFire.allowMove = false
+        spriteFire.allowClick = false
+        spriteFire.interactive = false
+        spriteFire.roundPixels = true
+        spriteFire.x = 10
+        spriteFire.y = 5
+        spriteFire.play()
+        spriteFire.animationSpeed = 0.2 * accelerator
+        this.addChild(spriteFire)
+      } else {
+        const fire = this.getChildByName('deco')
+        if (fire) {
+          fire.destroy()
+        }
+      }
+    }
   }
 
   detect(instance) {
@@ -319,7 +386,7 @@ export class Building extends Container {
     }
   }
 
-  updateLife(action) {
+  updateHitPoints(action) {
     if (this.hitPoints > this.totalHitPoints) {
       this.hitPoints = this.totalHitPoints
     }
@@ -528,7 +595,7 @@ export class Building extends Container {
     const {
       context: { menu },
     } = this
-    const unit = this.owner.config[type]
+    const unit = this.owner.config.units[type]
     if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (this.owner.type === 'AI' && this.loading === null) {
@@ -696,10 +763,10 @@ export class Building extends Container {
     element.appendChild(iconImg)
 
     if (this.owner && this.owner.isPlayed) {
-      const lifeDiv = document.createElement('div')
-      lifeDiv.id = 'hitPoints'
-      lifeDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
-      element.appendChild(lifeDiv)
+      const hitPointsDiv = document.createElement('div')
+      hitPointsDiv.id = 'hitPoints'
+      hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
+      element.appendChild(hitPointsDiv)
 
       const loadingDiv = document.createElement('div')
       loadingDiv.id = 'loading'

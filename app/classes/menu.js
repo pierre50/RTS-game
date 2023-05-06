@@ -496,7 +496,7 @@ export default class Menu {
     const {
       context: { player },
     } = this
-    const unit = player.config[type]
+    const unit = player.config.units[type]
     return {
       id: type,
       icon: () => getIconPath(unit.icon),
@@ -558,7 +558,7 @@ export default class Menu {
     const {
       context: { controls, player },
     } = this
-    const config = player.config[type]
+    const config = player.config.buildings[type]
     return {
       id: type,
       icon: () => {
