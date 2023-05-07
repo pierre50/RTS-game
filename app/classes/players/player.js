@@ -1,5 +1,13 @@
 import { Assets } from 'pixi.js'
-import { canAfford, drawInstanceBlinkingSelection, payCost, uuidv4, getHexColor, updateObject } from '../../lib'
+import {
+  canAfford,
+  drawInstanceBlinkingSelection,
+  payCost,
+  uuidv4,
+  getHexColor,
+  updateObject,
+  getBuildingTextureNameWithSize,
+} from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
@@ -51,7 +59,7 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: false,
+          viewed: map.revealTerrain || false,
         }
       }
     }
@@ -113,7 +121,7 @@ export class Player {
     } = this
     const others = [...players]
     others.splice(players.indexOf(this), 1)
-    return otrs
+    return others
   }
 
   updateConfig(operations) {
@@ -130,9 +138,7 @@ export class Player {
         } else if (Object.keys(this.config.units).includes(type)) {
           this.config.units[type] && updateObject(this.config.units[type], operation)
         }
-        if (this.isPlayed && (this.selectedBuilding || this.selectedUnit)) {
-          menu.setBottombar(this.selectedBuilding || this.selectedUnit)
-        }
+
         /*for (let u = 0; u < this.units.length; u++) {
           const unit = this.units[u]
           unit.type === type && updateObject(unit, operation)
@@ -153,9 +159,7 @@ export class Player {
     if (canAfford(this, config.cost)) {
       this.spawnBuilding(i, j, type)
       payCost(this, config.cost)
-      if (this.isPlayed) {
-        menu.updateTopbar()
-      }
+      this.isPlayed && menu.updateTopbar()
       return true
     }
     return false

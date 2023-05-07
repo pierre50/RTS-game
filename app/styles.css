@@ -99,13 +99,12 @@ body {
 
 .bottombar-info #infos {
   position: absolute;
-  left: 50%;
+  left: 45%;
   top: 30px;
   display: flex;
   align-items: center;
   flex-direction: column;
 }
-
 
 .bottombar-info #info {
   display: flex;
@@ -197,17 +196,30 @@ body {
   padding: 3px;
 }
 
-.resource-quantity,
-.unit-loading {
+.resource-quantity {
+  position: absolute;
+  top: 20px;
+  left: 45%;
   display: flex;
   align-items: center;
+  flex-direction: row;
+  gap: 5px;
 }
 
-.resource-quantity-icon,
-.unit-loading-icon {
-  object-fit: none;
-  height: 13px;
-  width: 20px;
-  margin-right: 2px;
-  border-radius: 2px;
+.unit-loading {
+  position: absolute;
+  top: 52px;
+  left: 45%;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 5px;
+}
+
+#population {
+  display: flex;
+  align-items: center;
+  position: relative;
+  left: -5px;
+  top: -8px;
 }

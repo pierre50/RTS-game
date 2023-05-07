@@ -79,6 +79,11 @@ export class Building extends Container {
           const populationDiv = document.createElement('div')
           populationDiv.id = 'population'
           populationDiv.textContent = this.owner.population + '/' + this.owner.populationMax
+
+          const populationIcon = document.createElement('img')
+          populationIcon.id = 'icon'
+          populationIcon.src = getIconPath('004_50731')
+          populationDiv.prepend(populationIcon)
           element.appendChild(populationDiv)
         }
       },
@@ -119,56 +124,68 @@ export class Building extends Container {
           return
         }
         let hasSentVillager = false
+        let hasSentOther = false
         controls.mouse.prevent = true
         if (this.owner.isPlayed) {
           // Send Villager to build the building
           if (!this.isBuilt) {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
-              if (getActionCondition(unit, this, 'build')) {
-                hasSentVillager = true
-                unit.sendToBuilding(this)
-                drawInstanceBlinkingSelection(this)
+              if (unit.type === 'Villager') {
+                if (getActionCondition(unit, this, 'build')) {
+                  hasSentVillager = true
+                  unit.sendToBuilding(this)
+                }
+              } else {
+                unit.sendTo(this)
+                hasSentOther = true
               }
             }
             if (hasSentVillager) {
-              sound.play('5118')
+              drawInstanceBlinkingSelection(this)
+            }
+            if (hasSentOther) {
+              const voice = randomItem(['5075', '5076', '5128', '5164'])
+              sound.play(voice)
+              return
+            } else if (hasSentVillager) {
+              const voice = Assets.cache.get('config').units.Villager.sounds.farm
+              sound.play(voice)
               return
             }
           } else if (player.selectedUnits) {
             // Send Villager to give loading of resources
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
+              const accept = this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType))
               if (unit.type === 'Villager') {
-                if (this.hitPoints < this.totalHitPoints) {
+                if (getActionCondition(unit, this, 'build')) {
                   hasSentVillager = true
                   unit.previousDest = null
                   unit.sendToBuilding(this)
-                } else {
-                  switch (this.type) {
-                    case 'Farm':
-                      hasSentVillager = true
-                      unit.sendToFarm(this)
-                      break
-                    case 'StoragePit':
-                    case 'Granary':
-                    case 'TownCenter':
-                      if (
-                        unit.loading > 0 &&
-                        (this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType)))
-                      ) {
-                        hasSentVillager = true
-                        unit.previousDest = null
-                        unit.sendTo(this, 'delivery')
-                      }
-                      break
-                  }
+                } else if (getActionCondition(unit, this, 'farm')) {
+                  hasSentVillager = true
+                  unit.sendToFarm(this)
+                } else if (accept && getActionCondition(unit, this, 'delivery', { buildingType: this.type })) {
+                  hasSentVillager = true
+                  unit.previousDest = null
+                  unit.sendTo(this, 'delivery')
                 }
+              } else {
+                unit.sendTo(this)
+                hasSentOther = true
               }
             }
             if (hasSentVillager) {
-              sound.play('5118')
               drawInstanceBlinkingSelection(this)
+            }
+            if (hasSentOther) {
+              const voice = randomItem(['5075', '5076', '5128', '5164'])
+              sound.play(voice)
+              return
+            } else if (hasSentVillager) {
+              const voice = Assets.cache.get('config').units.Villager.sounds.build
+              sound.play(voice)
               return
             }
           }
@@ -321,10 +338,7 @@ export class Building extends Container {
       this.owner.populationMax += 4
       // Update bottombar with populationmax if house selected
       if (this.selected && this.owner.isPlayed) {
-        menu.updateInfo(
-          'population',
-          element => (element.textContent = this.owner.population + '/' + this.owner.populationMax)
-        )
+        menu.updateInfo('population', this.owner.population + '/' + this.owner.populationMax)
       }
     }
     if (this.owner.isPlayed && this.selected) {
@@ -549,7 +563,7 @@ export class Building extends Container {
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.drawPolygon(path)
     if (this.loading && this.owner.isPlayed) {
-      menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
+      menu.updateInfo('loading', this.loading + '%')
     }
     this.addChildAt(selection, 0)
 
@@ -584,10 +598,7 @@ export class Building extends Container {
     this.owner.createUnit(spawnCell.i, spawnCell.j, type, map)
 
     if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.type === 'House') {
-      menu.updateInfo(
-        'population',
-        element => (element.textContent = this.owner.population + '/' + this.owner.populationMax)
-      )
+      menu.updateInfo('population', this.owner.population + '/' + this.owner.populationMax)
     }
   }
 
@@ -604,18 +615,16 @@ export class Building extends Container {
           payCost(this.owner, unit.cost)
           this.queue.push(type)
           if (this.selected && this.owner.isPlayed) {
-            menu.updateButtonContent(type, element => (element.textContent = this.queue.filter(q => q === type).length))
+            menu.updateButtonContent(type, this.queue.filter(q => q === type).length)
           }
         }
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
+        this.owner.isPlayed && menu.updateTopbar()
       }
       if (this.loading === null) {
         let hasShowedMessage = false
         this.loading = 0
         if (this.selected && this.owner.isPlayed) {
-          menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
+          menu.updateInfo('loading', this.loading + '%')
         }
         this.startInterval(() => {
           if (this.queue[0] !== type) {
@@ -627,11 +636,11 @@ export class Building extends Container {
             hasShowedMessage = false
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
-              menu.updateButtonContent(type, element => (element.textContent = still || ''))
+              menu.updateButtonContent(type, still || '')
               if (still === 0) {
                 menu.toggleButtonCancel(type, false)
               }
-              menu.updateInfo('loading', element => (element.textContent = ''))
+              menu.updateInfo('loading', '')
             }
           } else if (this.loading < 100) {
             if (this.owner.population < this.owner.populationMax) {
@@ -641,7 +650,7 @@ export class Building extends Container {
               hasShowedMessage = true
             }
             if (this.selected && this.owner.isPlayed) {
-              menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
+              menu.updateInfo('loading', this.loading + '%')
             }
           } else if (this.loading >= 100) {
             this.stopInterval()
@@ -654,11 +663,11 @@ export class Building extends Container {
             hasShowedMessage = false
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
-              menu.updateButtonContent(type, element => (element.textContent = still || ''))
+              menu.updateButtonContent(type, still || '')
               if (still === 0) {
                 menu.toggleButtonCancel(type, false)
               }
-              menu.updateInfo('loading', element => (element.textContent = ''))
+              menu.updateInfo('loading', '')
             }
           }
         }, unit.trainingTime)
@@ -674,10 +683,10 @@ export class Building extends Container {
     refundCost(player, this.technology.cost)
     this.technology = null
     this.loading = null
-    if (this.selected && this.owner.isPlayed) {
-      menu.setBottombar(this)
+    if (this.owner.isPlayed) {
+      menu.updateBottombar()
+      menu.updateTopbar()
     }
-    menu.updateTopbar()
   }
 
   buyTechnology(technology, type) {
@@ -705,7 +714,7 @@ export class Building extends Container {
         if (this.loading < 100) {
           this.loading += 1
           if (this.selected && this.owner.isPlayed) {
-            menu.updateInfo('loading', element => (element.textContent = this.loading + '%'))
+            menu.updateInfo('loading', this.loading + '%')
           }
         } else if (this.loading >= 100) {
           this.stopInterval()
@@ -733,10 +742,10 @@ export class Building extends Container {
           }
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)
-          if (this.selected && this.owner.isPlayed) {
-            menu.setBottombar(this)
+          if (this.owner.isPlayed) {
+            menu.updateBottombar()
+            menu.updateTopbar()
           }
-          menu.updateTopbar()
         }
       }, technology.researchTime)
     }

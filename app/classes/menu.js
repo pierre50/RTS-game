@@ -20,10 +20,16 @@ export default class Menu {
     this.topbar.id = 'topbar'
     this.topbar.className = 'topbar bar'
     this.icons = {
-      wood: 'interface/50732/000_50732.png',
-      food: 'interface/50732/002_50732.png',
-      stone: 'interface/50732/001_50732.png',
-      gold: 'interface/50732/003_50732.png',
+      wood: getIconPath('000_50732'),
+      food: getIconPath('002_50732'),
+      stone: getIconPath('001_50732'),
+      gold: getIconPath('003_50732'),
+    }
+    this.infoIcons = {
+      wood: getIconPath('000_50731'),
+      stone: getIconPath('001_50731'),
+      food: getIconPath('002_50731'),
+      gold: getIconPath('003_50731'),
     }
 
     this.resources = document.createElement('div')
@@ -118,7 +124,7 @@ export default class Menu {
     cameraContext.translate(translate, 0)
     resourceContext.translate(translate, 0)
 
-    if (map.revealEverything) {
+    if (map.revealEverything || map.revealTerrain) {
       this.revealTerrainMinimap()
     }
   }
@@ -343,6 +349,15 @@ export default class Menu {
     this.resources.appendChild(box)
   }
 
+  updateBottomBar() {
+    const {
+      context: { menu, player },
+    } = getBuildingTextureNameWithSize
+    if (player.selectedBuilding || player.selectedUnit) {
+      menu.setBottombar(player.selectedBuilding || player.selectedUnit)
+    }
+  }
+
   updateTopbar() {
     const {
       context: { player },
@@ -374,22 +389,22 @@ export default class Menu {
 
   updateInfo(target, action) {
     const targetElement = this.bottombarInfo.querySelector(`[id=${target}]`)
-    if (!targetElement || typeof action !== 'function') {
+    if (!targetElement) {
       return
     }
-    return action(targetElement)
+    return typeof action !== 'function' ? (targetElement.textContent = action) : action(targetElement)
   }
 
   updateButtonContent(target, action) {
     const targetElement = this.bottombarMenu.querySelector(`[id=${target}]`)
-    if (!targetElement || typeof action !== 'function') {
+    if (!targetElement) {
       return
     }
     const contentElement = targetElement.querySelector('[id=content]')
     if (!contentElement) {
       return
     }
-    return action(contentElement)
+    return typeof action !== 'function' ? (contentElement.textContent = action) : action(contentElement)
   }
 
   toggleButtonCancel(target, value) {
@@ -521,7 +536,7 @@ export default class Menu {
           this.updateTopbar()
           selection.queue = selection.queue.filter(q => q !== type)
           if (selection.queue[0] !== type) {
-            this.updateButtonContent(type, element => (element.textContent = ''))
+            this.updateButtonContent(type, '')
             this.toggleButtonCancel(type, false)
           }
         })

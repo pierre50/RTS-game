@@ -6,8 +6,10 @@ import {
   pointsDistance,
   instancesDistance,
   average,
+  randomItem,
 } from '../lib'
 import { colorArrow, stepTime } from '../constants'
+import { sound } from '@pixi/sound'
 
 export class Projectile extends Container {
   constructor(options, context) {
@@ -16,7 +18,7 @@ export class Projectile extends Container {
     this.context = context
 
     const {
-      context: { map },
+      context: { map, controls },
     } = this
     this.setParent(map)
     this.id = map.children.length
@@ -32,6 +34,10 @@ export class Projectile extends Container {
     this.x = this.owner.x
     this.y = this.owner.y - this.owner.sprite.height / 2
     const { x: targetX, y: targetY } = this.destination || this.target
+
+    this.owner.visible &&
+      this.sounds.start &&
+      sound.play(Array.isArray(this.sounds.start) ? randomItem(this.sounds.start) : this.sounds.start)
 
     this.distance = instancesDistance(this, this.target, false)
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
@@ -68,10 +74,7 @@ export class Projectile extends Container {
     } = this
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected && player.selectedOther === instance) {
-      menu.updateInfo(
-        'hitPoints',
-        element => (element.textContent = instance.hitPoints + '/' + instance.totalHitPoints)
-      )
+      menu.updateInfo('hitPoints', instance.hitPoints + '/' + instance.totalHitPoints)
     }
     if (instance.hitPoints <= 0) {
       instance.die()

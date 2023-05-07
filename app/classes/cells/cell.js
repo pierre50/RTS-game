@@ -149,9 +149,9 @@ export class Cell extends Container {
       this.y -= elevation
     }
     this.inclined = true
-    if (this.has && typeof this.has.die === 'function') {
+    /*if (this.has && typeof this.has.die === 'function') {
       this.has.die(true)
-    }
+    }*/
     sprite.name = 'sprite'
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
@@ -245,6 +245,7 @@ export class Cell extends Container {
       }
       this.children[i].cacheAsBitmap = true
     }
+
     if (this.has) {
       setFogChildren(this.has)
     }

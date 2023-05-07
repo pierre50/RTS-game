@@ -304,8 +304,8 @@ export default class Controls extends Container {
             }
           }
           if (hasSentSoldier){
-            const sounds = randomItem(['5075','5076','5128', '5164'])
-            sound.play(sounds)
+            const voice = randomItem(['5075','5076','5128', '5164'])
+            sound.play(voice)
           }else if (hasSentVillager) {
             sound.play('5006')
           }

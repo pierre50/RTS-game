@@ -105,6 +105,7 @@ export const getActionCondition = (source, target, action, props) => {
   }
   const conditions = {
     delivery: props =>
+      source.loading > 0 && 
       target.hitPoints > 0 &&
       target.isBuilt &&
       (target.type === 'TownCenter' || (!props ? true : props.buildingType && target.type === props.buildingType)),

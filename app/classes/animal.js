@@ -99,20 +99,25 @@ export class Animal extends Container {
       controls.mouse.prevent = true
       let drawDestinationRectangle = false
       let hasSentVillager = false
+      let hasSentOther = false
+
       if (player.selectedUnits.length) {
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
-          if (getActionCondition(playerUnit, this, 'hunt')) {
-            hasSentVillager = true
-            playerUnit.sendToHunt(this)
-            drawDestinationRectangle = true
+          if (playerUnit.type === 'Villager') {
+            if (getActionCondition(playerUnit, this, 'hunt')) {
+              playerUnit.sendToHunt(this)
+              hasSentVillager = true
+              drawDestinationRectangle = true
+            } else if (getActionCondition(playerUnit, this, 'takemeat')) {
+              playerUnit.sendToTakeMeat(this)
+              hasSentVillager = true
+              drawDestinationRectangle = true
+            }
           } else if (getActionCondition(playerUnit, this, 'attack')) {
             playerUnit.sendTo(this, 'attack')
             drawDestinationRectangle = true
-          } else if (getActionCondition(playerUnit, this, 'takemeat')) {
-            hasSentVillager = true
-            playerUnit.sendToTakeMeat(this)
-            drawDestinationRectangle = true
+            hasSentOther = true
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
@@ -130,8 +135,12 @@ export class Animal extends Container {
         player.selectedOther = this
       }
 
-      if (hasSentVillager) {
-        sound.play('5005')
+      if (hasSentOther) {
+        const voice = randomItem(['5075', '5076', '5128', '5164'])
+        sound.play(voice)
+      } else if (hasSentVillager) {
+        const voice = Assets.cache.get('config').units.Villager.sounds.hunt
+        sound.play(voice)
       }
       if (drawDestinationRectangle) {
         drawInstanceBlinkingSelection(this)
@@ -298,20 +307,17 @@ export class Animal extends Container {
               this.sendTo(this.dest, 'attack')
               return
             }
+
+            this.sounds && this.sounds.hit && this.visible && sound.play(this.sounds.hit)
+
             if (this.dest.hitPoints > 0) {
-              if (this.sounds && this.sounds.attack) {
-                sound.play(this.sounds.attack)
-              }
               this.dest.hitPoints = getHitPointsWithDamage(this, this.dest)
               if (
                 this.dest.selected &&
                 player &&
                 (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
               ) {
-                menu.updateInfo(
-                  'hitPoints',
-                  element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
-                )
+                menu.updateInfo('hitPoints', this.dest.hitPoints + '/' + this.dest.totalHitPoints)
               }
               this.dest.isAttacked(this)
             }
@@ -483,8 +489,7 @@ export class Animal extends Container {
   step() {
     if (this.hitPoints <= 0) {
       this.die()
-    }
-    if (this.hasPath()) {
+    } else if (this.hasPath()) {
       this.moveToPath()
     }
   }
@@ -519,8 +524,8 @@ export class Animal extends Container {
     const {
       context: { player, menu },
     } = this
-    if (this.sounds) {
-      this.sounds.dead && sound.play(this.sounds.dead)
+    if (this.sounds && this.visible) {
+      this.sounds.die && sound.play(this.sounds.die)
       this.sounds.fall && sound.play(this.sounds.fall)
     }
     this.stopInterval()
@@ -538,7 +543,7 @@ export class Animal extends Container {
         if (this.quantity > 0) {
           this.quantity--
           if (this.selected && player.selectedOther === this) {
-            menu.updateInfo('quantity-text', element => (element.textContent = this.quantity))
+            menu.updateInfo('quantity-text', this.quantity)
           }
         }
         this.updateTexture()

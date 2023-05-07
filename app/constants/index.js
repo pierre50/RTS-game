@@ -25,10 +25,13 @@ export const colorArrow = 0xe8e3df
 export const colorGrass = '#647B2F'
 export const colorWater = '#17277B'
 export const colorDesert = '#CFA443'
-export const colorTree = '#274F1F'
-export const colorGold = '#DECF10'
-export const colorStone = '#B3B3B3'
-export const colorBerry = '#7B9051'
+
+export const typeAction = {
+  Stone: 'minestone',
+  Gold: 'minegold',
+  Berrybush: 'forageberry',
+  Tree: 'chopwood',
+}
 
 export const corpseTime = 120
 export const rubbleTime = 120

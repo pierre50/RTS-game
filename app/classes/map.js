@@ -1,6 +1,6 @@
 import { Container, Assets, Sprite } from 'pixi.js'
 import { Grass, Water, Desert, Jungle } from './cells/'
-import { Tree, Berrybush, Stone, Gold } from './resources/'
+import { Resource } from './resource'
 import { Human, AI, Gaia } from './players/'
 import {
   randomRange,
@@ -9,6 +9,7 @@ import {
   getPlainCellsAroundPoint,
   getCellsAroundPoint,
   colors,
+  renderCellOnInstanceSight,
 } from '../lib'
 import { cellDepth } from '../constants'
 import { Animal } from './animal'
@@ -32,7 +33,8 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = true
+    this.revealEverything = false
+    this.revealTerrain = true
     this.noAI = true
     this.grid = []
     this.sortableChildren = true
@@ -89,19 +91,12 @@ export default class Map extends Container {
       return
     }
 
-    if (!this.revealEverything) {
-      for (let i = 0; i <= this.size; i++) {
-        for (let j = 0; j <= this.size; j++) {
-          this.grid[i][j].setFog()
-        }
-      }
-    }
     this.generateResourcesAroundPlayers(this.playersPos)
   }
 
   stylishMap() {
     const {
-      context: { menu },
+      context: { menu, player },
     } = this
 
     this.gaia = new Gaia(this.context)
@@ -112,6 +107,23 @@ export default class Map extends Container {
     this.formatCellsDesert()
 
     this.generateSets()
+
+    if (!this.revealEverything) {
+      for (let i = 0; i <= this.size; i++) {
+        for (let j = 0; j <= this.size; j++) {
+          this.grid[i][j].setFog()
+        }
+      }
+      for (let i = 0; i < player.buildings.length; i++) {
+        const building = player.buildings[i]
+        renderCellOnInstanceSight(building)
+      }
+      for (let i = 0; i < player.units.length; i++) {
+        const unit = player.units[i]
+        renderCellOnInstanceSight(unit)
+      }
+    }
+
     menu.updateResourcesMiniMap()
   }
 
@@ -201,18 +213,18 @@ export default class Map extends Container {
             break
           case '2':
             this.grid[i][j] = new Grass({ i, j, z }, this.context)
-            this.resources.push(new Tree({ i, j }, this.context))
+            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
           case '3':
             this.grid[i][j] = new Water({ i, j, z }, this.context)
             break
           case '4':
             this.grid[i][j] = new Desert({ i, j, z }, this.context)
-            this.resources.push(new Tree({ i, j }, this.context))
+            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
           case '5':
             this.grid[i][j] = new Jungle({ i, j, z }, this.context)
-            this.resources.push(new Tree({ i, j }, this.context))
+            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
         }
       }
@@ -249,7 +261,7 @@ export default class Map extends Container {
             const type = randomItem(['tree', 'rock', 'animal'])
             switch (type) {
               case 'tree':
-                this.resources.push(new Tree({ i, j }, this.context))
+                this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
                 break
               case 'rock':
                 const randomSpritesheet = randomRange(531, 534).toString()
@@ -586,12 +598,6 @@ export default class Map extends Container {
 
   placeResourceGroup(player, instance, quantity, range) {
     const { context, grid } = this
-    const resources = {
-      Tree,
-      Berrybush,
-      Stone,
-      Gold,
-    }
     function getRandomCells(loop = 0) {
       if (loop > 100) {
         return []
@@ -625,7 +631,7 @@ export default class Map extends Container {
     for (let i = 0; i < quantity; i++) {
       const item = randomItem(cells)
       cells.splice(cells.indexOf(item), 1)
-      this.resources.push(new resources[instance]({ i: item.i, j: item.j }, context))
+      this.resources.push(new Resource({ i: item.i, j: item.j, type: instance }, context))
     }
   }
 

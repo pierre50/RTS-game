@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits } from '../constants'
+import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits, typeAction } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -416,12 +416,7 @@ export class Unit extends Container {
     const {
       context: { map },
     } = this
-    const typeAction = {
-      Stone: 'minestone',
-      Gold: 'minegold',
-      Berrybush: 'forageberry',
-      Tree: 'chopwood',
-    }
+
     if (!this.previousDest) {
       this.stop()
       return
@@ -467,9 +462,7 @@ export class Unit extends Container {
           return
         }
         this.owner[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType] += this.loading
-        if (this.owner.isPlayed) {
-          menu.updateTopbar()
-        }
+        this.owner.isPlayed && menu.updateTopbar()
         this.loading = 0
         this.updateInterfaceLoading()
         if (this.allAssets[this.work]) {
@@ -511,10 +504,10 @@ export class Unit extends Container {
             this.loadingType = 'wheat'
             this.updateInterfaceLoading()
 
-            sound.play('5178')
+            this.visible && sound.play('5178')
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy farm if it out of quantity
             if (this.dest.quantity <= 0) {
@@ -553,17 +546,17 @@ export class Unit extends Container {
               this.sendToDelivery()
               return
             }
-            sound.play('5048')
+
+            this.visible && sound.play('5048')
 
             // Tree destination is still alive we cut him until it's dead
             if (this.dest.hitPoints > 0) {
               this.dest.hitPoints = Math.max(this.dest.hitPoints - 1, 0)
 
               if (this.dest.selected && this.owner.isPlayed) {
-                menu.updateInfo('hitPoints', element =>
-                  this.dest.hitPoints > 0
-                    ? (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
-                    : (element.textContent = '')
+                menu.updateInfo(
+                  'hitPoints',
+                  this.dest.hitPoints > 0 ? this.dest.hitPoints + '/' + this.dest.totalHitPoints : ''
                 )
               }
               if (this.dest.hitPoints <= 0) {
@@ -579,7 +572,7 @@ export class Unit extends Container {
 
               this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
               if (this.dest.selected && this.owner.isPlayed) {
-                menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+                menu.updateInfo('quantity-text', this.dest.quantity)
               }
               // Destroy tree if stump out of quantity
               if (this.dest.quantity <= 0) {
@@ -624,11 +617,11 @@ export class Unit extends Container {
             this.loadingType = 'berry'
             this.updateInterfaceLoading()
 
-            sound.play('5085')
+            this.visible && sound.play('5085')
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy berrybush if it out of quantity
             if (this.dest.quantity <= 0) {
@@ -672,11 +665,11 @@ export class Unit extends Container {
             this.loadingType = 'stone'
             this.updateInterfaceLoading()
 
-            sound.play('5159')
+            this.visible && sound.play('5159')
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy stone if it out of quantity
             if (this.dest.quantity <= 0) {
@@ -717,10 +710,10 @@ export class Unit extends Container {
             this.loadingType = 'gold'
             this.updateInterfaceLoading()
 
-            sound.play('5159')
+            this.visible && sound.play('5159')
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy gold if it out of quantity
             if (this.dest.quantity <= 0) {
@@ -755,16 +748,13 @@ export class Unit extends Container {
               return
             }
             if (this.dest.hitPoints < this.dest.totalHitPoints) {
-              sound.play('5107')
+              this.visible && sound.play('5107')
               this.dest.hitPoints = Math.min(
                 Math.round(this.dest.hitPoints + this.dest.totalHitPoints / this.dest.constructionTime),
                 this.dest.totalHitPoints
               )
               if (this.dest.selected && this.owner.isPlayed) {
-                menu.updateInfo(
-                  'hitPoints',
-                  element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
-                )
+                menu.updateInfo('hitPoints', this.dest.hitPoints + '/' + this.dest.totalHitPoints)
               }
               this.dest.updateHitPoints(this.action)
             } else {
@@ -850,10 +840,11 @@ export class Unit extends Container {
                 this.sendTo(this.dest, 'attack')
                 return
               }
+              if (this.sounds && this.sounds.hit) {
+                this.visible &&
+                  sound.play(Array.isArray(this.sounds.hit) ? randomItem(this.sounds.hit) : this.sounds.hit)
+              }
               if (this.dest.hitPoints > 0) {
-                if (this.sounds && this.sounds.attack) {
-                  sound.play(Array.isArray(this.sounds.attack) ? randomItem(this.sounds.attack) : this.sounds.attack)
-                }
                 this.dest.hitPoints = getHitPointsWithDamage(this, this.dest)
                 if (
                   this.dest.selected &&
@@ -861,10 +852,7 @@ export class Unit extends Container {
                     player.selectedBuilding === this.dest ||
                     player.selectedOther === this.dest)
                 ) {
-                  menu.updateInfo(
-                    'hitPoints',
-                    element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
-                  )
+                  menu.updateInfo('hitPoints', this.dest.hitPoints + '/' + this.dest.totalHitPoints)
                 }
                 this.dest.isAttacked(this)
                 if (this.dest.hitPoints <= 0) {
@@ -907,10 +895,7 @@ export class Unit extends Container {
           if (this.dest.hitPoints < this.dest.totalHitPoints) {
             this.dest.hitPoints = Math.min(this.dest.hitPoints + this.healing, this.dest.totalHitPoints)
             if (this.dest.selected && player.selectedUnit === this.dest) {
-              menu.updateInfo(
-                'hitPoints',
-                element => (element.textContent = this.dest.hitPoints + '/' + this.dest.totalHitPoints)
-              )
+              menu.updateInfo('hitPoints', this.dest.hitPoints + '/' + this.dest.totalHitPoints)
             }
           }
         }
@@ -933,7 +918,7 @@ export class Unit extends Container {
               return
             }
             // Villager take meat
-            sound.play('5178')
+            this.visible && sound.play('5178')
 
             this.loading++
             this.loadingType = 'meat'
@@ -942,7 +927,7 @@ export class Unit extends Container {
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             this.dest.updateTexture()
             if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo('quantity-text', element => (element.textContent = this.dest.quantity))
+              menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Set the walking with meat animation
             if (this.loading > 0) {
@@ -996,12 +981,11 @@ export class Unit extends Container {
           }
         }
         onSpriteLoopAtFrame(this.sprite, 6, () => {
-          sound.play('5125')
           const projectile = new Projectile(
             {
               owner: this,
               target: this.dest,
-              type: 'spear',
+              type: 'Spear',
               destination: this.realDest,
               damage: 4,
             },
@@ -1012,6 +996,19 @@ export class Unit extends Container {
         break
       default:
         this.stop()
+    }
+  }
+
+  detect(instance) {
+    if (
+      this.work === 'attacker' &&
+      instance &&
+      instance.name === 'unit' &&
+      !this.path.length &&
+      !this.dest &&
+      this.getActionCondition(instance, 'attack')
+    ) {
+      this.sendTo(instance, 'attack')
     }
   }
 
@@ -1060,9 +1057,6 @@ export class Unit extends Container {
   }
 
   upgrade(type) {
-    const {
-      context: { player, menu },
-    } = this
     const data = this.owner.config.units[type]
     this.type = type
     this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints)
@@ -1071,9 +1065,6 @@ export class Unit extends Container {
     }
     for (const [key, value] of Object.entries(this.assets)) {
       this[key] = Assets.cache.get(value)
-    }
-    if (player.selectedUnit === this) {
-      menu.setBottombar(this)
     }
     if (this.action && !this.path.length) {
       this.getAction(this.action)
@@ -1211,10 +1202,10 @@ export class Unit extends Container {
       } = this
       // Move to next
       const oldDeg = this.degree
-      /*let speed = this.speed
+      let speed = this.speed
       if (this.loading > 0) {
         speed *= 0.8
-      }*/
+      }
       moveTowardPoint(this, nextCell.x, nextCell.y, this.speed)
       menu.updatePlayerMiniMap(this.owner)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
@@ -1259,6 +1250,9 @@ export class Unit extends Container {
   }
 
   startInterval(callback, time, immediate = true) {
+    if (this.isDead) {
+      return
+    }
     this.stopInterval()
     immediate && callback()
     this.interval = setInterval(callback, time)
@@ -1274,8 +1268,7 @@ export class Unit extends Container {
   step() {
     if (this.hitPoints <= 0) {
       this.die()
-    }
-    if (this.hasPath()) {
+    } else if (this.hasPath()) {
       this.moveToPath()
     }
   }
@@ -1330,9 +1323,11 @@ export class Unit extends Container {
       context: { player, map },
     } = this
 
-    if (this.sounds && this.sounds.dead) {
-      sound.play(this.sounds.dead)
-    }
+    this.sounds &&
+      this.sounds.die &&
+      this.visible &&
+      sound.play(Array.isArray(this.sounds.die) ? randomItem(this.sounds.die) : this.sounds.die)
+
     this.stopInterval()
     if (this.selected && player.selectedOther === this) {
       player.unselectUnit(this)
@@ -1345,7 +1340,6 @@ export class Unit extends Container {
     this.interactive = false
     this.isDead = true
     this.unselect()
-    clearInterval(this.interval)
     if (this.owner) {
       this.owner.population--
       // Remove from player units
@@ -1445,9 +1439,9 @@ export class Unit extends Container {
     } = this
     if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
       if (this.loading === 1) {
-        menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().outerHTML))
+        menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().innerHTML))
       } else if (this.loading > 1) {
-        menu.updateInfo('loading-text', element => (element.textContent = this.loading))
+        menu.updateInfo('loading-text', this.loading)
       } else {
         menu.updateInfo('loading', element => (element.innerHTML = ''))
       }
@@ -1461,10 +1455,11 @@ export class Unit extends Container {
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'unit-loading'
     loadingDiv.id = 'loading'
+
     if (this.loading) {
       const iconImg = document.createElement('img')
       iconImg.className = 'unit-loading-icon'
-      iconImg.src = menu.icons[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType]
+      iconImg.src = menu.infoIcons[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType]
       const textDiv = document.createElement('div')
       textDiv.id = 'loading-text'
       textDiv.textContent = this.loading
@@ -1475,26 +1470,35 @@ export class Unit extends Container {
   }
 
   sendToAttack(target) {
-    this.updateInterfaceLoading()
-    this.work = 'attacker'
-    this.actionSheet = Assets.cache.get(this.allAssets.attack.actionSheet)
-    this.standingSheet = Assets.cache.get(this.allAssets.attack.standingSheet)
-    if (!this.loading) {
-      this.walkingSheet = Assets.cache.get(this.allAssets.attack.walkingSheet)
-      this.dyingSheet = Assets.cache.get(this.allAssets.attack.dyingSheet)
-      this.corpseSheet = Assets.cache.get(this.allAssets.attack.corpseSheet)
+    const {
+      context: { menu },
+    } = this
+    if (work !== 'attacker') {
+      this.work = 'attacker'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.type)
+      this.actionSheet = Assets.cache.get(this.allAssets.attack.actionSheet)
+      this.standingSheet = Assets.cache.get(this.allAssets.attack.standingSheet)
+      if (!this.loading) {
+        this.walkingSheet = Assets.cache.get(this.allAssets.attack.walkingSheet)
+        this.dyingSheet = Assets.cache.get(this.allAssets.attack.dyingSheet)
+        this.corpseSheet = Assets.cache.get(this.allAssets.attack.corpseSheet)
+      }
     }
     this.previousDest = null
     return this.sendTo(target, 'attack')
   }
 
   sendToTakeMeat(target) {
+    const {
+      context: { menu },
+    } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'hunter' || this.action !== 'takemeat') {
       this.work = 'hunter'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.hunter.harvestSheet)
       this.standingSheet = Assets.cache.get(this.allAssets.hunter.standingSheet)
       if (!this.loading) {
@@ -1508,12 +1512,16 @@ export class Unit extends Container {
   }
 
   sendToHunt(target) {
+    const {
+      context: { menu },
+    } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'hunter' || this.action !== 'hunt') {
       this.work = 'hunter'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.hunter.actionSheet)
       this.standingSheet = Assets.cache.get(this.allAssets.hunter.standingSheet)
       if (!this.loading) {
@@ -1554,9 +1562,13 @@ export class Unit extends Container {
   }
 
   sendToBuilding(building) {
+    const {
+      context: { menu },
+    } = this
     if (this.work !== 'builder') {
       this.updateInterfaceLoading()
       this.work = 'builder'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.builder.actionSheet)
       if (!this.loading) {
         this.standingSheet = Assets.cache.get(this.allAssets.builder.standingSheet)
@@ -1570,12 +1582,16 @@ export class Unit extends Container {
   }
 
   sendToFarm(farm) {
+    const {
+      context: { menu },
+    } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'farmer') {
       this.work = 'farmer'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.farmer.actionSheet)
       if (!this.loading) {
         this.standingSheet = Assets.cache.get(this.allAssets.farmer.standingSheet)
@@ -1589,10 +1605,14 @@ export class Unit extends Container {
   }
 
   sendToTree(tree) {
+    const {
+      context: { menu },
+    } = this
     if (this.work !== 'woodcutter') {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'woodcutter'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.woodcutter.actionSheet)
       this.standingSheet = Assets.cache.get(this.allAssets.woodcutter.standingSheet)
       this.walkingSheet = Assets.cache.get(this.allAssets.woodcutter.walkingSheet)
@@ -1604,12 +1624,16 @@ export class Unit extends Container {
   }
 
   sendToBerrybush(berrybush) {
+    const {
+      context: { menu },
+    } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
     if (this.work !== 'forager') {
       this.work = 'forager'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.forager.actionSheet)
       if (!this.loading) {
         this.standingSheet = Assets.cache.get(this.allAssets.forager.standingSheet)
@@ -1623,10 +1647,14 @@ export class Unit extends Container {
   }
 
   sendToStone(stone) {
+    const {
+      context: { menu },
+    } = this
     if (this.work !== 'stoneminer') {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'stoneminer'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.stoneminer.actionSheet)
       this.standingSheet = Assets.cache.get(this.allAssets.stoneminer.standingSheet)
       this.walkingSheet = Assets.cache.get(this.allAssets.stoneminer.walkingSheet)
@@ -1638,10 +1666,14 @@ export class Unit extends Container {
   }
 
   sendToGold(gold) {
+    const {
+      context: { menu },
+    } = this
     if (this.work !== 'goldminer') {
       this.loading = 0
       this.updateInterfaceLoading()
       this.work = 'goldminer'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
       this.actionSheet = Assets.cache.get(this.allAssets.goldminer.actionSheet)
       this.standingSheet = Assets.cache.get(this.allAssets.goldminer.standingSheet)
       this.walkingSheet = Assets.cache.get(this.allAssets.goldminer.walkingSheet)
@@ -1660,7 +1692,7 @@ export class Unit extends Container {
 
     const typeDiv = document.createElement('div')
     typeDiv.id = 'type'
-    typeDiv.textContent = this.type
+    typeDiv.textContent = this.type === 'Villager' ? this.work || this.type : this.type
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')

@@ -1,7 +1,14 @@
-import { Container, Graphics } from 'pixi.js'
-import { getInstanceZIndex, instanceIsInPlayerSight, getIconPath } from '../../lib'
-
-export class resource extends Container {
+import { sound } from '@pixi/sound'
+import { Container, Graphics, Sprite, Assets, Polygon } from 'pixi.js'
+import {
+  getInstanceZIndex,
+  instanceIsInPlayerSight,
+  getIconPath,
+  randomItem,
+  drawInstanceBlinkingSelection,
+} from '../lib'
+import { typeAction, cellWidth, cellHeight } from '../constants'
+export class Resource extends Container {
   constructor(options, context) {
     super()
 
@@ -14,9 +21,15 @@ export class resource extends Container {
 
     this.id = map.children.length
     this.name = 'resource'
+
+    const config = Assets.cache.get('config')
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
+    Object.keys(config.resources[this.type]).forEach(prop => {
+      this[prop] = config.resources[this.type][prop]
+    })
+
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
@@ -25,7 +38,7 @@ export class resource extends Container {
     this.visible = false
     this.isDead = false
     this.isDestroyed = false
-
+    this.size = 1
     this.hitPoints = this.totalHitPoints
 
     // Set solid zone
@@ -37,6 +50,21 @@ export class resource extends Container {
     this.allowClick = false
     this.allowMove = false
 
+    this.interface = {
+      info: element => {
+        const data = config.resources[this.type]
+        this.setDefaultInterface(element, data)
+      },
+    }
+    const textureName = randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
+    const resourceName = textureName.split('_')[1]
+    const textureFile = textureName + '.png'
+    const spritesheet = Assets.cache.get(resourceName)
+    const texture = spritesheet.textures[textureFile]
+    this.sprite = Sprite.from(texture)
+    this.sprite.updateAnchor = true
+    this.sprite.name = 'sprite'
+    this.sprite.hitArea = new Polygon(spritesheet.data.frames[textureFile].hitArea)
     if (this.sprite) {
       this.sprite.allowMove = false
       this.sprite.interactive = true
@@ -53,6 +81,41 @@ export class resource extends Container {
           player.selectedOther = this
         }
       })
+      this.sprite.on('pointerup', () => {
+        const {
+          context: { player, controls },
+        } = this
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+          return
+        }
+        controls.mouse.prevent = true
+        // Send Villager to forage the berry
+        let hasVillager = false
+        let hasOther = false
+        for (let i = 0; i < player.selectedUnits.length; i++) {
+          const unit = player.selectedUnits[i]
+          if (unit.type === 'Villager') {
+            hasVillager = true
+            const sendToFunc = `sendTo${this.type}`
+            typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](this) : unit.sendTo(this)
+          } else {
+            hasOther = true
+            unit.sendTo(this)
+          }
+        }
+        if (hasVillager) {
+          drawInstanceBlinkingSelection(this)
+        }
+        if (hasOther) {
+          const voice = randomItem(['5075', '5076', '5128', '5164'])
+          sound.play(voice)
+        } else if (hasVillager) {
+          const action = typeAction[this.type]
+          const voice = Assets.cache.get('config').units.Villager.sounds[action]
+          sound.play(voice)
+        }
+      })
+
       this.addChild(this.sprite)
     }
   }
@@ -96,8 +159,10 @@ export class resource extends Container {
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === 'AI') {
         const list = players[i][listName]
-        const index = list.indexOf(this)
-        list.splice(index, 1)
+        if (list) {
+          const index = list.indexOf(this)
+          list.splice(index, 1)
+        }
       }
     }
     // Remove from map resources
@@ -107,10 +172,39 @@ export class resource extends Container {
     }
     menu.updateResourcesMiniMap()
     this.isDead = true
-    if (typeof this.onDie === 'function' && !immediate) {
-      this.onDie()
+    if (this.type === 'Tree' && !immediate) {
+      this.onTreeDie()
     } else {
       this.clear()
+    }
+  }
+
+  setCuttedTreeTexture() {
+    const sprite = this.getChildByName('sprite')
+    const spritesheet = Assets.cache.get('636')
+    const textureName = `00${randomRange(0, 3)}_636.png`
+    const texture = spritesheet.textures[textureName]
+    sprite.texture = texture
+    const points = [-cellWidth / 2, 0, 0, -cellHeight / 2, cellWidth / 2, 0, 0, cellHeight / 2]
+    sprite.hitArea = new Polygon(points)
+    sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+  }
+
+  onTreeDie() {
+    const {
+      context: { map },
+    } = this
+    const spritesheet = Assets.cache.get('623')
+    const textureName = `00${randomRange(0, 3)}_623.png`
+    const texture = spritesheet.textures[textureName]
+    const sprite = this.getChildByName('sprite')
+    sprite.texture = texture
+    sprite.interactive = false
+    this.zIndex--
+    if (map.grid[this.i][this.j].has === this) {
+      map.grid[this.i][this.j].has = null
+      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].solid = false
     }
   }
 
@@ -161,16 +255,16 @@ export class resource extends Container {
       let iconToUse
       switch (this.type) {
         case 'Tree':
-          iconToUse = menu.icons['wood']
+          iconToUse = menu.infoIcons['wood']
           break
         case 'Berrybush':
-          iconToUse = menu.icons['food']
+          iconToUse = menu.infoIcons['food']
           break
         case 'Stone':
-          iconToUse = menu.icons['stone']
+          iconToUse = menu.infoIcons['stone']
           break
         case 'Gold':
-          iconToUse = menu.icons['gold']
+          iconToUse = menu.infoIcons['gold']
           break
       }
       const smallIconImg = document.createElement('img')
