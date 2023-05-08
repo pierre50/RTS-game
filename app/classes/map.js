@@ -35,6 +35,7 @@ export default class Map extends Container {
     this.chanceOfSets = 0.02
     this.revealEverything = false
     this.revealTerrain = true
+    this.ready = false
     this.noAI = true
     this.grid = []
     this.sortableChildren = true
@@ -124,6 +125,7 @@ export default class Map extends Container {
       }
     }
 
+    this.ready = true
     menu.updateResourcesMiniMap()
   }
 

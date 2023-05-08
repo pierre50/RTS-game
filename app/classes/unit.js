@@ -165,7 +165,7 @@ export class Unit extends Container {
       }
     }
 
-    if (this.owner.isPlayed) {
+    if (this.owner.isPlayed && map.ready) {
       sound.play((this.sounds && this.sounds.create) || 5144)
     }
 
