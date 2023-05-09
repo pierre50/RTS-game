@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, rubbleTime } from '../constants'
+import { accelerator, populationMax, rubbleTime } from '../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -78,14 +78,18 @@ export class Building extends Container {
         if (this.displayPopulation && this.owner.isPlayed && this.isBuilt) {
           const populationDiv = document.createElement('div')
           populationDiv.id = 'population'
-          populationDiv.textContent = this.owner.population + '/' + this.owner.populationMax
 
           const populationIcon = document.createElement('img')
-          populationIcon.id = 'icon'
+          const populationSpan = document.createElement('span')
+          populationSpan.id = 'population-text'
+          populationSpan.textContent = this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+
           populationIcon.src = getIconPath('004_50731')
-          populationDiv.prepend(populationIcon)
+          populationDiv.appendChild(populationIcon)
+          populationDiv.appendChild(populationSpan)
           element.appendChild(populationDiv)
         }
+        element.appendChild(this.getLoadingElement())
       },
       menu: this.owner.isPlayed ? [...units, ...technologies] : [],
     }
@@ -337,8 +341,11 @@ export class Building extends Container {
       // Increase player population and continue all unit creation that was paused
       this.owner.populationMax += 4
       // Update bottombar with populationmax if house selected
-      if (this.selected && this.owner.isPlayed) {
-        menu.updateInfo('population', this.owner.population + '/' + this.owner.populationMax)
+      if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
+        menu.updateInfo(
+          'population-text',
+          this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+        )
       }
     }
     if (this.owner.isPlayed && this.selected) {
@@ -563,7 +570,8 @@ export class Building extends Container {
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.drawPolygon(path)
     if (this.loading && this.owner.isPlayed) {
-      menu.updateInfo('loading', this.loading + '%')
+      this.updateInterfaceLoading()
+      //menu.updateInfo('loading', this.loading + '%')
     }
     this.addChildAt(selection, 0)
 
@@ -597,8 +605,11 @@ export class Building extends Container {
     this.owner.population++
     this.owner.createUnit(spawnCell.i, spawnCell.j, type, map)
 
-    if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.type === 'House') {
-      menu.updateInfo('population', this.owner.population + '/' + this.owner.populationMax)
+    if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
+      menu.updateInfo(
+        'population-text',
+        this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+      )
     }
   }
 
@@ -624,7 +635,7 @@ export class Building extends Container {
         let hasShowedMessage = false
         this.loading = 0
         if (this.selected && this.owner.isPlayed) {
-          menu.updateInfo('loading', this.loading + '%')
+          this.updateInterfaceLoading()
         }
         this.startInterval(() => {
           if (this.queue[0] !== type) {
@@ -640,17 +651,17 @@ export class Building extends Container {
               if (still === 0) {
                 menu.toggleButtonCancel(type, false)
               }
-              menu.updateInfo('loading', '')
+              this.updateInterfaceLoading()
             }
           } else if (this.loading < 100) {
-            if (this.owner.population < this.owner.populationMax) {
+            if (this.owner.population < Math.min(populationMax, this.owner.populationMax)) {
               this.loading += 1
             } else if (this.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage('You need to build more houses')
               hasShowedMessage = true
             }
             if (this.selected && this.owner.isPlayed) {
-              menu.updateInfo('loading', this.loading + '%')
+              this.updateInterfaceLoading()
             }
           } else if (this.loading >= 100) {
             this.stopInterval()
@@ -667,12 +678,45 @@ export class Building extends Container {
               if (still === 0) {
                 menu.toggleButtonCancel(type, false)
               }
-              menu.updateInfo('loading', '')
+              this.updateInterfaceLoading()
             }
           }
         }, unit.trainingTime)
       }
     }
+  }
+
+  updateInterfaceLoading() {
+    const {
+      context: { menu },
+    } = this
+    if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
+      if (this.loading === 1) {
+        menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().innerHTML))
+      } else if (this.loading > 1) {
+        menu.updateInfo('loading-text', this.loading + '%')
+      } else {
+        menu.updateInfo('loading', element => (element.innerHTML = ''))
+      }
+    }
+  }
+
+  getLoadingElement() {
+    const loadingDiv = document.createElement('div')
+    loadingDiv.className = 'building-loading'
+    loadingDiv.id = 'loading'
+
+    if (this.loading) {
+      const iconImg = document.createElement('img')
+      iconImg.className = 'building-loading-icon'
+      iconImg.src = getIconPath('009_50731')
+      const textDiv = document.createElement('div')
+      textDiv.id = 'loading-text'
+      textDiv.textContent = this.loading + '%'
+      loadingDiv.appendChild(iconImg)
+      loadingDiv.appendChild(textDiv)
+    }
+    return loadingDiv
   }
 
   cancelTechnology() {
@@ -707,14 +751,14 @@ export class Building extends Container {
       this.loading = 0
 
       this.technology = technology
-      if (this.selected && this.owner.isPlayed) {
+      if (this.selected && this.owner.selectedBuilding === this) {
         menu.setBottombar(this)
       }
       this.startInterval(() => {
         if (this.loading < 100) {
           this.loading += 1
-          if (this.selected && this.owner.isPlayed) {
-            menu.updateInfo('loading', this.loading + '%')
+          if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
+            this.updateInterfaceLoading()
           }
         } else if (this.loading >= 100) {
           this.stopInterval()
@@ -777,12 +821,7 @@ export class Building extends Container {
       hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
       element.appendChild(hitPointsDiv)
 
-      const loadingDiv = document.createElement('div')
-      loadingDiv.id = 'loading'
-      loadingDiv.textContent = this.loading ? this.loading + '%' : ''
-      element.appendChild(loadingDiv)
-
-      if (this.type === 'Farm' && this.isBuilt && this.quantity) {
+      if (this.isBuilt && this.quantity) {
         const quantityDiv = document.createElement('div')
         quantityDiv.id = 'quantity'
         quantityDiv.className = 'resource-quantity'

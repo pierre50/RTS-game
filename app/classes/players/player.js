@@ -6,11 +6,11 @@ import {
   uuidv4,
   getHexColor,
   updateObject,
-  getBuildingTextureNameWithSize,
 } from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
+import { populationMax } from '../../constants'
 
 export class Player {
   constructor({ i, j, age, civ, color, type, isPlayed = false }, context) {
@@ -32,7 +32,7 @@ export class Player {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.populationMax = 1000 - 4 //5
+    this.populationMax = populationMax - 4 //5
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed

@@ -8,6 +8,7 @@ import {
   drawInstanceBlinkingSelection,
 } from '../lib'
 import { typeAction, cellWidth, cellHeight } from '../constants'
+
 export class Resource extends Container {
   constructor(options, context) {
     super()

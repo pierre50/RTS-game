@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits, typeAction } from '../constants'
+import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits, typeAction, populationMax } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -1320,7 +1320,7 @@ export class Unit extends Container {
       return
     }
     const {
-      context: { player, map },
+      context: { player, map, menu },
     } = this
 
     this.sounds &&
@@ -1342,6 +1342,9 @@ export class Unit extends Container {
     this.unselect()
     if (this.owner) {
       this.owner.population--
+      if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
+        menu.updateInfo('population-text', this.owner.population + '/' +  Math.min(populationMax,this.owner.populationMax))
+      }
       // Remove from player units
       let index = this.owner.units.indexOf(this)
       if (index >= 0) {

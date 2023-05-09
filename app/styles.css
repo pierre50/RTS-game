@@ -216,10 +216,11 @@ body {
   gap: 5px;
 }
 
+.building-loading,
 #population {
+  position: absolute;
+  left: 40%;
+  top: 32px;
   display: flex;
   align-items: center;
-  position: relative;
-  left: -5px;
-  top: -8px;
 }

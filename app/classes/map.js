@@ -33,7 +33,7 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = false
+    this.revealEverything = true
     this.revealTerrain = true
     this.ready = false
     this.noAI = true

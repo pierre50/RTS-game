@@ -50,7 +50,7 @@ export default class Controls extends Container {
   }
 
   onKeyDown(evt) {
-    if (evt.key === 'Delete') {
+    if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
         context: { player },
       } = this
@@ -292,9 +292,9 @@ export default class Controls extends Container {
             const distCenterY = unit.j - centerY
             const finalX = cell.i + distCenterX
             const finalY = cell.j + distCenterY
-            if (unit.type === 'Villager'){
+            if (unit.type === 'Villager') {
               hasSentVillager = true
-            }else{
+            } else {
               hasSentSoldier = true
             }
             if (map.grid[finalX] && map.grid[finalX][finalY]) {
@@ -303,10 +303,10 @@ export default class Controls extends Container {
               player.selectedUnits[u].sendTo(cell)
             }
           }
-          if (hasSentSoldier){
-            const voice = randomItem(['5075','5076','5128', '5164'])
+          if (hasSentSoldier) {
+            const voice = randomItem(['5075', '5076', '5128', '5164'])
             sound.play(voice)
-          }else if (hasSentVillager) {
+          } else if (hasSentVillager) {
             sound.play('5006')
           }
         }
