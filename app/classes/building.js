@@ -61,10 +61,13 @@ export class Building extends Container {
     if (!map.revealEverything) {
       this.visible = false
     }
-    const texture = getTexture(
-      this.type === 'House' && this.owner.age === 0 ? '000_489' : getBuildingTextureNameWithSize(this.size),
-      Assets
-    )
+    let spriteSheet = getBuildingTextureNameWithSize(this.size)
+    if (this.type === 'House' && this.owner.age === 0) {
+      spriteSheet = '000_489'
+    } else if (this.type === 'Dock') {
+      spriteSheet = '000_356'
+    }
+    const texture = getTexture(spriteSheet, Assets)
     this.sprite = Sprite.from(texture)
     this.sprite.updateAnchor = true
     this.sprite.name = 'sprite'

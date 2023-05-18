@@ -1,5 +1,5 @@
 import { sound } from '@pixi/sound'
-import { Container, Graphics, Sprite, Assets, Polygon } from 'pixi.js'
+import { Container, Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
   instanceIsInPlayerSight,
@@ -58,15 +58,23 @@ export class Resource extends Container {
         this.setDefaultInterface(element, data)
       },
     }
-    const textureName = randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
-    const resourceName = textureName.split('_')[1]
-    const textureFile = textureName + '.png'
-    const spritesheet = Assets.cache.get(resourceName)
-    const texture = spritesheet.textures[textureFile]
-    this.sprite = Sprite.from(texture)
+    if (this.isAnimated) {
+      const spritesheetJump = Assets.cache.get(this.assets)
+      this.sprite = new AnimatedSprite(spritesheetJump.animations.jump)
+      this.sprite.play()
+      this.sprite.animationSpeed = 0.2
+    } else {
+      const textureName = randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
+      const resourceName = textureName.split('_')[1]
+      const textureFile = textureName + '.png'
+      const spritesheet = Assets.cache.get(resourceName)
+      const texture = spritesheet.textures[textureFile]
+      this.sprite = Sprite.from(texture)
+      this.sprite.hitArea = new Polygon(spritesheet.data.frames[textureFile].hitArea)
+    }
+
     this.sprite.updateAnchor = true
     this.sprite.name = 'sprite'
-    this.sprite.hitArea = new Polygon(spritesheet.data.frames[textureFile].hitArea)
     if (this.sprite) {
       this.sprite.allowMove = false
       this.sprite.interactive = true

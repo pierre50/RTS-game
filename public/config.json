@@ -393,19 +393,19 @@
           "loadedSheet": "272"
         },
         "fisher": {
-          "actionSheet": "624",
+          "actionSheet": "631",
           "standingSheet": "431",
           "walkingSheet": "676",
           "dyingSheet": "332",
           "corpseSheet": "389",
-          "loadedSheet": "272"
+          "loadedSheet": "271"
         },
         "farmer": {
-          "actionSheet": "630",
+          "actionSheet": "631",
           "standingSheet": "430",
           "walkingSheet": "670",
-          "dyingSheet": "326",
-          "corpseSheet": "388",
+          "dyingSheet": "327",
+          "corpseSheet": "393",
           "loadedSheet": "672"
         },
         "forager": {
@@ -839,11 +839,11 @@
         "fisher": 0.4
       },
       "assets": {
-        "standingSheet": "414",
-        "walkingSheet": "653",
-        "actionSheet": "204",
-        "dyingSheet": "309",
-        "corpseSheet": "368"
+        "standingSheet": "473",
+        "walkingSheet": "473",
+        "actionSheet": "473",
+        "dyingSheet": "473",
+        "corpseSheet": "473"
       }
     }
   },
@@ -882,7 +882,8 @@
       "quantity": 250,
       "icon": "034_50730",
       "allowAction": ["Villager", "FishingBoat"],
-      "assets": ["000_622"]
+      "isAnimated": true,
+      "assets": "594"
     }
   },
   "animals": {
