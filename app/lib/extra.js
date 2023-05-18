@@ -105,15 +105,20 @@ export const getActionCondition = (source, target, action, props) => {
   }
   const conditions = {
     delivery: props =>
-      source.loading > 0 && 
+      source.loading > 0 &&
       target.hitPoints > 0 &&
       target.isBuilt &&
-      (target.type === 'TownCenter' || (!props ? true : props.buildingType && target.type === props.buildingType)),
+      (!props || props.buildingTypes.includes(target.type)),
     takemeat: () =>
       source.type === 'Villager' &&
       target.name === 'animal' &&
       target.quantity > 0 &&
       target.isDead &&
+      !target.isDestroyed,
+    fishing: () =>
+      target.category === 'Fish' &&
+      target.allowAction.includes(source.type) &&
+      target.quantity > 0 &&
       !target.isDestroyed,
     hunt: () =>
       source.type === 'Villager' &&

@@ -7,8 +7,8 @@ import {
   instanceIsInPlayerSight,
   instancesDistance,
   getInstanceZIndex,
-} from '../../lib'
-import { cellDepth, colorWhite } from '../../constants'
+} from '../lib'
+import { cellDepth, colorWhite } from '../constants'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -24,29 +24,38 @@ export class Cell extends Container {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
-    const { i, j, z, sprite } = this
-    const pos = cartesianToIsometric(i, j)
+    Object.keys(Assets.cache.get('config').cells[this.type]).forEach(prop => {
+      this[prop] = Assets.cache.get('config').cells[this.type][prop]
+    })
+    const pos = cartesianToIsometric(this.i, this.j)
 
     this.map = map
     this.x = pos[0]
-    this.y = pos[1] - z * cellDepth
+    this.y = pos[1] - this.z * cellDepth
     this.zIndex = 0
     this.inclined = false
     this.border = false
+    this.waterBorder = false
     this.has = null
     this.corpses = []
+    this.solid = false
     this.visible = false
     this.viewed = false
     this.viewBy = []
 
-    if (sprite) {
-      sprite.anchor.set(0.5, 0.5)
-      sprite.roundPixels = true
-      sprite.allowMove = false
-      sprite.interactive = false
-      sprite.allowClick = false
-      this.addChild(sprite)
-    }
+    const textureName = randomItem(this.assets)
+    const resourceName = textureName.split('_')[1]
+    const textureFile = textureName + '.png'
+    const spritesheet = Assets.cache.get(resourceName)
+    const texture = spritesheet.textures[textureFile]
+    this.sprite = Sprite.from(texture)
+    this.sprite.name = 'sprite'
+    this.sprite.anchor.set(0.5, 0.5)
+    this.sprite.roundPixels = true
+    this.sprite.allowMove = false
+    this.sprite.interactive = false
+    this.sprite.allowClick = false
+    this.addChild(this.sprite)
 
     this.interactive = false
     this.allowMove = false
@@ -132,8 +141,9 @@ export class Cell extends Container {
     const sprite = this.getChildByName('sprite')
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
-    this.type = 'desert'
+    this.type = 'Desert'
     this.border = true
+    this.waterBorder = true
     if (this.has && typeof this.has.die === 'function') {
       this.has.die(true)
     }
@@ -149,9 +159,9 @@ export class Cell extends Container {
       this.y -= elevation
     }
     this.inclined = true
-    /*if (this.has && typeof this.has.die === 'function') {
-      this.has.die(true)
-    }*/
+    if (this.has) {
+      this.has.zIndex = getInstanceZIndex(this.has)
+    }
     sprite.name = 'sprite'
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
@@ -160,7 +170,7 @@ export class Cell extends Container {
   fillWaterCellsAroundCell() {
     const grid = this.parent.grid
     getCellsAroundPoint(this.i, this.j, grid, 2, cell => {
-      if (cell.type === 'water' && this.type === 'water') {
+      if (cell.type === 'Water' && this.type === 'Water') {
         const dist = instancesDistance(this, cell)
         const velX = Math.round((this.i - cell.i) / dist)
         const velY = Math.round((this.j - cell.j) / dist)
@@ -174,7 +184,7 @@ export class Cell extends Container {
               const resourceName = '15002'
               const spritesheet = Assets.cache.get(resourceName)
               sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
-              target.type = 'water'
+              target.type = 'Water'
               target.solid = true
             }
           }

@@ -35,50 +35,11 @@ export function moveTowardPoint(instance, x, y, speed) {
  * @param {number} y
  * @param {object} grid
  */
-export function getFreeCellAroundPoint(x, y, size, grid) {
+export function getFreeCellAroundPoint(x, y, size, grid, condition) {
   for (let i = size - 1; i < 50; i++) {
-    let cells = getCellsAroundPoint(x, y, grid, i, cell => !cell.solid)
+    let cells = getCellsAroundPoint(x, y, grid, i, cell => condition(cell))
     if (cells.length) {
       return randomItem(cells)
-    }
-  }
-  return null
-}
-
-export function instanceIsSurroundedBySolid(instance) {
-  let size = instance.size - 1 || 1
-  let solids = 0
-  let neighbours = getCellsAroundPoint(instance.i, instance.j, instance.parent.grid, size, cell => {
-    if (cell.solid) {
-      solids++
-    }
-    return true
-  })
-  return neighbours.length === solids
-}
-
-export function getNewInstanceClosestFreeCellPath(instance, target, map) {
-  for (let i = 1; i < 100; i++) {
-    let size = instance.size - 1 || 1
-    let paths = []
-    getCellsAroundPoint(target.i, target.j, map.grid, size * i, cell => {
-      if (cell.has && cell.has.type === target.type) {
-        getCellsAroundPoint(cell.i, cell.j, map.grid, size, neighbour => {
-          if (!neighbour.solid) {
-            let path = getInstancePath(instance, neighbour.i, neighbour.j, map)
-            if (path.length) {
-              paths.push({
-                target: cell.has,
-                path,
-              })
-            }
-          }
-        })
-      }
-    })
-    paths.sort((a, b) => a.path.length - b.path.length)
-    if (paths[0]) {
-      return paths[0]
     }
   }
   return null
@@ -124,6 +85,14 @@ export function getInstancePath(instance, x, y, map) {
   let minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
   let maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
 
+  function isCellReachable(cell) {
+    if (cell.solid) {
+      return false
+    }
+    const allowWaterCellCategory = instance.category === 'Boat'
+    return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water'
+  }
+
   let cloneGrid = []
   for (var i = minX; i <= maxX; i++) {
     for (var j = minY; j <= maxY; j++) {
@@ -137,6 +106,7 @@ export function getInstancePath(instance, x, y, map) {
         y: map.grid[i][j].y,
         z: map.grid[i][j].z,
         solid: map.grid[i][j].solid,
+        category: map.grid[i][j].category,
       }
     }
   }
@@ -181,8 +151,8 @@ export function getInstancePath(instance, x, y, map) {
       getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
         const validDiag =
           !cellIsDiag(current, neighbour) ||
-          (!cloneGrid[current.i][neighbour.j].solid && !cloneGrid[neighbour.i][current.j].solid)
-        if (!closedCells.includes(neighbour) && !neighbour.solid && validDiag) {
+          (isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]))
+        if (!closedCells.includes(neighbour) && isCellReachable(neighbour) && validDiag) {
           let tempG = current.g + instancesDistance(neighbour, current)
           if (!openCells.includes(neighbour)) {
             openCells.push(neighbour)

@@ -153,7 +153,7 @@ export class Building extends Container {
               sound.play(voice)
               return
             } else if (hasSentVillager) {
-              const voice = Assets.cache.get('config').units.Villager.sounds.farm
+              const voice = Assets.cache.get('config').units.Villager.sounds.build
               sound.play(voice)
               return
             }
@@ -598,7 +598,25 @@ export class Building extends Container {
     const {
       context: { map, menu },
     } = this
-    const spawnCell = getFreeCellAroundPoint(this.i, this.j, this.size, map.grid)
+    let spawnCell
+    const config = this.owner.config.units[type]
+    if (config.category === 'Boat') {
+      spawnCell = getFreeCellAroundPoint(
+        this.i,
+        this.j,
+        this.size,
+        map.grid,
+        cell => cell.category === 'Water' && !cell.solid
+      )
+    } else {
+      spawnCell = getFreeCellAroundPoint(
+        this.i,
+        this.j,
+        this.size,
+        map.grid,
+        cell => cell.category !== 'Water' && !cell.solid
+      )
+    }
     if (!spawnCell) {
       return
     }

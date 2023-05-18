@@ -9,6 +9,7 @@ import {
   changeSpriteColor,
   getTexture,
   randomItem,
+  getCellsAroundPoint,
 } from '../lib'
 import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
@@ -112,12 +113,33 @@ export default class Controls extends Container {
         this.mouseBuilding.x = cell.x - this.camera.x
         this.mouseBuilding.y = cell.y - this.camera.y
         let isFree = true
-        getPlainCellsAroundPoint(i, j, map.grid, 1, cell => {
-          if (cell.solid || cell.inclined || cell.border || !cell.visible) {
+
+        const dist = this.mouseBuilding.size === 3 ? 1 : 0
+        if (this.mouseBuilding.buildOnWater) {
+          let waterBorderedCells = 0
+          let waterCells = 0
+          getPlainCellsAroundPoint(i, j, map.grid, dist, cell => {
+            if (cell.inclined || cell.solid || !cell.visible) {
+              isFree = false
+              return
+            }
+            if (cell.waterBorder) {
+              waterBorderedCells++
+            } else if (cell.category === 'Water') {
+              waterCells++
+            }
+          })
+          if (waterBorderedCells < 2 || waterCells < 4) {
             isFree = false
-            return
           }
-        })
+        } else {
+          getPlainCellsAroundPoint(i, j, map.grid, dist, cell => {
+            if (cell.category === 'Water' || cell.solid || cell.inclined || cell.border || !cell.visible) {
+              isFree = false
+              return
+            }
+          })
+        }
         // Color image of mouse building depend on buildable or not
         const sprite = this.mouseBuilding.getChildByName('sprite')
         const color = this.mouseBuilding.getChildByName('color')
@@ -338,8 +360,9 @@ export default class Controls extends Container {
     const sprite = Sprite.from(getTexture(building.images.final, Assets))
     sprite.name = 'sprite'
     this.mouseBuilding.addChild(sprite)
-    this.mouseBuilding.type = building.type
-    this.mouseBuilding.size = building.size
+    Object.keys(building).forEach(prop => {
+      this.mouseBuilding[prop] = building[prop]
+    })
     this.mouseBuilding.x = this.mouse.x
     this.mouseBuilding.y = this.mouse.y
     this.mouseBuilding.name = 'mouseBuilding'

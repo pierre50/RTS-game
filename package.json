@@ -20,14 +20,14 @@
   "dependencies": {
     "@pixi/filter-multi-color-replace": "^5.1.1",
     "@pixi/sound": "^5.1.2",
-    "pixi.js": "^7.2.0-beta",
+    "pixi.js": "^7.2.4",
     "popmotion": "^11.0.5",
     "redux": "^4.2.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.12",
+    "@babel/core": "^7.21.8",
     "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
-    "@babel/preset-env": "^7.20.2",
+    "@babel/preset-env": "^7.21.5",
     "babel-core": "^4.7.16",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^9.1.2",
@@ -36,20 +36,20 @@
     "babel-preset-stage-0": "^6.24.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
-    "eslint": "^8.34.0",
-    "eslint-config-prettier": "^8.6.0",
+    "eslint": "^8.40.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "file-loader": "^6.2.0",
     "gh-pages": "^5.0.0",
     "husky": "^8.0.3",
-    "lint-staged": "^13.1.2",
+    "lint-staged": "^13.2.2",
     "prettier": "2.8.4",
     "raw-loader": "^4.0.2",
-    "rimraf": "^4.1.2",
-    "style-loader": "^3.3.1",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1",
-    "webpack-dev-server": "^4.11.1"
+    "rimraf": "^4.4.1",
+    "style-loader": "^3.3.2",
+    "webpack": "^5.82.0",
+    "webpack-cli": "^5.1.1",
+    "webpack-dev-server": "^4.15.0"
   },
   "engines": {
     "node": ">=8.0.0"

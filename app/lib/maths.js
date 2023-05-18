@@ -96,7 +96,7 @@ export function randomRange(min, max) {
  * Get a random item from a array
  * @param {array} array
  */
-export function randomItem(array) {
+export function randomItem(array = []) {
   return array[Math.round(Math.random() * (array.length - 1))]
 }
 

@@ -226,7 +226,7 @@ export default class Menu {
 
     map.resources.forEach(resource => {
       const cell = player.views[resource.i][resource.j]
-      if (cell.viewed || map.revealEverything) {
+      if (resource.color && (cell.viewed || map.revealEverything)) {
         const finalX = resource.x / minimapFactor - squareSize / 2
         const finalY = resource.y / minimapFactor - squareSize / 2
         canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)
@@ -351,10 +351,10 @@ export default class Menu {
 
   updateBottomBar() {
     const {
-      context: { menu, player },
-    } = getBuildingTextureNameWithSize
+      context: { player },
+    } = this
     if (player.selectedBuilding || player.selectedUnit) {
-      menu.setBottombar(player.selectedBuilding || player.selectedUnit)
+      this.setBottombar(player.selectedBuilding || player.selectedUnit)
     }
   }
 

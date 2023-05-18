@@ -376,7 +376,7 @@ export class Animal extends Container {
     // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      (nextCell.has.name === 'unit' || nextCell.has.name === 'animal') &&
+      nextCell.has.name === 'animal' &&
       nextCell.has !== this &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&

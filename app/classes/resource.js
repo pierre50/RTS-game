@@ -6,6 +6,7 @@ import {
   getIconPath,
   randomItem,
   drawInstanceBlinkingSelection,
+  getActionCondition,
 } from '../lib'
 import { typeAction, cellWidth, cellHeight } from '../constants'
 
@@ -86,6 +87,7 @@ export class Resource extends Container {
         const {
           context: { player, controls },
         } = this
+        const action = typeAction[this.category || this.type]
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
           return
         }
@@ -95,9 +97,9 @@ export class Resource extends Container {
         let hasOther = false
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const unit = player.selectedUnits[i]
-          if (unit.type === 'Villager') {
+          if (getActionCondition(unit, this, action)) {
             hasVillager = true
-            const sendToFunc = `sendTo${this.type}`
+            const sendToFunc = `sendTo${this.category || this.type}`
             typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](this) : unit.sendTo(this)
           } else {
             hasOther = true
@@ -109,11 +111,10 @@ export class Resource extends Container {
         }
         if (hasOther) {
           const voice = randomItem(['5075', '5076', '5128', '5164'])
-          sound.play(voice)
+          voice && sound.play(voice)
         } else if (hasVillager) {
-          const action = typeAction[this.type]
           const voice = Assets.cache.get('config').units.Villager.sounds[action]
-          sound.play(voice)
+          voice && sound.play(voice)
         }
       })
 
@@ -258,6 +259,7 @@ export class Resource extends Container {
         case 'Tree':
           iconToUse = menu.infoIcons['wood']
           break
+        case 'Salmon':
         case 'Berrybush':
           iconToUse = menu.infoIcons['food']
           break

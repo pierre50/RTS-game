@@ -6,6 +6,7 @@ import {
   uuidv4,
   getHexColor,
   updateObject,
+  getActionCondition,
 } from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
@@ -70,18 +71,31 @@ export class Player {
     const building = this.createBuilding(...args)
     if (this.isPlayed) {
       let hasSentVillager = false
+      let hasSentOther = false
 
-      for (let u = 0; u < this.selectedUnits.length; u++) {
-        const unit = this.selectedUnits[u]
+      for (let i = 0; i < this.selectedUnits.length; i++) {
+        const unit = this.selectedUnits[i]
         if (unit.type === 'Villager') {
-          hasSentVillager = true
-          drawInstanceBlinkingSelection(building)
-          unit.sendToBuilding(building)
+          if (getActionCondition(unit, building, 'build')) {
+            hasSentVillager = true
+            unit.sendToBuilding(building)
+          }
+        } else {
+          unit.sendTo(building)
+          hasSentOther = true
         }
       }
-
       if (hasSentVillager) {
-        sound.play('5118')
+        drawInstanceBlinkingSelection(building)
+      }
+      if (hasSentOther) {
+        const voice = randomItem(['5075', '5076', '5128', '5164'])
+        sound.play(voice)
+        return
+      } else if (hasSentVillager) {
+        const voice = this.config.units.Villager.sounds.build
+        sound.play(voice)
+        return
       }
     }
 

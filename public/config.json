@@ -50,7 +50,7 @@
       "cost": {
         "wood": 120
       },
-      "accept": ["wood", "stone", "gold", "meat"],
+      "accept": ["wood", "stone", "gold", "meat", "fish"],
       "technologies": ["Toolworking", "LeatherArmorInfantry", "LeatherArmorArchers", "LeatherArmorCavalry"],
       "sounds": {
         "create": 5186
@@ -61,8 +61,13 @@
       "sight": 5,
       "totalHitPoints": 350,
       "constructionTime": 50,
+      "buildOnWater": true,
+      "units": ["FishingBoat"],
       "cost": {
         "wood": 150
+      },
+      "sounds": {
+        "create": 5027
       }
     },
     "ArcheryRange": {
@@ -361,7 +366,8 @@
         "berry": 10,
         "stone": 10,
         "gold": 10,
-        "meat": 10
+        "meat": 10,
+        "fish": 10
       },
       "allAssets": {
         "default": {
@@ -381,6 +387,14 @@
           "actionSheet": "624",
           "harvestSheet": "626",
           "standingSheet": "435",
+          "walkingSheet": "676",
+          "dyingSheet": "332",
+          "corpseSheet": "389",
+          "loadedSheet": "272"
+        },
+        "fisher": {
+          "actionSheet": "624",
+          "standingSheet": "431",
           "walkingSheet": "676",
           "dyingSheet": "332",
           "corpseSheet": "389",
@@ -437,7 +451,7 @@
       "gatheringRate": {
         "forager": 0.45,
         "hunter": 0.4725,
-        "fisherman": 0.6,
+        "fisher": 0.6,
         "farmer": 0.45,
         "woodcutter": 0.55,
         "stoneminer": 0.5175,
@@ -455,6 +469,7 @@
         "chopwood": 5180,
         "minestone": 5075,
         "minegold": 5075,
+        "fishing": 5054,
         "move": 5006
       }
     },
@@ -803,6 +818,33 @@
         "dyingSheet": "310",
         "corpseSheet": "369"
       }
+    },
+    "FishingBoat": {
+      "category": "Boat",
+      "totalHitPoints": 45,
+      "sight": 6,
+      "speed": 1.4,
+      "trainingTime": 40,
+      "showLoading": true,
+      "icon": "018_50730",
+      "meleeArmor": 0,
+      "pierceArmor": 0,
+      "cost": {
+        "wood": 50
+      },
+      "loadingMax": {
+        "fish": 10
+      },
+      "gatheringRate": {
+        "fisher": 0.4
+      },
+      "assets": {
+        "standingSheet": "414",
+        "walkingSheet": "653",
+        "actionSheet": "204",
+        "dyingSheet": "309",
+        "corpseSheet": "368"
+      }
     }
   },
   "resources": {
@@ -818,9 +860,9 @@
       "icon": "035_50730",
       "color": "#274F1F",
       "assets": {
-        "grass": ["000_492", "000_493", "000_494", "000_503", "000_509"],
-        "desert": ["000_463", "000_464", "000_465", "000_466"],
-        "jungle": ["000_463", "000_464", "000_465", "000_466"]
+        "Grass": ["000_492", "000_493", "000_494", "000_503", "000_509"],
+        "Desert": ["000_463", "000_464", "000_465", "000_466"],
+        "Jungle": ["000_463", "000_464", "000_465", "000_466"]
       }
     },
     "Gold": {
@@ -834,6 +876,13 @@
       "icon": "038_50730",
       "color": "#B3B3B3",
       "assets": ["000_622", "001_622", "002_622", "003_622", "004_622", "005_622", "006_622"]
+    },
+    "Salmon": {
+      "category": "Fish",
+      "quantity": 250,
+      "icon": "034_50730",
+      "allowAction": ["Villager", "FishingBoat"],
+      "assets": ["000_622"]
     }
   },
   "animals": {
@@ -933,6 +982,58 @@
       "sounds": {
         "start": [5009, 5010, 5011, 5012]
       }
+    }
+  },
+  "cells": {
+    "Desert": {
+      "category": "Ground",
+      "color": "#CFA443",
+      "assets": [
+        "000_15000",
+        "001_15000",
+        "002_15000",
+        "003_15000",
+        "004_15000",
+        "005_15000",
+        "006_15000",
+        "007_15000",
+        "008_15000"
+      ]
+    },
+    "Grass": {
+      "category": "Ground",
+      "color": "#647B2F",
+      "assets": [
+        "000_15001",
+        "001_15001",
+        "002_15001",
+        "003_15001",
+        "004_15001",
+        "005_15001",
+        "006_15001",
+        "007_15001",
+        "008_15001"
+      ]
+    },
+    "Jungle": {
+      "category": "Ground",
+      "color": "#647B2F",
+      "assets": [
+        "000_15001",
+        "001_15001",
+        "002_15001",
+        "003_15001",
+        "004_15001",
+        "005_15001",
+        "006_15001",
+        "007_15001",
+        "008_15001"
+      ]
+    },
+    "Water": {
+      "category": "Water",
+      "color": "#17277B",
+      "assets": ["000_15002", "001_15002", "002_15002", "003_15002"]
     }
   }
 }

@@ -1,6 +1,14 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime, loadingFoodTypes, maxSelectUnits, typeAction, populationMax } from '../constants'
+import {
+  accelerator,
+  stepTime,
+  corpseTime,
+  loadingFoodTypes,
+  maxSelectUnits,
+  typeAction,
+  populationMax,
+} from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -25,6 +33,8 @@ import {
   randomItem,
   getHitPointsWithDamage,
   getClosestInstance,
+  debounce,
+  throttle,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -200,6 +210,8 @@ export class Unit extends Container {
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
 
+    this.sendTo = throttle(this.sendToEvt, 100)
+
     this.on('pointerdown', () => {
       const {
         context: { controls, player },
@@ -368,7 +380,7 @@ export class Unit extends Container {
     }
   }
 
-  sendTo(dest, action) {
+  sendToEvt(dest, action) {
     const {
       context: { map },
     } = this
@@ -422,6 +434,7 @@ export class Unit extends Container {
       return
     }
     const dest = this.previousDest
+    const type = dest.category || dest.type
     this.previousDest = null
     if (dest.name === 'animal') {
       if (this.getActionCondition(dest, 'takemeat')) {
@@ -437,12 +450,12 @@ export class Unit extends Container {
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'build')
       }
-    } else if (typeAction[dest.type]) {
-      if (this.getActionCondition(dest, typeAction[dest.type])) {
-        const sendToFunc = `sendTo${dest.type}`
+    } else if (typeAction[type]) {
+      if (this.getActionCondition(dest, typeAction[type])) {
+        const sendToFunc = `sendTo${type}`
         typeof this[sendToFunc] === 'function' ? this[sendToFunc](dest) : this.stop()
       } else {
-        this.sendTo(map.grid[dest.i][dest.j], typeAction[dest.type])
+        this.sendTo(map.grid[dest.i][dest.j], typeAction[type])
       }
     } else {
       this.sendTo(map.grid[dest.i][dest.j])
@@ -465,7 +478,7 @@ export class Unit extends Container {
         this.owner.isPlayed && menu.updateTopbar()
         this.loading = 0
         this.updateInterfaceLoading()
-        if (this.allAssets[this.work]) {
+        if (this.allAssets && this.allAssets[this.work]) {
           this.standingSheet = Assets.cache.get(this.allAssets[this.work].standingSheet)
           this.walkingSheet = Assets.cache.get(this.allAssets[this.work].walkingSheet)
         }
@@ -945,6 +958,50 @@ export class Unit extends Container {
           false
         )
         break
+      case 'fishing':
+        if (!this.getActionCondition(this.dest)) {
+          this.affectNewDest()
+          return
+        }
+        this.setTextures('actionSheet')
+        this.startInterval(
+          () => {
+            if (!this.getActionCondition(this.dest)) {
+              this.affectNewDest()
+              return
+            }
+            // Villager is full we send him delivery first
+            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
+              this.sendToDelivery()
+              return
+            }
+            // Villager fish
+            this.visible && sound.play('5178')
+
+            this.loading++
+            this.loadingType = 'fish'
+            this.updateInterfaceLoading()
+
+            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
+            if (this.dest.selected && this.owner.isPlayed) {
+              menu.updateInfo('quantity-text', this.dest.quantity)
+            }
+            // Set the walking with meat animation
+            if (this.loading > 0) {
+              if (this.allAssets && this.allAssets[this.work]) {
+                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+              }
+              this.standingSheet = null
+            }
+            // Destroy corps if it out of quantity
+            if (this.dest.quantity <= 0) {
+              this.affectNewDest()
+            }
+          },
+          (1 / this.gatheringRate[this.work]) * 1000,
+          false
+        )
+        break
       case 'hunt':
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
@@ -1142,7 +1199,7 @@ export class Unit extends Container {
     // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      (nextCell.has.name === 'unit' || nextCell.has.name === 'animal') &&
+      nextCell.has.name === 'unit' &&
       nextCell.has !== this &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
@@ -1343,7 +1400,10 @@ export class Unit extends Container {
     if (this.owner) {
       this.owner.population--
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-        menu.updateInfo('population-text', this.owner.population + '/' +  Math.min(populationMax,this.owner.populationMax))
+        menu.updateInfo(
+          'population-text',
+          this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+        )
       }
       // Remove from player units
       let index = this.owner.units.indexOf(this)
@@ -1472,6 +1532,31 @@ export class Unit extends Container {
     return loadingDiv
   }
 
+  sendToFish(target) {
+    const {
+      context: { menu },
+    } = this
+    if (!loadingFoodTypes.includes(this.loadingType)) {
+      this.loading = 0
+      this.updateInterfaceLoading()
+    }
+    if (this.work !== 'fisher') {
+      this.work = 'fisher'
+      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
+      if (this.allAssets && this.allAssets.fisher) {
+        this.actionSheet = Assets.cache.get(this.allAssets.fisher.actionSheet)
+        this.standingSheet = Assets.cache.get(this.allAssets.fisher.standingSheet)
+        if (!this.loading) {
+          this.walkingSheet = Assets.cache.get(this.allAssets.fisher.walkingSheet)
+          this.dyingSheet = Assets.cache.get(this.allAssets.fisher.dyingSheet)
+          this.corpseSheet = Assets.cache.get(this.allAssets.fisher.corpseSheet)
+        }
+      }
+    }
+    this.previousDest = null
+    return this.sendTo(target, 'fishing')
+  }
+
   sendToAttack(target) {
     const {
       context: { menu },
@@ -1541,19 +1626,25 @@ export class Unit extends Container {
     const {
       context: { map },
     } = this
-    let buildingType = null
-    const buildings = {
-      Granary: this.owner.config.buildings.Granary,
-      StoragePit: this.owner.config.buildings.StoragePit,
-    }
-    for (const [key, value] of Object.entries(buildings)) {
-      if (key !== 'TownCenter' && value.accept && value.accept.includes(this.loadingType)) {
-        buildingType = key
-        break
+    let buildingTypes = []
+    if (this.category === 'Boat') {
+      buildingTypes = ['Dock']
+    } else {
+      buildingTypes = ['TownCenter']
+      const buildings = {
+        Granary: this.owner.config.buildings.Granary,
+        StoragePit: this.owner.config.buildings.StoragePit,
+      }
+      for (const [key, value] of Object.entries(buildings)) {
+        if (value.accept && value.accept.includes(this.loadingType)) {
+          buildingTypes.push(key)
+          break
+        }
       }
     }
+
     const targets = this.owner.buildings.filter(building =>
-      getActionCondition(this, building, 'delivery', { buildingType })
+      getActionCondition(this, building, 'delivery', { buildingTypes })
     )
     const target = getClosestInstance(this, targets)
     if (this.dest) {

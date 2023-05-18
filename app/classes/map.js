@@ -1,5 +1,4 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { Grass, Water, Desert, Jungle } from './cells/'
 import { Resource } from './resource'
 import { Human, AI, Gaia } from './players/'
 import {
@@ -13,6 +12,7 @@ import {
 } from '../lib'
 import { cellDepth } from '../constants'
 import { Animal } from './animal'
+import { Cell } from './cell'
 
 /**
  * 
@@ -208,24 +208,24 @@ export default class Map extends Container {
         }
         switch (cols[j]) {
           case '0':
-            this.grid[i][j] = new Grass({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
             break
           case '1':
-            this.grid[i][j] = new Desert({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
             break
           case '2':
-            this.grid[i][j] = new Grass({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
             this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
           case '3':
-            this.grid[i][j] = new Water({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
             break
           case '4':
-            this.grid[i][j] = new Desert({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
             this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
           case '5':
-            this.grid[i][j] = new Jungle({ i, j, z }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Jungle' }, this.context)
             this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
         }
@@ -245,8 +245,8 @@ export default class Map extends Container {
         if (getCellsAroundPoint(i, j, this.grid, 1, neighbour => neighbour.solid).length > 0) {
           continue
         }
-        if (cell.type && cell.type !== 'water' && !cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          if (Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
+        if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
+          if (cell.type !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
@@ -260,29 +260,33 @@ export default class Map extends Container {
             cell.addChild(floor)
           }
           if (Math.random() < this.chanceOfSets) {
-            const type = randomItem(['tree', 'rock', 'animal'])
-            switch (type) {
-              case 'tree':
-                this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
-                break
-              case 'rock':
-                const randomSpritesheet = randomRange(531, 534).toString()
-                const spritesheet = Assets.cache.get(randomSpritesheet)
-                const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
-                const rock = Sprite.from(texture)
-                rock.name = 'set'
-                rock.roundPixels = true
-                rock.allowMove = false
-                rock.interactive = false
-                rock.allowClick = false
-                rock.updateAnchor = true
-                cell.addChild(rock)
-                break
-              case 'animal':
-                const animals = Assets.cache.get('config').animals
-                const animal = randomItem(Object.keys(animals))
-                new Animal({ i, j, type: animal, owner: this.gaia }, this.context)
-                break
+            if (cell.type !== 'Water') {
+              const type = randomItem(['tree', 'rock', 'animal'])
+              switch (type) {
+                case 'tree':
+                  this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
+                  break
+                case 'rock':
+                  const randomSpritesheet = randomRange(531, 534).toString()
+                  const spritesheet = Assets.cache.get(randomSpritesheet)
+                  const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
+                  const rock = Sprite.from(texture)
+                  rock.name = 'set'
+                  rock.roundPixels = true
+                  rock.allowMove = false
+                  rock.interactive = false
+                  rock.allowClick = false
+                  rock.updateAnchor = true
+                  cell.addChild(rock)
+                  break
+                case 'animal':
+                  const animals = Assets.cache.get('config').animals
+                  const animal = randomItem(Object.keys(animals))
+                  new Animal({ i, j, type: animal, owner: this.gaia }, this.context)
+                  break
+              }
+            } else {
+              this.resources.push(new Resource({ i, j, type: 'Salmon' }, this.context))
             }
           }
         }
@@ -299,7 +303,7 @@ export default class Map extends Container {
           let canGenerate = true
           if (
             getPlainCellsAroundPoint(i, j, this.grid, level * 2, cell => {
-              if (cell.type === 'water' || (cell.has && cell.has.name === 'building')) {
+              if (cell.type === 'Water' || (cell.has && cell.has.name === 'building')) {
                 canGenerate = false
               }
             })
@@ -450,101 +454,101 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        if (cell.type !== 'water') {
+        if (cell.type !== 'Water') {
           // Side
           if (
             this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water')
+            this.grid[i - 1][j].type === 'Water' &&
+            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
+            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
+            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '008')
           } else if (
             this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'water' &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water')
+            this.grid[i + 1][j].type === 'Water' &&
+            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water') &&
+            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
+            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '009')
           } else if (
             this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
+            this.grid[i][j - 1].type === 'Water' &&
+            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
+            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
+            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '011')
           } else if (
             this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
+            this.grid[i][j + 1].type === 'Water' &&
+            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
+            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
+            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '010')
           } // Corner
           else if (
             this.grid[i - 1] &&
             this.grid[i - 1][j - 1] &&
-            this.grid[i - 1][j - 1].type === 'water' &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
+            this.grid[i - 1][j - 1].type === 'Water' &&
+            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
+            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '005')
           } else if (
             this.grid[i + 1] &&
             this.grid[i + 1][j - 1] &&
-            this.grid[i + 1][j - 1].type === 'water' &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'water') &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water')
+            this.grid[i + 1][j - 1].type === 'Water' &&
+            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
+            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '007')
           } else if (
             this.grid[i - 1] &&
             this.grid[i - 1][j + 1] &&
-            this.grid[i - 1][j + 1].type === 'water' &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'water')
+            this.grid[i - 1][j + 1].type === 'Water' &&
+            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
+            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '004')
           } else if (
             this.grid[i + 1] &&
             this.grid[i + 1][j + 1] &&
-            this.grid[i + 1][j + 1].type === 'water' &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'water') &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'water')
+            this.grid[i + 1][j + 1].type === 'Water' &&
+            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
+            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')
           ) {
             cell.setWaterBorder('20000', '006')
           }
           // Deep corner
           else if (
             this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'water' &&
+            this.grid[i][j - 1].type === 'Water' &&
             this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'water'
+            this.grid[i - 1][j].type === 'Water'
           ) {
             cell.setWaterBorder('20000', '001')
           } else if (
             this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'water' &&
+            this.grid[i][j + 1].type === 'Water' &&
             this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'water'
+            this.grid[i + 1][j].type === 'Water'
           ) {
             cell.setWaterBorder('20000', '002')
           } else if (
             this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'water' &&
+            this.grid[i][j - 1].type === 'Water' &&
             this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'water'
+            this.grid[i + 1][j].type === 'Water'
           ) {
             cell.setWaterBorder('20000', '003')
           } else if (
             this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'water' &&
+            this.grid[i][j + 1].type === 'Water' &&
             this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'water'
+            this.grid[i - 1][j].type === 'Water'
           ) {
             cell.setWaterBorder('20000', '000')
           }
@@ -613,7 +617,7 @@ export default class Map extends Container {
         const dist = Math.round(Math.sqrt(quantity, 2))
         const cells = getPlainCellsAroundPoint(finalI, finalJ, grid, dist, cell => {
           cpt++
-          if (!cell.solid && !cell.has && !cell.border && !cell.inclined) {
+          if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
             return true
           }
         })
@@ -641,8 +645,8 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        const typeToFormat = ['grass', 'jungle']
-        if (cell.type === 'desert') {
+        const typeToFormat = ['Grass', 'Jungle']
+        if (cell.type === 'Desert') {
           if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
             this.grid[i - 1][j].setDesertBorder('est')
           }
