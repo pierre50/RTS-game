@@ -2,7 +2,7 @@ export const cellWidth = 63
 export const cellHeight = 30
 export const cellDepth = 16
 
-export const accelerator = 2
+export const accelerator = 1
 export const stepTime = 20
 
 export const loadingFoodTypes = ['meat', 'wheat', 'berry', 'fish']

@@ -976,8 +976,6 @@ export class Unit extends Container {
               return
             }
             // Villager fish
-            this.visible && sound.play('5178')
-
             this.loading++
             this.loadingType = 'fish'
             this.updateInterfaceLoading()
@@ -1001,6 +999,11 @@ export class Unit extends Container {
           (1 / this.gatheringRate[this.work]) * 1000,
           false
         )
+        if (this.category !== 'Boat') {
+          onSpriteLoopAtFrame(this.sprite, 6, () => {
+            this.visible && sound.play('5125')
+          })
+        }
         break
       case 'hunt':
         if (!this.getActionCondition(this.dest)) {

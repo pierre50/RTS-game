@@ -164,20 +164,21 @@ export class Building extends Container {
             // Send Villager to give loading of resources
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
-              const accept = this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType))
-              if (unit.type === 'Villager') {
-                if (getActionCondition(unit, this, 'build')) {
-                  hasSentVillager = true
-                  unit.previousDest = null
-                  unit.sendToBuilding(this)
-                } else if (getActionCondition(unit, this, 'farm')) {
-                  hasSentVillager = true
-                  unit.sendToFarm(this)
-                } else if (accept && getActionCondition(unit, this, 'delivery', { buildingType: this.type })) {
-                  hasSentVillager = true
-                  unit.previousDest = null
-                  unit.sendTo(this, 'delivery')
-                }
+              const accept =
+                unit.category === 'Boat'
+                  ? this.type === 'Dock'
+                  : this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType))
+              if (unit.type === 'Villager' && getActionCondition(unit, this, 'build')) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendToBuilding(this)
+              } else if (unit.type === 'Villager' && getActionCondition(unit, this, 'farm')) {
+                hasSentVillager = true
+                unit.sendToFarm(this)
+              } else if (accept && getActionCondition(unit, this, 'delivery', { buildingTypes: [this.type] })) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendTo(this, 'delivery')
               } else {
                 unit.sendTo(this)
                 hasSentOther = true
