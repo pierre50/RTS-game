@@ -349,7 +349,7 @@ export default class Menu {
     this.resources.appendChild(box)
   }
 
-  updateBottomBar() {
+  updateBottombar() {
     const {
       context: { player },
     } = this

@@ -809,6 +809,8 @@ export class Building extends Container {
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)
           if (this.owner.isPlayed) {
+            debugger
+
             menu.updateBottombar()
             menu.updateTopbar()
           }
