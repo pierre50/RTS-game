@@ -81,11 +81,11 @@ export class Animal extends Container {
     }
 
     this.allowMove = false
-    this.interactive = true
+    this.eventMode = 'static'
     this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
     this.sprite.name = 'sprite'
     this.sprite.allowMove = false
-    this.sprite.interactive = false
+    this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
 

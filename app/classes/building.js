@@ -120,7 +120,7 @@ export class Building extends Container {
     this.allowMove = false
     if (this.sprite) {
       this.sprite.allowMove = false
-      this.sprite.interactive = true
+      this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
@@ -383,7 +383,7 @@ export class Building extends Container {
         spriteFire.name = 'deco'
         spriteFire.allowMove = false
         spriteFire.allowClick = false
-        spriteFire.interactive = false
+        spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
         spriteFire.x = 10
         spriteFire.y = 5
@@ -452,7 +452,7 @@ export class Building extends Container {
         newFire.name = 'fire'
         newFire.allowMove = false
         newFire.allowClick = false
-        newFire.interactive = false
+        newFire.eventMode = 'none'
         let poses = [[0, 0]]
         if (building.size === 3) {
           poses = [
@@ -466,7 +466,7 @@ export class Building extends Container {
           const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
           spriteFire.allowMove = false
           spriteFire.allowClick = false
-          spriteFire.interactive = false
+          spriteFire.eventMode = 'none'
           spriteFire.roundPixels = true
           spriteFire.x = poses[i][0]
           spriteFire.y = poses[i][1]
@@ -517,7 +517,7 @@ export class Building extends Container {
     }
     this.sprite.texture = getTexture(rubbleSheet, Assets)
     this.sprite.allowMove = false
-    this.sprite.interactive = false
+    this.sprite.eventMode = 'none'
     this.sprite.allowClick = false
     this.zIndex--
     if (this.type === 'Farm') {

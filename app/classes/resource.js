@@ -48,7 +48,7 @@ export class Resource extends Container {
     cell.solid = true
     cell.has = this
 
-    this.interactive = false
+    this.eventMode = 'auto'
     this.allowClick = false
     this.allowMove = false
 
@@ -77,7 +77,7 @@ export class Resource extends Container {
     this.sprite.name = 'sprite'
     if (this.sprite) {
       this.sprite.allowMove = false
-      this.sprite.interactive = true
+      this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
@@ -209,7 +209,7 @@ export class Resource extends Container {
     const texture = spritesheet.textures[textureName]
     const sprite = this.getChildByName('sprite')
     sprite.texture = texture
-    sprite.interactive = false
+    sprite.eventMode = 'none'
     this.zIndex--
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null

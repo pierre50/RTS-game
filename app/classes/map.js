@@ -48,7 +48,7 @@ export default class Map extends Container {
     this.gaia = null
     this.resources = []
 
-    this.interactive = false
+    this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
   }
@@ -178,7 +178,6 @@ export default class Map extends Container {
       const towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', true)
       for (let i = 0; i < this.startingUnits; i++) {
         towncenter.placeUnit('Villager')
-        towncenter.placeUnit('Clubman')
       }
     }
   }
@@ -254,7 +253,7 @@ export default class Map extends Container {
             floor.name = 'floor'
             floor.roundPixels = true
             floor.allowMove = false
-            floor.interactive = false
+            floor.eventMode = 'none'
             floor.allowClick = false
             floor.updateAnchor = true
             cell.addChild(floor)
@@ -274,7 +273,7 @@ export default class Map extends Container {
                   rock.name = 'set'
                   rock.roundPixels = true
                   rock.allowMove = false
-                  rock.interactive = false
+                  rock.eventMode = 'none'
                   rock.allowClick = false
                   rock.updateAnchor = true
                   cell.addChild(rock)

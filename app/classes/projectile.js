@@ -18,7 +18,7 @@ export class Projectile extends Container {
     this.context = context
 
     const {
-      context: { map, controls },
+      context: { map },
     } = this
     this.setParent(map)
     this.id = map.children.length
@@ -47,7 +47,7 @@ export class Projectile extends Container {
     sprite.rotation = degreesToRadians(degree)
     sprite.name = 'sprite'
     sprite.allowMove = false
-    sprite.interactive = false
+    sprite.eventMode = 'none'
     sprite.allowClick = false
     sprite.roundPixels = true
     this.addChild(sprite)

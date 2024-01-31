@@ -33,7 +33,6 @@ import {
   randomItem,
   getHitPointsWithDamage,
   getClosestInstance,
-  debounce,
   throttle,
 } from '../lib'
 import { Projectile } from './projectile'
@@ -202,11 +201,11 @@ export class Unit extends Container {
     }
 
     this.allowMove = false
-    this.interactive = true
+    this.eventMode = 'static'
     this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
     this.sprite.name = 'sprite'
     this.sprite.allowMove = false
-    this.sprite.interactive = false
+    this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
 
@@ -1397,7 +1396,7 @@ export class Unit extends Container {
     }
     this.path = []
     this.action = null
-    this.interactive = false
+    this.eventMode = 'none'
     this.isDead = true
     this.unselect()
     if (this.owner) {

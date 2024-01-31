@@ -36,7 +36,7 @@ export default class Controls extends Container {
     this.double = null
     this.doubleClicked = false
     this.keysPressed = {}
-    this.interactive = false
+    this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
 
@@ -292,7 +292,7 @@ export default class Controls extends Container {
           pointer.y = this.mouse.y
           pointer.allowMove = false
           pointer.allowClick = false
-          pointer.interactive = false
+          pointer.eventMode = 'auto'
           pointer.roundPixels = true
           pointer.onComplete = () => {
             pointer.destroy()

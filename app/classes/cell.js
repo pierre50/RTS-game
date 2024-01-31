@@ -53,11 +53,11 @@ export class Cell extends Container {
     this.sprite.anchor.set(0.5, 0.5)
     this.sprite.roundPixels = true
     this.sprite.allowMove = false
-    this.sprite.interactive = false
+    this.sprite.eventMode = 'none'
     this.sprite.allowClick = false
     this.addChild(this.sprite)
 
-    this.interactive = false
+    this.eventMode = 'none'
     this.allowMove = false
     this.allowClick = false
   }

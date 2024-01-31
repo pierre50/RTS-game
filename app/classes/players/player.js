@@ -139,9 +139,6 @@ export class Player {
   }
 
   updateConfig(operations) {
-    const {
-      context: { menu },
-    } = this
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
       const types = Array.isArray(operation.type) ? operation.type : [operation.type]
@@ -152,15 +149,6 @@ export class Player {
         } else if (Object.keys(this.config.units).includes(type)) {
           this.config.units[type] && updateObject(this.config.units[type], operation)
         }
-
-        /*for (let u = 0; u < this.units.length; u++) {
-          const unit = this.units[u]
-          unit.type === type && updateObject(unit, operation)
-        }
-        for (let u = 0; u < this.buildings.length; u++) {
-          const building = this.buildings[u]
-          building.type === type && updateObject(building, operation)
-        }*/
       }
     }
   }

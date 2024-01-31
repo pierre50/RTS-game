@@ -28,7 +28,7 @@
     "@babel/core": "^7.21.8",
     "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
     "@babel/preset-env": "^7.21.5",
-    "babel-core": "^4.7.16",
+    "babel-core": "^6.26.3",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^9.1.2",
     "babel-polyfill": "^6.26.0",

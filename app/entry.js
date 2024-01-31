@@ -12,8 +12,8 @@ const app = new Application({
   powerPreference: 'high-performance',
 })
 
-window.document.removeEventListener('mousemove', app.renderer.plugins.interaction.onPointerMove, true)
-window.document.removeEventListener('pointermove', app.renderer.plugins.interaction.onPointerMove, true)
+window.document.removeEventListener('mousemove', app.renderer.events.onPointerMove, true)
+window.document.removeEventListener('pointermove', app.renderer.events.onPointerMove, true)
 
 const loader = new Loader() // Basic Loading screen
 const gamebox = document.getElementById('game')
