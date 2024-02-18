@@ -37,6 +37,8 @@ export function getBuildingAsset(type, owner, assets) {
     return path[owner.age - 1][type]
   } else if (path[owner.age - 2][type]) {
     return path[owner.age - 2][type]
+  } else if (path[0][type]) {
+    return path[0][type]
   }
 }
 

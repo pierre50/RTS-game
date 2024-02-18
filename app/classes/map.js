@@ -36,9 +36,12 @@ export default class Map extends Container {
     this.revealEverything = true
     this.revealTerrain = true
     this.ready = false
-    this.noAI = true
     this.grid = []
     this.sortableChildren = true
+
+    this.allTechnologies = false
+    this.noAI = true
+    this.devMode = false
 
     this.x = 0
     this.y = 0
@@ -152,7 +155,7 @@ export default class Map extends Container {
             {
               i: posI,
               j: posJ,
-              age: 1,
+              age: 2,
               civ: 'Greek',
               color,
               isPlayed: true,

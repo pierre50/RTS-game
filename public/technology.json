@@ -26,7 +26,7 @@
         "value": 1
       }
     ],
-    "researchTime": 140,
+    "researchTime": 132,
     "cost": {
       "food": 800
     }
@@ -42,7 +42,7 @@
         "value": 2
       }
     ],
-    "researchTime": 160,
+    "researchTime": 144,
     "cost": {
       "food": 1000,
       "gold": 800
@@ -58,7 +58,7 @@
         "value": 1
       }
     ],
-    "researchTime": 40,
+    "researchTime": 30,
     "cost": {
       "food": 100
     },
@@ -91,6 +91,183 @@
       ]
     }
   },
+  "Metalworking": {
+    "icon": "011_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Toolworking"
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 200,
+      "gold": 120
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeAttack",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion",
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "CamelRider"
+          ]
+        }
+      ]
+    }
+  },
+  "Metallurgy": {
+    "icon": "036_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Metalworking"
+      }
+    ],
+    "researchTime": 84,
+    "cost": {
+      "food": 300,
+      "gold": 180
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeAttack",
+          "op": "+",
+          "value": "3",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion",
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "CamelRider"
+          ]
+        }
+      ]
+    }
+  },
+  "BronzeShield": {
+    "icon": "019_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 50,
+    "cost": {
+      "food": 150,
+      "gold": 180
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "pierceArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion"
+          ]
+        }
+      ]
+    }
+  },
+  "IronShield": {
+    "icon": "058_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BronzeShield"
+      }
+    ],
+    "researchTime": 69,
+    "cost": {
+      "food": 200,
+      "gold": 320
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "pierceArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion"
+          ]
+        }
+      ]
+    }
+  },
   "LeatherArmorInfantry": {
     "icon": "037_50729",
     "key": "technologies",
@@ -104,6 +281,90 @@
     "researchTime": 30,
     "cost": {
       "food": 75
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion"
+          ]
+        }
+      ]
+    }
+  },
+  "ScaleArmorInfantry": {
+    "icon": "040_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "LeatherArmorInfantry"
+      }
+    ],
+    "researchTime": 60,
+    "cost": {
+      "food": 100,
+      "gold": 50
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion"
+          ]
+        }
+      ]
+    }
+  },
+  "ChainmailInfantry": {
+    "icon": "043_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ScaleArmorInfantry"
+      }
+    ],
+    "researchTime": 69,
+    "cost": {
+      "food": 125,
+      "gold": 100
     },
     "action": {
       "type": "improve",
@@ -161,6 +422,86 @@
       ]
     }
   },
+  "ScaleArmorArchers": {
+    "icon": "041_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "LeatherArmorArchers"
+      }
+    ],
+    "researchTime": 60,
+    "cost": {
+      "food": 100,
+      "gold": 50
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher"
+          ]
+        }
+      ]
+    }
+  },
+  "ChainmailArchers": {
+    "icon": "044_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ScaleArmorArchers"
+      }
+    ],
+    "researchTime": 69,
+    "cost": {
+      "food": 125,
+      "gold": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher"
+          ]
+        }
+      ]
+    }
+  },
   "LeatherArmorCavalry": {
     "icon": "039_50729",
     "key": "technologies",
@@ -174,6 +515,90 @@
     "researchTime": 30,
     "cost": {
       "food": 125
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "WarElephant",
+            "ArmoredElephant",
+            "Camel Rider"
+          ]
+        }
+      ]
+    }
+  },
+  "ScaleArmorCavalry": {
+    "icon": "042_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "LeatherArmorCavalry"
+      }
+    ],
+    "researchTime": 60,
+    "cost": {
+      "food": 100,
+      "gold": 50
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "meleeArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "WarElephant",
+            "ArmoredElephant",
+            "Camel Rider"
+          ]
+        }
+      ]
+    }
+  },
+  "ChainmailCavalry": {
+    "icon": "028_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }, 
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ScaleArmorCavalry"
+      }
+    ],
+    "researchTime": 69,
+    "cost": {
+      "food": 125,
+      "gold": 100
     },
     "action": {
       "type": "improve",
@@ -374,6 +799,31 @@
       "food": 50
     }
   },
+  "ResearchSentryTower": {
+    "icon": "049_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },{
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchWatchTower"
+      }
+    ],
+    "researchTime": 30,
+    "cost": {
+      "food": 120,
+      "stone": 50
+    },
+    "action": {
+      "type": "upgradeBuilding",
+      "source": "WatchTower",
+      "target": "SentryTower"
+    }
+  },
   "BattleAxe": {
     "icon": "045_50729",
     "key": "technologies",
@@ -389,7 +839,7 @@
       "food": 100
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "Clubman",
       "target": "Axeman"
     }
@@ -415,7 +865,7 @@
       "gold": 50
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "Axeman",
       "target": "ShortSwordsman"
     }
@@ -441,7 +891,7 @@
       "gold": 50
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "ShortSwordsman",
       "target": "BroadSwordsman"
     }
@@ -467,7 +917,7 @@
       "gold": 50
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "BroadSwordsman",
       "target": "LongSwordsman"
     }
@@ -488,7 +938,7 @@
       "wood": 80
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "Bowman",
       "target": "ImprovedBowman"
     }
@@ -514,7 +964,7 @@
       "wood": 100
     },
     "action": {
-      "type": "upgrade",
+      "type": "upgradeUnit",
       "source": "ImprovedBowman",
       "target": "CompositeBowman"
     }

@@ -25,21 +25,22 @@ export class Player {
     this.j = j
     this.civ = civ
     this.age = age
-    this.wood = 10000 //200
-    this.food = 10000 //200
-    this.stone = 10000 //150
-    this.gold = 10000 //0
+    this.wood = map.devMode ? 10000 : 200
+    this.food = map.devMode ? 10000 : 200
+    this.stone = map.devMode ? 10000 : 150
+    this.gold = map.devMode ? 10000 : 0
     this.type = type
     this.units = []
     this.buildings = []
     this.population = 0
-    this.populationMax = populationMax - 4 //5
+    this.populationMax = populationMax - 4
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
     this.config = { ...Assets.cache.get('config') }
-    this.hasBuilt = Object.keys(this.config.buildings).map(key => key) //[]
-    this.technologies = []
+    this.techs = { ...Assets.cache.get('technology') }
+    this.hasBuilt = map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
+    this.technologies = []//map.allTechnologies ? Object.keys(this.techs).filter(prop => this.techs[prop].key === "technologies").map(key => key) : []
 
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
@@ -155,11 +156,11 @@ export class Player {
 
   buyBuilding(i, j, type) {
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
     const config = this.config.buildings[type]
     if (canAfford(this, config.cost)) {
-      this.spawnBuilding(i, j, type)
+      this.spawnBuilding(i, j, type, map.devMode)
       payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true

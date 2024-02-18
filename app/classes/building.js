@@ -637,7 +637,7 @@ export class Building extends Container {
 
   buyUnit(type, alreadyPaid = false) {
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
     const unit = this.owner.config.units[type]
     if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
@@ -675,17 +675,7 @@ export class Building extends Container {
               }
               this.updateInterfaceLoading()
             }
-          } else if (this.loading < 100) {
-            if (this.owner.population < Math.min(populationMax, this.owner.populationMax)) {
-              this.loading += 1
-            } else if (this.owner.isPlayed && !hasShowedMessage) {
-              menu.showMessage('You need to build more houses')
-              hasShowedMessage = true
-            }
-            if (this.selected && this.owner.isPlayed) {
-              this.updateInterfaceLoading()
-            }
-          } else if (this.loading >= 100) {
+          } else if (this.loading >= 100 || map.devMode) {
             this.stopInterval()
             this.placeUnit(type)
             this.loading = null
@@ -700,6 +690,17 @@ export class Building extends Container {
               if (still === 0) {
                 menu.toggleButtonCancel(type, false)
               }
+              this.updateInterfaceLoading()
+            }
+          }
+          else if (this.loading < 100) {
+            if (this.owner.population < Math.min(populationMax, this.owner.populationMax)) {
+              this.loading += 1
+            } else if (this.owner.isPlayed && !hasShowedMessage) {
+              menu.showMessage('You need to build more houses')
+              hasShowedMessage = true
+            }
+            if (this.selected && this.owner.isPlayed) {
               this.updateInterfaceLoading()
             }
           }
@@ -755,9 +756,34 @@ export class Building extends Container {
     }
   }
 
+  upgrade(type) {
+    const data = this.owner.config.buildings[type]
+    this.type = type
+    this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints)
+    for (const [key, value] of Object.entries(data)) {
+      this[key] = value
+    }
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
+    this.sprite.texture = getTexture(assets.images.final, Assets)
+    this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
+    const color = this.getChildByName('color')
+    if (color) {
+      color.destroy()
+    }
+    if (assets.images.color) {
+      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
+      spriteColor.name = 'color'
+      changeSpriteColor(spriteColor, this.owner.color)
+      this.addChild(spriteColor)
+    } else {
+      changeSpriteColor(this.sprite, this.owner.color)
+    }
+
+  }
+
   buyTechnology(technology, type) {
     const {
-      context: { player, menu },
+      context: { player, menu, map },
     } = this
     if (
       !this.queue.length &&
@@ -777,12 +803,7 @@ export class Building extends Container {
         menu.setBottombar(this)
       }
       this.startInterval(() => {
-        if (this.loading < 100) {
-          this.loading += 1
-          if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
-            this.updateInterfaceLoading()
-          }
-        } else if (this.loading >= 100) {
+        if (this.loading >= 100 || map.devMode) {
           this.stopInterval()
           this.loading = null
           this.technology = null
@@ -793,11 +814,19 @@ export class Building extends Container {
           }
           if (technology.action) {
             switch (technology.action.type) {
-              case 'upgrade':
+              case 'upgradeUnit':
                 for (let i = 0; i < player.units.length; i++) {
                   const unit = player.units[i]
                   if (unit.type === technology.action.source) {
                     unit.upgrade(technology.action.target)
+                  }
+                }
+                break
+              case 'upgradeBuilding':
+                for (let i = 0; i < player.buildings.length; i++) {
+                  const building = player.buildings[i]
+                  if (building.type === technology.action.source) {
+                    building.upgrade(technology.action.target)
                   }
                 }
                 break
@@ -809,10 +838,13 @@ export class Building extends Container {
           const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
           typeof player[functionName] === 'function' && player[functionName](technology.value)
           if (this.owner.isPlayed) {
-            debugger
-
             menu.updateBottombar()
             menu.updateTopbar()
+          }
+        } else if (this.loading < 100) {
+          this.loading += 1
+          if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
+            this.updateInterfaceLoading()
           }
         }
       }, technology.researchTime)
