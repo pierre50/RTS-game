@@ -22,8 +22,8 @@
       "cost": {
         "wood": 125
       },
-      "units": ["Clubman", "Axeman", "ShortSwordsman", "BroadSwordsman"],
-      "technologies": ["BattleAxe", "ShortSword", "BroadSword"],
+      "units": ["Clubman", "Axeman", "ShortSwordsman", "BroadSwordsman", "LongSwordsman"],
+      "technologies": ["BattleAxe", "ShortSword", "BroadSword", "LongSword"],
       "sounds": {
         "create": 5022
       }
@@ -37,7 +37,8 @@
         "wood": 120
       },
       "accept": ["berry", "wheat"],
-      "technologies": ["ResearchWatchTower", "ResearchSmallWall"],
+      "technologies": ["ResearchWatchTower","ResearchSentryTower",
+       "ResearchSmallWall"],
       "sounds": {
         "create": 5096
       }
@@ -51,7 +52,11 @@
         "wood": 120
       },
       "accept": ["wood", "stone", "gold", "meat", "fish"],
-      "technologies": ["Toolworking", "LeatherArmorInfantry", "LeatherArmorArchers", "LeatherArmorCavalry"],
+      "technologies": ["Toolworking", "Metalworking", "Metallurgy", 
+      "BronzeShield", "IronShield",
+      "LeatherArmorInfantry", "ScaleArmorInfantry", "ChainmailInfantry", 
+      "LeatherArmorArchers", "ScaleArmorArchers", "ChainmailArchers", 
+      "LeatherArmorCavalry", "ScaleArmorCavalry", "ChainmailCavalry"],
       "sounds": {
         "create": 5186
       }
@@ -168,6 +173,39 @@
           "key": "technologies",
           "op": "includes",
           "value": "ResearchWatchTower"
+        },
+        {
+          "key": "technologies",
+          "op": "notincludes",
+          "value": "ResearchSentryTower"
+        }
+      ],
+      "sounds": {
+        "create": 5201
+      }
+    },
+    "SentryTower": {
+      "size": 2,
+      "sight": 9,
+      "totalHitPoints": 185,
+      "constructionTime": 65,
+      "range": 7,
+      "projectile": "Arrow",
+      "pierceAttack": 6,
+      "rateOfFire": 1.5,
+      "cost": {
+        "stone": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 2
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchSentryTower"
         }
       ],
       "sounds": {
@@ -337,6 +375,7 @@
           "value": "Stable"
         }
       ],
+      "units": ["Hoplite"],
       "sounds": {
         "create": 5002
       }
@@ -347,7 +386,7 @@
       "category": "Civilian",
       "totalHitPoints": 25,
       "sight": 4,
-      "speed": 1.1,
+      "speed": 0.92,
       "rateOfFire": 1.5,
       "trainingTime": 20,
       "icon": "000_50730",
@@ -477,7 +516,7 @@
       "category": "Infantry",
       "totalHitPoints": 40,
       "sight": 4,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.5,
       "trainingTime": 26,
       "icon": "002_50730",
@@ -510,7 +549,7 @@
       "category": "Cavalery",
       "totalHitPoints": 60,
       "sight": 7,
-      "speed": 2,
+      "speed": 1.66,
       "rateOfFire": 1.5,
       "trainingTime": 30,
       "icon": "031_50730",
@@ -536,7 +575,7 @@
       "category": "Archer",
       "totalHitPoints": 35,
       "sight": 7,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.4,
       "trainingTime": 30,
       "icon": "006_50730",
@@ -561,7 +600,7 @@
       "category": "Civilian",
       "totalHitPoints": 25,
       "sight": 12,
-      "speed": 0.8,
+      "speed": 0.66,
       "trainingTime": 50,
       "icon": "001_50730",
       "healing": 1,
@@ -583,7 +622,7 @@
       "category": "Infantry",
       "totalHitPoints": 50,
       "sight": 4,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.5,
       "trainingTime": 26,
       "icon": "003_50730",
@@ -617,7 +656,7 @@
       "category": "Infantry",
       "totalHitPoints": 60,
       "sight": 4,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.5,
       "trainingTime": 26,
       "icon": "004_50730",
@@ -652,7 +691,7 @@
       "category": "Infantry",
       "totalHitPoints": 80,
       "sight": 4,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.5,
       "trainingTime": 26,
       "icon": "005_50730",
@@ -672,7 +711,7 @@
         {
           "key": "technologies",
           "op": "includes",
-          "value": "BroadSwordsman"
+          "value": "BroadSword"
         }
       ],
       "assets": {
@@ -687,10 +726,10 @@
       "category": "Infantry",
       "totalHitPoints": 100,
       "sight": 4,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.5,
       "trainingTime": 26,
-      "icon": "005_50730",
+      "icon": "027_50730",
       "meleeAttack": 11,
       "meleeArmor": 2,
       "pierceArmor": 0,
@@ -699,11 +738,6 @@
         "gold": 15
       },
       "conditions": [
-        {
-          "key": "technologies",
-          "op": "notincludes",
-          "value": "Fanaticism"
-        },
         {
           "key": "technologies",
           "op": "includes",
@@ -722,7 +756,7 @@
       "category": "Archer",
       "totalHitPoints": 40,
       "sight": 8,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.4,
       "trainingTime": 30,
       "icon": "007_50730",
@@ -755,11 +789,34 @@
         "corpseSheet": "368"
       }
     },
+    "Hoplite": {
+      "category": "Infantry",
+      "totalHitPoints": 120,
+      "sight": 4,
+      "speed": 0.87,
+      "rateOfFire": 1.5,
+      "trainingTime": 36,
+      "icon": "016_50730",
+      "meleeAttack": 17,
+      "meleeArmor": 5,
+      "pierceArmor": 0,
+      "cost": {
+        "food": 60,
+        "gold": 40
+      },
+      "assets": {
+        "standingSheet": "442",
+        "walkingSheet": "684",
+        "actionSheet": "225",
+        "dyingSheet": "340",
+        "corpseSheet": "401"
+      }
+    },
     "CompositeBowman": {
       "category": "Archer",
       "totalHitPoints": 45,
       "sight": 9,
-      "speed": 1.2,
+      "speed": 1,
       "rateOfFire": 1.4,
       "trainingTime": 30,
       "icon": "008_50730",
@@ -791,7 +848,7 @@
       "category": "Archer",
       "totalHitPoints": 70,
       "sight": 9,
-      "speed": 2,
+      "speed": 1.66,
       "rateOfFire": 1.4,
       "trainingTime": 40,
       "icon": "028_50730",
