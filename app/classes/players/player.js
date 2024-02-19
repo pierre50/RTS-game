@@ -40,7 +40,7 @@ export class Player {
     this.config = { ...Assets.cache.get('config') }
     this.techs = { ...Assets.cache.get('technology') }
     this.hasBuilt = map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
-    this.technologies = []//map.allTechnologies ? Object.keys(this.techs).filter(prop => this.techs[prop].key === "technologies").map(key => key) : []
+    this.technologies = [] //map.allTechnologies ? Object.keys(this.techs).filter(prop => this.techs[prop].key === "technologies").map(key => key) : []
 
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {

@@ -89,11 +89,11 @@ export class Animal extends Container {
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
 
-    this.on('pointerup', () => {
+    this.on('pointerup', evt => {
       const {
         context: { controls, player, menu },
       } = this
-      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
       controls.mouse.prevent = true

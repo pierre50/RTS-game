@@ -211,11 +211,11 @@ export class Unit extends Container {
 
     this.sendTo = throttle(this.sendToEvt, 100)
 
-    this.on('pointerdown', () => {
+    this.on('pointerdown', evt => {
       const {
         context: { controls, player },
       } = this
-      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
       if (controls.clicked) {
@@ -236,11 +236,11 @@ export class Unit extends Container {
       }
       controls.clicked = false
     })
-    this.on('pointerup', () => {
+    this.on('pointerup', evt => {
       const {
         context: { controls, player, menu },
       } = this
-      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
 

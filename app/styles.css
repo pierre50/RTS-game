@@ -1,5 +1,5 @@
 :root {
-  --main-background-color: #161d25;
+  --main-background-color: #12171ecf;
   --main-border-color: transparent;
   --main-border-radius: 2px;
   --main-border-size: 0px;
@@ -76,7 +76,6 @@ body {
   width: calc(100% - 10px);
   grid-gap: 5px;
   padding: 5px;
-  border-top: 2px solid var(--main-background-color);
 }
 
 .bottombar-info {
@@ -223,4 +222,18 @@ body {
   top: 32px;
   display: flex;
   align-items: center;
+}
+
+.toggle{
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  height: 30px;
+  width: 30px;
+  border-top-left-radius: 3px;
+  background: black;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

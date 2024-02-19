@@ -91,12 +91,12 @@ export class Resource extends Container {
           player.selectedOther = this
         }
       })
-      this.sprite.on('pointerup', () => {
+      this.sprite.on('pointerup', evt => {
         const {
           context: { player, controls },
         } = this
         const action = typeAction[this.category || this.type]
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
         controls.mouse.prevent = true

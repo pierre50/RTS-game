@@ -9,9 +9,9 @@ import {
   changeSpriteColor,
   getTexture,
   randomItem,
-  getCellsAroundPoint,
+  debounce,
 } from '../lib'
-import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
+import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator, isMobile } from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -29,16 +29,27 @@ export default class Controls extends Container {
       prevent: false,
     }
 
-    this.camera
+    this.camera = {
+      x: 0,
+      y: 0,
+    }
+
+    this.clearInstancesOnScreen = debounce(this.clearInstancesOnScreenEvt, 40)
+    this.displayInstancesOnScreen = debounce(this.displayInstancesOnScreenEvt, 40)
+
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
+    this.mouseHoldTimeout
     this.clicked = false
+    this.longClick = false
     this.double = null
     this.doubleClicked = false
     this.keysPressed = {}
     this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
+    this.mouseRectangle
+    this.mouseLongClick
 
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
@@ -159,8 +170,34 @@ export default class Controls extends Container {
       return
     }
 
+    console.log(isMobile)
+    if (isMobile && this.longClick) {
+      if (this.mouseLongClick) {
+        const speedX = Math.abs(this.mouse.x - this.mouseLongClick.x) * 2
+        const speedY = Math.abs(this.mouse.y - this.mouseLongClick.y) * 2
+        if (this.mouse.x > this.mouseLongClick.x) {
+          this.moveCamera('left', speedX, false)
+        }
+        if (this.mouse.y > this.mouseLongClick.y) {
+          this.moveCamera('up', speedY, false)
+        }
+        if (this.mouse.y < this.mouseLongClick.y) {
+          this.moveCamera('down', speedY, false)
+        }
+        if (this.mouse.x < this.mouseLongClick.x) {
+          this.moveCamera('right', speedX, false)
+        }
+      }
+      this.mouseLongClick = {
+        x: this.mouse.x,
+        y: this.mouse.y,
+      }
+      return
+    }
+
     // Create and draw mouse selection
     if (
+      !isMobile &&
       !this.mouseRectangle &&
       this.pointerStart &&
       pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5
@@ -195,22 +232,34 @@ export default class Controls extends Container {
     }
   }
 
-  onPointerDown() {
-    if (!this.isMouseInApp()) {
+  onPointerDown(evt) {
+    if (isMobile) {
+      this.mouse.x = evt.pageX
+      this.mouse.y = evt.pageY
+    }
+    if (!this.isMouseInApp(evt)) {
       return
     }
     this.pointerStart = {
       x: this.mouse.x,
       y: this.mouse.y,
     }
+    if (isMobile) {
+      this.mouseHoldTimeout = setTimeout(() => {
+        this.longClick = true
+      }, 200)
+    }
   }
 
-  onPointerUp() {
+  onPointerUp(evt) {
     const {
       context: { menu, map, player },
     } = this
     this.pointerStart = null
-    if (!this.isMouseInApp() || this.mouse.prevent || this.doubleClicked) {
+    this.mouseLongClick = null
+    clearTimeout(this.mouseHoldTimeout)
+    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.doubleClicked || this.longClick) {
+      this.longClick = false
       this.mouse.prevent = false
       return
     }
@@ -260,7 +309,7 @@ export default class Controls extends Container {
       }
       return
     }
-    if (this.isMouseInApp()) {
+    if (this.isMouseInApp(evt)) {
       const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
       const i = Math.min(Math.max(pos[0], 0), map.size)
       const j = Math.min(Math.max(pos[1], 0), map.size)
@@ -336,11 +385,8 @@ export default class Controls extends Container {
     }
   }
 
-  isMouseInApp() {
-    const {
-      context: { app, menu },
-    } = this
-    return this.mouse.y > menu.topbar.clientHeight && this.mouse.y < app.screen.height - menu.bottombar.clientHeight
+  isMouseInApp(evt) {
+    return evt.target && (!evt.target.tagName || (evt.target.tagName || '').toLowerCase() === 'canvas')
   }
 
   removeMouseBuilding() {
@@ -377,7 +423,7 @@ export default class Controls extends Container {
     this.addChild(this.mouseBuilding)
   }
 
-  moveCamera(dir, moveSpeed, isSpeedDiveded) {
+  moveCamera(dir, moveSpeed, isSpeedDivided) {
     /**
      * 	/A\
      * /   \
@@ -390,7 +436,7 @@ export default class Controls extends Container {
       context: { map, app, menu },
     } = this
 
-    const dividedSpeed = isSpeedDiveded ? 2 : 1
+    const dividedSpeed = isSpeedDivided ? 2 : 1
     const speed = (moveSpeed || 20) / dividedSpeed
     const A = { x: cellWidth / 2 - this.camera.x, y: -this.camera.y }
     const B = {
@@ -499,7 +545,7 @@ export default class Controls extends Container {
     }
     const margin = cellWidth
     for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += cellWidth / 2) {
-      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height - 120 + margin; j += cellHeight / 2) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += cellHeight / 2) {
         const coordinate = isometricToCartesian(i, j)
         const x = Math.min(Math.max(coordinate[0], 0), map.size)
         const y = Math.min(Math.max(coordinate[1], 0), map.size)
@@ -510,7 +556,7 @@ export default class Controls extends Container {
     }
   }
 
-  clearInstancesOnScreen() {
+  clearInstancesOnScreenEvt() {
     this.getCellOnCamera(cell => {
       cell.visible = false
       if (cell.has) {
@@ -519,7 +565,7 @@ export default class Controls extends Container {
     })
   }
 
-  displayInstancesOnScreen() {
+  displayInstancesOnScreenEvt() {
     this.getCellOnCamera(cell => cell.updateVisible())
   }
 
@@ -539,15 +585,12 @@ export default class Controls extends Container {
     const {
       context: { map, app, menu },
     } = this
-
+    this.camera && this.clearInstancesOnScreen()
     this.camera = {
       x: x - app.screen.width / 2,
       y: y - app.screen.height / 2,
     }
-
-    if (menu) {
-      menu.updateCameraMiniMap()
-    }
+    menu && menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
     this.displayInstancesOnScreen()
   }

@@ -87,6 +87,25 @@ export default class Menu {
     this.bottombar.appendChild(bottombarMapWrap)
     document.body.appendChild(this.bottombar)
 
+    this.toggled = false
+    this.toggle = document.createElement('div')
+    this.toggle.className = 'toggle'
+    this.toggle.innerText = 'x'
+    this.toggle.addEventListener('pointerdown', evt => {
+      evt.preventDefault()
+      if (this.toggled) {
+        this.toggle.innerText = 'x'
+        this.bottombar.style.display = 'grid'
+        this.toggled = false
+      } else {
+        this.bottombar.style.display = 'none'
+        this.toggle.innerText = 'o'
+        this.toggled = true
+      }
+      evt.stopPropagation()
+    })
+    document.body.prepend(this.toggle)
+
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)

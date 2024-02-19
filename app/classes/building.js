@@ -123,11 +123,11 @@ export class Building extends Container {
       this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
-      this.sprite.on('pointertap', () => {
+      this.sprite.on('pointertap', evt => {
         const {
           context: { controls, player, menu },
         } = this
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp()) {
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
         let hasSentVillager = false
@@ -692,8 +692,7 @@ export class Building extends Container {
               }
               this.updateInterfaceLoading()
             }
-          }
-          else if (this.loading < 100) {
+          } else if (this.loading < 100) {
             if (this.owner.population < Math.min(populationMax, this.owner.populationMax)) {
               this.loading += 1
             } else if (this.owner.isPlayed && !hasShowedMessage) {
@@ -778,7 +777,6 @@ export class Building extends Container {
     } else {
       changeSpriteColor(this.sprite, this.owner.color)
     }
-
   }
 
   buyTechnology(technology, type) {

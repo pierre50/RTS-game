@@ -5,6 +5,8 @@ export const cellDepth = 16
 export const accelerator = 1
 export const stepTime = 20
 
+export const isMobile = window.innerWidth <= 800 && window.innerHeight <= 600
+
 export const loadingFoodTypes = ['meat', 'wheat', 'berry', 'fish']
 
 export const colorWhite = 0xffffff
@@ -27,7 +29,7 @@ export const typeAction = {
   Gold: 'minegold',
   Berrybush: 'forageberry',
   Tree: 'chopwood',
-  Fish: 'fishing'
+  Fish: 'fishing',
 }
 
 export const corpseTime = 120
