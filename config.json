@@ -443,8 +443,8 @@
           "actionSheet": "630",
           "standingSheet": "430",
           "walkingSheet": "670",
-          "dyingSheet": "327",
-          "corpseSheet": "393",
+          "dyingSheet": "326",
+          "corpseSheet": "388",
           "loadedSheet": "672"
         },
         "forager": {
