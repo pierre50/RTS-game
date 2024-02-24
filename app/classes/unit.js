@@ -34,6 +34,7 @@ import {
   getHitPointsWithDamage,
   getClosestInstance,
   throttle,
+  getFreeCellAroundPoint,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -399,14 +400,28 @@ export class Unit extends Container {
       return
     }
     // Set unit path
-    if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-      path = getInstanceClosestFreeCellPath(this, dest, map)
-      if (!path.length && this.work) {
-        this.action = action
-        this.affectNewDest()
+    if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
+      const allowWaterCellCategory = this.category === 'Boat'
+      if (map.grid[dest.i][dest.j].solid) {
+        path = getInstanceClosestFreeCellPath(this, dest, map)
+        if (!path.length && this.work) {
+          this.action = action
+          this.affectNewDest()
+          return
+        }
+      } else if (!allowWaterCellCategory && dest.category === 'Water') {
+        const cell = getFreeCellAroundPoint(
+          dest.i,
+          dest.j,
+          1,
+          map.grid,
+          cell => cell.category !== 'Water' && !cell.solid
+        )
+        this.sendToEvt(cell)
         return
       }
-    } else {
+    }
+    if (!path.length) {
       path = getInstancePath(this, dest.i, dest.j, map)
     }
     // Unit found a path, set the action and play walking animation

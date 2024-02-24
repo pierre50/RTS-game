@@ -24,6 +24,7 @@ import {
   getBuildingTextureNameWithSize,
 } from '../lib'
 import { Projectile } from './projectile'
+import { Polygon } from 'pixi.js'
 
 export class Building extends Container {
   constructor(options, context) {
@@ -71,7 +72,9 @@ export class Building extends Container {
     this.sprite = Sprite.from(texture)
     this.sprite.updateAnchor = true
     this.sprite.name = 'sprite'
-
+    this.sprite.hitArea = texture.hitArea
+      ? new Polygon(texture.hitArea)
+      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     const units = (this.units || []).map(key => context.menu.getUnitButton(key))
     const technologies = (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
     this.interface = {
@@ -179,19 +182,12 @@ export class Building extends Container {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendTo(this, 'delivery')
-              } else {
-                unit.sendTo(this)
-                hasSentOther = true
               }
             }
             if (hasSentVillager) {
               drawInstanceBlinkingSelection(this)
             }
-            if (hasSentOther) {
-              const voice = randomItem(['5075', '5076', '5128', '5164'])
-              sound.play(voice)
-              return
-            } else if (hasSentVillager) {
+            if (hasSentVillager) {
               const voice = Assets.cache.get('config').units.Villager.sounds.build
               sound.play(voice)
               return
@@ -359,8 +355,12 @@ export class Building extends Container {
   finalTexture() {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
 
-    this.sprite.texture = getTexture(assets.images.final, Assets)
-    this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
+    const texture = getTexture(assets.images.final, Assets)
+    this.sprite.texture = texture
+    this.sprite.hitArea = texture.hitArea
+      ? new Polygon(texture.hitArea)
+      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
 
     const color = this.getChildByName('color')
     if (color) {
@@ -575,7 +575,6 @@ export class Building extends Container {
     selection.drawPolygon(path)
     if (this.loading && this.owner.isPlayed) {
       this.updateInterfaceLoading()
-      //menu.updateInfo('loading', this.loading + '%')
     }
     this.addChildAt(selection, 0)
 

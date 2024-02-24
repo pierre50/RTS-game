@@ -6,6 +6,7 @@ export const accelerator = 1
 export const stepTime = 20
 
 export const isMobile = window.innerWidth <= 800 && window.innerHeight <= 600
+export const longClickDuration = 200
 
 export const loadingFoodTypes = ['meat', 'wheat', 'berry', 'fish']
 

@@ -10,7 +10,7 @@ import {
   isValidCondition,
   getBuildingAsset,
 } from '../lib'
-import { cellWidth, cellHeight } from '../constants'
+import { cellWidth, cellHeight, longClickDuration } from '../constants'
 import { sound } from '@pixi/sound'
 
 export default class Menu {
@@ -31,6 +31,9 @@ export default class Menu {
       food: getIconPath('002_50731'),
       gold: getIconPath('003_50731'),
     }
+
+    this.longClick = false
+    this.mouseHoldTimeout
 
     this.resources = document.createElement('div')
     this.resources.className = 'resources'
@@ -57,19 +60,47 @@ export default class Menu {
     bottombarMapWrap.className = 'bottombar-map-wrap'
     this.bottombarMap = document.createElement('div')
     this.bottombarMap.className = 'bottombar-map'
-    this.bottombarMap.addEventListener('pointerup', evt => {
+    this.bottombarMap.addEventListener('pointerdown', evt => {
       const {
         context: { controls },
       } = this
-      if (controls.mouseBuilding || controls.mouseRectangle) {
+      this.mouseHoldTimeout = setTimeout(() => {
+        this.longClick = true
+        const minimapFactor = this.getMinimapFactor()
+        const rect = evt.target.getBoundingClientRect()
+        const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
+        const y = (evt.clientY - rect.top - 3) * minimapFactor
+        controls.clearInstancesOnScreen()
+        controls.setCamera(x, y)
+      }, longClickDuration)
+    })
+    this.bottombarMap.addEventListener('pointerup', evt => {
+      const {
+        context: { player, controls, map },
+      } = this
+      clearTimeout(this.mouseHoldTimeout)
+      if (controls.mouseBuilding || controls.mouseRectangle || this.longClick) {
+        this.longClick = false
         return
       }
+      this.longClick = false
       const minimapFactor = this.getMinimapFactor()
       const rect = evt.target.getBoundingClientRect()
       const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
       const y = (evt.clientY - rect.top - 3) * minimapFactor
-      controls.clearInstancesOnScreen()
-      controls.setCamera(x, y)
+
+      if (player.selectedUnits.length) {
+        const pos = isometricToCartesian(x, y)
+        const i = Math.min(Math.max(pos[0], 0), map.size)
+        const j = Math.min(Math.max(pos[1], 0), map.size)
+        if (map.grid[i] && map.grid[i][j]) {
+          const cell = map.grid[i][j]
+          controls.sendUnits(cell)
+        }
+      } else {
+        controls.clearInstancesOnScreen()
+        controls.setCamera(x, y)
+      }
     })
     bottombarMapWrap.appendChild(this.bottombarMap)
 

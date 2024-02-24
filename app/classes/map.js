@@ -33,15 +33,17 @@ export default class Map extends Container {
     ]
     this.chanceOfRelief = 0.06
     this.chanceOfSets = 0.02
-    this.revealEverything = true
-    this.revealTerrain = true
+
     this.ready = false
     this.grid = []
     this.sortableChildren = true
 
     this.allTechnologies = false
     this.noAI = true
+
     this.devMode = false
+    this.revealEverything = this.devMode || false
+    this.revealTerrain = this.devMode || false
 
     this.x = 0
     this.y = 0
@@ -155,7 +157,7 @@ export default class Map extends Container {
             {
               i: posI,
               j: posJ,
-              age: 2,
+              age: 0,
               civ: 'Greek',
               color,
               isPlayed: true,

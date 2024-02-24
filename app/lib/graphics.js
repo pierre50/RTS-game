@@ -1,5 +1,6 @@
 import { Graphics } from 'pixi.js'
 import { MultiColorReplaceFilter } from '@pixi/filter-multi-color-replace'
+import { Polygon } from 'pixi.js'
 
 export function getIconPath(name) {
   const id = name.split('_')[1]
@@ -47,7 +48,7 @@ export function getTexture(name, assets) {
   const index = name.split('_')[0]
   const spritesheet = assets.cache.get(id)
   const textureName = `${index}_${id}.png`
-  //spritesheet.textures[textureName].hitArea = spritesheet.data.frames[textureName].hitArea
+  spritesheet.textures[textureName].hitArea = spritesheet.data.frames[textureName].hitArea
   return spritesheet.textures[textureName]
 }
 

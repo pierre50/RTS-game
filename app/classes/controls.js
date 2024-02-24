@@ -11,7 +11,16 @@ import {
   randomItem,
   debounce,
 } from '../lib'
-import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator, isMobile } from '../constants'
+import {
+  colorWhite,
+  colorRed,
+  cellWidth,
+  cellHeight,
+  maxSelectUnits,
+  accelerator,
+  isMobile,
+  longClickDuration,
+} from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -56,9 +65,9 @@ export default class Controls extends Container {
 
     document.addEventListener('keydown', evt => this.onKeyDown(evt))
     document.addEventListener('keyup', evt => this.onKeyUp(evt))
-    document.addEventListener('pointermove', evt => this.onPointerMove(evt))
-    document.addEventListener('pointerdown', evt => this.onPointerDown(evt))
-    document.addEventListener('pointerup', evt => this.onPointerUp(evt))
+    gamebox.addEventListener('pointermove', evt => this.onPointerMove(evt))
+    gamebox.addEventListener('pointerdown', evt => this.onPointerDown(evt))
+    gamebox.addEventListener('pointerup', evt => this.onPointerUp(evt))
   }
 
   onKeyDown(evt) {
@@ -170,7 +179,6 @@ export default class Controls extends Container {
       return
     }
 
-    console.log(isMobile)
     if (isMobile && this.longClick) {
       if (this.mouseLongClick) {
         const speedX = Math.abs(this.mouse.x - this.mouseLongClick.x) * 2
@@ -233,10 +241,11 @@ export default class Controls extends Container {
   }
 
   onPointerDown(evt) {
-    if (isMobile) {
-      this.mouse.x = evt.pageX
-      this.mouse.y = evt.pageY
-    }
+    const {
+      context: { player },
+    } = this
+    this.mouse.x = evt.pageX
+    this.mouse.y = evt.pageY
     if (!this.isMouseInApp(evt)) {
       return
     }
@@ -244,11 +253,13 @@ export default class Controls extends Container {
       x: this.mouse.x,
       y: this.mouse.y,
     }
-    if (isMobile) {
-      this.mouseHoldTimeout = setTimeout(() => {
-        this.longClick = true
-      }, 200)
-    }
+
+    this.mouseHoldTimeout = setTimeout(() => {
+      if (pointsDistance(this.pointerStart.x, this.pointerStart.y, this.mouse.x, this.mouse.y) < 5) {
+        player.unselectAll()
+      }
+      this.longClick = true
+    }, longClickDuration)
   }
 
   onPointerUp(evt) {
@@ -258,11 +269,13 @@ export default class Controls extends Container {
     this.pointerStart = null
     this.mouseLongClick = null
     clearTimeout(this.mouseHoldTimeout)
-    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.doubleClicked || this.longClick) {
+    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.doubleClicked || (isMobile && this.longClick)) {
       this.longClick = false
       this.mouse.prevent = false
       return
     }
+    this.longClick = false
+    player.selectedBuilding && player.unselectAll()
     // Select units on mouse rectangle
     if (this.mouseRectangle) {
       let selectVillager
@@ -349,44 +362,51 @@ export default class Controls extends Container {
           pointer.play()
           this.addChild(pointer)
           // Send units
-          const minX = Math.min(...player.selectedUnits.map(unit => unit.i))
-          const minY = Math.min(...player.selectedUnits.map(unit => unit.j))
-          const maxX = Math.max(...player.selectedUnits.map(unit => unit.i))
-          const maxY = Math.max(...player.selectedUnits.map(unit => unit.j))
-          const centerX = minX + Math.round((maxX - minX) / 2)
-          const centerY = minY + Math.round((maxY - minY) / 2)
-          let hasSentVillager = false
-          let hasSentSoldier = false
-          for (let u = 0; u < player.selectedUnits.length; u++) {
-            const unit = player.selectedUnits[u]
-            const distCenterX = unit.i - centerX
-            const distCenterY = unit.j - centerY
-            const finalX = cell.i + distCenterX
-            const finalY = cell.j + distCenterY
-            if (unit.type === 'Villager') {
-              hasSentVillager = true
-            } else {
-              hasSentSoldier = true
-            }
-            if (map.grid[finalX] && map.grid[finalX][finalY]) {
-              player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
-            } else {
-              player.selectedUnits[u].sendTo(cell)
-            }
-          }
-          if (hasSentSoldier) {
-            const voice = randomItem(['5075', '5076', '5128', '5164'])
-            sound.play(voice)
-          } else if (hasSentVillager) {
-            sound.play('5006')
-          }
+          this.sendUnits(cell)
         }
       }
     }
   }
 
+  sendUnits(cell) {
+    const {
+      context: { player, map },
+    } = this
+    const minX = Math.min(...player.selectedUnits.map(unit => unit.i))
+    const minY = Math.min(...player.selectedUnits.map(unit => unit.j))
+    const maxX = Math.max(...player.selectedUnits.map(unit => unit.i))
+    const maxY = Math.max(...player.selectedUnits.map(unit => unit.j))
+    const centerX = minX + Math.round((maxX - minX) / 2)
+    const centerY = minY + Math.round((maxY - minY) / 2)
+    let hasSentVillager = false
+    let hasSentSoldier = false
+    for (let u = 0; u < player.selectedUnits.length; u++) {
+      const unit = player.selectedUnits[u]
+      const distCenterX = unit.i - centerX
+      const distCenterY = unit.j - centerY
+      const finalX = cell.i + distCenterX
+      const finalY = cell.j + distCenterY
+      if (unit.type === 'Villager') {
+        hasSentVillager = true
+      } else {
+        hasSentSoldier = true
+      }
+      if (map.grid[finalX] && map.grid[finalX][finalY]) {
+        player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
+      } else {
+        player.selectedUnits[u].sendTo(cell)
+      }
+    }
+    if (hasSentSoldier) {
+      const voice = randomItem(['5075', '5076', '5128', '5164'])
+      sound.play(voice)
+    } else if (hasSentVillager) {
+      sound.play('5006')
+    }
+  }
+
   isMouseInApp(evt) {
-    return evt.target && (!evt.target.tagName || (evt.target.tagName || '').toLowerCase() === 'canvas')
+    return evt.target && (!evt.target.tagName || evt.target.closest('#game'))
   }
 
   removeMouseBuilding() {
