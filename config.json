@@ -6,7 +6,7 @@
       "totalHitPoints": 75,
       "constructionTime": 20,
       "displayPopulation": true,
-      "increasePopulation": true,
+      "increasePopulation": 4,
       "cost": {
         "wood": 50
       },
@@ -312,7 +312,7 @@
       "sight": 7,
       "totalHitPoints": 600,
       "constructionTime": 60,
-      "increasePopulation": true,
+      "increasePopulation": 4,
       "cost": {
         "wood": 200
       },
