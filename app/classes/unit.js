@@ -1580,7 +1580,7 @@ export class Unit extends Container {
     const {
       context: { menu },
     } = this
-    if (work !== 'attacker') {
+    if (this.work !== 'attacker') {
       this.work = 'attacker'
       this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.type)
       this.actionSheet = Assets.cache.get(this.allAssets.attack.actionSheet)

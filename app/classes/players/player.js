@@ -61,7 +61,7 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: isPlayed && type === "Human" && map.revealTerrain || false,
+          viewed: (isPlayed && type === 'Human' && map.revealTerrain) || false,
         }
       }
     }

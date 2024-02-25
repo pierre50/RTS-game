@@ -25,7 +25,9 @@ export class AI extends Player {
   }
 
   step() {
-    const { context: { map } } = this
+    const {
+      context: { map },
+    } = this
 
     const maxVillagers = 20
     const maxVillagersOnConstruction = 4
@@ -61,8 +63,8 @@ export class AI extends Player {
       return
     }
 
-    if (this.cellViewed <= map.totalCells ){
-      getCellsAroundPoint(this.i, this.j, this.views, this.distSpread, (cell) => {
+    if (this.cellViewed <= map.totalCells) {
+      getCellsAroundPoint(this.i, this.j, this.views, this.distSpread, cell => {
         const globalCell = map.grid[cell.i][cell.j]
         cell.has = globalCell.has
         if (globalCell.has) {
@@ -89,16 +91,15 @@ export class AI extends Player {
             this.foundedEnemyBuildings.push(globalCell.has)
           }
         }
-  
+
         if (!cell.viewed) {
           this.cellViewed++
           cell.viewed = true
         }
       })
-  
+
       this.distSpread++
     }
-
 
     /**
      * Units action

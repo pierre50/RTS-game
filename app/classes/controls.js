@@ -11,17 +11,7 @@ import {
   randomItem,
   debounce,
 } from '../lib'
-import {
-  colorWhite,
-  colorRed,
-  cellWidth,
-  cellHeight,
-  maxSelectUnits,
-  accelerator,
-  isMobile,
-  longClickDuration,
-} from '../constants'
-import 'hammerjs'
+import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -57,20 +47,21 @@ export default class Controls extends Container {
     this.mouseRectangle
     this.mouseTouch
     this.mouseDrag = false
+    this.moveCameraInterval
 
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
-    //var mc = new Hammer.Manager(gamebox);
-
+    document.addEventListener('mousemove', evt => this.moveCameraWithMouse(evt))
+    document.addEventListener('mouseout', () => clearInterval(this.moveCameraInterval))
     document.addEventListener('keydown', evt => this.onKeyDown(evt))
     document.addEventListener('keyup', evt => this.onKeyUp(evt))
     gamebox.addEventListener('touchstart', evt => this.onTouchStart(evt))
     gamebox.addEventListener('touchend', evt => this.onTouchEnd(evt))
     gamebox.addEventListener('touchmove', evt => this.onTouchMove(evt))
-    gamebox.addEventListener('pointermove', evt => this.onPointerMove(evt))
-    gamebox.addEventListener('pointerdown', evt => this.onPointerDown(evt))
-    gamebox.addEventListener('pointerup', evt => this.onPointerUp(evt))
+    gamebox.addEventListener('mousemove', evt => this.onMouseMove(evt))
+    gamebox.addEventListener('mousedown', evt => this.onMouseDown(evt))
+    gamebox.addEventListener('mouseup', evt => this.onMouseUp(evt))
   }
 
   onKeyDown(evt) {
@@ -114,24 +105,25 @@ export default class Controls extends Container {
       delete this.keysPressed[evt.key]
     }
   }
-  
-  onTouchEnd(evt) {
-    this.mouseDrag = false
-    this.mouseTouch = null
-  }
-  onTouchStart(evt){
-    if(evt.touches.length > 1 && !this.mouseRectangle) {
-      this.mouseDrag = true
+
+  onTouchStart(evt) {
+    const touch = evt.touches[0]
+    if (evt.touches.length === 2) {
+      this.mouseTouch = {
+        x: touch.pageX,
+        y: touch.pageY,
+      }
+    } else {
+      this.onMouseDown(touch)
     }
   }
-  onTouchMove(evt){
-    if(evt.touches.length > 1) {
-      if (this.mouseRectangle){
-        return
-      }
-      this.mouse.x = evt.pageX
-      this.mouse.y = evt.pageY
-  
+
+  onTouchMove(evt) {
+    const touch = evt.touches[0]
+    if (evt.touches.length === 2) {
+      this.mouse.x = touch.pageX
+      this.mouse.y = touch.pageY
+
       if (this.mouseTouch) {
         const speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2
         const speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2
@@ -152,10 +144,31 @@ export default class Controls extends Container {
         x: this.mouse.x,
         y: this.mouse.y,
       }
+    } else {
+      this.onMouseMove(touch)
     }
   }
-  
-  onPointerMove(evt) {
+
+  onTouchEnd(evt) {
+    const touch = evt.changedTouches[0]
+    if (evt.changedTouches.length === 1) {
+      this.onMouseUp(touch)
+    }
+  }
+
+  onMouseDown(evt) {
+    this.mouse.x = evt.pageX
+    this.mouse.y = evt.pageY
+    if (!this.isMouseInApp(evt)) {
+      return
+    }
+    this.pointerStart = {
+      x: this.mouse.x,
+      y: this.mouse.y,
+    }
+  }
+
+  onMouseMove(evt) {
     const {
       context: { map, player, app },
     } = this
@@ -163,9 +176,6 @@ export default class Controls extends Container {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
-    if (this.mouseDrag){
-      return
-    }
     // Mouse building to place construction
     if (this.mouseBuilding) {
       const pos = isometricToCartesian(
@@ -261,26 +271,7 @@ export default class Controls extends Container {
     }
   }
 
-  onPointerDown(evt) {
-
-    this.mouse.x = evt.pageX
-    this.mouse.y = evt.pageY
-    if (!this.isMouseInApp(evt) || this.mouseDrag) {
-      return
-    }
-    this.pointerStart = {
-      x: this.mouse.x,
-      y: this.mouse.y,
-    }
-    this.mouseHoldTimeout = setTimeout(() => {
-      this.longClick = true
-    }, longClickDuration)
-  }
-
-  onPointerUp(evt) {
-    if (isMobile){
-      return
-    }
+  onMouseUp(evt) {
     const {
       context: { menu, map, player },
     } = this
@@ -537,31 +528,50 @@ export default class Controls extends Container {
     this.displayInstancesOnScreen()
   }
 
-  /*moveCameraWithMouse() {
-    const { mouse } = this
-    const coef = 1.2
+  moveCameraWithMouse(evt) {
+    clearInterval(this.moveCameraInterval)
+    const dir = []
+    const mouse = {
+      x: evt.pageX,
+      y: evt.pageY,
+    }
+    const coef = 1
     const moveDist = 10
+
+    const calcs = {
+      left: (0 + moveDist - mouse.x) * coef,
+      right: (mouse.x - (window.innerWidth - moveDist)) * coef,
+      up: (0 + moveDist - mouse.y) * coef,
+      down: (mouse.y - (window.innerHeight - moveDist)) * coef,
+    }
     if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= window.innerHeight) {
-      this.moveCamera('left', (0 + moveDist - mouse.x) * coef)
+      dir.push('left')
     } else if (
       mouse.x > window.innerWidth - moveDist &&
       mouse.x <= window.innerWidth &&
       mouse.y >= 0 &&
       mouse.y <= window.innerHeight
     ) {
-      this.moveCamera('right', (mouse.x - (window.innerWidth - moveDist)) * coef)
+      dir.push('right')
     }
     if (mouse.x >= 0 && mouse.x <= window.innerWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist) {
-      this.moveCamera('up', (0 + moveDist - mouse.y) * coef)
+      dir.push('up')
     } else if (
       mouse.x >= 0 &&
       mouse.x <= window.innerWidth &&
       mouse.y > window.innerHeight - moveDist &&
       mouse.y <= window.innerHeight
     ) {
-      this.moveCamera('down', (mouse.y - (window.innerHeight - moveDist)) * coef)
+      dir.push('down')
     }
-  }*/
+    if (dir.length) {
+      this.moveCameraInterval = setInterval(() => {
+        dir.forEach(prop => {
+          this.moveCamera(prop, calcs[prop])
+        })
+      }, 20)
+    }
+  }
 
   instanceInCamera(instance) {
     const {
