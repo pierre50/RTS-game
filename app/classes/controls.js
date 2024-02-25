@@ -21,6 +21,7 @@ import {
   isMobile,
   longClickDuration,
 } from '../constants'
+import 'hammerjs'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -49,22 +50,24 @@ export default class Controls extends Container {
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
     this.mouseHoldTimeout
-    this.clicked = false
-    this.longClick = false
-    this.double = null
-    this.doubleClicked = false
     this.keysPressed = {}
     this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
     this.mouseRectangle
-    this.mouseLongClick
+    this.mouseTouch
+    this.mouseDrag = false
 
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
+    //var mc = new Hammer.Manager(gamebox);
+
     document.addEventListener('keydown', evt => this.onKeyDown(evt))
     document.addEventListener('keyup', evt => this.onKeyUp(evt))
+    gamebox.addEventListener('touchstart', evt => this.onTouchStart(evt))
+    gamebox.addEventListener('touchend', evt => this.onTouchEnd(evt))
+    gamebox.addEventListener('touchmove', evt => this.onTouchMove(evt))
     gamebox.addEventListener('pointermove', evt => this.onPointerMove(evt))
     gamebox.addEventListener('pointerdown', evt => this.onPointerDown(evt))
     gamebox.addEventListener('pointerup', evt => this.onPointerUp(evt))
@@ -111,7 +114,47 @@ export default class Controls extends Container {
       delete this.keysPressed[evt.key]
     }
   }
-
+  
+  onTouchEnd(evt) {
+    this.mouseDrag = false
+    this.mouseTouch = null
+  }
+  onTouchStart(evt){
+    if(evt.touches.length > 1 && !this.mouseRectangle) {
+      this.mouseDrag = true
+    }
+  }
+  onTouchMove(evt){
+    if(evt.touches.length > 1) {
+      if (this.mouseRectangle){
+        return
+      }
+      this.mouse.x = evt.pageX
+      this.mouse.y = evt.pageY
+  
+      if (this.mouseTouch) {
+        const speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2
+        const speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2
+        if (this.mouse.x > this.mouseTouch.x) {
+          this.moveCamera('left', speedX, false)
+        }
+        if (this.mouse.y > this.mouseTouch.y) {
+          this.moveCamera('up', speedY, false)
+        }
+        if (this.mouse.y < this.mouseTouch.y) {
+          this.moveCamera('down', speedY, false)
+        }
+        if (this.mouse.x < this.mouseTouch.x) {
+          this.moveCamera('right', speedX, false)
+        }
+      }
+      this.mouseTouch = {
+        x: this.mouse.x,
+        y: this.mouse.y,
+      }
+    }
+  }
+  
   onPointerMove(evt) {
     const {
       context: { map, player, app },
@@ -120,6 +163,9 @@ export default class Controls extends Container {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
+    if (this.mouseDrag){
+      return
+    }
     // Mouse building to place construction
     if (this.mouseBuilding) {
       const pos = isometricToCartesian(
@@ -179,33 +225,8 @@ export default class Controls extends Container {
       return
     }
 
-    if (isMobile && this.longClick) {
-      if (this.mouseLongClick) {
-        const speedX = Math.abs(this.mouse.x - this.mouseLongClick.x) * 2
-        const speedY = Math.abs(this.mouse.y - this.mouseLongClick.y) * 2
-        if (this.mouse.x > this.mouseLongClick.x) {
-          this.moveCamera('left', speedX, false)
-        }
-        if (this.mouse.y > this.mouseLongClick.y) {
-          this.moveCamera('up', speedY, false)
-        }
-        if (this.mouse.y < this.mouseLongClick.y) {
-          this.moveCamera('down', speedY, false)
-        }
-        if (this.mouse.x < this.mouseLongClick.x) {
-          this.moveCamera('right', speedX, false)
-        }
-      }
-      this.mouseLongClick = {
-        x: this.mouse.x,
-        y: this.mouse.y,
-      }
-      return
-    }
-
     // Create and draw mouse selection
     if (
-      !isMobile &&
       !this.mouseRectangle &&
       this.pointerStart &&
       pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5
@@ -241,40 +262,34 @@ export default class Controls extends Container {
   }
 
   onPointerDown(evt) {
-    const {
-      context: { player },
-    } = this
+
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
-    if (!this.isMouseInApp(evt)) {
+    if (!this.isMouseInApp(evt) || this.mouseDrag) {
       return
     }
     this.pointerStart = {
       x: this.mouse.x,
       y: this.mouse.y,
     }
-
     this.mouseHoldTimeout = setTimeout(() => {
-      if (pointsDistance(this.pointerStart.x, this.pointerStart.y, this.mouse.x, this.mouse.y) < 5) {
-        player.unselectAll()
-      }
       this.longClick = true
     }, longClickDuration)
   }
 
   onPointerUp(evt) {
+    if (isMobile){
+      return
+    }
     const {
       context: { menu, map, player },
     } = this
     this.pointerStart = null
-    this.mouseLongClick = null
     clearTimeout(this.mouseHoldTimeout)
-    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.doubleClicked || (isMobile && this.longClick)) {
-      this.longClick = false
+    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.mouseDrag) {
       this.mouse.prevent = false
       return
     }
-    this.longClick = false
     player.selectedBuilding && player.unselectAll()
     // Select units on mouse rectangle
     if (this.mouseRectangle) {

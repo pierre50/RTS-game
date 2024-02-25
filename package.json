@@ -20,6 +20,7 @@
   "dependencies": {
     "@pixi/filter-multi-color-replace": "^5.1.1",
     "@pixi/sound": "^5.1.2",
+    "hammerjs": "^2.0.8",
     "pixi.js": "^7.2.4",
     "popmotion": "^11.0.5",
     "redux": "^4.2.1"

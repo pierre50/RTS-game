@@ -226,12 +226,13 @@ body {
 
 .toggle{
   position: fixed;
-  bottom: 0;
+  bottom: -119px;
   right: 0;
-  height: 30px;
-  width: 30px;
+  rotate: 64deg;
+  height: 192px;
+  width: 100px;
   border-top-left-radius: 3px;
-  background: black;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 10;
   display: flex;
   align-items: center;

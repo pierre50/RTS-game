@@ -21,6 +21,7 @@ import {
   getActionCondition,
   pointsDistance,
   getHitPointsWithDamage,
+  uuidv4,
 } from '../lib'
 
 export class Animal extends Container {
@@ -33,7 +34,7 @@ export class Animal extends Container {
       context: { map },
     } = this
     this.setParent(map)
-    this.id = map.children.length
+    this.id = uuidv4()
     this.name = 'animal'
 
     Object.keys(options).forEach(prop => {
@@ -377,7 +378,7 @@ export class Animal extends Container {
     if (
       nextCell.has &&
       nextCell.has.name === 'animal' &&
-      nextCell.has !== this &&
+      nextCell.has.id !== this.id &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
       nextCell.has.sprite.playing
@@ -471,7 +472,7 @@ export class Animal extends Container {
   }
 
   stop() {
-    if (this.currentCell.has !== this && this.currentCell.solid) {
+    if (this.currentCell.has.id !== this.id && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }

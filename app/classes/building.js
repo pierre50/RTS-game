@@ -22,6 +22,7 @@ import {
   getBuildingRubbleTextureNameWithSize,
   instancesDistance,
   getBuildingTextureNameWithSize,
+  uuidv4,
 } from '../lib'
 import { Projectile } from './projectile'
 import { Polygon } from 'pixi.js'
@@ -34,7 +35,7 @@ export class Building extends Container {
 
     const { map } = context
     this.setParent(map)
-    this.id = map.children.length
+    this.id = uuidv4()
     this.name = 'building'
 
     Object.keys(options).forEach(prop => {
@@ -97,7 +98,7 @@ export class Building extends Container {
         }
         element.appendChild(this.getLoadingElement())
       },
-      menu: this.owner.isPlayed ? [...units, ...technologies] : [],
+      menu: this.owner.isPlayed || map.devMode ? [...units, ...technologies] : [],
     }
 
     this.hitPoints = this.isBuilt ? this.totalHitPoints : 1
@@ -193,11 +194,11 @@ export class Building extends Container {
               return
             }
           }
-          if (player.selectedBuilding !== this) {
-            player.unselectAll()
+          if (this.owner.selectedBuilding !== this) {
+            this.owner.unselectAll()
             this.select()
             menu.setBottombar(this)
-            player.selectedBuilding = this
+            this.owner.selectedBuilding = this
           }
         } else if (player.selectedUnits.length) {
           drawInstanceBlinkingSelection(this)
@@ -339,7 +340,7 @@ export class Building extends Container {
     } = this
     if (this.increasePopulation) {
       // Increase player population and continue all unit creation that was paused
-      this.owner.populationMax += 4
+      this.owner.populationMax += this.increasePopulation
       // Update bottombar with populationmax if house selected
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
         menu.updateInfo(
@@ -559,7 +560,7 @@ export class Building extends Container {
       return
     }
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
 
     if (this.owner.isPlayed && this.sounds && this.sounds.create) {
@@ -709,7 +710,7 @@ export class Building extends Container {
 
   updateInterfaceLoading() {
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
     if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
       if (this.loading === 1) {
@@ -850,7 +851,7 @@ export class Building extends Container {
 
   setDefaultInterface(element, data) {
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
 
     const civDiv = document.createElement('div')

@@ -39,15 +39,15 @@ export default class Map extends Container {
     this.sortableChildren = true
 
     this.allTechnologies = false
-    this.noAI = true
+    this.noAI = false
 
-    this.devMode = false
+    this.devMode = true
     this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 
     this.x = 0
     this.y = 0
-    this.startingUnits = 5
+    this.startingUnits = 3
 
     this.players = []
     this.gaia = null
@@ -56,6 +56,7 @@ export default class Map extends Container {
     this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
+    this.totalCells
   }
 
   setCoordinate(x, y) {
@@ -86,6 +87,8 @@ export default class Map extends Container {
       default:
         this.positionsCount = 2
     }
+
+    this.totalCells = Math.pow(this.size, 2)
 
     this.playersPos = this.findPlayerPlaces()
 

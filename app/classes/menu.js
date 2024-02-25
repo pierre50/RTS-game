@@ -10,7 +10,7 @@ import {
   isValidCondition,
   getBuildingAsset,
 } from '../lib'
-import { cellWidth, cellHeight, longClickDuration } from '../constants'
+import { cellWidth, cellHeight, longClickDuration, isMobile } from '../constants'
 import { sound } from '@pixi/sound'
 
 export default class Menu {
@@ -135,7 +135,7 @@ export default class Menu {
       }
       evt.stopPropagation()
     })
-    document.body.prepend(this.toggle)
+    isMobile && document.body.prepend(this.toggle)
 
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)

@@ -7,6 +7,7 @@ import {
   instancesDistance,
   average,
   randomItem,
+  uuidv4,
 } from '../lib'
 import { colorArrow, stepTime } from '../constants'
 import { sound } from '@pixi/sound'
@@ -21,7 +22,7 @@ export class Projectile extends Container {
       context: { map },
     } = this
     this.setParent(map)
-    this.id = map.children.length
+    this.id = uuidv4()
     this.name = 'projectile'
 
     Object.keys(options).forEach(prop => {

@@ -33,7 +33,7 @@ export class Player {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.populationMax = populationMax - 4
+    this.populationMax = map.devMode ? populationMax : 0
     this.color = color
     this.colorHex = getHexColor(color)
     this.isPlayed = isPlayed
@@ -41,7 +41,7 @@ export class Player {
     this.techs = { ...Assets.cache.get('technology') }
     this.hasBuilt = map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
     this.technologies = [] //map.allTechnologies ? Object.keys(this.techs).filter(prop => this.techs[prop].key === "technologies").map(key => key) : []
-
+    this.cellViewed = 0
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
@@ -61,7 +61,7 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: map.revealTerrain || false,
+          viewed: isPlayed && type === "Human" && map.revealTerrain || false,
         }
       }
     }
@@ -119,11 +119,11 @@ export class Player {
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
       if (player.type === 'Human') {
-        if (player.selectedUnit && player.selectedUnit.owner === this) {
+        if (player.selectedUnit && player.selectedUnit.owner.id === this.id) {
           menu.setBottombar(player.selectedUnit)
-        } else if (player.selectedBuilding && player.selectedBuilding.owner === this) {
+        } else if (player.selectedBuilding && player.selectedBuilding.owner.id === this.id) {
           menu.setBottombar(player.selectedBuilding)
-        } else if (player.selectedOther && player.selectedOther.owner === this) {
+        } else if (player.selectedOther && player.selectedOther.owner.id === this.id) {
           menu.setBottombar(player.selectedOther)
         }
       }

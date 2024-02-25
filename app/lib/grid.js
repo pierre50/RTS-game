@@ -266,7 +266,7 @@ export function renderCellOnInstanceSight(instance) {
         if (
           globalCell.has.name === 'building' &&
           globalCell.has.hitPoints > 0 &&
-          globalCell.has.owner !== instance.owner &&
+          globalCell.has.owner.id !== instance.owner.id &&
           instance.owner.foundedEnemyBuildings.indexOf(globalCell.has) === -1
         ) {
           instance.owner.foundedEnemyBuildings.push(globalCell.has)
@@ -284,6 +284,7 @@ export function renderCellOnInstanceSight(instance) {
         cell.viewBy.push(instance)
       }
       if (!cell.viewed) {
+        instance.owner.cellViewed++
         cell.onViewed()
         cell.viewed = true
       }

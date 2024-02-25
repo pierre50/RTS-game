@@ -35,6 +35,7 @@ import {
   getClosestInstance,
   throttle,
   getFreeCellAroundPoint,
+  uuidv4,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -121,7 +122,7 @@ export class Unit extends Container {
       context: { map, menu },
     } = this
     this.setParent(map)
-    this.id = map.children.length
+    this.id = uuidv4()
     this.name = 'unit'
 
     Object.keys(options).forEach(prop => {
@@ -225,7 +226,8 @@ export class Unit extends Container {
             if (
               player.selectedUnits.length < maxSelectUnits &&
               cell.has &&
-              cell.has.owner === this.owner &&
+              cell.has.owner &&
+              cell.has.owner.id === this.owner.id &&
               cell.has.type === this.type
             ) {
               cell.has.select()
@@ -1217,7 +1219,7 @@ export class Unit extends Container {
     if (
       nextCell.has &&
       nextCell.has.name === 'unit' &&
-      nextCell.has !== this &&
+      nextCell.has.id !== this.id &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
       nextCell.has.sprite.playing
@@ -1307,7 +1309,7 @@ export class Unit extends Container {
   }
 
   stop() {
-    if (this.currentCell.has !== this && this.currentCell.solid) {
+    if (this.currentCell.has.id !== this.id && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }
@@ -1551,7 +1553,7 @@ export class Unit extends Container {
 
   sendToFish(target) {
     const {
-      context: { menu },
+      context: { menu, map },
     } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0

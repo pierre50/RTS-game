@@ -6,18 +6,27 @@ import {
   getPositionInGridAroundInstance,
   getClosestInstance,
   instancesDistance,
+  getCellsAroundPoint,
 } from '../../lib'
 
 export class AI extends Player {
-  constructor({ i, j, age, civ, color }, context) {
-    super({ i, j, age, civ, color, type: 'AI' }, context)
+  constructor({ i, j, age, civ, color, isPlayed = false }, context) {
+    super({ i, j, age, civ, color, type: 'AI', isPlayed }, context)
     this.foundedTrees = []
     this.foundedBerrybushs = []
     this.foundedEnemyBuildings = []
     this.interval = setInterval(() => this.step(), 4000)
+    this.selectedUnits = []
+    this.selectedUnit = null
+    this.selectedBuilding = null
+    this.selectedOther = null
+    this.distSpread = 1
+    this.cellViewed = 0
   }
 
   step() {
+    const { context: { map } } = this
+
     const maxVillagers = 20
     const maxVillagersOnConstruction = 4
     const maxClubmans = 10
@@ -52,6 +61,45 @@ export class AI extends Player {
       return
     }
 
+    if (this.cellViewed <= map.totalCells ){
+      getCellsAroundPoint(this.i, this.j, this.views, this.distSpread, (cell) => {
+        const globalCell = map.grid[cell.i][cell.j]
+        cell.has = globalCell.has
+        if (globalCell.has) {
+          if (
+            globalCell.has.type === 'Tree' &&
+            globalCell.has.quantity > 0 &&
+            this.foundedTrees.indexOf(globalCell.has) === -1
+          ) {
+            this.foundedTrees.push(globalCell.has)
+          }
+          if (
+            globalCell.has.type === 'Berrybush' &&
+            globalCell.has.quantity > 0 &&
+            this.foundedBerrybushs.indexOf(globalCell.has) === -1
+          ) {
+            this.foundedBerrybushs.push(globalCell.has)
+          }
+          if (
+            globalCell.has.name === 'building' &&
+            globalCell.has.hitPoints > 0 &&
+            globalCell.has.owner.id !== this.id &&
+            this.foundedEnemyBuildings.indexOf(globalCell.has) === -1
+          ) {
+            this.foundedEnemyBuildings.push(globalCell.has)
+          }
+        }
+  
+        if (!cell.viewed) {
+          this.cellViewed++
+          cell.viewed = true
+        }
+      })
+  
+      this.distSpread++
+    }
+
+
     /**
      * Units action
      */
@@ -71,21 +119,17 @@ export class AI extends Player {
             const bushNeighbours = getPlainCellsAroundPoint(
               bush.i,
               bush.j,
-              this.parent.grid,
+              map.grid,
               2,
               cell => cell.has && cell.has.type === 'Berrybush'
             )
             if (bushNeighbours.length > 3) {
-              const pos = getPositionInGridAroundInstance(bush, this.parent.grid, [0, 6], 2)
+              const pos = getPositionInGridAroundInstance(bush, map.grid, [0, 6], 2)
               if (pos) {
                 this.buyBuilding(pos.i, pos.j, 'Granary')
               }
             }
           }
-        }
-      } else {
-        for (let i = 0; i < Math.min(maxVillagersOnFood, inactifVillagers.length); i++) {
-          inactifVillagers[i].explore()
         }
       }
     }
@@ -105,21 +149,17 @@ export class AI extends Player {
             const treeNeighbours = getPlainCellsAroundPoint(
               tree.i,
               tree.j,
-              this.parent.grid,
+              map.grid,
               2,
               cell => cell.has && cell.has.type === 'Tree'
             )
             if (treeNeighbours.length > 5) {
-              const pos = getPositionInGridAroundInstance(tree, this.parent.grid, [0, 6], 2)
+              const pos = getPositionInGridAroundInstance(tree, map.grid, [0, 6], 2)
               if (pos) {
                 this.buyBuilding(pos.i, pos.j, 'StoragePit')
               }
             }
           }
-        }
-      } else {
-        for (let i = 0; i < Math.min(maxVillagersOnWood, inactifVillagers.length); i++) {
-          inactifVillagers[i].explore()
         }
       }
     }
@@ -145,8 +185,8 @@ export class AI extends Player {
         const target = this.otherPlayers()[targetIndex]
         const i = target.i + randomRange(-5, 5)
         const j = target.j + randomRange(-5, 5)
-        if (this.parent.grid[i] && this.parent.grid[i][j]) {
-          const cell = this.parent.grid[i][j]
+        if (map.grid[i] && map.grid[i][j]) {
+          const cell = map.grid[i][j]
           for (let i = 0; i < waitingClubmans.length; i++) {
             waitingClubmans[i].assault = true
             waitingClubmans[i].sendTo(cell, 'attack')
@@ -159,11 +199,7 @@ export class AI extends Player {
       }
     }
     if (inactifClubmans.length) {
-      if (!this.foundedEnemyBuildings.length) {
-        for (let i = 0; i < inactifClubmans.length; i++) {
-          inactifClubmans[i].explore()
-        }
-      } else {
+      if (this.foundedEnemyBuildings.length) {
         for (let i = 0; i < inactifClubmans.length; i++) {
           inactifClubmans[i].sendTo(this.foundedEnemyBuildings[0], 'attack')
         }
@@ -194,14 +230,14 @@ export class AI extends Player {
      */
     // Buy a house
     if (this.population + 3 > this.populationMax && !notBuiltHouses.length) {
-      const pos = getPositionInGridAroundInstance(towncenters[0], this.parent.grid, [3, 12], 2)
+      const pos = getPositionInGridAroundInstance(towncenters[0], map.grid, [3, 12], 2)
       if (pos) {
         this.buyBuilding(pos.i, pos.j, 'House')
       }
     }
     // Buy a barracks
     if (villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0) {
-      const pos = getPositionInGridAroundInstance(towncenters[0], this.parent.grid, [4, 20], 3, false, cell => {
+      const pos = getPositionInGridAroundInstance(towncenters[0], map.grid, [4, 20], 3, false, cell => {
         let isMiddle = true
         for (let i = 0; i < this.otherPlayers().length; i++) {
           if (

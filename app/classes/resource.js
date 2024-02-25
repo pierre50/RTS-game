@@ -7,6 +7,7 @@ import {
   randomItem,
   drawInstanceBlinkingSelection,
   getActionCondition,
+  uuidv4,
 } from '../lib'
 import { typeAction, cellWidth, cellHeight } from '../constants'
 
@@ -21,7 +22,7 @@ export class Resource extends Container {
     } = this
     this.setParent(map)
 
-    this.id = map.children.length
+    this.id = uuidv4()
     this.name = 'resource'
 
     const config = Assets.cache.get('config')

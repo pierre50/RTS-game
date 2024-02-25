@@ -36,4 +36,4 @@ export const typeAction = {
 export const corpseTime = 120
 export const rubbleTime = 120
 export const maxSelectUnits = 10
-export const populationMax = 60
+export const populationMax = 200

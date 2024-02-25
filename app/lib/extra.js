@@ -131,7 +131,7 @@ export const getActionCondition = (source, target, action, props) => {
       source.type === 'Villager' &&
       target.type === 'Farm' &&
       target.hitPoints > 0 &&
-      target.owner === source.owner &&
+      target.owner.id === source.owner.id &&
       target.quantity > 0 &&
       (!target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
@@ -141,20 +141,20 @@ export const getActionCondition = (source, target, action, props) => {
     minegold: () => source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDead,
     build: () =>
       source.type === 'Villager' &&
-      target.owner === source.owner &&
+      target.owner.id === source.owner.id &&
       target.name === 'building' &&
       target.hitPoints > 0 &&
       (!target.isBuilt || target.hitPoints < target.totalHitPoints) &&
       !target.isDead,
     attack: () =>
       target &&
-      target.owner !== source.owner &&
+      target.owner.id !== source.owner.id &&
       (target.name === 'building' || target.name === 'unit' || target.name === 'animal') &&
       target.hitPoints > 0 &&
       !target.isDead,
     heal: () =>
       target &&
-      target.owner === source.owner &&
+      target.owner.id === source.owner.id &&
       target.name === 'unit' &&
       target.hitPoints > 0 &&
       target.hitPoints < target.totalHitPoints &&
