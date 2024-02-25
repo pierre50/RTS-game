@@ -41,7 +41,7 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.noAI = false
 
-    this.devMode = true
+    this.devMode = false
     this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 

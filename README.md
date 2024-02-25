@@ -1,4 +1,11 @@
 # RTS Game
 
-npm install
-npm run start
+## Installation
+pnpm install
+
+## Start
+pnpm start
+
+## Deploy
+pnpm deploy
+
