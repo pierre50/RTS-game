@@ -26,6 +26,7 @@ body {
   height: 100vh;
   overflow: hidden;
   margin: 0;
+  -webkit-user-select: none;
   user-select: none;
   background-color: black;
 }
@@ -228,7 +229,7 @@ body {
   position: fixed;
   bottom: -119px;
   right: 0;
-  rotate: 64deg;
+  transform: rotate(64deg);
   height: 192px;
   width: 100px;
   border-top-left-radius: 3px;

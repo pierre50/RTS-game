@@ -2,11 +2,13 @@
   "name": "rts-game",
   "version": "1.0.0",
   "description": "RTS game",
+  "main": "main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pierre50/RTS-game.git"
   },
   "scripts": {
+    "compile": "pnpm build && electron-builder",
     "start": "webpack serve",
     "deploy": "pnpm build && gh-pages -d build",
     "webpack": "webpack --mode development",
@@ -16,6 +18,23 @@
     "precommit": "lint-staged",
     "clean": "rm -rf ./build && mkdir ./build",
     "lint": "eslint ./app/**/*.js"
+  },
+  "build": {
+    "appId": "your.id",
+    "mac": {
+      "category": "your.app.category.type"
+    },
+
+    "files": [
+      "main.js",
+      {
+        "from": "build",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   },
   "dependencies": {
     "@pixi/filter-multi-color-replace": "^5.1.1",
@@ -33,6 +52,8 @@
     "babel-preset-stage-0": "^6.24.1",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.10.0",
+    "electron": "^29.0.1",
+    "electron-builder": "^24.12.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",

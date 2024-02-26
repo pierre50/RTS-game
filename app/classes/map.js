@@ -1,6 +1,6 @@
 import { Container, Assets, Sprite } from 'pixi.js'
 import { Resource } from './resource'
-import { Human, AI, Gaia } from './players/'
+import { Human, AI, Gaia } from './players'
 import {
   randomRange,
   getZoneInGridWithCondition,

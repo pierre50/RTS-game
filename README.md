@@ -3,9 +3,11 @@
 ## Installation
 pnpm install
 
-## Start
+## Start locally
 pnpm start
 
-## Deploy
+## Deploy to gh page
 pnpm deploy
 
+## Compile to app for macOS, Windows and Linux 
+pnpm compile
