@@ -9,6 +9,7 @@ import {
   canvasDrawStrokeRectangle,
   isValidCondition,
   getBuildingAsset,
+  debounce,
 } from '../lib'
 import { cellWidth, cellHeight, longClickDuration, isMobile } from '../constants'
 import { sound } from '@pixi/sound'
@@ -137,9 +138,9 @@ export default class Menu {
     })
     isMobile && document.body.prepend(this.toggle)
 
-    this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 100)
-    this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 100)
-    this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100)
+    this.updatePlayerMiniMap = debounce(this.updatePlayerMiniMapEvt, 500)
+    this.updateResourcesMiniMap = debounce(this.updateResourcesMiniMapEvt, 500)
+    this.updateCameraMiniMap = debounce(this.updateCameraMiniMapEvt, 100)
 
     this.miniMapAlpha = 1.284
     this.updateTopbar()

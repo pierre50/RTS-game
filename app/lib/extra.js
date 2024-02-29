@@ -1,3 +1,5 @@
+import { instanceIsInPlayerSight } from './grid'
+
 export function throttle(callback, wait, immediate = false) {
   let timeout = null
   let initialCall = true
@@ -64,6 +66,10 @@ export const updateObject = (target, operation) => {
       setToValue(target, result + Number(operation.value), operation.key)
       break
   }
+}
+
+export const canUpdateMinimap = (instance, player) => {
+  return instance.owner.isPlayed || (player.id !== instance.owner.id && instanceIsInPlayerSight(instance, player))
 }
 export const isValidCondition = (condition, values) => {
   if (!condition) {

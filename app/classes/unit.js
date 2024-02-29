@@ -36,6 +36,7 @@ import {
   throttle,
   getFreeCellAroundPoint,
   uuidv4,
+  canUpdateMinimap,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -315,7 +316,7 @@ export class Unit extends Container {
       return
     }
     const {
-      context: { menu },
+      context: { menu, player },
     } = this
 
     this.selected = true
@@ -327,7 +328,7 @@ export class Unit extends Container {
     selection.drawPolygon(path)
     this.addChildAt(selection, 0)
 
-    menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   unselect() {
@@ -335,7 +336,7 @@ export class Unit extends Container {
       return
     }
     const {
-      context: { menu },
+      context: { menu, player },
     } = this
 
     this.selected = false
@@ -343,7 +344,7 @@ export class Unit extends Container {
     if (selection) {
       this.removeChild(selection)
     }
-    menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   hasPath() {
@@ -1274,7 +1275,7 @@ export class Unit extends Container {
       }
     } else {
       const {
-        context: { menu },
+        context: { menu, player },
       } = this
       // Move to next
       const oldDeg = this.degree
@@ -1283,7 +1284,7 @@ export class Unit extends Container {
         speed *= 0.8
       }
       moveTowardPoint(this, nextCell.x, nextCell.y, this.speed)
-      menu.updatePlayerMiniMap(this.owner)
+      canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
         this.setTextures('walkingSheet')
@@ -1454,6 +1455,7 @@ export class Unit extends Container {
         this.clear()
       }
     }
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   clear() {

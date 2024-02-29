@@ -535,6 +535,7 @@ export class Building extends Container {
       }
     })
     this.startTimeout(() => this.clear(), rubbleTime)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   clear() {
@@ -560,7 +561,7 @@ export class Building extends Container {
       return
     }
     const {
-      context: { menu, map },
+      context: { menu, player },
     } = this
 
     if (this.owner.isPlayed && this.sounds && this.sounds.create) {
@@ -579,7 +580,7 @@ export class Building extends Container {
     }
     this.addChildAt(selection, 0)
 
-    menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   unselect() {
@@ -587,7 +588,7 @@ export class Building extends Container {
       return
     }
     const {
-      context: { menu },
+      context: { menu, player },
     } = this
 
     this.selected = false
@@ -595,7 +596,7 @@ export class Building extends Container {
     if (selection) {
       this.removeChild(selection)
     }
-    menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   placeUnit(type) {

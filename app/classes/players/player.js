@@ -7,6 +7,7 @@ import {
   getHexColor,
   updateObject,
   getActionCondition,
+  canUpdateMinimap,
 } from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
@@ -172,7 +173,7 @@ export class Player {
     const { context } = this
     let unit = new Unit({ i, j, type, owner: this }, context)
     this.units.push(unit)
-    context.menu.updatePlayerMiniMap(this)
+    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }
 
@@ -180,7 +181,7 @@ export class Player {
     const { context } = this
     const building = new Building({ i, j, owner: this, type, isBuilt }, context)
     this.buildings.push(building)
-    context.menu.updatePlayerMiniMap(this)
+    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return building
   }
 }

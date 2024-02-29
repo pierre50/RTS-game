@@ -41,6 +41,8 @@ export default class Controls extends Container {
 
     this.mouseHoldTimeout
     this.keysPressed = {}
+    this.keyInterval
+    this.keySpeed = 0
     this.eventMode = 'auto'
     this.allowMove = false
     this.allowClick = false
@@ -78,31 +80,48 @@ export default class Controls extends Container {
       return
     }
 
+    const handleMoveCamera = () => {
+      if (!this.keyInterval) {
+        this.keyInterval = setInterval(() => {
+          let double = false
+          if (Object.values(this.keysPressed).filter(Boolean).length > 1) {
+            double = true
+          }
+          if (this.keySpeed < 2.4) {
+            this.keySpeed += 0.1
+          }
+          if (this.keysPressed['ArrowLeft']) {
+            this.moveCamera('left', this.keySpeed, double)
+          }
+          if (this.keysPressed['ArrowUp']) {
+            this.moveCamera('up', this.keySpeed, double)
+          }
+          if (this.keysPressed['ArrowDown']) {
+            this.moveCamera('down', this.keySpeed, double)
+          }
+          if (this.keysPressed['ArrowRight']) {
+            this.moveCamera('right', this.keySpeed, double)
+          }
+        }, 1)
+      }
+    }
     if (!evt.repeat) {
       this.keysPressed[evt.key] = true
     }
-    let pressed = false
-    if (this.keysPressed['ArrowLeft']) {
-      this.moveCamera('left', null, pressed)
-      pressed = true
-    }
-    if (this.keysPressed['ArrowUp']) {
-      this.moveCamera('up', null, pressed)
-      pressed = true
-    }
-    if (this.keysPressed['ArrowDown']) {
-      this.moveCamera('down', null, pressed)
-      pressed = true
-    }
-    if (this.keysPressed['ArrowRight']) {
-      this.moveCamera('right', null, pressed)
-      pressed = true
+    const controlsMap = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']
+    if (controlsMap.includes(evt.key)) {
+      handleMoveCamera()
     }
   }
 
   onKeyUp(evt) {
     if (!evt.repeat) {
       delete this.keysPressed[evt.key]
+    }
+    if (!Object.values(this.keysPressed).filter(Boolean).length) {
+      clearInterval(this.keyInterval)
+      this.keyInterval = null
+      this.keySpeed = 0
     }
   }
 
