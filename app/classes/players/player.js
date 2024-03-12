@@ -15,29 +15,26 @@ import { Unit } from '../unit'
 import { populationMax } from '../../constants'
 
 export class Player {
-  constructor({ i, j, age, civ, color, type, isPlayed = false }, context) {
+  constructor(options, context) {
     this.name = 'player'
     this.context = context
 
     const { map } = context
     this.id = uuidv4()
     this.parent = map
-    this.i = i
-    this.j = j
-    this.civ = civ
-    this.age = age
+    Object.keys(options).forEach(prop => {
+      this[prop] = options[prop]
+    })
+
     this.wood = map.devMode ? 10000 : 200
     this.food = map.devMode ? 10000 : 200
     this.stone = map.devMode ? 10000 : 150
     this.gold = map.devMode ? 10000 : 0
-    this.type = type
     this.units = []
     this.buildings = []
     this.population = 0
     this.populationMax = map.devMode ? populationMax : 0
-    this.color = color
-    this.colorHex = getHexColor(color)
-    this.isPlayed = isPlayed
+    this.colorHex = getHexColor(this.color)
     this.config = { ...Assets.cache.get('config') }
     this.techs = { ...Assets.cache.get('technology') }
     this.hasBuilt = map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
@@ -62,7 +59,7 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: (isPlayed && type === 'Human' && map.revealTerrain) || false,
+          viewed: (this.isPlayed && this.type === 'Human' && map.revealTerrain) || false,
         }
       }
     }

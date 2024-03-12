@@ -50,6 +50,8 @@ export default class Map extends Container {
     this.startingUnits = 3
 
     this.players = []
+    this.playersPos = []
+    this.positionsCount = 2
     this.gaia = null
     this.resources = []
 

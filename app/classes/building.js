@@ -23,6 +23,7 @@ import {
   instancesDistance,
   getBuildingTextureNameWithSize,
   uuidv4,
+  canUpdateMinimap,
 } from '../lib'
 import { Projectile } from './projectile'
 import { Polygon } from 'pixi.js'
@@ -579,7 +580,6 @@ export class Building extends Container {
       this.updateInterfaceLoading()
     }
     this.addChildAt(selection, 0)
-
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
