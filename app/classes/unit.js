@@ -1553,94 +1553,37 @@ export class Unit extends Container {
     return loadingDiv
   }
 
-  sendToFish(target) {
+  commonSendTo(target, work, action, assets) {
     const {
-      context: { menu, map },
+      resource = work,
+      actionSheet = 'actionSheet',
+      standingSheet = 'standingSheet',
+      walkingSheet = 'walkingSheet',
+      dyingSheet = 'dyingSheet',
+      corpseSheet = 'corpseSheet',
+    } = assets || {}
+    const {
+      context: { menu },
     } = this
     if (!loadingFoodTypes.includes(this.loadingType)) {
       this.loading = 0
       this.updateInterfaceLoading()
     }
-    if (this.work !== 'fisher') {
-      this.work = 'fisher'
+    if (this.work !== work || this.action !== action) {
+      this.work = work
       this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      if (this.allAssets && this.allAssets.fisher) {
-        this.actionSheet = Assets.cache.get(this.allAssets.fisher.actionSheet)
-        this.standingSheet = Assets.cache.get(this.allAssets.fisher.standingSheet)
+      if (this.allAssets && this.allAssets[resource]) {
+        this.actionSheet = Assets.cache.get(this.allAssets[resource][actionSheet])
+        this.standingSheet = Assets.cache.get(this.allAssets[resource][standingSheet])
         if (!this.loading) {
-          this.walkingSheet = Assets.cache.get(this.allAssets.fisher.walkingSheet)
-          this.dyingSheet = Assets.cache.get(this.allAssets.fisher.dyingSheet)
-          this.corpseSheet = Assets.cache.get(this.allAssets.fisher.corpseSheet)
+          this.walkingSheet = Assets.cache.get(this.allAssets[resource][walkingSheet])
+          this.dyingSheet = Assets.cache.get(this.allAssets[resource][dyingSheet])
+          this.corpseSheet = Assets.cache.get(this.allAssets[resource][corpseSheet])
         }
       }
     }
     this.previousDest = null
-    return this.sendTo(target, 'fishing')
-  }
-
-  sendToAttack(target) {
-    const {
-      context: { menu },
-    } = this
-    if (this.work !== 'attacker') {
-      this.work = 'attacker'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.type)
-      this.actionSheet = Assets.cache.get(this.allAssets.attack.actionSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.attack.standingSheet)
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get(this.allAssets.attack.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.attack.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.attack.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'attack')
-  }
-
-  sendToTakeMeat(target) {
-    const {
-      context: { menu },
-    } = this
-    if (!loadingFoodTypes.includes(this.loadingType)) {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'hunter' || this.action !== 'takemeat') {
-      this.work = 'hunter'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.hunter.harvestSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.hunter.standingSheet)
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get(this.allAssets.hunter.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.hunter.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.hunter.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'takemeat')
-  }
-
-  sendToHunt(target) {
-    const {
-      context: { menu },
-    } = this
-    if (!loadingFoodTypes.includes(this.loadingType)) {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'hunter' || this.action !== 'hunt') {
-      this.work = 'hunter'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.hunter.actionSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.hunter.standingSheet)
-      if (!this.loading) {
-        this.walkingSheet = Assets.cache.get(this.allAssets.hunter.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.hunter.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.hunter.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(target, 'hunt')
+    return this.sendTo(target, action)
   }
 
   sendToDelivery() {
@@ -1676,127 +1619,44 @@ export class Unit extends Container {
     this.sendTo(target, 'delivery')
   }
 
-  sendToBuilding(building) {
-    const {
-      context: { menu },
-    } = this
-    if (this.work !== 'builder') {
-      this.updateInterfaceLoading()
-      this.work = 'builder'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.builder.actionSheet)
-      if (!this.loading) {
-        this.standingSheet = Assets.cache.get(this.allAssets.builder.standingSheet)
-        this.walkingSheet = Assets.cache.get(this.allAssets.builder.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.builder.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.builder.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(building, 'build')
+  sendToFish(target) {
+    return this.commonSendTo(target, 'fisher', 'fishing')
   }
 
-  sendToFarm(farm) {
-    const {
-      context: { menu },
-    } = this
-    if (!loadingFoodTypes.includes(this.loadingType)) {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'farmer') {
-      this.work = 'farmer'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.farmer.actionSheet)
-      if (!this.loading) {
-        this.standingSheet = Assets.cache.get(this.allAssets.farmer.standingSheet)
-        this.walkingSheet = Assets.cache.get(this.allAssets.farmer.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.farmer.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.farmer.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(farm, 'farm')
+  sendToAttack(target) {
+    return this.commonSendTo(target, 'attacker', 'attack', { resource: 'attack' })
   }
 
-  sendToTree(tree) {
-    const {
-      context: { menu },
-    } = this
-    if (this.work !== 'woodcutter') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'woodcutter'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.woodcutter.actionSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.woodcutter.standingSheet)
-      this.walkingSheet = Assets.cache.get(this.allAssets.woodcutter.walkingSheet)
-      this.dyingSheet = Assets.cache.get(this.allAssets.woodcutter.dyingSheet)
-      this.corpseSheet = Assets.cache.get(this.allAssets.woodcutter.corpseSheet)
-    }
-    this.previousDest = null
-    return this.sendTo(tree, 'chopwood')
+  sendToTakeMeat(target) {
+    return this.commonSendTo(target, 'hunter', 'takemeat', { actionSheet: 'harvestSheet' })
   }
 
-  sendToBerrybush(berrybush) {
-    const {
-      context: { menu },
-    } = this
-    if (!loadingFoodTypes.includes(this.loadingType)) {
-      this.loading = 0
-      this.updateInterfaceLoading()
-    }
-    if (this.work !== 'forager') {
-      this.work = 'forager'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.forager.actionSheet)
-      if (!this.loading) {
-        this.standingSheet = Assets.cache.get(this.allAssets.forager.standingSheet)
-        this.walkingSheet = Assets.cache.get(this.allAssets.forager.walkingSheet)
-        this.dyingSheet = Assets.cache.get(this.allAssets.forager.dyingSheet)
-        this.corpseSheet = Assets.cache.get(this.allAssets.forager.corpseSheet)
-      }
-    }
-    this.previousDest = null
-    return this.sendTo(berrybush, 'forageberry')
+  sendToHunt(target) {
+    return this.commonSendTo(target, 'hunter', 'hunt')
   }
 
-  sendToStone(stone) {
-    const {
-      context: { menu },
-    } = this
-    if (this.work !== 'stoneminer') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'stoneminer'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.stoneminer.actionSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.stoneminer.standingSheet)
-      this.walkingSheet = Assets.cache.get(this.allAssets.stoneminer.walkingSheet)
-      this.dyingSheet = Assets.cache.get(this.allAssets.stoneminer.dyingSheet)
-      this.corpseSheet = Assets.cache.get(this.allAssets.stoneminer.corpseSheet)
-    }
-    this.previousDest = null
-    return this.sendTo(stone, 'minestone')
+  sendToBuilding(target) {
+    return this.commonSendTo(target, 'builder', 'build')
   }
 
-  sendToGold(gold) {
-    const {
-      context: { menu },
-    } = this
-    if (this.work !== 'goldminer') {
-      this.loading = 0
-      this.updateInterfaceLoading()
-      this.work = 'goldminer'
-      this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      this.actionSheet = Assets.cache.get(this.allAssets.goldminer.actionSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets.goldminer.standingSheet)
-      this.walkingSheet = Assets.cache.get(this.allAssets.goldminer.walkingSheet)
-      this.dyingSheet = Assets.cache.get(this.allAssets.goldminer.dyingSheet)
-      this.corpseSheet = Assets.cache.get(this.allAssets.goldminer.corpseSheet)
-    }
-    this.previousDest = null
-    return this.sendTo(gold, 'minegold')
+  sendToFarm(target) {
+    return this.commonSendTo(target, 'farmer', 'farm')
+  }
+
+  sendToTree(target) {
+    return this.commonSendTo(target, 'woodcutter', 'chopwood')
+  }
+
+  sendToBerrybush(target) {
+    return this.commonSendTo(target, 'forager', 'forageberry')
+  }
+
+  sendToStone(target) {
+    return this.commonSendTo(target, 'stoneminer', 'minestone')
+  }
+
+  sendToGold(target) {
+    return this.commonSendTo(target, 'goldminer', 'minegold')
   }
 
   setDefaultInterface(element, data) {
