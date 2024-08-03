@@ -10,7 +10,7 @@ pnpm start
 
 ## Deploy to gh page
 
-pnpm deploy
+npm run deploy
 
 ## Compile to app for macOS, Windows and Linux
 
