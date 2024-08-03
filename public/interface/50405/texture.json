@@ -193,7 +193,7 @@
       }
     }
   },
- "animations": {
+  "animations": {
     "animation": [
       "000_50405.png",
       "001_50405.png",
@@ -202,7 +202,8 @@
       "004_50405.png",
       "005_50405.png",
       "006_50405.png",
-      "007_50405.png"]
+      "007_50405.png"
+    ]
   },
   "meta": {
     "app": "http://free-tex-packer.com",

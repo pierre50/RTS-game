@@ -99,7 +99,7 @@
         "key": "age",
         "op": ">=",
         "value": 2
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -148,7 +148,7 @@
         "key": "age",
         "op": ">=",
         "value": 3
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -312,7 +312,7 @@
         "key": "age",
         "op": ">=",
         "value": 2
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -354,7 +354,7 @@
         "key": "age",
         "op": ">=",
         "value": 3
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -430,7 +430,7 @@
         "key": "age",
         "op": ">=",
         "value": 2
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -470,7 +470,7 @@
         "key": "age",
         "op": ">=",
         "value": 3
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -546,7 +546,7 @@
         "key": "age",
         "op": ">=",
         "value": 2
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -588,7 +588,7 @@
         "key": "age",
         "op": ">=",
         "value": 3
-      }, 
+      },
       {
         "key": "technologies",
         "op": "includes",
@@ -807,7 +807,8 @@
         "key": "age",
         "op": ">=",
         "value": 2
-      },{
+      },
+      {
         "key": "technologies",
         "op": "includes",
         "value": "ResearchWatchTower"

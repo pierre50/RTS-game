@@ -9,7 +9,7 @@ import {
   changeSpriteColor,
   getTexture,
   randomItem,
-  debounce,
+  throttle,
 } from '../lib'
 import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
@@ -33,9 +33,6 @@ export default class Controls extends Container {
       x: 0,
       y: 0,
     }
-
-    this.clearInstancesOnScreen = debounce(this.clearInstancesOnScreenEvt, 40)
-    this.displayInstancesOnScreen = debounce(this.displayInstancesOnScreenEvt, 40)
 
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
@@ -481,7 +478,7 @@ export default class Controls extends Container {
       context: { map, app, menu },
     } = this
 
-    const dividedSpeed = isSpeedDivided ? 2 : 1
+    const dividedSpeed = isSpeedDivided ? 1.5 : 1
     const speed = (moveSpeed || 20) / dividedSpeed
     const A = { x: cellWidth / 2 - this.camera.x, y: -this.camera.y }
     const B = {
@@ -620,7 +617,7 @@ export default class Controls extends Container {
     }
   }
 
-  clearInstancesOnScreenEvt() {
+  clearInstancesOnScreen() {
     this.getCellOnCamera(cell => {
       cell.visible = false
       if (cell.has) {
@@ -629,7 +626,7 @@ export default class Controls extends Container {
     })
   }
 
-  displayInstancesOnScreenEvt() {
+  displayInstancesOnScreen() {
     this.getCellOnCamera(cell => cell.updateVisible())
   }
 

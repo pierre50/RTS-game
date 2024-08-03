@@ -97,7 +97,7 @@ export class Cell extends Container {
 
   setDesertBorder(direction) {
     const resourceName = '20002'
-    const cellSprite = this.getChildByName('sprite')
+    const { sprite: cellSprite } = this
     const cellSpriteTextureName = cellSprite.texture.textureCacheIds[0]
     const cellSpriteIndex = cellSpriteTextureName.split('_')[0]
     let val = {}
@@ -138,7 +138,7 @@ export class Cell extends Container {
   }
 
   setWaterBorder(resourceName, index) {
-    const sprite = this.getChildByName('sprite')
+    const { sprite } = this
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
     this.type = 'Desert'
@@ -151,7 +151,7 @@ export class Cell extends Container {
   }
 
   setReliefBorder(index, elevation = 0) {
-    const sprite = this.getChildByName('sprite')
+    const { sprite } = this
     const resourceName = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
@@ -179,7 +179,7 @@ export class Cell extends Container {
           const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
           if (target.type !== this.type && aside.type !== this.type) {
             if (Math.floor(instancesDistance(this, cell)) === 2) {
-              const sprite = target.getChildByName('sprite')
+              const { sprite } = this
               const index = formatNumber(randomRange(0, 3))
               const resourceName = '15002'
               const spritesheet = Assets.cache.get(resourceName)

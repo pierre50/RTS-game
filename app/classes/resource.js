@@ -191,7 +191,7 @@ export class Resource extends Container {
   }
 
   setCuttedTreeTexture() {
-    const sprite = this.getChildByName('sprite')
+    const { sprite } = this
     const spritesheet = Assets.cache.get('636')
     const textureName = `00${randomRange(0, 3)}_636.png`
     const texture = spritesheet.textures[textureName]
@@ -208,7 +208,7 @@ export class Resource extends Container {
     const spritesheet = Assets.cache.get('623')
     const textureName = `00${randomRange(0, 3)}_623.png`
     const texture = spritesheet.textures[textureName]
-    const sprite = this.getChildByName('sprite')
+    const { sprite } = this
     sprite.texture = texture
     sprite.eventMode = 'none'
     this.zIndex--

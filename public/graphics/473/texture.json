@@ -133,20 +133,10 @@
     "scale": 1
   },
   "animations": {
-    "south": [
-      "000_473.png"
-    ],
-    "southwest": [
-      "001_473.png"
-    ],
-    "west": [
-      "002_473.png"
-    ],
-    "northwest": [
-      "003_473.png"
-    ],
-    "north": [
-      "004_473.png"
-    ]
+    "south": ["000_473.png"],
+    "southwest": ["001_473.png"],
+    "west": ["002_473.png"],
+    "northwest": ["003_473.png"],
+    "north": ["004_473.png"]
   }
 }

@@ -37,8 +37,7 @@
         "wood": 120
       },
       "accept": ["berry", "wheat"],
-      "technologies": ["ResearchWatchTower","ResearchSentryTower",
-       "ResearchSmallWall"],
+      "technologies": ["ResearchWatchTower", "ResearchSentryTower", "ResearchSmallWall"],
       "sounds": {
         "create": 5096
       }
@@ -52,11 +51,22 @@
         "wood": 120
       },
       "accept": ["wood", "stone", "gold", "meat", "fish"],
-      "technologies": ["Toolworking", "Metalworking", "Metallurgy", 
-      "BronzeShield", "IronShield",
-      "LeatherArmorInfantry", "ScaleArmorInfantry", "ChainmailInfantry", 
-      "LeatherArmorArchers", "ScaleArmorArchers", "ChainmailArchers", 
-      "LeatherArmorCavalry", "ScaleArmorCavalry", "ChainmailCavalry"],
+      "technologies": [
+        "Toolworking",
+        "Metalworking",
+        "Metallurgy",
+        "BronzeShield",
+        "IronShield",
+        "LeatherArmorInfantry",
+        "ScaleArmorInfantry",
+        "ChainmailInfantry",
+        "LeatherArmorArchers",
+        "ScaleArmorArchers",
+        "ChainmailArchers",
+        "LeatherArmorCavalry",
+        "ScaleArmorCavalry",
+        "ChainmailCavalry"
+      ],
       "sounds": {
         "create": 5186
       }
