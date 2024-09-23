@@ -141,7 +141,7 @@
       "sight": 3,
       "totalHitPoints": 50,
       "constructionTime": 24,
-      "quantity": 250,
+      "totalQuantity": 250,
       "cost": {
         "wood": 75
       },
@@ -425,7 +425,7 @@
           "dyingSheet": "314",
           "corpseSheet": "373"
         },
-        "attack": {
+        "attacker": {
           "actionSheet": "224",
           "standingSheet": "418",
           "dyingSheet": "314",
@@ -916,13 +916,13 @@
   },
   "resources": {
     "Berrybush": {
-      "quantity": 200,
+      "totalQuantity": 200,
       "icon": "036_50730",
       "color": "#7B9051",
       "assets": ["000_240"]
     },
     "Tree": {
-      "quantity": 300,
+      "totalQuantity": 300,
       "totalHitPoints": 25,
       "icon": "035_50730",
       "color": "#274F1F",
@@ -933,20 +933,20 @@
       }
     },
     "Gold": {
-      "quantity": 400,
+      "totalQuantity": 400,
       "icon": "039_50730",
       "color": "#DECF10",
       "assets": ["000_481", "001_481", "002_481", "003_481", "004_481", "005_481", "006_481"]
     },
     "Stone": {
-      "quantity": 250,
+      "totalQuantity": 250,
       "icon": "038_50730",
       "color": "#B3B3B3",
       "assets": ["000_622", "001_622", "002_622", "003_622", "004_622", "005_622", "006_622"]
     },
     "Salmon": {
       "category": "Fish",
-      "quantity": 250,
+      "totalQuantity": 250,
       "icon": "034_50730",
       "allowAction": ["Villager", "FishingBoat"],
       "isAnimated": true,
@@ -960,7 +960,7 @@
       "speed": 1.2,
       "strategy": "runaway",
       "icon": "037_50730",
-      "quantity": 150,
+      "totalQuantity": 150,
       "assets": {
         "standingSheet": "479",
         "walkingSheet": "478",
@@ -979,7 +979,7 @@
       "meleeAttack": 10,
       "icon": "033_50730",
       "rateOfFire": 1,
-      "quantity": 300,
+      "totalQuantity": 300,
       "assets": {
         "actionSheet": "215",
         "standingSheet": "428",
@@ -1001,7 +1001,7 @@
       "strategy": "attack",
       "icon": "041_50730",
       "rateOfFire": 2,
-      "quantity": 100,
+      "totalQuantity": 100,
       "assets": {
         "actionSheet": "217",
         "standingSheet": "433",
@@ -1021,7 +1021,7 @@
       "strategy": "attack",
       "rateOfFire": 1,
       "icon": "040_50730",
-      "quantity": 100,
+      "totalQuantity": 100,
       "assets": {
         "actionSheet": "222",
         "standingSheet": "497",

@@ -8,6 +8,7 @@ import {
   updateObject,
   getActionCondition,
   canUpdateMinimap,
+  isValidCondition,
 } from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
@@ -16,30 +17,34 @@ import { populationMax } from '../../constants'
 
 export class Player {
   constructor(options, context) {
-    this.name = 'player'
+    this.family = 'player'
     this.context = context
 
     const { map } = context
-    this.id = uuidv4()
+    this.name = uuidv4()
     this.parent = map
+
+    this.wood = map.devMode ? 10000 : 200
+    this.food = map.devMode ? 10000 : 800
+    this.stone = map.devMode ? 10000 : 150
+    this.gold = map.devMode ? 10000 : 0
+    this.corpses = []
+    this.units = []
+    this.buildings = []
+    this.population = 0
+    this.technologies = []
+    this.cellViewed = 0
+    this.age = 0
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
 
-    this.wood = map.devMode ? 10000 : 200
-    this.food = map.devMode ? 10000 : 200
-    this.stone = map.devMode ? 10000 : 150
-    this.gold = map.devMode ? 10000 : 0
-    this.units = []
-    this.buildings = []
-    this.population = 0
-    this.populationMax = map.devMode ? populationMax : 0
+    this.populationMax = this.populationMax || map.devMode ? populationMax : 0
+
     this.colorHex = getHexColor(this.color)
     this.config = { ...Assets.cache.get('config') }
     this.techs = { ...Assets.cache.get('technology') }
-    this.hasBuilt = map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
-    this.technologies = [] //map.allTechnologies ? Object.keys(this.techs).filter(prop => this.techs[prop].key === "technologies").map(key => key) : []
-    this.cellViewed = 0
+    this.hasBuilt = this.hasBuilt || map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
@@ -49,8 +54,7 @@ export class Player {
         cloneGrid[i][j] = {
           i,
           j,
-          has: null,
-          viewBy: [],
+          viewBy: this.views?.[i][j].viewBy ?? [],
           onViewed: () => {
             const {
               context: { menu, map },
@@ -59,15 +63,15 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: (this.isPlayed && this.type === 'Human' && map.revealTerrain) || false,
+          viewed: this.views?.[i][j].viewed ?? ((this.isPlayed && this.type === 'Human' && map.revealTerrain) || false),
         }
       }
     }
     this.views = cloneGrid
   }
 
-  spawnBuilding(...args) {
-    const building = this.createBuilding(...args)
+  spawnBuilding(options) {
+    const building = this.createBuilding(options)
     if (this.isPlayed) {
       let hasSentVillager = false
       let hasSentOther = false
@@ -117,11 +121,11 @@ export class Player {
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
       if (player.type === 'Human') {
-        if (player.selectedUnit && player.selectedUnit.owner.id === this.id) {
+        if (player.selectedUnit && player.selectedUnit.owner.name === this.name) {
           menu.setBottombar(player.selectedUnit)
-        } else if (player.selectedBuilding && player.selectedBuilding.owner.id === this.id) {
+        } else if (player.selectedBuilding && player.selectedBuilding.owner.name === this.name) {
           menu.setBottombar(player.selectedBuilding)
-        } else if (player.selectedOther && player.selectedOther.owner.id === this.id) {
+        } else if (player.selectedOther && player.selectedOther.owner.name === this.name) {
           menu.setBottombar(player.selectedOther)
         }
       }
@@ -157,8 +161,11 @@ export class Player {
       context: { menu, map },
     } = this
     const config = this.config.buildings[type]
-    if (canAfford(this, config.cost)) {
-      this.spawnBuilding(i, j, type, map.devMode)
+    if (
+      canAfford(this, config.cost) &&
+      (!config.conditions || config.conditions.every(condition => isValidCondition(condition, this)))
+    ) {
+      this.spawnBuilding({ i, j, type, isBuilt: map.devMode })
       payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true
@@ -166,17 +173,16 @@ export class Player {
     return false
   }
 
-  createUnit(i, j, type) {
+  createUnit(options) {
     const { context } = this
-    let unit = new Unit({ i, j, type, owner: this }, context)
-    this.units.push(unit)
+    let unit = new Unit({ ...options, owner: this }, context)
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }
 
-  createBuilding(i, j, type, isBuilt = false) {
+  createBuilding(options) {
     const { context } = this
-    const building = new Building({ i, j, owner: this, type, isBuilt }, context)
+    const building = new Building({ ...options, owner: this }, context)
     this.buildings.push(building)
     canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return building

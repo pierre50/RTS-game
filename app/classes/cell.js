@@ -7,8 +7,11 @@ import {
   instanceIsInPlayerSight,
   instancesDistance,
   getInstanceZIndex,
+  getBuildingAsset,
+  getTexture,
+  changeSpriteColorDirectly,
 } from '../lib'
-import { cellDepth, colorWhite } from '../constants'
+import { cellDepth, colorFog, colorWhite } from '../constants'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -20,7 +23,22 @@ export class Cell extends Container {
       context: { map },
     } = this
     this.setParent(map)
-    this.name = 'cell'
+    this.family = 'cell'
+    this.map = map
+
+    this.solid = false
+    this.visible = false
+    this.zIndex = 0
+    this.inclined = false
+    this.border = false
+    this.waterBorder = false
+    this.z = 0
+    this.viewed = false
+    this.viewBy = []
+    this.has = null
+    this.corpses = []
+    this.fogSprites = []
+
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
@@ -29,19 +47,8 @@ export class Cell extends Container {
     })
     const pos = cartesianToIsometric(this.i, this.j)
 
-    this.map = map
     this.x = pos[0]
     this.y = pos[1] - this.z * cellDepth
-    this.zIndex = 0
-    this.inclined = false
-    this.border = false
-    this.waterBorder = false
-    this.has = null
-    this.corpses = []
-    this.solid = false
-    this.visible = false
-    this.viewed = false
-    this.viewBy = []
 
     const textureName = randomItem(this.assets)
     const resourceName = textureName.split('_')[1]
@@ -56,6 +63,8 @@ export class Cell extends Container {
     this.sprite.eventMode = 'none'
     this.sprite.allowClick = false
     this.addChild(this.sprite)
+
+    this.fogSprites.forEach(sprite => this.addFogBuilding(...Object.values(sprite)))
 
     this.eventMode = 'none'
     this.allowMove = false
@@ -72,10 +81,7 @@ export class Cell extends Container {
         map.revealEverything ||
         !instance.owner ||
         instance.owner.isPlayed ||
-        instanceIsInPlayerSight(instance, player) ||
-        (instance.name === 'building' &&
-          player.views[this.i][this.j].has &&
-          player.views[this.i][this.j].has.id === instance.id)
+        instanceIsInPlayerSight(instance, player)
       ) {
         instance.visible = true
       }
@@ -235,33 +241,74 @@ export class Cell extends Container {
     }
   }
 
-  setFog() {
-    const color = 0x666666
-    function setFogChildren(instance) {
-      if ((instance.name === 'unit' || instance.name === 'animal') && !instance.owner.isPlayed) {
+  addFogBuilding(textureSheet, colorSheet, colorName) {
+    const sprite = Sprite.from(getTexture(textureSheet, Assets))
+    sprite.name = 'buildingFog'
+    sprite.tint = colorFog
+    sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+    this.addChild(sprite)
+    this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
+    if (colorSheet) {
+      const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
+      spriteColor.name = 'buildingColorFog'
+      spriteColor.tint = colorFog
+      changeSpriteColorDirectly(spriteColor, colorName)
+      this.addChild(spriteColor)
+      this.fogSprites.push({ sprite: spriteColor, textureSheet, colorSheet, colorName })
+    } else {
+      changeSpriteColorDirectly(sprite, colorName)
+    }
+    this.zIndex = 100
+  }
+
+  removeFogBuilding(instance) {
+    const { map } = this.context
+    if (instance.owner && !instance.owner.isPlayed && instance.family === 'building') {
+      let i = 0
+      const localCell = map.grid[instance.i][instance.j]
+      while (i < localCell.fogSprites.length) {
+        if (localCell.fogSprites[i]) {
+          localCell.fogSprites[i].sprite?.destroy() // Destroy the sprite
+          localCell.fogSprites.splice(i, 1) // Remove the destroyed sprite from the array
+        } else {
+          i++ // Only increment if no sprite is destroyed, to avoid skipping elements
+        }
+      }
+    }
+  }
+
+  setFogChildren(instance, init) {
+    const { player, map } = this.context
+    if (!instanceIsInPlayerSight(instance, player)) {
+      if (instance.owner && !instance.owner.isPlayed) {
+        if (!init && instance.family === 'building') {
+          const assets = getBuildingAsset(instance.type, instance.owner, Assets)
+          const localCell = map.grid[instance.i][instance.j]
+          localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)
+        }
         instance.visible = false
       } else {
         for (let i = 0; i < instance.children.length; i++) {
           if (instance.children[i].tint) {
-            instance.children[i].tint = color
+            instance.children[i].tint = colorFog
           }
-          instance.children[i].cacheAsBitmap = true
         }
       }
     }
+  }
+
+  setFog(init) {
+    if (this.has) {
+      this.setFogChildren(this.has, init)
+    }
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i].tint) {
-        this.children[i].tint = color
+        this.children[i].tint = colorFog
       }
-      this.children[i].cacheAsBitmap = true
-    }
-
-    if (this.has) {
-      setFogChildren(this.has)
     }
     if (this.corpses.length) {
       for (let i = 0; i < this.corpses.length; i++) {
-        setFogChildren(this.corpses[i])
+        this.setFogChildren(this.corpses[i], init)
       }
     }
   }
@@ -278,19 +325,20 @@ export class Cell extends Container {
         if (instance.children[i].tint) {
           instance.children[i].tint = colorWhite
         }
-        instance.children[i].cacheAsBitmap = false
       }
     }
     if (!this.visible) {
       this.visible = true
     }
+
+    this.zIndex = 0
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i].tint) {
         this.children[i].tint = colorWhite
       }
-      this.children[i].cacheAsBitmap = false
     }
     if (this.has) {
+      this.removeFogBuilding(this.has)
       setRemoveChildren(this.has)
     }
     if (this.corpses.length) {

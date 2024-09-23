@@ -18,12 +18,13 @@ import {
   capitalizeFirstLetter,
   refundCost,
   getBuildingAsset,
-  changeSpriteColor,
   getBuildingRubbleTextureNameWithSize,
   instancesDistance,
   getBuildingTextureNameWithSize,
   uuidv4,
   canUpdateMinimap,
+  CustomTimeout,
+  changeSpriteColorDirectly,
 } from '../lib'
 import { Projectile } from './projectile'
 import { Polygon } from 'pixi.js'
@@ -34,10 +35,19 @@ export class Building extends Container {
 
     this.context = context
 
-    const { map } = context
+    const { map, controls } = context
     this.setParent(map)
-    this.id = uuidv4()
-    this.name = 'building'
+
+    this.name = uuidv4()
+    this.family = 'building'
+    this.selected = false
+    this.queue = []
+    this.technology = null
+    this.loading = null
+    this.isDead = false
+    this.isDestroyed = false
+    this.timeout
+    this.isUsedBy = null
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
@@ -46,24 +56,21 @@ export class Building extends Container {
       this[prop] = this.owner.config.buildings[this.type][prop]
     })
 
+    this.interval
+    this.attackInterval
+
+    if (this.queue.length) {
+      this.buyUnit(this.queue[0], true, true)
+    } else if (this.technology) {
+      this.buyTechnology(this.technology.type, true, true)
+    }
+
+    this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
-    this.selected = false
-    this.queue = []
-    this.technology = null
-    this.loading = null
-    this.isDead = false
-    this.isDestroyed = false
-    this.interval
-    this.attackInterval
-    this.timeout
-    this.isUsedBy = null
-
-    if (!map.revealEverything) {
-      this.visible = false
-    }
+    this.visible = map.revealEverything && controls.instanceInCamera(this) ? true : false
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === 'House' && this.owner.age === 0) {
       spriteSheet = '000_489'
@@ -101,8 +108,6 @@ export class Building extends Container {
       },
       menu: this.owner.isPlayed || map.devMode ? [...units, ...technologies] : [],
     }
-
-    this.hitPoints = this.isBuilt ? this.totalHitPoints : 1
 
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
@@ -222,8 +227,8 @@ export class Building extends Container {
       this.addChild(this.sprite)
     }
 
+    this.updateTexture()
     if (this.isBuilt) {
-      this.updateTexture()
       renderCellOnInstanceSight(this)
       this.onBuilt()
     }
@@ -256,8 +261,15 @@ export class Building extends Container {
   }
 
   startInterval(callback, time) {
+    const finalCb = () => {
+      const { paused } = this.context
+      if (paused) {
+        return
+      }
+      callback()
+    }
     this.stopInterval()
-    this.interval = setInterval(callback, (time * 1000) / 100 / accelerator)
+    this.interval = setInterval(finalCb, (time * 1000) / 100 / accelerator)
   }
 
   stopInterval() {
@@ -268,9 +280,16 @@ export class Building extends Container {
   }
 
   startAttackInterval(callback, time) {
+    const finalCb = () => {
+      const { paused } = this.context
+      if (paused) {
+        return
+      }
+      callback()
+    }
     this.stopAttackInterval()
-    callback()
-    this.attackInterval = setInterval(callback, time * 1000)
+    finalCb()
+    this.attackInterval = setInterval(finalCb, time * 1000)
   }
 
   stopAttackInterval() {
@@ -280,9 +299,17 @@ export class Building extends Container {
     }
   }
 
+  pause() {
+    this.timeout?.pause()
+  }
+
+  resume() {
+    this.timeout?.resume()
+  }
+
   startTimeout(cb, time) {
     this.stopTimeout()
-    this.timeout = setTimeout(() => cb(), (time * 1000) / accelerator)
+    this.timeout = new CustomTimeout(() => cb(), (time * 1000) / accelerator)
   }
 
   stopTimeout() {
@@ -293,6 +320,9 @@ export class Building extends Container {
   }
 
   isAttacked(instance) {
+    if (this.isDead) {
+      return
+    }
     if (this.range && getActionCondition(this, instance, 'attack') && instancesDistance(this, instance) <= this.range) {
       this.attackAction(instance)
     }
@@ -354,6 +384,7 @@ export class Building extends Container {
       menu.setBottombar(this)
     }
   }
+
   finalTexture() {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
 
@@ -372,10 +403,10 @@ export class Building extends Container {
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
       spriteColor.name = 'color'
-      changeSpriteColor(spriteColor, this.owner.color)
+      changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
-      changeSpriteColor(this.sprite, this.owner.color)
+      changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
 
     if (this.type === 'House') {
@@ -486,7 +517,7 @@ export class Building extends Container {
       return
     }
     const {
-      context: { map, player },
+      context: { map, player, players, menu },
     } = this
     this.stopInterval()
     this.isDead = true
@@ -500,9 +531,9 @@ export class Building extends Container {
       this.owner.buildings.splice(index, 1)
     }
     // Remove from view of others players
-    for (let i = 0; i < map.players.length; i++) {
-      if (map.players[i].type === 'AI') {
-        const list = map.players[i].foundedEnemyBuildings
+    for (let i = 0; i < players.length; i++) {
+      if (players[i].type === 'AI') {
+        const list = players[i].foundedEnemyBuildings
         list.splice(list.indexOf(this), 1)
       }
     }
@@ -523,7 +554,7 @@ export class Building extends Container {
     this.sprite.allowClick = false
     this.zIndex--
     if (this.type === 'Farm') {
-      changeSpriteColor(this.sprite, this.owner.color)
+      changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
     // Remove solid zone
     clearCellOnInstanceSight(this)
@@ -626,7 +657,9 @@ export class Building extends Container {
       return
     }
     this.owner.population++
-    this.owner.createUnit(spawnCell.i, spawnCell.j, type, map)
+
+    const extra = (this.owner.getUnitExtraOptions && this.owner.getUnitExtraOptions(type)) || {}
+    this.owner.createUnit({ i: spawnCell.i, j: spawnCell.j, type, ...extra })
 
     if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
       menu.updateInfo(
@@ -636,27 +669,33 @@ export class Building extends Container {
     }
   }
 
-  buyUnit(type, alreadyPaid = false) {
+  buyUnit(type, alreadyPaid = false, force = false, extra) {
     const {
       context: { menu, map },
     } = this
+    let success = false
     const unit = this.owner.config.units[type]
     if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
-        if (this.owner.type === 'AI' && this.loading === null) {
-          payCost(this.owner, unit.cost)
+        if (this.owner.type === 'AI') {
+          if (!this.queue.length && this.loading === null) {
+            payCost(this.owner, unit.cost)
+            this.queue.push(type)
+            success = true
+          }
         } else {
           payCost(this.owner, unit.cost)
           this.queue.push(type)
           if (this.selected && this.owner.isPlayed) {
             menu.updateButtonContent(type, this.queue.filter(q => q === type).length)
           }
+          this.owner.isPlayed && menu.updateTopbar()
+          success = true
         }
-        this.owner.isPlayed && menu.updateTopbar()
       }
-      if (this.loading === null) {
+      if ((this.loading === null && this.queue[0]) || force) {
         let hasShowedMessage = false
-        this.loading = 0
+        this.loading = force ? this.loading : 0
         if (this.selected && this.owner.isPlayed) {
           this.updateInterfaceLoading()
         }
@@ -678,7 +717,7 @@ export class Building extends Container {
             }
           } else if (this.loading >= 100 || map.devMode) {
             this.stopInterval()
-            this.placeUnit(type)
+            this.placeUnit(type, extra)
             this.loading = null
             this.queue.shift()
             if (this.queue.length) {
@@ -706,12 +745,13 @@ export class Building extends Container {
           }
         }, unit.trainingTime)
       }
+      return success
     }
   }
 
   updateInterfaceLoading() {
     const {
-      context: { menu, map },
+      context: { menu },
     } = this
     if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
       if (this.loading === 1) {
@@ -767,75 +807,77 @@ export class Building extends Container {
     this.sprite.texture = getTexture(assets.images.final, Assets)
     this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
     const color = this.getChildByName('color')
-    if (color) {
-      color.destroy()
-    }
+    color?.destroy()
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
       spriteColor.name = 'color'
-      changeSpriteColor(spriteColor, this.owner.color)
+      changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
-      changeSpriteColor(this.sprite, this.owner.color)
+      changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
   }
 
-  buyTechnology(technology, type) {
+  buyTechnology(type, alreadyPaid, force) {
     const {
-      context: { player, menu, map },
+      context: { menu, map },
     } = this
+    let success = false
+    const config = this.owner.techs[type]
     if (
       !this.queue.length &&
       this.isBuilt &&
-      this.loading === null &&
+      (force || this.loading === null) &&
       !this.isDead &&
-      canAfford(this.owner, technology.cost)
+      (alreadyPaid || canAfford(this.owner, config.cost))
     ) {
-      payCost(this.owner, technology.cost)
+      !alreadyPaid && payCost(this.owner, config.cost)
+      success = true
       if (this.owner.isPlayed) {
         menu.updateTopbar()
       }
-      this.loading = 0
+      this.loading = force ? this.loading : 0
 
-      this.technology = technology
+      this.technology = { config, type }
       if (this.selected && this.owner.selectedBuilding === this) {
         menu.setBottombar(this)
       }
       this.startInterval(() => {
+        const { config, type } = this.technology
         if (this.loading >= 100 || map.devMode) {
           this.stopInterval()
           this.loading = null
           this.technology = null
-          if (Array.isArray(player[technology.key])) {
-            player[technology.key].push(technology.value || type)
+          if (Array.isArray(this.owner[config.key])) {
+            this.owner[config.key].push(config.value || type)
           } else {
-            player[technology.key] = technology.value || type
+            this.owner[config.key] = config.value || type
           }
-          if (technology.action) {
-            switch (technology.action.type) {
+          if (config.action) {
+            switch (config.action.type) {
               case 'upgradeUnit':
-                for (let i = 0; i < player.units.length; i++) {
-                  const unit = player.units[i]
-                  if (unit.type === technology.action.source) {
-                    unit.upgrade(technology.action.target)
+                for (let i = 0; i < this.owner.units.length; i++) {
+                  const unit = this.owner.units[i]
+                  if (unit.type === config.action.source) {
+                    unit.upgrade(config.action.target)
                   }
                 }
                 break
               case 'upgradeBuilding':
-                for (let i = 0; i < player.buildings.length; i++) {
-                  const building = player.buildings[i]
-                  if (building.type === technology.action.source) {
-                    building.upgrade(technology.action.target)
+                for (let i = 0; i < this.owner.buildings.length; i++) {
+                  const building = this.owner.buildings[i]
+                  if (building.type === config.action.source) {
+                    building.upgrade(technconfigology.action.target)
                   }
                 }
                 break
               case 'improve':
-                this.owner.updateConfig(technology.action.operations)
+                this.owner.updateConfig(config.action.operations)
                 break
             }
           }
-          const functionName = `on${capitalizeFirstLetter(technology.key)}Change`
-          typeof player[functionName] === 'function' && player[functionName](technology.value)
+          const functionName = `on${capitalizeFirstLetter(config.key)}Change`
+          typeof this.owner[functionName] === 'function' && this.owner[functionName](config.value)
           if (this.owner.isPlayed) {
             menu.updateBottombar()
             menu.updateTopbar()
@@ -846,13 +888,14 @@ export class Building extends Container {
             this.updateInterfaceLoading()
           }
         }
-      }, technology.researchTime)
+      }, config.researchTime)
     }
+    return success
   }
 
   setDefaultInterface(element, data) {
     const {
-      context: { menu, map },
+      context: { menu },
     } = this
 
     const civDiv = document.createElement('div')

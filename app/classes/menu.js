@@ -9,6 +9,7 @@ import {
   canvasDrawStrokeRectangle,
   isValidCondition,
   getBuildingAsset,
+  Modal,
 } from '../lib'
 import { cellWidth, cellHeight, longClickDuration, isMobile } from '../constants'
 import { sound } from '@pixi/sound'
@@ -36,18 +37,61 @@ export default class Menu {
     this.mouseHoldTimeout
 
     this.resources = document.createElement('div')
-    this.resources.className = 'resources'
+    this.resources.className = 'topbar-resources'
     ;['wood', 'food', 'stone', 'gold'].forEach(res => {
       this.setResourceBox(res)
     })
 
     this.age = document.createElement('div')
-    this.age.className = 'age'
-    this.options = document.createElement('div')
+    this.age.className = 'topbar-age'
+    const options = document.createElement('div')
+    options.className = 'topbar-options'
+    const menu = document.createElement('div')
+    menu.className = 'topbar-options-menu'
+    menu.innerText = 'Menu'
+    menu.addEventListener('pointerdown', () => {
+      this.context.pause()
+      const content = document.createElement('div')
+      content.className = 'modal-menu'
+      const modal = new Modal(content)
+      const save = document.createElement('button')
+      save.innerText = 'Save'
+      save.addEventListener('pointerdown', () => {
+        this.context.save()
+        modal.close()
+        this.context.resume()
+      })
+      const load = document.createElement('div')
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'application/JSON'
+      input.addEventListener('change', evt => {
+        var reader = new FileReader()
+        reader.onload = ({ target: { result } }) => {
+          this.context.load(JSON.parse(result))
+          modal.close()
+          this.context.resume()
+        }
+        reader.readAsText(evt.target.files[0])
+      })
+      load.className = 'input-file'
+      load.innerText = 'Load'
+      load.appendChild(input)
+      const cancel = document.createElement('button')
+      cancel.innerText = 'Cancel'
+      cancel.addEventListener('pointerdown', () => {
+        modal.close()
+        this.context.resume()
+      })
+      content.appendChild(save)
+      content.appendChild(load)
+      content.appendChild(cancel)
+    })
+    options.appendChild(menu)
 
     this.topbar.appendChild(this.resources)
     this.topbar.appendChild(this.age)
-    this.topbar.appendChild(this.options)
+    this.topbar.appendChild(options)
     document.body.prepend(this.topbar)
 
     this.bottombar = document.createElement('div')
@@ -145,6 +189,11 @@ export default class Menu {
     this.updateTopbar()
   }
 
+  destroy() {
+    this.bottombar.remove()
+    this.topbar.remove()
+  }
+
   init() {
     this.initMiniMap()
     this.updateTopbar()
@@ -236,7 +285,7 @@ export default class Menu {
       color
     )
 
-    if (cell.has && cell.has.name === 'resource') {
+    if (cell.has && cell.has.family === 'resource') {
       this.updateResourceMiniMap(cell.has)
     }
   }
@@ -315,7 +364,7 @@ export default class Menu {
     } = this
 
     const squareSize = 4
-    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.id}`)
+    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.name}`)
     const color = owner.colorHex
 
     let canvas
@@ -333,7 +382,7 @@ export default class Menu {
       context = canvas.getContext('2d')
       context.translate(translate, 0)
       this.playersMinimap.push({
-        id: `minimap-${owner.id}`,
+        id: `minimap-${owner.name}`,
         canvas,
         context,
       })
@@ -478,7 +527,7 @@ export default class Menu {
     }
     if (selection && selection.interface) {
       this.generateInfo(selection)
-      if (selection.name === 'building') {
+      if (selection.family === 'building') {
         if (!selection.isBuilt) {
           setMenuRecurs(selection, this.bottombarMenu, [])
         } else if (selection.technology) {
@@ -647,7 +696,7 @@ export default class Menu {
     const {
       context: { controls, player },
     } = this
-    const config = Assets.cache.get('technology')[type]
+    const config = player.techs[type]
     return {
       icon: getIconPath(config.icon),
       id: type,
@@ -658,9 +707,9 @@ export default class Menu {
       onClick: selection => {
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
-          selection.buyTechnology(config, type)
+          selection.buyTechnology(type)
         } else {
-          this.showMessage(this.getMessage(config.cost))
+          this.showMessage(this.getMessage(configpcost))
         }
       },
     }

@@ -11,7 +11,6 @@ import {
   renderCellOnInstanceSight,
 } from '../lib'
 import { cellDepth } from '../constants'
-import { Animal } from './animal'
 import { Cell } from './cell'
 
 /**
@@ -42,14 +41,13 @@ export default class Map extends Container {
     this.noAI = false
 
     this.devMode = false
-    this.revealEverything = this.devMode || false
+    this.revealEverything = true || this.devMode || false
     this.revealTerrain = this.devMode || false
 
     this.x = 0
     this.y = 0
     this.startingUnits = 3
 
-    this.players = []
     this.playersPos = []
     this.positionsCount = 2
     this.gaia = null
@@ -64,6 +62,119 @@ export default class Map extends Container {
   setCoordinate(x, y) {
     this.x = x
     this.y = y
+  }
+
+  generateFromJSON({ map, players, camera, resources, animals }) {
+    const classMap = {
+      Human,
+      AI,
+    }
+    const { menu, controls } = this.context
+    this.removeChildren()
+    this.size = map.length - 1
+
+    this.gaia = new Gaia(this.context)
+
+    for (let i = 0; i <= this.size; i++) {
+      const line = map[i]
+      for (let j = 0; j <= this.size; j++) {
+        if (!this.grid[i]) {
+          this.grid[i] = []
+        }
+        const cell = line[j]
+        this.grid[i][j] = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.context)
+        if (!this.revealEverything) {
+          this.grid[i][j].setFog()
+        }
+      }
+    }
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        this.grid[i][j].fillWaterCellsAroundCell()
+      }
+    }
+    this.resources = resources.map(resource => new Resource(resource, this.context))
+
+    this.formatCellsRelief()
+    this.formatCellsWaterBorder()
+    this.formatCellsDesert()
+
+    this.context.players = players.map(player => {
+      const p = new classMap[player.type](
+        {
+          ...player,
+          corpses: [],
+          buildings: [],
+          units: [],
+        },
+        this.context
+      )
+      if (player.isPlayed) {
+        this.context.player = p
+      }
+      return p
+    })
+    controls.setCamera(camera.x, camera.y, true)
+    menu.init()
+    menu.updateResourcesMiniMap()
+
+    this.context.players.forEach((player, index) => {
+      const { buildings, units, corpses } = players[index]
+      player.buildings = buildings.map(building => player.createBuilding(building))
+      player.units = units.map(unit => player.createUnit(unit))
+      player.corpses = corpses.map(unit => player.createUnit(unit))
+    })
+    animals.forEach(animal => this.gaia.createAnimal(animal))
+
+    function getDest(val, map) {
+      if (val) {
+        if (Array.isArray(val)) {
+          return val[2] ? map.getChildByName(val[2]) : map.grid[val[0]][val[1]]
+        } else {
+          return map.getChildByName(val)
+        }
+      }
+      return null
+    }
+
+    function processUnit(unit, context) {
+      if (unit.previousDest) {
+        unit.previousDest = getDest(unit.previousDest, context)
+      }
+      if (unit.dest && !unit.isDead) {
+        const dest = getDest(unit.dest, context)
+        if (dest) {
+          unit.commonSendTo ? unit.commonSendTo(dest, unit.work, unit.action, true) : unit.sendTo(dest, unit.action)
+        } else {
+          unit.stop()
+        }
+      }
+    }
+
+    this.gaia.units.forEach(animal => processUnit(animal, this))
+
+    this.context.players.forEach(player => {
+      for (let i = 0; i <= this.size; i++) {
+        const line = player.views[i]
+        for (let j = 0; j <= this.size; j++) {
+          const cell = line[j]
+          if (cell.viewed) {
+            cell.onViewed()
+          }
+          cell.viewBy = cell.viewBy.map(name => getDest(name, this)).filter(Boolean)
+          if (player.isPlayed && cell.viewed) {
+            if (!cell.viewBy.length) {
+              this.grid[i][j].setFog(true)
+            } else {
+              this.grid[i][j].removeFog()
+            }
+          }
+        }
+      }
+      player.units.forEach(unit => processUnit(unit, this))
+    })
+
+    this.ready = true
   }
 
   generateMap(repeat = 0) {
@@ -185,7 +296,7 @@ export default class Map extends Container {
     // Place a town center
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
-      const towncenter = player.spawnBuilding(player.i, player.j, 'TownCenter', true)
+      const towncenter = player.spawnBuilding({ i: player.i, j: player.j, type: 'TownCenter', isBuilt: true })
       for (let i = 0; i < this.startingUnits; i++) {
         towncenter.placeUnit('Villager')
       }
@@ -210,12 +321,13 @@ export default class Map extends Container {
     const lines = Assets.cache.get('0').split('\n').filter(Boolean)
     this.size = lines.length - 1
     for (let i = 0; i <= this.size; i++) {
-      const cols = lines[i].split('').filter(Boolean)
+      const line = lines[i].split('').filter(Boolean)
       for (let j = 0; j <= this.size; j++) {
         if (!this.grid[i]) {
           this.grid[i] = []
         }
-        switch (cols[j]) {
+        const cell = line[j]
+        switch (cell) {
           case '0':
             this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
             break
@@ -290,8 +402,8 @@ export default class Map extends Container {
                   break
                 case 'animal':
                   const animals = Assets.cache.get('config').animals
-                  const animal = randomItem(Object.keys(animals))
-                  new Animal({ i, j, type: animal, owner: this.gaia }, this.context)
+                  const type = randomItem(Object.keys(animals))
+                  this.gaia.createAnimal({ i, j, type })
                   break
               }
             } else {
@@ -312,7 +424,7 @@ export default class Map extends Container {
           let canGenerate = true
           if (
             getPlainCellsAroundPoint(i, j, this.grid, level * 2, cell => {
-              if (cell.type === 'Water' || (cell.has && cell.has.name === 'building')) {
+              if (cell.type === 'Water' || (cell.has && cell.has.family === 'building')) {
                 canGenerate = false
               }
             })

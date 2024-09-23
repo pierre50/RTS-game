@@ -1,9 +1,15 @@
 import { cellWidth, cellHeight, cellDepth } from '../constants'
 
+/**
+ * Generate a version 4 UUID.
+ * @returns {string} - A random UUID.
+ */
 export function uuidv4() {
-  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
-  )
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const randomValue = crypto.getRandomValues(new Uint8Array(1))[0] & 15 // Get a random value
+    const hexValue = (c === 'x' ? randomValue : (randomValue & 0x3) | 0x8).toString(16) // Adjust for 'y'
+    return hexValue
+  })
 }
 
 /**
@@ -139,20 +145,26 @@ export function getInstanceDegree(instance, x, y) {
 }
 
 /**
- * Get degree of instance according to a point
- * @param {object} instance
- * @param {number} x
- * @param {number} y
+ * Get the degree from one point to another.
+ * @param {number} x1 - The x-coordinate of the first point.
+ * @param {number} y1 - The y-coordinate of the first point.
+ * @param {number} x2 - The x-coordinate of the second point.
+ * @param {number} y2 - The y-coordinate of the second point.
+ * @returns {number} - The angle in degrees from the first point to the second.
  */
 export function getPointsDegree(x1, y1, x2, y2) {
-  let tX = x2 - x1
-  let tY = y2 - y1
+  const tX = x2 - x1
+  const tY = y2 - y1
   return Math.round((Math.atan2(tY, tX) * 180) / Math.PI + 180)
 }
 
+/**
+ * Convert degrees to radians.
+ * @param {number} degrees - The angle in degrees.
+ * @returns {number} - The angle in radians.
+ */
 export function degreesToRadians(degrees) {
-  var pi = Math.PI
-  return degrees * (pi / 180)
+  return degrees * (Math.PI / 180)
 }
 
 /**

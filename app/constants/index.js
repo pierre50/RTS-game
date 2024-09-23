@@ -1,13 +1,14 @@
-export const cellWidth = 63
-export const cellHeight = 30
+export const cellWidth = 64
+export const cellHeight = 32
 export const cellDepth = 16
 
-export const accelerator = 1
+export const accelerator = 1.5
 export const stepTime = 20
 
 export const isMobile = window.innerWidth <= 800 && window.innerHeight <= 600
 export const longClickDuration = 200
 
+export const workFoodTypes = ['fisher', 'hunter', 'farmer', 'forager']
 export const loadingFoodTypes = ['meat', 'wheat', 'berry', 'fish']
 
 export const colorWhite = 0xffffff
@@ -22,6 +23,7 @@ export const colorIndigo = 0x4b0082
 export const colorViolet = 0xee82ee
 export const colorBone = 0xe2dac2
 export const colorShipgrey = 0x3c3b3d
+export const colorFog = 0x999999
 
 export const colorArrow = 0xe8e3df
 

@@ -22,27 +22,29 @@ export class Resource extends Container {
     } = this
     this.setParent(map)
 
-    this.id = uuidv4()
-    this.name = 'resource'
+    this.name = uuidv4()
+    this.family = 'resource'
 
-    const config = Assets.cache.get('config')
+    this.selected = false
+    this.isDead = false
+    this.isDestroyed = false
+    this.size = 1
+
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
+    const config = Assets.cache.get('config')
     Object.keys(config.resources[this.type]).forEach(prop => {
       this[prop] = config.resources[this.type][prop]
     })
 
+    this.quantity = this.quantity ?? this.totalQuantity
+    this.hitPoints = this.hitPoints ?? this.totalHitPoints
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
-    this.selected = false
     this.visible = false
-    this.isDead = false
-    this.isDestroyed = false
-    this.size = 1
-    this.hitPoints = this.totalHitPoints
 
     // Set solid zone
     const cell = map.grid[this.i][this.j]
@@ -65,13 +67,15 @@ export class Resource extends Container {
       this.sprite.play()
       this.sprite.animationSpeed = 0.2
     } else {
-      const textureName = randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
-      const resourceName = textureName.split('_')[1]
-      const textureFile = textureName + '.png'
+      this.textureName =
+        this.textureName || randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
+      const resourceName = this.textureName.split('_')[1]
+      const textureFile = this.textureName + '.png'
       const spritesheet = Assets.cache.get(resourceName)
       const texture = spritesheet.textures[textureFile]
       this.sprite = Sprite.from(texture)
-      this.sprite.hitArea = new Polygon(spritesheet.data.frames[textureFile].hitArea)
+      this.sprite.hitArea =
+        spritesheet.data.frames[textureFile].hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
     }
 
     this.sprite.updateAnchor = true
@@ -193,8 +197,8 @@ export class Resource extends Container {
   setCuttedTreeTexture() {
     const { sprite } = this
     const spritesheet = Assets.cache.get('636')
-    const textureName = `00${randomRange(0, 3)}_636.png`
-    const texture = spritesheet.textures[textureName]
+    this.textureName = `00${randomRange(0, 3)}_636.png`
+    const texture = spritesheet.textures[this.textureName]
     sprite.texture = texture
     const points = [-cellWidth / 2, 0, 0, -cellHeight / 2, cellWidth / 2, 0, 0, cellHeight / 2]
     sprite.hitArea = new Polygon(points)
@@ -206,8 +210,8 @@ export class Resource extends Container {
       context: { map },
     } = this
     const spritesheet = Assets.cache.get('623')
-    const textureName = `00${randomRange(0, 3)}_623.png`
-    const texture = spritesheet.textures[textureName]
+    this.textureName = `00${randomRange(0, 3)}_623.png`
+    const texture = spritesheet.textures[this.textureName]
     const { sprite } = this
     sprite.texture = texture
     sprite.eventMode = 'none'

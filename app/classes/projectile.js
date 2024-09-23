@@ -22,8 +22,8 @@ export class Projectile extends Container {
       context: { map },
     } = this
     this.setParent(map)
-    this.id = uuidv4()
-    this.name = 'projectile'
+    this.name = uuidv4()
+    this.family = 'projectile'
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]

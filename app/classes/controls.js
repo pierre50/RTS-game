@@ -9,7 +9,6 @@ import {
   changeSpriteColor,
   getTexture,
   randomItem,
-  throttle,
 } from '../lib'
 import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
 
@@ -61,6 +60,19 @@ export default class Controls extends Container {
     gamebox.addEventListener('mousemove', evt => this.onMouseMove(evt))
     gamebox.addEventListener('mousedown', evt => this.onMouseDown(evt))
     gamebox.addEventListener('mouseup', evt => this.onMouseUp(evt))
+  }
+
+  destroy() {
+    document.removeEventListener('mousemove', evt => this.moveCameraWithMouse(evt))
+    document.removeEventListener('mouseout', () => clearInterval(this.moveCameraInterval))
+    document.removeEventListener('keydown', evt => this.onKeyDown(evt))
+    document.removeEventListener('keyup', evt => this.onKeyUp(evt))
+    gamebox.removeEventListener('touchstart', evt => this.onTouchStart(evt))
+    gamebox.removeEventListener('touchend', evt => this.onTouchEnd(evt))
+    gamebox.removeEventListener('touchmove', evt => this.onTouchMove(evt))
+    gamebox.removeEventListener('mousemove', evt => this.onMouseMove(evt))
+    gamebox.removeEventListener('mousedown', evt => this.onMouseDown(evt))
+    gamebox.removeEventListener('mouseup', evt => this.onMouseUp(evt))
   }
 
   onKeyDown(evt) {
@@ -600,16 +612,20 @@ export default class Controls extends Container {
     const {
       context: { map, app },
     } = this
+
     const cameraFloor = {
       x: Math.floor(this.camera.x),
       y: Math.floor(this.camera.y),
     }
     const margin = cellWidth
+
     for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += cellWidth / 2) {
       for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += cellHeight / 2) {
-        const coordinate = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(coordinate[0], 0), map.size)
-        const y = Math.min(Math.max(coordinate[1], 0), map.size)
+        const [cartesianX, cartesianY] = isometricToCartesian(i, j)
+        const x = Math.min(Math.max(cartesianX, 0), map.size - 1) // Adjust for index bounds
+        const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
+
+        // Ensure the coordinates are within bounds and call the callback
         if (map.grid[x] && map.grid[x][y]) {
           callback(map.grid[x][y])
         }
@@ -642,14 +658,14 @@ export default class Controls extends Container {
     }
   }
 
-  setCamera(x, y) {
+  setCamera(x, y, direct) {
     const {
       context: { map, app, menu },
     } = this
     this.camera && this.clearInstancesOnScreen()
     this.camera = {
-      x: x - app.screen.width / 2,
-      y: y - app.screen.height / 2,
+      x: direct ? x : x - app.screen.width / 2,
+      y: direct ? y : y - app.screen.height / 2,
     }
     menu && menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)

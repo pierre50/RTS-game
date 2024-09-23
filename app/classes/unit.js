@@ -8,6 +8,7 @@ import {
   maxSelectUnits,
   typeAction,
   populationMax,
+  workFoodTypes,
 } from '../constants'
 import {
   getInstanceZIndex,
@@ -37,81 +38,18 @@ import {
   getFreeCellAroundPoint,
   uuidv4,
   canUpdateMinimap,
+  getWorkWithLoadingType,
+  setUnitTexture,
 } from '../lib'
 import { Projectile } from './projectile'
 
-/*
-allAssets = {
-  default: {
-    standingSheet: '418',
-    walkingSheet: '657',
-    dyingSheet: '314',
-    corpseSheet: '373',
-  },
-  attack: {
-    actionSheet: '224',
-    standingSheet: '418',
-    dyingSheet: '314', // missing
-    walkingSheet: '657', // missing
-    corpseSheet: '373', // missing
-  },
-  hunter: {
-    actionSheet: '624',
-    harvestSheet: '626',
-    standingSheet: '435',
-    walkingSheet: '676',
-    dyingSheet: '332',
-    corpseSheet: '389',
-    loadedSheet: '272',
-  },
-  farmer: {
-    actionSheet: '630',
-    standingSheet: '430',
-    walkingSheet: '670',
-    dyingSheet: '326',
-    corpseSheet: '388',
-    loadedSheet: '672',
-  },
-  forager: {
-    actionSheet: '632',
-    standingSheet: '432',
-    walkingSheet: '672',
-    dyingSheet: '328',
-    corpseSheet: '390',
-    loadedSheet: '672',
-  },
-  stoneminer: {
-    actionSheet: '633',
-    standingSheet: '441',
-    walkingSheet: '683',
-    dyingSheet: '315', // missing
-    corpseSheet: '400',
-    loadedSheet: '274',
-  },
-  goldminer: {
-    actionSheet: '633',
-    standingSheet: '441',
-    walkingSheet: '683',
-    dyingSheet: '315', // missing
-    corpseSheet: '400',
-    loadedSheet: '281',
-  },
-  woodcutter: {
-    actionSheet: '625',
-    standingSheet: '440',
-    walkingSheet: '682',
-    dyingSheet: '315', // missing
-    corpseSheet: '399',
-    loadedSheet: '273',
-  },
-  builder: {
-    actionSheet: '628',
-    standingSheet: '419',
-    walkingSheet: '658', // to reupload yellow ?
-    dyingSheet: '315',
-    corpseSheet: '374',
-  },
-},*/
+function getActionSheet(work, action, Assets, unit) {
+  if (!work) {
+    return
+  }
+  const actionSheet = action === 'takemeat' ? 'harvestSheet' : 'actionSheet'
+  return Assets.cache.get(unit.allAssets[work][actionSheet])
+}
 
 export class Unit extends Container {
   constructor(options, context) {
@@ -123,8 +61,26 @@ export class Unit extends Container {
       context: { map, menu },
     } = this
     this.setParent(map)
-    this.id = uuidv4()
-    this.name = 'unit'
+    this.name = uuidv4()
+    this.family = 'unit'
+
+    this.dest = null
+    this.realDest = null
+    this.previousDest = null
+    this.path = []
+    this.selected = false
+    this.degree = randomRange(1, 360)
+    this.currentFrame = randomRange(0, 4)
+    this.action = null
+    this.loading = 0
+    this.loadingType = null
+    this.currentSheet = 'standingSheet'
+    this.inactif = true
+    this.isDead = false
+    this.isDestroyed = false
+    this.x = null
+    this.y = null
+    this.z = null
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
@@ -132,33 +88,27 @@ export class Unit extends Container {
     Object.keys(this.owner.config.units[this.type]).forEach(prop => {
       this[prop] = this.owner.config.units[this.type][prop]
     })
-
-    this.x = map.grid[this.i][this.j].x
-    this.y = map.grid[this.i][this.j].y
-    this.z = map.grid[this.i][this.j].z
-    this.dest = null
-    this.realDest = null
-    this.previousDest = null
-    this.path = []
-    this.zIndex = getInstanceZIndex(this)
-    this.selected = false
-    this.degree = randomRange(1, 360)
-    this.currentFrame = randomRange(0, 4)
-    this.action = null
-    this.loading = 0
-    this.loadingType = null
-    this.currentSheet = null
     this.size = 1
     this.visible = false
-    this.currentCell = map.grid[this.i][this.j]
-    this.currentCell.has = this
-    this.currentCell.solid = true
-    this.isDead = false
-    this.isDestroyed = false
+    this.x = this.x ?? map.grid[this.i][this.j].x
+    this.y = this.y ?? map.grid[this.i][this.j].y
+    this.z = this.z ?? map.grid[this.i][this.j].z
+    this.zIndex = getInstanceZIndex(this)
+    this.quantity = this.quantity ?? this.totalQuantity
+    this.hitPoints = this.hitPoints ?? this.totalHitPoints
 
+    this.currentCell = map.grid[this.i][this.j]
+    if (this.currentSheet === 'corpseSheet') {
+      this.owner.corpses.push(this)
+      map.grid[this.i][this.j].corpses.push(this)
+    } else if (!this.isDead) {
+      this.currentCell.has = this
+      this.currentCell.solid = true
+      this.owner.units.push(this)
+    }
     switch (this.type) {
       case 'Villager':
-        this.work = null
+        this.work = this.work || null
         break
       case 'Priest':
         this.work = 'healer'
@@ -181,9 +131,6 @@ export class Unit extends Container {
       sound.play((this.sounds && this.sounds.create) || 5144)
     }
 
-    this.hitPoints = this.totalHitPoints
-    this.inactif = true
-
     this.interface = {
       info: element => {
         const data = this.owner.config.units[this.type]
@@ -205,14 +152,27 @@ export class Unit extends Container {
 
     this.allowMove = false
     this.eventMode = 'static'
-    this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
+    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
+    this.sprite = new AnimatedSprite(this['standingSheet'].animations['south'])
     this.sprite.name = 'sprite'
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
+    this.sprite.loop = this.loop ?? true
+    if (this.isDead) {
+      this.currentSheet === 'corpseSheet' ? this.decompose() : this.death()
+    } else if (this.loading > 0) {
+      this.walkingSheet = Assets.cache.get(this.allAssets[getWorkWithLoadingType(this.loadingType)].loadedSheet)
+      this.standingSheet = Assets.cache.get(this.allAssets[getWorkWithLoadingType(this.loadingType)].standingSheet)
+    }
+    this.setTextures(this.currentSheet)
 
-    this.sendTo = throttle(this.sendToEvt, 100)
+    this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
+    this.sprite.updateAnchor = true
+    this.addChild(this.sprite)
+
+    this.sendTo = this.owner.isPlayed ? throttle(this.sendToEvt, 100, true) : this.sendToEvt
 
     this.on('pointerdown', evt => {
       const {
@@ -228,7 +188,7 @@ export class Unit extends Container {
               player.selectedUnits.length < maxSelectUnits &&
               cell.has &&
               cell.has.owner &&
-              cell.has.owner.id === this.owner.id &&
+              cell.has.owner.name === this.owner.name &&
               cell.has.type === this.type
             ) {
               cell.has.select()
@@ -300,15 +260,20 @@ export class Unit extends Container {
         }
       }
     })
+
     changeSpriteColor(this.sprite, this.owner.color)
 
     this.interval = null
-    this.sprite.updateAnchor = true
-    this.addChild(this.sprite)
-
-    this.stop()
 
     renderCellOnInstanceSight(this)
+  }
+
+  pause() {
+    this.sprite?.stop()
+  }
+
+  resume() {
+    this.sprite?.play()
   }
 
   select() {
@@ -356,13 +321,14 @@ export class Unit extends Container {
       this.stop()
       return
     }
+    this.handleSetDest && this.handleSetDest(dest, this)
     this.dest = dest
     this.realDest = {
       i: dest.i,
       j: dest.j,
       x: dest.x,
       y: dest.y,
-      id: dest.id,
+      name: dest.name,
     }
   }
 
@@ -391,11 +357,15 @@ export class Unit extends Container {
     this.stopInterval()
     let path = []
     // No instance we cancel the destination
-    if (!dest) {
+    if (!dest || this.isDead) {
       return
     }
     // Unit is already beside our target
-    if (this.isUnitAtDest(action, dest)) {
+    if (
+      this.isUnitAtDest(action, dest) &&
+      (!map.grid[this.i][this.j].solid ||
+        (map.grid[this.i][this.j].solid && map.grid[this.i][this.j].has?.name === this.name))
+    ) {
       this.setDest(dest)
       this.action = action
       this.degree = getInstanceDegree(this, dest.x, dest.y)
@@ -453,13 +423,13 @@ export class Unit extends Container {
     const dest = this.previousDest
     const type = dest.category || dest.type
     this.previousDest = null
-    if (dest.name === 'animal') {
+    if (dest.family === 'animal') {
       if (this.getActionCondition(dest, 'takemeat')) {
         this.sendToTakeMeat(dest)
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'hunt')
       }
-    } else if (dest.name === 'building') {
+    } else if (dest.family === 'building') {
       if (this.getActionCondition(dest, 'build')) {
         this.sendToBuilding(dest)
       } else if (this.getActionCondition(dest, 'farm')) {
@@ -536,7 +506,7 @@ export class Unit extends Container {
 
             this.visible && sound.play('5178')
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
+            if (this.dest.selected) {
               menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy farm if it out of quantity
@@ -583,7 +553,7 @@ export class Unit extends Container {
             if (this.dest.hitPoints > 0) {
               this.dest.hitPoints = Math.max(this.dest.hitPoints - 1, 0)
 
-              if (this.dest.selected && this.owner.isPlayed) {
+              if (this.dest.selected) {
                 menu.updateInfo(
                   'hitPoints',
                   this.dest.hitPoints > 0 ? this.dest.hitPoints + '/' + this.dest.totalHitPoints : ''
@@ -601,7 +571,7 @@ export class Unit extends Container {
               this.updateInterfaceLoading()
 
               this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-              if (this.dest.selected && this.owner.isPlayed) {
+              if (this.dest.selected) {
                 menu.updateInfo('quantity-text', this.dest.quantity)
               }
               // Destroy tree if stump out of quantity
@@ -650,7 +620,7 @@ export class Unit extends Container {
             this.visible && sound.play('5085')
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
+            if (this.dest.selected) {
               menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy berrybush if it out of quantity
@@ -698,7 +668,7 @@ export class Unit extends Container {
             this.visible && sound.play('5159')
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
+            if (this.dest.selected) {
               menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy stone if it out of quantity
@@ -742,7 +712,7 @@ export class Unit extends Container {
 
             this.visible && sound.play('5159')
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
+            if (this.dest.selected) {
               menu.updateInfo('quantity-text', this.dest.quantity)
             }
             // Destroy gold if it out of quantity
@@ -789,7 +759,7 @@ export class Unit extends Container {
               this.dest.updateHitPoints(this.action)
             } else {
               if (!this.dest.isBuilt) {
-                this.dest.updateHitPoints(this.action)
+                this.depst.updateHitPoints(this.action)
                 this.dest.isBuilt = true
                 if (this.dest.type === 'Farm' && !this.dest.isUsedBy) {
                   this.sendToFarm(this.dest)
@@ -1080,7 +1050,7 @@ export class Unit extends Container {
     if (
       this.work === 'attacker' &&
       instance &&
-      instance.name === 'unit' &&
+      instance.family === 'unit' &&
       !this.path.length &&
       !this.dest &&
       this.getActionCondition(instance, 'attack')
@@ -1219,8 +1189,8 @@ export class Unit extends Container {
     // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      nextCell.has.name === 'unit' &&
-      nextCell.has.id !== this.id &&
+      nextCell.has.family === 'unit' &&
+      nextCell.has.name !== this.name &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
       nextCell.has.sprite.playing
@@ -1243,7 +1213,6 @@ export class Unit extends Container {
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
-
       if (this.currentCell.has === this) {
         this.currentCell.has = null
         this.currentCell.solid = false
@@ -1253,7 +1222,6 @@ export class Unit extends Container {
         this.currentCell.has = this
         this.currentCell.solid = true
       }
-
       renderCellOnInstanceSight(this)
       this.path.pop()
 
@@ -1293,12 +1261,12 @@ export class Unit extends Container {
   }
 
   isAttacked(instance) {
-    if (!instance || this.dest === instance) {
+    if (!instance || this.dest === instance || this.isDead) {
       return
     }
     const currentDest = this.dest
     if (this.type === 'Villager') {
-      if (instance.name === 'animal') {
+      if (instance.family === 'animal') {
         this.sendToHunt(instance)
       } else {
         this.sendToAttack(instance)
@@ -1310,7 +1278,7 @@ export class Unit extends Container {
   }
 
   stop() {
-    if (this.currentCell.has.id !== this.id && this.currentCell.solid) {
+    if (this.currentCell.has.name !== this.name && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }
@@ -1327,12 +1295,19 @@ export class Unit extends Container {
   }
 
   startInterval(callback, time, immediate = true) {
+    const finalCb = () => {
+      const { paused } = this.context
+      if (paused) {
+        return
+      }
+      callback()
+    }
     if (this.isDead) {
       return
     }
     this.stopInterval()
-    immediate && callback()
-    this.interval = setInterval(callback, time)
+    immediate && finalCb()
+    this.interval = setInterval(finalCb, time)
   }
 
   stopInterval() {
@@ -1392,12 +1367,43 @@ export class Unit extends Container {
     }
   }
 
+  decompose() {
+    const {
+      context: { map },
+    } = this
+    this.setTextures('corpseSheet')
+    if (map.grid[this.i][this.j].has === this) {
+      map.grid[this.i][this.j].has = null
+      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].solid = false
+    }
+    this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
+    this.sprite.onComplete = () => {
+      this.clear()
+    }
+  }
+
+  death() {
+    this.setTextures('dyingSheet')
+    this.zIndex--
+    this.sprite.loop = false
+    this.sprite.onComplete = () => {
+      clearCellOnInstanceSight(this)
+      // Remove from player units
+      let index = this.owner.corpses.indexOf(this)
+      if (index < 0) {
+        this.owner.corpses.push(this)
+      }
+      this.decompose()
+    }
+  }
+
   die() {
     if (this.isDead) {
       return
     }
     const {
-      context: { player, map, menu },
+      context: { player, menu },
     } = this
 
     this.sounds &&
@@ -1412,6 +1418,7 @@ export class Unit extends Container {
     if (this.dest && this.dest.isUsedBy === this) {
       this.dest.isUsedBy = null
     }
+    this.hitPoints = 0
     this.path = []
     this.action = null
     this.eventMode = 'none'
@@ -1430,91 +1437,36 @@ export class Unit extends Container {
       if (index >= 0) {
         this.owner.units.splice(index, 1)
       }
-      // Remove from player selected units
-      if (this.owner.selectedUnits) {
-        index = this.owner.selectedUnits.indexOf(this)
-        if (index >= 0) {
-          this.owner.selectedUnits.splice(index, 1)
-        }
+      // Update from player selected unit
+      if (this.owner.selectedUnit === this) {
+        menu.updateInfo('hitPoints', this.hitPoints + '/' + this.totalHitPoints)
       }
     }
-
-    this.setTextures('dyingSheet')
-    this.sprite.loop = false
-    this.sprite.onComplete = () => {
-      clearCellOnInstanceSight(this)
-      this.setTextures('corpseSheet')
-      this.zIndex--
-      if (map.grid[this.i][this.j].has === this) {
-        map.grid[this.i][this.j].has = null
-        map.grid[this.i][this.j].corpses.push(this)
-        map.grid[this.i][this.j].solid = false
-      }
-      this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
-      this.sprite.onComplete = () => {
-        this.clear()
-      }
-    }
+    this.death()
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   clear() {
-    if (this.isDestroyed) {
-      return
-    }
     const {
       context: { map },
     } = this
     this.isDestroyed = true
-    map.grid[this.i][this.j].corpses.splice(map.grid[this.i][this.j].corpses.indexOf(this), 1)
+    // Remove from player units
+    let index = this.owner.corpses.indexOf(this)
+    if (index >= 0) {
+      this.owner.corpses.splice(index, 1)
+    }
+    // Remove from map corpses
+    const corpsesIndex = map.grid[this.i][this.j].corpses.indexOf(this)
+    if (index >= 0) {
+      map.grid[this.i][this.j].corpses.splice(corpsesIndex, 1)
+    }
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }
 
   setTextures(sheet) {
-    const sheetToReset = ['actionSheet']
-    // Sheet don't exist we just block the current sheet
-    if (!this[sheet]) {
-      if (this.currentSheet !== 'walkingSheet' && this.walkingSheet) {
-        this.sprite.textures = [this.walkingSheet.textures[Object.keys(this.walkingSheet.textures)[0]]]
-      } else {
-        this.sprite.textures = [this.sprite.textures[this.sprite.currentFrame]]
-      }
-      this.currentSheet = 'walkingSheet'
-      this.sprite.stop()
-      this.sprite.anchor.set(
-        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.x,
-        this.sprite.textures[this.sprite.currentFrame].defaultAnchor.y
-      )
-      return
-    }
-    // Reset action loop
-    if (!sheetToReset.includes(sheet)) {
-      this.sprite.onLoop = null
-      this.sprite.onFrameChange = null
-    }
-    this.currentSheet = sheet
-    const direction = degreeToDirection(this.degree)
-    switch (direction) {
-      case 'southest':
-        this.sprite.scale.x = -1
-        this.sprite.textures = this[sheet].animations['southwest']
-        break
-      case 'northest':
-        this.sprite.scale.x = -1
-        this.sprite.textures = this[sheet].animations['northwest']
-        break
-      case 'est':
-        this.sprite.scale.x = -1
-        this.sprite.textures = this[sheet].animations['west']
-        break
-      default:
-        this.sprite.scale.x = 1
-        this.sprite.textures = this[sheet].animations[direction]
-    }
-    this.sprite.animationSpeed =
-      (this[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
-    this.sprite.play()
+    setUnitTexture(sheet, this, accelerator)
   }
 
   updateInterfaceLoading() {
@@ -1553,36 +1505,34 @@ export class Unit extends Container {
     return loadingDiv
   }
 
-  commonSendTo(target, work, action, assets) {
-    const {
-      resource = work,
-      actionSheet = 'actionSheet',
-      standingSheet = 'standingSheet',
-      walkingSheet = 'walkingSheet',
-      dyingSheet = 'dyingSheet',
-      corpseSheet = 'corpseSheet',
-    } = assets || {}
+  commonSendTo(target, work, action, keepPrevious) {
     const {
       context: { menu },
     } = this
-    if (!loadingFoodTypes.includes(this.loadingType)) {
+    const workFromLoading = getWorkWithLoadingType(this.loadingType)
+    if (
+      work !== 'builder' &&
+      work !== workFromLoading &&
+      !(workFoodTypes.includes(work) && workFoodTypes.includes(workFromLoading))
+    ) {
       this.loading = 0
+      this.loadingType = null
       this.updateInterfaceLoading()
     }
     if (this.work !== work || this.action !== action) {
       this.work = work
       this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work)
-      if (this.allAssets && this.allAssets[resource]) {
-        this.actionSheet = Assets.cache.get(this.allAssets[resource][actionSheet])
-        this.standingSheet = Assets.cache.get(this.allAssets[resource][standingSheet])
+      if (this.allAssets && this.allAssets[work]) {
+        this.actionSheet = getActionSheet(work, action, Assets, this)
         if (!this.loading) {
-          this.walkingSheet = Assets.cache.get(this.allAssets[resource][walkingSheet])
-          this.dyingSheet = Assets.cache.get(this.allAssets[resource][dyingSheet])
-          this.corpseSheet = Assets.cache.get(this.allAssets[resource][corpseSheet])
+          this.standingSheet = Assets.cache.get(this.allAssets[work]['standingSheet'])
+          this.walkingSheet = Assets.cache.get(this.allAssets[work]['walkingSheet'])
+          this.dyingSheet = Assets.cache.get(this.allAssets[work]['dyingSheet'])
+          this.corpseSheet = Assets.cache.get(this.allAssets[work]['corpseSheet'])
         }
       }
     }
-    this.previousDest = null
+    this.previousDest = keepPrevious ? this.previousDest : null
     return this.sendTo(target, action)
   }
 

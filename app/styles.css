@@ -1,4 +1,5 @@
 :root {
+  --main-primary-color: #1d57a8;
   --main-background-color: #12171ecf;
   --main-border-color: transparent;
   --main-border-radius: 2px;
@@ -31,6 +32,39 @@ body {
   background-color: black;
 }
 
+button,
+.input-file {
+  border: 1px solid var(--main-primary-color);
+  padding: 6px 15px;
+  border-radius: var(--main-border-radius);
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+  background-color: transparent;
+  width: 200px;
+  transition: all 0.2s;
+}
+button:hover,
+.input-file:hover {
+  background-color: var(--main-primary-color);
+}
+.input-file {
+  width: calc(100% - 32px);
+}
+.input-file > input {
+  width: 200px;
+  cursor: pointer;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 99;
+  /*Opacity settings for all browsers*/
+  opacity: 0;
+  -moz-opacity: 0;
+  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -40,6 +74,16 @@ body {
 
 #game {
   flex: 1;
+}
+
+#pause {
+  position: absolute;
+  z-index: 1000;
+  font-size: 50px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: -66px;
 }
 
 .bar {
@@ -153,15 +197,26 @@ body {
   height: 100%;
 }
 
-.age {
+.topbar-age {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.resources {
+.topbar-resources {
   display: flex;
   gap: 10px;
+}
+
+.topbar-options {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+}
+
+.topbar-options-menu {
+  width: fit-content;
+  cursor: pointer;
 }
 
 .resource {
@@ -238,4 +293,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+}
+
+.modal-content {
+  background: var(--main-background-color);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--main-box-shadow);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.modal-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
 }
