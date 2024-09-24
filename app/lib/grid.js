@@ -279,11 +279,15 @@ export function findInstancesInSight(instance, condition) {
  *                            Must include properties like `i`, `j`, `sight`, `owner`, `parent`, and `context`.
  */
 export function renderCellOnInstanceSight(instance) {
-  const { player } = instance.context
+  const { player, controls } = instance.context
   const { owner, parent, sight } = instance
 
   // Check if instance should be visible based on player interaction and sight
-  if (player && !parent.revealEverything && !owner.isPlayed && !instanceIsInPlayerSight(instance, player)) {
+  if (
+    player &&
+    (!parent.revealEverything ? !instanceIsInPlayerSight(instance, player) : !controls.instanceInCamera(instance)) &&
+    !owner.isPlayed
+  ) {
     instance.visible = false
   } else {
     instance.visible = true
@@ -407,10 +411,55 @@ export function clearCellOnInstanceSight(instance) {
 }
 
 /**
+ * Randomly finds a valid position in the grid within a specified zone and size, considering certain conditions.
+ *
+ * This function attempts to find a valid cell in the grid around the specified zone by randomly generating coordinates
+ * and checking if they meet specific conditions, such as avoiding inclined, solid, or border cells.
+ *
+ * @param {object} zone - The area of the grid to search within (must have properties `minX`, `minY`, `maxX`, `maxY`).
+ * @param {object[][]} grid - The grid representing the map, where each cell contains coordinates and attributes.
+ * @param {number} size - The size of the instance for which we are finding space.
+ * @param {function} condition - A function that returns true if the cell meets the conditions, false otherwise.
+ * @param {number} attempts - The number of random attempts to find a valid cell.
+ * @returns {object|null} The position {i, j} of a valid cell or null if no valid cell is found.
+ */
+export function getRandomZoneInGridWithCondition(zone, grid, size, condition, attempts = 100) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    // Generate random coordinates within the zone
+    const randomX = Math.floor(Math.random() * (zone.maxX - zone.minX + 1)) + zone.minX
+    const randomY = Math.floor(Math.random() * (zone.maxY - zone.minY + 1)) + zone.minY
+
+    const cell = grid[randomX]?.[randomY]
+    if (!cell) continue // Skip if cell doesn't exist
+
+    // Assume the area around (randomX, randomY) is free initially
+    let isFree = true
+
+    // Check the surrounding cells of size `size` to ensure they all meet the condition
+    const surroundingCells = getPlainCellsAroundPoint(randomX, randomY, grid, size)
+    for (const surroundingCell of surroundingCells) {
+      if (!condition(surroundingCell)) {
+        isFree = false
+        break // Exit early if a cell does not meet the condition
+      }
+    }
+
+    // If the area is free, return the valid cell
+    if (isFree) {
+      return { i: randomX, j: randomY }
+    }
+  }
+
+  // Return null if no valid cells found after all attempts
+  return null
+}
+
+/**
  * Find a valid position in the grid around an instance within a specified space range.
  *
  * This function searches for a position around a given instance within the grid, considering a range of space,
- * the size of the object, and additional conditions like avoiding inclined, solid, or border cells.
+ * the size of the object, and additional conditions like avoiding inclined, solid, or border cells. It can
+ * use either a random zone search or a fixed zone search depending on the `random` parameter.
  *
  * @param {object} instance - The instance around which to search (must have properties `i`, `j`, and `parent` grid).
  * @param {object[][]} grid - The grid representing the map, where each cell contains coordinates and attributes.
@@ -418,9 +467,18 @@ export function clearCellOnInstanceSight(instance) {
  * @param {number} size - The size of the instance for which we are finding space.
  * @param {boolean} [allowInclined=false] - Whether to allow inclined cells in the search.
  * @param {function} [extraCondition] - An optional callback for extra conditions that a valid cell must meet.
+ * @param {boolean} [random=true] - If `true`, uses `getRandomZoneInGridWithCondition`; otherwise, uses `getZoneInGridWithCondition`.
  * @returns {object|null} The position {i, j} of a valid cell or null if no valid cell is found.
  */
-export function getPositionInGridAroundInstance(instance, grid, space, size, allowInclined = false, extraCondition) {
+export function getPositionInGridAroundInstance(
+  instance,
+  grid,
+  space,
+  size,
+  allowInclined = false,
+  extraCondition,
+  random = true
+) {
   const [minSpace, maxSpace] = space
 
   // Define the search zone based on instance's position and maxSpace
@@ -431,23 +489,28 @@ export function getPositionInGridAroundInstance(instance, grid, space, size, all
     maxY: Math.min(instance.j + maxSpace, instance.parent.size - 1),
   }
 
-  // Use the optimized 'getZoneInGridWithCondition' to find a valid cell in the grid
-  const pos = getZoneInGridWithCondition(zone, grid, size, cell => {
+  // Condition to check if the cell is valid based on space, solid, inclined, etc.
+  const cellCondition = cell => {
     const distance = instancesDistance(instance, cell, true)
-
     return (
-      cell.i > 0 &&
-      cell.j > 0 && // Ensure within valid grid bounds
-      distance > minSpace &&
-      distance < maxSpace && // Check if distance is within specified range
+      distance >= minSpace && // Ensure it's at least the minimum distance away
+      distance <= maxSpace && // Ensure it's within the maximum distance
       !cell.solid && // Ensure the cell is not solid
       !cell.border && // Ensure the cell is not at the border
       (allowInclined || !cell.inclined) && // Check inclined condition
       (!extraCondition || extraCondition(cell)) // Apply any additional conditions
     )
-  })
+  }
 
-  // Return found position or null if none is found
+  // Use either the random zone search or fixed zone search based on the 'random' flag
+  let pos
+  if (random) {
+    pos = getRandomZoneInGridWithCondition(zone, grid, size, cellCondition)
+  } else {
+    pos = getZoneInGridWithCondition(zone, grid, size, cellCondition)
+  }
+
+  // Return the found position or null if none is found
   return pos || null
 }
 
@@ -480,7 +543,7 @@ export function instanceIsInPlayerSight(instance, player) {
  * @param {function} [callback] - Optional callback function to filter cells. If provided, it should return true for valid cells.
  * @returns {object[]} - Array of valid cells around the point within the distance.
  */
-export function getPlainCellsAroundPoint(startX, startY, grid, dist, callback) {
+export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
   const result = []
 
   // Handle the case where dist is 0 (single cell case)

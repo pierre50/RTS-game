@@ -709,7 +709,7 @@ export default class Menu {
         if (canAfford(player, config.cost)) {
           selection.buyTechnology(type)
         } else {
-          this.showMessage(this.getMessage(configpcost))
+          this.showMessage(this.getMessage(config.cost))
         }
       },
     }

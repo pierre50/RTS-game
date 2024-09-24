@@ -303,16 +303,223 @@ export default class Map extends Container {
     }
   }
 
+  generateForestAroundPlayer(
+    player,
+    treeCount,
+    clusterCount = 12,
+    minClusterRadius = 5,
+    maxClusterRadius = 10,
+    safeDistance = 20,
+    clearingProbability = 0.6
+  ) {
+    const { grid } = this
+    const { i: playerI, j: playerJ } = player
+    const gridWidth = grid.length
+    const gridHeight = grid[0].length
+    const forestCells = []
+    const pathCells = new Set()
+
+    // Function to calculate the distance between two points
+    function distance(x1, y1, x2, y2) {
+      return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    }
+
+    // Function to create a circle of points within a grid, checking boundaries
+    function createCircle(centerI, centerJ, radius, density = 0.7, edgeNoise = 0) {
+      const circleCells = []
+      for (let x = -radius; x <= radius; x++) {
+        for (let y = -radius; y <= radius; y++) {
+          const distFromCenter = Math.sqrt(x * x + y * y)
+          const noise = Math.random() * edgeNoise - edgeNoise / 2 // Random edge noise
+          if (distFromCenter + noise <= radius) {
+            // If within noisy circle
+            const cellI = centerI + x
+            const cellJ = centerJ + y
+            if (
+              cellI >= 0 &&
+              cellI < gridWidth && // Ensure cell is within grid bounds
+              cellJ >= 0 &&
+              cellJ < gridHeight &&
+              !grid[cellI][cellJ].solid && // Ensure the cell is not solid
+              grid[cellI][cellJ].type !== 'Water' && // Ensure not water
+              grid[cellI][cellJ].type !== 'Border' && // Ensure not border
+              !grid[cellI][cellJ].inclined && // Ensure not inclined
+              Math.random() < density // Tree density control
+            ) {
+              circleCells.push({ i: cellI, j: cellJ })
+            }
+          }
+        }
+      }
+      return circleCells
+    }
+
+    // Create forest clusters
+    for (let cluster = 0; cluster < clusterCount; cluster++) {
+      let clusterCenterI, clusterCenterJ
+      let tries = 0
+      const clusterRadius = Math.floor(Math.random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius // Random radius
+      const clusterDensity = Math.random() * 0.5 + 0.5 // Density between 0.5 and 1
+      const edgeNoise = Math.random() * 2 // Noise for organic shapes
+
+      // Ensure the cluster is far from the player and within bounds
+      do {
+        clusterCenterI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset
+        clusterCenterJ = playerJ + Math.floor(Math.random() * 60 - 30)
+        tries++
+        if (tries > 100) break // Safety exit
+      } while (
+        distance(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistance ||
+        clusterCenterI < 0 ||
+        clusterCenterI >= gridWidth ||
+        clusterCenterJ < 0 ||
+        clusterCenterJ >= gridHeight || // Stay within grid bounds
+        grid[clusterCenterI][clusterCenterJ].type === 'Water' || // Avoid water cells
+        grid[clusterCenterI][clusterCenterJ].solid || // Avoid solid cells
+        grid[clusterCenterI][clusterCenterJ].inclined // Avoid inclined cells
+      )
+
+      if (tries <= 100) {
+        const treeCluster = createCircle(clusterCenterI, clusterCenterJ, clusterRadius, clusterDensity, edgeNoise)
+        treeCluster.forEach(cell => forestCells.push(cell))
+      }
+    }
+
+    // Scattered solo trees (20% of total trees)
+    const scatteredTreeCount = Math.floor(treeCount * 0.2)
+    for (let i = 0; i < scatteredTreeCount; i++) {
+      let soloI, soloJ
+      let tries = 0
+
+      do {
+        soloI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset within [-30, 30]
+        soloJ = playerJ + Math.floor(Math.random() * 60 - 30)
+        tries++
+        if (tries > 50) break // Safety exit to avoid infinite loop
+      } while (
+        distance(soloI, soloJ, playerI, playerJ) < safeDistance ||
+        soloI < 0 ||
+        soloI >= gridWidth ||
+        soloJ < 0 ||
+        soloJ >= gridHeight || // Stay within grid bounds
+        grid[soloI][soloJ].type === 'Water' || // Avoid water cells
+        grid[soloI][soloJ].solid || // Avoid solid cells
+        grid[soloI][soloJ].inclined // Avoid inclined cells
+      )
+
+      if (tries <= 50) {
+        forestCells.push({ i: soloI, j: soloJ })
+      }
+    }
+
+    // Generate random clearings based on clearingProbability
+    for (let clearing = 0; clearing < clusterCount; clearing++) {
+      if (Math.random() < clearingProbability) {
+        let clearingCenterI, clearingCenterJ
+        let tries = 0
+        const clearingRadius = Math.floor(Math.random() * 8) + 5 // Random clearing radius between 5 and 13
+        const edgeNoise = Math.random() * 1.5
+
+        do {
+          clearingCenterI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset
+          clearingCenterJ = playerJ + Math.floor(Math.random() * 60 - 30)
+          tries++
+          if (tries > 100) break
+        } while (
+          distance(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistance ||
+          clearingCenterI < 0 ||
+          clearingCenterI >= gridWidth ||
+          clearingCenterJ < 0 ||
+          clearingCenterJ >= gridHeight || // Stay within grid bounds
+          grid[clearingCenterI][clearingCenterJ].type === 'Water' || // Avoid water cells
+          grid[clearingCenterI][clearingCenterJ].solid || // Avoid solid cells
+          grid[clearingCenterI][clearingCenterJ].inclined // Avoid inclined cells
+        )
+
+        if (tries <= 100) {
+          const clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, edgeNoise)
+          clearingCells.forEach(clearedCell => {
+            const index = forestCells.findIndex(cell => cell.i === clearedCell.i && cell.j === clearedCell.j)
+            if (index > -1) {
+              forestCells.splice(index, 1) // Remove tree from clearing
+            }
+          })
+        }
+      }
+    }
+
+    // Generate diagonal paths
+    const pathLength = 20
+    const pathDirection = Math.random() > 0.5 ? 1 : -1 // Random path direction
+
+    for (let step = 0; step < pathLength; step++) {
+      let offsetX, offsetY
+      let tries = 0
+
+      do {
+        offsetX = step * pathDirection
+        offsetY = step
+        tries++
+        if (tries > 50) break
+      } while (
+        distance(playerI + offsetX, playerJ + offsetY, playerI, playerJ) < safeDistance ||
+        playerI + offsetX < 0 ||
+        playerI + offsetX >= gridWidth ||
+        playerJ + offsetY < 0 ||
+        playerJ + offsetY >= gridHeight
+      )
+
+      if (tries <= 50) {
+        const randOffsetX = Math.random() > 0.5 ? 1 : -1
+        const randOffsetY = Math.random() > 0.5 ? 1 : -1
+        pathCells.add(`${playerI + offsetX + randOffsetX},${playerJ + offsetY + randOffsetY}`)
+      }
+    }
+
+    // Remove path cells from forestCells
+    forestCells.forEach(cell => {
+      if (pathCells.has(`${cell.i},${cell.j}`)) {
+        forestCells.splice(forestCells.indexOf(cell), 1)
+      }
+    })
+
+    // Select and place trees in the forest cells
+    const cellsToPlace = []
+    for (let i = 0; i < treeCount; i++) {
+      if (forestCells.length === 0) break
+      const itemIndex = Math.floor(Math.random() * forestCells.length)
+      const cell = forestCells[itemIndex]
+      cellsToPlace.push(cell)
+      forestCells.splice(itemIndex, 1)
+    }
+
+    // Place the trees in the selected cells
+    for (const cell of cellsToPlace) {
+      // Ensure again that we're not placing trees on Water, Border, or Solid cells
+      if (grid[cell.i][cell.j].type !== 'Water' && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
+        let isFree = true
+        getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
+          if (['Berrybush', 'Gold', 'Stone'].includes(cell.has?.type)) {
+            isFree = false
+          }
+        })
+        isFree && this.resources.push(new Resource({ i: cell.i, j: cell.j, type: 'Tree' }, this.context))
+      }
+    }
+  }
+
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 6, [5, 10])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [10, 15])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [10, 15])
-      this.placeResourceGroup(playersPos[i], 'Tree', 20, [10, 25])
-      this.placeResourceGroup(playersPos[i], 'Tree', 30, [10, 25])
-      this.placeResourceGroup(playersPos[i], 'Tree', 20, [10, 25])
-      this.placeResourceGroup(playersPos[i], 'Tree', 30, [10, 25])
-      this.placeResourceGroup(playersPos[i], 'Tree', 50, [10, 30])
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [14, 22])
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [22, 29])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [14, 22])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [22, 29])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [14, 22])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [22, 29])
+      this.generateForestAroundPlayer(playersPos[i], 1000)
     }
   }
 
@@ -339,7 +546,8 @@ export default class Map extends Container {
             this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
           case '3':
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
+            //this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
             break
           case '4':
             this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
@@ -384,9 +592,6 @@ export default class Map extends Container {
             if (cell.type !== 'Water') {
               const type = randomItem(['tree', 'rock', 'animal'])
               switch (type) {
-                case 'tree':
-                  this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
-                  break
                 case 'rock':
                   const randomSpritesheet = randomRange(531, 534).toString()
                   const spritesheet = Assets.cache.get(randomSpritesheet)
@@ -725,40 +930,55 @@ export default class Map extends Container {
 
   placeResourceGroup(player, instance, quantity, range) {
     const { context, grid } = this
-    function getRandomCells(loop = 0) {
-      if (loop > 100) {
-        return []
-      }
-      const randomI = randomRange(range[0], range[1])
-      const randomJ = randomRange(range[0], range[1])
-      const finalI = player.i + randomItem([-randomI, randomI])
-      const finalJ = player.j + randomItem([-randomJ, randomJ])
-      let cpt = 0
-      if (grid[finalI] && grid[finalI][finalJ]) {
-        const dist = Math.round(Math.sqrt(quantity, 2))
-        const cells = getPlainCellsAroundPoint(finalI, finalJ, grid, dist, cell => {
-          cpt++
-          if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-            return true
+
+    // Function to get valid cells around a center point within a specific distance
+    function getValidCells(centerI, centerJ, dist) {
+      const cells = []
+      // Check surrounding cells within the specified distance
+      for (let dx = -dist; dx <= dist; dx++) {
+        for (let dy = -dist; dy <= dist; dy++) {
+          const newI = centerI + dx
+          const newJ = centerJ + dy
+
+          // Ensure the new coordinates are within the grid bounds
+          if (grid[newI] && grid[newI][newJ]) {
+            const cell = grid[newI][newJ]
+            // Check if the cell is valid
+            if (!cell.solid && cell.type !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+              cells.push({ i: newI, j: newJ })
+            }
           }
-        })
-        if (cells.length >= cpt) {
-          return cells
-        } else {
-          return getRandomCells(loop + 1)
         }
-      } else {
-        return getRandomCells(loop + 1)
       }
+      return cells
     }
-    const cells = getRandomCells()
-    if (!cells.length) {
-      return
+
+    // Get a random center point around the player's position within the specified range
+    const randomDistance = randomRange(range[0], range[1])
+    const centerI = player.i + randomItem([-randomDistance, randomDistance])
+    const centerJ = player.j + randomItem([-randomDistance, randomDistance])
+
+    // Gather valid cells around the center point
+    const validCells = getValidCells(centerI, centerJ, 2) // Adjust distance to suit clustering
+
+    // Check if we have enough valid cells to place the required quantity of resources
+    if (validCells.length < quantity) {
+      console.warn('Not enough valid cells found for resource placement.')
+      return // Exit if not enough valid cells found
     }
+
+    // Randomly select the required number of cells from the valid cells
+    const cellsToPlace = []
     for (let i = 0; i < quantity; i++) {
-      const item = randomItem(cells)
-      cells.splice(cells.indexOf(item), 1)
-      this.resources.push(new Resource({ i: item.i, j: item.j, type: instance }, context))
+      const itemIndex = Math.floor(Math.random() * validCells.length)
+      const cell = validCells[itemIndex]
+      cellsToPlace.push(cell) // Store the selected cell for placement
+      validCells.splice(itemIndex, 1) // Remove it from valid cells to avoid duplicates
+    }
+
+    // Place resources in the selected cells
+    for (const cell of cellsToPlace) {
+      this.resources.push(new Resource({ i: cell.i, j: cell.j, type: instance }, context))
     }
   }
 

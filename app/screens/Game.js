@@ -67,7 +67,18 @@ export default class Game extends Container {
   save() {
     const cleanContext = context => {
       const resourceData = resource => ({
-        ...filterObject(resource, ['name', 'i', 'j', 'selected', 'type', 'isDead', 'isDestroyed', 'size', 'hitPoints']),
+        ...filterObject(resource, [
+          'name',
+          'i',
+          'j',
+          'selected',
+          'type',
+          'isDead',
+          'quantity',
+          'isDestroyed',
+          'size',
+          'hitPoints',
+        ]),
         textureName: (resource.textureName || '').split('.')[0],
       })
       const animalData = animal => ({

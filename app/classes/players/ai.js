@@ -28,6 +28,11 @@ export class AI extends Player {
     this.distSpread = 1
     this.cellViewed = 0
 
+    this.nextAge = {
+      1: 'ToolAge',
+      2: 'BronzeAge',
+      3: 'IronAge',
+    }
     this.maxVillagerPerAge = {
       0: 16,
       1: 24,
@@ -42,28 +47,55 @@ export class AI extends Player {
         stone: 0,
       },
       1: {
-        wood: 40,
-        food: 50,
+        wood: 45,
+        food: 45,
         gold: 10,
         stone: 0,
       },
       2: {
-        wood: 30,
-        food: 40,
+        wood: 35,
+        food: 35,
         gold: 20,
         stone: 10,
       },
       3: {
         wood: 30,
-        food: 35,
+        food: 30,
         gold: 25,
-        stone: 10,
+        stone: 15,
+      },
+    }
+    this.maxBuildingByAge = {
+      0: {
+        StoragePit: 1,
+        Granary: 1,
+      },
+      1: {
+        StoragePit: 2,
+        Granary: 2,
+        Farm: 4,
+      },
+      2: {
+        StoragePit: 3,
+        Granary: 3,
+        Farm: 6,
+      },
+      3: {
+        StoragePit: 4,
+        Granary: 4,
+        Farm: 10,
       },
     }
   }
 
-  buildingsByType(type) {
-    return this.buildings.filter(b => b.type === type)
+  hasNotReachBuildingLimit(buildingType, buildings) {
+    return (
+      !this.maxBuildingByAge[this.age][buildingType] || buildings.length < this.maxBuildingByAge[this.age][buildingType]
+    )
+  }
+
+  buildingsByTypes(types) {
+    return this.buildings.filter(b => types.includes(b.type))
   }
 
   getUnitExtraOptions(type) {
@@ -73,12 +105,14 @@ export class AI extends Player {
         const { map } = me.context
         if (type === 'Villager' && target.family === 'resource') {
           const buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit'
-          const buildings = me.buildingsByType(buildingType)
-          const closestBuilding = getClosestInstance(target, buildings)
-          if (!closestBuilding || instancesDistance(closestBuilding, target) > 15) {
-            const pos = getPositionInGridAroundInstance(target, map.grid, [0, 6], 1)
-            if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
-              console.log(`Building ${buildingType} at: ${pos}`)
+          const buildings = me.buildingsByTypes([buildingType])
+          if (me.hasNotReachBuildingLimit(buildingType, buildings)) {
+            const closestBuilding = getClosestInstance(target, [...buildings, ...me.buildingsByTypes(['TownCenter'])])
+            if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
+              const pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1)
+              if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
+                console.log(`Building ${buildingType} at: ${pos}`)
+              }
             }
           }
         }
@@ -101,7 +135,7 @@ export class AI extends Player {
     console.log('%c ----Step started', styleLogInfo1)
 
     console.log(
-      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}`,
+      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.populationMax}`,
       styleLogInfo2
     )
 
@@ -116,13 +150,13 @@ export class AI extends Player {
       styleLogInfo2
     )
 
-    const towncenters = this.buildingsByType('TownCenter')
-    const storagepits = this.buildingsByType('StoragePit')
-    const houses = this.buildingsByType('House')
-    const granarys = this.buildingsByType('Granary')
-    const barracks = this.buildingsByType('Barracks')
-    const markets = this.buildingsByType('Market')
-    const farms = this.buildingsByType('Farm')
+    const towncenters = this.buildingsByTypes(['TownCenter'])
+    const storagepits = this.buildingsByTypes(['StoragePit'])
+    const houses = this.buildingsByTypes(['House'])
+    const granarys = this.buildingsByTypes(['Granary'])
+    const barracks = this.buildingsByTypes(['Barracks'])
+    const markets = this.buildingsByTypes(['Market'])
+    const farms = this.buildingsByTypes(['Farm'])
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
 
     console.log(
@@ -316,8 +350,8 @@ export class AI extends Player {
     }
 
     // Buy House
-    buyBuildingIfNeeded(this.population + 3 > this.populationMax && !notBuiltHouses.length, 'House', () =>
-      getPositionInGridAroundInstance(towncenters[0], map.grid, [3, 12], 0)
+    buyBuildingIfNeeded(this.population + 2 > this.populationMax && !notBuiltHouses.length, 'House', () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
     )
 
     // Buy Barracks
@@ -325,7 +359,7 @@ export class AI extends Player {
       villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0,
       'Barracks',
       () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [4, 24], 1, false, cell =>
+        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
           this.otherPlayers().every(
             player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
           )
@@ -334,7 +368,7 @@ export class AI extends Player {
 
     // Buy Markets
     buyBuildingIfNeeded(markets.length === 0, 'Market', () =>
-      getPositionInGridAroundInstance(towncenters[0], map.grid, [4, 24], 1, false, cell =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         this.otherPlayers().every(
           player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
         )
@@ -342,19 +376,30 @@ export class AI extends Player {
     )
 
     // Buy Farm
-    buyBuildingIfNeeded(farms.length < 6, 'Farm', () =>
-      getPositionInGridAroundInstance(towncenters[0], map.grid, [4, 24], 1, false, cell =>
-        this.otherPlayers().every(
-          player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
-        )
-      )
-    )
+    buyBuildingIfNeeded(this.hasNotReachBuildingLimit('Farm', farms), 'Farm', () => {
+      const buildings = [...granarys, ...towncenters] // Combine both granarys and towncenters
 
-    const nextAge = {
-      1: 'ToolAge',
-      2: 'BronzeAge',
-      3: 'IronAge',
-    }
+      for (const building of buildings) {
+        // Try to find a valid position around each building
+        const position = getPositionInGridAroundInstance(
+          building,
+          map.grid,
+          [2, 10],
+          2,
+          false,
+          cell =>
+            this.otherPlayers().every(player => instancesDistance(cell, player) <= instancesDistance(building, player)),
+          false
+        )
+
+        if (position) {
+          return position // If a valid position is found, return and break the loop
+        }
+      }
+
+      return null // If no valid position is found after looping through all buildings
+    })
+
     // Unit Purchasing Logic
     const buyTechnology = (buildingList, technologyType) => {
       // Iterate over the buildings until we reach the needed count
@@ -364,8 +409,8 @@ export class AI extends Player {
         }
       }
     }
-    if (nextAge[this.age + 1]) {
-      buyTechnology(towncenters, nextAge[this.age + 1])
+    if (this.nextAge[this.age + 1]) {
+      buyTechnology(towncenters, this.nextAge[this.age + 1])
     }
 
     console.log('%c ----Step ended', styleLogInfo1)

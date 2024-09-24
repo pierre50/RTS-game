@@ -2,7 +2,7 @@ export const cellWidth = 64
 export const cellHeight = 32
 export const cellDepth = 16
 
-export const accelerator = 1.5
+export const accelerator = 2
 export const stepTime = 20
 
 export const isMobile = window.innerWidth <= 800 && window.innerHeight <= 600

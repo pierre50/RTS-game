@@ -65,6 +65,7 @@ export class Building extends Container {
       this.buyTechnology(this.technology.type, true, true)
     }
 
+    this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
