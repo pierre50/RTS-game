@@ -133,7 +133,7 @@ export default class Menu {
       const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
       const y = (evt.clientY - rect.top - 3) * minimapFactor
 
-      if (player.selectedUnits.length) {
+      if (player?.selectedUnits?.length) {
         const pos = isometricToCartesian(x, y)
         const i = Math.min(Math.max(pos[0], 0), map.size)
         const j = Math.min(Math.max(pos[1], 0), map.size)
@@ -324,8 +324,8 @@ export default class Menu {
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
     map.resources.forEach(resource => {
-      const cell = player.views[resource.i][resource.j]
-      if (resource.color && (cell.viewed || map.revealEverything)) {
+      const cell = player?.views?.[resource.i]?.[resource.j]
+      if (resource.color && (cell?.viewed || map.revealEverything)) {
         const finalX = resource.x / minimapFactor - squareSize / 2
         const finalY = resource.y / minimapFactor - squareSize / 2
         canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)

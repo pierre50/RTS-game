@@ -233,7 +233,7 @@ export default class Controls extends Container {
               waterCells++
             }
           })
-          if (waterBorderedCells < 2 || waterCells < 4) {
+          if (waterBorderedCells < 2 && waterCells < 4) {
             isFree = false
           }
         } else {
@@ -309,7 +309,7 @@ export default class Controls extends Container {
       this.mouse.prevent = false
       return
     }
-    player.selectedBuilding && player.unselectAll()
+    player?.selectedBuilding && player.unselectAll()
     // Select units on mouse rectangle
     if (this.mouseRectangle) {
       let selectVillager
@@ -377,7 +377,7 @@ export default class Controls extends Container {
               }
             }
           }
-        } else if (player.selectedUnits.length) {
+        } else if (player?.selectedUnits.length) {
           // Pointer animation
           const pointerSheet = Assets.cache.get('50405')
           const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
@@ -648,13 +648,15 @@ export default class Controls extends Container {
 
   init() {
     const {
-      context: { player },
+      context: { player, map },
     } = this
     // Set camera to player building else unit
-    if (player.buildings.length) {
+    if (player?.buildings?.length) {
       this.setCamera(player.buildings[0].x, player.buildings[0].y)
-    } else if (player.units.length) {
+    } else if (player?.units?.length) {
       this.setCamera(player.units[0].x, player.units[0].y)
+    } else {
+      this.setCamera(map.size / 2, map.size / 2)
     }
   }
 

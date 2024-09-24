@@ -173,8 +173,19 @@ export class Cell extends Container {
     sprite.texture = texture
   }
 
+  setWater() {
+    const index = formatNumber(randomRange(0, 3))
+    const resourceName = '15002'
+    const spritesheet = Assets.cache.get(resourceName)
+    this.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
+    this.type = 'Water'
+    this.category = 'Water'
+  }
   fillWaterCellsAroundCell() {
     const grid = this.parent.grid
+    if (this.type === 'Water' && !this.sprite.texture.textureCacheIds[0].includes('15002')) {
+      this.setWater()
+    }
     getCellsAroundPoint(this.i, this.j, grid, 2, cell => {
       if (cell.type === 'Water' && this.type === 'Water') {
         const dist = instancesDistance(this, cell)
@@ -185,13 +196,8 @@ export class Cell extends Container {
           const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
           if (target.type !== this.type && aside.type !== this.type) {
             if (Math.floor(instancesDistance(this, cell)) === 2) {
-              const { sprite } = this
-              const index = formatNumber(randomRange(0, 3))
-              const resourceName = '15002'
-              const spritesheet = Assets.cache.get(resourceName)
-              sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
-              target.type = 'Water'
-              target.solid = true
+              cell.setWater()
+              target.setWater()
             }
           }
         }

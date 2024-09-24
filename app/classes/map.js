@@ -208,6 +208,7 @@ export default class Map extends Container {
     if (this.playersPos.length < this.positionsCount) {
       if (repeat >= 10) {
         alert('Error while generating the map')
+        return
       }
       this.generateMap(repeat + 1)
       return
@@ -225,8 +226,6 @@ export default class Map extends Container {
 
     //this.generateMapRelief()
     //this.formatCellsRelief()
-    this.formatCellsWaterBorder()
-    this.formatCellsDesert()
 
     this.generateSets()
 
@@ -264,25 +263,27 @@ export default class Map extends Container {
     }
 
     for (let i = 0; i < this.positionsCount; i++) {
-      const posI = this.playersPos[poses[i]].i
-      const posJ = this.playersPos[poses[i]].j
-      const color = colors[i]
-      if (!i) {
-        players.push(
-          new Human(
-            {
-              i: posI,
-              j: posJ,
-              age: 0,
-              civ: 'Greek',
-              color,
-              isPlayed: true,
-            },
-            context
+      const posI = this.playersPos[poses[i]]?.i
+      const posJ = this.playersPos[poses[i]]?.j
+      if (posI && posJ) {
+        const color = colors[i]
+        if (!i) {
+          players.push(
+            new Human(
+              {
+                i: posI,
+                j: posJ,
+                age: 0,
+                civ: 'Greek',
+                color,
+                isPlayed: true,
+              },
+              context
+            )
           )
-        )
-      } else if (!this.noAI) {
-        players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color }, context))
+        } else if (!this.noAI) {
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color }, context))
+        }
       }
     }
     return players
@@ -341,7 +342,7 @@ export default class Map extends Container {
               cellJ >= 0 &&
               cellJ < gridHeight &&
               !grid[cellI][cellJ].solid && // Ensure the cell is not solid
-              grid[cellI][cellJ].type !== 'Water' && // Ensure not water
+              grid[cellI][cellJ].category !== 'Water' && // Ensure not water
               grid[cellI][cellJ].type !== 'Border' && // Ensure not border
               !grid[cellI][cellJ].inclined && // Ensure not inclined
               Math.random() < density // Tree density control
@@ -374,7 +375,7 @@ export default class Map extends Container {
         clusterCenterI >= gridWidth ||
         clusterCenterJ < 0 ||
         clusterCenterJ >= gridHeight || // Stay within grid bounds
-        grid[clusterCenterI][clusterCenterJ].type === 'Water' || // Avoid water cells
+        grid[clusterCenterI][clusterCenterJ].category === 'Water' || // Avoid water cells
         grid[clusterCenterI][clusterCenterJ].solid || // Avoid solid cells
         grid[clusterCenterI][clusterCenterJ].inclined // Avoid inclined cells
       )
@@ -402,7 +403,7 @@ export default class Map extends Container {
         soloI >= gridWidth ||
         soloJ < 0 ||
         soloJ >= gridHeight || // Stay within grid bounds
-        grid[soloI][soloJ].type === 'Water' || // Avoid water cells
+        grid[soloI][soloJ].category === 'Water' || // Avoid water cells
         grid[soloI][soloJ].solid || // Avoid solid cells
         grid[soloI][soloJ].inclined // Avoid inclined cells
       )
@@ -431,7 +432,7 @@ export default class Map extends Container {
           clearingCenterI >= gridWidth ||
           clearingCenterJ < 0 ||
           clearingCenterJ >= gridHeight || // Stay within grid bounds
-          grid[clearingCenterI][clearingCenterJ].type === 'Water' || // Avoid water cells
+          grid[clearingCenterI][clearingCenterJ].category === 'Water' || // Avoid water cells
           grid[clearingCenterI][clearingCenterJ].solid || // Avoid solid cells
           grid[clearingCenterI][clearingCenterJ].inclined // Avoid inclined cells
         )
@@ -496,7 +497,12 @@ export default class Map extends Container {
     // Place the trees in the selected cells
     for (const cell of cellsToPlace) {
       // Ensure again that we're not placing trees on Water, Border, or Solid cells
-      if (grid[cell.i][cell.j].type !== 'Water' && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
+      if (
+        grid[cell.i][cell.j].category !== 'Water' &&
+        !grid[cell.i][cell.j].waterBorder &&
+        !grid[cell.i][cell.j].solid &&
+        !grid[cell.i][cell.j].inclined
+      ) {
         let isFree = true
         getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
           if (['Berrybush', 'Gold', 'Stone'].includes(cell.has?.type)) {
@@ -510,52 +516,150 @@ export default class Map extends Container {
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 10])
       this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [10, 14])
       this.placeResourceGroup(playersPos[i], 'Stone', 7, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Stone', 7, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [10, 14])
       this.placeResourceGroup(playersPos[i], 'Gold', 7, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Gold', 7, [22, 29])
       this.generateForestAroundPlayer(playersPos[i], 1000)
     }
   }
 
+  generateTerrain(gridSize = 120, mapModel = 'plain') {
+    const terrainMap = []
+
+    // Initialize the map with default grass (0)
+    for (let i = 0; i < gridSize; i++) {
+      terrainMap[i] = []
+      for (let j = 0; j < gridSize; j++) {
+        terrainMap[i][j] = 0 // Default to grass
+      }
+    }
+
+    // Helper function to generate terrain clusters around a point
+    function generateTerrainCluster(x, y, radius, type) {
+      for (let i = -radius; i <= radius; i++) {
+        for (let j = -radius; j <= radius; j++) {
+          const nx = x + i
+          const ny = y + j
+          if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && i * i + j * j <= radius * radius) {
+            terrainMap[nx][ny] = type
+          }
+        }
+      }
+    }
+
+    // Generate water with a smoother, randomized approach
+    function generateWater() {
+      if (mapModel === 'continent') {
+        const edgeSize = 10 // Base edge size for water
+        const roundFactor = 0.15 // Controls the "smoothness" of the water edge
+
+        // Loop through the map and set water in a rounded pattern with random noise
+        for (let i = 0; i < gridSize; i++) {
+          for (let j = 0; j < gridSize; j++) {
+            const distFromCenter = Math.abs(i - gridSize / 2) + Math.abs(j - gridSize / 2) // Distance from center
+
+            // Add smooth water around the edges with randomized borders
+            const edgeDist = Math.min(i, j, gridSize - i, gridSize - j)
+            const randomOffset = Math.random() * 5 - 2.5 // Randomize water edge for more natural look
+
+            if (edgeDist < edgeSize + Math.sin(distFromCenter * roundFactor) * 5 + randomOffset) {
+              terrainMap[i][j] = 2 // Water
+            }
+          }
+        }
+      } else if (mapModel === 'lac') {
+        const centerX = Math.floor(gridSize / 2)
+        const centerY = Math.floor(gridSize / 2)
+        const baseRadius = Math.floor(gridSize / 4) // Base radius for the lake
+        const roundFactor = 0.6 // Adjust this for more/less rounding
+
+        // Create a lake with a smoother, randomized border
+        for (let i = -baseRadius; i <= baseRadius; i++) {
+          for (let j = -baseRadius; j <= baseRadius; j++) {
+            const nx = centerX + i
+            const ny = centerY + j
+            const distanceFromCenter = Math.sqrt(i * i + j * j)
+            const noise = Math.sin(distanceFromCenter * roundFactor) * 2 // Create smooth noise
+            const randomOffset = Math.random() * 3 - 1.5 // Add randomness to the lake shape
+
+            if (
+              nx >= 0 &&
+              nx < gridSize &&
+              ny >= 0 &&
+              ny < gridSize &&
+              distanceFromCenter < baseRadius + noise + randomOffset
+            ) {
+              terrainMap[nx][ny] = 2 // Water
+            }
+          }
+        }
+      }
+      // 'plain' model: no water, so do nothing
+    }
+
+    // Generate clusters of desert (1) and jungle (3)
+    function generateLandTerrain() {
+      // Generate desert areas (1)
+      generateClusters(1, 8, 5, 10)
+
+      // Generate jungle areas (3)
+      generateClusters(3, 10, 4, 8)
+    }
+
+    // Generic function to generate clustered terrain types
+    function generateClusters(type, clusterCount, clusterSizeMin, clusterSizeMax) {
+      for (let i = 0; i < clusterCount; i++) {
+        const clusterX = Math.floor(Math.random() * gridSize)
+        const clusterY = Math.floor(Math.random() * gridSize)
+        const radius = Math.floor(Math.random() * (clusterSizeMax - clusterSizeMin)) + clusterSizeMin
+
+        // Ensure we avoid water if generating jungle/desert in the 'lac' or 'continent' models
+        if (type !== 2 && terrainMap[clusterX][clusterY] === 2) {
+          continue // Skip if this area is water
+        }
+
+        generateTerrainCluster(clusterX, clusterY, radius, type)
+      }
+    }
+
+    // Generate water based on the map model
+    generateWater()
+
+    // Generate desert and jungle clusters
+    generateLandTerrain()
+
+    return terrainMap
+  }
+
   generateCells() {
     const z = 0
-    const lines = Assets.cache.get('0').split('\n').filter(Boolean)
-    this.size = lines.length - 1
+    const terrain = this.generateTerrain(121, 'continent')
+    this.size = terrain.length - 1
     for (let i = 0; i <= this.size; i++) {
-      const line = lines[i].split('').filter(Boolean)
+      const line = terrain[i]
       for (let j = 0; j <= this.size; j++) {
         if (!this.grid[i]) {
           this.grid[i] = []
         }
         const cell = line[j]
         switch (cell) {
-          case '0':
+          case 0:
             this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
             break
-          case '1':
+          case 1:
             this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
             break
-          case '2':
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
-            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
+          case 2:
+            this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
             break
-          case '3':
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
-            //this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
-            break
-          case '4':
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
-            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
-            break
-          case '5':
+          case 3:
             this.grid[i][j] = new Cell({ i, j, z, type: 'Jungle' }, this.context)
-            this.resources.push(new Resource({ i, j, type: 'Tree' }, this.context))
             break
         }
       }
@@ -565,6 +669,8 @@ export default class Map extends Container {
         this.grid[i][j].fillWaterCellsAroundCell()
       }
     }
+    this.formatCellsWaterBorder()
+    this.formatCellsDesert()
   }
 
   generateSets() {
@@ -575,7 +681,7 @@ export default class Map extends Container {
           continue
         }
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          if (cell.type !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
+          if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
@@ -589,7 +695,7 @@ export default class Map extends Container {
             cell.addChild(floor)
           }
           if (Math.random() < this.chanceOfSets) {
-            if (cell.type !== 'Water') {
+            if (cell.category !== 'Water') {
               const type = randomItem(['tree', 'rock', 'animal'])
               switch (type) {
                 case 'rock':
@@ -629,7 +735,7 @@ export default class Map extends Container {
           let canGenerate = true
           if (
             getPlainCellsAroundPoint(i, j, this.grid, level * 2, cell => {
-              if (cell.type === 'Water' || (cell.has && cell.has.family === 'building')) {
+              if (cell.category === 'Water' || (cell.has && cell.has.family === 'building')) {
                 canGenerate = false
               }
             })
@@ -943,8 +1049,14 @@ export default class Map extends Container {
           // Ensure the new coordinates are within the grid bounds
           if (grid[newI] && grid[newI][newJ]) {
             const cell = grid[newI][newJ]
+            let isFree = true
+            getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
+              if (['Berrybush', 'Gold', 'Stone'].includes(cell.has?.type)) {
+                isFree = false
+              }
+            })
             // Check if the cell is valid
-            if (!cell.solid && cell.type !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+            if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
               cells.push({ i: newI, j: newJ })
             }
           }
