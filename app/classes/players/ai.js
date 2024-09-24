@@ -7,6 +7,7 @@ import {
   getClosestInstance,
   instancesDistance,
   getCellsAroundPoint,
+  canAfford,
 } from '../../lib'
 
 const styleLogInfo1 = 'background: #00ff00; color: #ffff00'
@@ -69,21 +70,29 @@ export class AI extends Player {
       0: {
         StoragePit: 1,
         Granary: 1,
+        Barracks: 1,
+        Market: 1,
       },
       1: {
         StoragePit: 2,
         Granary: 2,
         Farm: 4,
+        Barracks: 1,
+        Market: 1,
       },
       2: {
         StoragePit: 3,
         Granary: 3,
         Farm: 6,
+        Barracks: 2,
+        Market: 1,
       },
       3: {
         StoragePit: 4,
         Granary: 4,
         Farm: 10,
+        Barracks: 2,
+        Market: 1,
       },
     }
   }
@@ -106,7 +115,10 @@ export class AI extends Player {
         if (type === 'Villager' && target.family === 'resource') {
           const buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit'
           const buildings = me.buildingsByTypes([buildingType])
-          if (me.hasNotReachBuildingLimit(buildingType, buildings)) {
+          if (
+            canAfford(me, me.config.buildings[buildingType]) &&
+            me.hasNotReachBuildingLimit(buildingType, buildings)
+          ) {
             const closestBuilding = getClosestInstance(target, [...buildings, ...me.buildingsByTypes(['TownCenter'])])
             if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
               const pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1)
@@ -341,7 +353,20 @@ export class AI extends Player {
 
     // Building Purchasing Logic
     const buyBuildingIfNeeded = (condition, buildingType, positionCallback) => {
-      if (condition) {
+      const list = {
+        House: houses,
+        Farm: farms,
+        Barracks: barracks,
+        Granary: granarys,
+        StoragePit: storagepits,
+        Market: markets,
+      }
+      const building = this.config.buildings[buildingType]
+      if (
+        condition &&
+        canAfford(this, building.cost) &&
+        this.hasNotReachBuildingLimit(buildingType, list[buildingType])
+      ) {
         const pos = positionCallback()
         if (pos && this.buyBuilding(pos.i, pos.j, buildingType)) {
           console.log(`Buying building: ${buildingType} at position:`, pos)
@@ -355,15 +380,12 @@ export class AI extends Player {
     )
 
     // Buy Barracks
-    buyBuildingIfNeeded(
-      villagers.length > howManyVillagerBeforeBuyingABarracks && barracks.length === 0,
-      'Barracks',
-      () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
-          this.otherPlayers().every(
-            player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
-          )
+    buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, 'Barracks', () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
+        this.otherPlayers().every(
+          player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
         )
+      )
     )
 
     // Buy Markets
@@ -376,7 +398,7 @@ export class AI extends Player {
     )
 
     // Buy Farm
-    buyBuildingIfNeeded(this.hasNotReachBuildingLimit('Farm', farms), 'Farm', () => {
+    buyBuildingIfNeeded(true, 'Farm', () => {
       const buildings = [...granarys, ...towncenters] // Combine both granarys and towncenters
 
       for (const building of buildings) {

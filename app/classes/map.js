@@ -223,8 +223,8 @@ export default class Map extends Container {
 
     this.gaia = new Gaia(this.context)
 
-    this.generateMapRelief()
-    this.formatCellsRelief()
+    //this.generateMapRelief()
+    //this.formatCellsRelief()
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
 

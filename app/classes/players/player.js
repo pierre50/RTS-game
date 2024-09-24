@@ -25,7 +25,7 @@ export class Player {
     this.parent = map
 
     this.wood = map.devMode ? 10000 : 200
-    this.food = map.devMode ? 10000 : 800
+    this.food = map.devMode ? 10000 : 200
     this.stone = map.devMode ? 10000 : 150
     this.gold = map.devMode ? 10000 : 0
     this.corpses = []
