@@ -516,16 +516,16 @@ export default class Map extends Container {
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 10])
+      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 14])
       this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [10, 14])
+      this.placeResourceGroup(playersPos[i], 'Stone', 7, [7, 14])
       this.placeResourceGroup(playersPos[i], 'Stone', 7, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Stone', 7, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [10, 14])
+      this.placeResourceGroup(playersPos[i], 'Gold', 7, [7, 14])
       this.placeResourceGroup(playersPos[i], 'Gold', 7, [14, 22])
       this.placeResourceGroup(playersPos[i], 'Gold', 7, [22, 29])
-      this.generateForestAroundPlayer(playersPos[i], 1000)
+      this.generateForestAroundPlayer(playersPos[i], this.size * 4)
     }
   }
 
@@ -639,7 +639,7 @@ export default class Map extends Container {
 
   generateCells() {
     const z = 0
-    const terrain = this.generateTerrain(121, 'continent')
+    const terrain = this.generateTerrain(121)
     this.size = terrain.length - 1
     for (let i = 0; i <= this.size; i++) {
       const line = terrain[i]
@@ -983,10 +983,6 @@ export default class Map extends Container {
             this.grid[i - 1][j].type === 'Water'
           ) {
             cell.setWaterBorder('20000', '000')
-          }
-        } else {
-          if (cell.has) {
-            cell.has.destroy()
           }
         }
       }

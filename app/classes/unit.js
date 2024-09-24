@@ -1372,14 +1372,14 @@ export class Unit extends Container {
       context: { map },
     } = this
     this.setTextures('corpseSheet')
+    this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].corpses.push(this)
       map.grid[this.i][this.j].solid = false
     }
-    this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
     this.sprite.onComplete = () => {
-      this.clear()
+      //this.clear()
     }
   }
 

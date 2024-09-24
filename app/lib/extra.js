@@ -2,11 +2,15 @@ import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 
 export function setUnitTexture(sheet, instance, accelerator) {
+  const animationSpeed = {
+    standingSheet: 0.15,
+    corpseSheet: 0,
+  }
   const { paused } = instance.context
   if (paused) {
     return
   }
-  const sheetToReset = ['actionSheet']
+  const sheetToReset = ['actionSheet', 'dyingSheet', 'corpseSheet']
   // Sheet don't exist we just block the current sheet
   if (!instance[sheet]) {
     if (instance.currentSheet !== 'walkingSheet' && instance.walkingSheet) {
@@ -47,8 +51,7 @@ export function setUnitTexture(sheet, instance, accelerator) {
       instance.sprite.scale.x = 1
       instance.sprite.textures = instance[sheet].animations[direction]
   }
-  instance.sprite.animationSpeed =
-    (instance[sheet].data.animationSpeed || (sheet === 'standingSheet' ? 0.15 : 0.3)) * accelerator
+  instance.sprite.animationSpeed = (instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3) * accelerator
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 

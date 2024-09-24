@@ -177,6 +177,7 @@ export default class Game extends Container {
           'technologies',
           'cellViewed',
           'isPlayed',
+          'hasBuilt',
         ]),
         buildings: player.buildings.map(building => buildingData(building)),
         units: player.units.map(unit => unitData(unit)),
@@ -189,7 +190,17 @@ export default class Game extends Container {
         ),
       })
       const cellData = cell => ({
-        ...filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'inclined', 'border', 'waterBorder']),
+        ...filterObject(cell, [
+          'z',
+          'type',
+          'viewed',
+          'solid',
+          'visible',
+          'category',
+          'inclined',
+          'border',
+          'waterBorder',
+        ]),
         has: cell.has?.name,
         fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
           textureSheet,

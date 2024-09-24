@@ -67,6 +67,7 @@ export class Building extends Container {
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
+
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
@@ -228,9 +229,9 @@ export class Building extends Container {
       this.addChild(this.sprite)
     }
 
-    this.updateTexture()
     if (this.isBuilt) {
       renderCellOnInstanceSight(this)
+      this.finalTexture()
       this.onBuilt()
     }
   }
@@ -770,7 +771,7 @@ export class Building extends Container {
     loadingDiv.className = 'building-loading'
     loadingDiv.id = 'loading'
 
-    if (this.loading) {
+    if (this.loading && this.owner.isPlayed) {
       const iconImg = document.createElement('img')
       iconImg.className = 'building-loading-icon'
       iconImg.src = getIconPath('009_50731')
