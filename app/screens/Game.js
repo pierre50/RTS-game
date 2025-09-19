@@ -11,10 +11,11 @@ import { filterObject } from '../lib'
  */
 
 export default class Game extends Container {
-  constructor(app) {
+  constructor(app, gamebox) {
     super()
     this.context = {
       app,
+      gamebox,
       menu: null,
       player: null,
       players: [],
@@ -55,8 +56,7 @@ export default class Game extends Container {
     })
     window.addEventListener('resize', () => {
       if (context.controls) {
-        context.controls.clearInstancesOnScreen()
-        context.controls.displayInstancesOnScreen()
+        context.controls.updateVisibleCells()
       }
       if (context.menu) {
         context.menu.updateCameraMiniMap()
@@ -173,7 +173,7 @@ export default class Game extends Container {
           'civ',
           'color',
           'population',
-          'populationMax',
+          'POPULATION_MAX',
           'technologies',
           'cellViewed',
           'isPlayed',

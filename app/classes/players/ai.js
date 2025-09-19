@@ -147,7 +147,7 @@ export class AI extends Player {
     console.log('%c ----Step started', styleLogInfo1)
 
     console.log(
-      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.populationMax}`,
+      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.POPULATION_MAX}`,
       styleLogInfo2
     )
 
@@ -375,7 +375,7 @@ export class AI extends Player {
     }
 
     // Buy House
-    buyBuildingIfNeeded(this.population + 2 > this.populationMax && !notBuiltHouses.length, 'House', () =>
+    buyBuildingIfNeeded(this.population + 2 > this.POPULATION_MAX && !notBuiltHouses.length, 'House', () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
     )
 

@@ -10,7 +10,7 @@ import {
   getTexture,
   randomItem,
 } from '../lib'
-import { colorWhite, colorRed, cellWidth, cellHeight, maxSelectUnits, accelerator } from '../constants'
+import { COLOR_WHITE, COLOR_RED, CELL_WIDTH, CELL_HEIGHT, MAX_SELECT_UNITS, ACCELERATOR } from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -18,7 +18,7 @@ export default class Controls extends Container {
 
     this.context = context
 
-    const { map } = context
+    const { map, gamebox } = context
 
     this.sortableChildren = true
 
@@ -32,6 +32,8 @@ export default class Controls extends Container {
       x: 0,
       y: 0,
     }
+
+    this.visibleCells = new Set()
 
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
@@ -96,8 +98,8 @@ export default class Controls extends Container {
           if (Object.values(this.keysPressed).filter(Boolean).length > 1) {
             double = true
           }
-          if (this.keySpeed < 2.4) {
-            this.keySpeed += 0.1
+          if (this.keySpeed < 6) {
+            this.keySpeed += 0.5
           }
           if (this.keysPressed['ArrowLeft']) {
             this.moveCamera('left', this.keySpeed, double)
@@ -248,14 +250,14 @@ export default class Controls extends Container {
         const sprite = this.mouseBuilding.getChildByName('sprite')
         const color = this.mouseBuilding.getChildByName('color')
         if (isFree) {
-          sprite.tint = colorWhite
+          sprite.tint = COLOR_WHITE
           if (color) {
-            color.tint = colorWhite
+            color.tint = COLOR_WHITE
           }
         } else {
-          sprite.tint = colorRed
+          sprite.tint = COLOR_RED
           if (color) {
-            color.tint = colorRed
+            color.tint = COLOR_RED
           }
         }
         this.mouseBuilding.isFree = isFree
@@ -276,26 +278,25 @@ export default class Controls extends Container {
         height: 0,
         graph: new Graphics(),
       }
-      this.addChild(this.mouseRectangle.graph)
+      app.stage.addChild(this.mouseRectangle.graph)
     }
 
     if (this.mouseRectangle && !this.mouseBuilding) {
       if (player.selectedUnits.length || player.selectedBuilding) {
         player.unselectAll()
       }
-      this.mouseRectangle.graph.clear()
-      this.mouseRectangle.width = Math.round(this.mouse.x - this.mouseRectangle.x)
-      this.mouseRectangle.height =
-        this.mouse.y >= app.screen.height
-          ? Math.round(app.screen.height - 2 - this.mouseRectangle.y)
-          : Math.round(this.mouse.y - this.mouseRectangle.y)
-      this.mouseRectangle.graph.lineStyle(1, colorWhite, 1)
-      this.mouseRectangle.graph.drawRect(
-        Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width),
-        Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height),
-        Math.abs(this.mouseRectangle.width),
-        Math.abs(this.mouseRectangle.height)
-      )
+      const graph = this.mouseRectangle.graph
+      graph.clear()
+    
+      this.mouseRectangle.width = this.mouse.x - this.mouseRectangle.x
+      this.mouseRectangle.height = this.mouse.y - this.mouseRectangle.y
+    
+      const x = Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width)
+      const y = Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height)
+      const w = Math.abs(this.mouseRectangle.width)
+      const h = Math.abs(this.mouseRectangle.height)
+    
+      graph.rect(x, y, w, h).stroke(COLOR_WHITE);
     }
   }
 
@@ -319,7 +320,7 @@ export default class Controls extends Container {
       for (let i = 0; i < player.units.length; i++) {
         const unit = player.units[i]
         if (
-          player.selectedUnits.length < maxSelectUnits &&
+          player.selectedUnits.length < MAX_SELECT_UNITS &&
           pointInRectangle(
             unit.x - this.camera.x,
             unit.y - this.camera.y,
@@ -381,7 +382,7 @@ export default class Controls extends Container {
           // Pointer animation
           const pointerSheet = Assets.cache.get('50405')
           const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
-          pointer.animationSpeed = 0.2 * accelerator
+          pointer.animationSpeed = 0.2 * ACCELERATOR
           pointer.loop = false
           pointer.anchor.set(0.5, 0.5)
           pointer.x = this.mouse.x
@@ -492,38 +493,37 @@ export default class Controls extends Container {
 
     const dividedSpeed = isSpeedDivided ? 1.5 : 1
     const speed = (moveSpeed || 20) / dividedSpeed
-    const A = { x: cellWidth / 2 - this.camera.x, y: -this.camera.y }
+    const A = { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y }
     const B = {
-      x: cellWidth / 2 - (map.size * cellWidth) / 2 - this.camera.x,
-      y: (map.size * cellHeight) / 2 - this.camera.y,
+      x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
+      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
     }
     const D = {
-      x: cellWidth / 2 + (map.size * cellWidth) / 2 - this.camera.x,
-      y: (map.size * cellHeight) / 2 - this.camera.y,
+      x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
+      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
     }
-    const C = { x: cellWidth / 2 - this.camera.x, y: map.size * cellHeight - this.camera.y }
+    const C = { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y }
     const cameraCenter = {
       x: this.camera.x + app.screen.width / 2 - this.camera.x,
       y: this.camera.y + app.screen.height / 2 - this.camera.y,
     }
-    this.clearInstancesOnScreen()
 
     if (dir === 'left') {
       if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y += speed / (cellWidth / cellHeight)
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x -= speed
       } else if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (cellWidth / cellHeight)
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x -= speed
       } else if (cameraCenter.x - 100 > B.x) {
         this.camera.x -= speed
       }
     } else if (dir === 'right') {
       if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y += speed / (cellWidth / cellHeight)
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x += speed
       } else if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (cellWidth / cellHeight)
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x += speed
       } else if (cameraCenter.x + 100 < D.x) {
         this.camera.x += speed
@@ -531,20 +531,20 @@ export default class Controls extends Container {
     }
     if (dir === 'up') {
       if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y -= speed / (cellWidth / cellHeight)
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x += speed
       } else if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y -= speed / (cellWidth / cellHeight)
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x -= speed
       } else if (cameraCenter.y - 50 > A.y) {
         this.camera.y -= speed
       }
     } else if (dir === 'down') {
       if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y += speed / (cellWidth / cellHeight)
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x -= speed
       } else if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y += speed / (cellWidth / cellHeight)
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
         this.camera.x += speed
       } else if (cameraCenter.y + 100 < C.y) {
         this.camera.y += speed
@@ -553,7 +553,7 @@ export default class Controls extends Container {
 
     menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
-    this.displayInstancesOnScreen()
+    this.updateVisibleCells()
   }
 
   moveCameraWithMouse(evt) {
@@ -617,10 +617,10 @@ export default class Controls extends Container {
       x: Math.floor(this.camera.x),
       y: Math.floor(this.camera.y),
     }
-    const margin = cellWidth
+    const margin = CELL_WIDTH
 
-    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += cellWidth / 2) {
-      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += cellHeight / 2) {
+    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
         const [cartesianX, cartesianY] = isometricToCartesian(i, j)
         const x = Math.min(Math.max(cartesianX, 0), map.size - 1) // Adjust for index bounds
         const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
@@ -633,18 +633,47 @@ export default class Controls extends Container {
     }
   }
 
-  clearInstancesOnScreen() {
-    this.getCellOnCamera(cell => {
-      cell.visible = false
-      if (cell.has) {
-        cell.has.visible = false
-      }
-    })
-  }
 
-  displayInstancesOnScreen() {
-    this.getCellOnCamera(cell => cell.updateVisible())
-  }
+  updateVisibleCells() {
+    const { map, app } = this.context
+    const newVisible = new Set()
+    const margin = CELL_WIDTH // extra padding for offscreen cells
+
+    const startX = Math.floor(this.camera.x - margin)
+    const endX = Math.floor(this.camera.x + app.screen.width + margin)
+    const startY = Math.floor(this.camera.y - margin)
+    const endY = Math.floor(this.camera.y + app.screen.height + margin)
+
+    for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
+        for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
+            const [cartX, cartY] = isometricToCartesian(i, j)
+            const x = Math.min(Math.max(cartX, 0), map.size - 1)
+            const y = Math.min(Math.max(cartY, 0), map.size - 1)
+
+            const cell = map.grid[x]?.[y]
+            if (cell) {
+                newVisible.add(cell)
+            }
+        }
+    }
+
+    // Hide cells that left the viewport
+    for (let cell of this.visibleCells) {
+        if (!newVisible.has(cell)) {
+            cell.visible = false
+            if (cell.has) cell.has.visible = false
+        }
+    }
+
+    // Show newly visible cells
+    for (let cell of newVisible) {
+        if (!this.visibleCells.has(cell)) {
+            cell.updateVisible()
+        }
+    }
+
+    this.visibleCells = newVisible
+}
 
   init() {
     const {
@@ -664,13 +693,12 @@ export default class Controls extends Container {
     const {
       context: { map, app, menu },
     } = this
-    this.camera && this.clearInstancesOnScreen()
     this.camera = {
       x: direct ? x : x - app.screen.width / 2,
       y: direct ? y : y - app.screen.height / 2,
     }
     menu && menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
-    this.displayInstancesOnScreen()
+    this.updateVisibleCells()
   }
 }

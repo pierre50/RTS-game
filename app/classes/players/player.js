@@ -13,7 +13,7 @@ import {
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
-import { populationMax } from '../../constants'
+import { POPULATION_MAX } from '../../constants'
 
 export class Player {
   constructor(options, context) {
@@ -39,7 +39,7 @@ export class Player {
       this[prop] = options[prop]
     })
 
-    this.populationMax = this.populationMax || map.devMode ? populationMax : 0
+    this.POPULATION_MAX = this.POPULATION_MAX || map.devMode ? POPULATION_MAX : 0
 
     this.colorHex = getHexColor(this.color)
     this.config = { ...Assets.cache.get('config') }
@@ -175,14 +175,14 @@ export class Player {
 
   createUnit(options) {
     const { context } = this
-    let unit = new Unit({ ...options, owner: this }, context)
+    let unit = context.map.addChild(new Unit({ ...options, owner: this }, context))
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }
 
   createBuilding(options) {
     const { context } = this
-    const building = new Building({ ...options, owner: this }, context)
+    const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)
     canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return building

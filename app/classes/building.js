@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, populationMax, rubbleTime } from '../constants'
+import { ACCELERATOR, COLOR_WHITE, POPULATION_MAX, RUBBLE_TIME } from '../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -36,7 +36,6 @@ export class Building extends Container {
     this.context = context
 
     const { map, controls } = context
-    this.setParent(map)
 
     this.name = uuidv4()
     this.family = 'building'
@@ -99,7 +98,7 @@ export class Building extends Container {
           const populationIcon = document.createElement('img')
           const populationSpan = document.createElement('span')
           populationSpan.id = 'population-text'
-          populationSpan.textContent = this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+          populationSpan.textContent = this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
 
           populationIcon.src = getIconPath('004_50731')
           populationDiv.appendChild(populationIcon)
@@ -271,7 +270,7 @@ export class Building extends Container {
       callback()
     }
     this.stopInterval()
-    this.interval = setInterval(finalCb, (time * 1000) / 100 / accelerator)
+    this.interval = setInterval(finalCb, (time * 1000) / 100 / ACCELERATOR)
   }
 
   stopInterval() {
@@ -311,7 +310,7 @@ export class Building extends Container {
 
   startTimeout(cb, time) {
     this.stopTimeout()
-    this.timeout = new CustomTimeout(() => cb(), (time * 1000) / accelerator)
+    this.timeout = new CustomTimeout(() => cb(), (time * 1000) / ACCELERATOR)
   }
 
   stopTimeout() {
@@ -336,7 +335,7 @@ export class Building extends Container {
       context: { menu },
     } = this
     const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
-    const buildSpritesheetId = this.sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
+    const buildSpritesheetId = this.sprite.texture.label.split('_')[1].split('.')[0]
     const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
 
     if (percentage >= 25 && percentage < 50) {
@@ -373,12 +372,12 @@ export class Building extends Container {
     } = this
     if (this.increasePopulation) {
       // Increase player population and continue all unit creation that was paused
-      this.owner.populationMax += this.increasePopulation
-      // Update bottombar with populationmax if house selected
+      this.owner.POPULATION_MAX += this.increasePopulation
+      // Update bottombar with POPULATION_MAX if house selected
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
         menu.updateInfo(
           'population-text',
-          this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
         )
       }
     }
@@ -423,7 +422,7 @@ export class Building extends Container {
         spriteFire.x = 10
         spriteFire.y = 5
         spriteFire.play()
-        spriteFire.animationSpeed = 0.2 * accelerator
+        spriteFire.animationSpeed = 0.2 * ACCELERATOR
         this.addChild(spriteFire)
       } else {
         const fire = this.getChildByName('deco')
@@ -506,7 +505,7 @@ export class Building extends Container {
           spriteFire.x = poses[i][0]
           spriteFire.y = poses[i][1]
           spriteFire.play()
-          spriteFire.animationSpeed = 0.2 * accelerator
+          spriteFire.animationSpeed = 0.2 * ACCELERATOR
           newFire.addChild(spriteFire)
         }
         building.addChild(newFire)
@@ -568,7 +567,7 @@ export class Building extends Container {
         cell.corpses.push(this)
       }
     })
-    this.startTimeout(() => this.clear(), rubbleTime)
+    this.startTimeout(() => this.clear(), RUBBLE_TIME)
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
@@ -606,9 +605,9 @@ export class Building extends Container {
     const selection = new Graphics()
     selection.name = 'selection'
     selection.zIndex = 3
-    selection.lineStyle(1, 0xffffff)
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
-    selection.drawPolygon(path)
+    selection.poly(path);
+    selection.stroke(COLOR_WHITE);
     if (this.loading && this.owner.isPlayed) {
       this.updateInterfaceLoading()
     }
@@ -666,7 +665,7 @@ export class Building extends Container {
     if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
       menu.updateInfo(
         'population-text',
-        this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+        this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
       )
     }
   }
@@ -735,7 +734,7 @@ export class Building extends Container {
               this.updateInterfaceLoading()
             }
           } else if (this.loading < 100) {
-            if (this.owner.population < Math.min(populationMax, this.owner.populationMax)) {
+            if (this.owner.population < Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)) {
               this.loading += 1
             } else if (this.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage('You need to build more houses')

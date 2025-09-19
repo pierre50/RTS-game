@@ -10,7 +10,7 @@ import {
   colors,
   renderCellOnInstanceSight,
 } from '../lib'
-import { cellDepth } from '../constants'
+import { CELL_DEPTH } from '../constants'
 import { Cell } from './cell'
 
 /**
@@ -82,7 +82,9 @@ export default class Map extends Container {
           this.grid[i] = []
         }
         const cell = line[j]
-        this.grid[i][j] = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.context)
+        const newCell = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.context)
+        this.addChild(newCell) 
+        this.grid[i][j] = newCell
         if (!this.revealEverything) {
           this.grid[i][j].setFog()
         }
@@ -93,7 +95,7 @@ export default class Map extends Container {
         this.grid[i][j].fillWaterCellsAroundCell()
       }
     }
-    this.resources = resources.map(resource => new Resource(resource, this.context))
+    this.resources = resources.map(resource => this.addChild(new Resource(resource, this.context)))
 
     this.formatCellsRelief()
     this.formatCellsWaterBorder()
@@ -509,7 +511,7 @@ export default class Map extends Container {
             isFree = false
           }
         })
-        isFree && this.resources.push(new Resource({ i: cell.i, j: cell.j, type: 'Tree' }, this.context))
+        isFree && this.resources.push(this.addChild(new Resource({ i: cell.i, j: cell.j, type: 'Tree' }, this.context)))
       }
     }
   }
@@ -641,38 +643,36 @@ export default class Map extends Container {
     const z = 0
     const terrain = this.generateTerrain(121)
     this.size = terrain.length - 1
+  
+    // Map terrain numbers to cell types
+    const terrainMap = {
+      0: 'Grass',
+      1: 'Desert',
+      2: 'Water',
+      3: 'Jungle',
+    }
+  
     for (let i = 0; i <= this.size; i++) {
-      const line = terrain[i]
+      if (!this.grid[i]) this.grid[i] = []
       for (let j = 0; j <= this.size; j++) {
-        if (!this.grid[i]) {
-          this.grid[i] = []
-        }
-        const cell = line[j]
-        switch (cell) {
-          case 0:
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Grass' }, this.context)
-            break
-          case 1:
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Desert' }, this.context)
-            break
-          case 2:
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Water' }, this.context)
-            break
-          case 3:
-            this.grid[i][j] = new Cell({ i, j, z, type: 'Jungle' }, this.context)
-            break
-        }
+        const type = terrainMap[terrain[i][j]]
+        const cell = new Cell({ i, j, z, type }, this.context)
+        this.addChild(cell)         // ensures cell.parent is set
+        this.grid[i][j] = cell
       }
     }
+  
+    // Post-processing
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         this.grid[i][j].fillWaterCellsAroundCell()
       }
     }
+  
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
   }
-
+  
   generateSets() {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
@@ -718,7 +718,7 @@ export default class Map extends Container {
                   break
               }
             } else {
-              this.resources.push(new Resource({ i, j, type: 'Salmon' }, this.context))
+              this.resources.push(this.addChild(new Resource({ i, j, type: 'Salmon' }, this.context)))
             }
           }
         }
@@ -789,7 +789,7 @@ export default class Map extends Container {
           (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) &&
           (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z)
         ) {
-          cell.setReliefBorder('014', cellDepth / 2)
+          cell.setReliefBorder('014', CELL_DEPTH / 2)
         } else if (
           this.grid[i + 1] &&
           this.grid[i + 1][j].z - cell.z === 1 &&
@@ -797,7 +797,7 @@ export default class Map extends Container {
           (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) &&
           (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z)
         ) {
-          cell.setReliefBorder('015', cellDepth / 2)
+          cell.setReliefBorder('015', CELL_DEPTH / 2)
         } else if (
           this.grid[i][j - 1] &&
           this.grid[i][j - 1].z - cell.z === 1 &&
@@ -805,7 +805,7 @@ export default class Map extends Container {
           (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z) &&
           (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)
         ) {
-          cell.setReliefBorder('016', cellDepth / 2)
+          cell.setReliefBorder('016', CELL_DEPTH / 2)
         } else if (
           this.grid[i][j + 1] &&
           this.grid[i][j + 1].z - cell.z === 1 &&
@@ -813,7 +813,7 @@ export default class Map extends Container {
           (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) &&
           (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)
         ) {
-          cell.setReliefBorder('013', cellDepth / 2)
+          cell.setReliefBorder('013', CELL_DEPTH / 2)
         } // Corner
         else if (
           this.grid[i - 1] &&
@@ -822,7 +822,7 @@ export default class Map extends Container {
           (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) &&
           (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)
         ) {
-          cell.setReliefBorder('010', cellDepth / 2)
+          cell.setReliefBorder('010', CELL_DEPTH / 2)
         } else if (
           this.grid[i + 1] &&
           this.grid[i + 1][j - 1] &&
@@ -846,7 +846,7 @@ export default class Map extends Container {
           (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z) &&
           (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z)
         ) {
-          cell.setReliefBorder('009', cellDepth / 2)
+          cell.setReliefBorder('009', CELL_DEPTH / 2)
         }
         // Deep corner
         else if (
@@ -855,28 +855,28 @@ export default class Map extends Container {
           this.grid[i - 1] &&
           this.grid[i - 1][j].z - cell.z === 1
         ) {
-          cell.setReliefBorder('022', cellDepth / 2)
+          cell.setReliefBorder('022', CELL_DEPTH / 2)
         } else if (
           this.grid[i][j + 1] &&
           this.grid[i][j + 1].z - cell.z === 1 &&
           this.grid[i + 1] &&
           this.grid[i + 1][j].z - cell.z === 1
         ) {
-          cell.setReliefBorder('021', cellDepth / 2)
+          cell.setReliefBorder('021', CELL_DEPTH / 2)
         } else if (
           this.grid[i][j - 1] &&
           this.grid[i][j - 1].z - cell.z === 1 &&
           this.grid[i + 1] &&
           this.grid[i + 1][j].z - cell.z === 1
         ) {
-          cell.setReliefBorder('023', cellDepth)
+          cell.setReliefBorder('023', CELL_DEPTH)
         } else if (
           this.grid[i][j + 1] &&
           this.grid[i][j + 1].z - cell.z === 1 &&
           this.grid[i - 1] &&
           this.grid[i - 1][j].z - cell.z === 1
         ) {
-          cell.setReliefBorder('024', cellDepth)
+          cell.setReliefBorder('024', CELL_DEPTH)
         }
       }
     }
@@ -988,7 +988,28 @@ export default class Map extends Container {
       }
     }
   }
-
+  formatCellsDesert() {
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        const typeToFormat = ['Grass', 'Jungle']
+        if (cell.type === 'Desert') {
+          if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
+            this.grid[i - 1][j].setDesertBorder('est')
+          }
+          if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
+            this.grid[i + 1][j].setDesertBorder('west')
+          }
+          if (this.grid[i][j - 1] && typeToFormat.includes(this.grid[i][j - 1].type)) {
+            this.grid[i][j - 1].setDesertBorder('south')
+          }
+          if (this.grid[i][j + 1] && typeToFormat.includes(this.grid[i][j + 1].type)) {
+            this.grid[i][j + 1].setDesertBorder('north')
+          }
+        }
+      }
+    }
+  }
   findPlayerPlaces() {
     const results = []
     const outBorder = 20
@@ -1086,30 +1107,9 @@ export default class Map extends Container {
 
     // Place resources in the selected cells
     for (const cell of cellsToPlace) {
-      this.resources.push(new Resource({ i: cell.i, j: cell.j, type: instance }, context))
+      this.resources.push(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
   }
 
-  formatCellsDesert() {
-    for (let i = 0; i <= this.size; i++) {
-      for (let j = 0; j <= this.size; j++) {
-        const cell = this.grid[i][j]
-        const typeToFormat = ['Grass', 'Jungle']
-        if (cell.type === 'Desert') {
-          if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
-            this.grid[i - 1][j].setDesertBorder('est')
-          }
-          if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
-            this.grid[i + 1][j].setDesertBorder('west')
-          }
-          if (this.grid[i][j - 1] && typeToFormat.includes(this.grid[i][j - 1].type)) {
-            this.grid[i][j - 1].setDesertBorder('south')
-          }
-          if (this.grid[i][j + 1] && typeToFormat.includes(this.grid[i][j + 1].type)) {
-            this.grid[i][j + 1].setDesertBorder('north')
-          }
-        }
-      }
-    }
-  }
+
 }

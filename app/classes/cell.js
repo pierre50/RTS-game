@@ -11,7 +11,7 @@ import {
   getTexture,
   changeSpriteColorDirectly,
 } from '../lib'
-import { cellDepth, colorFog, colorWhite } from '../constants'
+import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE } from '../constants'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -22,7 +22,6 @@ export class Cell extends Container {
     const {
       context: { map },
     } = this
-    this.setParent(map)
     this.family = 'cell'
     this.map = map
 
@@ -48,7 +47,7 @@ export class Cell extends Container {
     const pos = cartesianToIsometric(this.i, this.j)
 
     this.x = pos[0]
-    this.y = pos[1] - this.z * cellDepth
+    this.y = pos[1] - this.z * CELL_DEPTH
 
     const textureName = randomItem(this.assets)
     const resourceName = textureName.split('_')[1]
@@ -104,7 +103,7 @@ export class Cell extends Container {
   setDesertBorder(direction) {
     const resourceName = '20002'
     const { sprite: cellSprite } = this
-    const cellSpriteTextureName = cellSprite.texture.textureCacheIds[0]
+    const cellSpriteTextureName = cellSprite.texture.label
     const cellSpriteIndex = cellSpriteTextureName.split('_')[0]
     let val = {}
     let index
@@ -158,7 +157,7 @@ export class Cell extends Container {
 
   setReliefBorder(index, elevation = 0) {
     const { sprite } = this
-    const resourceName = sprite.texture.textureCacheIds[0].split('_')[1].split('.')[0]
+    const resourceName = sprite.texture.label.split('_')[1].split('.')[0]
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
     if (elevation) {
@@ -183,7 +182,7 @@ export class Cell extends Container {
   }
   fillWaterCellsAroundCell() {
     const grid = this.parent.grid
-    if (this.type === 'Water' && !this.sprite.texture.textureCacheIds[0].includes('15002')) {
+    if (this.type === 'Water' && !this.sprite.texture.label.includes('15002')) {
       this.setWater()
     }
     getCellsAroundPoint(this.i, this.j, grid, 2, cell => {
@@ -227,14 +226,14 @@ export class Cell extends Container {
 
   setCellLevel(level, cpt = 1) {
     if (level === 0) {
-      this.y += cellDepth
+      this.y += CELL_DEPTH
       this.z = level
       return
     }
     const grid = this.parent.grid
     getCellsAroundPoint(this.i, this.j, grid, level - cpt, cell => {
       if (cell.z < cpt) {
-        cell.y -= (cpt - cell.z) * cellDepth
+        cell.y -= (cpt - cell.z) * CELL_DEPTH
         cell.z = cpt
         cell.fillReliefCellsAroundCell(grid)
       }
@@ -250,14 +249,14 @@ export class Cell extends Container {
   addFogBuilding(textureSheet, colorSheet, colorName) {
     const sprite = Sprite.from(getTexture(textureSheet, Assets))
     sprite.name = 'buildingFog'
-    sprite.tint = colorFog
+    sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
     this.addChild(sprite)
     this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
     if (colorSheet) {
       const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
       spriteColor.name = 'buildingColorFog'
-      spriteColor.tint = colorFog
+      spriteColor.tint = COLOR_FOG
       changeSpriteColorDirectly(spriteColor, colorName)
       this.addChild(spriteColor)
       this.fogSprites.push({ sprite: spriteColor, textureSheet, colorSheet, colorName })
@@ -296,7 +295,7 @@ export class Cell extends Container {
       } else {
         for (let i = 0; i < instance.children.length; i++) {
           if (instance.children[i].tint) {
-            instance.children[i].tint = colorFog
+            instance.children[i].tint = COLOR_FOG
           }
         }
       }
@@ -309,7 +308,7 @@ export class Cell extends Container {
     }
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i].tint) {
-        this.children[i].tint = colorFog
+        this.children[i].tint = COLOR_FOG
       }
     }
     if (this.corpses.length) {
@@ -329,7 +328,7 @@ export class Cell extends Container {
       }
       for (let i = 0; i < instance.children.length; i++) {
         if (instance.children[i].tint) {
-          instance.children[i].tint = colorWhite
+          instance.children[i].tint = COLOR_WHITE
         }
       }
     }
@@ -340,7 +339,7 @@ export class Cell extends Container {
     this.zIndex = 0
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i].tint) {
-        this.children[i].tint = colorWhite
+        this.children[i].tint = COLOR_WHITE
       }
     }
     if (this.has) {

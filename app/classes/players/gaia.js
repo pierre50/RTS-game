@@ -7,7 +7,7 @@ export class Gaia extends Player {
   }
   createAnimal(options) {
     const { context } = this
-    let unit = new Animal({ ...options, owner: this }, context)
+    let unit = context.map.addChild(new Animal({ ...options, owner: this }, context))
     this.units.push(unit)
     return unit
   }

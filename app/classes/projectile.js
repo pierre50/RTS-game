@@ -9,7 +9,7 @@ import {
   randomItem,
   uuidv4,
 } from '../lib'
-import { colorArrow, stepTime } from '../constants'
+import { COLOR_ARROW, STEP_TIME } from '../constants'
 import { sound } from '@pixi/sound'
 
 export class Projectile extends Container {
@@ -21,7 +21,6 @@ export class Projectile extends Container {
     const {
       context: { map },
     } = this
-    this.setParent(map)
     this.name = uuidv4()
     this.family = 'projectile'
 
@@ -43,8 +42,8 @@ export class Projectile extends Container {
     this.distance = instancesDistance(this, this.target, false)
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = new Graphics()
-    sprite.beginFill(colorArrow)
-    sprite.drawRect(1, 1, this.size, 1)
+    sprite.rect(1, 1, this.size, 1)
+    sprite.fill(COLOR_ARROW)
     sprite.rotation = degreesToRadians(degree)
     sprite.name = 'sprite'
     sprite.allowMove = false
@@ -66,7 +65,7 @@ export class Projectile extends Container {
         return
       }
       moveTowardPoint(this, targetX, targetY, this.speed)
-    }, stepTime)
+    }, STEP_TIME)
   }
 
   onHit(instance) {

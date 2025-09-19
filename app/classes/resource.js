@@ -9,7 +9,7 @@ import {
   getActionCondition,
   uuidv4,
 } from '../lib'
-import { typeAction, cellWidth, cellHeight } from '../constants'
+import { TYPE_ACTION, CELL_WIDTH, CELL_HEIGHT, COLOR_WHITE } from '../constants'
 
 export class Resource extends Container {
   constructor(options, context) {
@@ -20,7 +20,6 @@ export class Resource extends Container {
     const {
       context: { map },
     } = this
-    this.setParent(map)
 
     this.name = uuidv4()
     this.family = 'resource'
@@ -100,7 +99,7 @@ export class Resource extends Container {
         const {
           context: { player, controls },
         } = this
-        const action = typeAction[this.category || this.type]
+        const action = TYPE_ACTION[this.category || this.type]
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
@@ -143,9 +142,9 @@ export class Resource extends Container {
     const selection = new Graphics()
     selection.name = 'selection'
     selection.zIndex = 3
-    selection.lineStyle(1, 0xffffff)
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
-    selection.drawPolygon(path)
+    selection.poly(path);
+    selection.stroke(COLOR_WHITE);
     this.addChildAt(selection, 0)
   }
 
@@ -200,7 +199,7 @@ export class Resource extends Container {
     this.textureName = `00${randomRange(0, 3)}_636.png`
     const texture = spritesheet.textures[this.textureName]
     sprite.texture = texture
-    const points = [-cellWidth / 2, 0, 0, -cellHeight / 2, cellWidth / 2, 0, 0, cellHeight / 2]
+    const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
     sprite.hitArea = new Polygon(points)
     sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
   }

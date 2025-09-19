@@ -1,4 +1,4 @@
-import { cellWidth, cellHeight, cellDepth } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
 
 /**
  * Generate a version 4 UUID.
@@ -26,7 +26,7 @@ export function formatNumber(nbr) {
  * @param {number} y
  */
 export function cartesianToIsometric(x, y) {
-  return [Math.floor(((x - y) * cellWidth) / 2), Math.floor(((x + y) * cellHeight) / 2)]
+  return [Math.floor(((x - y) * CELL_WIDTH) / 2), Math.floor(((x + y) * CELL_HEIGHT) / 2)]
 }
 
 /**
@@ -36,8 +36,8 @@ export function cartesianToIsometric(x, y) {
  */
 export function isometricToCartesian(x, y) {
   return [
-    Math.round((x / (cellWidth / 2) + y / (cellHeight / 2)) / 2),
-    Math.round((y / (cellHeight / 2) - x / (cellWidth / 2)) / 2),
+    Math.round((x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2),
+    Math.round((y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2),
   ]
 }
 
@@ -75,17 +75,35 @@ export function average(a, b) {
  * @param {object} pnt
  * @param {number} lineThickness
  */
+/**
+ * Check if a point is within a certain distance from a line segment
+ * @param {{x:number, y:number}} line1 - Start point of the line
+ * @param {{x:number, y:number}} line2 - End point of the line
+ * @param {{x:number, y:number}} pnt - Point to check
+ * @param {number} lineThickness - Maximum allowed distance from the line
+ * @returns {boolean}
+ */
 export function pointIsBetweenTwoPoint(line1, line2, pnt, lineThickness) {
-  let L2 = (line2.x - line1.x) * (line2.x - line1.x) + (line2.y - line1.y) * (line2.y - line1.y)
-  if (L2 == 0) return false
-  let r = ((pnt.x - line1.x) * (line2.x - line1.x) + (pnt.y - line1.y) * (line2.y - line1.y)) / L2
+  const dx = line2.x - line1.x
+  const dy = line2.y - line1.y
+  const L2 = dx * dx + dy * dy
+  if (L2 === 0) {
+    // line1 == line2
+    const dist = Math.hypot(line1.x - pnt.x, line1.y - pnt.y)
+    return dist <= lineThickness
+  }
+
+  // Projection parameter
+  const r = ((pnt.x - line1.x) * dx + (pnt.y - line1.y) * dy) / L2
+
   if (r < 0) {
-    return Math.sqrt((line1.x - pnt.x) * (line1.x - pnt.x) + (line1.y - pnt.y) * (line1.y - pnt.y)) <= lineThickness
-  } else if (0 <= r && r <= 1) {
-    let s = ((line1.y - pnt.y) * (line2.x - line1.x) - (line1.x - pnt.x) * (line2.y - line1.y)) / L2
-    return Math.abs(s) * Math.sqrt(L2) <= lineThickness
+    return Math.hypot(line1.x - pnt.x, line1.y - pnt.y) <= lineThickness
+  } else if (r > 1) {
+    return Math.hypot(line2.x - pnt.x, line2.y - pnt.y) <= lineThickness
   } else {
-    return Math.sqrt((line2.x - pnt.x) * (line2.x - pnt.x) + (line2.y - pnt.y) * (line2.y - pnt.y)) <= lineThickness
+    // Perpendicular distance from point to line
+    const s = ((line1.y - pnt.y) * dx - (line1.x - pnt.x) * dy) / L2
+    return Math.abs(s) * Math.sqrt(L2) <= lineThickness
   }
 }
 
@@ -121,7 +139,7 @@ export function instancesDistance(a, b, useCartesian = true) {
  * @param {object} instance
  */
 export function getInstanceZIndex(instance) {
-  const pos = isometricToCartesian(instance.x, instance.y + instance.z * cellDepth)
+  const pos = isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH)
   return pos[0] + pos[1]
 }
 

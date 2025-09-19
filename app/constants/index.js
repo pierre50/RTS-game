@@ -1,33 +1,33 @@
-export const cellWidth = 64
-export const cellHeight = 32
-export const cellDepth = 16
+export const CELL_WIDTH = 64
+export const CELL_HEIGHT = 32
+export const CELL_DEPTH = 16
 
-export const accelerator = 1.5
-export const stepTime = 20
+export const ACCELERATOR = 1.5
+export const STEP_TIME = 20
 
-export const isMobile = window.innerWidth <= 800 && window.innerHeight <= 600
-export const longClickDuration = 200
+export const IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600
+export const LONG_CLICK_DURATION = 200
 
-export const workFoodTypes = ['fisher', 'hunter', 'farmer', 'forager']
-export const loadingFoodTypes = ['meat', 'wheat', 'berry', 'fish']
+export const WORK_FOOD_TYPES = ['fisher', 'hunter', 'farmer', 'forager']
+export const LOADING_FOOD_TYPES = ['meat', 'wheat', 'berry', 'fish']
 
-export const colorWhite = 0xffffff
-export const colorBlack = 0x000000
-export const colorGrey = 0x808080
-export const colorRed = 0xff0000
-export const colorOrange = 0xffa500
-export const colorYellow = 0xffff00
-export const colorGreen = 0x008000
-export const colorBlue = 0x0000ff
-export const colorIndigo = 0x4b0082
-export const colorViolet = 0xee82ee
-export const colorBone = 0xe2dac2
-export const colorShipgrey = 0x3c3b3d
-export const colorFog = 0x999999
+export const COLOR_WHITE = 0xffffff
+export const COLOR_BLACK = 0x000000
+export const COLOR_GREY = 0x808080
+export const COLOR_RED = 0xff0000
+export const COLOR_ORANGE = 0xffa500
+export const COLOR_YELLOW = 0xffff00
+export const COLOR_GREEN = 0x008000
+export const COLOR_BLUE = 0x0000ff
+export const COLOR_INDIGO = 0x4b0082
+export const COLOR_VIOLET = 0xee82ee
+export const COLOR_BONE = 0xe2dac2
+export const COLOR_SHIP_GREY = 0x3c3b3d
+export const COLOR_FOG = 0x999999
+export const COLOR_FLASHY_GREEN = 0x00ff00
+export const COLOR_ARROW = 0xe8e3df
 
-export const colorArrow = 0xe8e3df
-
-export const typeAction = {
+export const TYPE_ACTION = {
   Stone: 'minestone',
   Gold: 'minegold',
   Berrybush: 'forageberry',
@@ -35,7 +35,7 @@ export const typeAction = {
   Fish: 'fishing',
 }
 
-export const corpseTime = 120
-export const rubbleTime = 120
-export const maxSelectUnits = 10
-export const populationMax = 200
+export const CORPSE_TIME = 120
+export const RUBBLE_TIME = 120
+export const MAX_SELECT_UNITS = 10
+export const POPULATION_MAX = 200

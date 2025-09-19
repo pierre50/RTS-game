@@ -1,38 +1,47 @@
-import { Application } from 'pixi.js'
-import './index.html'
-import './styles.css'
-import Game from './screens/Game'
-import Loader from './screens/Loader'
+import { Application } from 'pixi.js';
+import './styles.css';
+import Game from './screens/Game';
+import Loader from './screens/Loader';
 
-const app = new Application({
-  antialias: false,
-  width: window.innerWidth,
-  height: window.innerHeight,
-  resizeTo: window,
-  powerPreference: 'high-performance',
-})
+(async () => {
+  // Create a new PixiJS application
+  const app = new Application();
 
-window.document.removeEventListener('mousemove', app.renderer.events.onPointerMove, true)
-window.document.removeEventListener('pointermove', app.renderer.events.onPointerMove, true)
+  // Initialize the app with background color and auto-resize
+  await app.init({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    background: 0x000000, // black background
+    resizeTo: window,
+    antialias: false,           // faster
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,          // adjusts canvas for resolution
+    powerPreference: 'high-performance', // GPU hint
+  });
 
-const loader = new Loader() // Basic Loading screen
-const gamebox = document.getElementById('game')
-gamebox.addEventListener('contextmenu', evt => {
-  evt.preventDefault()
-})
+  // Append the canvas to your game container
+  const gamebox = document.getElementById('game');
+  if (!gamebox) {
+    console.error('No #game container found');
+    return;
+  }
+  gamebox.appendChild(app.canvas);
 
-window.app = app
-window.gamebox = gamebox
-// append renderer to DOM
-gamebox.appendChild(app.view)
+  // Initialize loader
+  const loader = new Loader();
+  app.stage.addChild(loader);
+  loader.start();
 
-// Add loader to App Display Object and start loading assets
-app.stage.addChild(loader)
-loader.start()
+  // Once assets are loaded, remove loader and start game
+  loader.onLoaded(() => {
+    const game = new Game(app, gamebox);
+    app.stage.removeChild(loader);
+    app.stage.addChild(game);
+  });
 
-// remove loader then show example once asset loading is complete
-loader.onLoaded(() => {
-  const game = new Game(app)
-  app.stage.removeChild(loader)
-  app.stage.addChild(game)
-})
+  // Optional: global pointermove listener
+  app.stage.on('pointermove', event => {
+    // event.data.global.x, event.data.global.y
+  });
+
+})();

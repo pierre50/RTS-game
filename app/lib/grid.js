@@ -1,4 +1,4 @@
-import { accelerator } from '../constants'
+import { ACCELERATOR } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -32,8 +32,8 @@ export function moveTowardPoint(instance, x, y, speed) {
   const tY = y - instance.y
 
   // Calculate the velocity based on the speed and distance
-  const velX = (tX / dist) * (speed * accelerator)
-  const velY = (tY / dist) * (speed * accelerator)
+  const velX = (tX / dist) * (speed * ACCELERATOR)
+  const velY = (tY / dist) * (speed * ACCELERATOR)
 
   // Update the instance's degree (rotation) to face the target point
   instance.degree = getInstanceDegree(instance, x, y)
@@ -279,13 +279,13 @@ export function findInstancesInSight(instance, condition) {
  *                            Must include properties like `i`, `j`, `sight`, `owner`, `parent`, and `context`.
  */
 export function renderCellOnInstanceSight(instance) {
-  const { player, controls } = instance.context
-  const { owner, parent, sight } = instance
+  const { player, controls, map } = instance.context
+  const { owner, sight } = instance
 
   // Check if instance should be visible based on player interaction and sight
   if (
     player &&
-    (!parent.revealEverything ? !instanceIsInPlayerSight(instance, player) : !controls.instanceInCamera(instance)) &&
+    (!map.revealEverything ? !instanceIsInPlayerSight(instance, player) : !controls.instanceInCamera(instance)) &&
     !owner.isPlayed
   ) {
     instance.visible = false
@@ -296,7 +296,7 @@ export function renderCellOnInstanceSight(instance) {
   // Process cells around the instance based on its sight
   getPlainCellsAroundPoint(instance.i, instance.j, owner.views, sight, cell => {
     const pointDistance = pointsDistance(instance.i, instance.j, cell.i, cell.j)
-    const globalCell = parent.grid[cell.i][cell.j]
+    const globalCell = map.grid[cell.i][cell.j]
 
     if (pointDistance <= sight) {
       // If the global cell has an instance with sight and a detection function
@@ -322,7 +322,7 @@ export function renderCellOnInstanceSight(instance) {
       }
 
       // Handle fog removal for the instance's owner (player vs AI)
-      if (owner.isPlayed && !parent.revealEverything) {
+      if (owner.isPlayed && !map.revealEverything) {
         globalCell.removeFog()
       } else if (owner.type === 'AI') {
         // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
@@ -546,72 +546,80 @@ export function instanceIsInPlayerSight(instance, player) {
 export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
   const result = []
 
-  // Handle the case where dist is 0 (single cell case)
+  // Handle single-cell case
   if (dist === 0) {
-    const cell = grid?.[startX]?.[startY]
-    if (cell && (!callback || callback(cell))) {
-      result.push(cell)
+    const row = grid[startX]
+    if (row) {
+      const cell = row[startY]
+      if (cell && (!callback || callback(cell))) result.push(cell)
     }
     return result
   }
 
-  // Set boundaries for the search
   const minX = Math.max(startX - dist, 0)
   const maxX = Math.min(startX + dist, grid.length - 1)
-  const minY = Math.max(startY - dist, 0)
-  const maxY = Math.min(startY + dist, grid[0].length - 1)
 
-  // Loop through the cells within the defined range
   for (let i = minX; i <= maxX; i++) {
+    const row = grid[i]
+    if (!row) continue
+    const minY = Math.max(startY - dist, 0)
+    const maxY = Math.min(startY + dist, row.length - 1)
+
     for (let j = minY; j <= maxY; j++) {
-      const cell = grid[i]?.[j] // Safely access the grid
-      if (cell && (!callback || callback(cell))) {
-        result.push(cell)
-      }
+      const cell = row[j]
+      if (cell && (!callback || callback(cell))) result.push(cell)
     }
   }
 
   return result
 }
 
+
 /**
- * Get the coordinate around a point at a certain distance
+ * Get the coordinates around a point within a Manhattan distance
  * @param {number} startX
  * @param {number} startY
- * @param {Array} grid - The grid to search within
- * @param {number} dist - The distance around the point
- * @param {Function} callback - Optional callback for filtering cells
- * @returns {Array} - Array of cells that match the criteria
+ * @param {Array} grid
+ * @param {number} dist
+ * @param {Function} callback
+ * @returns {Array} Array of cells that match the criteria
+ */
+/**
+ * Get the coordinates around a point within a Manhattan distance (safe for irregular grids)
+ * @param {number} startX
+ * @param {number} startY
+ * @param {Array} grid
+ * @param {number} dist
+ * @param {Function} callback
+ * @returns {Array} Array of cells that match the criteria
  */
 export function getCellsAroundPoint(startX, startY, grid, dist, callback) {
-  const result = []
+  const result = [];
 
-  // Return the single cell if dist is 0
+  // Special case: distance 0
+  const startCell = grid[startX]?.[startY];
   if (dist === 0) {
-    const cell = grid[startX][startY]
-    if (!callback || callback(cell)) {
-      result.push(cell)
-    }
-    return result
+    if (startCell && (!callback || callback(startCell))) result.push(startCell);
+    return result;
   }
 
-  // Loop through the cells in a square spiral pattern
+  // Iterate over Manhattan distance
   for (let dx = -dist; dx <= dist; dx++) {
-    for (let dy = -dist; dy <= dist; dy++) {
-      if (Math.abs(dx) + Math.abs(dy) <= dist) {
-        const x = startX + dx
-        const y = startY + dy
-        if (grid[x] && grid[x][y]) {
-          const cell = grid[x][y]
-          if (!callback || callback(cell)) {
-            result.push(cell)
-          }
-        }
-      }
+    const x = startX + dx;
+    if (!grid[x]) continue; // Skip if row does not exist
+
+    const dyMax = dist - Math.abs(dx);
+    for (let dy = -dyMax; dy <= dyMax; dy++) {
+      const y = startY + dy;
+      const row = grid[x];
+      if (!row || !row[y]) continue; // Skip if cell does not exist
+
+      const cell = row[y];
+      if (!callback || callback(cell)) result.push(cell);
     }
   }
 
-  return result
+  return result;
 }
 
 /**

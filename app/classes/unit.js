@@ -1,14 +1,15 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import {
-  accelerator,
-  stepTime,
-  corpseTime,
-  loadingFoodTypes,
-  maxSelectUnits,
-  typeAction,
-  populationMax,
-  workFoodTypes,
+  ACCELERATOR,
+  STEP_TIME,
+  CORPSE_TIME,
+  LOADING_FOOD_TYPES,
+  MAX_SELECT_UNITS,
+  TYPE_ACTION,
+  POPULATION_MAX,
+  WORK_FOOD_TYPES,
+  COLOR_WHITE,
 } from '../constants'
 import {
   getInstanceZIndex,
@@ -60,7 +61,6 @@ export class Unit extends Container {
     const {
       context: { map, menu },
     } = this
-    this.setParent(map)
     this.name = uuidv4()
     this.family = 'unit'
 
@@ -185,7 +185,7 @@ export class Unit extends Container {
         if (this.owner.isPlayed) {
           controls.getCellOnCamera(cell => {
             if (
-              player.selectedUnits.length < maxSelectUnits &&
+              player.selectedUnits.length < MAX_SELECT_UNITS &&
               cell.has &&
               cell.has.owner &&
               cell.has.owner.name === this.owner.name &&
@@ -277,25 +277,30 @@ export class Unit extends Container {
   }
 
   select() {
-    if (this.selected) {
-      return
-    }
+    if (this.selected) return;
+  
     const {
       context: { menu, player },
-    } = this
+    } = this;
+  
+    this.selected = true;
+  
+    const selection = new Graphics();
+    selection.name = 'selection';
+    selection.zIndex = 3;
 
-    this.selected = true
-    const selection = new Graphics()
-    selection.name = 'selection'
-    selection.zIndex = 3
-    selection.lineStyle(1, 0xffffff)
-    const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
-    selection.drawPolygon(path)
-    this.addChildAt(selection, 0)
+    // Diamond shape
+    const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5];
+    selection.poly(path);
+    selection.stroke(COLOR_WHITE);
 
-    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+    this.addChildAt(selection, 0);
+  
+    if (canUpdateMinimap(this, player)) {
+      menu.updatePlayerMiniMapEvt(this.owner);
+    }
   }
-
+  
   unselect() {
     if (!this.selected) {
       return
@@ -340,7 +345,7 @@ export class Unit extends Container {
     this.setTextures('walkingSheet')
     this.inactif = false
     this.path = path
-    this.startInterval(() => this.step(), stepTime)
+    this.startInterval(() => this.step(), STEP_TIME)
   }
 
   handleChangeDest() {
@@ -437,12 +442,12 @@ export class Unit extends Container {
       } else {
         this.sendTo(map.grid[dest.i][dest.j], 'build')
       }
-    } else if (typeAction[type]) {
-      if (this.getActionCondition(dest, typeAction[type])) {
+    } else if (TYPE_ACTION[type]) {
+      if (this.getActionCondition(dest, TYPE_ACTION[type])) {
         const sendToFunc = `sendTo${type}`
         typeof this[sendToFunc] === 'function' ? this[sendToFunc](dest) : this.stop()
       } else {
-        this.sendTo(map.grid[dest.i][dest.j], typeAction[type])
+        this.sendTo(map.grid[dest.i][dest.j], TYPE_ACTION[type])
       }
     } else {
       this.sendTo(map.grid[dest.i][dest.j])
@@ -461,7 +466,7 @@ export class Unit extends Container {
           this.stop()
           return
         }
-        this.owner[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType] += this.loading
+        this.owner[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType] += this.loading
         this.owner.isPlayed && menu.updateTopbar()
         this.loading = 0
         this.updateInterfaceLoading()
@@ -1372,7 +1377,7 @@ export class Unit extends Container {
       context: { map },
     } = this
     this.setTextures('corpseSheet')
-    this.sprite.animationSpeed = (1 / (corpseTime * 1000)) * accelerator
+    this.sprite.animationSpeed = (1 / (CORPSE_TIME * 1000)) * ACCELERATOR
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].corpses.push(this)
@@ -1429,7 +1434,7 @@ export class Unit extends Container {
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
         menu.updateInfo(
           'population-text',
-          this.owner.population + '/' + Math.min(populationMax, this.owner.populationMax)
+          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
         )
       }
       // Remove from player units
@@ -1466,7 +1471,7 @@ export class Unit extends Container {
   }
 
   setTextures(sheet) {
-    setUnitTexture(sheet, this, accelerator)
+    setUnitTexture(sheet, this, ACCELERATOR)
   }
 
   updateInterfaceLoading() {
@@ -1495,7 +1500,7 @@ export class Unit extends Container {
     if (this.loading) {
       const iconImg = document.createElement('img')
       iconImg.className = 'unit-loading-icon'
-      iconImg.src = menu.infoIcons[loadingFoodTypes.includes(this.loadingType) ? 'food' : this.loadingType]
+      iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType]
       const textDiv = document.createElement('div')
       textDiv.id = 'loading-text'
       textDiv.textContent = this.loading
@@ -1513,7 +1518,7 @@ export class Unit extends Container {
     if (
       work !== 'builder' &&
       work !== workFromLoading &&
-      !(workFoodTypes.includes(work) && workFoodTypes.includes(workFromLoading))
+      !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))
     ) {
       this.loading = 0
       this.loadingType = null

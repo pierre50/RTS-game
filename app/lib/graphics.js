@@ -1,6 +1,7 @@
-import { Graphics } from 'pixi.js'
-import { MultiColorReplaceFilter } from '@pixi/filter-multi-color-replace'
+import { Graphics  } from 'pixi.js'
 import { Texture } from 'pixi.js'
+import { COLOR_FLASHY_GREEN } from '../constants'
+import { MultiColorReplaceFilter } from 'pixi-filters'
 
 export function getIconPath(name) {
   const id = name.split('_')[1]
@@ -121,7 +122,7 @@ export function changeSpriteColorDirectly(sprite, color) {
     throw new Error('Invalid color selected.') // Throw error for invalid color
   }
 
-  const baseTexture = sprite.texture.baseTexture.resource.source
+  const baseTexture = sprite.texture.baseTexture.resource
 
   const canvas = document.createElement('canvas')
   canvas.width = sprite.texture.width
@@ -198,13 +199,14 @@ export function changeSpriteColor(sprite, color) {
   }
 
   // Create final color mapping
-  const final = []
+  const replacements = []
   for (let i = 0; i < source.length; i++) {
-    final.push([source[i], colors[color][i]])
+    replacements.push([source[i], colors[color][i]])
   }
 
-  // Apply the color filter to the sprite
-  sprite.filters = [new MultiColorReplaceFilter(final, 0.1)]
+  const filter = new MultiColorReplaceFilter({replacements,tolerance:  0.1 })
+  
+  sprite.filters = [filter]
 }
 
 /**
@@ -215,11 +217,11 @@ export function drawInstanceBlinkingSelection(instance) {
   const selection = new Graphics()
   selection.name = 'selection'
   selection.zIndex = 3
-  selection.lineStyle(1, 0x00ff00)
 
   // Define the path for the selection
   const path = [-32 * instance.size, 0, 0, -16 * instance.size, 32 * instance.size, 0, 0, 16 * instance.size]
-  selection.drawPolygon(path)
+  selection.poly(path);
+  selection.stroke(COLOR_FLASHY_GREEN);
   instance.addChildAt(selection, 0)
 
   // Helper function for blinking effect

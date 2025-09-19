@@ -1,6 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { accelerator, stepTime, corpseTime } from '../constants'
+import { ACCELERATOR, STEP_TIME, CORPSE_TIME, COLOR_WHITE } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -35,7 +35,6 @@ export class Animal extends Container {
     const {
       context: { map },
     } = this
-    this.setParent(map)
     this.name = uuidv4()
     this.family = 'animal'
 
@@ -198,9 +197,9 @@ export class Animal extends Container {
     const selection = new Graphics()
     selection.name = 'selection'
     selection.zIndex = 3
-    selection.lineStyle(1, 0xffffff)
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
-    selection.drawPolygon(path)
+    selection.poly(path);
+    selection.stroke(COLOR_WHITE);
     this.addChildAt(selection, 0)
   }
 
@@ -251,7 +250,7 @@ export class Animal extends Container {
     this.setTextures('walkingSheet')
     this.inactif = false
     this.path = path
-    this.startInterval(() => this.step(), stepTime, true)
+    this.startInterval(() => this.step(), STEP_TIME, true)
   }
 
   isAnimalAtDest(action, dest) {
@@ -607,7 +606,7 @@ export class Animal extends Container {
       this.sprite.currentFrame = 3
       this.timeout = new CustomTimeout(() => {
         this.clear()
-      }, corpseTime * 1000)
+      }, CORPSE_TIME * 1000)
     }
   }
 
@@ -624,7 +623,7 @@ export class Animal extends Container {
   }
 
   setTextures(sheet) {
-    setUnitTexture(sheet, this, accelerator)
+    setUnitTexture(sheet, this, ACCELERATOR)
   }
 
   setDefaultInterface(element, data) {

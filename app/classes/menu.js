@@ -11,7 +11,7 @@ import {
   getBuildingAsset,
   Modal,
 } from '../lib'
-import { cellWidth, cellHeight, longClickDuration, isMobile } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, LONG_CLICK_DURATION, IS_MOBILE } from '../constants'
 import { sound } from '@pixi/sound'
 
 export default class Menu {
@@ -114,9 +114,9 @@ export default class Menu {
         const rect = evt.target.getBoundingClientRect()
         const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
         const y = (evt.clientY - rect.top - 3) * minimapFactor
-        controls.clearInstancesOnScreen()
+        controls.updateVisibleCells()
         controls.setCamera(x, y)
-      }, longClickDuration)
+      }, LONG_CLICK_DURATION)
     })
     this.bottombarMap.addEventListener('pointerup', evt => {
       const {
@@ -142,7 +142,7 @@ export default class Menu {
           controls.sendUnits(cell)
         }
       } else {
-        controls.clearInstancesOnScreen()
+        controls.updateVisibleCells()
         controls.setCamera(x, y)
       }
     })
@@ -179,7 +179,7 @@ export default class Menu {
       }
       evt.stopPropagation()
     })
-    isMobile && document.body.prepend(this.toggle)
+    IS_MOBILE && document.body.prepend(this.toggle)
 
     this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 500)
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 500)
@@ -203,7 +203,7 @@ export default class Menu {
     const {
       context: { map },
     } = this
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     return (mapWidth / 234) * 2
   }
 
@@ -217,7 +217,7 @@ export default class Menu {
     const resourceContext = this.resourcesMinimap.getContext('2d')
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
     context.translate(translate, 0)
     cameraContext.translate(translate, 0)
@@ -237,7 +237,7 @@ export default class Menu {
     const context = canvas.getContext('2d')
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
@@ -251,8 +251,8 @@ export default class Menu {
           context,
           x / minimapFactor + translate,
           y / minimapFactor,
-          cellWidth / minimapFactor + 1,
-          cellHeight / minimapFactor + 1,
+          CELL_WIDTH / minimapFactor + 1,
+          CELL_HEIGHT / minimapFactor + 1,
           cell.color
         )
       }
@@ -268,7 +268,7 @@ export default class Menu {
     const context = canvas.getContext('2d')
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     const cell = map.grid[i][j]
@@ -280,8 +280,8 @@ export default class Menu {
       context,
       x / minimapFactor + translate,
       y / minimapFactor,
-      cellWidth / minimapFactor + 1,
-      cellHeight / minimapFactor + 1,
+      CELL_WIDTH / minimapFactor + 1,
+      CELL_HEIGHT / minimapFactor + 1,
       color
     )
 
@@ -300,7 +300,7 @@ export default class Menu {
 
     const squareSize = 4
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     const finalX = resource.x / minimapFactor - squareSize / 2
@@ -318,7 +318,7 @@ export default class Menu {
 
     const squareSize = 4
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
@@ -342,7 +342,7 @@ export default class Menu {
     const context = canvas.getContext('2d')
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
@@ -371,7 +371,7 @@ export default class Menu {
     let context
 
     const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = cellWidth / 2 + (map.size * cellWidth) / 2
+    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
     const translate = mapWidth / 2 / minimapFactor
 
     if (playerMinimap) {
@@ -414,6 +414,9 @@ export default class Menu {
   }
 
   showMessage(message) {
+    const {
+      context: { gamebox },
+    } = this
     if (document.getElementById('msg')) {
       document.getElementById('msg').remove()
     }
@@ -428,7 +431,7 @@ export default class Menu {
     msg.className = 'message-content'
 
     box.appendChild(msg)
-    window.gamebox.appendChild(box)
+    gamebox.appendChild(box)
     setTimeout(() => {
       box.remove()
     }, 3000)
@@ -645,7 +648,7 @@ export default class Menu {
         img.addEventListener('pointerup', () => {
           sound.play('5036')
           if (canAfford(player, unit.cost)) {
-            if (player.population >= player.populationMax) {
+            if (player.population >= player.POPULATION_MAX) {
               this.showMessage('You need to build more houses')
             }
             this.toggleButtonCancel(type, true)
