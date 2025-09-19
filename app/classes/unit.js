@@ -143,7 +143,7 @@ export class Unit extends Container {
         this.showBuildings && this.owner.isPlayed
           ? [
               {
-                icon: 'interface/50721/002_50721.png',
+                icon: 'assets/interface/50721/002_50721.png',
                 children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key)),
               },
             ]

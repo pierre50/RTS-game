@@ -6,7 +6,7 @@ import { MultiColorReplaceFilter } from 'pixi-filters'
 export function getIconPath(name) {
   const id = name.split('_')[1]
   const index = name.split('_')[0]
-  return `interface/${id}/${index}_${id}.png`
+  return `assets/interface/${id}/${index}_${id}.png`
 }
 
 export function getBuildingTextureNameWithSize(size) {

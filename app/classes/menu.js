@@ -536,7 +536,7 @@ export default class Menu {
         } else if (selection.technology) {
           setMenuRecurs(selection, this.bottombarMenu, [
             {
-              icon: 'interface/50721/003_50721.png',
+              icon: 'assets/interface/50721/003_50721.png',
               id: `${type}-cancel`,
               onClick: selection => {
                 sound.play('5036')
@@ -588,7 +588,7 @@ export default class Menu {
         const img = document.createElement('img')
         img.className = 'img'
         back.id = 'interfaceBackBtn'
-        img.src = 'interface/50721/010_50721.png'
+        img.src = 'assets/interface/50721/010_50721.png'
         if (parent) {
           back.addEventListener('pointerup', () => {
             sound.play('5036')
@@ -624,7 +624,7 @@ export default class Menu {
         const cancel = document.createElement('img')
         cancel.id = `${type}-cancel`
         cancel.className = 'img'
-        cancel.src = 'interface/50721/003_50721.png'
+        cancel.src = 'assets/interface/50721/003_50721.png'
         if (!selection.queue.filter(q => q === type).length) {
           cancel.style.display = 'none'
         }

@@ -2,7 +2,6 @@ import { Application } from 'pixi.js'
 import './styles.css'
 import Game from './screens/Game'
 import Loader from './screens/Loader'
-
 ;(async () => {
   // Create a new PixiJS application
   const app = new Application()

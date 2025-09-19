@@ -19,28 +19,28 @@ export default class LoaderScreen extends Container {
 
   async start() {
     Assets.addBundle('config', {
-      config: 'config.json',
-      greek: 'greek.json',
-      technology: 'technology.json',
+      config: 'assets/config.json',
+      greek: 'assets/greek.json',
+      technology: 'assets/technology.json',
     })
 
     Assets.addBundle('interface', {
-      50405: 'interface/50405/texture.json',
+      50405: 'assets/interface/50405/texture.json',
     })
 
     Assets.addBundle('seeds', {
-      0: 'seeds/0.txt',
+      0: 'assets/seeds/0.txt',
     })
 
     Assets.addBundle('terrain', {
-      15000: 'terrain/15000/texture.json',
-      15001: 'terrain/15001/texture.json',
-      15002: 'terrain/15002/texture.json',
+      15000: 'assets/terrain/15000/texture.json',
+      15001: 'assets/terrain/15001/texture.json',
+      15002: 'assets/terrain/15002/texture.json',
     })
 
     Assets.addBundle('border', {
-      20000: 'border/20000/texture.json',
-      20002: 'border/20002/texture.json',
+      20000: 'assets/border/20000/texture.json',
+      20002: 'assets/border/20002/texture.json',
     })
 
     const graphics = [
@@ -257,7 +257,7 @@ export default class LoaderScreen extends Container {
       graphics.reduce(
         (acc, g) => ({
           ...acc,
-          [g]: `graphics/${g}/texture.json`,
+          [g]: `assets/graphics/${g}/texture.json`,
         }),
         {}
       )
@@ -329,7 +329,7 @@ export default class LoaderScreen extends Container {
       sounds.reduce(
         (acc, g) => ({
           ...acc,
-          [g]: `sounds/${g}.wav`,
+          [g]: `assets/sounds/${g}.wav`,
         }),
         {}
       )
