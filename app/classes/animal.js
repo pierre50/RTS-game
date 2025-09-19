@@ -198,8 +198,8 @@ export class Animal extends Container {
     selection.name = 'selection'
     selection.zIndex = 3
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
-    selection.poly(path);
-    selection.stroke(COLOR_WHITE);
+    selection.poly(path)
+    selection.stroke(COLOR_WHITE)
     this.addChildAt(selection, 0)
   }
 

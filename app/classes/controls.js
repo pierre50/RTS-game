@@ -287,16 +287,16 @@ export default class Controls extends Container {
       }
       const graph = this.mouseRectangle.graph
       graph.clear()
-    
+
       this.mouseRectangle.width = this.mouse.x - this.mouseRectangle.x
       this.mouseRectangle.height = this.mouse.y - this.mouseRectangle.y
-    
+
       const x = Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width)
       const y = Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height)
       const w = Math.abs(this.mouseRectangle.width)
       const h = Math.abs(this.mouseRectangle.height)
-    
-      graph.rect(x, y, w, h).stroke(COLOR_WHITE);
+
+      graph.rect(x, y, w, h).stroke(COLOR_WHITE)
     }
   }
 
@@ -633,7 +633,6 @@ export default class Controls extends Container {
     }
   }
 
-
   updateVisibleCells() {
     const { map, app } = this.context
     const newVisible = new Set()
@@ -645,35 +644,35 @@ export default class Controls extends Container {
     const endY = Math.floor(this.camera.y + app.screen.height + margin)
 
     for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
-        for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
-            const [cartX, cartY] = isometricToCartesian(i, j)
-            const x = Math.min(Math.max(cartX, 0), map.size - 1)
-            const y = Math.min(Math.max(cartY, 0), map.size - 1)
+      for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
+        const [cartX, cartY] = isometricToCartesian(i, j)
+        const x = Math.min(Math.max(cartX, 0), map.size - 1)
+        const y = Math.min(Math.max(cartY, 0), map.size - 1)
 
-            const cell = map.grid[x]?.[y]
-            if (cell) {
-                newVisible.add(cell)
-            }
+        const cell = map.grid[x]?.[y]
+        if (cell) {
+          newVisible.add(cell)
         }
+      }
     }
 
     // Hide cells that left the viewport
     for (let cell of this.visibleCells) {
-        if (!newVisible.has(cell)) {
-            cell.visible = false
-            if (cell.has) cell.has.visible = false
-        }
+      if (!newVisible.has(cell)) {
+        cell.visible = false
+        if (cell.has) cell.has.visible = false
+      }
     }
 
     // Show newly visible cells
     for (let cell of newVisible) {
-        if (!this.visibleCells.has(cell)) {
-            cell.updateVisible()
-        }
+      if (!this.visibleCells.has(cell)) {
+        cell.updateVisible()
+      }
     }
 
     this.visibleCells = newVisible
-}
+  }
 
   init() {
     const {

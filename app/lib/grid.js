@@ -574,7 +574,6 @@ export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callbac
   return result
 }
 
-
 /**
  * Get the coordinates around a point within a Manhattan distance
  * @param {number} startX
@@ -594,32 +593,32 @@ export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callbac
  * @returns {Array} Array of cells that match the criteria
  */
 export function getCellsAroundPoint(startX, startY, grid, dist, callback) {
-  const result = [];
+  const result = []
 
   // Special case: distance 0
-  const startCell = grid[startX]?.[startY];
+  const startCell = grid[startX]?.[startY]
   if (dist === 0) {
-    if (startCell && (!callback || callback(startCell))) result.push(startCell);
-    return result;
+    if (startCell && (!callback || callback(startCell))) result.push(startCell)
+    return result
   }
 
   // Iterate over Manhattan distance
   for (let dx = -dist; dx <= dist; dx++) {
-    const x = startX + dx;
-    if (!grid[x]) continue; // Skip if row does not exist
+    const x = startX + dx
+    if (!grid[x]) continue // Skip if row does not exist
 
-    const dyMax = dist - Math.abs(dx);
+    const dyMax = dist - Math.abs(dx)
     for (let dy = -dyMax; dy <= dyMax; dy++) {
-      const y = startY + dy;
-      const row = grid[x];
-      if (!row || !row[y]) continue; // Skip if cell does not exist
+      const y = startY + dy
+      const row = grid[x]
+      if (!row || !row[y]) continue // Skip if cell does not exist
 
-      const cell = row[y];
-      if (!callback || callback(cell)) result.push(cell);
+      const cell = row[y]
+      if (!callback || callback(cell)) result.push(cell)
     }
   }
 
-  return result;
+  return result
 }
 
 /**

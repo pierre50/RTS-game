@@ -606,8 +606,8 @@ export class Building extends Container {
     selection.name = 'selection'
     selection.zIndex = 3
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
-    selection.poly(path);
-    selection.stroke(COLOR_WHITE);
+    selection.poly(path)
+    selection.stroke(COLOR_WHITE)
     if (this.loading && this.owner.isPlayed) {
       this.updateInterfaceLoading()
     }

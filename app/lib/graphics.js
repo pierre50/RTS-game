@@ -1,4 +1,4 @@
-import { Graphics  } from 'pixi.js'
+import { Graphics } from 'pixi.js'
 import { Texture } from 'pixi.js'
 import { COLOR_FLASHY_GREEN } from '../constants'
 import { MultiColorReplaceFilter } from 'pixi-filters'
@@ -204,8 +204,8 @@ export function changeSpriteColor(sprite, color) {
     replacements.push([source[i], colors[color][i]])
   }
 
-  const filter = new MultiColorReplaceFilter({replacements,tolerance:  0.1 })
-  
+  const filter = new MultiColorReplaceFilter({ replacements, tolerance: 0.1 })
+
   sprite.filters = [filter]
 }
 
@@ -220,8 +220,8 @@ export function drawInstanceBlinkingSelection(instance) {
 
   // Define the path for the selection
   const path = [-32 * instance.size, 0, 0, -16 * instance.size, 32 * instance.size, 0, 0, 16 * instance.size]
-  selection.poly(path);
-  selection.stroke(COLOR_FLASHY_GREEN);
+  selection.poly(path)
+  selection.stroke(COLOR_FLASHY_GREEN)
   instance.addChildAt(selection, 0)
 
   // Helper function for blinking effect

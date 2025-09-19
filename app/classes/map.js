@@ -83,7 +83,7 @@ export default class Map extends Container {
         }
         const cell = line[j]
         const newCell = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.context)
-        this.addChild(newCell) 
+        this.addChild(newCell)
         this.grid[i][j] = newCell
         if (!this.revealEverything) {
           this.grid[i][j].setFog()
@@ -643,7 +643,7 @@ export default class Map extends Container {
     const z = 0
     const terrain = this.generateTerrain(121)
     this.size = terrain.length - 1
-  
+
     // Map terrain numbers to cell types
     const terrainMap = {
       0: 'Grass',
@@ -651,28 +651,28 @@ export default class Map extends Container {
       2: 'Water',
       3: 'Jungle',
     }
-  
+
     for (let i = 0; i <= this.size; i++) {
       if (!this.grid[i]) this.grid[i] = []
       for (let j = 0; j <= this.size; j++) {
         const type = terrainMap[terrain[i][j]]
         const cell = new Cell({ i, j, z, type }, this.context)
-        this.addChild(cell)         // ensures cell.parent is set
+        this.addChild(cell) // ensures cell.parent is set
         this.grid[i][j] = cell
       }
     }
-  
+
     // Post-processing
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         this.grid[i][j].fillWaterCellsAroundCell()
       }
     }
-  
+
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
   }
-  
+
   generateSets() {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
@@ -1110,6 +1110,4 @@ export default class Map extends Container {
       this.resources.push(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
   }
-
-
 }
