@@ -65,6 +65,10 @@ export default class Controls extends Container {
   }
 
   destroy() {
+    const {
+      context: { gamebox },
+    } = this
+
     document.removeEventListener('mousemove', evt => this.moveCameraWithMouse(evt))
     document.removeEventListener('mouseout', () => clearInterval(this.moveCameraInterval))
     document.removeEventListener('keydown', evt => this.onKeyDown(evt))
@@ -247,8 +251,8 @@ export default class Controls extends Container {
           })
         }
         // Color image of mouse building depend on buildable or not
-        const sprite = this.mouseBuilding.getChildByName('sprite')
-        const color = this.mouseBuilding.getChildByName('color')
+        const sprite = this.mouseBuilding.getChildByLabel('sprite')
+        const color = this.mouseBuilding.getChildByLabel('color')
         if (isFree) {
           sprite.tint = COLOR_WHITE
           if (color) {
@@ -459,17 +463,17 @@ export default class Controls extends Container {
     } = this
     this.mouseBuilding = new Container()
     const sprite = Sprite.from(getTexture(building.images.final, Assets))
-    sprite.name = 'sprite'
+    sprite.label = 'sprite'
     this.mouseBuilding.addChild(sprite)
     Object.keys(building).forEach(prop => {
       this.mouseBuilding[prop] = building[prop]
     })
     this.mouseBuilding.x = this.mouse.x
     this.mouseBuilding.y = this.mouse.y
-    this.mouseBuilding.name = 'mouseBuilding'
+    this.mouseBuilding.label = 'mouseBuilding'
     if (building.images.color) {
       const color = Sprite.from(getTexture(building.images.color, Assets))
-      color.name = 'color'
+      color.label = 'color'
       changeSpriteColor(color, player.color)
       this.mouseBuilding.addChild(color)
     } else {

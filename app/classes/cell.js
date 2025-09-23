@@ -55,7 +55,7 @@ export class Cell extends Container {
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[textureFile]
     this.sprite = Sprite.from(texture)
-    this.sprite.name = 'sprite'
+    this.sprite.label = 'sprite'
     this.sprite.anchor.set(0.5, 0.5)
     this.sprite.roundPixels = true
     this.sprite.allowMove = false
@@ -167,7 +167,7 @@ export class Cell extends Container {
     if (this.has) {
       this.has.zIndex = getInstanceZIndex(this.has)
     }
-    sprite.name = 'sprite'
+    sprite.label = 'sprite'
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
   }
@@ -248,14 +248,14 @@ export class Cell extends Container {
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
     const sprite = Sprite.from(getTexture(textureSheet, Assets))
-    sprite.name = 'buildingFog'
+    sprite.label = 'buildingFog'
     sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
     this.addChild(sprite)
     this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
     if (colorSheet) {
       const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
-      spriteColor.name = 'buildingColorFog'
+      spriteColor.label = 'buildingColorFog'
       spriteColor.tint = COLOR_FOG
       changeSpriteColorDirectly(spriteColor, colorName)
       this.addChild(spriteColor)

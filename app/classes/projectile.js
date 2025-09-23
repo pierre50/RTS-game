@@ -17,10 +17,6 @@ export class Projectile extends Container {
     super()
 
     this.context = context
-
-    const {
-      context: { map },
-    } = this
     this.name = uuidv4()
     this.family = 'projectile'
 
@@ -45,7 +41,7 @@ export class Projectile extends Container {
     sprite.rect(1, 1, this.size, 1)
     sprite.fill(COLOR_ARROW)
     sprite.rotation = degreesToRadians(degree)
-    sprite.name = 'sprite'
+    sprite.label = 'sprite'
     sprite.allowMove = false
     sprite.eventMode = 'none'
     sprite.allowClick = false

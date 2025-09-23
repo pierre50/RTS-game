@@ -78,7 +78,7 @@ export class Resource extends Container {
     }
 
     this.sprite.updateAnchor = true
-    this.sprite.name = 'sprite'
+    this.sprite.label = 'sprite'
     if (this.sprite) {
       this.sprite.allowMove = false
       this.sprite.eventMode = 'static'
@@ -140,7 +140,7 @@ export class Resource extends Container {
     }
     this.selected = true
     const selection = new Graphics()
-    selection.name = 'selection'
+    selection.label = 'selection'
     selection.zIndex = 3
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.poly(path)
@@ -153,7 +153,7 @@ export class Resource extends Container {
       return
     }
     this.selected = false
-    const selection = this.getChildByName('selection')
+    const selection = this.getChildByLabel('selection')
     if (selection) {
       this.removeChild(selection)
     }

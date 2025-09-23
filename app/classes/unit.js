@@ -154,7 +154,7 @@ export class Unit extends Container {
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
     this.sprite = new AnimatedSprite(this['standingSheet'].animations['south'])
-    this.sprite.name = 'sprite'
+    this.sprite.label = 'sprite'
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
@@ -286,7 +286,7 @@ export class Unit extends Container {
     this.selected = true
 
     const selection = new Graphics()
-    selection.name = 'selection'
+    selection.label = 'selection'
     selection.zIndex = 3
 
     // Diamond shape
@@ -310,7 +310,7 @@ export class Unit extends Container {
     } = this
 
     this.selected = false
-    const selection = this.getChildByName('selection')
+    const selection = this.getChildByLabel('selection')
     if (selection) {
       this.removeChild(selection)
     }

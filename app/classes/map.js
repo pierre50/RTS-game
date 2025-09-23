@@ -131,9 +131,9 @@ export default class Map extends Container {
     function getDest(val, map) {
       if (val) {
         if (Array.isArray(val)) {
-          return val[2] ? map.getChildByName(val[2]) : map.grid[val[0]][val[1]]
+          return val[2] ? map.getChildByLabel(val[2]) : map.grid[val[0]][val[1]]
         } else {
-          return map.getChildByName(val)
+          return map.getChildByLabel(val)
         }
       }
       return null
@@ -686,7 +686,7 @@ export default class Map extends Container {
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
             const floor = Sprite.from(texture)
-            floor.name = 'floor'
+            floor.label = 'floor'
             floor.roundPixels = true
             floor.allowMove = false
             floor.eventMode = 'none'
@@ -703,7 +703,7 @@ export default class Map extends Container {
                   const spritesheet = Assets.cache.get(randomSpritesheet)
                   const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
                   const rock = Sprite.from(texture)
-                  rock.name = 'set'
+                  rock.label = 'set'
                   rock.roundPixels = true
                   rock.allowMove = false
                   rock.eventMode = 'none'

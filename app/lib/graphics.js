@@ -215,7 +215,7 @@ export function changeSpriteColor(sprite, color) {
  */
 export function drawInstanceBlinkingSelection(instance) {
   const selection = new Graphics()
-  selection.name = 'selection'
+  selection.label = 'selection'
   selection.zIndex = 3
 
   // Define the path for the selection

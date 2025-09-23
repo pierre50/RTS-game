@@ -81,7 +81,7 @@ export class Building extends Container {
     const texture = getTexture(spriteSheet, Assets)
     this.sprite = Sprite.from(texture)
     this.sprite.updateAnchor = true
-    this.sprite.name = 'sprite'
+    this.sprite.label = 'sprite'
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
@@ -113,7 +113,7 @@ export class Building extends Container {
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-      const set = cell.getChildByName('set')
+      const set = cell.getChildByLabel('set')
       if (set) {
         cell.removeChild(set)
       }
@@ -396,14 +396,14 @@ export class Building extends Container {
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
 
-    const color = this.getChildByName('color')
+    const color = this.getChildByLabel('color')
     if (color) {
       color.destroy()
     }
 
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.name = 'color'
+      spriteColor.label = 'color'
       changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
@@ -414,7 +414,7 @@ export class Building extends Container {
       if (this.owner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
         const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-        spriteFire.name = 'deco'
+        spriteFire.label = 'deco'
         spriteFire.allowMove = false
         spriteFire.allowClick = false
         spriteFire.eventMode = 'none'
@@ -425,7 +425,7 @@ export class Building extends Container {
         spriteFire.animationSpeed = 0.2 * ACCELERATOR
         this.addChild(spriteFire)
       } else {
-        const fire = this.getChildByName('deco')
+        const fire = this.getChildByLabel('deco')
         if (fire) {
           fire.destroy()
         }
@@ -467,14 +467,14 @@ export class Building extends Container {
         generateFire(this, '347')
       }
       if (percentage >= 75) {
-        const fire = this.getChildByName('fire')
+        const fire = this.getChildByLabel('fire')
         if (fire) {
           this.removeChild(fire)
         }
       }
     }
     function generateFire(building, spriteId) {
-      const fire = building.getChildByName('fire')
+      const fire = building.getChildByLabel('fire')
       const spritesheetFire = Assets.cache.get(spriteId)
       if (fire) {
         for (let i = 0; i < fire.children.length; i++) {
@@ -483,7 +483,7 @@ export class Building extends Container {
         }
       } else {
         const newFire = new Container()
-        newFire.name = 'fire'
+        newFire.label = 'fire'
         newFire.allowMove = false
         newFire.allowClick = false
         newFire.eventMode = 'none'
@@ -538,11 +538,11 @@ export class Building extends Container {
         list.splice(list.indexOf(this), 1)
       }
     }
-    const color = this.getChildByName('color')
+    const color = this.getChildByLabel('color')
     color && color.destroy()
-    const deco = this.getChildByName('deco')
+    const deco = this.getChildByLabel('deco')
     deco && deco.destroy()
-    const fire = this.getChildByName('fire')
+    const fire = this.getChildByLabel('fire')
     fire && fire.destroy()
 
     let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
@@ -603,7 +603,7 @@ export class Building extends Container {
 
     this.selected = true
     const selection = new Graphics()
-    selection.name = 'selection'
+    selection.label = 'selection'
     selection.zIndex = 3
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.poly(path)
@@ -624,7 +624,7 @@ export class Building extends Container {
     } = this
 
     this.selected = false
-    const selection = this.getChildByName('selection')
+    const selection = this.getChildByLabel('selection')
     if (selection) {
       this.removeChild(selection)
     }
@@ -807,11 +807,11 @@ export class Building extends Container {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
     this.sprite.texture = getTexture(assets.images.final, Assets)
     this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
-    const color = this.getChildByName('color')
+    const color = this.getChildByLabel('color')
     color?.destroy()
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.name = 'color'
+      spriteColor.label = 'color'
       changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {

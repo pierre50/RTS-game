@@ -90,7 +90,7 @@ export class Animal extends Container {
     this.allowMove = false
     this.eventMode = 'static'
     this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
-    this.sprite.name = 'sprite'
+    this.sprite.label = 'sprite'
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
@@ -195,7 +195,7 @@ export class Animal extends Container {
 
     this.selected = true
     const selection = new Graphics()
-    selection.name = 'selection'
+    selection.label = 'selection'
     selection.zIndex = 3
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
     selection.poly(path)
@@ -209,7 +209,7 @@ export class Animal extends Container {
     }
 
     this.selected = false
-    const selection = this.getChildByName('selection')
+    const selection = this.getChildByLabel('selection')
     if (selection) {
       this.removeChild(selection)
     }
