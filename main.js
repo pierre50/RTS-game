@@ -90,8 +90,55 @@ var ACCELERATOR = 1.5;
 var STEP_TIME = 20;
 var IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600;
 var LONG_CLICK_DURATION = 200;
-var WORK_FOOD_TYPES = ['fisher', 'hunter', 'farmer', 'forager'];
-var LOADING_FOOD_TYPES = ['meat', 'wheat', 'berry', 'fish'];
+var PLAYER_TYPES = {
+  human: 'Human',
+  ai: 'AI'
+};
+var constants_FAMILY_TYPES = {
+  animal: 'animal',
+  building: 'building',
+  cell: 'cell',
+  projectile: 'projectile',
+  resource: 'resource',
+  unit: 'unit',
+  player: 'player'
+};
+var WORK_TYPES = {
+  fisher: 'fisher',
+  hunter: 'hunter',
+  farmer: 'farmer',
+  forager: 'forager',
+  woodcutter: 'woodcutter',
+  stoneminer: 'stoneminer',
+  goldminer: 'goldminer',
+  builder: 'builder',
+  attacker: 'attacker',
+  healer: 'healer'
+};
+var constants_ACTION_TYPES = {
+  delivery: 'delivery',
+  takemeat: 'takemeat',
+  hunt: 'hunt',
+  attack: 'attack',
+  fishing: 'fishing',
+  build: 'build',
+  farm: 'farm',
+  forageberry: 'forageberry',
+  minegold: 'minegold',
+  minestone: 'minestone',
+  chopwood: 'chopwood'
+};
+var LOADING_TYPES = {
+  meat: 'meat',
+  wheat: 'wheat',
+  berry: 'berry',
+  fish: 'fish',
+  stone: 'stone',
+  gold: 'gold',
+  wood: 'wood'
+};
+var WORK_FOOD_TYPES = [WORK_TYPES.fisher, WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.forager];
+var LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOADING_TYPES.berry, LOADING_TYPES.fish];
 var COLOR_WHITE = 0xffffff;
 var COLOR_BLACK = 0x000000;
 var COLOR_GREY = 0x808080;
@@ -108,11 +155,11 @@ var COLOR_FOG = 0x999999;
 var COLOR_FLASHY_GREEN = 0x00ff00;
 var COLOR_ARROW = 0xe8e3df;
 var TYPE_ACTION = {
-  Stone: 'minestone',
-  Gold: 'minegold',
-  Berrybush: 'forageberry',
-  Tree: 'chopwood',
-  Fish: 'fishing'
+  Stone: constants_ACTION_TYPES.minestone,
+  Gold: constants_ACTION_TYPES.minegold,
+  Berrybush: constants_ACTION_TYPES.forageberry,
+  Tree: constants_ACTION_TYPES.chopwood,
+  Fish: constants_ACTION_TYPES.fishing
 };
 var CORPSE_TIME = 120;
 var RUBBLE_TIME = 120;
@@ -1036,57 +1083,94 @@ function findInstancesInSight(instance, condition) {
 }
 
 /**
- * Renders cells in the instance's line of sight, updating their visibility and interactions based on the instance's sight.
+ * Updates the cells within a instance's line of sight.
+ * Handles fog, viewBy, and visibility efficiently by diffing old vs new cells.
  *
- * @param {object} instance - The instance whose sight is being processed.
- *                            Must include properties like `i`, `j`, `sight`, `owner`, `parent`, and `context`.
+ * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
-function renderCellOnInstanceSight(instance) {
-  var _instance$context = instance.context,
-    player = _instance$context.player,
-    controls = _instance$context.controls,
-    map = _instance$context.map;
-  var owner = instance.owner,
-    sight = instance.sight;
+function updateInstanceVisibility(instance) {
+  var cx = instance.i,
+    cy = instance.j,
+    sight = instance.sight,
+    owner = instance.owner;
+  var map = instance.context.map;
+  var sightSq = sight * sight;
+  var newVisible = new Set();
 
-  // Check if instance should be visible based on player interaction and sight
-  if (player && (!map.revealEverything ? !instanceIsInPlayerSight(instance, player) : !controls.instanceInCamera(instance)) && !owner.isPlayed) {
-    instance.visible = false;
-  } else {
-    instance.visible = true;
+  // Collect all cells within sight
+  if (!instance.isDead) {
+    getPlainCellsAroundPoint(cx, cy, owner.views, sight, function (cell) {
+      var dx = cell.i - cx;
+      var dy = cell.j - cy;
+      if (dx * dx + dy * dy <= sightSq) {
+        newVisible.add(cell);
+      }
+    });
   }
+  var prevVisible = instance.visibleCells || new Set();
 
-  // Process cells around the instance based on its sight
-  getPlainCellsAroundPoint(instance.i, instance.j, owner.views, sight, function (cell) {
-    var pointDistance = pointsDistance(instance.i, instance.j, cell.i, cell.j);
-    var globalCell = map.grid[cell.i][cell.j];
-    if (pointDistance <= sight) {
-      // If the global cell has an instance with sight and a detection function
-      if (globalCell.has && globalCell.has.sight && instancesDistance(instance, globalCell.has) <= globalCell.has.sight && typeof globalCell.has.detect === 'function') {
-        globalCell.has.detect(instance);
-      }
-
-      // Add the instance to the cell's viewBy list if not already present
-      if (!cell.viewBy.includes(instance)) {
-        cell.viewBy.push(instance);
-      }
-
-      // Mark the cell as viewed if it hasn't been already
-      if (!cell.viewed) {
-        owner.cellViewed++;
-        cell.onViewed();
-        cell.viewed = true;
-      }
-
-      // Handle fog removal for the instance's owner (player vs AI)
-      if (owner.isPlayed && !map.revealEverything) {
-        globalCell.removeFog();
-      } else if (owner.type === 'AI') {
-        // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
-        updateAIKnowledge(globalCell, cell, instance);
+  // Hide cells that left sight
+  var _iterator2 = _createForOfIteratorHelper(prevVisible),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var cell = _step2.value;
+      if (!newVisible.has(cell)) {
+        var idx = cell.viewBy.indexOf(instance);
+        if (idx !== -1) {
+          cell.viewBy.splice(idx, 1);
+        }
+        if (!cell.viewBy.length && owner.isPlayed && !map.revealEverything) {
+          map.grid[cell.i][cell.j].setFog();
+        }
+        if (cell.has) {
+          cell.has.visible = false;
+        }
       }
     }
-  });
+
+    // Show new cells
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  var _iterator3 = _createForOfIteratorHelper(newVisible),
+    _step3;
+  try {
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var _cell = _step3.value;
+      if (!prevVisible.has(_cell)) {
+        _cell.visible = true;
+        if (!_cell.viewBy.includes(instance)) {
+          _cell.viewBy.push(instance);
+        }
+        if (!_cell.viewed) {
+          var _cell$onViewed;
+          owner.cellViewed++;
+          (_cell$onViewed = _cell.onViewed) === null || _cell$onViewed === void 0 || _cell$onViewed.call(_cell);
+          _cell.viewed = true;
+        }
+        if (owner.isPlayed && !map.revealEverything) {
+          map.grid[_cell.i][_cell.j].removeFog();
+        }
+
+        // Optional: detect other instances in sight
+        var globalCell = map.grid[_cell.i][_cell.j];
+        if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
+          var distSq = Math.pow(cx - globalCell.has.i, 2) + Math.pow(cy - globalCell.has.j, 2);
+          if (distSq <= Math.pow(globalCell.has.sight, 2)) {
+            globalCell.has.detect(instance);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    _iterator3.e(err);
+  } finally {
+    _iterator3.f();
+  }
+  instance.visibleCells = newVisible;
 }
 
 /**
@@ -1114,51 +1198,10 @@ function updateAIKnowledge(globalCell, cell, instance) {
     }
 
     // Detect enemy buildings and update AI's knowledge
-    if (globalCell.has.family === 'building' && globalCell.has.hitPoints > 0 && globalCell.has.owner.label !== owner.label && !owner.foundedEnemyBuildings.includes(globalCell.has)) {
+    if (globalCell.has.family === FAMILY_TYPES.building && globalCell.has.hitPoints > 0 && globalCell.has.owner.label !== owner.label && !owner.foundedEnemyBuildings.includes(globalCell.has)) {
       owner.foundedEnemyBuildings.push(globalCell.has);
     }
   }
-}
-
-/**
- * Clears the cells within the instance's line of sight from the owner's view.
- *
- * This function removes the instance from the `viewBy` list of cells around it, within its line of sight.
- * If a cell is no longer viewed by any instance and meets certain conditions, fog is applied to that cell.
- *
- * @param {object} instance - The instance whose sight is being cleared (must have properties `i`, `j`, `sight`, `owner`, and `parent`).
- */
-function clearCellOnInstanceSight(instance) {
-  // If the entire map is revealed, skip the process
-  if (instance.parent.revealEverything) return;
-  var instX = instance.i,
-    instY = instance.j,
-    sight = instance.sight,
-    owner = instance.owner,
-    parent = instance.parent;
-  var views = owner.views;
-
-  // Get cells around the instance within its sight range
-  getPlainCellsAroundPoint(instX, instY, views, sight, function (cell) {
-    // Check if the cell is within the sight radius based on distance
-    if (pointsDistance(instX, instY, cell.i, cell.j) <= sight) {
-      var idx = cell.viewBy.indexOf(instance);
-
-      // If the instance is in the viewBy array, remove it
-      if (idx !== -1) {
-        cell.viewBy.splice(idx, 1);
-
-        // If the cell is no longer viewed by any instance, apply fog after a slight delay
-        if (!cell.viewBy.length && owner.isPlayed && !parent.revealEverything) {
-          setTimeout(function () {
-            if (parent && !cell.viewBy.length) {
-              parent.grid[cell.i][cell.j].setFog();
-            }
-          }, 30);
-        }
-      }
-    }
-  });
 }
 
 /**
@@ -1189,11 +1232,11 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
 
     // Check the surrounding cells of size `size` to ensure they all meet the condition
     var surroundingCells = getPlainCellsAroundPoint(randomX, randomY, grid, size);
-    var _iterator2 = _createForOfIteratorHelper(surroundingCells),
-      _step2;
+    var _iterator4 = _createForOfIteratorHelper(surroundingCells),
+      _step4;
     try {
-      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-        var surroundingCell = _step2.value;
+      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+        var surroundingCell = _step4.value;
         if (!condition(surroundingCell)) {
           isFree = false;
           break; // Exit early if a cell does not meet the condition
@@ -1202,9 +1245,9 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
 
       // If the area is free, return the valid cell
     } catch (err) {
-      _iterator2.e(err);
+      _iterator4.e(err);
     } finally {
-      _iterator2.f();
+      _iterator4.f();
     }
     if (isFree) {
       return {
@@ -1328,8 +1371,8 @@ function getPlainCellsAroundPoint(startX, startY, grid) {
     var minY = Math.max(startY - dist, 0);
     var maxY = Math.min(startY + dist, _row.length - 1);
     for (var j = minY; j <= maxY; j++) {
-      var _cell = _row[j];
-      if (_cell && (!callback || callback(_cell))) result.push(_cell);
+      var _cell2 = _row[j];
+      if (_cell2 && (!callback || callback(_cell2))) result.push(_cell2);
     }
   }
   return result;
@@ -1394,11 +1437,11 @@ function getClosestInstance(instance, instances) {
   var closestDistance = Infinity;
 
   // Iterate through the instances to find the one with the minimum distance to the reference instance
-  var _iterator3 = _createForOfIteratorHelper(instances),
-    _step3;
+  var _iterator5 = _createForOfIteratorHelper(instances),
+    _step5;
   try {
-    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-      var targetInstance = _step3.value;
+    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+      var targetInstance = _step5.value;
       var distance = instancesDistance(instance, targetInstance);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -1408,9 +1451,9 @@ function getClosestInstance(instance, instances) {
 
     // Return the closest instance, or false if no valid instance was found
   } catch (err) {
-    _iterator3.e(err);
+    _iterator5.e(err);
   } finally {
-    _iterator3.f();
+    _iterator5.f();
   }
   return closestInstance || false;
 }
@@ -1428,11 +1471,11 @@ function getClosestInstance(instance, instances) {
  */
 function getClosestInstanceWithPath(instance, instances) {
   var closest = null;
-  var _iterator4 = _createForOfIteratorHelper(instances),
-    _step4;
+  var _iterator6 = _createForOfIteratorHelper(instances),
+    _step6;
   try {
-    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-      var target = _step4.value;
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var target = _step6.value;
       var path = getInstanceClosestFreeCellPath(instance, target, instance.parent);
 
       // If a valid path exists, compare its length to the current closest
@@ -1444,9 +1487,9 @@ function getClosestInstanceWithPath(instance, instances) {
       }
     }
   } catch (err) {
-    _iterator4.e(err);
+    _iterator6.e(err);
   } finally {
-    _iterator4.f();
+    _iterator6.f();
   }
   return closest;
 }
@@ -1455,6 +1498,7 @@ function extra_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof S
 function extra_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return extra_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? extra_arrayLikeToArray(r, a) : void 0; } }
 function extra_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function extra_typeof(o) { "@babel/helpers - typeof"; return extra_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, extra_typeof(o); }
+
 
 
 function setUnitTexture(sheet, instance, ACCELERATOR) {
@@ -1654,13 +1698,13 @@ var debounce = function debounce(callback, wait) {
  */
 function getWorkWithLoadingType(loadingType) {
   var workMapping = {
-    wheat: 'farmer',
-    wood: 'woodcutter',
-    berry: 'forager',
-    stone: 'stoneminer',
-    gold: 'goldminer',
-    meat: 'hunter',
-    fish: 'fisher'
+    wheat: WORK_TYPES.farmer,
+    wood: WORK_TYPES.woodcutter,
+    berry: WORK_TYPES.forager,
+    stone: WORK_TYPES.stoneminer,
+    gold: WORK_TYPES.goldminer,
+    meat: WORK_TYPES.hunter,
+    fish: WORK_TYPES.fisher
   };
   return workMapping[loadingType] || 'default'; // Fallback to 'default' if loadingType is not found
 }
@@ -1829,13 +1873,13 @@ var extra_getActionCondition = function getActionCondition(source, target, actio
       return source.loading > 0 && target.hitPoints > 0 && target.isBuilt && (!props || props.buildingTypes.includes(target.type));
     },
     takemeat: function takemeat() {
-      return source.type === 'Villager' && target.family === 'animal' && target.quantity > 0 && target.isDead && !target.isDestroyed;
+      return source.type === 'Villager' && target.family === constants_FAMILY_TYPES.animal && target.quantity > 0 && target.isDead && !target.isDestroyed;
     },
     fishing: function fishing() {
       return target.category === 'Fish' && target.allowAction.includes(source.type) && target.quantity > 0 && !target.isDestroyed;
     },
     hunt: function hunt() {
-      return source.type === 'Villager' && target.family === 'animal' && target.quantity > 0 && target.hitPoints > 0 && !target.isDead;
+      return source.type === 'Villager' && target.family === constants_FAMILY_TYPES.animal && target.quantity > 0 && target.hitPoints > 0 && !target.isDead;
     },
     chopwood: function chopwood() {
       return source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDead;
@@ -1855,15 +1899,15 @@ var extra_getActionCondition = function getActionCondition(source, target, actio
     },
     build: function build() {
       var _target$owner2;
-      return source.type === 'Villager' && ((_target$owner2 = target.owner) === null || _target$owner2 === void 0 ? void 0 : _target$owner2.label) === source.owner.label && target.family === 'building' && target.hitPoints > 0 && (!target.isBuilt || target.hitPoints < target.totalHitPoints) && !target.isDead;
+      return source.type === 'Villager' && ((_target$owner2 = target.owner) === null || _target$owner2 === void 0 ? void 0 : _target$owner2.label) === source.owner.label && target.family === constants_FAMILY_TYPES.building && target.hitPoints > 0 && (!target.isBuilt || target.hitPoints < target.totalHitPoints) && !target.isDead;
     },
     attack: function attack() {
       var _target$owner3;
-      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) !== source.owner.label && ['building', 'unit', 'animal'].includes(target.family) && target.hitPoints > 0 && !target.isDead;
+      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) !== source.owner.label && [constants_FAMILY_TYPES.building, constants_FAMILY_TYPES.unit, constants_FAMILY_TYPES.animal].includes(target.family) && target.hitPoints > 0 && !target.isDead;
     },
     heal: function heal() {
       var _target$owner4;
-      return target && ((_target$owner4 = target.owner) === null || _target$owner4 === void 0 ? void 0 : _target$owner4.label) === source.owner.label && target.family === 'unit' && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
+      return target && ((_target$owner4 = target.owner) === null || _target$owner4 === void 0 ? void 0 : _target$owner4.label) === source.owner.label && target.family === constants_FAMILY_TYPES.unit && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
     }
   };
   return target && target !== source && source.hitPoints > 0 && !source.isDead && conditions[action](props);
@@ -1902,7 +1946,7 @@ var Resource = /*#__PURE__*/function (_Container) {
     var _this2 = _this,
       map = _this2.context.map;
     _this.label = uuidv4();
-    _this.family = 'resource';
+    _this.family = constants_FAMILY_TYPES.resource;
     _this.selected = false;
     _this.isDead = false;
     _this.isDestroyed = false;
@@ -2050,7 +2094,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       }
       var listName = 'founded' + this.type + 's';
       for (var i = 0; i < players.length; i++) {
-        if (players[i].type === 'AI') {
+        if (players[i].type === PLAYER_TYPES.ai) {
           var list = players[i][listName];
           if (list) {
             var _index = list.indexOf(this);
@@ -2196,7 +2240,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     _this = projectile_callSuper(this, Projectile);
     _this.context = context;
     _this.label = uuidv4();
-    _this.family = 'projectile';
+    _this.family = constants_FAMILY_TYPES.projectile;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
@@ -2305,7 +2349,7 @@ var Building = /*#__PURE__*/function (_Container) {
     var map = context.map,
       controls = context.controls;
     _this.label = uuidv4();
-    _this.family = 'building';
+    _this.family = constants_FAMILY_TYPES.building;
     _this.selected = false;
     _this.queue = [];
     _this.technology = null;
@@ -2412,7 +2456,7 @@ var Building = /*#__PURE__*/function (_Container) {
             for (var i = 0; i < player.selectedUnits.length; i++) {
               var unit = player.selectedUnits[i];
               if (unit.type === 'Villager') {
-                if (extra_getActionCondition(unit, _this, 'build')) {
+                if (extra_getActionCondition(unit, _this, constants_ACTION_TYPES.build)) {
                   hasSentVillager = true;
                   unit.sendToBuilding(_this);
                 }
@@ -2438,19 +2482,19 @@ var Building = /*#__PURE__*/function (_Container) {
             for (var _i = 0; _i < player.selectedUnits.length; _i++) {
               var _unit = player.selectedUnits[_i];
               var accept = _unit.category === 'Boat' ? _this.type === 'Dock' : _this.type === 'TownCenter' || _this.accept && _this.accept.includes(_unit.loadingType);
-              if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, 'build')) {
+              if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.build)) {
                 hasSentVillager = true;
                 _unit.previousDest = null;
                 _unit.sendToBuilding(_this);
-              } else if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, 'farm')) {
+              } else if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.farm)) {
                 hasSentVillager = true;
                 _unit.sendToFarm(_this);
-              } else if (accept && extra_getActionCondition(_unit, _this, 'delivery', {
+              } else if (accept && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.delivery, {
                 buildingTypes: [_this.type]
               })) {
                 hasSentVillager = true;
                 _unit.previousDest = null;
-                _unit.sendTo(_this, 'delivery');
+                _unit.sendTo(_this, constants_ACTION_TYPES.delivery);
               }
             }
             if (hasSentVillager) {
@@ -2475,7 +2519,7 @@ var Building = /*#__PURE__*/function (_Container) {
             if (playerUnit.type === 'Villager') {
               playerUnit.sendToAttack(_this);
             } else {
-              playerUnit.sendTo(_this, 'attack');
+              playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
             }
           }
         } else if (instanceIsInPlayerSight(_this, player) || map.revealEverything) {
@@ -2488,7 +2532,9 @@ var Building = /*#__PURE__*/function (_Container) {
       _this.addChild(_this.sprite);
     }
     if (_this.isBuilt) {
-      renderCellOnInstanceSight(_this);
+      setTimeout(function () {
+        updateInstanceVisibility(_this);
+      });
       _this.finalTexture();
       _this.onBuilt();
     }
@@ -2501,7 +2547,7 @@ var Building = /*#__PURE__*/function (_Container) {
       var _this3 = this;
       var map = this.context.map;
       this.startAttackInterval(function () {
-        if (extra_getActionCondition(_this3, target, 'attack') && maths_instancesDistance(_this3, target) <= _this3.range) {
+        if (extra_getActionCondition(_this3, target, constants_ACTION_TYPES.attack) && maths_instancesDistance(_this3, target) <= _this3.range) {
           if (target.hitPoints <= 0) {
             target.die();
           } else {
@@ -2596,10 +2642,10 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.isDead) {
         return;
       }
-      if (this.range && extra_getActionCondition(this, instance, 'attack') && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && extra_getActionCondition(this, instance, constants_ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
-      this.updateHitPoints('attack');
+      this.updateHitPoints(constants_ACTION_TYPES.attack);
     }
   }, {
     key: "updateTexture",
@@ -2632,7 +2678,7 @@ var Building = /*#__PURE__*/function (_Container) {
         if (this.owner.isPlayed && this.selected) {
           menu.setBottombar(this);
         }
-        renderCellOnInstanceSight(this);
+        updateInstanceVisibility(this);
       }
     }
   }, {
@@ -2696,7 +2742,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.range && instance.label !== 'animal' && !this.attackInterval && extra_getActionCondition(this, instance, 'attack') && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && instance.family !== constants_FAMILY_TYPES.animal && !this.attackInterval && extra_getActionCondition(this, instance, constants_ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
     }
@@ -2710,9 +2756,9 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.hitPoints <= 0) {
         this.die();
       }
-      if (action === 'build' && !this.isBuilt) {
+      if (action === constants_ACTION_TYPES.build && !this.isBuilt) {
         this.updateTexture();
-      } else if (action === 'attack' && this.isBuilt || action === 'build' && this.isBuilt) {
+      } else if (action === constants_ACTION_TYPES.attack && this.isBuilt || action === constants_ACTION_TYPES.build && this.isBuilt) {
         if (percentage > 0 && percentage < 25) {
           generateFire(this, '450');
         }
@@ -2788,7 +2834,7 @@ var Building = /*#__PURE__*/function (_Container) {
       }
       // Remove from view of others players
       for (var i = 0; i < players.length; i++) {
-        if (players[i].type === 'AI') {
+        if (players[i].type === PLAYER_TYPES.ai) {
           var list = players[i].foundedEnemyBuildings;
           list.splice(list.indexOf(this), 1);
         }
@@ -2812,7 +2858,7 @@ var Building = /*#__PURE__*/function (_Container) {
         changeSpriteColorDirectly(this.sprite, this.owner.color);
       }
       // Remove solid zone
-      clearCellOnInstanceSight(this);
+      updateInstanceVisibility(this);
       var dist = this.size === 3 ? 1 : 0;
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
         if (cell.has === _this6) {
@@ -2933,7 +2979,7 @@ var Building = /*#__PURE__*/function (_Container) {
       var unit = this.owner.config.units[type];
       if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
         if (!alreadyPaid) {
-          if (this.owner.type === 'AI') {
+          if (this.owner.type === PLAYER_TYPES.ai) {
             if (!this.queue.length && this.loading === null) {
               payCost(this.owner, unit.cost);
               this.queue.push(type);
@@ -3231,7 +3277,7 @@ function getActionSheet(work, action, Assets, unit) {
   if (!work) {
     return;
   }
-  var actionSheet = action === 'takemeat' ? 'harvestSheet' : 'actionSheet';
+  var actionSheet = action === constants_ACTION_TYPES.takemeat ? 'harvestSheet' : 'actionSheet';
   return Assets.cache.get(unit.allAssets[work][actionSheet]);
 }
 var Unit = /*#__PURE__*/function (_Container) {
@@ -3246,7 +3292,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       map = _this2$context.map,
       menu = _this2$context.menu;
     _this.label = uuidv4();
-    _this.family = 'unit';
+    _this.family = constants_FAMILY_TYPES.unit;
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
@@ -3272,6 +3318,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     });
     _this.size = 1;
     _this.visible = false;
+    _this.visibleCells = new Set();
     _this.x = (_this$x = _this.x) !== null && _this$x !== void 0 ? _this$x : map.grid[_this.i][_this.j].x;
     _this.y = (_this$y = _this.y) !== null && _this$y !== void 0 ? _this$y : map.grid[_this.i][_this.j].y;
     _this.z = (_this$z = _this.z) !== null && _this$z !== void 0 ? _this$z : map.grid[_this.i][_this.j].z;
@@ -3292,10 +3339,10 @@ var Unit = /*#__PURE__*/function (_Container) {
         _this.work = _this.work || null;
         break;
       case 'Priest':
-        _this.work = 'healer';
+        _this.work = WORK_TYPES.healer;
         break;
       default:
-        _this.work = 'attacker';
+        _this.work = WORK_TYPES.attacker;
     }
     if (_this.assets) {
       for (var _i = 0, _Object$entries = Object.entries(_this.assets); _i < _Object$entries.length; _i++) {
@@ -3392,7 +3439,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (player.selectedUnits.length) {
           for (var i = 0; i < player.selectedUnits.length; i++) {
             var playerUnit = player.selectedUnits[i];
-            if (playerUnit.work === 'healer' && _this.getActionCondition(playerUnit, 'heal')) {
+            if (playerUnit.work === WORK_TYPES.healer && _this.getActionCondition(playerUnit, 'heal')) {
               hasSentHealer = true;
               playerUnit.sendTo(_this, 'heal');
             }
@@ -3412,12 +3459,12 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (player.selectedUnits.length) {
           for (var _i3 = 0; _i3 < player.selectedUnits.length; _i3++) {
             var _playerUnit = player.selectedUnits[_i3];
-            if (_this.getActionCondition(_playerUnit, 'attack')) if (_playerUnit.type === 'Villager') {
+            if (_this.getActionCondition(_playerUnit, constants_ACTION_TYPES.attack)) if (_playerUnit.type === 'Villager') {
               hasSentAttacker = true;
               _playerUnit.sendToAttack(_this);
-            } else if (_playerUnit.work === 'attacker') {
+            } else if (_playerUnit.work === WORK_TYPES.attacker) {
               hasSentAttacker = true;
-              _playerUnit.sendTo(_this, 'attack');
+              _playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
             }
           }
         }
@@ -3433,7 +3480,9 @@ var Unit = /*#__PURE__*/function (_Container) {
     });
     changeSpriteColor(_this.sprite, _this.owner.color);
     _this.interval = null;
-    renderCellOnInstanceSight(_this);
+    setTimeout(function () {
+      updateInstanceVisibility(_this);
+    });
     return _this;
   }
   unit_inherits(Unit, _Container);
@@ -3598,19 +3647,19 @@ var Unit = /*#__PURE__*/function (_Container) {
       var dest = this.previousDest;
       var type = dest.category || dest.type;
       this.previousDest = null;
-      if (dest.family === 'animal') {
-        if (this.getActionCondition(dest, 'takemeat')) {
+      if (dest.family === constants_FAMILY_TYPES.animal) {
+        if (this.getActionCondition(dest, constants_ACTION_TYPES.takemeat)) {
           this.sendToTakeMeat(dest);
         } else {
-          this.sendTo(map.grid[dest.i][dest.j], 'hunt');
+          this.sendTo(map.grid[dest.i][dest.j], constants_ACTION_TYPES.hunt);
         }
-      } else if (dest.family === 'building') {
-        if (this.getActionCondition(dest, 'build')) {
+      } else if (dest.family === constants_FAMILY_TYPES.building) {
+        if (this.getActionCondition(dest, constants_ACTION_TYPES.build)) {
           this.sendToBuilding(dest);
-        } else if (this.getActionCondition(dest, 'farm')) {
+        } else if (this.getActionCondition(dest, constants_ACTION_TYPES.farm)) {
           this.sendToFarm(dest);
         } else {
-          this.sendTo(map.grid[dest.i][dest.j], 'build');
+          this.sendTo(map.grid[dest.i][dest.j], constants_ACTION_TYPES.build);
         }
       } else if (TYPE_ACTION[type]) {
         if (this.getActionCondition(dest, TYPE_ACTION[type])) {
@@ -3634,7 +3683,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.sprite.onLoop = null;
       this.sprite.onFrameChange = null;
       switch (name) {
-        case 'delivery':
+        case constants_ACTION_TYPES.delivery:
           if (!this.getActionCondition(this.dest, this.action)) {
             this.stop();
             return;
@@ -3653,7 +3702,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             this.stop();
           }
           break;
-        case 'farm':
+        case constants_ACTION_TYPES.farm:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3677,7 +3726,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
             // Villager farm the farm
             _this6.loading++;
-            _this6.loadingType = 'wheat';
+            _this6.loadingType = LOADING_TYPES.wheat;
             _this6.updateInterfaceLoading();
             _this6.visible && sound_lib/* sound */.s3.play('5178');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
@@ -3698,7 +3747,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'chopwood':
+        case constants_ACTION_TYPES.chopwood:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3733,7 +3782,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             } else {
               // Villager cut the stump
               _this6.loading++;
-              _this6.loadingType = 'wood';
+              _this6.loadingType = LOADING_TYPES.wood;
               _this6.updateInterfaceLoading();
               _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
               if (_this6.dest.selected) {
@@ -3754,7 +3803,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'forageberry':
+        case constants_ACTION_TYPES.forageberry:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3775,7 +3824,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
             // Villager forage the berrybush
             _this6.loading++;
-            _this6.loadingType = 'berry';
+            _this6.loadingType = LOADING_TYPES.berry;
             _this6.updateInterfaceLoading();
             _this6.visible && sound_lib/* sound */.s3.play('5085');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
@@ -3796,7 +3845,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'minestone':
+        case constants_ACTION_TYPES.minestone:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3817,7 +3866,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
             // Villager mine the stone
             _this6.loading++;
-            _this6.loadingType = 'stone';
+            _this6.loadingType = LOADING_TYPES.stone;
             _this6.updateInterfaceLoading();
             _this6.visible && sound_lib/* sound */.s3.play('5159');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
@@ -3838,7 +3887,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'minegold':
+        case constants_ACTION_TYPES.minegold:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3856,7 +3905,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
             // Villager mine the gold
             _this6.loading++;
-            _this6.loadingType = 'gold';
+            _this6.loadingType = LOADING_TYPES.gold;
             _this6.updateInterfaceLoading();
             _this6.visible && sound_lib/* sound */.s3.play('5159');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
@@ -3877,7 +3926,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'build':
+        case constants_ACTION_TYPES.build:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3910,7 +3959,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1000, false);
           break;
-        case 'attack':
+        case constants_ACTION_TYPES.attack:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -3971,7 +4020,7 @@ var Unit = /*#__PURE__*/function (_Container) {
                 }
               }
               if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-                _this6.sendTo(_this6.dest, 'attack');
+                _this6.sendTo(_this6.dest, constants_ACTION_TYPES.attack);
                 return;
               }
               if (_this6.sounds && _this6.sounds.hit) {
@@ -4025,7 +4074,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           };
           break;
-        case 'takemeat':
+        case constants_ACTION_TYPES.takemeat:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -4044,7 +4093,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             // Villager take meat
             _this6.visible && sound_lib/* sound */.s3.play('5178');
             _this6.loading++;
-            _this6.loadingType = 'meat';
+            _this6.loadingType = LOADING_TYPES.meat;
             _this6.updateInterfaceLoading();
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             _this6.dest.updateTexture();
@@ -4064,7 +4113,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case 'fishing':
+        case constants_ACTION_TYPES.fishing:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -4082,7 +4131,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
             // Villager fish
             _this6.loading++;
-            _this6.loadingType = 'fish';
+            _this6.loadingType = LOADING_TYPES.fish;
             _this6.updateInterfaceLoading();
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected && _this6.owner.isPlayed) {
@@ -4106,7 +4155,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             });
           }
           break;
-        case 'hunt':
+        case constants_ACTION_TYPES.hunt:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -4159,8 +4208,8 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.work === 'attacker' && instance && instance.family === 'unit' && !this.path.length && !this.dest && this.getActionCondition(instance, 'attack')) {
-        this.sendTo(instance, 'attack');
+      if (this.work === WORK_TYPES.attacker && instance && instance.family === constants_FAMILY_TYPES.unit && !this.path.length && !this.dest && this.getActionCondition(instance, constants_ACTION_TYPES.attack)) {
+        this.sendTo(instance, constants_ACTION_TYPES.attack);
       }
     }
   }, {
@@ -4168,13 +4217,13 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function handleAffectNewDestHunter() {
       var _this7 = this;
       var firstTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, 'takemeat');
+        return _this7.getActionCondition(instance, constants_ACTION_TYPES.takemeat);
       });
       if (firstTargets.length) {
         var target = getClosestInstanceWithPath(this, firstTargets);
         if (target) {
-          if (this.action !== 'takemeat') {
-            this.action = 'takemeat';
+          if (this.action !== constants_ACTION_TYPES.takemeat) {
+            this.action = constants_ACTION_TYPES.takemeat;
             if (this.allAssets[this.work]) {
               this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].harvestSheet);
             }
@@ -4190,13 +4239,13 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var secondTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, 'hunt');
+        return _this7.getActionCondition(instance, constants_ACTION_TYPES.hunt);
       });
       if (secondTargets.length) {
         var _target = getClosestInstanceWithPath(this, secondTargets);
         if (_target) {
-          if (this.action !== 'hunt') {
-            this.action = 'hunt';
+          if (this.action !== constants_ACTION_TYPES.hunt) {
+            this.action = constants_ACTION_TYPES.hunt;
             if (this.allAssets[this.work]) {
               this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].actionSheet);
             }
@@ -4242,14 +4291,14 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function affectNewDest() {
       var _this8 = this;
       this.stopInterval();
-      if (this.previousDest && this.work !== 'delivery') {
+      if (this.previousDest && this.action !== constants_ACTION_TYPES.delivery) {
         this.goBackToPrevious();
         return;
       }
       var handleSuccess = false;
-      if (this.type === 'Villager' && (this.action === 'takemeat' || this.action === 'hunt')) {
+      if (this.type === 'Villager' && (this.action === constants_ACTION_TYPES.takemeat || this.action === constants_ACTION_TYPES.hunt)) {
         handleSuccess = this.handleAffectNewDestHunter();
-      } else if (!this.dest || this.dest.label !== 'animal') {
+      } else if (!this.dest || this.dest.family !== constants_FAMILY_TYPES.animal) {
         var targets = findInstancesInSight(this, function (instance) {
           return _this8.getActionCondition(instance);
         });
@@ -4268,7 +4317,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       if (!handleSuccess) {
-        var notDeliveryWork = ['builder', 'attacker', 'healer'];
+        var notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer];
         if (this.loading && !notDeliveryWork.includes(this.work)) {
           this.sendToDelivery();
         } else {
@@ -4286,7 +4335,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         this.affectNewDest();
         return false;
       }
-      if ((this.type !== 'Villager' || action === 'hunt') && this.range && maths_instancesDistance(this, dest) <= this.range) {
+      if ((this.type !== 'Villager' || action === constants_ACTION_TYPES.hunt) && this.range && maths_instancesDistance(this, dest) <= this.range) {
         return true;
       }
       return instanceContactInstance(this, dest);
@@ -4307,7 +4356,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === 'unit' && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === constants_FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -4320,7 +4369,6 @@ var Unit = /*#__PURE__*/function (_Container) {
       }
       this.zIndex = getInstanceZIndex(this);
       if (maths_instancesDistance(this, nextCell, false) <= this.speed) {
-        clearCellOnInstanceSight(this);
         this.z = nextCell.z;
         this.i = nextCell.i;
         this.j = nextCell.j;
@@ -4333,7 +4381,7 @@ var Unit = /*#__PURE__*/function (_Container) {
           this.currentCell.has = this;
           this.currentCell.solid = true;
         }
-        renderCellOnInstanceSight(this);
+        updateInstanceVisibility(this);
         this.path.pop();
 
         // Destination moved
@@ -4377,13 +4425,13 @@ var Unit = /*#__PURE__*/function (_Container) {
       }
       var currentDest = this.dest;
       if (this.type === 'Villager') {
-        if (instance.family === 'animal') {
+        if (instance.family === constants_FAMILY_TYPES.animal) {
           this.sendToHunt(instance);
         } else {
           this.sendToAttack(instance);
         }
       } else {
-        this.sendTo(instance, 'attack');
+        this.sendTo(instance, constants_ACTION_TYPES.attack);
       }
       this.previousDest = currentDest;
     }
@@ -4489,9 +4537,6 @@ var Unit = /*#__PURE__*/function (_Container) {
         map.grid[this.i][this.j].corpses.push(this);
         map.grid[this.i][this.j].solid = false;
       }
-      this.sprite.onComplete = function () {
-        //this.clear()
-      };
     }
   }, {
     key: "death",
@@ -4501,7 +4546,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
-        clearCellOnInstanceSight(_this10);
+        updateInstanceVisibility(_this10);
         // Remove from player units
         var index = _this10.owner.corpses.indexOf(_this10);
         if (index < 0) {
@@ -4620,7 +4665,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function commonSendTo(target, work, action, keepPrevious) {
       var menu = this.context.menu;
       var workFromLoading = getWorkWithLoadingType(this.loadingType);
-      if (work !== 'builder' && work !== workFromLoading && !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))) {
+      if (work !== WORK_TYPES.builder && work !== workFromLoading && !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))) {
         this.loading = 0;
         this.loadingType = null;
         this.updateInterfaceLoading();
@@ -4666,7 +4711,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var targets = this.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(_this12, building, 'delivery', {
+        return extra_getActionCondition(_this12, building, constants_ACTION_TYPES.delivery, {
           buildingTypes: buildingTypes
         });
       });
@@ -4676,61 +4721,61 @@ var Unit = /*#__PURE__*/function (_Container) {
       } else {
         this.previousDest = map.grid[this.i][this.j];
       }
-      this.sendTo(target, 'delivery');
+      this.sendTo(target, constants_ACTION_TYPES.delivery);
     }
   }, {
     key: "sendToFish",
     value: function sendToFish(target) {
-      return this.commonSendTo(target, 'fisher', 'fishing');
+      return this.commonSendTo(target, WORK_TYPES.fisher, constants_ACTION_TYPES.fishing);
     }
   }, {
     key: "sendToAttack",
     value: function sendToAttack(target) {
-      return this.commonSendTo(target, 'attacker', 'attack', {
+      return this.commonSendTo(target, WORK_TYPES.attacker, constants_ACTION_TYPES.attack, {
         resource: 'attack'
       });
     }
   }, {
     key: "sendToTakeMeat",
     value: function sendToTakeMeat(target) {
-      return this.commonSendTo(target, 'hunter', 'takemeat', {
+      return this.commonSendTo(target, WORK_TYPES.hunter, constants_ACTION_TYPES.takemeat, {
         actionSheet: 'harvestSheet'
       });
     }
   }, {
     key: "sendToHunt",
     value: function sendToHunt(target) {
-      return this.commonSendTo(target, 'hunter', 'hunt');
+      return this.commonSendTo(target, WORK_TYPES.hunter, constants_ACTION_TYPES.hunt);
     }
   }, {
     key: "sendToBuilding",
     value: function sendToBuilding(target) {
-      return this.commonSendTo(target, 'builder', 'build');
+      return this.commonSendTo(target, WORK_TYPES.builder, constants_ACTION_TYPES.build);
     }
   }, {
     key: "sendToFarm",
     value: function sendToFarm(target) {
-      return this.commonSendTo(target, 'farmer', 'farm');
+      return this.commonSendTo(target, WORK_TYPES.farmer, constants_ACTION_TYPES.farm);
     }
   }, {
     key: "sendToTree",
     value: function sendToTree(target) {
-      return this.commonSendTo(target, 'woodcutter', 'chopwood');
+      return this.commonSendTo(target, WORK_TYPES.woodcutter, constants_ACTION_TYPES.chopwood);
     }
   }, {
     key: "sendToBerrybush",
     value: function sendToBerrybush(target) {
-      return this.commonSendTo(target, 'forager', 'forageberry');
+      return this.commonSendTo(target, WORK_TYPES.forager, constants_ACTION_TYPES.forageberry);
     }
   }, {
     key: "sendToStone",
     value: function sendToStone(target) {
-      return this.commonSendTo(target, 'stoneminer', 'minestone');
+      return this.commonSendTo(target, WORK_TYPES.stoneminer, constants_ACTION_TYPES.minestone);
     }
   }, {
     key: "sendToGold",
     value: function sendToGold(target) {
-      return this.commonSendTo(target, 'goldminer', 'minegold');
+      return this.commonSendTo(target, WORK_TYPES.goldminer, constants_ACTION_TYPES.minegold);
     }
   }, {
     key: "setDefaultInterface",
@@ -4799,7 +4844,7 @@ var Player = /*#__PURE__*/function () {
   function Player(options, context) {
     var _this = this;
     player_classCallCheck(this, Player);
-    this.family = 'player';
+    this.family = constants_FAMILY_TYPES.player;
     this.context = context;
     var map = context.map;
     this.label = uuidv4();
@@ -4844,7 +4889,7 @@ var Player = /*#__PURE__*/function () {
               menu.updateTerrainMiniMap(i, j);
             }
           },
-          viewed: (_this$views$i$j$viewe = (_this$views2 = _this.views) === null || _this$views2 === void 0 ? void 0 : _this$views2[i][j].viewed) !== null && _this$views$i$j$viewe !== void 0 ? _this$views$i$j$viewe : _this.isPlayed && _this.type === 'Human' && map.revealTerrain || false
+          viewed: (_this$views$i$j$viewe = (_this$views2 = _this.views) === null || _this$views2 === void 0 ? void 0 : _this$views2[i][j].viewed) !== null && _this$views$i$j$viewe !== void 0 ? _this$views$i$j$viewe : _this.isPlayed && _this.type === PLAYER_TYPES.human && map.revealTerrain || false
         };
       };
       for (var j = 0; j <= map.size; j++) {
@@ -4866,7 +4911,7 @@ var Player = /*#__PURE__*/function () {
         for (var i = 0; i < this.selectedUnits.length; i++) {
           var unit = this.selectedUnits[i];
           if (unit.type === 'Villager') {
-            if (extra_getActionCondition(unit, building, 'build')) {
+            if (extra_getActionCondition(unit, building, ACTION_TYPES.build)) {
               hasSentVillager = true;
               unit.sendToBuilding(building);
             }
@@ -4907,7 +4952,7 @@ var Player = /*#__PURE__*/function () {
       }
       for (var _i = 0; _i < players.length; _i++) {
         var player = players[_i];
-        if (player.type === 'Human') {
+        if (player.type === PLAYER_TYPES.human) {
           if (player.selectedUnit && player.selectedUnit.owner.label === this.label) {
             menu.setBottombar(player.selectedUnit);
           } else if (player.selectedBuilding && player.selectedBuilding.owner.label === this.label) {
@@ -5016,6 +5061,7 @@ function ai_inherits(t, e) { if ("function" != typeof e && null !== e) throw new
 function ai_setPrototypeOf(t, e) { return ai_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, ai_setPrototypeOf(t, e); }
 
 
+
 var styleLogInfo1 = 'background: #00ff00; color: #ffff00';
 var styleLogInfo2 = 'background: #222; color: #ff0000';
 var AI = /*#__PURE__*/function (_Player) {
@@ -5025,7 +5071,7 @@ var AI = /*#__PURE__*/function (_Player) {
     ai_classCallCheck(this, AI);
     _this = ai_callSuper(this, AI, [ai_objectSpread(ai_objectSpread({}, props), {}, {
       isPlayed: false,
-      type: 'AI'
+      type: PLAYER_TYPES.ai
     }), context]);
     _this.foundedTrees = [];
     _this.foundedBerrybushs = [];
@@ -5129,7 +5175,7 @@ var AI = /*#__PURE__*/function (_Player) {
       return {
         handleSetDest: function handleSetDest(target) {
           var map = me.context.map;
-          if (type === 'Villager' && target.family === 'resource') {
+          if (type === 'Villager' && target.family === constants_FAMILY_TYPES.resource) {
             var buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit';
             var buildings = me.buildingsByTypes([buildingType]);
             if (canAfford(me, me.config.buildings[buildingType]) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
@@ -5197,23 +5243,23 @@ var AI = /*#__PURE__*/function (_Player) {
         });
       };
       var inactifVillagers = villagers.filter(function (v) {
-        return v.inactif && v.action !== 'attack';
+        return v.inactif && v.action !== constants_ACTION_TYPES.attack;
       });
-      var villagersOnWood = villagersByWork(['woodcutter']);
-      var villagersOnFood = villagersByWork(['forager', 'farmer', 'hunter']);
-      var villagersOnGold = villagersByWork(['goldminer']);
-      var villagersOnStone = villagersByWork(['stoneminer']);
-      var builderVillagers = villagersByWork(['builder']);
+      var villagersOnWood = villagersByWork([WORK_TYPES.woodcutter]);
+      var villagersOnFood = villagersByWork([WORK_TYPES.forager, WORK_TYPES.farmer, WORK_TYPES.hunter]);
+      var villagersOnGold = villagersByWork([WORK_TYPES.goldminer]);
+      var villagersOnStone = villagersByWork([WORK_TYPES.stoneminer]);
+      var builderVillagers = villagersByWork([WORK_TYPES.builder]);
       var maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood']);
       var maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food']);
       var maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold']);
       var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
       console.log("%c Villagers on Wood: ".concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Villagers on Food: ").concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Villagers on Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Villagers on Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builder Villagers: ").concat(builderVillagers.length), styleLogInfo2);
       var inactifClubmans = clubmans.filter(function (c) {
-        return c.inactif && c.action !== 'attack' && c.assault;
+        return c.inactif && c.action !== constants_ACTION_TYPES.attack && c.assault;
       });
       var waitingClubmans = clubmans.filter(function (c) {
-        return c.inactif && c.action !== 'attack' && !c.assault;
+        return c.inactif && c.action !== constants_ACTION_TYPES.attack && !c.assault;
       });
       console.log("%c Inactif Clubmans: ".concat(inactifClubmans.length, ", Waiting Clubmans: ").concat(waitingClubmans.length), styleLogInfo2);
 
@@ -5245,7 +5291,7 @@ var AI = /*#__PURE__*/function (_Player) {
                 _this2.foundedGolds.push(has);
               }
             }
-            if (has.family === 'building' && has.owner.label !== _this2.label && !_this2.foundedEnemyBuildings.includes(has)) {
+            if (has.family === constants_FAMILY_TYPES.building && has.owner.label !== _this2.label && !_this2.foundedEnemyBuildings.includes(has)) {
               _this2.foundedEnemyBuildings.push(has);
             }
           }
@@ -5310,7 +5356,7 @@ var AI = /*#__PURE__*/function (_Player) {
             var building = _step.value;
             if (builderVillagers.length >= maxVillagersOnConstruction) break;
             var availableVillagers = villagers.filter(function (v) {
-              return v.work !== 'builder' || v.inactif;
+              return v.work !== WORK_TYPES.builder || v.inactif;
             });
             var _villager = getClosestInstance(building, availableVillagers);
             if (_villager) {
@@ -5329,7 +5375,7 @@ var AI = /*#__PURE__*/function (_Player) {
       var sendToAttack = function sendToAttack(clubmans, target) {
         console.log('Sending clubmans to attack:', target);
         clubmans.forEach(function (clubman) {
-          return clubman.sendTo(target, 'attack');
+          return clubman.sendTo(target, constants_ACTION_TYPES.attack);
         });
       };
       if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
@@ -5513,7 +5559,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     var _this2 = _this,
       map = _this2.context.map;
     _this.label = uuidv4();
-    _this.family = 'animal';
+    _this.family = constants_FAMILY_TYPES.animal;
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
@@ -5538,6 +5584,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     });
     _this.size = 1;
     _this.visible = false;
+    _this.visibleCells = new Set();
     _this.x = (_this$x = _this.x) !== null && _this$x !== void 0 ? _this$x : map.grid[_this.i][_this.j].x;
     _this.y = (_this$y = _this.y) !== null && _this$y !== void 0 ? _this$y : map.grid[_this.i][_this.j].y;
     _this.z = (_this$z = _this.z) !== null && _this$z !== void 0 ? _this$z : map.grid[_this.i][_this.j].z;
@@ -5591,23 +5638,23 @@ var Animal = /*#__PURE__*/function (_Container) {
         for (var i = 0; i < player.selectedUnits.length; i++) {
           var playerUnit = player.selectedUnits[i];
           if (playerUnit.type === 'Villager') {
-            if (extra_getActionCondition(playerUnit, _this, 'hunt')) {
+            if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
-            } else if (extra_getActionCondition(playerUnit, _this, 'takemeat')) {
+            } else if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.takemeat)) {
               playerUnit.sendToTakeMeat(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
             }
-          } else if (extra_getActionCondition(playerUnit, _this, 'attack')) {
-            playerUnit.sendTo(_this, 'attack');
+          } else if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.attack)) {
+            playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
             drawDestinationRectangle = true;
             hasSentOther = true;
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
-        if (extra_getActionCondition(player.selectedBuilding, _this, 'attack') && maths_instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
+        if (extra_getActionCondition(player.selectedBuilding, _this, constants_ACTION_TYPES.attack) && maths_instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
           player.selectedBuilding.attackAction(_this);
           drawDestinationRectangle = true;
         }
@@ -5631,7 +5678,9 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.interval = null;
     _this.sprite.updateAnchor = true;
     _this.addChild(_this.sprite);
-    renderCellOnInstanceSight(_this);
+    setTimeout(function () {
+      updateInstanceVisibility(_this);
+    });
     return _this;
   }
   animal_inherits(Animal, _Container);
@@ -5793,7 +5842,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         menu = _this$context.menu,
         player = _this$context.player;
       switch (name) {
-        case 'attack':
+        case constants_ACTION_TYPES.attack:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -5812,7 +5861,7 @@ var Animal = /*#__PURE__*/function (_Container) {
               _this6.setTextures('actionSheet');
             }
             if (!instanceContactInstance(_this6, _this6.dest)) {
-              _this6.sendTo(_this6.dest, 'attack');
+              _this6.sendTo(_this6.dest, constants_ACTION_TYPES.attack);
               return;
             }
             _this6.sounds && _this6.sounds.hit && _this6.visible && sound_lib/* sound */.s3.play(_this6.sounds.hit);
@@ -5873,7 +5922,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === 'animal' && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === constants_FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -5886,7 +5935,6 @@ var Animal = /*#__PURE__*/function (_Container) {
       }
       this.zIndex = getInstanceZIndex(this);
       if (maths_instancesDistance(this, nextCell, false) < this.speed) {
-        clearCellOnInstanceSight(this);
         this.z = nextCell.z;
         this.i = nextCell.i;
         this.j = nextCell.j;
@@ -5899,7 +5947,7 @@ var Animal = /*#__PURE__*/function (_Container) {
           this.currentCell.has = this;
           this.currentCell.solid = true;
         }
-        renderCellOnInstanceSight(this);
+        updateInstanceVisibility(this);
         this.path.pop();
 
         // Destination moved
@@ -5933,13 +5981,13 @@ var Animal = /*#__PURE__*/function (_Container) {
       if (this.strategy === 'runaway') {
         this.runaway(instance);
       } else {
-        this.sendTo(instance, 'attack');
+        this.sendTo(instance, constants_ACTION_TYPES.attack);
       }
     }
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.strategy && instance && instance.family === 'unit' && !this.isDead && !this.path.length && !this.dest) {
+      if (this.strategy && instance && instance.family === constants_FAMILY_TYPES.unit && !this.isDead && !this.path.length && !this.dest) {
         this.getReaction(instance);
       }
     }
@@ -6035,7 +6083,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         this.sounds.die && sound_lib/* sound */.s3.play(this.sounds.die);
         this.sounds.fall && sound_lib/* sound */.s3.play(this.sounds.fall);
       }
-      clearCellOnInstanceSight(this);
+      updateInstanceVisibility(this);
       this.owner.population--;
       this.stopInterval();
       this.isDead = true;
@@ -6187,13 +6235,14 @@ function human_getPrototypeOf(t) { return human_getPrototypeOf = Object.setProto
 function human_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && human_setPrototypeOf(t, e); }
 function human_setPrototypeOf(t, e) { return human_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, human_setPrototypeOf(t, e); }
 
+
 var Human = /*#__PURE__*/function (_Player) {
   function Human(_ref, context) {
     var _this;
     var props = human_extends({}, (human_objectDestructuringEmpty(_ref), _ref));
     human_classCallCheck(this, Human);
     _this = human_callSuper(this, Human, [human_objectSpread(human_objectSpread({}, props), {}, {
-      type: 'Human'
+      type: PLAYER_TYPES.human
     }), context]);
     _this.selectedUnits = [];
     _this.selectedUnit = null;
@@ -6287,7 +6336,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.context = context;
     var _this2 = _this,
       map = _this2.context.map;
-    _this.family = 'cell';
+    _this.family = constants_FAMILY_TYPES.cell;
     _this.map = map;
     _this.solid = false;
     _this.visible = false;
@@ -6550,7 +6599,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     key: "removeFogBuilding",
     value: function removeFogBuilding(instance) {
       var map = this.context.map;
-      if (instance.owner && !instance.owner.isPlayed && instance.family === 'building') {
+      if (instance.owner && !instance.owner.isPlayed && instance.family === constants_FAMILY_TYPES.building) {
         var i = 0;
         var localCell = map.grid[instance.i][instance.j];
         while (i < localCell.fogSprites.length) {
@@ -6572,7 +6621,7 @@ var Cell = /*#__PURE__*/function (_Container) {
         map = _this$context2.map;
       if (!instanceIsInPlayerSight(instance, player)) {
         if (instance.owner && !instance.owner.isPlayed) {
-          if (!init && instance.family === 'building') {
+          if (!init && instance.family === constants_FAMILY_TYPES.building) {
             var assets = getBuildingAsset(instance.type, instance.owner, lib/* Assets */.sP);
             var localCell = map.grid[instance.i][instance.j];
             localCell.addFogBuilding(assets.images["final"], assets.images.color, instance.owner.color);
@@ -6685,7 +6734,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.allTechnologies = false;
     _this.noAI = true;
     _this.devMode = false;
-    _this.revealEverything =  true || 0;
+    _this.revealEverything = _this.devMode || false;
     _this.revealTerrain = _this.devMode || false;
     _this.x = 0;
     _this.y = 0;
@@ -6704,7 +6753,6 @@ var map_Map = /*#__PURE__*/function (_Container) {
   return map_createClass(Map, [{
     key: "setCoordinate",
     value: function setCoordinate(x, y) {
-      //this.position.set(-x, -y);
       this.x = x;
       this.y = y;
     }
@@ -6900,11 +6948,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
         }
         for (var _i3 = 0; _i3 < player.buildings.length; _i3++) {
           var building = player.buildings[_i3];
-          renderCellOnInstanceSight(building);
+          updateInstanceVisibility(building);
         }
         for (var _i4 = 0; _i4 < player.units.length; _i4++) {
           var unit = player.units[_i4];
-          renderCellOnInstanceSight(unit);
+          updateInstanceVisibility(unit);
         }
       }
       this.ready = true;
@@ -7413,7 +7461,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
             var level = maths_randomItem(_this4.reliefRange);
             var canGenerate = true;
             if (getPlainCellsAroundPoint(i, j, _this4.grid, level * 2, function (cell) {
-              if (cell.category === 'Water' || cell.has && cell.has.family === 'building') {
+              if (cell.category === 'Water' || cell.has && cell.has.family === constants_FAMILY_TYPES.building) {
                 canGenerate = false;
               }
             })) ;
@@ -7920,7 +7968,7 @@ var Menu = /*#__PURE__*/function () {
       var x = cell.x;
       var y = cell.y;
       canvasDrawDiamond(context, x / minimapFactor + translate, y / minimapFactor, CELL_WIDTH / minimapFactor + 1, CELL_HEIGHT / minimapFactor + 1, color);
-      if (cell.has && cell.has.family === 'resource') {
+      if (cell.has && cell.has.family === constants_FAMILY_TYPES.resource) {
         this.updateResourceMiniMap(cell.has);
       }
     }
@@ -8161,7 +8209,7 @@ var Menu = /*#__PURE__*/function () {
       }
       if (selection && selection["interface"]) {
         this.generateInfo(selection);
-        if (selection.family === 'building') {
+        if (selection.family === constants_FAMILY_TYPES.building) {
           if (!selection.isBuilt) {
             setMenuRecurs(selection, this.bottombarMenu, []);
           } else if (selection.technology) {
@@ -9697,6 +9745,11 @@ button:hover,
   width: 100%;
 }
 
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 .img {
   object-fit: none;
   height: 45px;
@@ -9927,7 +9980,7 @@ button:hover,
   gap: 10px;
   padding: 10px;
 }
-`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #1d57a8;\n  --main-background-color: #12171ecf;\n  --main-border-color: transparent;\n  --main-border-radius: 2px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-shadow-color: rgba(0, 0, 0, 0.7);\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: #5e5d5a;\n  color: #e5e0d8;\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-primary-color);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: #da2424;\n  background: rgba(0, 0, 0, 0.4);\n  padding: 3px;\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding: 10px;\n}\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #1d57a8;\n  --main-background-color: #12171ecf;\n  --main-border-color: transparent;\n  --main-border-radius: 2px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-shadow-color: rgba(0, 0, 0, 0.7);\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: #5e5d5a;\n  color: #e5e0d8;\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-primary-color);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: #da2424;\n  background: rgba(0, 0, 0, 0.4);\n  padding: 3px;\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding: 10px;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
