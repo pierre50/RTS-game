@@ -1,15 +1,13 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { ACCELERATOR, STEP_TIME, CORPSE_TIME, COLOR_WHITE } from '../constants'
+import { ACCELERATOR, STEP_TIME, CORPSE_TIME, COLOR_WHITE, ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
-  renderCellOnInstanceSight,
   getIconPath,
   getInstancePath,
   instancesDistance,
   moveTowardPoint,
-  clearCellOnInstanceSight,
   getInstanceClosestFreeCellPath,
   instanceContactInstance,
   getInstanceDegree,
@@ -24,6 +22,7 @@ import {
   uuidv4,
   CustomTimeout,
   setUnitTexture,
+  updateInstanceVisibility,
 } from '../lib'
 
 export class Animal extends Container {
@@ -36,7 +35,7 @@ export class Animal extends Container {
       context: { map },
     } = this
     this.label = uuidv4()
-    this.family = 'animal'
+    this.family = FAMILY_TYPES.animal
 
     this.dest = null
     this.realDest = null
@@ -64,6 +63,7 @@ export class Animal extends Container {
 
     this.size = 1
     this.visible = false
+    this.visibleCells = new Set()
     this.x = this.x ?? map.grid[this.i][this.j].x
     this.y = this.y ?? map.grid[this.i][this.j].y
     this.z = this.z ?? map.grid[this.i][this.j].z
@@ -119,24 +119,24 @@ export class Animal extends Container {
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
           if (playerUnit.type === 'Villager') {
-            if (getActionCondition(playerUnit, this, 'hunt')) {
+            if (getActionCondition(playerUnit, this, ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(this)
               hasSentVillager = true
               drawDestinationRectangle = true
-            } else if (getActionCondition(playerUnit, this, 'takemeat')) {
+            } else if (getActionCondition(playerUnit, this, ACTION_TYPES.takemeat)) {
               playerUnit.sendToTakeMeat(this)
               hasSentVillager = true
               drawDestinationRectangle = true
             }
-          } else if (getActionCondition(playerUnit, this, 'attack')) {
-            playerUnit.sendTo(this, 'attack')
+          } else if (getActionCondition(playerUnit, this, ACTION_TYPES.attack)) {
+            playerUnit.sendTo(this, ACTION_TYPES.attack)
             drawDestinationRectangle = true
             hasSentOther = true
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
         if (
-          getActionCondition(player.selectedBuilding, this, 'attack') &&
+          getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
           instancesDistance(player.selectedBuilding, this) <= player.selectedBuilding.range
         ) {
           player.selectedBuilding.attackAction(this)
@@ -165,7 +165,9 @@ export class Animal extends Container {
     this.sprite.updateAnchor = true
     this.addChild(this.sprite)
 
-    renderCellOnInstanceSight(this)
+    setTimeout(() => {
+      updateInstanceVisibility(this)
+    })
   }
 
   startInterval(callback, time, immediate = true) {
@@ -312,7 +314,7 @@ export class Animal extends Container {
       context: { menu, player },
     } = this
     switch (name) {
-      case 'attack':
+      case ACTION_TYPES.attack:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -332,7 +334,7 @@ export class Animal extends Container {
               this.setTextures('actionSheet')
             }
             if (!instanceContactInstance(this, this.dest)) {
-              this.sendTo(this.dest, 'attack')
+              this.sendTo(this.dest, ACTION_TYPES.attack)
               return
             }
 
@@ -404,7 +406,7 @@ export class Animal extends Container {
     // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      nextCell.has.family === 'animal' &&
+      nextCell.has.family === FAMILY_TYPES.animal &&
       nextCell.has.label !== this.label &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
@@ -424,8 +426,6 @@ export class Animal extends Container {
 
     this.zIndex = getInstanceZIndex(this)
     if (instancesDistance(this, nextCell, false) < this.speed) {
-      clearCellOnInstanceSight(this)
-
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
@@ -440,7 +440,7 @@ export class Animal extends Container {
         this.currentCell.solid = true
       }
 
-      renderCellOnInstanceSight(this)
+      updateInstanceVisibility(this)
       this.path.pop()
 
       // Destination moved
@@ -474,12 +474,19 @@ export class Animal extends Container {
     if (this.strategy === 'runaway') {
       this.runaway(instance)
     } else {
-      this.sendTo(instance, 'attack')
+      this.sendTo(instance, ACTION_TYPES.attack)
     }
   }
 
   detect(instance) {
-    if (this.strategy && instance && instance.family === 'unit' && !this.isDead && !this.path.length && !this.dest) {
+    if (
+      this.strategy &&
+      instance &&
+      instance.family === FAMILY_TYPES.unit &&
+      !this.isDead &&
+      !this.path.length &&
+      !this.dest
+    ) {
       this.getReaction(instance)
     }
   }
@@ -572,7 +579,7 @@ export class Animal extends Container {
       this.sounds.die && sound.play(this.sounds.die)
       this.sounds.fall && sound.play(this.sounds.fall)
     }
-    clearCellOnInstanceSight(this)
+    updateInstanceVisibility(this)
 
     this.owner.population--
     this.stopInterval()

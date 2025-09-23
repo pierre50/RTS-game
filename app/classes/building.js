@@ -1,19 +1,25 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
-import { ACCELERATOR, COLOR_WHITE, POPULATION_MAX, RUBBLE_TIME } from '../constants'
+import {
+  ACCELERATOR,
+  ACTION_TYPES,
+  COLOR_WHITE,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  POPULATION_MAX,
+  RUBBLE_TIME,
+} from '../constants'
 import {
   getTexture,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
   getPercentage,
-  renderCellOnInstanceSight,
   getFreeCellAroundPoint,
   getIconPath,
   canAfford,
   drawInstanceBlinkingSelection,
   payCost,
   instanceIsInPlayerSight,
-  clearCellOnInstanceSight,
   getActionCondition,
   capitalizeFirstLetter,
   refundCost,
@@ -25,6 +31,7 @@ import {
   canUpdateMinimap,
   CustomTimeout,
   changeSpriteColorDirectly,
+  updateInstanceVisibility,
 } from '../lib'
 import { Projectile } from './projectile'
 import { Polygon } from 'pixi.js'
@@ -38,7 +45,7 @@ export class Building extends Container {
     const { map, controls } = context
 
     this.label = uuidv4()
-    this.family = 'building'
+    this.family = FAMILY_TYPES.building
     this.selected = false
     this.queue = []
     this.technology = null
@@ -150,7 +157,7 @@ export class Building extends Container {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === 'Villager') {
-                if (getActionCondition(unit, this, 'build')) {
+                if (getActionCondition(unit, this, ACTION_TYPES.build)) {
                   hasSentVillager = true
                   unit.sendToBuilding(this)
                 }
@@ -179,17 +186,20 @@ export class Building extends Container {
                 unit.category === 'Boat'
                   ? this.type === 'Dock'
                   : this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType))
-              if (unit.type === 'Villager' && getActionCondition(unit, this, 'build')) {
+              if (unit.type === 'Villager' && getActionCondition(unit, this, ACTION_TYPES.build)) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
-              } else if (unit.type === 'Villager' && getActionCondition(unit, this, 'farm')) {
+              } else if (unit.type === 'Villager' && getActionCondition(unit, this, ACTION_TYPES.farm)) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
-              } else if (accept && getActionCondition(unit, this, 'delivery', { buildingTypes: [this.type] })) {
+              } else if (
+                accept &&
+                getActionCondition(unit, this, ACTION_TYPES.delivery, { buildingTypes: [this.type] })
+              ) {
                 hasSentVillager = true
                 unit.previousDest = null
-                unit.sendTo(this, 'delivery')
+                unit.sendTo(this, ACTION_TYPES.delivery)
               }
             }
             if (hasSentVillager) {
@@ -214,7 +224,7 @@ export class Building extends Container {
             if (playerUnit.type === 'Villager') {
               playerUnit.sendToAttack(this)
             } else {
-              playerUnit.sendTo(this, 'attack')
+              playerUnit.sendTo(this, ACTION_TYPES.attack)
             }
           }
         } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
@@ -229,7 +239,9 @@ export class Building extends Container {
     }
 
     if (this.isBuilt) {
-      renderCellOnInstanceSight(this)
+      setTimeout(() => {
+        updateInstanceVisibility(this)
+      })
       this.finalTexture()
       this.onBuilt()
     }
@@ -241,7 +253,7 @@ export class Building extends Container {
     } = this
 
     this.startAttackInterval(() => {
-      if (getActionCondition(this, target, 'attack') && instancesDistance(this, target) <= this.range) {
+      if (getActionCondition(this, target, ACTION_TYPES.attack) && instancesDistance(this, target) <= this.range) {
         if (target.hitPoints <= 0) {
           target.die()
         } else {
@@ -324,10 +336,14 @@ export class Building extends Container {
     if (this.isDead) {
       return
     }
-    if (this.range && getActionCondition(this, instance, 'attack') && instancesDistance(this, instance) <= this.range) {
+    if (
+      this.range &&
+      getActionCondition(this, instance, ACTION_TYPES.attack) &&
+      instancesDistance(this, instance) <= this.range
+    ) {
       this.attackAction(instance)
     }
-    this.updateHitPoints('attack')
+    this.updateHitPoints(ACTION_TYPES.attack)
   }
 
   updateTexture() {
@@ -362,7 +378,7 @@ export class Building extends Container {
       if (this.owner.isPlayed && this.selected) {
         menu.setBottombar(this)
       }
-      renderCellOnInstanceSight(this)
+      updateInstanceVisibility(this)
     }
   }
 
@@ -436,9 +452,9 @@ export class Building extends Container {
   detect(instance) {
     if (
       this.range &&
-      instance.label !== 'animal' &&
+      instance.family !== FAMILY_TYPES.animal &&
       !this.attackInterval &&
-      getActionCondition(this, instance, 'attack') &&
+      getActionCondition(this, instance, ACTION_TYPES.attack) &&
       instancesDistance(this, instance) <= this.range
     ) {
       this.attackAction(instance)
@@ -454,9 +470,9 @@ export class Building extends Container {
     if (this.hitPoints <= 0) {
       this.die()
     }
-    if (action === 'build' && !this.isBuilt) {
+    if (action === ACTION_TYPES.build && !this.isBuilt) {
       this.updateTexture()
-    } else if ((action === 'attack' && this.isBuilt) || (action === 'build' && this.isBuilt)) {
+    } else if ((action === ACTION_TYPES.attack && this.isBuilt) || (action === ACTION_TYPES.build && this.isBuilt)) {
       if (percentage > 0 && percentage < 25) {
         generateFire(this, '450')
       }
@@ -533,7 +549,7 @@ export class Building extends Container {
     }
     // Remove from view of others players
     for (let i = 0; i < players.length; i++) {
-      if (players[i].type === 'AI') {
+      if (players[i].type === PLAYER_TYPES.ai) {
         const list = players[i].foundedEnemyBuildings
         list.splice(list.indexOf(this), 1)
       }
@@ -558,7 +574,7 @@ export class Building extends Container {
       changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
     // Remove solid zone
-    clearCellOnInstanceSight(this)
+    updateInstanceVisibility(this)
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
       if (cell.has === this) {
@@ -678,7 +694,7 @@ export class Building extends Container {
     const unit = this.owner.config.units[type]
     if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
-        if (this.owner.type === 'AI') {
+        if (this.owner.type === PLAYER_TYPES.ai) {
           if (!this.queue.length && this.loading === null) {
             payCost(this.owner, unit.cost)
             this.queue.push(type)

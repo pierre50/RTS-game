@@ -1,4 +1,4 @@
-import { ACCELERATOR } from '../constants'
+import { ACCELERATOR, FAMILY_TYPES } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -273,63 +273,78 @@ export function findInstancesInSight(instance, condition) {
 }
 
 /**
- * Renders cells in the instance's line of sight, updating their visibility and interactions based on the instance's sight.
+ * Updates the cells within a instance's line of sight.
+ * Handles fog, viewBy, and visibility efficiently by diffing old vs new cells.
  *
- * @param {object} instance - The instance whose sight is being processed.
- *                            Must include properties like `i`, `j`, `sight`, `owner`, `parent`, and `context`.
+ * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
-export function renderCellOnInstanceSight(instance) {
-  const { player, controls, map } = instance.context
-  const { owner, sight } = instance
+export function updateInstanceVisibility(instance) {
+  const { i: cx, j: cy, sight, owner } = instance
+  const map = instance.context.map
+  const sightSq = sight * sight
+  const newVisible = new Set()
 
-  // Check if instance should be visible based on player interaction and sight
-  if (
-    player &&
-    (!map.revealEverything ? !instanceIsInPlayerSight(instance, player) : !controls.instanceInCamera(instance)) &&
-    !owner.isPlayed
-  ) {
-    instance.visible = false
-  } else {
-    instance.visible = true
+  // Collect all cells within sight
+  if (!instance.isDead) {
+    getPlainCellsAroundPoint(cx, cy, owner.views, sight, cell => {
+      const dx = cell.i - cx
+      const dy = cell.j - cy
+      if (dx * dx + dy * dy <= sightSq) {
+        newVisible.add(cell)
+      }
+    })
   }
 
-  // Process cells around the instance based on its sight
-  getPlainCellsAroundPoint(instance.i, instance.j, owner.views, sight, cell => {
-    const pointDistance = pointsDistance(instance.i, instance.j, cell.i, cell.j)
-    const globalCell = map.grid[cell.i][cell.j]
+  const prevVisible = instance.visibleCells || new Set()
 
-    if (pointDistance <= sight) {
-      // If the global cell has an instance with sight and a detection function
-      if (
-        globalCell.has &&
-        globalCell.has.sight &&
-        instancesDistance(instance, globalCell.has) <= globalCell.has.sight &&
-        typeof globalCell.has.detect === 'function'
-      ) {
-        globalCell.has.detect(instance)
+  // Hide cells that left sight
+  for (let cell of prevVisible) {
+    if (!newVisible.has(cell)) {
+      const idx = cell.viewBy.indexOf(instance)
+      if (idx !== -1) {
+        cell.viewBy.splice(idx, 1)
       }
 
-      // Add the instance to the cell's viewBy list if not already present
+      if (!cell.viewBy.length && owner.isPlayed && !map.revealEverything) {
+        map.grid[cell.i][cell.j].setFog()
+      }
+
+      if (cell.has) {
+        cell.has.visible = false
+      }
+    }
+  }
+
+  // Show new cells
+  for (let cell of newVisible) {
+    if (!prevVisible.has(cell)) {
+      cell.visible = true
       if (!cell.viewBy.includes(instance)) {
         cell.viewBy.push(instance)
       }
 
-      // Mark the cell as viewed if it hasn't been already
       if (!cell.viewed) {
         owner.cellViewed++
-        cell.onViewed()
+        cell.onViewed?.()
         cell.viewed = true
       }
 
-      // Handle fog removal for the instance's owner (player vs AI)
       if (owner.isPlayed && !map.revealEverything) {
-        globalCell.removeFog()
-      } else if (owner.type === 'AI') {
-        // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
-        updateAIKnowledge(globalCell, cell, instance)
+        map.grid[cell.i][cell.j].removeFog()
+      }
+
+      // Optional: detect other instances in sight
+      const globalCell = map.grid[cell.i][cell.j]
+      if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
+        const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
+        if (distSq <= globalCell.has.sight ** 2) {
+          globalCell.has.detect(instance)
+        }
       }
     }
-  })
+  }
+
+  instance.visibleCells = newVisible
 }
 
 /**
@@ -362,7 +377,7 @@ function updateAIKnowledge(globalCell, cell, instance) {
 
     // Detect enemy buildings and update AI's knowledge
     if (
-      globalCell.has.family === 'building' &&
+      globalCell.has.family === FAMILY_TYPES.building &&
       globalCell.has.hitPoints > 0 &&
       globalCell.has.owner.label !== owner.label &&
       !owner.foundedEnemyBuildings.includes(globalCell.has)
@@ -370,44 +385,6 @@ function updateAIKnowledge(globalCell, cell, instance) {
       owner.foundedEnemyBuildings.push(globalCell.has)
     }
   }
-}
-
-/**
- * Clears the cells within the instance's line of sight from the owner's view.
- *
- * This function removes the instance from the `viewBy` list of cells around it, within its line of sight.
- * If a cell is no longer viewed by any instance and meets certain conditions, fog is applied to that cell.
- *
- * @param {object} instance - The instance whose sight is being cleared (must have properties `i`, `j`, `sight`, `owner`, and `parent`).
- */
-export function clearCellOnInstanceSight(instance) {
-  // If the entire map is revealed, skip the process
-  if (instance.parent.revealEverything) return
-
-  const { i: instX, j: instY, sight, owner, parent } = instance
-  const views = owner.views
-
-  // Get cells around the instance within its sight range
-  getPlainCellsAroundPoint(instX, instY, views, sight, cell => {
-    // Check if the cell is within the sight radius based on distance
-    if (pointsDistance(instX, instY, cell.i, cell.j) <= sight) {
-      const idx = cell.viewBy.indexOf(instance)
-
-      // If the instance is in the viewBy array, remove it
-      if (idx !== -1) {
-        cell.viewBy.splice(idx, 1)
-
-        // If the cell is no longer viewed by any instance, apply fog after a slight delay
-        if (!cell.viewBy.length && owner.isPlayed && !parent.revealEverything) {
-          setTimeout(() => {
-            if (parent && !cell.viewBy.length) {
-              parent.grid[cell.i][cell.j].setFog()
-            }
-          }, 30)
-        }
-      }
-    }
-  })
 }
 
 /**

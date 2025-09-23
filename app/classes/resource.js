@@ -9,7 +9,7 @@ import {
   getActionCondition,
   uuidv4,
 } from '../lib'
-import { TYPE_ACTION, CELL_WIDTH, CELL_HEIGHT, COLOR_WHITE } from '../constants'
+import { TYPE_ACTION, CELL_WIDTH, CELL_HEIGHT, COLOR_WHITE, FAMILY_TYPES, PLAYER_TYPES } from '../constants'
 
 export class Resource extends Container {
   constructor(options, context) {
@@ -22,7 +22,7 @@ export class Resource extends Container {
     } = this
 
     this.label = uuidv4()
-    this.family = 'resource'
+    this.family = FAMILY_TYPES.resource
 
     this.selected = false
     this.isDead = false
@@ -171,7 +171,7 @@ export class Resource extends Container {
     }
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
-      if (players[i].type === 'AI') {
+      if (players[i].type === PLAYER_TYPES.ai) {
         const list = players[i][listName]
         if (list) {
           const index = list.indexOf(this)

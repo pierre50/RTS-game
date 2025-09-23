@@ -8,8 +8,60 @@ export const STEP_TIME = 20
 export const IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600
 export const LONG_CLICK_DURATION = 200
 
-export const WORK_FOOD_TYPES = ['fisher', 'hunter', 'farmer', 'forager']
-export const LOADING_FOOD_TYPES = ['meat', 'wheat', 'berry', 'fish']
+export const PLAYER_TYPES = {
+  human: 'Human',
+  ai: 'AI',
+}
+
+export const FAMILY_TYPES = {
+  animal: 'animal',
+  building: 'building',
+  cell: 'cell',
+  projectile: 'projectile',
+  resource: 'resource',
+  unit: 'unit',
+  player: 'player',
+}
+
+export const WORK_TYPES = {
+  fisher: 'fisher',
+  hunter: 'hunter',
+  farmer: 'farmer',
+  forager: 'forager',
+  woodcutter: 'woodcutter',
+  stoneminer: 'stoneminer',
+  goldminer: 'goldminer',
+  builder: 'builder',
+  attacker: 'attacker',
+  healer: 'healer',
+}
+
+export const ACTION_TYPES = {
+  delivery: 'delivery',
+  takemeat: 'takemeat',
+  hunt: 'hunt',
+  attack: 'attack',
+  fishing: 'fishing',
+  build: 'build',
+  farm: 'farm',
+  forageberry: 'forageberry',
+  minegold: 'minegold',
+  minestone: 'minestone',
+  chopwood: 'chopwood',
+}
+
+export const LOADING_TYPES = {
+  meat: 'meat',
+  wheat: 'wheat',
+  berry: 'berry',
+  fish: 'fish',
+  stone: 'stone',
+  gold: 'gold',
+  wood: 'wood',
+}
+
+export const WORK_FOOD_TYPES = [WORK_TYPES.fisher, WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.forager]
+export const LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOADING_TYPES.berry, LOADING_TYPES.fish]
 
 export const COLOR_WHITE = 0xffffff
 export const COLOR_BLACK = 0x000000
@@ -28,11 +80,11 @@ export const COLOR_FLASHY_GREEN = 0x00ff00
 export const COLOR_ARROW = 0xe8e3df
 
 export const TYPE_ACTION = {
-  Stone: 'minestone',
-  Gold: 'minegold',
-  Berrybush: 'forageberry',
-  Tree: 'chopwood',
-  Fish: 'fishing',
+  Stone: ACTION_TYPES.minestone,
+  Gold: ACTION_TYPES.minegold,
+  Berrybush: ACTION_TYPES.forageberry,
+  Tree: ACTION_TYPES.chopwood,
+  Fish: ACTION_TYPES.fishing,
 }
 
 export const CORPSE_TIME = 120

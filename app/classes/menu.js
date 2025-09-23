@@ -11,7 +11,7 @@ import {
   getBuildingAsset,
   Modal,
 } from '../lib'
-import { CELL_WIDTH, CELL_HEIGHT, LONG_CLICK_DURATION, IS_MOBILE } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, LONG_CLICK_DURATION, IS_MOBILE, FAMILY_TYPES } from '../constants'
 import { sound } from '@pixi/sound'
 
 export default class Menu {
@@ -283,7 +283,7 @@ export default class Menu {
       color
     )
 
-    if (cell.has && cell.has.family === 'resource') {
+    if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
       this.updateResourceMiniMap(cell.has)
     }
   }
@@ -528,7 +528,7 @@ export default class Menu {
     }
     if (selection && selection.interface) {
       this.generateInfo(selection)
-      if (selection.family === 'building') {
+      if (selection.family === FAMILY_TYPES.building) {
         if (!selection.isBuilt) {
           setMenuRecurs(selection, this.bottombarMenu, [])
         } else if (selection.technology) {

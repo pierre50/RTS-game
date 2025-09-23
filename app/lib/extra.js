@@ -1,3 +1,4 @@
+import { FAMILY_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 
@@ -208,13 +209,13 @@ export const debounce = (callback, wait) => {
  */
 export function getWorkWithLoadingType(loadingType) {
   const workMapping = {
-    wheat: 'farmer',
-    wood: 'woodcutter',
-    berry: 'forager',
-    stone: 'stoneminer',
-    gold: 'goldminer',
-    meat: 'hunter',
-    fish: 'fisher',
+    wheat: WORK_TYPES.farmer,
+    wood: WORK_TYPES.woodcutter,
+    berry: WORK_TYPES.forager,
+    stone: WORK_TYPES.stoneminer,
+    gold: WORK_TYPES.goldminer,
+    meat: WORK_TYPES.hunter,
+    fish: WORK_TYPES.fisher,
   }
 
   return workMapping[loadingType] || 'default' // Fallback to 'default' if loadingType is not found
@@ -386,7 +387,7 @@ export const getActionCondition = (source, target, action, props) => {
       (!props || props.buildingTypes.includes(target.type)),
     takemeat: () =>
       source.type === 'Villager' &&
-      target.family === 'animal' &&
+      target.family === FAMILY_TYPES.animal &&
       target.quantity > 0 &&
       target.isDead &&
       !target.isDestroyed,
@@ -397,7 +398,7 @@ export const getActionCondition = (source, target, action, props) => {
       !target.isDestroyed,
     hunt: () =>
       source.type === 'Villager' &&
-      target.family === 'animal' &&
+      target.family === FAMILY_TYPES.animal &&
       target.quantity > 0 &&
       target.hitPoints > 0 &&
       !target.isDead,
@@ -417,20 +418,20 @@ export const getActionCondition = (source, target, action, props) => {
     build: () =>
       source.type === 'Villager' &&
       target.owner?.label === source.owner.label &&
-      target.family === 'building' &&
+      target.family === FAMILY_TYPES.building &&
       target.hitPoints > 0 &&
       (!target.isBuilt || target.hitPoints < target.totalHitPoints) &&
       !target.isDead,
     attack: () =>
       target &&
       target.owner?.label !== source.owner.label &&
-      ['building', 'unit', 'animal'].includes(target.family) &&
+      [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) &&
       target.hitPoints > 0 &&
       !target.isDead,
     heal: () =>
       target &&
       target.owner?.label === source.owner.label &&
-      target.family === 'unit' &&
+      target.family === FAMILY_TYPES.unit &&
       target.hitPoints > 0 &&
       target.hitPoints < target.totalHitPoints &&
       !target.isDead,

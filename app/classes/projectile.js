@@ -9,7 +9,7 @@ import {
   randomItem,
   uuidv4,
 } from '../lib'
-import { COLOR_ARROW, STEP_TIME } from '../constants'
+import { COLOR_ARROW, FAMILY_TYPES, STEP_TIME } from '../constants'
 import { sound } from '@pixi/sound'
 
 export class Projectile extends Container {
@@ -18,7 +18,7 @@ export class Projectile extends Container {
 
     this.context = context
     this.label = uuidv4()
-    this.family = 'projectile'
+    this.family = FAMILY_TYPES.projectile
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]

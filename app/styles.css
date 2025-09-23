@@ -91,6 +91,11 @@ button:hover,
   width: 100%;
 }
 
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 .img {
   object-fit: none;
   height: 45px;

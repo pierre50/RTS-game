@@ -2,7 +2,7 @@
   "name": "rts-game",
   "version": "1.0.0",
   "description": "RTS game",
-  "author": "Pierre N.",
+  "author": "Pierre Nicolas <tenzin50@hotmail.fr",
   "main": "main.js",
   "repository": {
     "type": "git",

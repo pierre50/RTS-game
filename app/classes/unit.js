@@ -10,16 +10,18 @@ import {
   POPULATION_MAX,
   WORK_FOOD_TYPES,
   COLOR_WHITE,
+  WORK_TYPES,
+  ACTION_TYPES,
+  LOADING_TYPES,
+  FAMILY_TYPES,
 } from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
-  renderCellOnInstanceSight,
   getIconPath,
   getInstancePath,
   instancesDistance,
   moveTowardPoint,
-  clearCellOnInstanceSight,
   getInstanceClosestFreeCellPath,
   instanceContactInstance,
   getInstanceDegree,
@@ -41,6 +43,7 @@ import {
   canUpdateMinimap,
   getWorkWithLoadingType,
   setUnitTexture,
+  updateInstanceVisibility,
 } from '../lib'
 import { Projectile } from './projectile'
 
@@ -48,7 +51,7 @@ function getActionSheet(work, action, Assets, unit) {
   if (!work) {
     return
   }
-  const actionSheet = action === 'takemeat' ? 'harvestSheet' : 'actionSheet'
+  const actionSheet = action === ACTION_TYPES.takemeat ? 'harvestSheet' : 'actionSheet'
   return Assets.cache.get(unit.allAssets[work][actionSheet])
 }
 
@@ -62,7 +65,7 @@ export class Unit extends Container {
       context: { map, menu },
     } = this
     this.label = uuidv4()
-    this.family = 'unit'
+    this.family = FAMILY_TYPES.unit
 
     this.dest = null
     this.realDest = null
@@ -90,6 +93,7 @@ export class Unit extends Container {
     })
     this.size = 1
     this.visible = false
+    this.visibleCells = new Set()
     this.x = this.x ?? map.grid[this.i][this.j].x
     this.y = this.y ?? map.grid[this.i][this.j].y
     this.z = this.z ?? map.grid[this.i][this.j].z
@@ -111,10 +115,10 @@ export class Unit extends Container {
         this.work = this.work || null
         break
       case 'Priest':
-        this.work = 'healer'
+        this.work = WORK_TYPES.healer
         break
       default:
-        this.work = 'attacker'
+        this.work = WORK_TYPES.attacker
     }
 
     if (this.assets) {
@@ -220,7 +224,7 @@ export class Unit extends Container {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === 'healer' && this.getActionCondition(playerUnit, 'heal')) {
+            if (playerUnit.work === WORK_TYPES.healer && this.getActionCondition(playerUnit, 'heal')) {
               hasSentHealer = true
               playerUnit.sendTo(this, 'heal')
             }
@@ -240,13 +244,13 @@ export class Unit extends Container {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (this.getActionCondition(playerUnit, 'attack'))
+            if (this.getActionCondition(playerUnit, ACTION_TYPES.attack))
               if (playerUnit.type === 'Villager') {
                 hasSentAttacker = true
                 playerUnit.sendToAttack(this)
-              } else if (playerUnit.work === 'attacker') {
+              } else if (playerUnit.work === WORK_TYPES.attacker) {
                 hasSentAttacker = true
-                playerUnit.sendTo(this, 'attack')
+                playerUnit.sendTo(this, ACTION_TYPES.attack)
               }
           }
         }
@@ -265,7 +269,9 @@ export class Unit extends Container {
 
     this.interval = null
 
-    renderCellOnInstanceSight(this)
+    setTimeout(() => {
+      updateInstanceVisibility(this)
+    })
   }
 
   pause() {
@@ -428,19 +434,19 @@ export class Unit extends Container {
     const dest = this.previousDest
     const type = dest.category || dest.type
     this.previousDest = null
-    if (dest.family === 'animal') {
-      if (this.getActionCondition(dest, 'takemeat')) {
+    if (dest.family === FAMILY_TYPES.animal) {
+      if (this.getActionCondition(dest, ACTION_TYPES.takemeat)) {
         this.sendToTakeMeat(dest)
       } else {
-        this.sendTo(map.grid[dest.i][dest.j], 'hunt')
+        this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
       }
-    } else if (dest.family === 'building') {
-      if (this.getActionCondition(dest, 'build')) {
+    } else if (dest.family === FAMILY_TYPES.building) {
+      if (this.getActionCondition(dest, ACTION_TYPES.build)) {
         this.sendToBuilding(dest)
-      } else if (this.getActionCondition(dest, 'farm')) {
+      } else if (this.getActionCondition(dest, ACTION_TYPES.farm)) {
         this.sendToFarm(dest)
       } else {
-        this.sendTo(map.grid[dest.i][dest.j], 'build')
+        this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.build)
       }
     } else if (TYPE_ACTION[type]) {
       if (this.getActionCondition(dest, TYPE_ACTION[type])) {
@@ -461,7 +467,7 @@ export class Unit extends Container {
     this.sprite.onLoop = null
     this.sprite.onFrameChange = null
     switch (name) {
-      case 'delivery':
+      case ACTION_TYPES.delivery:
         if (!this.getActionCondition(this.dest, this.action)) {
           this.stop()
           return
@@ -481,7 +487,7 @@ export class Unit extends Container {
           this.stop()
         }
         break
-      case 'farm':
+      case ACTION_TYPES.farm:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -506,7 +512,7 @@ export class Unit extends Container {
             }
             // Villager farm the farm
             this.loading++
-            this.loadingType = 'wheat'
+            this.loadingType = LOADING_TYPES.wheat
             this.updateInterfaceLoading()
 
             this.visible && sound.play('5178')
@@ -531,7 +537,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'chopwood':
+      case ACTION_TYPES.chopwood:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -572,7 +578,7 @@ export class Unit extends Container {
             } else {
               // Villager cut the stump
               this.loading++
-              this.loadingType = 'wood'
+              this.loadingType = LOADING_TYPES.wood
               this.updateInterfaceLoading()
 
               this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
@@ -597,7 +603,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'forageberry':
+      case ACTION_TYPES.forageberry:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -619,7 +625,7 @@ export class Unit extends Container {
             }
             // Villager forage the berrybush
             this.loading++
-            this.loadingType = 'berry'
+            this.loadingType = LOADING_TYPES.berry
             this.updateInterfaceLoading()
 
             this.visible && sound.play('5085')
@@ -645,7 +651,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'minestone':
+      case ACTION_TYPES.minestone:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -667,7 +673,7 @@ export class Unit extends Container {
             }
             // Villager mine the stone
             this.loading++
-            this.loadingType = 'stone'
+            this.loadingType = LOADING_TYPES.stone
             this.updateInterfaceLoading()
 
             this.visible && sound.play('5159')
@@ -693,7 +699,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'minegold':
+      case ACTION_TYPES.minegold:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -712,7 +718,7 @@ export class Unit extends Container {
             }
             // Villager mine the gold
             this.loading++
-            this.loadingType = 'gold'
+            this.loadingType = LOADING_TYPES.gold
             this.updateInterfaceLoading()
 
             this.visible && sound.play('5159')
@@ -737,7 +743,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'build':
+      case ACTION_TYPES.build:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -777,7 +783,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'attack':
+      case ACTION_TYPES.attack:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -842,7 +848,7 @@ export class Unit extends Container {
                 }
               }
               if (!this.isUnitAtDest(this.action, this.dest)) {
-                this.sendTo(this.dest, 'attack')
+                this.sendTo(this.dest, ACTION_TYPES.attack)
                 return
               }
               if (this.sounds && this.sounds.hit) {
@@ -905,7 +911,7 @@ export class Unit extends Container {
           }
         }
         break
-      case 'takemeat':
+      case ACTION_TYPES.takemeat:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -926,7 +932,7 @@ export class Unit extends Container {
             this.visible && sound.play('5178')
 
             this.loading++
-            this.loadingType = 'meat'
+            this.loadingType = LOADING_TYPES.meat
             this.updateInterfaceLoading()
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
@@ -950,7 +956,7 @@ export class Unit extends Container {
           false
         )
         break
-      case 'fishing':
+      case ACTION_TYPES.fishing:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -969,7 +975,7 @@ export class Unit extends Container {
             }
             // Villager fish
             this.loading++
-            this.loadingType = 'fish'
+            this.loadingType = LOADING_TYPES.fish
             this.updateInterfaceLoading()
 
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
@@ -997,7 +1003,7 @@ export class Unit extends Container {
           })
         }
         break
-      case 'hunt':
+      case ACTION_TYPES.hunt:
         if (!this.getActionCondition(this.dest)) {
           this.affectNewDest()
           return
@@ -1053,24 +1059,26 @@ export class Unit extends Container {
 
   detect(instance) {
     if (
-      this.work === 'attacker' &&
+      this.work === WORK_TYPES.attacker &&
       instance &&
-      instance.family === 'unit' &&
+      instance.family === FAMILY_TYPES.unit &&
       !this.path.length &&
       !this.dest &&
-      this.getActionCondition(instance, 'attack')
+      this.getActionCondition(instance, ACTION_TYPES.attack)
     ) {
-      this.sendTo(instance, 'attack')
+      this.sendTo(instance, ACTION_TYPES.attack)
     }
   }
 
   handleAffectNewDestHunter() {
-    const firstTargets = findInstancesInSight(this, instance => this.getActionCondition(instance, 'takemeat'))
+    const firstTargets = findInstancesInSight(this, instance =>
+      this.getActionCondition(instance, ACTION_TYPES.takemeat)
+    )
     if (firstTargets.length) {
       const target = getClosestInstanceWithPath(this, firstTargets)
       if (target) {
-        if (this.action !== 'takemeat') {
-          this.action = 'takemeat'
+        if (this.action !== ACTION_TYPES.takemeat) {
+          this.action = ACTION_TYPES.takemeat
           if (this.allAssets[this.work]) {
             this.actionSheet = Assets.cache.get(this.allAssets[this.work].harvestSheet)
           }
@@ -1085,12 +1093,12 @@ export class Unit extends Container {
         return true
       }
     }
-    const secondTargets = findInstancesInSight(this, instance => this.getActionCondition(instance, 'hunt'))
+    const secondTargets = findInstancesInSight(this, instance => this.getActionCondition(instance, ACTION_TYPES.hunt))
     if (secondTargets.length) {
       const target = getClosestInstanceWithPath(this, secondTargets)
       if (target) {
-        if (this.action !== 'hunt') {
-          this.action = 'hunt'
+        if (this.action !== ACTION_TYPES.hunt) {
+          this.action = ACTION_TYPES.hunt
           if (this.allAssets[this.work]) {
             this.actionSheet = Assets.cache.get(this.allAssets[this.work].actionSheet)
           }
@@ -1127,14 +1135,14 @@ export class Unit extends Container {
 
   affectNewDest() {
     this.stopInterval()
-    if (this.previousDest && this.work !== 'delivery') {
+    if (this.previousDest && this.action !== ACTION_TYPES.delivery) {
       this.goBackToPrevious()
       return
     }
     let handleSuccess = false
-    if (this.type === 'Villager' && (this.action === 'takemeat' || this.action === 'hunt')) {
+    if (this.type === 'Villager' && (this.action === ACTION_TYPES.takemeat || this.action === ACTION_TYPES.hunt)) {
       handleSuccess = this.handleAffectNewDestHunter()
-    } else if (!this.dest || this.dest.label !== 'animal') {
+    } else if (!this.dest || this.dest.family !== FAMILY_TYPES.animal) {
       const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
       if (targets.length) {
         const target = getClosestInstanceWithPath(this, targets)
@@ -1151,7 +1159,7 @@ export class Unit extends Container {
       }
     }
     if (!handleSuccess) {
-      const notDeliveryWork = ['builder', 'attacker', 'healer']
+      const notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer]
       if (this.loading && !notDeliveryWork.includes(this.work)) {
         this.sendToDelivery()
       } else {
@@ -1168,7 +1176,11 @@ export class Unit extends Container {
       this.affectNewDest()
       return false
     }
-    if ((this.type !== 'Villager' || action === 'hunt') && this.range && instancesDistance(this, dest) <= this.range) {
+    if (
+      (this.type !== 'Villager' || action === ACTION_TYPES.hunt) &&
+      this.range &&
+      instancesDistance(this, dest) <= this.range
+    ) {
       return true
     }
     return instanceContactInstance(this, dest)
@@ -1194,7 +1206,7 @@ export class Unit extends Container {
     // Collision with another walking unit, we block the mouvement
     if (
       nextCell.has &&
-      nextCell.has.family === 'unit' &&
+      nextCell.has.family === FAMILY_TYPES.unit &&
       nextCell.has.label !== this.label &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
@@ -1214,7 +1226,6 @@ export class Unit extends Container {
 
     this.zIndex = getInstanceZIndex(this)
     if (instancesDistance(this, nextCell, false) <= this.speed) {
-      clearCellOnInstanceSight(this)
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
@@ -1227,7 +1238,7 @@ export class Unit extends Container {
         this.currentCell.has = this
         this.currentCell.solid = true
       }
-      renderCellOnInstanceSight(this)
+      updateInstanceVisibility(this)
       this.path.pop()
 
       // Destination moved
@@ -1271,13 +1282,13 @@ export class Unit extends Container {
     }
     const currentDest = this.dest
     if (this.type === 'Villager') {
-      if (instance.family === 'animal') {
+      if (instance.family === FAMILY_TYPES.animal) {
         this.sendToHunt(instance)
       } else {
         this.sendToAttack(instance)
       }
     } else {
-      this.sendTo(instance, 'attack')
+      this.sendTo(instance, ACTION_TYPES.attack)
     }
     this.previousDest = currentDest
   }
@@ -1383,9 +1394,6 @@ export class Unit extends Container {
       map.grid[this.i][this.j].corpses.push(this)
       map.grid[this.i][this.j].solid = false
     }
-    this.sprite.onComplete = () => {
-      //this.clear()
-    }
   }
 
   death() {
@@ -1393,7 +1401,7 @@ export class Unit extends Container {
     this.zIndex--
     this.sprite.loop = false
     this.sprite.onComplete = () => {
-      clearCellOnInstanceSight(this)
+      updateInstanceVisibility(this)
       // Remove from player units
       let index = this.owner.corpses.indexOf(this)
       if (index < 0) {
@@ -1516,7 +1524,7 @@ export class Unit extends Container {
     } = this
     const workFromLoading = getWorkWithLoadingType(this.loadingType)
     if (
-      work !== 'builder' &&
+      work !== WORK_TYPES.builder &&
       work !== workFromLoading &&
       !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))
     ) {
@@ -1563,7 +1571,7 @@ export class Unit extends Container {
     }
 
     const targets = this.owner.buildings.filter(building =>
-      getActionCondition(this, building, 'delivery', { buildingTypes })
+      getActionCondition(this, building, ACTION_TYPES.delivery, { buildingTypes })
     )
     const target = getClosestInstance(this, targets)
     if (this.dest) {
@@ -1571,47 +1579,47 @@ export class Unit extends Container {
     } else {
       this.previousDest = map.grid[this.i][this.j]
     }
-    this.sendTo(target, 'delivery')
+    this.sendTo(target, ACTION_TYPES.delivery)
   }
 
   sendToFish(target) {
-    return this.commonSendTo(target, 'fisher', 'fishing')
+    return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing)
   }
 
   sendToAttack(target) {
-    return this.commonSendTo(target, 'attacker', 'attack', { resource: 'attack' })
+    return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
   }
 
   sendToTakeMeat(target) {
-    return this.commonSendTo(target, 'hunter', 'takemeat', { actionSheet: 'harvestSheet' })
+    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, { actionSheet: 'harvestSheet' })
   }
 
   sendToHunt(target) {
-    return this.commonSendTo(target, 'hunter', 'hunt')
+    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt)
   }
 
   sendToBuilding(target) {
-    return this.commonSendTo(target, 'builder', 'build')
+    return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build)
   }
 
   sendToFarm(target) {
-    return this.commonSendTo(target, 'farmer', 'farm')
+    return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm)
   }
 
   sendToTree(target) {
-    return this.commonSendTo(target, 'woodcutter', 'chopwood')
+    return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood)
   }
 
   sendToBerrybush(target) {
-    return this.commonSendTo(target, 'forager', 'forageberry')
+    return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry)
   }
 
   sendToStone(target) {
-    return this.commonSendTo(target, 'stoneminer', 'minestone')
+    return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone)
   }
 
   sendToGold(target) {
-    return this.commonSendTo(target, 'goldminer', 'minegold')
+    return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold)
   }
 
   setDefaultInterface(element, data) {

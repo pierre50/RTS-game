@@ -13,11 +13,11 @@ import {
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
-import { POPULATION_MAX } from '../../constants'
+import { FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 
 export class Player {
   constructor(options, context) {
-    this.family = 'player'
+    this.family = FAMILY_TYPES.player
     this.context = context
 
     const { map } = context
@@ -63,7 +63,9 @@ export class Player {
               menu.updateTerrainMiniMap(i, j)
             }
           },
-          viewed: this.views?.[i][j].viewed ?? ((this.isPlayed && this.type === 'Human' && map.revealTerrain) || false),
+          viewed:
+            this.views?.[i][j].viewed ??
+            ((this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain) || false),
         }
       }
     }
@@ -79,7 +81,7 @@ export class Player {
       for (let i = 0; i < this.selectedUnits.length; i++) {
         const unit = this.selectedUnits[i]
         if (unit.type === 'Villager') {
-          if (getActionCondition(unit, building, 'build')) {
+          if (getActionCondition(unit, building, ACTION_TYPES.build)) {
             hasSentVillager = true
             unit.sendToBuilding(building)
           }
@@ -120,7 +122,7 @@ export class Player {
     }
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
-      if (player.type === 'Human') {
+      if (player.type === PLAYER_TYPES.human) {
         if (player.selectedUnit && player.selectedUnit.owner.label === this.label) {
           menu.setBottombar(player.selectedUnit)
         } else if (player.selectedBuilding && player.selectedBuilding.owner.label === this.label) {

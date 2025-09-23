@@ -11,7 +11,7 @@ import {
   getTexture,
   changeSpriteColorDirectly,
 } from '../lib'
-import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE } from '../constants'
+import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES } from '../constants'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -22,7 +22,7 @@ export class Cell extends Container {
     const {
       context: { map },
     } = this
-    this.family = 'cell'
+    this.family = FAMILY_TYPES.cell
     this.map = map
 
     this.solid = false
@@ -268,7 +268,7 @@ export class Cell extends Container {
 
   removeFogBuilding(instance) {
     const { map } = this.context
-    if (instance.owner && !instance.owner.isPlayed && instance.family === 'building') {
+    if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
       let i = 0
       const localCell = map.grid[instance.i][instance.j]
       while (i < localCell.fogSprites.length) {
@@ -286,7 +286,7 @@ export class Cell extends Container {
     const { player, map } = this.context
     if (!instanceIsInPlayerSight(instance, player)) {
       if (instance.owner && !instance.owner.isPlayed) {
-        if (!init && instance.family === 'building') {
+        if (!init && instance.family === FAMILY_TYPES.building) {
           const assets = getBuildingAsset(instance.type, instance.owner, Assets)
           const localCell = map.grid[instance.i][instance.j]
           localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)

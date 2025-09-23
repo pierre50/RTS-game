@@ -8,13 +8,14 @@ import {
   getCellsAroundPoint,
   canAfford,
 } from '../../lib'
+import { WORK_TYPES, ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES } from '../../constants'
 
 const styleLogInfo1 = 'background: #00ff00; color: #ffff00'
 const styleLogInfo2 = 'background: #222; color: #ff0000'
 
 export class AI extends Player {
   constructor({ ...props }, context) {
-    super({ ...props, isPlayed: false, type: 'AI' }, context)
+    super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
     this.foundedTrees = []
     this.foundedBerrybushs = []
     this.foundedGolds = []
@@ -111,7 +112,7 @@ export class AI extends Player {
     return {
       handleSetDest: target => {
         const { map } = me.context
-        if (type === 'Villager' && target.family === 'resource') {
+        if (type === 'Villager' && target.family === FAMILY_TYPES.resource) {
           const buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit'
           const buildings = me.buildingsByTypes([buildingType])
           if (
@@ -181,13 +182,13 @@ export class AI extends Player {
     const notBuiltHouses = notBuiltBuildings.filter(b => b.type === 'House')
 
     const villagersByWork = works => villagers.filter(v => !v.inactif && works.includes(v.work))
-    const inactifVillagers = villagers.filter(v => v.inactif && v.action !== 'attack')
+    const inactifVillagers = villagers.filter(v => v.inactif && v.action !== ACTION_TYPES.attack)
 
-    const villagersOnWood = villagersByWork(['woodcutter'])
-    const villagersOnFood = villagersByWork(['forager', 'farmer', 'hunter'])
-    const villagersOnGold = villagersByWork(['goldminer'])
-    const villagersOnStone = villagersByWork(['stoneminer'])
-    const builderVillagers = villagersByWork(['builder'])
+    const villagersOnWood = villagersByWork([WORK_TYPES.woodcutter])
+    const villagersOnFood = villagersByWork([WORK_TYPES.forager, WORK_TYPES.farmer, WORK_TYPES.hunter])
+    const villagersOnGold = villagersByWork([WORK_TYPES.goldminer])
+    const villagersOnStone = villagersByWork([WORK_TYPES.stoneminer])
+    const builderVillagers = villagersByWork([WORK_TYPES.builder])
 
     const maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood'])
     const maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food'])
@@ -202,8 +203,8 @@ export class AI extends Player {
       styleLogInfo2
     )
 
-    const inactifClubmans = clubmans.filter(c => c.inactif && c.action !== 'attack' && c.assault)
-    const waitingClubmans = clubmans.filter(c => c.inactif && c.action !== 'attack' && !c.assault)
+    const inactifClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
+    const waitingClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && !c.assault)
 
     console.log(
       `%c Inactif Clubmans: ${inactifClubmans.length}, Waiting Clubmans: ${waitingClubmans.length}`,
@@ -239,7 +240,7 @@ export class AI extends Player {
             }
           }
           if (
-            has.family === 'building' &&
+            has.family === FAMILY_TYPES.building &&
             has.owner.label !== this.label &&
             !this.foundedEnemyBuildings.includes(has)
           ) {
@@ -303,7 +304,7 @@ export class AI extends Player {
     if (notBuiltBuildings.length) {
       for (const building of notBuiltBuildings) {
         if (builderVillagers.length >= maxVillagersOnConstruction) break
-        const availableVillagers = villagers.filter(v => v.work !== 'builder' || v.inactif)
+        const availableVillagers = villagers.filter(v => v.work !== WORK_TYPES.builder || v.inactif)
         const villager = getClosestInstance(building, availableVillagers)
         if (villager) {
           console.log('Villager sent to build:', building)
@@ -315,7 +316,7 @@ export class AI extends Player {
     // Attack Logic
     const sendToAttack = (clubmans, target) => {
       console.log('Sending clubmans to attack:', target)
-      clubmans.forEach(clubman => clubman.sendTo(target, 'attack'))
+      clubmans.forEach(clubman => clubman.sendTo(target, ACTION_TYPES.attack))
     }
 
     if (waitingClubmans.length >= howManySoldiersBeforeAttack) {

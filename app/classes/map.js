@@ -8,9 +8,9 @@ import {
   getPlainCellsAroundPoint,
   getCellsAroundPoint,
   colors,
-  renderCellOnInstanceSight,
+  updateInstanceVisibility,
 } from '../lib'
-import { CELL_DEPTH } from '../constants'
+import { CELL_DEPTH, FAMILY_TYPES } from '../constants'
 import { Cell } from './cell'
 
 /**
@@ -41,7 +41,7 @@ export default class Map extends Container {
     this.noAI = true
 
     this.devMode = false
-    this.revealEverything = true || this.devMode || false
+    this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 
     this.x = 0
@@ -60,7 +60,6 @@ export default class Map extends Container {
   }
 
   setCoordinate(x, y) {
-    //this.position.set(-x, -y);
     this.x = x
     this.y = y
   }
@@ -240,11 +239,11 @@ export default class Map extends Container {
       }
       for (let i = 0; i < player.buildings.length; i++) {
         const building = player.buildings[i]
-        renderCellOnInstanceSight(building)
+        updateInstanceVisibility(building)
       }
       for (let i = 0; i < player.units.length; i++) {
         const unit = player.units[i]
-        renderCellOnInstanceSight(unit)
+        updateInstanceVisibility(unit)
       }
     }
 
@@ -736,7 +735,7 @@ export default class Map extends Container {
           let canGenerate = true
           if (
             getPlainCellsAroundPoint(i, j, this.grid, level * 2, cell => {
-              if (cell.category === 'Water' || (cell.has && cell.has.family === 'building')) {
+              if (cell.category === 'Water' || (cell.has && cell.has.family === FAMILY_TYPES.building)) {
                 canGenerate = false
               }
             })

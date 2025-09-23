@@ -1,8 +1,9 @@
+import { PLAYER_TYPES } from '../../constants'
 import { Player } from './player'
 
 export class Human extends Player {
   constructor({ ...props }, context) {
-    super({ ...props, type: 'Human' }, context)
+    super({ ...props, type: PLAYER_TYPES.human }, context)
     this.selectedUnits = []
     this.selectedUnit = null
     this.selectedBuilding = null
