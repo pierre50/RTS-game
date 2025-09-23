@@ -21,7 +21,7 @@ export class Player {
     this.context = context
 
     const { map } = context
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.parent = map
 
     this.wood = map.devMode ? 10000 : 200
@@ -121,11 +121,11 @@ export class Player {
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
       if (player.type === 'Human') {
-        if (player.selectedUnit && player.selectedUnit.owner.name === this.name) {
+        if (player.selectedUnit && player.selectedUnit.owner.label === this.label) {
           menu.setBottombar(player.selectedUnit)
-        } else if (player.selectedBuilding && player.selectedBuilding.owner.name === this.name) {
+        } else if (player.selectedBuilding && player.selectedBuilding.owner.label === this.label) {
           menu.setBottombar(player.selectedBuilding)
-        } else if (player.selectedOther && player.selectedOther.owner.name === this.name) {
+        } else if (player.selectedOther && player.selectedOther.owner.label === this.label) {
           menu.setBottombar(player.selectedOther)
         }
       }

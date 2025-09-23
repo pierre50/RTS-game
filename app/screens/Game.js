@@ -68,7 +68,7 @@ export default class Game extends Container {
     const cleanContext = context => {
       const resourceData = resource => ({
         ...filterObject(resource, [
-          'name',
+          'label',
           'i',
           'j',
           'selected',
@@ -83,7 +83,7 @@ export default class Game extends Container {
       })
       const animalData = animal => ({
         ...filterObject(animal, [
-          'name',
+          'label',
           'type',
           'i',
           'j',
@@ -109,12 +109,12 @@ export default class Game extends Container {
         ]),
         currentFrame: animal.sprite?.currentFrame,
         loop: animal.sprite?.loop,
-        dest: animal.dest && [animal.dest.i, animal.dest.i, animal.dest?.name],
-        previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.i, animal.previousDest?.name],
+        dest: animal.dest && [animal.dest.i, animal.dest.i, animal.dest?.label],
+        previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.i, animal.previousDest?.label],
       })
       const unitData = unit => ({
         ...filterObject(unit, [
-          'name',
+          'label',
           'type',
           'i',
           'j',
@@ -140,12 +140,12 @@ export default class Game extends Container {
         ]),
         currentFrame: unit.sprite?.currentFrame,
         loop: unit.sprite?.loop,
-        dest: unit.dest && [unit.dest.i, unit.dest.i, unit.dest?.name],
-        previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.i, unit.previousDest?.name],
+        dest: unit.dest && [unit.dest.i, unit.dest.i, unit.dest?.label],
+        previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.i, unit.previousDest?.label],
       })
       const buildingData = building => ({
         ...filterObject(building, [
-          'name',
+          'label',
           'i',
           'j',
           'type',
@@ -163,7 +163,7 @@ export default class Game extends Container {
       })
       const playerData = player => ({
         ...filterObject(player, [
-          'name',
+          'label',
           'age',
           'type',
           'wood',
@@ -185,7 +185,7 @@ export default class Game extends Container {
         views: player.views.map(view =>
           view.map(cell => ({
             ...filterObject(cell, ['i', 'j', 'viewed']),
-            viewBy: (cell.viewBy || []).map(unit => unit.name),
+            viewBy: (cell.viewBy || []).map(unit => unit.label),
           }))
         ),
       })
@@ -201,7 +201,7 @@ export default class Game extends Container {
           'border',
           'waterBorder',
         ]),
-        has: cell.has?.name,
+        has: cell.has?.label,
         fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
           textureSheet,
           colorSheet,

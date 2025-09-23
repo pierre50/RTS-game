@@ -343,7 +343,7 @@ function updateAIKnowledge(globalCell, cell, instance) {
   const { owner } = instance
 
   // Sync local cell's "has" object with the global cell if different
-  if (globalCell.has && (!cell.has || cell.has.name !== globalCell.has.name)) {
+  if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
     cell.has = globalCell.has
 
     // Detect tree resources and update AI's knowledge
@@ -364,7 +364,7 @@ function updateAIKnowledge(globalCell, cell, instance) {
     if (
       globalCell.has.family === 'building' &&
       globalCell.has.hitPoints > 0 &&
-      globalCell.has.owner.name !== owner.name &&
+      globalCell.has.owner.label !== owner.label &&
       !owner.foundedEnemyBuildings.includes(globalCell.has)
     ) {
       owner.foundedEnemyBuildings.push(globalCell.has)

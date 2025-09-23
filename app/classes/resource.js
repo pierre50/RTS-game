@@ -21,7 +21,7 @@ export class Resource extends Container {
       context: { map },
     } = this
 
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.family = 'resource'
 
     this.selected = false

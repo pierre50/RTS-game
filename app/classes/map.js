@@ -38,7 +38,7 @@ export default class Map extends Container {
     this.sortableChildren = true
 
     this.allTechnologies = false
-    this.noAI = false
+    this.noAI = true
 
     this.devMode = false
     this.revealEverything = true || this.devMode || false
@@ -60,6 +60,7 @@ export default class Map extends Container {
   }
 
   setCoordinate(x, y) {
+    //this.position.set(-x, -y);
     this.x = x
     this.y = y
   }

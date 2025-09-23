@@ -17,7 +17,7 @@ export class Projectile extends Container {
     super()
 
     this.context = context
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.family = 'projectile'
 
     Object.keys(options).forEach(prop => {

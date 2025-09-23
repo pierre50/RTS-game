@@ -37,7 +37,7 @@ export class Building extends Container {
 
     const { map, controls } = context
 
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.family = 'building'
     this.selected = false
     this.queue = []
@@ -436,7 +436,7 @@ export class Building extends Container {
   detect(instance) {
     if (
       this.range &&
-      instance.name !== 'animal' &&
+      instance.label !== 'animal' &&
       !this.attackInterval &&
       getActionCondition(this, instance, 'attack') &&
       instancesDistance(this, instance) <= this.range

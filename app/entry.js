@@ -29,14 +29,12 @@ import Loader from './screens/Loader'
   // Initialize loader
   const loader = new Loader()
   app.stage.addChild(loader)
-  loader.start()
+  await loader.start()
 
   // Once assets are loaded, remove loader and start game
-  loader.onLoaded(() => {
-    const game = new Game(app, gamebox)
-    app.stage.removeChild(loader)
-    app.stage.addChild(game)
-  })
+  const game = new Game(app, gamebox)
+  app.stage.removeChild(loader)
+  app.stage.addChild(game)
 
   // Optional: global pointermove listener
   app.stage.on('pointermove', event => {

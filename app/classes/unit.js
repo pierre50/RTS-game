@@ -61,7 +61,7 @@ export class Unit extends Container {
     const {
       context: { map, menu },
     } = this
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.family = 'unit'
 
     this.dest = null
@@ -188,7 +188,7 @@ export class Unit extends Container {
               player.selectedUnits.length < MAX_SELECT_UNITS &&
               cell.has &&
               cell.has.owner &&
-              cell.has.owner.name === this.owner.name &&
+              cell.has.owner.label === this.owner.label &&
               cell.has.type === this.type
             ) {
               cell.has.select()
@@ -333,7 +333,7 @@ export class Unit extends Container {
       j: dest.j,
       x: dest.x,
       y: dest.y,
-      name: dest.name,
+      label: dest.label,
     }
   }
 
@@ -369,7 +369,7 @@ export class Unit extends Container {
     if (
       this.isUnitAtDest(action, dest) &&
       (!map.grid[this.i][this.j].solid ||
-        (map.grid[this.i][this.j].solid && map.grid[this.i][this.j].has?.name === this.name))
+        (map.grid[this.i][this.j].solid && map.grid[this.i][this.j].has?.label === this.label))
     ) {
       this.setDest(dest)
       this.action = action
@@ -1134,7 +1134,7 @@ export class Unit extends Container {
     let handleSuccess = false
     if (this.type === 'Villager' && (this.action === 'takemeat' || this.action === 'hunt')) {
       handleSuccess = this.handleAffectNewDestHunter()
-    } else if (!this.dest || this.dest.name !== 'animal') {
+    } else if (!this.dest || this.dest.label !== 'animal') {
       const targets = findInstancesInSight(this, instance => this.getActionCondition(instance))
       if (targets.length) {
         const target = getClosestInstanceWithPath(this, targets)
@@ -1195,7 +1195,7 @@ export class Unit extends Container {
     if (
       nextCell.has &&
       nextCell.has.family === 'unit' &&
-      nextCell.has.name !== this.name &&
+      nextCell.has.label !== this.label &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
       nextCell.has.sprite.playing
@@ -1283,7 +1283,7 @@ export class Unit extends Container {
   }
 
   stop() {
-    if (this.currentCell.has.name !== this.name && this.currentCell.solid) {
+    if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }

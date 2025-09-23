@@ -1,7 +1,6 @@
 import { Player } from './player'
 
 import {
-  getPlainCellsAroundPoint,
   getValuePercentage,
   getPositionInGridAroundInstance,
   getClosestInstance,
@@ -123,7 +122,7 @@ export class AI extends Player {
             if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
               const pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1)
               if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
-                console.log(`Building ${buildingType} at: ${pos}`)
+                console.log(`Building ${buildingType} at:`, pos)
               }
             }
           }
@@ -140,7 +139,7 @@ export class AI extends Player {
 
     const maxVillagers = this.maxVillagerPerAge[this.age]
     const maxVillagersOnConstruction = 4
-    const maxClubmans = 0 //10
+    const maxClubmans = 10
     const howManyVillagerBeforeBuyingABarracks = 10
     const howManySoldiersBeforeAttack = 5
 
@@ -239,7 +238,11 @@ export class AI extends Player {
               this.foundedGolds.push(has)
             }
           }
-          if (has.family === 'building' && has.owner.name !== this.name && !this.foundedEnemyBuildings.includes(has)) {
+          if (
+            has.family === 'building' &&
+            has.owner.label !== this.label &&
+            !this.foundedEnemyBuildings.includes(has)
+          ) {
             this.foundedEnemyBuildings.push(has)
           }
         }

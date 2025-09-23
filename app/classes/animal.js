@@ -35,7 +35,7 @@ export class Animal extends Container {
     const {
       context: { map },
     } = this
-    this.name = uuidv4()
+    this.label = uuidv4()
     this.family = 'animal'
 
     this.dest = null
@@ -279,7 +279,7 @@ export class Animal extends Container {
     if (
       this.isAnimalAtDest(action, dest) &&
       (!map.grid[this.i][this.j].solid ||
-        (map.grid[this.i][this.j].solid && map.grid[this.i][this.j].has?.name === this.name))
+        (map.grid[this.i][this.j].solid && map.grid[this.i][this.j].has?.label === this.label))
     ) {
       this.setDest(dest)
       this.action = action
@@ -405,7 +405,7 @@ export class Animal extends Container {
     if (
       nextCell.has &&
       nextCell.has.family === 'animal' &&
-      nextCell.has.name !== this.name &&
+      nextCell.has.label !== this.label &&
       nextCell.has.hasPath() &&
       instancesDistance(this, nextCell.has) <= 1 &&
       nextCell.has.sprite.playing
@@ -492,7 +492,7 @@ export class Animal extends Container {
   }
 
   stop() {
-    if (this.currentCell.has.name !== this.name && this.currentCell.solid) {
+    if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }

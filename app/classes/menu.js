@@ -114,7 +114,6 @@ export default class Menu {
         const rect = evt.target.getBoundingClientRect()
         const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
         const y = (evt.clientY - rect.top - 3) * minimapFactor
-        controls.updateVisibleCells()
         controls.setCamera(x, y)
       }, LONG_CLICK_DURATION)
     })
@@ -142,7 +141,6 @@ export default class Menu {
           controls.sendUnits(cell)
         }
       } else {
-        controls.updateVisibleCells()
         controls.setCamera(x, y)
       }
     })
@@ -364,7 +362,7 @@ export default class Menu {
     } = this
 
     const squareSize = 4
-    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.name}`)
+    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.label}`)
     const color = owner.colorHex
 
     let canvas
@@ -382,7 +380,7 @@ export default class Menu {
       context = canvas.getContext('2d')
       context.translate(translate, 0)
       this.playersMinimap.push({
-        id: `minimap-${owner.name}`,
+        id: `minimap-${owner.label}`,
         canvas,
         context,
       })

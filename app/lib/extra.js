@@ -313,7 +313,7 @@ export const updateObject = (target, operation) => {
 }
 
 export const canUpdateMinimap = (instance, player) => {
-  return instance.owner.isPlayed || (player.name !== instance.owner.name && instanceIsInPlayerSight(instance, player))
+  return instance.owner.isPlayed || (player.label !== instance.owner.label && instanceIsInPlayerSight(instance, player))
 }
 
 /**
@@ -406,7 +406,7 @@ export const getActionCondition = (source, target, action, props) => {
       source.type === 'Villager' &&
       target.type === 'Farm' &&
       target.hitPoints > 0 &&
-      target.owner?.name === source.owner.name &&
+      target.owner?.label === source.owner.label &&
       target.quantity > 0 &&
       (!target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
@@ -416,20 +416,20 @@ export const getActionCondition = (source, target, action, props) => {
     minegold: () => source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDead,
     build: () =>
       source.type === 'Villager' &&
-      target.owner?.name === source.owner.name &&
+      target.owner?.label === source.owner.label &&
       target.family === 'building' &&
       target.hitPoints > 0 &&
       (!target.isBuilt || target.hitPoints < target.totalHitPoints) &&
       !target.isDead,
     attack: () =>
       target &&
-      target.owner?.name !== source.owner.name &&
+      target.owner?.label !== source.owner.label &&
       ['building', 'unit', 'animal'].includes(target.family) &&
       target.hitPoints > 0 &&
       !target.isDead,
     heal: () =>
       target &&
-      target.owner?.name === source.owner.name &&
+      target.owner?.label === source.owner.label &&
       target.family === 'unit' &&
       target.hitPoints > 0 &&
       target.hitPoints < target.totalHitPoints &&

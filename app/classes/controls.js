@@ -102,8 +102,8 @@ export default class Controls extends Container {
           if (Object.values(this.keysPressed).filter(Boolean).length > 1) {
             double = true
           }
-          if (this.keySpeed < 6) {
-            this.keySpeed += 0.5
+          if (this.keySpeed < 4) {
+            this.keySpeed += 0.2
           }
           if (this.keysPressed['ArrowLeft']) {
             this.moveCamera('left', this.keySpeed, double)
