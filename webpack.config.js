@@ -7,9 +7,9 @@ const DEBUG = process.env.NODE_ENV !== 'production'
 module.exports = {
   entry: './app/entry.js',
   output: {
-    filename: 'bundle.js',
+    filename: DEBUG ? '[name].js' : '[name].[contenthash].js',
     path: path.resolve(__dirname, 'build'),
-    clean: true, // nettoie le dossier build à chaque build
+    clean: true,
   },
   mode: DEBUG ? 'development' : 'production',
   devtool: DEBUG ? 'source-map' : false,
@@ -36,19 +36,40 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './public/index.html', // prend ton HTML existant
+      template: './public/index.html',
     }),
     new CopyWebpackPlugin({
-      patterns: [{ from: 'public/assets', to: 'assets' }], // si tu as des assets supplémentaires
+      patterns: [{ from: 'public/assets', to: 'assets' }],
     }),
   ],
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      maxInitialRequests: Infinity,
+      minSize: 20000,
+      cacheGroups: {
+        pixi: {
+          test: /[\\/]node_modules[\\/]pixi\.js[\\/]/,
+          name: 'pixi',
+          chunks: 'all',
+        },
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+        },
+      },
+    },
+    runtimeChunk: 'single',
+    minimize: !DEBUG,
+  },
   devServer: {
     static: {
-      directory: path.join(__dirname, 'build'), // sert le dossier build
+      directory: path.join(__dirname, 'build'),
     },
     compress: true,
     port: 8080,
     hot: true,
-    historyApiFallback: true, // permet de servir index.html pour toutes les routes (utile pour SPA)
+    historyApiFallback: true,
   },
 }

@@ -2,6 +2,7 @@
   "name": "rts-game",
   "version": "1.0.0",
   "description": "RTS game",
+  "author": "Pierre N.",
   "main": "main.js",
   "repository": {
     "type": "git",
@@ -20,15 +21,17 @@
     "lint": "eslint ./app/**/*.js"
   },
   "build": {
-    "appId": "your.id",
+    "appId": "com.pierre50.rts-game",
     "mac": {
+      "icon": "assets/icon.icns",
       "category": "your.app.category.type"
     },
+    "asar": true,
     "files": [
       "main.js",
       {
         "from": "build",
-        "to": ".",
+        "to": "build",
         "filter": [
           "**/*"
         ]
