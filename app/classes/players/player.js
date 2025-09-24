@@ -13,7 +13,7 @@ import {
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
-import { FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 
 export class Player {
   constructor(options, context) {
@@ -39,7 +39,7 @@ export class Player {
       this[prop] = options[prop]
     })
 
-    this.POPULATION_MAX = this.POPULATION_MAX || map.devMode ? POPULATION_MAX : 0
+    this.population_max = this.population_max || map.devMode ? POPULATION_MAX : 0
 
     this.colorHex = getHexColor(this.color)
     this.config = { ...Assets.cache.get('config') }
@@ -80,7 +80,7 @@ export class Player {
 
       for (let i = 0; i < this.selectedUnits.length; i++) {
         const unit = this.selectedUnits[i]
-        if (unit.type === 'Villager') {
+        if (unit.type === UNIT_TYPES.villager) {
           if (getActionCondition(unit, building, ACTION_TYPES.build)) {
             hasSentVillager = true
             unit.sendToBuilding(building)

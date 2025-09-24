@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, WORK_TYPES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 
@@ -11,15 +11,15 @@ export function setUnitTexture(sheet, instance, ACCELERATOR) {
   if (paused) {
     return
   }
-  const sheetToReset = ['actionSheet', 'dyingSheet', 'corpseSheet']
+  const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   // Sheet don't exist we just block the current sheet
   if (!instance[sheet]) {
-    if (instance.currentSheet !== 'walkingSheet' && instance.walkingSheet) {
+    if (instance.currentSheet !== SHEET_TYPES.walking && instance.walkingSheet) {
       instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]]
     } else {
       instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
     }
-    instance.currentSheet = 'walkingSheet'
+    instance.currentSheet = SHEET_TYPES.walking
     instance.sprite.stop()
     instance.sprite.anchor.set(
       instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.x,
@@ -386,7 +386,7 @@ export const getActionCondition = (source, target, action, props) => {
       target.isBuilt &&
       (!props || props.buildingTypes.includes(target.type)),
     takemeat: () =>
-      source.type === 'Villager' &&
+      source.type === UNIT_TYPES.villager &&
       target.family === FAMILY_TYPES.animal &&
       target.quantity > 0 &&
       target.isDead &&
@@ -397,26 +397,41 @@ export const getActionCondition = (source, target, action, props) => {
       target.quantity > 0 &&
       !target.isDestroyed,
     hunt: () =>
-      source.type === 'Villager' &&
+      source.type === UNIT_TYPES.villager &&
       target.family === FAMILY_TYPES.animal &&
       target.quantity > 0 &&
       target.hitPoints > 0 &&
       !target.isDead,
-    chopwood: () => source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDead,
+    chopwood: () =>
+      source.type === UNIT_TYPES.villager &&
+      target.type === RESOURCE_TYPES.tree &&
+      target.quantity > 0 &&
+      !target.isDead,
     farm: () =>
-      source.type === 'Villager' &&
-      target.type === 'Farm' &&
+      source.type === UNIT_TYPES.villager &&
+      target.type === BUILDING_TYPES.farm &&
       target.hitPoints > 0 &&
       target.owner?.label === source.owner.label &&
       target.quantity > 0 &&
       (!target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
-      source.type === 'Villager' && target.type === 'Berrybush' && target.quantity > 0 && !target.isDead,
-    minestone: () => source.type === 'Villager' && target.type === 'Stone' && target.quantity > 0 && !target.isDead,
-    minegold: () => source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDead,
+      source.type === UNIT_TYPES.villager &&
+      target.type === RESOURCE_TYPES.berrybush &&
+      target.quantity > 0 &&
+      !target.isDead,
+    minestone: () =>
+      source.type === UNIT_TYPES.villager &&
+      target.type === RESOURCE_TYPES.stone &&
+      target.quantity > 0 &&
+      !target.isDead,
+    minegold: () =>
+      source.type === UNIT_TYPES.villager &&
+      target.type === RESOURCE_TYPES.gold &&
+      target.quantity > 0 &&
+      !target.isDead,
     build: () =>
-      source.type === 'Villager' &&
+      source.type === UNIT_TYPES.villager &&
       target.owner?.label === source.owner.label &&
       target.family === FAMILY_TYPES.building &&
       target.hitPoints > 0 &&

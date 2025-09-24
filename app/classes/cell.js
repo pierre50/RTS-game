@@ -11,7 +11,7 @@ import {
   getTexture,
   changeSpriteColorDirectly,
 } from '../lib'
-import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES } from '../constants'
+import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -55,7 +55,7 @@ export class Cell extends Container {
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[textureFile]
     this.sprite = Sprite.from(texture)
-    this.sprite.label = 'sprite'
+    this.sprite.label = LABEL_TYPES.sprite
     this.sprite.anchor.set(0.5, 0.5)
     this.sprite.roundPixels = true
     this.sprite.allowMove = false
@@ -167,7 +167,7 @@ export class Cell extends Container {
     if (this.has) {
       this.has.zIndex = getInstanceZIndex(this.has)
     }
-    sprite.label = 'sprite'
+    sprite.label = LABEL_TYPES.sprite
     sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
   }
@@ -248,14 +248,14 @@ export class Cell extends Container {
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
     const sprite = Sprite.from(getTexture(textureSheet, Assets))
-    sprite.label = 'buildingFog'
+    sprite.label = LABEL_TYPES.buildingFog
     sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
     this.addChild(sprite)
     this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
     if (colorSheet) {
       const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
-      spriteColor.label = 'buildingColorFog'
+      spriteColor.label = LABEL_TYPES.buildingFog
       spriteColor.tint = COLOR_FOG
       changeSpriteColorDirectly(spriteColor, colorName)
       this.addChild(spriteColor)

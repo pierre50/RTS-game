@@ -9,7 +9,17 @@ import {
   getActionCondition,
   uuidv4,
 } from '../lib'
-import { TYPE_ACTION, CELL_WIDTH, CELL_HEIGHT, COLOR_WHITE, FAMILY_TYPES, PLAYER_TYPES } from '../constants'
+import {
+  TYPE_ACTION,
+  CELL_WIDTH,
+  CELL_HEIGHT,
+  COLOR_WHITE,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
+  RESOURCE_TYPES,
+} from '../constants'
 
 export class Resource extends Container {
   constructor(options, context) {
@@ -78,7 +88,7 @@ export class Resource extends Container {
     }
 
     this.sprite.updateAnchor = true
-    this.sprite.label = 'sprite'
+    this.sprite.label = LABEL_TYPES.sprite
     if (this.sprite) {
       this.sprite.allowMove = false
       this.sprite.eventMode = 'static'
@@ -140,7 +150,7 @@ export class Resource extends Container {
     }
     this.selected = true
     const selection = new Graphics()
-    selection.label = 'selection'
+    selection.label = LABEL_TYPES.selection
     selection.zIndex = 3
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.poly(path)
@@ -153,7 +163,7 @@ export class Resource extends Container {
       return
     }
     this.selected = false
-    const selection = this.getChildByLabel('selection')
+    const selection = this.getChildByLabel(LABEL_TYPES.selection)
     if (selection) {
       this.removeChild(selection)
     }
@@ -186,7 +196,7 @@ export class Resource extends Container {
     }
     menu.updateResourcesMiniMap()
     this.isDead = true
-    if (this.type === 'Tree' && !immediate) {
+    if (this.type === RESOURCE_TYPES.tree && !immediate) {
       this.onTreeDie()
     } else {
       this.clear()
@@ -245,40 +255,40 @@ export class Resource extends Container {
       context: { menu },
     } = this
     const typeDiv = document.createElement('div')
-    typeDiv.id = 'type'
+    typeDiv.id = MENU_INFO_IDS.type
     typeDiv.textContent = this.type
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')
-    iconImg.id = 'icon'
+    iconImg.id = MENU_INFO_IDS.icon
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
     if (this.hitPoints) {
       const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.id = 'hitPoints'
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints
       hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
       element.appendChild(hitPointsDiv)
     }
     if (this.quantity) {
       const quantityDiv = document.createElement('div')
 
-      quantityDiv.id = 'quantity'
+      quantityDiv.id = MENU_INFO_IDS.quantity
       quantityDiv.className = 'resource-quantity'
 
       let iconToUse
       switch (this.type) {
-        case 'Tree':
+        case RESOURCE_TYPES.tree:
           iconToUse = menu.infoIcons['wood']
           break
-        case 'Salmon':
-        case 'Berrybush':
+        case RESOURCE_TYPES.salmon:
+        case RESOURCE_TYPES.berrybush:
           iconToUse = menu.infoIcons['food']
           break
-        case 'Stone':
+        case RESOURCE_TYPES.stone:
           iconToUse = menu.infoIcons['stone']
           break
-        case 'Gold':
+        case RESOURCE_TYPES.gold:
           iconToUse = menu.infoIcons['gold']
           break
       }
@@ -286,7 +296,7 @@ export class Resource extends Container {
       smallIconImg.src = iconToUse
       smallIconImg.className = 'resource-quantity-icon'
       const textDiv = document.createElement('div')
-      textDiv.id = 'quantity-text'
+      textDiv.id = MENU_INFO_IDS.quantityText
       textDiv.textContent = this.quantity
       quantityDiv.appendChild(smallIconImg)
       quantityDiv.appendChild(textDiv)

@@ -8,9 +8,69 @@ export const STEP_TIME = 20
 export const IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600
 export const LONG_CLICK_DURATION = 200
 
+export const RESOURCE_TYPES = {
+  tree: 'Tree',
+  berrybush: 'Berrybush',
+  stone: 'Stone',
+  gold: 'Gold',
+  salmon: 'Salmon',
+}
+
+export const BUILDING_TYPES = {
+  house: 'House',
+  dock: 'Dock',
+  townCenter: 'TownCenter',
+  farm: 'Farm',
+  storagePit: 'StoragePit',
+  granary: 'Granary',
+  barracks: 'Barracks',
+  market: 'Market',
+}
+
+export const UNIT_TYPES = {
+  villager: 'Villager',
+  priest: 'Priest',
+  clubman: 'Clubman',
+}
+
+export const MENU_INFO_IDS = {
+  loading: 'loading',
+  hitPoints: 'hit-points',
+  population: 'population',
+  populationText: 'population-text',
+  quantity: 'quantity',
+  quantityText: 'quantity-text',
+  loadingText: 'loading-text',
+  type: 'type',
+  civ: 'civ',
+  icon: 'icon',
+}
+
+export const LABEL_TYPES = {
+  sprite: 'sprite',
+  color: 'color',
+  deco: 'deco',
+  fire: 'fire',
+  selection: 'selection',
+  buildingFog: 'building',
+  mouseBuilding: 'mouseBuilding',
+  floor: 'floor',
+  set: 'set',
+}
+
+export const SHEET_TYPES = {
+  walking: 'walkingSheet',
+  action: 'actionSheet',
+  standing: 'standingSheet',
+  corpse: 'corpseSheet',
+  dying: 'dyingSheet',
+  harvest: 'harvestSheet',
+}
+
 export const PLAYER_TYPES = {
   human: 'Human',
   ai: 'AI',
+  gaia: 'Gaia',
 }
 
 export const FAMILY_TYPES = {
@@ -48,6 +108,7 @@ export const ACTION_TYPES = {
   minegold: 'minegold',
   minestone: 'minestone',
   chopwood: 'chopwood',
+  heal: 'heal',
 }
 
 export const LOADING_TYPES = {

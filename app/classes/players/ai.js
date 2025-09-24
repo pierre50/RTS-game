@@ -8,7 +8,15 @@ import {
   getCellsAroundPoint,
   canAfford,
 } from '../../lib'
-import { WORK_TYPES, ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES } from '../../constants'
+import {
+  WORK_TYPES,
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  UNIT_TYPES,
+  BUILDING_TYPES,
+  RESOURCE_TYPES,
+} from '../../constants'
 
 const styleLogInfo1 = 'background: #00ff00; color: #ffff00'
 const styleLogInfo2 = 'background: #222; color: #ff0000'
@@ -112,14 +120,18 @@ export class AI extends Player {
     return {
       handleSetDest: target => {
         const { map } = me.context
-        if (type === 'Villager' && target.family === FAMILY_TYPES.resource) {
-          const buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit'
+        if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
+          const buildingType =
+            target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
           const buildings = me.buildingsByTypes([buildingType])
           if (
             canAfford(me, me.config.buildings[buildingType]) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
-            const closestBuilding = getClosestInstance(target, [...buildings, ...me.buildingsByTypes(['TownCenter'])])
+            const closestBuilding = getClosestInstance(target, [
+              ...buildings,
+              ...me.buildingsByTypes([BUILDING_TYPES.townCenter]),
+            ])
             if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
               const pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1)
               if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
@@ -147,28 +159,28 @@ export class AI extends Player {
     console.log('%c ----Step started', styleLogInfo1)
 
     console.log(
-      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.POPULATION_MAX}`,
+      `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.population_max}`,
       styleLogInfo2
     )
 
     const filterUnitsByType = (type, condition = unit => unit.hitPoints > 0) =>
       this.units.filter(unit => unit.type === type && condition(unit))
 
-    const villagers = filterUnitsByType('Villager')
-    const clubmans = filterUnitsByType('Clubman')
+    const villagers = filterUnitsByType(UNIT_TYPES.villager)
+    const clubmans = filterUnitsByType(UNIT_TYPES.clubman)
 
     console.log(
       `%c Villagers: ${villagers.length}/${maxVillagers}, Clubmans: ${clubmans.length}/${maxClubmans}`,
       styleLogInfo2
     )
 
-    const towncenters = this.buildingsByTypes(['TownCenter'])
-    const storagepits = this.buildingsByTypes(['StoragePit'])
-    const houses = this.buildingsByTypes(['House'])
-    const granarys = this.buildingsByTypes(['Granary'])
-    const barracks = this.buildingsByTypes(['Barracks'])
-    const markets = this.buildingsByTypes(['Market'])
-    const farms = this.buildingsByTypes(['Farm'])
+    const towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter])
+    const storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit])
+    const houses = this.buildingsByTypes([BUILDING_TYPES.house])
+    const granarys = this.buildingsByTypes([BUILDING_TYPES.granary])
+    const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
+    const markets = this.buildingsByTypes([BUILDING_TYPES.market])
+    const farms = this.buildingsByTypes([BUILDING_TYPES.farm])
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
 
     console.log(
@@ -179,7 +191,7 @@ export class AI extends Player {
     const notBuiltBuildings = this.buildings.filter(
       b => !b.isBuilt || (b.hitPoints > 0 && b.hitPoints < b.totalHitPoints)
     )
-    const notBuiltHouses = notBuiltBuildings.filter(b => b.type === 'House')
+    const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)
 
     const villagersByWork = works => villagers.filter(v => !v.inactif && works.includes(v.work))
     const inactifVillagers = villagers.filter(v => v.inactif && v.action !== ACTION_TYPES.attack)
@@ -226,16 +238,16 @@ export class AI extends Player {
         if (globalCell.has) {
           const { has } = globalCell
           if (has.quantity > 0) {
-            if (has.type === 'Tree' && !this.foundedTrees.includes(has)) {
+            if (has.type === RESOURCE_TYPES.tree && !this.foundedTrees.includes(has)) {
               this.foundedTrees.push(has)
             }
-            if (has.type === 'Berrybush' && !this.foundedBerrybushs.includes(has)) {
+            if (has.type === RESOURCE_TYPES.berrybush && !this.foundedBerrybushs.includes(has)) {
               this.foundedBerrybushs.push(has)
             }
-            if (has.type === 'Stone' && !this.foundedStones.includes(has)) {
+            if (has.type === RESOURCE_TYPES.stone && !this.foundedStones.includes(has)) {
               this.foundedStones.push(has)
             }
-            if (has.type === 'Gold' && !this.foundedGolds.includes(has)) {
+            if (has.type === RESOURCE_TYPES.gold && !this.foundedGolds.includes(has)) {
               this.foundedGolds.push(has)
             }
           }
@@ -352,8 +364,8 @@ export class AI extends Player {
       }
     }
 
-    buyUnits(villagers.length, maxVillagers, towncenters, 'Villager')
-    buyUnits(clubmans.length, maxClubmans, barracks, 'Clubman')
+    buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager)
+    buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman)
 
     // Building Purchasing Logic
     const buyBuildingIfNeeded = (condition, buildingType, positionCallback) => {
@@ -379,12 +391,12 @@ export class AI extends Player {
     }
 
     // Buy House
-    buyBuildingIfNeeded(this.population + 2 > this.POPULATION_MAX && !notBuiltHouses.length, 'House', () =>
+    buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
     )
 
     // Buy Barracks
-    buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, 'Barracks', () =>
+    buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         this.otherPlayers().every(
           player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
@@ -393,7 +405,7 @@ export class AI extends Player {
     )
 
     // Buy Markets
-    buyBuildingIfNeeded(markets.length === 0, 'Market', () =>
+    buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         this.otherPlayers().every(
           player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player)
@@ -402,7 +414,7 @@ export class AI extends Player {
     )
 
     // Buy Farm
-    buyBuildingIfNeeded(true, 'Farm', () => {
+    buyBuildingIfNeeded(true, BUILDING_TYPES.farm, () => {
       const buildings = [...granarys, ...towncenters] // Combine both granarys and towncenters
 
       for (const building of buildings) {

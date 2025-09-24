@@ -1,6 +1,17 @@
 import { sound } from '@pixi/sound'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { ACCELERATOR, STEP_TIME, CORPSE_TIME, COLOR_WHITE, ACTION_TYPES, FAMILY_TYPES } from '../constants'
+import {
+  ACCELERATOR,
+  STEP_TIME,
+  CORPSE_TIME,
+  COLOR_WHITE,
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  SHEET_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
+  UNIT_TYPES,
+} from '../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -45,7 +56,7 @@ export class Animal extends Container {
     this.degree = randomRange(1, 360)
     this.action = null
     this.currentFrame = 0
-    this.currentSheet = 'standingSheet'
+    this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.isDead = false
     this.isDestroyed = false
@@ -90,14 +101,14 @@ export class Animal extends Container {
     this.allowMove = false
     this.eventMode = 'static'
     this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
-    this.sprite.label = 'sprite'
+    this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
     this.sprite.allowClick = false
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
     if (this.isDead) {
-      this.currentSheet === 'corpseSheet' ? this.decompose() : this.death()
+      this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
     } else {
       this.setTextures(this.currentSheet)
     }
@@ -118,7 +129,7 @@ export class Animal extends Container {
       if (player.selectedUnits.length) {
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const playerUnit = player.selectedUnits[i]
-          if (playerUnit.type === 'Villager') {
+          if (playerUnit.type === UNIT_TYPES.villager) {
             if (getActionCondition(playerUnit, this, ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(this)
               hasSentVillager = true
@@ -197,7 +208,7 @@ export class Animal extends Container {
 
     this.selected = true
     const selection = new Graphics()
-    selection.label = 'selection'
+    selection.label = LABEL_TYPES.selection
     selection.zIndex = 3
     const path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5]
     selection.poly(path)
@@ -211,7 +222,7 @@ export class Animal extends Container {
     }
 
     this.selected = false
-    const selection = this.getChildByLabel('selection')
+    const selection = this.getChildByLabel(LABEL_TYPES.selection)
     if (selection) {
       this.removeChild(selection)
     }
@@ -249,7 +260,7 @@ export class Animal extends Container {
       return
     }
 
-    this.setTextures('walkingSheet')
+    this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
     this.startInterval(() => this.step(), STEP_TIME, true)
@@ -319,7 +330,7 @@ export class Animal extends Container {
           this.affectNewDest()
           return
         }
-        this.setTextures('actionSheet')
+        this.setTextures(SHEET_TYPES.action)
         this.startInterval(
           () => {
             if (!this.getActionCondition(this.dest)) {
@@ -331,7 +342,7 @@ export class Animal extends Container {
             }
             if (this.destHasMoved()) {
               this.degree = getInstanceDegree(this, this.dest.x, this.dest.y)
-              this.setTextures('actionSheet')
+              this.setTextures(SHEET_TYPES.action)
             }
             if (!instanceContactInstance(this, this.dest)) {
               this.sendTo(this.dest, ACTION_TYPES.attack)
@@ -347,7 +358,7 @@ export class Animal extends Container {
                 player &&
                 (player.selectedUnit === this.dest || player.selectedBuilding === this.dest)
               ) {
-                menu.updateInfo('hitPoints', this.dest.hitPoints + '/' + this.dest.totalHitPoints)
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, this.dest.hitPoints + '/' + this.dest.totalHitPoints)
               }
               this.dest.isAttacked(this)
             }
@@ -465,7 +476,7 @@ export class Animal extends Container {
       moveTowardPoint(this, nextCell.x, nextCell.y, this.speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
-        this.setTextures('walkingSheet')
+        this.setTextures(SHEET_TYPES.walking)
       }
     }
   }
@@ -511,7 +522,7 @@ export class Animal extends Container {
     this.currentCell.solid = true
     this.path = []
     this.stopInterval()
-    this.setTextures('standingSheet')
+    this.setTextures(SHEET_TYPES.standing)
   }
 
   step() {
@@ -549,13 +560,13 @@ export class Animal extends Container {
     const {
       context: { player, menu },
     } = this
-    this.setTextures('corpseSheet')
+    this.setTextures(SHEET_TYPES.corpse)
     this.sprite.animationSpeed = 0
     this.startInterval(() => {
       if (this.quantity > 0) {
         this.quantity--
         if (this.selected && player.selectedOther === this) {
-          menu.updateInfo('quantity-text', this.quantity)
+          menu.updateInfo(MENU_INFO_IDS.quantityText, this.quantity)
         }
       }
       this.updateTexture()
@@ -563,7 +574,7 @@ export class Animal extends Container {
   }
 
   death() {
-    this.setTextures('dyingSheet')
+    this.setTextures(SHEET_TYPES.dying)
     this.zIndex--
     this.sprite.loop = false
     this.sprite.onComplete = () => {
@@ -639,33 +650,33 @@ export class Animal extends Container {
     } = this
 
     const civDiv = document.createElement('div')
-    civDiv.id = 'civ'
+    civDiv.id = MENU_INFO_IDS.civ
     civDiv.textContent = ''
     element.appendChild(civDiv)
 
     const typeDiv = document.createElement('div')
-    typeDiv.id = 'type'
+    typeDiv.id = MENU_INFO_IDS.type
     typeDiv.textContent = this.type
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')
-    iconImg.id = 'icon'
+    iconImg.id = MENU_INFO_IDS.icon
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
     const hitPointsDiv = document.createElement('div')
-    hitPointsDiv.id = 'hitPoints'
+    hitPointsDiv.id = MENU_INFO_IDS.hitPoints
     hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
     element.appendChild(hitPointsDiv)
 
     const quantityDiv = document.createElement('div')
-    quantityDiv.id = 'quantity'
+    quantityDiv.id = MENU_INFO_IDS.quantity
     quantityDiv.className = 'resource-quantity'
     const smallIconImg = document.createElement('img')
     smallIconImg.src = menu.icons['food']
     smallIconImg.className = 'resource-quantity-icon'
     const textDiv = document.createElement('div')
-    textDiv.id = 'quantity-text'
+    textDiv.id = MENU_INFO_IDS.quantityText
     textDiv.textContent = this.quantity
     quantityDiv.appendChild(smallIconImg)
     quantityDiv.appendChild(textDiv)

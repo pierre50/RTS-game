@@ -3,11 +3,15 @@ import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
 import {
   ACCELERATOR,
   ACTION_TYPES,
+  BUILDING_TYPES,
   COLOR_WHITE,
   FAMILY_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
   PLAYER_TYPES,
   POPULATION_MAX,
   RUBBLE_TIME,
+  UNIT_TYPES,
 } from '../constants'
 import {
   getTexture,
@@ -80,15 +84,15 @@ export class Building extends Container {
     this.zIndex = getInstanceZIndex(this)
     this.visible = map.revealEverything && controls.instanceInCamera(this) ? true : false
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
-    if (this.type === 'House' && this.owner.age === 0) {
+    if (this.type === BUILDING_TYPES.house && this.owner.age === 0) {
       spriteSheet = '000_489'
-    } else if (this.type === 'Dock') {
+    } else if (this.type === BUILDING_TYPES.dock) {
       spriteSheet = '000_356'
     }
     const texture = getTexture(spriteSheet, Assets)
     this.sprite = Sprite.from(texture)
     this.sprite.updateAnchor = true
-    this.sprite.label = 'sprite'
+    this.sprite.label = LABEL_TYPES.sprite
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
@@ -100,12 +104,12 @@ export class Building extends Container {
         this.setDefaultInterface(element, assets)
         if (this.displayPopulation && this.owner.isPlayed && this.isBuilt) {
           const populationDiv = document.createElement('div')
-          populationDiv.id = 'population'
+          populationDiv.id = MENU_INFO_IDS.population
 
           const populationIcon = document.createElement('img')
           const populationSpan = document.createElement('span')
-          populationSpan.id = 'population-text'
-          populationSpan.textContent = this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
+          populationSpan.id = MENU_INFO_IDS.populationText
+          populationSpan.textContent = this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max)
 
           populationIcon.src = getIconPath('004_50731')
           populationDiv.appendChild(populationIcon)
@@ -120,7 +124,7 @@ export class Building extends Container {
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-      const set = cell.getChildByLabel('set')
+      const set = cell.getChildByLabel(LABEL_TYPES.set)
       if (set) {
         cell.removeChild(set)
       }
@@ -156,7 +160,7 @@ export class Building extends Container {
           if (!this.isBuilt) {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
-              if (unit.type === 'Villager') {
+              if (unit.type === UNIT_TYPES.villager) {
                 if (getActionCondition(unit, this, ACTION_TYPES.build)) {
                   hasSentVillager = true
                   unit.sendToBuilding(this)
@@ -184,13 +188,13 @@ export class Building extends Container {
               const unit = player.selectedUnits[i]
               const accept =
                 unit.category === 'Boat'
-                  ? this.type === 'Dock'
-                  : this.type === 'TownCenter' || (this.accept && this.accept.includes(unit.loadingType))
-              if (unit.type === 'Villager' && getActionCondition(unit, this, ACTION_TYPES.build)) {
+                  ? this.type === BUILDING_TYPES.dock
+                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType))
+              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.build)) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
-              } else if (unit.type === 'Villager' && getActionCondition(unit, this, ACTION_TYPES.farm)) {
+              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.farm)) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
               } else if (
@@ -221,7 +225,7 @@ export class Building extends Container {
           drawInstanceBlinkingSelection(this)
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.type === 'Villager') {
+            if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(this)
             } else {
               playerUnit.sendTo(this, ACTION_TYPES.attack)
@@ -388,12 +392,12 @@ export class Building extends Container {
     } = this
     if (this.increasePopulation) {
       // Increase player population and continue all unit creation that was paused
-      this.owner.POPULATION_MAX += this.increasePopulation
-      // Update bottombar with POPULATION_MAX if house selected
+      this.owner.population_max += this.increasePopulation
+      // Update bottombar with population_max if house selected
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
         menu.updateInfo(
-          'population-text',
-          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
+          MENU_INFO_IDS.populationText,
+          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max)
         )
       }
     }
@@ -412,25 +416,25 @@ export class Building extends Container {
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
 
-    const color = this.getChildByLabel('color')
+    const color = this.getChildByLabel(LABEL_TYPES.color)
     if (color) {
       color.destroy()
     }
 
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.label = 'color'
+      spriteColor.label = LABEL_TYPES.color
       changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
       changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
 
-    if (this.type === 'House') {
+    if (this.type === BUILDING_TYPES.house) {
       if (this.owner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
         const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-        spriteFire.label = 'deco'
+        spriteFire.label = LABEL_TYPES.deco
         spriteFire.allowMove = false
         spriteFire.allowClick = false
         spriteFire.eventMode = 'none'
@@ -441,7 +445,7 @@ export class Building extends Container {
         spriteFire.animationSpeed = 0.2 * ACCELERATOR
         this.addChild(spriteFire)
       } else {
-        const fire = this.getChildByLabel('deco')
+        const fire = this.getChildByLabel(LABEL_TYPES.deco)
         if (fire) {
           fire.destroy()
         }
@@ -483,14 +487,14 @@ export class Building extends Container {
         generateFire(this, '347')
       }
       if (percentage >= 75) {
-        const fire = this.getChildByLabel('fire')
+        const fire = this.getChildByLabel(LABEL_TYPES.fire)
         if (fire) {
           this.removeChild(fire)
         }
       }
     }
     function generateFire(building, spriteId) {
-      const fire = building.getChildByLabel('fire')
+      const fire = building.getChildByLabel(LABEL_TYPES.fire)
       const spritesheetFire = Assets.cache.get(spriteId)
       if (fire) {
         for (let i = 0; i < fire.children.length; i++) {
@@ -499,7 +503,7 @@ export class Building extends Container {
         }
       } else {
         const newFire = new Container()
-        newFire.label = 'fire'
+        newFire.label = LABEL_TYPES.fire
         newFire.allowMove = false
         newFire.allowClick = false
         newFire.eventMode = 'none'
@@ -554,15 +558,15 @@ export class Building extends Container {
         list.splice(list.indexOf(this), 1)
       }
     }
-    const color = this.getChildByLabel('color')
+    const color = this.getChildByLabel(LABEL_TYPES.color)
     color && color.destroy()
-    const deco = this.getChildByLabel('deco')
+    const deco = this.getChildByLabel(LABEL_TYPES.deco)
     deco && deco.destroy()
-    const fire = this.getChildByLabel('fire')
+    const fire = this.getChildByLabel(LABEL_TYPES.fire)
     fire && fire.destroy()
 
     let rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, Assets)
-    if (this.type === 'Farm') {
+    if (this.type === BUILDING_TYPES.farm) {
       rubbleSheet = '000_239'
     }
     this.sprite.texture = getTexture(rubbleSheet, Assets)
@@ -570,7 +574,7 @@ export class Building extends Container {
     this.sprite.eventMode = 'none'
     this.sprite.allowClick = false
     this.zIndex--
-    if (this.type === 'Farm') {
+    if (this.type === BUILDING_TYPES.farm) {
       changeSpriteColorDirectly(this.sprite, this.owner.color)
     }
     // Remove solid zone
@@ -619,7 +623,7 @@ export class Building extends Container {
 
     this.selected = true
     const selection = new Graphics()
-    selection.label = 'selection'
+    selection.label = LABEL_TYPES.selection
     selection.zIndex = 3
     const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
     selection.poly(path)
@@ -640,7 +644,7 @@ export class Building extends Container {
     } = this
 
     this.selected = false
-    const selection = this.getChildByLabel('selection')
+    const selection = this.getChildByLabel(LABEL_TYPES.selection)
     if (selection) {
       this.removeChild(selection)
     }
@@ -680,8 +684,8 @@ export class Building extends Container {
 
     if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
       menu.updateInfo(
-        'population-text',
-        this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)
+        MENU_INFO_IDS.populationText,
+        this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max)
       )
     }
   }
@@ -750,7 +754,7 @@ export class Building extends Container {
               this.updateInterfaceLoading()
             }
           } else if (this.loading < 100) {
-            if (this.owner.population < Math.min(POPULATION_MAX, this.owner.POPULATION_MAX)) {
+            if (this.owner.population < Math.min(POPULATION_MAX, this.owner.population_max)) {
               this.loading += 1
             } else if (this.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage('You need to build more houses')
@@ -772,11 +776,11 @@ export class Building extends Container {
     } = this
     if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
       if (this.loading === 1) {
-        menu.updateInfo('loading', element => (element.innerHTML = this.getLoadingElement().innerHTML))
+        menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = this.getLoadingElement().innerHTML))
       } else if (this.loading > 1) {
-        menu.updateInfo('loading-text', this.loading + '%')
+        menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading + '%')
       } else {
-        menu.updateInfo('loading', element => (element.innerHTML = ''))
+        menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = ''))
       }
     }
   }
@@ -784,14 +788,14 @@ export class Building extends Container {
   getLoadingElement() {
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'building-loading'
-    loadingDiv.id = 'loading'
+    loadingDiv.id = MENU_INFO_IDS.loading
 
     if (this.loading && this.owner.isPlayed) {
       const iconImg = document.createElement('img')
       iconImg.className = 'building-loading-icon'
       iconImg.src = getIconPath('009_50731')
       const textDiv = document.createElement('div')
-      textDiv.id = 'loading-text'
+      textDiv.id = MENU_INFO_IDS.loadingText
       textDiv.textContent = this.loading + '%'
       loadingDiv.appendChild(iconImg)
       loadingDiv.appendChild(textDiv)
@@ -823,11 +827,11 @@ export class Building extends Container {
     const assets = getBuildingAsset(this.type, this.owner, Assets)
     this.sprite.texture = getTexture(assets.images.final, Assets)
     this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y)
-    const color = this.getChildByLabel('color')
+    const color = this.getChildByLabel(LABEL_TYPES.color)
     color?.destroy()
     if (assets.images.color) {
       const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.label = 'color'
+      spriteColor.label = LABEL_TYPES.color
       changeSpriteColorDirectly(spriteColor, this.owner.color)
       this.addChild(spriteColor)
     } else {
@@ -916,35 +920,35 @@ export class Building extends Container {
     } = this
 
     const civDiv = document.createElement('div')
-    civDiv.id = 'civ'
+    civDiv.id = MENU_INFO_IDS.civ
     civDiv.textContent = this.owner.civ
     element.appendChild(civDiv)
 
     const typeDiv = document.createElement('div')
-    typeDiv.id = 'type'
+    typeDiv.id = MENU_INFO_IDS.type
     typeDiv.textContent = this.type
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')
-    iconImg.id = 'icon'
+    iconImg.id = MENU_INFO_IDS.icon
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
     if (this.owner && this.owner.isPlayed) {
       const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.id = 'hitPoints'
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints
       hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
       element.appendChild(hitPointsDiv)
 
       if (this.isBuilt && this.quantity) {
         const quantityDiv = document.createElement('div')
-        quantityDiv.id = 'quantity'
+        quantityDiv.id = MENU_INFO_IDS.quantity
         quantityDiv.className = 'resource-quantity'
         const smallIconImg = document.createElement('img')
         smallIconImg.src = menu.icons['food']
         smallIconImg.className = 'resource-quantity-icon'
         const textDiv = document.createElement('div')
-        textDiv.id = 'quantity-text'
+        textDiv.id = MENU_INFO_IDS.quantityText
         textDiv.textContent = this.quantity
         quantityDiv.appendChild(smallIconImg)
         quantityDiv.appendChild(textDiv)

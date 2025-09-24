@@ -173,7 +173,7 @@ export default class Game extends Container {
           'civ',
           'color',
           'population',
-          'POPULATION_MAX',
+          'population_max',
           'technologies',
           'cellViewed',
           'isPlayed',

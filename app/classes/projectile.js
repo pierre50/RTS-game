@@ -9,7 +9,7 @@ import {
   randomItem,
   uuidv4,
 } from '../lib'
-import { COLOR_ARROW, FAMILY_TYPES, STEP_TIME } from '../constants'
+import { COLOR_ARROW, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 import { sound } from '@pixi/sound'
 
 export class Projectile extends Container {
@@ -41,7 +41,7 @@ export class Projectile extends Container {
     sprite.rect(1, 1, this.size, 1)
     sprite.fill(COLOR_ARROW)
     sprite.rotation = degreesToRadians(degree)
-    sprite.label = 'sprite'
+    sprite.label = LABEL_TYPES.sprite
     sprite.allowMove = false
     sprite.eventMode = 'none'
     sprite.allowClick = false
@@ -70,7 +70,7 @@ export class Projectile extends Container {
     } = this
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected && player.selectedOther === instance) {
-      menu.updateInfo('hitPoints', instance.hitPoints + '/' + instance.totalHitPoints)
+      menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
     }
     if (instance.hitPoints <= 0) {
       instance.die()

@@ -646,7 +646,7 @@ export default class Menu {
         img.addEventListener('pointerup', () => {
           sound.play('5036')
           if (canAfford(player, unit.cost)) {
-            if (player.population >= player.POPULATION_MAX) {
+            if (player.population >= player.population_max) {
               this.showMessage('You need to build more houses')
             }
             this.toggleButtonCancel(type, true)

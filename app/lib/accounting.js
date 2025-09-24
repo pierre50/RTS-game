@@ -5,15 +5,12 @@
  */
 export function refundCost(player, cost) {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    console.error('Invalid arguments provided to refundCost.')
     return
   }
 
   Object.keys(cost).forEach(prop => {
     if (typeof cost[prop] === 'number') {
       player[prop] += cost[prop]
-    } else {
-      console.warn(`Cost for ${prop} is not a number:`, cost[prop])
     }
   })
 }
@@ -25,15 +22,12 @@ export function refundCost(player, cost) {
  */
 export function payCost(player, cost) {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    console.error('Invalid arguments provided to payCost.')
     return
   }
 
   Object.keys(cost).forEach(prop => {
     if (typeof cost[prop] === 'number') {
       player[prop] -= cost[prop]
-    } else {
-      console.warn(`Cost for ${prop} is not a number:`, cost[prop])
     }
   })
 }
@@ -47,7 +41,6 @@ export function payCost(player, cost) {
 export function canAfford(player, cost) {
   // Validate inputs
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    console.error('Invalid arguments provided to canAfford.')
     return false
   }
 

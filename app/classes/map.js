@@ -10,7 +10,7 @@ import {
   colors,
   updateInstanceVisibility,
 } from '../lib'
-import { CELL_DEPTH, FAMILY_TYPES } from '../constants'
+import { BUILDING_TYPES, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { Cell } from './cell'
 
 /**
@@ -40,7 +40,7 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.noAI = true
 
-    this.devMode = false
+    this.devMode = true
     this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 
@@ -299,9 +299,14 @@ export default class Map extends Container {
     // Place a town center
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
-      const towncenter = player.spawnBuilding({ i: player.i, j: player.j, type: 'TownCenter', isBuilt: true })
+      const towncenter = player.spawnBuilding({
+        i: player.i,
+        j: player.j,
+        type: BUILDING_TYPES.townCenter,
+        isBuilt: true,
+      })
       for (let i = 0; i < this.startingUnits; i++) {
-        towncenter.placeUnit('Villager')
+        towncenter.placeUnit(UNIT_TYPES.villager)
       }
     }
   }
@@ -507,26 +512,29 @@ export default class Map extends Container {
       ) {
         let isFree = true
         getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
-          if (['Berrybush', 'Gold', 'Stone'].includes(cell.has?.type)) {
+          if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(cell.has?.type)) {
             isFree = false
           }
         })
-        isFree && this.resources.push(this.addChild(new Resource({ i: cell.i, j: cell.j, type: 'Tree' }, this.context)))
+        isFree &&
+          this.resources.push(
+            this.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.context))
+          )
       }
     }
   }
 
   generateResourcesAroundPlayers(playersPos) {
     for (let i = 0; i < playersPos.length; i++) {
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 14])
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [14, 22])
-      this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [7, 14])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [14, 22])
-      this.placeResourceGroup(playersPos[i], 'Stone', 7, [22, 29])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [7, 14])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [14, 22])
-      this.placeResourceGroup(playersPos[i], 'Gold', 7, [22, 29])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [7, 14])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [14, 22])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [22, 29])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [14, 22])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [22, 29])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [7, 14])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [14, 22])
+      this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [22, 29])
       this.generateForestAroundPlayer(playersPos[i], this.size * 4)
     }
   }
@@ -686,7 +694,7 @@ export default class Map extends Container {
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
             const floor = Sprite.from(texture)
-            floor.label = 'floor'
+            floor.label = LABEL_TYPES.floor
             floor.roundPixels = true
             floor.allowMove = false
             floor.eventMode = 'none'
@@ -703,7 +711,7 @@ export default class Map extends Container {
                   const spritesheet = Assets.cache.get(randomSpritesheet)
                   const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
                   const rock = Sprite.from(texture)
-                  rock.label = 'set'
+                  rock.label = LABEL_TYPES.set
                   rock.roundPixels = true
                   rock.allowMove = false
                   rock.eventMode = 'none'
@@ -718,7 +726,7 @@ export default class Map extends Container {
                   break
               }
             } else {
-              this.resources.push(this.addChild(new Resource({ i, j, type: 'Salmon' }, this.context)))
+              this.resources.push(this.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.context)))
             }
           }
         }
@@ -1068,7 +1076,7 @@ export default class Map extends Container {
             const cell = grid[newI][newJ]
             let isFree = true
             getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
-              if (['Berrybush', 'Gold', 'Stone'].includes(cell.has?.type)) {
+              if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(cell.has?.type)) {
                 isFree = false
               }
             })

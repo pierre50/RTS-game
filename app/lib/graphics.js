@@ -1,6 +1,6 @@
 import { Graphics } from 'pixi.js'
 import { Texture } from 'pixi.js'
-import { COLOR_FLASHY_GREEN } from '../constants'
+import { COLOR_FLASHY_GREEN, LABEL_TYPES } from '../constants'
 import { MultiColorReplaceFilter } from 'pixi-filters'
 
 export function getIconPath(name) {
@@ -215,7 +215,7 @@ export function changeSpriteColor(sprite, color) {
  */
 export function drawInstanceBlinkingSelection(instance) {
   const selection = new Graphics()
-  selection.label = 'selection'
+  selection.label = LABEL_TYPES.selection
   selection.zIndex = 3
 
   // Define the path for the selection

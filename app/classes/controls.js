@@ -10,7 +10,16 @@ import {
   getTexture,
   randomItem,
 } from '../lib'
-import { COLOR_WHITE, COLOR_RED, CELL_WIDTH, CELL_HEIGHT, MAX_SELECT_UNITS, ACCELERATOR } from '../constants'
+import {
+  COLOR_WHITE,
+  COLOR_RED,
+  CELL_WIDTH,
+  CELL_HEIGHT,
+  MAX_SELECT_UNITS,
+  ACCELERATOR,
+  LABEL_TYPES,
+  UNIT_TYPES,
+} from '../constants'
 
 export default class Controls extends Container {
   constructor(context) {
@@ -251,8 +260,8 @@ export default class Controls extends Container {
           })
         }
         // Color image of mouse building depend on buildable or not
-        const sprite = this.mouseBuilding.getChildByLabel('sprite')
-        const color = this.mouseBuilding.getChildByLabel('color')
+        const sprite = this.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
+        const color = this.mouseBuilding.getChildByLabel(LABEL_TYPES.color)
         if (isFree) {
           sprite.tint = COLOR_WHITE
           if (color) {
@@ -337,7 +346,7 @@ export default class Controls extends Container {
         ) {
           unit.select()
           countSelect++
-          if (unit.type === 'Villager') {
+          if (unit.type === UNIT_TYPES.villager) {
             selectVillager = unit
           }
           player.selectedUnits.push(unit)
@@ -425,7 +434,7 @@ export default class Controls extends Container {
       const distCenterY = unit.j - centerY
       const finalX = cell.i + distCenterX
       const finalY = cell.j + distCenterY
-      if (unit.type === 'Villager') {
+      if (unit.type === UNIT_TYPES.villager) {
         hasSentVillager = true
       } else {
         hasSentSoldier = true
@@ -463,17 +472,17 @@ export default class Controls extends Container {
     } = this
     this.mouseBuilding = new Container()
     const sprite = Sprite.from(getTexture(building.images.final, Assets))
-    sprite.label = 'sprite'
+    sprite.label = LABEL_TYPES.sprite
     this.mouseBuilding.addChild(sprite)
     Object.keys(building).forEach(prop => {
       this.mouseBuilding[prop] = building[prop]
     })
     this.mouseBuilding.x = this.mouse.x
     this.mouseBuilding.y = this.mouse.y
-    this.mouseBuilding.label = 'mouseBuilding'
+    this.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     if (building.images.color) {
       const color = Sprite.from(getTexture(building.images.color, Assets))
-      color.label = 'color'
+      color.label = LABEL_TYPES.color
       changeSpriteColor(color, player.color)
       this.mouseBuilding.addChild(color)
     } else {

@@ -1,4 +1,4 @@
-import { ACCELERATOR, FAMILY_TYPES } from '../constants'
+import { ACCELERATOR, FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
 import * as exports from './maths'
 Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
 
@@ -279,13 +279,14 @@ export function findInstancesInSight(instance, condition) {
  * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
 export function updateInstanceVisibility(instance) {
-  const { i: cx, j: cy, sight, owner } = instance
-  const map = instance.context.map
+  const { i: cx, j: cy, sight, owner, context, isDead, visibleCells } = instance
+  const map = context.map
+  const player = context.player
   const sightSq = sight * sight
   const newVisible = new Set()
 
   // Collect all cells within sight
-  if (!instance.isDead) {
+  if (!isDead) {
     getPlainCellsAroundPoint(cx, cy, owner.views, sight, cell => {
       const dx = cell.i - cx
       const dy = cell.j - cy
@@ -295,22 +296,24 @@ export function updateInstanceVisibility(instance) {
     })
   }
 
-  const prevVisible = instance.visibleCells || new Set()
+  const prevVisible = visibleCells || new Set()
 
   // Hide cells that left sight
   for (let cell of prevVisible) {
     if (!newVisible.has(cell)) {
+      const playerCell = player.views[cell.i][cell.j]
+      const globalCell = map.grid[cell.i][cell.j]
+      const globalIdx = globalCell.viewBy.indexOf(instance)
       const idx = cell.viewBy.indexOf(instance)
+      if (globalIdx !== -1) {
+        globalCell.viewBy.splice(globalIdx, 1)
+      }
       if (idx !== -1) {
         cell.viewBy.splice(idx, 1)
       }
 
-      if (!cell.viewBy.length && owner.isPlayed && !map.revealEverything) {
-        map.grid[cell.i][cell.j].setFog()
-      }
-
-      if (cell.has) {
-        cell.has.visible = false
+      if (!playerCell.viewBy.length && !map.revealEverything) {
+        globalCell.setFog()
       }
     }
   }
@@ -318,23 +321,29 @@ export function updateInstanceVisibility(instance) {
   // Show new cells
   for (let cell of newVisible) {
     if (!prevVisible.has(cell)) {
-      cell.visible = true
+      const globalCell = map.grid[cell.i][cell.j]
+
+      globalCell.updateVisible()
+      if (!globalCell.viewBy.includes(instance)) {
+        globalCell.viewBy.push(instance)
+      }
       if (!cell.viewBy.includes(instance)) {
         cell.viewBy.push(instance)
       }
-
       if (!cell.viewed) {
         owner.cellViewed++
         cell.onViewed?.()
         cell.viewed = true
       }
 
-      if (owner.isPlayed && !map.revealEverything) {
-        map.grid[cell.i][cell.j].removeFog()
+      if (!map.revealEverything && owner.isPlayed) {
+        globalCell.removeFog()
+      } else if (owner.type === PLAYER_TYPES.ai) {
+        // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
+        updateAIKnowledge(globalCell, cell, instance)
       }
 
       // Optional: detect other instances in sight
-      const globalCell = map.grid[cell.i][cell.j]
       if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
         if (distSq <= globalCell.has.sight ** 2) {
@@ -362,13 +371,17 @@ function updateAIKnowledge(globalCell, cell, instance) {
     cell.has = globalCell.has
 
     // Detect tree resources and update AI's knowledge
-    if (globalCell.has.type === 'Tree' && globalCell.has.quantity > 0 && !owner.foundedTrees.includes(globalCell.has)) {
+    if (
+      globalCell.has.type === RESOURCE_TYPES.tree &&
+      globalCell.has.quantity > 0 &&
+      !owner.foundedTrees.includes(globalCell.has)
+    ) {
       owner.foundedTrees.push(globalCell.has)
     }
 
     // Detect berrybush resources and update AI's knowledge
     if (
-      globalCell.has.type === 'Berrybush' &&
+      globalCell.has.type === RESOURCE_TYPES.berrybush &&
       globalCell.has.quantity > 0 &&
       !owner.foundedBerrybushs.includes(globalCell.has)
     ) {

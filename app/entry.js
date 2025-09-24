@@ -35,9 +35,4 @@ import Loader from './screens/Loader'
   const game = new Game(app, gamebox)
   app.stage.removeChild(loader)
   app.stage.addChild(game)
-
-  // Optional: global pointermove listener
-  app.stage.on('pointermove', event => {
-    // event.data.global.x, event.data.global.y
-  })
 })()

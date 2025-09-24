@@ -1,4 +1,4 @@
-import { PLAYER_TYPES } from '../../constants'
+import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { Player } from './player'
 
 export class Human extends Player {
@@ -27,7 +27,7 @@ export class Human extends Player {
     let nextVillager
     if (this.selectedUnit === unit) {
       for (let i = 0; i < this.selectedUnits.length; i++) {
-        if (this.selectedUnits[i].type === 'Villager') {
+        if (this.selectedUnits[i].type === UNIT_TYPES.villager) {
           nextVillager = this.selectedUnits[i].type
           break
         }
