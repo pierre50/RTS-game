@@ -90,11 +90,65 @@ var ACCELERATOR = 1.5;
 var STEP_TIME = 20;
 var IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600;
 var LONG_CLICK_DURATION = 200;
+var RESOURCE_TYPES = {
+  tree: 'Tree',
+  berrybush: 'Berrybush',
+  stone: 'Stone',
+  gold: 'Gold',
+  salmon: 'Salmon'
+};
+var BUILDING_TYPES = {
+  house: 'House',
+  dock: 'Dock',
+  townCenter: 'TownCenter',
+  farm: 'Farm',
+  storagePit: 'StoragePit',
+  granary: 'Granary',
+  barracks: 'Barracks',
+  market: 'Market'
+};
+var UNIT_TYPES = {
+  villager: 'Villager',
+  priest: 'Priest',
+  clubman: 'Clubman'
+};
+var MENU_INFO_IDS = {
+  loading: 'loading',
+  hitPoints: 'hit-points',
+  population: 'population',
+  populationText: 'population-text',
+  quantity: 'quantity',
+  quantityText: 'quantity-text',
+  loadingText: 'loading-text',
+  type: 'type',
+  civ: 'civ',
+  icon: 'icon'
+};
+var LABEL_TYPES = {
+  sprite: 'sprite',
+  color: 'color',
+  deco: 'deco',
+  fire: 'fire',
+  selection: 'selection',
+  buildingFog: 'building',
+  mouseBuilding: 'mouseBuilding',
+  floor: 'floor',
+  set: 'set'
+};
+var SHEET_TYPES = {
+  walking: 'walkingSheet',
+  action: 'actionSheet',
+  standing: 'standingSheet',
+  corpse: 'corpseSheet',
+  dying: 'dyingSheet',
+  harvest: 'harvestSheet'
+};
 var PLAYER_TYPES = {
   human: 'Human',
-  ai: 'AI'
+  ai: 'AI',
+  gaia: 'Gaia'
 };
-var constants_FAMILY_TYPES = {
+var FAMILY_TYPES = {
   animal: 'animal',
   building: 'building',
   cell: 'cell',
@@ -115,7 +169,7 @@ var WORK_TYPES = {
   attacker: 'attacker',
   healer: 'healer'
 };
-var constants_ACTION_TYPES = {
+var ACTION_TYPES = {
   delivery: 'delivery',
   takemeat: 'takemeat',
   hunt: 'hunt',
@@ -126,7 +180,8 @@ var constants_ACTION_TYPES = {
   forageberry: 'forageberry',
   minegold: 'minegold',
   minestone: 'minestone',
-  chopwood: 'chopwood'
+  chopwood: 'chopwood',
+  heal: 'heal'
 };
 var LOADING_TYPES = {
   meat: 'meat',
@@ -155,11 +210,11 @@ var COLOR_FOG = 0x999999;
 var COLOR_FLASHY_GREEN = 0x00ff00;
 var COLOR_ARROW = 0xe8e3df;
 var TYPE_ACTION = {
-  Stone: constants_ACTION_TYPES.minestone,
-  Gold: constants_ACTION_TYPES.minegold,
-  Berrybush: constants_ACTION_TYPES.forageberry,
-  Tree: constants_ACTION_TYPES.chopwood,
-  Fish: constants_ACTION_TYPES.fishing
+  Stone: ACTION_TYPES.minestone,
+  Gold: ACTION_TYPES.minegold,
+  Berrybush: ACTION_TYPES.forageberry,
+  Tree: ACTION_TYPES.chopwood,
+  Fish: ACTION_TYPES.fishing
 };
 var CORPSE_TIME = 120;
 var RUBBLE_TIME = 120;
@@ -369,7 +424,7 @@ function changeSpriteColor(sprite, color) {
  */
 function drawInstanceBlinkingSelection(instance) {
   var selection = new lib/* Graphics */.A1g();
-  selection.label = 'selection';
+  selection.label = LABEL_TYPES.selection;
   selection.zIndex = 3;
 
   // Define the path for the selection
@@ -490,14 +545,11 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
  */
 function refundCost(player, cost) {
   if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    console.error('Invalid arguments provided to refundCost.');
     return;
   }
   Object.keys(cost).forEach(function (prop) {
     if (typeof cost[prop] === 'number') {
       player[prop] += cost[prop];
-    } else {
-      console.warn("Cost for ".concat(prop, " is not a number:"), cost[prop]);
     }
   });
 }
@@ -509,14 +561,11 @@ function refundCost(player, cost) {
  */
 function payCost(player, cost) {
   if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    console.error('Invalid arguments provided to payCost.');
     return;
   }
   Object.keys(cost).forEach(function (prop) {
     if (typeof cost[prop] === 'number') {
       player[prop] -= cost[prop];
-    } else {
-      console.warn("Cost for ".concat(prop, " is not a number:"), cost[prop]);
     }
   });
 }
@@ -530,7 +579,6 @@ function payCost(player, cost) {
 function canAfford(player, cost) {
   // Validate inputs
   if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    console.error('Invalid arguments provided to canAfford.');
     return false;
   }
 
@@ -1092,13 +1140,17 @@ function updateInstanceVisibility(instance) {
   var cx = instance.i,
     cy = instance.j,
     sight = instance.sight,
-    owner = instance.owner;
-  var map = instance.context.map;
+    owner = instance.owner,
+    context = instance.context,
+    isDead = instance.isDead,
+    visibleCells = instance.visibleCells;
+  var map = context.map;
+  var player = context.player;
   var sightSq = sight * sight;
   var newVisible = new Set();
 
   // Collect all cells within sight
-  if (!instance.isDead) {
+  if (!isDead) {
     getPlainCellsAroundPoint(cx, cy, owner.views, sight, function (cell) {
       var dx = cell.i - cx;
       var dy = cell.j - cy;
@@ -1107,7 +1159,7 @@ function updateInstanceVisibility(instance) {
       }
     });
   }
-  var prevVisible = instance.visibleCells || new Set();
+  var prevVisible = visibleCells || new Set();
 
   // Hide cells that left sight
   var _iterator2 = _createForOfIteratorHelper(prevVisible),
@@ -1116,15 +1168,18 @@ function updateInstanceVisibility(instance) {
     for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
       var cell = _step2.value;
       if (!newVisible.has(cell)) {
+        var playerCell = player.views[cell.i][cell.j];
+        var globalCell = map.grid[cell.i][cell.j];
+        var globalIdx = globalCell.viewBy.indexOf(instance);
         var idx = cell.viewBy.indexOf(instance);
+        if (globalIdx !== -1) {
+          globalCell.viewBy.splice(globalIdx, 1);
+        }
         if (idx !== -1) {
           cell.viewBy.splice(idx, 1);
         }
-        if (!cell.viewBy.length && owner.isPlayed && !map.revealEverything) {
-          map.grid[cell.i][cell.j].setFog();
-        }
-        if (cell.has) {
-          cell.has.visible = false;
+        if (!playerCell.viewBy.length && !map.revealEverything) {
+          globalCell.setFog();
         }
       }
     }
@@ -1141,7 +1196,11 @@ function updateInstanceVisibility(instance) {
     for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
       var _cell = _step3.value;
       if (!prevVisible.has(_cell)) {
-        _cell.visible = true;
+        var _globalCell = map.grid[_cell.i][_cell.j];
+        _globalCell.updateVisible();
+        if (!_globalCell.viewBy.includes(instance)) {
+          _globalCell.viewBy.push(instance);
+        }
         if (!_cell.viewBy.includes(instance)) {
           _cell.viewBy.push(instance);
         }
@@ -1151,16 +1210,18 @@ function updateInstanceVisibility(instance) {
           (_cell$onViewed = _cell.onViewed) === null || _cell$onViewed === void 0 || _cell$onViewed.call(_cell);
           _cell.viewed = true;
         }
-        if (owner.isPlayed && !map.revealEverything) {
-          map.grid[_cell.i][_cell.j].removeFog();
+        if (!map.revealEverything && owner.isPlayed) {
+          _globalCell.removeFog();
+        } else if (owner.type === PLAYER_TYPES.ai) {
+          // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
+          updateAIKnowledge(_globalCell, _cell, instance);
         }
 
         // Optional: detect other instances in sight
-        var globalCell = map.grid[_cell.i][_cell.j];
-        if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
-          var distSq = Math.pow(cx - globalCell.has.i, 2) + Math.pow(cy - globalCell.has.j, 2);
-          if (distSq <= Math.pow(globalCell.has.sight, 2)) {
-            globalCell.has.detect(instance);
+        if (_globalCell.has && _globalCell.has.sight && typeof _globalCell.has.detect === 'function') {
+          var distSq = Math.pow(cx - _globalCell.has.i, 2) + Math.pow(cy - _globalCell.has.j, 2);
+          if (distSq <= Math.pow(_globalCell.has.sight, 2)) {
+            _globalCell.has.detect(instance);
           }
         }
       }
@@ -1188,12 +1249,12 @@ function updateAIKnowledge(globalCell, cell, instance) {
     cell.has = globalCell.has;
 
     // Detect tree resources and update AI's knowledge
-    if (globalCell.has.type === 'Tree' && globalCell.has.quantity > 0 && !owner.foundedTrees.includes(globalCell.has)) {
+    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0 && !owner.foundedTrees.includes(globalCell.has)) {
       owner.foundedTrees.push(globalCell.has);
     }
 
     // Detect berrybush resources and update AI's knowledge
-    if (globalCell.has.type === 'Berrybush' && globalCell.has.quantity > 0 && !owner.foundedBerrybushs.includes(globalCell.has)) {
+    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0 && !owner.foundedBerrybushs.includes(globalCell.has)) {
       owner.foundedBerrybushs.push(globalCell.has);
     }
 
@@ -1511,15 +1572,15 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
   if (paused) {
     return;
   }
-  var sheetToReset = ['actionSheet', 'dyingSheet', 'corpseSheet'];
+  var sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse];
   // Sheet don't exist we just block the current sheet
   if (!instance[sheet]) {
-    if (instance.currentSheet !== 'walkingSheet' && instance.walkingSheet) {
+    if (instance.currentSheet !== SHEET_TYPES.walking && instance.walkingSheet) {
       instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]];
     } else {
       instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]];
     }
-    instance.currentSheet = 'walkingSheet';
+    instance.currentSheet = SHEET_TYPES.walking;
     instance.sprite.stop();
     instance.sprite.anchor.set(instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.x, instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.y);
     return;
@@ -1873,41 +1934,41 @@ var extra_getActionCondition = function getActionCondition(source, target, actio
       return source.loading > 0 && target.hitPoints > 0 && target.isBuilt && (!props || props.buildingTypes.includes(target.type));
     },
     takemeat: function takemeat() {
-      return source.type === 'Villager' && target.family === constants_FAMILY_TYPES.animal && target.quantity > 0 && target.isDead && !target.isDestroyed;
+      return source.type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.animal && target.quantity > 0 && target.isDead && !target.isDestroyed;
     },
     fishing: function fishing() {
       return target.category === 'Fish' && target.allowAction.includes(source.type) && target.quantity > 0 && !target.isDestroyed;
     },
     hunt: function hunt() {
-      return source.type === 'Villager' && target.family === constants_FAMILY_TYPES.animal && target.quantity > 0 && target.hitPoints > 0 && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.animal && target.quantity > 0 && target.hitPoints > 0 && !target.isDead;
     },
     chopwood: function chopwood() {
-      return source.type === 'Villager' && target.type === 'Tree' && target.quantity > 0 && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.type === RESOURCE_TYPES.tree && target.quantity > 0 && !target.isDead;
     },
     farm: function farm() {
       var _target$owner;
-      return source.type === 'Villager' && target.type === 'Farm' && target.hitPoints > 0 && ((_target$owner = target.owner) === null || _target$owner === void 0 ? void 0 : _target$owner.label) === source.owner.label && target.quantity > 0 && (!target.isUsedBy || target.isUsedBy === source) && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.type === BUILDING_TYPES.farm && target.hitPoints > 0 && ((_target$owner = target.owner) === null || _target$owner === void 0 ? void 0 : _target$owner.label) === source.owner.label && target.quantity > 0 && (!target.isUsedBy || target.isUsedBy === source) && !target.isDead;
     },
     forageberry: function forageberry() {
-      return source.type === 'Villager' && target.type === 'Berrybush' && target.quantity > 0 && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.type === RESOURCE_TYPES.berrybush && target.quantity > 0 && !target.isDead;
     },
     minestone: function minestone() {
-      return source.type === 'Villager' && target.type === 'Stone' && target.quantity > 0 && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.type === RESOURCE_TYPES.stone && target.quantity > 0 && !target.isDead;
     },
     minegold: function minegold() {
-      return source.type === 'Villager' && target.type === 'Gold' && target.quantity > 0 && !target.isDead;
+      return source.type === UNIT_TYPES.villager && target.type === RESOURCE_TYPES.gold && target.quantity > 0 && !target.isDead;
     },
     build: function build() {
       var _target$owner2;
-      return source.type === 'Villager' && ((_target$owner2 = target.owner) === null || _target$owner2 === void 0 ? void 0 : _target$owner2.label) === source.owner.label && target.family === constants_FAMILY_TYPES.building && target.hitPoints > 0 && (!target.isBuilt || target.hitPoints < target.totalHitPoints) && !target.isDead;
+      return source.type === UNIT_TYPES.villager && ((_target$owner2 = target.owner) === null || _target$owner2 === void 0 ? void 0 : _target$owner2.label) === source.owner.label && target.family === FAMILY_TYPES.building && target.hitPoints > 0 && (!target.isBuilt || target.hitPoints < target.totalHitPoints) && !target.isDead;
     },
     attack: function attack() {
       var _target$owner3;
-      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) !== source.owner.label && [constants_FAMILY_TYPES.building, constants_FAMILY_TYPES.unit, constants_FAMILY_TYPES.animal].includes(target.family) && target.hitPoints > 0 && !target.isDead;
+      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) !== source.owner.label && [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) && target.hitPoints > 0 && !target.isDead;
     },
     heal: function heal() {
       var _target$owner4;
-      return target && ((_target$owner4 = target.owner) === null || _target$owner4 === void 0 ? void 0 : _target$owner4.label) === source.owner.label && target.family === constants_FAMILY_TYPES.unit && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
+      return target && ((_target$owner4 = target.owner) === null || _target$owner4 === void 0 ? void 0 : _target$owner4.label) === source.owner.label && target.family === FAMILY_TYPES.unit && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
     }
   };
   return target && target !== source && source.hitPoints > 0 && !source.isDead && conditions[action](props);
@@ -1946,7 +2007,7 @@ var Resource = /*#__PURE__*/function (_Container) {
     var _this2 = _this,
       map = _this2.context.map;
     _this.label = uuidv4();
-    _this.family = constants_FAMILY_TYPES.resource;
+    _this.family = FAMILY_TYPES.resource;
     _this.selected = false;
     _this.isDead = false;
     _this.isDestroyed = false;
@@ -1994,7 +2055,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       _this.sprite.hitArea = spritesheet.data.frames[textureFile].hitArea && new lib/* Polygon */.tS(spritesheet.data.frames[textureFile].hitArea);
     }
     _this.sprite.updateAnchor = true;
-    _this.sprite.label = 'sprite';
+    _this.sprite.label = LABEL_TYPES.sprite;
     if (_this.sprite) {
       _this.sprite.allowMove = false;
       _this.sprite.eventMode = 'static';
@@ -2059,7 +2120,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       }
       this.selected = true;
       var selection = new lib/* Graphics */.A1g();
-      selection.label = 'selection';
+      selection.label = LABEL_TYPES.selection;
       selection.zIndex = 3;
       var path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size];
       selection.poly(path);
@@ -2073,7 +2134,7 @@ var Resource = /*#__PURE__*/function (_Container) {
         return;
       }
       this.selected = false;
-      var selection = this.getChildByLabel('selection');
+      var selection = this.getChildByLabel(LABEL_TYPES.selection);
       if (selection) {
         this.removeChild(selection);
       }
@@ -2109,7 +2170,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       }
       menu.updateResourcesMiniMap();
       this.isDead = true;
-      if (this.type === 'Tree' && !immediate) {
+      if (this.type === RESOURCE_TYPES.tree && !immediate) {
         this.onTreeDie();
       } else {
         this.clear();
@@ -2169,36 +2230,36 @@ var Resource = /*#__PURE__*/function (_Container) {
     value: function setDefaultInterface(element, data) {
       var menu = this.context.menu;
       var typeDiv = document.createElement('div');
-      typeDiv.id = 'type';
+      typeDiv.id = MENU_INFO_IDS.type;
       typeDiv.textContent = this.type;
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
-      iconImg.id = 'icon';
+      iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
       if (this.hitPoints) {
         var hitPointsDiv = document.createElement('div');
-        hitPointsDiv.id = 'hitPoints';
+        hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
         hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
         element.appendChild(hitPointsDiv);
       }
       if (this.quantity) {
         var quantityDiv = document.createElement('div');
-        quantityDiv.id = 'quantity';
+        quantityDiv.id = MENU_INFO_IDS.quantity;
         quantityDiv.className = 'resource-quantity';
         var iconToUse;
         switch (this.type) {
-          case 'Tree':
+          case RESOURCE_TYPES.tree:
             iconToUse = menu.infoIcons['wood'];
             break;
-          case 'Salmon':
-          case 'Berrybush':
+          case RESOURCE_TYPES.salmon:
+          case RESOURCE_TYPES.berrybush:
             iconToUse = menu.infoIcons['food'];
             break;
-          case 'Stone':
+          case RESOURCE_TYPES.stone:
             iconToUse = menu.infoIcons['stone'];
             break;
-          case 'Gold':
+          case RESOURCE_TYPES.gold:
             iconToUse = menu.infoIcons['gold'];
             break;
         }
@@ -2206,7 +2267,7 @@ var Resource = /*#__PURE__*/function (_Container) {
         smallIconImg.src = iconToUse;
         smallIconImg.className = 'resource-quantity-icon';
         var textDiv = document.createElement('div');
-        textDiv.id = 'quantity-text';
+        textDiv.id = MENU_INFO_IDS.quantityText;
         textDiv.textContent = this.quantity;
         quantityDiv.appendChild(smallIconImg);
         quantityDiv.appendChild(textDiv);
@@ -2240,7 +2301,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     _this = projectile_callSuper(this, Projectile);
     _this.context = context;
     _this.label = uuidv4();
-    _this.family = constants_FAMILY_TYPES.projectile;
+    _this.family = FAMILY_TYPES.projectile;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
@@ -2259,7 +2320,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     sprite.rect(1, 1, _this.size, 1);
     sprite.fill(COLOR_ARROW);
     sprite.rotation = degreesToRadians(degree);
-    sprite.label = 'sprite';
+    sprite.label = LABEL_TYPES.sprite;
     sprite.allowMove = false;
     sprite.eventMode = 'none';
     sprite.allowClick = false;
@@ -2287,7 +2348,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
         player = _this$context.player;
       instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage);
       if (instance.selected && player.selectedOther === instance) {
-        menu.updateInfo('hitPoints', instance.hitPoints + '/' + instance.totalHitPoints);
+        menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints);
       }
       if (instance.hitPoints <= 0) {
         instance.die();
@@ -2349,7 +2410,7 @@ var Building = /*#__PURE__*/function (_Container) {
     var map = context.map,
       controls = context.controls;
     _this.label = uuidv4();
-    _this.family = constants_FAMILY_TYPES.building;
+    _this.family = FAMILY_TYPES.building;
     _this.selected = false;
     _this.queue = [];
     _this.technology = null;
@@ -2379,15 +2440,15 @@ var Building = /*#__PURE__*/function (_Container) {
     _this.zIndex = getInstanceZIndex(_this);
     _this.visible = map.revealEverything && controls.instanceInCamera(_this) ? true : false;
     var spriteSheet = getBuildingTextureNameWithSize(_this.size);
-    if (_this.type === 'House' && _this.owner.age === 0) {
+    if (_this.type === BUILDING_TYPES.house && _this.owner.age === 0) {
       spriteSheet = '000_489';
-    } else if (_this.type === 'Dock') {
+    } else if (_this.type === BUILDING_TYPES.dock) {
       spriteSheet = '000_356';
     }
     var texture = getTexture(spriteSheet, lib/* Assets */.sP);
     _this.sprite = lib/* Sprite */.kxk.from(texture);
     _this.sprite.updateAnchor = true;
-    _this.sprite.label = 'sprite';
+    _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.hitArea = texture.hitArea ? new lib/* Polygon */.tS(texture.hitArea) : new lib/* Polygon */.tS([-32 * _this.size, 0, 0, -16 * _this.size, 32 * _this.size, 0, 0, 16 * _this.size]);
     var units = (_this.units || []).map(function (key) {
       return context.menu.getUnitButton(key);
@@ -2401,11 +2462,11 @@ var Building = /*#__PURE__*/function (_Container) {
         _this.setDefaultInterface(element, assets);
         if (_this.displayPopulation && _this.owner.isPlayed && _this.isBuilt) {
           var populationDiv = document.createElement('div');
-          populationDiv.id = 'population';
+          populationDiv.id = MENU_INFO_IDS.population;
           var populationIcon = document.createElement('img');
           var populationSpan = document.createElement('span');
-          populationSpan.id = 'population-text';
-          populationSpan.textContent = _this.owner.population + '/' + Math.min(POPULATION_MAX, _this.owner.POPULATION_MAX);
+          populationSpan.id = MENU_INFO_IDS.populationText;
+          populationSpan.textContent = _this.owner.population + '/' + Math.min(POPULATION_MAX, _this.owner.population_max);
           populationIcon.src = getIconPath('004_50731');
           populationDiv.appendChild(populationIcon);
           populationDiv.appendChild(populationSpan);
@@ -2419,7 +2480,7 @@ var Building = /*#__PURE__*/function (_Container) {
     // Set solid zone
     var dist = _this.size === 3 ? 1 : 0;
     getPlainCellsAroundPoint(_this.i, _this.j, map.grid, dist, function (cell) {
-      var set = cell.getChildByLabel('set');
+      var set = cell.getChildByLabel(LABEL_TYPES.set);
       if (set) {
         cell.removeChild(set);
       }
@@ -2455,8 +2516,8 @@ var Building = /*#__PURE__*/function (_Container) {
           if (!_this.isBuilt) {
             for (var i = 0; i < player.selectedUnits.length; i++) {
               var unit = player.selectedUnits[i];
-              if (unit.type === 'Villager') {
-                if (extra_getActionCondition(unit, _this, constants_ACTION_TYPES.build)) {
+              if (unit.type === UNIT_TYPES.villager) {
+                if (extra_getActionCondition(unit, _this, ACTION_TYPES.build)) {
                   hasSentVillager = true;
                   unit.sendToBuilding(_this);
                 }
@@ -2481,20 +2542,20 @@ var Building = /*#__PURE__*/function (_Container) {
             // Send Villager to give loading of resources
             for (var _i = 0; _i < player.selectedUnits.length; _i++) {
               var _unit = player.selectedUnits[_i];
-              var accept = _unit.category === 'Boat' ? _this.type === 'Dock' : _this.type === 'TownCenter' || _this.accept && _this.accept.includes(_unit.loadingType);
-              if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.build)) {
+              var accept = _unit.category === 'Boat' ? _this.type === BUILDING_TYPES.dock : _this.type === BUILDING_TYPES.townCenter || _this.accept && _this.accept.includes(_unit.loadingType);
+              if (_unit.type === UNIT_TYPES.villager && extra_getActionCondition(_unit, _this, ACTION_TYPES.build)) {
                 hasSentVillager = true;
                 _unit.previousDest = null;
                 _unit.sendToBuilding(_this);
-              } else if (_unit.type === 'Villager' && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.farm)) {
+              } else if (_unit.type === UNIT_TYPES.villager && extra_getActionCondition(_unit, _this, ACTION_TYPES.farm)) {
                 hasSentVillager = true;
                 _unit.sendToFarm(_this);
-              } else if (accept && extra_getActionCondition(_unit, _this, constants_ACTION_TYPES.delivery, {
+              } else if (accept && extra_getActionCondition(_unit, _this, ACTION_TYPES.delivery, {
                 buildingTypes: [_this.type]
               })) {
                 hasSentVillager = true;
                 _unit.previousDest = null;
-                _unit.sendTo(_this, constants_ACTION_TYPES.delivery);
+                _unit.sendTo(_this, ACTION_TYPES.delivery);
               }
             }
             if (hasSentVillager) {
@@ -2516,10 +2577,10 @@ var Building = /*#__PURE__*/function (_Container) {
           drawInstanceBlinkingSelection(_this);
           for (var _i2 = 0; _i2 < player.selectedUnits.length; _i2++) {
             var playerUnit = player.selectedUnits[_i2];
-            if (playerUnit.type === 'Villager') {
+            if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(_this);
             } else {
-              playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
+              playerUnit.sendTo(_this, ACTION_TYPES.attack);
             }
           }
         } else if (instanceIsInPlayerSight(_this, player) || map.revealEverything) {
@@ -2547,7 +2608,7 @@ var Building = /*#__PURE__*/function (_Container) {
       var _this3 = this;
       var map = this.context.map;
       this.startAttackInterval(function () {
-        if (extra_getActionCondition(_this3, target, constants_ACTION_TYPES.attack) && maths_instancesDistance(_this3, target) <= _this3.range) {
+        if (extra_getActionCondition(_this3, target, ACTION_TYPES.attack) && maths_instancesDistance(_this3, target) <= _this3.range) {
           if (target.hitPoints <= 0) {
             target.die();
           } else {
@@ -2642,10 +2703,10 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.isDead) {
         return;
       }
-      if (this.range && extra_getActionCondition(this, instance, constants_ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
-      this.updateHitPoints(constants_ACTION_TYPES.attack);
+      this.updateHitPoints(ACTION_TYPES.attack);
     }
   }, {
     key: "updateTexture",
@@ -2687,10 +2748,10 @@ var Building = /*#__PURE__*/function (_Container) {
       var menu = this.context.menu;
       if (this.increasePopulation) {
         // Increase player population and continue all unit creation that was paused
-        this.owner.POPULATION_MAX += this.increasePopulation;
-        // Update bottombar with POPULATION_MAX if house selected
+        this.owner.population_max += this.increasePopulation;
+        // Update bottombar with population_max if house selected
         if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-          menu.updateInfo('population-text', this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX));
+          menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
         }
       }
       if (this.owner.isPlayed && this.selected) {
@@ -2705,23 +2766,23 @@ var Building = /*#__PURE__*/function (_Container) {
       this.sprite.texture = texture;
       this.sprite.hitArea = texture.hitArea ? new lib/* Polygon */.tS(texture.hitArea) : new lib/* Polygon */.tS([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]);
       this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
-      var color = this.getChildByLabel('color');
+      var color = this.getChildByLabel(LABEL_TYPES.color);
       if (color) {
         color.destroy();
       }
       if (assets.images.color) {
         var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
-        spriteColor.label = 'color';
+        spriteColor.label = LABEL_TYPES.color;
         changeSpriteColorDirectly(spriteColor, this.owner.color);
         this.addChild(spriteColor);
       } else {
         changeSpriteColorDirectly(this.sprite, this.owner.color);
       }
-      if (this.type === 'House') {
+      if (this.type === BUILDING_TYPES.house) {
         if (this.owner.age === 0) {
           var spritesheetFire = lib/* Assets */.sP.cache.get('347');
           var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
-          spriteFire.label = 'deco';
+          spriteFire.label = LABEL_TYPES.deco;
           spriteFire.allowMove = false;
           spriteFire.allowClick = false;
           spriteFire.eventMode = 'none';
@@ -2732,7 +2793,7 @@ var Building = /*#__PURE__*/function (_Container) {
           spriteFire.animationSpeed = 0.2 * ACCELERATOR;
           this.addChild(spriteFire);
         } else {
-          var fire = this.getChildByLabel('deco');
+          var fire = this.getChildByLabel(LABEL_TYPES.deco);
           if (fire) {
             fire.destroy();
           }
@@ -2742,7 +2803,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.range && instance.family !== constants_FAMILY_TYPES.animal && !this.attackInterval && extra_getActionCondition(this, instance, constants_ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && instance.family !== FAMILY_TYPES.animal && !this.attackInterval && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
     }
@@ -2756,9 +2817,9 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.hitPoints <= 0) {
         this.die();
       }
-      if (action === constants_ACTION_TYPES.build && !this.isBuilt) {
+      if (action === ACTION_TYPES.build && !this.isBuilt) {
         this.updateTexture();
-      } else if (action === constants_ACTION_TYPES.attack && this.isBuilt || action === constants_ACTION_TYPES.build && this.isBuilt) {
+      } else if (action === ACTION_TYPES.attack && this.isBuilt || action === ACTION_TYPES.build && this.isBuilt) {
         if (percentage > 0 && percentage < 25) {
           generateFire(this, '450');
         }
@@ -2769,14 +2830,14 @@ var Building = /*#__PURE__*/function (_Container) {
           generateFire(this, '347');
         }
         if (percentage >= 75) {
-          var fire = this.getChildByLabel('fire');
+          var fire = this.getChildByLabel(LABEL_TYPES.fire);
           if (fire) {
             this.removeChild(fire);
           }
         }
       }
       function generateFire(building, spriteId) {
-        var fire = building.getChildByLabel('fire');
+        var fire = building.getChildByLabel(LABEL_TYPES.fire);
         var spritesheetFire = lib/* Assets */.sP.cache.get(spriteId);
         if (fire) {
           for (var i = 0; i < fire.children.length; i++) {
@@ -2785,7 +2846,7 @@ var Building = /*#__PURE__*/function (_Container) {
           }
         } else {
           var newFire = new lib/* Container */.mcf();
-          newFire.label = 'fire';
+          newFire.label = LABEL_TYPES.fire;
           newFire.allowMove = false;
           newFire.allowClick = false;
           newFire.eventMode = 'none';
@@ -2839,14 +2900,14 @@ var Building = /*#__PURE__*/function (_Container) {
           list.splice(list.indexOf(this), 1);
         }
       }
-      var color = this.getChildByLabel('color');
+      var color = this.getChildByLabel(LABEL_TYPES.color);
       color && color.destroy();
-      var deco = this.getChildByLabel('deco');
+      var deco = this.getChildByLabel(LABEL_TYPES.deco);
       deco && deco.destroy();
-      var fire = this.getChildByLabel('fire');
+      var fire = this.getChildByLabel(LABEL_TYPES.fire);
       fire && fire.destroy();
       var rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, lib/* Assets */.sP);
-      if (this.type === 'Farm') {
+      if (this.type === BUILDING_TYPES.farm) {
         rubbleSheet = '000_239';
       }
       this.sprite.texture = getTexture(rubbleSheet, lib/* Assets */.sP);
@@ -2854,7 +2915,7 @@ var Building = /*#__PURE__*/function (_Container) {
       this.sprite.eventMode = 'none';
       this.sprite.allowClick = false;
       this.zIndex--;
-      if (this.type === 'Farm') {
+      if (this.type === BUILDING_TYPES.farm) {
         changeSpriteColorDirectly(this.sprite, this.owner.color);
       }
       // Remove solid zone
@@ -2907,7 +2968,7 @@ var Building = /*#__PURE__*/function (_Container) {
       }
       this.selected = true;
       var selection = new lib/* Graphics */.A1g();
-      selection.label = 'selection';
+      selection.label = LABEL_TYPES.selection;
       selection.zIndex = 3;
       var path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size];
       selection.poly(path);
@@ -2928,7 +2989,7 @@ var Building = /*#__PURE__*/function (_Container) {
         menu = _this$context3.menu,
         player = _this$context3.player;
       this.selected = false;
-      var selection = this.getChildByLabel('selection');
+      var selection = this.getChildByLabel(LABEL_TYPES.selection);
       if (selection) {
         this.removeChild(selection);
       }
@@ -2962,7 +3023,7 @@ var Building = /*#__PURE__*/function (_Container) {
         type: type
       }, extra));
       if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-        menu.updateInfo('population-text', this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX));
+        menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
       }
     }
   }, {
@@ -3041,7 +3102,7 @@ var Building = /*#__PURE__*/function (_Container) {
                 _this8.updateInterfaceLoading();
               }
             } else if (_this8.loading < 100) {
-              if (_this8.owner.population < Math.min(POPULATION_MAX, _this8.owner.POPULATION_MAX)) {
+              if (_this8.owner.population < Math.min(POPULATION_MAX, _this8.owner.population_max)) {
                 _this8.loading += 1;
               } else if (_this8.owner.isPlayed && !hasShowedMessage) {
                 menu.showMessage('You need to build more houses');
@@ -3063,13 +3124,13 @@ var Building = /*#__PURE__*/function (_Container) {
       var menu = this.context.menu;
       if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
         if (this.loading === 1) {
-          menu.updateInfo('loading', function (element) {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
             return element.innerHTML = _this9.getLoadingElement().innerHTML;
           });
         } else if (this.loading > 1) {
-          menu.updateInfo('loading-text', this.loading + '%');
+          menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading + '%');
         } else {
-          menu.updateInfo('loading', function (element) {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
             return element.innerHTML = '';
           });
         }
@@ -3080,13 +3141,13 @@ var Building = /*#__PURE__*/function (_Container) {
     value: function getLoadingElement() {
       var loadingDiv = document.createElement('div');
       loadingDiv.className = 'building-loading';
-      loadingDiv.id = 'loading';
+      loadingDiv.id = MENU_INFO_IDS.loading;
       if (this.loading && this.owner.isPlayed) {
         var iconImg = document.createElement('img');
         iconImg.className = 'building-loading-icon';
         iconImg.src = getIconPath('009_50731');
         var textDiv = document.createElement('div');
-        textDiv.id = 'loading-text';
+        textDiv.id = MENU_INFO_IDS.loadingText;
         textDiv.textContent = this.loading + '%';
         loadingDiv.appendChild(iconImg);
         loadingDiv.appendChild(textDiv);
@@ -3123,11 +3184,11 @@ var Building = /*#__PURE__*/function (_Container) {
       var assets = getBuildingAsset(this.type, this.owner, lib/* Assets */.sP);
       this.sprite.texture = getTexture(assets.images["final"], lib/* Assets */.sP);
       this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y);
-      var color = this.getChildByLabel('color');
+      var color = this.getChildByLabel(LABEL_TYPES.color);
       color === null || color === void 0 || color.destroy();
       if (assets.images.color) {
         var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
-        spriteColor.label = 'color';
+        spriteColor.label = LABEL_TYPES.color;
         changeSpriteColorDirectly(spriteColor, this.owner.color);
         this.addChild(spriteColor);
       } else {
@@ -3214,31 +3275,31 @@ var Building = /*#__PURE__*/function (_Container) {
     value: function setDefaultInterface(element, data) {
       var menu = this.context.menu;
       var civDiv = document.createElement('div');
-      civDiv.id = 'civ';
+      civDiv.id = MENU_INFO_IDS.civ;
       civDiv.textContent = this.owner.civ;
       element.appendChild(civDiv);
       var typeDiv = document.createElement('div');
-      typeDiv.id = 'type';
+      typeDiv.id = MENU_INFO_IDS.type;
       typeDiv.textContent = this.type;
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
-      iconImg.id = 'icon';
+      iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
       if (this.owner && this.owner.isPlayed) {
         var hitPointsDiv = document.createElement('div');
-        hitPointsDiv.id = 'hitPoints';
+        hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
         hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
         element.appendChild(hitPointsDiv);
         if (this.isBuilt && this.quantity) {
           var quantityDiv = document.createElement('div');
-          quantityDiv.id = 'quantity';
+          quantityDiv.id = MENU_INFO_IDS.quantity;
           quantityDiv.className = 'resource-quantity';
           var smallIconImg = document.createElement('img');
           smallIconImg.src = menu.icons['food'];
           smallIconImg.className = 'resource-quantity-icon';
           var textDiv = document.createElement('div');
-          textDiv.id = 'quantity-text';
+          textDiv.id = MENU_INFO_IDS.quantityText;
           textDiv.textContent = this.quantity;
           quantityDiv.appendChild(smallIconImg);
           quantityDiv.appendChild(textDiv);
@@ -3277,7 +3338,7 @@ function getActionSheet(work, action, Assets, unit) {
   if (!work) {
     return;
   }
-  var actionSheet = action === constants_ACTION_TYPES.takemeat ? 'harvestSheet' : 'actionSheet';
+  var actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action;
   return Assets.cache.get(unit.allAssets[work][actionSheet]);
 }
 var Unit = /*#__PURE__*/function (_Container) {
@@ -3292,7 +3353,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       map = _this2$context.map,
       menu = _this2$context.menu;
     _this.label = uuidv4();
-    _this.family = constants_FAMILY_TYPES.unit;
+    _this.family = FAMILY_TYPES.unit;
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
@@ -3303,7 +3364,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.action = null;
     _this.loading = 0;
     _this.loadingType = null;
-    _this.currentSheet = 'standingSheet';
+    _this.currentSheet = SHEET_TYPES.standing;
     _this.inactif = true;
     _this.isDead = false;
     _this.isDestroyed = false;
@@ -3326,7 +3387,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.quantity = (_this$quantity = _this.quantity) !== null && _this$quantity !== void 0 ? _this$quantity : _this.totalQuantity;
     _this.hitPoints = (_this$hitPoints = _this.hitPoints) !== null && _this$hitPoints !== void 0 ? _this$hitPoints : _this.totalHitPoints;
     _this.currentCell = map.grid[_this.i][_this.j];
-    if (_this.currentSheet === 'corpseSheet') {
+    if (_this.currentSheet === SHEET_TYPES.corpse) {
       _this.owner.corpses.push(_this);
       map.grid[_this.i][_this.j].corpses.push(_this);
     } else if (!_this.isDead) {
@@ -3335,7 +3396,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       _this.owner.units.push(_this);
     }
     switch (_this.type) {
-      case 'Villager':
+      case UNIT_TYPES.villager:
         _this.work = _this.work || null;
         break;
       case 'Priest':
@@ -3380,15 +3441,15 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.allowMove = false;
     _this.eventMode = 'static';
     _this.actionSheet = _this.actionSheet || getActionSheet(_this.work, _this.action, lib/* Assets */.sP, _this);
-    _this.sprite = new lib/* AnimatedSprite */.Dl5(_this['standingSheet'].animations['south']);
-    _this.sprite.label = 'sprite';
+    _this.sprite = new lib/* AnimatedSprite */.Dl5(_this[SHEET_TYPES.standing].animations['south']);
+    _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.allowMove = false;
     _this.sprite.eventMode = 'auto';
     _this.sprite.allowClick = false;
     _this.sprite.roundPixels = true;
     _this.sprite.loop = (_this$loop = _this.loop) !== null && _this$loop !== void 0 ? _this$loop : true;
     if (_this.isDead) {
-      _this.currentSheet === 'corpseSheet' ? _this.decompose() : _this.death();
+      _this.currentSheet === SHEET_TYPES.corpse ? _this.decompose() : _this.death();
     } else if (_this.loading > 0) {
       _this.walkingSheet = lib/* Assets */.sP.cache.get(_this.allAssets[getWorkWithLoadingType(_this.loadingType)].loadedSheet);
       _this.standingSheet = lib/* Assets */.sP.cache.get(_this.allAssets[getWorkWithLoadingType(_this.loadingType)].standingSheet);
@@ -3439,9 +3500,9 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (player.selectedUnits.length) {
           for (var i = 0; i < player.selectedUnits.length; i++) {
             var playerUnit = player.selectedUnits[i];
-            if (playerUnit.work === WORK_TYPES.healer && _this.getActionCondition(playerUnit, 'heal')) {
+            if (playerUnit.work === WORK_TYPES.healer && _this.getActionCondition(playerUnit, ACTION_TYPES.heal)) {
               hasSentHealer = true;
-              playerUnit.sendTo(_this, 'heal');
+              playerUnit.sendTo(_this, ACTION_TYPES.heal);
             }
           }
         }
@@ -3459,12 +3520,12 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (player.selectedUnits.length) {
           for (var _i3 = 0; _i3 < player.selectedUnits.length; _i3++) {
             var _playerUnit = player.selectedUnits[_i3];
-            if (_this.getActionCondition(_playerUnit, constants_ACTION_TYPES.attack)) if (_playerUnit.type === 'Villager') {
+            if (_this.getActionCondition(_playerUnit, ACTION_TYPES.attack)) if (_playerUnit.type === UNIT_TYPES.villager) {
               hasSentAttacker = true;
               _playerUnit.sendToAttack(_this);
             } else if (_playerUnit.work === WORK_TYPES.attacker) {
               hasSentAttacker = true;
-              _playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
+              _playerUnit.sendTo(_this, ACTION_TYPES.attack);
             }
           }
         }
@@ -3507,7 +3568,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         player = _this$context.player;
       this.selected = true;
       var selection = new lib/* Graphics */.A1g();
-      selection.label = 'selection';
+      selection.label = LABEL_TYPES.selection;
       selection.zIndex = 3;
 
       // Diamond shape
@@ -3529,7 +3590,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         menu = _this$context2.menu,
         player = _this$context2.player;
       this.selected = false;
-      var selection = this.getChildByLabel('selection');
+      var selection = this.getChildByLabel(LABEL_TYPES.selection);
       if (selection) {
         this.removeChild(selection);
       }
@@ -3565,7 +3626,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         this.stop();
         return;
       }
-      this.setTextures('walkingSheet');
+      this.setTextures(SHEET_TYPES.walking);
       this.inactif = false;
       this.path = path;
       this.startInterval(function () {
@@ -3647,19 +3708,19 @@ var Unit = /*#__PURE__*/function (_Container) {
       var dest = this.previousDest;
       var type = dest.category || dest.type;
       this.previousDest = null;
-      if (dest.family === constants_FAMILY_TYPES.animal) {
-        if (this.getActionCondition(dest, constants_ACTION_TYPES.takemeat)) {
+      if (dest.family === FAMILY_TYPES.animal) {
+        if (this.getActionCondition(dest, ACTION_TYPES.takemeat)) {
           this.sendToTakeMeat(dest);
         } else {
-          this.sendTo(map.grid[dest.i][dest.j], constants_ACTION_TYPES.hunt);
+          this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.hunt);
         }
-      } else if (dest.family === constants_FAMILY_TYPES.building) {
-        if (this.getActionCondition(dest, constants_ACTION_TYPES.build)) {
+      } else if (dest.family === FAMILY_TYPES.building) {
+        if (this.getActionCondition(dest, ACTION_TYPES.build)) {
           this.sendToBuilding(dest);
-        } else if (this.getActionCondition(dest, constants_ACTION_TYPES.farm)) {
+        } else if (this.getActionCondition(dest, ACTION_TYPES.farm)) {
           this.sendToFarm(dest);
         } else {
-          this.sendTo(map.grid[dest.i][dest.j], constants_ACTION_TYPES.build);
+          this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.build);
         }
       } else if (TYPE_ACTION[type]) {
         if (this.getActionCondition(dest, TYPE_ACTION[type])) {
@@ -3683,7 +3744,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.sprite.onLoop = null;
       this.sprite.onFrameChange = null;
       switch (name) {
-        case constants_ACTION_TYPES.delivery:
+        case ACTION_TYPES.delivery:
           if (!this.getActionCondition(this.dest, this.action)) {
             this.stop();
             return;
@@ -3702,13 +3763,13 @@ var Unit = /*#__PURE__*/function (_Container) {
             this.stop();
           }
           break;
-        case constants_ACTION_TYPES.farm:
+        case ACTION_TYPES.farm:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
           this.dest.isUsedBy = this;
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest.quantity <= 0) {
@@ -3731,7 +3792,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.visible && sound_lib/* sound */.s3.play('5178');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Destroy farm if it out of quantity
             if (_this6.dest.quantity <= 0) {
@@ -3747,12 +3808,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.chopwood:
+        case ACTION_TYPES.chopwood:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest.quantity <= 0) {
@@ -3772,7 +3833,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             if (_this6.dest.hitPoints > 0) {
               _this6.dest.hitPoints = Math.max(_this6.dest.hitPoints - 1, 0);
               if (_this6.dest.selected) {
-                menu.updateInfo('hitPoints', _this6.dest.hitPoints > 0 ? _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints : '');
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints > 0 ? _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints : '');
               }
               if (_this6.dest.hitPoints <= 0) {
                 // Set cutted tree texture
@@ -3786,7 +3847,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.updateInterfaceLoading();
               _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
               if (_this6.dest.selected) {
-                menu.updateInfo('quantity-text', _this6.dest.quantity);
+                menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
               }
               // Destroy tree if stump out of quantity
               if (_this6.dest.quantity <= 0) {
@@ -3803,12 +3864,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.forageberry:
+        case ACTION_TYPES.forageberry:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest.quantity <= 0) {
@@ -3829,7 +3890,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.visible && sound_lib/* sound */.s3.play('5085');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Destroy berrybush if it out of quantity
             if (_this6.dest.quantity <= 0) {
@@ -3845,12 +3906,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.minestone:
+        case ACTION_TYPES.minestone:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest.quantity <= 0) {
@@ -3871,7 +3932,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.visible && sound_lib/* sound */.s3.play('5159');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Destroy stone if it out of quantity
             if (_this6.dest.quantity <= 0) {
@@ -3887,12 +3948,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.minegold:
+        case ACTION_TYPES.minegold:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               _this6.affectNewDest();
@@ -3910,7 +3971,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.visible && sound_lib/* sound */.s3.play('5159');
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Destroy gold if it out of quantity
             if (_this6.dest.quantity <= 0) {
@@ -3926,15 +3987,15 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.build:
+        case ACTION_TYPES.build:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.type === 'Farm' && !_this6.dest.isUsedBy) {
+              if (_this6.dest.type === BUILDING_TYPES.farm && !_this6.dest.isUsedBy) {
                 _this6.sendToFarm(_this6.dest);
               }
               _this6.affectNewDest();
@@ -3944,14 +4005,14 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.visible && sound_lib/* sound */.s3.play('5107');
               _this6.dest.hitPoints = Math.min(Math.round(_this6.dest.hitPoints + _this6.dest.totalHitPoints / _this6.dest.constructionTime), _this6.dest.totalHitPoints);
               if (_this6.dest.selected && _this6.owner.isPlayed) {
-                menu.updateInfo('hitPoints', _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
               }
               _this6.dest.updateHitPoints(_this6.action);
             } else {
               if (!_this6.dest.isBuilt) {
                 _this6.depst.updateHitPoints(_this6.action);
                 _this6.dest.isBuilt = true;
-                if (_this6.dest.type === 'Farm' && !_this6.dest.isUsedBy) {
+                if (_this6.dest.type === BUILDING_TYPES.farm && !_this6.dest.isUsedBy) {
                   _this6.sendToFarm(_this6.dest);
                 }
               }
@@ -3959,13 +4020,13 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1000, false);
           break;
-        case constants_ACTION_TYPES.attack:
+        case ACTION_TYPES.attack:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
-          if (this.range && this.type !== 'Villager') {
+          this.setTextures(SHEET_TYPES.action);
+          if (this.range && this.type !== UNIT_TYPES.villager) {
             this.sprite.onLoop = function () {
               if (!_this6.getActionCondition(_this6.dest)) {
                 if (_this6.dest && _this6.dest.hitPoints <= 0) {
@@ -3986,7 +4047,7 @@ var Unit = /*#__PURE__*/function (_Container) {
                 var oldDeg = _this6.degree;
                 _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
                 if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
-                  _this6.setTextures('actionSheet');
+                  _this6.setTextures(SHEET_TYPES.action);
                 }
               }
             };
@@ -4016,11 +4077,11 @@ var Unit = /*#__PURE__*/function (_Container) {
                 var oldDeg = _this6.degree;
                 _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
                 if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
-                  _this6.setTextures('actionSheet');
+                  _this6.setTextures(SHEET_TYPES.action);
                 }
               }
               if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-                _this6.sendTo(_this6.dest, constants_ACTION_TYPES.attack);
+                _this6.sendTo(_this6.dest, ACTION_TYPES.attack);
                 return;
               }
               if (_this6.sounds && _this6.sounds.hit) {
@@ -4029,7 +4090,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               if (_this6.dest.hitPoints > 0) {
                 _this6.dest.hitPoints = getHitPointsWithDamage(_this6, _this6.dest);
                 if (_this6.dest.selected && (player.selectedUnit === _this6.dest || player.selectedBuilding === _this6.dest || player.selectedOther === _this6.dest)) {
-                  menu.updateInfo('hitPoints', _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+                  menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
                 }
                 _this6.dest.isAttacked(_this6);
                 if (_this6.dest.hitPoints <= 0) {
@@ -4040,12 +4101,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }, this.rateOfFire * 1000, false);
           }
           break;
-        case 'heal':
+        case ACTION_TYPES.heal:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.sprite.onLoop = function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               _this6.affectNewDest();
@@ -4059,27 +4120,27 @@ var Unit = /*#__PURE__*/function (_Container) {
               var oldDeg = _this6.degree;
               _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
               if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
-                _this6.setTextures('actionSheet');
+                _this6.setTextures(SHEET_TYPES.action);
               }
             }
             if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-              _this6.sendTo(_this6.dest, 'heal');
+              _this6.sendTo(_this6.dest, ACTION_TYPES.heal);
               return;
             }
             if (_this6.dest.hitPoints < _this6.dest.totalHitPoints) {
               _this6.dest.hitPoints = Math.min(_this6.dest.hitPoints + _this6.healing, _this6.dest.totalHitPoints);
               if (_this6.dest.selected && player.selectedUnit === _this6.dest) {
-                menu.updateInfo('hitPoints', _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
               }
             }
           };
           break;
-        case constants_ACTION_TYPES.takemeat:
+        case ACTION_TYPES.takemeat:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               _this6.affectNewDest();
@@ -4098,7 +4159,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             _this6.dest.updateTexture();
             if (_this6.dest.selected && _this6.owner.isPlayed) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Set the walking with meat animation
             if (_this6.loading > 0) {
@@ -4113,12 +4174,12 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
-        case constants_ACTION_TYPES.fishing:
+        case ACTION_TYPES.fishing:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               _this6.affectNewDest();
@@ -4135,7 +4196,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             _this6.updateInterfaceLoading();
             _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
             if (_this6.dest.selected && _this6.owner.isPlayed) {
-              menu.updateInfo('quantity-text', _this6.dest.quantity);
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Set the walking with meat animation
             if (_this6.loading > 0) {
@@ -4155,7 +4216,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             });
           }
           break;
-        case constants_ACTION_TYPES.hunt:
+        case ACTION_TYPES.hunt:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
@@ -4163,7 +4224,7 @@ var Unit = /*#__PURE__*/function (_Container) {
           if (this.dest.isDead) {
             this.previousDest ? this.goBackToPrevious() : this.sendToTakeMeat(this.dest);
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.sprite.onLoop = function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest && _this6.dest.hitPoints <= 0) {
@@ -4186,7 +4247,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               var oldDeg = _this6.degree;
               _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
               if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
-                _this6.setTextures('actionSheet');
+                _this6.setTextures(SHEET_TYPES.action);
               }
             }
           };
@@ -4208,8 +4269,8 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.work === WORK_TYPES.attacker && instance && instance.family === constants_FAMILY_TYPES.unit && !this.path.length && !this.dest && this.getActionCondition(instance, constants_ACTION_TYPES.attack)) {
-        this.sendTo(instance, constants_ACTION_TYPES.attack);
+      if (this.work === WORK_TYPES.attacker && instance && instance.family === FAMILY_TYPES.unit && !this.path.length && !this.dest && this.getActionCondition(instance, ACTION_TYPES.attack)) {
+        this.sendTo(instance, ACTION_TYPES.attack);
       }
     }
   }, {
@@ -4217,13 +4278,13 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function handleAffectNewDestHunter() {
       var _this7 = this;
       var firstTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, constants_ACTION_TYPES.takemeat);
+        return _this7.getActionCondition(instance, ACTION_TYPES.takemeat);
       });
       if (firstTargets.length) {
         var target = getClosestInstanceWithPath(this, firstTargets);
         if (target) {
-          if (this.action !== constants_ACTION_TYPES.takemeat) {
-            this.action = constants_ACTION_TYPES.takemeat;
+          if (this.action !== ACTION_TYPES.takemeat) {
+            this.action = ACTION_TYPES.takemeat;
             if (this.allAssets[this.work]) {
               this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].harvestSheet);
             }
@@ -4239,13 +4300,13 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var secondTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, constants_ACTION_TYPES.hunt);
+        return _this7.getActionCondition(instance, ACTION_TYPES.hunt);
       });
       if (secondTargets.length) {
         var _target = getClosestInstanceWithPath(this, secondTargets);
         if (_target) {
-          if (this.action !== constants_ACTION_TYPES.hunt) {
-            this.action = constants_ACTION_TYPES.hunt;
+          if (this.action !== ACTION_TYPES.hunt) {
+            this.action = ACTION_TYPES.hunt;
             if (this.allAssets[this.work]) {
               this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].actionSheet);
             }
@@ -4291,14 +4352,14 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function affectNewDest() {
       var _this8 = this;
       this.stopInterval();
-      if (this.previousDest && this.action !== constants_ACTION_TYPES.delivery) {
+      if (this.previousDest && this.action !== ACTION_TYPES.delivery) {
         this.goBackToPrevious();
         return;
       }
       var handleSuccess = false;
-      if (this.type === 'Villager' && (this.action === constants_ACTION_TYPES.takemeat || this.action === constants_ACTION_TYPES.hunt)) {
+      if (this.type === UNIT_TYPES.villager && (this.action === ACTION_TYPES.takemeat || this.action === ACTION_TYPES.hunt)) {
         handleSuccess = this.handleAffectNewDestHunter();
-      } else if (!this.dest || this.dest.family !== constants_FAMILY_TYPES.animal) {
+      } else if (!this.dest || this.dest.family !== FAMILY_TYPES.animal) {
         var targets = findInstancesInSight(this, function (instance) {
           return _this8.getActionCondition(instance);
         });
@@ -4335,7 +4396,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         this.affectNewDest();
         return false;
       }
-      if ((this.type !== 'Villager' || action === constants_ACTION_TYPES.hunt) && this.range && maths_instancesDistance(this, dest) <= this.range) {
+      if ((this.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) && this.range && maths_instancesDistance(this, dest) <= this.range) {
         return true;
       }
       return instanceContactInstance(this, dest);
@@ -4356,7 +4417,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === constants_FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -4413,7 +4474,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner);
         if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(this.degree)) {
           // Change animation according to degree
-          this.setTextures('walkingSheet');
+          this.setTextures(SHEET_TYPES.walking);
         }
       }
     }
@@ -4424,14 +4485,14 @@ var Unit = /*#__PURE__*/function (_Container) {
         return;
       }
       var currentDest = this.dest;
-      if (this.type === 'Villager') {
-        if (instance.family === constants_FAMILY_TYPES.animal) {
+      if (this.type === UNIT_TYPES.villager) {
+        if (instance.family === FAMILY_TYPES.animal) {
           this.sendToHunt(instance);
         } else {
           this.sendToAttack(instance);
         }
       } else {
-        this.sendTo(instance, constants_ACTION_TYPES.attack);
+        this.sendTo(instance, ACTION_TYPES.attack);
       }
       this.previousDest = currentDest;
     }
@@ -4451,7 +4512,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.currentCell.solid = true;
       this.path = [];
       this.stopInterval();
-      this.setTextures('standingSheet');
+      this.setTextures(SHEET_TYPES.standing);
     }
   }, {
     key: "startInterval",
@@ -4530,7 +4591,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     key: "decompose",
     value: function decompose() {
       var map = this.context.map;
-      this.setTextures('corpseSheet');
+      this.setTextures(SHEET_TYPES.corpse);
       this.sprite.animationSpeed = 1 / (CORPSE_TIME * 1000) * ACCELERATOR;
       if (map.grid[this.i][this.j].has === this) {
         map.grid[this.i][this.j].has = null;
@@ -4542,7 +4603,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     key: "death",
     value: function death() {
       var _this10 = this;
-      this.setTextures('dyingSheet');
+      this.setTextures(SHEET_TYPES.dying);
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
@@ -4581,7 +4642,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       if (this.owner) {
         this.owner.population--;
         if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-          menu.updateInfo('population-text', this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.POPULATION_MAX));
+          menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
         }
         // Remove from player units
         var index = this.owner.units.indexOf(this);
@@ -4590,7 +4651,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
         // Update from player selected unit
         if (this.owner.selectedUnit === this) {
-          menu.updateInfo('hitPoints', this.hitPoints + '/' + this.totalHitPoints);
+          menu.updateInfo(MENU_INFO_IDS.hitPoints, this.hitPoints + '/' + this.totalHitPoints);
         }
       }
       this.death();
@@ -4629,13 +4690,13 @@ var Unit = /*#__PURE__*/function (_Container) {
       var menu = this.context.menu;
       if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
         if (this.loading === 1) {
-          menu.updateInfo('loading', function (element) {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
             return element.innerHTML = _this11.getLoadingElement().innerHTML;
           });
         } else if (this.loading > 1) {
-          menu.updateInfo('loading-text', this.loading);
+          menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading);
         } else {
-          menu.updateInfo('loading', function (element) {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
             return element.innerHTML = '';
           });
         }
@@ -4647,13 +4708,13 @@ var Unit = /*#__PURE__*/function (_Container) {
       var menu = this.context.menu;
       var loadingDiv = document.createElement('div');
       loadingDiv.className = 'unit-loading';
-      loadingDiv.id = 'loading';
+      loadingDiv.id = MENU_INFO_IDS.loading;
       if (this.loading) {
         var iconImg = document.createElement('img');
         iconImg.className = 'unit-loading-icon';
         iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType];
         var textDiv = document.createElement('div');
-        textDiv.id = 'loading-text';
+        textDiv.id = MENU_INFO_IDS.loadingText;
         textDiv.textContent = this.loading;
         loadingDiv.appendChild(iconImg);
         loadingDiv.appendChild(textDiv);
@@ -4672,14 +4733,14 @@ var Unit = /*#__PURE__*/function (_Container) {
       }
       if (this.work !== work || this.action !== action) {
         this.work = work;
-        this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo('type', this.work);
+        this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo(MENU_INFO_IDS.type, this.work);
         if (this.allAssets && this.allAssets[work]) {
           this.actionSheet = getActionSheet(work, action, lib/* Assets */.sP, this);
           if (!this.loading) {
-            this.standingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work]['standingSheet']);
-            this.walkingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work]['walkingSheet']);
-            this.dyingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work]['dyingSheet']);
-            this.corpseSheet = lib/* Assets */.sP.cache.get(this.allAssets[work]['corpseSheet']);
+            this.standingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.standing]);
+            this.walkingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.walking]);
+            this.dyingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.dying]);
+            this.corpseSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.corpse]);
           }
         }
       }
@@ -4693,9 +4754,9 @@ var Unit = /*#__PURE__*/function (_Container) {
       var map = this.context.map;
       var buildingTypes = [];
       if (this.category === 'Boat') {
-        buildingTypes = ['Dock'];
+        buildingTypes = [BUILDING_TYPES.dock];
       } else {
-        buildingTypes = ['TownCenter'];
+        buildingTypes = [BUILDING_TYPES.townCenter];
         var buildings = {
           Granary: this.owner.config.buildings.Granary,
           StoragePit: this.owner.config.buildings.StoragePit
@@ -4711,7 +4772,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var targets = this.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(_this12, building, constants_ACTION_TYPES.delivery, {
+        return extra_getActionCondition(_this12, building, ACTION_TYPES.delivery, {
           buildingTypes: buildingTypes
         });
       });
@@ -4721,79 +4782,79 @@ var Unit = /*#__PURE__*/function (_Container) {
       } else {
         this.previousDest = map.grid[this.i][this.j];
       }
-      this.sendTo(target, constants_ACTION_TYPES.delivery);
+      this.sendTo(target, ACTION_TYPES.delivery);
     }
   }, {
     key: "sendToFish",
     value: function sendToFish(target) {
-      return this.commonSendTo(target, WORK_TYPES.fisher, constants_ACTION_TYPES.fishing);
+      return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing);
     }
   }, {
     key: "sendToAttack",
     value: function sendToAttack(target) {
-      return this.commonSendTo(target, WORK_TYPES.attacker, constants_ACTION_TYPES.attack, {
+      return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, {
         resource: 'attack'
       });
     }
   }, {
     key: "sendToTakeMeat",
     value: function sendToTakeMeat(target) {
-      return this.commonSendTo(target, WORK_TYPES.hunter, constants_ACTION_TYPES.takemeat, {
-        actionSheet: 'harvestSheet'
+      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, {
+        actionSheet: SHEET_TYPES.harvest
       });
     }
   }, {
     key: "sendToHunt",
     value: function sendToHunt(target) {
-      return this.commonSendTo(target, WORK_TYPES.hunter, constants_ACTION_TYPES.hunt);
+      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt);
     }
   }, {
     key: "sendToBuilding",
     value: function sendToBuilding(target) {
-      return this.commonSendTo(target, WORK_TYPES.builder, constants_ACTION_TYPES.build);
+      return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build);
     }
   }, {
     key: "sendToFarm",
     value: function sendToFarm(target) {
-      return this.commonSendTo(target, WORK_TYPES.farmer, constants_ACTION_TYPES.farm);
+      return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm);
     }
   }, {
     key: "sendToTree",
     value: function sendToTree(target) {
-      return this.commonSendTo(target, WORK_TYPES.woodcutter, constants_ACTION_TYPES.chopwood);
+      return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood);
     }
   }, {
     key: "sendToBerrybush",
     value: function sendToBerrybush(target) {
-      return this.commonSendTo(target, WORK_TYPES.forager, constants_ACTION_TYPES.forageberry);
+      return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry);
     }
   }, {
     key: "sendToStone",
     value: function sendToStone(target) {
-      return this.commonSendTo(target, WORK_TYPES.stoneminer, constants_ACTION_TYPES.minestone);
+      return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone);
     }
   }, {
     key: "sendToGold",
     value: function sendToGold(target) {
-      return this.commonSendTo(target, WORK_TYPES.goldminer, constants_ACTION_TYPES.minegold);
+      return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold);
     }
   }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
       var civDiv = document.createElement('div');
-      civDiv.id = 'civ';
+      civDiv.id = MENU_INFO_IDS.civ;
       civDiv.textContent = this.owner.civ;
       element.appendChild(civDiv);
       var typeDiv = document.createElement('div');
-      typeDiv.id = 'type';
-      typeDiv.textContent = this.type === 'Villager' ? this.work || this.type : this.type;
+      typeDiv.id = MENU_INFO_IDS.type;
+      typeDiv.textContent = this.type === UNIT_TYPES.villager ? this.work || this.type : this.type;
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
-      iconImg.id = 'icon';
+      iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
       var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = 'hitPoints';
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
       hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
       element.appendChild(hitPointsDiv);
       var infosDiv = document.createElement('div');
@@ -4844,7 +4905,7 @@ var Player = /*#__PURE__*/function () {
   function Player(options, context) {
     var _this = this;
     player_classCallCheck(this, Player);
-    this.family = constants_FAMILY_TYPES.player;
+    this.family = FAMILY_TYPES.player;
     this.context = context;
     var map = context.map;
     this.label = uuidv4();
@@ -4863,7 +4924,7 @@ var Player = /*#__PURE__*/function () {
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
-    this.POPULATION_MAX = this.POPULATION_MAX || map.devMode ? POPULATION_MAX : 0;
+    this.population_max = this.population_max || map.devMode ? POPULATION_MAX : 0;
     this.colorHex = getHexColor(this.color);
     this.config = player_objectSpread({}, lib/* Assets */.sP.cache.get('config'));
     this.techs = player_objectSpread({}, lib/* Assets */.sP.cache.get('technology'));
@@ -4910,7 +4971,7 @@ var Player = /*#__PURE__*/function () {
         var hasSentOther = false;
         for (var i = 0; i < this.selectedUnits.length; i++) {
           var unit = this.selectedUnits[i];
-          if (unit.type === 'Villager') {
+          if (unit.type === UNIT_TYPES.villager) {
             if (extra_getActionCondition(unit, building, ACTION_TYPES.build)) {
               hasSentVillager = true;
               unit.sendToBuilding(building);
@@ -5175,11 +5236,11 @@ var AI = /*#__PURE__*/function (_Player) {
       return {
         handleSetDest: function handleSetDest(target) {
           var map = me.context.map;
-          if (type === 'Villager' && target.family === constants_FAMILY_TYPES.resource) {
-            var buildingType = target.type === 'Berrybush' ? 'Granary' : 'StoragePit';
+          if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
+            var buildingType = target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit;
             var buildings = me.buildingsByTypes([buildingType]);
             if (canAfford(me, me.config.buildings[buildingType]) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
-              var closestBuilding = getClosestInstance(target, [].concat(ai_toConsumableArray(buildings), ai_toConsumableArray(me.buildingsByTypes(['TownCenter']))));
+              var closestBuilding = getClosestInstance(target, [].concat(ai_toConsumableArray(buildings), ai_toConsumableArray(me.buildingsByTypes([BUILDING_TYPES.townCenter]))));
               if (!closestBuilding || maths_instancesDistance(closestBuilding, target) > 5) {
                 var pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1);
                 if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
@@ -5207,7 +5268,7 @@ var AI = /*#__PURE__*/function (_Player) {
       var howManyVillagerBeforeBuyingABarracks = 10;
       var howManySoldiersBeforeAttack = 5;
       console.log('%c ----Step started', styleLogInfo1);
-      console.log("%c Age: ".concat(this.age, ", Wood: ").concat(this.wood, ", Food: ").concat(this.food, ", Stone: ").concat(this.stone, ", Gold: ").concat(this.gold, ", Population: ").concat(this.population, "/").concat(this.POPULATION_MAX), styleLogInfo2);
+      console.log("%c Age: ".concat(this.age, ", Wood: ").concat(this.wood, ", Food: ").concat(this.food, ", Stone: ").concat(this.stone, ", Gold: ").concat(this.gold, ", Population: ").concat(this.population, "/").concat(this.population_max), styleLogInfo2);
       var filterUnitsByType = function filterUnitsByType(type) {
         var condition = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (unit) {
           return unit.hitPoints > 0;
@@ -5216,16 +5277,16 @@ var AI = /*#__PURE__*/function (_Player) {
           return unit.type === type && condition(unit);
         });
       };
-      var villagers = filterUnitsByType('Villager');
-      var clubmans = filterUnitsByType('Clubman');
+      var villagers = filterUnitsByType(UNIT_TYPES.villager);
+      var clubmans = filterUnitsByType(UNIT_TYPES.clubman);
       console.log("%c Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Clubmans: ").concat(clubmans.length, "/").concat(maxClubmans), styleLogInfo2);
-      var towncenters = this.buildingsByTypes(['TownCenter']);
-      var storagepits = this.buildingsByTypes(['StoragePit']);
-      var houses = this.buildingsByTypes(['House']);
-      var granarys = this.buildingsByTypes(['Granary']);
-      var barracks = this.buildingsByTypes(['Barracks']);
-      var markets = this.buildingsByTypes(['Market']);
-      var farms = this.buildingsByTypes(['Farm']);
+      var towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]);
+      var storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit]);
+      var houses = this.buildingsByTypes([BUILDING_TYPES.house]);
+      var granarys = this.buildingsByTypes([BUILDING_TYPES.granary]);
+      var barracks = this.buildingsByTypes([BUILDING_TYPES.barracks]);
+      var markets = this.buildingsByTypes([BUILDING_TYPES.market]);
+      var farms = this.buildingsByTypes([BUILDING_TYPES.farm]);
       var emptyFarms = farms.filter(function (_ref2) {
         var isUsedBy = _ref2.isUsedBy;
         return !isUsedBy;
@@ -5235,7 +5296,7 @@ var AI = /*#__PURE__*/function (_Player) {
         return !b.isBuilt || b.hitPoints > 0 && b.hitPoints < b.totalHitPoints;
       });
       var notBuiltHouses = notBuiltBuildings.filter(function (b) {
-        return b.type === 'House';
+        return b.type === BUILDING_TYPES.house;
       });
       var villagersByWork = function villagersByWork(works) {
         return villagers.filter(function (v) {
@@ -5243,7 +5304,7 @@ var AI = /*#__PURE__*/function (_Player) {
         });
       };
       var inactifVillagers = villagers.filter(function (v) {
-        return v.inactif && v.action !== constants_ACTION_TYPES.attack;
+        return v.inactif && v.action !== ACTION_TYPES.attack;
       });
       var villagersOnWood = villagersByWork([WORK_TYPES.woodcutter]);
       var villagersOnFood = villagersByWork([WORK_TYPES.forager, WORK_TYPES.farmer, WORK_TYPES.hunter]);
@@ -5256,10 +5317,10 @@ var AI = /*#__PURE__*/function (_Player) {
       var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
       console.log("%c Villagers on Wood: ".concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Villagers on Food: ").concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Villagers on Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Villagers on Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builder Villagers: ").concat(builderVillagers.length), styleLogInfo2);
       var inactifClubmans = clubmans.filter(function (c) {
-        return c.inactif && c.action !== constants_ACTION_TYPES.attack && c.assault;
+        return c.inactif && c.action !== ACTION_TYPES.attack && c.assault;
       });
       var waitingClubmans = clubmans.filter(function (c) {
-        return c.inactif && c.action !== constants_ACTION_TYPES.attack && !c.assault;
+        return c.inactif && c.action !== ACTION_TYPES.attack && !c.assault;
       });
       console.log("%c Inactif Clubmans: ".concat(inactifClubmans.length, ", Waiting Clubmans: ").concat(waitingClubmans.length), styleLogInfo2);
 
@@ -5278,20 +5339,20 @@ var AI = /*#__PURE__*/function (_Player) {
           if (globalCell.has) {
             var has = globalCell.has;
             if (has.quantity > 0) {
-              if (has.type === 'Tree' && !_this2.foundedTrees.includes(has)) {
+              if (has.type === RESOURCE_TYPES.tree && !_this2.foundedTrees.includes(has)) {
                 _this2.foundedTrees.push(has);
               }
-              if (has.type === 'Berrybush' && !_this2.foundedBerrybushs.includes(has)) {
+              if (has.type === RESOURCE_TYPES.berrybush && !_this2.foundedBerrybushs.includes(has)) {
                 _this2.foundedBerrybushs.push(has);
               }
-              if (has.type === 'Stone' && !_this2.foundedStones.includes(has)) {
+              if (has.type === RESOURCE_TYPES.stone && !_this2.foundedStones.includes(has)) {
                 _this2.foundedStones.push(has);
               }
-              if (has.type === 'Gold' && !_this2.foundedGolds.includes(has)) {
+              if (has.type === RESOURCE_TYPES.gold && !_this2.foundedGolds.includes(has)) {
                 _this2.foundedGolds.push(has);
               }
             }
-            if (has.family === constants_FAMILY_TYPES.building && has.owner.label !== _this2.label && !_this2.foundedEnemyBuildings.includes(has)) {
+            if (has.family === FAMILY_TYPES.building && has.owner.label !== _this2.label && !_this2.foundedEnemyBuildings.includes(has)) {
               _this2.foundedEnemyBuildings.push(has);
             }
           }
@@ -5375,7 +5436,7 @@ var AI = /*#__PURE__*/function (_Player) {
       var sendToAttack = function sendToAttack(clubmans, target) {
         console.log('Sending clubmans to attack:', target);
         clubmans.forEach(function (clubman) {
-          return clubman.sendTo(target, constants_ACTION_TYPES.attack);
+          return clubman.sendTo(target, ACTION_TYPES.attack);
         });
       };
       if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
@@ -5415,8 +5476,8 @@ var AI = /*#__PURE__*/function (_Player) {
           _iterator2.f();
         }
       };
-      buyUnits(villagers.length, maxVillagers, towncenters, 'Villager');
-      buyUnits(clubmans.length, maxClubmans, barracks, 'Clubman');
+      buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
+      buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman);
 
       // Building Purchasing Logic
       var buyBuildingIfNeeded = function buyBuildingIfNeeded(condition, buildingType, positionCallback) {
@@ -5438,12 +5499,12 @@ var AI = /*#__PURE__*/function (_Player) {
       };
 
       // Buy House
-      buyBuildingIfNeeded(this.population + 2 > this.POPULATION_MAX && !notBuiltHouses.length, 'House', function () {
+      buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0);
       });
 
       // Buy Barracks
-      buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, 'Barracks', function () {
+      buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return _this2.otherPlayers().every(function (player) {
             return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
@@ -5452,7 +5513,7 @@ var AI = /*#__PURE__*/function (_Player) {
       });
 
       // Buy Markets
-      buyBuildingIfNeeded(markets.length === 0, 'Market', function () {
+      buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return _this2.otherPlayers().every(function (player) {
             return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
@@ -5461,7 +5522,7 @@ var AI = /*#__PURE__*/function (_Player) {
       });
 
       // Buy Farm
-      buyBuildingIfNeeded(true, 'Farm', function () {
+      buyBuildingIfNeeded(true, BUILDING_TYPES.farm, function () {
         var buildings = [].concat(ai_toConsumableArray(granarys), ai_toConsumableArray(towncenters)); // Combine both granarys and towncenters
         var _iterator3 = ai_createForOfIteratorHelper(buildings),
           _step3;
@@ -5559,7 +5620,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     var _this2 = _this,
       map = _this2.context.map;
     _this.label = uuidv4();
-    _this.family = constants_FAMILY_TYPES.animal;
+    _this.family = FAMILY_TYPES.animal;
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
@@ -5568,7 +5629,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.degree = maths_randomRange(1, 360);
     _this.action = null;
     _this.currentFrame = 0;
-    _this.currentSheet = 'standingSheet';
+    _this.currentSheet = SHEET_TYPES.standing;
     _this.inactif = true;
     _this.isDead = false;
     _this.isDestroyed = false;
@@ -5609,14 +5670,14 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.allowMove = false;
     _this.eventMode = 'static';
     _this.sprite = new lib/* AnimatedSprite */.Dl5(_this.standingSheet.animations['south']);
-    _this.sprite.label = 'sprite';
+    _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.allowMove = false;
     _this.sprite.eventMode = 'auto';
     _this.sprite.allowClick = false;
     _this.sprite.roundPixels = true;
     _this.sprite.loop = (_this$loop = _this.loop) !== null && _this$loop !== void 0 ? _this$loop : true;
     if (_this.isDead) {
-      _this.currentSheet === 'corpseSheet' ? _this.decompose() : _this.death();
+      _this.currentSheet === SHEET_TYPES.corpse ? _this.decompose() : _this.death();
     } else {
       _this.setTextures(_this.currentSheet);
     }
@@ -5637,24 +5698,24 @@ var Animal = /*#__PURE__*/function (_Container) {
       if (player.selectedUnits.length) {
         for (var i = 0; i < player.selectedUnits.length; i++) {
           var playerUnit = player.selectedUnits[i];
-          if (playerUnit.type === 'Villager') {
-            if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.hunt)) {
+          if (playerUnit.type === UNIT_TYPES.villager) {
+            if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
-            } else if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.takemeat)) {
+            } else if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.takemeat)) {
               playerUnit.sendToTakeMeat(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
             }
-          } else if (extra_getActionCondition(playerUnit, _this, constants_ACTION_TYPES.attack)) {
-            playerUnit.sendTo(_this, constants_ACTION_TYPES.attack);
+          } else if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.attack)) {
+            playerUnit.sendTo(_this, ACTION_TYPES.attack);
             drawDestinationRectangle = true;
             hasSentOther = true;
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
-        if (extra_getActionCondition(player.selectedBuilding, _this, constants_ACTION_TYPES.attack) && maths_instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
+        if (extra_getActionCondition(player.selectedBuilding, _this, ACTION_TYPES.attack) && maths_instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
           player.selectedBuilding.attackAction(_this);
           drawDestinationRectangle = true;
         }
@@ -5716,7 +5777,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       }
       this.selected = true;
       var selection = new lib/* Graphics */.A1g();
-      selection.label = 'selection';
+      selection.label = LABEL_TYPES.selection;
       selection.zIndex = 3;
       var path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5];
       selection.poly(path);
@@ -5730,7 +5791,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         return;
       }
       this.selected = false;
-      var selection = this.getChildByLabel('selection');
+      var selection = this.getChildByLabel(LABEL_TYPES.selection);
       if (selection) {
         this.removeChild(selection);
       }
@@ -5775,7 +5836,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         this.stop();
         return;
       }
-      this.setTextures('walkingSheet');
+      this.setTextures(SHEET_TYPES.walking);
       this.inactif = false;
       this.path = path;
       this.startInterval(function () {
@@ -5842,12 +5903,12 @@ var Animal = /*#__PURE__*/function (_Container) {
         menu = _this$context.menu,
         player = _this$context.player;
       switch (name) {
-        case constants_ACTION_TYPES.attack:
+        case ACTION_TYPES.attack:
           if (!this.getActionCondition(this.dest)) {
             this.affectNewDest();
             return;
           }
-          this.setTextures('actionSheet');
+          this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
             if (!_this6.getActionCondition(_this6.dest)) {
               if (_this6.dest && _this6.dest.hitPoints <= 0) {
@@ -5858,17 +5919,17 @@ var Animal = /*#__PURE__*/function (_Container) {
             }
             if (_this6.destHasMoved()) {
               _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              _this6.setTextures('actionSheet');
+              _this6.setTextures(SHEET_TYPES.action);
             }
             if (!instanceContactInstance(_this6, _this6.dest)) {
-              _this6.sendTo(_this6.dest, constants_ACTION_TYPES.attack);
+              _this6.sendTo(_this6.dest, ACTION_TYPES.attack);
               return;
             }
             _this6.sounds && _this6.sounds.hit && _this6.visible && sound_lib/* sound */.s3.play(_this6.sounds.hit);
             if (_this6.dest.hitPoints > 0) {
               _this6.dest.hitPoints = getHitPointsWithDamage(_this6, _this6.dest);
               if (_this6.dest.selected && player && (player.selectedUnit === _this6.dest || player.selectedBuilding === _this6.dest)) {
-                menu.updateInfo('hitPoints', _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
               }
               _this6.dest.isAttacked(_this6);
             }
@@ -5922,7 +5983,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === constants_FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -5971,7 +6032,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         moveTowardPoint(this, nextCell.x, nextCell.y, this.speed);
         if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
           // Change animation according to degree
-          this.setTextures('walkingSheet');
+          this.setTextures(SHEET_TYPES.walking);
         }
       }
     }
@@ -5981,13 +6042,13 @@ var Animal = /*#__PURE__*/function (_Container) {
       if (this.strategy === 'runaway') {
         this.runaway(instance);
       } else {
-        this.sendTo(instance, constants_ACTION_TYPES.attack);
+        this.sendTo(instance, ACTION_TYPES.attack);
       }
     }
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.strategy && instance && instance.family === constants_FAMILY_TYPES.unit && !this.isDead && !this.path.length && !this.dest) {
+      if (this.strategy && instance && instance.family === FAMILY_TYPES.unit && !this.isDead && !this.path.length && !this.dest) {
         this.getReaction(instance);
       }
     }
@@ -6014,7 +6075,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       this.currentCell.solid = true;
       this.path = [];
       this.stopInterval();
-      this.setTextures('standingSheet');
+      this.setTextures(SHEET_TYPES.standing);
     }
   }, {
     key: "step",
@@ -6050,13 +6111,13 @@ var Animal = /*#__PURE__*/function (_Container) {
       var _this$context2 = this.context,
         player = _this$context2.player,
         menu = _this$context2.menu;
-      this.setTextures('corpseSheet');
+      this.setTextures(SHEET_TYPES.corpse);
       this.sprite.animationSpeed = 0;
       this.startInterval(function () {
         if (_this9.quantity > 0) {
           _this9.quantity--;
           if (_this9.selected && player.selectedOther === _this9) {
-            menu.updateInfo('quantity-text', _this9.quantity);
+            menu.updateInfo(MENU_INFO_IDS.quantityText, _this9.quantity);
           }
         }
         _this9.updateTexture();
@@ -6066,7 +6127,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     key: "death",
     value: function death() {
       var _this0 = this;
-      this.setTextures('dyingSheet');
+      this.setTextures(SHEET_TYPES.dying);
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
@@ -6144,29 +6205,29 @@ var Animal = /*#__PURE__*/function (_Container) {
     value: function setDefaultInterface(element, data) {
       var menu = this.context.menu;
       var civDiv = document.createElement('div');
-      civDiv.id = 'civ';
+      civDiv.id = MENU_INFO_IDS.civ;
       civDiv.textContent = '';
       element.appendChild(civDiv);
       var typeDiv = document.createElement('div');
-      typeDiv.id = 'type';
+      typeDiv.id = MENU_INFO_IDS.type;
       typeDiv.textContent = this.type;
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
-      iconImg.id = 'icon';
+      iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
       var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = 'hitPoints';
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
       hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
       element.appendChild(hitPointsDiv);
       var quantityDiv = document.createElement('div');
-      quantityDiv.id = 'quantity';
+      quantityDiv.id = MENU_INFO_IDS.quantity;
       quantityDiv.className = 'resource-quantity';
       var smallIconImg = document.createElement('img');
       smallIconImg.src = menu.icons['food'];
       smallIconImg.className = 'resource-quantity-icon';
       var textDiv = document.createElement('div');
-      textDiv.id = 'quantity-text';
+      textDiv.id = MENU_INFO_IDS.quantityText;
       textDiv.textContent = this.quantity;
       quantityDiv.appendChild(smallIconImg);
       quantityDiv.appendChild(textDiv);
@@ -6193,13 +6254,14 @@ function gaia_inherits(t, e) { if ("function" != typeof e && null !== e) throw n
 function gaia_setPrototypeOf(t, e) { return gaia_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, gaia_setPrototypeOf(t, e); }
 
 
+
 var Gaia = /*#__PURE__*/function (_Player) {
   function Gaia(context) {
     gaia_classCallCheck(this, Gaia);
     return gaia_callSuper(this, Gaia, [{
       i: 0,
       j: 0,
-      type: 'Gaia'
+      type: PLAYER_TYPES.gaia
     }, context]);
   }
   gaia_inherits(Gaia, _Player);
@@ -6266,7 +6328,7 @@ var Human = /*#__PURE__*/function (_Player) {
       var nextVillager;
       if (this.selectedUnit === unit) {
         for (var i = 0; i < this.selectedUnits.length; i++) {
-          if (this.selectedUnits[i].type === 'Villager') {
+          if (this.selectedUnits[i].type === UNIT_TYPES.villager) {
             nextVillager = this.selectedUnits[i].type;
             break;
           }
@@ -6336,7 +6398,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.context = context;
     var _this2 = _this,
       map = _this2.context.map;
-    _this.family = constants_FAMILY_TYPES.cell;
+    _this.family = FAMILY_TYPES.cell;
     _this.map = map;
     _this.solid = false;
     _this.visible = false;
@@ -6365,7 +6427,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
     var texture = spritesheet.textures[textureFile];
     _this.sprite = lib/* Sprite */.kxk.from(texture);
-    _this.sprite.label = 'sprite';
+    _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.anchor.set(0.5, 0.5);
     _this.sprite.roundPixels = true;
     _this.sprite.allowMove = false;
@@ -6478,7 +6540,7 @@ var Cell = /*#__PURE__*/function (_Container) {
       if (this.has) {
         this.has.zIndex = getInstanceZIndex(this.has);
       }
-      sprite.label = 'sprite';
+      sprite.label = LABEL_TYPES.sprite;
       sprite.anchor.set(0.5, 0.5);
       sprite.texture = texture;
     }
@@ -6568,7 +6630,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     key: "addFogBuilding",
     value: function addFogBuilding(textureSheet, colorSheet, colorName) {
       var sprite = lib/* Sprite */.kxk.from(getTexture(textureSheet, lib/* Assets */.sP));
-      sprite.label = 'buildingFog';
+      sprite.label = LABEL_TYPES.buildingFog;
       sprite.tint = COLOR_FOG;
       sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
       this.addChild(sprite);
@@ -6580,7 +6642,7 @@ var Cell = /*#__PURE__*/function (_Container) {
       });
       if (colorSheet) {
         var spriteColor = lib/* Sprite */.kxk.from(getTexture(colorSheet, lib/* Assets */.sP));
-        spriteColor.label = 'buildingColorFog';
+        spriteColor.label = LABEL_TYPES.buildingFog;
         spriteColor.tint = COLOR_FOG;
         changeSpriteColorDirectly(spriteColor, colorName);
         this.addChild(spriteColor);
@@ -6599,7 +6661,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     key: "removeFogBuilding",
     value: function removeFogBuilding(instance) {
       var map = this.context.map;
-      if (instance.owner && !instance.owner.isPlayed && instance.family === constants_FAMILY_TYPES.building) {
+      if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
         var i = 0;
         var localCell = map.grid[instance.i][instance.j];
         while (i < localCell.fogSprites.length) {
@@ -6621,7 +6683,7 @@ var Cell = /*#__PURE__*/function (_Container) {
         map = _this$context2.map;
       if (!instanceIsInPlayerSight(instance, player)) {
         if (instance.owner && !instance.owner.isPlayed) {
-          if (!init && instance.family === constants_FAMILY_TYPES.building) {
+          if (!init && instance.family === FAMILY_TYPES.building) {
             var assets = getBuildingAsset(instance.type, instance.owner, lib/* Assets */.sP);
             var localCell = map.grid[instance.i][instance.j];
             localCell.addFogBuilding(assets.images["final"], assets.images.color, instance.owner.color);
@@ -6733,7 +6795,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.sortableChildren = true;
     _this.allTechnologies = false;
     _this.noAI = true;
-    _this.devMode = false;
+    _this.devMode = true;
     _this.revealEverything = _this.devMode || false;
     _this.revealTerrain = _this.devMode || false;
     _this.x = 0;
@@ -7009,11 +7071,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
         var towncenter = player.spawnBuilding({
           i: player.i,
           j: player.j,
-          type: 'TownCenter',
+          type: BUILDING_TYPES.townCenter,
           isBuilt: true
         });
         for (var _i6 = 0; _i6 < this.startingUnits; _i6++) {
-          towncenter.placeUnit('Villager');
+          towncenter.placeUnit(UNIT_TYPES.villager);
         }
       }
     }
@@ -7214,14 +7276,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
           var isFree = true;
           getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
             var _cell$has;
-            if (['Berrybush', 'Gold', 'Stone'].includes((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.type)) {
+            if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.type)) {
               isFree = false;
             }
           });
           isFree && _this3.resources.push(_this3.addChild(new Resource({
             i: cell.i,
             j: cell.j,
-            type: 'Tree'
+            type: RESOURCE_TYPES.tree
           }, _this3.context)));
         }
       };
@@ -7233,15 +7295,15 @@ var map_Map = /*#__PURE__*/function (_Container) {
     key: "generateResourcesAroundPlayers",
     value: function generateResourcesAroundPlayers(playersPos) {
       for (var i = 0; i < playersPos.length; i++) {
-        this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [7, 14]);
-        this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [14, 22]);
-        this.placeResourceGroup(playersPos[i], 'Berrybush', 8, [22, 29]);
-        this.placeResourceGroup(playersPos[i], 'Stone', 7, [7, 14]);
-        this.placeResourceGroup(playersPos[i], 'Stone', 7, [14, 22]);
-        this.placeResourceGroup(playersPos[i], 'Stone', 7, [22, 29]);
-        this.placeResourceGroup(playersPos[i], 'Gold', 7, [7, 14]);
-        this.placeResourceGroup(playersPos[i], 'Gold', 7, [14, 22]);
-        this.placeResourceGroup(playersPos[i], 'Gold', 7, [22, 29]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [7, 14]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [14, 22]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [22, 29]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [7, 14]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [14, 22]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [22, 29]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [7, 14]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [14, 22]);
+        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [22, 29]);
         this.generateForestAroundPlayer(playersPos[i], this.size * 4);
       }
     }
@@ -7403,7 +7465,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
               var spritesheet = lib/* Assets */.sP.cache.get(randomSpritesheet);
               var texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
               var floor = lib/* Sprite */.kxk.from(texture);
-              floor.label = 'floor';
+              floor.label = LABEL_TYPES.floor;
               floor.roundPixels = true;
               floor.allowMove = false;
               floor.eventMode = 'none';
@@ -7420,7 +7482,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
                     var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
                     var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
                     var rock = lib/* Sprite */.kxk.from(_texture);
-                    rock.label = 'set';
+                    rock.label = LABEL_TYPES.set;
                     rock.roundPixels = true;
                     rock.allowMove = false;
                     rock.eventMode = 'none';
@@ -7442,7 +7504,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
                 this.resources.push(this.addChild(new Resource({
                   i: i,
                   j: j,
-                  type: 'Salmon'
+                  type: RESOURCE_TYPES.salmon
                 }, this.context)));
               }
             }
@@ -7461,7 +7523,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
             var level = maths_randomItem(_this4.reliefRange);
             var canGenerate = true;
             if (getPlainCellsAroundPoint(i, j, _this4.grid, level * 2, function (cell) {
-              if (cell.category === 'Water' || cell.has && cell.has.family === constants_FAMILY_TYPES.building) {
+              if (cell.category === 'Water' || cell.has && cell.has.family === FAMILY_TYPES.building) {
                 canGenerate = false;
               }
             })) ;
@@ -7665,7 +7727,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
               var isFree = true;
               getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
                 var _cell$has2;
-                if (['Berrybush', 'Gold', 'Stone'].includes((_cell$has2 = cell.has) === null || _cell$has2 === void 0 ? void 0 : _cell$has2.type)) {
+                if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has2 = cell.has) === null || _cell$has2 === void 0 ? void 0 : _cell$has2.type)) {
                   isFree = false;
                 }
               });
@@ -7968,7 +8030,7 @@ var Menu = /*#__PURE__*/function () {
       var x = cell.x;
       var y = cell.y;
       canvasDrawDiamond(context, x / minimapFactor + translate, y / minimapFactor, CELL_WIDTH / minimapFactor + 1, CELL_HEIGHT / minimapFactor + 1, color);
-      if (cell.has && cell.has.family === constants_FAMILY_TYPES.resource) {
+      if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
         this.updateResourceMiniMap(cell.has);
       }
     }
@@ -8209,7 +8271,7 @@ var Menu = /*#__PURE__*/function () {
       }
       if (selection && selection["interface"]) {
         this.generateInfo(selection);
-        if (selection.family === constants_FAMILY_TYPES.building) {
+        if (selection.family === FAMILY_TYPES.building) {
           if (!selection.isBuilt) {
             setMenuRecurs(selection, this.bottombarMenu, []);
           } else if (selection.technology) {
@@ -8334,7 +8396,7 @@ var Menu = /*#__PURE__*/function () {
           img.addEventListener('pointerup', function () {
             sound_lib/* sound */.s3.play('5036');
             if (canAfford(player, unit.cost)) {
-              if (player.population >= player.POPULATION_MAX) {
+              if (player.population >= player.population_max) {
                 _this3.showMessage('You need to build more houses');
               }
               _this3.toggleButtonCancel(type, true);
@@ -8721,8 +8783,8 @@ var Controls = /*#__PURE__*/function (_Container) {
             });
           }
           // Color image of mouse building depend on buildable or not
-          var sprite = this.mouseBuilding.getChildByLabel('sprite');
-          var color = this.mouseBuilding.getChildByLabel('color');
+          var sprite = this.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite);
+          var color = this.mouseBuilding.getChildByLabel(LABEL_TYPES.color);
           if (isFree) {
             sprite.tint = COLOR_WHITE;
             if (color) {
@@ -8790,7 +8852,7 @@ var Controls = /*#__PURE__*/function (_Container) {
           if (player.selectedUnits.length < MAX_SELECT_UNITS && pointInRectangle(unit.x - this.camera.x, unit.y - this.camera.y, this.mouseRectangle.x, this.mouseRectangle.y, this.mouseRectangle.width, this.mouseRectangle.height, true)) {
             unit.select();
             countSelect++;
-            if (unit.type === 'Villager') {
+            if (unit.type === UNIT_TYPES.villager) {
               selectVillager = unit;
             }
             player.selectedUnits.push(unit);
@@ -8887,7 +8949,7 @@ var Controls = /*#__PURE__*/function (_Container) {
         var distCenterY = unit.j - centerY;
         var finalX = cell.i + distCenterX;
         var finalY = cell.j + distCenterY;
-        if (unit.type === 'Villager') {
+        if (unit.type === UNIT_TYPES.villager) {
           hasSentVillager = true;
         } else {
           hasSentSoldier = true;
@@ -8927,17 +8989,17 @@ var Controls = /*#__PURE__*/function (_Container) {
       var player = this.context.player;
       this.mouseBuilding = new lib/* Container */.mcf();
       var sprite = lib/* Sprite */.kxk.from(getTexture(building.images["final"], lib/* Assets */.sP));
-      sprite.label = 'sprite';
+      sprite.label = LABEL_TYPES.sprite;
       this.mouseBuilding.addChild(sprite);
       Object.keys(building).forEach(function (prop) {
         _this4.mouseBuilding[prop] = building[prop];
       });
       this.mouseBuilding.x = this.mouse.x;
       this.mouseBuilding.y = this.mouse.y;
-      this.mouseBuilding.label = 'mouseBuilding';
+      this.mouseBuilding.label = LABEL_TYPES.mouseBuilding;
       if (building.images.color) {
         var color = lib/* Sprite */.kxk.from(getTexture(building.images.color, lib/* Assets */.sP));
-        color.label = 'color';
+        color.label = LABEL_TYPES.color;
         changeSpriteColor(color, player.color);
         this.mouseBuilding.addChild(color);
       } else {
@@ -9318,7 +9380,7 @@ var Game = /*#__PURE__*/function (_Container) {
           });
         };
         var playerData = function playerData(player) {
-          return Game_objectSpread(Game_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'POPULATION_MAX', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
+          return Game_objectSpread(Game_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
             buildings: player.buildings.map(function (building) {
               return buildingData(building);
             }),
@@ -9624,11 +9686,6 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
         game = new Game(app, gamebox);
         app.stage.removeChild(loader);
         app.stage.addChild(game);
-
-        // Optional: global pointermove listener
-        app.stage.on('pointermove', function (event) {
-          // event.data.global.x, event.data.global.y
-        });
       case 4:
         return _context.a(2);
     }
