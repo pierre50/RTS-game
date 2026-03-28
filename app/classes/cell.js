@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite } from 'pixi.js'
+import { Container, Assets, Sprite, Texture } from 'pixi.js'
 import {
   randomRange,
   formatNumber,
@@ -11,7 +11,80 @@ import {
   getTexture,
   changeSpriteColorDirectly,
 } from '../lib'
-import { CELL_DEPTH, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../constants'
+import { CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../constants'
+
+// Which triangle sides to show per cardinal neighbor (di, dj)
+const NEIGHBOR_SIDES = {
+  '-1,0': ['NW'],
+  '0,-1': ['NE'],
+  '0,1':  ['SW'],
+  '1,0':  ['SE'],
+}
+
+const _ditherTextures = {}
+let _fogTexture = null
+
+function getFogTexture() {
+  if (_fogTexture) return _fogTexture
+  const W = CELL_WIDTH, H = CELL_HEIGHT
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  for (let px = 0; px < W; px++) {
+    for (let py = 0; py < H; py++) {
+      if (px + 2 * py < 32) continue
+      if (px - 2 * py > 32) continue
+      if (px + 2 * py > 96) continue
+      if (px - 2 * py < -32) continue
+      if ((px + py) % 2 !== 0) continue
+      ctx.fillStyle = '#000'
+      ctx.fillRect(px, py, 1, 1)
+    }
+  }
+  _fogTexture = Texture.from(canvas)
+  return _fogTexture
+}
+
+function getDitherTexture(side) {
+  if (_ditherTextures[side]) return _ditherTextures[side]
+
+  const W = CELL_WIDTH, H = CELL_HEIGHT
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  const K = 14 // band width in isometric edge-distance units (~6px perpendicular)
+
+  for (let px = 0; px < W; px++) {
+    for (let py = 0; py < H; py++) {
+      // Must be inside the isometric diamond
+      // NW edge: px+2py=32, NE edge: px-2py=32, SE edge: px+2py=96, SW edge: px-2py=-32
+      if (px + 2 * py < 32) continue
+      if (px - 2 * py > 32) continue
+      if (px + 2 * py > 96) continue
+      if (px - 2 * py < -32) continue
+
+      // Distance from this side's isometric edge toward the diamond interior
+      let d
+      if      (side === 'NW') d = (px + 2 * py) - 32
+      else if (side === 'NE') d = 32 - (px - 2 * py)
+      else if (side === 'SE') d = 96 - (px + 2 * py)
+      else                    d = (px - 2 * py) + 32  // SW
+
+      if (d < 0 || d > K) continue
+
+      // Dither pattern
+      if ((px + py) % 2 !== 0) continue
+
+      ctx.fillStyle = '#000'
+      ctx.fillRect(px, py, 1, 1)
+    }
+  }
+
+  _ditherTextures[side] = Texture.from(canvas)
+  return _ditherTextures[side]
+}
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -37,6 +110,10 @@ export class Cell extends Container {
     this.has = null
     this.corpses = new Set()
     this.fogSprites = []
+    this._ditherNE = null
+    this._ditherNW = null
+    this._ditherSE = null
+    this._ditherSW = null
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
@@ -290,12 +367,38 @@ export class Cell extends Container {
           localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)
         }
         instance.visible = false
-      } else {
-        for (let i = 0; i < instance.children.length; i++) {
-          if (instance.children[i].tint) {
-            instance.children[i].tint = COLOR_FOG
-          }
+      }
+    }
+  }
+
+  _updateEdgeDither() {
+    const needed = new Set()
+
+    if (this.visible && this.viewBy.size > 0) {
+      const { grid } = this.context.map
+      for (const [key, sides] of Object.entries(NEIGHBOR_SIDES)) {
+        const [di, dj] = key.split(',').map(Number)
+        const n = grid[this.i + di]?.[this.j + dj]
+        if (!n?.visible || n.viewBy.size === 0) {
+          sides.forEach(s => needed.add(s))
         }
+      }
+    }
+
+    for (const side of ['NE', 'NW', 'SE', 'SW']) {
+      const key = `_dither${side}`
+      if (needed.has(side)) {
+        if (!this[key]) {
+          const sprite = new Sprite(getDitherTexture(side))
+          sprite.label = LABEL_TYPES.dither
+          sprite.anchor.set(0.5, 0.5)
+          sprite.eventMode = 'none'
+          this[key] = sprite
+          this.addChild(sprite)
+        }
+      } else if (this[key]) {
+        this.removeChild(this[key])
+        this[key] = null
       }
     }
   }
@@ -304,9 +407,20 @@ export class Cell extends Container {
     if (this.has) {
       this.setFogChildren(this.has, init)
     }
-    for (let i = 0; i < this.children.length; i++) {
-      if (this.children[i].tint) {
-        this.children[i].tint = COLOR_FOG
+    if (!this.children.find(c => c.label === LABEL_TYPES.fogOverlay)) {
+      const overlay = new Sprite(getFogTexture())
+      overlay.label = LABEL_TYPES.fogOverlay
+      overlay.anchor.set(0.5, 0.5)
+      overlay.eventMode = 'none'
+      this.addChild(overlay)
+    }
+    // This cell goes fog: remove its dither ring, update visible neighbors
+    this._updateEdgeDither()
+    const { grid } = this.context.map
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (di === 0 && dj === 0) continue
+        grid[this.i + di]?.[this.j + dj]?._updateEdgeDither()
       }
     }
     for (const corpse of this.corpses) {
@@ -331,11 +445,19 @@ export class Cell extends Container {
     if (!this.visible) {
       this.visible = true
     }
-
     this.zIndex = 0
-    for (let i = 0; i < this.children.length; i++) {
-      if (this.children[i].tint) {
-        this.children[i].tint = COLOR_WHITE
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      if (this.children[i].label === LABEL_TYPES.fogOverlay) {
+        this.removeChild(this.children[i])
+      }
+    }
+    // This cell is now visible: check edge dither for self and neighbors
+    this._updateEdgeDither()
+    const { grid } = this.context.map
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (di === 0 && dj === 0) continue
+        grid[this.i + di]?.[this.j + dj]?._updateEdgeDither()
       }
     }
     if (this.has) {

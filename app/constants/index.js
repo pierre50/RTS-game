@@ -56,6 +56,8 @@ export const LABEL_TYPES = {
   mouseBuilding: 'mouseBuilding',
   floor: 'floor',
   set: 'set',
+  dither: 'dither',
+  fogOverlay: 'fogOverlay',
 }
 
 export const SHEET_TYPES = {
