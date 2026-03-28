@@ -477,6 +477,7 @@ export default class Menu {
   resetInfo() {
     this.bottombarInfo.textContent = ''
     this.bottombarInfo.style.background = 'transparent'
+    this._infoCache = null
   }
 
   generateInfo(selection) {
@@ -488,9 +489,12 @@ export default class Menu {
   }
 
   updateInfo(target, action) {
-    const targetElement = this.bottombarInfo.querySelector(`[id=${target}]`)
+    if (!this._infoCache) this._infoCache = new Map()
+    let targetElement = this._infoCache.get(target)
     if (!targetElement) {
-      return
+      targetElement = this.bottombarInfo.querySelector(`[id=${target}]`)
+      if (!targetElement) return
+      this._infoCache.set(target, targetElement)
     }
     return typeof action !== 'function' ? (targetElement.textContent = action) : action(targetElement)
   }

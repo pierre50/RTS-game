@@ -40,7 +40,7 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.noAI = true
 
-    this.devMode = true
+    this.devMode = false
     this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 
@@ -51,7 +51,7 @@ export default class Map extends Container {
     this.playersPos = []
     this.positionsCount = 2
     this.gaia = null
-    this.resources = []
+    this.resources = new Set()
 
     this.eventMode = 'auto'
     this.allowMove = false
@@ -95,7 +95,7 @@ export default class Map extends Container {
         this.grid[i][j].fillWaterCellsAroundCell()
       }
     }
-    this.resources = resources.map(resource => this.addChild(new Resource(resource, this.context)))
+    this.resources = new Set(resources.map(resource => this.addChild(new Resource(resource, this.context))))
 
     this.formatCellsRelief()
     this.formatCellsWaterBorder()
@@ -163,9 +163,9 @@ export default class Map extends Container {
           if (cell.viewed) {
             cell.onViewed()
           }
-          cell.viewBy = cell.viewBy.map(name => getDest(name, this)).filter(Boolean)
+          cell.viewBy = new Set([...cell.viewBy].map(name => getDest(name, this)).filter(Boolean))
           if (player.isPlayed && cell.viewed) {
-            if (!cell.viewBy.length) {
+            if (!cell.viewBy.size) {
               this.grid[i][j].setFog(true)
             } else {
               this.grid[i][j].removeFog()
@@ -517,7 +517,7 @@ export default class Map extends Container {
           }
         })
         isFree &&
-          this.resources.push(
+          this.resources.add(
             this.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.context))
           )
       }
@@ -726,7 +726,7 @@ export default class Map extends Container {
                   break
               }
             } else {
-              this.resources.push(this.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.context)))
+              this.resources.add(this.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.context)))
             }
           }
         }
@@ -1115,7 +1115,7 @@ export default class Map extends Container {
 
     // Place resources in the selected cells
     for (const cell of cellsToPlace) {
-      this.resources.push(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
+      this.resources.add(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
   }
 }

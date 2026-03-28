@@ -24,11 +24,11 @@ const styleLogInfo2 = 'background: #222; color: #ff0000'
 export class AI extends Player {
   constructor({ ...props }, context) {
     super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
-    this.foundedTrees = []
-    this.foundedBerrybushs = []
-    this.foundedGolds = []
-    this.foundedStones = []
-    this.foundedEnemyBuildings = []
+    this.foundedTrees = new Set()
+    this.foundedBerrybushs = new Set()
+    this.foundedGolds = new Set()
+    this.foundedStones = new Set()
+    this.foundedEnemyBuildings = new Set()
     this.interval = setInterval(() => this.step(), 4000)
     this.selectedUnits = []
     this.selectedUnit = null
@@ -238,25 +238,13 @@ export class AI extends Player {
         if (globalCell.has) {
           const { has } = globalCell
           if (has.quantity > 0) {
-            if (has.type === RESOURCE_TYPES.tree && !this.foundedTrees.includes(has)) {
-              this.foundedTrees.push(has)
-            }
-            if (has.type === RESOURCE_TYPES.berrybush && !this.foundedBerrybushs.includes(has)) {
-              this.foundedBerrybushs.push(has)
-            }
-            if (has.type === RESOURCE_TYPES.stone && !this.foundedStones.includes(has)) {
-              this.foundedStones.push(has)
-            }
-            if (has.type === RESOURCE_TYPES.gold && !this.foundedGolds.includes(has)) {
-              this.foundedGolds.push(has)
-            }
+            if (has.type === RESOURCE_TYPES.tree) this.foundedTrees.add(has)
+            if (has.type === RESOURCE_TYPES.berrybush) this.foundedBerrybushs.add(has)
+            if (has.type === RESOURCE_TYPES.stone) this.foundedStones.add(has)
+            if (has.type === RESOURCE_TYPES.gold) this.foundedGolds.add(has)
           }
-          if (
-            has.family === FAMILY_TYPES.building &&
-            has.owner.label !== this.label &&
-            !this.foundedEnemyBuildings.includes(has)
-          ) {
-            this.foundedEnemyBuildings.push(has)
+          if (has.family === FAMILY_TYPES.building && has.owner.label !== this.label) {
+            this.foundedEnemyBuildings.add(has)
           }
         }
         if (!cell.viewed) {
@@ -269,7 +257,7 @@ export class AI extends Player {
 
     // Utility function to assign villagers to resources
     const assignVillagersToResource = (villagers, resourceList, maxVillagers, actionCallback) => {
-      if (resourceList.length) {
+      if (resourceList.size) {
         if (villagers.length < maxVillagers) {
           for (let i = 0; i < Math.min(maxVillagers, inactifVillagers.length); i++) {
             const resource = getClosestInstance(inactifVillagers[i], resourceList)
@@ -333,15 +321,15 @@ export class AI extends Player {
 
     if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
       const target =
-        this.foundedEnemyBuildings[0] ||
+        this.foundedEnemyBuildings.values().next().value ||
         map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)]
       console.log('Clubman attack target:', target)
       sendToAttack(waitingClubmans, target)
     }
 
-    if (inactifClubmans.length && this.foundedEnemyBuildings.length) {
+    if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
       console.log('Inactif clubmans attacking founded enemy building...')
-      sendToAttack(inactifClubmans, this.foundedEnemyBuildings[0])
+      sendToAttack(inactifClubmans, this.foundedEnemyBuildings.values().next().value)
     }
 
     // Unit Purchasing Logic

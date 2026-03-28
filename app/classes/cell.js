@@ -33,9 +33,9 @@ export class Cell extends Container {
     this.waterBorder = false
     this.z = 0
     this.viewed = false
-    this.viewBy = []
+    this.viewBy = new Set()
     this.has = null
-    this.corpses = []
+    this.corpses = new Set()
     this.fogSprites = []
 
     Object.keys(options).forEach(prop => {
@@ -93,10 +93,8 @@ export class Cell extends Container {
     if (this.has) {
       updateChild(this.has)
     }
-    if (this.corpses.length) {
-      for (let i = 0; i < this.corpses.length; i++) {
-        updateChild(this.corpses[i])
-      }
+    for (const corpse of this.corpses) {
+      updateChild(corpse)
     }
   }
 
@@ -311,10 +309,8 @@ export class Cell extends Container {
         this.children[i].tint = COLOR_FOG
       }
     }
-    if (this.corpses.length) {
-      for (let i = 0; i < this.corpses.length; i++) {
-        this.setFogChildren(this.corpses[i], init)
-      }
+    for (const corpse of this.corpses) {
+      this.setFogChildren(corpse, init)
     }
   }
 
@@ -346,10 +342,8 @@ export class Cell extends Container {
       this.removeFogBuilding(this.has)
       setRemoveChildren(this.has)
     }
-    if (this.corpses.length) {
-      for (let i = 0; i < this.corpses.length; i++) {
-        setRemoveChildren(this.corpses[i])
-      }
+    for (const corpse of this.corpses) {
+      setRemoveChildren(corpse)
     }
   }
 }

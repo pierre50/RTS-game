@@ -184,16 +184,11 @@ export class Resource extends Container {
       if (players[i].type === PLAYER_TYPES.ai) {
         const list = players[i][listName]
         if (list) {
-          const index = list.indexOf(this)
-          list.splice(index, 1)
+          list.delete(this)
         }
       }
     }
-    // Remove from map resources
-    let index = map.resources.indexOf(this)
-    if (index >= 0) {
-      map.resources.splice(index, 1)
-    }
+    map.resources.delete(this)
     menu.updateResourcesMiniMap()
     this.isDead = true
     if (this.type === RESOURCE_TYPES.tree && !immediate) {
@@ -227,7 +222,7 @@ export class Resource extends Container {
     this.zIndex--
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
-      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].corpses.add(this)
       map.grid[this.i][this.j].solid = false
     }
   }
@@ -244,8 +239,7 @@ export class Resource extends Container {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].solid = false
     }
-    const corpseIndex = map.grid[this.i][this.j].corpses.indexOf(this)
-    corpseIndex >= 0 && map.grid[this.i][this.j].corpses.splice(corpseIndex, 1)
+    map.grid[this.i][this.j].corpses.delete(this)
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }

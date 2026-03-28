@@ -34,6 +34,7 @@ import {
   CustomTimeout,
   setUnitTexture,
   updateInstanceVisibility,
+  getPercentage,
 } from '../lib'
 
 export class Animal extends Container {
@@ -615,7 +616,7 @@ export class Animal extends Container {
       this.stopInterval()
       if (map.grid[this.i][this.j].has === this) {
         map.grid[this.i][this.j].has = null
-        map.grid[this.i][this.j].corpses.push(this)
+        map.grid[this.i][this.j].corpses.add(this)
         map.grid[this.i][this.j].solid = false
       }
       if (this.selected && player.selectedOther === this) {
@@ -634,8 +635,7 @@ export class Animal extends Container {
     } = this
     this.isDestroyed = true
     // Remove from map corpses
-    const corpsesIndex = map.grid[this.i][this.j].corpses.indexOf(this)
-    corpsesIndex >= 0 && map.grid[this.i][this.j].corpses.splice(corpsesIndex, 1)
+    map.grid[this.i][this.j].corpses.delete(this)
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }

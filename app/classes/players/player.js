@@ -39,12 +39,12 @@ export class Player {
       this[prop] = options[prop]
     })
 
-    this.population_max = this.population_max || map.devMode ? POPULATION_MAX : 0
+    this.population_max = this.population_max || (map.devMode ? POPULATION_MAX : 0)
 
     this.colorHex = getHexColor(this.color)
     this.config = { ...Assets.cache.get('config') }
     this.techs = { ...Assets.cache.get('technology') }
-    this.hasBuilt = this.hasBuilt || map.devMode ? Object.keys(this.config.buildings).map(key => key) : []
+    this.hasBuilt = this.hasBuilt || (map.devMode ? Object.keys(this.config.buildings).map(key => key) : [])
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
@@ -54,7 +54,7 @@ export class Player {
         cloneGrid[i][j] = {
           i,
           j,
-          viewBy: this.views?.[i][j].viewBy ?? [],
+          viewBy: new Set(this.views?.[i][j].viewBy ?? []),
           onViewed: () => {
             const {
               context: { menu, map },

@@ -132,64 +132,59 @@ export function getInstancePath(instance, x, y, map) {
       }
     }
   }
-  let isFinish = false
   let path = []
   let openCells = []
-  let closedCells = []
+  const openSet = new Set()
+  const closedSet = new Set()
   const cloneEnd = cloneGrid[end.i][end.j]
   const cloneStart = cloneGrid[start.i][start.j]
   openCells.push(cloneStart)
-  while (!isFinish) {
-    if (openCells.length > 0) {
-      // find the lowest f in open cells
-      let lowestF = 0
-      for (let i = 0; i < openCells.length; i++) {
-        if (openCells[i].f < openCells[lowestF].f) {
-          lowestF = i
-        }
-
-        if (openCells[i].f == openCells[lowestF].f) {
-          if (openCells[i].g > openCells[lowestF].g) {
-            lowestF = i
-          }
-        }
+  openSet.add(cloneStart)
+  while (true) {
+    if (openCells.length === 0) {
+      // no solution
+      break
+    }
+    // find the lowest f in open cells
+    let lowestF = 0
+    for (let i = 1; i < openCells.length; i++) {
+      if (openCells[i].f < openCells[lowestF].f) {
+        lowestF = i
+      } else if (openCells[i].f === openCells[lowestF].f && openCells[i].g > openCells[lowestF].g) {
+        lowestF = i
       }
-      let current = openCells[lowestF]
-      if (current === cloneEnd) {
-        // reached the end cell
-        isFinish = true
-      }
-      // calculate path
+    }
+    let current = openCells[lowestF]
+    if (current === cloneEnd) {
+      // reached the end cell - reconstruct path once
       path = [cloneEnd]
       let temp = current
-
       while (temp.previous) {
         path.push(temp.previous)
         temp = temp.previous
       }
-      openCells.splice(openCells.indexOf(current), 1)
-      closedCells.push(current)
-      // check neighbours
-      getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
-        const validDiag =
-          !cellIsDiag(current, neighbour) ||
-          (isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]))
-        if (!closedCells.includes(neighbour) && isCellReachable(neighbour) && validDiag) {
-          let tempG = current.g + instancesDistance(neighbour, current)
-          if (!openCells.includes(neighbour)) {
-            openCells.push(neighbour)
-            neighbour.g = tempG
-            neighbour.h = instancesDistance(neighbour, cloneEnd)
-            neighbour.f = neighbour.g + neighbour.h
-            neighbour.previous = current
-          }
-        }
-      })
-    } else {
-      // no solution
-      path = []
-      isFinish = true
+      break
     }
+    openCells.splice(lowestF, 1)
+    openSet.delete(current)
+    closedSet.add(current)
+    // check neighbours
+    getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
+      const validDiag =
+        !cellIsDiag(current, neighbour) ||
+        (isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]))
+      if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+        let tempG = current.g + instancesDistance(neighbour, current)
+        if (!openSet.has(neighbour)) {
+          openCells.push(neighbour)
+          openSet.add(neighbour)
+          neighbour.g = tempG
+          neighbour.h = instancesDistance(neighbour, cloneEnd)
+          neighbour.f = neighbour.g + neighbour.h
+          neighbour.previous = current
+        }
+      }
+    })
   }
   path.pop()
   return [...path]
@@ -303,16 +298,10 @@ export function updateInstanceVisibility(instance) {
     if (!newVisible.has(cell)) {
       const playerCell = player.views[cell.i][cell.j]
       const globalCell = map.grid[cell.i][cell.j]
-      const globalIdx = globalCell.viewBy.indexOf(instance)
-      const idx = cell.viewBy.indexOf(instance)
-      if (globalIdx !== -1) {
-        globalCell.viewBy.splice(globalIdx, 1)
-      }
-      if (idx !== -1) {
-        cell.viewBy.splice(idx, 1)
-      }
+      globalCell.viewBy.delete(instance)
+      cell.viewBy.delete(instance)
 
-      if (!playerCell.viewBy.length && !map.revealEverything) {
+      if (!playerCell.viewBy.size && !map.revealEverything) {
         globalCell.setFog()
       }
     }
@@ -324,12 +313,8 @@ export function updateInstanceVisibility(instance) {
       const globalCell = map.grid[cell.i][cell.j]
 
       globalCell.updateVisible()
-      if (!globalCell.viewBy.includes(instance)) {
-        globalCell.viewBy.push(instance)
-      }
-      if (!cell.viewBy.includes(instance)) {
-        cell.viewBy.push(instance)
-      }
+      globalCell.viewBy.add(instance)
+      cell.viewBy.add(instance)
       if (!cell.viewed) {
         owner.cellViewed++
         cell.onViewed?.()
@@ -371,31 +356,22 @@ function updateAIKnowledge(globalCell, cell, instance) {
     cell.has = globalCell.has
 
     // Detect tree resources and update AI's knowledge
-    if (
-      globalCell.has.type === RESOURCE_TYPES.tree &&
-      globalCell.has.quantity > 0 &&
-      !owner.foundedTrees.includes(globalCell.has)
-    ) {
-      owner.foundedTrees.push(globalCell.has)
+    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0) {
+      owner.foundedTrees.add(globalCell.has)
     }
 
     // Detect berrybush resources and update AI's knowledge
-    if (
-      globalCell.has.type === RESOURCE_TYPES.berrybush &&
-      globalCell.has.quantity > 0 &&
-      !owner.foundedBerrybushs.includes(globalCell.has)
-    ) {
-      owner.foundedBerrybushs.push(globalCell.has)
+    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0) {
+      owner.foundedBerrybushs.add(globalCell.has)
     }
 
     // Detect enemy buildings and update AI's knowledge
     if (
       globalCell.has.family === FAMILY_TYPES.building &&
       globalCell.has.hitPoints > 0 &&
-      globalCell.has.owner.label !== owner.label &&
-      !owner.foundedEnemyBuildings.includes(globalCell.has)
+      globalCell.has.owner.label !== owner.label
     ) {
-      owner.foundedEnemyBuildings.push(globalCell.has)
+      owner.foundedEnemyBuildings.add(globalCell.has)
     }
   }
 }
@@ -515,7 +491,7 @@ export function instanceIsInPlayerSight(instance, player) {
 
   player?.views &&
     getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist, cell => {
-      if (cell.viewBy.length > 0) {
+      if (cell.viewBy.size > 0) {
         isInSight = true // Set the flag if the condition is met
       }
     })
@@ -648,17 +624,19 @@ export function getClosestInstance(instance, instances) {
  * @returns {object|null} The closest instance with its path or null if no valid path is found.
  */
 export function getClosestInstanceWithPath(instance, instances) {
+  // Sort by Euclidean distance first so we try nearby targets first
+  const sorted = [...instances].sort((a, b) => instancesDistance(instance, a) - instancesDistance(instance, b))
+
   let closest = null
 
-  for (const target of instances) {
+  for (const target of sorted) {
+    // A* path length >= straight-line distance, so skip if already longer than best
+    if (closest && instancesDistance(instance, target) >= closest.path.length) {
+      break
+    }
     const path = getInstanceClosestFreeCellPath(instance, target, instance.parent)
-
-    // If a valid path exists, compare its length to the current closest
     if (path.length && (!closest || path.length < closest.path.length)) {
-      closest = {
-        instance: target,
-        path,
-      }
+      closest = { instance: target, path }
     }
   }
 

@@ -185,7 +185,7 @@ export default class Game extends Container {
         views: player.views.map(view =>
           view.map(cell => ({
             ...filterObject(cell, ['i', 'j', 'viewed']),
-            viewBy: (cell.viewBy || []).map(unit => unit.label),
+            viewBy: [...(cell.viewBy || [])].map(unit => unit.label),
           }))
         ),
       })
@@ -211,7 +211,7 @@ export default class Game extends Container {
       return {
         camera: context.controls.camera,
         players: context.players.map(player => playerData(player)),
-        resources: context.map.resources.map(resource => resourceData(resource)),
+        resources: [...context.map.resources].map(resource => resourceData(resource)),
         map: context.map.grid.map(line => line.map(cell => cellData(cell))),
         animals: context.map.gaia.units.map(animal => animalData(animal)),
       }

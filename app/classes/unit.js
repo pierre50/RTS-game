@@ -109,7 +109,7 @@ export class Unit extends Container {
     this.currentCell = map.grid[this.i][this.j]
     if (this.currentSheet === SHEET_TYPES.corpse) {
       this.owner.corpses.push(this)
-      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].corpses.add(this)
     } else if (!this.isDead) {
       this.currentCell.has = this
       this.currentCell.solid = true
@@ -1399,7 +1399,7 @@ export class Unit extends Container {
     this.sprite.animationSpeed = (1 / (CORPSE_TIME * 1000)) * ACCELERATOR
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
-      map.grid[this.i][this.j].corpses.push(this)
+      map.grid[this.i][this.j].corpses.add(this)
       map.grid[this.i][this.j].solid = false
     }
   }
@@ -1477,11 +1477,7 @@ export class Unit extends Container {
     if (index >= 0) {
       this.owner.corpses.splice(index, 1)
     }
-    // Remove from map corpses
-    const corpsesIndex = map.grid[this.i][this.j].corpses.indexOf(this)
-    if (index >= 0) {
-      map.grid[this.i][this.j].corpses.splice(corpsesIndex, 1)
-    }
+    map.grid[this.i][this.j].corpses.delete(this)
     map.removeChild(this)
     this.destroy({ child: true, texture: true })
   }

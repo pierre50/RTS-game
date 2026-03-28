@@ -128,12 +128,12 @@ export class Building extends Container {
       if (set) {
         cell.removeChild(set)
       }
-      for (let i = 0; i < cell.corpses.length; i++) {
-        typeof cell.corpses[i].clear === 'function' && cell.corpses[i].clear()
+      for (const corpse of cell.corpses) {
+        typeof corpse.clear === 'function' && corpse.clear()
       }
       cell.has = this
       cell.solid = true
-      this.owner.views[cell.i][cell.j].viewBy.push(this)
+      this.owner.views[cell.i][cell.j].viewBy.add(this)
       if (this.owner.isPlayed && !map.revealEverything) {
         cell.removeFog()
       }
@@ -554,8 +554,7 @@ export class Building extends Container {
     // Remove from view of others players
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === PLAYER_TYPES.ai) {
-        const list = players[i].foundedEnemyBuildings
-        list.splice(list.indexOf(this), 1)
+        players[i].foundedEnemyBuildings.delete(this)
       }
     }
     const color = this.getChildByLabel(LABEL_TYPES.color)
@@ -584,7 +583,7 @@ export class Building extends Container {
       if (cell.has === this) {
         cell.has = null
         cell.solid = false
-        cell.corpses.push(this)
+        cell.corpses.add(this)
       }
     })
     this.startTimeout(() => this.clear(), RUBBLE_TIME)
@@ -600,10 +599,7 @@ export class Building extends Container {
     } = this
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-      const index = cell.corpses.indexOf(this)
-      if (index >= 0) {
-        cell.corpses.splice(index, 1)
-      }
+      cell.corpses.delete(this)
     })
     this.isDestroyed = true
     this.destroy({ child: true, texture: true })
@@ -888,7 +884,7 @@ export class Building extends Container {
                 for (let i = 0; i < this.owner.buildings.length; i++) {
                   const building = this.owner.buildings[i]
                   if (building.type === config.action.source) {
-                    building.upgrade(technconfigology.action.target)
+                    building.upgrade(config.action.target)
                   }
                 }
                 break
