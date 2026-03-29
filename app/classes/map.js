@@ -219,7 +219,7 @@ export default class Map extends Container {
       this.positionsCount = positionsCountOverride
     }
 
-    this.totalCells = Math.pow(this.size, 2)
+    this.totalCells = (this.size + 1) ** 2
 
     this.playersPos = this.findPlayerPlaces()
 
@@ -348,10 +348,11 @@ export default class Map extends Container {
     const forestCells = []
     const pathCells = new Set()
 
-    // Function to calculate the distance between two points
-    function distance(x1, y1, x2, y2) {
-      return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
+    function distSq(x1, y1, x2, y2) {
+      return (x1 - x2) ** 2 + (y1 - y2) ** 2
     }
+    const safeDistanceSq = safeDistance ** 2
 
     // Function to create a circle of points within a grid, checking boundaries
     function createCircle(centerI, centerJ, radius, density = 0.7, edgeNoise = 0) {
@@ -398,7 +399,7 @@ export default class Map extends Container {
         tries++
         if (tries > 100) break // Safety exit
       } while (
-        distance(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistance ||
+        distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq ||
         clusterCenterI < 0 ||
         clusterCenterI >= gridWidth ||
         clusterCenterJ < 0 ||
@@ -426,7 +427,7 @@ export default class Map extends Container {
         tries++
         if (tries > 50) break // Safety exit to avoid infinite loop
       } while (
-        distance(soloI, soloJ, playerI, playerJ) < safeDistance ||
+        distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq ||
         soloI < 0 ||
         soloI >= gridWidth ||
         soloJ < 0 ||
@@ -455,7 +456,7 @@ export default class Map extends Container {
           tries++
           if (tries > 100) break
         } while (
-          distance(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistance ||
+          distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq ||
           clearingCenterI < 0 ||
           clearingCenterI >= gridWidth ||
           clearingCenterJ < 0 ||
@@ -467,12 +468,12 @@ export default class Map extends Container {
 
         if (tries <= 100) {
           const clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, edgeNoise)
-          clearingCells.forEach(clearedCell => {
-            const index = forestCells.findIndex(cell => cell.i === clearedCell.i && cell.j === clearedCell.j)
-            if (index > -1) {
-              forestCells.splice(index, 1) // Remove tree from clearing
+          const clearingSet = new Set(clearingCells.map(c => `${c.i},${c.j}`))
+          for (let idx = forestCells.length - 1; idx >= 0; idx--) {
+            if (clearingSet.has(`${forestCells[idx].i},${forestCells[idx].j}`)) {
+              forestCells.splice(idx, 1)
             }
-          })
+          }
         }
       }
     }
@@ -482,35 +483,27 @@ export default class Map extends Container {
     const pathDirection = Math.random() > 0.5 ? 1 : -1 // Random path direction
 
     for (let step = 0; step < pathLength; step++) {
-      let offsetX, offsetY
-      let tries = 0
-
-      do {
-        offsetX = step * pathDirection
-        offsetY = step
-        tries++
-        if (tries > 50) break
-      } while (
-        distance(playerI + offsetX, playerJ + offsetY, playerI, playerJ) < safeDistance ||
-        playerI + offsetX < 0 ||
-        playerI + offsetX >= gridWidth ||
-        playerJ + offsetY < 0 ||
-        playerJ + offsetY >= gridHeight
-      )
-
-      if (tries <= 50) {
+      const offsetX = step * pathDirection
+      const offsetY = step
+      const ni = playerI + offsetX
+      const nj = playerJ + offsetY
+      if (
+        ni >= 0 && ni < gridWidth &&
+        nj >= 0 && nj < gridHeight &&
+        distSq(ni, nj, playerI, playerJ) >= safeDistanceSq
+      ) {
         const randOffsetX = Math.random() > 0.5 ? 1 : -1
         const randOffsetY = Math.random() > 0.5 ? 1 : -1
-        pathCells.add(`${playerI + offsetX + randOffsetX},${playerJ + offsetY + randOffsetY}`)
+        pathCells.add(`${ni + randOffsetX},${nj + randOffsetY}`)
       }
     }
 
     // Remove path cells from forestCells
-    forestCells.forEach(cell => {
-      if (pathCells.has(`${cell.i},${cell.j}`)) {
-        forestCells.splice(forestCells.indexOf(cell), 1)
+    for (let idx = forestCells.length - 1; idx >= 0; idx--) {
+      if (pathCells.has(`${forestCells[idx].i},${forestCells[idx].j}`)) {
+        forestCells.splice(idx, 1)
       }
-    })
+    }
 
     // Select and place trees in the forest cells
     const cellsToPlace = []
@@ -670,6 +663,7 @@ export default class Map extends Container {
 
   generateCells() {
     const z = 0
+    this.grid = []
     const terrain = this.generateTerrain(this.size ? this.size + 1 : 121)
     this.size = terrain.length - 1
 
@@ -727,7 +721,7 @@ export default class Map extends Container {
             if (cell.category !== 'Water') {
               const type = randomItem(['tree', 'rock', 'animal'])
               switch (type) {
-                case 'rock':
+                case 'rock': {
                   const randomSpritesheet = randomRange(531, 534).toString()
                   const spritesheet = Assets.cache.get(randomSpritesheet)
                   const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
@@ -740,11 +734,13 @@ export default class Map extends Container {
                   rock.updateAnchor = true
                   cell.addChild(rock)
                   break
-                case 'animal':
+                }
+                case 'animal': {
                   const animals = Assets.cache.get('config').animals
-                  const type = randomItem(Object.keys(animals))
-                  this.gaia.createAnimal({ i, j, type })
+                  const animalType = randomItem(Object.keys(animals))
+                  this.gaia.createAnimal({ i, j, type: animalType })
                   break
+                }
               }
             } else {
               this.resources.add(this.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.context)))
