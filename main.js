@@ -1,8 +1,8 @@
 "use strict";
 (self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[792],{
 
-/***/ 6544:
-/***/ ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
+/***/ 5494
+(__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
 // NAMESPACE OBJECT: ./app/lib/maths.js
@@ -18,7 +18,7 @@ __webpack_require__.d(maths_namespaceObject, {
   formatNumber: () => (formatNumber),
   getInstanceDegree: () => (maths_getInstanceDegree),
   getInstanceZIndex: () => (getInstanceZIndex),
-  getPercentage: () => (maths_getPercentage),
+  getPercentage: () => (getPercentage),
   getPointsDegree: () => (maths_getPointsDegree),
   getValuePercentage: () => (getValuePercentage),
   instancesDistance: () => (maths_instancesDistance),
@@ -31,28 +31,28 @@ __webpack_require__.d(maths_namespaceObject, {
   uuidv4: () => (uuidv4)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.13.2/node_modules/pixi.js/lib/index.mjs + 39 modules
-var lib = __webpack_require__(6663);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
-var injectStylesIntoStyleTag = __webpack_require__(5993);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/index.mjs + 41 modules
+var lib = __webpack_require__(7103);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
+var injectStylesIntoStyleTag = __webpack_require__(7388);
 var injectStylesIntoStyleTag_default = /*#__PURE__*/__webpack_require__.n(injectStylesIntoStyleTag);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/styleDomAPI.js
-var styleDomAPI = __webpack_require__(4782);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/styleDomAPI.js
+var styleDomAPI = __webpack_require__(4517);
 var styleDomAPI_default = /*#__PURE__*/__webpack_require__.n(styleDomAPI);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/insertBySelector.js
-var insertBySelector = __webpack_require__(5494);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/insertBySelector.js
+var insertBySelector = __webpack_require__(6615);
 var insertBySelector_default = /*#__PURE__*/__webpack_require__.n(insertBySelector);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/setAttributesWithoutAttributes.js
-var setAttributesWithoutAttributes = __webpack_require__(1193);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/setAttributesWithoutAttributes.js
+var setAttributesWithoutAttributes = __webpack_require__(9812);
 var setAttributesWithoutAttributes_default = /*#__PURE__*/__webpack_require__.n(setAttributesWithoutAttributes);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/insertStyleElement.js
-var insertStyleElement = __webpack_require__(8325);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/insertStyleElement.js
+var insertStyleElement = __webpack_require__(1600);
 var insertStyleElement_default = /*#__PURE__*/__webpack_require__.n(insertStyleElement);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.101.3/node_modules/style-loader/dist/runtime/styleTagTransform.js
-var styleTagTransform = __webpack_require__(3842);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/styleTagTransform.js
+var styleTagTransform = __webpack_require__(7837);
 var styleTagTransform_default = /*#__PURE__*/__webpack_require__.n(styleTagTransform);
-// EXTERNAL MODULE: ./node_modules/.pnpm/css-loader@7.1.2_webpack@5.101.3/node_modules/css-loader/dist/cjs.js!./app/styles.css
-var styles = __webpack_require__(7511);
+// EXTERNAL MODULE: ./node_modules/.pnpm/css-loader@7.1.4_webpack@5.105.4/node_modules/css-loader/dist/cjs.js!./app/styles.css
+var styles = __webpack_require__(2088);
 ;// ./app/styles.css
 
       
@@ -80,8 +80,8 @@ var update = injectStylesIntoStyleTag_default()(styles/* default */.A, options);
 
        /* harmony default export */ const app_styles = (styles/* default */.A && styles/* default */.A.locals ? styles/* default */.A.locals : undefined);
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.13.2/node_modules/@pixi/sound/lib/index.mjs + 29 modules
-var sound_lib = __webpack_require__(7694);
+// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
+var sound_lib = __webpack_require__(8449);
 ;// ./app/constants/index.js
 var CELL_WIDTH = 64;
 var CELL_HEIGHT = 32;
@@ -133,7 +133,9 @@ var LABEL_TYPES = {
   buildingFog: 'building',
   mouseBuilding: 'mouseBuilding',
   floor: 'floor',
-  set: 'set'
+  set: 'set',
+  dither: 'dither',
+  fogOverlay: 'fogOverlay'
 };
 var SHEET_TYPES = {
   walking: 'walkingSheet',
@@ -220,8 +222,8 @@ var CORPSE_TIME = 120;
 var RUBBLE_TIME = 120;
 var MAX_SELECT_UNITS = 10;
 var POPULATION_MAX = 200;
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi-filters@6.1.4_pixi.js@8.13.2/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs + 4 modules
-var MultiColorReplaceFilter = __webpack_require__(5360);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs + 4 modules
+var MultiColorReplaceFilter = __webpack_require__(6240);
 ;// ./app/lib/graphics.js
 function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
@@ -642,7 +644,7 @@ function maths_isometricToCartesian(x, y) {
  * @param {number} a
  * @param {number} b
  */
-function maths_getPercentage(a, b) {
+function getPercentage(a, b) {
   return Math.floor(a / b * 100);
 }
 
@@ -982,48 +984,50 @@ function getInstancePath(instance, x, y, map) {
       };
     }
   }
-  var isFinish = false;
   var path = [];
   var openCells = [];
-  var closedCells = [];
+  var openSet = new Set();
+  var closedSet = new Set();
   var cloneEnd = cloneGrid[end.i][end.j];
   var cloneStart = cloneGrid[start.i][start.j];
   openCells.push(cloneStart);
+  openSet.add(cloneStart);
   var _loop = function _loop() {
-    if (openCells.length > 0) {
+      if (openCells.length === 0) {
+        // no solution
+        return 0; // break
+      }
       // find the lowest f in open cells
       var lowestF = 0;
-      for (var _i = 0; _i < openCells.length; _i++) {
+      for (var _i = 1; _i < openCells.length; _i++) {
         if (openCells[_i].f < openCells[lowestF].f) {
           lowestF = _i;
-        }
-        if (openCells[_i].f == openCells[lowestF].f) {
-          if (openCells[_i].g > openCells[lowestF].g) {
-            lowestF = _i;
-          }
+        } else if (openCells[_i].f === openCells[lowestF].f && openCells[_i].g > openCells[lowestF].g) {
+          lowestF = _i;
         }
       }
       var current = openCells[lowestF];
       if (current === cloneEnd) {
-        // reached the end cell
-        isFinish = true;
+        // reached the end cell - reconstruct path once
+        path = [cloneEnd];
+        var temp = current;
+        while (temp.previous) {
+          path.push(temp.previous);
+          temp = temp.previous;
+        }
+        return 0; // break
       }
-      // calculate path
-      path = [cloneEnd];
-      var temp = current;
-      while (temp.previous) {
-        path.push(temp.previous);
-        temp = temp.previous;
-      }
-      openCells.splice(openCells.indexOf(current), 1);
-      closedCells.push(current);
+      openCells.splice(lowestF, 1);
+      openSet["delete"](current);
+      closedSet.add(current);
       // check neighbours
       getCellsAroundPoint(current.i, current.j, cloneGrid, 1, function (neighbour) {
         var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]);
-        if (!closedCells.includes(neighbour) && isCellReachable(neighbour) && validDiag) {
+        if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
           var tempG = current.g + instancesDistance(neighbour, current);
-          if (!openCells.includes(neighbour)) {
+          if (!openSet.has(neighbour)) {
             openCells.push(neighbour);
+            openSet.add(neighbour);
             neighbour.g = tempG;
             neighbour.h = instancesDistance(neighbour, cloneEnd);
             neighbour.f = neighbour.g + neighbour.h;
@@ -1031,14 +1035,11 @@ function getInstancePath(instance, x, y, map) {
           }
         }
       });
-    } else {
-      // no solution
-      path = [];
-      isFinish = true;
-    }
-  };
-  while (!isFinish) {
-    _loop();
+    },
+    _ret;
+  while (true) {
+    _ret = _loop();
+    if (_ret === 0) break;
   }
   path.pop();
   return _toConsumableArray(path);
@@ -1170,15 +1171,9 @@ function updateInstanceVisibility(instance) {
       if (!newVisible.has(cell)) {
         var playerCell = player.views[cell.i][cell.j];
         var globalCell = map.grid[cell.i][cell.j];
-        var globalIdx = globalCell.viewBy.indexOf(instance);
-        var idx = cell.viewBy.indexOf(instance);
-        if (globalIdx !== -1) {
-          globalCell.viewBy.splice(globalIdx, 1);
-        }
-        if (idx !== -1) {
-          cell.viewBy.splice(idx, 1);
-        }
-        if (!playerCell.viewBy.length && !map.revealEverything) {
+        globalCell.viewBy["delete"](instance);
+        cell.viewBy["delete"](instance);
+        if (!playerCell.viewBy.size && !map.revealEverything) {
           globalCell.setFog();
         }
       }
@@ -1198,12 +1193,8 @@ function updateInstanceVisibility(instance) {
       if (!prevVisible.has(_cell)) {
         var _globalCell = map.grid[_cell.i][_cell.j];
         _globalCell.updateVisible();
-        if (!_globalCell.viewBy.includes(instance)) {
-          _globalCell.viewBy.push(instance);
-        }
-        if (!_cell.viewBy.includes(instance)) {
-          _cell.viewBy.push(instance);
-        }
+        _globalCell.viewBy.add(instance);
+        _cell.viewBy.add(instance);
         if (!_cell.viewed) {
           var _cell$onViewed;
           owner.cellViewed++;
@@ -1249,18 +1240,18 @@ function updateAIKnowledge(globalCell, cell, instance) {
     cell.has = globalCell.has;
 
     // Detect tree resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0 && !owner.foundedTrees.includes(globalCell.has)) {
-      owner.foundedTrees.push(globalCell.has);
+    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0) {
+      owner.foundedTrees.add(globalCell.has);
     }
 
     // Detect berrybush resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0 && !owner.foundedBerrybushs.includes(globalCell.has)) {
-      owner.foundedBerrybushs.push(globalCell.has);
+    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0) {
+      owner.foundedBerrybushs.add(globalCell.has);
     }
 
     // Detect enemy buildings and update AI's knowledge
-    if (globalCell.has.family === FAMILY_TYPES.building && globalCell.has.hitPoints > 0 && globalCell.has.owner.label !== owner.label && !owner.foundedEnemyBuildings.includes(globalCell.has)) {
-      owner.foundedEnemyBuildings.push(globalCell.has);
+    if (globalCell.has.family === FAMILY_TYPES.building && globalCell.has.hitPoints > 0 && globalCell.has.owner.label !== owner.label) {
+      owner.foundedEnemyBuildings.add(globalCell.has);
     }
   }
 }
@@ -1368,7 +1359,7 @@ function getPositionInGridAroundInstance(instance, grid, space, size) {
     allowInclined || !cell.inclined) && (
     // Check inclined condition
     !extraCondition || extraCondition(cell)) // Apply any additional conditions
-    ;
+;
   };
 
   // Use either the random zone search or fixed zone search based on the 'random' flag
@@ -1393,7 +1384,7 @@ function instanceIsInPlayerSight(instance, player) {
   var isInSight = false; // Flag to track if the instance is in player sight
 
   (player === null || player === void 0 ? void 0 : player.views) && getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist, function (cell) {
-    if (cell.viewBy.length > 0) {
+    if (cell.viewBy.size > 0) {
       isInSight = true; // Set the flag if the condition is met
     }
   });
@@ -1531,15 +1522,21 @@ function getClosestInstance(instance, instances) {
  * @returns {object|null} The closest instance with its path or null if no valid path is found.
  */
 function getClosestInstanceWithPath(instance, instances) {
+  // Sort by Euclidean distance first so we try nearby targets first
+  var sorted = _toConsumableArray(instances).sort(function (a, b) {
+    return instancesDistance(instance, a) - instancesDistance(instance, b);
+  });
   var closest = null;
-  var _iterator6 = _createForOfIteratorHelper(instances),
+  var _iterator6 = _createForOfIteratorHelper(sorted),
     _step6;
   try {
     for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
       var target = _step6.value;
+      // A* path length >= straight-line distance, so skip if already longer than best
+      if (closest && instancesDistance(instance, target) >= closest.path.length) {
+        break;
+      }
       var path = getInstanceClosestFreeCellPath(instance, target, instance.parent);
-
-      // If a valid path exists, compare its length to the current closest
       if (path.length && (!closest || path.length < closest.path.length)) {
         closest = {
           instance: target,
@@ -2158,16 +2155,11 @@ var Resource = /*#__PURE__*/function (_Container) {
         if (players[i].type === PLAYER_TYPES.ai) {
           var list = players[i][listName];
           if (list) {
-            var _index = list.indexOf(this);
-            list.splice(_index, 1);
+            list["delete"](this);
           }
         }
       }
-      // Remove from map resources
-      var index = map.resources.indexOf(this);
-      if (index >= 0) {
-        map.resources.splice(index, 1);
-      }
+      map.resources["delete"](this);
       menu.updateResourcesMiniMap();
       this.isDead = true;
       if (this.type === RESOURCE_TYPES.tree && !immediate) {
@@ -2201,7 +2193,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       this.zIndex--;
       if (map.grid[this.i][this.j].has === this) {
         map.grid[this.i][this.j].has = null;
-        map.grid[this.i][this.j].corpses.push(this);
+        map.grid[this.i][this.j].corpses.add(this);
         map.grid[this.i][this.j].solid = false;
       }
     }
@@ -2217,8 +2209,7 @@ var Resource = /*#__PURE__*/function (_Container) {
         map.grid[this.i][this.j].has = null;
         map.grid[this.i][this.j].solid = false;
       }
-      var corpseIndex = map.grid[this.i][this.j].corpses.indexOf(this);
-      corpseIndex >= 0 && map.grid[this.i][this.j].corpses.splice(corpseIndex, 1);
+      map.grid[this.i][this.j].corpses["delete"](this);
       map.removeChild(this);
       this.destroy({
         child: true,
@@ -2376,6 +2367,7 @@ function building_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = building_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function building_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = building_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function building_toConsumableArray(r) { return building_arrayWithoutHoles(r) || building_iterableToArray(r) || building_unsupportedIterableToArray(r) || building_nonIterableSpread(); }
 function building_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function building_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return building_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? building_arrayLikeToArray(r, a) : void 0; } }
@@ -2484,12 +2476,21 @@ var Building = /*#__PURE__*/function (_Container) {
       if (set) {
         cell.removeChild(set);
       }
-      for (var i = 0; i < cell.corpses.length; i++) {
-        typeof cell.corpses[i].clear === 'function' && cell.corpses[i].clear();
+      var _iterator = building_createForOfIteratorHelper(cell.corpses),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var corpse = _step.value;
+          typeof corpse.clear === 'function' && corpse.clear();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
       }
       cell.has = _this;
       cell.solid = true;
-      _this.owner.views[cell.i][cell.j].viewBy.push(_this);
+      _this.owner.views[cell.i][cell.j].viewBy.add(_this);
       if (_this.owner.isPlayed && !map.revealEverything) {
         cell.removeFog();
       }
@@ -2712,7 +2713,7 @@ var Building = /*#__PURE__*/function (_Container) {
     key: "updateTexture",
     value: function updateTexture() {
       var menu = this.context.menu;
-      var percentage = maths_getPercentage(this.hitPoints, this.totalHitPoints);
+      var percentage = getPercentage(this.hitPoints, this.totalHitPoints);
       var buildSpritesheetId = this.sprite.texture.label.split('_')[1].split('.')[0];
       var buildSpritesheet = lib/* Assets */.sP.cache.get(buildSpritesheetId);
       if (percentage >= 25 && percentage < 50) {
@@ -2813,7 +2814,7 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.hitPoints > this.totalHitPoints) {
         this.hitPoints = this.totalHitPoints;
       }
-      var percentage = maths_getPercentage(this.hitPoints, this.totalHitPoints);
+      var percentage = getPercentage(this.hitPoints, this.totalHitPoints);
       if (this.hitPoints <= 0) {
         this.die();
       }
@@ -2896,8 +2897,7 @@ var Building = /*#__PURE__*/function (_Container) {
       // Remove from view of others players
       for (var i = 0; i < players.length; i++) {
         if (players[i].type === PLAYER_TYPES.ai) {
-          var list = players[i].foundedEnemyBuildings;
-          list.splice(list.indexOf(this), 1);
+          players[i].foundedEnemyBuildings["delete"](this);
         }
       }
       var color = this.getChildByLabel(LABEL_TYPES.color);
@@ -2925,7 +2925,7 @@ var Building = /*#__PURE__*/function (_Container) {
         if (cell.has === _this6) {
           cell.has = null;
           cell.solid = false;
-          cell.corpses.push(_this6);
+          cell.corpses.add(_this6);
         }
       });
       this.startTimeout(function () {
@@ -2943,10 +2943,7 @@ var Building = /*#__PURE__*/function (_Container) {
       var map = this.context.map;
       var dist = this.size === 3 ? 1 : 0;
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
-        var index = cell.corpses.indexOf(_this7);
-        if (index >= 0) {
-          cell.corpses.splice(index, 1);
-        }
+        cell.corpses["delete"](_this7);
       });
       this.isDestroyed = true;
       this.destroy({
@@ -3245,7 +3242,7 @@ var Building = /*#__PURE__*/function (_Container) {
                   for (var _i5 = 0; _i5 < _this0.owner.buildings.length; _i5++) {
                     var building = _this0.owner.buildings[_i5];
                     if (building.type === config.action.source) {
-                      building.upgrade(technconfigology.action.target);
+                      building.upgrade(config.action.target);
                     }
                   }
                   break;
@@ -3389,7 +3386,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.currentCell = map.grid[_this.i][_this.j];
     if (_this.currentSheet === SHEET_TYPES.corpse) {
       _this.owner.corpses.push(_this);
-      map.grid[_this.i][_this.j].corpses.push(_this);
+      map.grid[_this.i][_this.j].corpses.add(_this);
     } else if (!_this.isDead) {
       _this.currentCell.has = _this;
       _this.currentCell.solid = true;
@@ -4595,7 +4592,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.sprite.animationSpeed = 1 / (CORPSE_TIME * 1000) * ACCELERATOR;
       if (map.grid[this.i][this.j].has === this) {
         map.grid[this.i][this.j].has = null;
-        map.grid[this.i][this.j].corpses.push(this);
+        map.grid[this.i][this.j].corpses.add(this);
         map.grid[this.i][this.j].solid = false;
       }
     }
@@ -4667,11 +4664,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       if (index >= 0) {
         this.owner.corpses.splice(index, 1);
       }
-      // Remove from map corpses
-      var corpsesIndex = map.grid[this.i][this.j].corpses.indexOf(this);
-      if (index >= 0) {
-        map.grid[this.i][this.j].corpses.splice(corpsesIndex, 1);
-      }
+      map.grid[this.i][this.j].corpses["delete"](this);
       map.removeChild(this);
       this.destroy({
         child: true,
@@ -4924,13 +4917,13 @@ var Player = /*#__PURE__*/function () {
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
-    this.population_max = this.population_max || map.devMode ? POPULATION_MAX : 0;
+    this.population_max = this.population_max || (map.devMode ? POPULATION_MAX : 0);
     this.colorHex = getHexColor(this.color);
     this.config = player_objectSpread({}, lib/* Assets */.sP.cache.get('config'));
     this.techs = player_objectSpread({}, lib/* Assets */.sP.cache.get('technology'));
-    this.hasBuilt = this.hasBuilt || map.devMode ? Object.keys(this.config.buildings).map(function (key) {
+    this.hasBuilt = this.hasBuilt || (map.devMode ? Object.keys(this.config.buildings).map(function (key) {
       return key;
-    }) : [];
+    }) : []);
     var cloneGrid = [];
     var _loop = function _loop(i) {
       var _loop2 = function _loop2(j) {
@@ -4941,7 +4934,7 @@ var Player = /*#__PURE__*/function () {
         cloneGrid[i][j] = {
           i: i,
           j: j,
-          viewBy: (_this$views$i$j$viewB = (_this$views = _this.views) === null || _this$views === void 0 ? void 0 : _this$views[i][j].viewBy) !== null && _this$views$i$j$viewB !== void 0 ? _this$views$i$j$viewB : [],
+          viewBy: new Set((_this$views$i$j$viewB = (_this$views = _this.views) === null || _this$views === void 0 ? void 0 : _this$views[i][j].viewBy) !== null && _this$views$i$j$viewB !== void 0 ? _this$views$i$j$viewB : []),
           onViewed: function onViewed() {
             var _this$context = _this.context,
               menu = _this$context.menu,
@@ -5134,11 +5127,11 @@ var AI = /*#__PURE__*/function (_Player) {
       isPlayed: false,
       type: PLAYER_TYPES.ai
     }), context]);
-    _this.foundedTrees = [];
-    _this.foundedBerrybushs = [];
-    _this.foundedGolds = [];
-    _this.foundedStones = [];
-    _this.foundedEnemyBuildings = [];
+    _this.foundedTrees = new Set();
+    _this.foundedBerrybushs = new Set();
+    _this.foundedGolds = new Set();
+    _this.foundedStones = new Set();
+    _this.foundedEnemyBuildings = new Set();
     _this.interval = setInterval(function () {
       return _this.step();
     }, 4000);
@@ -5339,21 +5332,13 @@ var AI = /*#__PURE__*/function (_Player) {
           if (globalCell.has) {
             var has = globalCell.has;
             if (has.quantity > 0) {
-              if (has.type === RESOURCE_TYPES.tree && !_this2.foundedTrees.includes(has)) {
-                _this2.foundedTrees.push(has);
-              }
-              if (has.type === RESOURCE_TYPES.berrybush && !_this2.foundedBerrybushs.includes(has)) {
-                _this2.foundedBerrybushs.push(has);
-              }
-              if (has.type === RESOURCE_TYPES.stone && !_this2.foundedStones.includes(has)) {
-                _this2.foundedStones.push(has);
-              }
-              if (has.type === RESOURCE_TYPES.gold && !_this2.foundedGolds.includes(has)) {
-                _this2.foundedGolds.push(has);
-              }
+              if (has.type === RESOURCE_TYPES.tree) _this2.foundedTrees.add(has);
+              if (has.type === RESOURCE_TYPES.berrybush) _this2.foundedBerrybushs.add(has);
+              if (has.type === RESOURCE_TYPES.stone) _this2.foundedStones.add(has);
+              if (has.type === RESOURCE_TYPES.gold) _this2.foundedGolds.add(has);
             }
-            if (has.family === FAMILY_TYPES.building && has.owner.label !== _this2.label && !_this2.foundedEnemyBuildings.includes(has)) {
-              _this2.foundedEnemyBuildings.push(has);
+            if (has.family === FAMILY_TYPES.building && has.owner.label !== _this2.label) {
+              _this2.foundedEnemyBuildings.add(has);
             }
           }
           if (!cell.viewed) {
@@ -5366,7 +5351,7 @@ var AI = /*#__PURE__*/function (_Player) {
 
       // Utility function to assign villagers to resources
       var assignVillagersToResource = function assignVillagersToResource(villagers, resourceList, maxVillagers, actionCallback) {
-        if (resourceList.length) {
+        if (resourceList.size) {
           if (villagers.length < maxVillagers) {
             for (var i = 0; i < Math.min(maxVillagers, inactifVillagers.length); i++) {
               var resource = getClosestInstance(inactifVillagers[i], resourceList);
@@ -5440,13 +5425,13 @@ var AI = /*#__PURE__*/function (_Player) {
         });
       };
       if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
-        var target = this.foundedEnemyBuildings[0] || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
+        var target = this.foundedEnemyBuildings.values().next().value || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
         console.log('Clubman attack target:', target);
         sendToAttack(waitingClubmans, target);
       }
-      if (inactifClubmans.length && this.foundedEnemyBuildings.length) {
+      if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
         console.log('Inactif clubmans attacking founded enemy building...');
-        sendToAttack(inactifClubmans, this.foundedEnemyBuildings[0]);
+        sendToAttack(inactifClubmans, this.foundedEnemyBuildings.values().next().value);
       }
 
       // Unit Purchasing Logic
@@ -6169,7 +6154,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         this.stopInterval();
         if (map.grid[this.i][this.j].has === this) {
           map.grid[this.i][this.j].has = null;
-          map.grid[this.i][this.j].corpses.push(this);
+          map.grid[this.i][this.j].corpses.add(this);
           map.grid[this.i][this.j].solid = false;
         }
         if (this.selected && player.selectedOther === this) {
@@ -6187,8 +6172,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       var map = this.context.map;
       this.isDestroyed = true;
       // Remove from map corpses
-      var corpsesIndex = map.grid[this.i][this.j].corpses.indexOf(this);
-      corpsesIndex >= 0 && map.grid[this.i][this.j].corpses.splice(corpsesIndex, 1);
+      map.grid[this.i][this.j].corpses["delete"](this);
       map.removeChild(this);
       this.destroy({
         child: true,
@@ -6369,6 +6353,11 @@ var Human = /*#__PURE__*/function (_Player) {
 
 ;// ./app/classes/cell.js
 function cell_typeof(o) { "@babel/helpers - typeof"; return cell_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, cell_typeof(o); }
+function cell_slicedToArray(r, e) { return cell_arrayWithHoles(r) || cell_iterableToArrayLimit(r, e) || cell_unsupportedIterableToArray(r, e) || cell_nonIterableRest(); }
+function cell_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function cell_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function cell_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function cell_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = cell_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function cell_toConsumableArray(r) { return cell_arrayWithoutHoles(r) || cell_iterableToArray(r) || cell_unsupportedIterableToArray(r) || cell_nonIterableSpread(); }
 function cell_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function cell_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return cell_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? cell_arrayLikeToArray(r, a) : void 0; } }
@@ -6390,6 +6379,85 @@ function cell_setPrototypeOf(t, e) { return cell_setPrototypeOf = Object.setProt
 
 
 
+
+// Which side to show per cardinal neighbor (di, dj)
+var NEIGHBOR_SIDES = {
+  '-1,0': 'NW',
+  '0,-1': 'NE',
+  '0,1': 'SW',
+  '1,0': 'SE'
+};
+
+// Cache keyed by sorted sides e.g. 'NE|NW|SW'
+var _ditherTextures = {};
+var _fogTexture = null;
+var _DW = 64;
+var _DH = 32;
+var _DAX = 32;
+var _DAY = 16;
+function _insideDiamond(px, py) {
+  return px + 2 * py >= 32 && px - 2 * py <= 32 && px - 2 * py >= -32 && px + 2 * py <= 96;
+}
+function getFogTexture() {
+  if (_fogTexture) return _fogTexture;
+  var canvas = document.createElement('canvas');
+  canvas.width = _DW;
+  canvas.height = _DH;
+  var ctx = canvas.getContext('2d');
+  for (var px = 0; px < _DW; px++) {
+    for (var py = 0; py < _DH; py++) {
+      if (!_insideDiamond(px, py)) continue;
+      if ((px + py) % 2 !== 0) continue;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(px, py, 1, 1);
+    }
+  }
+  _fogTexture = lib/* Texture */.gPd.from(canvas);
+  return _fogTexture;
+}
+
+// sides = Set of 'NW','NE','SE','SW'
+// ONE combined texture — zero overlap possible
+function getDitherTexture(sides) {
+  var key = ['NW', 'NE', 'SE', 'SW'].filter(function (s) {
+    return sides.has(s);
+  }).join('|');
+  if (!key) return null;
+  if (_ditherTextures[key]) return _ditherTextures[key];
+  var canvas = document.createElement('canvas');
+  canvas.width = _DW;
+  canvas.height = _DH;
+  var ctx = canvas.getContext('2d');
+  var K = 10;
+  for (var px = 0; px < _DW; px++) {
+    for (var py = 0; py < _DH; py++) {
+      if (!_insideDiamond(px, py)) continue;
+      var inBand = false;
+      if (sides.has('NW') && !inBand) {
+        var d = px + 2 * py - 32;
+        if (d >= 0 && d <= K) inBand = true;
+      }
+      if (sides.has('NE') && !inBand) {
+        var _d = 32 - (px - 2 * py);
+        if (_d >= 0 && _d <= K) inBand = true;
+      }
+      if (sides.has('SE') && !inBand) {
+        var _d2 = 96 - (px + 2 * py);
+        if (_d2 >= 0 && _d2 <= K) inBand = true;
+      }
+      if (sides.has('SW') && !inBand) {
+        var _d3 = px - 2 * py + 32;
+        if (_d3 >= 0 && _d3 <= K) inBand = true;
+      }
+      if (!inBand) continue;
+      if ((px + py) % 2 !== 0) continue;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(px, py, 1, 1);
+    }
+  }
+  _ditherTextures[key] = lib/* Texture */.gPd.from(canvas);
+  return _ditherTextures[key];
+}
 var Cell = /*#__PURE__*/function (_Container) {
   function Cell(options, context) {
     var _this;
@@ -6408,10 +6476,11 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.waterBorder = false;
     _this.z = 0;
     _this.viewed = false;
-    _this.viewBy = [];
+    _this.viewBy = new Set();
     _this.has = null;
-    _this.corpses = [];
+    _this.corpses = new Set();
     _this.fogSprites = [];
+    _this._ditherSprite = null;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
@@ -6462,10 +6531,17 @@ var Cell = /*#__PURE__*/function (_Container) {
       if (this.has) {
         updateChild(this.has);
       }
-      if (this.corpses.length) {
-        for (var i = 0; i < this.corpses.length; i++) {
-          updateChild(this.corpses[i]);
+      var _iterator = cell_createForOfIteratorHelper(this.corpses),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var corpse = _step.value;
+          updateChild(corpse);
         }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
       }
     }
   }, {
@@ -6689,12 +6765,49 @@ var Cell = /*#__PURE__*/function (_Container) {
             localCell.addFogBuilding(assets.images["final"], assets.images.color, instance.owner.color);
           }
           instance.visible = false;
+        }
+      }
+    }
+  }, {
+    key: "_updateEdgeDither",
+    value: function _updateEdgeDither() {
+      var needed = new Set();
+      var hasFogOverlay = this.children.some(function (c) {
+        return c.label === LABEL_TYPES.fogOverlay;
+      });
+      if (this.visible && this.viewBy.size > 0 && !hasFogOverlay) {
+        var grid = this.context.map.grid;
+        for (var _i = 0, _Object$entries = Object.entries(NEIGHBOR_SIDES); _i < _Object$entries.length; _i++) {
+          var _grid;
+          var _Object$entries$_i = cell_slicedToArray(_Object$entries[_i], 2),
+            key = _Object$entries$_i[0],
+            side = _Object$entries$_i[1];
+          var _key$split$map = key.split(',').map(Number),
+            _key$split$map2 = cell_slicedToArray(_key$split$map, 2),
+            di = _key$split$map2[0],
+            dj = _key$split$map2[1];
+          var n = (_grid = grid[this.i + di]) === null || _grid === void 0 ? void 0 : _grid[this.j + dj];
+          var neighborInFog = !n || n.children.some(function (c) {
+            return c.label === LABEL_TYPES.fogOverlay;
+          });
+          if (neighborInFog) needed.add(side);
+        }
+      }
+      if (needed.size > 0) {
+        var texture = getDitherTexture(needed);
+        if (!this._ditherSprite) {
+          this._ditherSprite = new lib/* Sprite */.kxk(texture);
+          this._ditherSprite.label = LABEL_TYPES.dither;
+          this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH);
+          this._ditherSprite.eventMode = 'none';
+          this.addChild(this._ditherSprite);
         } else {
-          for (var i = 0; i < instance.children.length; i++) {
-            if (instance.children[i].tint) {
-              instance.children[i].tint = COLOR_FOG;
-            }
-          }
+          this._ditherSprite.texture = texture;
+        }
+      } else {
+        if (this._ditherSprite) {
+          this.removeChild(this._ditherSprite);
+          this._ditherSprite = null;
         }
       }
     }
@@ -6704,15 +6817,36 @@ var Cell = /*#__PURE__*/function (_Container) {
       if (this.has) {
         this.setFogChildren(this.has, init);
       }
-      for (var i = 0; i < this.children.length; i++) {
-        if (this.children[i].tint) {
-          this.children[i].tint = COLOR_FOG;
+      if (!this.children.find(function (c) {
+        return c.label === LABEL_TYPES.fogOverlay;
+      })) {
+        var overlay = new lib/* Sprite */.kxk(getFogTexture());
+        overlay.label = LABEL_TYPES.fogOverlay;
+        overlay.anchor.set(_DAX / _DW, _DAY / _DH);
+        overlay.eventMode = 'none';
+        this.addChild(overlay);
+      }
+      // This cell goes fog: remove its dither ring, update visible neighbors
+      this._updateEdgeDither();
+      var grid = this.context.map.grid;
+      for (var di = -1; di <= 1; di++) {
+        for (var dj = -1; dj <= 1; dj++) {
+          var _grid2;
+          if (di === 0 && dj === 0) continue;
+          (_grid2 = grid[this.i + di]) === null || _grid2 === void 0 || (_grid2 = _grid2[this.j + dj]) === null || _grid2 === void 0 || _grid2._updateEdgeDither();
         }
       }
-      if (this.corpses.length) {
-        for (var _i = 0; _i < this.corpses.length; _i++) {
-          this.setFogChildren(this.corpses[_i], init);
+      var _iterator2 = cell_createForOfIteratorHelper(this.corpses),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var corpse = _step2.value;
+          this.setFogChildren(corpse, init);
         }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
       }
     }
   }, {
@@ -6733,25 +6867,48 @@ var Cell = /*#__PURE__*/function (_Container) {
         this.visible = true;
       }
       this.zIndex = 0;
-      for (var i = 0; i < this.children.length; i++) {
-        if (this.children[i].tint) {
-          this.children[i].tint = COLOR_WHITE;
+      for (var i = this.children.length - 1; i >= 0; i--) {
+        if (this.children[i].label === LABEL_TYPES.fogOverlay) {
+          this.removeChild(this.children[i]);
+        }
+      }
+      // This cell is now visible: check edge dither for self and neighbors
+      this._updateEdgeDither();
+      var grid = this.context.map.grid;
+      for (var di = -1; di <= 1; di++) {
+        for (var dj = -1; dj <= 1; dj++) {
+          var _grid3;
+          if (di === 0 && dj === 0) continue;
+          (_grid3 = grid[this.i + di]) === null || _grid3 === void 0 || (_grid3 = _grid3[this.j + dj]) === null || _grid3 === void 0 || _grid3._updateEdgeDither();
         }
       }
       if (this.has) {
         this.removeFogBuilding(this.has);
         setRemoveChildren(this.has);
       }
-      if (this.corpses.length) {
-        for (var _i2 = 0; _i2 < this.corpses.length; _i2++) {
-          setRemoveChildren(this.corpses[_i2]);
+      var _iterator3 = cell_createForOfIteratorHelper(this.corpses),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var corpse = _step3.value;
+          setRemoveChildren(corpse);
         }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
       }
     }
   }]);
 }(lib/* Container */.mcf);
 ;// ./app/classes/map.js
 function map_typeof(o) { "@babel/helpers - typeof"; return map_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, map_typeof(o); }
+function map_toConsumableArray(r) { return map_arrayWithoutHoles(r) || map_iterableToArray(r) || map_unsupportedIterableToArray(r) || map_nonIterableSpread(); }
+function map_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function map_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return map_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? map_arrayLikeToArray(r, a) : void 0; } }
+function map_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function map_arrayWithoutHoles(r) { if (Array.isArray(r)) return map_arrayLikeToArray(r); }
+function map_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function map_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function map_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? map_ownKeys(Object(t), !0).forEach(function (r) { map_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : map_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function map_defineProperty(e, r, t) { return (r = map_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -6795,7 +6952,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.sortableChildren = true;
     _this.allTechnologies = false;
     _this.noAI = true;
-    _this.devMode = true;
+    _this.devMode = false;
     _this.revealEverything = _this.devMode || false;
     _this.revealTerrain = _this.devMode || false;
     _this.x = 0;
@@ -6804,7 +6961,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.playersPos = [];
     _this.positionsCount = 2;
     _this.gaia = null;
-    _this.resources = [];
+    _this.resources = new Set();
     _this.eventMode = 'auto';
     _this.allowMove = false;
     _this.allowClick = false;
@@ -6863,9 +7020,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
           this.grid[_i][_j].fillWaterCellsAroundCell();
         }
       }
-      this.resources = resources.map(function (resource) {
+      this.resources = new Set(resources.map(function (resource) {
         return _this2.addChild(new Resource(resource, _this2.context));
-      });
+      }));
       this.formatCellsRelief();
       this.formatCellsWaterBorder();
       this.formatCellsDesert();
@@ -6935,11 +7092,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
             if (_cell.viewed) {
               _cell.onViewed();
             }
-            _cell.viewBy = _cell.viewBy.map(function (name) {
+            _cell.viewBy = new Set(map_toConsumableArray(_cell.viewBy).map(function (name) {
               return getDest(name, _this2);
-            }).filter(Boolean);
+            }).filter(Boolean));
             if (player.isPlayed && _cell.viewed) {
-              if (!_cell.viewBy.length) {
+              if (!_cell.viewBy.size) {
                 _this2.grid[_i2][_j2].setFog(true);
               } else {
                 _this2.grid[_i2][_j2].removeFog();
@@ -7280,7 +7437,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
               isFree = false;
             }
           });
-          isFree && _this3.resources.push(_this3.addChild(new Resource({
+          isFree && _this3.resources.add(_this3.addChild(new Resource({
             i: cell.i,
             j: cell.j,
             type: RESOURCE_TYPES.tree
@@ -7501,7 +7658,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
                     break;
                 }
               } else {
-                this.resources.push(this.addChild(new Resource({
+                this.resources.add(this.addChild(new Resource({
                   i: i,
                   j: j,
                   type: RESOURCE_TYPES.salmon
@@ -7773,7 +7930,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
       // Place resources in the selected cells
       for (var _i14 = 0, _cellsToPlace2 = cellsToPlace; _i14 < _cellsToPlace2.length; _i14++) {
         var _cell2 = _cellsToPlace2[_i14];
-        this.resources.push(this.addChild(new Resource({
+        this.resources.add(this.addChild(new Resource({
           i: _cell2.i,
           j: _cell2.j,
           type: instance
@@ -8215,6 +8372,7 @@ var Menu = /*#__PURE__*/function () {
     value: function resetInfo() {
       this.bottombarInfo.textContent = '';
       this.bottombarInfo.style.background = 'transparent';
+      this._infoCache = null;
     }
   }, {
     key: "generateInfo",
@@ -8228,9 +8386,12 @@ var Menu = /*#__PURE__*/function () {
   }, {
     key: "updateInfo",
     value: function updateInfo(target, action) {
-      var targetElement = this.bottombarInfo.querySelector("[id=".concat(target, "]"));
+      if (!this._infoCache) this._infoCache = new Map();
+      var targetElement = this._infoCache.get(target);
       if (!targetElement) {
-        return;
+        targetElement = this.bottombarInfo.querySelector("[id=".concat(target, "]"));
+        if (!targetElement) return;
+        this._infoCache.set(target, targetElement);
       }
       return typeof action !== 'function' ? targetElement.textContent = action : action(targetElement);
     }
@@ -9258,6 +9419,12 @@ var Controls = /*#__PURE__*/function (_Container) {
 
 ;// ./app/screens/Game.js
 function Game_typeof(o) { "@babel/helpers - typeof"; return Game_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Game_typeof(o); }
+function Game_toConsumableArray(r) { return Game_arrayWithoutHoles(r) || Game_iterableToArray(r) || Game_unsupportedIterableToArray(r) || Game_nonIterableSpread(); }
+function Game_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function Game_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return Game_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? Game_arrayLikeToArray(r, a) : void 0; } }
+function Game_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function Game_arrayWithoutHoles(r) { if (Array.isArray(r)) return Game_arrayLikeToArray(r); }
+function Game_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function Game_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? Game_ownKeys(Object(t), !0).forEach(function (r) { Game_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : Game_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function Game_defineProperty(e, r, t) { return (r = Game_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -9393,7 +9560,7 @@ var Game = /*#__PURE__*/function (_Container) {
             views: player.views.map(function (view) {
               return view.map(function (cell) {
                 return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['i', 'j', 'viewed'])), {}, {
-                  viewBy: (cell.viewBy || []).map(function (unit) {
+                  viewBy: Game_toConsumableArray(cell.viewBy || []).map(function (unit) {
                     return unit.label;
                   })
                 });
@@ -9422,7 +9589,7 @@ var Game = /*#__PURE__*/function (_Container) {
           players: context.players.map(function (player) {
             return playerData(player);
           }),
-          resources: context.map.resources.map(function (resource) {
+          resources: Game_toConsumableArray(context.map.resources).map(function (resource) {
             return resourceData(resource);
           }),
           map: context.map.grid.map(function (line) {
@@ -9692,22 +9859,22 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
   }, _callee);
 }))();
 
-/***/ }),
+/***/ },
 
-/***/ 7511:
-/***/ ((module, __webpack_exports__, __webpack_require__) => {
+/***/ 2088
+(module, __webpack_exports__, __webpack_require__) {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(957);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5099);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1018);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1674);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
 // Imports
 
 
-var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_2_webpack_5_101_3_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
+var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `:root {
   --main-primary-color: #1d57a8;
@@ -10042,12 +10209,12 @@ img {
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
 
-/***/ })
+/***/ }
 
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(6544)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(5494)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);
