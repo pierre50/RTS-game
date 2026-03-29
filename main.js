@@ -1,7 +1,7 @@
 "use strict";
 (self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[792],{
 
-/***/ 5494
+/***/ 7232
 (__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
@@ -265,14 +265,15 @@ function getBuildingRubbleTextureNameWithSize(size) {
   }
 }
 function getBuildingAsset(type, owner, assets) {
+  var _path$owner$age, _path, _path2, _path$;
   var path = assets.cache.get(owner.civ.toLowerCase()).buildings;
-  if (path[owner.age][type]) {
+  if ((_path$owner$age = path[owner.age]) !== null && _path$owner$age !== void 0 && _path$owner$age[type]) {
     return path[owner.age][type];
-  } else if (path[owner.age - 1][type]) {
+  } else if (owner.age >= 1 && (_path = path[owner.age - 1]) !== null && _path !== void 0 && _path[type]) {
     return path[owner.age - 1][type];
-  } else if (path[owner.age - 2][type]) {
+  } else if (owner.age >= 2 && (_path2 = path[owner.age - 2]) !== null && _path2 !== void 0 && _path2[type]) {
     return path[owner.age - 2][type];
-  } else if (path[0][type]) {
+  } else if ((_path$ = path[0]) !== null && _path$ !== void 0 && _path$[type]) {
     return path[0][type];
   }
 }
@@ -306,23 +307,37 @@ function getTexture(name, assets) {
 }
 var colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'];
 
+// Shared source colors (blue palette to replace)
+var SOURCE_COLORS = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057];
+
+// Shared target color palettes per color name
+var COLOR_PALETTES = {
+  red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
+  yellow: [0xe3e300, 0xdfcf0f, 0xdfcf0f, 0xc3a31b, 0xa37317, 0x876727, 0x6b4b27, 0x4f3723],
+  brown: [0xcfa343, 0xb78b2b, 0xa3734f, 0x8b5b37, 0x734727, 0x5f331b, 0x3f3723, 0x23231f],
+  orange: [0xfb9f1f, 0xf78b17, 0xf3770f, 0xef6307, 0xcf4300, 0x9f3300, 0x872b00, 0x6f2300],
+  green: [0x8b9f4f, 0x7f8b37, 0x637b2f, 0x4b6b2b, 0x375f27, 0x1b431b, 0x133313, 0x0b1b0b],
+  grey: [0xdbdbdb, 0xc7c7c7, 0xb3b3b3, 0x8f8f8f, 0x6b6b6b, 0x474747, 0x373737, 0x232323],
+  cyan: [0x5fd39f, 0x2bbf93, 0x00ab93, 0x00837b, 0x006f6b, 0x004f4f, 0x003f43, 0x002327]
+};
+var HEX_COLOR_MAP = {
+  blue: '#3f5f9f',
+  red: '#e30b00',
+  yellow: '#c3a31b',
+  brown: '#8b5b37',
+  orange: '#ef6307',
+  green: '#4b6b2b',
+  grey: '#8f8f8f',
+  cyan: '#00837b'
+};
+
 /**
  * Get the hex color code for a given color name.
  * @param {string} name - The name of the color.
  * @returns {string} The hex color code, or '#ffffff' if the color is not found.
  */
 function getHexColor(name) {
-  var colorMap = {
-    blue: '#3f5f9f',
-    red: '#e30b00',
-    yellow: '#c3a31b',
-    brown: '#8b5b37',
-    orange: '#ef6307',
-    green: '#4b6b2b',
-    grey: '#8f8f8f',
-    cyan: '#00837b'
-  };
-  return colorMap[name] || '#ffffff'; // Default to white if not found
+  return HEX_COLOR_MAP[name] || '#ffffff';
 }
 
 /**
@@ -330,49 +345,44 @@ function getHexColor(name) {
  * @param {object} sprite - The sprite to change the color of.
  * @param {string} color - The new color to apply to the sprite.
  */
+// Cache for recolored textures: key = `${textureName}_${color}`
+var recoloredTextureCache = new Map();
 function changeSpriteColorDirectly(sprite, color) {
-  if (color === 'blue') {
-    return; // Skip processing if color is blue
-  }
-  var sourceColors = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057];
-  var colors = {
-    red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
-    yellow: [0xe3e300, 0xdfcf0f, 0xdfcf0f, 0xc3a31b, 0xa37317, 0x876727, 0x6b4b27, 0x4f3723],
-    brown: [0xcfa343, 0xb78b2b, 0xa3734f, 0x8b5b37, 0x734727, 0x5f331b, 0x3f3723, 0x23231f],
-    orange: [0xfb9f1f, 0xf78b17, 0xf3770f, 0xef6307, 0xcf4300, 0x9f3300, 0x872b00, 0x6f2300],
-    green: [0x8b9f4f, 0x7f8b37, 0x637b2f, 0x4b6b2b, 0x375f27, 0x1b431b, 0x133313, 0x0b1b0b],
-    grey: [0xdbdbdb, 0xc7c7c7, 0xb3b3b3, 0x8f8f8f, 0x6b6b6b, 0x474747, 0x373737, 0x232323],
-    cyan: [0x5fd39f, 0x2bbf93, 0x00ab93, 0x00837b, 0x006f6b, 0x004f4f, 0x003f43, 0x002327]
-  };
-  var targetColors = colors[color];
+  var _sprite$texture$textu, _sprite$texture$textu2;
+  if (color === 'blue') return;
+  var targetColors = COLOR_PALETTES[color];
   if (!targetColors) {
-    throw new Error('Invalid color selected.'); // Throw error for invalid color
+    throw new Error('Invalid color selected.');
+  }
+  var frame = sprite.texture.frame;
+  var cacheKey = "".concat((_sprite$texture$textu = (_sprite$texture$textu2 = sprite.texture.textureCacheIds) === null || _sprite$texture$textu2 === void 0 ? void 0 : _sprite$texture$textu2[0]) !== null && _sprite$texture$textu !== void 0 ? _sprite$texture$textu : "".concat(frame.x, "_").concat(frame.y), "_").concat(color);
+  if (recoloredTextureCache.has(cacheKey)) {
+    sprite.texture = recoloredTextureCache.get(cacheKey);
+    return;
   }
   var baseTexture = sprite.texture.baseTexture.resource;
   var canvas = document.createElement('canvas');
-  canvas.width = sprite.texture.width;
-  canvas.height = sprite.texture.height;
+  canvas.width = frame.width;
+  canvas.height = frame.height;
   var ctx = canvas.getContext('2d');
-  ctx.drawImage(baseTexture, sprite.texture.frame.x, sprite.texture.frame.y, sprite.texture.frame.width, sprite.texture.frame.height, 0, 0, sprite.texture.frame.width, sprite.texture.frame.height);
+  ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height);
   var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   var data = imageData.data;
-  var sourceColorMap = new Map(sourceColors.map(function (color, index) {
-    return [color, targetColors[index]];
+  var sourceColorMap = new Map(SOURCE_COLORS.map(function (src, i) {
+    return [src, targetColors[i]];
   }));
   for (var i = 0; i < data.length; i += 4) {
-    var r = data[i];
-    var g = data[i + 1];
-    var b = data[i + 2];
-    var rgb = r << 16 | g << 8 | b;
-    if (sourceColorMap.has(rgb)) {
-      var targetColor = sourceColorMap.get(rgb);
-      data[i] = targetColor >> 16 & 0xff; // Red
-      data[i + 1] = targetColor >> 8 & 0xff; // Green
-      data[i + 2] = targetColor & 0xff; // Blue
+    var rgb = data[i] << 16 | data[i + 1] << 8 | data[i + 2];
+    var targetColor = sourceColorMap.get(rgb);
+    if (targetColor !== undefined) {
+      data[i] = targetColor >> 16 & 0xff;
+      data[i + 1] = targetColor >> 8 & 0xff;
+      data[i + 2] = targetColor & 0xff;
     }
   }
   ctx.putImageData(imageData, 0, 0);
   var newTexture = lib/* Texture */.gPd.from(canvas);
+  recoloredTextureCache.set(cacheKey, newTexture);
   sprite.texture = newTexture;
 }
 
@@ -383,41 +393,21 @@ function changeSpriteColorDirectly(sprite, color) {
  * @param {string} color - The target color. Supported colors: 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'.
  * @returns {void}
  */
+// Cache for MultiColorReplaceFilter instances, one per color
+var colorFilterCache = new Map();
 function changeSpriteColor(sprite, color) {
-  // Skip color change if the specified color is blue
-  if (color === 'blue') {
-    return;
+  if (color === 'blue') return;
+  if (!COLOR_PALETTES[color]) return;
+  if (!colorFilterCache.has(color)) {
+    var replacements = SOURCE_COLORS.map(function (src, i) {
+      return [src, COLOR_PALETTES[color][i]];
+    });
+    colorFilterCache.set(color, new MultiColorReplaceFilter/* MultiColorReplaceFilter */.N({
+      replacements: replacements,
+      tolerance: 0.1
+    }));
   }
-
-  // Source colors (Hex)
-  var source = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057];
-
-  // Define color mappings
-  var colors = {
-    red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
-    yellow: [0xe3e300, 0xdfcf0f, 0xdfcf0f, 0xc3a31b, 0xa37317, 0x876727, 0x6b4b27, 0x4f3723],
-    brown: [0xcfa343, 0xb78b2b, 0xa3734f, 0x8b5b37, 0x734727, 0x5f331b, 0x3f3723, 0x23231f],
-    orange: [0xfb9f1f, 0xf78b17, 0xf3770f, 0xef6307, 0xcf4300, 0x9f3300, 0x872b00, 0x6f2300],
-    green: [0x8b9f4f, 0x7f8b37, 0x637b2f, 0x4b6b2b, 0x375f27, 0x1b431b, 0x133313, 0x0b1b0b],
-    grey: [0xdbdbdb, 0xc7c7c7, 0xb3b3b3, 0x8f8f8f, 0x6b6b6b, 0x474747, 0x373737, 0x232323],
-    cyan: [0x5fd39f, 0x2bbf93, 0x00ab93, 0x00837b, 0x006f6b, 0x004f4f, 0x003f43, 0x002327]
-  };
-
-  // Check if the color is supported
-  if (!colors[color]) {
-    return;
-  }
-
-  // Create final color mapping
-  var replacements = [];
-  for (var i = 0; i < source.length; i++) {
-    replacements.push([source[i], colors[color][i]]);
-  }
-  var filter = new MultiColorReplaceFilter/* MultiColorReplaceFilter */.N({
-    replacements: replacements,
-    tolerance: 0.1
-  });
-  sprite.filters = [filter];
+  sprite.filters = [colorFilterCache.get(color)];
 }
 
 /**
@@ -532,10 +522,10 @@ function canvasDrawDiamond(context, x, y, width, height, color) {
  * @param {function} cb - The callback to execute.
  */
 function onSpriteLoopAtFrame(sprite, frame, cb) {
+  var prev = sprite.onFrameChange;
   sprite.onFrameChange = function (currentFrame) {
-    if (currentFrame === frame) {
-      cb();
-    }
+    prev === null || prev === void 0 || prev(currentFrame);
+    if (currentFrame === frame) cb();
   };
 }
 ;// ./app/lib/accounting.js
@@ -546,14 +536,12 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
  * @param {object} cost - An object representing the costs to refund.
  */
 function refundCost(player, cost) {
-  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    return;
-  }
-  Object.keys(cost).forEach(function (prop) {
-    if (typeof cost[prop] === 'number') {
-      player[prop] += cost[prop];
+  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') return;
+  for (var prop in cost) {
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      player[prop] = (player[prop] || 0) + cost[prop];
     }
-  });
+  }
 }
 
 /**
@@ -562,14 +550,12 @@ function refundCost(player, cost) {
  * @param {object} cost - An object representing the costs to pay.
  */
 function payCost(player, cost) {
-  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    return;
-  }
-  Object.keys(cost).forEach(function (prop) {
-    if (typeof cost[prop] === 'number') {
-      player[prop] -= cost[prop];
+  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') return;
+  for (var prop in cost) {
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      player[prop] = (player[prop] || 0) - cost[prop];
     }
-  });
+  }
 }
 
 /**
@@ -579,38 +565,37 @@ function payCost(player, cost) {
  * @returns {boolean} - True if the player can afford the costs, false otherwise.
  */
 function canAfford(player, cost) {
-  // Validate inputs
-  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') {
-    return false;
-  }
-
-  // Iterate over the cost object
+  if (!player || _typeof(player) !== 'object' || !cost || _typeof(cost) !== 'object') return false;
   for (var prop in cost) {
-    // Check if the cost for the property is a number
-    if (typeof cost[prop] === 'number') {
-      // Early return if player cannot afford the cost
-      if (player[prop] < cost[prop]) {
-        return false;
-      }
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      if ((player[prop] || 0) < cost[prop]) return false;
     }
   }
-
-  // If all costs are affordable, return true
   return true;
 }
 ;// ./app/lib/maths.js
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || maths_unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function maths_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return maths_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? maths_arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return maths_arrayLikeToArray(r); }
+function maths_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 
+var HALF_CELL_WIDTH = CELL_WIDTH / 2;
+var HALF_CELL_HEIGHT = CELL_HEIGHT / 2;
+var DEG_TO_RAD = Math.PI / 180;
 
 /**
  * Generate a version 4 UUID.
  * @returns {string} - A random UUID.
  */
 function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var randomValue = crypto.getRandomValues(new Uint8Array(1))[0] & 15; // Get a random value
-    var hexValue = (c === 'x' ? randomValue : randomValue & 0x3 | 0x8).toString(16); // Adjust for 'y'
-    return hexValue;
-  });
+  var bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = bytes[6] & 0x0f | 0x40;
+  bytes[8] = bytes[8] & 0x3f | 0x80;
+  return _toConsumableArray(bytes).map(function (b, i) {
+    return ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0');
+  }).join('');
 }
 
 /**
@@ -636,7 +621,7 @@ function cartesianToIsometric(x, y) {
  * @param {number} y
  */
 function isometricToCartesian(x, y) {
-  return [Math.round((x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2), Math.round((y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2)];
+  return [Math.round((x / HALF_CELL_WIDTH + y / HALF_CELL_HEIGHT) / 2), Math.round((y / HALF_CELL_HEIGHT - x / HALF_CELL_WIDTH) / 2)];
 }
 
 /**
@@ -700,7 +685,7 @@ function pointIsBetweenTwoPoint(line1, line2, pnt, lineThickness) {
   } else {
     // Perpendicular distance from point to line
     var s = ((line1.y - pnt.y) * dx - (line1.x - pnt.x) * dy) / L2;
-    return Math.abs(s) * Math.sqrt(L2) <= lineThickness;
+    return s * s * L2 <= lineThickness * lineThickness;
   }
 }
 
@@ -719,7 +704,7 @@ function maths_randomRange(min, max) {
  */
 function maths_randomItem() {
   var array = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  return array[Math.round(Math.random() * (array.length - 1))];
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 /**
@@ -781,7 +766,7 @@ function maths_getPointsDegree(x1, y1, x2, y2) {
  * @returns {number} - The angle in radians.
  */
 function degreesToRadians(degrees) {
-  return degrees * (Math.PI / 180);
+  return degrees * DEG_TO_RAD;
 }
 
 /**
@@ -831,19 +816,19 @@ function degreeToDirection(degree) {
   } else if (degree >= 292.5 && degree <= 337.5) {
     return 'southwest';
   } else if (degree > 157.5 && degree < 202.5) {
-    return 'est';
+    return 'east';
   } else if (degree > 112.5 && degree < 157.5) {
-    return 'northest';
+    return 'northeast';
   } else if (degree > 202.5 && degree < 247.5) {
-    return 'southest';
+    return 'southeast';
   }
 }
 ;// ./app/lib/grid.js
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = grid_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
-function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || grid_unsupportedIterableToArray(r) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function _arrayWithoutHoles(r) { if (Array.isArray(r)) return grid_arrayLikeToArray(r); }
+function grid_toConsumableArray(r) { return grid_arrayWithoutHoles(r) || grid_iterableToArray(r) || grid_unsupportedIterableToArray(r) || grid_nonIterableSpread(); }
+function grid_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function grid_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function grid_arrayWithoutHoles(r) { if (Array.isArray(r)) return grid_arrayLikeToArray(r); }
 function grid_slicedToArray(r, e) { return grid_arrayWithHoles(r) || grid_iterableToArrayLimit(r, e) || grid_unsupportedIterableToArray(r, e) || grid_nonIterableRest(); }
 function grid_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function grid_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return grid_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? grid_arrayLikeToArray(r, a) : void 0; } }
@@ -969,10 +954,8 @@ function getInstancePath(instance, x, y, map) {
   }
   var cloneGrid = [];
   for (var i = minX; i <= maxX; i++) {
+    cloneGrid[i] = [];
     for (var j = minY; j <= maxY; j++) {
-      if (cloneGrid[i] == null) {
-        cloneGrid[i] = [];
-      }
       cloneGrid[i][j] = {
         i: i,
         j: j,
@@ -984,65 +967,101 @@ function getInstancePath(instance, x, y, map) {
       };
     }
   }
-  var path = [];
-  var openCells = [];
-  var openSet = new Set();
-  var closedSet = new Set();
   var cloneEnd = cloneGrid[end.i][end.j];
   var cloneStart = cloneGrid[start.i][start.j];
-  openCells.push(cloneStart);
-  openSet.add(cloneStart);
+
+  // Min-heap storing [f_at_push, node] pairs.
+  // Stale re-insertions are skipped by comparing stored f with node's current f.
+  var heapData = [];
+  function heapPush(f, node) {
+    heapData.push([f, node]);
+    var i = heapData.length - 1;
+    while (i > 0) {
+      var parent = i - 1 >> 1;
+      if (heapData[parent][0] <= heapData[i][0]) break;
+      var _ref3 = [heapData[i], heapData[parent]];
+      heapData[parent] = _ref3[0];
+      heapData[i] = _ref3[1];
+      i = parent;
+    }
+  }
+  function heapPop() {
+    var top = heapData[0];
+    var last = heapData.pop();
+    if (heapData.length > 0) {
+      heapData[0] = last;
+      var _i = 0;
+      while (true) {
+        var l = 2 * _i + 1;
+        var r = 2 * _i + 2;
+        var s = _i;
+        if (l < heapData.length && heapData[l][0] < heapData[s][0]) s = l;
+        if (r < heapData.length && heapData[r][0] < heapData[s][0]) s = r;
+        if (s === _i) break;
+        var _ref4 = [heapData[_i], heapData[s]];
+        heapData[s] = _ref4[0];
+        heapData[_i] = _ref4[1];
+        _i = s;
+      }
+    }
+    return top;
+  }
+  cloneStart.g = 0;
+  cloneStart.h = instancesDistance(cloneStart, cloneEnd);
+  cloneStart.f = cloneStart.h;
+  heapPush(cloneStart.f, cloneStart);
+  var openSet = new Set([cloneStart]);
+  var closedSet = new Set();
+  var path = [];
   var _loop = function _loop() {
-      if (openCells.length === 0) {
-        // no solution
-        return 0; // break
-      }
-      // find the lowest f in open cells
-      var lowestF = 0;
-      for (var _i = 1; _i < openCells.length; _i++) {
-        if (openCells[_i].f < openCells[lowestF].f) {
-          lowestF = _i;
-        } else if (openCells[_i].f === openCells[lowestF].f && openCells[_i].g > openCells[lowestF].g) {
-          lowestF = _i;
-        }
-      }
-      var current = openCells[lowestF];
+      var _heapPop = heapPop(),
+        _heapPop2 = grid_slicedToArray(_heapPop, 2),
+        pushedF = _heapPop2[0],
+        current = _heapPop2[1];
+      // Skip stale entries (node was re-inserted with a better f)
+      if (pushedF !== current.f || closedSet.has(current)) return 0; // continue
       if (current === cloneEnd) {
-        // reached the end cell - reconstruct path once
         path = [cloneEnd];
         var temp = current;
         while (temp.previous) {
           path.push(temp.previous);
           temp = temp.previous;
         }
-        return 0; // break
+        return 1; // break
       }
-      openCells.splice(lowestF, 1);
       openSet["delete"](current);
       closedSet.add(current);
+
       // check neighbours
       getCellsAroundPoint(current.i, current.j, cloneGrid, 1, function (neighbour) {
         var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]);
         if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
           var tempG = current.g + instancesDistance(neighbour, current);
           if (!openSet.has(neighbour)) {
-            openCells.push(neighbour);
-            openSet.add(neighbour);
             neighbour.g = tempG;
             neighbour.h = instancesDistance(neighbour, cloneEnd);
             neighbour.f = neighbour.g + neighbour.h;
             neighbour.previous = current;
+            openSet.add(neighbour);
+            heapPush(neighbour.f, neighbour);
+          } else if (tempG < neighbour.g) {
+            // Better path found — update scores and re-insert; old heap entry will be skipped
+            neighbour.g = tempG;
+            neighbour.f = neighbour.g + neighbour.h;
+            neighbour.previous = current;
+            heapPush(neighbour.f, neighbour);
           }
         }
       });
     },
     _ret;
-  while (true) {
+  while (heapData.length > 0) {
     _ret = _loop();
-    if (_ret === 0) break;
+    if (_ret === 0) continue;
+    if (_ret === 1) break;
   }
   path.pop();
-  return _toConsumableArray(path);
+  return grid_toConsumableArray(path);
 }
 
 /**
@@ -1375,15 +1394,12 @@ function getPositionInGridAroundInstance(instance, grid, space, size) {
  * @param {object} player
  */
 function instanceIsInPlayerSight(instance, player) {
+  if (!(player !== null && player !== void 0 && player.views)) return false;
   var dist = instance.size === 3 ? 1 : 0;
-  var isInSight = false; // Flag to track if the instance is in player sight
-
-  (player === null || player === void 0 ? void 0 : player.views) && getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist, function (cell) {
-    if (cell.viewBy.size > 0) {
-      isInSight = true; // Set the flag if the condition is met
-    }
+  var cells = getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist);
+  return cells.some(function (cell) {
+    return cell.viewBy.size > 0;
   });
-  return isInSight; // Return the flag
 }
 
 /**
@@ -1426,15 +1442,6 @@ function getPlainCellsAroundPoint(startX, startY, grid) {
 }
 
 /**
- * Get the coordinates around a point within a Manhattan distance
- * @param {number} startX
- * @param {number} startY
- * @param {Array} grid
- * @param {number} dist
- * @param {Function} callback
- * @returns {Array} Array of cells that match the criteria
- */
-/**
  * Get the coordinates around a point within a Manhattan distance (safe for irregular grids)
  * @param {number} startX
  * @param {number} startY
@@ -1457,15 +1464,15 @@ function getCellsAroundPoint(startX, startY, grid, dist, callback) {
   // Iterate over Manhattan distance
   for (var dx = -dist; dx <= dist; dx++) {
     var x = startX + dx;
-    if (!grid[x]) continue; // Skip if row does not exist
+    var row = grid[x];
+    if (!row) continue; // Skip if row does not exist
 
     var dyMax = dist - Math.abs(dx);
     for (var dy = -dyMax; dy <= dyMax; dy++) {
       var y = startY + dy;
-      var row = grid[x];
-      if (!row || !row[y]) continue; // Skip if cell does not exist
-
       var cell = row[y];
+      if (!cell) continue; // Skip if cell does not exist
+
       if (!callback || callback(cell)) result.push(cell);
     }
   }
@@ -1518,7 +1525,7 @@ function getClosestInstance(instance, instances) {
  */
 function getClosestInstanceWithPath(instance, instances) {
   // Sort by Euclidean distance first so we try nearby targets first
-  var sorted = _toConsumableArray(instances).sort(function (a, b) {
+  var sorted = grid_toConsumableArray(instances).sort(function (a, b) {
     return instancesDistance(instance, a) - instancesDistance(instance, b);
   });
   var closest = null;
@@ -1586,15 +1593,15 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
   instance.currentSheet = sheet;
   var direction = degreeToDirection(instance.degree);
   switch (direction) {
-    case 'southest':
+    case 'southeast':
       instance.sprite.scale.x = -1;
       instance.sprite.textures = instance[sheet].animations['southwest'];
       break;
-    case 'northest':
+    case 'northeast':
       instance.sprite.scale.x = -1;
       instance.sprite.textures = instance[sheet].animations['northwest'];
       break;
-    case 'est':
+    case 'east':
       instance.sprite.scale.x = -1;
       instance.sprite.textures = instance[sheet].animations['west'];
       break;
@@ -2583,7 +2590,7 @@ var Building = /*#__PURE__*/function (_Container) {
       _this.addChild(_this.sprite);
     }
     if (_this.isBuilt) {
-      setTimeout(function () {
+      _this.visibilityTimeout = setTimeout(function () {
         updateInstanceVisibility(_this);
       });
       _this.finalTexture();
@@ -2599,16 +2606,12 @@ var Building = /*#__PURE__*/function (_Container) {
       var map = this.context.map;
       this.startAttackInterval(function () {
         if (extra_getActionCondition(_this3, target, ACTION_TYPES.attack) && maths_instancesDistance(_this3, target) <= _this3.range) {
-          if (target.hitPoints <= 0) {
-            target.die();
-          } else {
-            var projectile = new Projectile({
-              owner: _this3,
-              type: _this3.projectile,
-              target: target
-            }, _this3.context);
-            map.addChild(projectile);
-          }
+          var projectile = new Projectile({
+            owner: _this3,
+            type: _this3.projectile,
+            target: target
+          }, _this3.context);
+          map.addChild(projectile);
         } else {
           _this3.stopAttackInterval();
         }
@@ -2811,11 +2814,11 @@ var Building = /*#__PURE__*/function (_Container) {
         this.updateTexture();
       } else if (action === ACTION_TYPES.attack && this.isBuilt || action === ACTION_TYPES.build && this.isBuilt) {
         if (percentage > 0 && percentage < 25) {
-          generateFire(this, '450');
+          this.generateFire('450');
         } else if (percentage >= 25 && percentage < 50) {
-          generateFire(this, '452');
+          this.generateFire('452');
         } else if (percentage >= 50 && percentage < 75) {
-          generateFire(this, '347');
+          this.generateFire('347');
         } else if (percentage >= 75) {
           var fire = this.getChildByLabel(LABEL_TYPES.fire);
           if (fire) {
@@ -2823,38 +2826,40 @@ var Building = /*#__PURE__*/function (_Container) {
           }
         }
       }
-      function generateFire(building, spriteId) {
-        var fire = building.getChildByLabel(LABEL_TYPES.fire);
-        var spritesheetFire = lib/* Assets */.sP.cache.get(spriteId);
-        if (fire) {
-          for (var i = 0; i < fire.children.length; i++) {
-            fire.children[i].textures = spritesheetFire.animations['fire'];
-            fire.children[i].play();
-          }
-        } else {
-          var newFire = new lib/* Container */.mcf();
-          newFire.label = LABEL_TYPES.fire;
-          newFire.allowMove = false;
-          newFire.allowClick = false;
-          newFire.eventMode = 'none';
-          var poses = [[0, 0]];
-          if (building.size === 3) {
-            poses = [[0, -32], [-64, 0], [0, 32], [64, 0]];
-          }
-          for (var _i3 = 0; _i3 < poses.length; _i3++) {
-            var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
-            spriteFire.allowMove = false;
-            spriteFire.allowClick = false;
-            spriteFire.eventMode = 'none';
-            spriteFire.roundPixels = true;
-            spriteFire.x = poses[_i3][0];
-            spriteFire.y = poses[_i3][1];
-            spriteFire.play();
-            spriteFire.animationSpeed = 0.2 * ACCELERATOR;
-            newFire.addChild(spriteFire);
-          }
-          building.addChild(newFire);
+    }
+  }, {
+    key: "generateFire",
+    value: function generateFire(spriteId) {
+      var fire = this.getChildByLabel(LABEL_TYPES.fire);
+      var spritesheetFire = lib/* Assets */.sP.cache.get(spriteId);
+      if (fire) {
+        for (var i = 0; i < fire.children.length; i++) {
+          fire.children[i].textures = spritesheetFire.animations['fire'];
+          fire.children[i].play();
         }
+      } else {
+        var newFire = new lib/* Container */.mcf();
+        newFire.label = LABEL_TYPES.fire;
+        newFire.allowMove = false;
+        newFire.allowClick = false;
+        newFire.eventMode = 'none';
+        var poses = [[0, 0]];
+        if (this.size === 3) {
+          poses = [[0, -32], [-64, 0], [0, 32], [64, 0]];
+        }
+        for (var _i3 = 0; _i3 < poses.length; _i3++) {
+          var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
+          spriteFire.allowMove = false;
+          spriteFire.allowClick = false;
+          spriteFire.eventMode = 'none';
+          spriteFire.roundPixels = true;
+          spriteFire.x = poses[_i3][0];
+          spriteFire.y = poses[_i3][1];
+          spriteFire.play();
+          spriteFire.animationSpeed = 0.2 * ACCELERATOR;
+          newFire.addChild(spriteFire);
+        }
+        this.addChild(newFire);
       }
     }
   }, {
@@ -2869,6 +2874,7 @@ var Building = /*#__PURE__*/function (_Container) {
         player = _this$context.player,
         players = _this$context.players,
         menu = _this$context.menu;
+      clearTimeout(this.visibilityTimeout);
       this.stopInterval();
       this.isDead = true;
       if (this.selected && player) {
@@ -2934,7 +2940,7 @@ var Building = /*#__PURE__*/function (_Container) {
       this.isDestroyed = true;
       this.destroy({
         child: true,
-        texture: true
+        texture: false
       });
     }
   }, {
@@ -3060,9 +3066,7 @@ var Building = /*#__PURE__*/function (_Container) {
                   return q === type;
                 }).length;
                 menu.updateButtonContent(type, still || '');
-                if (still === 0) {
-                  menu.toggleButtonCancel(type, false);
-                }
+                if (still === 0) menu.toggleButtonCancel(type, false);
                 _this8.updateInterfaceLoading();
               }
             } else if (_this8.loading >= 100 || map.devMode) {
@@ -3079,9 +3083,7 @@ var Building = /*#__PURE__*/function (_Container) {
                   return q === type;
                 }).length;
                 menu.updateButtonContent(type, _still || '');
-                if (_still === 0) {
-                  menu.toggleButtonCancel(type, false);
-                }
+                if (_still === 0) menu.toggleButtonCancel(type, false);
                 _this8.updateInterfaceLoading();
               }
             } else if (_this8.loading < 100) {
@@ -3787,7 +3789,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.affectNewDest();
             }
             // Set the walking with berrybush animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -3842,7 +3844,7 @@ var Unit = /*#__PURE__*/function (_Container) {
                 _this6.affectNewDest();
               }
               // Set the walking with wood animation
-              if (_this6.loading > 0) {
+              if (_this6.loading === 1) {
                 if (_this6.allAssets[_this6.work]) {
                   _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
                 }
@@ -3885,7 +3887,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.affectNewDest();
             }
             // Set the walking with berrybush animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -3927,7 +3929,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.affectNewDest();
             }
             // Set the walking with stone animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -3966,7 +3968,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.affectNewDest();
             }
             // Set the walking with gold animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -4149,7 +4151,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Set the walking with meat animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -4186,7 +4188,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
             }
             // Set the walking with meat animation
-            if (_this6.loading > 0) {
+            if (_this6.loading === 1) {
               if (_this6.allAssets && _this6.allAssets[_this6.work]) {
                 _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
               }
@@ -4415,11 +4417,11 @@ var Unit = /*#__PURE__*/function (_Container) {
       if (!this.sprite.playing) {
         this.sprite.play();
       }
-      this.zIndex = getInstanceZIndex(this);
       if (maths_instancesDistance(this, nextCell, false) <= this.speed) {
         this.z = nextCell.z;
         this.i = nextCell.i;
         this.j = nextCell.j;
+        this.zIndex = getInstanceZIndex(this);
         if (this.currentCell.has === this) {
           this.currentCell.has = null;
           this.currentCell.solid = false;
@@ -4486,7 +4488,8 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "stop",
     value: function stop() {
-      if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
+      var _this$currentCell$has;
+      if (((_this$currentCell$has = this.currentCell.has) === null || _this$currentCell$has === void 0 ? void 0 : _this$currentCell$has.label) !== this.label && this.currentCell.solid) {
         this.sendTo(this.currentCell);
         return;
       }
@@ -4897,10 +4900,11 @@ var Player = /*#__PURE__*/function () {
     var map = context.map;
     this.label = uuidv4();
     this.parent = map;
-    this.wood = map.devMode ? 10000 : 200;
-    this.food = map.devMode ? 10000 : 200;
-    this.stone = map.devMode ? 10000 : 150;
-    this.gold = map.devMode ? 10000 : 0;
+    var res = map.startingResources;
+    this.wood = res.wood;
+    this.food = res.food;
+    this.stone = res.stone;
+    this.gold = res.gold;
     this.corpses = [];
     this.units = [];
     this.buildings = [];
@@ -5110,8 +5114,7 @@ function ai_setPrototypeOf(t, e) { return ai_setPrototypeOf = Object.setPrototyp
 
 
 
-var styleLogInfo1 = 'background: #00ff00; color: #ffff00';
-var styleLogInfo2 = 'background: #222; color: #ff0000';
+var DEBUG = false;
 var AI = /*#__PURE__*/function (_Player) {
   function AI(_ref, context) {
     var _this;
@@ -5304,12 +5307,13 @@ var AI = /*#__PURE__*/function (_Player) {
           if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
             var buildingType = target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit;
             var buildings = me.buildingsByTypes([buildingType]);
-            if (canAfford(me, me.config.buildings[buildingType]) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
+            // Fix: pass .cost to canAfford, not the full building config object
+            if (canAfford(me, me.config.buildings[buildingType].cost) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
               var closestBuilding = getClosestInstance(target, [].concat(ai_toConsumableArray(buildings), ai_toConsumableArray(me.buildingsByTypes([BUILDING_TYPES.townCenter]))));
               if (!closestBuilding || maths_instancesDistance(closestBuilding, target) > 5) {
                 var pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1);
                 if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
-                  console.log("Building ".concat(buildingType, " at:"), pos);
+                  if (DEBUG) console.log("Building ".concat(buildingType, " at:"), pos);
                 }
               }
             }
@@ -5330,8 +5334,10 @@ var AI = /*#__PURE__*/function (_Player) {
       var maxClubmans = 10;
       var howManyVillagerBeforeBuyingABarracks = 10;
       var howManySoldiersBeforeAttack = 5;
-      console.log('%c ----Step started', styleLogInfo1);
-      console.log("%c Age: ".concat(this.age, ", Wood: ").concat(this.wood, ", Food: ").concat(this.food, ", Stone: ").concat(this.stone, ", Gold: ").concat(this.gold, ", Population: ").concat(this.population, "/").concat(this.population_max), styleLogInfo2);
+      if (DEBUG) {
+        console.log('----Step started');
+        console.log("Age: ".concat(this.age, ", Wood: ").concat(this.wood, ", Food: ").concat(this.food, ", Stone: ").concat(this.stone, ", Gold: ").concat(this.gold, ", Population: ").concat(this.population, "/").concat(this.population_max));
+      }
       var filterUnitsByType = function filterUnitsByType(type) {
         var condition = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (unit) {
           return unit.hitPoints > 0;
@@ -5342,7 +5348,7 @@ var AI = /*#__PURE__*/function (_Player) {
       };
       var villagers = filterUnitsByType(UNIT_TYPES.villager);
       var clubmans = filterUnitsByType(UNIT_TYPES.clubman);
-      console.log("%c Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Clubmans: ").concat(clubmans.length, "/").concat(maxClubmans), styleLogInfo2);
+      if (DEBUG) console.log("Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Clubmans: ").concat(clubmans.length, "/").concat(maxClubmans));
       var towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]);
       var storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit]);
       var houses = this.buildingsByTypes([BUILDING_TYPES.house]);
@@ -5354,7 +5360,7 @@ var AI = /*#__PURE__*/function (_Player) {
         var isUsedBy = _ref2.isUsedBy;
         return !isUsedBy;
       });
-      console.log("%c Towncenters: ".concat(towncenters.length, ", Houses: ").concat(houses.length, ", StoragePits: ").concat(storagepits.length, ", Granaries: ").concat(granarys.length, ", Barracks: ").concat(barracks.length, ", Markets: ").concat(markets.length), styleLogInfo2);
+      if (DEBUG) console.log("Towncenters: ".concat(towncenters.length, ", Houses: ").concat(houses.length, ", StoragePits: ").concat(storagepits.length, ", Granaries: ").concat(granarys.length, ", Barracks: ").concat(barracks.length, ", Markets: ").concat(markets.length));
       var notBuiltBuildings = this.buildings.filter(function (b) {
         return !b.isBuilt || b.hitPoints > 0 && b.hitPoints < b.totalHitPoints;
       });
@@ -5383,7 +5389,7 @@ var AI = /*#__PURE__*/function (_Player) {
       var maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood']);
       var maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold']);
       var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
-      console.log("%c Food: ".concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Wood: ").concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builders: ").concat(builderVillagers.length), styleLogInfo2);
+      if (DEBUG) console.log("Food: ".concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Wood: ").concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builders: ").concat(builderVillagers.length));
 
       // Soldiers: those already on assault vs those waiting at base
       var inactifClubmans = clubmans.filter(function (c) {
@@ -5392,11 +5398,11 @@ var AI = /*#__PURE__*/function (_Player) {
       var waitingClubmans = clubmans.filter(function (c) {
         return c.inactif && c.action !== ACTION_TYPES.attack && !c.assault;
       });
-      console.log("%c Inactif Clubmans: ".concat(inactifClubmans.length, ", Waiting Clubmans: ").concat(waitingClubmans.length), styleLogInfo2);
+      if (DEBUG) console.log("Inactif Clubmans: ".concat(inactifClubmans.length, ", Waiting Clubmans: ").concat(waitingClubmans.length));
 
       // Player losing condition
       if (!this.buildings.length && !this.units.length) {
-        console.log('Player has no buildings and units. Dying...');
+        if (DEBUG) console.log('Player has no buildings and units. Dying...');
         this.die();
         return;
       }
@@ -5405,9 +5411,10 @@ var AI = /*#__PURE__*/function (_Player) {
       this.cleanupSets();
 
       // Scout logic: one villager explores the map incrementally.
+      // Pick the last idle villager so that earlier ones remain available for gathering.
       // Resources and enemies are discovered naturally through unit sight (updateAIKnowledge in grid.js).
       if (!this.scout || this.scout.isDead || this.scout.hitPoints <= 0) {
-        this.scout = inactifVillagers[0] || null;
+        this.scout = inactifVillagers[inactifVillagers.length - 1] || null;
       }
       if (this.scout && this.scout.inactif) {
         // explore() finds the nearest unviewed cell (radius 50) — short path, A* always succeeds
@@ -5419,25 +5426,32 @@ var AI = /*#__PURE__*/function (_Player) {
         return v !== _this2.scout;
       });
 
+      // Cache otherPlayers once — used in multiple building placement filters below
+      var otherPlayers = this.otherPlayers();
+
       // Assign villagers from the available pool to a resource type.
       // Stops excess workers and fills shortfall from the available pool.
-      var assignVillagersToResource = function assignVillagersToResource(villagersOnResource, resourceList, maxVillagers, actionCallback) {
+      var assignVillagersToResource = function assignVillagersToResource(villagersOnResource, resourceList, maxVillagersForResource, actionCallback) {
         // Stop workers above quota
-        for (var i = maxVillagers; i < villagersOnResource.length; i++) {
+        for (var i = maxVillagersForResource; i < villagersOnResource.length; i++) {
           villagersOnResource[i].stop();
         }
-        if (resourceList.size === 0) return;
-        var needed = Math.max(0, maxVillagers - villagersOnResource.length);
+        if (resourceList.size === 0) return 0;
+        var needed = Math.max(0, maxVillagersForResource - villagersOnResource.length);
         var toAssign = Math.min(needed, availableVillagers.length);
         for (var _i = 0; _i < toAssign; _i++) {
           var villager = availableVillagers.shift();
           var resource = getClosestInstance(villager, resourceList);
           actionCallback(villager, resource);
         }
+        return toAssign;
       };
 
+      // Track food workers assigned this step to avoid double-filling the quota via both berries and farms
+      var foodWorkersAssigned = villagersOnFood.length;
+
       // Food: berries first
-      assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
+      foodWorkersAssigned += assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
         villager.sendToBerrybush(bush);
       });
 
@@ -5446,8 +5460,8 @@ var AI = /*#__PURE__*/function (_Player) {
         villager.sendToTree(tree);
       });
 
-      // Food fallback: send to empty farms when berries aren't covering the quota
-      var foodShortfall = Math.max(0, maxVillagersOnFood - villagersOnFood.length);
+      // Food fallback: send to empty farms only when berries aren't covering the full quota
+      var foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned);
       for (var i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
         var villager = availableVillagers.shift();
         villager.sendToFarm(emptyFarms[i]);
@@ -5468,23 +5482,16 @@ var AI = /*#__PURE__*/function (_Player) {
         var _iterator7 = ai_createForOfIteratorHelper(notBuiltBuildings),
           _step7;
         try {
-          var _loop = function _loop() {
-              var building = _step7.value;
-              if (builderVillagers.length >= maxVillagersOnConstruction) return 0; // break
-              if (availableVillagers.length === 0) return 0; // break
-              var villager = getClosestInstance(building, availableVillagers);
-              if (villager) {
-                console.log('Villager sent to build:', building);
-                villager.sendToBuilding(building);
-                availableVillagers = availableVillagers.filter(function (v) {
-                  return v !== villager;
-                });
-              }
-            },
-            _ret;
           for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-            _ret = _loop();
-            if (_ret === 0) break;
+            var building = _step7.value;
+            if (builderVillagers.length >= maxVillagersOnConstruction) break;
+            if (availableVillagers.length === 0) break;
+            var _villager = getClosestInstance(building, availableVillagers);
+            if (_villager) {
+              if (DEBUG) console.log('Villager sent to build:', building);
+              _villager.sendToBuilding(building);
+              availableVillagers.splice(availableVillagers.indexOf(_villager), 1);
+            }
           }
         } catch (err) {
           _iterator7.e(err);
@@ -5495,7 +5502,7 @@ var AI = /*#__PURE__*/function (_Player) {
 
       // Attack helpers
       var sendToAttack = function sendToAttack(soldiers, target) {
-        console.log('Sending soldiers to attack:', target);
+        if (DEBUG) console.log('Sending soldiers to attack:', target);
         soldiers.forEach(function (c) {
           c.assault = true;
           c.sendTo(target, ACTION_TYPES.attack);
@@ -5515,7 +5522,7 @@ var AI = /*#__PURE__*/function (_Player) {
           return u.hitPoints > 0;
         });
         if (enemyUnit) {
-          console.log('Enemy units spotted! Defending...');
+          if (DEBUG) console.log('Enemy units spotted! Defending...');
           sendToAttack(waitingClubmans, enemyUnit);
         }
       }
@@ -5523,7 +5530,7 @@ var AI = /*#__PURE__*/function (_Player) {
       // Attack wave: enough soldiers accumulated → launch assault
       if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
         var target = getBestEnemyTarget() || map.grid[maths_randomRange(0, map.grid.length - 1)][maths_randomRange(0, map.grid[0].length - 1)];
-        console.log('Launching attack wave! Target:', target);
+        if (DEBUG) console.log('Launching attack wave! Target:', target);
         sendToAttack(waitingClubmans, target);
       }
 
@@ -5531,7 +5538,7 @@ var AI = /*#__PURE__*/function (_Player) {
       if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
         var _target = getBestEnemyTarget();
         if (_target) {
-          console.log('Redirecting assault soldiers to:', _target);
+          if (DEBUG) console.log('Redirecting assault soldiers to:', _target);
           sendToAttack(inactifClubmans, _target);
         }
       }
@@ -5545,11 +5552,11 @@ var AI = /*#__PURE__*/function (_Player) {
           _step8;
         try {
           for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-            var building = _step8.value;
+            var _building = _step8.value;
             if (unitsBought >= unitsNeeded) break;
-            if (building && building.buyUnit(unitType, false, false, extra)) {
+            if (_building && _building.buyUnit(unitType, false, false, extra)) {
               unitsBought++;
-              console.log("Buying ".concat(unitType, " from ").concat(building.type, ", Total Bought: ").concat(unitsBought));
+              if (DEBUG) console.log("Buying ".concat(unitType, " from ").concat(_building.type, ", Total Bought: ").concat(unitsBought));
             }
           }
         } catch (err) {
@@ -5561,21 +5568,14 @@ var AI = /*#__PURE__*/function (_Player) {
       buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
       buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman);
 
-      // Building Purchasing
+      // Building Purchasing — use BUILDING_TYPES constants as keys to avoid string/constant mismatches
       var buyBuildingIfNeeded = function buyBuildingIfNeeded(condition, buildingType, positionCallback) {
-        var list = {
-          House: houses,
-          Farm: farms,
-          Barracks: barracks,
-          Granary: granarys,
-          StoragePit: storagepits,
-          Market: markets
-        };
+        var list = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.house, houses), BUILDING_TYPES.farm, farms), BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.granary, granarys), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets);
         var building = _this2.config.buildings[buildingType];
         if (condition && canAfford(_this2, building.cost) && _this2.hasNotReachBuildingLimit(buildingType, list[buildingType])) {
           var pos = positionCallback();
           if (pos && _this2.buyBuilding(pos.i, pos.j, buildingType)) {
-            console.log("Buying building: ".concat(buildingType, " at position:"), pos);
+            if (DEBUG) console.log("Buying building: ".concat(buildingType, " at position:"), pos);
           }
         }
       };
@@ -5588,7 +5588,7 @@ var AI = /*#__PURE__*/function (_Player) {
       // Barracks
       buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return _this2.otherPlayers().every(function (player) {
+          return otherPlayers.every(function (player) {
             return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
           });
         });
@@ -5597,7 +5597,7 @@ var AI = /*#__PURE__*/function (_Player) {
       // Market
       buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return _this2.otherPlayers().every(function (player) {
+          return otherPlayers.every(function (player) {
             return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
           });
         });
@@ -5609,10 +5609,10 @@ var AI = /*#__PURE__*/function (_Player) {
         var _iterator9 = ai_createForOfIteratorHelper(buildings),
           _step9;
         try {
-          var _loop2 = function _loop2() {
+          var _loop = function _loop() {
               var building = _step9.value;
               var position = getPositionInGridAroundInstance(building, map.grid, [2, 10], 2, false, function (cell) {
-                return _this2.otherPlayers().every(function (player) {
+                return otherPlayers.every(function (player) {
                   return maths_instancesDistance(cell, player) <= maths_instancesDistance(building, player);
                 });
               }, false);
@@ -5620,10 +5620,10 @@ var AI = /*#__PURE__*/function (_Player) {
                 v: position
               };
             },
-            _ret2;
+            _ret;
           for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-            _ret2 = _loop2();
-            if (_ret2) return _ret2.v;
+            _ret = _loop();
+            if (_ret) return _ret.v;
           }
         } catch (err) {
           _iterator9.e(err);
@@ -5639,9 +5639,9 @@ var AI = /*#__PURE__*/function (_Player) {
           _step0;
         try {
           for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
-            var building = _step0.value;
-            if (building && building.buyTechnology(technologyType)) {
-              console.log("Buying ".concat(technologyType, " from ").concat(building.type));
+            var _building2 = _step0.value;
+            if (_building2 && _building2.buyTechnology(technologyType)) {
+              if (DEBUG) console.log("Buying ".concat(technologyType, " from ").concat(_building2.type));
             }
           }
         } catch (err) {
@@ -5653,7 +5653,7 @@ var AI = /*#__PURE__*/function (_Player) {
       if (this.nextAge[this.age + 1]) {
         buyTechnology(towncenters, this.nextAge[this.age + 1]);
       }
-      console.log('%c ----Step ended', styleLogInfo1);
+      if (DEBUG) console.log('----Step ended');
     }
   }, {
     key: "die",
@@ -6446,17 +6446,11 @@ var Human = /*#__PURE__*/function (_Player) {
 
 ;// ./app/classes/cell.js
 function cell_typeof(o) { "@babel/helpers - typeof"; return cell_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, cell_typeof(o); }
-function cell_slicedToArray(r, e) { return cell_arrayWithHoles(r) || cell_iterableToArrayLimit(r, e) || cell_unsupportedIterableToArray(r, e) || cell_nonIterableRest(); }
-function cell_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function cell_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function cell_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function cell_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = cell_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function cell_toConsumableArray(r) { return cell_arrayWithoutHoles(r) || cell_iterableToArray(r) || cell_unsupportedIterableToArray(r) || cell_nonIterableSpread(); }
 function cell_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function cell_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return cell_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? cell_arrayLikeToArray(r, a) : void 0; } }
 function cell_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function cell_arrayWithoutHoles(r) { if (Array.isArray(r)) return cell_arrayLikeToArray(r); }
-function cell_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function cell_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function cell_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, cell_toPropertyKey(o.key), o); } }
 function cell_createClass(e, r, t) { return r && cell_defineProperties(e.prototype, r), t && cell_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -6469,6 +6463,12 @@ function cell_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valu
 function cell_getPrototypeOf(t) { return cell_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, cell_getPrototypeOf(t); }
 function cell_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && cell_setPrototypeOf(t, e); }
 function cell_setPrototypeOf(t, e) { return cell_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, cell_setPrototypeOf(t, e); }
+function cell_slicedToArray(r, e) { return cell_arrayWithHoles(r) || cell_iterableToArrayLimit(r, e) || cell_unsupportedIterableToArray(r, e) || cell_nonIterableRest(); }
+function cell_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function cell_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return cell_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? cell_arrayLikeToArray(r, a) : void 0; } }
+function cell_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function cell_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function cell_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
@@ -6504,6 +6504,50 @@ var CORNER_DATA = {
     adj: [[0, 1], [-1, 0]]
   } // W tip  (SW∩NW)
 };
+
+// Pre-parsed neighbor/corner lists — avoid string splitting at runtime
+var _NEIGHBOR_LIST = Object.entries(NEIGHBOR_SIDES).map(function (_ref) {
+  var _ref2 = cell_slicedToArray(_ref, 2),
+    k = _ref2[0],
+    side = _ref2[1];
+  var _k$split$map = k.split(',').map(Number),
+    _k$split$map2 = cell_slicedToArray(_k$split$map, 2),
+    di = _k$split$map2[0],
+    dj = _k$split$map2[1];
+  return {
+    di: di,
+    dj: dj,
+    side: side
+  };
+});
+var _CORNER_LIST = Object.entries(CORNER_DATA).map(function (_ref3) {
+  var _ref4 = cell_slicedToArray(_ref3, 2),
+    k = _ref4[0],
+    _ref4$ = _ref4[1],
+    corner = _ref4$.corner,
+    adj = _ref4$.adj;
+  var _k$split$map3 = k.split(',').map(Number),
+    _k$split$map4 = cell_slicedToArray(_k$split$map3, 2),
+    di = _k$split$map4[0],
+    dj = _k$split$map4[1];
+  return {
+    di: di,
+    dj: dj,
+    corner: corner,
+    adj: adj
+  };
+});
+
+// Static lookup for setDesertBorder — computed once
+var _DESERT_VAL = Array.from({
+  length: 25
+}, function (_, i) {
+  return i < 9 ? [0, 1, 2, 3] : Array.from({
+    length: 4
+  }, function (__, k) {
+    return (i - 9) * 4 + k + 4;
+  });
+});
 
 // Cache keyed by sorted sides e.g. 'NE|NW|SW'
 var _ditherTextures = {};
@@ -6617,7 +6661,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     var textureFile = textureName + '.png';
     var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
     var texture = spritesheet.textures[textureFile];
-    _this.sprite = lib/* Sprite */.kxk.from(texture);
+    _this.sprite = new lib/* Sprite */.kxk(texture);
     _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.anchor.set(0.5, 0.5);
     _this.sprite.roundPixels = true;
@@ -6636,29 +6680,47 @@ var Cell = /*#__PURE__*/function (_Container) {
   }
   cell_inherits(Cell, _Container);
   return cell_createClass(Cell, [{
-    key: "updateVisible",
-    value: function updateVisible() {
+    key: "_updateChild",
+    value: function _updateChild(instance) {
       var _this$context = this.context,
         map = _this$context.map,
         player = _this$context.player;
-      function updateChild(instance) {
-        if (map.revealEverything || !instance.owner || instance.owner.isPlayed || instanceIsInPlayerSight(instance, player)) {
-          instance.visible = true;
+      if (map.revealEverything || !instance.owner || instance.owner.isPlayed || instanceIsInPlayerSight(instance, player)) {
+        instance.visible = true;
+      }
+    }
+  }, {
+    key: "_setRemoveChildren",
+    value: function _setRemoveChildren(instance) {
+      var controls = this.context.controls;
+      if (controls.instanceInCamera(instance)) {
+        instance.visible = true;
+      }
+      for (var i = 0; i < instance.children.length; i++) {
+        if (instance.children[i].tint) {
+          instance.children[i].tint = COLOR_WHITE;
         }
       }
+    }
+  }, {
+    key: "updateVisible",
+    value: function updateVisible() {
+      var _this$context2 = this.context,
+        map = _this$context2.map,
+        player = _this$context2.player;
       if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
         return;
       }
       this.visible = true;
       if (this.has) {
-        updateChild(this.has);
+        this._updateChild(this.has);
       }
       var _iterator = cell_createForOfIteratorHelper(this.corpses),
         _step;
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var corpse = _step.value;
-          updateChild(corpse);
+          this._updateChild(corpse);
         }
       } catch (err) {
         _iterator.e(err);
@@ -6669,41 +6731,25 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "setDesertBorder",
     value: function setDesertBorder(direction) {
+      // Avoid stacking duplicate border sprites when multiple desert neighbors trigger the same side
+      var alreadySet = this.children.some(function (c) {
+        return c.type === 'border' && c.direction === direction;
+      });
+      if (alreadySet) return;
       var resourceName = '20002';
       var cellSprite = this.sprite;
       var cellSpriteTextureName = cellSprite.texture.label;
-      var cellSpriteIndex = cellSpriteTextureName.split('_')[0];
-      var val = {};
-      var index;
-      var cpt = 0;
-      for (var i = 0; i < 25; i++) {
-        val[i] = [];
-        if (i < 9) {
-          val[i].push(0, 1, 2, 3);
-        } else {
-          for (var j = cpt; j < cpt + 4; j++) {
-            val[i].push(j + 4);
-          }
-          cpt += 4;
-        }
-      }
-      switch (direction) {
-        case 'west':
-          index = val[cellSpriteIndex * 1][0];
-          break;
-        case 'north':
-          index = val[cellSpriteIndex * 1][1];
-          break;
-        case 'south':
-          index = val[cellSpriteIndex * 1][2];
-          break;
-        case 'est':
-          index = val[cellSpriteIndex * 1][3];
-          break;
-      }
+      var cellSpriteIndex = +cellSpriteTextureName.split('_')[0];
+      var dirIndex = {
+        west: 0,
+        north: 1,
+        south: 2,
+        east: 3
+      }[direction];
+      var index = _DESERT_VAL[cellSpriteIndex][dirIndex];
       var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
       var texture = spritesheet.textures[formatNumber(index) + '_' + resourceName + '.png'];
-      var sprite = lib/* Sprite */.kxk.from(texture);
+      var sprite = new lib/* Sprite */.kxk(texture);
       sprite.direction = direction;
       sprite.anchor.set(0.5, 0.5);
       sprite.type = 'border';
@@ -6769,7 +6815,7 @@ var Cell = /*#__PURE__*/function (_Container) {
             var target = grid[cell.i + velX][cell.j + velY];
             var aside = grid[_this4.i + cell.i - target.i][_this4.j + cell.j - target.j];
             if (target.type !== _this4.type && aside.type !== _this4.type) {
-              if (Math.floor(maths_instancesDistance(_this4, cell)) === 2) {
+              if (Math.floor(dist) === 2) {
                 cell.setWater();
                 target.setWater();
               }
@@ -6792,7 +6838,7 @@ var Cell = /*#__PURE__*/function (_Container) {
             var target = grid[cell.i + velX][cell.j + velY];
             var aside = grid[_this5.i + cell.i - target.i][_this5.j + cell.j - target.j];
             if (target.z <= _this5.z && target.z !== _this5.z && aside.z !== _this5.z) {
-              if (Math.floor(maths_instancesDistance(_this5, cell)) === 2) {
+              if (Math.floor(dist) === 2) {
                 target.setCellLevel(target.z + 1);
               }
             }
@@ -6876,9 +6922,9 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "setFogChildren",
     value: function setFogChildren(instance, init) {
-      var _this$context2 = this.context,
-        player = _this$context2.player,
-        map = _this$context2.map;
+      var _this$context3 = this.context,
+        player = _this$context3.player,
+        map = _this$context3.map;
       if (!instanceIsInPlayerSight(instance, player)) {
         if (instance.owner && !instance.owner.isPlayed) {
           if (!init && instance.family === FAMILY_TYPES.building) {
@@ -6898,42 +6944,51 @@ var Cell = /*#__PURE__*/function (_Container) {
       var neededCorners = new Set();
       if (this.visible && this.viewBy.size > 0 && !this._hasFog) {
         var grid = this.context.map.grid;
-        for (var _i = 0, _Object$entries = Object.entries(NEIGHBOR_SIDES); _i < _Object$entries.length; _i++) {
-          var _grid;
-          var _Object$entries$_i = cell_slicedToArray(_Object$entries[_i], 2),
-            key = _Object$entries$_i[0],
-            side = _Object$entries$_i[1];
-          var _key$split$map = key.split(',').map(Number),
-            _key$split$map2 = cell_slicedToArray(_key$split$map, 2),
-            di = _key$split$map2[0],
-            dj = _key$split$map2[1];
-          var n = (_grid = grid[this.i + di]) === null || _grid === void 0 ? void 0 : _grid[this.j + dj];
-          if (!n || n._hasFog) needed.add(side);
-        }
-        // Inner-corner: diagonal in fog but both shared cardinals visible
-        for (var _i2 = 0, _Object$entries2 = Object.entries(CORNER_DATA); _i2 < _Object$entries2.length; _i2++) {
-          var _grid2;
-          var _Object$entries2$_i = cell_slicedToArray(_Object$entries2[_i2], 2),
-            _key = _Object$entries2$_i[0],
-            _Object$entries2$_i$ = _Object$entries2$_i[1],
-            corner = _Object$entries2$_i$.corner,
-            adj = _Object$entries2$_i$.adj;
-          var _key$split$map3 = _key.split(',').map(Number),
-            _key$split$map4 = cell_slicedToArray(_key$split$map3, 2),
-            _di = _key$split$map4[0],
-            _dj = _key$split$map4[1];
-          var diag = (_grid2 = grid[this.i + _di]) === null || _grid2 === void 0 ? void 0 : _grid2[this.j + _dj];
-          if (!diag || diag._hasFog) {
-            var bothVisible = adj.every(function (_ref) {
-              var _grid3;
-              var _ref2 = cell_slicedToArray(_ref, 2),
-                cdi = _ref2[0],
-                cdj = _ref2[1];
-              var cn = (_grid3 = grid[_this6.i + cdi]) === null || _grid3 === void 0 ? void 0 : _grid3[_this6.j + cdj];
-              return cn && !cn._hasFog;
-            });
-            if (bothVisible) neededCorners.add(corner);
+        var _iterator2 = cell_createForOfIteratorHelper(_NEIGHBOR_LIST),
+          _step2;
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var _grid;
+            var _step2$value = _step2.value,
+              di = _step2$value.di,
+              dj = _step2$value.dj,
+              side = _step2$value.side;
+            var n = (_grid = grid[this.i + di]) === null || _grid === void 0 ? void 0 : _grid[this.j + dj];
+            if (!n || n._hasFog) needed.add(side);
           }
+          // Inner-corner: diagonal in fog but both shared cardinals visible
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+        var _iterator3 = cell_createForOfIteratorHelper(_CORNER_LIST),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var _grid2;
+            var _step3$value = _step3.value,
+              _di = _step3$value.di,
+              _dj = _step3$value.dj,
+              corner = _step3$value.corner,
+              adj = _step3$value.adj;
+            var diag = (_grid2 = grid[this.i + _di]) === null || _grid2 === void 0 ? void 0 : _grid2[this.j + _dj];
+            if (!diag || diag._hasFog) {
+              var bothVisible = adj.every(function (_ref5) {
+                var _grid3;
+                var _ref6 = cell_slicedToArray(_ref5, 2),
+                  cdi = _ref6[0],
+                  cdj = _ref6[1];
+                var cn = (_grid3 = grid[_this6.i + cdi]) === null || _grid3 === void 0 ? void 0 : _grid3[_this6.j + cdj];
+                return cn && !cn._hasFog;
+              });
+              if (bothVisible) neededCorners.add(corner);
+            }
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
         }
       }
       var fogLayer = this.context.map.fogLayer;
@@ -6989,20 +7044,7 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "removeFog",
     value: function removeFog() {
-      var controls = this.context.controls;
-      function setRemoveChildren(instance) {
-        if (controls.instanceInCamera(instance)) {
-          instance.visible = true;
-        }
-        for (var i = 0; i < instance.children.length; i++) {
-          if (instance.children[i].tint) {
-            instance.children[i].tint = COLOR_WHITE;
-          }
-        }
-      }
-      if (!this.visible) {
-        this.visible = true;
-      }
+      this.visible = true;
       this.zIndex = 0;
       if (this._hasFog) {
         this._hasFog = false;
@@ -7021,19 +7063,19 @@ var Cell = /*#__PURE__*/function (_Container) {
       }
       if (this.has) {
         this.removeFogBuilding(this.has);
-        setRemoveChildren(this.has);
+        this._setRemoveChildren(this.has);
       }
-      var _iterator2 = cell_createForOfIteratorHelper(this.corpses),
-        _step2;
+      var _iterator4 = cell_createForOfIteratorHelper(this.corpses),
+        _step4;
       try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var corpse = _step2.value;
-          setRemoveChildren(corpse);
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          var corpse = _step4.value;
+          this._setRemoveChildren(corpse);
         }
       } catch (err) {
-        _iterator2.e(err);
+        _iterator4.e(err);
       } finally {
-        _iterator2.f();
+        _iterator4.f();
       }
     }
   }]);
@@ -7090,8 +7132,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.allTechnologies = false;
     _this.noAI = false;
     _this.devMode = false;
-    _this.revealEverything = _this.devMode || false;
-    _this.revealTerrain = _this.devMode || false;
+    _this.startingResources = {
+      wood: 200,
+      food: 200,
+      stone: 150,
+      gold: 0
+    };
+    _this.revealEverything = false;
+    _this.revealTerrain = false;
     _this.x = 0;
     _this.y = 0;
     _this.startingUnits = 3;
@@ -7260,7 +7308,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
   }, {
     key: "generateMap",
     value: function generateMap() {
-      var repeat = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var positionsCountOverride = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var repeat = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       this.removeChildren();
       this.generateCells();
       switch (this.size) {
@@ -7274,22 +7323,25 @@ var map_Map = /*#__PURE__*/function (_Container) {
           this.positionsCount = 4;
           break;
         case 200:
-          this.positionsCount = 4;
+          this.positionsCount = 6;
           break;
         case 220:
-          this.positionsCount = 4;
+          this.positionsCount = 8;
           break;
         default:
           this.positionsCount = 2;
       }
-      this.totalCells = Math.pow(this.size, 2);
+      if (positionsCountOverride !== null) {
+        this.positionsCount = positionsCountOverride;
+      }
+      this.totalCells = Math.pow(this.size + 1, 2);
       this.playersPos = this.findPlayerPlaces();
       if (this.playersPos.length < this.positionsCount) {
         if (repeat >= 10) {
           alert('Error while generating the map');
           return;
         }
-        this.generateMap(repeat + 1);
+        this.generateMap(positionsCountOverride, repeat + 1);
         return;
       }
       this.generateResourcesAroundPlayers(this.playersPos);
@@ -7404,10 +7456,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
       var forestCells = [];
       var pathCells = new Set();
 
-      // Function to calculate the distance between two points
-      function distance(x1, y1, x2, y2) {
-        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+      // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
+      function distSq(x1, y1, x2, y2) {
+        return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
       }
+      var safeDistanceSq = Math.pow(safeDistance, 2);
 
       // Function to create a circle of points within a grid, checking boundaries
       function createCircle(centerI, centerJ, radius) {
@@ -7460,7 +7513,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           clusterCenterJ = playerJ + Math.floor(Math.random() * 60 - 30);
           tries++;
           if (tries > 100) break; // Safety exit
-        } while (distance(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistance || clusterCenterI < 0 || clusterCenterI >= gridWidth || clusterCenterJ < 0 || clusterCenterJ >= gridHeight ||
+        } while (distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq || clusterCenterI < 0 || clusterCenterI >= gridWidth || clusterCenterJ < 0 || clusterCenterJ >= gridHeight ||
         // Stay within grid bounds
         grid[clusterCenterI][clusterCenterJ].category === 'Water' ||
         // Avoid water cells
@@ -7487,7 +7540,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           soloJ = playerJ + Math.floor(Math.random() * 60 - 30);
           _tries++;
           if (_tries > 50) break; // Safety exit to avoid infinite loop
-        } while (distance(soloI, soloJ, playerI, playerJ) < safeDistance || soloI < 0 || soloI >= gridWidth || soloJ < 0 || soloJ >= gridHeight ||
+        } while (distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq || soloI < 0 || soloI >= gridWidth || soloJ < 0 || soloJ >= gridHeight ||
         // Stay within grid bounds
         grid[soloI][soloJ].category === 'Water' ||
         // Avoid water cells
@@ -7516,7 +7569,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
             clearingCenterJ = playerJ + Math.floor(Math.random() * 60 - 30);
             _tries2++;
             if (_tries2 > 100) break;
-          } while (distance(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistance || clearingCenterI < 0 || clearingCenterI >= gridWidth || clearingCenterJ < 0 || clearingCenterJ >= gridHeight ||
+          } while (distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq || clearingCenterI < 0 || clearingCenterI >= gridWidth || clearingCenterJ < 0 || clearingCenterJ >= gridHeight ||
           // Stay within grid bounds
           grid[clearingCenterI][clearingCenterJ].category === 'Water' ||
           // Avoid water cells
@@ -7526,14 +7579,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
           );
           if (_tries2 <= 100) {
             var clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, _edgeNoise);
-            clearingCells.forEach(function (clearedCell) {
-              var index = forestCells.findIndex(function (cell) {
-                return cell.i === clearedCell.i && cell.j === clearedCell.j;
-              });
-              if (index > -1) {
-                forestCells.splice(index, 1); // Remove tree from clearing
+            var clearingSet = new Set(clearingCells.map(function (c) {
+              return "".concat(c.i, ",").concat(c.j);
+            }));
+            for (var idx = forestCells.length - 1; idx >= 0; idx--) {
+              if (clearingSet.has("".concat(forestCells[idx].i, ",").concat(forestCells[idx].j))) {
+                forestCells.splice(idx, 1);
               }
-            });
+            }
           }
         }
       }
@@ -7543,28 +7596,23 @@ var map_Map = /*#__PURE__*/function (_Container) {
       var pathDirection = Math.random() > 0.5 ? 1 : -1; // Random path direction
 
       for (var step = 0; step < pathLength; step++) {
-        var offsetX = void 0,
-          offsetY = void 0;
-        var _tries3 = 0;
-        do {
-          offsetX = step * pathDirection;
-          offsetY = step;
-          _tries3++;
-          if (_tries3 > 50) break;
-        } while (distance(playerI + offsetX, playerJ + offsetY, playerI, playerJ) < safeDistance || playerI + offsetX < 0 || playerI + offsetX >= gridWidth || playerJ + offsetY < 0 || playerJ + offsetY >= gridHeight);
-        if (_tries3 <= 50) {
+        var offsetX = step * pathDirection;
+        var offsetY = step;
+        var ni = playerI + offsetX;
+        var nj = playerJ + offsetY;
+        if (ni >= 0 && ni < gridWidth && nj >= 0 && nj < gridHeight && distSq(ni, nj, playerI, playerJ) >= safeDistanceSq) {
           var randOffsetX = Math.random() > 0.5 ? 1 : -1;
           var randOffsetY = Math.random() > 0.5 ? 1 : -1;
-          pathCells.add("".concat(playerI + offsetX + randOffsetX, ",").concat(playerJ + offsetY + randOffsetY));
+          pathCells.add("".concat(ni + randOffsetX, ",").concat(nj + randOffsetY));
         }
       }
 
       // Remove path cells from forestCells
-      forestCells.forEach(function (cell) {
-        if (pathCells.has("".concat(cell.i, ",").concat(cell.j))) {
-          forestCells.splice(forestCells.indexOf(cell), 1);
+      for (var _idx = forestCells.length - 1; _idx >= 0; _idx--) {
+        if (pathCells.has("".concat(forestCells[_idx].i, ",").concat(forestCells[_idx].j))) {
+          forestCells.splice(_idx, 1);
         }
-      });
+      }
 
       // Select and place trees in the forest cells
       var cellsToPlace = [];
@@ -7722,7 +7770,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
     key: "generateCells",
     value: function generateCells() {
       var z = 0;
-      var terrain = this.generateTerrain(121);
+      this.grid = [];
+      var terrain = this.generateTerrain(this.size ? this.size + 1 : 121);
       this.size = terrain.length - 1;
 
       // Map terrain numbers to cell types
@@ -7786,27 +7835,31 @@ var map_Map = /*#__PURE__*/function (_Container) {
                 var type = maths_randomItem(['tree', 'rock', 'animal']);
                 switch (type) {
                   case 'rock':
-                    var _randomSpritesheet = maths_randomRange(531, 534).toString();
-                    var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
-                    var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
-                    var rock = lib/* Sprite */.kxk.from(_texture);
-                    rock.label = LABEL_TYPES.set;
-                    rock.roundPixels = true;
-                    rock.allowMove = false;
-                    rock.eventMode = 'none';
-                    rock.allowClick = false;
-                    rock.updateAnchor = true;
-                    cell.addChild(rock);
-                    break;
+                    {
+                      var _randomSpritesheet = maths_randomRange(531, 534).toString();
+                      var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
+                      var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
+                      var rock = lib/* Sprite */.kxk.from(_texture);
+                      rock.label = LABEL_TYPES.set;
+                      rock.roundPixels = true;
+                      rock.allowMove = false;
+                      rock.eventMode = 'none';
+                      rock.allowClick = false;
+                      rock.updateAnchor = true;
+                      cell.addChild(rock);
+                      break;
+                    }
                   case 'animal':
-                    var animals = lib/* Assets */.sP.cache.get('config').animals;
-                    var _type = maths_randomItem(Object.keys(animals));
-                    this.gaia.createAnimal({
-                      i: i,
-                      j: j,
-                      type: _type
-                    });
-                    break;
+                    {
+                      var animals = lib/* Assets */.sP.cache.get('config').animals;
+                      var animalType = maths_randomItem(Object.keys(animals));
+                      this.gaia.createAnimal({
+                        i: i,
+                        j: j,
+                        type: animalType
+                      });
+                      break;
+                    }
                 }
               } else {
                 this.resources.add(this.addChild(new Resource({
@@ -7962,7 +8015,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           var typeToFormat = ['Grass', 'Jungle'];
           if (cell.type === 'Desert') {
             if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
-              this.grid[i - 1][j].setDesertBorder('est');
+              this.grid[i - 1][j].setDesertBorder('east');
             }
             if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
               this.grid[i + 1][j].setDesertBorder('west');
@@ -8145,7 +8198,8 @@ var Menu = /*#__PURE__*/function () {
       content.className = 'modal-menu';
       var modal = new Modal(content);
       var save = document.createElement('button');
-      save.innerText = 'Save';
+      save.className = 'menu-btn';
+      save.innerText = 'Sauvegarder';
       save.addEventListener('pointerdown', function () {
         _this.context.save();
         modal.close();
@@ -8165,17 +8219,26 @@ var Menu = /*#__PURE__*/function () {
         };
         reader.readAsText(evt.target.files[0]);
       });
-      load.className = 'input-file';
-      load.innerText = 'Load';
+      load.className = 'input-file menu-btn';
+      load.innerText = 'Charger';
       load.appendChild(input);
+      var quit = document.createElement('button');
+      quit.className = 'menu-btn secondary';
+      quit.innerText = 'Quitter';
+      quit.addEventListener('pointerdown', function () {
+        modal.close();
+        _this.context.quit();
+      });
       var cancel = document.createElement('button');
-      cancel.innerText = 'Cancel';
+      cancel.className = 'menu-btn secondary';
+      cancel.innerText = 'Annuler';
       cancel.addEventListener('pointerdown', function () {
         modal.close();
         _this.context.resume();
       });
       content.appendChild(save);
       content.appendChild(load);
+      content.appendChild(quit);
       content.appendChild(cancel);
     });
     options.appendChild(menu);
@@ -9539,15 +9602,15 @@ var Controls = /*#__PURE__*/function (_Container) {
 
 ;// ./app/screens/Game.js
 function Game_typeof(o) { "@babel/helpers - typeof"; return Game_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Game_typeof(o); }
+function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function Game_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? Game_ownKeys(Object(t), !0).forEach(function (r) { Game_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : Game_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function Game_defineProperty(e, r, t) { return (r = Game_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function Game_toConsumableArray(r) { return Game_arrayWithoutHoles(r) || Game_iterableToArray(r) || Game_unsupportedIterableToArray(r) || Game_nonIterableSpread(); }
 function Game_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function Game_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return Game_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? Game_arrayLikeToArray(r, a) : void 0; } }
 function Game_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function Game_arrayWithoutHoles(r) { if (Array.isArray(r)) return Game_arrayLikeToArray(r); }
 function Game_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function Game_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? Game_ownKeys(Object(t), !0).forEach(function (r) { Game_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : Game_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function Game_defineProperty(e, r, t) { return (r = Game_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function Game_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function Game_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, Game_toPropertyKey(o.key), o); } }
 function Game_createClass(e, r, t) { return r && Game_defineProperties(e.prototype, r), t && Game_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -9574,8 +9637,12 @@ function Game_setPrototypeOf(t, e) { return Game_setPrototypeOf = Object.setProt
 var Game = /*#__PURE__*/function (_Container) {
   function Game(app, gamebox) {
     var _this;
+    var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var onQuit = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
     Game_classCallCheck(this, Game);
     _this = Game_callSuper(this, Game);
+    _this.config = config;
+    _this.onQuit = onQuit;
     _this.context = {
       app: app,
       gamebox: gamebox,
@@ -9596,6 +9663,9 @@ var Game = /*#__PURE__*/function (_Container) {
       },
       resume: function resume() {
         return _this.togglePause(false);
+      },
+      quit: function quit() {
+        return _this.quit();
       }
     };
     _this.start();
@@ -9605,12 +9675,17 @@ var Game = /*#__PURE__*/function (_Container) {
   return Game_createClass(Game, [{
     key: "start",
     value: function start() {
-      var _this2 = this;
-      var context = this.context;
+      var context = this.context,
+        config = this.config;
       context.map = new map_Map(context);
+      if (config.size) context.map.size = config.size;
+      if (config.devMode) context.map.devMode = true;
+      if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything;
+      if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain;
+      if (config.startingResources) context.map.startingResources = config.startingResources;
       context.controls = new Controls(context);
       context.menu = new Menu(context);
-      context.map.generateMap();
+      context.map.generateMap(config.bots != null ? config.bots + 1 : null);
       context.players = context.map.generatePlayers();
       context.player = context.players[0];
       context.menu.init();
@@ -9619,110 +9694,57 @@ var Game = /*#__PURE__*/function (_Container) {
       context.controls.init();
       this.addChild(context.map);
       this.addChild(context.controls);
-      window.addEventListener('keydown', function (evt) {
+      this._attachWindowListeners();
+    }
+  }, {
+    key: "_attachWindowListeners",
+    value: function _attachWindowListeners() {
+      var _this2 = this;
+      this._onKeydown = function (evt) {
         if (evt.key === 'p') {
-          _this2.context.paused ? context.resume() : context.pause();
+          _this2.context.paused ? _this2.context.resume() : _this2.context.pause();
         }
-      });
-      window.addEventListener('resize', function () {
-        if (context.controls) {
-          context.controls.updateVisibleCells();
-        }
-        if (context.menu) {
-          context.menu.updateCameraMiniMap();
-        }
-      });
+      };
+      this._onResize = debounce(function () {
+        if (_this2.context.controls) _this2.context.controls.updateVisibleCells();
+        if (_this2.context.menu) _this2.context.menu.updateCameraMiniMap();
+      }, 100);
+      window.addEventListener('keydown', this._onKeydown);
+      window.addEventListener('resize', this._onResize);
+    }
+  }, {
+    key: "_removeWindowListeners",
+    value: function _removeWindowListeners() {
+      window.removeEventListener('keydown', this._onKeydown);
+      window.removeEventListener('resize', this._onResize);
     }
   }, {
     key: "save",
     value: function save() {
-      var cleanContext = function cleanContext(context) {
-        var resourceData = function resourceData(resource) {
-          return Game_objectSpread(Game_objectSpread({}, filterObject(resource, ['label', 'i', 'j', 'selected', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints'])), {}, {
-            textureName: (resource.textureName || '').split('.')[0]
+      var context = this.context;
+      var json = {
+        camera: context.controls.camera,
+        config: {
+          devMode: context.map.devMode,
+          revealEverything: context.map.revealEverything,
+          revealTerrain: context.map.revealTerrain,
+          startingResources: context.map.startingResources
+        },
+        players: context.players.map(function (p) {
+          return Game._playerData(p);
+        }),
+        resources: Game_toConsumableArray(context.map.resources).map(function (r) {
+          return Game._resourceData(r);
+        }),
+        map: context.map.grid.map(function (line) {
+          return line.map(function (cell) {
+            return Game._cellData(cell);
           });
-        };
-        var animalData = function animalData(animal) {
-          var _animal$sprite, _animal$sprite2, _animal$dest, _animal$previousDest;
-          return Game_objectSpread(Game_objectSpread({}, filterObject(animal, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'path', 'zIndex', 'selected', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed', 'quantity'])), {}, {
-            currentFrame: (_animal$sprite = animal.sprite) === null || _animal$sprite === void 0 ? void 0 : _animal$sprite.currentFrame,
-            loop: (_animal$sprite2 = animal.sprite) === null || _animal$sprite2 === void 0 ? void 0 : _animal$sprite2.loop,
-            dest: animal.dest && [animal.dest.i, animal.dest.i, (_animal$dest = animal.dest) === null || _animal$dest === void 0 ? void 0 : _animal$dest.label],
-            previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.i, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label]
-          });
-        };
-        var unitData = function unitData(unit) {
-          var _unit$sprite, _unit$sprite2, _unit$dest, _unit$previousDest;
-          return Game_objectSpread(Game_objectSpread({}, filterObject(unit, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'path', 'selected', 'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed'])), {}, {
-            currentFrame: (_unit$sprite = unit.sprite) === null || _unit$sprite === void 0 ? void 0 : _unit$sprite.currentFrame,
-            loop: (_unit$sprite2 = unit.sprite) === null || _unit$sprite2 === void 0 ? void 0 : _unit$sprite2.loop,
-            dest: unit.dest && [unit.dest.i, unit.dest.i, (_unit$dest = unit.dest) === null || _unit$dest === void 0 ? void 0 : _unit$dest.label],
-            previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.i, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label]
-          });
-        };
-        var buildingData = function buildingData(building) {
-          var _building$isUsedBy;
-          return Game_objectSpread(Game_objectSpread({}, filterObject(building, ['label', 'i', 'j', 'type', 'selected', 'queue', 'technology', 'loading', 'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity'])), {}, {
-            isUsedBy: (_building$isUsedBy = building.isUsedBy) === null || _building$isUsedBy === void 0 ? void 0 : _building$isUsedBy.iname
-          });
-        };
-        var playerData = function playerData(player) {
-          return Game_objectSpread(Game_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
-            buildings: player.buildings.map(function (building) {
-              return buildingData(building);
-            }),
-            units: player.units.map(function (unit) {
-              return unitData(unit);
-            }),
-            corpses: player.corpses.map(function (corpse) {
-              return unitData(corpse);
-            }),
-            views: player.views.map(function (view) {
-              return view.map(function (cell) {
-                return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['i', 'j', 'viewed'])), {}, {
-                  viewBy: Game_toConsumableArray(cell.viewBy || []).map(function (unit) {
-                    return unit.label;
-                  })
-                });
-              });
-            })
-          });
-        };
-        var cellData = function cellData(cell) {
-          var _cell$has;
-          return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
-            has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
-            fogSprites: cell.fogSprites.map(function (_ref) {
-              var textureSheet = _ref.textureSheet,
-                colorSheet = _ref.colorSheet,
-                colorName = _ref.colorName;
-              return {
-                textureSheet: textureSheet,
-                colorSheet: colorSheet,
-                colorName: colorName
-              };
-            })
-          });
-        };
-        return {
-          camera: context.controls.camera,
-          players: context.players.map(function (player) {
-            return playerData(player);
-          }),
-          resources: Game_toConsumableArray(context.map.resources).map(function (resource) {
-            return resourceData(resource);
-          }),
-          map: context.map.grid.map(function (line) {
-            return line.map(function (cell) {
-              return cellData(cell);
-            });
-          }),
-          animals: context.map.gaia.units.map(function (animal) {
-            return animalData(animal);
-          })
-        };
+        }),
+        animals: context.map.gaia.units.map(function (a) {
+          return Game._animalData(a);
+        })
       };
-      var json = cleanContext(this.context);
       var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
       var downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute('href', dataStr);
@@ -9736,6 +9758,9 @@ var Game = /*#__PURE__*/function (_Container) {
   }, {
     key: "load",
     value: function load(json) {
+      var _document$getElementB;
+      (_document$getElementB = document.getElementById('pause')) === null || _document$getElementB === void 0 || _document$getElementB.remove();
+      this._removeWindowListeners();
       this.context.controls.destroy();
       this.context.menu.destroy();
       this.removeChildren();
@@ -9748,11 +9773,29 @@ var Game = /*#__PURE__*/function (_Container) {
       });
       var context = this.context;
       context.map = new map_Map(context);
+      if (json.config) {
+        if (json.config.devMode) context.map.devMode = true;
+        if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything;
+        if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain;
+        if (json.config.startingResources) context.map.startingResources = json.config.startingResources;
+      }
       context.controls = new Controls(context);
       context.menu = new Menu(context);
       context.map.generateFromJSON(json);
       this.addChild(context.map);
       this.addChild(context.controls);
+      this._attachWindowListeners();
+    }
+  }, {
+    key: "quit",
+    value: function quit() {
+      var _document$getElementB2;
+      (_document$getElementB2 = document.getElementById('pause')) === null || _document$getElementB2 === void 0 || _document$getElementB2.remove();
+      this._removeWindowListeners();
+      this.context.controls.destroy();
+      this.context.menu.destroy();
+      this.removeChildren();
+      if (this.onQuit) this.onQuit();
     }
   }, {
     key: "togglePause",
@@ -9766,24 +9809,101 @@ var Game = /*#__PURE__*/function (_Container) {
         div.innerText = 'Pause';
         document.body.appendChild(div);
       } else {
-        var _document$getElementB;
-        (_document$getElementB = document.getElementById('pause')) === null || _document$getElementB === void 0 || _document$getElementB.remove();
+        var _document$getElementB3;
+        (_document$getElementB3 = document.getElementById('pause')) === null || _document$getElementB3 === void 0 || _document$getElementB3.remove();
       }
       for (var i = 0; i < map.gaia.units.length; i++) {
         pause ? map.gaia.units[i].pause() : map.gaia.units[i].resume();
       }
       for (var _i = 0; _i < players.length; _i++) {
         var player = players[_i];
-        for (var j = 0; j < (player === null || player === void 0 || (_player$units = player.units) === null || _player$units === void 0 ? void 0 : _player$units.length); j++) {
-          var _player$units;
+        for (var j = 0; j < player.units.length; j++) {
           pause ? player.units[j].pause() : player.units[j].resume();
         }
-        for (var _j = 0; _j < (player === null || player === void 0 || (_player$buildings = player.buildings) === null || _player$buildings === void 0 ? void 0 : _player$buildings.length); _j++) {
-          var _player$buildings;
+        for (var _j = 0; _j < player.buildings.length; _j++) {
           pause ? player.buildings[_j].pause() : player.buildings[_j].resume();
         }
       }
       this.context.paused = pause;
+    }
+  }], [{
+    key: "_resourceData",
+    value: function _resourceData(resource) {
+      return Game_objectSpread(Game_objectSpread({}, filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints'])), {}, {
+        textureName: (resource.textureName || '').split('.')[0]
+      });
+    }
+  }, {
+    key: "_animalData",
+    value: function _animalData(animal) {
+      var _animal$sprite, _animal$sprite2, _animal$dest, _animal$previousDest;
+      return Game_objectSpread(Game_objectSpread({}, filterObject(animal, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'zIndex', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed', 'quantity'])), {}, {
+        currentFrame: (_animal$sprite = animal.sprite) === null || _animal$sprite === void 0 ? void 0 : _animal$sprite.currentFrame,
+        loop: (_animal$sprite2 = animal.sprite) === null || _animal$sprite2 === void 0 ? void 0 : _animal$sprite2.loop,
+        dest: animal.dest && [animal.dest.i, animal.dest.j, (_animal$dest = animal.dest) === null || _animal$dest === void 0 ? void 0 : _animal$dest.label],
+        previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label]
+      });
+    }
+  }, {
+    key: "_unitData",
+    value: function _unitData(unit) {
+      var _unit$sprite, _unit$sprite2, _unit$dest, _unit$previousDest;
+      return Game_objectSpread(Game_objectSpread({}, filterObject(unit, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed'])), {}, {
+        currentFrame: (_unit$sprite = unit.sprite) === null || _unit$sprite === void 0 ? void 0 : _unit$sprite.currentFrame,
+        loop: (_unit$sprite2 = unit.sprite) === null || _unit$sprite2 === void 0 ? void 0 : _unit$sprite2.loop,
+        dest: unit.dest && [unit.dest.i, unit.dest.j, (_unit$dest = unit.dest) === null || _unit$dest === void 0 ? void 0 : _unit$dest.label],
+        previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label]
+      });
+    }
+  }, {
+    key: "_buildingData",
+    value: function _buildingData(building) {
+      var _building$isUsedBy;
+      return Game_objectSpread(Game_objectSpread({}, filterObject(building, ['label', 'i', 'j', 'type', 'queue', 'technology', 'loading', 'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity'])), {}, {
+        isUsedBy: (_building$isUsedBy = building.isUsedBy) === null || _building$isUsedBy === void 0 ? void 0 : _building$isUsedBy.label
+      });
+    }
+  }, {
+    key: "_playerData",
+    value: function _playerData(player) {
+      return Game_objectSpread(Game_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
+        buildings: player.buildings.map(function (b) {
+          return Game._buildingData(b);
+        }),
+        units: player.units.map(function (u) {
+          return Game._unitData(u);
+        }),
+        corpses: player.corpses.map(function (c) {
+          return Game._unitData(c);
+        }),
+        views: player.views.map(function (view) {
+          return view.map(function (cell) {
+            return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['i', 'j', 'viewed'])), {}, {
+              viewBy: Game_toConsumableArray(cell.viewBy || []).map(function (unit) {
+                return unit.label;
+              })
+            });
+          });
+        })
+      });
+    }
+  }, {
+    key: "_cellData",
+    value: function _cellData(cell) {
+      var _cell$has;
+      return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
+        has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
+        fogSprites: cell.fogSprites.map(function (_ref) {
+          var textureSheet = _ref.textureSheet,
+            colorSheet = _ref.colorSheet,
+            colorName = _ref.colorName;
+          return {
+            textureSheet: textureSheet,
+            colorSheet: colorSheet,
+            colorName: colorName
+          };
+        })
+      });
     }
   }]);
 }(lib/* Container */.mcf);
@@ -9921,6 +10041,260 @@ var LoaderScreen = /*#__PURE__*/function (_Container) {
   }]);
 }(lib/* Container */.mcf);
 
+;// ./app/screens/MainMenu.js
+function MainMenu_typeof(o) { "@babel/helpers - typeof"; return MainMenu_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MainMenu_typeof(o); }
+function MainMenu_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MainMenu_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MainMenu_toPropertyKey(o.key), o); } }
+function MainMenu_createClass(e, r, t) { return r && MainMenu_defineProperties(e.prototype, r), t && MainMenu_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MainMenu_toPropertyKey(t) { var i = MainMenu_toPrimitive(t, "string"); return "symbol" == MainMenu_typeof(i) ? i : i + ""; }
+function MainMenu_toPrimitive(t, r) { if ("object" != MainMenu_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MainMenu_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var MainMenu = /*#__PURE__*/function () {
+  function MainMenu(onStart, onLoad) {
+    MainMenu_classCallCheck(this, MainMenu);
+    this.el = document.createElement('div');
+    this.el.id = 'main-menu';
+    var panel = document.createElement('div');
+    panel.className = 'menu-panel';
+    var title = document.createElement('div');
+    title.className = 'menu-title';
+    title.textContent = 'RTS';
+    var subtitle = document.createElement('div');
+    subtitle.className = 'menu-subtitle';
+    subtitle.textContent = 'Age of Empires';
+    var divider = document.createElement('div');
+    divider.className = 'menu-divider';
+    var buttons = document.createElement('div');
+    buttons.className = 'menu-buttons';
+    var btnStart = document.createElement('button');
+    btnStart.className = 'menu-btn';
+    btnStart.textContent = 'Nouvelle Partie';
+    btnStart.onclick = onStart;
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    fileInput.style.display = 'none';
+    fileInput.onchange = function (evt) {
+      var file = evt.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        return onLoad(JSON.parse(e.target.result));
+      };
+      reader.readAsText(file);
+    };
+    var btnLoad = document.createElement('button');
+    btnLoad.className = 'menu-btn secondary';
+    btnLoad.textContent = 'Charger une Partie';
+    btnLoad.onclick = function () {
+      return fileInput.click();
+    };
+    buttons.appendChild(btnStart);
+    buttons.appendChild(btnLoad);
+    buttons.appendChild(fileInput);
+    panel.appendChild(title);
+    panel.appendChild(subtitle);
+    panel.appendChild(divider);
+    panel.appendChild(buttons);
+    this.el.appendChild(panel);
+    document.body.appendChild(this.el);
+  }
+  return MainMenu_createClass(MainMenu, [{
+    key: "destroy",
+    value: function destroy() {
+      this.el.remove();
+    }
+  }]);
+}();
+
+;// ./app/screens/MapConfig.js
+function MapConfig_typeof(o) { "@babel/helpers - typeof"; return MapConfig_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapConfig_typeof(o); }
+function MapConfig_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function MapConfig_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? MapConfig_ownKeys(Object(t), !0).forEach(function (r) { MapConfig_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : MapConfig_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function MapConfig_defineProperty(e, r, t) { return (r = MapConfig_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function MapConfig_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MapConfig_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapConfig_toPropertyKey(o.key), o); } }
+function MapConfig_createClass(e, r, t) { return r && MapConfig_defineProperties(e.prototype, r), t && MapConfig_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MapConfig_toPropertyKey(t) { var i = MapConfig_toPrimitive(t, "string"); return "symbol" == MapConfig_typeof(i) ? i : i + ""; }
+function MapConfig_toPrimitive(t, r) { if ("object" != MapConfig_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapConfig_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var STARTING_RESOURCES = [{
+  label: 'Bas      — 100 / 150 / 50 / 0',
+  value: 'low'
+}, {
+  label: 'Standard — 200 / 200 / 150 / 0',
+  value: 'standard'
+}, {
+  label: 'Élevé    — 500 / 500 / 300 / 0',
+  value: 'high'
+}, {
+  label: 'Très élevé — 1000 / 1000 / 750 / 100',
+  value: 'very_high'
+}];
+var RESOURCES_MAP = {
+  low: {
+    wood: 100,
+    food: 150,
+    stone: 50,
+    gold: 0
+  },
+  standard: {
+    wood: 200,
+    food: 200,
+    stone: 150,
+    gold: 0
+  },
+  high: {
+    wood: 500,
+    food: 500,
+    stone: 300,
+    gold: 0
+  },
+  very_high: {
+    wood: 1000,
+    food: 1000,
+    stone: 750,
+    gold: 100
+  }
+};
+var MAP_SIZES = [{
+  label: 'Tiny  (120×120) — 2 joueurs',
+  value: 120
+}, {
+  label: 'Small  (144×144) — 3 joueurs',
+  value: 144
+}, {
+  label: 'Medium (168×168) — 4 joueurs',
+  value: 168
+}, {
+  label: 'Normal (200×200) — 6 joueurs',
+  value: 200
+}, {
+  label: 'Large  (220×220) — 8 joueurs',
+  value: 220
+}];
+var MapConfig = /*#__PURE__*/function () {
+  function MapConfig(onPlay, onBack) {
+    var _this = this;
+    MapConfig_classCallCheck(this, MapConfig);
+    this.config = {
+      size: 120,
+      bots: 1,
+      revealEverything: false,
+      revealTerrain: false,
+      devMode: false,
+      startingResources: RESOURCES_MAP.standard
+    };
+    this.el = document.createElement('div');
+    this.el.id = 'map-config';
+    var panel = document.createElement('div');
+    panel.className = 'menu-panel';
+    var title = document.createElement('div');
+    title.className = 'menu-title';
+    title.textContent = 'Nouvelle Partie';
+    var subtitle = document.createElement('div');
+    subtitle.className = 'menu-subtitle';
+    subtitle.textContent = 'Configuration';
+    var divider = document.createElement('div');
+    divider.className = 'menu-divider';
+    var form = document.createElement('div');
+    form.className = 'config-form';
+    form.appendChild(this.createSelect('Carte', MAP_SIZES, 120, function (val) {
+      _this.config.size = parseInt(val);
+    }));
+    var botOptions = Array.from({
+      length: 7
+    }, function (_, i) {
+      return {
+        label: "".concat(i + 1, " bot").concat(i > 0 ? 's' : ''),
+        value: i + 1
+      };
+    });
+    form.appendChild(this.createSelect('Adversaires (IA)', botOptions, 1, function (val) {
+      _this.config.bots = parseInt(val);
+    }));
+    form.appendChild(this.createSelect('Ressources de départ', STARTING_RESOURCES, 'standard', function (val) {
+      _this.config.startingResources = RESOURCES_MAP[val];
+    }));
+    form.appendChild(this.createCheckbox('Mode dev (instant build)', false, function (val) {
+      _this.config.devMode = val;
+    }));
+    form.appendChild(this.createCheckbox('Tout révéler', false, function (val) {
+      _this.config.revealEverything = val;
+    }));
+    form.appendChild(this.createCheckbox('Révéler le terrain', false, function (val) {
+      _this.config.revealTerrain = val;
+    }));
+    var divider2 = document.createElement('div');
+    divider2.className = 'menu-divider';
+    var buttons = document.createElement('div');
+    buttons.className = 'menu-buttons';
+    var btnBack = document.createElement('button');
+    btnBack.className = 'menu-btn secondary';
+    btnBack.textContent = '← Retour';
+    btnBack.onclick = onBack;
+    var btnPlay = document.createElement('button');
+    btnPlay.className = 'menu-btn';
+    btnPlay.textContent = 'Lancer la Partie';
+    btnPlay.onclick = function () {
+      return onPlay(MapConfig_objectSpread({}, _this.config));
+    };
+    buttons.appendChild(btnBack);
+    buttons.appendChild(btnPlay);
+    panel.appendChild(title);
+    panel.appendChild(subtitle);
+    panel.appendChild(divider);
+    panel.appendChild(form);
+    panel.appendChild(divider2);
+    panel.appendChild(buttons);
+    this.el.appendChild(panel);
+    document.body.appendChild(this.el);
+  }
+  return MapConfig_createClass(MapConfig, [{
+    key: "createSelect",
+    value: function createSelect(label, options, defaultValue, onChange) {
+      var row = document.createElement('div');
+      row.className = 'config-row';
+      var lbl = document.createElement('label');
+      lbl.textContent = label;
+      var select = document.createElement('select');
+      options.forEach(function (opt) {
+        var option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === defaultValue) option.selected = true;
+        select.appendChild(option);
+      });
+      select.onchange = function (e) {
+        return onChange(e.target.value);
+      };
+      row.appendChild(lbl);
+      row.appendChild(select);
+      return row;
+    }
+  }, {
+    key: "createCheckbox",
+    value: function createCheckbox(label, defaultValue, onChange) {
+      var row = document.createElement('div');
+      row.className = 'config-row config-row--checkbox';
+      var lbl = document.createElement('label');
+      lbl.textContent = label;
+      var checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = defaultValue;
+      checkbox.onchange = function (e) {
+        return onChange(e.target.checked);
+      };
+      row.appendChild(lbl);
+      row.appendChild(checkbox);
+      return row;
+    }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.el.remove();
+    }
+  }]);
+}();
+
 ;// ./app/entry.js
 function entry_regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return entry_regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (entry_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, entry_regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, entry_regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), entry_regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", entry_regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), entry_regeneratorDefine2(u), entry_regeneratorDefine2(u, o, "Generator"), entry_regeneratorDefine2(u, n, function () { return this; }), entry_regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (entry_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function entry_regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } entry_regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { entry_regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, entry_regeneratorDefine2(e, r, n, t); }
@@ -9930,29 +10304,26 @@ function entry_asyncToGenerator(n) { return function () { var t = this, e = argu
 
 
 
+
+
 entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
-  var app, gamebox, loader, game;
+  var app, gamebox, loader, currentGame, quitGame, startGame, loadGame, showMapConfig, showMainMenu;
   return entry_regenerator().w(function (_context) {
     while (1) switch (_context.n) {
       case 0:
-        // Create a new PixiJS application
-        app = new lib/* Application */.lgM(); // Initialize the app with background color and auto-resize
+        app = new lib/* Application */.lgM();
         _context.n = 1;
         return app.init({
           width: window.innerWidth,
           height: window.innerHeight,
           background: 0x000000,
-          // black background
           resizeTo: window,
           antialias: false,
-          // faster
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
-          // adjusts canvas for resolution
-          powerPreference: 'high-performance' // GPU hint
+          powerPreference: 'high-performance'
         });
       case 1:
-        // Append the canvas to your game container
         gamebox = document.getElementById('game');
         if (gamebox) {
           _context.n = 2;
@@ -9962,17 +10333,49 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
         return _context.a(2);
       case 2:
         gamebox.appendChild(app.canvas);
-
-        // Initialize loader
         loader = new LoaderScreen();
         app.stage.addChild(loader);
         _context.n = 3;
         return loader.start();
       case 3:
-        // Once assets are loaded, remove loader and start game
-        game = new Game(app, gamebox);
         app.stage.removeChild(loader);
-        app.stage.addChild(game);
+        currentGame = null;
+        quitGame = function quitGame() {
+          if (currentGame) {
+            app.stage.removeChild(currentGame);
+            currentGame.destroy();
+            currentGame = null;
+          }
+          showMainMenu();
+        };
+        startGame = function startGame(config) {
+          currentGame = new Game(app, gamebox, config, quitGame);
+          app.stage.addChild(currentGame);
+        };
+        loadGame = function loadGame(json) {
+          currentGame = new Game(app, gamebox, {}, quitGame);
+          app.stage.addChild(currentGame);
+          currentGame.load(json);
+        };
+        showMapConfig = function showMapConfig() {
+          var mapConfig = new MapConfig(function (config) {
+            mapConfig.destroy();
+            startGame(config);
+          }, function () {
+            mapConfig.destroy();
+            showMainMenu();
+          });
+        };
+        showMainMenu = function showMainMenu() {
+          var mainMenu = new MainMenu(function () {
+            mainMenu.destroy();
+            showMapConfig();
+          }, function (json) {
+            mainMenu.destroy();
+            loadGame(json);
+          });
+        };
+        showMainMenu();
       case 4:
         return _context.a(2);
     }
@@ -9997,14 +10400,22 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
 var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `:root {
-  --main-primary-color: #1d57a8;
-  --main-background-color: #12171ecf;
+  --main-primary-color: #4a3a1e;
+  --main-background-color: rgba(14, 10, 5, 0.95);
+  --main-bg-base: #0b0906;
   --main-border-color: transparent;
   --main-border-radius: 2px;
   --main-border-size: 0px;
   --main-border-style: solid;
-  --main-shadow-color: rgba(0, 0, 0, 0.7);
+  --main-border-hover: #7a6030;
+  --main-shadow-color: rgba(0, 0, 0, 0.75);
+  --main-shadow-dark: #1e1508;
   --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;
+  --main-text-color: #c8b87a;
+  --main-text-muted: #6a5a38;
+  --main-accent-color: #c0a060;
+  --main-accent-bright: #e0c880;
+  --main-accent-hover: rgba(74, 58, 30, 0.55);
 }
 
 html,
@@ -10013,8 +10424,8 @@ input,
 textarea,
 select,
 button {
-  border-color: #5e5d5a;
-  color: #e5e0d8;
+  border-color: var(--main-primary-color);
+  color: var(--main-text-color);
   font-size: 12px;
   text-shadow: 1px 1px black;
   font-family: sans-serif;
@@ -10041,10 +10452,12 @@ button,
   background-color: transparent;
   width: 200px;
   transition: all 0.2s;
+  color: var(--main-accent-color);
 }
 button:hover,
 .input-file:hover {
-  background-color: var(--main-primary-color);
+  background-color: var(--main-accent-hover);
+  border-color: var(--main-border-hover);
 }
 .input-file {
   width: calc(100% - 32px);
@@ -10220,6 +10633,18 @@ img {
 .topbar-options-menu {
   width: fit-content;
   cursor: pointer;
+  border: 1px solid var(--main-primary-color);
+  padding: 3px 12px;
+  color: var(--main-accent-color);
+  background: var(--main-background-color);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.topbar-options-menu:hover {
+  background: var(--main-accent-hover);
+  border-color: var(--main-border-hover);
 }
 
 .resource {
@@ -10310,8 +10735,9 @@ img {
 
 .modal-content {
   background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color);
+  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);
   border-radius: var(--main-border-radius);
-  box-shadow: var(--main-box-shadow);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -10321,10 +10747,162 @@ img {
 .modal-menu {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 32px;
 }
-`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #1d57a8;\n  --main-background-color: #12171ecf;\n  --main-border-color: transparent;\n  --main-border-radius: 2px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-shadow-color: rgba(0, 0, 0, 0.7);\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: #5e5d5a;\n  color: #e5e0d8;\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-primary-color);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: #da2424;\n  background: rgba(0, 0, 0, 0.4);\n  padding: 3px;\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding: 10px;\n}\n"],"sourceRoot":""}]);
+
+.modal-menu .menu-btn,
+.modal-menu .input-file.menu-btn {
+  width: 220px !important;
+}
+
+/* ============================================================
+   MAIN MENU / MAP CONFIG  — inspired by Age of Empires I
+   ============================================================ */
+
+#main-menu,
+#map-config {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--main-bg-base);
+  background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);
+}
+
+.menu-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 44px 64px;
+  background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color);
+  box-shadow:
+    0 0 0 1px var(--main-shadow-dark),
+    0 0 40px rgba(0, 0, 0, 0.9),
+    inset 0 0 24px rgba(0, 0, 0, 0.6);
+}
+
+.menu-title {
+  font-size: 40px;
+  font-weight: bold;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--main-accent-color);
+  text-shadow:
+    0 0 24px rgba(200, 168, 94, 0.35),
+    2px 2px 0 #000;
+  font-family: serif;
+  margin: 0;
+}
+
+.menu-subtitle {
+  font-size: 11px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--main-text-muted);
+  margin-top: -12px;
+  text-shadow: none;
+}
+
+.menu-divider {
+  width: 220px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);
+  margin: 2px 0;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.menu-btn {
+  box-sizing: border-box !important;
+  width: 250px !important;
+  padding: 10px 20px !important;
+  font-size: 11px !important;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--main-primary-color) !important;
+  color: var(--main-accent-color) !important;
+  background: var(--main-background-color) !important;
+  transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+}
+
+.menu-btn:hover {
+  background: var(--main-accent-hover) !important;
+  color: var(--main-accent-bright) !important;
+  border-color: var(--main-border-hover) !important;
+}
+
+.menu-btn.secondary {
+  color: var(--main-text-muted) !important;
+  border-color: var(--main-shadow-dark) !important;
+}
+
+.menu-btn.secondary:hover {
+  background: var(--main-accent-hover) !important;
+  color: var(--main-accent-color) !important;
+  border-color: var(--main-primary-color) !important;
+}
+
+/* Config form rows */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 340px;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.config-row label {
+  color: var(--main-text-color) !important;
+  letter-spacing: 1px;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  text-shadow: none !important;
+}
+
+.config-row select {
+  background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color) !important;
+  color: var(--main-accent-color) !important;
+  padding: 5px 8px;
+  min-width: 180px;
+  font-size: 11px !important;
+  cursor: pointer;
+}
+
+.config-row select:focus {
+  outline: none;
+  border-color: var(--main-border-hover) !important;
+}
+
+.config-row--checkbox {
+  cursor: pointer;
+}
+
+.config-row input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--main-border-hover);
+  cursor: pointer;
+  border: none;
+}
+`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #4a3a1e;\n  --main-background-color: rgba(14, 10, 5, 0.95);\n  --main-bg-base: #0b0906;\n  --main-border-color: transparent;\n  --main-border-radius: 2px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-border-hover: #7a6030;\n  --main-shadow-color: rgba(0, 0, 0, 0.75);\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n  --main-text-color: #c8b87a;\n  --main-text-muted: #6a5a38;\n  --main-accent-color: #c0a060;\n  --main-accent-bright: #e0c880;\n  --main-accent-hover: rgba(74, 58, 30, 0.55);\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: 1px solid var(--main-primary-color);\n  padding: 3px 12px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  letter-spacing: 1px;\n  text-transform: uppercase;\n  font-size: 11px;\n  transition: background 0.15s, border-color 0.15s;\n}\n.topbar-options-menu:hover {\n  background: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: #da2424;\n  background: rgba(0, 0, 0, 0.4);\n  padding: 3px;\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n.modal-menu .menu-btn,\n.modal-menu .input-file.menu-btn {\n  width: 220px !important;\n}\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG  — inspired by Age of Empires I\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-bg-base);\n  background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 40px rgba(0, 0, 0, 0.9),\n    inset 0 0 24px rgba(0, 0, 0, 0.6);\n}\n\n.menu-title {\n  font-size: 40px;\n  font-weight: bold;\n  letter-spacing: 8px;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  text-shadow:\n    0 0 24px rgba(200, 168, 94, 0.35),\n    2px 2px 0 #000;\n  font-family: serif;\n  margin: 0;\n}\n\n.menu-subtitle {\n  font-size: 11px;\n  letter-spacing: 5px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-top: -12px;\n  text-shadow: none;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box !important;\n  width: 250px !important;\n  padding: 10px 20px !important;\n  font-size: 11px !important;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  border: 1px solid var(--main-primary-color) !important;\n  color: var(--main-accent-color) !important;\n  background: var(--main-background-color) !important;\n  transition: background 0.15s, border-color 0.15s, color 0.15s !important;\n}\n\n.menu-btn:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-bright) !important;\n  border-color: var(--main-border-hover) !important;\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted) !important;\n  border-color: var(--main-shadow-dark) !important;\n}\n\n.menu-btn.secondary:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-primary-color) !important;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 340px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  color: var(--main-text-color) !important;\n  letter-spacing: 1px;\n  font-size: 11px !important;\n  text-transform: uppercase;\n  text-shadow: none !important;\n}\n\n.config-row select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color) !important;\n  color: var(--main-accent-color) !important;\n  padding: 5px 8px;\n  min-width: 180px;\n  font-size: 11px !important;\n  cursor: pointer;\n}\n\n.config-row select:focus {\n  outline: none;\n  border-color: var(--main-border-hover) !important;\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  width: 14px;\n  height: 14px;\n  accent-color: var(--main-border-hover);\n  cursor: pointer;\n  border: none;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -10334,7 +10912,7 @@ img {
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(5494)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(7232)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);
