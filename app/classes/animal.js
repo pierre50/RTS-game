@@ -15,6 +15,8 @@ import {
 import {
   getInstanceZIndex,
   randomRange,
+  randomItem,
+  degreeToDirection,
   getIconPath,
   getInstancePath,
   instancesDistance,
@@ -511,7 +513,7 @@ export class Animal extends Container {
   }
 
   stop() {
-    if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
+    if (this.currentCell.has && this.currentCell.has.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }

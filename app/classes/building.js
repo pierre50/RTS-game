@@ -15,6 +15,7 @@ import {
 } from '../constants'
 import {
   getTexture,
+  randomItem,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
   getPercentage,
@@ -82,7 +83,7 @@ export class Building extends Container {
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
-    this.visible = map.revealEverything && controls.instanceInCamera(this) ? true : false
+    this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.house && this.owner.age === 0) {
       spriteSheet = '000_489'
@@ -208,8 +209,6 @@ export class Building extends Container {
             }
             if (hasSentVillager) {
               drawInstanceBlinkingSelection(this)
-            }
-            if (hasSentVillager) {
               const voice = Assets.cache.get('config').units.Villager.sounds.build
               sound.play(voice)
               return
@@ -331,7 +330,7 @@ export class Building extends Container {
 
   stopTimeout() {
     if (this.timeout) {
-      clearInterval(this.timeout)
+      this.timeout.pause()
       this.timeout = null
     }
   }
@@ -479,14 +478,11 @@ export class Building extends Container {
     } else if ((action === ACTION_TYPES.attack && this.isBuilt) || (action === ACTION_TYPES.build && this.isBuilt)) {
       if (percentage > 0 && percentage < 25) {
         generateFire(this, '450')
-      }
-      if (percentage >= 25 && percentage < 50) {
+      } else if (percentage >= 25 && percentage < 50) {
         generateFire(this, '452')
-      }
-      if (percentage >= 50 && percentage < 75) {
+      } else if (percentage >= 50 && percentage < 75) {
         generateFire(this, '347')
-      }
-      if (percentage >= 75) {
+      } else if (percentage >= 75) {
         const fire = this.getChildByLabel(LABEL_TYPES.fire)
         if (fire) {
           this.removeChild(fire)
