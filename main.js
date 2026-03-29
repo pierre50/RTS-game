@@ -12,7 +12,7 @@ __webpack_require__.d(maths_namespaceObject, {
   average: () => (average),
   cartesianToIsometric: () => (cartesianToIsometric),
   cellIsDiag: () => (maths_cellIsDiag),
-  degreeToDirection: () => (maths_degreeToDirection),
+  degreeToDirection: () => (degreeToDirection),
   degreesToRadians: () => (degreesToRadians),
   diff: () => (diff),
   formatNumber: () => (formatNumber),
@@ -819,7 +819,7 @@ function pointInRectangle(x, y, left, top, width, height) {
 function maths_cellIsDiag(src, target) {
   return Math.abs(target.i - src.i) === Math.abs(target.j - src.j);
 }
-function maths_degreeToDirection(degree) {
+function degreeToDirection(degree) {
   if (degree > 67.5 && degree < 112.5) {
     return 'north';
   } else if (degree > 247.5 && degree < 292.5) {
@@ -1584,7 +1584,7 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
   }
   var _goto = instance.currentSheet === sheet && instance.sprite.currentFrame;
   instance.currentSheet = sheet;
-  var direction = maths_degreeToDirection(instance.degree);
+  var direction = degreeToDirection(instance.degree);
   switch (direction) {
     case 'southest':
       instance.sprite.scale.x = -1;
@@ -2421,7 +2421,7 @@ var Building = /*#__PURE__*/function (_Container) {
     _this.y = map.grid[_this.i][_this.j].y;
     _this.z = map.grid[_this.i][_this.j].z;
     _this.zIndex = getInstanceZIndex(_this);
-    _this.visible = map.revealEverything && controls.instanceInCamera(_this) ? true : false;
+    _this.visible = map.revealEverything && controls.instanceInCamera(_this);
     var spriteSheet = getBuildingTextureNameWithSize(_this.size);
     if (_this.type === BUILDING_TYPES.house && _this.owner.age === 0) {
       spriteSheet = '000_489';
@@ -2522,7 +2522,7 @@ var Building = /*#__PURE__*/function (_Container) {
               drawInstanceBlinkingSelection(_this);
             }
             if (hasSentOther) {
-              var voice = randomItem(['5075', '5076', '5128', '5164']);
+              var voice = maths_randomItem(['5075', '5076', '5128', '5164']);
               sound_lib/* sound */.s3.play(voice);
               return;
             } else if (hasSentVillager) {
@@ -2552,8 +2552,6 @@ var Building = /*#__PURE__*/function (_Container) {
             }
             if (hasSentVillager) {
               drawInstanceBlinkingSelection(_this);
-            }
-            if (hasSentVillager) {
               var _voice2 = lib/* Assets */.sP.cache.get('config').units.Villager.sounds.build;
               sound_lib/* sound */.s3.play(_voice2);
               return;
@@ -2685,7 +2683,7 @@ var Building = /*#__PURE__*/function (_Container) {
     key: "stopTimeout",
     value: function stopTimeout() {
       if (this.timeout) {
-        clearInterval(this.timeout);
+        this.timeout.pause();
         this.timeout = null;
       }
     }
@@ -2814,14 +2812,11 @@ var Building = /*#__PURE__*/function (_Container) {
       } else if (action === ACTION_TYPES.attack && this.isBuilt || action === ACTION_TYPES.build && this.isBuilt) {
         if (percentage > 0 && percentage < 25) {
           generateFire(this, '450');
-        }
-        if (percentage >= 25 && percentage < 50) {
+        } else if (percentage >= 25 && percentage < 50) {
           generateFire(this, '452');
-        }
-        if (percentage >= 50 && percentage < 75) {
+        } else if (percentage >= 50 && percentage < 75) {
           generateFire(this, '347');
-        }
-        if (percentage >= 75) {
+        } else if (percentage >= 75) {
           var fire = this.getChildByLabel(LABEL_TYPES.fire);
           if (fire) {
             this.removeChild(fire);
@@ -4038,7 +4033,7 @@ var Unit = /*#__PURE__*/function (_Container) {
                 _this6.realDest.y = _this6.dest.y;
                 var oldDeg = _this6.degree;
                 _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-                if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
+                if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
                   _this6.setTextures(SHEET_TYPES.action);
                 }
               }
@@ -4068,7 +4063,7 @@ var Unit = /*#__PURE__*/function (_Container) {
                 _this6.realDest.y = _this6.dest.y;
                 var oldDeg = _this6.degree;
                 _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-                if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
+                if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
                   _this6.setTextures(SHEET_TYPES.action);
                 }
               }
@@ -4111,7 +4106,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.realDest.y = _this6.dest.y;
               var oldDeg = _this6.degree;
               _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
+              if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
                 _this6.setTextures(SHEET_TYPES.action);
               }
             }
@@ -4238,7 +4233,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.realDest.y = _this6.dest.y;
               var oldDeg = _this6.degree;
               _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(_this6.degree)) {
+              if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
                 _this6.setTextures(SHEET_TYPES.action);
               }
             }
@@ -4464,7 +4459,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
         moveTowardPoint(this, nextCell.x, nextCell.y, speed);
         canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner);
-        if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(this.degree)) {
+        if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
           // Change animation according to degree
           this.setTextures(SHEET_TYPES.walking);
         }
@@ -5809,7 +5804,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         player.selectedOther = _this;
       }
       if (hasSentOther) {
-        var voice = randomItem(['5075', '5076', '5128', '5164']);
+        var voice = maths_randomItem(['5075', '5076', '5128', '5164']);
         sound_lib/* sound */.s3.play(voice);
       } else if (hasSentVillager) {
         var _voice = lib/* Assets */.sP.cache.get('config').units.Villager.sounds.hunt;
@@ -6146,7 +6141,7 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "stop",
     value: function stop() {
-      if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
+      if (this.currentCell.has && this.currentCell.has.label !== this.label && this.currentCell.solid) {
         this.sendTo(this.currentCell);
         return;
       }
