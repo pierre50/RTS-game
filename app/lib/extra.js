@@ -36,15 +36,15 @@ export function setUnitTexture(sheet, instance, ACCELERATOR) {
   instance.currentSheet = sheet
   const direction = degreeToDirection(instance.degree)
   switch (direction) {
-    case 'southest':
+    case 'southeast':
       instance.sprite.scale.x = -1
       instance.sprite.textures = instance[sheet].animations['southwest']
       break
-    case 'northest':
+    case 'northeast':
       instance.sprite.scale.x = -1
       instance.sprite.textures = instance[sheet].animations['northwest']
       break
-    case 'est':
+    case 'east':
       instance.sprite.scale.x = -1
       instance.sprite.textures = instance[sheet].animations['west']
       break

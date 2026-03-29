@@ -1,15 +1,20 @@
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
 
+const HALF_CELL_WIDTH = CELL_WIDTH / 2
+const HALF_CELL_HEIGHT = CELL_HEIGHT / 2
+const DEG_TO_RAD = Math.PI / 180
+
 /**
  * Generate a version 4 UUID.
  * @returns {string} - A random UUID.
  */
 export function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const randomValue = crypto.getRandomValues(new Uint8Array(1))[0] & 15 // Get a random value
-    const hexValue = (c === 'x' ? randomValue : (randomValue & 0x3) | 0x8).toString(16) // Adjust for 'y'
-    return hexValue
-  })
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  return [...bytes]
+    .map((b, i) => ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 /**
@@ -36,8 +41,8 @@ export function cartesianToIsometric(x, y) {
  */
 export function isometricToCartesian(x, y) {
   return [
-    Math.round((x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2),
-    Math.round((y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2),
+    Math.round((x / HALF_CELL_WIDTH + y / HALF_CELL_HEIGHT) / 2),
+    Math.round((y / HALF_CELL_HEIGHT - x / HALF_CELL_WIDTH) / 2),
   ]
 }
 
@@ -103,7 +108,7 @@ export function pointIsBetweenTwoPoint(line1, line2, pnt, lineThickness) {
   } else {
     // Perpendicular distance from point to line
     const s = ((line1.y - pnt.y) * dx - (line1.x - pnt.x) * dy) / L2
-    return Math.abs(s) * Math.sqrt(L2) <= lineThickness
+    return s * s * L2 <= lineThickness * lineThickness
   }
 }
 
@@ -121,7 +126,7 @@ export function randomRange(min, max) {
  * @param {array} array
  */
 export function randomItem(array = []) {
-  return array[Math.round(Math.random() * (array.length - 1))]
+  return array[Math.floor(Math.random() * array.length)]
 }
 
 /**
@@ -182,7 +187,7 @@ export function getPointsDegree(x1, y1, x2, y2) {
  * @returns {number} - The angle in radians.
  */
 export function degreesToRadians(degrees) {
-  return degrees * (Math.PI / 180)
+  return degrees * DEG_TO_RAD
 }
 
 /**
@@ -237,10 +242,10 @@ export function degreeToDirection(degree) {
   } else if (degree >= 292.5 && degree <= 337.5) {
     return 'southwest'
   } else if (degree > 157.5 && degree < 202.5) {
-    return 'est'
+    return 'east'
   } else if (degree > 112.5 && degree < 157.5) {
-    return 'northest'
+    return 'northeast'
   } else if (degree > 202.5 && degree < 247.5) {
-    return 'southest'
+    return 'southeast'
   }
 }

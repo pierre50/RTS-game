@@ -2,7 +2,7 @@ import { Container } from 'pixi.js'
 import Map from '../classes/map'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
-import { filterObject } from '../lib'
+import { filterObject, debounce } from '../lib'
 
 /**
  * Main Display Object
@@ -59,175 +59,114 @@ export default class Game extends Container {
     this.addChild(context.map)
     this.addChild(context.controls)
 
-    window.addEventListener('keydown', evt => {
+    this._attachWindowListeners()
+  }
+
+  _attachWindowListeners() {
+    this._onKeydown = evt => {
       if (evt.key === 'p') {
-        this.context.paused ? context.resume() : context.pause()
+        this.context.paused ? this.context.resume() : this.context.pause()
       }
-    })
-    window.addEventListener('resize', () => {
-      if (context.controls) {
-        context.controls.updateVisibleCells()
-      }
-      if (context.menu) {
-        context.menu.updateCameraMiniMap()
-      }
-    })
+    }
+    this._onResize = debounce(() => {
+      if (this.context.controls) this.context.controls.updateVisibleCells()
+      if (this.context.menu) this.context.menu.updateCameraMiniMap()
+    }, 100)
+    window.addEventListener('keydown', this._onKeydown)
+    window.addEventListener('resize', this._onResize)
+  }
+
+  _removeWindowListeners() {
+    window.removeEventListener('keydown', this._onKeydown)
+    window.removeEventListener('resize', this._onResize)
+  }
+
+  static _resourceData(resource) {
+    return {
+      ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
+      textureName: (resource.textureName || '').split('.')[0],
+    }
+  }
+
+  static _animalData(animal) {
+    return {
+      ...filterObject(animal, [
+        'label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest',
+        'zIndex', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif',
+        'isDead', 'isDestroyed', 'quantity',
+      ]),
+      currentFrame: animal.sprite?.currentFrame,
+      loop: animal.sprite?.loop,
+      dest: animal.dest && [animal.dest.i, animal.dest.j, animal.dest?.label],
+      previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, animal.previousDest?.label],
+    }
+  }
+
+  static _unitData(unit) {
+    return {
+      ...filterObject(unit, [
+        'label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest',
+        'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size',
+        'inactif', 'isDead', 'isDestroyed',
+      ]),
+      currentFrame: unit.sprite?.currentFrame,
+      loop: unit.sprite?.loop,
+      dest: unit.dest && [unit.dest.i, unit.dest.j, unit.dest?.label],
+      previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, unit.previousDest?.label],
+    }
+  }
+
+  static _buildingData(building) {
+    return {
+      ...filterObject(building, [
+        'label', 'i', 'j', 'type', 'queue', 'technology', 'loading',
+        'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity',
+      ]),
+      isUsedBy: building.isUsedBy?.label,
+    }
+  }
+
+  static _playerData(player) {
+    return {
+      ...filterObject(player, [
+        'label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color',
+        'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt',
+      ]),
+      buildings: player.buildings.map(b => Game._buildingData(b)),
+      units: player.units.map(u => Game._unitData(u)),
+      corpses: player.corpses.map(c => Game._unitData(c)),
+      views: player.views.map(view =>
+        view.map(cell => ({
+          ...filterObject(cell, ['i', 'j', 'viewed']),
+          viewBy: [...(cell.viewBy || [])].map(unit => unit.label),
+        }))
+      ),
+    }
+  }
+
+  static _cellData(cell) {
+    return {
+      ...filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder']),
+      has: cell.has?.label,
+      fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({ textureSheet, colorSheet, colorName })),
+    }
   }
 
   save() {
-    const cleanContext = context => {
-      const resourceData = resource => ({
-        ...filterObject(resource, [
-          'label',
-          'i',
-          'j',
-          'selected',
-          'type',
-          'isDead',
-          'quantity',
-          'isDestroyed',
-          'size',
-          'hitPoints',
-        ]),
-        textureName: (resource.textureName || '').split('.')[0],
-      })
-      const animalData = animal => ({
-        ...filterObject(animal, [
-          'label',
-          'type',
-          'i',
-          'j',
-          'x',
-          'y',
-          'z',
-          'hitPoints',
-          'path',
-          'work',
-          'realDest',
-          'path',
-          'zIndex',
-          'selected',
-          'degree',
-          'action',
-          'direction',
-          'currentSheet',
-          'size',
-          'inactif',
-          'isDead',
-          'isDestroyed',
-          'quantity',
-        ]),
-        currentFrame: animal.sprite?.currentFrame,
-        loop: animal.sprite?.loop,
-        dest: animal.dest && [animal.dest.i, animal.dest.i, animal.dest?.label],
-        previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.i, animal.previousDest?.label],
-      })
-      const unitData = unit => ({
-        ...filterObject(unit, [
-          'label',
-          'type',
-          'i',
-          'j',
-          'x',
-          'y',
-          'z',
-          'hitPoints',
-          'path',
-          'work',
-          'realDest',
-          'path',
-          'selected',
-          'degree',
-          'action',
-          'loading',
-          'loadingType',
-          'direction',
-          'currentSheet',
-          'size',
-          'inactif',
-          'isDead',
-          'isDestroyed',
-        ]),
-        currentFrame: unit.sprite?.currentFrame,
-        loop: unit.sprite?.loop,
-        dest: unit.dest && [unit.dest.i, unit.dest.i, unit.dest?.label],
-        previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.i, unit.previousDest?.label],
-      })
-      const buildingData = building => ({
-        ...filterObject(building, [
-          'label',
-          'i',
-          'j',
-          'type',
-          'selected',
-          'queue',
-          'technology',
-          'loading',
-          'isDead',
-          'isDestroyed',
-          'isBuilt',
-          'hitPoints',
-          'quantity',
-        ]),
-        isUsedBy: building.isUsedBy?.iname,
-      })
-      const playerData = player => ({
-        ...filterObject(player, [
-          'label',
-          'age',
-          'type',
-          'wood',
-          'food',
-          'stone',
-          'gold',
-          'civ',
-          'color',
-          'population',
-          'population_max',
-          'technologies',
-          'cellViewed',
-          'isPlayed',
-          'hasBuilt',
-        ]),
-        buildings: player.buildings.map(building => buildingData(building)),
-        units: player.units.map(unit => unitData(unit)),
-        corpses: player.corpses.map(corpse => unitData(corpse)),
-        views: player.views.map(view =>
-          view.map(cell => ({
-            ...filterObject(cell, ['i', 'j', 'viewed']),
-            viewBy: [...(cell.viewBy || [])].map(unit => unit.label),
-          }))
-        ),
-      })
-      const cellData = cell => ({
-        ...filterObject(cell, [
-          'z',
-          'type',
-          'viewed',
-          'solid',
-          'visible',
-          'category',
-          'inclined',
-          'border',
-          'waterBorder',
-        ]),
-        has: cell.has?.label,
-        fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
-          textureSheet,
-          colorSheet,
-          colorName,
-        })),
-      })
-      return {
-        camera: context.controls.camera,
-        players: context.players.map(player => playerData(player)),
-        resources: [...context.map.resources].map(resource => resourceData(resource)),
-        map: context.map.grid.map(line => line.map(cell => cellData(cell))),
-        animals: context.map.gaia.units.map(animal => animalData(animal)),
-      }
+    const { context } = this
+    const json = {
+      camera: context.controls.camera,
+      config: {
+        devMode: context.map.devMode,
+        revealEverything: context.map.revealEverything,
+        revealTerrain: context.map.revealTerrain,
+        startingResources: context.map.startingResources,
+      },
+      players: context.players.map(p => Game._playerData(p)),
+      resources: [...context.map.resources].map(r => Game._resourceData(r)),
+      map: context.map.grid.map(line => line.map(cell => Game._cellData(cell))),
+      animals: context.map.gaia.units.map(a => Game._animalData(a)),
     }
-
-    const json = cleanContext(this.context)
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json))
     const downloadAnchorNode = document.createElement('a')
     downloadAnchorNode.setAttribute('href', dataStr)
@@ -238,6 +177,8 @@ export default class Game extends Container {
   }
 
   load(json) {
+    document.getElementById('pause')?.remove()
+    this._removeWindowListeners()
     this.context.controls.destroy()
     this.context.menu.destroy()
     this.removeChildren()
@@ -252,6 +193,14 @@ export default class Game extends Container {
     const { context } = this
 
     context.map = new Map(context)
+
+    if (json.config) {
+      if (json.config.devMode) context.map.devMode = true
+      if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything
+      if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain
+      if (json.config.startingResources) context.map.startingResources = json.config.startingResources
+    }
+
     context.controls = new Controls(context)
     context.menu = new Menu(context)
 
@@ -259,10 +208,13 @@ export default class Game extends Container {
 
     this.addChild(context.map)
     this.addChild(context.controls)
+
+    this._attachWindowListeners()
   }
 
   quit() {
     document.getElementById('pause')?.remove()
+    this._removeWindowListeners()
     this.context.controls.destroy()
     this.context.menu.destroy()
     this.removeChildren()
@@ -284,10 +236,10 @@ export default class Game extends Container {
     }
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
-      for (let j = 0; j < player?.units?.length; j++) {
+      for (let j = 0; j < player.units.length; j++) {
         pause ? player.units[j].pause() : player.units[j].resume()
       }
-      for (let j = 0; j < player?.buildings?.length; j++) {
+      for (let j = 0; j < player.buildings.length; j++) {
         pause ? player.buildings[j].pause() : player.buildings[j].resume()
       }
     }

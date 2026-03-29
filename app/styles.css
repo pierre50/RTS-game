@@ -1,12 +1,20 @@
 :root {
-  --main-primary-color: #1d57a8;
-  --main-background-color: #12171ecf;
+  --main-primary-color: #4a3a1e;
+  --main-background-color: rgba(14, 10, 5, 0.95);
+  --main-bg-base: #0b0906;
   --main-border-color: transparent;
   --main-border-radius: 2px;
   --main-border-size: 0px;
   --main-border-style: solid;
-  --main-shadow-color: rgba(0, 0, 0, 0.7);
+  --main-border-hover: #7a6030;
+  --main-shadow-color: rgba(0, 0, 0, 0.75);
+  --main-shadow-dark: #1e1508;
   --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;
+  --main-text-color: #c8b87a;
+  --main-text-muted: #6a5a38;
+  --main-accent-color: #c0a060;
+  --main-accent-bright: #e0c880;
+  --main-accent-hover: rgba(74, 58, 30, 0.55);
 }
 
 html,
@@ -15,8 +23,8 @@ input,
 textarea,
 select,
 button {
-  border-color: #5e5d5a;
-  color: #e5e0d8;
+  border-color: var(--main-primary-color);
+  color: var(--main-text-color);
   font-size: 12px;
   text-shadow: 1px 1px black;
   font-family: sans-serif;
@@ -43,10 +51,12 @@ button,
   background-color: transparent;
   width: 200px;
   transition: all 0.2s;
+  color: var(--main-accent-color);
 }
 button:hover,
 .input-file:hover {
-  background-color: var(--main-primary-color);
+  background-color: var(--main-accent-hover);
+  border-color: var(--main-border-hover);
 }
 .input-file {
   width: calc(100% - 32px);
@@ -222,6 +232,18 @@ img {
 .topbar-options-menu {
   width: fit-content;
   cursor: pointer;
+  border: 1px solid var(--main-primary-color);
+  padding: 3px 12px;
+  color: var(--main-accent-color);
+  background: var(--main-background-color);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.topbar-options-menu:hover {
+  background: var(--main-accent-hover);
+  border-color: var(--main-border-hover);
 }
 
 .resource {
@@ -312,8 +334,9 @@ img {
 
 .modal-content {
   background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color);
+  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);
   border-radius: var(--main-border-radius);
-  box-shadow: var(--main-box-shadow);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -345,7 +368,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0b0906;
+  background: var(--main-bg-base);
   background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);
 }
 
@@ -355,10 +378,10 @@ img {
   align-items: center;
   gap: 18px;
   padding: 44px 64px;
-  background: rgba(14, 10, 5, 0.96);
-  border: 1px solid #4a3a1e;
+  background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color);
   box-shadow:
-    0 0 0 1px #1e1508,
+    0 0 0 1px var(--main-shadow-dark),
     0 0 40px rgba(0, 0, 0, 0.9),
     inset 0 0 24px rgba(0, 0, 0, 0.6);
 }
@@ -368,7 +391,7 @@ img {
   font-weight: bold;
   letter-spacing: 8px;
   text-transform: uppercase;
-  color: #c8a85e;
+  color: var(--main-accent-color);
   text-shadow:
     0 0 24px rgba(200, 168, 94, 0.35),
     2px 2px 0 #000;
@@ -380,7 +403,7 @@ img {
   font-size: 11px;
   letter-spacing: 5px;
   text-transform: uppercase;
-  color: #6a5a38;
+  color: var(--main-text-muted);
   margin-top: -12px;
   text-shadow: none;
 }
@@ -388,7 +411,7 @@ img {
 .menu-divider {
   width: 220px;
   height: 1px;
-  background: linear-gradient(to right, transparent, #4a3a1e, transparent);
+  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);
   margin: 2px 0;
 }
 
@@ -406,27 +429,27 @@ img {
   font-size: 11px !important;
   letter-spacing: 2px;
   text-transform: uppercase;
-  border: 1px solid #4a3a1e !important;
-  color: #c0a060 !important;
-  background: rgba(22, 16, 6, 0.9) !important;
+  border: 1px solid var(--main-primary-color) !important;
+  color: var(--main-accent-color) !important;
+  background: var(--main-background-color) !important;
   transition: background 0.15s, border-color 0.15s, color 0.15s !important;
 }
 
 .menu-btn:hover {
-  background: rgba(74, 58, 30, 0.55) !important;
-  color: #e0c880 !important;
-  border-color: #7a6030 !important;
+  background: var(--main-accent-hover) !important;
+  color: var(--main-accent-bright) !important;
+  border-color: var(--main-border-hover) !important;
 }
 
 .menu-btn.secondary {
-  color: #7a6838 !important;
-  border-color: #2e2410 !important;
+  color: var(--main-text-muted) !important;
+  border-color: var(--main-shadow-dark) !important;
 }
 
 .menu-btn.secondary:hover {
-  background: rgba(46, 36, 16, 0.6) !important;
-  color: #a88840 !important;
-  border-color: #5a4828 !important;
+  background: var(--main-accent-hover) !important;
+  color: var(--main-accent-color) !important;
+  border-color: var(--main-primary-color) !important;
 }
 
 /* Config form rows */
@@ -445,7 +468,7 @@ img {
 }
 
 .config-row label {
-  color: #9a8050 !important;
+  color: var(--main-text-color) !important;
   letter-spacing: 1px;
   font-size: 11px !important;
   text-transform: uppercase;
@@ -453,9 +476,9 @@ img {
 }
 
 .config-row select {
-  background: rgba(14, 10, 5, 0.95);
-  border: 1px solid #4a3a1e !important;
-  color: #c0a060 !important;
+  background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color) !important;
+  color: var(--main-accent-color) !important;
   padding: 5px 8px;
   min-width: 180px;
   font-size: 11px !important;
@@ -464,7 +487,7 @@ img {
 
 .config-row select:focus {
   outline: none;
-  border-color: #7a6030 !important;
+  border-color: var(--main-border-hover) !important;
 }
 
 .config-row--checkbox {
@@ -474,7 +497,7 @@ img {
 .config-row input[type='checkbox'] {
   width: 14px;
   height: 14px;
-  accent-color: #7a6030;
+  accent-color: var(--main-border-hover);
   cursor: pointer;
   border: none;
 }

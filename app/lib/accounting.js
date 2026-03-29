@@ -4,15 +4,12 @@
  * @param {object} cost - An object representing the costs to refund.
  */
 export function refundCost(player, cost) {
-  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    return
-  }
-
-  Object.keys(cost).forEach(prop => {
-    if (typeof cost[prop] === 'number') {
-      player[prop] += cost[prop]
+  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
+  for (const prop in cost) {
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      player[prop] = (player[prop] || 0) + cost[prop]
     }
-  })
+  }
 }
 
 /**
@@ -21,15 +18,12 @@ export function refundCost(player, cost) {
  * @param {object} cost - An object representing the costs to pay.
  */
 export function payCost(player, cost) {
-  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    return
-  }
-
-  Object.keys(cost).forEach(prop => {
-    if (typeof cost[prop] === 'number') {
-      player[prop] -= cost[prop]
+  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
+  for (const prop in cost) {
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      player[prop] = (player[prop] || 0) - cost[prop]
     }
-  })
+  }
 }
 
 /**
@@ -39,22 +33,11 @@ export function payCost(player, cost) {
  * @returns {boolean} - True if the player can afford the costs, false otherwise.
  */
 export function canAfford(player, cost) {
-  // Validate inputs
-  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') {
-    return false
-  }
-
-  // Iterate over the cost object
+  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return false
   for (const prop in cost) {
-    // Check if the cost for the property is a number
-    if (typeof cost[prop] === 'number') {
-      // Early return if player cannot afford the cost
-      if (player[prop] < cost[prop]) {
-        return false
-      }
+    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
+      if ((player[prop] || 0) < cost[prop]) return false
     }
   }
-
-  // If all costs are affordable, return true
   return true
 }

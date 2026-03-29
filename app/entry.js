@@ -36,6 +36,7 @@ import MapConfig from './screens/MapConfig'
   const quitGame = () => {
     if (currentGame) {
       app.stage.removeChild(currentGame)
+      currentGame.destroy()
       currentGame = null
     }
     showMainMenu()
