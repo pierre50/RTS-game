@@ -395,7 +395,11 @@ export class Unit extends Container {
         path = getInstanceClosestFreeCellPath(this, dest, map)
         if (!path.length && this.work) {
           this.action = action
-          this.affectNewDest()
+          if (action === ACTION_TYPES.delivery) {
+            this.stop()
+          } else {
+            this.affectNewDest()
+          }
           return
         }
       } else if (!allowWaterCellCategory && dest.category === 'Water') {
@@ -775,7 +779,7 @@ export class Unit extends Container {
               this.dest.updateHitPoints(this.action)
             } else {
               if (!this.dest.isBuilt) {
-                this.depst.updateHitPoints(this.action)
+                this.dest.updateHitPoints(this.action)
                 this.dest.isBuilt = true
                 if (this.dest.type === BUILDING_TYPES.farm && !this.dest.isUsedBy) {
                   this.sendToFarm(this.dest)
@@ -1275,7 +1279,7 @@ export class Unit extends Container {
       if (this.loading > 0) {
         speed *= 0.8
       }
-      moveTowardPoint(this, nextCell.x, nextCell.y, this.speed)
+      moveTowardPoint(this, nextCell.x, nextCell.y, speed)
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner)
       if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
         // Change animation according to degree
@@ -1353,42 +1357,41 @@ export class Unit extends Container {
     const {
       context: { map },
     } = this
-    let dest
-    for (let i = 3; i < 50; i++) {
-      getCellsAroundPoint(this.i, this.j, map.grid, i, cell => {
-        if (!this.owner.views[cell.i][cell.j].viewed && !cell.solid) {
+    // Single scan at max radius — find the closest unviewed non-solid cell
+    let dest = null
+    let minDist = Infinity
+    getCellsAroundPoint(this.i, this.j, map.grid, 50, cell => {
+      if (!this.owner.views[cell.i][cell.j].viewed && !cell.solid) {
+        const d = Math.abs(cell.i - this.i) + Math.abs(cell.j - this.j)
+        if (d < minDist) {
+          minDist = d
           dest = this.owner.views[cell.i][cell.j]
-          return
         }
-      })
-      if (dest) {
-        this.sendTo(dest)
-        break
       }
-    }
+    })
+    if (dest) this.sendTo(dest)
   }
 
   runaway(instance) {
     const {
       context: { map },
     } = this
-    let dest = null
-    getCellsAroundPoint(this.i, this.j, map.grid, this.sight, cell => {
-      if (
-        !cell.solid &&
-        (!dest ||
-          pointsDistance(cell.i, cell.j, instance.i, instance.j) >
-            pointsDistance(dest.i, dest.j, instance.i, instance.j))
-      ) {
-        dest = this.owner.views[cell.i][cell.j]
-        return
+    // Flee in the opposite direction from attacker — O(sight) instead of O(sight²)
+    const di = this.i - instance.i
+    const dj = this.j - instance.j
+    const len = Math.sqrt(di * di + dj * dj) || 1
+    for (let dist = this.sight; dist >= 1; dist--) {
+      const ti = Math.round(this.i + (di / len) * dist)
+      const tj = Math.round(this.j + (dj / len) * dist)
+      if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
+        const cell = map.grid[ti][tj]
+        if (!cell.solid && !cell.border) {
+          this.sendTo(this.owner.views[ti][tj])
+          return
+        }
       }
-    })
-    if (dest) {
-      this.sendTo(dest)
-    } else {
-      this.stop()
     }
+    this.stop()
   }
 
   decompose() {

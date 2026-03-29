@@ -38,9 +38,9 @@ export default class Map extends Container {
     this.sortableChildren = true
 
     this.allTechnologies = false
-    this.noAI = true
+    this.noAI = false
 
-    this.devMode = false
+    this.devMode = true
     this.revealEverything = this.devMode || false
     this.revealTerrain = this.devMode || false
 
@@ -73,6 +73,10 @@ export default class Map extends Container {
     this.removeChildren()
     this.size = map.length - 1
 
+    this.fogLayer = new Container()
+    this.fogLayer.eventMode = 'none'
+    this.fogLayer.zIndex = 1e9
+
     this.gaia = new Gaia(this.context)
 
     for (let i = 0; i <= this.size; i++) {
@@ -85,9 +89,6 @@ export default class Map extends Container {
         const newCell = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.context)
         this.addChild(newCell)
         this.grid[i][j] = newCell
-        if (!this.revealEverything) {
-          this.grid[i][j].setFog()
-        }
       }
     }
     for (let i = 0; i <= this.size; i++) {
@@ -100,6 +101,16 @@ export default class Map extends Container {
     this.formatCellsRelief()
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
+
+    // fogLayer is added last so it always renders above units, buildings, corpses
+    this.addChild(this.fogLayer)
+    if (!this.revealEverything) {
+      for (let i = 0; i <= this.size; i++) {
+        for (let j = 0; j <= this.size; j++) {
+          this.grid[i][j].setFog()
+        }
+      }
+    }
 
     this.context.players = players.map(player => {
       const p = new classMap[player.type](
@@ -230,6 +241,11 @@ export default class Map extends Container {
     //this.formatCellsRelief()
 
     this.generateSets()
+
+    this.fogLayer = new Container()
+    this.fogLayer.eventMode = 'none'
+    this.fogLayer.zIndex = 1e9
+    this.addChild(this.fogLayer)
 
     if (!this.revealEverything) {
       for (let i = 0; i <= this.size; i++) {

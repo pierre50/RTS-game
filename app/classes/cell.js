@@ -139,6 +139,8 @@ export class Cell extends Container {
     this.corpses = new Set()
     this.fogSprites = []
     this._ditherSprite = null
+    this._fogOverlay = null
+    this._hasFog = false
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
@@ -399,31 +401,30 @@ export class Cell extends Container {
   _updateEdgeDither() {
     const needed = new Set()
     const neededCorners = new Set()
-    const hasFogOverlay = this.children.some(c => c.label === LABEL_TYPES.fogOverlay)
 
-    if (this.visible && this.viewBy.size > 0 && !hasFogOverlay) {
+    if (this.visible && this.viewBy.size > 0 && !this._hasFog) {
       const { grid } = this.context.map
       for (const [key, side] of Object.entries(NEIGHBOR_SIDES)) {
         const [di, dj] = key.split(',').map(Number)
         const n = grid[this.i + di]?.[this.j + dj]
-        const neighborInFog = !n || n.children.some(c => c.label === LABEL_TYPES.fogOverlay)
-        if (neighborInFog) needed.add(side)
+        if (!n || n._hasFog) needed.add(side)
       }
       // Inner-corner: diagonal in fog but both shared cardinals visible
       for (const [key, { corner, adj }] of Object.entries(CORNER_DATA)) {
         const [di, dj] = key.split(',').map(Number)
         const diag = grid[this.i + di]?.[this.j + dj]
-        const diagInFog = !diag || diag.children.some(c => c.label === LABEL_TYPES.fogOverlay)
-        if (diagInFog) {
+        if (!diag || diag._hasFog) {
           const bothVisible = adj.every(([cdi, cdj]) => {
             const cn = grid[this.i + cdi]?.[this.j + cdj]
-            return cn && !cn.children.some(c => c.label === LABEL_TYPES.fogOverlay)
+            return cn && !cn._hasFog
           })
           if (bothVisible) neededCorners.add(corner)
         }
       }
     }
 
+    const fogLayer = this.context.map.fogLayer
+    if (!fogLayer) return
     if (needed.size > 0 || neededCorners.size > 0) {
       const texture = getDitherTexture(needed, neededCorners)
       if (!this._ditherSprite) {
@@ -431,28 +432,34 @@ export class Cell extends Container {
         this._ditherSprite.label = LABEL_TYPES.dither
         this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH)
         this._ditherSprite.eventMode = 'none'
-        this.addChild(this._ditherSprite)
+        this._ditherSprite.x = this.x
+        this._ditherSprite.y = this.y
+        fogLayer.addChild(this._ditherSprite)
       } else {
         this._ditherSprite.texture = texture
       }
     } else {
       if (this._ditherSprite) {
-        this.removeChild(this._ditherSprite)
+        fogLayer.removeChild(this._ditherSprite)
         this._ditherSprite = null
       }
     }
   }
 
   setFog(init) {
-    if (this.has) {
+    if (this.has && !this.has.isDead) {
       this.setFogChildren(this.has, init)
     }
-    if (!this.children.find(c => c.label === LABEL_TYPES.fogOverlay)) {
+    if (!this._hasFog && this.context.map.fogLayer) {
+      this._hasFog = true
       const overlay = new Sprite(getFogTexture())
       overlay.label = LABEL_TYPES.fogOverlay
       overlay.anchor.set(_DAX / _DW, _DAY / _DH)
       overlay.eventMode = 'none'
-      this.addChild(overlay)
+      overlay.x = this.x
+      overlay.y = this.y
+      this.context.map.fogLayer.addChild(overlay)
+      this._fogOverlay = overlay
     }
     // This cell goes fog: remove its dither ring, update visible neighbors
     this._updateEdgeDither()
@@ -462,9 +469,6 @@ export class Cell extends Container {
         if (di === 0 && dj === 0) continue
         grid[this.i + di]?.[this.j + dj]?._updateEdgeDither()
       }
-    }
-    for (const corpse of this.corpses) {
-      this.setFogChildren(corpse, init)
     }
   }
 
@@ -486,10 +490,10 @@ export class Cell extends Container {
       this.visible = true
     }
     this.zIndex = 0
-    for (let i = this.children.length - 1; i >= 0; i--) {
-      if (this.children[i].label === LABEL_TYPES.fogOverlay) {
-        this.removeChild(this.children[i])
-      }
+    if (this._hasFog) {
+      this._hasFog = false
+      this.context.map.fogLayer.removeChild(this._fogOverlay)
+      this._fogOverlay = null
     }
     // This cell is now visible: check edge dither for self and neighbors
     this._updateEdgeDither()

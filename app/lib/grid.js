@@ -342,11 +342,8 @@ export function updateInstanceVisibility(instance) {
 }
 
 /**
- * Updates AI knowledge of trees, berrybushes, and enemy buildings when an AI instance views a global cell.
- *
- * @param {object} globalCell - The cell in the global grid.
- * @param {object} cell - The current local cell being processed.
- * @param {object} instance - The AI instance viewing the cell.
+ * Updates AI knowledge of resources and enemies when an AI instance views a new cell.
+ * Called by updateInstanceVisibility when a cell enters sight for the first time.
  */
 function updateAIKnowledge(globalCell, cell, instance) {
   const { owner } = instance
@@ -354,24 +351,21 @@ function updateAIKnowledge(globalCell, cell, instance) {
   // Sync local cell's "has" object with the global cell if different
   if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
     cell.has = globalCell.has
+    const { has } = globalCell
 
-    // Detect tree resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0) {
-      owner.foundedTrees.add(globalCell.has)
+    if (has.quantity > 0) {
+      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees.add(has)
+      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has)
+      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has)
+      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has)
     }
 
-    // Detect berrybush resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0) {
-      owner.foundedBerrybushs.add(globalCell.has)
+    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
+      owner.foundedEnemyBuildings.add(has)
     }
 
-    // Detect enemy buildings and update AI's knowledge
-    if (
-      globalCell.has.family === FAMILY_TYPES.building &&
-      globalCell.has.hitPoints > 0 &&
-      globalCell.has.owner.label !== owner.label
-    ) {
-      owner.foundedEnemyBuildings.add(globalCell.has)
+    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
+      owner.foundedEnemyUnits.add(has)
     }
   }
 }

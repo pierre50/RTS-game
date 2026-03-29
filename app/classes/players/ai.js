@@ -5,8 +5,8 @@ import {
   getPositionInGridAroundInstance,
   getClosestInstance,
   instancesDistance,
-  getCellsAroundPoint,
   canAfford,
+  randomRange,
 } from '../../lib'
 import {
   WORK_TYPES,
@@ -29,13 +29,13 @@ export class AI extends Player {
     this.foundedGolds = new Set()
     this.foundedStones = new Set()
     this.foundedEnemyBuildings = new Set()
+    this.foundedEnemyUnits = new Set()
     this.interval = setInterval(() => this.step(), 4000)
     this.selectedUnits = []
     this.selectedUnit = null
     this.selectedBuilding = null
     this.selectedOther = null
-    this.distSpread = 1
-    this.cellViewed = 0
+    this.scout = null
 
     this.nextAge = {
       1: 'ToolAge',
@@ -115,6 +115,28 @@ export class AI extends Player {
     return this.buildings.filter(b => types.includes(b.type))
   }
 
+  // Remove depleted resources and destroyed buildings from tracked Sets
+  cleanupSets() {
+    for (const r of this.foundedTrees) {
+      if (r.quantity <= 0 || r.isDead) this.foundedTrees.delete(r)
+    }
+    for (const r of this.foundedBerrybushs) {
+      if (r.quantity <= 0 || r.isDead) this.foundedBerrybushs.delete(r)
+    }
+    for (const r of this.foundedStones) {
+      if (r.quantity <= 0 || r.isDead) this.foundedStones.delete(r)
+    }
+    for (const r of this.foundedGolds) {
+      if (r.quantity <= 0 || r.isDead) this.foundedGolds.delete(r)
+    }
+    for (const b of this.foundedEnemyBuildings) {
+      if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings.delete(b)
+    }
+    for (const u of this.foundedEnemyUnits) {
+      if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits.delete(u)
+    }
+  }
+
   getUnitExtraOptions(type) {
     const me = this
     return {
@@ -146,9 +168,7 @@ export class AI extends Player {
 
   step() {
     const { map, paused } = this.context
-    if (paused) {
-      return
-    }
+    if (paused) return
 
     const maxVillagers = this.maxVillagerPerAge[this.age]
     const maxVillagersOnConstruction = 4
@@ -157,7 +177,6 @@ export class AI extends Player {
     const howManySoldiersBeforeAttack = 5
 
     console.log('%c ----Step started', styleLogInfo1)
-
     console.log(
       `%c Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.population_max}`,
       styleLogInfo2
@@ -184,7 +203,7 @@ export class AI extends Player {
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
 
     console.log(
-      `%c Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets}`,
+      `%c Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`,
       styleLogInfo2
     )
 
@@ -196,14 +215,18 @@ export class AI extends Player {
     const villagersByWork = works => villagers.filter(v => !v.inactif && works.includes(v.work))
     const inactifVillagers = villagers.filter(v => v.inactif && v.action !== ACTION_TYPES.attack)
 
+    // Split food workers by type to avoid stopping farmers when berries run out
+    const villagersForaging = villagersByWork([WORK_TYPES.forager])
+    const villagersFarming = villagersByWork([WORK_TYPES.farmer])
+    const villagersHunting = villagersByWork([WORK_TYPES.hunter])
+    const villagersOnFood = [...villagersForaging, ...villagersFarming, ...villagersHunting]
     const villagersOnWood = villagersByWork([WORK_TYPES.woodcutter])
-    const villagersOnFood = villagersByWork([WORK_TYPES.forager, WORK_TYPES.farmer, WORK_TYPES.hunter])
     const villagersOnGold = villagersByWork([WORK_TYPES.goldminer])
     const villagersOnStone = villagersByWork([WORK_TYPES.stoneminer])
     const builderVillagers = villagersByWork([WORK_TYPES.builder])
 
-    const maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood'])
     const maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food'])
+    const maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood'])
     const maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold'])
     const maxVillagersOnStone = getValuePercentage(
       villagers.length,
@@ -211,10 +234,11 @@ export class AI extends Player {
     )
 
     console.log(
-      `%c Villagers on Wood: ${villagersOnWood.length}/${maxVillagersOnWood}, Villagers on Food: ${villagersOnFood.length}/${maxVillagersOnFood}, Villagers on Stone: ${villagersOnStone.length}/${maxVillagersOnStone}, Villagers on Gold: ${villagersOnGold.length}/${maxVillagersOnGold}, Builder Villagers: ${builderVillagers.length}`,
+      `%c Food: ${villagersOnFood.length}/${maxVillagersOnFood}, Wood: ${villagersOnWood.length}/${maxVillagersOnWood}, Stone: ${villagersOnStone.length}/${maxVillagersOnStone}, Gold: ${villagersOnGold.length}/${maxVillagersOnGold}, Builders: ${builderVillagers.length}`,
       styleLogInfo2
     )
 
+    // Soldiers: those already on assault vs those waiting at base
     const inactifClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
     const waitingClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && !c.assault)
 
@@ -230,121 +254,128 @@ export class AI extends Player {
       return
     }
 
-    // Cell Viewing Logic
-    if (this.cellViewed <= map.totalCells) {
-      getCellsAroundPoint(this.i, this.j, this.views, this.distSpread, cell => {
-        const globalCell = map.grid[cell.i][cell.j]
-        cell.has = globalCell.has
-        if (globalCell.has) {
-          const { has } = globalCell
-          if (has.quantity > 0) {
-            if (has.type === RESOURCE_TYPES.tree) this.foundedTrees.add(has)
-            if (has.type === RESOURCE_TYPES.berrybush) this.foundedBerrybushs.add(has)
-            if (has.type === RESOURCE_TYPES.stone) this.foundedStones.add(has)
-            if (has.type === RESOURCE_TYPES.gold) this.foundedGolds.add(has)
-          }
-          if (has.family === FAMILY_TYPES.building && has.owner.label !== this.label) {
-            this.foundedEnemyBuildings.add(has)
-          }
-        }
-        if (!cell.viewed) {
-          this.cellViewed++
-          cell.viewed = true
-        }
-      })
-      this.distSpread++
+    // Remove depleted resources and destroyed enemies from tracked sets
+    this.cleanupSets()
+
+    // Scout logic: one villager explores the map incrementally.
+    // Resources and enemies are discovered naturally through unit sight (updateAIKnowledge in grid.js).
+    if (!this.scout || this.scout.isDead || this.scout.hitPoints <= 0) {
+      this.scout = inactifVillagers[0] || null
+    }
+    if (this.scout && this.scout.inactif) {
+      // explore() finds the nearest unviewed cell (radius 50) — short path, A* always succeeds
+      this.scout.explore()
     }
 
-    // Utility function to assign villagers to resources
-    const assignVillagersToResource = (villagers, resourceList, maxVillagers, actionCallback) => {
-      if (resourceList.size) {
-        if (villagers.length < maxVillagers) {
-          for (let i = 0; i < Math.min(maxVillagers, inactifVillagers.length); i++) {
-            const resource = getClosestInstance(inactifVillagers[i], resourceList)
-            actionCallback(inactifVillagers[i], resource)
-          }
-        } else {
-          for (let i = 0; i < villagers.length - maxVillagers; i++) {
-            villagers[i].stop()
-          }
-        }
-      } else {
-        for (let i = 0; i < villagers.length; i++) {
-          villagers[i].stop()
-        }
+    // Mutable pool of idle villagers — scout excluded so it doesn't get reassigned to gather
+    let availableVillagers = inactifVillagers.filter(v => v !== this.scout)
+
+    // Assign villagers from the available pool to a resource type.
+    // Stops excess workers and fills shortfall from the available pool.
+    const assignVillagersToResource = (villagersOnResource, resourceList, maxVillagers, actionCallback) => {
+      // Stop workers above quota
+      for (let i = maxVillagers; i < villagersOnResource.length; i++) {
+        villagersOnResource[i].stop()
+      }
+      if (resourceList.size === 0) return
+      const needed = Math.max(0, maxVillagers - villagersOnResource.length)
+      const toAssign = Math.min(needed, availableVillagers.length)
+      for (let i = 0; i < toAssign; i++) {
+        const villager = availableVillagers.shift()
+        const resource = getClosestInstance(villager, resourceList)
+        actionCallback(villager, resource)
       }
     }
 
-    // Food Gathering Logic
-    assignVillagersToResource(villagersOnFood, this.foundedBerrybushs, maxVillagersOnFood, (villager, bush) => {
+    // Food: berries first
+    assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, (villager, bush) => {
       villager.sendToBerrybush(bush)
     })
 
-    // Wood Gathering Logic
+    // Wood
     assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, (villager, tree) => {
       villager.sendToTree(tree)
     })
 
-    // Stone Gathering Logic
+    // Food fallback: send to empty farms when berries aren't covering the quota
+    const foodShortfall = Math.max(0, maxVillagersOnFood - villagersOnFood.length)
+    for (let i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
+      const villager = availableVillagers.shift()
+      villager.sendToFarm(emptyFarms[i])
+    }
+
+    // Stone
     assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, (villager, stone) => {
       villager.sendToStone(stone)
     })
 
-    // Gold Gathering Logic
+    // Gold
     assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, (villager, gold) => {
       villager.sendToGold(gold)
     })
 
-    for (let i = 0; i < emptyFarms.length; i++) {
-      const villager = getClosestInstance(emptyFarms[i], inactifVillagers)
-      villager && villager.sendToFarm(emptyFarms[i])
-    }
-
-    // Construction Logic
+    // Construction
     if (notBuiltBuildings.length) {
       for (const building of notBuiltBuildings) {
         if (builderVillagers.length >= maxVillagersOnConstruction) break
-        const availableVillagers = villagers.filter(v => v.work !== WORK_TYPES.builder || v.inactif)
+        if (availableVillagers.length === 0) break
         const villager = getClosestInstance(building, availableVillagers)
         if (villager) {
           console.log('Villager sent to build:', building)
           villager.sendToBuilding(building)
+          availableVillagers = availableVillagers.filter(v => v !== villager)
         }
       }
     }
 
-    // Attack Logic
-    const sendToAttack = (clubmans, target) => {
-      console.log('Sending clubmans to attack:', target)
-      clubmans.forEach(clubman => clubman.sendTo(target, ACTION_TYPES.attack))
+    // Attack helpers
+    const sendToAttack = (soldiers, target) => {
+      console.log('Sending soldiers to attack:', target)
+      soldiers.forEach(c => {
+        c.assault = true
+        c.sendTo(target, ACTION_TYPES.attack)
+      })
     }
 
+    // Pick the best enemy target (prefer TC, then any building)
+    const getBestEnemyTarget = () =>
+      [...this.foundedEnemyBuildings].find(b => b.type === BUILDING_TYPES.townCenter) ||
+      this.foundedEnemyBuildings.values().next().value
+
+    // Defensive reaction: enemy units spotted → send idle soldiers to defend
+    if (this.foundedEnemyUnits.size > 0 && waitingClubmans.length > 0) {
+      const enemyUnit = [...this.foundedEnemyUnits].find(u => u.hitPoints > 0)
+      if (enemyUnit) {
+        console.log('Enemy units spotted! Defending...')
+        sendToAttack(waitingClubmans, enemyUnit)
+      }
+    }
+
+    // Attack wave: enough soldiers accumulated → launch assault
     if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
       const target =
-        this.foundedEnemyBuildings.values().next().value ||
+        getBestEnemyTarget() ||
         map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)]
-      console.log('Clubman attack target:', target)
+      console.log('Launching attack wave! Target:', target)
       sendToAttack(waitingClubmans, target)
     }
 
+    // Soldiers that finished an assault → redirect to next enemy building
     if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
-      console.log('Inactif clubmans attacking founded enemy building...')
-      sendToAttack(inactifClubmans, this.foundedEnemyBuildings.values().next().value)
+      const target = getBestEnemyTarget()
+      if (target) {
+        console.log('Redirecting assault soldiers to:', target)
+        sendToAttack(inactifClubmans, target)
+      }
     }
 
-    // Unit Purchasing Logic
+    // Unit Purchasing
     const buyUnits = (currentCount, maxCount, buildingList, unitType, extra) => {
-      // Calculate how many more units can be bought
       const unitsNeeded = maxCount - currentCount
       let unitsBought = 0
-
-      if (unitsNeeded <= 0) {
-        return
-      }
-      // Iterate over the buildings until we reach the needed count
+      if (unitsNeeded <= 0) return
       for (const building of buildingList) {
-        if (unitsBought >= unitsNeeded) break // Stop if we've bought enough units
-
+        if (unitsBought >= unitsNeeded) break
         if (building && building.buyUnit(unitType, false, false, extra)) {
           unitsBought++
           console.log(`Buying ${unitType} from ${building.type}, Total Bought: ${unitsBought}`)
@@ -355,7 +386,7 @@ export class AI extends Player {
     buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager)
     buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman)
 
-    // Building Purchasing Logic
+    // Building Purchasing
     const buyBuildingIfNeeded = (condition, buildingType, positionCallback) => {
       const list = {
         House: houses,
@@ -378,12 +409,12 @@ export class AI extends Player {
       }
     }
 
-    // Buy House
+    // House
     buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
     )
 
-    // Buy Barracks
+    // Barracks
     buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         this.otherPlayers().every(
@@ -392,7 +423,7 @@ export class AI extends Player {
       )
     )
 
-    // Buy Markets
+    // Market
     buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         this.otherPlayers().every(
@@ -401,12 +432,10 @@ export class AI extends Player {
       )
     )
 
-    // Buy Farm
+    // Farm
     buyBuildingIfNeeded(true, BUILDING_TYPES.farm, () => {
-      const buildings = [...granarys, ...towncenters] // Combine both granarys and towncenters
-
+      const buildings = [...granarys, ...towncenters]
       for (const building of buildings) {
-        // Try to find a valid position around each building
         const position = getPositionInGridAroundInstance(
           building,
           map.grid,
@@ -417,18 +446,13 @@ export class AI extends Player {
             this.otherPlayers().every(player => instancesDistance(cell, player) <= instancesDistance(building, player)),
           false
         )
-
-        if (position) {
-          return position // If a valid position is found, return and break the loop
-        }
+        if (position) return position
       }
-
-      return null // If no valid position is found after looping through all buildings
+      return null
     })
 
-    // Unit Purchasing Logic
+    // Tech / Age Up
     const buyTechnology = (buildingList, technologyType) => {
-      // Iterate over the buildings until we reach the needed count
       for (const building of buildingList) {
         if (building && building.buyTechnology(technologyType)) {
           console.log(`Buying ${technologyType} from ${building.type}`)
