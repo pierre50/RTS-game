@@ -10,6 +10,7 @@ import {
   isValidCondition,
   getBuildingAsset,
   Modal,
+  isometricToCartesian,
 } from '../lib'
 import { CELL_WIDTH, CELL_HEIGHT, LONG_CLICK_DURATION, IS_MOBILE, FAMILY_TYPES } from '../constants'
 import { sound } from '@pixi/sound'
@@ -66,7 +67,7 @@ export default class Menu {
       input.type = 'file'
       input.accept = 'application/JSON'
       input.addEventListener('change', evt => {
-        var reader = new FileReader()
+        const reader = new FileReader()
         reader.onload = ({ target: { result } }) => {
           this.context.load(JSON.parse(result))
           modal.close()
@@ -198,59 +199,43 @@ export default class Menu {
   }
 
   getMinimapFactor() {
-    const {
-      context: { map },
-    } = this
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    return (mapWidth / 234) * 2
+    const { map } = this.context
+    return (CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2) / 234 * 2
+  }
+
+  getMinimapParams() {
+    const factor = this.getMinimapFactor() / this.miniMapAlpha
+    const translate = (CELL_WIDTH / 2 + (this.context.map.size * CELL_WIDTH) / 2) / 2 / factor
+    return { factor, translate }
   }
 
   initMiniMap() {
-    const {
-      context: { map },
-    } = this
-
-    const context = this.terrainMinimap.getContext('2d')
-    const cameraContext = this.cameraMinimap.getContext('2d')
-    const resourceContext = this.resourcesMinimap.getContext('2d')
-
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
-    context.translate(translate, 0)
-    cameraContext.translate(translate, 0)
-    resourceContext.translate(translate, 0)
-
+    const { translate } = this.getMinimapParams()
+    for (const canvas of [this.terrainMinimap, this.cameraMinimap, this.resourcesMinimap]) {
+      canvas.getContext('2d').translate(translate, 0)
+    }
+    const { map } = this.context
     if (map.revealEverything || map.revealTerrain) {
       this.revealTerrainMinimap()
     }
   }
 
   revealTerrainMinimap() {
-    const {
-      context: { map },
-    } = this
-
+    const { map } = this.context
     const canvas = this.terrainMinimap
     const context = canvas.getContext('2d')
-
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
+    const { factor, translate } = this.getMinimapParams()
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
-
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
         const cell = map.grid[i][j]
-        const x = cell.x
-        const y = cell.y
         canvasDrawDiamond(
           context,
-          x / minimapFactor + translate,
-          y / minimapFactor,
-          CELL_WIDTH / minimapFactor + 1,
-          CELL_HEIGHT / minimapFactor + 1,
+          cell.x / factor + translate,
+          cell.y / factor,
+          CELL_WIDTH / factor + 1,
+          CELL_HEIGHT / factor + 1,
           cell.color
         )
       }
@@ -258,132 +243,97 @@ export default class Menu {
   }
 
   updateTerrainMiniMap(i, j) {
-    const {
-      context: { map },
-    } = this
-
+    const { map } = this.context
     const canvas = this.terrainMinimap
     const context = canvas.getContext('2d')
-
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
-
+    const { factor, translate } = this.getMinimapParams()
     const cell = map.grid[i][j]
-    let color = cell.color
 
-    const x = cell.x
-    const y = cell.y
     canvasDrawDiamond(
       context,
-      x / minimapFactor + translate,
-      y / minimapFactor,
-      CELL_WIDTH / minimapFactor + 1,
-      CELL_HEIGHT / minimapFactor + 1,
-      color
+      cell.x / factor + translate,
+      cell.y / factor,
+      CELL_WIDTH / factor + 1,
+      CELL_HEIGHT / factor + 1,
+      cell.color
     )
-
     if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
       this.updateResourceMiniMap(cell.has)
     }
   }
 
   updateResourceMiniMap(resource) {
-    const {
-      context: { map },
-    } = this
-
-    const canvas = this.resourcesMinimap
-    const context = canvas.getContext('2d')
-
+    const context = this.resourcesMinimap.getContext('2d')
+    const { factor, translate } = this.getMinimapParams()
     const squareSize = 4
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
-
-    const finalX = resource.x / minimapFactor - squareSize / 2
-    const finalY = resource.y / minimapFactor - squareSize / 2
-    canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)
+    canvasDrawRectangle(
+      context,
+      resource.x / factor - squareSize / 2 + translate,
+      resource.y / factor - squareSize / 2,
+      squareSize,
+      squareSize,
+      resource.color
+    )
   }
 
   updateResourcesMiniMapEvt() {
-    const {
-      context: { map, player },
-    } = this
-
+    const { map, player } = this.context
     const canvas = this.resourcesMinimap
     const context = canvas.getContext('2d')
-
+    const { factor, translate } = this.getMinimapParams()
     const squareSize = 4
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
-
     map.resources.forEach(resource => {
       const cell = player?.views?.[resource.i]?.[resource.j]
       if (resource.color && (cell?.viewed || map.revealEverything)) {
-        const finalX = resource.x / minimapFactor - squareSize / 2
-        const finalY = resource.y / minimapFactor - squareSize / 2
-        canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color)
+        canvasDrawRectangle(
+          context,
+          resource.x / factor - squareSize / 2 + translate,
+          resource.y / factor - squareSize / 2,
+          squareSize,
+          squareSize,
+          resource.color
+        )
       }
     })
   }
 
   updateCameraMiniMapEvt() {
-    const {
-      context: { app, map, controls },
-    } = this
-
+    const { app, controls } = this.context
     const canvas = this.cameraMinimap
     const context = canvas.getContext('2d')
-
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
+    const { factor, translate } = this.getMinimapParams()
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
-
-    const x = controls.camera.x / minimapFactor
-    const y = controls.camera.y / minimapFactor
-    const w = app.screen.width / minimapFactor
-    const h = app.screen.height / minimapFactor
-    canvasDrawStrokeRectangle(context, x + translate, y, w, h, 'white')
+    canvasDrawStrokeRectangle(
+      context,
+      controls.camera.x / factor + translate,
+      controls.camera.y / factor,
+      app.screen.width / factor,
+      app.screen.height / factor,
+      'white'
+    )
   }
 
   updatePlayerMiniMapEvt(owner) {
-    if (!owner) {
-      return
-    }
-
-    const {
-      context: { map },
-    } = this
+    if (!owner) return
 
     const squareSize = 4
-    const playerMinimap = this.playersMinimap.find(({ id }) => id === `minimap-${owner.label}`)
+    const { factor, translate } = this.getMinimapParams()
     const color = owner.colorHex
+    const id = `minimap-${owner.label}`
 
-    let canvas
-    let context
-
-    const minimapFactor = this.getMinimapFactor() / this.miniMapAlpha
-    const mapWidth = CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2
-    const translate = mapWidth / 2 / minimapFactor
-
-    if (playerMinimap) {
-      canvas = playerMinimap.canvas
-      context = playerMinimap.context
+    let canvas, context
+    const existing = this.playersMinimap.find(p => p.id === id)
+    if (existing) {
+      canvas = existing.canvas
+      context = existing.context
     } else {
       canvas = document.createElement('canvas')
       context = canvas.getContext('2d')
       context.translate(translate, 0)
-      this.playersMinimap.push({
-        id: `minimap-${owner.label}`,
-        canvas,
-        context,
-      })
+      this.playersMinimap.push({ id, canvas, context })
       this.bottombarMap.appendChild(canvas)
     }
 
@@ -391,15 +341,10 @@ export default class Menu {
 
     owner.buildings.forEach(({ x, y, size, selected }) => {
       const finalSize = squareSize + size
-      const finalX = x / minimapFactor - finalSize / 2
-      const finalY = y / minimapFactor - finalSize / 2
-      canvasDrawRectangle(context, finalX + translate, finalY, finalSize, finalSize, selected ? 'white' : color)
+      canvasDrawRectangle(context, x / factor - finalSize / 2 + translate, y / factor - finalSize / 2, finalSize, finalSize, selected ? 'white' : color)
     })
-
     owner.units.forEach(({ x, y, selected }) => {
-      const finalX = x / minimapFactor - squareSize / 2
-      const finalY = y / minimapFactor - squareSize / 2
-      canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, selected ? 'white' : color)
+      canvasDrawRectangle(context, x / factor - squareSize / 2 + translate, y / factor - squareSize / 2, squareSize, squareSize, selected ? 'white' : color)
     })
   }
 
@@ -539,7 +484,7 @@ export default class Menu {
           setMenuRecurs(selection, this.bottombarMenu, [
             {
               icon: 'assets/interface/50721/003_50721.png',
-              id: `${type}-cancel`,
+              id: `${selection.technology}-cancel`,
               onClick: selection => {
                 sound.play('5036')
                 selection.cancelTechnology()
@@ -627,7 +572,7 @@ export default class Menu {
         cancel.id = `${type}-cancel`
         cancel.className = 'img'
         cancel.src = 'assets/interface/50721/003_50721.png'
-        if (!selection.queue.filter(q => q === type).length) {
+        if (!selection.queue.some(q => q === type)) {
           cancel.style.display = 'none'
         }
         cancel.addEventListener('pointerup', () => {

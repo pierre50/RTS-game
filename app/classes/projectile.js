@@ -4,7 +4,6 @@ import {
   getHitPointsWithDamage,
   moveTowardPoint,
   pointsDistance,
-  instancesDistance,
   average,
   randomItem,
   uuidv4,
@@ -20,12 +19,8 @@ export class Projectile extends Container {
     this.label = uuidv4()
     this.family = FAMILY_TYPES.projectile
 
-    Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
-    })
-    Object.keys(this.owner.owner.config.projectiles[this.type]).forEach(prop => {
-      this[prop] = this.owner.owner.config.projectiles[this.type][prop]
-    })
+    Object.assign(this, options)
+    Object.assign(this, this.owner.owner.config.projectiles[this.type])
 
     this.x = this.owner.x
     this.y = this.owner.y - this.owner.sprite.height / 2
@@ -35,7 +30,6 @@ export class Projectile extends Container {
       this.sounds.start &&
       sound.play(Array.isArray(this.sounds.start) ? randomItem(this.sounds.start) : this.sounds.start)
 
-    this.distance = instancesDistance(this, this.target, false)
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = new Graphics()
     sprite.rect(1, 1, this.size, 1)
@@ -48,7 +42,8 @@ export class Projectile extends Container {
     sprite.roundPixels = true
     this.addChild(sprite)
 
-    const interval = setInterval(() => {
+    this.interval = setInterval(() => {
+      if (this.context.paused) return
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
         if (
           pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
@@ -56,7 +51,6 @@ export class Projectile extends Container {
         ) {
           this.onHit(this.target)
         }
-        clearInterval(interval)
         this.die()
         return
       }
@@ -81,6 +75,7 @@ export class Projectile extends Container {
 
   die() {
     this.isDead = true
+    clearInterval(this.interval)
     this.destroy({ child: true, texture: true })
   }
 }

@@ -21,6 +21,8 @@ import {
   UNIT_TYPES,
 } from '../constants'
 
+const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
+
 export default class Controls extends Container {
   constructor(context) {
     super()
@@ -48,6 +50,7 @@ export default class Controls extends Container {
 
     this.mouseHoldTimeout
     this.keysPressed = {}
+    this.keyPressedCount = 0
     this.keyInterval
     this.keySpeed = 0
     this.eventMode = 'auto'
@@ -61,16 +64,27 @@ export default class Controls extends Container {
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
-    document.addEventListener('mousemove', evt => this.moveCameraWithMouse(evt))
-    document.addEventListener('mouseout', () => clearInterval(this.moveCameraInterval))
-    document.addEventListener('keydown', evt => this.onKeyDown(evt))
-    document.addEventListener('keyup', evt => this.onKeyUp(evt))
-    gamebox.addEventListener('touchstart', evt => this.onTouchStart(evt))
-    gamebox.addEventListener('touchend', evt => this.onTouchEnd(evt))
-    gamebox.addEventListener('touchmove', evt => this.onTouchMove(evt))
-    gamebox.addEventListener('mousemove', evt => this.onMouseMove(evt))
-    gamebox.addEventListener('mousedown', evt => this.onMouseDown(evt))
-    gamebox.addEventListener('mouseup', evt => this.onMouseUp(evt))
+    this._onDocMouseMove = evt => this.moveCameraWithMouse(evt)
+    this._onDocMouseOut = () => clearInterval(this.moveCameraInterval)
+    this._onKeyDown = evt => this.onKeyDown(evt)
+    this._onKeyUp = evt => this.onKeyUp(evt)
+    this._onTouchStart = evt => this.onTouchStart(evt)
+    this._onTouchEnd = evt => this.onTouchEnd(evt)
+    this._onTouchMove = evt => this.onTouchMove(evt)
+    this._onMouseMove = evt => this.onMouseMove(evt)
+    this._onMouseDown = evt => this.onMouseDown(evt)
+    this._onMouseUp = evt => this.onMouseUp(evt)
+
+    document.addEventListener('mousemove', this._onDocMouseMove)
+    document.addEventListener('mouseout', this._onDocMouseOut)
+    document.addEventListener('keydown', this._onKeyDown)
+    document.addEventListener('keyup', this._onKeyUp)
+    gamebox.addEventListener('touchstart', this._onTouchStart)
+    gamebox.addEventListener('touchend', this._onTouchEnd)
+    gamebox.addEventListener('touchmove', this._onTouchMove)
+    gamebox.addEventListener('mousemove', this._onMouseMove)
+    gamebox.addEventListener('mousedown', this._onMouseDown)
+    gamebox.addEventListener('mouseup', this._onMouseUp)
   }
 
   destroy() {
@@ -78,16 +92,16 @@ export default class Controls extends Container {
       context: { gamebox },
     } = this
 
-    document.removeEventListener('mousemove', evt => this.moveCameraWithMouse(evt))
-    document.removeEventListener('mouseout', () => clearInterval(this.moveCameraInterval))
-    document.removeEventListener('keydown', evt => this.onKeyDown(evt))
-    document.removeEventListener('keyup', evt => this.onKeyUp(evt))
-    gamebox.removeEventListener('touchstart', evt => this.onTouchStart(evt))
-    gamebox.removeEventListener('touchend', evt => this.onTouchEnd(evt))
-    gamebox.removeEventListener('touchmove', evt => this.onTouchMove(evt))
-    gamebox.removeEventListener('mousemove', evt => this.onMouseMove(evt))
-    gamebox.removeEventListener('mousedown', evt => this.onMouseDown(evt))
-    gamebox.removeEventListener('mouseup', evt => this.onMouseUp(evt))
+    document.removeEventListener('mousemove', this._onDocMouseMove)
+    document.removeEventListener('mouseout', this._onDocMouseOut)
+    document.removeEventListener('keydown', this._onKeyDown)
+    document.removeEventListener('keyup', this._onKeyUp)
+    gamebox.removeEventListener('touchstart', this._onTouchStart)
+    gamebox.removeEventListener('touchend', this._onTouchEnd)
+    gamebox.removeEventListener('touchmove', this._onTouchMove)
+    gamebox.removeEventListener('mousemove', this._onMouseMove)
+    gamebox.removeEventListener('mousedown', this._onMouseDown)
+    gamebox.removeEventListener('mouseup', this._onMouseUp)
   }
 
   onKeyDown(evt) {
@@ -107,10 +121,7 @@ export default class Controls extends Container {
     const handleMoveCamera = () => {
       if (!this.keyInterval) {
         this.keyInterval = setInterval(() => {
-          let double = false
-          if (Object.values(this.keysPressed).filter(Boolean).length > 1) {
-            double = true
-          }
+          const double = this.keyPressedCount > 1
           if (this.keySpeed < 4) {
             this.keySpeed += 0.2
           }
@@ -131,18 +142,20 @@ export default class Controls extends Container {
     }
     if (!evt.repeat) {
       this.keysPressed[evt.key] = true
+      this.keyPressedCount++
     }
-    const controlsMap = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']
-    if (controlsMap.includes(evt.key)) {
+    if (ARROW_KEYS.has(evt.key)) {
       handleMoveCamera()
     }
   }
 
   onKeyUp(evt) {
-    if (!evt.repeat) {
+    if (!evt.repeat && this.keysPressed[evt.key]) {
       delete this.keysPressed[evt.key]
+      this.keyPressedCount--
     }
-    if (!Object.values(this.keysPressed).filter(Boolean).length) {
+    if (this.keyPressedCount <= 0) {
+      this.keyPressedCount = 0
       clearInterval(this.keyInterval)
       this.keyInterval = null
       this.keySpeed = 0
@@ -420,10 +433,14 @@ export default class Controls extends Container {
     const {
       context: { player, map },
     } = this
-    const minX = Math.min(...player.selectedUnits.map(unit => unit.i))
-    const minY = Math.min(...player.selectedUnits.map(unit => unit.j))
-    const maxX = Math.max(...player.selectedUnits.map(unit => unit.i))
-    const maxY = Math.max(...player.selectedUnits.map(unit => unit.j))
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (let k = 0; k < player.selectedUnits.length; k++) {
+      const { i, j } = player.selectedUnits[k]
+      if (i < minX) minX = i
+      if (j < minY) minY = j
+      if (i > maxX) maxX = i
+      if (j > maxY) maxY = j
+    }
     const centerX = minX + Math.round((maxX - minX) / 2)
     const centerY = minY + Math.round((maxY - minY) / 2)
     let hasSentVillager = false
@@ -517,8 +534,8 @@ export default class Controls extends Container {
     }
     const C = { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y }
     const cameraCenter = {
-      x: this.camera.x + app.screen.width / 2 - this.camera.x,
-      y: this.camera.y + app.screen.height / 2 - this.camera.y,
+      x: app.screen.width / 2,
+      y: app.screen.height / 2,
     }
 
     if (dir === 'left') {
