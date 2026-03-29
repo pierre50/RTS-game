@@ -21,6 +21,15 @@ const NEIGHBOR_SIDES = {
   '1,0':  'SE',
 }
 
+// Inner-corner: diagonal neighbor in fog, both shared cardinals visible
+// → draw a small dither patch at the diamond tip between the two cardinal edges
+const CORNER_DATA = {
+  '-1,-1': { corner: 'N', adj: [[-1, 0], [0, -1]] }, // N tip  (NW∩NE)
+  '1,-1':  { corner: 'E', adj: [[0, -1], [1, 0]] },  // E tip  (NE∩SE)
+  '1,1':   { corner: 'S', adj: [[1, 0], [0, 1]] },   // S tip  (SE∩SW)
+  '-1,1':  { corner: 'W', adj: [[0, 1], [-1, 0]] },  // W tip  (SW∩NW)
+}
+
 // Cache keyed by sorted sides e.g. 'NE|NW|SW'
 const _ditherTextures = {}
 let _fogTexture = null
@@ -57,11 +66,13 @@ function getFogTexture() {
   return _fogTexture
 }
 
-// sides = Set of 'NW','NE','SE','SW'
+// sides = Set of 'NW','NE','SE','SW', corners = Set of 'N','E','S','W'
 // ONE combined texture — zero overlap possible
-function getDitherTexture(sides) {
-  const key = ['NW', 'NE', 'SE', 'SW'].filter(s => sides.has(s)).join('|')
-  if (!key) return null
+function getDitherTexture(sides, corners = new Set()) {
+  const sidesKey = ['NW', 'NE', 'SE', 'SW'].filter(s => sides.has(s)).join('|')
+  const cornersKey = ['N', 'E', 'S', 'W'].filter(c => corners.has(c)).join('|')
+  if (!sidesKey && !cornersKey) return null
+  const key = sidesKey + (cornersKey ? '|C:' + cornersKey : '')
   if (_ditherTextures[key]) return _ditherTextures[key]
 
   const canvas = document.createElement('canvas')
@@ -74,23 +85,22 @@ function getDitherTexture(sides) {
     for (let py = 0; py < _DH; py++) {
       if (!_insideDiamond(px, py)) continue
 
+      const dNW = (px + 2 * py) - 32
+      const dNE = 32 - (px - 2 * py)
+      const dSE = 96 - (px + 2 * py)
+      const dSW = (px - 2 * py) + 32
+
       let inBand = false
-      if (sides.has('NW') && !inBand) {
-        const d = (px + 2 * py) - 32
-        if (d >= 0 && d <= K) inBand = true
-      }
-      if (sides.has('NE') && !inBand) {
-        const d = 32 - (px - 2 * py)
-        if (d >= 0 && d <= K) inBand = true
-      }
-      if (sides.has('SE') && !inBand) {
-        const d = 96 - (px + 2 * py)
-        if (d >= 0 && d <= K) inBand = true
-      }
-      if (sides.has('SW') && !inBand) {
-        const d = (px - 2 * py) + 32
-        if (d >= 0 && d <= K) inBand = true
-      }
+      if (sides.has('NW') && !inBand && dNW >= 0 && dNW <= K) inBand = true
+      if (sides.has('NE') && !inBand && dNE >= 0 && dNE <= K) inBand = true
+      if (sides.has('SE') && !inBand && dSE >= 0 && dSE <= K) inBand = true
+      if (sides.has('SW') && !inBand && dSW >= 0 && dSW <= K) inBand = true
+
+      // Inner-corner tips: both adjacent edge distances must be small
+      if (corners.has('N') && !inBand && dNW >= 0 && dNW <= K && dNE >= 0 && dNE <= K) inBand = true
+      if (corners.has('E') && !inBand && dNE >= 0 && dNE <= K && dSE >= 0 && dSE <= K) inBand = true
+      if (corners.has('S') && !inBand && dSE >= 0 && dSE <= K && dSW >= 0 && dSW <= K) inBand = true
+      if (corners.has('W') && !inBand && dSW >= 0 && dSW <= K && dNW >= 0 && dNW <= K) inBand = true
 
       if (!inBand) continue
       if ((px + py) % 2 !== 0) continue
@@ -388,6 +398,7 @@ export class Cell extends Container {
 
   _updateEdgeDither() {
     const needed = new Set()
+    const neededCorners = new Set()
     const hasFogOverlay = this.children.some(c => c.label === LABEL_TYPES.fogOverlay)
 
     if (this.visible && this.viewBy.size > 0 && !hasFogOverlay) {
@@ -398,10 +409,23 @@ export class Cell extends Container {
         const neighborInFog = !n || n.children.some(c => c.label === LABEL_TYPES.fogOverlay)
         if (neighborInFog) needed.add(side)
       }
+      // Inner-corner: diagonal in fog but both shared cardinals visible
+      for (const [key, { corner, adj }] of Object.entries(CORNER_DATA)) {
+        const [di, dj] = key.split(',').map(Number)
+        const diag = grid[this.i + di]?.[this.j + dj]
+        const diagInFog = !diag || diag.children.some(c => c.label === LABEL_TYPES.fogOverlay)
+        if (diagInFog) {
+          const bothVisible = adj.every(([cdi, cdj]) => {
+            const cn = grid[this.i + cdi]?.[this.j + cdj]
+            return cn && !cn.children.some(c => c.label === LABEL_TYPES.fogOverlay)
+          })
+          if (bothVisible) neededCorners.add(corner)
+        }
+      }
     }
 
-    if (needed.size > 0) {
-      const texture = getDitherTexture(needed)
+    if (needed.size > 0 || neededCorners.size > 0) {
+      const texture = getDitherTexture(needed, neededCorners)
       if (!this._ditherSprite) {
         this._ditherSprite = new Sprite(texture)
         this._ditherSprite.label = LABEL_TYPES.dither
