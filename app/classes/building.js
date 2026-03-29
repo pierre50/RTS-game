@@ -242,7 +242,7 @@ export class Building extends Container {
     }
 
     if (this.isBuilt) {
-      setTimeout(() => {
+      this.visibilityTimeout = setTimeout(() => {
         updateInstanceVisibility(this)
       })
       this.finalTexture()
@@ -257,19 +257,15 @@ export class Building extends Container {
 
     this.startAttackInterval(() => {
       if (getActionCondition(this, target, ACTION_TYPES.attack) && instancesDistance(this, target) <= this.range) {
-        if (target.hitPoints <= 0) {
-          target.die()
-        } else {
-          const projectile = new Projectile(
-            {
-              owner: this,
-              type: this.projectile,
-              target,
-            },
-            this.context
-          )
-          map.addChild(projectile)
-        }
+        const projectile = new Projectile(
+          {
+            owner: this,
+            type: this.projectile,
+            target,
+          },
+          this.context
+        )
+        map.addChild(projectile)
       } else {
         this.stopAttackInterval()
       }
@@ -477,11 +473,11 @@ export class Building extends Container {
       this.updateTexture()
     } else if ((action === ACTION_TYPES.attack && this.isBuilt) || (action === ACTION_TYPES.build && this.isBuilt)) {
       if (percentage > 0 && percentage < 25) {
-        generateFire(this, '450')
+        this.generateFire('450')
       } else if (percentage >= 25 && percentage < 50) {
-        generateFire(this, '452')
+        this.generateFire('452')
       } else if (percentage >= 50 && percentage < 75) {
-        generateFire(this, '347')
+        this.generateFire('347')
       } else if (percentage >= 75) {
         const fire = this.getChildByLabel(LABEL_TYPES.fire)
         if (fire) {
@@ -489,43 +485,44 @@ export class Building extends Container {
         }
       }
     }
-    function generateFire(building, spriteId) {
-      const fire = building.getChildByLabel(LABEL_TYPES.fire)
-      const spritesheetFire = Assets.cache.get(spriteId)
-      if (fire) {
-        for (let i = 0; i < fire.children.length; i++) {
-          fire.children[i].textures = spritesheetFire.animations['fire']
-          fire.children[i].play()
-        }
-      } else {
-        const newFire = new Container()
-        newFire.label = LABEL_TYPES.fire
-        newFire.allowMove = false
-        newFire.allowClick = false
-        newFire.eventMode = 'none'
-        let poses = [[0, 0]]
-        if (building.size === 3) {
-          poses = [
-            [0, -32],
-            [-64, 0],
-            [0, 32],
-            [64, 0],
-          ]
-        }
-        for (let i = 0; i < poses.length; i++) {
-          const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-          spriteFire.allowMove = false
-          spriteFire.allowClick = false
-          spriteFire.eventMode = 'none'
-          spriteFire.roundPixels = true
-          spriteFire.x = poses[i][0]
-          spriteFire.y = poses[i][1]
-          spriteFire.play()
-          spriteFire.animationSpeed = 0.2 * ACCELERATOR
-          newFire.addChild(spriteFire)
-        }
-        building.addChild(newFire)
+  }
+
+  generateFire(spriteId) {
+    const fire = this.getChildByLabel(LABEL_TYPES.fire)
+    const spritesheetFire = Assets.cache.get(spriteId)
+    if (fire) {
+      for (let i = 0; i < fire.children.length; i++) {
+        fire.children[i].textures = spritesheetFire.animations['fire']
+        fire.children[i].play()
       }
+    } else {
+      const newFire = new Container()
+      newFire.label = LABEL_TYPES.fire
+      newFire.allowMove = false
+      newFire.allowClick = false
+      newFire.eventMode = 'none'
+      let poses = [[0, 0]]
+      if (this.size === 3) {
+        poses = [
+          [0, -32],
+          [-64, 0],
+          [0, 32],
+          [64, 0],
+        ]
+      }
+      for (let i = 0; i < poses.length; i++) {
+        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        spriteFire.allowMove = false
+        spriteFire.allowClick = false
+        spriteFire.eventMode = 'none'
+        spriteFire.roundPixels = true
+        spriteFire.x = poses[i][0]
+        spriteFire.y = poses[i][1]
+        spriteFire.play()
+        spriteFire.animationSpeed = 0.2 * ACCELERATOR
+        newFire.addChild(spriteFire)
+      }
+      this.addChild(newFire)
     }
   }
 
@@ -536,6 +533,7 @@ export class Building extends Container {
     const {
       context: { map, player, players, menu },
     } = this
+    clearTimeout(this.visibilityTimeout)
     this.stopInterval()
     this.isDead = true
     if (this.selected && player) {
@@ -598,7 +596,7 @@ export class Building extends Container {
       cell.corpses.delete(this)
     })
     this.isDestroyed = true
-    this.destroy({ child: true, texture: true })
+    this.destroy({ child: true, texture: false })
   }
 
   select() {
@@ -723,9 +721,7 @@ export class Building extends Container {
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
               menu.updateButtonContent(type, still || '')
-              if (still === 0) {
-                menu.toggleButtonCancel(type, false)
-              }
+              if (still === 0) menu.toggleButtonCancel(type, false)
               this.updateInterfaceLoading()
             }
           } else if (this.loading >= 100 || map.devMode) {
@@ -740,9 +736,7 @@ export class Building extends Container {
             if (this.selected && this.owner.isPlayed) {
               const still = this.queue.filter(q => q === type).length
               menu.updateButtonContent(type, still || '')
-              if (still === 0) {
-                menu.toggleButtonCancel(type, false)
-              }
+              if (still === 0) menu.toggleButtonCancel(type, false)
               this.updateInterfaceLoading()
             }
           } else if (this.loading < 100) {

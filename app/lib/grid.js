@@ -117,10 +117,8 @@ export function getInstancePath(instance, x, y, map) {
 
   let cloneGrid = []
   for (var i = minX; i <= maxX; i++) {
+    cloneGrid[i] = []
     for (var j = minY; j <= maxY; j++) {
-      if (cloneGrid[i] == null) {
-        cloneGrid[i] = []
-      }
       cloneGrid[i][j] = {
         i,
         j,
@@ -132,31 +130,58 @@ export function getInstancePath(instance, x, y, map) {
       }
     }
   }
-  let path = []
-  let openCells = []
-  const openSet = new Set()
-  const closedSet = new Set()
+
   const cloneEnd = cloneGrid[end.i][end.j]
   const cloneStart = cloneGrid[start.i][start.j]
-  openCells.push(cloneStart)
-  openSet.add(cloneStart)
-  while (true) {
-    if (openCells.length === 0) {
-      // no solution
-      break
+
+  // Min-heap storing [f_at_push, node] pairs.
+  // Stale re-insertions are skipped by comparing stored f with node's current f.
+  const heapData = []
+  function heapPush(f, node) {
+    heapData.push([f, node])
+    let i = heapData.length - 1
+    while (i > 0) {
+      const parent = (i - 1) >> 1
+      if (heapData[parent][0] <= heapData[i][0]) break
+      ;[heapData[parent], heapData[i]] = [heapData[i], heapData[parent]]
+      i = parent
     }
-    // find the lowest f in open cells
-    let lowestF = 0
-    for (let i = 1; i < openCells.length; i++) {
-      if (openCells[i].f < openCells[lowestF].f) {
-        lowestF = i
-      } else if (openCells[i].f === openCells[lowestF].f && openCells[i].g > openCells[lowestF].g) {
-        lowestF = i
+  }
+  function heapPop() {
+    const top = heapData[0]
+    const last = heapData.pop()
+    if (heapData.length > 0) {
+      heapData[0] = last
+      let i = 0
+      while (true) {
+        const l = 2 * i + 1
+        const r = 2 * i + 2
+        let s = i
+        if (l < heapData.length && heapData[l][0] < heapData[s][0]) s = l
+        if (r < heapData.length && heapData[r][0] < heapData[s][0]) s = r
+        if (s === i) break
+        ;[heapData[s], heapData[i]] = [heapData[i], heapData[s]]
+        i = s
       }
     }
-    let current = openCells[lowestF]
+    return top
+  }
+
+  cloneStart.g = 0
+  cloneStart.h = instancesDistance(cloneStart, cloneEnd)
+  cloneStart.f = cloneStart.h
+  heapPush(cloneStart.f, cloneStart)
+
+  const openSet = new Set([cloneStart])
+  const closedSet = new Set()
+  let path = []
+
+  while (heapData.length > 0) {
+    const [pushedF, current] = heapPop()
+    // Skip stale entries (node was re-inserted with a better f)
+    if (pushedF !== current.f || closedSet.has(current)) continue
+
     if (current === cloneEnd) {
-      // reached the end cell - reconstruct path once
       path = [cloneEnd]
       let temp = current
       while (temp.previous) {
@@ -165,27 +190,35 @@ export function getInstancePath(instance, x, y, map) {
       }
       break
     }
-    openCells.splice(lowestF, 1)
+
     openSet.delete(current)
     closedSet.add(current)
+
     // check neighbours
     getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
       const validDiag =
         !cellIsDiag(current, neighbour) ||
         (isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]))
       if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
-        let tempG = current.g + instancesDistance(neighbour, current)
+        const tempG = current.g + instancesDistance(neighbour, current)
         if (!openSet.has(neighbour)) {
-          openCells.push(neighbour)
-          openSet.add(neighbour)
           neighbour.g = tempG
           neighbour.h = instancesDistance(neighbour, cloneEnd)
           neighbour.f = neighbour.g + neighbour.h
           neighbour.previous = current
+          openSet.add(neighbour)
+          heapPush(neighbour.f, neighbour)
+        } else if (tempG < neighbour.g) {
+          // Better path found — update scores and re-insert; old heap entry will be skipped
+          neighbour.g = tempG
+          neighbour.f = neighbour.g + neighbour.h
+          neighbour.previous = current
+          heapPush(neighbour.f, neighbour)
         }
       }
     })
   }
+
   path.pop()
   return [...path]
 }
@@ -480,17 +513,10 @@ export function getPositionInGridAroundInstance(
  * @param {object} player
  */
 export function instanceIsInPlayerSight(instance, player) {
+  if (!player?.views) return false
   const dist = instance.size === 3 ? 1 : 0
-  let isInSight = false // Flag to track if the instance is in player sight
-
-  player?.views &&
-    getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist, cell => {
-      if (cell.viewBy.size > 0) {
-        isInSight = true // Set the flag if the condition is met
-      }
-    })
-
-  return isInSight // Return the flag
+  const cells = getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist)
+  return cells.some(cell => cell.viewBy.size > 0)
 }
 
 /**
@@ -535,15 +561,6 @@ export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callbac
 }
 
 /**
- * Get the coordinates around a point within a Manhattan distance
- * @param {number} startX
- * @param {number} startY
- * @param {Array} grid
- * @param {number} dist
- * @param {Function} callback
- * @returns {Array} Array of cells that match the criteria
- */
-/**
  * Get the coordinates around a point within a Manhattan distance (safe for irregular grids)
  * @param {number} startX
  * @param {number} startY
@@ -565,15 +582,15 @@ export function getCellsAroundPoint(startX, startY, grid, dist, callback) {
   // Iterate over Manhattan distance
   for (let dx = -dist; dx <= dist; dx++) {
     const x = startX + dx
-    if (!grid[x]) continue // Skip if row does not exist
+    const row = grid[x]
+    if (!row) continue // Skip if row does not exist
 
     const dyMax = dist - Math.abs(dx)
     for (let dy = -dyMax; dy <= dyMax; dy++) {
       const y = startY + dy
-      const row = grid[x]
-      if (!row || !row[y]) continue // Skip if cell does not exist
-
       const cell = row[y]
+      if (!cell) continue // Skip if cell does not exist
+
       if (!callback || callback(cell)) result.push(cell)
     }
   }

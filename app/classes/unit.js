@@ -535,7 +535,7 @@ export class Unit extends Container {
               this.affectNewDest()
             }
             // Set the walking with berrybush animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -600,7 +600,7 @@ export class Unit extends Container {
                 this.affectNewDest()
               }
               // Set the walking with wood animation
-              if (this.loading > 0) {
+              if (this.loading === 1) {
                 if (this.allAssets[this.work]) {
                   this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
                 }
@@ -649,7 +649,7 @@ export class Unit extends Container {
               this.affectNewDest()
             }
             // Set the walking with berrybush animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -697,7 +697,7 @@ export class Unit extends Container {
               this.affectNewDest()
             }
             // Set the walking with stone animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -741,7 +741,7 @@ export class Unit extends Container {
               this.affectNewDest()
             }
             // Set the walking with gold animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -950,7 +950,7 @@ export class Unit extends Container {
               menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
             }
             // Set the walking with meat animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -992,7 +992,7 @@ export class Unit extends Container {
               menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
             }
             // Set the walking with meat animation
-            if (this.loading > 0) {
+            if (this.loading === 1) {
               if (this.allAssets && this.allAssets[this.work]) {
                 this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
               }
@@ -1236,11 +1236,11 @@ export class Unit extends Container {
       this.sprite.play()
     }
 
-    this.zIndex = getInstanceZIndex(this)
     if (instancesDistance(this, nextCell, false) <= this.speed) {
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
+      this.zIndex = getInstanceZIndex(this)
       if (this.currentCell.has === this) {
         this.currentCell.has = null
         this.currentCell.solid = false
@@ -1306,7 +1306,7 @@ export class Unit extends Container {
   }
 
   stop() {
-    if (this.currentCell.has.label !== this.label && this.currentCell.solid) {
+    if (this.currentCell.has?.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }
