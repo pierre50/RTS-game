@@ -22,7 +22,7 @@ __webpack_require__.d(maths_namespaceObject, {
   getPointsDegree: () => (maths_getPointsDegree),
   getValuePercentage: () => (getValuePercentage),
   instancesDistance: () => (maths_instancesDistance),
-  isometricToCartesian: () => (maths_isometricToCartesian),
+  isometricToCartesian: () => (isometricToCartesian),
   pointInRectangle: () => (pointInRectangle),
   pointIsBetweenTwoPoint: () => (pointIsBetweenTwoPoint),
   pointsDistance: () => (maths_pointsDistance),
@@ -635,7 +635,7 @@ function cartesianToIsometric(x, y) {
  * @param {number} x
  * @param {number} y
  */
-function maths_isometricToCartesian(x, y) {
+function isometricToCartesian(x, y) {
   return [Math.round((x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2), Math.round((y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2)];
 }
 
@@ -738,7 +738,7 @@ function maths_instancesDistance(a, b) {
  * @param {object} instance
  */
 function getInstanceZIndex(instance) {
-  var pos = maths_isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH);
+  var pos = isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH);
   return pos[0] + pos[1];
 }
 
@@ -1226,11 +1226,8 @@ function updateInstanceVisibility(instance) {
 }
 
 /**
- * Updates AI knowledge of trees, berrybushes, and enemy buildings when an AI instance views a global cell.
- *
- * @param {object} globalCell - The cell in the global grid.
- * @param {object} cell - The current local cell being processed.
- * @param {object} instance - The AI instance viewing the cell.
+ * Updates AI knowledge of resources and enemies when an AI instance views a new cell.
+ * Called by updateInstanceVisibility when a cell enters sight for the first time.
  */
 function updateAIKnowledge(globalCell, cell, instance) {
   var owner = instance.owner;
@@ -1238,20 +1235,18 @@ function updateAIKnowledge(globalCell, cell, instance) {
   // Sync local cell's "has" object with the global cell if different
   if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
     cell.has = globalCell.has;
-
-    // Detect tree resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.tree && globalCell.has.quantity > 0) {
-      owner.foundedTrees.add(globalCell.has);
+    var has = globalCell.has;
+    if (has.quantity > 0) {
+      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees.add(has);
+      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has);
+      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has);
+      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has);
     }
-
-    // Detect berrybush resources and update AI's knowledge
-    if (globalCell.has.type === RESOURCE_TYPES.berrybush && globalCell.has.quantity > 0) {
-      owner.foundedBerrybushs.add(globalCell.has);
+    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
+      owner.foundedEnemyBuildings.add(has);
     }
-
-    // Detect enemy buildings and update AI's knowledge
-    if (globalCell.has.family === FAMILY_TYPES.building && globalCell.has.hitPoints > 0 && globalCell.has.owner.label !== owner.label) {
-      owner.foundedEnemyBuildings.add(globalCell.has);
+    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
+      owner.foundedEnemyUnits.add(has);
     }
   }
 }
@@ -2293,19 +2288,14 @@ var Projectile = /*#__PURE__*/function (_Container) {
     _this.context = context;
     _this.label = uuidv4();
     _this.family = FAMILY_TYPES.projectile;
-    Object.keys(options).forEach(function (prop) {
-      _this[prop] = options[prop];
-    });
-    Object.keys(_this.owner.owner.config.projectiles[_this.type]).forEach(function (prop) {
-      _this[prop] = _this.owner.owner.config.projectiles[_this.type][prop];
-    });
+    Object.assign(_this, options);
+    Object.assign(_this, _this.owner.owner.config.projectiles[_this.type]);
     _this.x = _this.owner.x;
     _this.y = _this.owner.y - _this.owner.sprite.height / 2;
     var _ref = _this.destination || _this.target,
       targetX = _ref.x,
       targetY = _ref.y;
     _this.owner.visible && _this.sounds.start && sound_lib/* sound */.s3.play(Array.isArray(_this.sounds.start) ? maths_randomItem(_this.sounds.start) : _this.sounds.start);
-    _this.distance = maths_instancesDistance(_this, _this.target, false);
     var degree = _this.degree || getPointsDegree(_this.x, _this.y, targetX, targetY);
     var sprite = new lib/* Graphics */.A1g();
     sprite.rect(1, 1, _this.size, 1);
@@ -2317,12 +2307,12 @@ var Projectile = /*#__PURE__*/function (_Container) {
     sprite.allowClick = false;
     sprite.roundPixels = true;
     _this.addChild(sprite);
-    var interval = setInterval(function () {
+    _this.interval = setInterval(function () {
+      if (_this.context.paused) return;
       if (maths_pointsDistance(_this.x, _this.y, targetX, targetY) <= Math.max(_this.speed, _this.size)) {
         if (maths_pointsDistance(targetX, targetY, _this.target.x, _this.target.y) <= average(_this.target.width, _this.target.height)) {
           _this.onHit(_this.target);
         }
-        clearInterval(interval);
         _this.die();
         return;
       }
@@ -2351,6 +2341,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     key: "die",
     value: function die() {
       this.isDead = true;
+      clearInterval(this.interval);
       this.destroy({
         child: true,
         texture: true
@@ -3664,7 +3655,11 @@ var Unit = /*#__PURE__*/function (_Container) {
           path = getInstanceClosestFreeCellPath(this, dest, map);
           if (!path.length && this.work) {
             this.action = action;
-            this.affectNewDest();
+            if (action === ACTION_TYPES.delivery) {
+              this.stop();
+            } else {
+              this.affectNewDest();
+            }
             return;
           }
         } else if (!allowWaterCellCategory && dest.category === 'Water') {
@@ -4007,7 +4002,7 @@ var Unit = /*#__PURE__*/function (_Container) {
               _this6.dest.updateHitPoints(_this6.action);
             } else {
               if (!_this6.dest.isBuilt) {
-                _this6.depst.updateHitPoints(_this6.action);
+                _this6.dest.updateHitPoints(_this6.action);
                 _this6.dest.isBuilt = true;
                 if (_this6.dest.type === BUILDING_TYPES.farm && !_this6.dest.isUsedBy) {
                   _this6.sendToFarm(_this6.dest);
@@ -4467,7 +4462,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (this.loading > 0) {
           speed *= 0.8;
         }
-        moveTowardPoint(this, nextCell.x, nextCell.y, this.speed);
+        moveTowardPoint(this, nextCell.x, nextCell.y, speed);
         canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner);
         if (maths_degreeToDirection(oldDeg) !== maths_degreeToDirection(this.degree)) {
           // Change animation according to degree
@@ -4552,37 +4547,41 @@ var Unit = /*#__PURE__*/function (_Container) {
     value: function explore() {
       var _this0 = this;
       var map = this.context.map;
-      var dest;
-      for (var i = 3; i < 50; i++) {
-        getCellsAroundPoint(this.i, this.j, map.grid, i, function (cell) {
-          if (!_this0.owner.views[cell.i][cell.j].viewed && !cell.solid) {
+      // Single scan at max radius — find the closest unviewed non-solid cell
+      var dest = null;
+      var minDist = Infinity;
+      getCellsAroundPoint(this.i, this.j, map.grid, 50, function (cell) {
+        if (!_this0.owner.views[cell.i][cell.j].viewed && !cell.solid) {
+          var d = Math.abs(cell.i - _this0.i) + Math.abs(cell.j - _this0.j);
+          if (d < minDist) {
+            minDist = d;
             dest = _this0.owner.views[cell.i][cell.j];
-            return;
           }
-        });
-        if (dest) {
-          this.sendTo(dest);
-          break;
         }
-      }
+      });
+      if (dest) this.sendTo(dest);
     }
   }, {
     key: "runaway",
     value: function runaway(instance) {
-      var _this1 = this;
       var map = this.context.map;
-      var dest = null;
-      getCellsAroundPoint(this.i, this.j, map.grid, this.sight, function (cell) {
-        if (!cell.solid && (!dest || pointsDistance(cell.i, cell.j, instance.i, instance.j) > pointsDistance(dest.i, dest.j, instance.i, instance.j))) {
-          dest = _this1.owner.views[cell.i][cell.j];
-          return;
+      // Flee in the opposite direction from attacker — O(sight) instead of O(sight²)
+      var di = this.i - instance.i;
+      var dj = this.j - instance.j;
+      var len = Math.sqrt(di * di + dj * dj) || 1;
+      for (var dist = this.sight; dist >= 1; dist--) {
+        var _map$grid$ti$length, _map$grid$ti;
+        var ti = Math.round(this.i + di / len * dist);
+        var tj = Math.round(this.j + dj / len * dist);
+        if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < ((_map$grid$ti$length = (_map$grid$ti = map.grid[ti]) === null || _map$grid$ti === void 0 ? void 0 : _map$grid$ti.length) !== null && _map$grid$ti$length !== void 0 ? _map$grid$ti$length : 0)) {
+          var cell = map.grid[ti][tj];
+          if (!cell.solid && !cell.border) {
+            this.sendTo(this.owner.views[ti][tj]);
+            return;
+          }
         }
-      });
-      if (dest) {
-        this.sendTo(dest);
-      } else {
-        this.stop();
       }
+      this.stop();
     }
   }, {
     key: "decompose",
@@ -4599,18 +4598,18 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "death",
     value: function death() {
-      var _this10 = this;
+      var _this1 = this;
       this.setTextures(SHEET_TYPES.dying);
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
-        updateInstanceVisibility(_this10);
+        updateInstanceVisibility(_this1);
         // Remove from player units
-        var index = _this10.owner.corpses.indexOf(_this10);
+        var index = _this1.owner.corpses.indexOf(_this1);
         if (index < 0) {
-          _this10.owner.corpses.push(_this10);
+          _this1.owner.corpses.push(_this1);
         }
-        _this10.decompose();
+        _this1.decompose();
       };
     }
   }, {
@@ -4679,12 +4678,12 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "updateInterfaceLoading",
     value: function updateInterfaceLoading() {
-      var _this11 = this;
+      var _this10 = this;
       var menu = this.context.menu;
       if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
         if (this.loading === 1) {
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            return element.innerHTML = _this11.getLoadingElement().innerHTML;
+            return element.innerHTML = _this10.getLoadingElement().innerHTML;
           });
         } else if (this.loading > 1) {
           menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading);
@@ -4743,7 +4742,7 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "sendToDelivery",
     value: function sendToDelivery() {
-      var _this12 = this;
+      var _this11 = this;
       var map = this.context.map;
       var buildingTypes = [];
       if (this.category === 'Boat') {
@@ -4765,7 +4764,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var targets = this.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(_this12, building, ACTION_TYPES.delivery, {
+        return extra_getActionCondition(_this11, building, ACTION_TYPES.delivery, {
           buildingTypes: buildingTypes
         });
       });
@@ -5089,12 +5088,12 @@ var Player = /*#__PURE__*/function () {
 }();
 ;// ./app/classes/players/ai.js
 function ai_typeof(o) { "@babel/helpers - typeof"; return ai_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ai_typeof(o); }
-function ai_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = ai_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function ai_toConsumableArray(r) { return ai_arrayWithoutHoles(r) || ai_iterableToArray(r) || ai_unsupportedIterableToArray(r) || ai_nonIterableSpread(); }
 function ai_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function ai_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return ai_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? ai_arrayLikeToArray(r, a) : void 0; } }
 function ai_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function ai_arrayWithoutHoles(r) { if (Array.isArray(r)) return ai_arrayLikeToArray(r); }
+function ai_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = ai_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function ai_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return ai_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? ai_arrayLikeToArray(r, a) : void 0; } }
 function ai_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function ai_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function ai_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ai_ownKeys(Object(t), !0).forEach(function (r) { ai_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ai_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -5132,6 +5131,7 @@ var AI = /*#__PURE__*/function (_Player) {
     _this.foundedGolds = new Set();
     _this.foundedStones = new Set();
     _this.foundedEnemyBuildings = new Set();
+    _this.foundedEnemyUnits = new Set();
     _this.interval = setInterval(function () {
       return _this.step();
     }, 4000);
@@ -5139,8 +5139,7 @@ var AI = /*#__PURE__*/function (_Player) {
     _this.selectedUnit = null;
     _this.selectedBuilding = null;
     _this.selectedOther = null;
-    _this.distSpread = 1;
-    _this.cellViewed = 0;
+    _this.scout = null;
     _this.nextAge = {
       1: 'ToolAge',
       2: 'BronzeAge',
@@ -5222,6 +5221,84 @@ var AI = /*#__PURE__*/function (_Player) {
         return types.includes(b.type);
       });
     }
+
+    // Remove depleted resources and destroyed buildings from tracked Sets
+  }, {
+    key: "cleanupSets",
+    value: function cleanupSets() {
+      var _iterator = ai_createForOfIteratorHelper(this.foundedTrees),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var r = _step.value;
+          if (r.quantity <= 0 || r.isDead) this.foundedTrees["delete"](r);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      var _iterator2 = ai_createForOfIteratorHelper(this.foundedBerrybushs),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var _r = _step2.value;
+          if (_r.quantity <= 0 || _r.isDead) this.foundedBerrybushs["delete"](_r);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      var _iterator3 = ai_createForOfIteratorHelper(this.foundedStones),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var _r2 = _step3.value;
+          if (_r2.quantity <= 0 || _r2.isDead) this.foundedStones["delete"](_r2);
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+      var _iterator4 = ai_createForOfIteratorHelper(this.foundedGolds),
+        _step4;
+      try {
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          var _r3 = _step4.value;
+          if (_r3.quantity <= 0 || _r3.isDead) this.foundedGolds["delete"](_r3);
+        }
+      } catch (err) {
+        _iterator4.e(err);
+      } finally {
+        _iterator4.f();
+      }
+      var _iterator5 = ai_createForOfIteratorHelper(this.foundedEnemyBuildings),
+        _step5;
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var b = _step5.value;
+          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+      var _iterator6 = ai_createForOfIteratorHelper(this.foundedEnemyUnits),
+        _step6;
+      try {
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var u = _step6.value;
+          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+        }
+      } catch (err) {
+        _iterator6.e(err);
+      } finally {
+        _iterator6.f();
+      }
+    }
   }, {
     key: "getUnitExtraOptions",
     value: function getUnitExtraOptions(type) {
@@ -5252,9 +5329,7 @@ var AI = /*#__PURE__*/function (_Player) {
       var _this$context = this.context,
         map = _this$context.map,
         paused = _this$context.paused;
-      if (paused) {
-        return;
-      }
+      if (paused) return;
       var maxVillagers = this.maxVillagerPerAge[this.age];
       var maxVillagersOnConstruction = 4;
       var maxClubmans = 10;
@@ -5284,7 +5359,7 @@ var AI = /*#__PURE__*/function (_Player) {
         var isUsedBy = _ref2.isUsedBy;
         return !isUsedBy;
       });
-      console.log("%c Towncenters: ".concat(towncenters.length, ", Houses: ").concat(houses.length, ", StoragePits: ").concat(storagepits.length, ", Granaries: ").concat(granarys.length, ", Barracks: ").concat(barracks.length, ", Markets: ").concat(markets), styleLogInfo2);
+      console.log("%c Towncenters: ".concat(towncenters.length, ", Houses: ").concat(houses.length, ", StoragePits: ").concat(storagepits.length, ", Granaries: ").concat(granarys.length, ", Barracks: ").concat(barracks.length, ", Markets: ").concat(markets.length), styleLogInfo2);
       var notBuiltBuildings = this.buildings.filter(function (b) {
         return !b.isBuilt || b.hitPoints > 0 && b.hitPoints < b.totalHitPoints;
       });
@@ -5299,16 +5374,23 @@ var AI = /*#__PURE__*/function (_Player) {
       var inactifVillagers = villagers.filter(function (v) {
         return v.inactif && v.action !== ACTION_TYPES.attack;
       });
+
+      // Split food workers by type to avoid stopping farmers when berries run out
+      var villagersForaging = villagersByWork([WORK_TYPES.forager]);
+      var villagersFarming = villagersByWork([WORK_TYPES.farmer]);
+      var villagersHunting = villagersByWork([WORK_TYPES.hunter]);
+      var villagersOnFood = [].concat(ai_toConsumableArray(villagersForaging), ai_toConsumableArray(villagersFarming), ai_toConsumableArray(villagersHunting));
       var villagersOnWood = villagersByWork([WORK_TYPES.woodcutter]);
-      var villagersOnFood = villagersByWork([WORK_TYPES.forager, WORK_TYPES.farmer, WORK_TYPES.hunter]);
       var villagersOnGold = villagersByWork([WORK_TYPES.goldminer]);
       var villagersOnStone = villagersByWork([WORK_TYPES.stoneminer]);
       var builderVillagers = villagersByWork([WORK_TYPES.builder]);
-      var maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood']);
       var maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food']);
+      var maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood']);
       var maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold']);
       var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
-      console.log("%c Villagers on Wood: ".concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Villagers on Food: ").concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Villagers on Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Villagers on Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builder Villagers: ").concat(builderVillagers.length), styleLogInfo2);
+      console.log("%c Food: ".concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Wood: ").concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builders: ").concat(builderVillagers.length), styleLogInfo2);
+
+      // Soldiers: those already on assault vs those waiting at base
       var inactifClubmans = clubmans.filter(function (c) {
         return c.inactif && c.action !== ACTION_TYPES.attack && c.assault;
       });
@@ -5324,147 +5406,167 @@ var AI = /*#__PURE__*/function (_Player) {
         return;
       }
 
-      // Cell Viewing Logic
-      if (this.cellViewed <= map.totalCells) {
-        getCellsAroundPoint(this.i, this.j, this.views, this.distSpread, function (cell) {
-          var globalCell = map.grid[cell.i][cell.j];
-          cell.has = globalCell.has;
-          if (globalCell.has) {
-            var has = globalCell.has;
-            if (has.quantity > 0) {
-              if (has.type === RESOURCE_TYPES.tree) _this2.foundedTrees.add(has);
-              if (has.type === RESOURCE_TYPES.berrybush) _this2.foundedBerrybushs.add(has);
-              if (has.type === RESOURCE_TYPES.stone) _this2.foundedStones.add(has);
-              if (has.type === RESOURCE_TYPES.gold) _this2.foundedGolds.add(has);
-            }
-            if (has.family === FAMILY_TYPES.building && has.owner.label !== _this2.label) {
-              _this2.foundedEnemyBuildings.add(has);
-            }
-          }
-          if (!cell.viewed) {
-            _this2.cellViewed++;
-            cell.viewed = true;
-          }
-        });
-        this.distSpread++;
+      // Remove depleted resources and destroyed enemies from tracked sets
+      this.cleanupSets();
+
+      // Scout logic: one villager explores the map incrementally.
+      // Resources and enemies are discovered naturally through unit sight (updateAIKnowledge in grid.js).
+      if (!this.scout || this.scout.isDead || this.scout.hitPoints <= 0) {
+        this.scout = inactifVillagers[0] || null;
+      }
+      if (this.scout && this.scout.inactif) {
+        // explore() finds the nearest unviewed cell (radius 50) — short path, A* always succeeds
+        this.scout.explore();
       }
 
-      // Utility function to assign villagers to resources
-      var assignVillagersToResource = function assignVillagersToResource(villagers, resourceList, maxVillagers, actionCallback) {
-        if (resourceList.size) {
-          if (villagers.length < maxVillagers) {
-            for (var i = 0; i < Math.min(maxVillagers, inactifVillagers.length); i++) {
-              var resource = getClosestInstance(inactifVillagers[i], resourceList);
-              actionCallback(inactifVillagers[i], resource);
-            }
-          } else {
-            for (var _i = 0; _i < villagers.length - maxVillagers; _i++) {
-              villagers[_i].stop();
-            }
-          }
-        } else {
-          for (var _i2 = 0; _i2 < villagers.length; _i2++) {
-            villagers[_i2].stop();
-          }
+      // Mutable pool of idle villagers — scout excluded so it doesn't get reassigned to gather
+      var availableVillagers = inactifVillagers.filter(function (v) {
+        return v !== _this2.scout;
+      });
+
+      // Assign villagers from the available pool to a resource type.
+      // Stops excess workers and fills shortfall from the available pool.
+      var assignVillagersToResource = function assignVillagersToResource(villagersOnResource, resourceList, maxVillagers, actionCallback) {
+        // Stop workers above quota
+        for (var i = maxVillagers; i < villagersOnResource.length; i++) {
+          villagersOnResource[i].stop();
+        }
+        if (resourceList.size === 0) return;
+        var needed = Math.max(0, maxVillagers - villagersOnResource.length);
+        var toAssign = Math.min(needed, availableVillagers.length);
+        for (var _i = 0; _i < toAssign; _i++) {
+          var villager = availableVillagers.shift();
+          var resource = getClosestInstance(villager, resourceList);
+          actionCallback(villager, resource);
         }
       };
 
-      // Food Gathering Logic
-      assignVillagersToResource(villagersOnFood, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
+      // Food: berries first
+      assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
         villager.sendToBerrybush(bush);
       });
 
-      // Wood Gathering Logic
+      // Wood
       assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, function (villager, tree) {
         villager.sendToTree(tree);
       });
 
-      // Stone Gathering Logic
+      // Food fallback: send to empty farms when berries aren't covering the quota
+      var foodShortfall = Math.max(0, maxVillagersOnFood - villagersOnFood.length);
+      for (var i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
+        var villager = availableVillagers.shift();
+        villager.sendToFarm(emptyFarms[i]);
+      }
+
+      // Stone
       assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, function (villager, stone) {
         villager.sendToStone(stone);
       });
 
-      // Gold Gathering Logic
+      // Gold
       assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, function (villager, gold) {
         villager.sendToGold(gold);
       });
-      for (var i = 0; i < emptyFarms.length; i++) {
-        var villager = getClosestInstance(emptyFarms[i], inactifVillagers);
-        villager && villager.sendToFarm(emptyFarms[i]);
-      }
 
-      // Construction Logic
+      // Construction
       if (notBuiltBuildings.length) {
-        var _iterator = ai_createForOfIteratorHelper(notBuiltBuildings),
-          _step;
+        var _iterator7 = ai_createForOfIteratorHelper(notBuiltBuildings),
+          _step7;
         try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var building = _step.value;
-            if (builderVillagers.length >= maxVillagersOnConstruction) break;
-            var availableVillagers = villagers.filter(function (v) {
-              return v.work !== WORK_TYPES.builder || v.inactif;
-            });
-            var _villager = getClosestInstance(building, availableVillagers);
-            if (_villager) {
-              console.log('Villager sent to build:', building);
-              _villager.sendToBuilding(building);
-            }
+          var _loop = function _loop() {
+              var building = _step7.value;
+              if (builderVillagers.length >= maxVillagersOnConstruction) return 0; // break
+              if (availableVillagers.length === 0) return 0; // break
+              var villager = getClosestInstance(building, availableVillagers);
+              if (villager) {
+                console.log('Villager sent to build:', building);
+                villager.sendToBuilding(building);
+                availableVillagers = availableVillagers.filter(function (v) {
+                  return v !== villager;
+                });
+              }
+            },
+            _ret;
+          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+            _ret = _loop();
+            if (_ret === 0) break;
           }
         } catch (err) {
-          _iterator.e(err);
+          _iterator7.e(err);
         } finally {
-          _iterator.f();
+          _iterator7.f();
         }
       }
 
-      // Attack Logic
-      var sendToAttack = function sendToAttack(clubmans, target) {
-        console.log('Sending clubmans to attack:', target);
-        clubmans.forEach(function (clubman) {
-          return clubman.sendTo(target, ACTION_TYPES.attack);
+      // Attack helpers
+      var sendToAttack = function sendToAttack(soldiers, target) {
+        console.log('Sending soldiers to attack:', target);
+        soldiers.forEach(function (c) {
+          c.assault = true;
+          c.sendTo(target, ACTION_TYPES.attack);
         });
       };
+
+      // Pick the best enemy target (prefer TC, then any building)
+      var getBestEnemyTarget = function getBestEnemyTarget() {
+        return ai_toConsumableArray(_this2.foundedEnemyBuildings).find(function (b) {
+          return b.type === BUILDING_TYPES.townCenter;
+        }) || _this2.foundedEnemyBuildings.values().next().value;
+      };
+
+      // Defensive reaction: enemy units spotted → send idle soldiers to defend
+      if (this.foundedEnemyUnits.size > 0 && waitingClubmans.length > 0) {
+        var enemyUnit = ai_toConsumableArray(this.foundedEnemyUnits).find(function (u) {
+          return u.hitPoints > 0;
+        });
+        if (enemyUnit) {
+          console.log('Enemy units spotted! Defending...');
+          sendToAttack(waitingClubmans, enemyUnit);
+        }
+      }
+
+      // Attack wave: enough soldiers accumulated → launch assault
       if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
-        var target = this.foundedEnemyBuildings.values().next().value || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
-        console.log('Clubman attack target:', target);
+        var target = getBestEnemyTarget() || map.grid[maths_randomRange(0, map.grid.length - 1)][maths_randomRange(0, map.grid[0].length - 1)];
+        console.log('Launching attack wave! Target:', target);
         sendToAttack(waitingClubmans, target);
       }
+
+      // Soldiers that finished an assault → redirect to next enemy building
       if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
-        console.log('Inactif clubmans attacking founded enemy building...');
-        sendToAttack(inactifClubmans, this.foundedEnemyBuildings.values().next().value);
+        var _target = getBestEnemyTarget();
+        if (_target) {
+          console.log('Redirecting assault soldiers to:', _target);
+          sendToAttack(inactifClubmans, _target);
+        }
       }
 
-      // Unit Purchasing Logic
+      // Unit Purchasing
       var buyUnits = function buyUnits(currentCount, maxCount, buildingList, unitType, extra) {
-        // Calculate how many more units can be bought
         var unitsNeeded = maxCount - currentCount;
         var unitsBought = 0;
-        if (unitsNeeded <= 0) {
-          return;
-        }
-        // Iterate over the buildings until we reach the needed count
-        var _iterator2 = ai_createForOfIteratorHelper(buildingList),
-          _step2;
+        if (unitsNeeded <= 0) return;
+        var _iterator8 = ai_createForOfIteratorHelper(buildingList),
+          _step8;
         try {
-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var _building = _step2.value;
-            if (unitsBought >= unitsNeeded) break; // Stop if we've bought enough units
-
-            if (_building && _building.buyUnit(unitType, false, false, extra)) {
+          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+            var building = _step8.value;
+            if (unitsBought >= unitsNeeded) break;
+            if (building && building.buyUnit(unitType, false, false, extra)) {
               unitsBought++;
-              console.log("Buying ".concat(unitType, " from ").concat(_building.type, ", Total Bought: ").concat(unitsBought));
+              console.log("Buying ".concat(unitType, " from ").concat(building.type, ", Total Bought: ").concat(unitsBought));
             }
           }
         } catch (err) {
-          _iterator2.e(err);
+          _iterator8.e(err);
         } finally {
-          _iterator2.f();
+          _iterator8.f();
         }
       };
       buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
       buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman);
 
-      // Building Purchasing Logic
+      // Building Purchasing
       var buyBuildingIfNeeded = function buyBuildingIfNeeded(condition, buildingType, positionCallback) {
         var list = {
           House: houses,
@@ -5483,12 +5585,12 @@ var AI = /*#__PURE__*/function (_Player) {
         }
       };
 
-      // Buy House
+      // House
       buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0);
       });
 
-      // Buy Barracks
+      // Barracks
       buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return _this2.otherPlayers().every(function (player) {
@@ -5497,7 +5599,7 @@ var AI = /*#__PURE__*/function (_Player) {
         });
       });
 
-      // Buy Markets
+      // Market
       buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return _this2.otherPlayers().every(function (player) {
@@ -5506,55 +5608,51 @@ var AI = /*#__PURE__*/function (_Player) {
         });
       });
 
-      // Buy Farm
+      // Farm
       buyBuildingIfNeeded(true, BUILDING_TYPES.farm, function () {
-        var buildings = [].concat(ai_toConsumableArray(granarys), ai_toConsumableArray(towncenters)); // Combine both granarys and towncenters
-        var _iterator3 = ai_createForOfIteratorHelper(buildings),
-          _step3;
+        var buildings = [].concat(ai_toConsumableArray(granarys), ai_toConsumableArray(towncenters));
+        var _iterator9 = ai_createForOfIteratorHelper(buildings),
+          _step9;
         try {
-          var _loop = function _loop() {
-              var building = _step3.value;
-              // Try to find a valid position around each building
+          var _loop2 = function _loop2() {
+              var building = _step9.value;
               var position = getPositionInGridAroundInstance(building, map.grid, [2, 10], 2, false, function (cell) {
                 return _this2.otherPlayers().every(function (player) {
                   return maths_instancesDistance(cell, player) <= maths_instancesDistance(building, player);
                 });
               }, false);
-              if (position) {
-                return {
-                  v: position
-                }; // If a valid position is found, return and break the loop
-              }
+              if (position) return {
+                v: position
+              };
             },
-            _ret;
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            _ret = _loop();
-            if (_ret) return _ret.v;
+            _ret2;
+          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+            _ret2 = _loop2();
+            if (_ret2) return _ret2.v;
           }
         } catch (err) {
-          _iterator3.e(err);
+          _iterator9.e(err);
         } finally {
-          _iterator3.f();
+          _iterator9.f();
         }
-        return null; // If no valid position is found after looping through all buildings
+        return null;
       });
 
-      // Unit Purchasing Logic
+      // Tech / Age Up
       var buyTechnology = function buyTechnology(buildingList, technologyType) {
-        // Iterate over the buildings until we reach the needed count
-        var _iterator4 = ai_createForOfIteratorHelper(buildingList),
-          _step4;
+        var _iterator0 = ai_createForOfIteratorHelper(buildingList),
+          _step0;
         try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var _building2 = _step4.value;
-            if (_building2 && _building2.buyTechnology(technologyType)) {
-              console.log("Buying ".concat(technologyType, " from ").concat(_building2.type));
+          for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
+            var building = _step0.value;
+            if (building && building.buyTechnology(technologyType)) {
+              console.log("Buying ".concat(technologyType, " from ").concat(building.type));
             }
           }
         } catch (err) {
-          _iterator4.e(err);
+          _iterator0.e(err);
         } finally {
-          _iterator4.f();
+          _iterator0.f();
         }
       };
       if (this.nextAge[this.age + 1]) {
@@ -6388,6 +6486,30 @@ var NEIGHBOR_SIDES = {
   '1,0': 'SE'
 };
 
+// Inner-corner: diagonal neighbor in fog, both shared cardinals visible
+// → draw a small dither patch at the diamond tip between the two cardinal edges
+var CORNER_DATA = {
+  '-1,-1': {
+    corner: 'N',
+    adj: [[-1, 0], [0, -1]]
+  },
+  // N tip  (NW∩NE)
+  '1,-1': {
+    corner: 'E',
+    adj: [[0, -1], [1, 0]]
+  },
+  // E tip  (NE∩SE)
+  '1,1': {
+    corner: 'S',
+    adj: [[1, 0], [0, 1]]
+  },
+  // S tip  (SE∩SW)
+  '-1,1': {
+    corner: 'W',
+    adj: [[0, 1], [-1, 0]]
+  } // W tip  (SW∩NW)
+};
+
 // Cache keyed by sorted sides e.g. 'NE|NW|SW'
 var _ditherTextures = {};
 var _fogTexture = null;
@@ -6416,13 +6538,18 @@ function getFogTexture() {
   return _fogTexture;
 }
 
-// sides = Set of 'NW','NE','SE','SW'
+// sides = Set of 'NW','NE','SE','SW', corners = Set of 'N','E','S','W'
 // ONE combined texture — zero overlap possible
 function getDitherTexture(sides) {
-  var key = ['NW', 'NE', 'SE', 'SW'].filter(function (s) {
+  var corners = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Set();
+  var sidesKey = ['NW', 'NE', 'SE', 'SW'].filter(function (s) {
     return sides.has(s);
   }).join('|');
-  if (!key) return null;
+  var cornersKey = ['N', 'E', 'S', 'W'].filter(function (c) {
+    return corners.has(c);
+  }).join('|');
+  if (!sidesKey && !cornersKey) return null;
+  var key = sidesKey + (cornersKey ? '|C:' + cornersKey : '');
   if (_ditherTextures[key]) return _ditherTextures[key];
   var canvas = document.createElement('canvas');
   canvas.width = _DW;
@@ -6432,23 +6559,21 @@ function getDitherTexture(sides) {
   for (var px = 0; px < _DW; px++) {
     for (var py = 0; py < _DH; py++) {
       if (!_insideDiamond(px, py)) continue;
+      var dNW = px + 2 * py - 32;
+      var dNE = 32 - (px - 2 * py);
+      var dSE = 96 - (px + 2 * py);
+      var dSW = px - 2 * py + 32;
       var inBand = false;
-      if (sides.has('NW') && !inBand) {
-        var d = px + 2 * py - 32;
-        if (d >= 0 && d <= K) inBand = true;
-      }
-      if (sides.has('NE') && !inBand) {
-        var _d = 32 - (px - 2 * py);
-        if (_d >= 0 && _d <= K) inBand = true;
-      }
-      if (sides.has('SE') && !inBand) {
-        var _d2 = 96 - (px + 2 * py);
-        if (_d2 >= 0 && _d2 <= K) inBand = true;
-      }
-      if (sides.has('SW') && !inBand) {
-        var _d3 = px - 2 * py + 32;
-        if (_d3 >= 0 && _d3 <= K) inBand = true;
-      }
+      if (sides.has('NW') && !inBand && dNW >= 0 && dNW <= K) inBand = true;
+      if (sides.has('NE') && !inBand && dNE >= 0 && dNE <= K) inBand = true;
+      if (sides.has('SE') && !inBand && dSE >= 0 && dSE <= K) inBand = true;
+      if (sides.has('SW') && !inBand && dSW >= 0 && dSW <= K) inBand = true;
+
+      // Inner-corner tips: both adjacent edge distances must be small
+      if (corners.has('N') && !inBand && dNW >= 0 && dNW <= K && dNE >= 0 && dNE <= K) inBand = true;
+      if (corners.has('E') && !inBand && dNE >= 0 && dNE <= K && dSE >= 0 && dSE <= K) inBand = true;
+      if (corners.has('S') && !inBand && dSE >= 0 && dSE <= K && dSW >= 0 && dSW <= K) inBand = true;
+      if (corners.has('W') && !inBand && dSW >= 0 && dSW <= K && dNW >= 0 && dNW <= K) inBand = true;
       if (!inBand) continue;
       if ((px + py) % 2 !== 0) continue;
       ctx.fillStyle = '#000';
@@ -6481,6 +6606,8 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.corpses = new Set();
     _this.fogSprites = [];
     _this._ditherSprite = null;
+    _this._fogOverlay = null;
+    _this._hasFog = false;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
@@ -6771,11 +6898,10 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "_updateEdgeDither",
     value: function _updateEdgeDither() {
+      var _this6 = this;
       var needed = new Set();
-      var hasFogOverlay = this.children.some(function (c) {
-        return c.label === LABEL_TYPES.fogOverlay;
-      });
-      if (this.visible && this.viewBy.size > 0 && !hasFogOverlay) {
+      var neededCorners = new Set();
+      if (this.visible && this.viewBy.size > 0 && !this._hasFog) {
         var grid = this.context.map.grid;
         for (var _i = 0, _Object$entries = Object.entries(NEIGHBOR_SIDES); _i < _Object$entries.length; _i++) {
           var _grid;
@@ -6787,26 +6913,52 @@ var Cell = /*#__PURE__*/function (_Container) {
             di = _key$split$map2[0],
             dj = _key$split$map2[1];
           var n = (_grid = grid[this.i + di]) === null || _grid === void 0 ? void 0 : _grid[this.j + dj];
-          var neighborInFog = !n || n.children.some(function (c) {
-            return c.label === LABEL_TYPES.fogOverlay;
-          });
-          if (neighborInFog) needed.add(side);
+          if (!n || n._hasFog) needed.add(side);
+        }
+        // Inner-corner: diagonal in fog but both shared cardinals visible
+        for (var _i2 = 0, _Object$entries2 = Object.entries(CORNER_DATA); _i2 < _Object$entries2.length; _i2++) {
+          var _grid2;
+          var _Object$entries2$_i = cell_slicedToArray(_Object$entries2[_i2], 2),
+            _key = _Object$entries2$_i[0],
+            _Object$entries2$_i$ = _Object$entries2$_i[1],
+            corner = _Object$entries2$_i$.corner,
+            adj = _Object$entries2$_i$.adj;
+          var _key$split$map3 = _key.split(',').map(Number),
+            _key$split$map4 = cell_slicedToArray(_key$split$map3, 2),
+            _di = _key$split$map4[0],
+            _dj = _key$split$map4[1];
+          var diag = (_grid2 = grid[this.i + _di]) === null || _grid2 === void 0 ? void 0 : _grid2[this.j + _dj];
+          if (!diag || diag._hasFog) {
+            var bothVisible = adj.every(function (_ref) {
+              var _grid3;
+              var _ref2 = cell_slicedToArray(_ref, 2),
+                cdi = _ref2[0],
+                cdj = _ref2[1];
+              var cn = (_grid3 = grid[_this6.i + cdi]) === null || _grid3 === void 0 ? void 0 : _grid3[_this6.j + cdj];
+              return cn && !cn._hasFog;
+            });
+            if (bothVisible) neededCorners.add(corner);
+          }
         }
       }
-      if (needed.size > 0) {
-        var texture = getDitherTexture(needed);
+      var fogLayer = this.context.map.fogLayer;
+      if (!fogLayer) return;
+      if (needed.size > 0 || neededCorners.size > 0) {
+        var texture = getDitherTexture(needed, neededCorners);
         if (!this._ditherSprite) {
           this._ditherSprite = new lib/* Sprite */.kxk(texture);
           this._ditherSprite.label = LABEL_TYPES.dither;
           this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH);
           this._ditherSprite.eventMode = 'none';
-          this.addChild(this._ditherSprite);
+          this._ditherSprite.x = this.x;
+          this._ditherSprite.y = this.y;
+          fogLayer.addChild(this._ditherSprite);
         } else {
           this._ditherSprite.texture = texture;
         }
       } else {
         if (this._ditherSprite) {
-          this.removeChild(this._ditherSprite);
+          fogLayer.removeChild(this._ditherSprite);
           this._ditherSprite = null;
         }
       }
@@ -6814,39 +6966,29 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "setFog",
     value: function setFog(init) {
-      if (this.has) {
+      if (this.has && !this.has.isDead) {
         this.setFogChildren(this.has, init);
       }
-      if (!this.children.find(function (c) {
-        return c.label === LABEL_TYPES.fogOverlay;
-      })) {
+      if (!this._hasFog && this.context.map.fogLayer) {
+        this._hasFog = true;
         var overlay = new lib/* Sprite */.kxk(getFogTexture());
         overlay.label = LABEL_TYPES.fogOverlay;
         overlay.anchor.set(_DAX / _DW, _DAY / _DH);
         overlay.eventMode = 'none';
-        this.addChild(overlay);
+        overlay.x = this.x;
+        overlay.y = this.y;
+        this.context.map.fogLayer.addChild(overlay);
+        this._fogOverlay = overlay;
       }
       // This cell goes fog: remove its dither ring, update visible neighbors
       this._updateEdgeDither();
       var grid = this.context.map.grid;
       for (var di = -1; di <= 1; di++) {
         for (var dj = -1; dj <= 1; dj++) {
-          var _grid2;
+          var _grid4;
           if (di === 0 && dj === 0) continue;
-          (_grid2 = grid[this.i + di]) === null || _grid2 === void 0 || (_grid2 = _grid2[this.j + dj]) === null || _grid2 === void 0 || _grid2._updateEdgeDither();
+          (_grid4 = grid[this.i + di]) === null || _grid4 === void 0 || (_grid4 = _grid4[this.j + dj]) === null || _grid4 === void 0 || _grid4._updateEdgeDither();
         }
-      }
-      var _iterator2 = cell_createForOfIteratorHelper(this.corpses),
-        _step2;
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var corpse = _step2.value;
-          this.setFogChildren(corpse, init);
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
       }
     }
   }, {
@@ -6867,36 +7009,36 @@ var Cell = /*#__PURE__*/function (_Container) {
         this.visible = true;
       }
       this.zIndex = 0;
-      for (var i = this.children.length - 1; i >= 0; i--) {
-        if (this.children[i].label === LABEL_TYPES.fogOverlay) {
-          this.removeChild(this.children[i]);
-        }
+      if (this._hasFog) {
+        this._hasFog = false;
+        this.context.map.fogLayer.removeChild(this._fogOverlay);
+        this._fogOverlay = null;
       }
       // This cell is now visible: check edge dither for self and neighbors
       this._updateEdgeDither();
       var grid = this.context.map.grid;
       for (var di = -1; di <= 1; di++) {
         for (var dj = -1; dj <= 1; dj++) {
-          var _grid3;
+          var _grid5;
           if (di === 0 && dj === 0) continue;
-          (_grid3 = grid[this.i + di]) === null || _grid3 === void 0 || (_grid3 = _grid3[this.j + dj]) === null || _grid3 === void 0 || _grid3._updateEdgeDither();
+          (_grid5 = grid[this.i + di]) === null || _grid5 === void 0 || (_grid5 = _grid5[this.j + dj]) === null || _grid5 === void 0 || _grid5._updateEdgeDither();
         }
       }
       if (this.has) {
         this.removeFogBuilding(this.has);
         setRemoveChildren(this.has);
       }
-      var _iterator3 = cell_createForOfIteratorHelper(this.corpses),
-        _step3;
+      var _iterator2 = cell_createForOfIteratorHelper(this.corpses),
+        _step2;
       try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var corpse = _step3.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var corpse = _step2.value;
           setRemoveChildren(corpse);
         }
       } catch (err) {
-        _iterator3.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator3.f();
+        _iterator2.f();
       }
     }
   }]);
@@ -6951,7 +7093,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.grid = [];
     _this.sortableChildren = true;
     _this.allTechnologies = false;
-    _this.noAI = true;
+    _this.noAI = false;
     _this.devMode = false;
     _this.revealEverything = _this.devMode || false;
     _this.revealTerrain = _this.devMode || false;
@@ -6993,6 +7135,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
         controls = _this$context.controls;
       this.removeChildren();
       this.size = map.length - 1;
+      this.fogLayer = new lib/* Container */.mcf();
+      this.fogLayer.eventMode = 'none';
+      this.fogLayer.zIndex = 1e9;
       this.gaia = new Gaia(this.context);
       for (var i = 0; i <= this.size; i++) {
         var line = map[i];
@@ -7010,9 +7155,6 @@ var map_Map = /*#__PURE__*/function (_Container) {
           }, this.context);
           this.addChild(newCell);
           this.grid[i][j] = newCell;
-          if (!this.revealEverything) {
-            this.grid[i][j].setFog();
-          }
         }
       }
       for (var _i = 0; _i <= this.size; _i++) {
@@ -7026,6 +7168,16 @@ var map_Map = /*#__PURE__*/function (_Container) {
       this.formatCellsRelief();
       this.formatCellsWaterBorder();
       this.formatCellsDesert();
+
+      // fogLayer is added last so it always renders above units, buildings, corpses
+      this.addChild(this.fogLayer);
+      if (!this.revealEverything) {
+        for (var _i2 = 0; _i2 <= this.size; _i2++) {
+          for (var _j2 = 0; _j2 <= this.size; _j2++) {
+            this.grid[_i2][_j2].setFog();
+          }
+        }
+      }
       this.context.players = players.map(function (player) {
         var p = new classMap[player.type](map_objectSpread(map_objectSpread({}, player), {}, {
           corpses: [],
@@ -7085,10 +7237,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
         return processUnit(animal, _this2);
       });
       this.context.players.forEach(function (player) {
-        for (var _i2 = 0; _i2 <= _this2.size; _i2++) {
-          var _line = player.views[_i2];
-          for (var _j2 = 0; _j2 <= _this2.size; _j2++) {
-            var _cell = _line[_j2];
+        for (var _i3 = 0; _i3 <= _this2.size; _i3++) {
+          var _line = player.views[_i3];
+          for (var _j3 = 0; _j3 <= _this2.size; _j3++) {
+            var _cell = _line[_j3];
             if (_cell.viewed) {
               _cell.onViewed();
             }
@@ -7097,9 +7249,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
             }).filter(Boolean));
             if (player.isPlayed && _cell.viewed) {
               if (!_cell.viewBy.size) {
-                _this2.grid[_i2][_j2].setFog(true);
+                _this2.grid[_i3][_j3].setFog(true);
               } else {
-                _this2.grid[_i2][_j2].removeFog();
+                _this2.grid[_i3][_j3].removeFog();
               }
             }
           }
@@ -7159,18 +7311,22 @@ var map_Map = /*#__PURE__*/function (_Container) {
       //this.formatCellsRelief()
 
       this.generateSets();
+      this.fogLayer = new lib/* Container */.mcf();
+      this.fogLayer.eventMode = 'none';
+      this.fogLayer.zIndex = 1e9;
+      this.addChild(this.fogLayer);
       if (!this.revealEverything) {
         for (var i = 0; i <= this.size; i++) {
           for (var j = 0; j <= this.size; j++) {
             this.grid[i][j].setFog();
           }
         }
-        for (var _i3 = 0; _i3 < player.buildings.length; _i3++) {
-          var building = player.buildings[_i3];
+        for (var _i4 = 0; _i4 < player.buildings.length; _i4++) {
+          var building = player.buildings[_i4];
           updateInstanceVisibility(building);
         }
-        for (var _i4 = 0; _i4 < player.units.length; _i4++) {
-          var unit = player.units[_i4];
+        for (var _i5 = 0; _i5 < player.units.length; _i5++) {
+          var unit = player.units[_i5];
           updateInstanceVisibility(unit);
         }
       }
@@ -7189,13 +7345,13 @@ var map_Map = /*#__PURE__*/function (_Container) {
         poses.push(pos);
         randoms.splice(randoms.indexOf(pos), 1);
       }
-      for (var _i5 = 0; _i5 < this.positionsCount; _i5++) {
+      for (var _i6 = 0; _i6 < this.positionsCount; _i6++) {
         var _this$playersPos$pose, _this$playersPos$pose2;
-        var posI = (_this$playersPos$pose = this.playersPos[poses[_i5]]) === null || _this$playersPos$pose === void 0 ? void 0 : _this$playersPos$pose.i;
-        var posJ = (_this$playersPos$pose2 = this.playersPos[poses[_i5]]) === null || _this$playersPos$pose2 === void 0 ? void 0 : _this$playersPos$pose2.j;
+        var posI = (_this$playersPos$pose = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose === void 0 ? void 0 : _this$playersPos$pose.i;
+        var posJ = (_this$playersPos$pose2 = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose2 === void 0 ? void 0 : _this$playersPos$pose2.j;
         if (posI && posJ) {
-          var color = colors[_i5];
-          if (!_i5) {
+          var color = colors[_i6];
+          if (!_i6) {
             players.push(new Human({
               i: posI,
               j: posJ,
@@ -7231,7 +7387,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           type: BUILDING_TYPES.townCenter,
           isBuilt: true
         });
-        for (var _i6 = 0; _i6 < this.startingUnits; _i6++) {
+        for (var _i7 = 0; _i7 < this.startingUnits; _i7++) {
           towncenter.placeUnit(UNIT_TYPES.villager);
         }
       }
@@ -7417,7 +7573,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
       // Select and place trees in the forest cells
       var cellsToPlace = [];
-      for (var _i7 = 0; _i7 < treeCount; _i7++) {
+      for (var _i8 = 0; _i8 < treeCount; _i8++) {
         if (forestCells.length === 0) break;
         var itemIndex = Math.floor(Math.random() * forestCells.length);
         var cell = forestCells[itemIndex];
@@ -7427,7 +7583,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
       // Place the trees in the selected cells
       var _loop = function _loop() {
-        var cell = _cellsToPlace[_i8];
+        var cell = _cellsToPlace[_i9];
         // Ensure again that we're not placing trees on Water, Border, or Solid cells
         if (grid[cell.i][cell.j].category !== 'Water' && !grid[cell.i][cell.j].waterBorder && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
           var isFree = true;
@@ -7444,7 +7600,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           }, _this3.context)));
         }
       };
-      for (var _i8 = 0, _cellsToPlace = cellsToPlace; _i8 < _cellsToPlace.length; _i8++) {
+      for (var _i9 = 0, _cellsToPlace = cellsToPlace; _i9 < _cellsToPlace.length; _i9++) {
         _loop();
       }
     }
@@ -7481,11 +7637,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
       // Helper function to generate terrain clusters around a point
       function generateTerrainCluster(x, y, radius, type) {
-        for (var _i9 = -radius; _i9 <= radius; _i9++) {
-          for (var _j3 = -radius; _j3 <= radius; _j3++) {
-            var nx = x + _i9;
-            var ny = y + _j3;
-            if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && _i9 * _i9 + _j3 * _j3 <= radius * radius) {
+        for (var _i0 = -radius; _i0 <= radius; _i0++) {
+          for (var _j4 = -radius; _j4 <= radius; _j4++) {
+            var nx = x + _i0;
+            var ny = y + _j4;
+            if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && _i0 * _i0 + _j4 * _j4 <= radius * radius) {
               terrainMap[nx][ny] = type;
             }
           }
@@ -7499,16 +7655,16 @@ var map_Map = /*#__PURE__*/function (_Container) {
           var roundFactor = 0.15; // Controls the "smoothness" of the water edge
 
           // Loop through the map and set water in a rounded pattern with random noise
-          for (var _i0 = 0; _i0 < gridSize; _i0++) {
-            for (var _j4 = 0; _j4 < gridSize; _j4++) {
-              var distFromCenter = Math.abs(_i0 - gridSize / 2) + Math.abs(_j4 - gridSize / 2); // Distance from center
+          for (var _i1 = 0; _i1 < gridSize; _i1++) {
+            for (var _j5 = 0; _j5 < gridSize; _j5++) {
+              var distFromCenter = Math.abs(_i1 - gridSize / 2) + Math.abs(_j5 - gridSize / 2); // Distance from center
 
               // Add smooth water around the edges with randomized borders
-              var edgeDist = Math.min(_i0, _j4, gridSize - _i0, gridSize - _j4);
+              var edgeDist = Math.min(_i1, _j5, gridSize - _i1, gridSize - _j5);
               var randomOffset = Math.random() * 5 - 2.5; // Randomize water edge for more natural look
 
               if (edgeDist < edgeSize + Math.sin(distFromCenter * roundFactor) * 5 + randomOffset) {
-                terrainMap[_i0][_j4] = 2; // Water
+                terrainMap[_i1][_j5] = 2; // Water
               }
             }
           }
@@ -7519,11 +7675,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
           var _roundFactor = 0.6; // Adjust this for more/less rounding
 
           // Create a lake with a smoother, randomized border
-          for (var _i1 = -baseRadius; _i1 <= baseRadius; _i1++) {
-            for (var _j5 = -baseRadius; _j5 <= baseRadius; _j5++) {
-              var nx = centerX + _i1;
-              var ny = centerY + _j5;
-              var distanceFromCenter = Math.sqrt(_i1 * _i1 + _j5 * _j5);
+          for (var _i10 = -baseRadius; _i10 <= baseRadius; _i10++) {
+            for (var _j6 = -baseRadius; _j6 <= baseRadius; _j6++) {
+              var nx = centerX + _i10;
+              var ny = centerY + _j6;
+              var distanceFromCenter = Math.sqrt(_i10 * _i10 + _j6 * _j6);
               var noise = Math.sin(distanceFromCenter * _roundFactor) * 2; // Create smooth noise
               var _randomOffset = Math.random() * 3 - 1.5; // Add randomness to the lake shape
 
@@ -7547,7 +7703,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
       // Generic function to generate clustered terrain types
       function generateClusters(type, clusterCount, clusterSizeMin, clusterSizeMax) {
-        for (var _i10 = 0; _i10 < clusterCount; _i10++) {
+        for (var _i11 = 0; _i11 < clusterCount; _i11++) {
           var clusterX = Math.floor(Math.random() * gridSize);
           var clusterY = Math.floor(Math.random() * gridSize);
           var radius = Math.floor(Math.random() * (clusterSizeMax - clusterSizeMin)) + clusterSizeMin;
@@ -7597,9 +7753,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Post-processing
-      for (var _i11 = 0; _i11 <= this.size; _i11++) {
-        for (var _j6 = 0; _j6 <= this.size; _j6++) {
-          this.grid[_i11][_j6].fillWaterCellsAroundCell();
+      for (var _i12 = 0; _i12 <= this.size; _i12++) {
+        for (var _j7 = 0; _j7 <= this.size; _j7++) {
+          this.grid[_i12][_j7].fillWaterCellsAroundCell();
         }
       }
       this.formatCellsWaterBorder();
@@ -7693,13 +7849,13 @@ var map_Map = /*#__PURE__*/function (_Container) {
           _loop2();
         }
       }
-      for (var _i12 = 0; _i12 <= this.size; _i12++) {
+      for (var _i13 = 0; _i13 <= this.size; _i13++) {
         var _loop3 = function _loop3() {
-          var cell = _this4.grid[_i12][_j7];
+          var cell = _this4.grid[_i13][_j8];
           if (cell.z === 1) {
             var toRemove = true;
             var cpt = 0;
-            if (getCellsAroundPoint(_i12, _j7, _this4.grid, 1, function (cell) {
+            if (getCellsAroundPoint(_i13, _j8, _this4.grid, 1, function (cell) {
               if (cell.z > 0) {
                 cpt++;
               }
@@ -7712,14 +7868,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
             }
           }
         };
-        for (var _j7 = 0; _j7 <= this.size; _j7++) {
+        for (var _j8 = 0; _j8 <= this.size; _j8++) {
           _loop3();
         }
       }
       // Format cell's relief
-      for (var _i13 = 0; _i13 <= this.size; _i13++) {
-        for (var _j8 = 0; _j8 <= this.size; _j8++) {
-          var cell = this.grid[_i13][_j8];
+      for (var _i14 = 0; _i14 <= this.size; _i14++) {
+        for (var _j9 = 0; _j9 <= this.size; _j9++) {
+          var cell = this.grid[_i14][_j9];
           cell.fillReliefCellsAroundCell();
         }
       }
@@ -7928,8 +8084,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Place resources in the selected cells
-      for (var _i14 = 0, _cellsToPlace2 = cellsToPlace; _i14 < _cellsToPlace2.length; _i14++) {
-        var _cell2 = _cellsToPlace2[_i14];
+      for (var _i15 = 0, _cellsToPlace2 = cellsToPlace; _i15 < _cellsToPlace2.length; _i15++) {
+        var _cell2 = _cellsToPlace2[_i15];
         this.resources.add(this.addChild(new Resource({
           i: _cell2.i,
           j: _cell2.j,
@@ -8134,22 +8290,28 @@ var Menu = /*#__PURE__*/function () {
     key: "getMinimapFactor",
     value: function getMinimapFactor() {
       var map = this.context.map;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      return mapWidth / 234 * 2;
+      return (CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2) / 234 * 2;
+    }
+  }, {
+    key: "getMinimapParams",
+    value: function getMinimapParams() {
+      var factor = this.getMinimapFactor() / this.miniMapAlpha;
+      var translate = (CELL_WIDTH / 2 + this.context.map.size * CELL_WIDTH / 2) / 2 / factor;
+      return {
+        factor: factor,
+        translate: translate
+      };
     }
   }, {
     key: "initMiniMap",
     value: function initMiniMap() {
+      var _this$getMinimapParam = this.getMinimapParams(),
+        translate = _this$getMinimapParam.translate;
+      for (var _i = 0, _arr = [this.terrainMinimap, this.cameraMinimap, this.resourcesMinimap]; _i < _arr.length; _i++) {
+        var canvas = _arr[_i];
+        canvas.getContext('2d').translate(translate, 0);
+      }
       var map = this.context.map;
-      var context = this.terrainMinimap.getContext('2d');
-      var cameraContext = this.cameraMinimap.getContext('2d');
-      var resourceContext = this.resourcesMinimap.getContext('2d');
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
-      context.translate(translate, 0);
-      cameraContext.translate(translate, 0);
-      resourceContext.translate(translate, 0);
       if (map.revealEverything || map.revealTerrain) {
         this.revealTerrainMinimap();
       }
@@ -8160,16 +8322,14 @@ var Menu = /*#__PURE__*/function () {
       var map = this.context.map;
       var canvas = this.terrainMinimap;
       var context = canvas.getContext('2d');
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
+      var _this$getMinimapParam2 = this.getMinimapParams(),
+        factor = _this$getMinimapParam2.factor,
+        translate = _this$getMinimapParam2.translate;
       context.clearRect(-translate, 0, canvas.width, canvas.height);
       for (var i = 0; i <= map.size; i++) {
         for (var j = 0; j <= map.size; j++) {
           var cell = map.grid[i][j];
-          var x = cell.x;
-          var y = cell.y;
-          canvasDrawDiamond(context, x / minimapFactor + translate, y / minimapFactor, CELL_WIDTH / minimapFactor + 1, CELL_HEIGHT / minimapFactor + 1, cell.color);
+          canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
         }
       }
     }
@@ -8179,14 +8339,11 @@ var Menu = /*#__PURE__*/function () {
       var map = this.context.map;
       var canvas = this.terrainMinimap;
       var context = canvas.getContext('2d');
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
+      var _this$getMinimapParam3 = this.getMinimapParams(),
+        factor = _this$getMinimapParam3.factor,
+        translate = _this$getMinimapParam3.translate;
       var cell = map.grid[i][j];
-      var color = cell.color;
-      var x = cell.x;
-      var y = cell.y;
-      canvasDrawDiamond(context, x / minimapFactor + translate, y / minimapFactor, CELL_WIDTH / minimapFactor + 1, CELL_HEIGHT / minimapFactor + 1, color);
+      canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
       if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
         this.updateResourceMiniMap(cell.has);
       }
@@ -8194,16 +8351,12 @@ var Menu = /*#__PURE__*/function () {
   }, {
     key: "updateResourceMiniMap",
     value: function updateResourceMiniMap(resource) {
-      var map = this.context.map;
-      var canvas = this.resourcesMinimap;
-      var context = canvas.getContext('2d');
+      var context = this.resourcesMinimap.getContext('2d');
+      var _this$getMinimapParam4 = this.getMinimapParams(),
+        factor = _this$getMinimapParam4.factor,
+        translate = _this$getMinimapParam4.translate;
       var squareSize = 4;
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
-      var finalX = resource.x / minimapFactor - squareSize / 2;
-      var finalY = resource.y / minimapFactor - squareSize / 2;
-      canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color);
+      canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
     }
   }, {
     key: "updateResourcesMiniMapEvt",
@@ -8213,18 +8366,16 @@ var Menu = /*#__PURE__*/function () {
         player = _this$context2.player;
       var canvas = this.resourcesMinimap;
       var context = canvas.getContext('2d');
+      var _this$getMinimapParam5 = this.getMinimapParams(),
+        factor = _this$getMinimapParam5.factor,
+        translate = _this$getMinimapParam5.translate;
       var squareSize = 4;
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
       context.clearRect(-translate, 0, canvas.width, canvas.height);
       map.resources.forEach(function (resource) {
         var _player$views;
         var cell = player === null || player === void 0 || (_player$views = player.views) === null || _player$views === void 0 || (_player$views = _player$views[resource.i]) === null || _player$views === void 0 ? void 0 : _player$views[resource.j];
         if (resource.color && (cell !== null && cell !== void 0 && cell.viewed || map.revealEverything)) {
-          var finalX = resource.x / minimapFactor - squareSize / 2;
-          var finalY = resource.y / minimapFactor - squareSize / 2;
-          canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, resource.color);
+          canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
         }
       });
     }
@@ -8233,70 +8384,57 @@ var Menu = /*#__PURE__*/function () {
     value: function updateCameraMiniMapEvt() {
       var _this$context3 = this.context,
         app = _this$context3.app,
-        map = _this$context3.map,
         controls = _this$context3.controls;
       var canvas = this.cameraMinimap;
       var context = canvas.getContext('2d');
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
+      var _this$getMinimapParam6 = this.getMinimapParams(),
+        factor = _this$getMinimapParam6.factor,
+        translate = _this$getMinimapParam6.translate;
       context.clearRect(-translate, 0, canvas.width, canvas.height);
-      var x = controls.camera.x / minimapFactor;
-      var y = controls.camera.y / minimapFactor;
-      var w = app.screen.width / minimapFactor;
-      var h = app.screen.height / minimapFactor;
-      canvasDrawStrokeRectangle(context, x + translate, y, w, h, 'white');
+      canvasDrawStrokeRectangle(context, controls.camera.x / factor + translate, controls.camera.y / factor, app.screen.width / factor, app.screen.height / factor, 'white');
     }
   }, {
     key: "updatePlayerMiniMapEvt",
     value: function updatePlayerMiniMapEvt(owner) {
-      if (!owner) {
-        return;
-      }
-      var map = this.context.map;
+      if (!owner) return;
       var squareSize = 4;
-      var playerMinimap = this.playersMinimap.find(function (_ref2) {
-        var id = _ref2.id;
-        return id === "minimap-".concat(owner.label);
-      });
+      var _this$getMinimapParam7 = this.getMinimapParams(),
+        factor = _this$getMinimapParam7.factor,
+        translate = _this$getMinimapParam7.translate;
       var color = owner.colorHex;
-      var canvas;
-      var context;
-      var minimapFactor = this.getMinimapFactor() / this.miniMapAlpha;
-      var mapWidth = CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2;
-      var translate = mapWidth / 2 / minimapFactor;
-      if (playerMinimap) {
-        canvas = playerMinimap.canvas;
-        context = playerMinimap.context;
+      var id = "minimap-".concat(owner.label);
+      var canvas, context;
+      var existing = this.playersMinimap.find(function (p) {
+        return p.id === id;
+      });
+      if (existing) {
+        canvas = existing.canvas;
+        context = existing.context;
       } else {
         canvas = document.createElement('canvas');
         context = canvas.getContext('2d');
         context.translate(translate, 0);
         this.playersMinimap.push({
-          id: "minimap-".concat(owner.label),
+          id: id,
           canvas: canvas,
           context: context
         });
         this.bottombarMap.appendChild(canvas);
       }
       context.clearRect(-translate, 0, canvas.width, canvas.height);
-      owner.buildings.forEach(function (_ref3) {
+      owner.buildings.forEach(function (_ref2) {
+        var x = _ref2.x,
+          y = _ref2.y,
+          size = _ref2.size,
+          selected = _ref2.selected;
+        var finalSize = squareSize + size;
+        canvasDrawRectangle(context, x / factor - finalSize / 2 + translate, y / factor - finalSize / 2, finalSize, finalSize, selected ? 'white' : color);
+      });
+      owner.units.forEach(function (_ref3) {
         var x = _ref3.x,
           y = _ref3.y,
-          size = _ref3.size,
           selected = _ref3.selected;
-        var finalSize = squareSize + size;
-        var finalX = x / minimapFactor - finalSize / 2;
-        var finalY = y / minimapFactor - finalSize / 2;
-        canvasDrawRectangle(context, finalX + translate, finalY, finalSize, finalSize, selected ? 'white' : color);
-      });
-      owner.units.forEach(function (_ref4) {
-        var x = _ref4.x,
-          y = _ref4.y,
-          selected = _ref4.selected;
-        var finalX = x / minimapFactor - squareSize / 2;
-        var finalY = y / minimapFactor - squareSize / 2;
-        canvasDrawRectangle(context, finalX + translate, finalY, squareSize, squareSize, selected ? 'white' : color);
+        canvasDrawRectangle(context, x / factor - squareSize / 2 + translate, y / factor - squareSize / 2, squareSize, squareSize, selected ? 'white' : color);
       });
     }
   }, {
@@ -8438,7 +8576,7 @@ var Menu = /*#__PURE__*/function () {
           } else if (selection.technology) {
             setMenuRecurs(selection, this.bottombarMenu, [{
               icon: 'assets/interface/50721/003_50721.png',
-              id: "".concat(type, "-cancel"),
+              id: "".concat(selection.technology, "-cancel"),
               onClick: function onClick(selection) {
                 sound_lib/* sound */.s3.play('5036');
                 selection.cancelTechnology();
@@ -8530,9 +8668,9 @@ var Menu = /*#__PURE__*/function () {
           cancel.id = "".concat(type, "-cancel");
           cancel.className = 'img';
           cancel.src = 'assets/interface/50721/003_50721.png';
-          if (!selection.queue.filter(function (q) {
+          if (!selection.queue.some(function (q) {
             return q === type;
-          }).length) {
+          })) {
             cancel.style.display = 'none';
           }
           cancel.addEventListener('pointerup', function () {
@@ -8647,14 +8785,10 @@ function controls_typeof(o) { "@babel/helpers - typeof"; return controls_typeof 
 function controls_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = controls_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function controls_slicedToArray(r, e) { return controls_arrayWithHoles(r) || controls_iterableToArrayLimit(r, e) || controls_unsupportedIterableToArray(r, e) || controls_nonIterableRest(); }
 function controls_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function controls_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return controls_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? controls_arrayLikeToArray(r, a) : void 0; } }
+function controls_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function controls_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function controls_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-function controls_toConsumableArray(r) { return controls_arrayWithoutHoles(r) || controls_iterableToArray(r) || controls_unsupportedIterableToArray(r) || controls_nonIterableSpread(); }
-function controls_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function controls_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return controls_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? controls_arrayLikeToArray(r, a) : void 0; } }
-function controls_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function controls_arrayWithoutHoles(r) { if (Array.isArray(r)) return controls_arrayLikeToArray(r); }
-function controls_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function controls_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function controls_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, controls_toPropertyKey(o.key), o); } }
 function controls_createClass(e, r, t) { return r && controls_defineProperties(e.prototype, r), t && controls_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -8671,6 +8805,7 @@ function controls_setPrototypeOf(t, e) { return controls_setPrototypeOf = Object
 
 
 
+var ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']);
 var Controls = /*#__PURE__*/function (_Container) {
   function Controls(context) {
     var _this;
@@ -8693,6 +8828,7 @@ var Controls = /*#__PURE__*/function (_Container) {
     _this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2));
     _this.mouseHoldTimeout;
     _this.keysPressed = {};
+    _this.keyPressedCount = 0;
     _this.keyInterval;
     _this.keySpeed = 0;
     _this.eventMode = 'auto';
@@ -8704,79 +8840,68 @@ var Controls = /*#__PURE__*/function (_Container) {
     _this.moveCameraInterval;
     _this.minimapRectangle = new lib/* Graphics */.A1g();
     _this.addChild(_this.minimapRectangle);
-    document.addEventListener('mousemove', function (evt) {
+    _this._onDocMouseMove = function (evt) {
       return _this.moveCameraWithMouse(evt);
-    });
-    document.addEventListener('mouseout', function () {
+    };
+    _this._onDocMouseOut = function () {
       return clearInterval(_this.moveCameraInterval);
-    });
-    document.addEventListener('keydown', function (evt) {
+    };
+    _this._onKeyDown = function (evt) {
       return _this.onKeyDown(evt);
-    });
-    document.addEventListener('keyup', function (evt) {
+    };
+    _this._onKeyUp = function (evt) {
       return _this.onKeyUp(evt);
-    });
-    gamebox.addEventListener('touchstart', function (evt) {
+    };
+    _this._onTouchStart = function (evt) {
       return _this.onTouchStart(evt);
-    });
-    gamebox.addEventListener('touchend', function (evt) {
+    };
+    _this._onTouchEnd = function (evt) {
       return _this.onTouchEnd(evt);
-    });
-    gamebox.addEventListener('touchmove', function (evt) {
+    };
+    _this._onTouchMove = function (evt) {
       return _this.onTouchMove(evt);
-    });
-    gamebox.addEventListener('mousemove', function (evt) {
+    };
+    _this._onMouseMove = function (evt) {
       return _this.onMouseMove(evt);
-    });
-    gamebox.addEventListener('mousedown', function (evt) {
+    };
+    _this._onMouseDown = function (evt) {
       return _this.onMouseDown(evt);
-    });
-    gamebox.addEventListener('mouseup', function (evt) {
+    };
+    _this._onMouseUp = function (evt) {
       return _this.onMouseUp(evt);
-    });
+    };
+    document.addEventListener('mousemove', _this._onDocMouseMove);
+    document.addEventListener('mouseout', _this._onDocMouseOut);
+    document.addEventListener('keydown', _this._onKeyDown);
+    document.addEventListener('keyup', _this._onKeyUp);
+    gamebox.addEventListener('touchstart', _this._onTouchStart);
+    gamebox.addEventListener('touchend', _this._onTouchEnd);
+    gamebox.addEventListener('touchmove', _this._onTouchMove);
+    gamebox.addEventListener('mousemove', _this._onMouseMove);
+    gamebox.addEventListener('mousedown', _this._onMouseDown);
+    gamebox.addEventListener('mouseup', _this._onMouseUp);
     return _this;
   }
   controls_inherits(Controls, _Container);
   return controls_createClass(Controls, [{
     key: "destroy",
     value: function destroy() {
-      var _this2 = this;
       var gamebox = this.context.gamebox;
-      document.removeEventListener('mousemove', function (evt) {
-        return _this2.moveCameraWithMouse(evt);
-      });
-      document.removeEventListener('mouseout', function () {
-        return clearInterval(_this2.moveCameraInterval);
-      });
-      document.removeEventListener('keydown', function (evt) {
-        return _this2.onKeyDown(evt);
-      });
-      document.removeEventListener('keyup', function (evt) {
-        return _this2.onKeyUp(evt);
-      });
-      gamebox.removeEventListener('touchstart', function (evt) {
-        return _this2.onTouchStart(evt);
-      });
-      gamebox.removeEventListener('touchend', function (evt) {
-        return _this2.onTouchEnd(evt);
-      });
-      gamebox.removeEventListener('touchmove', function (evt) {
-        return _this2.onTouchMove(evt);
-      });
-      gamebox.removeEventListener('mousemove', function (evt) {
-        return _this2.onMouseMove(evt);
-      });
-      gamebox.removeEventListener('mousedown', function (evt) {
-        return _this2.onMouseDown(evt);
-      });
-      gamebox.removeEventListener('mouseup', function (evt) {
-        return _this2.onMouseUp(evt);
-      });
+      document.removeEventListener('mousemove', this._onDocMouseMove);
+      document.removeEventListener('mouseout', this._onDocMouseOut);
+      document.removeEventListener('keydown', this._onKeyDown);
+      document.removeEventListener('keyup', this._onKeyUp);
+      gamebox.removeEventListener('touchstart', this._onTouchStart);
+      gamebox.removeEventListener('touchend', this._onTouchEnd);
+      gamebox.removeEventListener('touchmove', this._onTouchMove);
+      gamebox.removeEventListener('mousemove', this._onMouseMove);
+      gamebox.removeEventListener('mousedown', this._onMouseDown);
+      gamebox.removeEventListener('mouseup', this._onMouseUp);
     }
   }, {
     key: "onKeyDown",
     value: function onKeyDown(evt) {
-      var _this3 = this;
+      var _this2 = this;
       if (evt.key === 'Delete' || evt.keyCode === 8) {
         var player = this.context.player;
         for (var i = 0; i < player.selectedUnits.length; i++) {
@@ -8788,45 +8913,44 @@ var Controls = /*#__PURE__*/function (_Container) {
         return;
       }
       var handleMoveCamera = function handleMoveCamera() {
-        if (!_this3.keyInterval) {
-          _this3.keyInterval = setInterval(function () {
-            var _double = false;
-            if (Object.values(_this3.keysPressed).filter(Boolean).length > 1) {
-              _double = true;
+        if (!_this2.keyInterval) {
+          _this2.keyInterval = setInterval(function () {
+            var _double = _this2.keyPressedCount > 1;
+            if (_this2.keySpeed < 4) {
+              _this2.keySpeed += 0.2;
             }
-            if (_this3.keySpeed < 4) {
-              _this3.keySpeed += 0.2;
+            if (_this2.keysPressed['ArrowLeft']) {
+              _this2.moveCamera('left', _this2.keySpeed, _double);
             }
-            if (_this3.keysPressed['ArrowLeft']) {
-              _this3.moveCamera('left', _this3.keySpeed, _double);
+            if (_this2.keysPressed['ArrowUp']) {
+              _this2.moveCamera('up', _this2.keySpeed, _double);
             }
-            if (_this3.keysPressed['ArrowUp']) {
-              _this3.moveCamera('up', _this3.keySpeed, _double);
+            if (_this2.keysPressed['ArrowDown']) {
+              _this2.moveCamera('down', _this2.keySpeed, _double);
             }
-            if (_this3.keysPressed['ArrowDown']) {
-              _this3.moveCamera('down', _this3.keySpeed, _double);
-            }
-            if (_this3.keysPressed['ArrowRight']) {
-              _this3.moveCamera('right', _this3.keySpeed, _double);
+            if (_this2.keysPressed['ArrowRight']) {
+              _this2.moveCamera('right', _this2.keySpeed, _double);
             }
           }, 1);
         }
       };
       if (!evt.repeat) {
         this.keysPressed[evt.key] = true;
+        this.keyPressedCount++;
       }
-      var controlsMap = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'];
-      if (controlsMap.includes(evt.key)) {
+      if (ARROW_KEYS.has(evt.key)) {
         handleMoveCamera();
       }
     }
   }, {
     key: "onKeyUp",
     value: function onKeyUp(evt) {
-      if (!evt.repeat) {
+      if (!evt.repeat && this.keysPressed[evt.key]) {
         delete this.keysPressed[evt.key];
+        this.keyPressedCount--;
       }
-      if (!Object.values(this.keysPressed).filter(Boolean).length) {
+      if (this.keyPressedCount <= 0) {
+        this.keyPressedCount = 0;
         clearInterval(this.keyInterval);
         this.keyInterval = null;
         this.keySpeed = 0;
@@ -8909,7 +9033,7 @@ var Controls = /*#__PURE__*/function (_Container) {
 
       // Mouse building to place construction
       if (this.mouseBuilding) {
-        var pos = maths_isometricToCartesian(this.mouse.x - map.x, this.mouse.y >= app.screen.height ? app.screen.height - map.y : this.mouse.y - map.y);
+        var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y >= app.screen.height ? app.screen.height - map.y : this.mouse.y - map.y);
         var i = Math.min(Math.max(pos[0], 0), map.size);
         var j = Math.min(Math.max(pos[1], 0), map.size);
         if (map.grid[i] && map.grid[i][j]) {
@@ -9038,7 +9162,7 @@ var Controls = /*#__PURE__*/function (_Container) {
         return;
       }
       if (this.isMouseInApp(evt)) {
-        var pos = maths_isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y);
+        var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y);
         var _i = Math.min(Math.max(pos[0], 0), map.size);
         var j = Math.min(Math.max(pos[1], 0), map.size);
         if (map.grid[_i] && map.grid[_i][j]) {
@@ -9088,18 +9212,19 @@ var Controls = /*#__PURE__*/function (_Container) {
       var _this$context3 = this.context,
         player = _this$context3.player,
         map = _this$context3.map;
-      var minX = Math.min.apply(Math, controls_toConsumableArray(player.selectedUnits.map(function (unit) {
-        return unit.i;
-      })));
-      var minY = Math.min.apply(Math, controls_toConsumableArray(player.selectedUnits.map(function (unit) {
-        return unit.j;
-      })));
-      var maxX = Math.max.apply(Math, controls_toConsumableArray(player.selectedUnits.map(function (unit) {
-        return unit.i;
-      })));
-      var maxY = Math.max.apply(Math, controls_toConsumableArray(player.selectedUnits.map(function (unit) {
-        return unit.j;
-      })));
+      var minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      for (var k = 0; k < player.selectedUnits.length; k++) {
+        var _player$selectedUnits = player.selectedUnits[k],
+          i = _player$selectedUnits.i,
+          j = _player$selectedUnits.j;
+        if (i < minX) minX = i;
+        if (j < minY) minY = j;
+        if (i > maxX) maxX = i;
+        if (j > maxY) maxY = j;
+      }
       var centerX = minX + Math.round((maxX - minX) / 2);
       var centerY = minY + Math.round((maxY - minY) / 2);
       var hasSentVillager = false;
@@ -9146,14 +9271,14 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "setMouseBuilding",
     value: function setMouseBuilding(building) {
-      var _this4 = this;
+      var _this3 = this;
       var player = this.context.player;
       this.mouseBuilding = new lib/* Container */.mcf();
       var sprite = lib/* Sprite */.kxk.from(getTexture(building.images["final"], lib/* Assets */.sP));
       sprite.label = LABEL_TYPES.sprite;
       this.mouseBuilding.addChild(sprite);
       Object.keys(building).forEach(function (prop) {
-        _this4.mouseBuilding[prop] = building[prop];
+        _this3.mouseBuilding[prop] = building[prop];
       });
       this.mouseBuilding.x = this.mouse.x;
       this.mouseBuilding.y = this.mouse.y;
@@ -9202,8 +9327,8 @@ var Controls = /*#__PURE__*/function (_Container) {
         y: map.size * CELL_HEIGHT - this.camera.y
       };
       var cameraCenter = {
-        x: this.camera.x + app.screen.width / 2 - this.camera.x,
-        y: this.camera.y + app.screen.height / 2 - this.camera.y
+        x: app.screen.width / 2,
+        y: app.screen.height / 2
       };
       if (dir === 'left') {
         if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
@@ -9254,7 +9379,7 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "moveCameraWithMouse",
     value: function moveCameraWithMouse(evt) {
-      var _this5 = this;
+      var _this4 = this;
       clearInterval(this.moveCameraInterval);
       var dir = [];
       var mouse = {
@@ -9282,7 +9407,7 @@ var Controls = /*#__PURE__*/function (_Container) {
       if (dir.length) {
         this.moveCameraInterval = setInterval(function () {
           dir.forEach(function (prop) {
-            _this5.moveCamera(prop, calcs[prop]);
+            _this4.moveCamera(prop, calcs[prop]);
           });
         }, 20);
       }
@@ -9306,7 +9431,7 @@ var Controls = /*#__PURE__*/function (_Container) {
       var margin = CELL_WIDTH;
       for (var i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
         for (var j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
-          var _isometricToCartesian = maths_isometricToCartesian(i, j),
+          var _isometricToCartesian = isometricToCartesian(i, j),
             _isometricToCartesian2 = controls_slicedToArray(_isometricToCartesian, 2),
             cartesianX = _isometricToCartesian2[0],
             cartesianY = _isometricToCartesian2[1];
@@ -9336,7 +9461,7 @@ var Controls = /*#__PURE__*/function (_Container) {
       for (var i = startX; i <= endX; i += CELL_WIDTH / 2) {
         for (var j = startY; j <= endY; j += CELL_HEIGHT / 2) {
           var _map$grid$x;
-          var _isometricToCartesian3 = maths_isometricToCartesian(i, j),
+          var _isometricToCartesian3 = isometricToCartesian(i, j),
             _isometricToCartesian4 = controls_slicedToArray(_isometricToCartesian3, 2),
             cartX = _isometricToCartesian4[0],
             cartY = _isometricToCartesian4[1];
