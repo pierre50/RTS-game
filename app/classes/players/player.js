@@ -24,10 +24,11 @@ export class Player {
     this.label = uuidv4()
     this.parent = map
 
-    this.wood = map.devMode ? 10000 : 200
-    this.food = map.devMode ? 10000 : 200
-    this.stone = map.devMode ? 10000 : 150
-    this.gold = map.devMode ? 10000 : 0
+    const res = map.startingResources
+    this.wood = res.wood
+    this.food = res.food
+    this.stone = res.stone
+    this.gold = res.gold
     this.corpses = []
     this.units = []
     this.buildings = []

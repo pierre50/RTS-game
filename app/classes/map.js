@@ -41,8 +41,9 @@ export default class Map extends Container {
     this.noAI = false
 
     this.devMode = false
-    this.revealEverything = this.devMode || false
-    this.revealTerrain = this.devMode || false
+    this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0 }
+    this.revealEverything = false
+    this.revealTerrain = false
 
     this.x = 0
     this.y = 0
@@ -190,7 +191,7 @@ export default class Map extends Container {
     this.ready = true
   }
 
-  generateMap(repeat = 0) {
+  generateMap(positionsCountOverride = null, repeat = 0) {
     this.removeChildren()
     this.generateCells()
 
@@ -205,13 +206,17 @@ export default class Map extends Container {
         this.positionsCount = 4
         break
       case 200:
-        this.positionsCount = 4
+        this.positionsCount = 6
         break
       case 220:
-        this.positionsCount = 4
+        this.positionsCount = 8
         break
       default:
         this.positionsCount = 2
+    }
+
+    if (positionsCountOverride !== null) {
+      this.positionsCount = positionsCountOverride
     }
 
     this.totalCells = Math.pow(this.size, 2)
@@ -223,7 +228,7 @@ export default class Map extends Container {
         alert('Error while generating the map')
         return
       }
-      this.generateMap(repeat + 1)
+      this.generateMap(positionsCountOverride, repeat + 1)
       return
     }
 
@@ -665,7 +670,7 @@ export default class Map extends Container {
 
   generateCells() {
     const z = 0
-    const terrain = this.generateTerrain(121)
+    const terrain = this.generateTerrain(this.size ? this.size + 1 : 121)
     this.size = terrain.length - 1
 
     // Map terrain numbers to cell types

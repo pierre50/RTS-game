@@ -56,7 +56,8 @@ export default class Menu {
       content.className = 'modal-menu'
       const modal = new Modal(content)
       const save = document.createElement('button')
-      save.innerText = 'Save'
+      save.className = 'menu-btn'
+      save.innerText = 'Sauvegarder'
       save.addEventListener('pointerdown', () => {
         this.context.save()
         modal.close()
@@ -75,17 +76,26 @@ export default class Menu {
         }
         reader.readAsText(evt.target.files[0])
       })
-      load.className = 'input-file'
-      load.innerText = 'Load'
+      load.className = 'input-file menu-btn'
+      load.innerText = 'Charger'
       load.appendChild(input)
+      const quit = document.createElement('button')
+      quit.className = 'menu-btn secondary'
+      quit.innerText = 'Quitter'
+      quit.addEventListener('pointerdown', () => {
+        modal.close()
+        this.context.quit()
+      })
       const cancel = document.createElement('button')
-      cancel.innerText = 'Cancel'
+      cancel.className = 'menu-btn secondary'
+      cancel.innerText = 'Annuler'
       cancel.addEventListener('pointerdown', () => {
         modal.close()
         this.context.resume()
       })
       content.appendChild(save)
       content.appendChild(load)
+      content.appendChild(quit)
       content.appendChild(cancel)
     })
     options.appendChild(menu)

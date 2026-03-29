@@ -2,23 +2,23 @@ import { Application } from 'pixi.js'
 import './styles.css'
 import Game from './screens/Game'
 import Loader from './screens/Loader'
+import MainMenu from './screens/MainMenu'
+import MapConfig from './screens/MapConfig'
+
 ;(async () => {
-  // Create a new PixiJS application
   const app = new Application()
 
-  // Initialize the app with background color and auto-resize
   await app.init({
     width: window.innerWidth,
     height: window.innerHeight,
-    background: 0x000000, // black background
+    background: 0x000000,
     resizeTo: window,
-    antialias: false, // faster
+    antialias: false,
     resolution: window.devicePixelRatio || 1,
-    autoDensity: true, // adjusts canvas for resolution
-    powerPreference: 'high-performance', // GPU hint
+    autoDensity: true,
+    powerPreference: 'high-performance',
   })
 
-  // Append the canvas to your game container
   const gamebox = document.getElementById('game')
   if (!gamebox) {
     console.error('No #game container found')
@@ -26,13 +26,57 @@ import Loader from './screens/Loader'
   }
   gamebox.appendChild(app.canvas)
 
-  // Initialize loader
   const loader = new Loader()
   app.stage.addChild(loader)
   await loader.start()
-
-  // Once assets are loaded, remove loader and start game
-  const game = new Game(app, gamebox)
   app.stage.removeChild(loader)
-  app.stage.addChild(game)
+
+  let currentGame = null
+
+  const quitGame = () => {
+    if (currentGame) {
+      app.stage.removeChild(currentGame)
+      currentGame = null
+    }
+    showMainMenu()
+  }
+
+  const startGame = config => {
+    currentGame = new Game(app, gamebox, config, quitGame)
+    app.stage.addChild(currentGame)
+  }
+
+  const loadGame = json => {
+    currentGame = new Game(app, gamebox, {}, quitGame)
+    app.stage.addChild(currentGame)
+    currentGame.load(json)
+  }
+
+  const showMapConfig = () => {
+    const mapConfig = new MapConfig(
+      config => {
+        mapConfig.destroy()
+        startGame(config)
+      },
+      () => {
+        mapConfig.destroy()
+        showMainMenu()
+      }
+    )
+  }
+
+  const showMainMenu = () => {
+    const mainMenu = new MainMenu(
+      () => {
+        mainMenu.destroy()
+        showMapConfig()
+      },
+      json => {
+        mainMenu.destroy()
+        loadGame(json)
+      }
+    )
+  }
+
+  showMainMenu()
 })()

@@ -11,8 +11,10 @@ import { filterObject } from '../lib'
  */
 
 export default class Game extends Container {
-  constructor(app, gamebox) {
+  constructor(app, gamebox, config = {}, onQuit = null) {
     super()
+    this.config = config
+    this.onQuit = onQuit
     this.context = {
       app,
       gamebox,
@@ -26,18 +28,26 @@ export default class Game extends Container {
       load: evt => this.load(evt),
       pause: () => this.togglePause(true),
       resume: () => this.togglePause(false),
+      quit: () => this.quit(),
     }
     this.start()
   }
 
   start() {
-    const { context } = this
+    const { context, config } = this
 
     context.map = new Map(context)
+
+    if (config.size) context.map.size = config.size
+    if (config.devMode) context.map.devMode = true
+    if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
+    if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
+    if (config.startingResources) context.map.startingResources = config.startingResources
+
     context.controls = new Controls(context)
     context.menu = new Menu(context)
 
-    context.map.generateMap()
+    context.map.generateMap(config.bots != null ? config.bots + 1 : null)
 
     context.players = context.map.generatePlayers()
     context.player = context.players[0]
@@ -249,6 +259,14 @@ export default class Game extends Container {
 
     this.addChild(context.map)
     this.addChild(context.controls)
+  }
+
+  quit() {
+    document.getElementById('pause')?.remove()
+    this.context.controls.destroy()
+    this.context.menu.destroy()
+    this.removeChildren()
+    if (this.onQuit) this.onQuit()
   }
 
   togglePause(pause) {
