@@ -30,6 +30,21 @@ const CORNER_DATA = {
   '-1,1':  { corner: 'W', adj: [[0, 1], [-1, 0]] },  // W tip  (SW∩NW)
 }
 
+// Pre-parsed neighbor/corner lists — avoid string splitting at runtime
+const _NEIGHBOR_LIST = Object.entries(NEIGHBOR_SIDES).map(([k, side]) => {
+  const [di, dj] = k.split(',').map(Number)
+  return { di, dj, side }
+})
+const _CORNER_LIST = Object.entries(CORNER_DATA).map(([k, { corner, adj }]) => {
+  const [di, dj] = k.split(',').map(Number)
+  return { di, dj, corner, adj }
+})
+
+// Static lookup for setDesertBorder — computed once
+const _DESERT_VAL = Array.from({ length: 25 }, (_, i) =>
+  i < 9 ? [0, 1, 2, 3] : Array.from({ length: 4 }, (__, k) => (i - 9) * 4 + k + 4)
+)
+
 // Cache keyed by sorted sides e.g. 'NE|NW|SW'
 const _ditherTextures = {}
 let _fogTexture = null
@@ -158,7 +173,7 @@ export class Cell extends Container {
     const textureFile = textureName + '.png'
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[textureFile]
-    this.sprite = Sprite.from(texture)
+    this.sprite = new Sprite(texture)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.anchor.set(0.5, 0.5)
     this.sprite.roundPixels = true
@@ -174,31 +189,43 @@ export class Cell extends Container {
     this.allowClick = false
   }
 
+  _updateChild(instance) {
+    const { map, player } = this.context
+    if (
+      map.revealEverything ||
+      !instance.owner ||
+      instance.owner.isPlayed ||
+      instanceIsInPlayerSight(instance, player)
+    ) {
+      instance.visible = true
+    }
+  }
+
+  _setRemoveChildren(instance) {
+    const { controls } = this.context
+    if (controls.instanceInCamera(instance)) {
+      instance.visible = true
+    }
+    for (let i = 0; i < instance.children.length; i++) {
+      if (instance.children[i].tint) {
+        instance.children[i].tint = COLOR_WHITE
+      }
+    }
+  }
+
   updateVisible() {
     const {
       context: { map, player },
     } = this
-
-    function updateChild(instance) {
-      if (
-        map.revealEverything ||
-        !instance.owner ||
-        instance.owner.isPlayed ||
-        instanceIsInPlayerSight(instance, player)
-      ) {
-        instance.visible = true
-      }
-    }
-
     if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
       return
     }
     this.visible = true
     if (this.has) {
-      updateChild(this.has)
+      this._updateChild(this.has)
     }
     for (const corpse of this.corpses) {
-      updateChild(corpse)
+      this._updateChild(corpse)
     }
   }
 
@@ -206,38 +233,12 @@ export class Cell extends Container {
     const resourceName = '20002'
     const { sprite: cellSprite } = this
     const cellSpriteTextureName = cellSprite.texture.label
-    const cellSpriteIndex = cellSpriteTextureName.split('_')[0]
-    let val = {}
-    let index
-    let cpt = 0
-    for (let i = 0; i < 25; i++) {
-      val[i] = []
-      if (i < 9) {
-        val[i].push(0, 1, 2, 3)
-      } else {
-        for (let j = cpt; j < cpt + 4; j++) {
-          val[i].push(j + 4)
-        }
-        cpt += 4
-      }
-    }
-    switch (direction) {
-      case 'west':
-        index = val[cellSpriteIndex * 1][0]
-        break
-      case 'north':
-        index = val[cellSpriteIndex * 1][1]
-        break
-      case 'south':
-        index = val[cellSpriteIndex * 1][2]
-        break
-      case 'est':
-        index = val[cellSpriteIndex * 1][3]
-        break
-    }
+    const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
+    const dirIndex = { west: 0, north: 1, south: 2, east: 3 }[direction]
+    const index = _DESERT_VAL[cellSpriteIndex][dirIndex]
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[formatNumber(index) + '_' + resourceName + '.png']
-    const sprite = Sprite.from(texture)
+    const sprite = new Sprite(texture)
     sprite.direction = direction
     sprite.anchor.set(0.5, 0.5)
     sprite.type = 'border'
@@ -296,7 +297,7 @@ export class Cell extends Container {
           const target = grid[cell.i + velX][cell.j + velY]
           const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
           if (target.type !== this.type && aside.type !== this.type) {
-            if (Math.floor(instancesDistance(this, cell)) === 2) {
+            if (Math.floor(dist) === 2) {
               cell.setWater()
               target.setWater()
             }
@@ -317,7 +318,7 @@ export class Cell extends Container {
           const target = grid[cell.i + velX][cell.j + velY]
           const aside = grid[this.i + cell.i - target.i][this.j + cell.j - target.j]
           if (target.z <= this.z && target.z !== this.z && aside.z !== this.z) {
-            if (Math.floor(instancesDistance(this, cell)) === 2) {
+            if (Math.floor(dist) === 2) {
               target.setCellLevel(target.z + 1)
             }
           }
@@ -404,14 +405,12 @@ export class Cell extends Container {
 
     if (this.visible && this.viewBy.size > 0 && !this._hasFog) {
       const { grid } = this.context.map
-      for (const [key, side] of Object.entries(NEIGHBOR_SIDES)) {
-        const [di, dj] = key.split(',').map(Number)
+      for (const { di, dj, side } of _NEIGHBOR_LIST) {
         const n = grid[this.i + di]?.[this.j + dj]
         if (!n || n._hasFog) needed.add(side)
       }
       // Inner-corner: diagonal in fog but both shared cardinals visible
-      for (const [key, { corner, adj }] of Object.entries(CORNER_DATA)) {
-        const [di, dj] = key.split(',').map(Number)
+      for (const { di, dj, corner, adj } of _CORNER_LIST) {
         const diag = grid[this.i + di]?.[this.j + dj]
         if (!diag || diag._hasFog) {
           const bothVisible = adj.every(([cdi, cdj]) => {
@@ -473,22 +472,7 @@ export class Cell extends Container {
   }
 
   removeFog() {
-    const {
-      context: { controls },
-    } = this
-    function setRemoveChildren(instance) {
-      if (controls.instanceInCamera(instance)) {
-        instance.visible = true
-      }
-      for (let i = 0; i < instance.children.length; i++) {
-        if (instance.children[i].tint) {
-          instance.children[i].tint = COLOR_WHITE
-        }
-      }
-    }
-    if (!this.visible) {
-      this.visible = true
-    }
+    this.visible = true
     this.zIndex = 0
     if (this._hasFog) {
       this._hasFog = false
@@ -506,10 +490,10 @@ export class Cell extends Container {
     }
     if (this.has) {
       this.removeFogBuilding(this.has)
-      setRemoveChildren(this.has)
+      this._setRemoveChildren(this.has)
     }
     for (const corpse of this.corpses) {
-      setRemoveChildren(corpse)
+      this._setRemoveChildren(corpse)
     }
   }
 }
