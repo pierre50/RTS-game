@@ -13,30 +13,41 @@ import {
 } from '../lib'
 import { CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 
-// Which triangle sides to show per cardinal neighbor (di, dj)
+// Which side to show per cardinal neighbor (di, dj)
 const NEIGHBOR_SIDES = {
-  '-1,0': ['NW'],
-  '0,-1': ['NE'],
-  '0,1':  ['SW'],
-  '1,0':  ['SE'],
+  '-1,0': 'NW',
+  '0,-1': 'NE',
+  '0,1':  'SW',
+  '1,0':  'SE',
 }
 
+// Cache keyed by sorted sides e.g. 'NE|NW|SW'
 const _ditherTextures = {}
 let _fogTexture = null
 
+const _DW = 64
+const _DH = 32
+const _DAX = 32
+const _DAY = 16
+
+function _insideDiamond(px, py) {
+  return (
+    px + 2 * py >= 32 &&
+    px - 2 * py <= 32 &&
+    px - 2 * py >= -32 &&
+    px + 2 * py <= 96
+  )
+}
+
 function getFogTexture() {
   if (_fogTexture) return _fogTexture
-  const W = CELL_WIDTH, H = CELL_HEIGHT
   const canvas = document.createElement('canvas')
-  canvas.width = W
-  canvas.height = H
+  canvas.width = _DW
+  canvas.height = _DH
   const ctx = canvas.getContext('2d')
-  for (let px = 0; px < W; px++) {
-    for (let py = 0; py < H; py++) {
-      if (px + 2 * py < 32) continue
-      if (px - 2 * py > 32) continue
-      if (px + 2 * py > 96) continue
-      if (px - 2 * py < -32) continue
+  for (let px = 0; px < _DW; px++) {
+    for (let py = 0; py < _DH; py++) {
+      if (!_insideDiamond(px, py)) continue
       if ((px + py) % 2 !== 0) continue
       ctx.fillStyle = '#000'
       ctx.fillRect(px, py, 1, 1)
@@ -46,35 +57,42 @@ function getFogTexture() {
   return _fogTexture
 }
 
-function getDitherTexture(side) {
-  if (_ditherTextures[side]) return _ditherTextures[side]
+// sides = Set of 'NW','NE','SE','SW'
+// ONE combined texture — zero overlap possible
+function getDitherTexture(sides) {
+  const key = ['NW', 'NE', 'SE', 'SW'].filter(s => sides.has(s)).join('|')
+  if (!key) return null
+  if (_ditherTextures[key]) return _ditherTextures[key]
 
-  const W = CELL_WIDTH, H = CELL_HEIGHT
   const canvas = document.createElement('canvas')
-  canvas.width = W
-  canvas.height = H
+  canvas.width = _DW
+  canvas.height = _DH
   const ctx = canvas.getContext('2d')
-  const K = 14 // band width in isometric edge-distance units (~6px perpendicular)
+  const K = 10
 
-  for (let px = 0; px < W; px++) {
-    for (let py = 0; py < H; py++) {
-      // Must be inside the isometric diamond
-      // NW edge: px+2py=32, NE edge: px-2py=32, SE edge: px+2py=96, SW edge: px-2py=-32
-      if (px + 2 * py < 32) continue
-      if (px - 2 * py > 32) continue
-      if (px + 2 * py > 96) continue
-      if (px - 2 * py < -32) continue
+  for (let px = 0; px < _DW; px++) {
+    for (let py = 0; py < _DH; py++) {
+      if (!_insideDiamond(px, py)) continue
 
-      // Distance from this side's isometric edge toward the diamond interior
-      let d
-      if      (side === 'NW') d = (px + 2 * py) - 32
-      else if (side === 'NE') d = 32 - (px - 2 * py)
-      else if (side === 'SE') d = 96 - (px + 2 * py)
-      else                    d = (px - 2 * py) + 32  // SW
+      let inBand = false
+      if (sides.has('NW') && !inBand) {
+        const d = (px + 2 * py) - 32
+        if (d >= 0 && d <= K) inBand = true
+      }
+      if (sides.has('NE') && !inBand) {
+        const d = 32 - (px - 2 * py)
+        if (d >= 0 && d <= K) inBand = true
+      }
+      if (sides.has('SE') && !inBand) {
+        const d = 96 - (px + 2 * py)
+        if (d >= 0 && d <= K) inBand = true
+      }
+      if (sides.has('SW') && !inBand) {
+        const d = (px - 2 * py) + 32
+        if (d >= 0 && d <= K) inBand = true
+      }
 
-      if (d < 0 || d > K) continue
-
-      // Dither pattern
+      if (!inBand) continue
       if ((px + py) % 2 !== 0) continue
 
       ctx.fillStyle = '#000'
@@ -82,8 +100,8 @@ function getDitherTexture(side) {
     }
   }
 
-  _ditherTextures[side] = Texture.from(canvas)
-  return _ditherTextures[side]
+  _ditherTextures[key] = Texture.from(canvas)
+  return _ditherTextures[key]
 }
 
 export class Cell extends Container {
@@ -110,10 +128,7 @@ export class Cell extends Container {
     this.has = null
     this.corpses = new Set()
     this.fogSprites = []
-    this._ditherNE = null
-    this._ditherNW = null
-    this._ditherSE = null
-    this._ditherSW = null
+    this._ditherSprite = null
 
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
@@ -373,32 +388,33 @@ export class Cell extends Container {
 
   _updateEdgeDither() {
     const needed = new Set()
+    const hasFogOverlay = this.children.some(c => c.label === LABEL_TYPES.fogOverlay)
 
-    if (this.visible && this.viewBy.size > 0) {
+    if (this.visible && this.viewBy.size > 0 && !hasFogOverlay) {
       const { grid } = this.context.map
-      for (const [key, sides] of Object.entries(NEIGHBOR_SIDES)) {
+      for (const [key, side] of Object.entries(NEIGHBOR_SIDES)) {
         const [di, dj] = key.split(',').map(Number)
         const n = grid[this.i + di]?.[this.j + dj]
-        if (!n?.visible || n.viewBy.size === 0) {
-          sides.forEach(s => needed.add(s))
-        }
+        const neighborInFog = !n || n.children.some(c => c.label === LABEL_TYPES.fogOverlay)
+        if (neighborInFog) needed.add(side)
       }
     }
 
-    for (const side of ['NE', 'NW', 'SE', 'SW']) {
-      const key = `_dither${side}`
-      if (needed.has(side)) {
-        if (!this[key]) {
-          const sprite = new Sprite(getDitherTexture(side))
-          sprite.label = LABEL_TYPES.dither
-          sprite.anchor.set(0.5, 0.5)
-          sprite.eventMode = 'none'
-          this[key] = sprite
-          this.addChild(sprite)
-        }
-      } else if (this[key]) {
-        this.removeChild(this[key])
-        this[key] = null
+    if (needed.size > 0) {
+      const texture = getDitherTexture(needed)
+      if (!this._ditherSprite) {
+        this._ditherSprite = new Sprite(texture)
+        this._ditherSprite.label = LABEL_TYPES.dither
+        this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH)
+        this._ditherSprite.eventMode = 'none'
+        this.addChild(this._ditherSprite)
+      } else {
+        this._ditherSprite.texture = texture
+      }
+    } else {
+      if (this._ditherSprite) {
+        this.removeChild(this._ditherSprite)
+        this._ditherSprite = null
       }
     }
   }
@@ -410,7 +426,7 @@ export class Cell extends Container {
     if (!this.children.find(c => c.label === LABEL_TYPES.fogOverlay)) {
       const overlay = new Sprite(getFogTexture())
       overlay.label = LABEL_TYPES.fogOverlay
-      overlay.anchor.set(0.5, 0.5)
+      overlay.anchor.set(_DAX / _DW, _DAY / _DH)
       overlay.eventMode = 'none'
       this.addChild(overlay)
     }
