@@ -230,6 +230,9 @@ export class Cell extends Container {
   }
 
   setDesertBorder(direction) {
+    // Avoid stacking duplicate border sprites when multiple desert neighbors trigger the same side
+    const alreadySet = this.children.some(c => c.type === 'border' && c.direction === direction)
+    if (alreadySet) return
     const resourceName = '20002'
     const { sprite: cellSprite } = this
     const cellSpriteTextureName = cellSprite.texture.label

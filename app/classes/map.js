@@ -1020,7 +1020,7 @@ export default class Map extends Container {
         const typeToFormat = ['Grass', 'Jungle']
         if (cell.type === 'Desert') {
           if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
-            this.grid[i - 1][j].setDesertBorder('est')
+            this.grid[i - 1][j].setDesertBorder('east')
           }
           if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
             this.grid[i + 1][j].setDesertBorder('west')
