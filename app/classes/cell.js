@@ -252,7 +252,6 @@ export class Cell extends Container {
     const { sprite } = this
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
-    this.type = 'Desert'
     this.border = true
     this.waterBorder = true
     if (this.has && typeof this.has.die === 'function') {
@@ -375,16 +374,9 @@ export class Cell extends Container {
   removeFogBuilding(instance) {
     const { map } = this.context
     if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
-      let i = 0
       const localCell = map.grid[instance.i][instance.j]
-      while (i < localCell.fogSprites.length) {
-        if (localCell.fogSprites[i]) {
-          localCell.fogSprites[i].sprite?.destroy() // Destroy the sprite
-          localCell.fogSprites.splice(i, 1) // Remove the destroyed sprite from the array
-        } else {
-          i++ // Only increment if no sprite is destroyed, to avoid skipping elements
-        }
-      }
+      localCell.fogSprites.forEach(s => s.sprite?.destroy())
+      localCell.fogSprites = []
     }
   }
 

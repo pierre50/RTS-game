@@ -116,9 +116,9 @@ export function getInstancePath(instance, x, y, map) {
   }
 
   let cloneGrid = []
-  for (var i = minX; i <= maxX; i++) {
+  for (let i = minX; i <= maxX; i++) {
     cloneGrid[i] = []
-    for (var j = minY; j <= maxY; j++) {
+    for (let j = minY; j <= maxY; j++) {
       cloneGrid[i][j] = {
         i,
         j,

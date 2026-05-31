@@ -274,8 +274,8 @@ export class Unit extends Container {
 
     this.interval = null
 
-    setTimeout(() => {
-      updateInstanceVisibility(this)
+    this.visibilityTimeout = setTimeout(() => {
+      if (!this.isDestroyed) updateInstanceVisibility(this)
     })
   }
 
@@ -1436,6 +1436,7 @@ export class Unit extends Container {
       sound.play(Array.isArray(this.sounds.die) ? randomItem(this.sounds.die) : this.sounds.die)
 
     this.stopInterval()
+    clearTimeout(this.visibilityTimeout)
     if (this.selected && player.selectedOther === this) {
       player.unselectUnit(this)
     }
@@ -1495,7 +1496,18 @@ export class Unit extends Container {
     } = this
     if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
       if (this.loading === 1) {
-        menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = this.getLoadingElement().innerHTML))
+        const iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType]
+        menu.updateInfo(MENU_INFO_IDS.loading, element => {
+          element.replaceChildren()
+          const iconImg = document.createElement('img')
+          iconImg.className = 'unit-loading-icon'
+          iconImg.src = iconSrc
+          const textDiv = document.createElement('div')
+          textDiv.id = MENU_INFO_IDS.loadingText
+          textDiv.textContent = this.loading
+          element.appendChild(iconImg)
+          element.appendChild(textDiv)
+        })
       } else if (this.loading > 1) {
         menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading)
       } else {

@@ -588,6 +588,7 @@ export class Building extends Container {
     if (this.isDestroyed) {
       return
     }
+    clearTimeout(this.visibilityTimeout)
     const {
       context: { map },
     } = this
