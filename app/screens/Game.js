@@ -46,6 +46,7 @@ export default class Game extends Container {
     if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
     if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
     if (config.startingResources) context.map.startingResources = config.startingResources
+    if (config.difficulty) context.map.difficulty = config.difficulty
 
     context.controls = new Controls(context)
     context.menu = new Menu(context)

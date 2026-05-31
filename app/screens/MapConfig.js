@@ -1,3 +1,9 @@
+const DIFFICULTIES = [
+  { label: 'Facile  — IA lente, pop réduite', value: 'easy' },
+  { label: 'Moyen   — IA standard',           value: 'medium' },
+  { label: 'Difficile — IA rapide, pop accrue', value: 'hard' },
+]
+
 const STARTING_RESOURCES = [
   { label: 'Bas      — 100 / 150 / 50 / 0', value: 'low' },
   { label: 'Standard — 200 / 200 / 150 / 0', value: 'standard' },
@@ -25,6 +31,7 @@ export default class MapConfig {
     this.config = {
       size: 120,
       bots: 1,
+      difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
       devMode: false,
@@ -64,6 +71,12 @@ export default class MapConfig {
     form.appendChild(
       this.createSelect('Adversaires (IA)', botOptions, 1, val => {
         this.config.bots = parseInt(val)
+      })
+    )
+
+    form.appendChild(
+      this.createSelect('Difficulté IA', DIFFICULTIES, 'medium', val => {
+        this.config.difficulty = val
       })
     )
 

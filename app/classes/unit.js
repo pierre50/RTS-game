@@ -328,7 +328,7 @@ export class Unit extends Container {
   }
 
   setDest(dest) {
-    if (!dest) {
+    if (!dest || dest.isDestroyed) {
       this.stop()
       return
     }
@@ -368,7 +368,7 @@ export class Unit extends Container {
     this.stopInterval()
     let path = []
     // No instance we cancel the destination
-    if (!dest || this.isDead) {
+    if (!dest || dest.isDestroyed || this.isDead) {
       return
     }
     // Unit is already beside our target

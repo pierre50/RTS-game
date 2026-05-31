@@ -27,9 +27,18 @@ export class AI extends Player {
     this.foundedBerrybushs = new Set()
     this.foundedGolds = new Set()
     this.foundedStones = new Set()
+    this.foundedAnimals = new Set()
+    this.foundedDeadAnimals = new Set()
     this.foundedEnemyBuildings = new Set()
     this.foundedEnemyUnits = new Set()
-    this.stepDelay = 4000
+    this.difficulty = props.difficulty || 'medium'
+    const _difficulties = {
+      easy:   { stepDelayBase: 6000, popCapMultiplier: 0.7, attackThreshold: 8,  defenderRatio: 0.5 },
+      medium: { stepDelayBase: 4000, popCapMultiplier: 1.0, attackThreshold: 5,  defenderRatio: 0.3 },
+      hard:   { stepDelayBase: 2500, popCapMultiplier: 1.3, attackThreshold: 3,  defenderRatio: 0.2 },
+    }
+    this.difficultyConfig = _difficulties[this.difficulty] || _difficulties.medium
+    this.stepDelay = this.difficultyConfig.stepDelayBase
     this._scheduleStep()
     this.selectedUnits = []
     this.selectedUnit = null
@@ -87,6 +96,8 @@ export class AI extends Player {
         Farm: 4,
         Barracks: 1,
         Market: 1,
+        ArcheryRange: 1,
+        Stable: 1,
       },
       2: {
         StoragePit: 3,
@@ -94,6 +105,9 @@ export class AI extends Player {
         Farm: 6,
         Barracks: 2,
         Market: 1,
+        ArcheryRange: 1,
+        Stable: 1,
+        Academy: 1,
       },
       3: {
         StoragePit: 4,
@@ -101,14 +115,31 @@ export class AI extends Player {
         Farm: 10,
         Barracks: 2,
         Market: 1,
+        ArcheryRange: 2,
+        Stable: 1,
+        Academy: 1,
       },
+    }
+    this.maxInfantryByAge = { 0: 8, 1: 8,  2: 10, 3: 12 }
+    this.maxArcherByAge   = { 0: 0, 1: 4,  2: 6,  3: 8  }
+    this.maxCavalryByAge  = { 0: 0, 1: 3,  2: 4,  3: 5  }
+    this.maxHopliteByAge  = { 0: 0, 1: 0,  2: 2,  3: 4  }
+    // Priority-ordered tech lists per building type — AI tries them each step and skips if conditions unmet or already researched
+    this.techPriorityByBuilding = {
+      [BUILDING_TYPES.barracks]:      ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword'],
+      [BUILDING_TYPES.archeryRange]:  ['ImprovedBow', 'CompositeBow'],
+      [BUILDING_TYPES.storagePit]: [
+        'Toolworking', 'LeatherArmorInfantry', 'Metalworking', 'ScaleArmorInfantry',
+        'Metallurgy', 'ChainmailInfantry', 'BronzeShield', 'IronShield',
+      ],
+      [BUILDING_TYPES.market]: ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication'],
     }
   }
 
   _scheduleStep() {
     this._stepTimer = setTimeout(() => {
       const actions = this.step()
-      this.stepDelay = actions > 0 ? 4000 : Math.min(Math.round(this.stepDelay * 1.5), 12000)
+      this.stepDelay = actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 12000)
       this._scheduleStep()
     }, this.stepDelay)
   }
@@ -136,6 +167,12 @@ export class AI extends Player {
     }
     for (const r of this.foundedGolds) {
       if (r.quantity <= 0 || r.isDead) this.foundedGolds.delete(r)
+    }
+    for (const a of this.foundedAnimals) {
+      if (a.isDead || a.isDestroyed || a.hitPoints <= 0) this.foundedAnimals.delete(a)
+    }
+    for (const a of this.foundedDeadAnimals) {
+      if (a.isDestroyed || a.quantity <= 0) this.foundedDeadAnimals.delete(a)
     }
     for (const b of this.foundedEnemyBuildings) {
       if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings.delete(b)
@@ -175,17 +212,52 @@ export class AI extends Player {
     }
   }
 
+  canResearchTech(techKey) {
+    const tech = this.techs[techKey]
+    if (!tech?.conditions) return true
+    return tech.conditions.every(cond => {
+      if (cond.key === 'age') {
+        if (cond.op === '>=') return this.age >= cond.value
+        if (cond.op === '=') return this.age === cond.value
+      }
+      if (cond.key === 'technologies') {
+        if (cond.op === 'includes') return this.technologies.includes(cond.value)
+        if (cond.op === 'notincludes') return !this.technologies.includes(cond.value)
+      }
+      return true
+    })
+  }
+
+  getBestInfantryUnit() {
+    if (this.technologies.includes('LongSword')) return 'LongSwordsman'
+    if (this.technologies.includes('BroadSword')) return 'BroadSwordsman'
+    if (this.technologies.includes('ShortSword')) return 'ShortSwordsman'
+    if (this.technologies.includes('BattleAxe')) return 'Axeman'
+    return 'Clubman'
+  }
+
+  getBestArcherUnit() {
+    if (this.technologies.includes('CompositeBow')) return 'CompositeBowman'
+    if (this.technologies.includes('ImprovedBow')) return 'ImprovedBowman'
+    return 'Bowman'
+  }
+
   step() {
     const { map, paused } = this.context
     if (paused) return 0
 
     let actions = 0
 
-    const maxVillagers = this.maxVillagerPerAge[this.age]
+    const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier)
     const maxVillagersOnConstruction = 4
-    const maxClubmans = 10
+    const maxInfantry = this.maxInfantryByAge[this.age]
+    const maxArcher   = this.maxArcherByAge[this.age]
+    const maxCavalry  = this.maxCavalryByAge[this.age]
+    const maxHoplite  = this.maxHopliteByAge[this.age]
+    const infantryUnit = this.getBestInfantryUnit()
+    const archerUnit   = this.getBestArcherUnit()
     const howManyVillagerBeforeBuyingABarracks = 10
-    const howManySoldiersBeforeAttack = 5
+    const howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold
 
     if (DEBUG) {
       console.log('----Step started')
@@ -198,17 +270,24 @@ export class AI extends Player {
       this.units.filter(unit => unit.type === type && condition(unit))
 
     const villagers = filterUnitsByType(UNIT_TYPES.villager)
-    const clubmans = filterUnitsByType(UNIT_TYPES.clubman)
+    const infantry = this.units.filter(u => u.hitPoints > 0 && ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman', 'LongSwordsman'].includes(u.type))
+    const archers  = this.units.filter(u => u.hitPoints > 0 && ['Bowman', 'ImprovedBowman', 'CompositeBowman'].includes(u.type))
+    const cavalry  = this.units.filter(u => u.hitPoints > 0 && u.type === 'Scout')
+    const hoplites = this.units.filter(u => u.hitPoints > 0 && u.type === 'Hoplite')
+    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
 
-    if (DEBUG) console.log(`Villagers: ${villagers.length}/${maxVillagers}, Clubmans: ${clubmans.length}/${maxClubmans}`)
+    if (DEBUG) console.log(`Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Hoplites: ${hoplites.length}/${maxHoplite}`)
 
-    const towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter])
-    const storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit])
-    const houses = this.buildingsByTypes([BUILDING_TYPES.house])
-    const granarys = this.buildingsByTypes([BUILDING_TYPES.granary])
-    const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
-    const markets = this.buildingsByTypes([BUILDING_TYPES.market])
-    const farms = this.buildingsByTypes([BUILDING_TYPES.farm])
+    const towncenters   = this.buildingsByTypes([BUILDING_TYPES.townCenter])
+    const storagepits   = this.buildingsByTypes([BUILDING_TYPES.storagePit])
+    const houses        = this.buildingsByTypes([BUILDING_TYPES.house])
+    const granarys      = this.buildingsByTypes([BUILDING_TYPES.granary])
+    const barracks      = this.buildingsByTypes([BUILDING_TYPES.barracks])
+    const markets       = this.buildingsByTypes([BUILDING_TYPES.market])
+    const farms         = this.buildingsByTypes([BUILDING_TYPES.farm])
+    const archeryRanges = this.buildingsByTypes([BUILDING_TYPES.archeryRange])
+    const stables       = this.buildingsByTypes([BUILDING_TYPES.stable])
+    const academies     = this.buildingsByTypes([BUILDING_TYPES.academy])
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
 
     if (DEBUG)
@@ -247,12 +326,23 @@ export class AI extends Player {
         `Food: ${villagersOnFood.length}/${maxVillagersOnFood}, Wood: ${villagersOnWood.length}/${maxVillagersOnWood}, Stone: ${villagersOnStone.length}/${maxVillagersOnStone}, Gold: ${villagersOnGold.length}/${maxVillagersOnGold}, Builders: ${builderVillagers.length}`
       )
 
-    // Soldiers: those already on assault vs those waiting at base
-    const inactifClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
-    const waitingClubmans = clubmans.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && !c.assault)
+    // Retreat: critically injured assault soldiers fall back and stop attacking
+    const RETREAT_HP_RATIO = 0.3
+    military
+      .filter(u => u.assault && u.hitPoints < u.totalHitPoints * RETREAT_HP_RATIO)
+      .forEach(u => { u.assault = false; u.stop() })
+
+    // Soldiers: those already on assault vs those waiting at base (exclude low-HP from attack pool)
+    const inactifMilitary = military.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
+    const waitingMilitary = military.filter(c =>
+      c.inactif &&
+      c.action !== ACTION_TYPES.attack &&
+      !c.assault &&
+      c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO
+    )
 
     if (DEBUG)
-      console.log(`Inactif Clubmans: ${inactifClubmans.length}, Waiting Clubmans: ${waitingClubmans.length}`)
+      console.log(`Inactif Military: ${inactifMilitary.length}, Waiting Military: ${waitingMilitary.length}`)
 
     // Player losing condition
     if (!this.buildings.length && !this.units.length) {
@@ -302,7 +392,26 @@ export class AI extends Player {
     // Track food workers assigned this step to avoid double-filling the quota via both berries and farms
     let foodWorkersAssigned = villagersOnFood.length
 
-    // Food: berries first
+    // Discover dead animals with remaining meat (scan each step so nothing is missed)
+    for (const animal of map.gaia.units) {
+      if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
+        this.foundedDeadAnimals.add(animal)
+      }
+    }
+
+    // Dead animal meat: highest food priority (free meat, no hunting needed)
+    if (this.foundedDeadAnimals.size > 0) {
+      const toAssign = Math.min(Math.max(0, maxVillagersOnFood - foodWorkersAssigned), availableVillagers.length)
+      for (let i = 0; i < toAssign; i++) {
+        const animal = getClosestInstance(availableVillagers[0], this.foundedDeadAnimals)
+        if (!animal) break
+        availableVillagers.shift().sendToTakeMeat(animal)
+        foodWorkersAssigned++
+        actions++
+      }
+    }
+
+    // Food: berries
     const berriesAssigned = assignVillagersToResource(
       villagersForaging,
       this.foundedBerrybushs,
@@ -319,7 +428,20 @@ export class AI extends Player {
       villager.sendToTree(tree)
     })
 
-    // Food fallback: send to empty farms only when berries aren't covering the full quota
+    // Hunting live animals (before farms, capped at 2 hunters)
+    if (this.foundedAnimals.size > 0) {
+      const maxHunters = Math.min(2, availableVillagers.length)
+      for (let i = 0; i < maxHunters; i++) {
+        if (foodWorkersAssigned >= maxVillagersOnFood) break
+        const animal = getClosestInstance(availableVillagers[0], this.foundedAnimals)
+        if (!animal) break
+        availableVillagers.shift().sendToHunt(animal)
+        foodWorkersAssigned++
+        actions++
+      }
+    }
+
+    // Food fallback: send to empty farms only when other sources aren't covering the full quota
     const foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned)
     for (let i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
       const villager = availableVillagers.shift()
@@ -367,31 +489,35 @@ export class AI extends Player {
       this.foundedEnemyBuildings.values().next().value
 
     // Defensive reaction: enemy units spotted → send idle soldiers to defend
-    if (this.foundedEnemyUnits.size > 0 && waitingClubmans.length > 0) {
+    if (this.foundedEnemyUnits.size > 0 && waitingMilitary.length > 0) {
       const enemyUnit = [...this.foundedEnemyUnits].find(u => u.hitPoints > 0)
       if (enemyUnit) {
         if (DEBUG) console.log('Enemy units spotted! Defending...')
-        sendToAttack(waitingClubmans, enemyUnit)
+        sendToAttack(waitingMilitary, enemyUnit)
         actions++
       }
     }
 
-    // Attack wave: enough soldiers accumulated → launch assault
-    if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
-      const target =
-        getBestEnemyTarget() ||
-        map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)]
-      if (DEBUG) console.log('Launching attack wave! Target:', target)
-      sendToAttack(waitingClubmans, target)
-      actions++
+    // Attack wave: keep a defender garrison (defenderRatio), send the rest
+    if (waitingMilitary.length >= howManySoldiersBeforeAttack) {
+      const defenderCount = Math.max(2, Math.floor(waitingMilitary.length * this.difficultyConfig.defenderRatio))
+      const attackers = waitingMilitary.slice(defenderCount)
+      if (attackers.length > 0) {
+        const target =
+          getBestEnemyTarget() ||
+          map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)]
+        if (DEBUG) console.log(`Launching attack wave! ${attackers.length} attackers, ${defenderCount} defenders. Target:`, target)
+        sendToAttack(attackers, target)
+        actions++
+      }
     }
 
     // Soldiers that finished an assault → redirect to next enemy building
-    if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
+    if (inactifMilitary.length && this.foundedEnemyBuildings.size) {
       const target = getBestEnemyTarget()
       if (target) {
         if (DEBUG) console.log('Redirecting assault soldiers to:', target)
-        sendToAttack(inactifClubmans, target)
+        sendToAttack(inactifMilitary, target)
         actions++
       }
     }
@@ -412,7 +538,10 @@ export class AI extends Player {
     }
 
     actions += buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager)
-    actions += buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman)
+    actions += buyUnits(infantry.length, maxInfantry, barracks, infantryUnit)
+    actions += buyUnits(archers.length,  maxArcher,   archeryRanges, archerUnit)
+    actions += buyUnits(cavalry.length,  maxCavalry,  stables, 'Scout')
+    actions += buyUnits(hoplites.length, maxHoplite,  academies, 'Hoplite')
 
     // Building Purchasing — use BUILDING_TYPES constants as keys to avoid string/constant mismatches
     const buyBuildingIfNeeded = (condition, buildingType, positionCallback) => {
@@ -423,6 +552,9 @@ export class AI extends Player {
         [BUILDING_TYPES.granary]: granarys,
         [BUILDING_TYPES.storagePit]: storagepits,
         [BUILDING_TYPES.market]: markets,
+        [BUILDING_TYPES.archeryRange]: archeryRanges,
+        [BUILDING_TYPES.stable]: stables,
+        [BUILDING_TYPES.academy]: academies,
       }
       const building = this.config.buildings[buildingType]
       if (
@@ -458,6 +590,27 @@ export class AI extends Player {
       )
     )) actions++
 
+    // Archery Range (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
+    if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
+        otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
+      )
+    )) actions++
+
+    // Stable (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
+    if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.stable, () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
+        otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
+      )
+    )) actions++
+
+    // Academy (conditions checked inside buyBuilding: age >= 2 + hasBuilt Stable)
+    if (buyBuildingIfNeeded(stables.some(s => s.isBuilt), BUILDING_TYPES.academy, () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
+        otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
+      )
+    )) actions++
+
     // Farm
     if (buyBuildingIfNeeded(true, BUILDING_TYPES.farm, () => {
       const buildings = [...granarys, ...towncenters]
@@ -487,8 +640,39 @@ export class AI extends Player {
       }
       return bought
     }
-    if (this.nextAge[this.age + 1]) {
-      actions += buyTechnology(towncenters, this.nextAge[this.age + 1])
+    // Age up only when near pop cap AND resources cover cost + buffer (avoid stripping the economy)
+    const ageUpCosts   = { 1: { food: 500 }, 2: { food: 800 }, 3: { food: 1000, gold: 800 } }
+    const ageUpBuffers = { 1: { food: 200 }, 2: { food: 200 }, 3: { food: 200,  gold: 200 } }
+    const nextAgeKey = this.age + 1
+    if (this.nextAge[nextAgeKey]) {
+      const cost   = ageUpCosts[nextAgeKey]   || {}
+      const buffer = ageUpBuffers[nextAgeKey] || {}
+      const popReady = this.population >= Math.floor(maxVillagers * 0.8)
+      const resReady = Object.entries(cost).every(([res, amount]) => this[res] >= amount + (buffer[res] || 0))
+      if (popReady && resReady) {
+        actions += buyTechnology(towncenters, this.nextAge[nextAgeKey])
+      }
+    }
+
+    // Research other technologies — one per building type per step, respecting conditions and prereqs
+    const buildingListByType = {
+      [BUILDING_TYPES.barracks]:     barracks,
+      [BUILDING_TYPES.archeryRange]: archeryRanges,
+      [BUILDING_TYPES.storagePit]:   storagepits,
+      [BUILDING_TYPES.market]:       markets,
+    }
+    for (const [buildingType, techList] of Object.entries(this.techPriorityByBuilding)) {
+      const buildings = buildingListByType[buildingType]
+      if (!buildings?.length) continue
+      for (const tech of techList) {
+        if (this.technologies.includes(tech)) continue
+        if (!this.canResearchTech(tech)) continue
+        const bought = buyTechnology(buildings, tech)
+        if (bought) {
+          actions += bought
+          break
+        }
+      }
     }
 
     if (DEBUG) console.log('----Step ended')

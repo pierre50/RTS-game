@@ -41,6 +41,7 @@ export default class Map extends Container {
     this.noAI = false
 
     this.devMode = false
+    this.difficulty = 'medium'
     this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0 }
     this.revealEverything = false
     this.revealTerrain = false
@@ -242,6 +243,8 @@ export default class Map extends Container {
 
     this.gaia = new Gaia(this.context)
 
+    this.generateAnimalsAroundPlayers(this.playersPos)
+
     //this.generateMapRelief()
     //this.formatCellsRelief()
 
@@ -305,7 +308,7 @@ export default class Map extends Container {
             )
           )
         } else if (!this.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color, difficulty: this.difficulty }, context))
         }
       }
     }
@@ -531,6 +534,41 @@ export default class Map extends Container {
             this.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.context))
           )
       }
+    }
+  }
+
+  placeAnimalHerd(player, quantity, range) {
+    const { grid } = this
+    const randomDistance = randomRange(range[0], range[1])
+    const centerI = player.i + randomItem([-randomDistance, randomDistance])
+    const centerJ = player.j + randomItem([-randomDistance, randomDistance])
+
+    const validCells = []
+    for (let dx = -3; dx <= 3; dx++) {
+      for (let dy = -3; dy <= 3; dy++) {
+        const newI = centerI + dx
+        const newJ = centerJ + dy
+        if (grid[newI]?.[newJ]) {
+          const cell = grid[newI][newJ]
+          if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+            validCells.push({ i: newI, j: newJ })
+          }
+        }
+      }
+    }
+
+    const toPlace = Math.min(quantity, validCells.length)
+    for (let i = 0; i < toPlace; i++) {
+      const idx = Math.floor(Math.random() * validCells.length)
+      const cell = validCells.splice(idx, 1)[0]
+      this.gaia.createAnimal({ i: cell.i, j: cell.j, type: 'Gazelle' })
+    }
+  }
+
+  generateAnimalsAroundPlayers(playersPos) {
+    for (let i = 0; i < playersPos.length; i++) {
+      this.placeAnimalHerd(playersPos[i], 5, [8, 14])
+      this.placeAnimalHerd(playersPos[i], 4, [16, 24])
     }
   }
 

@@ -408,6 +408,10 @@ function updateAIKnowledge(globalCell, cell, instance) {
       if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has)
     }
 
+    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
+      owner.foundedAnimals.add(has)
+    }
+
     if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
       owner.foundedEnemyBuildings.add(has)
     }

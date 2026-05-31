@@ -33,7 +33,6 @@ import {
   pointsDistance,
   getHitPointsWithDamage,
   uuidv4,
-  CustomTimeout,
   setUnitTexture,
   updateInstanceVisibility,
   getPercentage,
@@ -63,17 +62,13 @@ export class Animal extends Container {
     this.inactif = true
     this.isDead = false
     this.isDestroyed = false
-    this.timeout
+    this.timeoutId = null
     this.x = null
     this.y = null
     this.z = null
 
-    Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
-    })
-    Object.keys(this.owner.config.animals[this.type]).forEach(prop => {
-      this[prop] = this.owner.config.animals[this.type][prop]
-    })
+    Object.assign(this, options)
+    Object.assign(this, this.owner.config.animals[this.type])
 
     this.size = 1
     this.visible = false
@@ -197,6 +192,13 @@ export class Animal extends Container {
     }
   }
 
+  stopTimeout() {
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
+    }
+  }
+
   select() {
     if (this.selected) {
       return
@@ -241,12 +243,10 @@ export class Animal extends Container {
   }
 
   pause() {
-    this.timeout?.pause()
     this.sprite?.stop()
   }
 
   resume() {
-    this.timeout?.resume()
     this.sprite?.play()
   }
 
@@ -590,6 +590,7 @@ export class Animal extends Container {
 
     this.owner.population--
     this.stopInterval()
+    this.stopTimeout()
     this.isDead = true
     this.zIndex--
     this.path = []
@@ -618,9 +619,7 @@ export class Animal extends Container {
         player.unselectAll()
       }
       this.sprite.currentFrame = 3
-      this.timeout = new CustomTimeout(() => {
-        this.clear()
-      }, CORPSE_TIME * 1000)
+      this.timeoutId = this.context.scheduler.addOneShot(() => this.clear(), CORPSE_TIME * 1000)
     }
   }
 
@@ -628,6 +627,7 @@ export class Animal extends Container {
     const {
       context: { map },
     } = this
+    this.stopTimeout()
     this.isDestroyed = true
     // Remove from map corpses
     map.grid[this.i][this.j].corpses.delete(this)

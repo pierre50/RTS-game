@@ -133,7 +133,7 @@ export function changeSpriteColorDirectly(sprite, color) {
     return
   }
 
-  const baseTexture = sprite.texture.baseTexture.resource
+  const baseTexture = sprite.texture.source.resource
 
   const canvas = document.createElement('canvas')
   canvas.width = frame.width
