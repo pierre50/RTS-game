@@ -1,58 +1,32 @@
 "use strict";
 (self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[792],{
 
-/***/ 7232
+/***/ 2590
 (__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
-// NAMESPACE OBJECT: ./app/lib/maths.js
-var maths_namespaceObject = {};
-__webpack_require__.r(maths_namespaceObject);
-__webpack_require__.d(maths_namespaceObject, {
-  average: () => (average),
-  cartesianToIsometric: () => (cartesianToIsometric),
-  cellIsDiag: () => (maths_cellIsDiag),
-  degreeToDirection: () => (degreeToDirection),
-  degreesToRadians: () => (degreesToRadians),
-  diff: () => (diff),
-  formatNumber: () => (formatNumber),
-  getInstanceDegree: () => (maths_getInstanceDegree),
-  getInstanceZIndex: () => (getInstanceZIndex),
-  getPercentage: () => (getPercentage),
-  getPointsDegree: () => (maths_getPointsDegree),
-  getValuePercentage: () => (getValuePercentage),
-  instancesDistance: () => (maths_instancesDistance),
-  isometricToCartesian: () => (isometricToCartesian),
-  pointInRectangle: () => (pointInRectangle),
-  pointIsBetweenTwoPoint: () => (pointIsBetweenTwoPoint),
-  pointsDistance: () => (maths_pointsDistance),
-  randomItem: () => (maths_randomItem),
-  randomRange: () => (maths_randomRange),
-  uuidv4: () => (uuidv4)
-});
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(7103);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
-var injectStylesIntoStyleTag = __webpack_require__(7388);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
+var lib = __webpack_require__(5268);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
+var injectStylesIntoStyleTag = __webpack_require__(4368);
 var injectStylesIntoStyleTag_default = /*#__PURE__*/__webpack_require__.n(injectStylesIntoStyleTag);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/styleDomAPI.js
-var styleDomAPI = __webpack_require__(4517);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/styleDomAPI.js
+var styleDomAPI = __webpack_require__(2769);
 var styleDomAPI_default = /*#__PURE__*/__webpack_require__.n(styleDomAPI);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/insertBySelector.js
-var insertBySelector = __webpack_require__(6615);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/insertBySelector.js
+var insertBySelector = __webpack_require__(4987);
 var insertBySelector_default = /*#__PURE__*/__webpack_require__.n(insertBySelector);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/setAttributesWithoutAttributes.js
-var setAttributesWithoutAttributes = __webpack_require__(9812);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/setAttributesWithoutAttributes.js
+var setAttributesWithoutAttributes = __webpack_require__(5344);
 var setAttributesWithoutAttributes_default = /*#__PURE__*/__webpack_require__.n(setAttributesWithoutAttributes);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/insertStyleElement.js
-var insertStyleElement = __webpack_require__(1600);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/insertStyleElement.js
+var insertStyleElement = __webpack_require__(1740);
 var insertStyleElement_default = /*#__PURE__*/__webpack_require__.n(insertStyleElement);
-// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.105.4/node_modules/style-loader/dist/runtime/styleTagTransform.js
-var styleTagTransform = __webpack_require__(7837);
+// EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/styleTagTransform.js
+var styleTagTransform = __webpack_require__(4633);
 var styleTagTransform_default = /*#__PURE__*/__webpack_require__.n(styleTagTransform);
-// EXTERNAL MODULE: ./node_modules/.pnpm/css-loader@7.1.4_webpack@5.105.4/node_modules/css-loader/dist/cjs.js!./app/styles.css
-var styles = __webpack_require__(2088);
+// EXTERNAL MODULE: ./node_modules/.pnpm/css-loader@7.1.4_webpack@5.107.2/node_modules/css-loader/dist/cjs.js!./app/styles.css
+var styles = __webpack_require__(7172);
 ;// ./app/styles.css
 
       
@@ -80,8 +54,8 @@ var update = injectStylesIntoStyleTag_default()(styles/* default */.A, options);
 
        /* harmony default export */ const app_styles = (styles/* default */.A && styles/* default */.A.locals ? styles/* default */.A.locals : undefined);
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
-var sound_lib = __webpack_require__(8449);
+// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
+var sound_lib = __webpack_require__(2250);
 ;// ./app/constants/index.js
 var CELL_WIDTH = 64;
 var CELL_HEIGHT = 32;
@@ -105,7 +79,10 @@ var BUILDING_TYPES = {
   storagePit: 'StoragePit',
   granary: 'Granary',
   barracks: 'Barracks',
-  market: 'Market'
+  market: 'Market',
+  archeryRange: 'ArcheryRange',
+  stable: 'Stable',
+  academy: 'Academy'
 };
 var UNIT_TYPES = {
   villager: 'Villager',
@@ -222,8 +199,8 @@ var CORPSE_TIME = 120;
 var RUBBLE_TIME = 120;
 var MAX_SELECT_UNITS = 10;
 var POPULATION_MAX = 200;
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs + 4 modules
-var MultiColorReplaceFilter = __webpack_require__(6240);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs + 4 modules
+var MultiColorReplaceFilter = __webpack_require__(2973);
 ;// ./app/lib/graphics.js
 function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
@@ -360,7 +337,7 @@ function changeSpriteColorDirectly(sprite, color) {
     sprite.texture = recoloredTextureCache.get(cacheKey);
     return;
   }
-  var baseTexture = sprite.texture.baseTexture.resource;
+  var baseTexture = sprite.texture.source.resource;
   var canvas = document.createElement('canvas');
   canvas.width = frame.width;
   canvas.height = frame.height;
@@ -694,7 +671,7 @@ function pointIsBetweenTwoPoint(line1, line2, pnt, lineThickness) {
  * @param {number} min
  * @param {number} max
  */
-function maths_randomRange(min, max) {
+function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
@@ -713,9 +690,9 @@ function maths_randomItem() {
  * @param {object} b
  * @param {boolean} useCartesian
  */
-function maths_instancesDistance(a, b) {
+function instancesDistance(a, b) {
   var useCartesian = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-  return useCartesian ? maths_pointsDistance(a.i, a.j, b.i, b.j) : maths_pointsDistance(a.x, a.y, b.x, b.y);
+  return useCartesian ? pointsDistance(a.i, a.j, b.i, b.j) : pointsDistance(a.x, a.y, b.x, b.y);
 }
 
 /**
@@ -742,8 +719,8 @@ function diff(a, b) {
  * @param {number} x
  * @param {number} y
  */
-function maths_getInstanceDegree(instance, x, y) {
-  return maths_getPointsDegree(instance.x, instance.y, x, y);
+function getInstanceDegree(instance, x, y) {
+  return getPointsDegree(instance.x, instance.y, x, y);
 }
 
 /**
@@ -754,7 +731,7 @@ function maths_getInstanceDegree(instance, x, y) {
  * @param {number} y2 - The y-coordinate of the second point.
  * @returns {number} - The angle in degrees from the first point to the second.
  */
-function maths_getPointsDegree(x1, y1, x2, y2) {
+function getPointsDegree(x1, y1, x2, y2) {
   var tX = x2 - x1;
   var tY = y2 - y1;
   return Math.round(Math.atan2(tY, tX) * 180 / Math.PI + 180);
@@ -776,7 +753,7 @@ function degreesToRadians(degrees) {
  * @param {number} x2
  * @param {number} y2
  */
-function maths_pointsDistance(x1, y1, x2, y2) {
+function pointsDistance(x1, y1, x2, y2) {
   var a = x1 - x2;
   var b = y1 - y2;
   return Math.floor(Math.sqrt(a * a + b * b));
@@ -801,7 +778,7 @@ function pointInRectangle(x, y, left, top, width, height) {
  * @param {object} instance
  * @param {object} instance
  */
-function maths_cellIsDiag(src, target) {
+function cellIsDiag(src, target) {
   return Math.abs(target.i - src.i) === Math.abs(target.j - src.j);
 }
 function degreeToDirection(degree) {
@@ -824,25 +801,19 @@ function degreeToDirection(degree) {
   }
 }
 ;// ./app/lib/grid.js
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = grid_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function grid_slicedToArray(r, e) { return grid_arrayWithHoles(r) || grid_iterableToArrayLimit(r, e) || grid_unsupportedIterableToArray(r, e) || grid_nonIterableRest(); }
+function grid_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function grid_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function grid_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function grid_toConsumableArray(r) { return grid_arrayWithoutHoles(r) || grid_iterableToArray(r) || grid_unsupportedIterableToArray(r) || grid_nonIterableSpread(); }
 function grid_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function grid_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function grid_arrayWithoutHoles(r) { if (Array.isArray(r)) return grid_arrayLikeToArray(r); }
-function grid_slicedToArray(r, e) { return grid_arrayWithHoles(r) || grid_iterableToArrayLimit(r, e) || grid_unsupportedIterableToArray(r, e) || grid_nonIterableRest(); }
-function grid_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = grid_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function grid_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return grid_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? grid_arrayLikeToArray(r, a) : void 0; } }
 function grid_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function grid_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function grid_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
-Object.entries(maths_namespaceObject).forEach(function (_ref) {
-  var _ref2 = grid_slicedToArray(_ref, 2),
-    name = _ref2[0],
-    exported = _ref2[1];
-  return window[name] = exported;
-});
 
 /**
  * Check if two instances are in contact.
@@ -898,7 +869,7 @@ function getFreeCellAroundPoint(x, y, size, grid, condition) {
   for (var distance = size; distance < maxDistance; distance++) {
     var cells = getCellsAroundPoint(x, y, grid, distance, condition);
     if (cells.length > 0) {
-      return randomItem(cells);
+      return maths_randomItem(cells);
     }
   }
   return null;
@@ -913,22 +884,38 @@ function getFreeCellAroundPoint(x, y, size, grid, condition) {
  */
 function getInstanceClosestFreeCellPath(instance, target, map) {
   var size = target.size || target.has && target.has.size || 1;
-  var paths = [];
-
-  // Get cells around the target based on size
   var distance = size === 3 ? 2 : 1;
-  getCellsAroundPoint(target.i, target.j, map.grid, distance, function (cell) {
-    var path = getInstancePath(instance, cell.i, cell.j, map);
-    if (path.length) {
-      paths.push(path);
-    }
+  var candidates = getCellsAroundPoint(target.i, target.j, map.grid, distance);
+  candidates.sort(function (a, b) {
+    return Math.abs(a.i - instance.i) + Math.abs(a.j - instance.j) - (Math.abs(b.i - instance.i) + Math.abs(b.j - instance.j));
   });
-
-  // Return the shortest path if available
-  return paths.length ? paths.reduce(function (shortest, current) {
-    return current.length < shortest.length ? current : shortest;
-  }) : [];
+  var best = [];
+  var _iterator = _createForOfIteratorHelper(candidates),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var cell = _step.value;
+      if (best.length && Math.abs(cell.i - instance.i) + Math.abs(cell.j - instance.j) >= best.length) break;
+      var path = getInstancePath(instance, cell.i, cell.j, map);
+      if (path.length && (!best.length || path.length < best.length)) best = path;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  return best;
 }
+
+// Monotonically increasing stamp — each A* search gets a unique value so
+// per-cell state from prior searches is ignored without any cleanup pass.
+var _pathStamp = 0;
+
+// Reusable A* structures — reset at the start of each search instead of
+// allocating fresh arrays/sets on every call (~60 allocations/sec with 20 units).
+var _heapData = [];
+var _openSet = new Set();
+var _closedSet = new Set();
 
 /**
  * Get the shortest path for a instance to a destination
@@ -945,73 +932,71 @@ function getInstancePath(instance, x, y, map) {
   var maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size);
   var minY = Math.max(Math.min(start.j, end.j) - maxZone, 0);
   var maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size);
-  function isCellReachable(cell) {
-    if (cell.solid) {
-      return false;
+  var stamp = ++_pathStamp;
+
+  // Initialize A* scratch state on a cell the first time this search touches it.
+  // Cells from prior searches have a different _ps value and are treated as fresh.
+  function initCell(cell) {
+    if (cell._ps !== stamp) {
+      cell._ps = stamp;
+      cell._g = Infinity;
+      cell._h = 0;
+      cell._f = Infinity;
+      cell._prev = null;
     }
+    return cell;
+  }
+  function isCellReachable(cell) {
+    if (cell.solid) return false;
     var allowWaterCellCategory = instance.category === 'Boat';
     return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water';
   }
-  var cloneGrid = [];
-  for (var i = minX; i <= maxX; i++) {
-    cloneGrid[i] = [];
-    for (var j = minY; j <= maxY; j++) {
-      cloneGrid[i][j] = {
-        i: i,
-        j: j,
-        x: map.grid[i][j].x,
-        y: map.grid[i][j].y,
-        z: map.grid[i][j].z,
-        solid: map.grid[i][j].solid,
-        category: map.grid[i][j].category
-      };
-    }
-  }
-  var cloneEnd = cloneGrid[end.i][end.j];
-  var cloneStart = cloneGrid[start.i][start.j];
+  var startCell = initCell(start);
+  var endCell = initCell(end);
 
   // Min-heap storing [f_at_push, node] pairs.
   // Stale re-insertions are skipped by comparing stored f with node's current f.
-  var heapData = [];
+  _heapData.length = 0;
+  _openSet.clear();
+  _closedSet.clear();
   function heapPush(f, node) {
-    heapData.push([f, node]);
-    var i = heapData.length - 1;
+    _heapData.push([f, node]);
+    var i = _heapData.length - 1;
     while (i > 0) {
       var parent = i - 1 >> 1;
-      if (heapData[parent][0] <= heapData[i][0]) break;
-      var _ref3 = [heapData[i], heapData[parent]];
-      heapData[parent] = _ref3[0];
-      heapData[i] = _ref3[1];
+      if (_heapData[parent][0] <= _heapData[i][0]) break;
+      var _ref = [_heapData[i], _heapData[parent]];
+      _heapData[parent] = _ref[0];
+      _heapData[i] = _ref[1];
       i = parent;
     }
   }
   function heapPop() {
-    var top = heapData[0];
-    var last = heapData.pop();
-    if (heapData.length > 0) {
-      heapData[0] = last;
-      var _i = 0;
+    var top = _heapData[0];
+    var last = _heapData.pop();
+    if (_heapData.length > 0) {
+      _heapData[0] = last;
+      var i = 0;
       while (true) {
-        var l = 2 * _i + 1;
-        var r = 2 * _i + 2;
-        var s = _i;
-        if (l < heapData.length && heapData[l][0] < heapData[s][0]) s = l;
-        if (r < heapData.length && heapData[r][0] < heapData[s][0]) s = r;
-        if (s === _i) break;
-        var _ref4 = [heapData[_i], heapData[s]];
-        heapData[s] = _ref4[0];
-        heapData[_i] = _ref4[1];
-        _i = s;
+        var l = 2 * i + 1;
+        var r = 2 * i + 2;
+        var s = i;
+        if (l < _heapData.length && _heapData[l][0] < _heapData[s][0]) s = l;
+        if (r < _heapData.length && _heapData[r][0] < _heapData[s][0]) s = r;
+        if (s === i) break;
+        var _ref2 = [_heapData[i], _heapData[s]];
+        _heapData[s] = _ref2[0];
+        _heapData[i] = _ref2[1];
+        i = s;
       }
     }
     return top;
   }
-  cloneStart.g = 0;
-  cloneStart.h = instancesDistance(cloneStart, cloneEnd);
-  cloneStart.f = cloneStart.h;
-  heapPush(cloneStart.f, cloneStart);
-  var openSet = new Set([cloneStart]);
-  var closedSet = new Set();
+  startCell._g = 0;
+  startCell._h = instancesDistance(startCell, endCell);
+  startCell._f = startCell._h;
+  heapPush(startCell._f, startCell);
+  _openSet.add(startCell);
   var path = [];
   var _loop = function _loop() {
       var _heapPop = heapPop(),
@@ -1019,43 +1004,46 @@ function getInstancePath(instance, x, y, map) {
         pushedF = _heapPop2[0],
         current = _heapPop2[1];
       // Skip stale entries (node was re-inserted with a better f)
-      if (pushedF !== current.f || closedSet.has(current)) return 0; // continue
-      if (current === cloneEnd) {
-        path = [cloneEnd];
+      if (pushedF !== current._f || _closedSet.has(current)) return 0; // continue
+      if (current === endCell) {
+        path = [endCell];
         var temp = current;
-        while (temp.previous) {
-          path.push(temp.previous);
-          temp = temp.previous;
+        while (temp._prev) {
+          path.push(temp._prev);
+          temp = temp._prev;
         }
         return 1; // break
       }
-      openSet["delete"](current);
-      closedSet.add(current);
+      _openSet["delete"](current);
+      _closedSet.add(current);
 
       // check neighbours
-      getCellsAroundPoint(current.i, current.j, cloneGrid, 1, function (neighbour) {
-        var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]);
-        if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
-          var tempG = current.g + instancesDistance(neighbour, current);
-          if (!openSet.has(neighbour)) {
-            neighbour.g = tempG;
-            neighbour.h = instancesDistance(neighbour, cloneEnd);
-            neighbour.f = neighbour.g + neighbour.h;
-            neighbour.previous = current;
-            openSet.add(neighbour);
-            heapPush(neighbour.f, neighbour);
-          } else if (tempG < neighbour.g) {
+      getCellsAroundPoint(current.i, current.j, map.grid, 1, function (neighbour) {
+        // Enforce the search zone boundary (previously implicit via sparse cloneGrid)
+        if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return;
+        initCell(neighbour);
+        var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]);
+        if (!_closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+          var tempG = current._g + instancesDistance(neighbour, current);
+          if (!_openSet.has(neighbour)) {
+            neighbour._g = tempG;
+            neighbour._h = instancesDistance(neighbour, endCell);
+            neighbour._f = neighbour._g + neighbour._h;
+            neighbour._prev = current;
+            _openSet.add(neighbour);
+            heapPush(neighbour._f, neighbour);
+          } else if (tempG < neighbour._g) {
             // Better path found — update scores and re-insert; old heap entry will be skipped
-            neighbour.g = tempG;
-            neighbour.f = neighbour.g + neighbour.h;
-            neighbour.previous = current;
-            heapPush(neighbour.f, neighbour);
+            neighbour._g = tempG;
+            neighbour._f = neighbour._g + neighbour._h;
+            neighbour._prev = current;
+            heapPush(neighbour._f, neighbour);
           }
         }
       });
     },
     _ret;
-  while (heapData.length > 0) {
+  while (_heapData.length > 0) {
     _ret = _loop();
     if (_ret === 0) continue;
     if (_ret === 1) break;
@@ -1091,11 +1079,11 @@ function getZoneInGridWithCondition(zone, grid, size, condition) {
 
       // Check the surrounding cells of size `size` to ensure they all meet the condition
       var surroundingCells = getPlainCellsAroundPoint(i, j, grid, size);
-      var _iterator = _createForOfIteratorHelper(surroundingCells),
-        _step;
+      var _iterator2 = _createForOfIteratorHelper(surroundingCells),
+        _step2;
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var surroundingCell = _step.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var surroundingCell = _step2.value;
           if (!condition(surroundingCell)) {
             isFree = false;
             break; // Exit early if a cell does not meet the condition
@@ -1104,9 +1092,9 @@ function getZoneInGridWithCondition(zone, grid, size, condition) {
 
         // Return the first valid {i, j} coordinates if the area is free
       } catch (err) {
-        _iterator.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator.f();
+        _iterator2.f();
       }
       if (isFree) {
         return {
@@ -1136,8 +1124,10 @@ function findInstancesInSight(instance, condition) {
   var instances = [];
   for (var x = Math.max(instX - sight, 0); x <= Math.min(instX + sight, grid.length - 1); x++) {
     for (var y = Math.max(instY - sight, 0); y <= Math.min(instY + sight, grid[x].length - 1); y++) {
-      // Check if the cell is within the instance's sight range
-      if (pointsDistance(instX, instY, x, y) <= sight) {
+      // Check if the cell is within the instance's sight range (squared to avoid sqrt)
+      var dx = x - instX,
+        dy = y - instY;
+      if (dx * dx + dy * dy <= sight * sight) {
         var cell = grid[x][y];
 
         // Ensure the cell has an instance and the condition is met
@@ -1157,17 +1147,21 @@ function findInstancesInSight(instance, condition) {
  * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
 function updateInstanceVisibility(instance) {
+  var _instance$visibleCell, _instance$_visibleScr;
   var cx = instance.i,
     cy = instance.j,
     sight = instance.sight,
     owner = instance.owner,
     context = instance.context,
-    isDead = instance.isDead,
-    visibleCells = instance.visibleCells;
+    isDead = instance.isDead;
   var map = context.map;
   var player = context.player;
   var sightSq = sight * sight;
-  var newVisible = new Set();
+
+  // Ping-pong two persistent Sets to avoid per-call allocation
+  var prevVisible = (_instance$visibleCell = instance.visibleCells) !== null && _instance$visibleCell !== void 0 ? _instance$visibleCell : new Set();
+  var newVisible = (_instance$_visibleScr = instance._visibleScratch) !== null && _instance$_visibleScr !== void 0 ? _instance$_visibleScr : new Set();
+  newVisible.clear();
 
   // Collect all cells within sight
   if (!isDead) {
@@ -1179,14 +1173,13 @@ function updateInstanceVisibility(instance) {
       }
     });
   }
-  var prevVisible = visibleCells || new Set();
 
   // Hide cells that left sight
-  var _iterator2 = _createForOfIteratorHelper(prevVisible),
-    _step2;
+  var _iterator3 = _createForOfIteratorHelper(prevVisible),
+    _step3;
   try {
-    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-      var cell = _step2.value;
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var cell = _step3.value;
       if (!newVisible.has(cell)) {
         var playerCell = player.views[cell.i][cell.j];
         var globalCell = map.grid[cell.i][cell.j];
@@ -1200,15 +1193,15 @@ function updateInstanceVisibility(instance) {
 
     // Show new cells
   } catch (err) {
-    _iterator2.e(err);
+    _iterator3.e(err);
   } finally {
-    _iterator2.f();
+    _iterator3.f();
   }
-  var _iterator3 = _createForOfIteratorHelper(newVisible),
-    _step3;
+  var _iterator4 = _createForOfIteratorHelper(newVisible),
+    _step4;
   try {
-    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-      var _cell = _step3.value;
+    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+      var _cell = _step4.value;
       if (!prevVisible.has(_cell)) {
         var _globalCell = map.grid[_cell.i][_cell.j];
         _globalCell.updateVisible();
@@ -1237,11 +1230,12 @@ function updateInstanceVisibility(instance) {
       }
     }
   } catch (err) {
-    _iterator3.e(err);
+    _iterator4.e(err);
   } finally {
-    _iterator3.f();
+    _iterator4.f();
   }
   instance.visibleCells = newVisible;
+  instance._visibleScratch = prevVisible;
 }
 
 /**
@@ -1260,6 +1254,9 @@ function updateAIKnowledge(globalCell, cell, instance) {
       if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has);
       if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has);
       if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has);
+    }
+    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
+      owner.foundedAnimals.add(has);
     }
     if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
       owner.foundedEnemyBuildings.add(has);
@@ -1298,11 +1295,11 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
 
     // Check the surrounding cells of size `size` to ensure they all meet the condition
     var surroundingCells = getPlainCellsAroundPoint(randomX, randomY, grid, size);
-    var _iterator4 = _createForOfIteratorHelper(surroundingCells),
-      _step4;
+    var _iterator5 = _createForOfIteratorHelper(surroundingCells),
+      _step5;
     try {
-      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-        var surroundingCell = _step4.value;
+      for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+        var surroundingCell = _step5.value;
         if (!condition(surroundingCell)) {
           isFree = false;
           break; // Exit early if a cell does not meet the condition
@@ -1311,9 +1308,9 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
 
       // If the area is free, return the valid cell
     } catch (err) {
-      _iterator4.e(err);
+      _iterator5.e(err);
     } finally {
-      _iterator4.f();
+      _iterator5.f();
     }
     if (isFree) {
       return {
@@ -1491,11 +1488,11 @@ function getClosestInstance(instance, instances) {
   var closestDistance = Infinity;
 
   // Iterate through the instances to find the one with the minimum distance to the reference instance
-  var _iterator5 = _createForOfIteratorHelper(instances),
-    _step5;
+  var _iterator6 = _createForOfIteratorHelper(instances),
+    _step6;
   try {
-    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-      var targetInstance = _step5.value;
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var targetInstance = _step6.value;
       var distance = instancesDistance(instance, targetInstance);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -1505,9 +1502,9 @@ function getClosestInstance(instance, instances) {
 
     // Return the closest instance, or false if no valid instance was found
   } catch (err) {
-    _iterator5.e(err);
+    _iterator6.e(err);
   } finally {
-    _iterator5.f();
+    _iterator6.f();
   }
   return closestInstance || false;
 }
@@ -1524,20 +1521,22 @@ function getClosestInstance(instance, instances) {
  * @returns {object|null} The closest instance with its path or null if no valid path is found.
  */
 function getClosestInstanceWithPath(instance, instances) {
+  var maxCandidates = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 6;
   // Sort by Euclidean distance first so we try nearby targets first
   var sorted = grid_toConsumableArray(instances).sort(function (a, b) {
     return instancesDistance(instance, a) - instancesDistance(instance, b);
   });
   var closest = null;
-  var _iterator6 = _createForOfIteratorHelper(sorted),
-    _step6;
+  var attempts = 0;
+  var _iterator7 = _createForOfIteratorHelper(sorted),
+    _step7;
   try {
-    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-      var target = _step6.value;
+    for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+      var target = _step7.value;
       // A* path length >= straight-line distance, so skip if already longer than best
-      if (closest && instancesDistance(instance, target) >= closest.path.length) {
-        break;
-      }
+      if (closest && instancesDistance(instance, target) >= closest.path.length) break;
+      // Cap A* calls — if the N nearest by Euclidean distance are all blocked, farther ones likely are too
+      if (attempts++ >= maxCandidates) break;
       var path = getInstanceClosestFreeCellPath(instance, target, instance.parent);
       if (path.length && (!closest || path.length < closest.path.length)) {
         closest = {
@@ -1547,9 +1546,9 @@ function getClosestInstanceWithPath(instance, instances) {
       }
     }
   } catch (err) {
-    _iterator6.e(err);
+    _iterator7.e(err);
   } finally {
-    _iterator6.f();
+    _iterator7.f();
   }
   return closest;
 }
@@ -2314,10 +2313,9 @@ var Projectile = /*#__PURE__*/function (_Container) {
     sprite.allowClick = false;
     sprite.roundPixels = true;
     _this.addChild(sprite);
-    _this.interval = setInterval(function () {
-      if (_this.context.paused) return;
-      if (maths_pointsDistance(_this.x, _this.y, targetX, targetY) <= Math.max(_this.speed, _this.size)) {
-        if (maths_pointsDistance(targetX, targetY, _this.target.x, _this.target.y) <= average(_this.target.width, _this.target.height)) {
+    _this.interval = _this.context.scheduler.add(function () {
+      if (pointsDistance(_this.x, _this.y, targetX, targetY) <= Math.max(_this.speed, _this.size)) {
+        if (pointsDistance(targetX, targetY, _this.target.x, _this.target.y) <= average(_this.target.width, _this.target.height)) {
           _this.onHit(_this.target);
         }
         _this.die();
@@ -2348,7 +2346,8 @@ var Projectile = /*#__PURE__*/function (_Container) {
     key: "die",
     value: function die() {
       this.isDead = true;
-      clearInterval(this.interval);
+      this.context.scheduler.remove(this.interval);
+      this.interval = null;
       this.destroy({
         child: true,
         texture: true
@@ -2407,16 +2406,12 @@ var Building = /*#__PURE__*/function (_Container) {
     _this.loading = null;
     _this.isDead = false;
     _this.isDestroyed = false;
-    _this.timeout;
+    _this.timeoutId = null;
     _this.isUsedBy = null;
-    Object.keys(options).forEach(function (prop) {
-      _this[prop] = options[prop];
-    });
-    Object.keys(_this.owner.config.buildings[_this.type]).forEach(function (prop) {
-      _this[prop] = _this.owner.config.buildings[_this.type][prop];
-    });
-    _this.interval;
-    _this.attackInterval;
+    Object.assign(_this, options);
+    Object.assign(_this, _this.owner.config.buildings[_this.type]);
+    _this.intervalId = null;
+    _this.attackIntervalId = null;
     if (_this.queue.length) {
       _this.buyUnit(_this.queue[0], true, true);
     } else if (_this.technology) {
@@ -2605,7 +2600,7 @@ var Building = /*#__PURE__*/function (_Container) {
       var _this3 = this;
       var map = this.context.map;
       this.startAttackInterval(function () {
-        if (extra_getActionCondition(_this3, target, ACTION_TYPES.attack) && maths_instancesDistance(_this3, target) <= _this3.range) {
+        if (extra_getActionCondition(_this3, target, ACTION_TYPES.attack) && instancesDistance(_this3, target) <= _this3.range) {
           var projectile = new Projectile({
             owner: _this3,
             type: _this3.projectile,
@@ -2620,74 +2615,50 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "startInterval",
     value: function startInterval(callback, time) {
-      var _this4 = this;
-      var finalCb = function finalCb() {
-        var paused = _this4.context.paused;
-        if (paused) {
-          return;
-        }
-        callback();
-      };
       this.stopInterval();
-      this.interval = setInterval(finalCb, time * 1000 / 100 / ACCELERATOR);
+      this.intervalId = this.context.scheduler.add(callback, time * 1000 / 10 / ACCELERATOR);
     }
   }, {
     key: "stopInterval",
     value: function stopInterval() {
-      if (this.interval) {
-        clearInterval(this.interval);
-        this.interval = null;
+      if (this.intervalId != null) {
+        this.context.scheduler.remove(this.intervalId);
+        this.intervalId = null;
       }
     }
   }, {
     key: "startAttackInterval",
     value: function startAttackInterval(callback, time) {
-      var _this5 = this;
-      var finalCb = function finalCb() {
-        var paused = _this5.context.paused;
-        if (paused) {
-          return;
-        }
-        callback();
-      };
       this.stopAttackInterval();
-      finalCb();
-      this.attackInterval = setInterval(finalCb, time * 1000);
+      callback();
+      this.attackIntervalId = this.context.scheduler.add(callback, time * 1000);
     }
   }, {
     key: "stopAttackInterval",
     value: function stopAttackInterval() {
-      if (this.attackInterval) {
-        clearInterval(this.attackInterval);
-        this.attackInterval = null;
+      if (this.attackIntervalId != null) {
+        this.context.scheduler.remove(this.attackIntervalId);
+        this.attackIntervalId = null;
       }
     }
   }, {
     key: "pause",
-    value: function pause() {
-      var _this$timeout;
-      (_this$timeout = this.timeout) === null || _this$timeout === void 0 || _this$timeout.pause();
-    }
+    value: function pause() {}
   }, {
     key: "resume",
-    value: function resume() {
-      var _this$timeout2;
-      (_this$timeout2 = this.timeout) === null || _this$timeout2 === void 0 || _this$timeout2.resume();
-    }
+    value: function resume() {}
   }, {
     key: "startTimeout",
     value: function startTimeout(cb, time) {
       this.stopTimeout();
-      this.timeout = new CustomTimeout(function () {
-        return cb();
-      }, time * 1000 / ACCELERATOR);
+      this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000 / ACCELERATOR);
     }
   }, {
     key: "stopTimeout",
     value: function stopTimeout() {
-      if (this.timeout) {
-        this.timeout.pause();
-        this.timeout = null;
+      if (this.timeoutId != null) {
+        this.context.scheduler.remove(this.timeoutId);
+        this.timeoutId = null;
       }
     }
   }, {
@@ -2696,7 +2667,7 @@ var Building = /*#__PURE__*/function (_Container) {
       if (this.isDead) {
         return;
       }
-      if (this.range && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
       this.updateHitPoints(ACTION_TYPES.attack);
@@ -2796,7 +2767,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.range && instance.family !== FAMILY_TYPES.animal && !this.attackInterval && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && maths_instancesDistance(this, instance) <= this.range) {
+      if (this.range && instance.family !== FAMILY_TYPES.animal && !this.attackIntervalId && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && instancesDistance(this, instance) <= this.range) {
         this.attackAction(instance);
       }
     }
@@ -2865,7 +2836,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "die",
     value: function die() {
-      var _this6 = this;
+      var _this4 = this;
       if (this.isDead) {
         return;
       }
@@ -2914,28 +2885,29 @@ var Building = /*#__PURE__*/function (_Container) {
       updateInstanceVisibility(this);
       var dist = this.size === 3 ? 1 : 0;
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
-        if (cell.has === _this6) {
+        if (cell.has === _this4) {
           cell.has = null;
           cell.solid = false;
-          cell.corpses.add(_this6);
+          cell.corpses.add(_this4);
         }
       });
       this.startTimeout(function () {
-        return _this6.clear();
+        return _this4.clear();
       }, RUBBLE_TIME);
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
   }, {
     key: "clear",
     value: function clear() {
-      var _this7 = this;
+      var _this5 = this;
       if (this.isDestroyed) {
         return;
       }
+      clearTimeout(this.visibilityTimeout);
       var map = this.context.map;
       var dist = this.size === 3 ? 1 : 0;
       getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
-        cell.corpses["delete"](_this7);
+        cell.corpses["delete"](_this5);
       });
       this.isDestroyed = true;
       this.destroy({
@@ -3018,7 +2990,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "buyUnit",
     value: function buyUnit(type) {
-      var _this8 = this;
+      var _this6 = this;
       var alreadyPaid = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var force = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var extra = arguments.length > 3 ? arguments[3] : undefined;
@@ -3054,47 +3026,47 @@ var Building = /*#__PURE__*/function (_Container) {
             this.updateInterfaceLoading();
           }
           this.startInterval(function () {
-            if (_this8.queue[0] !== type) {
-              _this8.stopInterval();
-              _this8.loading = null;
-              if (_this8.queue.length) {
-                _this8.buyUnit(_this8.queue[0], true);
+            if (_this6.queue[0] !== type) {
+              _this6.stopInterval();
+              _this6.loading = null;
+              if (_this6.queue.length) {
+                _this6.buyUnit(_this6.queue[0], true);
               }
               hasShowedMessage = false;
-              if (_this8.selected && _this8.owner.isPlayed) {
-                var still = _this8.queue.filter(function (q) {
+              if (_this6.selected && _this6.owner.isPlayed) {
+                var still = _this6.queue.filter(function (q) {
                   return q === type;
                 }).length;
                 menu.updateButtonContent(type, still || '');
                 if (still === 0) menu.toggleButtonCancel(type, false);
-                _this8.updateInterfaceLoading();
+                _this6.updateInterfaceLoading();
               }
-            } else if (_this8.loading >= 100 || map.devMode) {
-              _this8.stopInterval();
-              _this8.placeUnit(type, extra);
-              _this8.loading = null;
-              _this8.queue.shift();
-              if (_this8.queue.length) {
-                _this8.buyUnit(_this8.queue[0], true);
+            } else if (_this6.loading >= 100 || map.devMode) {
+              _this6.stopInterval();
+              _this6.placeUnit(type, extra);
+              _this6.loading = null;
+              _this6.queue.shift();
+              if (_this6.queue.length) {
+                _this6.buyUnit(_this6.queue[0], true);
               }
               hasShowedMessage = false;
-              if (_this8.selected && _this8.owner.isPlayed) {
-                var _still = _this8.queue.filter(function (q) {
+              if (_this6.selected && _this6.owner.isPlayed) {
+                var _still = _this6.queue.filter(function (q) {
                   return q === type;
                 }).length;
                 menu.updateButtonContent(type, _still || '');
                 if (_still === 0) menu.toggleButtonCancel(type, false);
-                _this8.updateInterfaceLoading();
+                _this6.updateInterfaceLoading();
               }
-            } else if (_this8.loading < 100) {
-              if (_this8.owner.population < Math.min(POPULATION_MAX, _this8.owner.population_max)) {
-                _this8.loading += 1;
-              } else if (_this8.owner.isPlayed && !hasShowedMessage) {
+            } else if (_this6.loading < 100) {
+              if (_this6.owner.population < Math.min(POPULATION_MAX, _this6.owner.population_max)) {
+                _this6.loading += 10;
+              } else if (_this6.owner.isPlayed && !hasShowedMessage) {
                 menu.showMessage('You need to build more houses');
                 hasShowedMessage = true;
               }
-              if (_this8.selected && _this8.owner.isPlayed) {
-                _this8.updateInterfaceLoading();
+              if (_this6.selected && _this6.owner.isPlayed) {
+                _this6.updateInterfaceLoading();
               }
             }
           }, unit.trainingTime);
@@ -3105,14 +3077,14 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "updateInterfaceLoading",
     value: function updateInterfaceLoading() {
-      var _this9 = this;
+      var _this7 = this;
       var menu = this.context.menu;
       if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
-        if (this.loading === 1) {
+        if (this.loading === 10) {
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            return element.innerHTML = _this9.getLoadingElement().innerHTML;
+            return element.innerHTML = _this7.getLoadingElement().innerHTML;
           });
-        } else if (this.loading > 1) {
+        } else if (this.loading > 10) {
           menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading + '%');
         } else {
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
@@ -3183,7 +3155,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "buyTechnology",
     value: function buyTechnology(type, alreadyPaid, force) {
-      var _this0 = this;
+      var _this8 = this;
       var _this$context7 = this.context,
         menu = _this$context7.menu,
         map = _this$context7.map;
@@ -3204,51 +3176,51 @@ var Building = /*#__PURE__*/function (_Container) {
           menu.setBottombar(this);
         }
         this.startInterval(function () {
-          var _this0$technology = _this0.technology,
-            config = _this0$technology.config,
-            type = _this0$technology.type;
-          if (_this0.loading >= 100 || map.devMode) {
-            _this0.stopInterval();
-            _this0.loading = null;
-            _this0.technology = null;
-            if (Array.isArray(_this0.owner[config.key])) {
-              _this0.owner[config.key].push(config.value || type);
+          var _this8$technology = _this8.technology,
+            config = _this8$technology.config,
+            type = _this8$technology.type;
+          if (_this8.loading >= 100 || map.devMode) {
+            _this8.stopInterval();
+            _this8.loading = null;
+            _this8.technology = null;
+            if (Array.isArray(_this8.owner[config.key])) {
+              _this8.owner[config.key].push(config.value || type);
             } else {
-              _this0.owner[config.key] = config.value || type;
+              _this8.owner[config.key] = config.value || type;
             }
             if (config.action) {
               switch (config.action.type) {
                 case 'upgradeUnit':
-                  for (var i = 0; i < _this0.owner.units.length; i++) {
-                    var unit = _this0.owner.units[i];
+                  for (var i = 0; i < _this8.owner.units.length; i++) {
+                    var unit = _this8.owner.units[i];
                     if (unit.type === config.action.source) {
                       unit.upgrade(config.action.target);
                     }
                   }
                   break;
                 case 'upgradeBuilding':
-                  for (var _i5 = 0; _i5 < _this0.owner.buildings.length; _i5++) {
-                    var building = _this0.owner.buildings[_i5];
+                  for (var _i5 = 0; _i5 < _this8.owner.buildings.length; _i5++) {
+                    var building = _this8.owner.buildings[_i5];
                     if (building.type === config.action.source) {
                       building.upgrade(config.action.target);
                     }
                   }
                   break;
                 case 'improve':
-                  _this0.owner.updateConfig(config.action.operations);
+                  _this8.owner.updateConfig(config.action.operations);
                   break;
               }
             }
             var functionName = "on".concat(capitalizeFirstLetter(config.key), "Change");
-            typeof _this0.owner[functionName] === 'function' && _this0.owner[functionName](config.value);
-            if (_this0.owner.isPlayed) {
+            typeof _this8.owner[functionName] === 'function' && _this8.owner[functionName](config.value);
+            if (_this8.owner.isPlayed) {
               menu.updateBottombar();
               menu.updateTopbar();
             }
-          } else if (_this0.loading < 100) {
-            _this0.loading += 1;
-            if (_this0.owner.isPlayed && _this0.owner.selectedBuilding === _this0) {
-              _this0.updateInterfaceLoading();
+          } else if (_this8.loading < 100) {
+            _this8.loading += 10;
+            if (_this8.owner.isPlayed && _this8.owner.selectedBuilding === _this8) {
+              _this8.updateInterfaceLoading();
             }
           }
         }, config.researchTime);
@@ -3344,8 +3316,8 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.previousDest = null;
     _this.path = [];
     _this.selected = false;
-    _this.degree = maths_randomRange(1, 360);
-    _this.currentFrame = maths_randomRange(0, 4);
+    _this.degree = randomRange(1, 360);
+    _this.currentFrame = randomRange(0, 4);
     _this.action = null;
     _this.loading = 0;
     _this.loadingType = null;
@@ -3356,12 +3328,8 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.x = null;
     _this.y = null;
     _this.z = null;
-    Object.keys(options).forEach(function (prop) {
-      _this[prop] = options[prop];
-    });
-    Object.keys(_this.owner.config.units[_this.type]).forEach(function (prop) {
-      _this[prop] = _this.owner.config.units[_this.type][prop];
-    });
+    Object.assign(_this, options);
+    Object.assign(_this, _this.owner.config.units[_this.type]);
     _this.size = 1;
     _this.visible = false;
     _this.visibleCells = new Set();
@@ -3376,7 +3344,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       _this.owner.corpses.push(_this);
       map.grid[_this.i][_this.j].corpses.add(_this);
     } else if (!_this.isDead) {
-      _this.currentCell.has = _this;
+      _this.currentCell.place(_this);
       _this.currentCell.solid = true;
       _this.owner.units.push(_this);
     }
@@ -3443,7 +3411,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.sprite.currentFrame = Math.min(_this.currentFrame, _this.sprite.textures.length - 1);
     _this.sprite.updateAnchor = true;
     _this.addChild(_this.sprite);
-    _this.sendTo = _this.owner.isPlayed ? throttle(_this.sendToEvt, 100, true) : _this.sendToEvt;
+    _this.sendTo = throttle(_this.sendToEvt, _this.owner.isPlayed ? 100 : 1000, true);
     _this.on('pointerdown', function (evt) {
       var _this3 = _this,
         _this3$context = _this3.context,
@@ -3526,8 +3494,8 @@ var Unit = /*#__PURE__*/function (_Container) {
     });
     changeSpriteColor(_this.sprite, _this.owner.color);
     _this.interval = null;
-    setTimeout(function () {
-      updateInstanceVisibility(_this);
+    _this.visibilityTimeout = setTimeout(function () {
+      if (!_this.isDestroyed) updateInstanceVisibility(_this);
     });
     return _this;
   }
@@ -3589,7 +3557,7 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "setDest",
     value: function setDest(dest) {
-      if (!dest) {
+      if (!dest || dest.isDestroyed) {
         this.stop();
         return;
       }
@@ -3634,14 +3602,14 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.stopInterval();
       var path = [];
       // No instance we cancel the destination
-      if (!dest || this.isDead) {
+      if (!dest || dest.isDestroyed || this.isDead) {
         return;
       }
       // Unit is already beside our target
       if (this.isUnitAtDest(action, dest) && (!map.grid[this.i][this.j].solid || map.grid[this.i][this.j].solid && ((_map$grid$this$i$this = map.grid[this.i][this.j].has) === null || _map$grid$this$i$this === void 0 ? void 0 : _map$grid$this$i$this.label) === this.label)) {
         this.setDest(dest);
         this.action = action;
-        this.degree = maths_getInstanceDegree(this, dest.x, dest.y);
+        this.degree = getInstanceDegree(this, dest.x, dest.y);
         this.getAction(action);
         return;
       }
@@ -3723,9 +3691,59 @@ var Unit = /*#__PURE__*/function (_Container) {
       }
     }
   }, {
+    key: "startGathering",
+    value: function startGathering(loadingType, soundId) {
+      var _this6 = this;
+      var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+        _ref$dieOnEmpty = _ref.dieOnEmpty,
+        dieOnEmpty = _ref$dieOnEmpty === void 0 ? false : _ref$dieOnEmpty,
+        _ref$checkOwner = _ref.checkOwner,
+        checkOwner = _ref$checkOwner === void 0 ? false : _ref$checkOwner,
+        _ref$updateTexture = _ref.updateTexture,
+        updateTexture = _ref$updateTexture === void 0 ? false : _ref$updateTexture;
+      var menu = this.context.menu;
+      if (!this.getActionCondition(this.dest)) {
+        this.affectNewDest();
+        return;
+      }
+      this.setTextures(SHEET_TYPES.action);
+      this.startInterval(function () {
+        if (!_this6.getActionCondition(_this6.dest)) {
+          if (dieOnEmpty && _this6.dest.quantity <= 0) {
+            _this6.dest.die();
+          }
+          _this6.affectNewDest();
+          return;
+        }
+        if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
+          _this6.sendToDelivery();
+          return;
+        }
+        _this6.loading++;
+        _this6.loadingType = loadingType;
+        _this6.updateInterfaceLoading();
+        if (soundId) _this6.visible && sound_lib/* sound */.s3.play(soundId);
+        if (updateTexture) _this6.dest.updateTexture();
+        _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
+        if (_this6.dest.selected && (!checkOwner || _this6.owner.isPlayed)) {
+          menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
+        }
+        if (_this6.dest.quantity <= 0) {
+          if (dieOnEmpty) _this6.dest.die();
+          _this6.affectNewDest();
+        }
+        if (_this6.loading === 1) {
+          if (_this6.allAssets && _this6.allAssets[_this6.work]) {
+            _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
+          }
+          _this6.standingSheet = null;
+        }
+      }, 1 / this.gatheringRate[this.work] * 1000, false);
+    }
+  }, {
     key: "getAction",
     value: function getAction(name) {
-      var _this6 = this;
+      var _this7 = this;
       var _this$context3 = this.context,
         menu = _this$context3.menu,
         player = _this$context3.player,
@@ -3760,40 +3778,40 @@ var Unit = /*#__PURE__*/function (_Container) {
           this.dest.isUsedBy = this;
           this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.quantity <= 0) {
-                _this6.dest.die();
+            if (!_this7.getActionCondition(_this7.dest)) {
+              if (_this7.dest.quantity <= 0) {
+                _this7.dest.die();
               }
-              _this6.affectNewDest();
+              _this7.affectNewDest();
               return;
             }
-            _this6.dest.isUsedBy = _this6;
+            _this7.dest.isUsedBy = _this7;
             // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              _this6.dest.isUsedBy = null;
+            if (_this7.loading === _this7.loadingMax[_this7.loadingType] || !_this7.dest) {
+              _this7.sendToDelivery();
+              _this7.dest.isUsedBy = null;
               return;
             }
             // Villager farm the farm
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.wheat;
-            _this6.updateInterfaceLoading();
-            _this6.visible && sound_lib/* sound */.s3.play('5178');
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            if (_this6.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
+            _this7.loading++;
+            _this7.loadingType = LOADING_TYPES.wheat;
+            _this7.updateInterfaceLoading();
+            _this7.visible && sound_lib/* sound */.s3.play('5178');
+            _this7.dest.quantity = Math.max(_this7.dest.quantity - 1, 0);
+            if (_this7.dest.selected) {
+              menu.updateInfo(MENU_INFO_IDS.quantityText, _this7.dest.quantity);
             }
             // Destroy farm if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.dest.die();
-              _this6.affectNewDest();
+            if (_this7.dest.quantity <= 0) {
+              _this7.dest.die();
+              _this7.affectNewDest();
             }
             // Set the walking with berrybush animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
+            if (_this7.loading === 1) {
+              if (_this7.allAssets[_this7.work]) {
+                _this7.walkingSheet = lib/* Assets */.sP.cache.get(_this7.allAssets[_this7.work].loadedSheet);
               }
-              _this6.standingSheet = null;
+              _this7.standingSheet = null;
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
@@ -3804,177 +3822,67 @@ var Unit = /*#__PURE__*/function (_Container) {
           }
           this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.quantity <= 0) {
-                _this6.dest.die();
+            if (!_this7.getActionCondition(_this7.dest)) {
+              if (_this7.dest.quantity <= 0) {
+                _this7.dest.die();
               }
-              _this6.affectNewDest();
+              _this7.affectNewDest();
               return;
             }
             // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
+            if (_this7.loading === _this7.loadingMax[_this7.loadingType] || !_this7.dest) {
+              _this7.sendToDelivery();
               return;
             }
-            _this6.visible && sound_lib/* sound */.s3.play('5048');
+            _this7.visible && sound_lib/* sound */.s3.play('5048');
 
             // Tree destination is still alive we cut him until it's dead
-            if (_this6.dest.hitPoints > 0) {
-              _this6.dest.hitPoints = Math.max(_this6.dest.hitPoints - 1, 0);
-              if (_this6.dest.selected) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints > 0 ? _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints : '');
+            if (_this7.dest.hitPoints > 0) {
+              _this7.dest.hitPoints = Math.max(_this7.dest.hitPoints - 1, 0);
+              if (_this7.dest.selected) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints > 0 ? _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints : '');
               }
-              if (_this6.dest.hitPoints <= 0) {
+              if (_this7.dest.hitPoints <= 0) {
                 // Set cutted tree texture
-                _this6.dest.hitPoints = 0;
-                _this6.dest.setCuttedTreeTexture();
+                _this7.dest.hitPoints = 0;
+                _this7.dest.setCuttedTreeTexture();
               }
             } else {
               // Villager cut the stump
-              _this6.loading++;
-              _this6.loadingType = LOADING_TYPES.wood;
-              _this6.updateInterfaceLoading();
-              _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-              if (_this6.dest.selected) {
-                menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
+              _this7.loading++;
+              _this7.loadingType = LOADING_TYPES.wood;
+              _this7.updateInterfaceLoading();
+              _this7.dest.quantity = Math.max(_this7.dest.quantity - 1, 0);
+              if (_this7.dest.selected) {
+                menu.updateInfo(MENU_INFO_IDS.quantityText, _this7.dest.quantity);
               }
               // Destroy tree if stump out of quantity
-              if (_this6.dest.quantity <= 0) {
-                _this6.dest.die();
-                _this6.affectNewDest();
+              if (_this7.dest.quantity <= 0) {
+                _this7.dest.die();
+                _this7.affectNewDest();
               }
               // Set the walking with wood animation
-              if (_this6.loading === 1) {
-                if (_this6.allAssets[_this6.work]) {
-                  _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
+              if (_this7.loading === 1) {
+                if (_this7.allAssets[_this7.work]) {
+                  _this7.walkingSheet = lib/* Assets */.sP.cache.get(_this7.allAssets[_this7.work].loadedSheet);
                 }
-                _this6.standingSheet = null;
+                _this7.standingSheet = null;
               }
             }
           }, 1 / this.gatheringRate[this.work] * 1000, false);
           break;
         case ACTION_TYPES.forageberry:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.quantity <= 0) {
-                _this6.dest.die();
-              }
-              _this6.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              return;
-            }
-            // Villager forage the berrybush
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.berry;
-            _this6.updateInterfaceLoading();
-            _this6.visible && sound_lib/* sound */.s3.play('5085');
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            if (_this6.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-            }
-            // Destroy berrybush if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.dest.die();
-              _this6.affectNewDest();
-            }
-            // Set the walking with berrybush animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-              }
-              _this6.standingSheet = null;
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
+          this.startGathering(LOADING_TYPES.berry, '5085', {
+            dieOnEmpty: true
+          });
           break;
         case ACTION_TYPES.minestone:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.quantity <= 0) {
-                _this6.dest.die();
-              }
-              _this6.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              return;
-            }
-            // Villager mine the stone
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.stone;
-            _this6.updateInterfaceLoading();
-            _this6.visible && sound_lib/* sound */.s3.play('5159');
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            if (_this6.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-            }
-            // Destroy stone if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.dest.die();
-              _this6.affectNewDest();
-            }
-            // Set the walking with stone animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-              }
-              _this6.standingSheet = null;
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
+          this.startGathering(LOADING_TYPES.stone, '5159', {
+            dieOnEmpty: true
+          });
           break;
         case ACTION_TYPES.minegold:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              _this6.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              return;
-            }
-            // Villager mine the gold
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.gold;
-            _this6.updateInterfaceLoading();
-            _this6.visible && sound_lib/* sound */.s3.play('5159');
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            if (_this6.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-            }
-            // Destroy gold if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.dest.die();
-              _this6.affectNewDest();
-            }
-            // Set the walking with gold animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-              }
-              _this6.standingSheet = null;
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
+          this.startGathering(LOADING_TYPES.gold, '5159');
           break;
         case ACTION_TYPES.build:
           if (!this.getActionCondition(this.dest)) {
@@ -3983,29 +3891,29 @@ var Unit = /*#__PURE__*/function (_Container) {
           }
           this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest.type === BUILDING_TYPES.farm && !_this6.dest.isUsedBy) {
-                _this6.sendToFarm(_this6.dest);
+            if (!_this7.getActionCondition(_this7.dest)) {
+              if (_this7.dest.type === BUILDING_TYPES.farm && !_this7.dest.isUsedBy) {
+                _this7.sendToFarm(_this7.dest);
               }
-              _this6.affectNewDest();
+              _this7.affectNewDest();
               return;
             }
-            if (_this6.dest.hitPoints < _this6.dest.totalHitPoints) {
-              _this6.visible && sound_lib/* sound */.s3.play('5107');
-              _this6.dest.hitPoints = Math.min(Math.round(_this6.dest.hitPoints + _this6.dest.totalHitPoints / _this6.dest.constructionTime), _this6.dest.totalHitPoints);
-              if (_this6.dest.selected && _this6.owner.isPlayed) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+            if (_this7.dest.hitPoints < _this7.dest.totalHitPoints) {
+              _this7.visible && sound_lib/* sound */.s3.play('5107');
+              _this7.dest.hitPoints = Math.min(Math.round(_this7.dest.hitPoints + _this7.dest.totalHitPoints / _this7.dest.constructionTime), _this7.dest.totalHitPoints);
+              if (_this7.dest.selected && _this7.owner.isPlayed) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
               }
-              _this6.dest.updateHitPoints(_this6.action);
+              _this7.dest.updateHitPoints(_this7.action);
             } else {
-              if (!_this6.dest.isBuilt) {
-                _this6.dest.updateHitPoints(_this6.action);
-                _this6.dest.isBuilt = true;
-                if (_this6.dest.type === BUILDING_TYPES.farm && !_this6.dest.isUsedBy) {
-                  _this6.sendToFarm(_this6.dest);
+              if (!_this7.dest.isBuilt) {
+                _this7.dest.updateHitPoints(_this7.action);
+                _this7.dest.isBuilt = true;
+                if (_this7.dest.type === BUILDING_TYPES.farm && !_this7.dest.isUsedBy) {
+                  _this7.sendToFarm(_this7.dest);
                 }
               }
-              _this6.affectNewDest();
+              _this7.affectNewDest();
             }
           }, 1000, false);
           break;
@@ -4017,74 +3925,74 @@ var Unit = /*#__PURE__*/function (_Container) {
           this.setTextures(SHEET_TYPES.action);
           if (this.range && this.type !== UNIT_TYPES.villager) {
             this.sprite.onLoop = function () {
-              if (!_this6.getActionCondition(_this6.dest)) {
-                if (_this6.dest && _this6.dest.hitPoints <= 0) {
-                  _this6.dest.die();
+              if (!_this7.getActionCondition(_this7.dest)) {
+                if (_this7.dest && _this7.dest.hitPoints <= 0) {
+                  _this7.dest.die();
                 }
-                _this6.affectNewDest();
+                _this7.affectNewDest();
                 return;
               }
-              if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-                _this6.stop();
+              if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
+                _this7.stop();
                 return;
               }
-              if (_this6.destHasMoved()) {
-                _this6.realDest.i = _this6.dest.i;
-                _this6.realDest.j = _this6.dest.j;
-                _this6.realDest.x = _this6.dest.x;
-                _this6.realDest.y = _this6.dest.y;
-                var oldDeg = _this6.degree;
-                _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-                if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
-                  _this6.setTextures(SHEET_TYPES.action);
+              if (_this7.destHasMoved()) {
+                _this7.realDest.i = _this7.dest.i;
+                _this7.realDest.j = _this7.dest.j;
+                _this7.realDest.x = _this7.dest.x;
+                _this7.realDest.y = _this7.dest.y;
+                var oldDeg = _this7.degree;
+                _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
+                if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
+                  _this7.setTextures(SHEET_TYPES.action);
                 }
               }
             };
             onSpriteLoopAtFrame(this.sprite, 6, function () {
               var projectile = new Projectile({
-                owner: _this6,
-                target: _this6.dest,
-                type: _this6.projectile,
-                destination: _this6.realDest
-              }, _this6.context);
+                owner: _this7,
+                target: _this7.dest,
+                type: _this7.projectile,
+                destination: _this7.realDest
+              }, _this7.context);
               map.addChild(projectile);
             });
           } else {
             this.startInterval(function () {
-              if (!_this6.getActionCondition(_this6.dest)) {
-                if (_this6.dest && _this6.dest.hitPoints <= 0) {
-                  _this6.dest.die();
+              if (!_this7.getActionCondition(_this7.dest)) {
+                if (_this7.dest && _this7.dest.hitPoints <= 0) {
+                  _this7.dest.die();
                 }
-                _this6.affectNewDest();
+                _this7.affectNewDest();
                 return;
               }
-              if (_this6.destHasMoved()) {
-                _this6.realDest.i = _this6.dest.i;
-                _this6.realDest.j = _this6.dest.j;
-                _this6.realDest.x = _this6.dest.x;
-                _this6.realDest.y = _this6.dest.y;
-                var oldDeg = _this6.degree;
-                _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-                if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
-                  _this6.setTextures(SHEET_TYPES.action);
+              if (_this7.destHasMoved()) {
+                _this7.realDest.i = _this7.dest.i;
+                _this7.realDest.j = _this7.dest.j;
+                _this7.realDest.x = _this7.dest.x;
+                _this7.realDest.y = _this7.dest.y;
+                var oldDeg = _this7.degree;
+                _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
+                if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
+                  _this7.setTextures(SHEET_TYPES.action);
                 }
               }
-              if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-                _this6.sendTo(_this6.dest, ACTION_TYPES.attack);
+              if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
+                _this7.sendTo(_this7.dest, ACTION_TYPES.attack);
                 return;
               }
-              if (_this6.sounds && _this6.sounds.hit) {
-                _this6.visible && sound_lib/* sound */.s3.play(Array.isArray(_this6.sounds.hit) ? maths_randomItem(_this6.sounds.hit) : _this6.sounds.hit);
+              if (_this7.sounds && _this7.sounds.hit) {
+                _this7.visible && sound_lib/* sound */.s3.play(Array.isArray(_this7.sounds.hit) ? maths_randomItem(_this7.sounds.hit) : _this7.sounds.hit);
               }
-              if (_this6.dest.hitPoints > 0) {
-                _this6.dest.hitPoints = getHitPointsWithDamage(_this6, _this6.dest);
-                if (_this6.dest.selected && (player.selectedUnit === _this6.dest || player.selectedBuilding === _this6.dest || player.selectedOther === _this6.dest)) {
-                  menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+              if (_this7.dest.hitPoints > 0) {
+                _this7.dest.hitPoints = getHitPointsWithDamage(_this7, _this7.dest);
+                if (_this7.dest.selected && (player.selectedUnit === _this7.dest || player.selectedBuilding === _this7.dest || player.selectedOther === _this7.dest)) {
+                  menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
                 }
-                _this6.dest.isAttacked(_this6);
-                if (_this6.dest.hitPoints <= 0) {
-                  _this6.dest.die();
-                  _this6.affectNewDest();
+                _this7.dest.isAttacked(_this7);
+                if (_this7.dest.hitPoints <= 0) {
+                  _this7.dest.die();
+                  _this7.affectNewDest();
                 }
               }
             }, this.rateOfFire * 1000, false);
@@ -4097,111 +4005,46 @@ var Unit = /*#__PURE__*/function (_Container) {
           }
           this.setTextures(SHEET_TYPES.action);
           this.sprite.onLoop = function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              _this6.affectNewDest();
+            if (!_this7.getActionCondition(_this7.dest)) {
+              _this7.affectNewDest();
               return;
             }
-            if (_this6.destHasMoved()) {
-              _this6.realDest.i = _this6.dest.i;
-              _this6.realDest.j = _this6.dest.j;
-              _this6.realDest.x = _this6.dest.x;
-              _this6.realDest.y = _this6.dest.y;
-              var oldDeg = _this6.degree;
-              _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
-                _this6.setTextures(SHEET_TYPES.action);
+            if (_this7.destHasMoved()) {
+              _this7.realDest.i = _this7.dest.i;
+              _this7.realDest.j = _this7.dest.j;
+              _this7.realDest.x = _this7.dest.x;
+              _this7.realDest.y = _this7.dest.y;
+              var oldDeg = _this7.degree;
+              _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
+              if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
+                _this7.setTextures(SHEET_TYPES.action);
               }
             }
-            if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-              _this6.sendTo(_this6.dest, ACTION_TYPES.heal);
+            if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
+              _this7.sendTo(_this7.dest, ACTION_TYPES.heal);
               return;
             }
-            if (_this6.dest.hitPoints < _this6.dest.totalHitPoints) {
-              _this6.dest.hitPoints = Math.min(_this6.dest.hitPoints + _this6.healing, _this6.dest.totalHitPoints);
-              if (_this6.dest.selected && player.selectedUnit === _this6.dest) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+            if (_this7.dest.hitPoints < _this7.dest.totalHitPoints) {
+              _this7.dest.hitPoints = Math.min(_this7.dest.hitPoints + _this7.healing, _this7.dest.totalHitPoints);
+              if (_this7.dest.selected && player.selectedUnit === _this7.dest) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
               }
             }
           };
           break;
         case ACTION_TYPES.takemeat:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              _this6.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              return;
-            }
-            // Villager take meat
-            _this6.visible && sound_lib/* sound */.s3.play('5178');
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.meat;
-            _this6.updateInterfaceLoading();
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            _this6.dest.updateTexture();
-            if (_this6.dest.selected && _this6.owner.isPlayed) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-            }
-            // Set the walking with meat animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-              }
-              _this6.standingSheet = null;
-            }
-            // Destroy corps if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.affectNewDest();
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
+          this.startGathering(LOADING_TYPES.meat, '5178', {
+            checkOwner: true,
+            updateTexture: true
+          });
           break;
         case ACTION_TYPES.fishing:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              _this6.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-              _this6.sendToDelivery();
-              return;
-            }
-            // Villager fish
-            _this6.loading++;
-            _this6.loadingType = LOADING_TYPES.fish;
-            _this6.updateInterfaceLoading();
-            _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-            if (_this6.dest.selected && _this6.owner.isPlayed) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-            }
-            // Set the walking with meat animation
-            if (_this6.loading === 1) {
-              if (_this6.allAssets && _this6.allAssets[_this6.work]) {
-                _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-              }
-              _this6.standingSheet = null;
-            }
-            // Destroy corps if it out of quantity
-            if (_this6.dest.quantity <= 0) {
-              _this6.affectNewDest();
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
+          this.startGathering(LOADING_TYPES.fish, null, {
+            checkOwner: true
+          });
           if (this.category !== 'Boat') {
             onSpriteLoopAtFrame(this.sprite, 6, function () {
-              _this6.visible && sound_lib/* sound */.s3.play('5125');
+              _this7.visible && sound_lib/* sound */.s3.play('5125');
             });
           }
           break;
@@ -4215,39 +4058,39 @@ var Unit = /*#__PURE__*/function (_Container) {
           }
           this.setTextures(SHEET_TYPES.action);
           this.sprite.onLoop = function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest && _this6.dest.hitPoints <= 0) {
-                _this6.dest.die();
-                _this6.previousDest ? _this6.goBackToPrevious() : _this6.sendToTakeMeat(_this6.dest);
+            if (!_this7.getActionCondition(_this7.dest)) {
+              if (_this7.dest && _this7.dest.hitPoints <= 0) {
+                _this7.dest.die();
+                _this7.previousDest ? _this7.goBackToPrevious() : _this7.sendToTakeMeat(_this7.dest);
                 return;
               }
-              _this6.affectNewDest();
+              _this7.affectNewDest();
               return;
             }
-            if (!_this6.isUnitAtDest(_this6.action, _this6.dest)) {
-              _this6.stop();
+            if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
+              _this7.stop();
               return;
             }
-            if (_this6.destHasMoved()) {
-              _this6.realDest.i = _this6.dest.i;
-              _this6.realDest.j = _this6.dest.j;
-              _this6.realDest.x = _this6.dest.x;
-              _this6.realDest.y = _this6.dest.y;
-              var oldDeg = _this6.degree;
-              _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              if (degreeToDirection(oldDeg) !== degreeToDirection(_this6.degree)) {
-                _this6.setTextures(SHEET_TYPES.action);
+            if (_this7.destHasMoved()) {
+              _this7.realDest.i = _this7.dest.i;
+              _this7.realDest.j = _this7.dest.j;
+              _this7.realDest.x = _this7.dest.x;
+              _this7.realDest.y = _this7.dest.y;
+              var oldDeg = _this7.degree;
+              _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
+              if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
+                _this7.setTextures(SHEET_TYPES.action);
               }
             }
           };
           onSpriteLoopAtFrame(this.sprite, 6, function () {
             var projectile = new Projectile({
-              owner: _this6,
-              target: _this6.dest,
+              owner: _this7,
+              target: _this7.dest,
               type: 'Spear',
-              destination: _this6.realDest,
+              destination: _this7.realDest,
               damage: 4
-            }, _this6.context);
+            }, _this7.context);
             map.addChild(projectile);
           });
           break;
@@ -4265,9 +4108,9 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "handleAffectNewDestHunter",
     value: function handleAffectNewDestHunter() {
-      var _this7 = this;
+      var _this8 = this;
       var firstTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, ACTION_TYPES.takemeat);
+        return _this8.getActionCondition(instance, ACTION_TYPES.takemeat);
       });
       if (firstTargets.length) {
         var target = getClosestInstanceWithPath(this, firstTargets);
@@ -4279,7 +4122,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }
           if (instanceContactInstance(this, target)) {
-            this.degree = maths_getInstanceDegree(this, target.x, target.y);
+            this.degree = getInstanceDegree(this, target.x, target.y);
             this.getAction(this.action);
             return true;
           }
@@ -4289,7 +4132,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var secondTargets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance, ACTION_TYPES.hunt);
+        return _this8.getActionCondition(instance, ACTION_TYPES.hunt);
       });
       if (secondTargets.length) {
         var _target = getClosestInstanceWithPath(this, secondTargets);
@@ -4301,7 +4144,7 @@ var Unit = /*#__PURE__*/function (_Container) {
             }
           }
           if (instanceContactInstance(this, _target)) {
-            this.degree = maths_getInstanceDegree(this, _target.x, _target.y);
+            this.degree = getInstanceDegree(this, _target.x, _target.y);
             this.getAction(this.action);
             return true;
           }
@@ -4339,7 +4182,7 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "affectNewDest",
     value: function affectNewDest() {
-      var _this8 = this;
+      var _this9 = this;
       this.stopInterval();
       if (this.previousDest && this.action !== ACTION_TYPES.delivery) {
         this.goBackToPrevious();
@@ -4350,13 +4193,13 @@ var Unit = /*#__PURE__*/function (_Container) {
         handleSuccess = this.handleAffectNewDestHunter();
       } else if (!this.dest || this.dest.family !== FAMILY_TYPES.animal) {
         var targets = findInstancesInSight(this, function (instance) {
-          return _this8.getActionCondition(instance);
+          return _this9.getActionCondition(instance);
         });
         if (targets.length) {
           var target = getClosestInstanceWithPath(this, targets);
           if (target) {
             if (instanceContactInstance(this, target)) {
-              this.degree = maths_getInstanceDegree(this, target.x, target.y);
+              this.degree = getInstanceDegree(this, target.x, target.y);
               this.getAction(this.action);
               return;
             }
@@ -4385,7 +4228,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         this.affectNewDest();
         return false;
       }
-      if ((this.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) && this.range && maths_instancesDistance(this, dest) <= this.range) {
+      if ((this.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) && this.range && instancesDistance(this, dest) <= this.range) {
         return true;
       }
       return instanceContactInstance(this, dest);
@@ -4393,7 +4236,7 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "destHasMoved",
     value: function destHasMoved() {
-      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && maths_instancesDistance(this, this.dest) <= this.sight;
+      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && instancesDistance(this, this.dest) <= this.sight;
     }
   }, {
     key: "moveToPath",
@@ -4406,7 +4249,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -4417,7 +4260,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       if (!this.sprite.playing) {
         this.sprite.play();
       }
-      if (maths_instancesDistance(this, nextCell, false) <= this.speed) {
+      if (instancesDistance(this, nextCell, false) <= this.speed) {
         this.z = nextCell.z;
         this.i = nextCell.i;
         this.j = nextCell.j;
@@ -4428,7 +4271,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
         this.currentCell = map.grid[this.i][this.j];
         if (this.currentCell.has === null) {
-          this.currentCell.has = this;
+          this.currentCell.place(this);
           this.currentCell.solid = true;
         }
         updateInstanceVisibility(this);
@@ -4442,7 +4285,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         if (this.isUnitAtDest(this.action, this.dest)) {
           this.path = [];
           this.stopInterval();
-          this.degree = maths_getInstanceDegree(this, this.dest.x, this.dest.y);
+          this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
           this.getAction(this.action);
           return;
         }
@@ -4498,7 +4341,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.action = null;
       this.dest = null;
       this.realDest = null;
-      this.currentCell.has = this;
+      this.currentCell.place(this);
       this.currentCell.solid = true;
       this.path = [];
       this.stopInterval();
@@ -4507,27 +4350,19 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "startInterval",
     value: function startInterval(callback, time) {
-      var _this9 = this;
       var immediate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-      var finalCb = function finalCb() {
-        var paused = _this9.context.paused;
-        if (paused) {
-          return;
-        }
-        callback();
-      };
       if (this.isDead) {
         return;
       }
       this.stopInterval();
-      immediate && finalCb();
-      this.interval = setInterval(finalCb, time);
+      if (immediate) callback();
+      this.interval = this.context.scheduler.add(callback, time);
     }
   }, {
     key: "stopInterval",
     value: function stopInterval() {
       if (this.interval) {
-        clearInterval(this.interval);
+        this.context.scheduler.remove(this.interval);
         this.interval = null;
       }
     }
@@ -4543,21 +4378,27 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "explore",
     value: function explore() {
-      var _this0 = this;
       var map = this.context.map;
-      // Single scan at max radius — find the closest unviewed non-solid cell
-      var dest = null;
-      var minDist = Infinity;
-      getCellsAroundPoint(this.i, this.j, map.grid, 50, function (cell) {
-        if (!_this0.owner.views[cell.i][cell.j].viewed && !cell.solid) {
-          var d = Math.abs(cell.i - _this0.i) + Math.abs(cell.j - _this0.j);
-          if (d < minDist) {
-            minDist = d;
-            dest = _this0.owner.views[cell.i][cell.j];
+      var grid = map.grid;
+      var views = this.owner.views;
+      // Scan rings outward, stop at first ring containing an unviewed non-solid cell
+      for (var r = 1; r <= 50; r++) {
+        for (var dx = -r; dx <= r; dx++) {
+          var x = this.i + dx;
+          var row = grid[x];
+          if (!row) continue;
+          var dyMax = r - Math.abs(dx);
+          // Only cells exactly on the ring border (|dx|+|dy|===r)
+          for (var _i6 = 0, _arr = dyMax === 0 ? [0] : [-dyMax, dyMax]; _i6 < _arr.length; _i6++) {
+            var dy = _arr[_i6];
+            var cell = row[this.j + dy];
+            if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
+              this.sendTo(views[cell.i][cell.j]);
+              return;
+            }
           }
         }
-      });
-      if (dest) this.sendTo(dest);
+      }
     }
   }, {
     key: "runaway",
@@ -4596,18 +4437,18 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "death",
     value: function death() {
-      var _this1 = this;
+      var _this0 = this;
       this.setTextures(SHEET_TYPES.dying);
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
-        updateInstanceVisibility(_this1);
+        updateInstanceVisibility(_this0);
         // Remove from player units
-        var index = _this1.owner.corpses.indexOf(_this1);
+        var index = _this0.owner.corpses.indexOf(_this0);
         if (index < 0) {
-          _this1.owner.corpses.push(_this1);
+          _this0.owner.corpses.push(_this0);
         }
-        _this1.decompose();
+        _this0.decompose();
       };
     }
   }, {
@@ -4621,6 +4462,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         menu = _this$context5.menu;
       this.sounds && this.sounds.die && this.visible && sound_lib/* sound */.s3.play(Array.isArray(this.sounds.die) ? maths_randomItem(this.sounds.die) : this.sounds.die);
       this.stopInterval();
+      clearTimeout(this.visibilityTimeout);
       if (this.selected && player.selectedOther === this) {
         player.unselectUnit(this);
       }
@@ -4676,12 +4518,21 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "updateInterfaceLoading",
     value: function updateInterfaceLoading() {
-      var _this10 = this;
+      var _this1 = this;
       var menu = this.context.menu;
       if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
         if (this.loading === 1) {
+          var iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType];
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            return element.innerHTML = _this10.getLoadingElement().innerHTML;
+            element.replaceChildren();
+            var iconImg = document.createElement('img');
+            iconImg.className = 'unit-loading-icon';
+            iconImg.src = iconSrc;
+            var textDiv = document.createElement('div');
+            textDiv.id = MENU_INFO_IDS.loadingText;
+            textDiv.textContent = _this1.loading;
+            element.appendChild(iconImg);
+            element.appendChild(textDiv);
           });
         } else if (this.loading > 1) {
           menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading);
@@ -4740,7 +4591,7 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "sendToDelivery",
     value: function sendToDelivery() {
-      var _this11 = this;
+      var _this10 = this;
       var map = this.context.map;
       var buildingTypes = [];
       if (this.category === 'Boat') {
@@ -4751,8 +4602,8 @@ var Unit = /*#__PURE__*/function (_Container) {
           Granary: this.owner.config.buildings.Granary,
           StoragePit: this.owner.config.buildings.StoragePit
         };
-        for (var _i6 = 0, _Object$entries5 = Object.entries(buildings); _i6 < _Object$entries5.length; _i6++) {
-          var _Object$entries5$_i = unit_slicedToArray(_Object$entries5[_i6], 2),
+        for (var _i7 = 0, _Object$entries5 = Object.entries(buildings); _i7 < _Object$entries5.length; _i7++) {
+          var _Object$entries5$_i = unit_slicedToArray(_Object$entries5[_i7], 2),
             key = _Object$entries5$_i[0],
             value = _Object$entries5$_i[1];
           if (value.accept && value.accept.includes(this.loadingType)) {
@@ -4762,7 +4613,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         }
       }
       var targets = this.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(_this11, building, ACTION_TYPES.delivery, {
+        return extra_getActionCondition(_this10, building, ACTION_TYPES.delivery, {
           buildingTypes: buildingTypes
         });
       });
@@ -5087,6 +4938,10 @@ var Player = /*#__PURE__*/function () {
 }();
 ;// ./app/classes/players/ai.js
 function ai_typeof(o) { "@babel/helpers - typeof"; return ai_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ai_typeof(o); }
+function ai_slicedToArray(r, e) { return ai_arrayWithHoles(r) || ai_iterableToArrayLimit(r, e) || ai_unsupportedIterableToArray(r, e) || ai_nonIterableRest(); }
+function ai_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function ai_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function ai_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function ai_toConsumableArray(r) { return ai_arrayWithoutHoles(r) || ai_iterableToArray(r) || ai_unsupportedIterableToArray(r) || ai_nonIterableSpread(); }
 function ai_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function ai_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -5128,11 +4983,34 @@ var AI = /*#__PURE__*/function (_Player) {
     _this.foundedBerrybushs = new Set();
     _this.foundedGolds = new Set();
     _this.foundedStones = new Set();
+    _this.foundedAnimals = new Set();
+    _this.foundedDeadAnimals = new Set();
     _this.foundedEnemyBuildings = new Set();
     _this.foundedEnemyUnits = new Set();
-    _this.interval = setInterval(function () {
-      return _this.step();
-    }, 4000);
+    _this.difficulty = props.difficulty || 'medium';
+    var _difficulties = {
+      easy: {
+        stepDelayBase: 6000,
+        popCapMultiplier: 0.7,
+        attackThreshold: 8,
+        defenderRatio: 0.5
+      },
+      medium: {
+        stepDelayBase: 4000,
+        popCapMultiplier: 1.0,
+        attackThreshold: 5,
+        defenderRatio: 0.3
+      },
+      hard: {
+        stepDelayBase: 2500,
+        popCapMultiplier: 1.3,
+        attackThreshold: 3,
+        defenderRatio: 0.2
+      }
+    };
+    _this.difficultyConfig = _difficulties[_this.difficulty] || _difficulties.medium;
+    _this.stepDelay = _this.difficultyConfig.stepDelayBase;
+    _this._scheduleStep();
     _this.selectedUnits = [];
     _this.selectedUnit = null;
     _this.selectedBuilding = null;
@@ -5187,27 +5065,71 @@ var AI = /*#__PURE__*/function (_Player) {
         Granary: 2,
         Farm: 4,
         Barracks: 1,
-        Market: 1
+        Market: 1,
+        ArcheryRange: 1,
+        Stable: 1
       },
       2: {
         StoragePit: 3,
         Granary: 3,
         Farm: 6,
         Barracks: 2,
-        Market: 1
+        Market: 1,
+        ArcheryRange: 1,
+        Stable: 1,
+        Academy: 1
       },
       3: {
         StoragePit: 4,
         Granary: 4,
         Farm: 10,
         Barracks: 2,
-        Market: 1
+        Market: 1,
+        ArcheryRange: 2,
+        Stable: 1,
+        Academy: 1
       }
     };
+    _this.maxInfantryByAge = {
+      0: 8,
+      1: 8,
+      2: 10,
+      3: 12
+    };
+    _this.maxArcherByAge = {
+      0: 0,
+      1: 4,
+      2: 6,
+      3: 8
+    };
+    _this.maxCavalryByAge = {
+      0: 0,
+      1: 3,
+      2: 4,
+      3: 5
+    };
+    _this.maxHopliteByAge = {
+      0: 0,
+      1: 0,
+      2: 2,
+      3: 4
+    };
+    // Priority-ordered tech lists per building type — AI tries them each step and skips if conditions unmet or already researched
+    _this.techPriorityByBuilding = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.barracks, ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword']), BUILDING_TYPES.archeryRange, ['ImprovedBow', 'CompositeBow']), BUILDING_TYPES.storagePit, ['Toolworking', 'LeatherArmorInfantry', 'Metalworking', 'ScaleArmorInfantry', 'Metallurgy', 'ChainmailInfantry', 'BronzeShield', 'IronShield']), BUILDING_TYPES.market, ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication']);
     return _this;
   }
   ai_inherits(AI, _Player);
   return ai_createClass(AI, [{
+    key: "_scheduleStep",
+    value: function _scheduleStep() {
+      var _this2 = this;
+      this._stepTimer = setTimeout(function () {
+        var actions = _this2.step();
+        _this2.stepDelay = actions > 0 ? _this2.difficultyConfig.stepDelayBase : Math.min(Math.round(_this2.stepDelay * 1.5), 12000);
+        _this2._scheduleStep();
+      }, this.stepDelay);
+    }
+  }, {
     key: "hasNotReachBuildingLimit",
     value: function hasNotReachBuildingLimit(buildingType, buildings) {
       return !this.maxBuildingByAge[this.age][buildingType] || buildings.length < this.maxBuildingByAge[this.age][buildingType];
@@ -5272,29 +5194,53 @@ var AI = /*#__PURE__*/function (_Player) {
       } finally {
         _iterator4.f();
       }
-      var _iterator5 = ai_createForOfIteratorHelper(this.foundedEnemyBuildings),
+      var _iterator5 = ai_createForOfIteratorHelper(this.foundedAnimals),
         _step5;
       try {
         for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var b = _step5.value;
-          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
+          var a = _step5.value;
+          if (a.isDead || a.isDestroyed || a.hitPoints <= 0) this.foundedAnimals["delete"](a);
         }
       } catch (err) {
         _iterator5.e(err);
       } finally {
         _iterator5.f();
       }
-      var _iterator6 = ai_createForOfIteratorHelper(this.foundedEnemyUnits),
+      var _iterator6 = ai_createForOfIteratorHelper(this.foundedDeadAnimals),
         _step6;
       try {
         for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-          var u = _step6.value;
-          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+          var _a = _step6.value;
+          if (_a.isDestroyed || _a.quantity <= 0) this.foundedDeadAnimals["delete"](_a);
         }
       } catch (err) {
         _iterator6.e(err);
       } finally {
         _iterator6.f();
+      }
+      var _iterator7 = ai_createForOfIteratorHelper(this.foundedEnemyBuildings),
+        _step7;
+      try {
+        for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+          var b = _step7.value;
+          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
+        }
+      } catch (err) {
+        _iterator7.e(err);
+      } finally {
+        _iterator7.f();
+      }
+      var _iterator8 = ai_createForOfIteratorHelper(this.foundedEnemyUnits),
+        _step8;
+      try {
+        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+          var u = _step8.value;
+          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+        }
+      } catch (err) {
+        _iterator8.e(err);
+      } finally {
+        _iterator8.f();
       }
     }
   }, {
@@ -5310,7 +5256,7 @@ var AI = /*#__PURE__*/function (_Player) {
             // Fix: pass .cost to canAfford, not the full building config object
             if (canAfford(me, me.config.buildings[buildingType].cost) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
               var closestBuilding = getClosestInstance(target, [].concat(ai_toConsumableArray(buildings), ai_toConsumableArray(me.buildingsByTypes([BUILDING_TYPES.townCenter]))));
-              if (!closestBuilding || maths_instancesDistance(closestBuilding, target) > 5) {
+              if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
                 var pos = getPositionInGridAroundInstance(target, map.grid, [1, 5], 1);
                 if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
                   if (DEBUG) console.log("Building ".concat(buildingType, " at:"), pos);
@@ -5322,18 +5268,58 @@ var AI = /*#__PURE__*/function (_Player) {
       };
     }
   }, {
+    key: "canResearchTech",
+    value: function canResearchTech(techKey) {
+      var _this3 = this;
+      var tech = this.techs[techKey];
+      if (!(tech !== null && tech !== void 0 && tech.conditions)) return true;
+      return tech.conditions.every(function (cond) {
+        if (cond.key === 'age') {
+          if (cond.op === '>=') return _this3.age >= cond.value;
+          if (cond.op === '=') return _this3.age === cond.value;
+        }
+        if (cond.key === 'technologies') {
+          if (cond.op === 'includes') return _this3.technologies.includes(cond.value);
+          if (cond.op === 'notincludes') return !_this3.technologies.includes(cond.value);
+        }
+        return true;
+      });
+    }
+  }, {
+    key: "getBestInfantryUnit",
+    value: function getBestInfantryUnit() {
+      if (this.technologies.includes('LongSword')) return 'LongSwordsman';
+      if (this.technologies.includes('BroadSword')) return 'BroadSwordsman';
+      if (this.technologies.includes('ShortSword')) return 'ShortSwordsman';
+      if (this.technologies.includes('BattleAxe')) return 'Axeman';
+      return 'Clubman';
+    }
+  }, {
+    key: "getBestArcherUnit",
+    value: function getBestArcherUnit() {
+      if (this.technologies.includes('CompositeBow')) return 'CompositeBowman';
+      if (this.technologies.includes('ImprovedBow')) return 'ImprovedBowman';
+      return 'Bowman';
+    }
+  }, {
     key: "step",
     value: function step() {
-      var _this2 = this;
+      var _this4 = this;
       var _this$context = this.context,
         map = _this$context.map,
         paused = _this$context.paused;
-      if (paused) return;
-      var maxVillagers = this.maxVillagerPerAge[this.age];
+      if (paused) return 0;
+      var actions = 0;
+      var maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier);
       var maxVillagersOnConstruction = 4;
-      var maxClubmans = 10;
+      var maxInfantry = this.maxInfantryByAge[this.age];
+      var maxArcher = this.maxArcherByAge[this.age];
+      var maxCavalry = this.maxCavalryByAge[this.age];
+      var maxHoplite = this.maxHopliteByAge[this.age];
+      var infantryUnit = this.getBestInfantryUnit();
+      var archerUnit = this.getBestArcherUnit();
       var howManyVillagerBeforeBuyingABarracks = 10;
-      var howManySoldiersBeforeAttack = 5;
+      var howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold;
       if (DEBUG) {
         console.log('----Step started');
         console.log("Age: ".concat(this.age, ", Wood: ").concat(this.wood, ", Food: ").concat(this.food, ", Stone: ").concat(this.stone, ", Gold: ").concat(this.gold, ", Population: ").concat(this.population, "/").concat(this.population_max));
@@ -5342,13 +5328,25 @@ var AI = /*#__PURE__*/function (_Player) {
         var condition = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (unit) {
           return unit.hitPoints > 0;
         };
-        return _this2.units.filter(function (unit) {
+        return _this4.units.filter(function (unit) {
           return unit.type === type && condition(unit);
         });
       };
       var villagers = filterUnitsByType(UNIT_TYPES.villager);
-      var clubmans = filterUnitsByType(UNIT_TYPES.clubman);
-      if (DEBUG) console.log("Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Clubmans: ").concat(clubmans.length, "/").concat(maxClubmans));
+      var infantry = this.units.filter(function (u) {
+        return u.hitPoints > 0 && ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman', 'LongSwordsman'].includes(u.type);
+      });
+      var archers = this.units.filter(function (u) {
+        return u.hitPoints > 0 && ['Bowman', 'ImprovedBowman', 'CompositeBowman'].includes(u.type);
+      });
+      var cavalry = this.units.filter(function (u) {
+        return u.hitPoints > 0 && u.type === 'Scout';
+      });
+      var hoplites = this.units.filter(function (u) {
+        return u.hitPoints > 0 && u.type === 'Hoplite';
+      });
+      var military = [].concat(ai_toConsumableArray(infantry), ai_toConsumableArray(archers), ai_toConsumableArray(cavalry), ai_toConsumableArray(hoplites));
+      if (DEBUG) console.log("Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Infantry: ").concat(infantry.length, "/").concat(maxInfantry, " (").concat(infantryUnit, "), Archers: ").concat(archers.length, "/").concat(maxArcher, " (").concat(archerUnit, "), Cavalry: ").concat(cavalry.length, "/").concat(maxCavalry, ", Hoplites: ").concat(hoplites.length, "/").concat(maxHoplite));
       var towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]);
       var storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit]);
       var houses = this.buildingsByTypes([BUILDING_TYPES.house]);
@@ -5356,6 +5354,9 @@ var AI = /*#__PURE__*/function (_Player) {
       var barracks = this.buildingsByTypes([BUILDING_TYPES.barracks]);
       var markets = this.buildingsByTypes([BUILDING_TYPES.market]);
       var farms = this.buildingsByTypes([BUILDING_TYPES.farm]);
+      var archeryRanges = this.buildingsByTypes([BUILDING_TYPES.archeryRange]);
+      var stables = this.buildingsByTypes([BUILDING_TYPES.stable]);
+      var academies = this.buildingsByTypes([BUILDING_TYPES.academy]);
       var emptyFarms = farms.filter(function (_ref2) {
         var isUsedBy = _ref2.isUsedBy;
         return !isUsedBy;
@@ -5391,20 +5392,29 @@ var AI = /*#__PURE__*/function (_Player) {
       var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
       if (DEBUG) console.log("Food: ".concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Wood: ").concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builders: ").concat(builderVillagers.length));
 
-      // Soldiers: those already on assault vs those waiting at base
-      var inactifClubmans = clubmans.filter(function (c) {
+      // Retreat: critically injured assault soldiers fall back and stop attacking
+      var RETREAT_HP_RATIO = 0.3;
+      military.filter(function (u) {
+        return u.assault && u.hitPoints < u.totalHitPoints * RETREAT_HP_RATIO;
+      }).forEach(function (u) {
+        u.assault = false;
+        u.stop();
+      });
+
+      // Soldiers: those already on assault vs those waiting at base (exclude low-HP from attack pool)
+      var inactifMilitary = military.filter(function (c) {
         return c.inactif && c.action !== ACTION_TYPES.attack && c.assault;
       });
-      var waitingClubmans = clubmans.filter(function (c) {
-        return c.inactif && c.action !== ACTION_TYPES.attack && !c.assault;
+      var waitingMilitary = military.filter(function (c) {
+        return c.inactif && c.action !== ACTION_TYPES.attack && !c.assault && c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO;
       });
-      if (DEBUG) console.log("Inactif Clubmans: ".concat(inactifClubmans.length, ", Waiting Clubmans: ").concat(waitingClubmans.length));
+      if (DEBUG) console.log("Inactif Military: ".concat(inactifMilitary.length, ", Waiting Military: ").concat(waitingMilitary.length));
 
       // Player losing condition
       if (!this.buildings.length && !this.units.length) {
         if (DEBUG) console.log('Player has no buildings and units. Dying...');
         this.die();
-        return;
+        return 0;
       }
 
       // Remove depleted resources and destroyed enemies from tracked sets
@@ -5423,7 +5433,7 @@ var AI = /*#__PURE__*/function (_Player) {
 
       // Mutable pool of idle villagers — scout excluded so it doesn't get reassigned to gather
       var availableVillagers = inactifVillagers.filter(function (v) {
-        return v !== _this2.scout;
+        return v !== _this4.scout;
       });
 
       // Cache otherPlayers once — used in multiple building placement filters below
@@ -5450,40 +5460,84 @@ var AI = /*#__PURE__*/function (_Player) {
       // Track food workers assigned this step to avoid double-filling the quota via both berries and farms
       var foodWorkersAssigned = villagersOnFood.length;
 
-      // Food: berries first
-      foodWorkersAssigned += assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
+      // Discover dead animals with remaining meat (scan each step so nothing is missed)
+      var _iterator9 = ai_createForOfIteratorHelper(map.gaia.units),
+        _step9;
+      try {
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var _animal2 = _step9.value;
+          if (_animal2.isDead && !_animal2.isDestroyed && _animal2.quantity > 0) {
+            this.foundedDeadAnimals.add(_animal2);
+          }
+        }
+
+        // Dead animal meat: highest food priority (free meat, no hunting needed)
+      } catch (err) {
+        _iterator9.e(err);
+      } finally {
+        _iterator9.f();
+      }
+      if (this.foundedDeadAnimals.size > 0) {
+        var toAssign = Math.min(Math.max(0, maxVillagersOnFood - foodWorkersAssigned), availableVillagers.length);
+        for (var i = 0; i < toAssign; i++) {
+          var animal = getClosestInstance(availableVillagers[0], this.foundedDeadAnimals);
+          if (!animal) break;
+          availableVillagers.shift().sendToTakeMeat(animal);
+          foodWorkersAssigned++;
+          actions++;
+        }
+      }
+
+      // Food: berries
+      var berriesAssigned = assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
         villager.sendToBerrybush(bush);
       });
+      foodWorkersAssigned += berriesAssigned;
+      actions += berriesAssigned;
 
       // Wood
-      assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, function (villager, tree) {
+      actions += assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, function (villager, tree) {
         villager.sendToTree(tree);
       });
 
-      // Food fallback: send to empty farms only when berries aren't covering the full quota
+      // Hunting live animals (before farms, capped at 2 hunters)
+      if (this.foundedAnimals.size > 0) {
+        var maxHunters = Math.min(2, availableVillagers.length);
+        for (var _i2 = 0; _i2 < maxHunters; _i2++) {
+          if (foodWorkersAssigned >= maxVillagersOnFood) break;
+          var _animal = getClosestInstance(availableVillagers[0], this.foundedAnimals);
+          if (!_animal) break;
+          availableVillagers.shift().sendToHunt(_animal);
+          foodWorkersAssigned++;
+          actions++;
+        }
+      }
+
+      // Food fallback: send to empty farms only when other sources aren't covering the full quota
       var foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned);
-      for (var i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
+      for (var _i3 = 0; _i3 < emptyFarms.length && _i3 < foodShortfall && availableVillagers.length > 0; _i3++) {
         var villager = availableVillagers.shift();
-        villager.sendToFarm(emptyFarms[i]);
+        villager.sendToFarm(emptyFarms[_i3]);
+        actions++;
       }
 
       // Stone
-      assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, function (villager, stone) {
+      actions += assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, function (villager, stone) {
         villager.sendToStone(stone);
       });
 
       // Gold
-      assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, function (villager, gold) {
+      actions += assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, function (villager, gold) {
         villager.sendToGold(gold);
       });
 
       // Construction
       if (notBuiltBuildings.length) {
-        var _iterator7 = ai_createForOfIteratorHelper(notBuiltBuildings),
-          _step7;
+        var _iterator0 = ai_createForOfIteratorHelper(notBuiltBuildings),
+          _step0;
         try {
-          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-            var building = _step7.value;
+          for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
+            var building = _step0.value;
             if (builderVillagers.length >= maxVillagersOnConstruction) break;
             if (availableVillagers.length === 0) break;
             var _villager = getClosestInstance(building, availableVillagers);
@@ -5491,12 +5545,13 @@ var AI = /*#__PURE__*/function (_Player) {
               if (DEBUG) console.log('Villager sent to build:', building);
               _villager.sendToBuilding(building);
               availableVillagers.splice(availableVillagers.indexOf(_villager), 1);
+              actions++;
             }
           }
         } catch (err) {
-          _iterator7.e(err);
+          _iterator0.e(err);
         } finally {
-          _iterator7.f();
+          _iterator0.f();
         }
       }
 
@@ -5511,35 +5566,42 @@ var AI = /*#__PURE__*/function (_Player) {
 
       // Pick the best enemy target (prefer TC, then any building)
       var getBestEnemyTarget = function getBestEnemyTarget() {
-        return ai_toConsumableArray(_this2.foundedEnemyBuildings).find(function (b) {
+        return ai_toConsumableArray(_this4.foundedEnemyBuildings).find(function (b) {
           return b.type === BUILDING_TYPES.townCenter;
-        }) || _this2.foundedEnemyBuildings.values().next().value;
+        }) || _this4.foundedEnemyBuildings.values().next().value;
       };
 
       // Defensive reaction: enemy units spotted → send idle soldiers to defend
-      if (this.foundedEnemyUnits.size > 0 && waitingClubmans.length > 0) {
+      if (this.foundedEnemyUnits.size > 0 && waitingMilitary.length > 0) {
         var enemyUnit = ai_toConsumableArray(this.foundedEnemyUnits).find(function (u) {
           return u.hitPoints > 0;
         });
         if (enemyUnit) {
           if (DEBUG) console.log('Enemy units spotted! Defending...');
-          sendToAttack(waitingClubmans, enemyUnit);
+          sendToAttack(waitingMilitary, enemyUnit);
+          actions++;
         }
       }
 
-      // Attack wave: enough soldiers accumulated → launch assault
-      if (waitingClubmans.length >= howManySoldiersBeforeAttack) {
-        var target = getBestEnemyTarget() || map.grid[maths_randomRange(0, map.grid.length - 1)][maths_randomRange(0, map.grid[0].length - 1)];
-        if (DEBUG) console.log('Launching attack wave! Target:', target);
-        sendToAttack(waitingClubmans, target);
+      // Attack wave: keep a defender garrison (defenderRatio), send the rest
+      if (waitingMilitary.length >= howManySoldiersBeforeAttack) {
+        var defenderCount = Math.max(2, Math.floor(waitingMilitary.length * this.difficultyConfig.defenderRatio));
+        var attackers = waitingMilitary.slice(defenderCount);
+        if (attackers.length > 0) {
+          var target = getBestEnemyTarget() || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
+          if (DEBUG) console.log("Launching attack wave! ".concat(attackers.length, " attackers, ").concat(defenderCount, " defenders. Target:"), target);
+          sendToAttack(attackers, target);
+          actions++;
+        }
       }
 
       // Soldiers that finished an assault → redirect to next enemy building
-      if (inactifClubmans.length && this.foundedEnemyBuildings.size) {
+      if (inactifMilitary.length && this.foundedEnemyBuildings.size) {
         var _target = getBestEnemyTarget();
         if (_target) {
           if (DEBUG) console.log('Redirecting assault soldiers to:', _target);
-          sendToAttack(inactifClubmans, _target);
+          sendToAttack(inactifMilitary, _target);
+          actions++;
         }
       }
 
@@ -5547,12 +5609,12 @@ var AI = /*#__PURE__*/function (_Player) {
       var buyUnits = function buyUnits(currentCount, maxCount, buildingList, unitType, extra) {
         var unitsNeeded = maxCount - currentCount;
         var unitsBought = 0;
-        if (unitsNeeded <= 0) return;
-        var _iterator8 = ai_createForOfIteratorHelper(buildingList),
-          _step8;
+        if (unitsNeeded <= 0) return 0;
+        var _iterator1 = ai_createForOfIteratorHelper(buildingList),
+          _step1;
         try {
-          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-            var _building = _step8.value;
+          for (_iterator1.s(); !(_step1 = _iterator1.n()).done;) {
+            var _building = _step1.value;
             if (unitsBought >= unitsNeeded) break;
             if (_building && _building.buyUnit(unitType, false, false, extra)) {
               unitsBought++;
@@ -5560,60 +5622,95 @@ var AI = /*#__PURE__*/function (_Player) {
             }
           }
         } catch (err) {
-          _iterator8.e(err);
+          _iterator1.e(err);
         } finally {
-          _iterator8.f();
+          _iterator1.f();
         }
+        return unitsBought;
       };
-      buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
-      buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman);
+      actions += buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
+      actions += buyUnits(infantry.length, maxInfantry, barracks, infantryUnit);
+      actions += buyUnits(archers.length, maxArcher, archeryRanges, archerUnit);
+      actions += buyUnits(cavalry.length, maxCavalry, stables, 'Scout');
+      actions += buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite');
 
       // Building Purchasing — use BUILDING_TYPES constants as keys to avoid string/constant mismatches
       var buyBuildingIfNeeded = function buyBuildingIfNeeded(condition, buildingType, positionCallback) {
-        var list = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.house, houses), BUILDING_TYPES.farm, farms), BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.granary, granarys), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets);
-        var building = _this2.config.buildings[buildingType];
-        if (condition && canAfford(_this2, building.cost) && _this2.hasNotReachBuildingLimit(buildingType, list[buildingType])) {
+        var list = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.house, houses), BUILDING_TYPES.farm, farms), BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.granary, granarys), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.stable, stables), BUILDING_TYPES.academy, academies);
+        var building = _this4.config.buildings[buildingType];
+        if (condition && canAfford(_this4, building.cost) && _this4.hasNotReachBuildingLimit(buildingType, list[buildingType])) {
           var pos = positionCallback();
-          if (pos && _this2.buyBuilding(pos.i, pos.j, buildingType)) {
+          if (pos && _this4.buyBuilding(pos.i, pos.j, buildingType)) {
             if (DEBUG) console.log("Buying building: ".concat(buildingType, " at position:"), pos);
+            return true;
           }
         }
+        return false;
       };
 
       // House
-      buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
+      if (buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0);
-      });
+      })) actions++;
 
       // Barracks
-      buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
+      if (buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return otherPlayers.every(function (player) {
-            return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
+            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
           });
         });
-      });
+      })) actions++;
 
       // Market
-      buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
+      if (buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
         return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
           return otherPlayers.every(function (player) {
-            return maths_instancesDistance(cell, player) <= maths_instancesDistance(towncenters[0], player);
+            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
           });
         });
-      });
+      })) actions++;
+
+      // Archery Range (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
+      if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.archeryRange, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
+          return otherPlayers.every(function (player) {
+            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
+          });
+        });
+      })) actions++;
+
+      // Stable (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
+      if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.stable, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
+          return otherPlayers.every(function (player) {
+            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
+          });
+        });
+      })) actions++;
+
+      // Academy (conditions checked inside buyBuilding: age >= 2 + hasBuilt Stable)
+      if (buyBuildingIfNeeded(stables.some(function (s) {
+        return s.isBuilt;
+      }), BUILDING_TYPES.academy, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
+          return otherPlayers.every(function (player) {
+            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
+          });
+        });
+      })) actions++;
 
       // Farm
-      buyBuildingIfNeeded(true, BUILDING_TYPES.farm, function () {
+      if (buyBuildingIfNeeded(true, BUILDING_TYPES.farm, function () {
         var buildings = [].concat(ai_toConsumableArray(granarys), ai_toConsumableArray(towncenters));
-        var _iterator9 = ai_createForOfIteratorHelper(buildings),
-          _step9;
+        var _iterator10 = ai_createForOfIteratorHelper(buildings),
+          _step10;
         try {
           var _loop = function _loop() {
-              var building = _step9.value;
+              var building = _step10.value;
               var position = getPositionInGridAroundInstance(building, map.grid, [2, 10], 2, false, function (cell) {
                 return otherPlayers.every(function (player) {
-                  return maths_instancesDistance(cell, player) <= maths_instancesDistance(building, player);
+                  return instancesDistance(cell, player) <= instancesDistance(building, player);
                 });
               }, false);
               if (position) return {
@@ -5621,45 +5718,114 @@ var AI = /*#__PURE__*/function (_Player) {
               };
             },
             _ret;
-          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
             _ret = _loop();
             if (_ret) return _ret.v;
           }
         } catch (err) {
-          _iterator9.e(err);
+          _iterator10.e(err);
         } finally {
-          _iterator9.f();
+          _iterator10.f();
         }
         return null;
-      });
+      })) actions++;
 
       // Tech / Age Up
       var buyTechnology = function buyTechnology(buildingList, technologyType) {
-        var _iterator0 = ai_createForOfIteratorHelper(buildingList),
-          _step0;
+        var bought = 0;
+        var _iterator11 = ai_createForOfIteratorHelper(buildingList),
+          _step11;
         try {
-          for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
-            var _building2 = _step0.value;
+          for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+            var _building2 = _step11.value;
             if (_building2 && _building2.buyTechnology(technologyType)) {
               if (DEBUG) console.log("Buying ".concat(technologyType, " from ").concat(_building2.type));
+              bought++;
             }
           }
         } catch (err) {
-          _iterator0.e(err);
+          _iterator11.e(err);
         } finally {
-          _iterator0.f();
+          _iterator11.f();
+        }
+        return bought;
+      };
+      // Age up only when near pop cap AND resources cover cost + buffer (avoid stripping the economy)
+      var ageUpCosts = {
+        1: {
+          food: 500
+        },
+        2: {
+          food: 800
+        },
+        3: {
+          food: 1000,
+          gold: 800
         }
       };
-      if (this.nextAge[this.age + 1]) {
-        buyTechnology(towncenters, this.nextAge[this.age + 1]);
+      var ageUpBuffers = {
+        1: {
+          food: 200
+        },
+        2: {
+          food: 200
+        },
+        3: {
+          food: 200,
+          gold: 200
+        }
+      };
+      var nextAgeKey = this.age + 1;
+      if (this.nextAge[nextAgeKey]) {
+        var cost = ageUpCosts[nextAgeKey] || {};
+        var buffer = ageUpBuffers[nextAgeKey] || {};
+        var popReady = this.population >= Math.floor(maxVillagers * 0.8);
+        var resReady = Object.entries(cost).every(function (_ref3) {
+          var _ref4 = ai_slicedToArray(_ref3, 2),
+            res = _ref4[0],
+            amount = _ref4[1];
+          return _this4[res] >= amount + (buffer[res] || 0);
+        });
+        if (popReady && resReady) {
+          actions += buyTechnology(towncenters, this.nextAge[nextAgeKey]);
+        }
+      }
+
+      // Research other technologies — one per building type per step, respecting conditions and prereqs
+      var buildingListByType = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets);
+      for (var _i4 = 0, _Object$entries = Object.entries(this.techPriorityByBuilding); _i4 < _Object$entries.length; _i4++) {
+        var _Object$entries$_i = ai_slicedToArray(_Object$entries[_i4], 2),
+          buildingType = _Object$entries$_i[0],
+          techList = _Object$entries$_i[1];
+        var buildings = buildingListByType[buildingType];
+        if (!(buildings !== null && buildings !== void 0 && buildings.length)) continue;
+        var _iterator12 = ai_createForOfIteratorHelper(techList),
+          _step12;
+        try {
+          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+            var tech = _step12.value;
+            if (this.technologies.includes(tech)) continue;
+            if (!this.canResearchTech(tech)) continue;
+            var bought = buyTechnology(buildings, tech);
+            if (bought) {
+              actions += bought;
+              break;
+            }
+          }
+        } catch (err) {
+          _iterator12.e(err);
+        } finally {
+          _iterator12.f();
+        }
       }
       if (DEBUG) console.log('----Step ended');
+      return actions;
     }
   }, {
     key: "die",
     value: function die() {
       var players = this.context.players;
-      clearInterval(this.interval);
+      clearTimeout(this._stepTimer);
       players.splice(players.indexOf(this), 1);
     }
   }]);
@@ -5704,23 +5870,19 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.previousDest = null;
     _this.path = [];
     _this.selected = false;
-    _this.degree = maths_randomRange(1, 360);
+    _this.degree = randomRange(1, 360);
     _this.action = null;
     _this.currentFrame = 0;
     _this.currentSheet = SHEET_TYPES.standing;
     _this.inactif = true;
     _this.isDead = false;
     _this.isDestroyed = false;
-    _this.timeout;
+    _this.timeoutId = null;
     _this.x = null;
     _this.y = null;
     _this.z = null;
-    Object.keys(options).forEach(function (prop) {
-      _this[prop] = options[prop];
-    });
-    Object.keys(_this.owner.config.animals[_this.type]).forEach(function (prop) {
-      _this[prop] = _this.owner.config.animals[_this.type][prop];
-    });
+    Object.assign(_this, options);
+    Object.assign(_this, _this.owner.config.animals[_this.type]);
     _this.size = 1;
     _this.visible = false;
     _this.visibleCells = new Set();
@@ -5729,7 +5891,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.z = (_this$z = _this.z) !== null && _this$z !== void 0 ? _this$z : map.grid[_this.i][_this.j].z;
     _this.zIndex = getInstanceZIndex(_this);
     _this.currentCell = map.grid[_this.i][_this.j];
-    _this.currentCell.has = _this;
+    _this.currentCell.place(_this);
     _this.currentCell.solid = true;
     _this.hitPoints = (_this$hitPoints = _this.hitPoints) !== null && _this$hitPoints !== void 0 ? _this$hitPoints : _this.totalHitPoints;
     _this.quantity = (_this$quantity = _this.quantity) !== null && _this$quantity !== void 0 ? _this$quantity : _this.totalQuantity;
@@ -5793,7 +5955,7 @@ var Animal = /*#__PURE__*/function (_Container) {
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
-        if (extra_getActionCondition(player.selectedBuilding, _this, ACTION_TYPES.attack) && maths_instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
+        if (extra_getActionCondition(player.selectedBuilding, _this, ACTION_TYPES.attack) && instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
           player.selectedBuilding.attackAction(_this);
           drawDestinationRectangle = true;
         }
@@ -5826,25 +5988,25 @@ var Animal = /*#__PURE__*/function (_Container) {
   return animal_createClass(Animal, [{
     key: "startInterval",
     value: function startInterval(callback, time) {
-      var _this4 = this;
       var immediate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-      var finalCb = function finalCb() {
-        var paused = _this4.context.paused;
-        if (paused) {
-          return;
-        }
-        callback();
-      };
       this.stopInterval();
-      immediate && finalCb();
-      this.interval = setInterval(finalCb, time);
+      if (immediate) callback();
+      this.interval = this.context.scheduler.add(callback, time);
     }
   }, {
     key: "stopInterval",
     value: function stopInterval() {
       if (this.interval) {
-        clearInterval(this.interval);
+        this.context.scheduler.remove(this.interval);
         this.interval = null;
+      }
+    }
+  }, {
+    key: "stopTimeout",
+    value: function stopTimeout() {
+      if (this.timeoutId != null) {
+        this.context.scheduler.remove(this.timeoutId);
+        this.timeoutId = null;
       }
     }
   }, {
@@ -5895,21 +6057,19 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "pause",
     value: function pause() {
-      var _this$timeout, _this$sprite;
-      (_this$timeout = this.timeout) === null || _this$timeout === void 0 || _this$timeout.pause();
+      var _this$sprite;
       (_this$sprite = this.sprite) === null || _this$sprite === void 0 || _this$sprite.stop();
     }
   }, {
     key: "resume",
     value: function resume() {
-      var _this$timeout2, _this$sprite2;
-      (_this$timeout2 = this.timeout) === null || _this$timeout2 === void 0 || _this$timeout2.resume();
+      var _this$sprite2;
       (_this$sprite2 = this.sprite) === null || _this$sprite2 === void 0 || _this$sprite2.play();
     }
   }, {
     key: "setPath",
     value: function setPath(path) {
-      var _this5 = this;
+      var _this4 = this;
       if (!path.length) {
         this.stop();
         return;
@@ -5918,7 +6078,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       this.inactif = false;
       this.path = path;
       this.startInterval(function () {
-        return _this5.step();
+        return _this4.step();
       }, STEP_TIME, true);
     }
   }, {
@@ -5949,7 +6109,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       if (this.isAnimalAtDest(action, dest) && (!map.grid[this.i][this.j].solid || map.grid[this.i][this.j].solid && ((_map$grid$this$i$this = map.grid[this.i][this.j].has) === null || _map$grid$this$i$this === void 0 ? void 0 : _map$grid$this$i$this.label) === this.label)) {
         this.setDest(dest);
         this.action = action;
-        this.degree = maths_getInstanceDegree(this, dest.x, dest.y);
+        this.degree = getInstanceDegree(this, dest.x, dest.y);
         this.getAction(action);
         return;
       }
@@ -5976,7 +6136,7 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "getAction",
     value: function getAction(name) {
-      var _this6 = this;
+      var _this5 = this;
       var _this$context = this.context,
         menu = _this$context.menu,
         player = _this$context.player;
@@ -5988,32 +6148,32 @@ var Animal = /*#__PURE__*/function (_Container) {
           }
           this.setTextures(SHEET_TYPES.action);
           this.startInterval(function () {
-            if (!_this6.getActionCondition(_this6.dest)) {
-              if (_this6.dest && _this6.dest.hitPoints <= 0) {
-                _this6.dest.die();
+            if (!_this5.getActionCondition(_this5.dest)) {
+              if (_this5.dest && _this5.dest.hitPoints <= 0) {
+                _this5.dest.die();
               }
-              _this6.affectNewDest();
+              _this5.affectNewDest();
               return;
             }
-            if (_this6.destHasMoved()) {
-              _this6.degree = maths_getInstanceDegree(_this6, _this6.dest.x, _this6.dest.y);
-              _this6.setTextures(SHEET_TYPES.action);
+            if (_this5.destHasMoved()) {
+              _this5.degree = getInstanceDegree(_this5, _this5.dest.x, _this5.dest.y);
+              _this5.setTextures(SHEET_TYPES.action);
             }
-            if (!instanceContactInstance(_this6, _this6.dest)) {
-              _this6.sendTo(_this6.dest, ACTION_TYPES.attack);
+            if (!instanceContactInstance(_this5, _this5.dest)) {
+              _this5.sendTo(_this5.dest, ACTION_TYPES.attack);
               return;
             }
-            _this6.sounds && _this6.sounds.hit && _this6.visible && sound_lib/* sound */.s3.play(_this6.sounds.hit);
-            if (_this6.dest.hitPoints > 0) {
-              _this6.dest.hitPoints = getHitPointsWithDamage(_this6, _this6.dest);
-              if (_this6.dest.selected && player && (player.selectedUnit === _this6.dest || player.selectedBuilding === _this6.dest)) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this6.dest.hitPoints + '/' + _this6.dest.totalHitPoints);
+            _this5.sounds && _this5.sounds.hit && _this5.visible && sound_lib/* sound */.s3.play(_this5.sounds.hit);
+            if (_this5.dest.hitPoints > 0) {
+              _this5.dest.hitPoints = getHitPointsWithDamage(_this5, _this5.dest);
+              if (_this5.dest.selected && player && (player.selectedUnit === _this5.dest || player.selectedBuilding === _this5.dest)) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this5.dest.hitPoints + '/' + _this5.dest.totalHitPoints);
               }
-              _this6.dest.isAttacked(_this6);
+              _this5.dest.isAttacked(_this5);
             }
-            if (_this6.dest.hitPoints <= 0) {
-              _this6.dest.die();
-              _this6.affectNewDest();
+            if (_this5.dest.hitPoints <= 0) {
+              _this5.dest.die();
+              _this5.affectNewDest();
             }
           }, this.rateOfFire * 1000, false);
           break;
@@ -6024,16 +6184,16 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "affectNewDest",
     value: function affectNewDest() {
-      var _this7 = this;
+      var _this6 = this;
       this.stopInterval();
       var targets = findInstancesInSight(this, function (instance) {
-        return _this7.getActionCondition(instance);
+        return _this6.getActionCondition(instance);
       });
       if (targets.length) {
         var target = getClosestInstanceWithPath(this, targets);
         if (target) {
           if (instanceContactInstance(this, target)) {
-            this.degree = maths_getInstanceDegree(this, target.x, target.y);
+            this.degree = getInstanceDegree(this, target.x, target.y);
             this.getAction(this.action);
             return;
           }
@@ -6048,7 +6208,7 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "destHasMoved",
     value: function destHasMoved() {
-      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && maths_instancesDistance(this, this.dest) <= this.sight;
+      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && instancesDistance(this, this.dest) <= this.sight;
     }
   }, {
     key: "moveToPath",
@@ -6061,7 +6221,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         return;
       }
       // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && maths_instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
         this.sprite.stop();
         return;
       }
@@ -6073,7 +6233,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         this.sprite.play();
       }
       this.zIndex = getInstanceZIndex(this);
-      if (maths_instancesDistance(this, nextCell, false) < this.speed) {
+      if (instancesDistance(this, nextCell, false) < this.speed) {
         this.z = nextCell.z;
         this.i = nextCell.i;
         this.j = nextCell.j;
@@ -6083,7 +6243,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         }
         this.currentCell = map.grid[this.i][this.j];
         if (this.currentCell.has === null) {
-          this.currentCell.has = this;
+          this.currentCell.place(this);
           this.currentCell.solid = true;
         }
         updateInstanceVisibility(this);
@@ -6097,7 +6257,7 @@ var Animal = /*#__PURE__*/function (_Container) {
         if (this.isAnimalAtDest(this.action, this.dest)) {
           this.path = [];
           this.stopInterval();
-          this.degree = maths_getInstanceDegree(this, this.dest.x, this.dest.y);
+          this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
           this.getAction(this.action);
           return;
         }
@@ -6149,7 +6309,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       this.action = null;
       this.dest = null;
       this.realDest = null;
-      this.currentCell.has = this;
+      this.currentCell.place(this);
       this.currentCell.solid = true;
       this.path = [];
       this.stopInterval();
@@ -6167,12 +6327,12 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "runaway",
     value: function runaway(instance) {
-      var _this8 = this;
+      var _this7 = this;
       var map = this.context.map;
       var dest = null;
       getCellsAroundPoint(this.i, this.j, map.grid, this.sight, function (cell) {
-        if (!cell.solid && (!dest || maths_pointsDistance(cell.i, cell.j, instance.i, instance.j) > maths_pointsDistance(dest.i, dest.j, instance.i, instance.j))) {
-          dest = _this8.owner.views[cell.i][cell.j];
+        if (!cell.solid && (!dest || pointsDistance(cell.i, cell.j, instance.i, instance.j) > pointsDistance(dest.i, dest.j, instance.i, instance.j))) {
+          dest = _this7.owner.views[cell.i][cell.j];
           return;
         }
       });
@@ -6185,31 +6345,31 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "decompose",
     value: function decompose() {
-      var _this9 = this;
+      var _this8 = this;
       var _this$context2 = this.context,
         player = _this$context2.player,
         menu = _this$context2.menu;
       this.setTextures(SHEET_TYPES.corpse);
       this.sprite.animationSpeed = 0;
       this.startInterval(function () {
-        if (_this9.quantity > 0) {
-          _this9.quantity--;
-          if (_this9.selected && player.selectedOther === _this9) {
-            menu.updateInfo(MENU_INFO_IDS.quantityText, _this9.quantity);
+        if (_this8.quantity > 0) {
+          _this8.quantity--;
+          if (_this8.selected && player.selectedOther === _this8) {
+            menu.updateInfo(MENU_INFO_IDS.quantityText, _this8.quantity);
           }
         }
-        _this9.updateTexture();
+        _this8.updateTexture();
       }, 5000);
     }
   }, {
     key: "death",
     value: function death() {
-      var _this0 = this;
+      var _this9 = this;
       this.setTextures(SHEET_TYPES.dying);
       this.zIndex--;
       this.sprite.loop = false;
       this.sprite.onComplete = function () {
-        _this0.decompose();
+        _this9.decompose();
       };
     }
   }, {
@@ -6225,6 +6385,7 @@ var Animal = /*#__PURE__*/function (_Container) {
       updateInstanceVisibility(this);
       this.owner.population--;
       this.stopInterval();
+      this.stopTimeout();
       this.isDead = true;
       this.zIndex--;
       this.path = [];
@@ -6234,7 +6395,7 @@ var Animal = /*#__PURE__*/function (_Container) {
   }, {
     key: "updateTexture",
     value: function updateTexture() {
-      var _this1 = this;
+      var _this0 = this;
       var _this$context3 = this.context,
         player = _this$context3.player,
         map = _this$context3.map;
@@ -6254,8 +6415,8 @@ var Animal = /*#__PURE__*/function (_Container) {
           player.unselectAll();
         }
         this.sprite.currentFrame = 3;
-        this.timeout = new CustomTimeout(function () {
-          _this1.clear();
+        this.timeoutId = this.context.scheduler.addOneShot(function () {
+          return _this0.clear();
         }, CORPSE_TIME * 1000);
       }
     }
@@ -6263,6 +6424,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     key: "clear",
     value: function clear() {
       var map = this.context.map;
+      this.stopTimeout();
       this.isDestroyed = true;
       // Remove from map corpses
       map.grid[this.i][this.j].corpses["delete"](this);
@@ -6656,7 +6818,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     var pos = cartesianToIsometric(_this.i, _this.j);
     _this.x = pos[0];
     _this.y = pos[1] - _this.z * CELL_DEPTH;
-    var textureName = randomItem(_this.assets);
+    var textureName = maths_randomItem(_this.assets);
     var resourceName = textureName.split('_')[1];
     var textureFile = textureName + '.png';
     var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
@@ -6729,6 +6891,12 @@ var Cell = /*#__PURE__*/function (_Container) {
       }
     }
   }, {
+    key: "place",
+    value: function place(entity) {
+      this.has = entity;
+      this.updateVisible();
+    }
+  }, {
     key: "setDesertBorder",
     value: function setDesertBorder(direction) {
       // Avoid stacking duplicate border sprites when multiple desert neighbors trigger the same side
@@ -6761,7 +6929,6 @@ var Cell = /*#__PURE__*/function (_Container) {
       var sprite = this.sprite;
       var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
       var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
-      this.type = 'Desert';
       this.border = true;
       this.waterBorder = true;
       if (this.has && typeof this.has.die === 'function') {
@@ -6791,7 +6958,7 @@ var Cell = /*#__PURE__*/function (_Container) {
   }, {
     key: "setWater",
     value: function setWater() {
-      var index = formatNumber(maths_randomRange(0, 3));
+      var index = formatNumber(randomRange(0, 3));
       var resourceName = '15002';
       var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
       this.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png'];
@@ -6808,7 +6975,7 @@ var Cell = /*#__PURE__*/function (_Container) {
       }
       getCellsAroundPoint(this.i, this.j, grid, 2, function (cell) {
         if (cell.type === 'Water' && _this4.type === 'Water') {
-          var dist = maths_instancesDistance(_this4, cell);
+          var dist = instancesDistance(_this4, cell);
           var velX = Math.round((_this4.i - cell.i) / dist);
           var velY = Math.round((_this4.j - cell.j) / dist);
           if (grid[cell.i + velX] && grid[cell.i + velX][cell.j + velY]) {
@@ -6831,7 +6998,7 @@ var Cell = /*#__PURE__*/function (_Container) {
       var grid = this.parent.grid;
       getCellsAroundPoint(this.i, this.j, grid, 2, function (cell) {
         if (cell.z === _this5.z) {
-          var dist = maths_instancesDistance(_this5, cell);
+          var dist = instancesDistance(_this5, cell);
           var velX = Math.round((_this5.i - cell.i) / dist);
           var velY = Math.round((_this5.j - cell.j) / dist);
           if (grid[cell.i + velX] && grid[cell.i + velX][cell.j + velY]) {
@@ -6906,17 +7073,12 @@ var Cell = /*#__PURE__*/function (_Container) {
     value: function removeFogBuilding(instance) {
       var map = this.context.map;
       if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
-        var i = 0;
         var localCell = map.grid[instance.i][instance.j];
-        while (i < localCell.fogSprites.length) {
-          if (localCell.fogSprites[i]) {
-            var _localCell$fogSprites;
-            (_localCell$fogSprites = localCell.fogSprites[i].sprite) === null || _localCell$fogSprites === void 0 || _localCell$fogSprites.destroy(); // Destroy the sprite
-            localCell.fogSprites.splice(i, 1); // Remove the destroyed sprite from the array
-          } else {
-            i++; // Only increment if no sprite is destroyed, to avoid skipping elements
-          }
-        }
+        localCell.fogSprites.forEach(function (s) {
+          var _s$sprite;
+          return (_s$sprite = s.sprite) === null || _s$sprite === void 0 ? void 0 : _s$sprite.destroy();
+        });
+        localCell.fogSprites = [];
       }
     }
   }, {
@@ -7132,6 +7294,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.allTechnologies = false;
     _this.noAI = false;
     _this.devMode = false;
+    _this.difficulty = 'medium';
     _this.startingResources = {
       wood: 200,
       food: 200,
@@ -7353,6 +7516,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
         menu = _this$context2.menu,
         player = _this$context2.player;
       this.gaia = new Gaia(this.context);
+      this.generateAnimalsAroundPlayers(this.playersPos);
 
       //this.generateMapRelief()
       //this.formatCellsRelief()
@@ -7413,7 +7577,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
               j: posJ,
               age: 0,
               civ: 'Greek',
-              color: color
+              color: color,
+              difficulty: this.difficulty
             }, context));
           }
         }
@@ -7469,9 +7634,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
         var circleCells = [];
         for (var x = -radius; x <= radius; x++) {
           for (var y = -radius; y <= radius; y++) {
-            var distFromCenter = Math.sqrt(x * x + y * y);
             var noise = Math.random() * edgeNoise - edgeNoise / 2; // Random edge noise
-            if (distFromCenter + noise <= radius) {
+            var effectiveRadius = radius - noise;
+            if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
               // If within noisy circle
               var cellI = centerI + x;
               var cellJ = centerJ + y;
@@ -7557,10 +7722,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Generate random clearings based on clearingProbability
-      for (var clearing = 0; clearing < clusterCount; clearing++) {
+      var _loop = function _loop() {
         if (Math.random() < clearingProbability) {
-          var clearingCenterI = void 0,
-            clearingCenterJ = void 0;
+          var clearingCenterI, clearingCenterJ;
           var _tries2 = 0;
           var clearingRadius = Math.floor(Math.random() * 8) + 5; // Random clearing radius between 5 and 13
           var _edgeNoise = Math.random() * 1.5;
@@ -7582,13 +7746,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
             var clearingSet = new Set(clearingCells.map(function (c) {
               return "".concat(c.i, ",").concat(c.j);
             }));
-            for (var idx = forestCells.length - 1; idx >= 0; idx--) {
-              if (clearingSet.has("".concat(forestCells[idx].i, ",").concat(forestCells[idx].j))) {
-                forestCells.splice(idx, 1);
-              }
-            }
+            forestCells = forestCells.filter(function (c) {
+              return !clearingSet.has("".concat(c.i, ",").concat(c.j));
+            });
           }
         }
+      };
+      for (var clearing = 0; clearing < clusterCount; clearing++) {
+        _loop();
       }
 
       // Generate diagonal paths
@@ -7608,9 +7773,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Remove path cells from forestCells
-      for (var _idx = forestCells.length - 1; _idx >= 0; _idx--) {
-        if (pathCells.has("".concat(forestCells[_idx].i, ",").concat(forestCells[_idx].j))) {
-          forestCells.splice(_idx, 1);
+      for (var idx = forestCells.length - 1; idx >= 0; idx--) {
+        if (pathCells.has("".concat(forestCells[idx].i, ",").concat(forestCells[idx].j))) {
+          forestCells.splice(idx, 1);
         }
       }
 
@@ -7625,7 +7790,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Place the trees in the selected cells
-      var _loop = function _loop() {
+      var _loop2 = function _loop2() {
         var cell = _cellsToPlace[_i9];
         // Ensure again that we're not placing trees on Water, Border, or Solid cells
         if (grid[cell.i][cell.j].category !== 'Water' && !grid[cell.i][cell.j].waterBorder && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
@@ -7644,7 +7809,50 @@ var map_Map = /*#__PURE__*/function (_Container) {
         }
       };
       for (var _i9 = 0, _cellsToPlace = cellsToPlace; _i9 < _cellsToPlace.length; _i9++) {
-        _loop();
+        _loop2();
+      }
+    }
+  }, {
+    key: "placeAnimalHerd",
+    value: function placeAnimalHerd(player, quantity, range) {
+      var grid = this.grid;
+      var randomDistance = randomRange(range[0], range[1]);
+      var centerI = player.i + maths_randomItem([-randomDistance, randomDistance]);
+      var centerJ = player.j + maths_randomItem([-randomDistance, randomDistance]);
+      var validCells = [];
+      for (var dx = -3; dx <= 3; dx++) {
+        for (var dy = -3; dy <= 3; dy++) {
+          var _grid$newI;
+          var newI = centerI + dx;
+          var newJ = centerJ + dy;
+          if ((_grid$newI = grid[newI]) !== null && _grid$newI !== void 0 && _grid$newI[newJ]) {
+            var cell = grid[newI][newJ];
+            if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+              validCells.push({
+                i: newI,
+                j: newJ
+              });
+            }
+          }
+        }
+      }
+      var toPlace = Math.min(quantity, validCells.length);
+      for (var i = 0; i < toPlace; i++) {
+        var idx = Math.floor(Math.random() * validCells.length);
+        var _cell2 = validCells.splice(idx, 1)[0];
+        this.gaia.createAnimal({
+          i: _cell2.i,
+          j: _cell2.j,
+          type: 'Gazelle'
+        });
+      }
+    }
+  }, {
+    key: "generateAnimalsAroundPlayers",
+    value: function generateAnimalsAroundPlayers(playersPos) {
+      for (var i = 0; i < playersPos.length; i++) {
+        this.placeAnimalHerd(playersPos[i], 5, [8, 14]);
+        this.placeAnimalHerd(playersPos[i], 4, [16, 24]);
       }
     }
   }, {
@@ -7818,7 +8026,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           }
           if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
             if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
-              var randomSpritesheet = maths_randomRange(292, 301).toString();
+              var randomSpritesheet = randomRange(292, 301).toString();
               var spritesheet = lib/* Assets */.sP.cache.get(randomSpritesheet);
               var texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
               var floor = lib/* Sprite */.kxk.from(texture);
@@ -7836,7 +8044,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
                 switch (type) {
                   case 'rock':
                     {
-                      var _randomSpritesheet = maths_randomRange(531, 534).toString();
+                      var _randomSpritesheet = randomRange(531, 534).toString();
                       var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
                       var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
                       var rock = lib/* Sprite */.kxk.from(_texture);
@@ -7878,7 +8086,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     value: function generateMapRelief() {
       var _this4 = this;
       for (var i = 0; i <= this.size; i++) {
-        var _loop2 = function _loop2() {
+        var _loop3 = function _loop3() {
           var cell = _this4.grid[i][j];
           if (Math.random() < _this4.chanceOfRelief) {
             var level = maths_randomItem(_this4.reliefRange);
@@ -7894,11 +8102,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
           }
         };
         for (var j = 0; j <= this.size; j++) {
-          _loop2();
+          _loop3();
         }
       }
       for (var _i13 = 0; _i13 <= this.size; _i13++) {
-        var _loop3 = function _loop3() {
+        var _loop4 = function _loop4() {
           var cell = _this4.grid[_i13][_j8];
           if (cell.z === 1) {
             var toRemove = true;
@@ -7917,7 +8125,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
           }
         };
         for (var _j8 = 0; _j8 <= this.size; _j8++) {
-          _loop3();
+          _loop4();
         }
       }
       // Format cell's relief
@@ -8078,7 +8286,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
         var cells = [];
         // Check surrounding cells within the specified distance
         for (var dx = -dist; dx <= dist; dx++) {
-          var _loop4 = function _loop4() {
+          var _loop5 = function _loop5() {
             var newI = centerI + dx;
             var newJ = centerJ + dy;
 
@@ -8102,14 +8310,14 @@ var map_Map = /*#__PURE__*/function (_Container) {
             }
           };
           for (var dy = -dist; dy <= dist; dy++) {
-            _loop4();
+            _loop5();
           }
         }
         return cells;
       }
 
       // Get a random center point around the player's position within the specified range
-      var randomDistance = maths_randomRange(range[0], range[1]);
+      var randomDistance = randomRange(range[0], range[1]);
       var centerI = player.i + maths_randomItem([-randomDistance, randomDistance]);
       var centerJ = player.j + maths_randomItem([-randomDistance, randomDistance]);
 
@@ -8133,10 +8341,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
       // Place resources in the selected cells
       for (var _i15 = 0, _cellsToPlace2 = cellsToPlace; _i15 < _cellsToPlace2.length; _i15++) {
-        var _cell2 = _cellsToPlace2[_i15];
+        var _cell3 = _cellsToPlace2[_i15];
         this.resources.add(this.addChild(new Resource({
-          i: _cell2.i,
-          j: _cell2.j,
+          i: _cell3.i,
+          j: _cell3.j,
           type: instance
         }, context)));
       }
@@ -9145,7 +9353,7 @@ var Controls = /*#__PURE__*/function (_Container) {
       }
 
       // Create and draw mouse selection
-      if (!this.mouseRectangle && this.pointerStart && maths_pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5) {
+      if (!this.mouseRectangle && this.pointerStart && pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5) {
         this.mouseRectangle = {
           x: this.pointerStart.x,
           y: this.pointerStart.y,
@@ -9600,6 +9808,99 @@ var Controls = /*#__PURE__*/function (_Container) {
   }]);
 }(lib/* Container */.mcf);
 
+;// ./app/classes/ActionScheduler.js
+function ActionScheduler_typeof(o) { "@babel/helpers - typeof"; return ActionScheduler_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ActionScheduler_typeof(o); }
+function ActionScheduler_slicedToArray(r, e) { return ActionScheduler_arrayWithHoles(r) || ActionScheduler_iterableToArrayLimit(r, e) || ActionScheduler_unsupportedIterableToArray(r, e) || ActionScheduler_nonIterableRest(); }
+function ActionScheduler_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function ActionScheduler_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function ActionScheduler_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function ActionScheduler_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = ActionScheduler_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function ActionScheduler_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return ActionScheduler_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? ActionScheduler_arrayLikeToArray(r, a) : void 0; } }
+function ActionScheduler_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function ActionScheduler_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function ActionScheduler_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, ActionScheduler_toPropertyKey(o.key), o); } }
+function ActionScheduler_createClass(e, r, t) { return r && ActionScheduler_defineProperties(e.prototype, r), t && ActionScheduler_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function ActionScheduler_toPropertyKey(t) { var i = ActionScheduler_toPrimitive(t, "string"); return "symbol" == ActionScheduler_typeof(i) ? i : i + ""; }
+function ActionScheduler_toPrimitive(t, r) { if ("object" != ActionScheduler_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != ActionScheduler_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var ActionScheduler = /*#__PURE__*/function () {
+  function ActionScheduler(app, getPaused) {
+    var _this = this;
+    ActionScheduler_classCallCheck(this, ActionScheduler);
+    this._getPaused = getPaused;
+    this._tasks = new Map();
+    this._nextId = 1;
+    this._toRemove = [];
+    app.ticker.add(function (ticker) {
+      return _this._tick(ticker.deltaMS);
+    });
+  }
+  return ActionScheduler_createClass(ActionScheduler, [{
+    key: "add",
+    value: function add(callback, intervalMs) {
+      var id = this._nextId++;
+      this._tasks.set(id, {
+        callback: callback,
+        interval: intervalMs,
+        elapsed: 0
+      });
+      return id;
+    }
+  }, {
+    key: "addOneShot",
+    value: function addOneShot(callback, delayMs) {
+      var id = this._nextId++;
+      this._tasks.set(id, {
+        callback: callback,
+        interval: delayMs,
+        elapsed: 0,
+        oneShot: true
+      });
+      return id;
+    }
+  }, {
+    key: "remove",
+    value: function remove(id) {
+      this._tasks["delete"](id);
+    }
+  }, {
+    key: "_tick",
+    value: function _tick(deltaMS) {
+      if (this._getPaused()) return;
+      this._toRemove.length = 0;
+      var _iterator = ActionScheduler_createForOfIteratorHelper(this._tasks),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _step$value = ActionScheduler_slicedToArray(_step.value, 2),
+            id = _step$value[0],
+            task = _step$value[1];
+          task.elapsed += deltaMS;
+          if (task.elapsed >= task.interval) {
+            task.elapsed -= task.interval;
+            task.callback();
+            if (task.oneShot) this._toRemove.push(id);
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      var _iterator2 = ActionScheduler_createForOfIteratorHelper(this._toRemove),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var _id = _step2.value;
+          this._tasks["delete"](_id);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+    }
+  }]);
+}();
 ;// ./app/screens/Game.js
 function Game_typeof(o) { "@babel/helpers - typeof"; return Game_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Game_typeof(o); }
 function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -9629,6 +9930,7 @@ function Game_setPrototypeOf(t, e) { return Game_setPrototypeOf = Object.setProt
 
 
 
+
 /**
  * Main Display Object
  * @exports Game
@@ -9652,6 +9954,7 @@ var Game = /*#__PURE__*/function (_Container) {
       map: null,
       controls: null,
       paused: false,
+      scheduler: null,
       save: function save() {
         return _this.save();
       },
@@ -9668,6 +9971,9 @@ var Game = /*#__PURE__*/function (_Container) {
         return _this.quit();
       }
     };
+    _this.context.scheduler = new ActionScheduler(app, function () {
+      return _this.context.paused;
+    });
     _this.start();
     return _this;
   }
@@ -9683,6 +9989,7 @@ var Game = /*#__PURE__*/function (_Container) {
       if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything;
       if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain;
       if (config.startingResources) context.map.startingResources = config.startingResources;
+      if (config.difficulty) context.map.difficulty = config.difficulty;
       context.controls = new Controls(context);
       context.menu = new Menu(context);
       context.map.generateMap(config.bots != null ? config.bots + 1 : null);
@@ -9722,7 +10029,7 @@ var Game = /*#__PURE__*/function (_Container) {
     key: "save",
     value: function save() {
       var context = this.context;
-      var json = {
+      var data = {
         camera: context.controls.camera,
         config: {
           devMode: context.map.devMode,
@@ -9745,15 +10052,29 @@ var Game = /*#__PURE__*/function (_Container) {
           return Game._animalData(a);
         })
       };
-      var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
-      var downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute('href', dataStr);
-      downloadAnchorNode.setAttribute('download', "save_".concat(new Date().toLocaleString('en-GB', {
-        timeZone: 'UTC'
-      }), ".json"));
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+      var workerBlob = new Blob(['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'], {
+        type: 'application/javascript'
+      });
+      var workerUrl = URL.createObjectURL(workerBlob);
+      var worker = new Worker(workerUrl);
+      URL.revokeObjectURL(workerUrl);
+      worker.onmessage = function (_ref) {
+        var json = _ref.data;
+        worker.terminate();
+        var blobUrl = URL.createObjectURL(new Blob([json], {
+          type: 'application/json'
+        }));
+        var a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = "save_".concat(new Date().toLocaleString('en-GB', {
+          timeZone: 'UTC'
+        }), ".json");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      };
+      worker.postMessage(data);
     }
   }, {
     key: "load",
@@ -9893,10 +10214,10 @@ var Game = /*#__PURE__*/function (_Container) {
       var _cell$has;
       return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
         has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
-        fogSprites: cell.fogSprites.map(function (_ref) {
-          var textureSheet = _ref.textureSheet,
-            colorSheet = _ref.colorSheet,
-            colorName = _ref.colorName;
+        fogSprites: cell.fogSprites.map(function (_ref2) {
+          var textureSheet = _ref2.textureSheet,
+            colorSheet = _ref2.colorSheet,
+            colorName = _ref2.colorName;
           return {
             textureSheet: textureSheet,
             colorSheet: colorSheet,
@@ -10116,6 +10437,16 @@ function MapConfig_defineProperties(e, r) { for (var t = 0; t < r.length; t++) {
 function MapConfig_createClass(e, r, t) { return r && MapConfig_defineProperties(e.prototype, r), t && MapConfig_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function MapConfig_toPropertyKey(t) { var i = MapConfig_toPrimitive(t, "string"); return "symbol" == MapConfig_typeof(i) ? i : i + ""; }
 function MapConfig_toPrimitive(t, r) { if ("object" != MapConfig_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapConfig_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var DIFFICULTIES = [{
+  label: 'Facile  — IA lente, pop réduite',
+  value: 'easy'
+}, {
+  label: 'Moyen   — IA standard',
+  value: 'medium'
+}, {
+  label: 'Difficile — IA rapide, pop accrue',
+  value: 'hard'
+}];
 var STARTING_RESOURCES = [{
   label: 'Bas      — 100 / 150 / 50 / 0',
   value: 'low'
@@ -10178,6 +10509,7 @@ var MapConfig = /*#__PURE__*/function () {
     this.config = {
       size: 120,
       bots: 1,
+      difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
       devMode: false,
@@ -10210,6 +10542,9 @@ var MapConfig = /*#__PURE__*/function () {
     });
     form.appendChild(this.createSelect('Adversaires (IA)', botOptions, 1, function (val) {
       _this.config.bots = parseInt(val);
+    }));
+    form.appendChild(this.createSelect('Difficulté IA', DIFFICULTIES, 'medium', function (val) {
+      _this.config.difficulty = val;
     }));
     form.appendChild(this.createSelect('Ressources de départ', STARTING_RESOURCES, 'standard', function (val) {
       _this.config.startingResources = RESOURCES_MAP[val];
@@ -10384,20 +10719,20 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
 
 /***/ },
 
-/***/ 2088
+/***/ 7172
 (module, __webpack_exports__, __webpack_require__) {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1018);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1674);
-/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5838);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3990);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
 // Imports
 
 
-var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_105_4_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
+var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `:root {
   --main-primary-color: #4a3a1e;
@@ -10912,7 +11247,7 @@ img {
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(7232)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(2590)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);

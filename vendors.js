@@ -1,6 +1,6 @@
 (self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[96],{
 
-/***/ 1674
+/***/ 3990
 (module) {
 
 "use strict";
@@ -92,7 +92,7 @@ module.exports = function (cssWithMappingToString) {
 
 /***/ },
 
-/***/ 1018
+/***/ 5838
 (module) {
 
 "use strict";
@@ -115,7 +115,7 @@ module.exports = function (item) {
 
 /***/ },
 
-/***/ 1343
+/***/ 3138
 (module) {
 
 "use strict";
@@ -523,7 +523,7 @@ function parseValues(args) {
 
 /***/ },
 
-/***/ 7388
+/***/ 4368
 (module) {
 
 "use strict";
@@ -614,7 +614,7 @@ module.exports = function (list, options) {
 
 /***/ },
 
-/***/ 6615
+/***/ 4987
 (module) {
 
 "use strict";
@@ -655,7 +655,7 @@ module.exports = insertBySelector;
 
 /***/ },
 
-/***/ 1600
+/***/ 1740
 (module) {
 
 "use strict";
@@ -672,7 +672,7 @@ module.exports = insertStyleElement;
 
 /***/ },
 
-/***/ 9812
+/***/ 5344
 (module, __unused_webpack_exports, __webpack_require__) {
 
 "use strict";
@@ -689,7 +689,7 @@ module.exports = setAttributesWithoutAttributes;
 
 /***/ },
 
-/***/ 4517
+/***/ 2769
 (module) {
 
 "use strict";
@@ -757,7 +757,7 @@ module.exports = domAPI;
 
 /***/ },
 
-/***/ 7837
+/***/ 4633
 (module) {
 
 "use strict";
@@ -778,7 +778,7 @@ module.exports = styleTagTransform;
 
 /***/ },
 
-/***/ 8449
+/***/ 2250
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -790,7 +790,7 @@ __webpack_require__.d(__webpack_exports__, {
 
 // UNUSED EXPORTS: Filter, Filterable, Sound, SoundLibrary, SoundSprite, filters, htmlaudio, soundAsset, utils, webaudio
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/instance.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/instance.mjs
 let instance;
 function setInstance(sound) {
   instance = sound;
@@ -803,7 +803,7 @@ function getInstance() {
 
 //# sourceMappingURL=instance.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/Filter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/Filter.mjs
 class Filter {
   /**
    * @param {AudioNode} destination - The audio node to use as the destination for the input AudioNode
@@ -840,7 +840,7 @@ class Filter {
 
 //# sourceMappingURL=Filter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/DistortionFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/DistortionFilter.mjs
 
 
 
@@ -887,7 +887,7 @@ class DistortionFilter extends Filter {
 
 //# sourceMappingURL=DistortionFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/WebAudioUtils.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/WebAudioUtils.mjs
 
 
 class WebAudioUtils {
@@ -913,7 +913,7 @@ class WebAudioUtils {
 
 //# sourceMappingURL=WebAudioUtils.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/EqualizerFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/EqualizerFilter.mjs
 
 
 
@@ -1196,7 +1196,7 @@ EqualizerFilter.F16K = 16e3;
 
 //# sourceMappingURL=EqualizerFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/MonoFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/MonoFilter.mjs
 
 
 
@@ -1223,7 +1223,7 @@ class MonoFilter extends Filter {
 
 //# sourceMappingURL=MonoFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/ReverbFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/ReverbFilter.mjs
 
 
 
@@ -1312,7 +1312,7 @@ class ReverbFilter extends Filter {
 
 //# sourceMappingURL=ReverbFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/StereoFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/StereoFilter.mjs
 
 
 
@@ -1361,7 +1361,7 @@ class StereoFilter extends Filter {
 
 //# sourceMappingURL=StereoFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/StreamFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/StreamFilter.mjs
 
 
 
@@ -1389,7 +1389,7 @@ class StreamFilter extends Filter {
 
 //# sourceMappingURL=StreamFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/TelephoneFilter.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/TelephoneFilter.mjs
 
 
 
@@ -1425,7 +1425,7 @@ class TelephoneFilter extends Filter {
 
 //# sourceMappingURL=TelephoneFilter.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/filters/index.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/filters/index.mjs
 
 
 
@@ -1436,9 +1436,9 @@ class TelephoneFilter extends Filter {
 
 //# sourceMappingURL=index.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(7103);
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioContext.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
+var lib = __webpack_require__(5268);
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioContext.mjs
 
 
 class HTMLAudioContext extends lib/* EventEmitter */.bkB {
@@ -1507,7 +1507,7 @@ class HTMLAudioContext extends lib/* EventEmitter */.bkB {
 
 //# sourceMappingURL=HTMLAudioContext.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioInstance.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioInstance.mjs
 
 
 let id = 0;
@@ -1776,7 +1776,7 @@ HTMLAudioInstance.PADDING = 0.1;
 
 //# sourceMappingURL=HTMLAudioInstance.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioMedia.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioMedia.mjs
 
 
 
@@ -1897,13 +1897,13 @@ class HTMLAudioMedia extends lib/* EventEmitter */.bkB {
 
 //# sourceMappingURL=HTMLAudioMedia.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/htmlaudio/index.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/index.mjs
 
 
 
 //# sourceMappingURL=index.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/SoundSprite.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/SoundSprite.mjs
 class SoundSprite {
   /**
    * @param parent - The parent sound
@@ -1938,7 +1938,7 @@ class SoundSprite {
 
 //# sourceMappingURL=SoundSprite.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/utils/supported.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/utils/supported.mjs
 const extensions = [
   "ogg",
   "oga",
@@ -1980,7 +1980,7 @@ validateFormats();
 
 //# sourceMappingURL=supported.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/WebAudioInstance.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/WebAudioInstance.mjs
 
 
 
@@ -2292,7 +2292,7 @@ class WebAudioInstance extends lib/* EventEmitter */.bkB {
 
 //# sourceMappingURL=WebAudioInstance.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/Filterable.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/Filterable.mjs
 class Filterable {
   /**
    * @param input - The source audio node
@@ -2346,7 +2346,7 @@ class Filterable {
 
 //# sourceMappingURL=Filterable.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/WebAudioNodes.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/WebAudioNodes.mjs
 
 
 
@@ -2428,7 +2428,7 @@ WebAudioNodes.BUFFER_SIZE = 0;
 
 //# sourceMappingURL=WebAudioNodes.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/WebAudioMedia.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/WebAudioMedia.mjs
 
 
 
@@ -2542,7 +2542,7 @@ class WebAudioMedia {
 
 //# sourceMappingURL=WebAudioMedia.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/Sound.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/Sound.mjs
 
 
 
@@ -2915,7 +2915,7 @@ Sound._pool = [];
 
 //# sourceMappingURL=Sound.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/WebAudioContext.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/WebAudioContext.mjs
 
 
 
@@ -3132,7 +3132,7 @@ class WebAudioContext extends Filterable {
 
 //# sourceMappingURL=WebAudioContext.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/SoundLibrary.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/SoundLibrary.mjs
 
 
 
@@ -3498,7 +3498,7 @@ class SoundLibrary {
 
 //# sourceMappingURL=SoundLibrary.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/utils/render.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/utils/render.mjs
 /* unused harmony import specifier */ var CanvasSource;
 /* unused harmony import specifier */ var render_WebAudioMedia;
 
@@ -3547,7 +3547,7 @@ function render(sound, options) {
 
 //# sourceMappingURL=render.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/utils/sineTone.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/utils/sineTone.mjs
 /* unused harmony import specifier */ var sineTone_Sound;
 /* unused harmony import specifier */ var sineTone_WebAudioMedia;
 
@@ -3584,14 +3584,14 @@ function sineTone(hertz = 200, seconds = 1) {
 
 //# sourceMappingURL=sineTone.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/utils/index.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/utils/index.mjs
 
 
 
 
 //# sourceMappingURL=index.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/webaudio/index.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/webaudio/index.mjs
 
 
 
@@ -3599,7 +3599,7 @@ function sineTone(hertz = 200, seconds = 1) {
 
 //# sourceMappingURL=index.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/soundAsset.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/soundAsset.mjs
 
 
 
@@ -3660,7 +3660,7 @@ lib/* extensions */.XOh.add(soundAsset);
 
 //# sourceMappingURL=soundAsset.mjs.map
 
-;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.17.1/node_modules/@pixi/sound/lib/index.mjs
+;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/index.mjs
 
 
 
@@ -3685,14 +3685,14 @@ const sound = setInstance(new SoundLibrary());
 
 /***/ },
 
-/***/ 413
+/***/ 2998
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1343);
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3138);
 
 
 
@@ -3701,7 +3701,7 @@ const sound = setInstance(new SoundLibrary());
 
 /***/ },
 
-/***/ 6240
+/***/ 2973
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3711,33 +3711,33 @@ __webpack_require__.d(__webpack_exports__, {
   N: () => (/* binding */ MultiColorReplaceFilter)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(7103);
-;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/defaults/default2.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
+var lib = __webpack_require__(5268);
+;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/defaults/default2.mjs
 var vertex = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
 
 
 //# sourceMappingURL=default2.mjs.map
 
-;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/defaults/default.mjs
+;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/defaults/default.mjs
 var wgslVertex = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}";
 
 
 //# sourceMappingURL=default.mjs.map
 
-;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/multi-color-replace/multi-color-replace2.mjs
+;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/multi-color-replace/multi-color-replace2.mjs
 var fragment = "in vec2 vTextureCoord;\nout vec4 finalColor;\n\nconst int MAX_COLORS = ${MAX_COLORS};\n\nuniform sampler2D uTexture;\nuniform vec3 uOriginalColors[MAX_COLORS];\nuniform vec3 uTargetColors[MAX_COLORS];\nuniform float uTolerance;\n\nvoid main(void)\n{\n    finalColor = texture(uTexture, vTextureCoord);\n\n    float alpha = finalColor.a;\n    if (alpha < 0.0001)\n    {\n      return;\n    }\n\n    vec3 color = finalColor.rgb / alpha;\n\n    for(int i = 0; i < MAX_COLORS; i++)\n    {\n      vec3 origColor = uOriginalColors[i];\n      if (origColor.r < 0.0)\n      {\n        break;\n      }\n      vec3 colorDiff = origColor - color;\n      if (length(colorDiff) < uTolerance)\n      {\n        vec3 targetColor = uTargetColors[i];\n        finalColor = vec4((targetColor + colorDiff) * alpha, alpha);\n        return;\n      }\n    }\n}\n";
 
 
 //# sourceMappingURL=multi-color-replace2.mjs.map
 
-;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/multi-color-replace/multi-color-replace.mjs
+;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/multi-color-replace/multi-color-replace.mjs
 var source = "struct MultiColorReplaceUniforms {\n  uOriginalColors: array<vec3<f32>, MAX_COLORS>,\n  uTargetColors: array<vec3<f32>, MAX_COLORS>,\n  uTolerance:f32,\n};\n\n@group(0) @binding(1) var uTexture: texture_2d<f32>; \n@group(0) @binding(2) var uSampler: sampler;\n@group(1) @binding(0) var<uniform> multiColorReplaceUniforms : MultiColorReplaceUniforms;\n\n@fragment\nfn mainFragment(\n  @builtin(position) position: vec4<f32>,\n  @location(0) uv : vec2<f32>\n) -> @location(0) vec4<f32> {\n  let uOriginalColors = multiColorReplaceUniforms.uOriginalColors;\n  let uTargetColors = multiColorReplaceUniforms.uTargetColors;\n  let uTolerance = multiColorReplaceUniforms.uTolerance;\n\n  var color: vec4<f32> = textureSample(uTexture, uSampler, uv);\n\n  let alpha: f32 = color.a;\n\n  if (alpha > 0.0001)\n  {\n    var modColor: vec3<f32> = vec3<f32>(color.rgb) / alpha;\n\n    for(var i: i32 = 0; i < MAX_COLORS; i += 1)\n    {\n      let origColor: vec3<f32> = uOriginalColors[i];\n      if (origColor.r < 0.0)\n      {\n        break;\n      }\n      let colorDiff: vec3<f32> = origColor - modColor;\n      \n      if (length(colorDiff) < uTolerance)\n      {\n        let targetColor: vec3<f32> = uTargetColors[i];\n        color = vec4((targetColor + colorDiff) * alpha, alpha);\n        return color;\n      }\n    }\n  }\n\n  return color;\n}\n\nconst MAX_COLORS: i32 = ${MAX_COLORS};";
 
 
 //# sourceMappingURL=multi-color-replace.mjs.map
 
-;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.17.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs
+;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs
 
 
 
@@ -3894,15 +3894,15 @@ let MultiColorReplaceFilter = _MultiColorReplaceFilter;
 
 /***/ },
 
-/***/ 691
+/***/ 4332
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   l: () => (/* binding */ Cache)
 /* harmony export */ });
-/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3764);
-/* harmony import */ var _utils_convertToList_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5326);
+/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2555);
+/* harmony import */ var _utils_convertToList_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7537);
 
 
 
@@ -4009,7 +4009,7 @@ const Cache = new CacheClass();
 
 /***/ },
 
-/***/ 1269
+/***/ 2930
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4030,7 +4030,7 @@ var LoaderParserPriority = /* @__PURE__ */ ((LoaderParserPriority2) => {
 
 /***/ },
 
-/***/ 1341
+/***/ 5812
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4042,13 +4042,13 @@ __webpack_require__.d(__webpack_exports__, {
 
 // UNUSED EXPORTS: getUrlExtension
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/path.mjs
-var path = __webpack_require__(1031);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/convertToList.mjs
-var convertToList = __webpack_require__(5326);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/createStringVariations.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/path.mjs
+var path = __webpack_require__(6064);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/convertToList.mjs
+var convertToList = __webpack_require__(7537);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/createStringVariations.mjs
 
 function processX(base, ids, depth, result, tags) {
   const id = ids[depth];
@@ -4081,9 +4081,9 @@ function createStringVariations(string) {
 
 //# sourceMappingURL=createStringVariations.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/isSingleItem.mjs
-var isSingleItem = __webpack_require__(1569);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/isSingleItem.mjs
+var isSingleItem = __webpack_require__(7160);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs
 
 
 
@@ -4657,7 +4657,7 @@ function getUrlExtension(url) {
 
 /***/ },
 
-/***/ 5326
+/***/ 7537
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4686,7 +4686,7 @@ const convertToList = (input, transform, forceTransform = false) => {
 
 /***/ },
 
-/***/ 6817
+/***/ 5884
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4708,7 +4708,7 @@ const copySearchParams = (targetUrl, sourceUrl) => {
 
 /***/ },
 
-/***/ 1569
+/***/ 7160
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4724,7 +4724,7 @@ const isSingleItem = (item) => !Array.isArray(item);
 
 /***/ },
 
-/***/ 2743
+/***/ 1640
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4746,9 +4746,10 @@ var r={grad:.9,turn:360,rad:360/(2*Math.PI)},t=function(r){return"string"==typeo
  var t; },r.prototype.hue=function(r){var t=c(this.rgba);return"number"==typeof r?w({h:r,s:t.s,l:t.l,a:t.a}):n(t.h)},r.prototype.isEqual=function(r){return this.toHex()===w(r).toHex()},r}(),w=function(r){return r instanceof j?r:new j(r)},S=[],k=function(r){r.forEach(function(r){S.indexOf(r)<0&&(r(j,y),S.push(r))})},E=function(){return new j({r:255*Math.random(),g:255*Math.random(),b:255*Math.random()})};
 
 ;// ./node_modules/.pnpm/@pixi+colord@2.9.6/node_modules/@pixi/colord/plugins/names.mjs
+__webpack_require__.dn(names);
 /* harmony default export */ function names(e,f){var a={white:"#ffffff",bisque:"#ffe4c4",blue:"#0000ff",cadetblue:"#5f9ea0",chartreuse:"#7fff00",chocolate:"#d2691e",coral:"#ff7f50",antiquewhite:"#faebd7",aqua:"#00ffff",azure:"#f0ffff",whitesmoke:"#f5f5f5",papayawhip:"#ffefd5",plum:"#dda0dd",blanchedalmond:"#ffebcd",black:"#000000",gold:"#ffd700",goldenrod:"#daa520",gainsboro:"#dcdcdc",cornsilk:"#fff8dc",cornflowerblue:"#6495ed",burlywood:"#deb887",aquamarine:"#7fffd4",beige:"#f5f5dc",crimson:"#dc143c",cyan:"#00ffff",darkblue:"#00008b",darkcyan:"#008b8b",darkgoldenrod:"#b8860b",darkkhaki:"#bdb76b",darkgray:"#a9a9a9",darkgreen:"#006400",darkgrey:"#a9a9a9",peachpuff:"#ffdab9",darkmagenta:"#8b008b",darkred:"#8b0000",darkorchid:"#9932cc",darkorange:"#ff8c00",darkslateblue:"#483d8b",gray:"#808080",darkslategray:"#2f4f4f",darkslategrey:"#2f4f4f",deeppink:"#ff1493",deepskyblue:"#00bfff",wheat:"#f5deb3",firebrick:"#b22222",floralwhite:"#fffaf0",ghostwhite:"#f8f8ff",darkviolet:"#9400d3",magenta:"#ff00ff",green:"#008000",dodgerblue:"#1e90ff",grey:"#808080",honeydew:"#f0fff0",hotpink:"#ff69b4",blueviolet:"#8a2be2",forestgreen:"#228b22",lawngreen:"#7cfc00",indianred:"#cd5c5c",indigo:"#4b0082",fuchsia:"#ff00ff",brown:"#a52a2a",maroon:"#800000",mediumblue:"#0000cd",lightcoral:"#f08080",darkturquoise:"#00ced1",lightcyan:"#e0ffff",ivory:"#fffff0",lightyellow:"#ffffe0",lightsalmon:"#ffa07a",lightseagreen:"#20b2aa",linen:"#faf0e6",mediumaquamarine:"#66cdaa",lemonchiffon:"#fffacd",lime:"#00ff00",khaki:"#f0e68c",mediumseagreen:"#3cb371",limegreen:"#32cd32",mediumspringgreen:"#00fa9a",lightskyblue:"#87cefa",lightblue:"#add8e6",midnightblue:"#191970",lightpink:"#ffb6c1",mistyrose:"#ffe4e1",moccasin:"#ffe4b5",mintcream:"#f5fffa",lightslategray:"#778899",lightslategrey:"#778899",navajowhite:"#ffdead",navy:"#000080",mediumvioletred:"#c71585",powderblue:"#b0e0e6",palegoldenrod:"#eee8aa",oldlace:"#fdf5e6",paleturquoise:"#afeeee",mediumturquoise:"#48d1cc",mediumorchid:"#ba55d3",rebeccapurple:"#663399",lightsteelblue:"#b0c4de",mediumslateblue:"#7b68ee",thistle:"#d8bfd8",tan:"#d2b48c",orchid:"#da70d6",mediumpurple:"#9370db",purple:"#800080",pink:"#ffc0cb",skyblue:"#87ceeb",springgreen:"#00ff7f",palegreen:"#98fb98",red:"#ff0000",yellow:"#ffff00",slateblue:"#6a5acd",lavenderblush:"#fff0f5",peru:"#cd853f",palevioletred:"#db7093",violet:"#ee82ee",teal:"#008080",slategray:"#708090",slategrey:"#708090",aliceblue:"#f0f8ff",darkseagreen:"#8fbc8f",darkolivegreen:"#556b2f",greenyellow:"#adff2f",seagreen:"#2e8b57",seashell:"#fff5ee",tomato:"#ff6347",silver:"#c0c0c0",sienna:"#a0522d",lavender:"#e6e6fa",lightgreen:"#90ee90",orange:"#ffa500",orangered:"#ff4500",steelblue:"#4682b4",royalblue:"#4169e1",turquoise:"#40e0d0",yellowgreen:"#9acd32",salmon:"#fa8072",saddlebrown:"#8b4513",sandybrown:"#f4a460",rosybrown:"#bc8f8f",darksalmon:"#e9967a",lightgoldenrodyellow:"#fafad2",snow:"#fffafa",lightgrey:"#d3d3d3",lightgray:"#d3d3d3",dimgray:"#696969",dimgrey:"#696969",olivedrab:"#6b8e23",olive:"#808000"},r={};for(var d in a)r[a[d]]=d;var l={};e.prototype.toName=function(f){if(!(this.rgba.a||this.rgba.r||this.rgba.g||this.rgba.b))return"transparent";var d,i,n=r[this.toHex()];if(n)return n;if(null==f?void 0:f.closest){var o=this.toRgb(),t=1/0,b="black";if(!l.length)for(var c in a)l[c]=new e(a[c]).toRgb();for(var g in a){var u=(d=o,i=l[g],Math.pow(d.r-i.r,2)+Math.pow(d.g-i.g,2)+Math.pow(d.b-i.b,2));u<t&&(t=u,b=g)}return b}};f.string.push([function(f){var r=f.toLowerCase(),d="transparent"===r?"#0000":a[r];return d?new e(d).toRgb():null},"name"])}
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs
 
 
 
@@ -5576,20 +5577,20 @@ let Color = _Color;
 
 /***/ },
 
-/***/ 9144
+/***/ 4657
 (__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
-var Container = __webpack_require__(9484);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/const.mjs
-var ticker_const = __webpack_require__(4546);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
-var Ticker = __webpack_require__(3333);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/dom/CanvasObserver.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
+var Container = __webpack_require__(5412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/const.mjs
+var ticker_const = __webpack_require__(7529);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
+var Ticker = __webpack_require__(4690);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/dom/CanvasObserver.mjs
 
 
 
@@ -5688,9 +5689,9 @@ class CanvasObserver {
 
 //# sourceMappingURL=CanvasObserver.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/Point.mjs
-var Point = __webpack_require__(1861);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/FederatedEvent.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/FederatedEvent.mjs
 
 
 "use strict";
@@ -6016,7 +6017,7 @@ function isMobile(param) {
     return result;
 }
 //# sourceMappingURL=isMobile.js.map
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/isMobile.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/isMobile.mjs
 
 
 "use strict";
@@ -6026,9 +6027,9 @@ const isMobile_isMobile = isMobileCall(globalThis.navigator);
 
 //# sourceMappingURL=isMobile.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/removeItems.mjs
-var removeItems = __webpack_require__(5399);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/accessibility/AccessibilitySystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/removeItems.mjs
+var removeItems = __webpack_require__(9344);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/accessibility/AccessibilitySystem.mjs
 
 
 
@@ -6607,7 +6608,7 @@ let AccessibilitySystem = _AccessibilitySystem;
 
 //# sourceMappingURL=AccessibilitySystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/accessibility/accessibilityTarget.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/accessibility/accessibilityTarget.mjs
 
 const accessibilityTarget = {
   accessible: false,
@@ -6626,7 +6627,7 @@ const accessibilityTarget = {
 
 //# sourceMappingURL=accessibilityTarget.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/accessibility/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/accessibility/init.mjs
 
 
 
@@ -6637,7 +6638,7 @@ Extensions/* extensions */.XO.add(AccessibilitySystem);
 Extensions/* extensions */.XO.mixin(Container/* Container */.mc, accessibilityTarget);
 //# sourceMappingURL=init.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/dom/DOMPipe.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/dom/DOMPipe.mjs
 
 
 
@@ -6751,7 +6752,7 @@ DOMPipe.extension = {
 
 //# sourceMappingURL=DOMPipe.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/dom/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/dom/init.mjs
 
 
 
@@ -6764,11 +6765,11 @@ Extensions/* extensions */.XO.add(DOMPipe);
 
 //# sourceMappingURL=init.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/EventTicker.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/EventTicker.mjs
 
 
 
@@ -6876,7 +6877,7 @@ const EventsTicker = new EventsTickerClass();
 
 //# sourceMappingURL=EventTicker.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/FederatedMouseEvent.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/FederatedMouseEvent.mjs
 
 
 
@@ -7025,7 +7026,7 @@ class FederatedMouseEvent extends FederatedEvent {
 
 //# sourceMappingURL=FederatedMouseEvent.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/FederatedPointerEvent.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/FederatedPointerEvent.mjs
 
 
 "use strict";
@@ -7072,7 +7073,7 @@ class FederatedPointerEvent extends FederatedMouseEvent {
 
 //# sourceMappingURL=FederatedPointerEvent.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/FederatedWheelEvent.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/FederatedWheelEvent.mjs
 
 
 "use strict";
@@ -7115,7 +7116,7 @@ FederatedWheelEvent.DOM_DELTA_PAGE = 2;
 
 //# sourceMappingURL=FederatedWheelEvent.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/EventBoundary.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/EventBoundary.mjs
 
 
 
@@ -8045,7 +8046,7 @@ class EventBoundary {
 
 //# sourceMappingURL=EventBoundary.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/EventSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/EventSystem.mjs
 
 
 
@@ -8651,7 +8652,7 @@ let EventSystem = _EventSystem;
 
 //# sourceMappingURL=EventSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/FederatedEventTarget.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/FederatedEventTarget.mjs
 
 
 
@@ -8749,7 +8750,7 @@ const FederatedContainer = {
 
 //# sourceMappingURL=FederatedEventTarget.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/events/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/events/init.mjs
 
 
 
@@ -8760,13 +8761,13 @@ Extensions/* extensions */.XO.add(EventSystem);
 Extensions/* extensions */.XO.mixin(Container/* Container */.mc, FederatedContainer);
 //# sourceMappingURL=init.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/spritesheet/init.mjs + 2 modules
-var init = __webpack_require__(1610);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/init.mjs + 5 modules
-var rendering_init = __webpack_require__(4936);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/init.mjs + 7 modules
-var filters_init = __webpack_require__(3931);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment-browser/browserAll.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/spritesheet/init.mjs + 2 modules
+var init = __webpack_require__(4571);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/init.mjs + 5 modules
+var rendering_init = __webpack_require__(6641);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/init.mjs + 9 modules
+var filters_init = __webpack_require__(7822);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment-browser/browserAll.mjs
 
 
 
@@ -8780,14 +8781,14 @@ var filters_init = __webpack_require__(3931);
 
 /***/ },
 
-/***/ 9229
+/***/ 7757
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _spritesheet_init_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1610);
-/* harmony import */ var _rendering_init_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4936);
-/* harmony import */ var _filters_init_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3931);
+/* harmony import */ var _spritesheet_init_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4571);
+/* harmony import */ var _rendering_init_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6641);
+/* harmony import */ var _filters_init_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7822);
 
 
 
@@ -8798,7 +8799,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ },
 
-/***/ 8985
+/***/ 5886
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -8808,7 +8809,7 @@ __webpack_require__.d(__webpack_exports__, {
   e: () => (/* binding */ DOMAdapter)
 });
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment-browser/BrowserAdapter.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment-browser/BrowserAdapter.mjs
 
 const BrowserAdapter = {
   createCanvas: (width, height) => {
@@ -8833,7 +8834,7 @@ const BrowserAdapter = {
 
 //# sourceMappingURL=BrowserAdapter.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs
 
 
 "use strict";
@@ -8861,7 +8862,7 @@ const DOMAdapter = {
 
 /***/ },
 
-/***/ 4227
+/***/ 6258
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -9138,17 +9139,17 @@ const extensions = {
 
 /***/ },
 
-/***/ 3826
+/***/ 1901
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   d: () => (/* binding */ Filter)
 /* harmony export */ });
-/* harmony import */ var _rendering_renderers_gl_shader_GlProgram_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8769);
-/* harmony import */ var _rendering_renderers_gpu_shader_GpuProgram_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(876);
-/* harmony import */ var _rendering_renderers_shared_shader_Shader_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3571);
-/* harmony import */ var _rendering_renderers_shared_state_State_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8179);
+/* harmony import */ var _rendering_renderers_gl_shader_GlProgram_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1638);
+/* harmony import */ var _rendering_renderers_gpu_shader_GpuProgram_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3207);
+/* harmony import */ var _rendering_renderers_shared_shader_Shader_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1992);
+/* harmony import */ var _rendering_renderers_shared_state_State_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3860);
 
 
 
@@ -9244,7 +9245,7 @@ let Filter = _Filter;
 
 /***/ },
 
-/***/ 1761
+/***/ 622
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -9274,14 +9275,345 @@ class FilterEffect {
 
 /***/ },
 
-/***/ 3931
+/***/ 7822
 (__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/FilterPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canvasUtils.mjs
+var canvasUtils = __webpack_require__(771);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
+var CanvasPool = __webpack_require__(1281);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getRenderableBounds.mjs
+
+
+
+"use strict";
+const tempProjectionMatrix = new Matrix/* Matrix */.u();
+function getGlobalRenderableBounds(renderables, bounds) {
+  bounds.clear();
+  const actualMatrix = bounds.matrix;
+  for (let i = 0; i < renderables.length; i++) {
+    const renderable = renderables[i];
+    if (renderable.globalDisplayStatus < 7) {
+      continue;
+    }
+    const renderGroup = renderable.renderGroup ?? renderable.parentRenderGroup;
+    if (renderGroup?.isCachedAsTexture) {
+      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup.textureOffsetInverseTransform).append(renderable.worldTransform);
+    } else if (renderGroup?._parentCacheAsTextureRenderGroup) {
+      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup._parentCacheAsTextureRenderGroup.inverseWorldTransform).append(renderable.groupTransform);
+    } else {
+      bounds.matrix = renderable.worldTransform;
+    }
+    bounds.addBounds(renderable.bounds);
+  }
+  bounds.matrix = actualMatrix;
+  return bounds;
+}
+
+
+//# sourceMappingURL=getRenderableBounds.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
+var TexturePool = __webpack_require__(7118);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/utils/getPo2TextureFromSource.mjs
+
+
+
+"use strict";
+const tempBounds = new Bounds/* Bounds */.c();
+function getPo2TextureFromSource(image, width, height, resolution, autoGenerateMipmaps = false) {
+  const bounds = tempBounds;
+  bounds.minX = 0;
+  bounds.minY = 0;
+  bounds.maxX = image.width / resolution | 0;
+  bounds.maxY = image.height / resolution | 0;
+  const texture = TexturePool/* TexturePool */.W.getOptimalTexture(
+    bounds.width,
+    bounds.height,
+    resolution,
+    false,
+    autoGenerateMipmaps
+  );
+  texture.source.uploadMethodId = "image";
+  texture.source.resource = image;
+  texture.source.alphaMode = "premultiply-alpha-on-upload";
+  texture.frame.width = width / resolution;
+  texture.frame.height = height / resolution;
+  texture.source.emit("update", texture.source);
+  texture.updateUvs();
+  return texture;
+}
+
+
+//# sourceMappingURL=getPo2TextureFromSource.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/CanvasFilterSystem.mjs
+
+
+
+
+
+
+
+"use strict";
+function isCanvasFilterCapable(filter) {
+  return typeof filter.getCanvasFilterString === "function";
+}
+class CanvasFilterFrame {
+  constructor() {
+    this.skip = false;
+    this.useClip = false;
+    this.filters = null;
+    this.container = null;
+    this.bounds = new Bounds/* Bounds */.c();
+    this.cssFilterString = "";
+  }
+}
+class CanvasFilterSystem {
+  /**
+   * @param renderer - The Canvas renderer
+   * @param renderer.canvasContext
+   * @param renderer.canvasContext.activeContext
+   * @param renderer.canvasContext.activeResolution
+   */
+  constructor(renderer) {
+    this._filterStack = [];
+    this._filterStackIndex = 0;
+    this._savedStates = [];
+    this._alphaMultiplier = 1;
+    this._warnedFilterTypes = /* @__PURE__ */ new Set();
+    this.renderer = renderer;
+  }
+  /**
+   * Push a filter instruction onto the stack.
+   * Called when entering a filtered container.
+   * @param instruction - The filter instruction from FilterPipe
+   */
+  push(instruction) {
+    const filterFrame = this._pushFilterFrame();
+    const filters = instruction.filterEffect.filters;
+    filterFrame.skip = false;
+    filterFrame.useClip = false;
+    filterFrame.filters = filters;
+    filterFrame.container = instruction.container;
+    filterFrame.cssFilterString = "";
+    if (filters.every((filter) => !filter.enabled)) {
+      filterFrame.skip = true;
+      return;
+    }
+    const cssFilters = [];
+    const alphaMultiplier = 1;
+    for (const filter of filters) {
+      if (!filter.enabled) continue;
+      if (!isCanvasFilterCapable(filter)) {
+        this._warnUnsupportedFilter(filter);
+        continue;
+      }
+      const cssString = filter.getCanvasFilterString();
+      if (cssString === null) {
+        this._warnUnsupportedFilter(filter);
+        continue;
+      }
+      if (cssString) {
+        cssFilters.push(cssString);
+      }
+    }
+    if (cssFilters.length === 0 && alphaMultiplier === 1) {
+      filterFrame.skip = true;
+      return;
+    }
+    filterFrame.cssFilterString = cssFilters.join(" ");
+    this._calculateFilterArea(instruction, filterFrame.bounds);
+    filterFrame.useClip = !!instruction.filterEffect.filterArea;
+    const context = this.renderer.canvasContext.activeContext;
+    const previousFilter = context.filter || "none";
+    this._savedStates.push({ filter: previousFilter, alphaMultiplier: this._alphaMultiplier });
+    if (filterFrame.useClip && Number.isFinite(filterFrame.bounds.width) && Number.isFinite(filterFrame.bounds.height) && filterFrame.bounds.width > 0 && filterFrame.bounds.height > 0) {
+      const resolution = this.renderer.canvasContext.activeResolution || 1;
+      context.save();
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.beginPath();
+      context.rect(
+        filterFrame.bounds.x * resolution,
+        filterFrame.bounds.y * resolution,
+        filterFrame.bounds.width * resolution,
+        filterFrame.bounds.height * resolution
+      );
+      context.clip();
+    } else {
+      filterFrame.useClip = false;
+    }
+    if (alphaMultiplier !== 1) {
+      this._alphaMultiplier *= alphaMultiplier;
+    }
+    if (filterFrame.cssFilterString) {
+      context.filter = previousFilter !== "none" ? `${previousFilter} ${filterFrame.cssFilterString}` : filterFrame.cssFilterString;
+    }
+  }
+  /** Pop a filter from the stack. Called when exiting a filtered container. */
+  pop() {
+    const filterFrame = this._popFilterFrame();
+    if (filterFrame.skip) {
+      return;
+    }
+    const savedState = this._savedStates.pop();
+    if (!savedState) {
+      return;
+    }
+    const context = this.renderer.canvasContext.activeContext;
+    if (filterFrame.useClip) {
+      context.restore();
+    } else {
+      context.filter = savedState.filter;
+    }
+    this._alphaMultiplier = savedState.alphaMultiplier;
+  }
+  /**
+   * Applies supported filters to a texture and returns a new texture.
+   * Unsupported filters are skipped with a warn-once message.
+   * @param params - The parameters for applying filters.
+   * @param params.texture
+   * @param params.filters
+   * @returns The resulting texture after filters are applied.
+   */
+  generateFilteredTexture({ texture, filters }) {
+    if (!filters?.length || filters.every((filter) => !filter.enabled)) {
+      return texture;
+    }
+    const cssFilters = [];
+    const alphaMultiplier = 1;
+    for (const filter of filters) {
+      if (!filter.enabled) continue;
+      if (!isCanvasFilterCapable(filter)) {
+        this._warnUnsupportedFilter(filter);
+        continue;
+      }
+      const cssString = filter.getCanvasFilterString();
+      if (cssString === null) {
+        this._warnUnsupportedFilter(filter);
+        continue;
+      }
+      if (cssString) {
+        cssFilters.push(cssString);
+      }
+    }
+    if (cssFilters.length === 0 && alphaMultiplier === 1) {
+      return texture;
+    }
+    const source = canvasUtils/* canvasUtils */.k.getCanvasSource(texture);
+    if (!source) {
+      return texture;
+    }
+    const frame = texture.frame;
+    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
+    const width = frame.width;
+    const height = frame.height;
+    const canvasAndContext = CanvasPool/* CanvasPool */.N.getOptimalCanvasAndContext(width, height, resolution);
+    const { canvas, context } = canvasAndContext;
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    if (cssFilters.length) {
+      context.filter = cssFilters.join(" ");
+    }
+    if (alphaMultiplier !== 1) {
+      context.globalAlpha = alphaMultiplier;
+    }
+    const sx = frame.x * resolution;
+    const sy = frame.y * resolution;
+    const sw = width * resolution;
+    const sh = height * resolution;
+    context.drawImage(
+      source,
+      sx,
+      sy,
+      sw,
+      sh,
+      0,
+      0,
+      sw,
+      sh
+    );
+    context.filter = "none";
+    context.globalAlpha = 1;
+    return getPo2TextureFromSource(canvas, width, height, resolution);
+  }
+  /**
+   * Calculate the filter area bounds.
+   * @param instruction - Filter instruction
+   * @param bounds - Bounds object to populate
+   */
+  _calculateFilterArea(instruction, bounds) {
+    if (instruction.renderables) {
+      getGlobalRenderableBounds(instruction.renderables, bounds);
+    } else if (instruction.filterEffect.filterArea) {
+      bounds.clear();
+      bounds.addRect(instruction.filterEffect.filterArea);
+      bounds.applyMatrix(instruction.container.worldTransform);
+    } else {
+      instruction.container.getFastGlobalBounds(true, bounds);
+    }
+    if (instruction.container) {
+      const renderGroup = instruction.container.renderGroup || instruction.container.parentRenderGroup;
+      const filterFrameTransform = renderGroup?.cacheToLocalTransform;
+      if (filterFrameTransform) {
+        bounds.applyMatrix(filterFrameTransform);
+      }
+    }
+  }
+  _warnUnsupportedFilter(filter) {
+    const filterName = filter?.constructor?.name || "Filter";
+    if (this._warnedFilterTypes.has(filterName)) {
+      return;
+    }
+    this._warnedFilterTypes.add(filterName);
+    console.warn(
+      `CanvasRenderer: filter "${filterName}" is not supported in Canvas2D and will be skipped.`
+    );
+  }
+  get alphaMultiplier() {
+    return this._alphaMultiplier;
+  }
+  _pushFilterFrame() {
+    let filterFrame = this._filterStack[this._filterStackIndex];
+    if (!filterFrame) {
+      filterFrame = this._filterStack[this._filterStackIndex] = new CanvasFilterFrame();
+    }
+    this._filterStackIndex++;
+    return filterFrame;
+  }
+  _popFilterFrame() {
+    if (this._filterStackIndex <= 0) {
+      return this._filterStack[0];
+    }
+    this._filterStackIndex--;
+    return this._filterStack[this._filterStackIndex];
+  }
+  /** Destroys the system */
+  destroy() {
+    this._filterStack = null;
+    this._savedStates = null;
+    this._warnedFilterTypes = null;
+    this._alphaMultiplier = 1;
+  }
+}
+/** @ignore */
+CanvasFilterSystem.extension = {
+  type: [Extensions/* ExtensionType */.Ag.CanvasSystem],
+  name: "filter"
+};
+
+
+//# sourceMappingURL=CanvasFilterSystem.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/FilterPipe.mjs
 
 
 "use strict";
@@ -9331,31 +9663,31 @@ FilterPipe.extension = {
 
 //# sourceMappingURL=FilterPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
-var GlProgram = __webpack_require__(8769);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
-var GpuProgram = __webpack_require__(876);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/Filter.mjs
-var Filter = __webpack_require__(3826);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/defaults/defaultFilter.vert.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
+var GlProgram = __webpack_require__(1638);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
+var GpuProgram = __webpack_require__(3207);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/Filter.mjs
+var Filter = __webpack_require__(1901);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/defaults/defaultFilter.vert.mjs
 var vertex = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
 
 
 //# sourceMappingURL=defaultFilter.vert.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/defaults/passthrough/passthrough.frag.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/defaults/passthrough/passthrough.frag.mjs
 var fragment = "in vec2 vTextureCoord;\nout vec4 finalColor;\nuniform sampler2D uTexture;\nvoid main() {\n    finalColor = texture(uTexture, vTextureCoord);\n}\n";
 
 
 //# sourceMappingURL=passthrough.frag.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/defaults/passthrough/passthrough.wgsl.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/defaults/passthrough/passthrough.wgsl.mjs
 var source = "struct GlobalFilterUniforms {\n  uInputSize: vec4<f32>,\n  uInputPixel: vec4<f32>,\n  uInputClamp: vec4<f32>,\n  uOutputFrame: vec4<f32>,\n  uGlobalFrame: vec4<f32>,\n  uOutputTexture: vec4<f32>,\n};\n\n@group(0) @binding(0) var <uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler: sampler;\n\nstruct VSOutput {\n  @builtin(position) position: vec4<f32>,\n  @location(0) uv: vec2<f32>\n};\n\nfn filterVertexPosition(aPosition: vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0 * gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord(aPosition: vec2<f32>) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition: vec2<f32>,\n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n) -> @location(0) vec4<f32> {\n    return textureSample(uTexture, uSampler, uv);\n}\n";
 
 
 //# sourceMappingURL=passthrough.wgsl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/defaults/passthrough/PassthroughFilter.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/defaults/passthrough/PassthroughFilter.mjs
 
 
 
@@ -9386,56 +9718,19 @@ class PassthroughFilter extends Filter/* Filter */.d {
 
 //# sourceMappingURL=PassthroughFilter.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
-var BindGroup = __webpack_require__(2849);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
-var Geometry = __webpack_require__(2147);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
-var UniformGroup = __webpack_require__(683);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
-var TexturePool = __webpack_require__(6301);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getRenderableBounds.mjs
-
-
-
-"use strict";
-const tempProjectionMatrix = new Matrix/* Matrix */.u();
-function getGlobalRenderableBounds(renderables, bounds) {
-  bounds.clear();
-  const actualMatrix = bounds.matrix;
-  for (let i = 0; i < renderables.length; i++) {
-    const renderable = renderables[i];
-    if (renderable.globalDisplayStatus < 7) {
-      continue;
-    }
-    const renderGroup = renderable.renderGroup ?? renderable.parentRenderGroup;
-    if (renderGroup?.isCachedAsTexture) {
-      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup.textureOffsetInverseTransform).append(renderable.worldTransform);
-    } else if (renderGroup?._parentCacheAsTextureRenderGroup) {
-      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup._parentCacheAsTextureRenderGroup.inverseWorldTransform).append(renderable.groupTransform);
-    } else {
-      bounds.matrix = renderable.worldTransform;
-    }
-    bounds.addBounds(renderable.bounds);
-  }
-  bounds.matrix = actualMatrix;
-  return bounds;
-}
-
-
-//# sourceMappingURL=getRenderableBounds.mjs.map
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/FilterSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
+var BindGroup = __webpack_require__(4042);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
+var Geometry = __webpack_require__(4158);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/FilterSystem.mjs
 
 
 
@@ -10070,20 +10365,21 @@ FilterSystem.extension = {
 
 //# sourceMappingURL=FilterSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/init.mjs
+
 
 
 
 
 "use strict";
-Extensions/* extensions */.XO.add(FilterSystem);
+Extensions/* extensions */.XO.add(FilterSystem, CanvasFilterSystem);
 Extensions/* extensions */.XO.add(FilterPipe);
 //# sourceMappingURL=init.mjs.map
 
 
 /***/ },
 
-/***/ 7103
+/***/ 5268
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -10112,11 +10408,11 @@ __webpack_require__.d(__webpack_exports__, {
   AeT: () => (/* reexport */ path/* path */.A)
 });
 
-// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Matrix, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderTexture, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSprite, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
+// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Matrix, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderTexture, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGDefsCollector, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSprite, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSVGFillAttributes, buildSVGPath, buildSVGStrokeAttributes, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, graphicsContextToSvg, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment-browser/browserExt.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment-browser/browserExt.mjs
 
 
 "use strict";
@@ -10128,14 +10424,14 @@ const browserExt = {
   },
   test: () => true,
   load: async () => {
-    await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 9144));
+    await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 4657));
   }
 };
 
 
 //# sourceMappingURL=browserExt.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment-webworker/webworkerExt.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment-webworker/webworkerExt.mjs
 
 
 "use strict";
@@ -10147,22 +10443,22 @@ const webworkerExt = {
   },
   test: () => typeof self !== "undefined" && self.WorkerGlobalScope !== void 0,
   load: async () => {
-    await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 9229));
+    await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 7757));
   }
 };
 
 
 //# sourceMappingURL=webworkerExt.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/init.mjs + 5 modules
-var init = __webpack_require__(4936);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/spritesheet/init.mjs + 2 modules
-var spritesheet_init = __webpack_require__(1610);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(8985);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
-var AbstractRenderer = __webpack_require__(5816);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/isWebGLSupported.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/init.mjs + 5 modules
+var init = __webpack_require__(6641);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/spritesheet/init.mjs + 2 modules
+var spritesheet_init = __webpack_require__(4571);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
+var AbstractRenderer = __webpack_require__(3789);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/isWebGLSupported.mjs
 
 
 
@@ -10200,7 +10496,7 @@ function isWebGLSupported(failIfMajorPerformanceCaveat) {
 
 //# sourceMappingURL=isWebGLSupported.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/isWebGPUSupported.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/isWebGPUSupported.mjs
 
 
 "use strict";
@@ -10226,7 +10522,7 @@ async function isWebGPUSupported(options = {}) {
 
 //# sourceMappingURL=isWebGPUSupported.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/autoDetectRenderer.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/autoDetectRenderer.mjs
 
 
 
@@ -10236,12 +10532,16 @@ const renderPriority = ["webgl", "webgpu", "canvas"];
 async function autoDetectRenderer(options) {
   let preferredOrder = [];
   if (options.preference) {
-    preferredOrder.push(options.preference);
-    renderPriority.forEach((item) => {
-      if (item !== options.preference) {
-        preferredOrder.push(item);
-      }
-    });
+    if (Array.isArray(options.preference)) {
+      preferredOrder = options.preference.slice();
+    } else {
+      preferredOrder.push(options.preference);
+      renderPriority.forEach((item) => {
+        if (item !== options.preference) {
+          preferredOrder.push(item);
+        }
+      });
+    }
   } else {
     preferredOrder = renderPriority.slice();
   }
@@ -10250,19 +10550,19 @@ async function autoDetectRenderer(options) {
   for (let i = 0; i < preferredOrder.length; i++) {
     const rendererType = preferredOrder[i];
     if (rendererType === "webgpu" && await isWebGPUSupported()) {
-      const { WebGPURenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 7298));
+      const { WebGPURenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 4727));
       RendererClass = WebGPURenderer;
       finalOptions = { ...options, ...options.webgpu };
       break;
     } else if (rendererType === "webgl" && isWebGLSupported(
       options.failIfMajorPerformanceCaveat ?? AbstractRenderer/* AbstractRenderer */.k.defaultOptions.failIfMajorPerformanceCaveat
     )) {
-      const { WebGLRenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 380));
+      const { WebGLRenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 5317));
       RendererClass = WebGLRenderer;
       finalOptions = { ...options, ...options.webgl };
       break;
     } else if (rendererType === "canvas") {
-      const { CanvasRenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 1736));
+      const { CanvasRenderer } = await __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 698));
       RendererClass = CanvasRenderer;
       finalOptions = { ...options, ...options.canvasOptions };
       break;
@@ -10282,13 +10582,13 @@ async function autoDetectRenderer(options) {
 
 //# sourceMappingURL=autoDetectRenderer.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
-var Container = __webpack_require__(9484);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/global/globalHooks.mjs
-var globalHooks = __webpack_require__(6937);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/app/ResizePlugin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
+var Container = __webpack_require__(5412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/global/globalHooks.mjs
+var globalHooks = __webpack_require__(7398);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/app/ResizePlugin.mjs
 
 
 "use strict";
@@ -10371,11 +10671,11 @@ ResizePlugin.extension = Extensions/* ExtensionType */.Ag.Application;
 
 //# sourceMappingURL=ResizePlugin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/const.mjs
-var ticker_const = __webpack_require__(4546);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
-var Ticker = __webpack_require__(3333);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/app/TickerPlugin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/const.mjs
+var ticker_const = __webpack_require__(7529);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
+var Ticker = __webpack_require__(4690);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/app/TickerPlugin.mjs
 
 
 
@@ -10441,7 +10741,7 @@ TickerPlugin.extension = Extensions/* ExtensionType */.Ag.Application;
 
 //# sourceMappingURL=TickerPlugin.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/app/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/app/init.mjs
 
 
 
@@ -10451,7 +10751,7 @@ Extensions/* extensions */.XO.add(ResizePlugin);
 Extensions/* extensions */.XO.add(TickerPlugin);
 //# sourceMappingURL=init.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/app/Application.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/app/Application.mjs
 
 
 
@@ -10595,6 +10895,14 @@ const _Application = class _Application {
     return this.renderer.screen;
   }
   /**
+   * Get the html div element that holds all DOM Container elements.
+   * @readonly
+   * @type {HTMLDivElement}
+   */
+  get domContainerRoot() {
+    return this.renderer.renderPipes.dom?._domElement;
+  }
+  /**
    * Destroys the application and all of its resources.
    *
    * This method should be called when you want to completely
@@ -10660,13 +10968,13 @@ Extensions/* extensions */.XO.add(globalHooks/* ApplicationInitHook */.M);
 
 //# sourceMappingURL=Application.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/LoaderParser.mjs
-var LoaderParser = __webpack_require__(1269);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/copySearchParams.mjs
-var copySearchParams = __webpack_require__(6817);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/path.mjs
-var path = __webpack_require__(1031);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontTextParser.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/LoaderParser.mjs
+var LoaderParser = __webpack_require__(2930);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/copySearchParams.mjs
+var copySearchParams = __webpack_require__(5884);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/path.mjs
+var path = __webpack_require__(6064);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontTextParser.mjs
 
 const bitmapFontTextParser = {
   test(data) {
@@ -10763,7 +11071,7 @@ const bitmapFontTextParser = {
 
 //# sourceMappingURL=bitmapFontTextParser.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontXMLParser.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontXMLParser.mjs
 
 const bitmapFontXMLParser = {
   test(data) {
@@ -10838,7 +11146,7 @@ const bitmapFontXMLParser = {
 
 //# sourceMappingURL=bitmapFontXMLParser.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontXMLStringParser.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/bitmapFontXMLStringParser.mjs
 
 
 
@@ -10858,7 +11166,7 @@ const bitmapFontXMLStringParser = {
 
 //# sourceMappingURL=bitmapFontXMLStringParser.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/loadBitmapFont.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/asset/loadBitmapFont.mjs
 
 
 
@@ -10921,7 +11229,7 @@ const loadBitmapFont = {
     }
     const [loadedTextures, { BitmapFont }] = await Promise.all([
       loader.load(textureUrls),
-      __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 924))
+      __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 2049))
     ]);
     const textures = textureUrls.map((url) => loadedTextures[url.src]);
     const bitmapFont = new BitmapFont({
@@ -10943,9 +11251,9 @@ const loadBitmapFont = {
 
 //# sourceMappingURL=loadBitmapFont.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/BackgroundLoader.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/BackgroundLoader.mjs
 
 class BackgroundLoader {
   /**
@@ -11052,11 +11360,11 @@ class BackgroundLoader {
 
 //# sourceMappingURL=BackgroundLoader.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/cache/Cache.mjs
-var Cache = __webpack_require__(691);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/cache/parsers/cacheTextureArray.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/cache/Cache.mjs
+var Cache = __webpack_require__(4332);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/cache/parsers/cacheTextureArray.mjs
 
 
 
@@ -11081,7 +11389,7 @@ const cacheTextureArray = {
 
 //# sourceMappingURL=cacheTextureArray.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/utils/testImageFormat.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/utils/testImageFormat.mjs
 
 async function testImageFormat(imageData) {
   if ("Image" in globalThis) {
@@ -11111,7 +11419,7 @@ async function testImageFormat(imageData) {
 
 //# sourceMappingURL=testImageFormat.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectAvif.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectAvif.mjs
 
 
 
@@ -11132,7 +11440,7 @@ const detectAvif = {
 
 //# sourceMappingURL=detectAvif.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectDefaults.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectDefaults.mjs
 
 
 "use strict";
@@ -11150,7 +11458,7 @@ const detectDefaults = {
 
 //# sourceMappingURL=detectDefaults.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/utils/testVideoFormat.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/utils/testVideoFormat.mjs
 
 const inWorker = "WorkerGlobalScope" in globalThis && globalThis instanceof globalThis.WorkerGlobalScope;
 function testVideoFormat(mimeType) {
@@ -11164,7 +11472,7 @@ function testVideoFormat(mimeType) {
 
 //# sourceMappingURL=testVideoFormat.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectMp4.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectMp4.mjs
 
 
 
@@ -11182,7 +11490,7 @@ const detectMp4 = {
 
 //# sourceMappingURL=detectMp4.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectOgv.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectOgv.mjs
 
 
 
@@ -11200,7 +11508,7 @@ const detectOgv = {
 
 //# sourceMappingURL=detectOgv.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectWebm.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectWebm.mjs
 
 
 
@@ -11218,7 +11526,7 @@ const detectWebm = {
 
 //# sourceMappingURL=detectWebm.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/detections/parsers/detectWebp.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/detections/parsers/detectWebp.mjs
 
 
 
@@ -11238,11 +11546,11 @@ const detectWebp = {
 
 //# sourceMappingURL=detectWebp.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/convertToList.mjs
-var convertToList = __webpack_require__(5326);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/isSingleItem.mjs
-var isSingleItem = __webpack_require__(1569);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/Loader.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/convertToList.mjs
+var convertToList = __webpack_require__(7537);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/isSingleItem.mjs
+var isSingleItem = __webpack_require__(7160);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/Loader.mjs
 
 
 
@@ -11472,7 +11780,7 @@ let Loader = _Loader;
 
 //# sourceMappingURL=Loader.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/checkDataUrl.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/checkDataUrl.mjs
 
 function checkDataUrl(url, mimes) {
   if (Array.isArray(mimes)) {
@@ -11487,7 +11795,7 @@ function checkDataUrl(url, mimes) {
 
 //# sourceMappingURL=checkDataUrl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/checkExtension.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/checkExtension.mjs
 
 
 "use strict";
@@ -11503,7 +11811,7 @@ function checkExtension(url, extension) {
 
 //# sourceMappingURL=checkExtension.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/loadJson.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/loadJson.mjs
 
 
 
@@ -11534,7 +11842,7 @@ const loadJson = {
 
 //# sourceMappingURL=loadJson.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/loadTxt.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/loadTxt.mjs
 
 
 
@@ -11566,7 +11874,7 @@ const loadTxt = {
 
 //# sourceMappingURL=loadTxt.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/loadWebFont.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/loadWebFont.mjs
 
 
 
@@ -11685,13 +11993,13 @@ const loadWebFont = {
 
 //# sourceMappingURL=loadWebFont.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
-var ImageSource = __webpack_require__(7709);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
-var GraphicsContext = __webpack_require__(5626);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs + 1 modules
-var Resolver = __webpack_require__(1341);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/network/getResolutionOfUrl.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
+var ImageSource = __webpack_require__(1950);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
+var GraphicsContext = __webpack_require__(9469);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs + 1 modules
+var Resolver = __webpack_require__(5812);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/network/getResolutionOfUrl.mjs
 
 
 "use strict";
@@ -11706,7 +12014,7 @@ function getResolutionOfUrl(url, defaultValue = 1) {
 
 //# sourceMappingURL=getResolutionOfUrl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/utils/createTexture.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/utils/createTexture.mjs
 
 
 
@@ -11743,7 +12051,7 @@ function createTexture(source, loader, url) {
 
 //# sourceMappingURL=createTexture.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadSVG.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadSVG.mjs
 
 
 
@@ -11819,7 +12127,7 @@ async function loadAsGraphics(url) {
 
 //# sourceMappingURL=loadSVG.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/_virtual/checkImageBitmap.worker.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/_virtual/checkImageBitmap.worker.mjs
 const WORKER_CODE = "(function () {\n    'use strict';\n\n    const WHITE_PNG = \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=\";\n    async function checkImageBitmap() {\n      try {\n        if (typeof createImageBitmap !== \"function\") return false;\n        const response = await fetch(WHITE_PNG);\n        const imageBlob = await response.blob();\n        const imageBitmap = await createImageBitmap(imageBlob);\n        return imageBitmap.width === 1 && imageBitmap.height === 1;\n      } catch (_e) {\n        return false;\n      }\n    }\n    void checkImageBitmap().then((result) => {\n      self.postMessage(result);\n    });\n\n})();\n";
 let WORKER_URL = null;
 class WorkerInstance
@@ -11845,7 +12153,7 @@ WorkerInstance.revokeObjectURL = function revokeObjectURL()
 
 //# sourceMappingURL=checkImageBitmap.worker.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/_virtual/loadImageBitmap.worker.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/_virtual/loadImageBitmap.worker.mjs
 const loadImageBitmap_worker_WORKER_CODE = "(function () {\n    'use strict';\n\n    async function loadImageBitmap(url, alphaMode) {\n      const response = await fetch(url);\n      if (!response.ok) {\n        throw new Error(`[WorkerManager.loadImageBitmap] Failed to fetch ${url}: ${response.status} ${response.statusText}`);\n      }\n      const imageBlob = await response.blob();\n      return alphaMode === \"premultiplied-alpha\" ? createImageBitmap(imageBlob, { premultiplyAlpha: \"none\" }) : createImageBitmap(imageBlob);\n    }\n    self.onmessage = async (event) => {\n      try {\n        const imageBitmap = await loadImageBitmap(event.data.data[0], event.data.data[1]);\n        self.postMessage({\n          data: imageBitmap,\n          uuid: event.data.uuid,\n          id: event.data.id\n        }, [imageBitmap]);\n      } catch (e) {\n        self.postMessage({\n          error: e,\n          uuid: event.data.uuid,\n          id: event.data.id\n        });\n      }\n    };\n\n})();\n";
 let loadImageBitmap_worker_WORKER_URL = null;
 class loadImageBitmap_worker_WorkerInstance
@@ -11871,7 +12179,7 @@ loadImageBitmap_worker_WorkerInstance.revokeObjectURL = function revokeObjectURL
 
 //# sourceMappingURL=loadImageBitmap.worker.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/workers/WorkerManager.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/workers/WorkerManager.mjs
 
 
 
@@ -12045,7 +12353,7 @@ const WorkerManager = new WorkerManagerClass();
 
 //# sourceMappingURL=WorkerManager.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadTextures.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadTextures.mjs
 
 
 
@@ -12128,11 +12436,11 @@ const loadTextures = {
 
 //# sourceMappingURL=loadTextures.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/VideoSource.mjs
-var VideoSource = __webpack_require__(3395);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/detectVideoAlphaMode.mjs
-var detectVideoAlphaMode = __webpack_require__(2562);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadVideoTextures.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/VideoSource.mjs
+var VideoSource = __webpack_require__(7756);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/detectVideoAlphaMode.mjs
+var detectVideoAlphaMode = __webpack_require__(1777);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/textures/loadVideoTextures.mjs
 
 
 
@@ -12291,7 +12599,7 @@ const loadVideoTextures = {
 
 //# sourceMappingURL=loadVideoTextures.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/resolver/parsers/resolveTextureUrl.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/resolver/parsers/resolveTextureUrl.mjs
 
 
 
@@ -12313,7 +12621,7 @@ const resolveTextureUrl = {
 
 //# sourceMappingURL=resolveTextureUrl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/resolver/parsers/resolveJsonUrl.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/resolver/parsers/resolveJsonUrl.mjs
 
 
 
@@ -12332,7 +12640,7 @@ const resolveJsonUrl = {
 
 //# sourceMappingURL=resolveJsonUrl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/Assets.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/Assets.mjs
 
 
 
@@ -13071,23 +13379,23 @@ Extensions/* extensions */.XO.handle(Extensions/* ExtensionType */.Ag.Asset, (ex
 
 //# sourceMappingURL=Assets.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/Filter.mjs
-var Filter = __webpack_require__(3826);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs + 1 modules
-var Polygon = __webpack_require__(7494);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
-var GlProgram = __webpack_require__(8769);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
-var GpuProgram = __webpack_require__(876);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/textureFrom.mjs
-var textureFrom = __webpack_require__(3013);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
-var Graphics = __webpack_require__(1839);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1816);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite-animated/AnimatedSprite.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/Filter.mjs
+var Filter = __webpack_require__(1901);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs + 1 modules
+var Polygon = __webpack_require__(6307);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
+var GlProgram = __webpack_require__(1638);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
+var GpuProgram = __webpack_require__(3207);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/textureFrom.mjs
+var textureFrom = __webpack_require__(7574);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
+var Graphics = __webpack_require__(5338);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
+var Sprite = __webpack_require__(1031);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-animated/AnimatedSprite.mjs
 
 
 
@@ -13627,9 +13935,13 @@ class AnimatedSprite extends Sprite/* Sprite */.k {
 
 //# sourceMappingURL=AnimatedSprite.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/index.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs
+
+
+
+
 
 
 
@@ -14263,15 +14575,15 @@ Extensions/* extensions */.XO.add(browserExt, webworkerExt);
 
 /***/ },
 
-/***/ 3721
+/***/ 6512
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   u: () => (/* binding */ Matrix)
 /* harmony export */ });
-/* harmony import */ var _misc_const_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5324);
-/* harmony import */ var _point_Point_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1861);
+/* harmony import */ var _misc_const_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(819);
+/* harmony import */ var _point_Point_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8876);
 
 
 
@@ -15083,14 +15395,14 @@ const identityMatrix = new Matrix();
 
 /***/ },
 
-/***/ 8407
+/***/ 1144
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   E: () => (/* binding */ groupD8)
 /* harmony export */ });
-/* harmony import */ var _Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
+/* harmony import */ var _Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
 
 
 "use strict";
@@ -15412,7 +15724,7 @@ const groupD8 = {
 
 /***/ },
 
-/***/ 5324
+/***/ 819
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -15432,7 +15744,7 @@ const DEG_TO_RAD = Math.PI / 180;
 
 /***/ },
 
-/***/ 5739
+/***/ 806
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -15476,7 +15788,7 @@ function log2(v) {
 
 /***/ },
 
-/***/ 7012
+/***/ 6489
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -15681,7 +15993,7 @@ class ObservablePoint {
 
 /***/ },
 
-/***/ 1861
+/***/ 8876
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -15892,7 +16204,7 @@ const tempPoint = new Point();
 
 /***/ },
 
-/***/ 7494
+/***/ 6307
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -15902,9 +16214,9 @@ __webpack_require__.d(__webpack_exports__, {
   t: () => (/* binding */ Polygon)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/misc/squaredDistanceToLineSegment.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/misc/squaredDistanceToLineSegment.mjs
 
 function squaredDistanceToLineSegment(x, y, x1, y1, x2, y2) {
   const a = x - x1;
@@ -15937,9 +16249,9 @@ function squaredDistanceToLineSegment(x, y, x1, y1, x2, y2) {
 
 //# sourceMappingURL=squaredDistanceToLineSegment.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs
 
 
 
@@ -16319,14 +16631,14 @@ class Polygon {
 
 /***/ },
 
-/***/ 764
+/***/ 1111
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   M: () => (/* binding */ Rectangle)
 /* harmony export */ });
-/* harmony import */ var _point_Point_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1861);
+/* harmony import */ var _point_Point_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8876);
 
 
 "use strict";
@@ -16985,7 +17297,7 @@ class Rectangle {
 
 /***/ },
 
-/***/ 8936
+/***/ 6237
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17041,15 +17353,15 @@ function checkMaxIfStatementsInShader(maxIfs, gl) {
 
 /***/ },
 
-/***/ 5469
+/***/ 62
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   w: () => (/* binding */ getTextureBatchBindGroup)
 /* harmony export */ });
-/* harmony import */ var _renderers_gpu_shader_BindGroup_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2849);
-/* harmony import */ var _renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8653);
+/* harmony import */ var _renderers_gpu_shader_BindGroup_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4042);
+/* harmony import */ var _renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4540);
 
 
 
@@ -17083,16 +17395,16 @@ function generateTextureBatchBindGroup(textures, size, key, maxTextures) {
 
 /***/ },
 
-/***/ 6740
+/***/ 3412
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   s: () => (/* binding */ BatcherPipe)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _renderers_shared_state_State_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8179);
-/* harmony import */ var _DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5747);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _renderers_shared_state_State_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3860);
+/* harmony import */ var _DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(652);
 
 
 
@@ -17200,7 +17512,7 @@ _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__/* .extensions */ .XO.add
 
 /***/ },
 
-/***/ 5747
+/***/ 652
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17210,11 +17522,11 @@ __webpack_require__.d(__webpack_exports__, {
   J: () => (/* binding */ DefaultBatcher)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/ViewableBuffer.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/ViewableBuffer.mjs
 
 class ViewableBuffer {
   constructor(sizeOrBuffer) {
@@ -17320,15 +17632,15 @@ class ViewableBuffer {
 
 //# sourceMappingURL=ViewableBuffer.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
-var GlobalResourceRegistry = __webpack_require__(9835);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/utils/fastCopy.mjs
-var fastCopy = __webpack_require__(7384);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
-var state_const = __webpack_require__(8381);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/getAdjustedBlendModeBlend.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
+var GlobalResourceRegistry = __webpack_require__(4298);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/utils/fastCopy.mjs
+var fastCopy = __webpack_require__(8979);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
+var state_const = __webpack_require__(6466);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/getAdjustedBlendModeBlend.mjs
 
 
 "use strict";
@@ -17342,11 +17654,11 @@ function getAdjustedBlendModeBlend(blendMode, textureSource) {
 
 //# sourceMappingURL=getAdjustedBlendModeBlend.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getTestContext.mjs
-var getTestContext = __webpack_require__(2500);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/checkMaxIfStatementsInShader.mjs
-var checkMaxIfStatementsInShader = __webpack_require__(8936);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/maxRecommendedTextures.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getTestContext.mjs
+var getTestContext = __webpack_require__(2371);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/checkMaxIfStatementsInShader.mjs
+var checkMaxIfStatementsInShader = __webpack_require__(6237);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/maxRecommendedTextures.mjs
 
 
 
@@ -17367,7 +17679,7 @@ function getMaxTexturesPerBatch() {
 
 //# sourceMappingURL=maxRecommendedTextures.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatchTextureArray.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatchTextureArray.mjs
 
 class BatchTextureArray {
   constructor() {
@@ -17390,7 +17702,7 @@ class BatchTextureArray {
 
 //# sourceMappingURL=BatchTextureArray.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/Batcher.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/Batcher.mjs
 
 
 
@@ -17769,13 +18081,13 @@ let Batcher = _Batcher;
 
 //# sourceMappingURL=Batcher.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
-var Buffer = __webpack_require__(7069);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
-var buffer_const = __webpack_require__(1092);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
-var Geometry = __webpack_require__(2147);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatchGeometry.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
+var Buffer = __webpack_require__(614);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
+var buffer_const = __webpack_require__(5697);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
+var Geometry = __webpack_require__(4158);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatchGeometry.mjs
 
 
 
@@ -17835,19 +18147,19 @@ class BatchGeometry extends Geometry/* Geometry */.V {
 
 //# sourceMappingURL=BatchGeometry.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
-var compileHighShaderToProgram = __webpack_require__(5395);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
-var colorBit = __webpack_require__(1667);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
-var generateTextureBatchBit = __webpack_require__(5608);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
-var roundPixelsBit = __webpack_require__(4305);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/getBatchSamplersUniformGroup.mjs
-var getBatchSamplersUniformGroup = __webpack_require__(768);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
-var Shader = __webpack_require__(3571);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/DefaultShader.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
+var compileHighShaderToProgram = __webpack_require__(3414);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
+var colorBit = __webpack_require__(7308);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
+var generateTextureBatchBit = __webpack_require__(3501);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
+var roundPixelsBit = __webpack_require__(5774);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/getBatchSamplersUniformGroup.mjs
+var getBatchSamplersUniformGroup = __webpack_require__(3767);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
+var Shader = __webpack_require__(1992);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/DefaultShader.mjs
 
 
 
@@ -17888,7 +18200,7 @@ class DefaultShader extends Shader/* Shader */.M {
 
 //# sourceMappingURL=DefaultShader.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/DefaultBatcher.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/DefaultBatcher.mjs
 
 
 
@@ -18019,7 +18331,7 @@ let DefaultBatcher = _DefaultBatcher;
 
 /***/ },
 
-/***/ 5395
+/***/ 3414
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18030,13 +18342,13 @@ __webpack_require__.d(__webpack_exports__, {
   v: () => (/* binding */ compileHighShaderGpuProgram)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
-var GlProgram = __webpack_require__(8769);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
-var GpuProgram = __webpack_require__(876);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/addBits.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
+var GlProgram = __webpack_require__(1638);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
+var GpuProgram = __webpack_require__(3207);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/addBits.mjs
 
 
 "use strict";
@@ -18064,7 +18376,7 @@ function addBits(srcParts, parts, name) {
 
 //# sourceMappingURL=addBits.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileHooks.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileHooks.mjs
 
 const findHooksRx = /\{\{(.*?)\}\}/g;
 function compileHooks(programSrc) {
@@ -18079,7 +18391,7 @@ function compileHooks(programSrc) {
 
 //# sourceMappingURL=compileHooks.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileInputs.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileInputs.mjs
 
 function extractInputs(fragmentSource, out) {
   let match;
@@ -18111,7 +18423,7 @@ ${finalString}
 
 //# sourceMappingURL=compileInputs.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileOutputs.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/compileOutputs.mjs
 
 function extractOutputs(fragmentSource, out) {
   let match;
@@ -18163,7 +18475,7 @@ ${mainEnd}
 
 //# sourceMappingURL=compileOutputs.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/injectBits.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/utils/injectBits.mjs
 
 function injectBits(templateSrc, fragmentParts) {
   let out = templateSrc;
@@ -18184,7 +18496,7 @@ ${parts.join("\n")}
 
 //# sourceMappingURL=injectBits.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/compileHighShader.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compiler/compileHighShader.mjs
 
 
 
@@ -18249,7 +18561,7 @@ function compileBits(vertex, fragment, bits) {
 
 //# sourceMappingURL=compileHighShader.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/defaultProgramTemplate.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/defaultProgramTemplate.mjs
 
 const vertexGPUTemplate = (
   /* wgsl */
@@ -18395,7 +18707,7 @@ const fragmentGlTemplate = (
 
 //# sourceMappingURL=defaultProgramTemplate.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/globalUniformsBit.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/globalUniformsBit.mjs
 
 const globalUniformsBit = {
   name: "global-uniforms-bit",
@@ -18415,7 +18727,7 @@ const globalUniformsBit = {
     )
   }
 };
-const globalUniformsUBOBitGl = {
+const globalUniformsUBOBitGl = (/* unused pure expression or super */ null && ({
   name: "global-uniforms-ubo-bit",
   vertex: {
     header: (
@@ -18430,7 +18742,7 @@ const globalUniformsUBOBitGl = {
         `
     )
   }
-};
+}));
 const globalUniformsBitGl = {
   name: "global-uniforms-bit",
   vertex: {
@@ -18449,7 +18761,7 @@ const globalUniformsBitGl = {
 
 //# sourceMappingURL=globalUniformsBit.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs
 
 
 
@@ -18502,7 +18814,7 @@ function compileHighShaderGlProgram({ bits, name }) {
 
 /***/ },
 
-/***/ 1667
+/***/ 7308
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18552,7 +18864,7 @@ const colorBitGl = {
 
 /***/ },
 
-/***/ 5608
+/***/ 3501
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18690,7 +19002,7 @@ function generateTextureBatchBitGl(maxTextures) {
 
 /***/ },
 
-/***/ 4107
+/***/ 2394
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18779,7 +19091,7 @@ const localUniformBitGl = {
 
 /***/ },
 
-/***/ 4305
+/***/ 5774
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18823,7 +19135,7 @@ const roundPixelsBitGl = {
 
 /***/ },
 
-/***/ 7719
+/***/ 2955
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18911,20 +19223,20 @@ const textureBitGl = {
 
 /***/ },
 
-/***/ 4936
+/***/ 6641
 (__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1816);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
-var getGlobalBounds = __webpack_require__(2491);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/utils/addMaskBounds.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
+var Sprite = __webpack_require__(1031);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
+var getGlobalBounds = __webpack_require__(32);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/utils/addMaskBounds.mjs
 
 
 
@@ -18941,13 +19253,13 @@ function addMaskBounds(mask, bounds, skipUpdateTransform) {
 
 //# sourceMappingURL=addMaskBounds.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
-var getLocalBounds = __webpack_require__(5277);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/utils/matrixAndBoundsPool.mjs
-var matrixAndBoundsPool = __webpack_require__(5784);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/utils/addMaskLocalBounds.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
+var getLocalBounds = __webpack_require__(3084);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/utils/matrixAndBoundsPool.mjs
+var matrixAndBoundsPool = __webpack_require__(7283);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/utils/addMaskLocalBounds.mjs
 
 
 
@@ -18980,7 +19292,7 @@ function getMatrixRelativeToParent(target, root, matrix) {
 
 //# sourceMappingURL=addMaskLocalBounds.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMask.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMask.mjs
 
 
 
@@ -18991,6 +19303,7 @@ class AlphaMask {
   constructor(options) {
     this.priority = 0;
     this.inverse = false;
+    this.channel = "red";
     this.pipe = "alphaMask";
     if (options?.mask) {
       this.init(options.mask);
@@ -19032,7 +19345,7 @@ AlphaMask.extension = Extensions/* ExtensionType */.Ag.MaskEffect;
 
 //# sourceMappingURL=AlphaMask.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/color/ColorMask.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/color/ColorMask.mjs
 
 
 "use strict";
@@ -19058,9 +19371,9 @@ ColorMask.extension = Extensions/* ExtensionType */.Ag.MaskEffect;
 
 //# sourceMappingURL=ColorMask.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
-var Container = __webpack_require__(9484);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/stencil/StencilMask.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
+var Container = __webpack_require__(5412);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/stencil/StencilMask.mjs
 
 
 
@@ -19108,17 +19421,17 @@ StencilMask.extension = Extensions/* ExtensionType */.Ag.MaskEffect;
 
 //# sourceMappingURL=StencilMask.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/BufferImageSource.mjs
-var BufferImageSource = __webpack_require__(9355);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
-var CanvasSource = __webpack_require__(9068);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
-var ImageSource = __webpack_require__(7709);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/VideoSource.mjs
-var VideoSource = __webpack_require__(3395);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/textureFrom.mjs
-var textureFrom = __webpack_require__(3013);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/init.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/BufferImageSource.mjs
+var BufferImageSource = __webpack_require__(5336);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
+var CanvasSource = __webpack_require__(2909);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
+var ImageSource = __webpack_require__(1950);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/VideoSource.mjs
+var VideoSource = __webpack_require__(7756);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/textureFrom.mjs
+var textureFrom = __webpack_require__(7574);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/init.mjs
 
 
 
@@ -19137,7 +19450,7 @@ Extensions/* extensions */.XO.add(AlphaMask, ColorMask, StencilMask, VideoSource
 
 /***/ },
 
-/***/ 7608
+/***/ 9793
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19147,41 +19460,41 @@ __webpack_require__.d(__webpack_exports__, {
   z: () => (/* binding */ AlphaMaskPipe)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/FilterEffect.mjs
-var FilterEffect = __webpack_require__(1761);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
-var GlProgram = __webpack_require__(8769);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
-var GpuProgram = __webpack_require__(876);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
-var UniformGroup = __webpack_require__(683);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureMatrix.mjs
-var TextureMatrix = __webpack_require__(516);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/Filter.mjs
-var Filter = __webpack_require__(3826);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/mask/mask.frag.mjs
-var fragment = "in vec2 vMaskCoord;\nin vec2 vTextureCoord;\n\nuniform sampler2D uTexture;\nuniform sampler2D uMaskTexture;\n\nuniform float uAlpha;\nuniform vec4 uMaskClamp;\nuniform float uInverse;\n\nout vec4 finalColor;\n\nvoid main(void)\n{\n    float clip = step(3.5,\n        step(uMaskClamp.x, vMaskCoord.x) +\n        step(uMaskClamp.y, vMaskCoord.y) +\n        step(vMaskCoord.x, uMaskClamp.z) +\n        step(vMaskCoord.y, uMaskClamp.w));\n\n    // TODO look into why this is needed\n    float npmAlpha = uAlpha;\n    vec4 original = texture(uTexture, vTextureCoord);\n    vec4 masky = texture(uMaskTexture, vMaskCoord);\n    float alphaMul = 1.0 - npmAlpha * (1.0 - masky.a);\n\n    float a = alphaMul * masky.r * npmAlpha * clip;\n\n    if (uInverse == 1.0) {\n        a = 1.0 - a;\n    }\n\n    finalColor = original * a;\n}\n";
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/FilterEffect.mjs
+var FilterEffect = __webpack_require__(622);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
+var GlProgram = __webpack_require__(1638);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
+var GpuProgram = __webpack_require__(3207);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureMatrix.mjs
+var TextureMatrix = __webpack_require__(8251);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/Filter.mjs
+var Filter = __webpack_require__(1901);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/mask/mask.frag.mjs
+var fragment = "in vec2 vMaskCoord;\nin vec2 vTextureCoord;\n\nuniform sampler2D uTexture;\nuniform sampler2D uMaskTexture;\n\nuniform float uAlpha;\nuniform vec4 uMaskClamp;\nuniform float uInverse;\nuniform float uChannel;\n\nout vec4 finalColor;\n\nvoid main(void)\n{\n    float clip = step(3.5,\n        step(uMaskClamp.x, vMaskCoord.x) +\n        step(uMaskClamp.y, vMaskCoord.y) +\n        step(vMaskCoord.x, uMaskClamp.z) +\n        step(vMaskCoord.y, uMaskClamp.w));\n\n    // TODO look into why this is needed\n    float npmAlpha = uAlpha;\n    vec4 original = texture(uTexture, vTextureCoord);\n    vec4 masky = texture(uMaskTexture, vMaskCoord);\n\n    float a;\n    if (uChannel == 1.0) {\n        a = masky.a * npmAlpha * clip;\n    } else {\n        float alphaMul = 1.0 - npmAlpha * (1.0 - masky.a);\n        a = alphaMul * masky.r * npmAlpha * clip;\n    }\n\n    if (uInverse == 1.0) {\n        a = 1.0 - a;\n    }\n\n    finalColor = original * a;\n}\n";
 
 
 //# sourceMappingURL=mask.frag.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/mask/mask.vert.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/mask/mask.vert.mjs
 var vertex = "in vec2 aPosition;\n\nout vec2 vTextureCoord;\nout vec2 vMaskCoord;\n\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\nuniform mat3 uFilterMatrix;\n\nvec4 filterVertexPosition(  vec2 aPosition )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n       \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord(  vec2 aPosition )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvec2 getFilterCoord( vec2 aPosition )\n{\n    return  ( uFilterMatrix * vec3( filterTextureCoord(aPosition), 1.0)  ).xy;\n}   \n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition(aPosition);\n    vTextureCoord = filterTextureCoord(aPosition);\n    vMaskCoord = getFilterCoord(aPosition);\n}\n";
 
 
 //# sourceMappingURL=mask.vert.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/mask/mask.wgsl.mjs
-var source = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct MaskUniforms {\n  uFilterMatrix:mat3x3<f32>,\n  uMaskClamp:vec4<f32>,\n  uAlpha:f32,\n  uInverse:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> filterUniforms : MaskUniforms;\n@group(1) @binding(1) var uMaskTexture: texture_2d<f32>;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) filterUv : vec2<f32>,\n};\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);\n}\n\nfn getFilterCoord(aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return ( filterUniforms.uFilterMatrix * vec3( filterTextureCoord(aPosition), 1.0)  ).xy;\n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>,\n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition),\n   getFilterCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) filterUv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n\n    var maskClamp = filterUniforms.uMaskClamp;\n    var uAlpha = filterUniforms.uAlpha;\n\n    var clip = step(3.5,\n      step(maskClamp.x, filterUv.x) +\n      step(maskClamp.y, filterUv.y) +\n      step(filterUv.x, maskClamp.z) +\n      step(filterUv.y, maskClamp.w));\n\n    var mask = textureSample(uMaskTexture, uSampler, filterUv);\n    var source = textureSample(uTexture, uSampler, uv);\n    var alphaMul = 1.0 - uAlpha * (1.0 - mask.a);\n\n    var a: f32 = alphaMul * mask.r * uAlpha * clip;\n\n    if (filterUniforms.uInverse == 1.0) {\n        a = 1.0 - a;\n    }\n\n    return source * a;\n}\n";
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/mask/mask.wgsl.mjs
+var source = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct MaskUniforms {\n  uFilterMatrix:mat3x3<f32>,\n  uMaskClamp:vec4<f32>,\n  uAlpha:f32,\n  uInverse:f32,\n  uChannel:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> filterUniforms : MaskUniforms;\n@group(1) @binding(1) var uMaskTexture: texture_2d<f32>;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) filterUv : vec2<f32>,\n};\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);\n}\n\nfn getFilterCoord(aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return ( filterUniforms.uFilterMatrix * vec3( filterTextureCoord(aPosition), 1.0)  ).xy;\n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>,\n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition),\n   getFilterCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) filterUv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n\n    var maskClamp = filterUniforms.uMaskClamp;\n    var uAlpha = filterUniforms.uAlpha;\n\n    var clip = step(3.5,\n      step(maskClamp.x, filterUv.x) +\n      step(maskClamp.y, filterUv.y) +\n      step(filterUv.x, maskClamp.z) +\n      step(filterUv.y, maskClamp.w));\n\n    var mask = textureSample(uMaskTexture, uSampler, filterUv);\n    var source = textureSample(uTexture, uSampler, uv);\n\n    var a: f32;\n    if (filterUniforms.uChannel == 1.0) {\n        a = mask.a * uAlpha * clip;\n    } else {\n        var alphaMul = 1.0 - uAlpha * (1.0 - mask.a);\n        a = alphaMul * mask.r * uAlpha * clip;\n    }\n\n    if (filterUniforms.uInverse == 1.0) {\n        a = 1.0 - a;\n    }\n\n    return source * a;\n}\n";
 
 
 //# sourceMappingURL=mask.wgsl.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/mask/MaskFilter.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/mask/MaskFilter.mjs
 
 
 
@@ -19201,7 +19514,8 @@ class MaskFilter extends Filter/* Filter */.d {
       uFilterMatrix: { value: new Matrix/* Matrix */.u(), type: "mat3x3<f32>" },
       uMaskClamp: { value: textureMatrix.uClampFrame, type: "vec4<f32>" },
       uAlpha: { value: 1, type: "f32" },
-      uInverse: { value: options.inverse ? 1 : 0, type: "f32" }
+      uInverse: { value: options.inverse ? 1 : 0, type: "f32" },
+      uChannel: { value: options.channel === "alpha" ? 1 : 0, type: "f32" }
     });
     const gpuProgram = GpuProgram/* GpuProgram */.B.from({
       vertex: {
@@ -19237,6 +19551,12 @@ class MaskFilter extends Filter/* Filter */.d {
   get inverse() {
     return this.resources.filterUniforms.uniforms.uInverse === 1;
   }
+  set channel(value) {
+    this.resources.filterUniforms.uniforms.uChannel = value === "alpha" ? 1 : 0;
+  }
+  get channel() {
+    return this.resources.filterUniforms.uniforms.uChannel === 1 ? "alpha" : "red";
+  }
   apply(filterManager, input, output, clearMode) {
     this._textureMatrix.texture = this.sprite.texture;
     filterManager.calculateSpriteMatrix(
@@ -19251,21 +19571,21 @@ class MaskFilter extends Filter/* Filter */.d {
 
 //# sourceMappingURL=MaskFilter.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
-var getGlobalBounds = __webpack_require__(2491);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1816);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
-var PoolGroup = __webpack_require__(8951);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
-var TexturePool = __webpack_require__(6301);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
+var getGlobalBounds = __webpack_require__(32);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
+var Sprite = __webpack_require__(1031);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
+var PoolGroup = __webpack_require__(8118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
+var TexturePool = __webpack_require__(7118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs
 
 
 
@@ -19301,6 +19621,12 @@ class AlphaMaskEffect extends FilterEffect/* FilterEffect */.a {
   set inverse(value) {
     this.filters[0].inverse = value;
   }
+  get channel() {
+    return this.filters[0].channel;
+  }
+  set channel(value) {
+    this.filters[0].channel = value;
+  }
 }
 class AlphaMaskPipe {
   constructor(renderer) {
@@ -19319,6 +19645,7 @@ class AlphaMaskPipe {
       maskedContainer
     });
     mask.inverse = maskedContainer._maskOptions.inverse;
+    mask.channel = maskedContainer._maskOptions.channel ?? "red";
     if (mask.renderMaskToTexture) {
       const maskContainer = mask.mask;
       maskContainer.includeInBuild = true;
@@ -19356,6 +19683,7 @@ class AlphaMaskPipe {
     if (instruction.action === "pushMaskBegin") {
       const filterEffect = PoolGroup/* BigPool */.Z.get(AlphaMaskEffect);
       filterEffect.inverse = instruction.inverse;
+      filterEffect.channel = instruction.mask.channel;
       if (renderMask) {
         instruction.mask.mask.measurable = true;
         const bounds = (0,getGlobalBounds/* getGlobalBounds */.f)(instruction.mask.mask, true, tempBounds);
@@ -19435,7 +19763,7 @@ AlphaMaskPipe.extension = {
 
 /***/ },
 
-/***/ 1736
+/***/ 698
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19445,397 +19773,35 @@ __webpack_require__.d(__webpack_exports__, {
   CanvasRenderer: () => (/* binding */ CanvasRenderer)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/CustomRenderPipe.mjs
-var CustomRenderPipe = __webpack_require__(1994);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/RenderGroupPipe.mjs
-var RenderGroupPipe = __webpack_require__(6160);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
-var groupD8 = __webpack_require__(8407);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(8985);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canUseNewCanvasBlendModes.mjs
-
-
-"use strict";
-let canUseNewCanvasBlendModesValue;
-function createColoredCanvas(color) {
-  const canvas = adapter/* DOMAdapter */.e.get().createCanvas(6, 1);
-  const context = canvas.getContext("2d");
-  context.fillStyle = color;
-  context.fillRect(0, 0, 6, 1);
-  return canvas;
-}
-function canUseNewCanvasBlendModes() {
-  if (canUseNewCanvasBlendModesValue !== void 0) {
-    return canUseNewCanvasBlendModesValue;
-  }
-  try {
-    const magenta = createColoredCanvas("#ff00ff");
-    const yellow = createColoredCanvas("#ffff00");
-    const canvas = adapter/* DOMAdapter */.e.get().createCanvas(6, 1);
-    const context = canvas.getContext("2d");
-    context.globalCompositeOperation = "multiply";
-    context.drawImage(magenta, 0, 0);
-    context.drawImage(yellow, 2, 0);
-    const imageData = context.getImageData(2, 0, 1, 1);
-    if (!imageData) {
-      canUseNewCanvasBlendModesValue = false;
-    } else {
-      const data = imageData.data;
-      canUseNewCanvasBlendModesValue = data[0] === 255 && data[1] === 0 && data[2] === 0;
-    }
-  } catch (_error) {
-    canUseNewCanvasBlendModesValue = false;
-  }
-  return canUseNewCanvasBlendModesValue;
-}
-
-
-//# sourceMappingURL=canUseNewCanvasBlendModes.mjs.map
-
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canvasUtils.mjs
-
-
-
-
-
-"use strict";
-const canvasUtils = {
-  canvas: null,
-  convertTintToImage: false,
-  cacheStepsPerColorChannel: 8,
-  canUseMultiply: canUseNewCanvasBlendModes(),
-  tintMethod: null,
-  _canvasSourceCache: /* @__PURE__ */ new WeakMap(),
-  _unpremultipliedCache: /* @__PURE__ */ new WeakMap(),
-  getCanvasSource: (texture) => {
-    const source = texture.source;
-    const resource = source?.resource;
-    if (!resource) {
-      return null;
-    }
-    const isPMA = source.alphaMode === "premultiplied-alpha";
-    const resourceWidth = source.resourceWidth ?? source.pixelWidth;
-    const resourceHeight = source.resourceHeight ?? source.pixelHeight;
-    const needsResize = resourceWidth !== source.pixelWidth || resourceHeight !== source.pixelHeight;
-    if (isPMA) {
-      if (resource instanceof HTMLCanvasElement || typeof OffscreenCanvas !== "undefined" && resource instanceof OffscreenCanvas) {
-        if (!needsResize) {
-          return resource;
-        }
-      }
-      const cached = canvasUtils._unpremultipliedCache.get(source);
-      if (cached?.resourceId === source._resourceId) {
-        return cached.canvas;
-      }
-    }
-    if (resource instanceof Uint8Array || resource instanceof Uint8ClampedArray || resource instanceof Int8Array || resource instanceof Uint16Array || resource instanceof Int16Array || resource instanceof Uint32Array || resource instanceof Int32Array || resource instanceof Float32Array || resource instanceof ArrayBuffer) {
-      const cached = canvasUtils._canvasSourceCache.get(source);
-      if (cached?.resourceId === source._resourceId) {
-        return cached.canvas;
-      }
-      const canvas = adapter/* DOMAdapter */.e.get().createCanvas(source.pixelWidth, source.pixelHeight);
-      const context = canvas.getContext("2d");
-      const imageData = context.createImageData(source.pixelWidth, source.pixelHeight);
-      const data = imageData.data;
-      const bytes = resource instanceof ArrayBuffer ? new Uint8Array(resource) : new Uint8Array(resource.buffer, resource.byteOffset, resource.byteLength);
-      if (source.format === "bgra8unorm") {
-        for (let i = 0; i < data.length && i + 3 < bytes.length; i += 4) {
-          data[i] = bytes[i + 2];
-          data[i + 1] = bytes[i + 1];
-          data[i + 2] = bytes[i];
-          data[i + 3] = bytes[i + 3];
-        }
-      } else {
-        data.set(bytes.subarray(0, data.length));
-      }
-      context.putImageData(imageData, 0, 0);
-      canvasUtils._canvasSourceCache.set(source, { canvas, resourceId: source._resourceId });
-      return canvas;
-    }
-    if (isPMA) {
-      const canvas = adapter/* DOMAdapter */.e.get().createCanvas(source.pixelWidth, source.pixelHeight);
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      canvas.width = source.pixelWidth;
-      canvas.height = source.pixelHeight;
-      context.drawImage(resource, 0, 0);
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        const a = data[i + 3];
-        if (a > 0) {
-          const alphaInv = 255 / a;
-          data[i] = Math.min(255, data[i] * alphaInv + 0.5);
-          data[i + 1] = Math.min(255, data[i + 1] * alphaInv + 0.5);
-          data[i + 2] = Math.min(255, data[i + 2] * alphaInv + 0.5);
-        }
-      }
-      context.putImageData(imageData, 0, 0);
-      canvasUtils._unpremultipliedCache.set(source, { canvas, resourceId: source._resourceId });
-      return canvas;
-    }
-    if (needsResize) {
-      const cached = canvasUtils._canvasSourceCache.get(source);
-      if (cached?.resourceId === source._resourceId) {
-        return cached.canvas;
-      }
-      const canvas = adapter/* DOMAdapter */.e.get().createCanvas(source.pixelWidth, source.pixelHeight);
-      const context = canvas.getContext("2d");
-      canvas.width = source.pixelWidth;
-      canvas.height = source.pixelHeight;
-      context.drawImage(resource, 0, 0);
-      canvasUtils._canvasSourceCache.set(source, { canvas, resourceId: source._resourceId });
-      return canvas;
-    }
-    return resource;
-  },
-  getTintedCanvas: (sprite, color) => {
-    const texture = sprite.texture;
-    const stringColor = Color/* Color */.Q.shared.setValue(color).toHex();
-    const cache = texture.tintCache || (texture.tintCache = {});
-    const cachedCanvas = cache[stringColor];
-    const resourceId = texture.source._resourceId;
-    if (cachedCanvas?.tintId === resourceId) {
-      return cachedCanvas;
-    }
-    const canvas = cachedCanvas && "getContext" in cachedCanvas ? cachedCanvas : adapter/* DOMAdapter */.e.get().createCanvas();
-    canvasUtils.tintMethod(texture, color, canvas);
-    canvas.tintId = resourceId;
-    if (canvasUtils.convertTintToImage && canvas.toDataURL !== void 0) {
-      const tintImage = adapter/* DOMAdapter */.e.get().createImage();
-      tintImage.src = canvas.toDataURL();
-      tintImage.tintId = resourceId;
-      cache[stringColor] = tintImage;
-    } else {
-      cache[stringColor] = canvas;
-    }
-    return cache[stringColor];
-  },
-  getTintedPattern: (texture, color) => {
-    const stringColor = Color/* Color */.Q.shared.setValue(color).toHex();
-    const cache = texture.patternCache || (texture.patternCache = {});
-    const resourceId = texture.source._resourceId;
-    let pattern = cache[stringColor];
-    if (pattern?.tintId === resourceId) {
-      return pattern;
-    }
-    if (!canvasUtils.canvas) {
-      canvasUtils.canvas = adapter/* DOMAdapter */.e.get().createCanvas();
-    }
-    canvasUtils.tintMethod(texture, color, canvasUtils.canvas);
-    const context = canvasUtils.canvas.getContext("2d");
-    pattern = context.createPattern(canvasUtils.canvas, "repeat");
-    pattern.tintId = resourceId;
-    cache[stringColor] = pattern;
-    return pattern;
-  },
-  /**
-   * Applies a transform to a CanvasPattern.
-   * @param pattern - The pattern to apply the transform to.
-   * @param matrix - The matrix to apply.
-   * @param matrix.a
-   * @param matrix.b
-   * @param matrix.c
-   * @param matrix.d
-   * @param matrix.tx
-   * @param matrix.ty
-   * @param invert
-   */
-  applyPatternTransform: (pattern, matrix, invert = true) => {
-    if (!matrix) return;
-    const patternAny = pattern;
-    if (!patternAny.setTransform) return;
-    const DOMMatrixCtor = globalThis.DOMMatrix;
-    if (!DOMMatrixCtor) return;
-    const domMatrix = new DOMMatrixCtor([matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty]);
-    patternAny.setTransform(invert ? domMatrix.inverse() : domMatrix);
-  },
-  tintWithMultiply: (texture, color, canvas) => {
-    const context = canvas.getContext("2d");
-    const crop = texture.frame.clone();
-    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-    const rotate = texture.rotate;
-    crop.x *= resolution;
-    crop.y *= resolution;
-    crop.width *= resolution;
-    crop.height *= resolution;
-    const isVertical = groupD8/* groupD8 */.E.isVertical(rotate);
-    const outWidth = isVertical ? crop.height : crop.width;
-    const outHeight = isVertical ? crop.width : crop.height;
-    canvas.width = Math.ceil(outWidth);
-    canvas.height = Math.ceil(outHeight);
-    context.save();
-    context.fillStyle = Color/* Color */.Q.shared.setValue(color).toHex();
-    context.fillRect(0, 0, outWidth, outHeight);
-    context.globalCompositeOperation = "multiply";
-    const source = canvasUtils.getCanvasSource(texture);
-    if (!source) {
-      context.restore();
-      return;
-    }
-    if (rotate) {
-      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
-    }
-    context.drawImage(
-      source,
-      crop.x,
-      crop.y,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-    context.globalCompositeOperation = "destination-atop";
-    context.drawImage(
-      source,
-      crop.x,
-      crop.y,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-    context.restore();
-  },
-  tintWithOverlay: (texture, color, canvas) => {
-    const context = canvas.getContext("2d");
-    const crop = texture.frame.clone();
-    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-    const rotate = texture.rotate;
-    crop.x *= resolution;
-    crop.y *= resolution;
-    crop.width *= resolution;
-    crop.height *= resolution;
-    const isVertical = groupD8/* groupD8 */.E.isVertical(rotate);
-    const outWidth = isVertical ? crop.height : crop.width;
-    const outHeight = isVertical ? crop.width : crop.height;
-    canvas.width = Math.ceil(outWidth);
-    canvas.height = Math.ceil(outHeight);
-    context.save();
-    context.globalCompositeOperation = "copy";
-    context.fillStyle = Color/* Color */.Q.shared.setValue(color).toHex();
-    context.fillRect(0, 0, outWidth, outHeight);
-    context.globalCompositeOperation = "destination-atop";
-    const source = canvasUtils.getCanvasSource(texture);
-    if (!source) {
-      context.restore();
-      return;
-    }
-    if (rotate) {
-      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
-    }
-    context.drawImage(
-      source,
-      crop.x,
-      crop.y,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-    context.restore();
-  },
-  tintWithPerPixel: (texture, color, canvas) => {
-    const context = canvas.getContext("2d");
-    const crop = texture.frame.clone();
-    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-    const rotate = texture.rotate;
-    crop.x *= resolution;
-    crop.y *= resolution;
-    crop.width *= resolution;
-    crop.height *= resolution;
-    const isVertical = groupD8/* groupD8 */.E.isVertical(rotate);
-    const outWidth = isVertical ? crop.height : crop.width;
-    const outHeight = isVertical ? crop.width : crop.height;
-    canvas.width = Math.ceil(outWidth);
-    canvas.height = Math.ceil(outHeight);
-    context.save();
-    context.globalCompositeOperation = "copy";
-    const source = canvasUtils.getCanvasSource(texture);
-    if (!source) {
-      context.restore();
-      return;
-    }
-    if (rotate) {
-      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
-    }
-    context.drawImage(
-      source,
-      crop.x,
-      crop.y,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-    context.restore();
-    const r = color >> 16 & 255;
-    const g = color >> 8 & 255;
-    const b = color & 255;
-    const imageData = context.getImageData(0, 0, outWidth, outHeight);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      data[i] = data[i] * r / 255;
-      data[i + 1] = data[i + 1] * g / 255;
-      data[i + 2] = data[i + 2] * b / 255;
-    }
-    context.putImageData(imageData, 0, 0);
-  },
-  /**
-   * Applies inverse rotation transform to context for texture packer rotation compensation.
-   * Supports all 16 groupD8 symmetries (rotations and reflections).
-   * @param context - Canvas 2D context
-   * @param rotate - The groupD8 rotation value
-   * @param srcWidth - Source crop width (before rotation)
-   * @param srcHeight - Source crop height (before rotation)
-   */
-  _applyInverseRotation: (context, rotate, srcWidth, srcHeight) => {
-    const inv = groupD8/* groupD8 */.E.inv(rotate);
-    const a = groupD8/* groupD8 */.E.uX(inv);
-    const b = groupD8/* groupD8 */.E.uY(inv);
-    const c = groupD8/* groupD8 */.E.vX(inv);
-    const d = groupD8/* groupD8 */.E.vY(inv);
-    const tx = -Math.min(0, a * srcWidth, c * srcHeight, a * srcWidth + c * srcHeight);
-    const ty = -Math.min(0, b * srcWidth, d * srcHeight, b * srcWidth + d * srcHeight);
-    context.transform(a, b, c, d, tx, ty);
-  }
-};
-canvasUtils.tintMethod = canvasUtils.canUseMultiply ? canvasUtils.tintWithMultiply : canvasUtils.tintWithPerPixel;
-
-
-//# sourceMappingURL=canvasUtils.mjs.map
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/getGlobalMixin.mjs
-var getGlobalMixin = __webpack_require__(7886);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/multiplyHexColors.mjs
-var multiplyHexColors = __webpack_require__(4396);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs + 1 modules
-var buildLine = __webpack_require__(8011);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
-var FillGradient = __webpack_require__(4004);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillPattern.mjs
-var FillPattern = __webpack_require__(2174);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/buildContextBatches.mjs + 10 modules
-var buildContextBatches = __webpack_require__(2913);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/generateTextureFillMatrix.mjs
-var generateTextureFillMatrix = __webpack_require__(6613);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/CustomRenderPipe.mjs
+var CustomRenderPipe = __webpack_require__(2569);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/RenderGroupPipe.mjs
+var RenderGroupPipe = __webpack_require__(3873);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
+var groupD8 = __webpack_require__(1144);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canvasUtils.mjs
+var canvasUtils = __webpack_require__(771);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/getGlobalMixin.mjs
+var getGlobalMixin = __webpack_require__(7711);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/multiplyHexColors.mjs
+var multiplyHexColors = __webpack_require__(7005);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs + 1 modules
+var buildLine = __webpack_require__(3260);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
+var FillGradient = __webpack_require__(193);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillPattern.mjs
+var FillPattern = __webpack_require__(1549);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/buildContextBatches.mjs + 10 modules
+var buildContextBatches = __webpack_require__(2950);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/generateTextureFillMatrix.mjs
+var generateTextureFillMatrix = __webpack_require__(8064);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsAdaptor.mjs
 
 
 
@@ -19962,18 +19928,18 @@ function getCanvasStyle(style, tint, textureMatrix, currentTransform) {
     fill.buildGradient();
     const gradientTexture = fill.texture;
     if (gradientTexture) {
-      const pattern = canvasUtils.getTintedPattern(gradientTexture, tint);
+      const pattern = canvasUtils/* canvasUtils */.k.getTintedPattern(gradientTexture, tint);
       const patternMatrix = textureMatrix ? tempPatternMatrix.copyFrom(textureMatrix).scale(gradientTexture.source.pixelWidth, gradientTexture.source.pixelHeight) : tempPatternMatrix.copyFrom(fill.transform);
       if (currentTransform && !style.textureSpace) {
         patternMatrix.append(currentTransform);
       }
-      canvasUtils.applyPatternTransform(pattern, patternMatrix);
+      canvasUtils/* canvasUtils */.k.applyPatternTransform(pattern, patternMatrix);
       return pattern;
     }
   }
   if (fill instanceof FillPattern/* FillPattern */.m) {
-    const pattern = canvasUtils.getTintedPattern(fill.texture, tint);
-    canvasUtils.applyPatternTransform(pattern, fill.transform);
+    const pattern = canvasUtils/* canvasUtils */.k.getTintedPattern(fill.texture, tint);
+    canvasUtils/* canvasUtils */.k.applyPatternTransform(pattern, fill.transform);
     return pattern;
   }
   const texture = style.texture;
@@ -19981,9 +19947,9 @@ function getCanvasStyle(style, tint, textureMatrix, currentTransform) {
     if (!texture.source.resource) {
       return emptyCanvasStyle;
     }
-    const pattern = canvasUtils.getTintedPattern(texture, tint);
+    const pattern = canvasUtils/* canvasUtils */.k.getTintedPattern(texture, tint);
     const patternMatrix = textureMatrix ? tempPatternMatrix.copyFrom(textureMatrix).scale(texture.source.pixelWidth, texture.source.pixelHeight) : style.matrix;
-    canvasUtils.applyPatternTransform(pattern, patternMatrix);
+    canvasUtils/* canvasUtils */.k.applyPatternTransform(pattern, patternMatrix);
     return pattern;
   }
   return colorToHex(tint);
@@ -20020,7 +19986,7 @@ class CanvasGraphicsAdaptor {
       if (instruction.action === "texture") {
         const data2 = instruction.data;
         const texture = data2.image;
-        const source = texture ? canvasUtils.getCanvasSource(texture) : null;
+        const source = texture ? canvasUtils/* canvasUtils */.k.getCanvasSource(texture) : null;
         if (!source) continue;
         const alpha2 = data2.alpha * groupAlpha;
         if (alpha2 <= 0) continue;
@@ -20028,7 +19994,7 @@ class CanvasGraphicsAdaptor {
         context.globalAlpha = alpha2;
         let drawSource = source;
         if (tint2 !== 16777215) {
-          drawSource = canvasUtils.getTintedCanvas({ texture }, tint2);
+          drawSource = canvasUtils/* canvasUtils */.k.getTintedCanvas({ texture }, tint2);
         }
         const frame = texture.frame;
         const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
@@ -20169,9 +20135,9 @@ CanvasGraphicsAdaptor.extension = {
 
 //# sourceMappingURL=CanvasGraphicsAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/SpritePipe.mjs
-var SpritePipe = __webpack_require__(8904);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/canvas/CanvasBatchAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/SpritePipe.mjs
+var SpritePipe = __webpack_require__(6109);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/canvas/CanvasBatchAdaptor.mjs
 
 
 
@@ -20205,7 +20171,7 @@ const _CanvasBatchAdaptor = class _CanvasBatchAdaptor {
       if (!element.packAsQuad) continue;
       const quad = element;
       const texture = quad.texture;
-      const source = texture ? canvasUtils.getCanvasSource(texture) : null;
+      const source = texture ? canvasUtils/* canvasUtils */.k.getCanvasSource(texture) : null;
       if (!source) continue;
       const textureStyle = texture.source.style;
       const smoothProperty = contextSystem.smoothProperty;
@@ -20281,7 +20247,7 @@ const _CanvasBatchAdaptor = class _CanvasBatchAdaptor {
         const canTint = tint !== 16777215 && !rotate;
         const fitsFrame = frame.width <= texture.source.width && frame.height <= texture.source.height;
         if (canTint && fitsFrame) {
-          patternSource = canvasUtils.getTintedCanvas({ texture }, tint);
+          patternSource = canvasUtils/* canvasUtils */.k.getTintedCanvas({ texture }, tint);
         }
         const pattern = context.createPattern(patternSource, repeat);
         if (!pattern) continue;
@@ -20306,12 +20272,12 @@ const _CanvasBatchAdaptor = class _CanvasBatchAdaptor {
           tx * pixelWidth,
           ty * pixelHeight
         );
-        canvasUtils.applyPatternTransform(pattern, _CanvasBatchAdaptor._tempPatternMatrix);
+        canvasUtils/* canvasUtils */.k.applyPatternTransform(pattern, _CanvasBatchAdaptor._tempPatternMatrix);
         context.fillStyle = pattern;
         context.fillRect(drawX, drawY, drawW, drawH);
       } else {
         const needsProcessing = tint !== 16777215 || rotate;
-        const processedSource = needsProcessing ? canvasUtils.getTintedCanvas({ texture }, tint) : source;
+        const processedSource = needsProcessing ? canvasUtils/* canvasUtils */.k.getTintedCanvas({ texture }, tint) : source;
         const isProcessed = processedSource !== source;
         context.drawImage(
           processedSource,
@@ -20341,11 +20307,11 @@ let CanvasBatchAdaptor = _CanvasBatchAdaptor;
 
 //# sourceMappingURL=CanvasBatchAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
-var BatcherPipe = __webpack_require__(6740);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
-var AlphaMaskPipe = __webpack_require__(7608);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/color/CanvasColorMaskPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
+var BatcherPipe = __webpack_require__(3412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
+var AlphaMaskPipe = __webpack_require__(9793);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/color/CanvasColorMaskPipe.mjs
 
 
 "use strict";
@@ -20408,11 +20374,13 @@ CanvasColorMaskPipe.extension = {
 
 //# sourceMappingURL=CanvasColorMaskPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
-var Graphics = __webpack_require__(1839);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/stencil/CanvasStencilMaskPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
+var Graphics = __webpack_require__(5338);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/stencil/CanvasStencilMaskPipe.mjs
+
+
 
 
 
@@ -20486,6 +20454,25 @@ function CanvasStencilMaskPipe_buildShapePath(context, shape) {
       break;
     }
   }
+}
+function buildStrokeMaskPath(context, shape, strokeStyle) {
+  const points = [];
+  const vertices = [];
+  const indices = [];
+  const shapeBuilder = buildContextBatches/* shapeBuilders */.y[shape.type];
+  if (!shapeBuilder?.build(shape, points)) return false;
+  const close = shape.closePath ?? true;
+  (0,buildLine/* buildLine */.h)(points, strokeStyle, false, close, vertices, indices);
+  for (let i = 0; i < indices.length; i += 3) {
+    const i0 = indices[i] * 2;
+    const i1 = indices[i + 1] * 2;
+    const i2 = indices[i + 2] * 2;
+    context.moveTo(vertices[i0], vertices[i0 + 1]);
+    context.lineTo(vertices[i1], vertices[i1 + 1]);
+    context.lineTo(vertices[i2], vertices[i2 + 1]);
+    context.closePath();
+  }
+  return true;
 }
 function CanvasStencilMaskPipe_addHolePaths(context, holes) {
   if (!holes?.length) return false;
@@ -20582,6 +20569,7 @@ class CanvasStencilMaskPipe {
       const data = instructionData.data;
       const shapePath = data?.path?.shapePath;
       if (!shapePath?.shapePrimitives?.length) continue;
+      const isStroke = action === "stroke";
       const shapePrimitives = shapePath.shapePrimitives;
       for (let j = 0; j < shapePrimitives.length; j++) {
         const primitive = shapePrimitives[j];
@@ -20592,9 +20580,17 @@ class CanvasStencilMaskPipe {
           context.save();
           context.transform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
         }
-        CanvasStencilMaskPipe_buildShapePath(context, primitive.shape);
-        hasHoles = CanvasStencilMaskPipe_addHolePaths(context, primitive.holes) || hasHoles;
-        drewPath = true;
+        if (isStroke && data.style) {
+          drewPath = buildStrokeMaskPath(
+            context,
+            primitive.shape,
+            data.style
+          ) || drewPath;
+        } else {
+          CanvasStencilMaskPipe_buildShapePath(context, primitive.shape);
+          hasHoles = CanvasStencilMaskPipe_addHolePaths(context, primitive.holes) || hasHoles;
+          drewPath = true;
+        }
         if (hasTransform) {
           context.restore();
         }
@@ -20633,21 +20629,25 @@ CanvasStencilMaskPipe.extension = {
 
 //# sourceMappingURL=CanvasStencilMaskPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/blendModes/BlendModePipe.mjs
-var BlendModePipe = __webpack_require__(3312);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
-var AbstractRenderer = __webpack_require__(5816);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(5285);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/mapCanvasBlendModesToPixi.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/blendModes/BlendModePipe.mjs
+var BlendModePipe = __webpack_require__(3557);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
+var AbstractRenderer = __webpack_require__(3789);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
+var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canUseNewCanvasBlendModes.mjs
+var canUseNewCanvasBlendModes = __webpack_require__(8628);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/mapCanvasBlendModesToPixi.mjs
 
 
 "use strict";
 const FALLBACK_BLEND = "source-over";
 function mapCanvasBlendModesToPixi() {
-  const supportsAdvanced = canUseNewCanvasBlendModes();
+  const supportsAdvanced = (0,canUseNewCanvasBlendModes/* canUseNewCanvasBlendModes */.B)();
   const map = /* @__PURE__ */ Object.create(null);
   map.inherit = FALLBACK_BLEND;
   map.none = FALLBACK_BLEND;
@@ -20688,7 +20688,7 @@ function mapCanvasBlendModesToPixi() {
 
 //# sourceMappingURL=mapCanvasBlendModesToPixi.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasContextSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasContextSystem.mjs
 
 
 
@@ -20839,7 +20839,7 @@ CanvasContextSystem.extension = {
 
 //# sourceMappingURL=CanvasContextSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasLimitsSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasLimitsSystem.mjs
 
 
 "use strict";
@@ -20863,11 +20863,13 @@ CanvasLimitsSystem.extension = {
 
 //# sourceMappingURL=CanvasLimitsSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
-var RenderTargetSystem = __webpack_require__(4718);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
-var CanvasSource = __webpack_require__(9068);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/renderTarget/CanvasRenderTargetAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
+var RenderTargetSystem = __webpack_require__(1091);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
+var CanvasSource = __webpack_require__(2909);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/renderTarget/CanvasRenderTargetAdaptor.mjs
 
 
 
@@ -21017,7 +21019,7 @@ class CanvasRenderTargetAdaptor {
 
 //# sourceMappingURL=CanvasRenderTargetAdaptor.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/renderTarget/CanvasRenderTargetSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/renderTarget/CanvasRenderTargetSystem.mjs
 
 
 
@@ -21039,7 +21041,7 @@ CanvasRenderTargetSystem.extension = {
 
 //# sourceMappingURL=CanvasRenderTargetSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/texture/CanvasTextureSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/texture/CanvasTextureSystem.mjs
 
 
 
@@ -21068,7 +21070,7 @@ class CanvasTextureSystem {
   generateCanvas(texture) {
     const canvas = adapter/* DOMAdapter */.e.get().createCanvas();
     const context = canvas.getContext("2d");
-    const source = canvasUtils.getCanvasSource(texture);
+    const source = canvasUtils/* canvasUtils */.k.getCanvasSource(texture);
     if (!source) {
       return canvas;
     }
@@ -21122,7 +21124,7 @@ CanvasTextureSystem.extension = {
 
 //# sourceMappingURL=CanvasTextureSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasRenderer.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasRenderer.mjs
 
 
 
@@ -21190,7 +21192,390 @@ class CanvasRenderer extends AbstractRenderer/* AbstractRenderer */.k {
 
 /***/ },
 
-/***/ 380
+/***/ 8628
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   B: () => (/* binding */ canUseNewCanvasBlendModes)
+/* harmony export */ });
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
+
+
+"use strict";
+let canUseNewCanvasBlendModesValue;
+function createColoredCanvas(color) {
+  const canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__/* .DOMAdapter */ .e.get().createCanvas(6, 1);
+  const context = canvas.getContext("2d");
+  context.fillStyle = color;
+  context.fillRect(0, 0, 6, 1);
+  return canvas;
+}
+function canUseNewCanvasBlendModes() {
+  if (canUseNewCanvasBlendModesValue !== void 0) {
+    return canUseNewCanvasBlendModesValue;
+  }
+  try {
+    const magenta = createColoredCanvas("#ff00ff");
+    const yellow = createColoredCanvas("#ffff00");
+    const canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__/* .DOMAdapter */ .e.get().createCanvas(6, 1);
+    const context = canvas.getContext("2d");
+    context.globalCompositeOperation = "multiply";
+    context.drawImage(magenta, 0, 0);
+    context.drawImage(yellow, 2, 0);
+    const imageData = context.getImageData(2, 0, 1, 1);
+    if (!imageData) {
+      canUseNewCanvasBlendModesValue = false;
+    } else {
+      const data = imageData.data;
+      canUseNewCanvasBlendModesValue = data[0] === 255 && data[1] === 0 && data[2] === 0;
+    }
+  } catch (_error) {
+    canUseNewCanvasBlendModesValue = false;
+  }
+  return canUseNewCanvasBlendModesValue;
+}
+
+
+//# sourceMappingURL=canUseNewCanvasBlendModes.mjs.map
+
+
+/***/ },
+
+/***/ 771
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   k: () => (/* binding */ canvasUtils)
+/* harmony export */ });
+/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1640);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5886);
+/* harmony import */ var _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1144);
+/* harmony import */ var _canUseNewCanvasBlendModes_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8628);
+
+
+
+
+
+"use strict";
+const canvasUtils = {
+  canvas: null,
+  convertTintToImage: false,
+  cacheStepsPerColorChannel: 8,
+  canUseMultiply: (0,_canUseNewCanvasBlendModes_mjs__WEBPACK_IMPORTED_MODULE_3__/* .canUseNewCanvasBlendModes */ .B)(),
+  tintMethod: null,
+  _canvasSourceCache: /* @__PURE__ */ new WeakMap(),
+  _unpremultipliedCache: /* @__PURE__ */ new WeakMap(),
+  getCanvasSource: (texture) => {
+    const source = texture.source;
+    const resource = source?.resource;
+    if (!resource) {
+      return null;
+    }
+    const isPMA = source.alphaMode === "premultiplied-alpha";
+    const resourceWidth = source.resourceWidth ?? source.pixelWidth;
+    const resourceHeight = source.resourceHeight ?? source.pixelHeight;
+    const needsResize = resourceWidth !== source.pixelWidth || resourceHeight !== source.pixelHeight;
+    if (isPMA) {
+      if (resource instanceof HTMLCanvasElement || typeof OffscreenCanvas !== "undefined" && resource instanceof OffscreenCanvas) {
+        if (!needsResize) {
+          return resource;
+        }
+      }
+      const cached = canvasUtils._unpremultipliedCache.get(source);
+      if (cached?.resourceId === source._resourceId) {
+        return cached.canvas;
+      }
+    }
+    if (resource instanceof Uint8Array || resource instanceof Uint8ClampedArray || resource instanceof Int8Array || resource instanceof Uint16Array || resource instanceof Int16Array || resource instanceof Uint32Array || resource instanceof Int32Array || resource instanceof Float32Array || resource instanceof ArrayBuffer) {
+      const cached = canvasUtils._canvasSourceCache.get(source);
+      if (cached?.resourceId === source._resourceId) {
+        return cached.canvas;
+      }
+      const canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createCanvas(source.pixelWidth, source.pixelHeight);
+      const context = canvas.getContext("2d");
+      const imageData = context.createImageData(source.pixelWidth, source.pixelHeight);
+      const data = imageData.data;
+      const bytes = resource instanceof ArrayBuffer ? new Uint8Array(resource) : new Uint8Array(resource.buffer, resource.byteOffset, resource.byteLength);
+      if (source.format === "bgra8unorm") {
+        for (let i = 0; i < data.length && i + 3 < bytes.length; i += 4) {
+          data[i] = bytes[i + 2];
+          data[i + 1] = bytes[i + 1];
+          data[i + 2] = bytes[i];
+          data[i + 3] = bytes[i + 3];
+        }
+      } else {
+        data.set(bytes.subarray(0, data.length));
+      }
+      context.putImageData(imageData, 0, 0);
+      canvasUtils._canvasSourceCache.set(source, { canvas, resourceId: source._resourceId });
+      return canvas;
+    }
+    if (isPMA) {
+      const canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createCanvas(source.pixelWidth, source.pixelHeight);
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      canvas.width = source.pixelWidth;
+      canvas.height = source.pixelHeight;
+      context.drawImage(resource, 0, 0);
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a > 0) {
+          const alphaInv = 255 / a;
+          data[i] = Math.min(255, data[i] * alphaInv + 0.5);
+          data[i + 1] = Math.min(255, data[i + 1] * alphaInv + 0.5);
+          data[i + 2] = Math.min(255, data[i + 2] * alphaInv + 0.5);
+        }
+      }
+      context.putImageData(imageData, 0, 0);
+      canvasUtils._unpremultipliedCache.set(source, { canvas, resourceId: source._resourceId });
+      return canvas;
+    }
+    if (needsResize) {
+      const cached = canvasUtils._canvasSourceCache.get(source);
+      if (cached?.resourceId === source._resourceId) {
+        return cached.canvas;
+      }
+      const canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createCanvas(source.pixelWidth, source.pixelHeight);
+      const context = canvas.getContext("2d");
+      canvas.width = source.pixelWidth;
+      canvas.height = source.pixelHeight;
+      context.drawImage(resource, 0, 0);
+      canvasUtils._canvasSourceCache.set(source, { canvas, resourceId: source._resourceId });
+      return canvas;
+    }
+    return resource;
+  },
+  getTintedCanvas: (sprite, color) => {
+    const texture = sprite.texture;
+    const stringColor = _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(color).toHex();
+    const cache = texture.tintCache || (texture.tintCache = {});
+    const cachedCanvas = cache[stringColor];
+    const resourceId = texture.source._resourceId;
+    if (cachedCanvas?.tintId === resourceId) {
+      return cachedCanvas;
+    }
+    const canvas = cachedCanvas && "getContext" in cachedCanvas ? cachedCanvas : _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createCanvas();
+    canvasUtils.tintMethod(texture, color, canvas);
+    canvas.tintId = resourceId;
+    if (canvasUtils.convertTintToImage && canvas.toDataURL !== void 0) {
+      const tintImage = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createImage();
+      tintImage.src = canvas.toDataURL();
+      tintImage.tintId = resourceId;
+      cache[stringColor] = tintImage;
+    } else {
+      cache[stringColor] = canvas;
+    }
+    return cache[stringColor];
+  },
+  getTintedPattern: (texture, color) => {
+    const stringColor = _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(color).toHex();
+    const cache = texture.patternCache || (texture.patternCache = {});
+    const resourceId = texture.source._resourceId;
+    let pattern = cache[stringColor];
+    if (pattern?.tintId === resourceId) {
+      return pattern;
+    }
+    if (!canvasUtils.canvas) {
+      canvasUtils.canvas = _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__/* .DOMAdapter */ .e.get().createCanvas();
+    }
+    canvasUtils.tintMethod(texture, color, canvasUtils.canvas);
+    const context = canvasUtils.canvas.getContext("2d");
+    pattern = context.createPattern(canvasUtils.canvas, "repeat");
+    pattern.tintId = resourceId;
+    cache[stringColor] = pattern;
+    return pattern;
+  },
+  /**
+   * Applies a transform to a CanvasPattern.
+   * @param pattern - The pattern to apply the transform to.
+   * @param matrix - The matrix to apply.
+   * @param matrix.a
+   * @param matrix.b
+   * @param matrix.c
+   * @param matrix.d
+   * @param matrix.tx
+   * @param matrix.ty
+   * @param invert
+   */
+  applyPatternTransform: (pattern, matrix, invert = true) => {
+    if (!matrix) return;
+    const patternAny = pattern;
+    if (!patternAny.setTransform) return;
+    const DOMMatrixCtor = globalThis.DOMMatrix;
+    if (!DOMMatrixCtor) return;
+    const domMatrix = new DOMMatrixCtor([matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty]);
+    patternAny.setTransform(invert ? domMatrix.inverse() : domMatrix);
+  },
+  tintWithMultiply: (texture, color, canvas) => {
+    const context = canvas.getContext("2d");
+    const crop = texture.frame.clone();
+    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
+    const rotate = texture.rotate;
+    crop.x *= resolution;
+    crop.y *= resolution;
+    crop.width *= resolution;
+    crop.height *= resolution;
+    const isVertical = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.isVertical(rotate);
+    const outWidth = isVertical ? crop.height : crop.width;
+    const outHeight = isVertical ? crop.width : crop.height;
+    canvas.width = Math.ceil(outWidth);
+    canvas.height = Math.ceil(outHeight);
+    context.save();
+    context.fillStyle = _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(color).toHex();
+    context.fillRect(0, 0, outWidth, outHeight);
+    context.globalCompositeOperation = "multiply";
+    const source = canvasUtils.getCanvasSource(texture);
+    if (!source) {
+      context.restore();
+      return;
+    }
+    if (rotate) {
+      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
+    }
+    context.drawImage(
+      source,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    context.globalCompositeOperation = "destination-atop";
+    context.drawImage(
+      source,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    context.restore();
+  },
+  tintWithOverlay: (texture, color, canvas) => {
+    const context = canvas.getContext("2d");
+    const crop = texture.frame.clone();
+    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
+    const rotate = texture.rotate;
+    crop.x *= resolution;
+    crop.y *= resolution;
+    crop.width *= resolution;
+    crop.height *= resolution;
+    const isVertical = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.isVertical(rotate);
+    const outWidth = isVertical ? crop.height : crop.width;
+    const outHeight = isVertical ? crop.width : crop.height;
+    canvas.width = Math.ceil(outWidth);
+    canvas.height = Math.ceil(outHeight);
+    context.save();
+    context.globalCompositeOperation = "copy";
+    context.fillStyle = _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(color).toHex();
+    context.fillRect(0, 0, outWidth, outHeight);
+    context.globalCompositeOperation = "destination-atop";
+    const source = canvasUtils.getCanvasSource(texture);
+    if (!source) {
+      context.restore();
+      return;
+    }
+    if (rotate) {
+      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
+    }
+    context.drawImage(
+      source,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    context.restore();
+  },
+  tintWithPerPixel: (texture, color, canvas) => {
+    const context = canvas.getContext("2d");
+    const crop = texture.frame.clone();
+    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
+    const rotate = texture.rotate;
+    crop.x *= resolution;
+    crop.y *= resolution;
+    crop.width *= resolution;
+    crop.height *= resolution;
+    const isVertical = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.isVertical(rotate);
+    const outWidth = isVertical ? crop.height : crop.width;
+    const outHeight = isVertical ? crop.width : crop.height;
+    canvas.width = Math.ceil(outWidth);
+    canvas.height = Math.ceil(outHeight);
+    context.save();
+    context.globalCompositeOperation = "copy";
+    const source = canvasUtils.getCanvasSource(texture);
+    if (!source) {
+      context.restore();
+      return;
+    }
+    if (rotate) {
+      canvasUtils._applyInverseRotation(context, rotate, crop.width, crop.height);
+    }
+    context.drawImage(
+      source,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    context.restore();
+    const r = color >> 16 & 255;
+    const g = color >> 8 & 255;
+    const b = color & 255;
+    const imageData = context.getImageData(0, 0, outWidth, outHeight);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = data[i] * r / 255;
+      data[i + 1] = data[i + 1] * g / 255;
+      data[i + 2] = data[i + 2] * b / 255;
+    }
+    context.putImageData(imageData, 0, 0);
+  },
+  /**
+   * Applies inverse rotation transform to context for texture packer rotation compensation.
+   * Supports all 16 groupD8 symmetries (rotations and reflections).
+   * @param context - Canvas 2D context
+   * @param rotate - The groupD8 rotation value
+   * @param srcWidth - Source crop width (before rotation)
+   * @param srcHeight - Source crop height (before rotation)
+   */
+  _applyInverseRotation: (context, rotate, srcWidth, srcHeight) => {
+    const inv = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.inv(rotate);
+    const a = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.uX(inv);
+    const b = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.uY(inv);
+    const c = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.vX(inv);
+    const d = _maths_matrix_groupD8_mjs__WEBPACK_IMPORTED_MODULE_2__/* .groupD8 */ .E.vY(inv);
+    const tx = -Math.min(0, a * srcWidth, c * srcHeight, a * srcWidth + c * srcHeight);
+    const ty = -Math.min(0, b * srcWidth, d * srcHeight, b * srcWidth + d * srcHeight);
+    context.transform(a, b, c, d, tx, ty);
+  }
+};
+canvasUtils.tintMethod = canvasUtils.canUseMultiply ? canvasUtils.tintWithMultiply : canvasUtils.tintWithPerPixel;
+
+
+//# sourceMappingURL=canvasUtils.mjs.map
+
+
+/***/ },
+
+/***/ 5317
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -21200,27 +21585,27 @@ __webpack_require__.d(__webpack_exports__, {
   WebGLRenderer: () => (/* binding */ WebGLRenderer)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
-var compileHighShaderToProgram = __webpack_require__(5395);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
-var colorBit = __webpack_require__(1667);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
-var generateTextureBatchBit = __webpack_require__(5608);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
-var localUniformBit = __webpack_require__(4107);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
-var roundPixelsBit = __webpack_require__(4305);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/getBatchSamplersUniformGroup.mjs
-var getBatchSamplersUniformGroup = __webpack_require__(768);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
-var Shader = __webpack_require__(3571);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
-var UniformGroup = __webpack_require__(683);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/gl/GlGraphicsAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
+var compileHighShaderToProgram = __webpack_require__(3414);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
+var colorBit = __webpack_require__(7308);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
+var generateTextureBatchBit = __webpack_require__(3501);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
+var localUniformBit = __webpack_require__(2394);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
+var roundPixelsBit = __webpack_require__(5774);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/getBatchSamplersUniformGroup.mjs
+var getBatchSamplersUniformGroup = __webpack_require__(3767);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
+var Shader = __webpack_require__(1992);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/gl/GlGraphicsAdaptor.mjs
 
 
 
@@ -21298,13 +21683,13 @@ GlGraphicsAdaptor.extension = {
 
 //# sourceMappingURL=GlGraphicsAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/textureBit.mjs
-var textureBit = __webpack_require__(7719);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/mesh/gl/GlMeshAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/textureBit.mjs
+var textureBit = __webpack_require__(2955);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/mesh/gl/GlMeshAdaptor.mjs
 
 
 
@@ -21373,9 +21758,9 @@ GlMeshAdaptor.extension = {
 
 //# sourceMappingURL=GlMeshAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
-var State = __webpack_require__(8179);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gl/GlBatchAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
+var State = __webpack_require__(3860);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gl/GlBatchAdaptor.mjs
 
 
 
@@ -21429,17 +21814,17 @@ GlBatchAdaptor.extension = {
 
 //# sourceMappingURL=GlBatchAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
-var AbstractRenderer = __webpack_require__(5816);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(5285);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
-var GCManagedHash = __webpack_require__(3286);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
-var buffer_const = __webpack_require__(1092);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/const.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
+var AbstractRenderer = __webpack_require__(3789);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
+var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
+var GCManagedHash = __webpack_require__(3901);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
+var buffer_const = __webpack_require__(5697);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/const.mjs
 
 var BUFFER_TYPE = /* @__PURE__ */ ((BUFFER_TYPE2) => {
   BUFFER_TYPE2[BUFFER_TYPE2["ELEMENT_ARRAY_BUFFER"] = 34963] = "ELEMENT_ARRAY_BUFFER";
@@ -21451,7 +21836,7 @@ var BUFFER_TYPE = /* @__PURE__ */ ((BUFFER_TYPE2) => {
 
 //# sourceMappingURL=const.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/GlBuffer.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/GlBuffer.mjs
 
 class GlBuffer {
   constructor(buffer, type) {
@@ -21475,7 +21860,7 @@ class GlBuffer {
 
 //# sourceMappingURL=GlBuffer.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/GlBufferSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/GlBufferSystem.mjs
 
 
 
@@ -21676,9 +22061,9 @@ GlBufferSystem.extension = {
 
 //# sourceMappingURL=GlBufferSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(8985);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/context/GlContextSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/context/GlContextSystem.mjs
 
 
 
@@ -21958,11 +22343,11 @@ let GlContextSystem = _GlContextSystem;
 
 //# sourceMappingURL=GlContextSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getAttributeInfoFromFormat.mjs
-var getAttributeInfoFromFormat = __webpack_require__(4122);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/ensureAttributes.mjs
-var ensureAttributes = __webpack_require__(9492);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/const.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getAttributeInfoFromFormat.mjs
+var getAttributeInfoFromFormat = __webpack_require__(2181);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/ensureAttributes.mjs
+var ensureAttributes = __webpack_require__(8011);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/const.mjs
 
 var GL_FORMATS = /* @__PURE__ */ ((GL_FORMATS2) => {
   GL_FORMATS2[GL_FORMATS2["RGBA"] = 6408] = "RGBA";
@@ -21992,12 +22377,12 @@ var GL_TARGETS = /* @__PURE__ */ ((GL_TARGETS2) => {
   GL_TARGETS2[GL_TARGETS2["TEXTURE_CUBE_MAP_NEGATIVE_Z"] = 34074] = "TEXTURE_CUBE_MAP_NEGATIVE_Z";
   return GL_TARGETS2;
 })(GL_TARGETS || {});
-var GL_WRAP_MODES = /* @__PURE__ */ ((GL_WRAP_MODES2) => {
+var GL_WRAP_MODES = /* @__PURE__ */ (/* unused pure expression or super */ null && (((GL_WRAP_MODES2) => {
   GL_WRAP_MODES2[GL_WRAP_MODES2["CLAMP"] = 33071] = "CLAMP";
   GL_WRAP_MODES2[GL_WRAP_MODES2["REPEAT"] = 10497] = "REPEAT";
   GL_WRAP_MODES2[GL_WRAP_MODES2["MIRRORED_REPEAT"] = 33648] = "MIRRORED_REPEAT";
   return GL_WRAP_MODES2;
-})(GL_WRAP_MODES || {});
+})(GL_WRAP_MODES || {})));
 var GL_TYPES = /* @__PURE__ */ ((GL_TYPES2) => {
   GL_TYPES2[GL_TYPES2["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
   GL_TYPES2[GL_TYPES2["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
@@ -22021,7 +22406,7 @@ var GL_TYPES = /* @__PURE__ */ ((GL_TYPES2) => {
 
 //# sourceMappingURL=const.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/geometry/utils/getGlTypeFromFormat.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/geometry/utils/getGlTypeFromFormat.mjs
 
 
 "use strict";
@@ -22064,7 +22449,7 @@ function getGlTypeFromFormat(format) {
 
 //# sourceMappingURL=getGlTypeFromFormat.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/geometry/GlGeometrySystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/geometry/GlGeometrySystem.mjs
 
 
 
@@ -22363,13 +22748,13 @@ GlGeometrySystem.extension = {
 
 //# sourceMappingURL=GlGeometrySystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
-var Geometry = __webpack_require__(2147);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
-var GlProgram = __webpack_require__(8769);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlBackBufferSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
+var Geometry = __webpack_require__(4158);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
+var GlProgram = __webpack_require__(1638);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlBackBufferSystem.mjs
 
 
 
@@ -22513,7 +22898,7 @@ let GlBackBufferSystem = _GlBackBufferSystem;
 
 //# sourceMappingURL=GlBackBufferSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlColorMaskSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlColorMaskSystem.mjs
 
 
 "use strict";
@@ -22544,7 +22929,7 @@ GlColorMaskSystem.extension = {
 
 //# sourceMappingURL=GlColorMaskSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlEncoderSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlEncoderSystem.mjs
 
 
 "use strict";
@@ -22583,9 +22968,9 @@ GlEncoderSystem.extension = {
 
 //# sourceMappingURL=GlEncoderSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/checkMaxIfStatementsInShader.mjs
-var checkMaxIfStatementsInShader = __webpack_require__(8936);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlLimitsSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/checkMaxIfStatementsInShader.mjs
+var checkMaxIfStatementsInShader = __webpack_require__(6237);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlLimitsSystem.mjs
 
 
 
@@ -22615,11 +23000,11 @@ GlLimitsSystem.extension = {
 
 //# sourceMappingURL=GlLimitsSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStencilModesToPixi.mjs
-var GpuStencilModesToPixi = __webpack_require__(8044);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
-var state_const = __webpack_require__(8381);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlStencilSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStencilModesToPixi.mjs
+var GpuStencilModesToPixi = __webpack_require__(9601);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
+var state_const = __webpack_require__(6466);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlStencilSystem.mjs
 
 
 
@@ -22713,9 +23098,9 @@ GlStencilSystem.extension = {
 
 //# sourceMappingURL=GlStencilSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UboSystem.mjs
-var UboSystem = __webpack_require__(9823);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboElementsSTD40.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UboSystem.mjs
+var UboSystem = __webpack_require__(2574);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboElementsSTD40.mjs
 
 const WGSL_TO_STD40_SIZE = {
   f32: 4,
@@ -22782,11 +23167,11 @@ function createUboElementsSTD40(uniformData) {
 
 //# sourceMappingURL=createUboElementsSTD40.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/createUboSyncFunction.mjs
-var createUboSyncFunction = __webpack_require__(6511);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uboSyncFunctions.mjs
-var uboSyncFunctions = __webpack_require__(3946);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateArraySyncSTD40.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/createUboSyncFunction.mjs
+var createUboSyncFunction = __webpack_require__(8626);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uboSyncFunctions.mjs
+var uboSyncFunctions = __webpack_require__(4465);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateArraySyncSTD40.mjs
 
 
 "use strict";
@@ -22817,7 +23202,7 @@ function generateArraySyncSTD40(uboElement, offsetToAdd) {
 
 //# sourceMappingURL=generateArraySyncSTD40.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboSyncSTD40.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboSyncSTD40.mjs
 
 
 
@@ -22835,7 +23220,7 @@ function createUboSyncFunctionSTD40(uboElements) {
 
 //# sourceMappingURL=createUboSyncSTD40.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlUboSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlUboSystem.mjs
 
 
 
@@ -22859,15 +23244,15 @@ GlUboSystem.extension = {
 
 //# sourceMappingURL=GlUboSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
-var RenderTargetSystem = __webpack_require__(4718);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
-var CanvasSource = __webpack_require__(9068);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
-var gl_const = __webpack_require__(481);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlRenderTarget.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
+var RenderTargetSystem = __webpack_require__(1091);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
+var CanvasSource = __webpack_require__(2909);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
+var gl_const = __webpack_require__(5442);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/GlRenderTarget.mjs
 
 class GlRenderTarget {
   constructor() {
@@ -22893,7 +23278,7 @@ class GlRenderTarget {
 
 //# sourceMappingURL=GlRenderTarget.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/renderTarget/GlRenderTargetAdaptor.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/renderTarget/GlRenderTargetAdaptor.mjs
 
 
 
@@ -23300,7 +23685,7 @@ class GlRenderTargetAdaptor {
 
 //# sourceMappingURL=GlRenderTargetAdaptor.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/renderTarget/GlRenderTargetSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/renderTarget/GlRenderTargetSystem.mjs
 
 
 
@@ -23322,9 +23707,9 @@ GlRenderTargetSystem.extension = {
 
 //# sourceMappingURL=GlRenderTargetSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/BufferResource.mjs
-var BufferResource = __webpack_require__(2925);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GenerateShaderSyncCode.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/BufferResource.mjs
+var BufferResource = __webpack_require__(6770);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GenerateShaderSyncCode.mjs
 
 
 
@@ -23399,7 +23784,7 @@ function generateShaderSyncCode(shader, shaderSystem) {
 
 //# sourceMappingURL=GenerateShaderSyncCode.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgramData.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgramData.mjs
 
 class IGLUniformData {
 }
@@ -23429,7 +23814,7 @@ class GlProgramData {
 
 //# sourceMappingURL=GlProgramData.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/compileShader.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/compileShader.mjs
 
 function compileShader(gl, type, src) {
   const shader = gl.createShader(type);
@@ -23441,7 +23826,7 @@ function compileShader(gl, type, src) {
 
 //# sourceMappingURL=compileShader.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/defaultValue.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/defaultValue.mjs
 
 function booleanArray(size) {
   const array = new Array(size);
@@ -23530,7 +23915,7 @@ function defaultValue(type, size) {
 
 //# sourceMappingURL=defaultValue.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/mapType.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/mapType.mjs
 
 let GL_TABLE = null;
 const GL_TO_GLSL_TYPES = {
@@ -23600,7 +23985,7 @@ function mapGlToVertexFormat(gl, type) {
 
 //# sourceMappingURL=mapType.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/extractAttributesFromGlProgram.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/extractAttributesFromGlProgram.mjs
 
 
 
@@ -23643,7 +24028,7 @@ function extractAttributesFromGlProgram(program, gl, sortAttributes = false) {
 
 //# sourceMappingURL=extractAttributesFromGlProgram.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUboData.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUboData.mjs
 
 function getUboData(program, gl) {
   if (!gl.ACTIVE_UNIFORM_BLOCKS) return {};
@@ -23665,7 +24050,7 @@ function getUboData(program, gl) {
 
 //# sourceMappingURL=getUboData.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUniformData.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUniformData.mjs
 
 
 
@@ -23693,7 +24078,7 @@ function getUniformData(program, gl) {
 
 //# sourceMappingURL=getUniformData.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/logProgramError.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/logProgramError.mjs
 
 function logPrettyShaderError(gl, shader) {
   const shaderSrc = gl.getShaderSource(shader).split("\n").map((line, index) => `${index}: ${line}`);
@@ -23737,7 +24122,7 @@ function logProgramError(gl, program, vertexShader, fragmentShader) {
 
 //# sourceMappingURL=logProgramError.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/generateProgram.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/generateProgram.mjs
 
 
 
@@ -23794,7 +24179,7 @@ function generateProgram(gl, program) {
 
 //# sourceMappingURL=generateProgram.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlShaderSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlShaderSystem.mjs
 
 
 
@@ -23928,9 +24313,9 @@ GlShaderSystem.extension = {
 
 //# sourceMappingURL=GlShaderSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uniformParsers.mjs
-var uniformParsers = __webpack_require__(4910);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSyncTypes.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uniformParsers.mjs
+var uniformParsers = __webpack_require__(4329);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSyncTypes.mjs
 
 const UNIFORM_TO_SINGLE_SETTERS = {
   f32: `if (cv !== v) {
@@ -24050,7 +24435,7 @@ const UNIFORM_TO_ARRAY_SETTERS = {
 
 //# sourceMappingURL=generateUniformsSyncTypes.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSync.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSync.mjs
 
 
 
@@ -24111,7 +24496,7 @@ function generateUniformsSync(group, uniformData) {
 
 //# sourceMappingURL=generateUniformsSync.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlUniformGroupSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlUniformGroupSystem.mjs
 
 
 
@@ -24200,7 +24585,7 @@ GlUniformGroupSystem.extension = {
 
 //# sourceMappingURL=GlUniformGroupSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/state/mapWebGLBlendModesToPixi.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/state/mapWebGLBlendModesToPixi.mjs
 
 
 "use strict";
@@ -24232,7 +24617,7 @@ function mapWebGLBlendModesToPixi(gl) {
 
 //# sourceMappingURL=mapWebGLBlendModesToPixi.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/state/GlStateSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/state/GlStateSystem.mjs
 
 
 
@@ -24471,7 +24856,7 @@ let GlStateSystem = _GlStateSystem;
 
 //# sourceMappingURL=GlStateSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/GlTexture.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/GlTexture.mjs
 
 
 "use strict";
@@ -24499,7 +24884,7 @@ class GlTexture {
 
 //# sourceMappingURL=GlTexture.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadBufferImageResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadBufferImageResource.mjs
 
 const glUploadBufferImageResource = {
   id: "buffer",
@@ -24538,7 +24923,7 @@ const glUploadBufferImageResource = {
 
 //# sourceMappingURL=glUploadBufferImageResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadCompressedTextureResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadCompressedTextureResource.mjs
 
 const compressedFormatMap = {
   "bc1-rgba-unorm": true,
@@ -24640,7 +25025,7 @@ const glUploadCompressedTextureResource = {
 
 //# sourceMappingURL=glUploadCompressedTextureResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadCubeTextureResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadCubeTextureResource.mjs
 
 
 "use strict";
@@ -24676,7 +25061,7 @@ function createGlUploadCubeTextureResource(uploaders) {
 
 //# sourceMappingURL=glUploadCubeTextureResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadImageResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadImageResource.mjs
 
 const glUploadImageResource = {
   id: "image",
@@ -24810,7 +25195,7 @@ function uploadImageWebGL1(gl, target, glTexture, textureWidth, textureHeight, _
 
 //# sourceMappingURL=glUploadImageResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/isSafari.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/isSafari.mjs
 
 
 "use strict";
@@ -24822,7 +25207,7 @@ function isSafari() {
 
 //# sourceMappingURL=isSafari.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadVideoResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadVideoResource.mjs
 
 
 
@@ -24853,7 +25238,7 @@ const glUploadVideoResource = {
 
 //# sourceMappingURL=glUploadVideoResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/pixiToGlMaps.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/pixiToGlMaps.mjs
 
 const scaleModeToGlFilter = {
   linear: 9729,
@@ -24888,7 +25273,7 @@ const compareModeToGlCompare = {
 
 //# sourceMappingURL=pixiToGlMaps.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/applyStyleParams.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/applyStyleParams.mjs
 
 
 "use strict";
@@ -24925,7 +25310,7 @@ function applyStyleParams(style, gl, mipmaps, anisotropicExt, glFunctionName, fi
 
 //# sourceMappingURL=applyStyleParams.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlFormat.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlFormat.mjs
 
 function mapFormatToGlFormat(gl) {
   return {
@@ -24984,7 +25369,7 @@ function mapFormatToGlFormat(gl) {
 
 //# sourceMappingURL=mapFormatToGlFormat.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlInternalFormat.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlInternalFormat.mjs
 
 
 "use strict";
@@ -25123,7 +25508,7 @@ function mapFormatToGlInternalFormat(gl, extensions) {
 
 //# sourceMappingURL=mapFormatToGlInternalFormat.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlType.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapFormatToGlType.mjs
 
 function mapFormatToGlType(gl) {
   return {
@@ -25182,7 +25567,7 @@ function mapFormatToGlType(gl) {
 
 //# sourceMappingURL=mapFormatToGlType.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapViewDimensionToGlTarget.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/utils/mapViewDimensionToGlTarget.mjs
 
 function mapViewDimensionToGlTarget(gl) {
   return {
@@ -25199,7 +25584,7 @@ function mapViewDimensionToGlTarget(gl) {
 
 //# sourceMappingURL=mapViewDimensionToGlTarget.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/GlTextureSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/texture/GlTextureSystem.mjs
 
 
 
@@ -25537,6 +25922,7 @@ class GlTextureSystem {
    */
   _applyMipRange(glTexture, source) {
     if (this._renderer.context.webGLVersion !== 2) return;
+    if (source.mipLevelCount <= 1) return;
     const gl = this._gl;
     const maxLevel = Math.max((source.mipLevelCount | 0) - 1, 0);
     gl.texParameteri(glTexture.target, gl.TEXTURE_BASE_LEVEL, 0);
@@ -25633,7 +26019,7 @@ GlTextureSystem.extension = {
 
 //# sourceMappingURL=GlTextureSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs
 
 
 
@@ -25702,7 +26088,7 @@ class WebGLRenderer extends AbstractRenderer/* AbstractRenderer */.k {
 
 /***/ },
 
-/***/ 481
+/***/ 5442
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -25728,7 +26114,7 @@ var CLEAR = /* @__PURE__ */ ((CLEAR2) => {
 
 /***/ },
 
-/***/ 8769
+/***/ 1638
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -25738,11 +26124,11 @@ __webpack_require__.d(__webpack_exports__, {
   M: () => (/* binding */ GlProgram)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
-var createIdFromString = __webpack_require__(8296);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getTestContext.mjs
-var getTestContext = __webpack_require__(2500);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getMaxFragmentPrecision.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
+var createIdFromString = __webpack_require__(9781);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getTestContext.mjs
+var getTestContext = __webpack_require__(2371);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getMaxFragmentPrecision.mjs
 
 
 "use strict";
@@ -25764,7 +26150,7 @@ function getMaxFragmentPrecision() {
 
 //# sourceMappingURL=getMaxFragmentPrecision.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/addProgramDefines.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/addProgramDefines.mjs
 
 function addProgramDefines(src, isES300, isFragment) {
   if (isES300) return src;
@@ -25793,7 +26179,7 @@ function addProgramDefines(src, isES300, isFragment) {
 
 //# sourceMappingURL=addProgramDefines.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/ensurePrecision.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/ensurePrecision.mjs
 
 function ensurePrecision(src, options, isFragment) {
   const maxSupportedPrecision = isFragment ? options.maxSupportedFragmentPrecision : options.maxSupportedVertexPrecision;
@@ -25813,7 +26199,7 @@ ${src}`;
 
 //# sourceMappingURL=ensurePrecision.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/insertVersion.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/insertVersion.mjs
 
 function insertVersion(src, isES300) {
   if (!isES300) return src;
@@ -25824,7 +26210,7 @@ ${src}`;
 
 //# sourceMappingURL=insertVersion.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/setProgramName.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/setProgramName.mjs
 
 const fragmentNameCache = {};
 const VertexNameCache = {};
@@ -25847,7 +26233,7 @@ ${src}`;
 
 //# sourceMappingURL=setProgramName.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/stripVersion.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/preprocessors/stripVersion.mjs
 
 function stripVersion(src, isES300) {
   if (!isES300) return src;
@@ -25857,7 +26243,7 @@ function stripVersion(src, isES300) {
 
 //# sourceMappingURL=stripVersion.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs
 
 
 
@@ -25953,14 +26339,14 @@ let GlProgram = _GlProgram;
 
 /***/ },
 
-/***/ 768
+/***/ 3767
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   n: () => (/* binding */ getBatchSamplersUniformGroup)
 /* harmony export */ });
-/* harmony import */ var _shared_shader_UniformGroup_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(683);
+/* harmony import */ var _shared_shader_UniformGroup_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5658);
 
 
 "use strict";
@@ -25984,15 +26370,15 @@ function getBatchSamplersUniformGroup(maxTextures) {
 
 /***/ },
 
-/***/ 9492
+/***/ 8011
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   q: () => (/* binding */ ensureAttributes)
 /* harmony export */ });
-/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3764);
-/* harmony import */ var _shared_geometry_utils_getAttributeInfoFromFormat_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4122);
+/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2555);
+/* harmony import */ var _shared_geometry_utils_getAttributeInfoFromFormat_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2181);
 
 
 
@@ -26038,14 +26424,14 @@ function ensureStartAndStride(geometry) {
 
 /***/ },
 
-/***/ 2500
+/***/ 2371
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   W: () => (/* binding */ getTestContext)
 /* harmony export */ });
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8985);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
 
 
 "use strict";
@@ -26064,7 +26450,7 @@ function getTestContext() {
 
 /***/ },
 
-/***/ 7298
+/***/ 4727
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -26074,27 +26460,27 @@ __webpack_require__.d(__webpack_exports__, {
   WebGPURenderer: () => (/* binding */ WebGPURenderer)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gpu/getTextureBatchBindGroup.mjs
-var getTextureBatchBindGroup = __webpack_require__(5469);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
-var compileHighShaderToProgram = __webpack_require__(5395);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
-var colorBit = __webpack_require__(1667);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
-var generateTextureBatchBit = __webpack_require__(5608);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
-var localUniformBit = __webpack_require__(4107);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
-var roundPixelsBit = __webpack_require__(4305);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
-var Shader = __webpack_require__(3571);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
-var UniformGroup = __webpack_require__(683);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/gpu/GpuGraphicsAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gpu/getTextureBatchBindGroup.mjs
+var getTextureBatchBindGroup = __webpack_require__(62);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
+var compileHighShaderToProgram = __webpack_require__(3414);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/colorBit.mjs
+var colorBit = __webpack_require__(7308);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/generateTextureBatchBit.mjs
+var generateTextureBatchBit = __webpack_require__(3501);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
+var localUniformBit = __webpack_require__(2394);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
+var roundPixelsBit = __webpack_require__(5774);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
+var Shader = __webpack_require__(1992);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/gpu/GpuGraphicsAdaptor.mjs
 
 
 
@@ -26197,13 +26583,13 @@ GpuGraphicsAdaptor.extension = {
 
 //# sourceMappingURL=GpuGraphicsAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/textureBit.mjs
-var textureBit = __webpack_require__(7719);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/mesh/gpu/GpuMeshAdapter.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/textureBit.mjs
+var textureBit = __webpack_require__(2955);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/mesh/gpu/GpuMeshAdapter.mjs
 
 
 
@@ -26276,9 +26662,9 @@ GpuMeshAdapter.extension = {
 
 //# sourceMappingURL=GpuMeshAdapter.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
-var State = __webpack_require__(8179);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/gpu/GpuBatchAdaptor.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
+var State = __webpack_require__(3860);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gpu/GpuBatchAdaptor.mjs
 
 
 
@@ -26344,13 +26730,13 @@ GpuBatchAdaptor.extension = {
 
 //# sourceMappingURL=GpuBatchAdaptor.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
-var AbstractRenderer = __webpack_require__(5816);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(5285);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/BindGroupSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
+var AbstractRenderer = __webpack_require__(3789);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
+var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/BindGroupSystem.mjs
 
 
 "use strict";
@@ -26434,13 +26820,13 @@ BindGroupSystem.extension = {
 
 //# sourceMappingURL=BindGroupSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
-var GCManagedHash = __webpack_require__(3286);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/utils/fastCopy.mjs
-var fastCopy = __webpack_require__(7384);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/GpuBufferSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
+var GCManagedHash = __webpack_require__(3901);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/utils/fastCopy.mjs
+var fastCopy = __webpack_require__(8979);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/GpuBufferSystem.mjs
 
 
 
@@ -26539,7 +26925,7 @@ GpuBufferSystem.extension = {
 
 //# sourceMappingURL=GpuBufferSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuColorMaskSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuColorMaskSystem.mjs
 
 
 "use strict";
@@ -26569,9 +26955,9 @@ GpuColorMaskSystem.extension = {
 
 //# sourceMappingURL=GpuColorMaskSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var environment_adapter = __webpack_require__(8985);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuDeviceSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var environment_adapter = __webpack_require__(5886);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuDeviceSystem.mjs
 
 
 
@@ -26649,7 +27035,7 @@ GpuDeviceSystem.defaultOptions = {
 
 //# sourceMappingURL=GpuDeviceSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuEncoderSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuEncoderSystem.mjs
 
 
 "use strict";
@@ -26820,7 +27206,7 @@ GpuEncoderSystem.extension = {
 
 //# sourceMappingURL=GpuEncoderSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuLimitsSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuLimitsSystem.mjs
 
 
 "use strict";
@@ -26846,9 +27232,9 @@ GpuLimitsSystem.extension = {
 
 //# sourceMappingURL=GpuLimitsSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
-var state_const = __webpack_require__(8381);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuStencilSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
+var state_const = __webpack_require__(6466);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuStencilSystem.mjs
 
 
 
@@ -26896,9 +27282,9 @@ GpuStencilSystem.extension = {
 
 //# sourceMappingURL=GpuStencilSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UboSystem.mjs
-var UboSystem = __webpack_require__(9823);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboElementsWGSL.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UboSystem.mjs
+var UboSystem = __webpack_require__(2574);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboElementsWGSL.mjs
 
 const WGSL_ALIGN_SIZE_DATA = {
   i32: { align: 4, size: 4 },
@@ -26965,11 +27351,11 @@ function createUboElementsWGSL(uniformData) {
 
 //# sourceMappingURL=createUboElementsWGSL.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/createUboSyncFunction.mjs
-var createUboSyncFunction = __webpack_require__(6511);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uboSyncFunctions.mjs
-var uboSyncFunctions = __webpack_require__(3946);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateArraySyncWGSL.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/createUboSyncFunction.mjs
+var createUboSyncFunction = __webpack_require__(8626);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/uboSyncFunctions.mjs
+var uboSyncFunctions = __webpack_require__(4465);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateArraySyncWGSL.mjs
 
 
 "use strict";
@@ -26999,7 +27385,7 @@ function generateArraySyncWGSL(uboElement, offsetToAdd) {
 
 //# sourceMappingURL=generateArraySyncWGSL.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboSyncFunctionWGSL.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboSyncFunctionWGSL.mjs
 
 
 
@@ -27017,7 +27403,7 @@ function createUboSyncFunctionWGSL(uboElements) {
 
 //# sourceMappingURL=createUboSyncFunctionWGSL.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUboSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUboSystem.mjs
 
 
 
@@ -27041,13 +27427,13 @@ GpuUboSystem.extension = {
 
 //# sourceMappingURL=GpuUboSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
-var Buffer = __webpack_require__(7069);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/BufferResource.mjs
-var BufferResource = __webpack_require__(2925);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
-var buffer_const = __webpack_require__(1092);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/UboBatch.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
+var Buffer = __webpack_require__(614);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/BufferResource.mjs
+var BufferResource = __webpack_require__(6770);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
+var buffer_const = __webpack_require__(5697);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/UboBatch.mjs
 
 class UboBatch {
   constructor({ minUniformOffsetAlignment }) {
@@ -27087,9 +27473,9 @@ class UboBatch {
 
 //# sourceMappingURL=UboBatch.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
-var BindGroup = __webpack_require__(2849);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUniformBatchPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
+var BindGroup = __webpack_require__(4042);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUniformBatchPipe.mjs
 
 
 
@@ -27220,13 +27606,13 @@ GpuUniformBatchPipe.extension = {
 
 //# sourceMappingURL=GpuUniformBatchPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/ensureAttributes.mjs
-var ensureAttributes = __webpack_require__(9492);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
-var createIdFromString = __webpack_require__(8296);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStencilModesToPixi.mjs
-var GpuStencilModesToPixi = __webpack_require__(8044);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/pipeline/PipelineSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/ensureAttributes.mjs
+var ensureAttributes = __webpack_require__(8011);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
+var createIdFromString = __webpack_require__(9781);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStencilModesToPixi.mjs
+var GpuStencilModesToPixi = __webpack_require__(9601);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/pipeline/PipelineSystem.mjs
 
 
 
@@ -27479,15 +27865,15 @@ PipelineSystem.extension = {
 
 //# sourceMappingURL=PipelineSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
-var RenderTargetSystem = __webpack_require__(4718);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
-var gl_const = __webpack_require__(481);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
-var CanvasSource = __webpack_require__(9068);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTarget.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs + 2 modules
+var RenderTargetSystem = __webpack_require__(1091);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
+var gl_const = __webpack_require__(5442);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
+var CanvasSource = __webpack_require__(2909);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTarget.mjs
 
 class GpuRenderTarget {
   constructor() {
@@ -27500,7 +27886,7 @@ class GpuRenderTarget {
 
 //# sourceMappingURL=GpuRenderTarget.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTargetAdaptor.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTargetAdaptor.mjs
 
 
 
@@ -27734,7 +28120,7 @@ class GpuRenderTargetAdaptor {
 
 //# sourceMappingURL=GpuRenderTargetAdaptor.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTargetSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTargetSystem.mjs
 
 
 
@@ -27756,7 +28142,7 @@ GpuRenderTargetSystem.extension = {
 
 //# sourceMappingURL=GpuRenderTargetSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuShaderSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuShaderSystem.mjs
 
 
 "use strict";
@@ -27796,7 +28182,7 @@ GpuShaderSystem.extension = {
 
 //# sourceMappingURL=GpuShaderSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuBlendModesToPixi.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuBlendModesToPixi.mjs
 
 const GpuBlendModesToPixi = {};
 GpuBlendModesToPixi.normal = {
@@ -27947,7 +28333,7 @@ GpuBlendModesToPixi.max = {
 
 //# sourceMappingURL=GpuBlendModesToPixi.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStateSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStateSystem.mjs
 
 
 
@@ -27994,9 +28380,9 @@ GpuStateSystem.extension = {
 
 //# sourceMappingURL=GpuStateSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
-var CanvasPool = __webpack_require__(6912);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadBufferImageResource.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
+var CanvasPool = __webpack_require__(1281);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadBufferImageResource.mjs
 
 const gpuUploadBufferImageResource = {
   type: "image",
@@ -28024,7 +28410,7 @@ const gpuUploadBufferImageResource = {
 
 //# sourceMappingURL=gpuUploadBufferImageResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadCompressedTextureResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadCompressedTextureResource.mjs
 
 const blockDataMap = {
   "bc1-rgba-unorm": { blockBytes: 8, blockWidth: 4, blockHeight: 4 },
@@ -28071,7 +28457,7 @@ const gpuUploadCompressedTextureResource = {
 
 //# sourceMappingURL=gpuUploadCompressedTextureResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadCubeTextureResource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadCubeTextureResource.mjs
 
 const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
 function createGpuUploadCubeTextureResource(uploaders) {
@@ -28092,7 +28478,7 @@ function createGpuUploadCubeTextureResource(uploaders) {
 
 //# sourceMappingURL=gpuUploadCubeTextureResource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadImageSource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadImageSource.mjs
 
 
 
@@ -28126,7 +28512,7 @@ const gpuUploadImageResource = {
 
 //# sourceMappingURL=gpuUploadImageSource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadVideoSource.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadVideoSource.mjs
 
 
 "use strict";
@@ -28140,7 +28526,7 @@ const gpuUploadVideoResource = {
 
 //# sourceMappingURL=gpuUploadVideoSource.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/utils/GpuMipmapGenerator.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/utils/GpuMipmapGenerator.mjs
 
 class GpuMipmapGenerator {
   constructor(device) {
@@ -28298,7 +28684,7 @@ class GpuMipmapGenerator {
 
 //# sourceMappingURL=GpuMipmapGenerator.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/GpuTextureSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/GpuTextureSystem.mjs
 
 
 
@@ -28542,7 +28928,7 @@ GpuTextureSystem.extension = {
 
 //# sourceMappingURL=GpuTextureSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs
 
 
 
@@ -28610,7 +28996,7 @@ class WebGPURenderer extends AbstractRenderer/* AbstractRenderer */.k {
 
 /***/ },
 
-/***/ 2849
+/***/ 4042
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -28711,7 +29097,7 @@ class BindGroup {
 
 /***/ },
 
-/***/ 876
+/***/ 3207
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -28721,11 +29107,11 @@ __webpack_require__.d(__webpack_exports__, {
   B: () => (/* binding */ GpuProgram)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
-var createIdFromString = __webpack_require__(8296);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getAttributeInfoFromFormat.mjs
-var getAttributeInfoFromFormat = __webpack_require__(4122);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/extractAttributesFromGpuProgram.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
+var createIdFromString = __webpack_require__(9781);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getAttributeInfoFromFormat.mjs
+var getAttributeInfoFromFormat = __webpack_require__(2181);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/extractAttributesFromGpuProgram.mjs
 
 
 "use strict";
@@ -28805,7 +29191,7 @@ function extractAttributesFromGpuProgram({ source, entryPoint }) {
 
 //# sourceMappingURL=extractAttributesFromGpuProgram.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/extractStructAndGroups.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/extractStructAndGroups.mjs
 
 function extractStructAndGroups(wgsl) {
   const linePattern = /(^|[^/])@(group|binding)\(\d+\)[^;]+;/g;
@@ -28855,7 +29241,7 @@ function extractStructAndGroups(wgsl) {
 
 //# sourceMappingURL=extractStructAndGroups.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/const.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/const.mjs
 
 var ShaderStage = /* @__PURE__ */ ((ShaderStage2) => {
   ShaderStage2[ShaderStage2["VERTEX"] = 1] = "VERTEX";
@@ -28867,7 +29253,7 @@ var ShaderStage = /* @__PURE__ */ ((ShaderStage2) => {
 
 //# sourceMappingURL=const.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateGpuLayoutGroups.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateGpuLayoutGroups.mjs
 
 
 "use strict";
@@ -28935,7 +29321,7 @@ function generateGpuLayoutGroups({ groups }) {
 
 //# sourceMappingURL=generateGpuLayoutGroups.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateLayoutHash.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateLayoutHash.mjs
 
 function generateLayoutHash({ groups }) {
   const layout = [];
@@ -28952,7 +29338,7 @@ function generateLayoutHash({ groups }) {
 
 //# sourceMappingURL=generateLayoutHash.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/removeStructAndGroupDuplicates.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/removeStructAndGroupDuplicates.mjs
 
 function removeStructAndGroupDuplicates(vertexStructsAndGroups, fragmentStructsAndGroups) {
   const structNameSet = /* @__PURE__ */ new Set();
@@ -28978,7 +29364,7 @@ function removeStructAndGroupDuplicates(vertexStructsAndGroups, fragmentStructsA
 
 //# sourceMappingURL=removeStructAndGroupDuplicates.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs
 
 
 
@@ -29058,14 +29444,14 @@ class GpuProgram {
 
 /***/ },
 
-/***/ 8044
+/***/ 9601
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   g: () => (/* binding */ GpuStencilModesToPixi)
 /* harmony export */ });
-/* harmony import */ var _shared_state_const_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8381);
+/* harmony import */ var _shared_state_const_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6466);
 
 
 "use strict";
@@ -29124,17 +29510,17 @@ GpuStencilModesToPixi[_shared_state_const_mjs__WEBPACK_IMPORTED_MODULE_0__/* .ST
 
 /***/ },
 
-/***/ 3312
+/***/ 3557
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   j: () => (/* binding */ BlendModePipe)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _filters_FilterEffect_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1761);
-/* harmony import */ var _scene_container_RenderGroup_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3660);
-/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3764);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _filters_FilterEffect_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(622);
+/* harmony import */ var _scene_container_RenderGroup_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5869);
+/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2555);
 
 
 
@@ -29284,16 +29670,16 @@ BlendModePipe.extension = {
 
 /***/ },
 
-/***/ 7069
+/***/ 614
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   h: () => (/* binding */ Buffer)
 /* harmony export */ });
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9117);
-/* harmony import */ var _const_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1092);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5150);
+/* harmony import */ var _const_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5697);
 
 
 
@@ -29466,15 +29852,15 @@ class Buffer extends eventemitter3__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */
 
 /***/ },
 
-/***/ 2925
+/***/ 6770
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   d: () => (/* binding */ BufferResource)
 /* harmony export */ });
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9117);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5150);
 
 
 
@@ -29554,7 +29940,7 @@ class BufferResource extends eventemitter3__WEBPACK_IMPORTED_MODULE_0__/* ["defa
 
 /***/ },
 
-/***/ 1092
+/***/ 5697
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -29583,7 +29969,7 @@ var BufferUsage = /* @__PURE__ */ ((BufferUsage2) => {
 
 /***/ },
 
-/***/ 7384
+/***/ 8979
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -29611,7 +29997,7 @@ function fastCopy(sourceBuffer, destinationBuffer, sourceOffset, byteLength) {
 
 /***/ },
 
-/***/ 2147
+/***/ 4158
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -29621,17 +30007,17 @@ __webpack_require__.d(__webpack_exports__, {
   V: () => (/* binding */ Geometry)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
-var Buffer = __webpack_require__(7069);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
-var buffer_const = __webpack_require__(1092);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/ensureIsBuffer.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
+var Buffer = __webpack_require__(614);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
+var buffer_const = __webpack_require__(5697);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/ensureIsBuffer.mjs
 
 
 
@@ -29660,7 +30046,7 @@ function ensureIsBuffer(buffer, index) {
 
 //# sourceMappingURL=ensureIsBuffer.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getGeometryBounds.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/getGeometryBounds.mjs
 
 function getGeometryBounds(geometry, attributeId, bounds) {
   const attribute = geometry.getAttribute(attributeId);
@@ -29697,7 +30083,7 @@ function getGeometryBounds(geometry, attributeId, bounds) {
 
 //# sourceMappingURL=getGeometryBounds.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs
 
 
 
@@ -29855,7 +30241,7 @@ class Geometry extends eventemitter3/* default */.A {
 
 /***/ },
 
-/***/ 4122
+/***/ 2181
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -29905,14 +30291,14 @@ function getAttributeInfoFromFormat(format) {
 
 /***/ },
 
-/***/ 840
+/***/ 4543
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   L: () => (/* binding */ InstructionSet)
 /* harmony export */ });
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9117);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5150);
 
 
 "use strict";
@@ -29965,16 +30351,16 @@ class InstructionSet {
 
 /***/ },
 
-/***/ 5935
+/***/ 9488
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   O: () => (/* binding */ RenderTarget)
 /* harmony export */ });
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9117);
-/* harmony import */ var _texture_sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2447);
-/* harmony import */ var _texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8653);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5150);
+/* harmony import */ var _texture_sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9060);
+/* harmony import */ var _texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4540);
 
 
 
@@ -30124,7 +30510,7 @@ let RenderTarget = _RenderTarget;
 
 /***/ },
 
-/***/ 4718
+/***/ 1091
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -30134,13 +30520,13 @@ __webpack_require__.d(__webpack_exports__, {
   l: () => (/* binding */ RenderTargetSystem)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
-var gl_const = __webpack_require__(481);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/calculateProjection.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
+var gl_const = __webpack_require__(5442);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/calculateProjection.mjs
 
 function calculateProjection(pm, x, y, width, height, flipY) {
   const sign = flipY ? 1 : -1;
@@ -30155,17 +30541,17 @@ function calculateProjection(pm, x, y, width, height, flipY) {
 
 //# sourceMappingURL=calculateProjection.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SystemRunner.mjs
-var SystemRunner = __webpack_require__(1465);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
-var CanvasSource = __webpack_require__(9068);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/getCanvasTexture.mjs
-var getCanvasTexture = __webpack_require__(6109);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/isRenderingToScreen.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SystemRunner.mjs
+var SystemRunner = __webpack_require__(3514);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/CanvasSource.mjs
+var CanvasSource = __webpack_require__(2909);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/getCanvasTexture.mjs
+var getCanvasTexture = __webpack_require__(4060);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/isRenderingToScreen.mjs
 
 function isRenderingToScreen(renderTarget) {
   const resource = renderTarget.colorTexture.source.resource;
@@ -30175,9 +30561,9 @@ function isRenderingToScreen(renderTarget) {
 
 //# sourceMappingURL=isRenderingToScreen.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTarget.mjs
-var RenderTarget = __webpack_require__(5935);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTarget.mjs
+var RenderTarget = __webpack_require__(9488);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTargetSystem.mjs
 
 
 
@@ -30544,20 +30930,20 @@ class RenderTargetSystem {
 
 /***/ },
 
-/***/ 3571
+/***/ 1992
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   M: () => (/* binding */ Shader)
 /* harmony export */ });
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9117);
-/* harmony import */ var _gl_shader_GlProgram_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8769);
-/* harmony import */ var _gpu_shader_BindGroup_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2849);
-/* harmony import */ var _gpu_shader_GpuProgram_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(876);
-/* harmony import */ var _types_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(2275);
-/* harmony import */ var _UniformGroup_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(683);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5150);
+/* harmony import */ var _gl_shader_GlProgram_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1638);
+/* harmony import */ var _gpu_shader_BindGroup_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4042);
+/* harmony import */ var _gpu_shader_GpuProgram_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3207);
+/* harmony import */ var _types_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(8838);
+/* harmony import */ var _UniformGroup_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(5658);
 
 
 
@@ -30747,16 +31133,16 @@ class Shader extends eventemitter3__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */
 
 /***/ },
 
-/***/ 9823
+/***/ 2574
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   W: () => (/* binding */ UboSystem)
 /* harmony export */ });
-/* harmony import */ var _utils_browser_unsafeEvalSupported_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3289);
-/* harmony import */ var _buffer_Buffer_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7069);
-/* harmony import */ var _buffer_const_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1092);
+/* harmony import */ var _utils_browser_unsafeEvalSupported_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1616);
+/* harmony import */ var _buffer_Buffer_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(614);
+/* harmony import */ var _buffer_const_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5697);
 
 
 
@@ -30839,7 +31225,7 @@ class UboSystem {
 
 /***/ },
 
-/***/ 683
+/***/ 5658
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -30849,11 +31235,11 @@ __webpack_require__.d(__webpack_exports__, {
   k: () => (/* binding */ UniformGroup)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
-var createIdFromString = __webpack_require__(8296);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/types.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/utils/createIdFromString.mjs
+var createIdFromString = __webpack_require__(9781);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/types.mjs
 
 const UNIFORM_TYPES_VALUES = [
   "f32",
@@ -30882,7 +31268,7 @@ const UNIFORM_TYPES_MAP = UNIFORM_TYPES_VALUES.reduce((acc, type) => {
 
 //# sourceMappingURL=types.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/getDefaultUniformValue.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/utils/getDefaultUniformValue.mjs
 
 function getDefaultUniformValue(type, size) {
   switch (type) {
@@ -30939,7 +31325,7 @@ function getDefaultUniformValue(type, size) {
 
 //# sourceMappingURL=getDefaultUniformValue.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs
 
 
 
@@ -31027,14 +31413,14 @@ let UniformGroup = _UniformGroup;
 
 /***/ },
 
-/***/ 6511
+/***/ 8626
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   E: () => (/* binding */ createUboSyncFunction)
 /* harmony export */ });
-/* harmony import */ var _uniformParsers_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4910);
+/* harmony import */ var _uniformParsers_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4329);
 
 
 "use strict";
@@ -31101,7 +31487,7 @@ function createUboSyncFunction(uboElements, parserCode, arrayGenerationFunction,
 
 /***/ },
 
-/***/ 3946
+/***/ 4465
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31189,7 +31575,7 @@ const uboSyncFunctionsWGSL = {
 
 /***/ },
 
-/***/ 4910
+/***/ 4329
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31315,7 +31701,7 @@ const uniformParsers = [
 
 /***/ },
 
-/***/ 8179
+/***/ 3860
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31484,7 +31870,7 @@ let State = _State;
 
 /***/ },
 
-/***/ 8381
+/***/ 6466
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31514,7 +31900,7 @@ var STENCIL_MODES = /* @__PURE__ */ ((STENCIL_MODES2) => {
 
 /***/ },
 
-/***/ 5816
+/***/ 3789
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31524,11 +31910,11 @@ __webpack_require__.d(__webpack_exports__, {
   k: () => (/* binding */ AbstractRenderer)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/autoDetectEnvironment.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/autoDetectEnvironment.mjs
 
 
 "use strict";
@@ -31551,23 +31937,23 @@ async function autoDetectEnvironment(add) {
 
 //# sourceMappingURL=autoDetectEnvironment.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
-var Container = __webpack_require__(9484);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/browser/unsafeEvalSupported.mjs
-var unsafeEvalSupported = __webpack_require__(3289);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
-var GlobalResourceRegistry = __webpack_require__(9835);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
-var gl_const = __webpack_require__(481);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SystemRunner.mjs
-var SystemRunner = __webpack_require__(1465);
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
+var Container = __webpack_require__(5412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/browser/unsafeEvalSupported.mjs
+var unsafeEvalSupported = __webpack_require__(1616);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
+var GlobalResourceRegistry = __webpack_require__(4298);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
+var gl_const = __webpack_require__(5442);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SystemRunner.mjs
+var SystemRunner = __webpack_require__(3514);
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs
 
 
 
@@ -31923,7 +32309,7 @@ let AbstractRenderer = _AbstractRenderer;
 
 /***/ },
 
-/***/ 5285
+/***/ 9922
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31934,21 +32320,21 @@ __webpack_require__.d(__webpack_exports__, {
   i: () => (/* binding */ SharedSystems)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/CustomRenderPipe.mjs
-var CustomRenderPipe = __webpack_require__(1994);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/RenderGroupPipe.mjs
-var RenderGroupPipe = __webpack_require__(6160);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
-var TexturePool = __webpack_require__(6301);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
-var TextureStyle = __webpack_require__(9698);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/clearList.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/CustomRenderPipe.mjs
+var CustomRenderPipe = __webpack_require__(2569);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/RenderGroupPipe.mjs
+var RenderGroupPipe = __webpack_require__(3873);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
+var TexturePool = __webpack_require__(7118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
+var TextureStyle = __webpack_require__(7187);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/clearList.mjs
 
 function clearList(list, index) {
   index || (index = 0);
@@ -31964,13 +32350,13 @@ function clearList(list, index) {
 
 //# sourceMappingURL=clearList.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/executeInstructions.mjs
-var executeInstructions = __webpack_require__(185);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
-var Container = __webpack_require__(9484);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/multiplyColors.mjs
-var multiplyColors = __webpack_require__(6985);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/updateRenderGroupTransforms.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/executeInstructions.mjs
+var executeInstructions = __webpack_require__(840);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs + 14 modules
+var Container = __webpack_require__(5412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/multiplyColors.mjs
+var multiplyColors = __webpack_require__(5954);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/updateRenderGroupTransforms.mjs
 
 
 
@@ -32084,7 +32470,7 @@ function updateColorBlendVisibility(container, parent, updateFlags) {
 
 //# sourceMappingURL=updateRenderGroupTransforms.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/validateRenderables.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/validateRenderables.mjs
 
 function validateRenderables(renderGroup, renderPipes) {
   const { list } = renderGroup.childrenRenderablesToUpdate;
@@ -32105,7 +32491,7 @@ function validateRenderables(renderGroup, renderPipes) {
 
 //# sourceMappingURL=validateRenderables.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/RenderGroupSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/RenderGroupSystem.mjs
 
 
 
@@ -32260,15 +32646,15 @@ RenderGroupSystem.extension = {
 
 //# sourceMappingURL=RenderGroupSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/SpritePipe.mjs
-var SpritePipe = __webpack_require__(8904);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/global/globalHooks.mjs
-var globalHooks = __webpack_require__(6937);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
-var BatcherPipe = __webpack_require__(6740);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
-var AlphaMaskPipe = __webpack_require__(7608);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/color/ColorMaskPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/SpritePipe.mjs
+var SpritePipe = __webpack_require__(6109);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/global/globalHooks.mjs
+var globalHooks = __webpack_require__(7398);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
+var BatcherPipe = __webpack_require__(3412);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
+var AlphaMaskPipe = __webpack_require__(9793);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/color/ColorMaskPipe.mjs
 
 
 "use strict";
@@ -32336,11 +32722,11 @@ ColorMaskPipe.extension = {
 
 //# sourceMappingURL=ColorMaskPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
-var gl_const = __webpack_require__(481);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
-var state_const = __webpack_require__(8381);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/stencil/StencilMaskPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/const.mjs
+var gl_const = __webpack_require__(5442);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
+var state_const = __webpack_require__(6466);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/stencil/StencilMaskPipe.mjs
 
 
 
@@ -32470,11 +32856,11 @@ StencilMaskPipe.extension = {
 
 //# sourceMappingURL=StencilMaskPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/background/BackgroundSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/background/BackgroundSystem.mjs
 
 
 
@@ -32562,13 +32948,13 @@ let BackgroundSystem = _BackgroundSystem;
 
 //# sourceMappingURL=BackgroundSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/blendModes/BlendModePipe.mjs
-var BlendModePipe = __webpack_require__(3312);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(8985);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/extract/ExtractSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/blendModes/BlendModePipe.mjs
+var BlendModePipe = __webpack_require__(3557);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/extract/ExtractSystem.mjs
 
 
 
@@ -32960,13 +33346,13 @@ let ExtractSystem = _ExtractSystem;
 
 //# sourceMappingURL=ExtractSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
-var getLocalBounds = __webpack_require__(5277);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderTexture.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
+var getLocalBounds = __webpack_require__(3084);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderTexture.mjs
 
 
 
@@ -32974,15 +33360,17 @@ var TextureSource = __webpack_require__(2447);
 class RenderTexture extends Texture/* Texture */.g {
   /**
    * Creates a RenderTexture. Pass `dynamic: true` in options to allow resizing after creation.
-   * @param options - Options for the RenderTexture, including width, height, and dynamic.
+   * @param options - Options for the RenderTexture, including width, height, textureOptions, and dynamic.
    * @returns A new RenderTexture instance.
    * @example
-   * const rt = RenderTexture.create({ width: 100, height: 100, dynamic: true });
+   * const textureOptions = { defaultAnchor: { x: 0.5, y: 0.5 } };
+   * const rt = RenderTexture.create({ width: 100, height: 100, dynamic: true, textureOptions });
    * rt.resize(500, 500);
    */
   static create(options) {
-    const { dynamic, ...rest } = options;
+    const { dynamic, textureOptions, ...rest } = options;
     return new RenderTexture({
+      ...textureOptions,
       source: new TextureSource/* TextureSource */.v(rest),
       dynamic: dynamic ?? false
     });
@@ -33003,7 +33391,7 @@ class RenderTexture extends Texture/* Texture */.g {
 
 //# sourceMappingURL=RenderTexture.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/extract/GenerateTextureSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/extract/GenerateTextureSystem.mjs
 
 
 
@@ -33077,6 +33465,9 @@ class GenerateTextureSystem {
       clearColor = noColor;
     }
     const region = options.frame?.copyTo(tempRect) || (0,getLocalBounds/* getLocalBounds */.n)(container, tempBounds).rectangle;
+    const textureOptions = options.defaultAnchor && {
+      defaultAnchor: options.defaultAnchor
+    };
     region.width = Math.max(region.width, 1 / resolution) | 0;
     region.height = Math.max(region.height, 1 / resolution) | 0;
     const target = RenderTexture.create({
@@ -33084,7 +33475,8 @@ class GenerateTextureSystem {
       width: region.width,
       height: region.height,
       resolution,
-      antialias
+      antialias,
+      textureOptions
     });
     const transform = Matrix/* Matrix */.u.shared.translate(-region.x, -region.y);
     this._renderer.render({
@@ -33113,7 +33505,7 @@ GenerateTextureSystem.extension = {
 
 //# sourceMappingURL=GenerateTextureSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/clean.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/clean.mjs
 
 function cleanHash(hash) {
   let clean = false;
@@ -33149,7 +33541,7 @@ function cleanArray(arr) {
 
 //# sourceMappingURL=clean.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/GCSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/GCSystem.mjs
 
 
 
@@ -33460,17 +33852,17 @@ let GCSystem = _GCSystem;
 
 //# sourceMappingURL=GCSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/Point.mjs
-var Point = __webpack_require__(1861);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/gpu/colorToUniform.mjs
-var colorToUniform = __webpack_require__(2560);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
-var BindGroup = __webpack_require__(2849);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
-var types = __webpack_require__(2275);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
-var UniformGroup = __webpack_require__(683);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/GlobalUniformSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/gpu/colorToUniform.mjs
+var colorToUniform = __webpack_require__(4933);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs
+var BindGroup = __webpack_require__(4042);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/GlobalUniformSystem.mjs
 
 
 
@@ -33606,9 +33998,9 @@ GlobalUniformSystem.extension = {
 
 //# sourceMappingURL=GlobalUniformSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
-var Ticker = __webpack_require__(3333);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/SchedulerSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/Ticker.mjs + 1 modules
+var Ticker = __webpack_require__(4690);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/SchedulerSystem.mjs
 
 
 
@@ -33699,9 +34091,9 @@ SchedulerSystem.extension = {
 
 //# sourceMappingURL=SchedulerSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/const.mjs
-var utils_const = __webpack_require__(1251);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/sayHello.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/const.mjs
+var utils_const = __webpack_require__(7382);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/sayHello.mjs
 
 
 
@@ -33733,7 +34125,7 @@ function sayHello(type) {
 
 //# sourceMappingURL=sayHello.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/startup/HelloSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/startup/HelloSystem.mjs
 
 
 
@@ -33776,9 +34168,9 @@ HelloSystem.defaultOptions = {
 
 //# sourceMappingURL=HelloSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderableGCSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderableGCSystem.mjs
 
 
 
@@ -33887,7 +34279,7 @@ let RenderableGCSystem = _RenderableGCSystem;
 
 //# sourceMappingURL=RenderableGCSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureGCSystem.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureGCSystem.mjs
 
 
 
@@ -34017,11 +34409,11 @@ let TextureGCSystem = _TextureGCSystem;
 
 //# sourceMappingURL=TextureGCSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTarget.mjs
-var RenderTarget = __webpack_require__(5935);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/getCanvasTexture.mjs
-var getCanvasTexture = __webpack_require__(6109);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/view/ViewSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/renderTarget/RenderTarget.mjs
+var RenderTarget = __webpack_require__(9488);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/getCanvasTexture.mjs
+var getCanvasTexture = __webpack_require__(4060);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/view/ViewSystem.mjs
 
 
 
@@ -34143,7 +34535,7 @@ let ViewSystem = _ViewSystem;
 
 //# sourceMappingURL=ViewSystem.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs
 
 
 
@@ -34197,7 +34589,7 @@ const SharedRenderPipes = [
 
 /***/ },
 
-/***/ 1465
+/***/ 3514
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -34302,7 +34694,7 @@ class SystemRunner {
 
 /***/ },
 
-/***/ 6912
+/***/ 1281
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -34310,9 +34702,9 @@ class SystemRunner {
 /* harmony export */   N: () => (/* binding */ CanvasPool)
 /* harmony export */ });
 /* unused harmony export CanvasPoolClass */
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8985);
-/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5739);
-/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9835);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
+/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(806);
+/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4298);
 
 
 
@@ -34383,7 +34775,7 @@ _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_2__/* .GlobalRes
 
 /***/ },
 
-/***/ 8653
+/***/ 4540
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -34393,17 +34785,17 @@ __webpack_require__.d(__webpack_exports__, {
   g: () => (/* binding */ Texture)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
-var groupD8 = __webpack_require__(8407);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/misc/NOOP.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
+var groupD8 = __webpack_require__(1144);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/misc/NOOP.mjs
 
 const NOOP = () => {
 };
@@ -34411,13 +34803,13 @@ const NOOP = () => {
 
 //# sourceMappingURL=NOOP.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/BufferImageSource.mjs
-var BufferImageSource = __webpack_require__(9355);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureMatrix.mjs
-var TextureMatrix = __webpack_require__(516);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/BufferImageSource.mjs
+var BufferImageSource = __webpack_require__(5336);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureMatrix.mjs
+var TextureMatrix = __webpack_require__(8251);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs
 
 
 
@@ -34619,14 +35011,14 @@ Texture.WHITE.destroy = NOOP;
 
 /***/ },
 
-/***/ 516
+/***/ 8251
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   N: () => (/* binding */ TextureMatrix)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
 
 
 "use strict";
@@ -34640,7 +35032,6 @@ class TextureMatrix {
     this.mapCoord = new _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Matrix */ .u();
     this.uClampFrame = new Float32Array(4);
     this.uClampOffset = new Float32Array(2);
-    this._textureID = -1;
     this._updateID = 0;
     this.clampOffset = 0;
     if (typeof clampMargin === "undefined") {
@@ -34656,10 +35047,11 @@ class TextureMatrix {
     return this._texture;
   }
   set texture(value) {
-    if (this.texture === value) return;
-    this._texture?.removeListener("update", this.update, this);
-    this._texture = value;
-    this._texture.addListener("update", this.update, this);
+    if (this._texture !== value) {
+      this._texture?.removeListener("update", this.update, this);
+      this._texture = value;
+      this._texture.addListener("update", this.update, this);
+    }
     this.update();
   }
   /**
@@ -34724,7 +35116,7 @@ class TextureMatrix {
 
 /***/ },
 
-/***/ 6301
+/***/ 7118
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -34732,11 +35124,11 @@ class TextureMatrix {
 /* harmony export */   W: () => (/* binding */ TexturePool)
 /* harmony export */ });
 /* unused harmony export TexturePoolClass */
-/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5739);
-/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9835);
-/* harmony import */ var _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2447);
-/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8653);
-/* harmony import */ var _TextureStyle_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9698);
+/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(806);
+/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4298);
+/* harmony import */ var _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9060);
+/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4540);
+/* harmony import */ var _TextureStyle_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7187);
 
 
 
@@ -34876,16 +35268,16 @@ _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_1__/* .GlobalRes
 
 /***/ },
 
-/***/ 9698
+/***/ 7187
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   n: () => (/* binding */ TextureStyle)
 /* harmony export */ });
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9117);
-/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7046);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5150);
+/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7927);
 
 
 
@@ -35005,15 +35397,15 @@ let TextureStyle = _TextureStyle;
 
 /***/ },
 
-/***/ 9355
+/***/ 5336
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   P: () => (/* binding */ BufferImageSource)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2447);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9060);
 
 
 
@@ -35058,16 +35450,16 @@ BufferImageSource.extension = _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODUL
 
 /***/ },
 
-/***/ 9068
+/***/ 2909
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   q: () => (/* binding */ CanvasSource)
 /* harmony export */ });
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8985);
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4227);
-/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2447);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6258);
+/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9060);
 
 
 
@@ -35133,15 +35525,15 @@ CanvasSource.extension = _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_1__
 
 /***/ },
 
-/***/ 7709
+/***/ 1950
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   b: () => (/* binding */ ImageSource)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2447);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9060);
 
 
 
@@ -35164,18 +35556,18 @@ ImageSource.extension = _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__/
 
 /***/ },
 
-/***/ 2447
+/***/ 9060
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   v: () => (/* binding */ TextureSource)
 /* harmony export */ });
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
-/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5739);
-/* harmony import */ var _scene_container_utils_definedProps_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2130);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9117);
-/* harmony import */ var _TextureStyle_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9698);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _maths_misc_pow2_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(806);
+/* harmony import */ var _scene_container_utils_definedProps_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9789);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5150);
+/* harmony import */ var _TextureStyle_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7187);
 
 
 
@@ -35533,17 +35925,17 @@ let TextureSource = _TextureSource;
 
 /***/ },
 
-/***/ 3395
+/***/ 7756
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   $: () => (/* binding */ VideoSource)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _ticker_Ticker_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3333);
-/* harmony import */ var _utils_browser_detectVideoAlphaMode_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2562);
-/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2447);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _ticker_Ticker_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4690);
+/* harmony import */ var _utils_browser_detectVideoAlphaMode_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1777);
+/* harmony import */ var _TextureSource_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9060);
 
 
 
@@ -35579,6 +35971,7 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
     this._onPlayStart = this._onPlayStart.bind(this);
     this._onPlayStop = this._onPlayStop.bind(this);
     this._onSeeked = this._onSeeked.bind(this);
+    this._onLoadedMetadata = this._onLoadedMetadata.bind(this);
     if (options.autoLoad !== false) {
       void this.load();
     }
@@ -35642,6 +36035,9 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
     } else {
       this._mediaReady();
     }
+    if (!this.isValid) {
+      source.addEventListener("loadedmetadata", this._onLoadedMetadata);
+    }
     this.alphaMode = await (0,_utils_browser_detectVideoAlphaMode_mjs__WEBPACK_IMPORTED_MODULE_2__/* .detectVideoAlphaMode */ .C)();
     this._load = new Promise((resolve, reject) => {
       if (this.isValid) {
@@ -35690,9 +36086,6 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
   }
   /** Runs the update loop when the video is ready to play. */
   _onPlayStart() {
-    if (!this.isValid) {
-      this._mediaReady();
-    }
     this._configureAutoUpdate();
   }
   /** Stops the update loop when a pause event is triggered. */
@@ -35707,6 +36100,13 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
       this._msToNextUpdate = 0;
     }
   }
+  /** When intrinsic size becomes known after play / canplay (common with MediaStream). */
+  _onLoadedMetadata() {
+    if (!this.isValid) {
+      return;
+    }
+    this._mediaReady();
+  }
   _onCanPlay() {
     const source = this.resource;
     source.removeEventListener("canplay", this._onCanPlay);
@@ -35714,7 +36114,7 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
   }
   _onCanPlayThrough() {
     const source = this.resource;
-    source.removeEventListener("canplaythrough", this._onCanPlay);
+    source.removeEventListener("canplaythrough", this._onCanPlayThrough);
     if (this._preloadTimeout) {
       clearTimeout(this._preloadTimeout);
       this._preloadTimeout = void 0;
@@ -35731,7 +36131,7 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
     this._msToNextUpdate = 0;
     this.updateFrame();
     this._msToNextUpdate = 0;
-    if (this._resolve) {
+    if (this._resolve && this.isValid) {
       this._resolve(this);
       this._resolve = null;
       this._reject = null;
@@ -35752,6 +36152,7 @@ const _VideoSource = class _VideoSource extends _TextureSource_mjs__WEBPACK_IMPO
       source.removeEventListener("seeked", this._onSeeked);
       source.removeEventListener("canplay", this._onCanPlay);
       source.removeEventListener("canplaythrough", this._onCanPlayThrough);
+      source.removeEventListener("loadedmetadata", this._onLoadedMetadata);
       source.removeEventListener("error", this._onError, true);
       source.pause();
       source.src = "";
@@ -35873,7 +36274,7 @@ let VideoSource = _VideoSource;
 
 /***/ },
 
-/***/ 6109
+/***/ 4060
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -35881,9 +36282,9 @@ let VideoSource = _VideoSource;
 /* harmony export */   c: () => (/* binding */ getCanvasTexture)
 /* harmony export */ });
 /* unused harmony export hasCachedCanvasTexture */
-/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9835);
-/* harmony import */ var _sources_CanvasSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9068);
-/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8653);
+/* harmony import */ var _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4298);
+/* harmony import */ var _sources_CanvasSource_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2909);
+/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4540);
 
 
 
@@ -35920,15 +36321,15 @@ function hasCachedCanvasTexture(canvas) {
 
 /***/ },
 
-/***/ 3013
-(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+/***/ 7574
+(__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* unused harmony exports autoDetectSource, resourceToTexture, textureFrom */
-/* harmony import */ var _assets_cache_Cache_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(691);
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4227);
-/* harmony import */ var _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2447);
-/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8653);
+/* harmony import */ var _assets_cache_Cache_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4332);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6258);
+/* harmony import */ var _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9060);
+/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4540);
 
 
 
@@ -35987,7 +36388,7 @@ _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_2__/* .TextureSource */ .v.f
 
 /***/ },
 
-/***/ 8296
+/***/ 9781
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36014,7 +36415,7 @@ function createIdFromString(value, groupId) {
 
 /***/ },
 
-/***/ 2275
+/***/ 8838
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36036,7 +36437,7 @@ var RendererType = /* @__PURE__ */ ((RendererType2) => {
 
 /***/ },
 
-/***/ 9484
+/***/ 5412
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36051,11 +36452,11 @@ __webpack_require__.d(__webpack_exports__, {
 
 // UNUSED EXPORTS: UPDATE_TRANSFORM
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/culling/cullingMixin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/culling/cullingMixin.mjs
 
 const cullingMixin = {
   cullArea: null,
@@ -36066,23 +36467,23 @@ const cullingMixin = {
 
 //# sourceMappingURL=cullingMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/misc/const.mjs
-var misc_const = __webpack_require__(5324);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
-var ObservablePoint = __webpack_require__(7012);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
-var PoolGroup = __webpack_require__(8951);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/cacheAsTextureMixin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/misc/const.mjs
+var misc_const = __webpack_require__(819);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
+var ObservablePoint = __webpack_require__(6489);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
+var PoolGroup = __webpack_require__(8118);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/cacheAsTextureMixin.mjs
 
 
 "use strict";
@@ -36113,9 +36514,9 @@ const cacheAsTextureMixin = {
 
 //# sourceMappingURL=cacheAsTextureMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/removeItems.mjs
-var removeItems = __webpack_require__(5399);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/childrenHelperMixin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/removeItems.mjs
+var removeItems = __webpack_require__(9344);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/childrenHelperMixin.mjs
 
 
 
@@ -36267,7 +36668,7 @@ const childrenHelperMixin = {
 
 //# sourceMappingURL=childrenHelperMixin.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/collectRenderablesMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/collectRenderablesMixin.mjs
 
 const collectRenderablesMixin = {
   collectRenderables(instructionSet, renderer, currentLayer) {
@@ -36309,9 +36710,9 @@ const collectRenderablesMixin = {
 
 //# sourceMappingURL=collectRenderablesMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/filters/FilterEffect.mjs
-var FilterEffect = __webpack_require__(1761);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/mask/MaskEffectManager.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/FilterEffect.mjs
+var FilterEffect = __webpack_require__(622);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/MaskEffectManager.mjs
 
 
 
@@ -36356,7 +36757,7 @@ Extensions/* extensions */.XO.handleByList(Extensions/* ExtensionType */.Ag.Mask
 
 //# sourceMappingURL=MaskEffectManager.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/effectsMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/effectsMixin.mjs
 
 
 
@@ -36364,7 +36765,8 @@ Extensions/* extensions */.XO.handleByList(Extensions/* ExtensionType */.Ag.Mask
 const effectsMixin = {
   _maskEffect: null,
   _maskOptions: {
-    inverse: false
+    inverse: false,
+    channel: "red"
   },
   _filterEffect: null,
   effects: [],
@@ -36447,7 +36849,7 @@ const effectsMixin = {
 
 //# sourceMappingURL=effectsMixin.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/findMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/findMixin.mjs
 
 
 "use strict";
@@ -36501,11 +36903,11 @@ const findMixin = {
 
 //# sourceMappingURL=findMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/utils/matrixAndBoundsPool.mjs
-var matrixAndBoundsPool = __webpack_require__(5784);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/getFastGlobalBoundsMixin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/utils/matrixAndBoundsPool.mjs
+var matrixAndBoundsPool = __webpack_require__(7283);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/getFastGlobalBoundsMixin.mjs
 
 
 
@@ -36579,13 +36981,13 @@ const getFastGlobalBoundsMixin = {
 
 //# sourceMappingURL=getFastGlobalBoundsMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/getGlobalMixin.mjs
-var getGlobalMixin = __webpack_require__(7886);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
-var getGlobalBounds = __webpack_require__(2491);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
-var getLocalBounds = __webpack_require__(5277);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/checkChildrenDidChange.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/getGlobalMixin.mjs
+var getGlobalMixin = __webpack_require__(7711);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
+var getGlobalBounds = __webpack_require__(32);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
+var getLocalBounds = __webpack_require__(3084);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/checkChildrenDidChange.mjs
 
 function checkChildrenDidChange(container, previousData) {
   const children = container.children;
@@ -36610,7 +37012,7 @@ function checkChildrenDidChange(container, previousData) {
 
 //# sourceMappingURL=checkChildrenDidChange.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/measureMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/measureMixin.mjs
 
 
 
@@ -36668,7 +37070,7 @@ const measureMixin = {
 
 //# sourceMappingURL=measureMixin.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/onRenderMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/onRenderMixin.mjs
 
 const onRenderMixin = {
   _onRender: null,
@@ -36694,7 +37096,7 @@ const onRenderMixin = {
 
 //# sourceMappingURL=onRenderMixin.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/sortMixin.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/sortMixin.mjs
 
 const sortMixin = {
   _zIndex: 0,
@@ -36730,9 +37132,9 @@ function sortChildren(a, b) {
 
 //# sourceMappingURL=sortMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/Point.mjs
-var Point = __webpack_require__(1861);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/container-mixins/toLocalGlobalMixin.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/toLocalGlobalMixin.mjs
 
 
 
@@ -36767,9 +37169,9 @@ const toLocalGlobalMixin = {
 
 //# sourceMappingURL=toLocalGlobalMixin.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/RenderGroup.mjs
-var RenderGroup = __webpack_require__(3660);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/utils/assignWithIgnore.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/RenderGroup.mjs
+var RenderGroup = __webpack_require__(5869);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/assignWithIgnore.mjs
 
 function assignWithIgnore(target, options, ignore = {}) {
   for (const key in options) {
@@ -36782,7 +37184,7 @@ function assignWithIgnore(target, options, ignore = {}) {
 
 //# sourceMappingURL=assignWithIgnore.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/Container.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/Container.mjs
 
 
 
@@ -37966,14 +38368,14 @@ Extensions/* extensions */.XO.mixin(
 
 /***/ },
 
-/***/ 1994
+/***/ 2569
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   _: () => (/* binding */ CustomRenderPipe)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
 
 
 "use strict";
@@ -38015,16 +38417,16 @@ CustomRenderPipe.extension = {
 
 /***/ },
 
-/***/ 3660
+/***/ 5869
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   m: () => (/* binding */ RenderGroup)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _rendering_renderers_shared_instructions_InstructionSet_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(840);
-/* harmony import */ var _rendering_renderers_shared_texture_TexturePool_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6301);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _rendering_renderers_shared_instructions_InstructionSet_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4543);
+/* harmony import */ var _rendering_renderers_shared_texture_TexturePool_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7118);
 
 
 
@@ -38297,18 +38699,18 @@ class RenderGroup {
 
 /***/ },
 
-/***/ 6160
+/***/ 3873
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   a: () => (/* binding */ RenderGroupPipe)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3721);
-/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8951);
-/* harmony import */ var _sprite_BatchableSprite_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3422);
-/* harmony import */ var _utils_executeInstructions_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(185);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6512);
+/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8118);
+/* harmony import */ var _sprite_BatchableSprite_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5185);
+/* harmony import */ var _utils_executeInstructions_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(840);
 
 
 
@@ -38402,15 +38804,15 @@ RenderGroupPipe.extension = {
 
 /***/ },
 
-/***/ 8076
+/***/ 1985
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   c: () => (/* binding */ Bounds)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _maths_shapes_Rectangle_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(764);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _maths_shapes_Rectangle_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1111);
 
 
 
@@ -39242,7 +39644,7 @@ class Bounds {
 
 /***/ },
 
-/***/ 2491
+/***/ 32
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39250,8 +39652,8 @@ class Bounds {
 /* harmony export */   E: () => (/* binding */ updateTransformBackwards),
 /* harmony export */   f: () => (/* binding */ getGlobalBounds)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5784);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7283);
 
 
 
@@ -39333,15 +39735,15 @@ function updateTransformBackwards(target, parentTransform) {
 
 /***/ },
 
-/***/ 5277
+/***/ 3084
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   n: () => (/* binding */ getLocalBounds)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5784);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7283);
 
 
 
@@ -39400,7 +39802,7 @@ function _getLocalBounds(target, bounds, parentTransform, rootContainer, isRoot)
 
 /***/ },
 
-/***/ 5784
+/***/ 7283
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39408,9 +39810,9 @@ function _getLocalBounds(target, bounds, parentTransform, rootContainer, isRoot)
 /* harmony export */   o: () => (/* binding */ boundsPool),
 /* harmony export */   u: () => (/* binding */ matrixPool)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8951);
-/* harmony import */ var _Bounds_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8076);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8118);
+/* harmony import */ var _Bounds_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1985);
 
 
 
@@ -39425,7 +39827,7 @@ const boundsPool = _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Big
 
 /***/ },
 
-/***/ 7886
+/***/ 7711
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39433,10 +39835,10 @@ const boundsPool = _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Big
 /* harmony export */   D: () => (/* binding */ bgr2rgb),
 /* harmony export */   R: () => (/* binding */ getGlobalMixin)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _bounds_getGlobalBounds_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2491);
-/* harmony import */ var _bounds_utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5784);
-/* harmony import */ var _utils_multiplyColors_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6985);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _bounds_getGlobalBounds_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
+/* harmony import */ var _bounds_utils_matrixAndBoundsPool_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7283);
+/* harmony import */ var _utils_multiplyColors_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5954);
 
 
 
@@ -39503,7 +39905,7 @@ const getGlobalMixin = {
 
 /***/ },
 
-/***/ 2130
+/***/ 9789
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39527,7 +39929,7 @@ function definedProps(obj) {
 
 /***/ },
 
-/***/ 185
+/***/ 840
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39550,14 +39952,14 @@ function executeInstructions(renderGroup, renderer) {
 
 /***/ },
 
-/***/ 6985
+/***/ 5954
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   j: () => (/* binding */ multiplyColors)
 /* harmony export */ });
-/* harmony import */ var _multiplyHexColors_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4396);
+/* harmony import */ var _multiplyHexColors_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7005);
 
 
 "use strict";
@@ -39578,7 +39980,7 @@ function multiplyColors(localBGRColor, parentBGRColor) {
 
 /***/ },
 
-/***/ 4396
+/***/ 7005
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39607,7 +40009,7 @@ function multiplyHexColors(color1, color2) {
 
 /***/ },
 
-/***/ 2560
+/***/ 4933
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39636,15 +40038,15 @@ function color32BitToUniform(abgr, out, offset) {
 
 /***/ },
 
-/***/ 2850
+/***/ 6359
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   G: () => (/* binding */ BatchableGraphics)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _container_utils_multiplyHexColors_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4396);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _container_utils_multiplyHexColors_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7005);
 
 
 
@@ -39718,7 +40120,7 @@ class BatchableGraphics {
 
 /***/ },
 
-/***/ 1839
+/***/ 5338
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -39728,19 +40130,19 @@ __webpack_require__.d(__webpack_exports__, {
   A: () => (/* binding */ Graphics)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
-var ViewContainer = __webpack_require__(5249);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
-var GraphicsContext = __webpack_require__(5626);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/instructions/InstructionSet.mjs
-var InstructionSet = __webpack_require__(840);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
-var GCManagedHash = __webpack_require__(3286);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsContextSystem.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
+var ViewContainer = __webpack_require__(2366);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
+var GraphicsContext = __webpack_require__(9469);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/instructions/InstructionSet.mjs
+var InstructionSet = __webpack_require__(4543);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
+var GCManagedHash = __webpack_require__(3901);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsContextSystem.mjs
 
 
 
@@ -39888,9 +40290,9 @@ let CanvasGraphicsContextSystem = _CanvasGraphicsContextSystem;
 
 //# sourceMappingURL=CanvasGraphicsContextSystem.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
-var State = __webpack_require__(8179);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
+var State = __webpack_require__(3860);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/canvas/CanvasGraphicsPipe.mjs
 
 
 
@@ -39939,15 +40341,15 @@ CanvasGraphicsPipe.extension = {
 
 //# sourceMappingURL=CanvasGraphicsPipe.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContextSystem.mjs
-var GraphicsContextSystem = __webpack_require__(178);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
-var PoolGroup = __webpack_require__(8951);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/gpu/colorToUniform.mjs
-var colorToUniform = __webpack_require__(2560);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/BatchableGraphics.mjs
-var BatchableGraphics = __webpack_require__(2850);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsPipe.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContextSystem.mjs
+var GraphicsContextSystem = __webpack_require__(2599);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
+var PoolGroup = __webpack_require__(8118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/gpu/colorToUniform.mjs
+var colorToUniform = __webpack_require__(4933);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/BatchableGraphics.mjs
+var BatchableGraphics = __webpack_require__(6359);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsPipe.mjs
 
 
 
@@ -40089,7 +40491,7 @@ GraphicsPipe.extension = {
 
 //# sourceMappingURL=GraphicsPipe.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/init.mjs
 
 
 
@@ -40103,7 +40505,7 @@ Extensions/* extensions */.XO.add(CanvasGraphicsContextSystem);
 Extensions/* extensions */.XO.add(GraphicsContextSystem/* GraphicsContextSystem */.GH);
 //# sourceMappingURL=init.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs
 
 
 
@@ -40939,7 +41341,7 @@ class Graphics extends ViewContainer/* ViewContainer */.l {
 
 /***/ },
 
-/***/ 5626
+/***/ 9469
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -40949,27 +41351,27 @@ __webpack_require__.d(__webpack_exports__, {
   T: () => (/* binding */ GraphicsContext)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/Point.mjs
-var Point = __webpack_require__(1861);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
-var Bounds = __webpack_require__(8076);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
+var Bounds = __webpack_require__(1985);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
 // EXTERNAL MODULE: ./node_modules/.pnpm/parse-svg-path@0.1.2/node_modules/parse-svg-path/index.js
 var parse_svg_path = __webpack_require__(3736);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGPath.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGPath.mjs
 
 
 
@@ -41187,9 +41589,9 @@ function parseSVGPath(svgPath, path) {
 
 //# sourceMappingURL=parseSVGPath.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Circle.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Circle.mjs
 
 
 "use strict";
@@ -41386,7 +41788,7 @@ class Circle {
 
 //# sourceMappingURL=Circle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Ellipse.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Ellipse.mjs
 
 
 "use strict";
@@ -41594,9 +41996,9 @@ class Ellipse {
 
 //# sourceMappingURL=Ellipse.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs + 1 modules
-var Polygon = __webpack_require__(7494);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/RoundedRectangle.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs + 1 modules
+var Polygon = __webpack_require__(6307);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/RoundedRectangle.mjs
 
 
 "use strict";
@@ -41874,9 +42276,9 @@ class RoundedRectangle {
 
 //# sourceMappingURL=RoundedRectangle.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContextSystem.mjs
-var GraphicsContextSystem = __webpack_require__(178);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildAdaptiveBezier.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContextSystem.mjs
+var GraphicsContextSystem = __webpack_require__(2599);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildAdaptiveBezier.mjs
 
 
 "use strict";
@@ -42008,7 +42410,7 @@ function recursive(x1, y1, x2, y2, x3, y3, x4, y4, points, distanceTolerance, le
 
 //# sourceMappingURL=buildAdaptiveBezier.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildAdaptiveQuadratic.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildAdaptiveQuadratic.mjs
 
 
 "use strict";
@@ -42075,7 +42477,7 @@ function buildAdaptiveQuadratic_recursive(points, x1, y1, x2, y2, x3, y3, distan
 
 //# sourceMappingURL=buildAdaptiveQuadratic.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArc.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArc.mjs
 
 function buildArc(points, x, y, radius, start, end, clockwise, steps) {
   let dist = Math.abs(start - end);
@@ -42102,7 +42504,7 @@ function buildArc(points, x, y, radius, start, end, clockwise, steps) {
 
 //# sourceMappingURL=buildArc.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArcTo.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArcTo.mjs
 
 
 "use strict";
@@ -42149,7 +42551,7 @@ function buildArcTo(points, x1, y1, x2, y2, radius) {
 
 //# sourceMappingURL=buildArcTo.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArcToSvg.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildArcToSvg.mjs
 
 
 "use strict";
@@ -42303,7 +42705,7 @@ function buildArcToSvg(points, px, py, cx, cy, rx, ry, xAxisRotation = 0, largeA
 
 //# sourceMappingURL=buildArcToSvg.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/path/roundShape.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/path/roundShape.mjs
 
 function roundedShapeArc(g, points, radius) {
   const vecFrom = (p, pp) => {
@@ -42434,7 +42836,7 @@ function roundedShapeQuadraticCurve(g, points, radius, smoothness) {
 
 //# sourceMappingURL=roundShape.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/path/ShapePath.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/path/ShapePath.mjs
 
 
 
@@ -42977,7 +43379,7 @@ class ShapePath {
 
 //# sourceMappingURL=ShapePath.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/path/GraphicsPath.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/path/GraphicsPath.mjs
 
 
 
@@ -43353,6 +43755,12 @@ class GraphicsPath {
         case "poly":
           data[2] = adjustTransform(data[2], matrix);
           break;
+        case "regularPoly":
+        case "chamferRect":
+          data[5] = adjustTransform(data[5], matrix);
+          break;
+        case "closePath":
+          break;
         default:
           (0,warn/* warn */.R)("unknown transform action", instruction.action);
           break;
@@ -43431,9 +43839,9 @@ function adjustTransform(currentMatrix, transform) {
 
 //# sourceMappingURL=GraphicsPath.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
-var FillGradient = __webpack_require__(4004);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGFloatAttribute.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
+var FillGradient = __webpack_require__(193);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGFloatAttribute.mjs
 
 function parseSVGFloatAttribute(svg, id, defaultValue) {
   const value = svg.getAttribute(id);
@@ -43443,7 +43851,7 @@ function parseSVGFloatAttribute(svg, id, defaultValue) {
 
 //# sourceMappingURL=parseSVGFloatAttribute.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGDefinitions.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGDefinitions.mjs
 
 
 
@@ -43498,7 +43906,7 @@ function parseRadialGradient(_child) {
 
 //# sourceMappingURL=parseSVGDefinitions.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/extractSvgUrlId.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/extractSvgUrlId.mjs
 
 function extractSvgUrlId(url) {
   const match = url.match(/url\s*\(\s*['"]?\s*#([^'"\s)]+)\s*['"]?\s*\)/i);
@@ -43508,7 +43916,7 @@ function extractSvgUrlId(url) {
 
 //# sourceMappingURL=extractSvgUrlId.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGStyle.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/parseSVGStyle.mjs
 
 
 
@@ -43616,7 +44024,7 @@ function parseAttribute(session, result, id, value) {
 
 //# sourceMappingURL=parseSVGStyle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/fillOperations.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/fillOperations.mjs
 
 function checkForNestedPattern(subpathsWithArea) {
   if (subpathsWithArea.length <= 2) {
@@ -43643,7 +44051,7 @@ function getFillInstructionData(context, index = 0) {
 
 //# sourceMappingURL=fillOperations.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/pathOperations.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/utils/pathOperations.mjs
 
 
 "use strict";
@@ -43682,7 +44090,7 @@ function appendSVGPath(pathData, graphicsPath) {
 
 //# sourceMappingURL=pathOperations.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/SVGParser.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/svg/SVGParser.mjs
 
 
 
@@ -43878,9 +44286,9 @@ function renderChildren(svg, session, fillStyle, strokeStyle) {
 
 //# sourceMappingURL=SVGParser.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/convertFillInputToFillStyle.mjs
-var convertFillInputToFillStyle = __webpack_require__(9526);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/getMaxMiterRatio.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/convertFillInputToFillStyle.mjs
+var convertFillInputToFillStyle = __webpack_require__(59);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/getMaxMiterRatio.mjs
 
 function getMaxMiterRatio(path, miterLimit) {
   let maxRatio = 1;
@@ -43926,7 +44334,7 @@ function getMaxMiterRatio(path, miterLimit) {
 
 //# sourceMappingURL=getMaxMiterRatio.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs
 
 
 
@@ -44777,7 +45185,7 @@ let GraphicsContext = _GraphicsContext;
 
 /***/ },
 
-/***/ 178
+/***/ 2599
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -44785,14 +45193,14 @@ let GraphicsContext = _GraphicsContext;
 /* harmony export */   GH: () => (/* binding */ GraphicsContextSystem)
 /* harmony export */ });
 /* unused harmony exports GpuGraphicsContext, GraphicsContextRenderData */
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _rendering_batcher_gpu_getTextureBatchBindGroup_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5469);
-/* harmony import */ var _rendering_batcher_shared_DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5747);
-/* harmony import */ var _rendering_renderers_shared_instructions_InstructionSet_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(840);
-/* harmony import */ var _utils_data_GCManagedHash_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3286);
-/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7046);
-/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8951);
-/* harmony import */ var _utils_buildContextBatches_mjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(2913);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _rendering_batcher_gpu_getTextureBatchBindGroup_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(62);
+/* harmony import */ var _rendering_batcher_shared_DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(652);
+/* harmony import */ var _rendering_renderers_shared_instructions_InstructionSet_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4543);
+/* harmony import */ var _utils_data_GCManagedHash_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3901);
+/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7927);
+/* harmony import */ var _utils_pool_PoolGroup_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8118);
+/* harmony import */ var _utils_buildContextBatches_mjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(2950);
 
 
 
@@ -44988,7 +45396,7 @@ let GraphicsContextSystem = _GraphicsContextSystem;
 
 /***/ },
 
-/***/ 8011
+/***/ 3260
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -44998,11 +45406,11 @@ __webpack_require__.d(__webpack_exports__, {
   h: () => (/* binding */ buildLine)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/Point.mjs
-var Point = __webpack_require__(1861);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/const.mjs
-var shared_const = __webpack_require__(6776);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/getOrientationOfPoints.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/const.mjs
+var shared_const = __webpack_require__(7065);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/getOrientationOfPoints.mjs
 
 function getOrientationOfPoints(points) {
   const m = points.length;
@@ -45026,7 +45434,7 @@ function getOrientationOfPoints(points) {
 
 //# sourceMappingURL=getOrientationOfPoints.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs
 
 
 
@@ -45393,7 +45801,7 @@ function buildLine(points, lineStyle, flipAlignment, closed, vertices, indices) 
 
 /***/ },
 
-/***/ 6776
+/***/ 7065
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -45411,21 +45819,21 @@ const curveEps = 1e-4;
 
 /***/ },
 
-/***/ 4004
+/***/ 193
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   _: () => (/* binding */ FillGradient)
 /* harmony export */ });
-/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2743);
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8985);
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3721);
-/* harmony import */ var _rendering_renderers_shared_texture_sources_ImageSource_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7709);
-/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8653);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9117);
-/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(7046);
-/* harmony import */ var _container_utils_definedProps_mjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(2130);
+/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1640);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5886);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6512);
+/* harmony import */ var _rendering_renderers_shared_texture_sources_ImageSource_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(1950);
+/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(4540);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5150);
+/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(7927);
+/* harmony import */ var _container_utils_definedProps_mjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9789);
 
 
 
@@ -45674,15 +46082,15 @@ function ensureGradientOptions(args) {
 
 /***/ },
 
-/***/ 2174
+/***/ 1549
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   m: () => (/* binding */ FillPattern)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9117);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5150);
 
 
 
@@ -45775,7 +46183,7 @@ class FillPattern {
 
 /***/ },
 
-/***/ 2913
+/***/ 2950
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -45786,13 +46194,13 @@ __webpack_require__.d(__webpack_exports__, {
   y: () => (/* binding */ shapeBuilders)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/buildUvs.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/buildUvs.mjs
 
 function buildUvs(vertices, verticesStride, verticesOffset, uvs, uvsOffset, uvsStride, size, matrix = null) {
   let index = 0;
@@ -45828,7 +46236,7 @@ function buildSimpleUvs(uvs, uvsOffset, uvsStride, size) {
 
 //# sourceMappingURL=buildUvs.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/transformVertices.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/utils/transformVertices.mjs
 
 function transformVertices(vertices, m, offset, stride, size) {
   const a = m.a;
@@ -45853,13 +46261,13 @@ function transformVertices(vertices, m, offset, stride, size) {
 
 //# sourceMappingURL=transformVertices.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
-var PoolGroup = __webpack_require__(8951);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/BatchableGraphics.mjs
-var BatchableGraphics = __webpack_require__(2850);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildCircle.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
+var PoolGroup = __webpack_require__(8118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/BatchableGraphics.mjs
+var BatchableGraphics = __webpack_require__(6359);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildCircle.mjs
 
 
 "use strict";
@@ -46011,11 +46419,11 @@ const buildRoundedRectangle = { ...buildCircle, extension: { ...buildCircle.exte
 
 //# sourceMappingURL=buildCircle.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs + 1 modules
-var buildLine = __webpack_require__(8011);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/const.mjs
-var shared_const = __webpack_require__(6776);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildPixelLine.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildLine.mjs + 1 modules
+var buildLine = __webpack_require__(3260);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/const.mjs
+var shared_const = __webpack_require__(7065);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildPixelLine.mjs
 
 
 "use strict";
@@ -46731,9 +47139,9 @@ function flatten(data) {
     return {vertices, holes, dimensions};
 }
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/utils.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/utils.mjs
 
 
 
@@ -46743,7 +47151,7 @@ const utils_earcut = earcut["default"] || earcut;
 
 //# sourceMappingURL=utils.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/triangulateWithHoles.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/triangulateWithHoles.mjs
 
 
 "use strict";
@@ -46768,7 +47176,7 @@ function triangulateWithHoles(points, holes, vertices, verticesStride, verticesO
 
 //# sourceMappingURL=triangulateWithHoles.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildPolygon.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildPolygon.mjs
 
 
 
@@ -46793,7 +47201,7 @@ const buildPolygon = {
 
 //# sourceMappingURL=buildPolygon.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildRectangle.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildRectangle.mjs
 
 
 "use strict";
@@ -46849,7 +47257,7 @@ const buildRectangle = {
 
 //# sourceMappingURL=buildRectangle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildTriangle.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/buildCommands/buildTriangle.mjs
 
 
 "use strict";
@@ -46888,9 +47296,9 @@ const buildTriangle = {
 
 //# sourceMappingURL=buildTriangle.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/generateTextureFillMatrix.mjs
-var generateTextureFillMatrix = __webpack_require__(6613);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/buildContextBatches.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/generateTextureFillMatrix.mjs
+var generateTextureFillMatrix = __webpack_require__(8064);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/buildContextBatches.mjs
 
 
 
@@ -47058,7 +47466,7 @@ function getHoleArrays(holePrimitives) {
 
 /***/ },
 
-/***/ 9526
+/***/ 59
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -47066,10 +47474,10 @@ function getHoleArrays(holePrimitives) {
 /* harmony export */   T: () => (/* binding */ toStrokeStyle),
 /* harmony export */   w: () => (/* binding */ toFillStyle)
 /* harmony export */ });
-/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2743);
-/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8653);
-/* harmony import */ var _fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4004);
-/* harmony import */ var _fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2174);
+/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1640);
+/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4540);
+/* harmony import */ var _fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(193);
+/* harmony import */ var _fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(1549);
 
 
 
@@ -47166,16 +47574,16 @@ function toStrokeStyle(value, defaultStyle) {
 
 /***/ },
 
-/***/ 6613
+/***/ 8064
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Y: () => (/* binding */ generateTextureMatrix)
 /* harmony export */ });
-/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3721);
-/* harmony import */ var _maths_shapes_Rectangle_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(764);
-/* harmony import */ var _fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4004);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6512);
+/* harmony import */ var _maths_shapes_Rectangle_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1111);
+/* harmony import */ var _fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(193);
 
 
 
@@ -47226,7 +47634,7 @@ function generateTextureMatrix(out, style, shape, matrix) {
 
 /***/ },
 
-/***/ 3422
+/***/ 5185
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -47272,7 +47680,7 @@ class BatchableSprite {
 
 /***/ },
 
-/***/ 1816
+/***/ 1031
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -47282,11 +47690,11 @@ __webpack_require__.d(__webpack_exports__, {
   k: () => (/* binding */ Sprite)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
-var ObservablePoint = __webpack_require__(7012);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/updateQuadBounds.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
+var ObservablePoint = __webpack_require__(6489);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/updateQuadBounds.mjs
 
 function updateQuadBounds(bounds, anchor, texture) {
   const { width, height } = texture.orig;
@@ -47309,11 +47717,11 @@ function updateQuadBounds(bounds, anchor, texture) {
 
 //# sourceMappingURL=updateQuadBounds.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
-var ViewContainer = __webpack_require__(5249);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
+var ViewContainer = __webpack_require__(2366);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
 
 
 
@@ -47652,15 +48060,15 @@ class Sprite extends ViewContainer/* ViewContainer */.l {
 
 /***/ },
 
-/***/ 8904
+/***/ 6109
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   k: () => (/* binding */ SpritePipe)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _BatchableSprite_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3422);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _BatchableSprite_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5185);
 
 
 
@@ -47723,7 +48131,7 @@ SpritePipe.extension = {
 
 /***/ },
 
-/***/ 924
+/***/ 2049
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -47735,17 +48143,17 @@ __webpack_require__.d(__webpack_exports__, {
   BitmapFont: () => (/* binding */ BitmapFont)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
-var groupD8 = __webpack_require__(8407);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.1/node_modules/eventemitter3/index.mjs
-var eventemitter3 = __webpack_require__(413);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7046);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/AbstractBitmapFont.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/groupD8.mjs
+var groupD8 = __webpack_require__(1144);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
+var eventemitter3 = __webpack_require__(2998);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
+var deprecation = __webpack_require__(7927);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/AbstractBitmapFont.mjs
 
 
 
@@ -48333,13 +48741,13 @@ function lru (max = 1000, ttl = 0, resetTtl = false) {
 
 	return new LRU(max, ttl, resetTtl);
 }
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/cache/Cache.mjs
-var Cache = __webpack_require__(691);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
-var warn = __webpack_require__(3764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(8985);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/parseTaggedText.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/cache/Cache.mjs
+var Cache = __webpack_require__(4332);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
+var warn = __webpack_require__(2555);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/parseTaggedText.mjs
 
 function hasTagStyles(style) {
   return !!style.tagStyles && Object.keys(style.tagStyles).length > 0;
@@ -48366,6 +48774,12 @@ function parseTaggedText(text, style) {
     if (char === "<") {
       const closeIndex = text.indexOf(">", i);
       if (closeIndex === -1) {
+        currentText += char;
+        i++;
+        continue;
+      }
+      const nextOpenIndex = text.indexOf("<", i + 1);
+      if (nextOpenIndex !== -1 && nextOpenIndex < closeIndex) {
         currentText += char;
         i++;
         continue;
@@ -48436,7 +48850,7 @@ function getPlainText(text, style) {
 
 //# sourceMappingURL=parseTaggedText.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/textTokenization.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/textTokenization.mjs
 
 const NEWLINES = [
   10,
@@ -48597,13 +49011,13 @@ function getCharacterGroups(token, breakWords, splitFn, canBreakCharsFn) {
 
 //# sourceMappingURL=textTokenization.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/measureTaggedText.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/measureTaggedText.mjs
 
 
 
 "use strict";
 const NEWLINE_TO_SPACE_REGEX = /\r\n|\r|\n/g;
-function measureTaggedText(text, style, wordWrap, context, measureTextFn, measureFontFn, canBreakCharsFn, wordWrapSplitFn) {
+function measureTaggedText(text, style, wordWrap, context, measureTextFn, wrapMeasureTextFn, measureFontFn, canBreakCharsFn, wordWrapSplitFn) {
   const runs = parseTaggedText(text, style);
   const shouldCollapseNewlines = collapseNewlines(style.whiteSpace);
   if (shouldCollapseNewlines) {
@@ -48633,7 +49047,7 @@ function measureTaggedText(text, style, wordWrap, context, measureTextFn, measur
     runsByLine,
     style,
     context,
-    measureTextFn,
+    wrapMeasureTextFn,
     canBreakCharsFn,
     wordWrapSplitFn
   ) : runsByLine;
@@ -48688,9 +49102,7 @@ function measureTaggedText(text, style, wordWrap, context, measureTextFn, measur
     maxLineWidth = Math.max(maxLineWidth, lineWidth);
   }
   const strokeWidth = maxRunStrokeWidth;
-  const useWrapWidth = wordWrap && style.align !== "left";
-  const alignWidth = useWrapWidth ? Math.max(maxLineWidth, style.wordWrapWidth) : maxLineWidth;
-  const width = alignWidth + strokeWidth + (style.dropShadow ? style.dropShadow.distance : 0);
+  const width = maxLineWidth + strokeWidth + (style.dropShadow ? style.dropShadow.distance : 0);
   let baseHeight = 0;
   for (let i = 0; i < lineHeightsArr.length; i++) {
     baseHeight += lineHeightsArr[i];
@@ -48894,7 +49306,7 @@ function tokenizeTaggedRuns(runs) {
 
 //# sourceMappingURL=measureTaggedText.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/wordWrap.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/wordWrap.mjs
 
 
 "use strict";
@@ -48996,7 +49408,7 @@ function wordWrap(text, style, canvas, measureTextFn, canBreakWordsFn, canBreakC
 
 //# sourceMappingURL=wordWrap.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs
 
 
 
@@ -49082,6 +49494,7 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
         wordWrap2,
         _CanvasTextMetrics._context,
         _CanvasTextMetrics._measureText,
+        _CanvasTextMetrics._measureTextAdvance,
         _CanvasTextMetrics.measureFont,
         _CanvasTextMetrics.canBreakChars,
         _CanvasTextMetrics.wordWrapSplit
@@ -49127,8 +49540,7 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
     }
     const strokeWidth = style._stroke?.width ?? 0;
     const lineHeight = style.lineHeight || fontProperties.fontSize;
-    const baseWidth = _CanvasTextMetrics._getAlignWidth(maxLineWidth, style, wordWrap2);
-    const width = _CanvasTextMetrics._adjustWidthForStyle(baseWidth, style);
+    const width = _CanvasTextMetrics._adjustWidthForStyle(maxLineWidth, style);
     const baseHeight = Math.max(lineHeight, fontProperties.fontSize + strokeWidth) + (lines.length - 1) * (lineHeight + style.leading);
     const height = _CanvasTextMetrics._adjustHeightForStyle(baseHeight, style);
     const measurements = new _CanvasTextMetrics(
@@ -49173,19 +49585,8 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
     return height;
   }
   /**
-   * Calculates the base width for alignment purposes.
-   * When word wrap is enabled with center/right alignment, uses wordWrapWidth.
-   * @param maxLineWidth - The maximum line width
-   * @param style - The text style
-   * @param wordWrapEnabled - Whether word wrap is enabled
-   * @returns The width to use for alignment calculations
-   */
-  static _getAlignWidth(maxLineWidth, style, wordWrapEnabled) {
-    const useWrapWidth = wordWrapEnabled && style.align !== "left";
-    return useWrapWidth ? Math.max(maxLineWidth, style.wordWrapWidth) : maxLineWidth;
-  }
-  /**
    * Measures the rendered width of a string, accounting for letter spacing and using the provided context.
+   * Returns the larger of the advance width and the bounding box width.
    * @param text - The text to measure
    * @param letterSpacing - Letter spacing in pixels
    * @param context - Canvas 2D context
@@ -49193,6 +49594,36 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
    * @internal
    */
   static _measureText(text, letterSpacing, context) {
+    const { metricWidth, metrics, letterSpacingVal } = _CanvasTextMetrics._measureTextCore(text, letterSpacing, context);
+    const actualBoundingBoxLeft = -(metrics.actualBoundingBoxLeft ?? 0);
+    const actualBoundingBoxRight = metrics.actualBoundingBoxRight ?? 0;
+    let boundsWidth = actualBoundingBoxRight - actualBoundingBoxLeft;
+    if (metrics.width > 0) {
+      boundsWidth += letterSpacingVal;
+    }
+    return Math.max(metricWidth, boundsWidth);
+  }
+  /**
+   * Measures advance width only (no bounding box). Advance widths are additive,
+   * making this suitable for word wrap line-fitting where per-token widths must sum correctly.
+   * @param text - The text to measure
+   * @param letterSpacing - Letter spacing in pixels
+   * @param context - Canvas 2D context
+   * @returns The advance width of the text
+   * @internal
+   */
+  static _measureTextAdvance(text, letterSpacing, context) {
+    return _CanvasTextMetrics._measureTextCore(text, letterSpacing, context).metricWidth;
+  }
+  /**
+   * Shared measurement core: sets up letter spacing on the context, calls
+   * context.measureText, and adjusts the advance width for letter spacing.
+   * @param text
+   * @param letterSpacing
+   * @param context
+   * @internal
+   */
+  static _measureTextCore(text, letterSpacing, context) {
     let useExperimentalLetterSpacing = false;
     if (_CanvasTextMetrics.experimentalLetterSpacingSupported) {
       if (_CanvasTextMetrics.experimentalLetterSpacing) {
@@ -49206,20 +49637,16 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
     }
     const metrics = context.measureText(text);
     let metricWidth = metrics.width;
-    const actualBoundingBoxLeft = -(metrics.actualBoundingBoxLeft ?? 0);
-    const actualBoundingBoxRight = metrics.actualBoundingBoxRight ?? 0;
-    let boundsWidth = actualBoundingBoxRight - actualBoundingBoxLeft;
+    let letterSpacingVal = 0;
     if (metricWidth > 0) {
       if (useExperimentalLetterSpacing) {
-        metricWidth -= letterSpacing;
-        boundsWidth -= letterSpacing;
+        letterSpacingVal = -letterSpacing;
       } else {
-        const val = (_CanvasTextMetrics.graphemeSegmenter(text).length - 1) * letterSpacing;
-        metricWidth += val;
-        boundsWidth += val;
+        letterSpacingVal = (_CanvasTextMetrics.graphemeSegmenter(text).length - 1) * letterSpacing;
       }
+      metricWidth += letterSpacingVal;
     }
-    return Math.max(metricWidth, boundsWidth);
+    return { metricWidth, metrics, letterSpacingVal };
   }
   /**
    * Applies newlines to a string to have it optimally fit into the horizontal
@@ -49234,7 +49661,7 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
       text,
       style,
       canvas,
-      _CanvasTextMetrics._measureText,
+      _CanvasTextMetrics._measureTextAdvance,
       _CanvasTextMetrics.canBreakWords,
       _CanvasTextMetrics.canBreakChars,
       _CanvasTextMetrics.wordWrapSplit
@@ -49417,19 +49844,19 @@ let CanvasTextMetrics = _CanvasTextMetrics;
 
 //# sourceMappingURL=CanvasTextMetrics.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(2743);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(9117);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
-var FillGradient = __webpack_require__(4004);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillPattern.mjs
-var FillPattern = __webpack_require__(2174);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
-var GraphicsContext = __webpack_require__(5626);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/convertFillInputToFillStyle.mjs
-var convertFillInputToFillStyle = __webpack_require__(9526);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/fontStringFromTextStyle.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
+var uid = __webpack_require__(5150);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
+var FillGradient = __webpack_require__(193);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillPattern.mjs
+var FillPattern = __webpack_require__(1549);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
+var GraphicsContext = __webpack_require__(9469);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/convertFillInputToFillStyle.mjs
+var convertFillInputToFillStyle = __webpack_require__(59);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/fontStringFromTextStyle.mjs
 
 const genericFontFamilies = [
   "serif",
@@ -49458,7 +49885,7 @@ function fontStringFromTextStyle(style) {
 
 //# sourceMappingURL=fontStringFromTextStyle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/TextStyle.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/TextStyle.mjs
 
 
 
@@ -50064,15 +50491,15 @@ function convertV7Tov8Style(style) {
 
 //# sourceMappingURL=TextStyle.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
-var CanvasPool = __webpack_require__(6912);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
-var ImageSource = __webpack_require__(7709);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
-var TextureStyle = __webpack_require__(9698);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(3721);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
+var CanvasPool = __webpack_require__(1281);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
+var ImageSource = __webpack_require__(1950);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
+var TextureStyle = __webpack_require__(7187);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
 
 
 
@@ -50161,7 +50588,7 @@ function getCanvasFillStyle(fillStyle, context, textMetrics, padding = 0, offset
 
 //# sourceMappingURL=getCanvasFillStyle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/DynamicBitmapFont.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/DynamicBitmapFont.mjs
 
 
 
@@ -50463,7 +50890,7 @@ let DynamicBitmapFont = _DynamicBitmapFont;
 
 //# sourceMappingURL=DynamicBitmapFont.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/getBitmapTextLayout.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/getBitmapTextLayout.mjs
 
 
 "use strict";
@@ -50628,9 +51055,6 @@ function getBitmapTextLayout(chars, style, font, trimEnd) {
     previousChar = char;
   }
   nextLine();
-  if (style.wordWrap && style.align !== "left") {
-    layoutData.width = Math.max(layoutData.width, adjustedWordWrapWidth);
-  }
   if (style.align === "center") {
     alignCenter(layoutData);
   } else if (style.align === "right") {
@@ -50681,7 +51105,7 @@ function alignJustify(measurementData) {
 
 //# sourceMappingURL=getBitmapTextLayout.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/resolveCharacters.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/resolveCharacters.mjs
 
 function resolveCharacters(chars) {
   if (chars === "") {
@@ -50721,7 +51145,7 @@ function resolveCharacters(chars) {
 
 //# sourceMappingURL=resolveCharacters.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFontManager.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFontManager.mjs
 
 
 
@@ -50911,7 +51335,7 @@ const BitmapFontManager = new BitmapFontManagerClass();
 
 //# sourceMappingURL=BitmapFontManager.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFont.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFont.mjs
 
 
 
@@ -51043,15 +51467,15 @@ class BitmapFont extends AbstractBitmapFont {
 
 /***/ },
 
-/***/ 5249
+/***/ 2366
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   l: () => (/* binding */ ViewContainer)
 /* harmony export */ });
-/* harmony import */ var _container_bounds_Bounds_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8076);
-/* harmony import */ var _container_Container_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9484);
+/* harmony import */ var _container_bounds_Bounds_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1985);
+/* harmony import */ var _container_Container_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5412);
 
 
 
@@ -51187,28 +51611,28 @@ class ViewContainer extends _container_Container_mjs__WEBPACK_IMPORTED_MODULE_1_
 
 /***/ },
 
-/***/ 1610
+/***/ 4571
 (__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
-var Extensions = __webpack_require__(4227);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/loader/parsers/LoaderParser.mjs
-var LoaderParser = __webpack_require__(1269);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs + 1 modules
-var Resolver = __webpack_require__(1341);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/assets/utils/copySearchParams.mjs
-var copySearchParams = __webpack_require__(6817);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(8653);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/path.mjs
-var path = __webpack_require__(1031);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
-var Rectangle = __webpack_require__(764);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(2447);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/spritesheet/Spritesheet.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
+var Extensions = __webpack_require__(6258);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/loader/parsers/LoaderParser.mjs
+var LoaderParser = __webpack_require__(2930);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/resolver/Resolver.mjs + 1 modules
+var Resolver = __webpack_require__(5812);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/utils/copySearchParams.mjs
+var copySearchParams = __webpack_require__(5884);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
+var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/path.mjs
+var path = __webpack_require__(6064);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/spritesheet/Spritesheet.mjs
 
 
 
@@ -51397,7 +51821,7 @@ let Spritesheet = _Spritesheet;
 
 //# sourceMappingURL=Spritesheet.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/spritesheet/spritesheetAsset.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/spritesheet/spritesheetAsset.mjs
 
 
 
@@ -51556,7 +51980,7 @@ const spritesheetAsset = {
 
 //# sourceMappingURL=spritesheetAsset.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/spritesheet/init.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/spritesheet/init.mjs
 
 
 
@@ -51567,7 +51991,7 @@ Extensions/* extensions */.XO.add(spritesheetAsset);
 
 /***/ },
 
-/***/ 3333
+/***/ 4690
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -51577,9 +52001,9 @@ __webpack_require__.d(__webpack_exports__, {
   R: () => (/* binding */ Ticker)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/const.mjs
-var ticker_const = __webpack_require__(4546);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/TickerListener.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/const.mjs
+var ticker_const = __webpack_require__(7529);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/TickerListener.mjs
 
 class TickerListener {
   /**
@@ -51671,7 +52095,7 @@ class TickerListener {
 
 //# sourceMappingURL=TickerListener.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/ticker/Ticker.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/ticker/Ticker.mjs
 
 
 
@@ -52320,7 +52744,7 @@ let Ticker = _Ticker;
 
 /***/ },
 
-/***/ 4546
+/***/ 7529
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52343,14 +52767,14 @@ var UPDATE_PRIORITY = /* @__PURE__ */ ((UPDATE_PRIORITY2) => {
 
 /***/ },
 
-/***/ 2562
+/***/ 1777
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   C: () => (/* binding */ detectVideoAlphaMode)
 /* harmony export */ });
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8985);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
 
 
 "use strict";
@@ -52405,7 +52829,7 @@ async function detectVideoAlphaMode() {
 
 /***/ },
 
-/***/ 3289
+/***/ 1616
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52433,7 +52857,7 @@ function unsafeEvalSupported() {
 
 /***/ },
 
-/***/ 1251
+/***/ 7382
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52441,12 +52865,12 @@ function unsafeEvalSupported() {
 /* harmony export */   xv: () => (/* binding */ VERSION)
 /* harmony export */ });
 /* unused harmony export DATA_URI */
-/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(413);
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
 
 
 "use strict";
 const DATA_URI = /^\s*data:(?:([\w-]+)\/([\w+.-]+))?(?:;charset=([\w-]+))?(?:;(base64))?,(.*)/i;
-const VERSION = "8.17.1";
+const VERSION = "8.18.1";
 
 
 //# sourceMappingURL=const.mjs.map
@@ -52454,7 +52878,7 @@ const VERSION = "8.17.1";
 
 /***/ },
 
-/***/ 3286
+/***/ 3901
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52510,7 +52934,7 @@ class GCManagedHash {
 
 /***/ },
 
-/***/ 5399
+/***/ 9344
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52538,7 +52962,7 @@ function removeItems(arr, startIdx, removeCount) {
 
 /***/ },
 
-/***/ 9117
+/***/ 5150
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52568,7 +52992,7 @@ function resetUids() {
 
 /***/ },
 
-/***/ 6937
+/***/ 7398
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52576,8 +53000,8 @@ function resetUids() {
 /* harmony export */   M: () => (/* binding */ ApplicationInitHook),
 /* harmony export */   d: () => (/* binding */ RendererInitHook)
 /* harmony export */ });
-/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4227);
-/* harmony import */ var _const_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1251);
+/* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
+/* harmony import */ var _const_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7382);
 
 
 
@@ -52618,7 +53042,7 @@ RendererInitHook.extension = {
 
 /***/ },
 
-/***/ 7046
+/***/ 7927
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52686,7 +53110,7 @@ Object.defineProperties(deprecation, {
 
 /***/ },
 
-/***/ 3764
+/***/ 2555
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52712,14 +53136,14 @@ function warn(...args) {
 
 /***/ },
 
-/***/ 1031
+/***/ 6064
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (/* binding */ path)
 /* harmony export */ });
-/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8985);
+/* harmony import */ var _environment_adapter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5886);
 
 
 "use strict";
@@ -53297,7 +53721,7 @@ const path = {
 
 /***/ },
 
-/***/ 9835
+/***/ 4298
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -53359,7 +53783,7 @@ const GlobalResourceRegistry = {
 
 /***/ },
 
-/***/ 8951
+/***/ 8118
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -53371,9 +53795,9 @@ __webpack_require__.d(__webpack_exports__, {
 
 // UNUSED EXPORTS: PoolGroupClass
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
-var GlobalResourceRegistry = __webpack_require__(9835);
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/Pool.mjs
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/GlobalResourceRegistry.mjs
+var GlobalResourceRegistry = __webpack_require__(4298);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/Pool.mjs
 
 class Pool {
   /**
@@ -53462,7 +53886,7 @@ class Pool {
 
 //# sourceMappingURL=Pool.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.17.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs
 
 
 
