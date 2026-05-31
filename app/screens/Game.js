@@ -3,6 +3,7 @@ import Map from '../classes/map'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
 import { filterObject, debounce } from '../lib'
+import { ActionScheduler } from '../classes/ActionScheduler'
 
 /**
  * Main Display Object
@@ -24,12 +25,14 @@ export default class Game extends Container {
       map: null,
       controls: null,
       paused: false,
+      scheduler: null,
       save: () => this.save(),
       load: evt => this.load(evt),
       pause: () => this.togglePause(true),
       resume: () => this.togglePause(false),
       quit: () => this.quit(),
     }
+    this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     this.start()
   }
 
@@ -154,7 +157,7 @@ export default class Game extends Container {
 
   save() {
     const { context } = this
-    const json = {
+    const data = {
       camera: context.controls.camera,
       config: {
         devMode: context.map.devMode,
@@ -167,13 +170,28 @@ export default class Game extends Container {
       map: context.map.grid.map(line => line.map(cell => Game._cellData(cell))),
       animals: context.map.gaia.units.map(a => Game._animalData(a)),
     }
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json))
-    const downloadAnchorNode = document.createElement('a')
-    downloadAnchorNode.setAttribute('href', dataStr)
-    downloadAnchorNode.setAttribute('download', `save_${new Date().toLocaleString('en-GB', { timeZone: 'UTC' })}.json`)
-    document.body.appendChild(downloadAnchorNode)
-    downloadAnchorNode.click()
-    downloadAnchorNode.remove()
+
+    const workerBlob = new Blob(
+      ['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'],
+      { type: 'application/javascript' }
+    )
+    const workerUrl = URL.createObjectURL(workerBlob)
+    const worker = new Worker(workerUrl)
+    URL.revokeObjectURL(workerUrl)
+
+    worker.onmessage = ({ data: json }) => {
+      worker.terminate()
+      const blobUrl = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `save_${new Date().toLocaleString('en-GB', { timeZone: 'UTC' })}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(blobUrl)
+    }
+
+    worker.postMessage(data)
   }
 
   load(json) {

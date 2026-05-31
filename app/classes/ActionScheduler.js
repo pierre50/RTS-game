@@ -1,0 +1,39 @@
+export class ActionScheduler {
+  constructor(app, getPaused) {
+    this._getPaused = getPaused
+    this._tasks = new Map()
+    this._nextId = 1
+    this._toRemove = []
+    app.ticker.add(ticker => this._tick(ticker.deltaMS))
+  }
+
+  add(callback, intervalMs) {
+    const id = this._nextId++
+    this._tasks.set(id, { callback, interval: intervalMs, elapsed: 0 })
+    return id
+  }
+
+  addOneShot(callback, delayMs) {
+    const id = this._nextId++
+    this._tasks.set(id, { callback, interval: delayMs, elapsed: 0, oneShot: true })
+    return id
+  }
+
+  remove(id) {
+    this._tasks.delete(id)
+  }
+
+  _tick(deltaMS) {
+    if (this._getPaused()) return
+    this._toRemove.length = 0
+    for (const [id, task] of this._tasks) {
+      task.elapsed += deltaMS
+      if (task.elapsed >= task.interval) {
+        task.elapsed -= task.interval
+        task.callback()
+        if (task.oneShot) this._toRemove.push(id)
+      }
+    }
+    for (const id of this._toRemove) this._tasks.delete(id)
+  }
+}

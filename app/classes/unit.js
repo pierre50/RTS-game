@@ -33,7 +33,6 @@ import {
   changeSpriteColor,
   findInstancesInSight,
   getClosestInstanceWithPath,
-  getCellsAroundPoint,
   drawInstanceBlinkingSelection,
   instanceIsInPlayerSight,
   degreeToDirection,
@@ -90,12 +89,8 @@ export class Unit extends Container {
     this.y = null
     this.z = null
 
-    Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
-    })
-    Object.keys(this.owner.config.units[this.type]).forEach(prop => {
-      this[prop] = this.owner.config.units[this.type][prop]
-    })
+    Object.assign(this, options)
+    Object.assign(this, this.owner.config.units[this.type])
     this.size = 1
     this.visible = false
     this.visibleCells = new Set()
@@ -111,7 +106,7 @@ export class Unit extends Container {
       this.owner.corpses.push(this)
       map.grid[this.i][this.j].corpses.add(this)
     } else if (!this.isDead) {
-      this.currentCell.has = this
+      this.currentCell.place(this)
       this.currentCell.solid = true
       this.owner.units.push(this)
     }
@@ -181,7 +176,7 @@ export class Unit extends Container {
     this.sprite.updateAnchor = true
     this.addChild(this.sprite)
 
-    this.sendTo = this.owner.isPlayed ? throttle(this.sendToEvt, 100, true) : this.sendToEvt
+    this.sendTo = throttle(this.sendToEvt, this.owner.isPlayed ? 100 : 1000, true)
 
     this.on('pointerdown', evt => {
       const {
@@ -469,6 +464,51 @@ export class Unit extends Container {
     }
   }
 
+  startGathering(loadingType, soundId, { dieOnEmpty = false, checkOwner = false, updateTexture = false } = {}) {
+    const { menu } = this.context
+    if (!this.getActionCondition(this.dest)) {
+      this.affectNewDest()
+      return
+    }
+    this.setTextures(SHEET_TYPES.action)
+    this.startInterval(
+      () => {
+        if (!this.getActionCondition(this.dest)) {
+          if (dieOnEmpty && this.dest.quantity <= 0) {
+            this.dest.die()
+          }
+          this.affectNewDest()
+          return
+        }
+        if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
+          this.sendToDelivery()
+          return
+        }
+        this.loading++
+        this.loadingType = loadingType
+        this.updateInterfaceLoading()
+        if (soundId) this.visible && sound.play(soundId)
+        if (updateTexture) this.dest.updateTexture()
+        this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
+        if (this.dest.selected && (!checkOwner || this.owner.isPlayed)) {
+          menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
+        }
+        if (this.dest.quantity <= 0) {
+          if (dieOnEmpty) this.dest.die()
+          this.affectNewDest()
+        }
+        if (this.loading === 1) {
+          if (this.allAssets && this.allAssets[this.work]) {
+            this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+          }
+          this.standingSheet = null
+        }
+      },
+      (1 / this.gatheringRate[this.work]) * 1000,
+      false
+    )
+  }
+
   getAction(name) {
     const {
       context: { menu, player, map },
@@ -613,144 +653,13 @@ export class Unit extends Container {
         )
         break
       case ACTION_TYPES.forageberry:
-        if (!this.getActionCondition(this.dest)) {
-          this.affectNewDest()
-          return
-        }
-        this.setTextures(SHEET_TYPES.action)
-        this.startInterval(
-          () => {
-            if (!this.getActionCondition(this.dest)) {
-              if (this.dest.quantity <= 0) {
-                this.dest.die()
-              }
-              this.affectNewDest()
-              return
-            }
-            // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
-              this.sendToDelivery()
-              return
-            }
-            // Villager forage the berrybush
-            this.loading++
-            this.loadingType = LOADING_TYPES.berry
-            this.updateInterfaceLoading()
-
-            this.visible && sound.play('5085')
-
-            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
-            }
-            // Destroy berrybush if it out of quantity
-            if (this.dest.quantity <= 0) {
-              this.dest.die()
-              this.affectNewDest()
-            }
-            // Set the walking with berrybush animation
-            if (this.loading === 1) {
-              if (this.allAssets[this.work]) {
-                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
-              }
-              this.standingSheet = null
-            }
-          },
-          (1 / this.gatheringRate[this.work]) * 1000,
-          false
-        )
+        this.startGathering(LOADING_TYPES.berry, '5085', { dieOnEmpty: true })
         break
       case ACTION_TYPES.minestone:
-        if (!this.getActionCondition(this.dest)) {
-          this.affectNewDest()
-          return
-        }
-        this.setTextures(SHEET_TYPES.action)
-        this.startInterval(
-          () => {
-            if (!this.getActionCondition(this.dest)) {
-              if (this.dest.quantity <= 0) {
-                this.dest.die()
-              }
-              this.affectNewDest()
-              return
-            }
-            // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
-              this.sendToDelivery()
-              return
-            }
-            // Villager mine the stone
-            this.loading++
-            this.loadingType = LOADING_TYPES.stone
-            this.updateInterfaceLoading()
-
-            this.visible && sound.play('5159')
-
-            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
-            }
-            // Destroy stone if it out of quantity
-            if (this.dest.quantity <= 0) {
-              this.dest.die()
-              this.affectNewDest()
-            }
-            // Set the walking with stone animation
-            if (this.loading === 1) {
-              if (this.allAssets[this.work]) {
-                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
-              }
-              this.standingSheet = null
-            }
-          },
-          (1 / this.gatheringRate[this.work]) * 1000,
-          false
-        )
+        this.startGathering(LOADING_TYPES.stone, '5159', { dieOnEmpty: true })
         break
       case ACTION_TYPES.minegold:
-        if (!this.getActionCondition(this.dest)) {
-          this.affectNewDest()
-          return
-        }
-        this.setTextures(SHEET_TYPES.action)
-        this.startInterval(
-          () => {
-            if (!this.getActionCondition(this.dest)) {
-              this.affectNewDest()
-              return
-            }
-            // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
-              this.sendToDelivery()
-              return
-            }
-            // Villager mine the gold
-            this.loading++
-            this.loadingType = LOADING_TYPES.gold
-            this.updateInterfaceLoading()
-
-            this.visible && sound.play('5159')
-            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
-            }
-            // Destroy gold if it out of quantity
-            if (this.dest.quantity <= 0) {
-              this.dest.die()
-              this.affectNewDest()
-            }
-            // Set the walking with gold animation
-            if (this.loading === 1) {
-              if (this.allAssets[this.work]) {
-                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
-              }
-              this.standingSheet = null
-            }
-          },
-          (1 / this.gatheringRate[this.work]) * 1000,
-          false
-        )
+        this.startGathering(LOADING_TYPES.gold, '5159')
         break
       case ACTION_TYPES.build:
         if (!this.getActionCondition(this.dest)) {
@@ -921,91 +830,10 @@ export class Unit extends Container {
         }
         break
       case ACTION_TYPES.takemeat:
-        if (!this.getActionCondition(this.dest)) {
-          this.affectNewDest()
-          return
-        }
-        this.setTextures(SHEET_TYPES.action)
-        this.startInterval(
-          () => {
-            if (!this.getActionCondition(this.dest)) {
-              this.affectNewDest()
-              return
-            }
-            // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
-              this.sendToDelivery()
-              return
-            }
-            // Villager take meat
-            this.visible && sound.play('5178')
-
-            this.loading++
-            this.loadingType = LOADING_TYPES.meat
-            this.updateInterfaceLoading()
-
-            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            this.dest.updateTexture()
-            if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
-            }
-            // Set the walking with meat animation
-            if (this.loading === 1) {
-              if (this.allAssets[this.work]) {
-                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
-              }
-              this.standingSheet = null
-            }
-            // Destroy corps if it out of quantity
-            if (this.dest.quantity <= 0) {
-              this.affectNewDest()
-            }
-          },
-          (1 / this.gatheringRate[this.work]) * 1000,
-          false
-        )
+        this.startGathering(LOADING_TYPES.meat, '5178', { checkOwner: true, updateTexture: true })
         break
       case ACTION_TYPES.fishing:
-        if (!this.getActionCondition(this.dest)) {
-          this.affectNewDest()
-          return
-        }
-        this.setTextures(SHEET_TYPES.action)
-        this.startInterval(
-          () => {
-            if (!this.getActionCondition(this.dest)) {
-              this.affectNewDest()
-              return
-            }
-            // Villager is full we send him delivery first
-            if (this.loading === this.loadingMax[this.loadingType] || !this.dest) {
-              this.sendToDelivery()
-              return
-            }
-            // Villager fish
-            this.loading++
-            this.loadingType = LOADING_TYPES.fish
-            this.updateInterfaceLoading()
-
-            this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
-            if (this.dest.selected && this.owner.isPlayed) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
-            }
-            // Set the walking with meat animation
-            if (this.loading === 1) {
-              if (this.allAssets && this.allAssets[this.work]) {
-                this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
-              }
-              this.standingSheet = null
-            }
-            // Destroy corps if it out of quantity
-            if (this.dest.quantity <= 0) {
-              this.affectNewDest()
-            }
-          },
-          (1 / this.gatheringRate[this.work]) * 1000,
-          false
-        )
+        this.startGathering(LOADING_TYPES.fish, null, { checkOwner: true })
         if (this.category !== 'Boat') {
           onSpriteLoopAtFrame(this.sprite, 6, () => {
             this.visible && sound.play('5125')
@@ -1247,7 +1075,7 @@ export class Unit extends Container {
       }
       this.currentCell = map.grid[this.i][this.j]
       if (this.currentCell.has === null) {
-        this.currentCell.has = this
+        this.currentCell.place(this)
         this.currentCell.solid = true
       }
       updateInstanceVisibility(this)
@@ -1315,7 +1143,7 @@ export class Unit extends Container {
     this.action = null
     this.dest = null
     this.realDest = null
-    this.currentCell.has = this
+    this.currentCell.place(this)
     this.currentCell.solid = true
     this.path = []
     this.stopInterval()
@@ -1323,24 +1151,17 @@ export class Unit extends Container {
   }
 
   startInterval(callback, time, immediate = true) {
-    const finalCb = () => {
-      const { paused } = this.context
-      if (paused) {
-        return
-      }
-      callback()
-    }
     if (this.isDead) {
       return
     }
     this.stopInterval()
-    immediate && finalCb()
-    this.interval = setInterval(finalCb, time)
+    if (immediate) callback()
+    this.interval = this.context.scheduler.add(callback, time)
   }
 
   stopInterval() {
     if (this.interval) {
-      clearInterval(this.interval)
+      this.context.scheduler.remove(this.interval)
       this.interval = null
     }
   }
@@ -1357,19 +1178,25 @@ export class Unit extends Container {
     const {
       context: { map },
     } = this
-    // Single scan at max radius — find the closest unviewed non-solid cell
-    let dest = null
-    let minDist = Infinity
-    getCellsAroundPoint(this.i, this.j, map.grid, 50, cell => {
-      if (!this.owner.views[cell.i][cell.j].viewed && !cell.solid) {
-        const d = Math.abs(cell.i - this.i) + Math.abs(cell.j - this.j)
-        if (d < minDist) {
-          minDist = d
-          dest = this.owner.views[cell.i][cell.j]
+    const { grid } = map
+    const views = this.owner.views
+    // Scan rings outward, stop at first ring containing an unviewed non-solid cell
+    for (let r = 1; r <= 50; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const x = this.i + dx
+        const row = grid[x]
+        if (!row) continue
+        const dyMax = r - Math.abs(dx)
+        // Only cells exactly on the ring border (|dx|+|dy|===r)
+        for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
+          const cell = row[this.j + dy]
+          if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
+            this.sendTo(views[cell.i][cell.j])
+            return
+          }
         }
       }
-    })
-    if (dest) this.sendTo(dest)
+    }
   }
 
   runaway(instance) {

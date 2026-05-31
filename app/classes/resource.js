@@ -5,6 +5,7 @@ import {
   instanceIsInPlayerSight,
   getIconPath,
   randomItem,
+  randomRange,
   drawInstanceBlinkingSelection,
   getActionCondition,
   uuidv4,

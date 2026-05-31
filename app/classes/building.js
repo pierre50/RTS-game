@@ -34,7 +34,6 @@ import {
   getBuildingTextureNameWithSize,
   uuidv4,
   canUpdateMinimap,
-  CustomTimeout,
   changeSpriteColorDirectly,
   updateInstanceVisibility,
 } from '../lib'
@@ -57,18 +56,14 @@ export class Building extends Container {
     this.loading = null
     this.isDead = false
     this.isDestroyed = false
-    this.timeout
+    this.timeoutId = null
     this.isUsedBy = null
 
-    Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
-    })
-    Object.keys(this.owner.config.buildings[this.type]).forEach(prop => {
-      this[prop] = this.owner.config.buildings[this.type][prop]
-    })
+    Object.assign(this, options)
+    Object.assign(this, this.owner.config.buildings[this.type])
 
-    this.interval
-    this.attackInterval
+    this.intervalId = null
+    this.attackIntervalId = null
 
     if (this.queue.length) {
       this.buyUnit(this.queue[0], true, true)
@@ -273,61 +268,43 @@ export class Building extends Container {
   }
 
   startInterval(callback, time) {
-    const finalCb = () => {
-      const { paused } = this.context
-      if (paused) {
-        return
-      }
-      callback()
-    }
     this.stopInterval()
-    this.interval = setInterval(finalCb, (time * 1000) / 100 / ACCELERATOR)
+    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 10 / ACCELERATOR)
   }
 
   stopInterval() {
-    if (this.interval) {
-      clearInterval(this.interval)
-      this.interval = null
+    if (this.intervalId != null) {
+      this.context.scheduler.remove(this.intervalId)
+      this.intervalId = null
     }
   }
 
   startAttackInterval(callback, time) {
-    const finalCb = () => {
-      const { paused } = this.context
-      if (paused) {
-        return
-      }
-      callback()
-    }
     this.stopAttackInterval()
-    finalCb()
-    this.attackInterval = setInterval(finalCb, time * 1000)
+    callback()
+    this.attackIntervalId = this.context.scheduler.add(callback, time * 1000)
   }
 
   stopAttackInterval() {
-    if (this.attackInterval) {
-      clearInterval(this.attackInterval)
-      this.attackInterval = null
+    if (this.attackIntervalId != null) {
+      this.context.scheduler.remove(this.attackIntervalId)
+      this.attackIntervalId = null
     }
   }
 
-  pause() {
-    this.timeout?.pause()
-  }
+  pause() {}
 
-  resume() {
-    this.timeout?.resume()
-  }
+  resume() {}
 
   startTimeout(cb, time) {
     this.stopTimeout()
-    this.timeout = new CustomTimeout(() => cb(), (time * 1000) / ACCELERATOR)
+    this.timeoutId = this.context.scheduler.addOneShot(cb, (time * 1000) / ACCELERATOR)
   }
 
   stopTimeout() {
-    if (this.timeout) {
-      this.timeout.pause()
-      this.timeout = null
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
     }
   }
 
@@ -452,7 +429,7 @@ export class Building extends Container {
     if (
       this.range &&
       instance.family !== FAMILY_TYPES.animal &&
-      !this.attackInterval &&
+      !this.attackIntervalId &&
       getActionCondition(this, instance, ACTION_TYPES.attack) &&
       instancesDistance(this, instance) <= this.range
     ) {
@@ -742,7 +719,7 @@ export class Building extends Container {
             }
           } else if (this.loading < 100) {
             if (this.owner.population < Math.min(POPULATION_MAX, this.owner.population_max)) {
-              this.loading += 1
+              this.loading += 10
             } else if (this.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage('You need to build more houses')
               hasShowedMessage = true
@@ -762,9 +739,9 @@ export class Building extends Container {
       context: { menu },
     } = this
     if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
-      if (this.loading === 1) {
+      if (this.loading === 10) {
         menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = this.getLoadingElement().innerHTML))
-      } else if (this.loading > 1) {
+      } else if (this.loading > 10) {
         menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading + '%')
       } else {
         menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = ''))
@@ -891,7 +868,7 @@ export class Building extends Container {
             menu.updateTopbar()
           }
         } else if (this.loading < 100) {
-          this.loading += 1
+          this.loading += 10
           if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
             this.updateInterfaceLoading()
           }

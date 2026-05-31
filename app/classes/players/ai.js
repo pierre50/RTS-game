@@ -29,7 +29,8 @@ export class AI extends Player {
     this.foundedStones = new Set()
     this.foundedEnemyBuildings = new Set()
     this.foundedEnemyUnits = new Set()
-    this.interval = setInterval(() => this.step(), 4000)
+    this.stepDelay = 4000
+    this._scheduleStep()
     this.selectedUnits = []
     this.selectedUnit = null
     this.selectedBuilding = null
@@ -104,6 +105,14 @@ export class AI extends Player {
     }
   }
 
+  _scheduleStep() {
+    this._stepTimer = setTimeout(() => {
+      const actions = this.step()
+      this.stepDelay = actions > 0 ? 4000 : Math.min(Math.round(this.stepDelay * 1.5), 12000)
+      this._scheduleStep()
+    }, this.stepDelay)
+  }
+
   hasNotReachBuildingLimit(buildingType, buildings) {
     return (
       !this.maxBuildingByAge[this.age][buildingType] || buildings.length < this.maxBuildingByAge[this.age][buildingType]
@@ -168,7 +177,9 @@ export class AI extends Player {
 
   step() {
     const { map, paused } = this.context
-    if (paused) return
+    if (paused) return 0
+
+    let actions = 0
 
     const maxVillagers = this.maxVillagerPerAge[this.age]
     const maxVillagersOnConstruction = 4
@@ -247,7 +258,7 @@ export class AI extends Player {
     if (!this.buildings.length && !this.units.length) {
       if (DEBUG) console.log('Player has no buildings and units. Dying...')
       this.die()
-      return
+      return 0
     }
 
     // Remove depleted resources and destroyed enemies from tracked sets
@@ -292,7 +303,7 @@ export class AI extends Player {
     let foodWorkersAssigned = villagersOnFood.length
 
     // Food: berries first
-    foodWorkersAssigned += assignVillagersToResource(
+    const berriesAssigned = assignVillagersToResource(
       villagersForaging,
       this.foundedBerrybushs,
       maxVillagersOnFood,
@@ -300,9 +311,11 @@ export class AI extends Player {
         villager.sendToBerrybush(bush)
       }
     )
+    foodWorkersAssigned += berriesAssigned
+    actions += berriesAssigned
 
     // Wood
-    assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, (villager, tree) => {
+    actions += assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, (villager, tree) => {
       villager.sendToTree(tree)
     })
 
@@ -311,15 +324,16 @@ export class AI extends Player {
     for (let i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
       const villager = availableVillagers.shift()
       villager.sendToFarm(emptyFarms[i])
+      actions++
     }
 
     // Stone
-    assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, (villager, stone) => {
+    actions += assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, (villager, stone) => {
       villager.sendToStone(stone)
     })
 
     // Gold
-    assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, (villager, gold) => {
+    actions += assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, (villager, gold) => {
       villager.sendToGold(gold)
     })
 
@@ -333,6 +347,7 @@ export class AI extends Player {
           if (DEBUG) console.log('Villager sent to build:', building)
           villager.sendToBuilding(building)
           availableVillagers.splice(availableVillagers.indexOf(villager), 1)
+          actions++
         }
       }
     }
@@ -357,6 +372,7 @@ export class AI extends Player {
       if (enemyUnit) {
         if (DEBUG) console.log('Enemy units spotted! Defending...')
         sendToAttack(waitingClubmans, enemyUnit)
+        actions++
       }
     }
 
@@ -367,6 +383,7 @@ export class AI extends Player {
         map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)]
       if (DEBUG) console.log('Launching attack wave! Target:', target)
       sendToAttack(waitingClubmans, target)
+      actions++
     }
 
     // Soldiers that finished an assault → redirect to next enemy building
@@ -375,6 +392,7 @@ export class AI extends Player {
       if (target) {
         if (DEBUG) console.log('Redirecting assault soldiers to:', target)
         sendToAttack(inactifClubmans, target)
+        actions++
       }
     }
 
@@ -382,7 +400,7 @@ export class AI extends Player {
     const buyUnits = (currentCount, maxCount, buildingList, unitType, extra) => {
       const unitsNeeded = maxCount - currentCount
       let unitsBought = 0
-      if (unitsNeeded <= 0) return
+      if (unitsNeeded <= 0) return 0
       for (const building of buildingList) {
         if (unitsBought >= unitsNeeded) break
         if (building && building.buyUnit(unitType, false, false, extra)) {
@@ -390,10 +408,11 @@ export class AI extends Player {
           if (DEBUG) console.log(`Buying ${unitType} from ${building.type}, Total Bought: ${unitsBought}`)
         }
       }
+      return unitsBought
     }
 
-    buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager)
-    buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman)
+    actions += buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager)
+    actions += buyUnits(clubmans.length, maxClubmans, barracks, UNIT_TYPES.clubman)
 
     // Building Purchasing — use BUILDING_TYPES constants as keys to avoid string/constant mismatches
     const buyBuildingIfNeeded = (condition, buildingType, positionCallback) => {
@@ -414,31 +433,33 @@ export class AI extends Player {
         const pos = positionCallback()
         if (pos && this.buyBuilding(pos.i, pos.j, buildingType)) {
           if (DEBUG) console.log(`Buying building: ${buildingType} at position:`, pos)
+          return true
         }
       }
+      return false
     }
 
     // House
-    buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
+    if (buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
-    )
+    )) actions++
 
     // Barracks
-    buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, () =>
+    if (buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
       )
-    )
+    )) actions++
 
     // Market
-    buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, () =>
+    if (buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
       )
-    )
+    )) actions++
 
     // Farm
-    buyBuildingIfNeeded(true, BUILDING_TYPES.farm, () => {
+    if (buyBuildingIfNeeded(true, BUILDING_TYPES.farm, () => {
       const buildings = [...granarys, ...towncenters]
       for (const building of buildings) {
         const position = getPositionInGridAroundInstance(
@@ -453,28 +474,32 @@ export class AI extends Player {
         if (position) return position
       }
       return null
-    })
+    })) actions++
 
     // Tech / Age Up
     const buyTechnology = (buildingList, technologyType) => {
+      let bought = 0
       for (const building of buildingList) {
         if (building && building.buyTechnology(technologyType)) {
           if (DEBUG) console.log(`Buying ${technologyType} from ${building.type}`)
+          bought++
         }
       }
+      return bought
     }
     if (this.nextAge[this.age + 1]) {
-      buyTechnology(towncenters, this.nextAge[this.age + 1])
+      actions += buyTechnology(towncenters, this.nextAge[this.age + 1])
     }
 
     if (DEBUG) console.log('----Step ended')
+    return actions
   }
 
   die() {
     const {
       context: { players },
     } = this
-    clearInterval(this.interval)
+    clearTimeout(this._stepTimer)
     players.splice(players.indexOf(this), 1)
   }
 }

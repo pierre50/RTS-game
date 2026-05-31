@@ -1,6 +1,7 @@
 import { Container, Assets, Sprite, Texture } from 'pixi.js'
 import {
   randomRange,
+  randomItem,
   formatNumber,
   cartesianToIsometric,
   getCellsAroundPoint,
@@ -227,6 +228,11 @@ export class Cell extends Container {
     for (const corpse of this.corpses) {
       this._updateChild(corpse)
     }
+  }
+
+  place(entity) {
+    this.has = entity
+    this.updateVisible()
   }
 
   setDesertBorder(direction) {

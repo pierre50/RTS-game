@@ -7,6 +7,7 @@ import {
   average,
   randomItem,
   uuidv4,
+  getPointsDegree,
 } from '../lib'
 import { COLOR_ARROW, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 import { sound } from '@pixi/sound'
@@ -42,8 +43,7 @@ export class Projectile extends Container {
     sprite.roundPixels = true
     this.addChild(sprite)
 
-    this.interval = setInterval(() => {
-      if (this.context.paused) return
+    this.interval = this.context.scheduler.add(() => {
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
         if (
           pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
@@ -75,7 +75,8 @@ export class Projectile extends Container {
 
   die() {
     this.isDead = true
-    clearInterval(this.interval)
+    this.context.scheduler.remove(this.interval)
+    this.interval = null
     this.destroy({ child: true, texture: true })
   }
 }

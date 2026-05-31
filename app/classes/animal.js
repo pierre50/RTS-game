@@ -84,7 +84,7 @@ export class Animal extends Container {
     this.zIndex = getInstanceZIndex(this)
 
     this.currentCell = map.grid[this.i][this.j]
-    this.currentCell.has = this
+    this.currentCell.place(this)
     this.currentCell.solid = true
 
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
@@ -185,21 +185,14 @@ export class Animal extends Container {
   }
 
   startInterval(callback, time, immediate = true) {
-    const finalCb = () => {
-      const { paused } = this.context
-      if (paused) {
-        return
-      }
-      callback()
-    }
     this.stopInterval()
-    immediate && finalCb()
-    this.interval = setInterval(finalCb, time)
+    if (immediate) callback()
+    this.interval = this.context.scheduler.add(callback, time)
   }
 
   stopInterval() {
     if (this.interval) {
-      clearInterval(this.interval)
+      this.context.scheduler.remove(this.interval)
       this.interval = null
     }
   }
@@ -450,7 +443,7 @@ export class Animal extends Container {
       }
       this.currentCell = map.grid[this.i][this.j]
       if (this.currentCell.has === null) {
-        this.currentCell.has = this
+        this.currentCell.place(this)
         this.currentCell.solid = true
       }
 
@@ -521,7 +514,7 @@ export class Animal extends Container {
     this.action = null
     this.dest = null
     this.realDest = null
-    this.currentCell.has = this
+    this.currentCell.place(this)
     this.currentCell.solid = true
     this.path = []
     this.stopInterval()

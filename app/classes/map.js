@@ -345,7 +345,7 @@ export default class Map extends Container {
     const { i: playerI, j: playerJ } = player
     const gridWidth = grid.length
     const gridHeight = grid[0].length
-    const forestCells = []
+    let forestCells = []
     const pathCells = new Set()
 
     // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
@@ -359,9 +359,9 @@ export default class Map extends Container {
       const circleCells = []
       for (let x = -radius; x <= radius; x++) {
         for (let y = -radius; y <= radius; y++) {
-          const distFromCenter = Math.sqrt(x * x + y * y)
           const noise = Math.random() * edgeNoise - edgeNoise / 2 // Random edge noise
-          if (distFromCenter + noise <= radius) {
+          const effectiveRadius = radius - noise
+          if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
             // If within noisy circle
             const cellI = centerI + x
             const cellJ = centerJ + y
@@ -469,11 +469,7 @@ export default class Map extends Container {
         if (tries <= 100) {
           const clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, edgeNoise)
           const clearingSet = new Set(clearingCells.map(c => `${c.i},${c.j}`))
-          for (let idx = forestCells.length - 1; idx >= 0; idx--) {
-            if (clearingSet.has(`${forestCells[idx].i},${forestCells[idx].j}`)) {
-              forestCells.splice(idx, 1)
-            }
-          }
+          forestCells = forestCells.filter(c => !clearingSet.has(`${c.i},${c.j}`))
         }
       }
     }

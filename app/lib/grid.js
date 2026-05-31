@@ -1,6 +1,5 @@
 import { ACCELERATOR, FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
-import * as exports from './maths'
-Object.entries(exports).forEach(([name, exported]) => (window[name] = exported))
+import { randomItem, instancesDistance, pointsDistance, getInstanceDegree, cellIsDiag } from './maths'
 
 /**
  * Check if two instances are in contact.
@@ -74,22 +73,33 @@ export function getFreeCellAroundPoint(x, y, size, grid, condition) {
  */
 export function getInstanceClosestFreeCellPath(instance, target, map) {
   const size = target.size || (target.has && target.has.size) || 1
-  const paths = []
-
-  // Get cells around the target based on size
   const distance = size === 3 ? 2 : 1
-  getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
-    const path = getInstancePath(instance, cell.i, cell.j, map)
-    if (path.length) {
-      paths.push(path)
-    }
-  })
 
-  // Return the shortest path if available
-  return paths.length
-    ? paths.reduce((shortest, current) => (current.length < shortest.length ? current : shortest))
-    : []
+  const candidates = getCellsAroundPoint(target.i, target.j, map.grid, distance)
+  candidates.sort(
+    (a, b) =>
+      Math.abs(a.i - instance.i) + Math.abs(a.j - instance.j) -
+      (Math.abs(b.i - instance.i) + Math.abs(b.j - instance.j))
+  )
+
+  let best = []
+  for (const cell of candidates) {
+    if (best.length && Math.abs(cell.i - instance.i) + Math.abs(cell.j - instance.j) >= best.length) break
+    const path = getInstancePath(instance, cell.i, cell.j, map)
+    if (path.length && (!best.length || path.length < best.length)) best = path
+  }
+  return best
 }
+
+// Monotonically increasing stamp — each A* search gets a unique value so
+// per-cell state from prior searches is ignored without any cleanup pass.
+let _pathStamp = 0
+
+// Reusable A* structures — reset at the start of each search instead of
+// allocating fresh arrays/sets on every call (~60 allocations/sec with 20 units).
+const _heapData = []
+const _openSet = new Set()
+const _closedSet = new Set()
 
 /**
  * Get the shortest path for a instance to a destination
@@ -102,118 +112,119 @@ export function getInstancePath(instance, x, y, map) {
   const maxZone = 10
   const end = map.grid[x][y]
   const start = map.grid[instance.i][instance.j]
-  let minX = Math.max(Math.min(start.i, end.i) - maxZone, 0)
-  let maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size)
-  let minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
-  let maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
+  const minX = Math.max(Math.min(start.i, end.i) - maxZone, 0)
+  const maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size)
+  const minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
+  const maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
+
+  const stamp = ++_pathStamp
+
+  // Initialize A* scratch state on a cell the first time this search touches it.
+  // Cells from prior searches have a different _ps value and are treated as fresh.
+  function initCell(cell) {
+    if (cell._ps !== stamp) {
+      cell._ps = stamp
+      cell._g = Infinity
+      cell._h = 0
+      cell._f = Infinity
+      cell._prev = null
+    }
+    return cell
+  }
 
   function isCellReachable(cell) {
-    if (cell.solid) {
-      return false
-    }
+    if (cell.solid) return false
     const allowWaterCellCategory = instance.category === 'Boat'
     return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water'
   }
 
-  let cloneGrid = []
-  for (let i = minX; i <= maxX; i++) {
-    cloneGrid[i] = []
-    for (let j = minY; j <= maxY; j++) {
-      cloneGrid[i][j] = {
-        i,
-        j,
-        x: map.grid[i][j].x,
-        y: map.grid[i][j].y,
-        z: map.grid[i][j].z,
-        solid: map.grid[i][j].solid,
-        category: map.grid[i][j].category,
-      }
-    }
-  }
-
-  const cloneEnd = cloneGrid[end.i][end.j]
-  const cloneStart = cloneGrid[start.i][start.j]
+  const startCell = initCell(start)
+  const endCell = initCell(end)
 
   // Min-heap storing [f_at_push, node] pairs.
   // Stale re-insertions are skipped by comparing stored f with node's current f.
-  const heapData = []
+  _heapData.length = 0
+  _openSet.clear()
+  _closedSet.clear()
   function heapPush(f, node) {
-    heapData.push([f, node])
-    let i = heapData.length - 1
+    _heapData.push([f, node])
+    let i = _heapData.length - 1
     while (i > 0) {
       const parent = (i - 1) >> 1
-      if (heapData[parent][0] <= heapData[i][0]) break
-      ;[heapData[parent], heapData[i]] = [heapData[i], heapData[parent]]
+      if (_heapData[parent][0] <= _heapData[i][0]) break
+      ;[_heapData[parent], _heapData[i]] = [_heapData[i], _heapData[parent]]
       i = parent
     }
   }
   function heapPop() {
-    const top = heapData[0]
-    const last = heapData.pop()
-    if (heapData.length > 0) {
-      heapData[0] = last
+    const top = _heapData[0]
+    const last = _heapData.pop()
+    if (_heapData.length > 0) {
+      _heapData[0] = last
       let i = 0
       while (true) {
         const l = 2 * i + 1
         const r = 2 * i + 2
         let s = i
-        if (l < heapData.length && heapData[l][0] < heapData[s][0]) s = l
-        if (r < heapData.length && heapData[r][0] < heapData[s][0]) s = r
+        if (l < _heapData.length && _heapData[l][0] < _heapData[s][0]) s = l
+        if (r < _heapData.length && _heapData[r][0] < _heapData[s][0]) s = r
         if (s === i) break
-        ;[heapData[s], heapData[i]] = [heapData[i], heapData[s]]
+        ;[_heapData[s], _heapData[i]] = [_heapData[i], _heapData[s]]
         i = s
       }
     }
     return top
   }
 
-  cloneStart.g = 0
-  cloneStart.h = instancesDistance(cloneStart, cloneEnd)
-  cloneStart.f = cloneStart.h
-  heapPush(cloneStart.f, cloneStart)
+  startCell._g = 0
+  startCell._h = instancesDistance(startCell, endCell)
+  startCell._f = startCell._h
+  heapPush(startCell._f, startCell)
+  _openSet.add(startCell)
 
-  const openSet = new Set([cloneStart])
-  const closedSet = new Set()
   let path = []
 
-  while (heapData.length > 0) {
+  while (_heapData.length > 0) {
     const [pushedF, current] = heapPop()
     // Skip stale entries (node was re-inserted with a better f)
-    if (pushedF !== current.f || closedSet.has(current)) continue
+    if (pushedF !== current._f || _closedSet.has(current)) continue
 
-    if (current === cloneEnd) {
-      path = [cloneEnd]
+    if (current === endCell) {
+      path = [endCell]
       let temp = current
-      while (temp.previous) {
-        path.push(temp.previous)
-        temp = temp.previous
+      while (temp._prev) {
+        path.push(temp._prev)
+        temp = temp._prev
       }
       break
     }
 
-    openSet.delete(current)
-    closedSet.add(current)
+    _openSet.delete(current)
+    _closedSet.add(current)
 
     // check neighbours
-    getCellsAroundPoint(current.i, current.j, cloneGrid, 1, neighbour => {
+    getCellsAroundPoint(current.i, current.j, map.grid, 1, neighbour => {
+      // Enforce the search zone boundary (previously implicit via sparse cloneGrid)
+      if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return
+      initCell(neighbour)
       const validDiag =
         !cellIsDiag(current, neighbour) ||
-        (isCellReachable(cloneGrid[current.i][neighbour.j]) && isCellReachable(cloneGrid[neighbour.i][current.j]))
-      if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
-        const tempG = current.g + instancesDistance(neighbour, current)
-        if (!openSet.has(neighbour)) {
-          neighbour.g = tempG
-          neighbour.h = instancesDistance(neighbour, cloneEnd)
-          neighbour.f = neighbour.g + neighbour.h
-          neighbour.previous = current
-          openSet.add(neighbour)
-          heapPush(neighbour.f, neighbour)
-        } else if (tempG < neighbour.g) {
+        (isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]))
+      if (!_closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+        const tempG = current._g + instancesDistance(neighbour, current)
+        if (!_openSet.has(neighbour)) {
+          neighbour._g = tempG
+          neighbour._h = instancesDistance(neighbour, endCell)
+          neighbour._f = neighbour._g + neighbour._h
+          neighbour._prev = current
+          _openSet.add(neighbour)
+          heapPush(neighbour._f, neighbour)
+        } else if (tempG < neighbour._g) {
           // Better path found — update scores and re-insert; old heap entry will be skipped
-          neighbour.g = tempG
-          neighbour.f = neighbour.g + neighbour.h
-          neighbour.previous = current
-          heapPush(neighbour.f, neighbour)
+          neighbour._g = tempG
+          neighbour._f = neighbour._g + neighbour._h
+          neighbour._prev = current
+          heapPush(neighbour._f, neighbour)
         }
       }
     })
@@ -285,8 +296,9 @@ export function findInstancesInSight(instance, condition) {
 
   for (let x = Math.max(instX - sight, 0); x <= Math.min(instX + sight, grid.length - 1); x++) {
     for (let y = Math.max(instY - sight, 0); y <= Math.min(instY + sight, grid[x].length - 1); y++) {
-      // Check if the cell is within the instance's sight range
-      if (pointsDistance(instX, instY, x, y) <= sight) {
+      // Check if the cell is within the instance's sight range (squared to avoid sqrt)
+      const dx = x - instX, dy = y - instY
+      if (dx * dx + dy * dy <= sight * sight) {
         const cell = grid[x][y]
 
         // Ensure the cell has an instance and the condition is met
@@ -307,11 +319,15 @@ export function findInstancesInSight(instance, condition) {
  * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
 export function updateInstanceVisibility(instance) {
-  const { i: cx, j: cy, sight, owner, context, isDead, visibleCells } = instance
+  const { i: cx, j: cy, sight, owner, context, isDead } = instance
   const map = context.map
   const player = context.player
   const sightSq = sight * sight
-  const newVisible = new Set()
+
+  // Ping-pong two persistent Sets to avoid per-call allocation
+  const prevVisible = instance.visibleCells ?? new Set()
+  const newVisible = instance._visibleScratch ?? new Set()
+  newVisible.clear()
 
   // Collect all cells within sight
   if (!isDead) {
@@ -323,8 +339,6 @@ export function updateInstanceVisibility(instance) {
       }
     })
   }
-
-  const prevVisible = visibleCells || new Set()
 
   // Hide cells that left sight
   for (let cell of prevVisible) {
@@ -372,6 +386,7 @@ export function updateInstanceVisibility(instance) {
   }
 
   instance.visibleCells = newVisible
+  instance._visibleScratch = prevVisible
 }
 
 /**
@@ -634,17 +649,19 @@ export function getClosestInstance(instance, instances) {
  * @param {Array<object>} instances - An array of target instances to find the closest reachable one.
  * @returns {object|null} The closest instance with its path or null if no valid path is found.
  */
-export function getClosestInstanceWithPath(instance, instances) {
+export function getClosestInstanceWithPath(instance, instances, maxCandidates = 6) {
   // Sort by Euclidean distance first so we try nearby targets first
   const sorted = [...instances].sort((a, b) => instancesDistance(instance, a) - instancesDistance(instance, b))
 
   let closest = null
+  let attempts = 0
 
   for (const target of sorted) {
     // A* path length >= straight-line distance, so skip if already longer than best
-    if (closest && instancesDistance(instance, target) >= closest.path.length) {
-      break
-    }
+    if (closest && instancesDistance(instance, target) >= closest.path.length) break
+    // Cap A* calls — if the N nearest by Euclidean distance are all blocked, farther ones likely are too
+    if (attempts++ >= maxCandidates) break
+
     const path = getInstanceClosestFreeCellPath(instance, target, instance.parent)
     if (path.length && (!closest || path.length < closest.path.length)) {
       closest = { instance: target, path }
