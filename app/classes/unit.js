@@ -1120,6 +1120,7 @@ export class Unit extends Container {
     if (!instance || this.dest === instance || this.isDead) {
       return
     }
+    if (this.handleIsAttacked?.(instance, this)) return
     const currentDest = this.dest
     if (this.type === UNIT_TYPES.villager) {
       if (instance.family === FAMILY_TYPES.animal) {
@@ -1393,6 +1394,33 @@ export class Unit extends Container {
     }
     this.previousDest = keepPrevious ? this.previousDest : null
     return this.sendTo(target, action)
+  }
+
+  // Navigate to arrivalCell but set target as the attack dest.
+  // Avoids the N×M A* calls getInstanceClosestFreeCellPath makes when multiple
+  // units are sent to the same solid target — each unit gets exactly one A* call.
+  sendToWithCell(target, arrivalCell, action) {
+    const {
+      context: { map },
+    } = this
+    this.handleChangeDest()
+    this.stopInterval()
+    if (!target || target.isDestroyed || this.isDead || !arrivalCell) return
+    if (this.isUnitAtDest(action, target)) {
+      this.setDest(target)
+      this.action = action
+      this.degree = getInstanceDegree(this, target.x, target.y)
+      this.getAction(action)
+      return
+    }
+    const path = getInstancePath(this, arrivalCell.i, arrivalCell.j, map)
+    if (path.length) {
+      this.setDest(target)
+      this.action = action
+      this.setPath(path)
+    } else {
+      this.sendToEvt(target, action)
+    }
   }
 
   sendToDelivery() {

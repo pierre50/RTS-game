@@ -406,6 +406,7 @@ function updateAIKnowledge(globalCell, cell, instance) {
       if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has)
       if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has)
       if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has)
+      if (has.type === RESOURCE_TYPES.salmon) owner.foundedFish?.add(has)
     }
 
     if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {

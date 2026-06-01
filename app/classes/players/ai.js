@@ -7,6 +7,7 @@ import {
   instancesDistance,
   canAfford,
   randomRange,
+  getCellsAroundPoint,
 } from '../../lib'
 import {
   WORK_TYPES,
@@ -29,6 +30,7 @@ export class AI extends Player {
     this.foundedStones = new Set()
     this.foundedAnimals = new Set()
     this.foundedDeadAnimals = new Set()
+    this.foundedFish = new Set()
     this.foundedEnemyBuildings = new Set()
     this.foundedEnemyUnits = new Set()
     this.difficulty = props.difficulty || 'medium'
@@ -146,7 +148,7 @@ export class AI extends Player {
   _scheduleStep() {
     this._stepTimer = setTimeout(() => {
       const actions = this.step()
-      this.stepDelay = actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 12000)
+      this.stepDelay = actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 5000)
       this._scheduleStep()
     }, this.stepDelay)
   }
@@ -181,6 +183,9 @@ export class AI extends Player {
     for (const a of this.foundedDeadAnimals) {
       if (a.isDestroyed || a.quantity <= 0) this.foundedDeadAnimals.delete(a)
     }
+    for (const r of this.foundedFish) {
+      if (r.quantity <= 0 || r.isDead) this.foundedFish.delete(r)
+    }
     for (const b of this.foundedEnemyBuildings) {
       if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings.delete(b)
     }
@@ -191,14 +196,13 @@ export class AI extends Player {
 
   getUnitExtraOptions(type) {
     const me = this
-    return {
+    const options = {
       handleSetDest: target => {
         const { map } = me.context
         if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
           const buildingType =
             target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
           const buildings = me.buildingsByTypes([buildingType])
-          // Fix: pass .cost to canAfford, not the full building config object
           if (
             canAfford(me, me.config.buildings[buildingType].cost) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
@@ -217,6 +221,16 @@ export class AI extends Player {
         }
       },
     }
+    if (type === UNIT_TYPES.villager) {
+      options.handleIsAttacked = (attacker, unit) => {
+        if (attacker.family !== FAMILY_TYPES.animal) {
+          unit.runaway(attacker)
+          return true
+        }
+        return false
+      }
+    }
+    return options
   }
 
   canResearchTech(techKey) {
@@ -256,7 +270,7 @@ export class AI extends Player {
     let actions = 0
 
     const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier)
-    const maxVillagersOnConstruction = 4
+    const maxVillagersOnConstruction = 2 + this.age * 2
     const maxInfantry = this.maxInfantryByAge[this.age]
     const maxArcher   = this.maxArcherByAge[this.age]
     const maxCavalry  = this.maxCavalryByAge[this.age]
@@ -319,9 +333,9 @@ export class AI extends Player {
         `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`
       )
 
-    const notBuiltBuildings = this.buildings.filter(
-      b => !b.isBuilt || (b.hitPoints > 0 && b.hitPoints < b.totalHitPoints)
-    )
+    const notBuiltBuildings = this.buildings
+      .filter(b => !b.isBuilt || (b.hitPoints > 0 && b.hitPoints < b.totalHitPoints))
+      .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
     const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)
 
     const villagersByWork = works => villagers.filter(v => !v.inactif && works.includes(v.work))
@@ -331,14 +345,17 @@ export class AI extends Player {
     const villagersForaging = villagersByWork([WORK_TYPES.forager])
     const villagersFarming = villagersByWork([WORK_TYPES.farmer])
     const villagersHunting = villagersByWork([WORK_TYPES.hunter])
-    const villagersOnFood = [...villagersForaging, ...villagersFarming, ...villagersHunting]
+    const villagersFishing = villagersByWork([WORK_TYPES.fisher])
+    const villagersOnFood = [...villagersForaging, ...villagersFarming, ...villagersHunting, ...villagersFishing]
     const villagersOnWood = villagersByWork([WORK_TYPES.woodcutter])
     const villagersOnGold = villagersByWork([WORK_TYPES.goldminer])
     const villagersOnStone = villagersByWork([WORK_TYPES.stoneminer])
     const builderVillagers = villagersByWork([WORK_TYPES.builder])
 
-    const maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food'])
-    const maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood'])
+    const woodBoost = this.wood < 50 ? 15 : 0
+    const foodBoost = this.food < 50 ? 15 : 0
+    const maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food'] + foodBoost)
+    const maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood'] + woodBoost)
     const maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold'])
     const maxVillagersOnStone = getValuePercentage(
       villagers.length,
@@ -465,6 +482,19 @@ export class AI extends Player {
       }
     }
 
+    // Food: fishing (capped at 3, only when salmon spotted)
+    if (this.foundedFish.size > 0) {
+      const maxFishers = Math.min(3, availableVillagers.length)
+      for (let i = 0; i < maxFishers; i++) {
+        if (foodWorkersAssigned >= maxVillagersOnFood) break
+        const fish = getClosestInstance(availableVillagers[0], this.foundedFish)
+        if (!fish) break
+        availableVillagers.shift().sendToFish(fish)
+        foodWorkersAssigned++
+        actions++
+      }
+    }
+
     // Food fallback: send to empty farms only when other sources aren't covering the full quota
     const foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned)
     for (let i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
@@ -501,10 +531,37 @@ export class AI extends Player {
     // Attack helpers
     const sendToAttack = (soldiers, target) => {
       if (DEBUG) console.log('Sending soldiers to attack:', target)
-      soldiers.forEach(c => {
-        c.assault = true
-        c.sendTo(target, ACTION_TYPES.attack)
-      })
+      soldiers.forEach(c => { c.assault = true })
+
+      const { map } = this.context
+      const targetCell = map.grid[target.i]?.[target.j]
+
+      // Pre-assign distinct arrival cells so each soldier runs A* exactly once,
+      // instead of getInstanceClosestFreeCellPath trying multiple candidates per unit.
+      if (soldiers.length > 1 && targetCell?.solid) {
+        const size = target.size || (targetCell.has?.size) || 1
+        const dist = size === 3 ? 2 : 1
+        const candidates = getCellsAroundPoint(target.i, target.j, map.grid, dist,
+          cell => !cell.solid && cell.category !== 'Water'
+        )
+        const taken = new Set()
+        for (const soldier of soldiers) {
+          let best = null, bestDist = Infinity
+          for (const cell of candidates) {
+            if (taken.has(cell)) continue
+            const d = Math.abs(cell.i - soldier.i) + Math.abs(cell.j - soldier.j)
+            if (d < bestDist) { bestDist = d; best = cell }
+          }
+          if (best) {
+            taken.add(best)
+            soldier.sendToWithCell(target, best, ACTION_TYPES.attack)
+          } else {
+            soldier.sendTo(target, ACTION_TYPES.attack)
+          }
+        }
+      } else {
+        soldiers.forEach(c => c.sendTo(target, ACTION_TYPES.attack))
+      }
     }
 
     // Pick the best enemy target (prefer TC, then any building)
