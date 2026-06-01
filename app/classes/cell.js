@@ -49,6 +49,7 @@ const _DESERT_VAL = Array.from({ length: 25 }, (_, i) =>
 // Cache keyed by sorted sides e.g. 'NE|NW|SW'
 const _ditherTextures = {}
 let _fogTexture = null
+let _darknessTexture = null
 
 const _DW = 64
 const _DH = 32
@@ -80,6 +81,23 @@ function getFogTexture() {
   }
   _fogTexture = Texture.from(canvas)
   return _fogTexture
+}
+
+// Solid black diamond — used for cells never explored (vs dithered fog for explored-not-visible)
+function getDarknessTexture() {
+  if (_darknessTexture) return _darknessTexture
+  const canvas = document.createElement('canvas')
+  canvas.width = _DW
+  canvas.height = _DH
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#000'
+  for (let px = 0; px < _DW; px++) {
+    for (let py = 0; py < _DH; py++) {
+      if (_insideDiamond(px, py)) ctx.fillRect(px, py, 1, 1)
+    }
+  }
+  _darknessTexture = Texture.from(canvas)
+  return _darknessTexture
 }
 
 // sides = Set of 'NW','NE','SE','SW', corners = Set of 'N','E','S','W'
@@ -358,23 +376,31 @@ export class Cell extends Container {
   }
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
+    const fogLayer = this.context.map.fogLayer
+    // Insert at position 0 so fog building sprites render below fog overlays
+    const addToLayer = sp => {
+      sp.x = this.x
+      sp.y = this.y
+      if (fogLayer) fogLayer.addChildAt(sp, 0)
+      else this.addChild(sp)
+    }
+
     const sprite = Sprite.from(getTexture(textureSheet, Assets))
     sprite.label = LABEL_TYPES.buildingFog
     sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
-    this.addChild(sprite)
+    addToLayer(sprite)
     this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
     if (colorSheet) {
       const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
       spriteColor.label = LABEL_TYPES.buildingFog
       spriteColor.tint = COLOR_FOG
       changeSpriteColorDirectly(spriteColor, colorName)
-      this.addChild(spriteColor)
+      addToLayer(spriteColor)
       this.fogSprites.push({ sprite: spriteColor, textureSheet, colorSheet, colorName })
     } else {
       changeSpriteColorDirectly(sprite, colorName)
     }
-    this.zIndex = 100
   }
 
   removeFogBuilding(instance) {
@@ -452,7 +478,9 @@ export class Cell extends Container {
     }
     if (!this._hasFog && this.context.map.fogLayer) {
       this._hasFog = true
-      const overlay = new Sprite(getFogTexture())
+      // Unexplored cells get solid black; explored-not-visible get dithered fog (AOE1 style)
+      const isViewed = this.context.player.views[this.i]?.[this.j]?.viewed ?? false
+      const overlay = new Sprite(isViewed ? getFogTexture() : getDarknessTexture())
       overlay.label = LABEL_TYPES.fogOverlay
       overlay.anchor.set(_DAX / _DW, _DAY / _DH)
       overlay.eventMode = 'none'

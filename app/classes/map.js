@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite } from 'pixi.js'
+import { Container, Assets, Sprite, RenderTexture, Matrix } from 'pixi.js'
 import { Resource } from './resource'
 import { Human, AI, Gaia } from './players'
 import {
@@ -10,7 +10,7 @@ import {
   colors,
   updateInstanceVisibility,
 } from '../lib'
-import { BUILDING_TYPES, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { Cell } from './cell'
 
 /**
@@ -189,6 +189,7 @@ export default class Map extends Container {
       player.units.forEach(unit => processUnit(unit, this))
     })
 
+    this.bakeTerrainToChunks()
     this.ready = true
   }
 
@@ -271,6 +272,7 @@ export default class Map extends Container {
       }
     }
 
+    this.bakeTerrainToChunks()
     this.ready = true
     menu.updateResourcesMiniMap()
   }
@@ -1167,6 +1169,80 @@ export default class Map extends Container {
     // Place resources in the selected cells
     for (const cell of cellsToPlace) {
       this.resources.add(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
+    }
+  }
+
+  // Bake all terrain cells into RenderTexture chunks and remove them from the live scene graph.
+  // Reduces updateTransformAndChildren from ~14k nodes to ~1 sprite per chunk.
+  bakeTerrainToChunks() {
+    const renderer = this.context.app?.renderer
+    if (!renderer) return
+
+    // Full isometric pixel bounds of the map (with margin for sprite overflow)
+    const margin = CELL_WIDTH
+    const minX = -this.size * (CELL_WIDTH / 2) - margin
+    const minY = -margin
+    const maxX = this.size * (CELL_WIDTH / 2) + margin
+    const maxY = this.size * CELL_HEIGHT + margin
+    const totalW = maxX - minX
+    const totalH = maxY - minY
+
+    // Cap chunk size at 4096 for broad GPU compatibility
+    const gl = renderer.gl
+    const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
+    const chunksX = Math.ceil(totalW / maxTex)
+    const chunksY = Math.ceil(totalH / maxTex)
+    const chunkW = totalW / chunksX
+    const chunkH = totalH / chunksY
+
+    // All cells must be visible during the bake (fog overlay is separate in fogLayer)
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        this.grid[i][j].visible = true
+      }
+    }
+
+    // Move cells out of the live scene graph into an off-screen container.
+    // Cells remain accessible via this.grid for all game logic.
+    const terrainContainer = new Container()
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        terrainContainer.addChild(this.grid[i][j])
+      }
+    }
+
+    for (let cx = 0; cx < chunksX; cx++) {
+      for (let cy = 0; cy < chunksY; cy++) {
+        const cMinX = minX + cx * chunkW
+        const cMinY = minY + cy * chunkH
+        const cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW)
+        const cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH)
+
+        const rt = RenderTexture.create({ width: cW, height: cH })
+        const transform = new Matrix().translate(-cMinX, -cMinY)
+        renderer.render({ container: terrainContainer, target: rt, transform, clear: true })
+
+        const sprite = new Sprite(rt)
+        sprite.x = cMinX
+        sprite.y = cMinY
+        sprite.zIndex = -1
+        sprite.eventMode = 'none'
+        sprite.label = 'terrainChunk'
+        this.addChild(sprite)
+      }
+    }
+
+    // Re-initialize entity visibility: cells were moved out of the scene graph so their
+    // updateVisible() was never triggered by the normal render pipeline.
+    // Walk all viewed cells and show their resources/corpses explicitly.
+    const { player } = this.context
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        if (player.views[i]?.[j]?.viewed) {
+          cell.updateVisible()
+        }
+      }
     }
   }
 }

@@ -686,10 +686,9 @@ export default class Controls extends Container {
       }
     }
 
-    // Hide cells that left the viewport
+    // Hide entities on cells that left the viewport (terrain is baked, only entities need hiding)
     for (let cell of this.visibleCells) {
       if (!newVisible.has(cell)) {
-        cell.visible = false
         if (cell.has) cell.has.visible = false
       }
     }
