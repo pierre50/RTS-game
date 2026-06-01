@@ -6,8 +6,6 @@ export default class MainMenu {
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
     this.el.style.backgroundImage = "url('/background/bg1.png')"
-    this.el.style.backgroundSize = 'cover'
-    this.el.style.backgroundPosition = 'center'
 
     const panel = document.createElement('div')
     panel.className = 'menu-panel'

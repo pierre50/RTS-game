@@ -37,6 +37,8 @@ button {
   text-shadow: 1px 1px black;
   font-family: sans-serif;
   -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  font-smoothing: none;
 }
 
 body {
@@ -390,15 +392,10 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-#main-menu {
   background: var(--main-bg-base);
-}
-
-#map-config {
-  background: var(--main-bg-base);
-  background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .menu-panel {
@@ -419,6 +416,7 @@ img {
 .menu-title {
   font-size: 40px;
   font-weight: bold;
+  text-align: center;
   letter-spacing: 8px;
   text-transform: uppercase;
   color: var(--main-accent-color);

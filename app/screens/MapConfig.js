@@ -67,8 +67,6 @@ export default class MapConfig {
     this.el = document.createElement('div')
     this.el.id = 'map-config'
     this.el.style.backgroundImage = "url('/background/bg2.png')"
-    this.el.style.backgroundSize = 'cover'
-    this.el.style.backgroundPosition = 'center'
 
     this._buildUI()
     document.body.appendChild(this.el)

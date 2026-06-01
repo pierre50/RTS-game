@@ -442,9 +442,9 @@ export class Unit extends Container {
     this.previousDest = null
     if (dest.family === FAMILY_TYPES.animal) {
       if (this.getActionCondition(dest, ACTION_TYPES.takemeat)) {
-        this.sendToTakeMeat(dest)
+        this.sendToTakeMeat(dest, true)
       } else {
-        this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
+        this.sendToEvt(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
       }
     } else if (dest.family === FAMILY_TYPES.building) {
       if (this.getActionCondition(dest, ACTION_TYPES.build)) {
@@ -502,8 +502,8 @@ export class Unit extends Container {
         if (this.loading === 1) {
           if (this.allAssets && this.allAssets[this.work]) {
             this.walkingSheet = Assets.cache.get(this.allAssets[this.work].loadedSheet)
+            this.standingSheet = Assets.cache.get(this.allAssets[this.work].standingSheet)
           }
-          this.standingSheet = null
         }
       },
       (1 / this.gatheringRate[this.work]) * 1000,
@@ -849,6 +849,7 @@ export class Unit extends Container {
         }
         if (this.dest.isDead) {
           this.previousDest ? this.goBackToPrevious() : this.sendToTakeMeat(this.dest)
+          return
         }
         this.setTextures(SHEET_TYPES.action)
         this.sprite.onLoop = () => {
@@ -1370,7 +1371,7 @@ export class Unit extends Container {
     return loadingDiv
   }
 
-  commonSendTo(target, work, action, keepPrevious) {
+  commonSendTo(target, work, action, keepPrevious, immediate = false) {
     const {
       context: { menu },
     } = this
@@ -1398,7 +1399,7 @@ export class Unit extends Container {
       }
     }
     this.previousDest = keepPrevious ? this.previousDest : null
-    return this.sendTo(target, action)
+    return immediate ? this.sendToEvt(target, action) : this.sendTo(target, action)
   }
 
   // Navigate to arrivalCell but set target as the attack dest.
@@ -1453,6 +1454,10 @@ export class Unit extends Container {
       getActionCondition(this, building, ACTION_TYPES.delivery, { buildingTypes })
     )
     const target = getClosestInstance(this, targets)
+    if (!target) {
+      this.stop()
+      return
+    }
     if (this.dest) {
       this.previousDest = this.dest
     } else {
@@ -1469,8 +1474,8 @@ export class Unit extends Container {
     return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
   }
 
-  sendToTakeMeat(target) {
-    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, { actionSheet: SHEET_TYPES.harvest })
+  sendToTakeMeat(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, { actionSheet: SHEET_TYPES.harvest }, immediate)
   }
 
   sendToHunt(target) {
