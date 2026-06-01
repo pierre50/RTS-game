@@ -25,7 +25,12 @@ export class Projectile extends Container {
 
     this.x = this.owner.x
     this.y = this.owner.y - this.owner.sprite.height / 2
-    const { x: targetX, y: targetY } = this.destination || this.target
+    const targetPoint = this.destination || this.target
+    if (!targetPoint) {
+      this.isDead = true
+      return
+    }
+    const { x: targetX, y: targetY } = targetPoint
 
     this.context.controls.instanceInCamera(this) &&
       this.sounds.start &&
@@ -46,6 +51,9 @@ export class Projectile extends Container {
     this.interval = this.context.scheduler.add(() => {
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
         if (
+          this.target &&
+          !this.target.isDead &&
+          !this.target.isDestroyed &&
           pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
           average(this.target.width, this.target.height)
         ) {

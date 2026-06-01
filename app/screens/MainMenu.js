@@ -5,7 +5,7 @@ export default class MainMenu {
   constructor(onStart, onLoad) {
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
-    this.el.style.backgroundImage = "url('/background/bg1.png')"
+    this.el.style.backgroundImage = "url('/assets/background/bg1.png')"
 
     const panel = document.createElement('div')
     panel.className = 'menu-panel'

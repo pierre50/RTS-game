@@ -1,25 +1,8 @@
-import { sound } from '@pixi/sound'
-import { Container, Graphics, AnimatedSprite, Assets, Sprite } from 'pixi.js'
-import {
-  isometricToCartesian,
-  pointIsBetweenTwoPoint,
-  pointsDistance,
-  pointInRectangle,
-  getPlainCellsAroundPoint,
-  changeSpriteColor,
-  getTexture,
-  randomItem,
-} from '../lib'
-import {
-  COLOR_WHITE,
-  COLOR_RED,
-  CELL_WIDTH,
-  CELL_HEIGHT,
-  MAX_SELECT_UNITS,
-  ACCELERATOR,
-  LABEL_TYPES,
-  UNIT_TYPES,
-} from '../constants'
+import { Container, Graphics } from 'pixi.js'
+import { isometricToCartesian } from '../lib'
+import { CameraController } from '../controllers/CameraController'
+import { BuildingPlacer } from '../controllers/BuildingPlacer'
+import { SelectionManager } from '../controllers/SelectionManager'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 
@@ -39,13 +22,7 @@ export default class Controls extends Container {
       prevent: false,
     }
 
-    this.camera = {
-      x: 0,
-      y: 0,
-    }
-
-    this.visibleCells = new Set()
-
+    this.cameraController = new CameraController(context)
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
     this.mouseHoldTimeout
@@ -59,9 +36,6 @@ export default class Controls extends Container {
     this.mouseRectangle
     this.mouseTouch
     this.mouseDrag = false
-    this.moveCameraInterval
-    this._rafPending = false
-
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
@@ -78,8 +52,11 @@ export default class Controls extends Container {
     }
     context.app.ticker.add(this._fpsTicker)
 
+    this.buildingPlacer = new BuildingPlacer(this)
+    this.selectionManager = new SelectionManager(this)
+
     this._onDocMouseMove = evt => this.moveCameraWithMouse(evt)
-    this._onDocMouseOut = () => clearInterval(this.moveCameraInterval)
+    this._onDocMouseOut = () => this.stopMouseCameraMove()
     this._onKeyDown = evt => this.onKeyDown(evt)
     this._onKeyUp = evt => this.onKeyUp(evt)
     this._onTouchStart = evt => this.onTouchStart(evt)
@@ -119,6 +96,11 @@ export default class Controls extends Container {
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
     gamebox.removeEventListener('mouseup', this._onMouseUp)
+    this.stopMouseCameraMove()
+  }
+
+  get camera() {
+    return this.cameraController.camera
   }
 
   onKeyDown(evt) {
@@ -148,18 +130,10 @@ export default class Controls extends Container {
           if (this.keySpeed < 4) {
             this.keySpeed += 0.2
           }
-          if (this.keysPressed['ArrowLeft']) {
-            this.moveCamera('left', this.keySpeed, double)
-          }
-          if (this.keysPressed['ArrowUp']) {
-            this.moveCamera('up', this.keySpeed, double)
-          }
-          if (this.keysPressed['ArrowDown']) {
-            this.moveCamera('down', this.keySpeed, double)
-          }
-          if (this.keysPressed['ArrowRight']) {
-            this.moveCamera('right', this.keySpeed, double)
-          }
+          if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double)
+          if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double)
+          if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double)
+          if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double)
         }, 1)
       }
     }
@@ -188,10 +162,7 @@ export default class Controls extends Container {
   onTouchStart(evt) {
     const touch = evt.touches[0]
     if (evt.touches.length === 2) {
-      this.mouseTouch = {
-        x: touch.pageX,
-        y: touch.pageY,
-      }
+      this.mouseTouch = { x: touch.pageX, y: touch.pageY }
     } else {
       this.onMouseDown(touch)
     }
@@ -206,23 +177,12 @@ export default class Controls extends Container {
       if (this.mouseTouch) {
         const speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2
         const speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2
-        if (this.mouse.x > this.mouseTouch.x) {
-          this.moveCamera('left', speedX, false)
-        }
-        if (this.mouse.y > this.mouseTouch.y) {
-          this.moveCamera('up', speedY, false)
-        }
-        if (this.mouse.y < this.mouseTouch.y) {
-          this.moveCamera('down', speedY, false)
-        }
-        if (this.mouse.x < this.mouseTouch.x) {
-          this.moveCamera('right', speedX, false)
-        }
+        if (this.mouse.x > this.mouseTouch.x) this.moveCamera('left', speedX, false)
+        if (this.mouse.y > this.mouseTouch.y) this.moveCamera('up', speedY, false)
+        if (this.mouse.y < this.mouseTouch.y) this.moveCamera('down', speedY, false)
+        if (this.mouse.x < this.mouseTouch.x) this.moveCamera('right', speedX, false)
       }
-      this.mouseTouch = {
-        x: this.mouse.x,
-        y: this.mouse.y,
-      }
+      this.mouseTouch = { x: this.mouse.x, y: this.mouse.y }
     } else {
       this.onMouseMove(touch)
     }
@@ -238,120 +198,24 @@ export default class Controls extends Container {
   onMouseDown(evt) {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
-    if (!this.isMouseInApp(evt)) {
-      return
-    }
-    this.pointerStart = {
-      x: this.mouse.x,
-      y: this.mouse.y,
-    }
+    if (!this.isMouseInApp(evt)) return
+    this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
   }
 
   onMouseMove(evt) {
-    const {
-      context: { map, player, app },
-    } = this
-
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
-    // Mouse building to place construction
     if (this.mouseBuilding) {
-      const pos = isometricToCartesian(
-        this.mouse.x - map.x,
-        this.mouse.y >= app.screen.height ? app.screen.height - map.y : this.mouse.y - map.y
-      )
-      const i = Math.min(Math.max(pos[0], 0), map.size)
-      const j = Math.min(Math.max(pos[1], 0), map.size)
-      if (map.grid[i] && map.grid[i][j]) {
-        const cell = map.grid[i][j]
-        this.mouseBuilding.x = cell.x - this.camera.x
-        this.mouseBuilding.y = cell.y - this.camera.y
-        let isFree = true
-
-        const dist = this.mouseBuilding.size === 3 ? 1 : 0
-        if (this.mouseBuilding.buildOnWater) {
-          let waterBorderedCells = 0
-          let waterCells = 0
-          getPlainCellsAroundPoint(i, j, map.grid, dist, cell => {
-            if (cell.inclined || cell.solid || !cell.visible) {
-              isFree = false
-              return
-            }
-            if (cell.waterBorder) {
-              waterBorderedCells++
-            } else if (cell.category === 'Water') {
-              waterCells++
-            }
-          })
-          if (waterBorderedCells < 2 && waterCells < 4) {
-            isFree = false
-          }
-        } else {
-          getPlainCellsAroundPoint(i, j, map.grid, dist, cell => {
-            if (cell.category === 'Water' || cell.solid || cell.inclined || cell.border || !cell.visible) {
-              isFree = false
-              return
-            }
-          })
-        }
-        // Color image of mouse building depend on buildable or not
-        const sprite = this.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
-        const color = this.mouseBuilding.getChildByLabel(LABEL_TYPES.color)
-        if (isFree) {
-          sprite.tint = COLOR_WHITE
-          if (color) {
-            color.tint = COLOR_WHITE
-          }
-        } else {
-          sprite.tint = COLOR_RED
-          if (color) {
-            color.tint = COLOR_RED
-          }
-        }
-        this.mouseBuilding.isFree = isFree
-      }
+      this.buildingPlacer.handleMouseMove()
       return
     }
-
-    // Create and draw mouse selection
-    if (
-      !this.mouseRectangle &&
-      this.pointerStart &&
-      pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5
-    ) {
-      this.mouseRectangle = {
-        x: this.pointerStart.x,
-        y: this.pointerStart.y,
-        width: 0,
-        height: 0,
-        graph: new Graphics(),
-      }
-      app.stage.addChild(this.mouseRectangle.graph)
-    }
-
-    if (this.mouseRectangle && !this.mouseBuilding) {
-      if (player.selectedUnits.length || player.selectedBuilding) {
-        player.unselectAll()
-      }
-      const graph = this.mouseRectangle.graph
-      graph.clear()
-
-      this.mouseRectangle.width = this.mouse.x - this.mouseRectangle.x
-      this.mouseRectangle.height = this.mouse.y - this.mouseRectangle.y
-
-      const x = Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width)
-      const y = Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height)
-      const w = Math.abs(this.mouseRectangle.width)
-      const h = Math.abs(this.mouseRectangle.height)
-
-      graph.rect(x, y, w, h).stroke(COLOR_WHITE)
-    }
+    this.selectionManager.handleMouseMove()
   }
 
   onMouseUp(evt) {
     const {
-      context: { menu, map, player },
+      context: { map, player },
     } = this
     this.pointerStart = null
     clearTimeout(this.mouseHoldTimeout)
@@ -360,137 +224,30 @@ export default class Controls extends Container {
       return
     }
     player?.selectedBuilding && player.unselectAll()
-    // Select units on mouse rectangle
+
     if (this.mouseRectangle) {
-      let selectVillager
-      let countSelect = 0
-      player.unselectAll()
-      // Select units inside the rectangle
-      for (let i = 0; i < player.units.length; i++) {
-        const unit = player.units[i]
-        if (
-          player.selectedUnits.length < MAX_SELECT_UNITS &&
-          pointInRectangle(
-            unit.x - this.camera.x,
-            unit.y - this.camera.y,
-            this.mouseRectangle.x,
-            this.mouseRectangle.y,
-            this.mouseRectangle.width,
-            this.mouseRectangle.height,
-            true
-          )
-        ) {
-          unit.select()
-          countSelect++
-          if (unit.type === UNIT_TYPES.villager) {
-            selectVillager = unit
-          }
-          player.selectedUnits.push(unit)
-        }
-      }
-      // Set our bottombar
-      if (countSelect) {
-        if (selectVillager) {
-          player.selectedUnit = selectVillager
-          menu.setBottombar(selectVillager)
-        } else {
-          // TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
-          player.selectedUnit = player.selectedUnits[0]
-          menu.setBottombar(player.selectedUnits[0])
-        }
-      }
-      // Reset mouse selection
-      if (this.mouseRectangle) {
-        this.mouseRectangle.graph.destroy(true)
-        this.mouseRectangle = null
-      }
+      this.selectionManager.handleMouseUp()
       return
     }
+
     if (this.isMouseInApp(evt)) {
       const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
       const i = Math.min(Math.max(pos[0], 0), map.size)
       const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
         const cell = map.grid[i][j]
-        if ((cell.solid || cell.has) && cell.visible) {
-          return
-        }
+        if ((cell.solid || cell.has) && cell.visible) return
         if (this.mouseBuilding) {
-          if (cell.inclined || cell.border) {
-            return
-          }
-          if (this.mouseBuilding.isFree) {
-            if (player.buyBuilding(i, j, this.mouseBuilding.type)) {
-              this.removeMouseBuilding()
-              if (menu.selection) {
-                menu.setBottombar(menu.selection)
-              }
-            }
-          }
+          this.buildingPlacer.handleMouseUp(cell)
         } else if (player?.selectedUnits.length) {
-          // Pointer animation
-          const pointerSheet = Assets.cache.get('50405')
-          const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
-          pointer.animationSpeed = 0.2 * ACCELERATOR
-          pointer.loop = false
-          pointer.anchor.set(0.5, 0.5)
-          pointer.x = this.mouse.x
-          pointer.y = this.mouse.y
-          pointer.allowMove = false
-          pointer.allowClick = false
-          pointer.eventMode = 'auto'
-          pointer.roundPixels = true
-          pointer.onComplete = () => {
-            pointer.destroy()
-          }
-          pointer.play()
-          this.addChild(pointer)
-          // Send units
-          this.sendUnits(cell)
+          this.selectionManager.handleClick(cell)
         }
       }
     }
   }
 
   sendUnits(cell) {
-    const {
-      context: { player, map },
-    } = this
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (let k = 0; k < player.selectedUnits.length; k++) {
-      const { i, j } = player.selectedUnits[k]
-      if (i < minX) minX = i
-      if (j < minY) minY = j
-      if (i > maxX) maxX = i
-      if (j > maxY) maxY = j
-    }
-    const centerX = minX + Math.round((maxX - minX) / 2)
-    const centerY = minY + Math.round((maxY - minY) / 2)
-    let hasSentVillager = false
-    let hasSentSoldier = false
-    for (let u = 0; u < player.selectedUnits.length; u++) {
-      const unit = player.selectedUnits[u]
-      const distCenterX = unit.i - centerX
-      const distCenterY = unit.j - centerY
-      const finalX = cell.i + distCenterX
-      const finalY = cell.j + distCenterY
-      if (unit.type === UNIT_TYPES.villager) {
-        hasSentVillager = true
-      } else {
-        hasSentSoldier = true
-      }
-      if (map.grid[finalX] && map.grid[finalX][finalY]) {
-        player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
-      } else {
-        player.selectedUnits[u].sendTo(cell)
-      }
-    }
-    if (hasSentSoldier) {
-      const voice = randomItem(['5075', '5076', '5128', '5164'])
-      sound.play(voice)
-    } else if (hasSentVillager) {
-      sound.play('5006')
-    }
+    return this.selectionManager.sendUnits(cell)
   }
 
   isMouseInApp(evt) {
@@ -498,238 +255,35 @@ export default class Controls extends Container {
   }
 
   removeMouseBuilding() {
-    if (!this.mouseBuilding) {
-      return
-    }
-    this.removeChild(this.mouseBuilding)
-    this.mouseBuilding.destroy()
-    this.mouseBuilding = null
+    return this.buildingPlacer.removeMouseBuilding()
   }
 
   setMouseBuilding(building) {
-    const {
-      context: { player },
-    } = this
-    this.mouseBuilding = new Container()
-    const sprite = Sprite.from(getTexture(building.images.final, Assets))
-    sprite.label = LABEL_TYPES.sprite
-    this.mouseBuilding.addChild(sprite)
-    Object.keys(building).forEach(prop => {
-      this.mouseBuilding[prop] = building[prop]
-    })
-    this.mouseBuilding.x = this.mouse.x
-    this.mouseBuilding.y = this.mouse.y
-    this.mouseBuilding.label = LABEL_TYPES.mouseBuilding
-    if (building.images.color) {
-      const color = Sprite.from(getTexture(building.images.color, Assets))
-      color.label = LABEL_TYPES.color
-      changeSpriteColor(color, player.color)
-      this.mouseBuilding.addChild(color)
-    } else {
-      changeSpriteColor(sprite, player.color)
-    }
-    this.addChild(this.mouseBuilding)
+    return this.buildingPlacer.setMouseBuilding(building)
   }
 
   moveCamera(dir, moveSpeed, isSpeedDivided) {
-    /**
-     * 	/A\
-     * /   \
-     *B     D
-     * \   /
-     *  \C/
-     */
-
-    const {
-      context: { map, app, menu },
-    } = this
-
-    const dividedSpeed = isSpeedDivided ? 1.5 : 1
-    const speed = (moveSpeed || 20) / dividedSpeed
-    const A = { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y }
-    const B = {
-      x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
-      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
-    }
-    const D = {
-      x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
-      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
-    }
-    const C = { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y }
-    const cameraCenter = {
-      x: app.screen.width / 2,
-      y: app.screen.height / 2,
-    }
-
-    if (dir === 'left') {
-      if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.x - 100 > B.x) {
-        this.camera.x -= speed
-      }
-    } else if (dir === 'right') {
-      if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.x + 100 < D.x) {
-        this.camera.x += speed
-      }
-    }
-    if (dir === 'up') {
-      if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.y - 50 > A.y) {
-        this.camera.y -= speed
-      }
-    } else if (dir === 'down') {
-      if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.y + 100 < C.y) {
-        this.camera.y += speed
-      }
-    }
-
-    menu.updateCameraMiniMap()
-    map.setCoordinate(-this.camera.x, -this.camera.y)
-    if (!this._rafPending) {
-      this._rafPending = true
-      requestAnimationFrame(() => {
-        this._rafPending = false
-        this.updateVisibleCells()
-      })
-    }
+    this.cameraController.move(dir, moveSpeed, isSpeedDivided)
   }
 
   moveCameraWithMouse(evt) {
-    clearInterval(this.moveCameraInterval)
-    const dir = []
-    const mouse = {
-      x: evt.pageX,
-      y: evt.pageY,
-    }
-    const coef = 1
-    const moveDist = 10
+    this.cameraController.moveWithMouse(evt)
+  }
 
-    const calcs = {
-      left: (0 + moveDist - mouse.x) * coef,
-      right: (mouse.x - (window.innerWidth - moveDist)) * coef,
-      up: (0 + moveDist - mouse.y) * coef,
-      down: (mouse.y - (window.innerHeight - moveDist)) * coef,
-    }
-    if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= window.innerHeight) {
-      dir.push('left')
-    } else if (
-      mouse.x > window.innerWidth - moveDist &&
-      mouse.x <= window.innerWidth &&
-      mouse.y >= 0 &&
-      mouse.y <= window.innerHeight
-    ) {
-      dir.push('right')
-    }
-    if (mouse.x >= 0 && mouse.x <= window.innerWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist) {
-      dir.push('up')
-    } else if (
-      mouse.x >= 0 &&
-      mouse.x <= window.innerWidth &&
-      mouse.y > window.innerHeight - moveDist &&
-      mouse.y <= window.innerHeight
-    ) {
-      dir.push('down')
-    }
-    if (dir.length) {
-      this.moveCameraInterval = setInterval(() => {
-        dir.forEach(prop => {
-          this.moveCamera(prop, calcs[prop])
-        })
-      }, 20)
-    }
+  stopMouseCameraMove() {
+    this.cameraController.stopMouseMove()
   }
 
   instanceInCamera(instance) {
-    const {
-      context: { app },
-    } = this
-    return pointInRectangle(instance.x, instance.y, this.camera.x, this.camera.y, app.screen.width, app.screen.height)
+    return this.cameraController.instanceInCamera(instance)
   }
 
   getCellOnCamera(callback) {
-    const {
-      context: { map, app },
-    } = this
-
-    const cameraFloor = {
-      x: Math.floor(this.camera.x),
-      y: Math.floor(this.camera.y),
-    }
-    const margin = CELL_WIDTH
-
-    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
-      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
-        const [cartesianX, cartesianY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartesianX, 0), map.size - 1) // Adjust for index bounds
-        const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
-
-        // Ensure the coordinates are within bounds and call the callback
-        if (map.grid[x] && map.grid[x][y]) {
-          callback(map.grid[x][y])
-        }
-      }
-    }
+    this.cameraController.getCellOnCamera(callback)
   }
 
   updateVisibleCells() {
-    const { map, app } = this.context
-    const newVisible = new Set()
-    const margin = CELL_WIDTH // extra padding for offscreen cells
-
-    const startX = Math.floor(this.camera.x - margin)
-    const endX = Math.floor(this.camera.x + app.screen.width + margin)
-    const startY = Math.floor(this.camera.y - margin)
-    const endY = Math.floor(this.camera.y + app.screen.height + margin)
-
-    for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
-      for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
-        const [cartX, cartY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartX, 0), map.size - 1)
-        const y = Math.min(Math.max(cartY, 0), map.size - 1)
-
-        const cell = map.grid[x]?.[y]
-        if (cell) {
-          newVisible.add(cell)
-        }
-      }
-    }
-
-    // Hide entities on cells that left the viewport (terrain is baked, only entities need hiding)
-    for (let cell of this.visibleCells) {
-      if (!newVisible.has(cell)) {
-        if (cell.has) cell.has.visible = false
-      }
-    }
-
-    // Show newly visible cells
-    for (let cell of newVisible) {
-      if (!this.visibleCells.has(cell)) {
-        cell.updateVisible()
-      }
-    }
-
-    this.visibleCells = newVisible
+    this.cameraController.updateVisibleCells()
   }
 
   init() {
@@ -740,7 +294,6 @@ export default class Controls extends Container {
     const topbar = document.getElementById('topbar')
     this.fpsEl.style.top = (topbar ? topbar.clientHeight + 5 : 50) + 'px'
 
-    // Set camera to player building else unit
     if (player?.buildings?.length) {
       this.setCamera(player.buildings[0].x, player.buildings[0].y)
     } else if (player?.units?.length) {
@@ -751,15 +304,6 @@ export default class Controls extends Container {
   }
 
   setCamera(x, y, direct) {
-    const {
-      context: { map, app, menu },
-    } = this
-    this.camera = {
-      x: direct ? x : x - app.screen.width / 2,
-      y: direct ? y : y - app.screen.height / 2,
-    }
-    menu && menu.updateCameraMiniMap()
-    map.setCoordinate(-this.camera.x, -this.camera.y)
-    this.updateVisibleCells()
+    this.cameraController.set(x, y, direct)
   }
 }

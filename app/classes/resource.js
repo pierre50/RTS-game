@@ -1,44 +1,35 @@
 import { sound } from '@pixi/sound'
-import { t } from '../lib/lang'
-import { Container, Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
+import { Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
   instanceIsInPlayerSight,
-  getIconPath,
   randomItem,
   randomRange,
   drawInstanceBlinkingSelection,
   getActionCondition,
-  uuidv4,
 } from '../lib'
 import {
   TYPE_ACTION,
   CELL_WIDTH,
   CELL_HEIGHT,
-  COLOR_WHITE,
   FAMILY_TYPES,
   PLAYER_TYPES,
   LABEL_TYPES,
-  MENU_INFO_IDS,
   RESOURCE_TYPES,
 } from '../constants'
+import { Instance } from './Instance'
+import { ResourceInterface } from '../ui/ResourceInterface'
 
-export class Resource extends Container {
+export class Resource extends Instance {
   constructor(options, context) {
-    super()
-
-    this.context = context
+    super(context)
 
     const {
       context: { map },
     } = this
 
-    this.label = uuidv4()
     this.family = FAMILY_TYPES.resource
-
-    this.selected = false
-    this.isDead = false
-    this.isDestroyed = false
+    this.resourceInterface = new ResourceInterface(this)
     this.size = 1
 
     Object.keys(options).forEach(prop => {
@@ -147,31 +138,6 @@ export class Resource extends Container {
     map.addToInstanceBucket(this)
   }
 
-  select() {
-    if (this.selected) {
-      return
-    }
-    this.selected = true
-    const selection = new Graphics()
-    selection.label = LABEL_TYPES.selection
-    selection.zIndex = 3
-    const path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]
-    selection.poly(path)
-    selection.stroke(COLOR_WHITE)
-    this.addChildAt(selection, 0)
-  }
-
-  unselect() {
-    if (!this.selected) {
-      return
-    }
-    this.selected = false
-    const selection = this.getChildByLabel(LABEL_TYPES.selection)
-    if (selection) {
-      this.removeChild(selection)
-    }
-  }
-
   die(immediate) {
     if (this.isDead) {
       return
@@ -249,56 +215,6 @@ export class Resource extends Container {
   }
 
   setDefaultInterface(element, data) {
-    const {
-      context: { menu },
-    } = this
-    const typeDiv = document.createElement('div')
-    typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = t(this.type)
-    element.appendChild(typeDiv)
-
-    const iconImg = document.createElement('img')
-    iconImg.id = MENU_INFO_IDS.icon
-    iconImg.src = getIconPath(data.icon)
-    element.appendChild(iconImg)
-
-    if (this.hitPoints) {
-      const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints
-      hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints
-      element.appendChild(hitPointsDiv)
-    }
-    if (this.quantity) {
-      const quantityDiv = document.createElement('div')
-
-      quantityDiv.id = MENU_INFO_IDS.quantity
-      quantityDiv.className = 'resource-quantity'
-
-      let iconToUse
-      switch (this.type) {
-        case RESOURCE_TYPES.tree:
-          iconToUse = menu.infoIcons['wood']
-          break
-        case RESOURCE_TYPES.salmon:
-        case RESOURCE_TYPES.berrybush:
-          iconToUse = menu.infoIcons['food']
-          break
-        case RESOURCE_TYPES.stone:
-          iconToUse = menu.infoIcons['stone']
-          break
-        case RESOURCE_TYPES.gold:
-          iconToUse = menu.infoIcons['gold']
-          break
-      }
-      const smallIconImg = document.createElement('img')
-      smallIconImg.src = iconToUse
-      smallIconImg.className = 'resource-quantity-icon'
-      const textDiv = document.createElement('div')
-      textDiv.id = MENU_INFO_IDS.quantityText
-      textDiv.textContent = this.quantity
-      quantityDiv.appendChild(smallIconImg)
-      quantityDiv.appendChild(textDiv)
-      element.appendChild(quantityDiv)
-    }
+    return this.resourceInterface.setDefaultInterface(element, data)
   }
 }

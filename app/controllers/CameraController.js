@@ -1,0 +1,231 @@
+import { isometricToCartesian, pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
+import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
+
+export class CameraController {
+  constructor(context) {
+    this.context = context
+    this.camera = {
+      x: 0,
+      y: 0,
+    }
+    this.visibleCells = new Set()
+    this.moveInterval = null
+    this._rafPending = false
+  }
+
+  move(dir, moveSpeed, isSpeedDivided) {
+    /**
+     *  /A\
+     * /   \
+     *B     D
+     * \   /
+     *  \C/
+     */
+
+    const {
+      context: { map, app, menu },
+    } = this
+
+    const dividedSpeed = isSpeedDivided ? 1.5 : 1
+    const speed = (moveSpeed || 20) / dividedSpeed
+    const A = { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y }
+    const B = {
+      x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
+      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+    }
+    const D = {
+      x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
+      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+    }
+    const C = { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y }
+    const cameraCenter = {
+      x: app.screen.width / 2,
+      y: app.screen.height / 2,
+    }
+
+    if (dir === 'left') {
+      if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x -= speed
+      } else if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x -= speed
+      } else if (cameraCenter.x - 100 > B.x) {
+        this.camera.x -= speed
+      }
+    } else if (dir === 'right') {
+      if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x += speed
+      } else if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x += speed
+      } else if (cameraCenter.x + 100 < D.x) {
+        this.camera.x += speed
+      }
+    }
+    if (dir === 'up') {
+      if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x += speed
+      } else if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
+        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x -= speed
+      } else if (cameraCenter.y - 50 > A.y) {
+        this.camera.y -= speed
+      }
+    } else if (dir === 'down') {
+      if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x -= speed
+      } else if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
+        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
+        this.camera.x += speed
+      } else if (cameraCenter.y + 100 < C.y) {
+        this.camera.y += speed
+      }
+    }
+
+    menu.updateCameraMiniMap()
+    map.setCoordinate(-this.camera.x, -this.camera.y)
+    if (!this._rafPending) {
+      this._rafPending = true
+      requestAnimationFrame(() => {
+        this._rafPending = false
+        this.updateVisibleCells()
+      })
+    }
+  }
+
+  moveWithMouse(evt) {
+    this.stopMouseMove()
+    const dir = []
+    const mouse = {
+      x: evt.pageX,
+      y: evt.pageY,
+    }
+    const coef = 1
+    const moveDist = 10
+
+    const calcs = {
+      left: (0 + moveDist - mouse.x) * coef,
+      right: (mouse.x - (window.innerWidth - moveDist)) * coef,
+      up: (0 + moveDist - mouse.y) * coef,
+      down: (mouse.y - (window.innerHeight - moveDist)) * coef,
+    }
+    if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= window.innerHeight) {
+      dir.push('left')
+    } else if (
+      mouse.x > window.innerWidth - moveDist &&
+      mouse.x <= window.innerWidth &&
+      mouse.y >= 0 &&
+      mouse.y <= window.innerHeight
+    ) {
+      dir.push('right')
+    }
+    if (mouse.x >= 0 && mouse.x <= window.innerWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist) {
+      dir.push('up')
+    } else if (
+      mouse.x >= 0 &&
+      mouse.x <= window.innerWidth &&
+      mouse.y > window.innerHeight - moveDist &&
+      mouse.y <= window.innerHeight
+    ) {
+      dir.push('down')
+    }
+    if (dir.length) {
+      this.moveInterval = setInterval(() => {
+        dir.forEach(prop => {
+          this.move(prop, calcs[prop])
+        })
+      }, 20)
+    }
+  }
+
+  stopMouseMove() {
+    clearInterval(this.moveInterval)
+    this.moveInterval = null
+  }
+
+  instanceInCamera(instance) {
+    const {
+      context: { app },
+    } = this
+    return pointInRectangle(instance.x, instance.y, this.camera.x, this.camera.y, app.screen.width, app.screen.height)
+  }
+
+  getCellOnCamera(callback) {
+    const {
+      context: { map, app },
+    } = this
+
+    const cameraFloor = {
+      x: Math.floor(this.camera.x),
+      y: Math.floor(this.camera.y),
+    }
+    const margin = CELL_WIDTH
+
+    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
+        const [cartesianX, cartesianY] = isometricToCartesian(i, j)
+        const x = Math.min(Math.max(cartesianX, 0), map.size - 1)
+        const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
+
+        if (map.grid[x] && map.grid[x][y]) {
+          callback(map.grid[x][y])
+        }
+      }
+    }
+  }
+
+  updateVisibleCells() {
+    const { map, app } = this.context
+    const newVisible = new Set()
+    const margin = CELL_WIDTH
+
+    const startX = Math.floor(this.camera.x - margin)
+    const endX = Math.floor(this.camera.x + app.screen.width + margin)
+    const startY = Math.floor(this.camera.y - margin)
+    const endY = Math.floor(this.camera.y + app.screen.height + margin)
+
+    for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
+      for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
+        const [cartX, cartY] = isometricToCartesian(i, j)
+        const x = Math.min(Math.max(cartX, 0), map.size - 1)
+        const y = Math.min(Math.max(cartY, 0), map.size - 1)
+
+        const cell = map.grid[x]?.[y]
+        if (cell) {
+          newVisible.add(cell)
+        }
+      }
+    }
+
+    for (let cell of this.visibleCells) {
+      if (!newVisible.has(cell)) {
+        if (cell.has) cell.has.visible = false
+      }
+    }
+
+    for (let cell of newVisible) {
+      if (!this.visibleCells.has(cell)) {
+        cell.updateVisible()
+      }
+    }
+
+    this.visibleCells = newVisible
+  }
+
+  set(x, y, direct) {
+    const {
+      context: { map, app, menu },
+    } = this
+    this.camera = {
+      x: direct ? x : x - app.screen.width / 2,
+      y: direct ? y : y - app.screen.height / 2,
+    }
+    menu && menu.updateCameraMiniMap()
+    map.setCoordinate(-this.camera.x, -this.camera.y)
+    this.updateVisibleCells()
+  }
+}

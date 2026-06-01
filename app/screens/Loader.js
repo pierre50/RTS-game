@@ -30,10 +30,6 @@ export default class LoaderScreen extends Container {
         50405: 'assets/interface/50405/texture.json',
       })
 
-      Assets.addBundle('seeds', {
-        0: 'assets/seeds/0.txt',
-      })
-
       Assets.addBundle('terrain', {
         15000: 'assets/terrain/15000/texture.json',
         15001: 'assets/terrain/15001/texture.json',
@@ -341,8 +337,6 @@ export default class LoaderScreen extends Container {
       await Assets.loadBundle('config')
       this.loadingDiv.innerHTML = t('loadingInterface')
       await Assets.loadBundle('interface')
-      this.loadingDiv.innerHTML = t('loadingSeeds')
-      await Assets.loadBundle('seeds')
       this.loadingDiv.innerHTML = t('loadingTerrain')
       await Assets.loadBundle('terrain')
       this.loadingDiv.innerHTML = t('loadingBorder')

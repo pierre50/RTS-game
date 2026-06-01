@@ -314,6 +314,7 @@ export const updateObject = (target, operation) => {
 }
 
 export const canUpdateMinimap = (instance, player) => {
+  if (instance.context?.map?.revealEverything) return true
   return instance.owner.isPlayed || (player.label !== instance.owner.label && instanceIsInPlayerSight(instance, player))
 }
 

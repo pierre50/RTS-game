@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite, RenderTexture, Matrix } from 'pixi.js'
+import { Container, Assets, Sprite, RenderTexture, Matrix, Graphics } from 'pixi.js'
 import { Resource } from './resource'
 import { Human, AI, Gaia } from './players'
 import {
@@ -12,6 +12,7 @@ import {
 } from '../lib'
 import { BUCKET_SIZE, BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { Cell } from './cell'
+import { getFogTexture, getDarknessTexture, _DW, _DH, _DAX, _DAY } from './cell/CellFog'
 
 /**
  * 
@@ -107,10 +108,7 @@ export default class Map extends Container {
     this.removeChildren()
     this.size = map.length - 1
 
-    this.fogLayer = new Container()
-    this.fogLayer.eventMode = 'none'
-    this.fogLayer.zIndex = 1e9
-    this.fogLayer.cullableChildren = true
+    this._initFogChunks()
 
     this.gaia = new Gaia(this.context)
 
@@ -137,8 +135,6 @@ export default class Map extends Container {
     this.formatCellsWaterBorder()
     this.formatCellsDesert()
 
-    // fogLayer is added last so it always renders above units, buildings, corpses
-    this.addChild(this.fogLayer)
     if (!this.revealEverything) {
       for (let i = 0; i <= this.size; i++) {
         for (let j = 0; j <= this.size; j++) {
@@ -222,6 +218,8 @@ export default class Map extends Container {
       player.units.forEach(unit => processUnit(unit, this))
     })
 
+    this._fogInitComplete = true
+    this._flushFogQueue()
     this.bakeTerrainToChunks()
     this.ready = true
   }
@@ -279,16 +277,12 @@ export default class Map extends Container {
 
     this.generateAnimalsAroundPlayers(this.playersPos)
 
-    //this.generateMapRelief()
-    //this.formatCellsRelief()
+    this.generateMapRelief()
+    this.formatCellsRelief()
 
     this.generateSets()
 
-    this.fogLayer = new Container()
-    this.fogLayer.eventMode = 'none'
-    this.fogLayer.zIndex = 1e9
-    this.fogLayer.cullableChildren = true
-    this.addChild(this.fogLayer)
+    this._initFogChunks()
 
     if (!this.revealEverything) {
       for (let i = 0; i <= this.size; i++) {
@@ -306,6 +300,8 @@ export default class Map extends Container {
       }
     }
 
+    this._fogInitComplete = true
+    this._flushFogQueue()
     this.bakeTerrainToChunks()
     this.ready = true
     menu.updateResourcesMiniMap()
@@ -381,6 +377,10 @@ export default class Map extends Container {
     let forestCells = []
     const pathCells = new Set()
 
+    // Larger range for lac so forests cover the sides between players around the lake
+    const rangeFactor = this.mapType === 'lac' ? 0.55 : 0.40
+    const forestRange = Math.max(30, Math.floor(this.size * rangeFactor))
+
     // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
     function distSq(x1, y1, x2, y2) {
       return (x1 - x2) ** 2 + (y1 - y2) ** 2
@@ -427,8 +427,8 @@ export default class Map extends Container {
 
       // Ensure the cluster is far from the player and within bounds
       do {
-        clusterCenterI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset
-        clusterCenterJ = playerJ + Math.floor(Math.random() * 60 - 30)
+        clusterCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
+        clusterCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
         tries++
         if (tries > 100) break // Safety exit
       } while (
@@ -455,8 +455,8 @@ export default class Map extends Container {
       let tries = 0
 
       do {
-        soloI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset within [-30, 30]
-        soloJ = playerJ + Math.floor(Math.random() * 60 - 30)
+        soloI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
+        soloJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
         tries++
         if (tries > 50) break // Safety exit to avoid infinite loop
       } while (
@@ -484,8 +484,8 @@ export default class Map extends Container {
         const edgeNoise = Math.random() * 1.5
 
         do {
-          clearingCenterI = playerI + Math.floor(Math.random() * 60 - 30) // Random offset
-          clearingCenterJ = playerJ + Math.floor(Math.random() * 60 - 30)
+          clearingCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
+          clearingCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
           tries++
           if (tries > 100) break
         } while (
@@ -617,110 +617,120 @@ export default class Map extends Container {
     }
   }
 
-  generateTerrain(gridSize = 120, mapModel = 'plain') {
-    const terrainMap = []
+  generateTerrain(gridSize = 120, mapType = 'plain') {
+    // Seeded 2D value noise — each map generation gets a unique seed
+    const seed = Math.random() * 9999
 
-    // Initialize the map with default grass (0)
+    function hash(x, y) {
+      const n = Math.sin(x * 127.1 + y * 311.7 + seed * 3.7) * 43758.5453
+      return n - Math.floor(n)
+    }
+
+    function noise(x, y) {
+      const xi = Math.floor(x), yi = Math.floor(y)
+      const xf = x - xi, yf = y - yi
+      const smooth = t => t * t * (3 - 2 * t)
+      const u = smooth(xf), v = smooth(yf)
+      const a = hash(xi, yi), b = hash(xi + 1, yi)
+      const c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1)
+      return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v
+    }
+
+    // Fractional Brownian Motion — sum of N octaves for natural-looking terrain
+    function fbm(x, y, octaves = 5) {
+      let val = 0, amp = 0.5, freq = 1, sum = 0
+      for (let o = 0; o < octaves; o++) {
+        val += noise(x * freq, y * freq) * amp
+        sum += amp
+        amp *= 0.5
+        freq *= 2
+      }
+      return val / sum
+    }
+
+    const scale = 4 / gridSize
+    const half = gridSize / 2
+
+    // Smooth radial falloff: 1.0 at center, 0.0 at edge
+    function radialFalloff(i, j) {
+      const dx = (i - half) / half
+      const dy = (j - half) / half
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const t = Math.min(1, dist)
+      return 1 - t * t * (3 - 2 * t)
+    }
+
+    // Pre-compute heightmap and biome map
+    const height = new Float32Array(gridSize * gridSize)
+    const biome  = new Float32Array(gridSize * gridSize)
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        height[i * gridSize + j] = fbm(i * scale, j * scale)
+        // Lower frequency (×0.6) → larger biome patches for AoE1-style biome regions
+        biome[i * gridSize + j]  = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4)
+      }
+    }
+
+    // Water threshold per map type
+    const thresholds = { plain: 0.30, continent: 0.40, lac: 0.42, ilot: 0.52 }
+    const waterThreshold = thresholds[mapType] ?? 0.30
+
+    const terrainMap = []
     for (let i = 0; i < gridSize; i++) {
       terrainMap[i] = []
       for (let j = 0; j < gridSize; j++) {
-        terrainMap[i][j] = 0 // Default to grass
+        let h = height[i * gridSize + j]
+        const fo = radialFalloff(i, j)
+
+        if (mapType === 'continent') {
+          // Stronger boost so the continent is large and water stays at the edges
+          h += (fo - 0.5) * 0.75
+        } else if (mapType === 'lac') {
+          // Depress center (→ lake), raise edges (→ land)
+          h -= (fo - 0.3) * 0.50
+        } else if (mapType === 'ilot') {
+          // Mild edge depression + higher threshold → scattered islands
+          h += (fo - 0.5) * 0.20
+        }
+
+        terrainMap[i][j] = h < waterThreshold ? 2 : 0
       }
     }
 
-    // Helper function to generate terrain clusters around a point
-    function generateTerrainCluster(x, y, radius, type) {
-      for (let i = -radius; i <= radius; i++) {
-        for (let j = -radius; j <= radius; j++) {
-          const nx = x + i
-          const ny = y + j
-          if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && i * i + j * j <= radius * radius) {
-            terrainMap[nx][ny] = type
-          }
+    // Smooth coastlines with 2 passes of cellular automaton.
+    // Removes isolated water/land pixels so water-border transition sprites apply correctly.
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 1; i < gridSize - 1; i++) {
+        for (let j = 1; j < gridSize - 1; j++) {
+          const wn =
+            (terrainMap[i - 1][j] === 2 ? 1 : 0) +
+            (terrainMap[i + 1][j] === 2 ? 1 : 0) +
+            (terrainMap[i][j - 1] === 2 ? 1 : 0) +
+            (terrainMap[i][j + 1] === 2 ? 1 : 0)
+          if (terrainMap[i][j] !== 2 && wn >= 3) terrainMap[i][j] = 2  // isolated land → water
+          if (terrainMap[i][j] === 2 && wn <= 1) terrainMap[i][j] = 0  // isolated water → land
         }
       }
     }
 
-    // Generate water with a smoother, randomized approach
-    function generateWater() {
-      if (mapModel === 'continent') {
-        const edgeSize = 10 // Base edge size for water
-        const roundFactor = 0.15 // Controls the "smoothness" of the water edge
-
-        // Loop through the map and set water in a rounded pattern with random noise
-        for (let i = 0; i < gridSize; i++) {
-          for (let j = 0; j < gridSize; j++) {
-            const distFromCenter = Math.abs(i - gridSize / 2) + Math.abs(j - gridSize / 2) // Distance from center
-
-            // Add smooth water around the edges with randomized borders
-            const edgeDist = Math.min(i, j, gridSize - i, gridSize - j)
-            const randomOffset = Math.random() * 5 - 2.5 // Randomize water edge for more natural look
-
-            if (edgeDist < edgeSize + Math.sin(distFromCenter * roundFactor) * 5 + randomOffset) {
-              terrainMap[i][j] = 2 // Water
-            }
-          }
-        }
-      } else if (mapModel === 'lac') {
-        const centerX = Math.floor(gridSize / 2)
-        const centerY = Math.floor(gridSize / 2)
-        const baseRadius = Math.floor(gridSize / 4) // Base radius for the lake
-        const roundFactor = 0.6 // Adjust this for more/less rounding
-
-        // Create a lake with a smoother, randomized border
-        for (let i = -baseRadius; i <= baseRadius; i++) {
-          for (let j = -baseRadius; j <= baseRadius; j++) {
-            const nx = centerX + i
-            const ny = centerY + j
-            const distanceFromCenter = Math.sqrt(i * i + j * j)
-            const noise = Math.sin(distanceFromCenter * roundFactor) * 2 // Create smooth noise
-            const randomOffset = Math.random() * 3 - 1.5 // Add randomness to the lake shape
-
-            if (
-              nx >= 0 &&
-              nx < gridSize &&
-              ny >= 0 &&
-              ny < gridSize &&
-              distanceFromCenter < baseRadius + noise + randomOffset
-            ) {
-              terrainMap[nx][ny] = 2 // Water
-            }
-          }
-        }
-      }
-      // 'plain' model: no water, so do nothing
+    // Biome pass on land cells — per-type thresholds and larger-patch noise frequency
+    // for more cohesive desert/jungle zones (AoE1 style)
+    const biomeThresholds = {
+      plain:     { lo: 0.38, hi: 0.65 },  // warmer, drier → more desert
+      continent: { lo: 0.33, hi: 0.67 },  // balanced
+      lac:       { lo: 0.32, hi: 0.68 },  // balanced
+      ilot:      { lo: 0.27, hi: 0.60 },  // tropical → more jungle
     }
+    const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
 
-    // Generate clusters of desert (1) and jungle (3)
-    function generateLandTerrain() {
-      // Generate desert areas (1)
-      generateClusters(1, 8, 5, 10)
-
-      // Generate jungle areas (3)
-      generateClusters(3, 10, 4, 8)
-    }
-
-    // Generic function to generate clustered terrain types
-    function generateClusters(type, clusterCount, clusterSizeMin, clusterSizeMax) {
-      for (let i = 0; i < clusterCount; i++) {
-        const clusterX = Math.floor(Math.random() * gridSize)
-        const clusterY = Math.floor(Math.random() * gridSize)
-        const radius = Math.floor(Math.random() * (clusterSizeMax - clusterSizeMin)) + clusterSizeMin
-
-        // Ensure we avoid water if generating jungle/desert in the 'lac' or 'continent' models
-        if (type !== 2 && terrainMap[clusterX][clusterY] === 2) {
-          continue // Skip if this area is water
-        }
-
-        generateTerrainCluster(clusterX, clusterY, radius, type)
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        if (terrainMap[i][j] === 2) continue
+        const b = biome[i * gridSize + j]
+        if (b < bt.lo)      terrainMap[i][j] = 1  // desert
+        else if (b > bt.hi) terrainMap[i][j] = 3  // jungle
       }
     }
-
-    // Generate water based on the map model
-    generateWater()
-
-    // Generate desert and jungle clusters
-    generateLandTerrain()
 
     return terrainMap
   }
@@ -728,7 +738,7 @@ export default class Map extends Container {
   generateCells() {
     const z = 0
     this.grid = []
-    const terrain = this.generateTerrain(this.size ? this.size + 1 : 121)
+    const terrain = this.generateTerrain(this.size ? this.size + 1 : 121, this.mapType || 'plain')
     this.size = terrain.length - 1
 
     // Map terrain numbers to cell types
@@ -816,52 +826,123 @@ export default class Map extends Container {
   }
 
   generateMapRelief() {
+    // Coherent fBm heightmap for natural ridges and hill ranges.
+    // Different seed and coarser scale than terrain noise → large, varied features.
+    const seed = Math.random() * 9999
+
+    function hash(x, y) {
+      const n = Math.sin(x * 83.7 + y * 214.3 + seed * 5.1) * 43758.5453
+      return n - Math.floor(n)
+    }
+    function noise(x, y) {
+      const xi = Math.floor(x), yi = Math.floor(y)
+      const xf = x - xi, yf = y - yi
+      const s = t => t * t * (3 - 2 * t)
+      const u = s(xf), v = s(yf)
+      const a = hash(xi, yi), b = hash(xi + 1, yi)
+      const c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1)
+      return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v
+    }
+    function fbm(x, y) {
+      let val = 0, amp = 0.5, freq = 1, sum = 0
+      for (let o = 0; o < 4; o++) {
+        val += noise(x * freq, y * freq) * amp
+        sum += amp; amp *= 0.5; freq *= 2
+      }
+      return val / sum
+    }
+
+    const scale = 3 / this.size
+    const n = this.size + 1
+
+    // BFS from water cells to compute distance-to-water for every cell.
+    // This caps the maximum relief level: a cell N steps from water can be at most N-1.
+    const dist = new Int16Array(n * n).fill(9999)
+    const queue = []
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
-        const cell = this.grid[i][j]
-        if (Math.random() < this.chanceOfRelief) {
-          const level = randomItem(this.reliefRange)
-          let canGenerate = true
-          if (
-            getPlainCellsAroundPoint(i, j, this.grid, level * 2, cell => {
-              if (cell.category === 'Water' || (cell.has && cell.has.family === FAMILY_TYPES.building)) {
-                canGenerate = false
-              }
-            })
-          );
-          if (canGenerate) {
-            cell.setCellLevel(level)
+        if (this.grid[i][j].category === 'Water') {
+          dist[i * n + j] = 0
+          queue.push(i * n + j)
+        }
+      }
+    }
+    for (let qi = 0; qi < queue.length; qi++) {
+      const idx = queue[qi]
+      const ci = Math.floor(idx / n), cj = idx % n
+      const d = dist[idx]
+      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const ni = ci + di, nj = cj + dj
+        if (ni < 0 || ni > this.size || nj < 0 || nj > this.size) continue
+        const nidx = ni * n + nj
+        if (dist[nidx] > d + 1) {
+          dist[nidx] = d + 1
+          queue.push(nidx)
+        }
+      }
+    }
+
+    // Precompute fBm heightmap
+    const reliefH = new Float32Array(n * n)
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        reliefH[i * n + j] = fbm(i * scale, j * scale)
+      }
+    }
+
+    // Helper: directly set a cell's z level and adjust its y position accordingly.
+    // Unlike setCellLevel(), this does NOT propagate to neighbours.
+    const setLevelDirect = (cell, level) => {
+      const delta = level - cell.z
+      if (delta === 0) return
+      cell.y -= delta * CELL_DEPTH
+      cell.z = level
+    }
+
+    // Apply relief from highest level to lowest.
+    // maxAllowed = dist - 1 ensures terrain always steps down to 0 before water.
+    const levelThresholds = [0, 0.66, 0.78, 0.86]
+    for (let targetLevel = 3; targetLevel >= 1; targetLevel--) {
+      const threshold = levelThresholds[targetLevel]
+      for (let i = 0; i <= this.size; i++) {
+        for (let j = 0; j <= this.size; j++) {
+          const cell = this.grid[i][j]
+          if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
+          const maxAllowed = Math.max(0, dist[i * n + j] - 1)
+          const actual = Math.min(targetLevel, maxAllowed)
+          if (reliefH[i * n + j] > threshold && actual > cell.z) {
+            cell.setCellLevel(actual)
           }
         }
       }
     }
+
+    // Hard constraint: directly clamp any cell that setCellLevel propagation raised
+    // beyond its allowed level. Use setLevelDirect to avoid further propagation.
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        const maxAllowed = Math.max(0, dist[i * n + j] - 1)
+        if (cell.z > maxAllowed) setLevelDirect(cell, maxAllowed)
+      }
+    }
+
+    // Remove isolated z=1 bumps (direct reset, no propagation)
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
         if (cell.z === 1) {
-          let toRemove = true
           let cpt = 0
-          if (
-            getCellsAroundPoint(i, j, this.grid, 1, cell => {
-              if (cell.z > 0) {
-                cpt++
-              }
-              if (cpt >= 3) {
-                toRemove = false
-              }
-            })
-          );
-          if (toRemove) {
-            cell.setCellLevel(0)
-          }
+          getCellsAroundPoint(i, j, this.grid, 1, c => { if (c.z > 0) cpt++ })
+          if (cpt < 3) setLevelDirect(cell, 0)
         }
       }
     }
-    // Format cell's relief
+
+    // Fill gaps between close elevated cells
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
-        const cell = this.grid[i][j]
-        cell.fillReliefCellsAroundCell()
+        this.grid[i][j].fillReliefCellsAroundCell()
       }
     }
   }
@@ -972,108 +1053,57 @@ export default class Map extends Container {
   }
 
   formatCellsWaterBorder() {
+    // Apply 20000 beach tiles to every land cell adjacent to water.
+    // Bitmask priority: deep corners (2 adjacent orthogonal water) first,
+    // then single sides, then diagonal-only outer corners.
+    // No exclusive "other sides NOT water" conditions — handles any coastline shape.
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        if (cell.type !== 'Water') {
-          // Side
-          if (
-            this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'Water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '008')
-          } else if (
-            this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'Water' &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '009')
-          } else if (
-            this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'Water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '011')
-          } else if (
-            this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'Water' &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '010')
-          } // Corner
-          else if (
-            this.grid[i - 1] &&
-            this.grid[i - 1][j - 1] &&
-            this.grid[i - 1][j - 1].type === 'Water' &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '005')
-          } else if (
-            this.grid[i + 1] &&
-            this.grid[i + 1][j - 1] &&
-            this.grid[i + 1][j - 1].type === 'Water' &&
-            (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '007')
-          } else if (
-            this.grid[i - 1] &&
-            this.grid[i - 1][j + 1] &&
-            this.grid[i - 1][j + 1].type === 'Water' &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
-            (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '004')
-          } else if (
-            this.grid[i + 1] &&
-            this.grid[i + 1][j + 1] &&
-            this.grid[i + 1][j + 1].type === 'Water' &&
-            (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') &&
-            (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')
-          ) {
-            cell.setWaterBorder('20000', '006')
-          }
-          // Deep corner
-          else if (
-            this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'Water' &&
-            this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'Water'
-          ) {
-            cell.setWaterBorder('20000', '001')
-          } else if (
-            this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'Water' &&
-            this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'Water'
-          ) {
-            cell.setWaterBorder('20000', '002')
-          } else if (
-            this.grid[i][j - 1] &&
-            this.grid[i][j - 1].type === 'Water' &&
-            this.grid[i + 1] &&
-            this.grid[i + 1][j].type === 'Water'
-          ) {
-            cell.setWaterBorder('20000', '003')
-          } else if (
-            this.grid[i][j + 1] &&
-            this.grid[i][j + 1].type === 'Water' &&
-            this.grid[i - 1] &&
-            this.grid[i - 1][j].type === 'Water'
-          ) {
-            cell.setWaterBorder('20000', '000')
+        if (cell.type === 'Water') continue
+
+        const n  = this.grid[i - 1]?.[j]?.type === 'Water'
+        const s  = this.grid[i + 1]?.[j]?.type === 'Water'
+        const w  = this.grid[i]?.[j - 1]?.type === 'Water'
+        const e  = this.grid[i]?.[j + 1]?.type === 'Water'
+        const nw = this.grid[i - 1]?.[j - 1]?.type === 'Water'
+        const sw = this.grid[i + 1]?.[j - 1]?.type === 'Water'
+        const ne = this.grid[i - 1]?.[j + 1]?.type === 'Water'
+        const se = this.grid[i + 1]?.[j + 1]?.type === 'Water'
+
+        if      (w && n) cell.setWaterBorder('20000', '001')
+        else if (e && s) cell.setWaterBorder('20000', '002')
+        else if (w && s) cell.setWaterBorder('20000', '003')
+        else if (e && n) cell.setWaterBorder('20000', '000')
+        else if (n)      cell.setWaterBorder('20000', '008')
+        else if (s)      cell.setWaterBorder('20000', '009')
+        else if (w)      cell.setWaterBorder('20000', '011')
+        else if (e)      cell.setWaterBorder('20000', '010')
+        else if (nw)     cell.setWaterBorder('20000', '005')
+        else if (sw)     cell.setWaterBorder('20000', '007')
+        else if (ne)     cell.setWaterBorder('20000', '004')
+        else if (se)     cell.setWaterBorder('20000', '006')
+      }
+    }
+
+    // Apply 20002 overlay on cells adjacent to waterBorder cells —
+    // same approach as formatCellsDesert: the beach tile acts as the "source"
+    // and its grass/jungle/desert neighbours get a sandy gradient on top.
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        if (!cell.waterBorder) continue
+
+        const overlay = (neighbor, direction) => {
+          if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
+            neighbor.setDesertBorder(direction)
           }
         }
+
+        overlay(this.grid[i - 1]?.[j], 'east')
+        overlay(this.grid[i + 1]?.[j], 'west')
+        overlay(this.grid[i]?.[j - 1], 'south')
+        overlay(this.grid[i]?.[j + 1], 'north')
       }
     }
   }
@@ -1101,100 +1131,88 @@ export default class Map extends Container {
   }
   findPlayerPlaces() {
     const results = []
-    const outBorder = 20
-    const inBorder = Math.floor(this.size / 4)
-    const zones = [
-      {
-        minX: outBorder,
-        minY: this.size / 2 + inBorder,
-        maxX: this.size / 2 - inBorder,
-        maxY: this.size - outBorder,
-      },
-      {
-        minX: outBorder,
-        minY: outBorder,
-        maxX: this.size / 2 - inBorder,
-        maxY: this.size / 2 - inBorder,
-      },
-      {
-        minX: this.size / 2 + inBorder,
-        minY: outBorder,
-        maxX: this.size - outBorder,
-        maxY: this.size / 2 - inBorder,
-      },
-      {
-        minX: this.size / 2 + inBorder,
-        minY: this.size / 2 + inBorder,
-        maxX: this.size - outBorder,
-        maxY: this.size - outBorder,
-      },
-    ]
-    for (let i = 0; i < zones.length; i++) {
-      const pos = getZoneInGridWithCondition(zones[i], this.grid, 5, cell => {
-        return !cell.border && !cell.solid && !cell.inclined
-      })
-      if (pos) {
-        results.push(pos)
+    const N = this.positionsCount
+    const center = this.size / 2
+    // Randomise start angle so map layout varies each game
+    const startAngle = Math.random() * 2 * Math.PI
+    // Search window radius around each angular candidate
+    const searchHalf = Math.max(8, Math.floor(this.size * 0.07))
+    const border = 12
+    // Ordered list of candidate radii (outer → inner) to try per slot
+    const radiiFactors = [0.38, 0.30, 0.44, 0.22, 0.46, 0.15]
+
+    for (let i = 0; i < N; i++) {
+      const angle = startAngle + (2 * Math.PI / N) * i
+      let found = null
+
+      for (const frac of radiiFactors) {
+        if (found) break
+        const r = Math.floor(this.size * frac)
+        const ci = Math.round(center + Math.cos(angle) * r)
+        const cj = Math.round(center + Math.sin(angle) * r)
+
+        found = getZoneInGridWithCondition(
+          {
+            minX: Math.max(border, ci - searchHalf),
+            maxX: Math.min(this.size - border, ci + searchHalf),
+            minY: Math.max(border, cj - searchHalf),
+            maxY: Math.min(this.size - border, cj + searchHalf),
+          },
+          this.grid,
+          5,
+          cell => !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water'
+        )
       }
+
+      if (found) results.push(found)
     }
+
     return results
   }
 
   placeResourceGroup(player, instance, quantity, range) {
     const { context, grid } = this
 
-    // Function to get valid cells around a center point within a specific distance
-    function getValidCells(centerI, centerJ, dist) {
+    function getValidCells(ci, cj, radius) {
       const cells = []
-      // Check surrounding cells within the specified distance
-      for (let dx = -dist; dx <= dist; dx++) {
-        for (let dy = -dist; dy <= dist; dy++) {
-          const newI = centerI + dx
-          const newJ = centerJ + dy
-
-          // Ensure the new coordinates are within the grid bounds
-          if (grid[newI] && grid[newI][newJ]) {
-            const cell = grid[newI][newJ]
-            let isFree = true
-            getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
-              if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(cell.has?.type)) {
-                isFree = false
-              }
-            })
-            // Check if the cell is valid
-            if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-              cells.push({ i: newI, j: newJ })
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+          const newI = ci + dx
+          const newJ = cj + dy
+          if (!grid[newI]?.[newJ]) continue
+          const cell = grid[newI][newJ]
+          let isFree = true
+          getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, c => {
+            if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(c.has?.type)) {
+              isFree = false
             }
+          })
+          if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+            cells.push({ i: newI, j: newJ })
           }
         }
       }
       return cells
     }
 
-    // Get a random center point around the player's position within the specified range
-    const randomDistance = randomRange(range[0], range[1])
-    const centerI = player.i + randomItem([-randomDistance, randomDistance])
-    const centerJ = player.j + randomItem([-randomDistance, randomDistance])
+    // Radial placement: random angle + random distance in [range[0], range[1]]
+    const angle = Math.random() * 2 * Math.PI
+    const dist = range[0] + Math.random() * (range[1] - range[0])
+    const centerI = Math.round(player.i + Math.cos(angle) * dist)
+    const centerJ = Math.round(player.j + Math.sin(angle) * dist)
 
-    // Gather valid cells around the center point
-    const validCells = getValidCells(centerI, centerJ, 2) // Adjust distance to suit clustering
+    // Radius 2 → 5×5 tight cluster (AoE1 style), fallback to 3 if not enough cells
+    let validCells = getValidCells(centerI, centerJ, 2)
+    if (validCells.length < quantity) validCells = getValidCells(centerI, centerJ, 3)
+    if (validCells.length < quantity) return
 
-    // Check if we have enough valid cells to place the required quantity of resources
-    if (validCells.length < quantity) {
-      console.warn('Not enough valid cells found for resource placement.')
-      return // Exit if not enough valid cells found
-    }
-
-    // Randomly select the required number of cells from the valid cells
     const cellsToPlace = []
     for (let i = 0; i < quantity; i++) {
-      const itemIndex = Math.floor(Math.random() * validCells.length)
-      const cell = validCells[itemIndex]
-      cellsToPlace.push(cell) // Store the selected cell for placement
-      validCells.splice(itemIndex, 1) // Remove it from valid cells to avoid duplicates
+      if (!validCells.length) break
+      const idx = Math.floor(Math.random() * validCells.length)
+      cellsToPlace.push(validCells.splice(idx, 1)[0])
     }
 
-    // Place resources in the selected cells
     for (const cell of cellsToPlace) {
       this.resources.add(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
@@ -1271,6 +1289,146 @@ export default class Map extends Container {
           cell.updateVisible()
         }
       }
+    }
+  }
+
+  _initFogChunks() {
+    this._fogQueue = new globalThis.Map()
+    this._fogInitComplete = false
+    this._fogChunks = []
+
+    const renderer = this.context.app?.renderer
+    if (!renderer) return
+
+    const margin = CELL_WIDTH
+    const minX = -this.size * (CELL_WIDTH / 2) - margin
+    const minY = -margin
+    const maxX = this.size * (CELL_WIDTH / 2) + margin
+    const maxY = this.size * CELL_HEIGHT + margin
+    const totalW = maxX - minX
+    const totalH = maxY - minY
+
+    const gl = renderer.gl
+    const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
+    const chunksX = Math.ceil(totalW / maxTex)
+    const chunksY = Math.ceil(totalH / maxTex)
+    const chunkW = totalW / chunksX
+    const chunkH = totalH / chunksY
+
+    this._fogBounds = { minX, minY, chunksX, chunksY, chunkW, chunkH, totalW, totalH }
+
+    this.fogLayer = new Container()
+    this.fogLayer.eventMode = 'none'
+    this.fogLayer.zIndex = 1e9
+    this.fogLayer.sortableChildren = true
+    this.addChild(this.fogLayer)
+
+    // revealEverything = no fog chunks at all, fogLayer stays empty
+    if (this.revealEverything) return
+
+    for (let cx = 0; cx < chunksX; cx++) {
+      for (let cy = 0; cy < chunksY; cy++) {
+        const cMinX = minX + cx * chunkW
+        const cMinY = minY + cy * chunkH
+        const cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW)
+        const cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH)
+
+        const rt = RenderTexture.create({ width: cW, height: cH })
+
+        if (this.revealTerrain) {
+          // Start transparent — dotted fog pattern is drawn per-cell via _flushFogQueue
+          // (drawing dots on black = still black; needs transparent base to show through)
+          const emptyC = new Container()
+          renderer.render({ container: emptyC, target: rt, clear: true })
+          emptyC.destroy()
+        } else {
+          // Normal mode: solid black, cells are erased as they become visible
+          const blackG = new Graphics()
+          blackG.rect(0, 0, cW, cH).fill({ color: 0x000000 })
+          renderer.render({ container: blackG, target: rt, clear: true })
+          blackG.destroy()
+        }
+
+        const sprite = new Sprite(rt)
+        sprite.x = cMinX
+        sprite.y = cMinY
+        sprite.zIndex = 1
+        sprite.eventMode = 'none'
+        this.fogLayer.addChild(sprite)
+
+        this._fogChunks.push({ rt, minX: cMinX, minY: cMinY, w: cW, h: cH })
+      }
+    }
+
+    this._fogTickerCb = () => {
+      // Self-remove if this map is no longer active
+      if (this.context.map !== this) {
+        this.context.app.ticker.remove(this._fogTickerCb)
+        return
+      }
+      this._flushFogQueue()
+    }
+    this.context.app.ticker.add(this._fogTickerCb)
+  }
+
+  _getFogChunkFor(x, y) {
+    const { _fogBounds, _fogChunks } = this
+    if (!_fogBounds || !_fogChunks) return null
+    const { minX, minY, chunksX, chunksY, chunkW, chunkH } = _fogBounds
+    const cx = Math.min(Math.floor((x - minX) / chunkW), chunksX - 1)
+    const cy = Math.min(Math.floor((y - minY) / chunkH), chunksY - 1)
+    const idx = cy + cx * chunksY
+    return _fogChunks[idx] ?? null
+  }
+
+  _flushFogQueue() {
+    if (!this._fogQueue || this._fogQueue.size === 0) return
+    const renderer = this.context.app?.renderer
+    if (!renderer) return
+
+    // Group updates by chunk
+    const chunkUpdates = new globalThis.Map()
+    for (const [cell, state] of this._fogQueue) {
+      const chunk = this._getFogChunkFor(cell.x, cell.y)
+      if (!chunk) continue
+      if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, [])
+      chunkUpdates.get(chunk).push({ cell, state })
+    }
+    this._fogQueue.clear()
+
+    const hw = _DW / 2
+    const hh = _DH / 2
+
+    for (const [chunk, updates] of chunkUpdates) {
+      const transform = new Matrix().translate(-chunk.minX, -chunk.minY)
+      const drawContainer = new Container()
+      const eraseContainer = new Container()
+
+      for (const { cell, state } of updates) {
+        if (state === 'clear') {
+          const g = new Graphics()
+          g.blendMode = 'erase'
+          const cx = cell.x, cy = cell.y
+          g.poly([cx, cy - hh, cx + hw, cy, cx, cy + hh, cx - hw, cy]).fill({ color: 0xffffff })
+          eraseContainer.addChild(g)
+        } else {
+          const s = new Sprite(state === 'fogViewed' ? getFogTexture() : getDarknessTexture())
+          s.anchor.set(_DAX / _DW, _DAY / _DH)
+          s.x = cell.x
+          s.y = cell.y
+          drawContainer.addChild(s)
+        }
+      }
+
+      if (drawContainer.children.length) {
+        renderer.render({ container: drawContainer, target: chunk.rt, transform, clear: false })
+      }
+      if (eraseContainer.children.length) {
+        renderer.render({ container: eraseContainer, target: chunk.rt, transform, clear: false })
+      }
+
+      drawContainer.destroy({ children: true })
+      eraseContainer.destroy({ children: true })
     }
   }
 }

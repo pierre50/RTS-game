@@ -29,6 +29,13 @@ const MAP_SIZES = [
   { label: 'Large  (220×220)', value: 220, maxPlayers: 8 },
 ]
 
+const MAP_TYPES = [
+  { label: () => t('mapTypePlain'),     value: 'plain' },
+  { label: () => t('mapTypeContinent'), value: 'continent' },
+  { label: () => t('mapTypeLac'),       value: 'lac' },
+  { label: () => t('mapTypeIlot'),      value: 'ilot' },
+]
+
 const CIVS = [
   { label: () => t('civGreek'), value: 'Greek' },
 ]
@@ -51,6 +58,7 @@ export default class MapConfig {
 
     this.config = {
       size: 120,
+      mapType: 'plain',
       difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
@@ -66,7 +74,7 @@ export default class MapConfig {
 
     this.el = document.createElement('div')
     this.el.id = 'map-config'
-    this.el.style.backgroundImage = "url('/background/bg2.png')"
+    this.el.style.backgroundImage = "url('/assets/background/bg2.png')"
 
     this._buildUI()
     document.body.appendChild(this.el)
@@ -129,6 +137,12 @@ export default class MapConfig {
         this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
         this._clampPlayers()
         this._refreshPlayerTable()
+      })
+    )
+
+    settingsForm.appendChild(
+      this._createSelect(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
+        this.config.mapType = val
       })
     )
 

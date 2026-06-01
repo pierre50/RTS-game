@@ -1,5 +1,7 @@
-import { ACCELERATOR, BUCKET_SIZE, FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
-import { randomItem, instancesDistance, pointsDistance, getInstanceDegree, cellIsDiag } from './maths'
+import { ACCELERATOR, BUCKET_SIZE } from '../constants'
+import { updateVisibility } from '../services/FogOfWar'
+import { findInstancePath } from '../services/Pathfinding'
+import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from './maths'
 
 /**
  * Check if two instances are in contact.
@@ -78,7 +80,8 @@ export function getInstanceClosestFreeCellPath(instance, target, map) {
   const candidates = getCellsAroundPoint(target.i, target.j, map.grid, distance)
   candidates.sort(
     (a, b) =>
-      Math.abs(a.i - instance.i) + Math.abs(a.j - instance.j) -
+      Math.abs(a.i - instance.i) +
+      Math.abs(a.j - instance.j) -
       (Math.abs(b.i - instance.i) + Math.abs(b.j - instance.j))
   )
 
@@ -91,16 +94,6 @@ export function getInstanceClosestFreeCellPath(instance, target, map) {
   return best
 }
 
-// Monotonically increasing stamp — each A* search gets a unique value so
-// per-cell state from prior searches is ignored without any cleanup pass.
-let _pathStamp = 0
-
-// Reusable A* structures — reset at the start of each search instead of
-// allocating fresh arrays/sets on every call (~60 allocations/sec with 20 units).
-const _heapData = []
-const _openSet = new Set()
-const _closedSet = new Set()
-
 /**
  * Get the shortest path for a instance to a destination
  * @param {object} instance
@@ -109,129 +102,7 @@ const _closedSet = new Set()
  * @param {object} map
  */
 export function getInstancePath(instance, x, y, map) {
-  const maxZone = 10
-  const end = map.grid[x][y]
-  const start = map.grid[instance.i][instance.j]
-  const minX = Math.max(Math.min(start.i, end.i) - maxZone, 0)
-  const maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size)
-  const minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
-  const maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
-
-  const stamp = ++_pathStamp
-
-  // Initialize A* scratch state on a cell the first time this search touches it.
-  // Cells from prior searches have a different _ps value and are treated as fresh.
-  function initCell(cell) {
-    if (cell._ps !== stamp) {
-      cell._ps = stamp
-      cell._g = Infinity
-      cell._h = 0
-      cell._f = Infinity
-      cell._prev = null
-    }
-    return cell
-  }
-
-  function isCellReachable(cell) {
-    if (cell.solid) return false
-    const allowWaterCellCategory = instance.category === 'Boat'
-    return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water'
-  }
-
-  const startCell = initCell(start)
-  const endCell = initCell(end)
-
-  // Min-heap storing [f_at_push, node] pairs.
-  // Stale re-insertions are skipped by comparing stored f with node's current f.
-  _heapData.length = 0
-  _openSet.clear()
-  _closedSet.clear()
-  function heapPush(f, node) {
-    _heapData.push([f, node])
-    let i = _heapData.length - 1
-    while (i > 0) {
-      const parent = (i - 1) >> 1
-      if (_heapData[parent][0] <= _heapData[i][0]) break
-      ;[_heapData[parent], _heapData[i]] = [_heapData[i], _heapData[parent]]
-      i = parent
-    }
-  }
-  function heapPop() {
-    const top = _heapData[0]
-    const last = _heapData.pop()
-    if (_heapData.length > 0) {
-      _heapData[0] = last
-      let i = 0
-      while (true) {
-        const l = 2 * i + 1
-        const r = 2 * i + 2
-        let s = i
-        if (l < _heapData.length && _heapData[l][0] < _heapData[s][0]) s = l
-        if (r < _heapData.length && _heapData[r][0] < _heapData[s][0]) s = r
-        if (s === i) break
-        ;[_heapData[s], _heapData[i]] = [_heapData[i], _heapData[s]]
-        i = s
-      }
-    }
-    return top
-  }
-
-  startCell._g = 0
-  startCell._h = instancesDistance(startCell, endCell)
-  startCell._f = startCell._h
-  heapPush(startCell._f, startCell)
-  _openSet.add(startCell)
-
-  let path = []
-
-  while (_heapData.length > 0) {
-    const [pushedF, current] = heapPop()
-    // Skip stale entries (node was re-inserted with a better f)
-    if (pushedF !== current._f || _closedSet.has(current)) continue
-
-    if (current === endCell) {
-      path = [endCell]
-      let temp = current
-      while (temp._prev) {
-        path.push(temp._prev)
-        temp = temp._prev
-      }
-      break
-    }
-
-    _openSet.delete(current)
-    _closedSet.add(current)
-
-    // check neighbours
-    getCellsAroundPoint(current.i, current.j, map.grid, 1, neighbour => {
-      // Enforce the search zone boundary (previously implicit via sparse cloneGrid)
-      if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return
-      initCell(neighbour)
-      const validDiag =
-        !cellIsDiag(current, neighbour) ||
-        (isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]))
-      if (!_closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
-        const tempG = current._g + instancesDistance(neighbour, current)
-        if (!_openSet.has(neighbour)) {
-          neighbour._g = tempG
-          neighbour._h = instancesDistance(neighbour, endCell)
-          neighbour._f = neighbour._g + neighbour._h
-          neighbour._prev = current
-          _openSet.add(neighbour)
-          heapPush(neighbour._f, neighbour)
-        } else if (tempG < neighbour._g) {
-          // Better path found — update scores and re-insert; old heap entry will be skipped
-          neighbour._g = tempG
-          neighbour._f = neighbour._g + neighbour._h
-          neighbour._prev = current
-          heapPush(neighbour._f, neighbour)
-        }
-      }
-    })
-  }
-
-  path.pop()
-  return [...path]
+  return findInstancePath(instance, x, y, map)
 }
 
 /**
@@ -286,7 +157,12 @@ export function getZoneInGridWithCondition(zone, grid, size, condition) {
  * @returns {Array} - List of instances that are within the sight range and match the condition.
  */
 export function findInstancesInSight(instance, condition) {
-  const { i: instX, j: instY, sight, context: { map } } = instance
+  const {
+    i: instX,
+    j: instY,
+    sight,
+    context: { map },
+  } = instance
   const { instanceBuckets } = map
   if (!instanceBuckets) return []
 
@@ -301,7 +177,8 @@ export function findInstancesInSight(instance, condition) {
   for (let bi = minBi; bi <= maxBi; bi++) {
     for (let bj = minBj; bj <= maxBj; bj++) {
       for (const target of instanceBuckets[bi][bj]) {
-        const dx = target.i - instX, dy = target.j - instY
+        const dx = target.i - instX,
+          dy = target.j - instY
         if (dx * dx + dy * dy <= sightSq && condition(target)) {
           instances.push(target)
         }
@@ -319,108 +196,7 @@ export function findInstancesInSight(instance, condition) {
  * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
 export function updateInstanceVisibility(instance) {
-  const { i: cx, j: cy, sight, owner, context, isDead } = instance
-  const map = context.map
-  const player = context.player
-  const sightSq = sight * sight
-
-  // Ping-pong two persistent Sets to avoid per-call allocation
-  const prevVisible = instance.visibleCells ?? new Set()
-  const newVisible = instance._visibleScratch ?? new Set()
-  newVisible.clear()
-
-  // Collect all cells within sight
-  if (!isDead) {
-    getPlainCellsAroundPoint(cx, cy, owner.views, sight, cell => {
-      const dx = cell.i - cx
-      const dy = cell.j - cy
-      if (dx * dx + dy * dy <= sightSq) {
-        newVisible.add(cell)
-      }
-    })
-  }
-
-  // Hide cells that left sight
-  for (let cell of prevVisible) {
-    if (!newVisible.has(cell)) {
-      const playerCell = player.views[cell.i][cell.j]
-      const globalCell = map.grid[cell.i][cell.j]
-      globalCell.viewBy.delete(instance)
-      cell.viewBy.delete(instance)
-
-      if (!playerCell.viewBy.size && !map.revealEverything) {
-        globalCell.setFog()
-      }
-    }
-  }
-
-  // Show new cells
-  for (let cell of newVisible) {
-    if (!prevVisible.has(cell)) {
-      const globalCell = map.grid[cell.i][cell.j]
-
-      globalCell.updateVisible()
-      globalCell.viewBy.add(instance)
-      cell.viewBy.add(instance)
-      if (!cell.viewed) {
-        owner.cellViewed++
-        cell.onViewed?.()
-        cell.viewed = true
-      }
-
-      if (!map.revealEverything && owner.isPlayed) {
-        globalCell.removeFog()
-      } else if (owner.type === PLAYER_TYPES.ai) {
-        // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
-        updateAIKnowledge(globalCell, cell, instance)
-      }
-
-      // Optional: detect other instances in sight
-      if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
-        const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
-        if (distSq <= globalCell.has.sight ** 2) {
-          globalCell.has.detect(instance)
-        }
-      }
-    }
-  }
-
-  instance.visibleCells = newVisible
-  instance._visibleScratch = prevVisible
-}
-
-/**
- * Updates AI knowledge of resources and enemies when an AI instance views a new cell.
- * Called by updateInstanceVisibility when a cell enters sight for the first time.
- */
-function updateAIKnowledge(globalCell, cell, instance) {
-  const { owner } = instance
-
-  // Sync local cell's "has" object with the global cell if different
-  if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
-    cell.has = globalCell.has
-    const { has } = globalCell
-
-    if (has.quantity > 0) {
-      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees.add(has)
-      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has)
-      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has)
-      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has)
-      if (has.type === RESOURCE_TYPES.salmon) owner.foundedFish?.add(has)
-    }
-
-    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
-      owner.foundedAnimals.add(has)
-    }
-
-    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
-      owner.foundedEnemyBuildings.add(has)
-    }
-
-    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
-      owner.foundedEnemyUnits.add(has)
-    }
-  }
+  return updateVisibility(instance)
 }
 
 /**

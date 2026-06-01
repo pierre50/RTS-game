@@ -1,0 +1,504 @@
+import { sound } from '@pixi/sound'
+import { t } from '../../lib/lang'
+import { Assets, Sprite, AnimatedSprite, Graphics, Container } from 'pixi.js'
+import {
+  ACCELERATOR,
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
+  POPULATION_MAX,
+  UNIT_TYPES,
+} from '../../constants'
+import {
+  getTexture,
+  randomItem,
+  getInstanceZIndex,
+  getPlainCellsAroundPoint,
+  getPercentage,
+  drawInstanceBlinkingSelection,
+  instanceIsInPlayerSight,
+  getActionCondition,
+  getBuildingAsset,
+  getBuildingTextureNameWithSize,
+  canUpdateMinimap,
+  changeSpriteColorDirectly,
+  updateInstanceVisibility,
+} from '../../lib'
+import { Polygon } from 'pixi.js'
+import { BuildingInterface } from '../../ui/BuildingInterface'
+import { BuildingLifecycle } from './BuildingLifecycle'
+import { BuildingProduction } from './BuildingProduction'
+import { Instance } from '../Instance'
+import { BuildingCombat } from './BuildingCombat'
+
+export class Building extends Instance {
+  constructor(options, context) {
+    super(context)
+
+    const { map, controls } = context
+
+    this.family = FAMILY_TYPES.building
+    this.buildingInterface = new BuildingInterface(this)
+    this.buildingLifecycle = new BuildingLifecycle(this)
+    this.buildingProduction = new BuildingProduction(this)
+    this.buildingCombat = new BuildingCombat(this)
+    this.queue = []
+    this.technology = null
+    this.loading = null
+    this.isUsedBy = null
+
+    Object.assign(this, options)
+    Object.assign(this, this.owner.config.buildings[this.type])
+
+    this.intervalId = null
+    this.attackIntervalId = null
+
+    if (this.queue.length) {
+      this.buyUnit(this.queue[0], true, true)
+    } else if (this.technology) {
+      this.buyTechnology(this.technology.type, true, true)
+    }
+
+    this.quantity = this.quantity ?? this.totalQuantity
+    this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
+
+    this.x = map.grid[this.i][this.j].x
+    this.y = map.grid[this.i][this.j].y
+    this.z = map.grid[this.i][this.j].z
+    this.zIndex = getInstanceZIndex(this)
+    this.visible = map.revealEverything && controls.instanceInCamera(this)
+    let spriteSheet = getBuildingTextureNameWithSize(this.size)
+    if (this.type === BUILDING_TYPES.house && this.owner.age === 0) {
+      spriteSheet = '000_489'
+    } else if (this.type === BUILDING_TYPES.dock) {
+      spriteSheet = '000_356'
+    }
+    const texture = getTexture(spriteSheet, Assets)
+    this.sprite = Sprite.from(texture)
+    this.sprite.updateAnchor = true
+    this.sprite.label = LABEL_TYPES.sprite
+    this.sprite.hitArea = texture.hitArea
+      ? new Polygon(texture.hitArea)
+      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    const units = (this.units || []).map(key => context.menu.getUnitButton(key))
+    const technologies = (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
+    this.interface = {
+      info: element => {
+        const assets = getBuildingAsset(this.type, this.owner, Assets)
+        this.buildingInterface.renderInfo(element, assets)
+      },
+      menu: this.owner.isPlayed || map.devMode ? [...units, ...technologies] : [],
+    }
+
+    // Set solid zone
+    const dist = this.size === 3 ? 1 : 0
+    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
+      const set = cell.getChildByLabel(LABEL_TYPES.set)
+      if (set) {
+        cell.removeChild(set)
+      }
+      for (const corpse of cell.corpses) {
+        typeof corpse.clear === 'function' && corpse.clear()
+      }
+      cell.has = this
+      cell.solid = true
+      this.owner.views[cell.i][cell.j].viewBy.add(this)
+      if (this.owner.isPlayed && !map.revealEverything) {
+        cell.removeFog()
+      }
+    })
+
+    this.allowMove = false
+    if (this.sprite) {
+      this.sprite.allowMove = false
+      this.sprite.eventMode = 'static'
+      this.sprite.roundPixels = true
+
+      this.sprite.on('pointertap', evt => {
+        const {
+          context: { controls, player, menu },
+        } = this
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+          return
+        }
+        let hasSentVillager = false
+        let hasSentOther = false
+        controls.mouse.prevent = true
+        if (this.owner.isPlayed) {
+          // Send Villager to build the building
+          if (!this.isBuilt) {
+            for (let i = 0; i < player.selectedUnits.length; i++) {
+              const unit = player.selectedUnits[i]
+              if (unit.type === UNIT_TYPES.villager) {
+                if (getActionCondition(unit, this, ACTION_TYPES.build)) {
+                  hasSentVillager = true
+                  unit.sendToBuilding(this)
+                }
+              } else {
+                unit.sendTo(this)
+                hasSentOther = true
+              }
+            }
+            if (hasSentVillager) {
+              drawInstanceBlinkingSelection(this)
+            }
+            if (hasSentOther) {
+              const voice = randomItem(['5075', '5076', '5128', '5164'])
+              sound.play(voice)
+              return
+            } else if (hasSentVillager) {
+              const voice = Assets.cache.get('config').units.Villager.sounds.build
+              sound.play(voice)
+              return
+            }
+          } else if (player.selectedUnits) {
+            // Send Villager to give loading of resources
+            for (let i = 0; i < player.selectedUnits.length; i++) {
+              const unit = player.selectedUnits[i]
+              const accept =
+                unit.category === 'Boat'
+                  ? this.type === BUILDING_TYPES.dock
+                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType))
+              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.build)) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendToBuilding(this)
+              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.farm)) {
+                hasSentVillager = true
+                unit.sendToFarm(this)
+              } else if (
+                accept &&
+                getActionCondition(unit, this, ACTION_TYPES.delivery, { buildingTypes: [this.type] })
+              ) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendTo(this, ACTION_TYPES.delivery)
+              }
+            }
+            if (hasSentVillager) {
+              drawInstanceBlinkingSelection(this)
+              const voice = Assets.cache.get('config').units.Villager.sounds.build
+              sound.play(voice)
+              return
+            }
+          }
+          if (this.owner.selectedBuilding !== this) {
+            this.owner.unselectAll()
+            this.select()
+            menu.setBottombar(this)
+            this.owner.selectedBuilding = this
+          }
+        } else if (player.selectedUnits.length) {
+          drawInstanceBlinkingSelection(this)
+          for (let i = 0; i < player.selectedUnits.length; i++) {
+            const playerUnit = player.selectedUnits[i]
+            if (playerUnit.type === UNIT_TYPES.villager) {
+              playerUnit.sendToAttack(this)
+            } else {
+              playerUnit.sendTo(this, ACTION_TYPES.attack)
+            }
+          }
+        } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+          player.unselectAll()
+          this.select()
+          menu.setBottombar(this)
+          player.selectedOther = this
+        }
+      })
+
+      this.addChild(this.sprite)
+    }
+
+    if (this.isBuilt) {
+      this.visibilityTimeout = setTimeout(() => {
+        updateInstanceVisibility(this)
+      })
+      this.finalTexture()
+      this.onBuilt()
+    }
+    map.addToInstanceBucket(this)
+  }
+
+  attackAction(target) {
+    return this.buildingCombat.attackAction(target)
+  }
+
+  startInterval(callback, time) {
+    this.stopInterval()
+    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 10 / ACCELERATOR)
+  }
+
+  stopInterval() {
+    if (this.intervalId != null) {
+      this.context.scheduler.remove(this.intervalId)
+      this.intervalId = null
+    }
+  }
+
+  startAttackInterval(callback, time) {
+    this.stopAttackInterval()
+    callback()
+    this.attackIntervalId = this.context.scheduler.add(callback, time * 1000)
+  }
+
+  stopAttackInterval() {
+    if (this.attackIntervalId != null) {
+      this.context.scheduler.remove(this.attackIntervalId)
+      this.attackIntervalId = null
+    }
+  }
+
+  startTimeout(cb, time) {
+    this.stopTimeout()
+    this.timeoutId = this.context.scheduler.addOneShot(cb, (time * 1000) / ACCELERATOR)
+  }
+
+  isAttacked(instance) {
+    return this.buildingCombat.isAttacked(instance)
+  }
+
+  updateTexture() {
+    const {
+      context: { menu },
+    } = this
+    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
+    const buildSpritesheetId = this.sprite.texture.label.split('_')[1].split('.')[0]
+    const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
+
+    if (percentage >= 25 && percentage < 50) {
+      const textureName = `001_${buildSpritesheetId}.png`
+      this.sprite.texture = buildSpritesheet.textures[textureName]
+    } else if (percentage >= 50 && percentage < 75) {
+      const textureName = `002_${buildSpritesheetId}.png`
+      this.sprite.texture = buildSpritesheet.textures[textureName]
+    } else if (percentage >= 75 && percentage < 99) {
+      const textureName = `003_${buildSpritesheetId}.png`
+      this.sprite.texture = buildSpritesheet.textures[textureName]
+    } else if (percentage >= 100) {
+      this.finalTexture()
+      if (!this.isBuilt) {
+        if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceInCamera(this)) {
+          sound.play(this.sounds.create)
+        }
+        this.onBuilt()
+      }
+      this.isBuilt = true
+      if (!this.owner.hasBuilt.includes(this.type)) {
+        this.owner.hasBuilt.push(this.type)
+      }
+      if (this.owner.isPlayed && this.selected) {
+        menu.setBottombar(this)
+      }
+      updateInstanceVisibility(this)
+    }
+  }
+
+  onBuilt() {
+    const {
+      context: { menu },
+    } = this
+    if (this.increasePopulation) {
+      // Increase player population and continue all unit creation that was paused
+      this.owner.population_max += this.increasePopulation
+      // Update bottombar with population_max if house selected
+      if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
+        menu.updateInfo(
+          MENU_INFO_IDS.populationText,
+          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max)
+        )
+      }
+    }
+    if (this.owner.isPlayed && this.selected) {
+      menu.setBottombar(this)
+    }
+  }
+
+  finalTexture() {
+    const assets = getBuildingAsset(this.type, this.owner, Assets)
+
+    const texture = getTexture(assets.images.final, Assets)
+    this.sprite.texture = texture
+    this.sprite.hitArea = texture.hitArea
+      ? new Polygon(texture.hitArea)
+      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+
+    const color = this.getChildByLabel(LABEL_TYPES.color)
+    if (color) {
+      color.destroy()
+    }
+
+    if (assets.images.color) {
+      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
+      spriteColor.label = LABEL_TYPES.color
+      changeSpriteColorDirectly(spriteColor, this.owner.color)
+      this.addChild(spriteColor)
+    } else {
+      changeSpriteColorDirectly(this.sprite, this.owner.color)
+    }
+
+    if (this.type === BUILDING_TYPES.house) {
+      if (this.owner.age === 0) {
+        const spritesheetFire = Assets.cache.get('347')
+        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        spriteFire.label = LABEL_TYPES.deco
+        spriteFire.allowMove = false
+        spriteFire.allowClick = false
+        spriteFire.eventMode = 'none'
+        spriteFire.roundPixels = true
+        spriteFire.x = 10
+        spriteFire.y = 5
+        spriteFire.play()
+        spriteFire.animationSpeed = 0.2 * ACCELERATOR
+        this.addChild(spriteFire)
+      } else {
+        const fire = this.getChildByLabel(LABEL_TYPES.deco)
+        if (fire) {
+          fire.destroy()
+        }
+      }
+    }
+  }
+
+  detect(instance) {
+    return this.buildingCombat.detect(instance)
+  }
+
+  updateHitPoints(action) {
+    if (this.hitPoints > this.totalHitPoints) {
+      this.hitPoints = this.totalHitPoints
+    }
+    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
+
+    if (this.hitPoints <= 0) {
+      this.die()
+    }
+    if (action === ACTION_TYPES.build && !this.isBuilt) {
+      this.updateTexture()
+    } else if ((action === ACTION_TYPES.attack && this.isBuilt) || (action === ACTION_TYPES.build && this.isBuilt)) {
+      if (percentage > 0 && percentage < 25) {
+        this.generateFire('450')
+      } else if (percentage >= 25 && percentage < 50) {
+        this.generateFire('452')
+      } else if (percentage >= 50 && percentage < 75) {
+        this.generateFire('347')
+      } else if (percentage >= 75) {
+        const fire = this.getChildByLabel(LABEL_TYPES.fire)
+        if (fire) {
+          this.removeChild(fire)
+        }
+      }
+    }
+  }
+
+  generateFire(spriteId) {
+    const fire = this.getChildByLabel(LABEL_TYPES.fire)
+    const spritesheetFire = Assets.cache.get(spriteId)
+    if (fire) {
+      for (let i = 0; i < fire.children.length; i++) {
+        fire.children[i].textures = spritesheetFire.animations['fire']
+        fire.children[i].play()
+      }
+    } else {
+      const newFire = new Container()
+      newFire.label = LABEL_TYPES.fire
+      newFire.allowMove = false
+      newFire.allowClick = false
+      newFire.eventMode = 'none'
+      let poses = [[0, 0]]
+      if (this.size === 3) {
+        poses = [
+          [0, -32],
+          [-64, 0],
+          [0, 32],
+          [64, 0],
+        ]
+      }
+      for (let i = 0; i < poses.length; i++) {
+        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        spriteFire.allowMove = false
+        spriteFire.allowClick = false
+        spriteFire.eventMode = 'none'
+        spriteFire.roundPixels = true
+        spriteFire.x = poses[i][0]
+        spriteFire.y = poses[i][1]
+        spriteFire.play()
+        spriteFire.animationSpeed = 0.2 * ACCELERATOR
+        newFire.addChild(spriteFire)
+      }
+      this.addChild(newFire)
+    }
+  }
+
+  die() {
+    return this.buildingLifecycle.die()
+  }
+
+  clear() {
+    return this.buildingLifecycle.clear()
+  }
+
+  select() {
+    if (this.selected) return
+    const { context: { menu, player } } = this
+    if (this.owner.isPlayed && this.sounds?.create) sound.play(this.sounds.create)
+    super.select()
+    if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+  }
+
+  unselect() {
+    if (!this.selected) return
+    super.unselect()
+    const { context: { menu, player } } = this
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+  }
+
+  placeUnit(type) {
+    return this.buildingProduction.placeUnit(type)
+  }
+
+  buyUnit(type, alreadyPaid = false, force = false, extra) {
+    return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
+  }
+
+  updateInterfaceLoading() {
+    this.buildingInterface.updateLoading()
+  }
+
+  getLoadingElement() {
+    return this.buildingInterface.getLoadingElement()
+  }
+
+  cancelTechnology() {
+    return this.buildingProduction.cancelTechnology()
+  }
+
+  upgrade(type) {
+    return this.buildingProduction.upgrade(type)
+  }
+
+  buyTechnology(type, alreadyPaid, force) {
+    return this.buildingProduction.buyTechnology(type, alreadyPaid, force)
+  }
+
+  setDefaultInterface(element, data) {
+    this.buildingInterface.setDefaultInterface(element, data)
+  }
+
+  pause() {
+    const fire = this.getChildByLabel(LABEL_TYPES.fire)
+    if (fire) fire.children.forEach(s => s.stop())
+    const deco = this.getChildByLabel(LABEL_TYPES.deco)
+    if (deco && typeof deco.stop === 'function') deco.stop()
+  }
+
+  resume() {
+    const fire = this.getChildByLabel(LABEL_TYPES.fire)
+    if (fire) fire.children.forEach(s => s.play())
+    const deco = this.getChildByLabel(LABEL_TYPES.deco)
+    if (deco && typeof deco.play === 'function') deco.play()
+  }
+}

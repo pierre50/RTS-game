@@ -3,8 +3,9 @@ import { t } from '../lib/lang'
 import Map from '../classes/map'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
-import { filterObject, debounce } from '../lib'
-import { ActionScheduler } from '../classes/ActionScheduler'
+import { debounce } from '../lib'
+import { ActionScheduler } from '../lib/ActionScheduler'
+import { serializeGame } from '../serialization/SaveSerializer'
 
 /**
  * Main Display Object
@@ -43,6 +44,7 @@ export default class Game extends Container {
     context.map = new Map(context)
 
     if (config.size) context.map.size = config.size
+    if (config.mapType) context.map.mapType = config.mapType
     if (config.devMode) context.map.devMode = true
     if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
     if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
@@ -52,7 +54,7 @@ export default class Game extends Container {
     context.controls = new Controls(context)
     context.menu = new Menu(context)
 
-    const posCount = config.players ? config.players.length : (config.bots != null ? config.bots + 1 : null)
+    const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
     context.map.generateMap(posCount)
 
     context.players = context.map.generatePlayers(config.players || null)
@@ -87,97 +89,12 @@ export default class Game extends Container {
     window.removeEventListener('resize', this._onResize)
   }
 
-  static _resourceData(resource) {
-    return {
-      ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
-      textureName: (resource.textureName || '').split('.')[0],
-    }
-  }
-
-  static _animalData(animal) {
-    return {
-      ...filterObject(animal, [
-        'label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest',
-        'zIndex', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif',
-        'isDead', 'isDestroyed', 'quantity',
-      ]),
-      currentFrame: animal.sprite?.currentFrame,
-      loop: animal.sprite?.loop,
-      dest: animal.dest && [animal.dest.i, animal.dest.j, animal.dest?.label],
-      previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, animal.previousDest?.label],
-    }
-  }
-
-  static _unitData(unit) {
-    return {
-      ...filterObject(unit, [
-        'label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest',
-        'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size',
-        'inactif', 'isDead', 'isDestroyed',
-      ]),
-      currentFrame: unit.sprite?.currentFrame,
-      loop: unit.sprite?.loop,
-      dest: unit.dest && [unit.dest.i, unit.dest.j, unit.dest?.label],
-      previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, unit.previousDest?.label],
-    }
-  }
-
-  static _buildingData(building) {
-    return {
-      ...filterObject(building, [
-        'label', 'i', 'j', 'type', 'queue', 'technology', 'loading',
-        'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity',
-      ]),
-      isUsedBy: building.isUsedBy?.label,
-    }
-  }
-
-  static _playerData(player) {
-    return {
-      ...filterObject(player, [
-        'label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color',
-        'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt',
-      ]),
-      buildings: player.buildings.map(b => Game._buildingData(b)),
-      units: player.units.map(u => Game._unitData(u)),
-      corpses: player.corpses.map(c => Game._unitData(c)),
-      views: player.views.map(view =>
-        view.map(cell => ({
-          ...filterObject(cell, ['i', 'j', 'viewed']),
-          viewBy: [...(cell.viewBy || [])].map(unit => unit.label),
-        }))
-      ),
-    }
-  }
-
-  static _cellData(cell) {
-    return {
-      ...filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder']),
-      has: cell.has?.label,
-      fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({ textureSheet, colorSheet, colorName })),
-    }
-  }
-
   save() {
-    const { context } = this
-    const data = {
-      camera: context.controls.camera,
-      config: {
-        devMode: context.map.devMode,
-        revealEverything: context.map.revealEverything,
-        revealTerrain: context.map.revealTerrain,
-        startingResources: context.map.startingResources,
-      },
-      players: context.players.map(p => Game._playerData(p)),
-      resources: [...context.map.resources].map(r => Game._resourceData(r)),
-      map: context.map.grid.map(line => line.map(cell => Game._cellData(cell))),
-      animals: context.map.gaia.units.map(a => Game._animalData(a)),
-    }
+    const data = serializeGame(this.context)
 
-    const workerBlob = new Blob(
-      ['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'],
-      { type: 'application/javascript' }
-    )
+    const workerBlob = new Blob(['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'], {
+      type: 'application/javascript',
+    })
     const workerUrl = URL.createObjectURL(workerBlob)
     const worker = new Worker(workerUrl)
     URL.revokeObjectURL(workerUrl)
