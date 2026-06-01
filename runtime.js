@@ -166,7 +166,7 @@
 /******/ 			return __webpack_require__.O(result);
 /******/ 		}
 /******/ 		
-/******/ 		var chunkLoadingGlobal = self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || [];
+/******/ 		var chunkLoadingGlobal = self["webpackChunkdawn_of_empires"] = self["webpackChunkdawn_of_empires"] || [];
 /******/ 		chunkLoadingGlobal.forEach(webpackJsonpCallback.bind(null, 0));
 /******/ 		chunkLoadingGlobal.push = webpackJsonpCallback.bind(null, chunkLoadingGlobal.push.bind(chunkLoadingGlobal));
 /******/ 	})();

@@ -1,4 +1,4 @@
-(self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[96],{
+(self["webpackChunkdawn_of_empires"] = self["webpackChunkdawn_of_empires"] || []).push([[96],{
 
 /***/ 3990
 (module) {
@@ -1436,8 +1436,8 @@ class TelephoneFilter extends Filter {
 
 //# sourceMappingURL=index.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(5268);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
+var lib = __webpack_require__(9014);
 ;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioContext.mjs
 
 
@@ -3711,8 +3711,8 @@ __webpack_require__.d(__webpack_exports__, {
   N: () => (/* binding */ MultiColorReplaceFilter)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(5268);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
+var lib = __webpack_require__(9014);
 ;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/defaults/default2.mjs
 var vertex = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
 
@@ -10379,7 +10379,7 @@ Extensions/* extensions */.XO.add(FilterPipe);
 
 /***/ },
 
-/***/ 5268
+/***/ 9014
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -10399,16 +10399,19 @@ __webpack_require__.d(__webpack_exports__, {
   BrD: () => (/* reexport */ GpuProgram/* GpuProgram */.B),
   A1g: () => (/* reexport */ Graphics/* Graphics */.A),
   T9C: () => (/* reexport */ LoaderParser/* LoaderParserPriority */.T),
+  uqu: () => (/* reexport */ Matrix/* Matrix */.u),
   tS: () => (/* reexport */ Polygon/* Polygon */.t),
+  Y7R: () => (/* reexport */ RenderTexture/* RenderTexture */.Y),
   kxk: () => (/* reexport */ Sprite/* Sprite */.k),
   gPd: () => (/* reexport */ Texture/* Texture */.g),
   RvI: () => (/* reexport */ Ticker/* Ticker */.R),
+  t9Q: () => (/* reexport */ TilingSprite),
   t66: () => (/* reexport */ deprecation/* deprecation */.t6),
   XOh: () => (/* reexport */ Extensions/* extensions */.XO),
   AeT: () => (/* reexport */ path/* path */.A)
 });
 
-// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Matrix, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderTexture, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGDefsCollector, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSprite, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSVGFillAttributes, buildSVGPath, buildSVGStrokeAttributes, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, graphicsContextToSvg, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
+// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGDefsCollector, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSVGFillAttributes, buildSVGPath, buildSVGStrokeAttributes, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, graphicsContextToSvg, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
 var Extensions = __webpack_require__(6258);
@@ -13383,12 +13386,16 @@ Extensions/* extensions */.XO.handle(Extensions/* ExtensionType */.Ag.Asset, (ex
 var Color = __webpack_require__(1640);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/Filter.mjs
 var Filter = __webpack_require__(1901);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
+var Matrix = __webpack_require__(6512);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Polygon.mjs + 1 modules
 var Polygon = __webpack_require__(6307);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgram.mjs + 6 modules
 var GlProgram = __webpack_require__(1638);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/GpuProgram.mjs + 6 modules
 var GpuProgram = __webpack_require__(3207);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderTexture.mjs
+var RenderTexture = __webpack_require__(6956);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/utils/textureFrom.mjs
 var textureFrom = __webpack_require__(7574);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
@@ -13934,6 +13941,1429 @@ class AnimatedSprite extends Sprite/* Sprite */.k {
 
 
 //# sourceMappingURL=AnimatedSprite.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
+var ObservablePoint = __webpack_require__(6489);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/misc/Transform.mjs
+
+
+
+"use strict";
+class Transform {
+  /**
+   * @param options - Options for the transform.
+   * @param options.matrix - The matrix to use.
+   * @param options.observer - The observer to use.
+   */
+  constructor({ matrix, observer } = {}) {
+    this.dirty = true;
+    this._matrix = matrix ?? new Matrix/* Matrix */.u();
+    this.observer = observer;
+    this.position = new ObservablePoint/* ObservablePoint */.o(this, 0, 0);
+    this.scale = new ObservablePoint/* ObservablePoint */.o(this, 1, 1);
+    this.pivot = new ObservablePoint/* ObservablePoint */.o(this, 0, 0);
+    this.skew = new ObservablePoint/* ObservablePoint */.o(this, 0, 0);
+    this._rotation = 0;
+    this._cx = 1;
+    this._sx = 0;
+    this._cy = 0;
+    this._sy = 1;
+  }
+  /**
+   * The transformation matrix computed from the transform's properties.
+   * Combines position, scale, rotation, skew, and pivot into a single matrix.
+   * @example
+   * ```ts
+   * // Get current matrix
+   * const matrix = transform.matrix;
+   * console.log(matrix.toString());
+   * ```
+   * @readonly
+   * @see {@link Matrix} For matrix operations
+   * @see {@link Transform.setFromMatrix} For setting transform from matrix
+   */
+  get matrix() {
+    const lt = this._matrix;
+    if (!this.dirty) return lt;
+    lt.a = this._cx * this.scale.x;
+    lt.b = this._sx * this.scale.x;
+    lt.c = this._cy * this.scale.y;
+    lt.d = this._sy * this.scale.y;
+    lt.tx = this.position.x - (this.pivot.x * lt.a + this.pivot.y * lt.c);
+    lt.ty = this.position.y - (this.pivot.x * lt.b + this.pivot.y * lt.d);
+    this.dirty = false;
+    return lt;
+  }
+  /**
+   * Called when a value changes.
+   * @param point
+   * @internal
+   */
+  _onUpdate(point) {
+    this.dirty = true;
+    if (point === this.skew) {
+      this.updateSkew();
+    }
+    this.observer?._onUpdate(this);
+  }
+  /** Called when the skew or the rotation changes. */
+  updateSkew() {
+    this._cx = Math.cos(this._rotation + this.skew.y);
+    this._sx = Math.sin(this._rotation + this.skew.y);
+    this._cy = -Math.sin(this._rotation - this.skew.x);
+    this._sy = Math.cos(this._rotation - this.skew.x);
+    this.dirty = true;
+  }
+  toString() {
+    return `[pixi.js/math:Transform position=(${this.position.x}, ${this.position.y}) rotation=${this.rotation} scale=(${this.scale.x}, ${this.scale.y}) skew=(${this.skew.x}, ${this.skew.y}) ]`;
+  }
+  /**
+   * Decomposes a matrix and sets the transforms properties based on it.
+   * @example
+   * ```ts
+   * // Basic matrix decomposition
+   * const transform = new Transform();
+   * const matrix = new Matrix()
+   *     .translate(100, 100)
+   *     .rotate(Math.PI / 4)
+   *     .scale(2, 2);
+   *
+   * transform.setFromMatrix(matrix);
+   * console.log(transform.position.x); // 100
+   * console.log(transform.rotation); // ~0.785 (π/4)
+   * ```
+   * @param matrix - The matrix to decompose
+   * @see {@link Matrix#decompose} For the decomposition logic
+   * @see {@link Transform#matrix} For getting the current matrix
+   */
+  setFromMatrix(matrix) {
+    matrix.decompose(this);
+    this.dirty = true;
+  }
+  /**
+   * The rotation of the object in radians.
+   * @example
+   * ```ts
+   * // Basic rotation
+   * transform.rotation = Math.PI / 4; // 45 degrees
+   *
+   * // Rotate around pivot point
+   * transform.pivot.set(50, 50);
+   * transform.rotation = Math.PI; // 180 degrees around pivot
+   *
+   * // Animate rotation
+   * app.ticker.add(() => {
+   *     transform.rotation += 0.1;
+   * });
+   * ```
+   * @see {@link Transform#pivot} For rotation point
+   * @see {@link Transform#skew} For skew effects
+   */
+  get rotation() {
+    return this._rotation;
+  }
+  set rotation(value) {
+    if (this._rotation !== value) {
+      this._rotation = value;
+      this._onUpdate(this.skew);
+    }
+  }
+}
+
+
+//# sourceMappingURL=Transform.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
+var ViewContainer = __webpack_require__(2366);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/Point.mjs
+var Point = __webpack_require__(8876);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/canvas/utils/canvasUtils.mjs
+var canvasUtils = __webpack_require__(771);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/container-mixins/getGlobalMixin.mjs
+var getGlobalMixin = __webpack_require__(7711);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/utils/multiplyHexColors.mjs
+var multiplyHexColors = __webpack_require__(7005);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/canvas/CanvasTilingSpritePipe.mjs
+
+
+
+
+
+
+
+"use strict";
+const worldMatrix = new Matrix/* Matrix */.u();
+const patternMatrix = new Matrix/* Matrix */.u();
+const patternRect = [new Point/* Point */.b(), new Point/* Point */.b(), new Point/* Point */.b(), new Point/* Point */.b()];
+class CanvasTilingSpritePipe {
+  constructor(renderer) {
+    this._renderer = renderer;
+  }
+  validateRenderable(_renderable) {
+    return false;
+  }
+  addRenderable(tilingSprite, instructionSet) {
+    this._renderer.renderPipes.batch.break(instructionSet);
+    instructionSet.add(tilingSprite);
+  }
+  updateRenderable(_tilingSprite) {
+  }
+  execute(tilingSprite) {
+    const renderer = this._renderer;
+    const contextSystem = renderer.canvasContext;
+    const context = contextSystem.activeContext;
+    context.save();
+    contextSystem.setBlendMode(tilingSprite.groupBlendMode);
+    const globalColor = renderer.globalUniforms.globalUniformData?.worldColor ?? 4294967295;
+    const groupColorAlpha = tilingSprite.groupColorAlpha;
+    const globalAlpha = (globalColor >>> 24 & 255) / 255;
+    const groupAlphaValue = (groupColorAlpha >>> 24 & 255) / 255;
+    const filterAlpha = renderer.filter?.alphaMultiplier ?? 1;
+    const alpha = globalAlpha * groupAlphaValue * filterAlpha;
+    if (alpha <= 0) {
+      context.restore();
+      return;
+    }
+    context.globalAlpha = alpha;
+    const globalTint = globalColor & 16777215;
+    const groupTintBGR = groupColorAlpha & 16777215;
+    const tint = (0,getGlobalMixin/* bgr2rgb */.D)((0,multiplyHexColors/* multiplyHexColors */.u)(groupTintBGR, globalTint));
+    const texture = tilingSprite.texture;
+    const pattern = canvasUtils/* canvasUtils */.k.getTintedPattern(texture, tint);
+    const width = tilingSprite.width;
+    const height = tilingSprite.height;
+    const transform = tilingSprite.groupTransform;
+    const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
+    patternMatrix.copyFrom(tilingSprite._tileTransform.matrix);
+    if (!tilingSprite.applyAnchorToTexture) {
+      patternMatrix.translate(-tilingSprite.anchor.x * width, -tilingSprite.anchor.y * height);
+    }
+    const savedTx = patternMatrix.tx;
+    const savedTy = patternMatrix.ty;
+    patternMatrix.scale(1 / resolution, 1 / resolution);
+    patternMatrix.tx = savedTx;
+    patternMatrix.ty = savedTy;
+    worldMatrix.identity();
+    worldMatrix.prepend(patternMatrix);
+    worldMatrix.prepend(transform);
+    const roundPixels = renderer._roundPixels | tilingSprite._roundPixels;
+    contextSystem.setContextTransform(worldMatrix, roundPixels === 1);
+    context.fillStyle = pattern;
+    const lx = tilingSprite.anchor.x * -width;
+    const ly = tilingSprite.anchor.y * -height;
+    patternRect[0].set(lx, ly);
+    patternRect[1].set(lx + width, ly);
+    patternRect[2].set(lx + width, ly + height);
+    patternRect[3].set(lx, ly + height);
+    for (let i = 0; i < 4; i++) {
+      patternMatrix.applyInverse(patternRect[i], patternRect[i]);
+    }
+    context.beginPath();
+    context.moveTo(patternRect[0].x, patternRect[0].y);
+    for (let i = 1; i < 4; i++) {
+      context.lineTo(patternRect[i].x, patternRect[i].y);
+    }
+    context.closePath();
+    context.fill();
+    context.restore();
+  }
+  destroy() {
+    this._renderer = null;
+  }
+}
+/** @ignore */
+CanvasTilingSpritePipe.extension = {
+  type: [
+    Extensions/* ExtensionType */.Ag.CanvasPipes
+  ],
+  name: "tilingSprite"
+};
+
+
+//# sourceMappingURL=CanvasTilingSpritePipe.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/getAdjustedBlendModeBlend.mjs
+var getAdjustedBlendModeBlend = __webpack_require__(7084);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/State.mjs
+var State = __webpack_require__(3860);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
+var types = __webpack_require__(8838);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
+var GCManagedHash = __webpack_require__(3901);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/gpu/colorToUniform.mjs
+var colorToUniform = __webpack_require__(4933);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/mesh/shared/BatchableMesh.mjs
+
+class BatchableMesh {
+  constructor() {
+    this.batcherName = "default";
+    this.packAsQuad = false;
+    this.indexOffset = 0;
+    this.attributeOffset = 0;
+    this.roundPixels = 0;
+    this._batcher = null;
+    this._batch = null;
+    this._textureMatrixUpdateId = -1;
+    this._uvUpdateId = -1;
+  }
+  get blendMode() {
+    return this.renderable.groupBlendMode;
+  }
+  get topology() {
+    return this._topology || this.geometry.topology;
+  }
+  set topology(value) {
+    this._topology = value;
+  }
+  reset() {
+    this.renderable = null;
+    this.texture = null;
+    this._batcher = null;
+    this._batch = null;
+    this.geometry = null;
+    this._uvUpdateId = -1;
+    this._textureMatrixUpdateId = -1;
+  }
+  /**
+   * Sets the texture for the batchable mesh.
+   * As it does so, it resets the texture matrix update ID.
+   * this is to ensure that the texture matrix is recalculated when the uvs are referenced
+   * @param value - The texture to set.
+   */
+  setTexture(value) {
+    if (this.texture === value) return;
+    this.texture = value;
+    this._textureMatrixUpdateId = -1;
+  }
+  get uvs() {
+    const geometry = this.geometry;
+    const uvBuffer = geometry.getBuffer("aUV");
+    const uvs = uvBuffer.data;
+    let transformedUvs = uvs;
+    const textureMatrix = this.texture.textureMatrix;
+    if (!textureMatrix.isSimple) {
+      transformedUvs = this._transformedUvs;
+      if (this._textureMatrixUpdateId !== textureMatrix._updateID || this._uvUpdateId !== uvBuffer._updateID) {
+        if (!transformedUvs || transformedUvs.length < uvs.length) {
+          transformedUvs = this._transformedUvs = new Float32Array(uvs.length);
+        }
+        this._textureMatrixUpdateId = textureMatrix._updateID;
+        this._uvUpdateId = uvBuffer._updateID;
+        textureMatrix.multiplyUvs(uvs, transformedUvs);
+      }
+    }
+    return transformedUvs;
+  }
+  get positions() {
+    return this.geometry.positions;
+  }
+  get indices() {
+    return this.geometry.indices;
+  }
+  get color() {
+    return this.renderable.groupColorAlpha;
+  }
+  get groupTransform() {
+    return this.renderable.groupTransform;
+  }
+  get attributeSize() {
+    return this.geometry.positions.length / 2;
+  }
+  get indexSize() {
+    return this.geometry.indices.length;
+  }
+}
+
+
+//# sourceMappingURL=BatchableMesh.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/Buffer.mjs
+var Buffer = __webpack_require__(614);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/const.mjs
+var buffer_const = __webpack_require__(5697);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/geometry/Geometry.mjs + 2 modules
+var Geometry = __webpack_require__(4158);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/mesh/shared/MeshGeometry.mjs
+
+
+
+
+
+"use strict";
+const _MeshGeometry = class _MeshGeometry extends Geometry/* Geometry */.V {
+  constructor(...args) {
+    let options = args[0] ?? {};
+    if (options instanceof Float32Array) {
+      (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "use new MeshGeometry({ positions, uvs, indices }) instead");
+      options = {
+        positions: options,
+        uvs: args[1],
+        indices: args[2]
+      };
+    }
+    options = { ..._MeshGeometry.defaultOptions, ...options };
+    const positions = options.positions || new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
+    let uvs = options.uvs;
+    if (!uvs) {
+      if (options.positions) {
+        uvs = new Float32Array(positions.length);
+      } else {
+        uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
+      }
+    }
+    const indices = options.indices || new Uint32Array([0, 1, 2, 0, 2, 3]);
+    const shrinkToFit = options.shrinkBuffersToFit;
+    const positionBuffer = new Buffer/* Buffer */.h({
+      data: positions,
+      label: "attribute-mesh-positions",
+      shrinkToFit,
+      usage: buffer_const/* BufferUsage */.S.VERTEX | buffer_const/* BufferUsage */.S.COPY_DST
+    });
+    const uvBuffer = new Buffer/* Buffer */.h({
+      data: uvs,
+      label: "attribute-mesh-uvs",
+      shrinkToFit,
+      usage: buffer_const/* BufferUsage */.S.VERTEX | buffer_const/* BufferUsage */.S.COPY_DST
+    });
+    const indexBuffer = new Buffer/* Buffer */.h({
+      data: indices,
+      label: "index-mesh-buffer",
+      shrinkToFit,
+      usage: buffer_const/* BufferUsage */.S.INDEX | buffer_const/* BufferUsage */.S.COPY_DST
+    });
+    super({
+      attributes: {
+        aPosition: {
+          buffer: positionBuffer,
+          format: "float32x2",
+          stride: 2 * 4,
+          offset: 0
+        },
+        aUV: {
+          buffer: uvBuffer,
+          format: "float32x2",
+          stride: 2 * 4,
+          offset: 0
+        }
+      },
+      indexBuffer,
+      topology: options.topology
+    });
+    this.batchMode = "auto";
+  }
+  /** The positions of the mesh. */
+  get positions() {
+    return this.attributes.aPosition.buffer.data;
+  }
+  /**
+   * Set the positions of the mesh.
+   * When setting the positions, its important that the uvs array is at least as long as the positions array.
+   * otherwise the geometry will not be valid.
+   * @param {Float32Array} value - The positions of the mesh.
+   */
+  set positions(value) {
+    this.attributes.aPosition.buffer.data = value;
+  }
+  /** The UVs of the mesh. */
+  get uvs() {
+    return this.attributes.aUV.buffer.data;
+  }
+  /**
+   * Set the UVs of the mesh.
+   * Its important that the uvs array you set is at least as long as the positions array.
+   * otherwise the geometry will not be valid.
+   * @param {Float32Array} value - The UVs of the mesh.
+   */
+  set uvs(value) {
+    this.attributes.aUV.buffer.data = value;
+  }
+  /** The indices of the mesh. */
+  get indices() {
+    return this.indexBuffer.data;
+  }
+  set indices(value) {
+    this.indexBuffer.data = value;
+  }
+};
+_MeshGeometry.defaultOptions = {
+  topology: "triangle-list",
+  shrinkBuffersToFit: false
+};
+let MeshGeometry = _MeshGeometry;
+
+
+//# sourceMappingURL=MeshGeometry.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/compileHighShaderToProgram.mjs + 8 modules
+var compileHighShaderToProgram = __webpack_require__(3414);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
+var localUniformBit = __webpack_require__(2394);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/roundPixelsBit.mjs
+var roundPixelsBit = __webpack_require__(5774);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/Shader.mjs
+var Shader = __webpack_require__(1992);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/shader/UniformGroup.mjs + 2 modules
+var UniformGroup = __webpack_require__(5658);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/shader/tilingBit.mjs
+
+const tilingBit = {
+  name: "tiling-bit",
+  vertex: {
+    header: (
+      /* wgsl */
+      `
+            struct TilingUniforms {
+                uMapCoord:mat3x3<f32>,
+                uClampFrame:vec4<f32>,
+                uClampOffset:vec2<f32>,
+                uTextureTransform:mat3x3<f32>,
+                uSizeAnchor:vec4<f32>
+            };
+
+            @group(2) @binding(0) var<uniform> tilingUniforms: TilingUniforms;
+            @group(2) @binding(1) var uTexture: texture_2d<f32>;
+            @group(2) @binding(2) var uSampler: sampler;
+        `
+    ),
+    main: (
+      /* wgsl */
+      `
+            uv = (tilingUniforms.uTextureTransform * vec3(uv, 1.0)).xy;
+
+            position = (position - tilingUniforms.uSizeAnchor.zw) * tilingUniforms.uSizeAnchor.xy;
+        `
+    )
+  },
+  fragment: {
+    header: (
+      /* wgsl */
+      `
+            struct TilingUniforms {
+                uMapCoord:mat3x3<f32>,
+                uClampFrame:vec4<f32>,
+                uClampOffset:vec2<f32>,
+                uTextureTransform:mat3x3<f32>,
+                uSizeAnchor:vec4<f32>
+            };
+
+            @group(2) @binding(0) var<uniform> tilingUniforms: TilingUniforms;
+            @group(2) @binding(1) var uTexture: texture_2d<f32>;
+            @group(2) @binding(2) var uSampler: sampler;
+        `
+    ),
+    main: (
+      /* wgsl */
+      `
+
+            var coord = vUV + ceil(tilingUniforms.uClampOffset - vUV);
+            coord = (tilingUniforms.uMapCoord * vec3(coord, 1.0)).xy;
+            var unclamped = coord;
+            coord = clamp(coord, tilingUniforms.uClampFrame.xy, tilingUniforms.uClampFrame.zw);
+
+            var bias = 0.;
+
+            if(unclamped.x == coord.x && unclamped.y == coord.y)
+            {
+                bias = -32.;
+            }
+
+            outColor = textureSampleBias(uTexture, uSampler, coord, bias);
+        `
+    )
+  }
+};
+const tilingBitGl = {
+  name: "tiling-bit",
+  vertex: {
+    header: (
+      /* glsl */
+      `
+            uniform mat3 uTextureTransform;
+            uniform vec4 uSizeAnchor;
+
+        `
+    ),
+    main: (
+      /* glsl */
+      `
+            uv = (uTextureTransform * vec3(aUV, 1.0)).xy;
+
+            position = (position - uSizeAnchor.zw) * uSizeAnchor.xy;
+        `
+    )
+  },
+  fragment: {
+    header: (
+      /* glsl */
+      `
+            uniform sampler2D uTexture;
+            uniform mat3 uMapCoord;
+            uniform vec4 uClampFrame;
+            uniform vec2 uClampOffset;
+        `
+    ),
+    main: (
+      /* glsl */
+      `
+
+        vec2 coord = vUV + ceil(uClampOffset - vUV);
+        coord = (uMapCoord * vec3(coord, 1.0)).xy;
+        vec2 unclamped = coord;
+        coord = clamp(coord, uClampFrame.xy, uClampFrame.zw);
+
+        outColor = texture(uTexture, coord, unclamped == coord ? 0.0 : -32.0);// lod-bias very negative to force lod 0
+
+        `
+    )
+  }
+};
+
+
+//# sourceMappingURL=tilingBit.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/shader/TilingSpriteShader.mjs
+
+
+
+
+
+
+
+
+
+"use strict";
+let gpuProgram;
+let glProgram;
+class TilingSpriteShader extends Shader/* Shader */.M {
+  constructor() {
+    gpuProgram ?? (gpuProgram = (0,compileHighShaderToProgram/* compileHighShaderGpuProgram */.v)({
+      name: "tiling-sprite-shader",
+      bits: [
+        localUniformBit/* localUniformBit */.Ls,
+        tilingBit,
+        roundPixelsBit/* roundPixelsBit */.b
+      ]
+    }));
+    glProgram ?? (glProgram = (0,compileHighShaderToProgram/* compileHighShaderGlProgram */.I)({
+      name: "tiling-sprite-shader",
+      bits: [
+        localUniformBit/* localUniformBitGl */.mA,
+        tilingBitGl,
+        roundPixelsBit/* roundPixelsBitGl */.m
+      ]
+    }));
+    const tilingUniforms = new UniformGroup/* UniformGroup */.k({
+      uMapCoord: { value: new Matrix/* Matrix */.u(), type: "mat3x3<f32>" },
+      uClampFrame: { value: new Float32Array([0, 0, 1, 1]), type: "vec4<f32>" },
+      uClampOffset: { value: new Float32Array([0, 0]), type: "vec2<f32>" },
+      uTextureTransform: { value: new Matrix/* Matrix */.u(), type: "mat3x3<f32>" },
+      uSizeAnchor: { value: new Float32Array([100, 100, 0.5, 0.5]), type: "vec4<f32>" }
+    });
+    super({
+      glProgram,
+      gpuProgram,
+      resources: {
+        localUniforms: new UniformGroup/* UniformGroup */.k({
+          uTransformMatrix: { value: new Matrix/* Matrix */.u(), type: "mat3x3<f32>" },
+          uColor: { value: new Float32Array([1, 1, 1, 1]), type: "vec4<f32>" },
+          uRound: { value: 0, type: "f32" }
+        }),
+        tilingUniforms,
+        uTexture: Texture/* Texture */.g.EMPTY.source,
+        uSampler: Texture/* Texture */.g.EMPTY.source.style
+      }
+    });
+  }
+  updateUniforms(width, height, matrix, anchorX, anchorY, texture) {
+    const tilingUniforms = this.resources.tilingUniforms;
+    const textureWidth = texture.width;
+    const textureHeight = texture.height;
+    const textureMatrix = texture.textureMatrix;
+    const uTextureTransform = tilingUniforms.uniforms.uTextureTransform;
+    uTextureTransform.set(
+      matrix.a * textureWidth / width,
+      matrix.b * textureWidth / height,
+      matrix.c * textureHeight / width,
+      matrix.d * textureHeight / height,
+      matrix.tx / width,
+      matrix.ty / height
+    );
+    uTextureTransform.invert();
+    tilingUniforms.uniforms.uMapCoord = textureMatrix.mapCoord;
+    tilingUniforms.uniforms.uClampFrame = textureMatrix.uClampFrame;
+    tilingUniforms.uniforms.uClampOffset = textureMatrix.uClampOffset;
+    tilingUniforms.uniforms.uTextureTransform = uTextureTransform;
+    tilingUniforms.uniforms.uSizeAnchor[0] = width;
+    tilingUniforms.uniforms.uSizeAnchor[1] = height;
+    tilingUniforms.uniforms.uSizeAnchor[2] = anchorX;
+    tilingUniforms.uniforms.uSizeAnchor[3] = anchorY;
+    if (texture) {
+      this.resources.uTexture = texture.source;
+      this.resources.uSampler = texture.source.style;
+    }
+  }
+}
+
+
+//# sourceMappingURL=TilingSpriteShader.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/utils/QuadGeometry.mjs
+
+
+"use strict";
+class QuadGeometry extends MeshGeometry {
+  constructor() {
+    super({
+      positions: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]),
+      uvs: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]),
+      indices: new Uint32Array([0, 1, 2, 0, 2, 3])
+    });
+  }
+}
+
+
+//# sourceMappingURL=QuadGeometry.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/utils/setPositions.mjs
+
+function setPositions(tilingSprite, positions) {
+  const anchorX = tilingSprite.anchor.x;
+  const anchorY = tilingSprite.anchor.y;
+  positions[0] = -anchorX * tilingSprite.width;
+  positions[1] = -anchorY * tilingSprite.height;
+  positions[2] = (1 - anchorX) * tilingSprite.width;
+  positions[3] = -anchorY * tilingSprite.height;
+  positions[4] = (1 - anchorX) * tilingSprite.width;
+  positions[5] = (1 - anchorY) * tilingSprite.height;
+  positions[6] = -anchorX * tilingSprite.width;
+  positions[7] = (1 - anchorY) * tilingSprite.height;
+}
+
+
+//# sourceMappingURL=setPositions.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/utils/applyMatrix.mjs
+
+function applyMatrix(array, stride, offset, matrix) {
+  let index = 0;
+  const size = array.length / (stride || 2);
+  const a = matrix.a;
+  const b = matrix.b;
+  const c = matrix.c;
+  const d = matrix.d;
+  const tx = matrix.tx;
+  const ty = matrix.ty;
+  offset *= stride;
+  while (index < size) {
+    const x = array[offset];
+    const y = array[offset + 1];
+    array[offset] = a * x + c * y + tx;
+    array[offset + 1] = b * x + d * y + ty;
+    offset += stride;
+    index++;
+  }
+}
+
+
+//# sourceMappingURL=applyMatrix.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/utils/setUvs.mjs
+
+
+
+"use strict";
+function setUvs(tilingSprite, uvs) {
+  const texture = tilingSprite.texture;
+  const width = texture.frame.width;
+  const height = texture.frame.height;
+  let anchorX = 0;
+  let anchorY = 0;
+  if (tilingSprite.applyAnchorToTexture) {
+    anchorX = tilingSprite.anchor.x;
+    anchorY = tilingSprite.anchor.y;
+  }
+  uvs[0] = uvs[6] = -anchorX;
+  uvs[2] = uvs[4] = 1 - anchorX;
+  uvs[1] = uvs[3] = -anchorY;
+  uvs[5] = uvs[7] = 1 - anchorY;
+  const textureMatrix = Matrix/* Matrix */.u.shared;
+  textureMatrix.copyFrom(tilingSprite._tileTransform.matrix);
+  textureMatrix.tx /= tilingSprite.width;
+  textureMatrix.ty /= tilingSprite.height;
+  textureMatrix.invert();
+  textureMatrix.scale(tilingSprite.width / width, tilingSprite.height / height);
+  applyMatrix(uvs, 2, 0, textureMatrix);
+}
+
+
+//# sourceMappingURL=setUvs.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/TilingSpritePipe.mjs
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+const sharedQuad = new QuadGeometry();
+class TilingSpriteGpuData {
+  constructor() {
+    this.canBatch = true;
+    this.geometry = new MeshGeometry({
+      indices: sharedQuad.indices.slice(),
+      positions: sharedQuad.positions.slice(),
+      uvs: sharedQuad.uvs.slice()
+    });
+  }
+  destroy() {
+    this.geometry.destroy();
+    this.shader?.destroy();
+  }
+}
+class TilingSpritePipe {
+  constructor(renderer) {
+    this._state = State/* State */.U.default2d;
+    this._renderer = renderer;
+    this._managedTilingSprites = new GCManagedHash/* GCManagedHash */.s({ renderer, type: "renderable", name: "tilingSprite" });
+  }
+  validateRenderable(renderable) {
+    const tilingSpriteData = this._getTilingSpriteData(renderable);
+    const couldBatch = tilingSpriteData.canBatch;
+    this._updateCanBatch(renderable);
+    const canBatch = tilingSpriteData.canBatch;
+    if (canBatch && canBatch === couldBatch) {
+      const { batchableMesh } = tilingSpriteData;
+      return !batchableMesh._batcher.checkAndUpdateTexture(
+        batchableMesh,
+        renderable.texture
+      );
+    }
+    return couldBatch !== canBatch;
+  }
+  addRenderable(tilingSprite, instructionSet) {
+    const batcher = this._renderer.renderPipes.batch;
+    this._updateCanBatch(tilingSprite);
+    const tilingSpriteData = this._getTilingSpriteData(tilingSprite);
+    const { geometry, canBatch } = tilingSpriteData;
+    if (canBatch) {
+      tilingSpriteData.batchableMesh || (tilingSpriteData.batchableMesh = new BatchableMesh());
+      const batchableMesh = tilingSpriteData.batchableMesh;
+      if (tilingSprite.didViewUpdate) {
+        this._updateBatchableMesh(tilingSprite);
+        batchableMesh.geometry = geometry;
+        batchableMesh.renderable = tilingSprite;
+        batchableMesh.transform = tilingSprite.groupTransform;
+        batchableMesh.setTexture(tilingSprite._texture);
+      }
+      batchableMesh.roundPixels = this._renderer._roundPixels | tilingSprite._roundPixels;
+      batcher.addToBatch(batchableMesh, instructionSet);
+    } else {
+      batcher.break(instructionSet);
+      tilingSpriteData.shader || (tilingSpriteData.shader = new TilingSpriteShader());
+      this.updateRenderable(tilingSprite);
+      instructionSet.add(tilingSprite);
+    }
+  }
+  execute(tilingSprite) {
+    const renderer = this._renderer;
+    const { shader } = this._getTilingSpriteData(tilingSprite);
+    shader.groups[0] = renderer.globalUniforms.bindGroup;
+    const localUniforms = shader.resources.localUniforms.uniforms;
+    localUniforms.uTransformMatrix = tilingSprite.groupTransform;
+    localUniforms.uRound = renderer._roundPixels | tilingSprite._roundPixels;
+    (0,colorToUniform/* color32BitToUniform */.V)(
+      tilingSprite.groupColorAlpha,
+      localUniforms.uColor,
+      0
+    );
+    this._state.blendMode = (0,getAdjustedBlendModeBlend/* getAdjustedBlendModeBlend */.i)(tilingSprite.groupBlendMode, tilingSprite.texture._source);
+    renderer.encoder.draw({
+      geometry: sharedQuad,
+      shader,
+      state: this._state
+    });
+  }
+  updateRenderable(tilingSprite) {
+    const tilingSpriteData = this._getTilingSpriteData(tilingSprite);
+    const { canBatch } = tilingSpriteData;
+    if (canBatch) {
+      const { batchableMesh } = tilingSpriteData;
+      if (tilingSprite.didViewUpdate) this._updateBatchableMesh(tilingSprite);
+      batchableMesh._batcher.updateElement(batchableMesh);
+    } else if (tilingSprite.didViewUpdate) {
+      const { shader } = tilingSpriteData;
+      shader.updateUniforms(
+        tilingSprite.width,
+        tilingSprite.height,
+        tilingSprite._tileTransform.matrix,
+        tilingSprite.anchor.x,
+        tilingSprite.anchor.y,
+        tilingSprite.texture
+      );
+    }
+  }
+  _getTilingSpriteData(renderable) {
+    return renderable._gpuData[this._renderer.uid] || this._initTilingSpriteData(renderable);
+  }
+  _initTilingSpriteData(tilingSprite) {
+    const gpuData = new TilingSpriteGpuData();
+    gpuData.renderable = tilingSprite;
+    tilingSprite._gpuData[this._renderer.uid] = gpuData;
+    this._managedTilingSprites.add(tilingSprite);
+    return gpuData;
+  }
+  _updateBatchableMesh(tilingSprite) {
+    const renderableData = this._getTilingSpriteData(tilingSprite);
+    const { geometry } = renderableData;
+    const style = tilingSprite.texture.source.style;
+    if (style.addressMode !== "repeat") {
+      style.addressMode = "repeat";
+      style.update();
+    }
+    setUvs(tilingSprite, geometry.uvs);
+    setPositions(tilingSprite, geometry.positions);
+  }
+  destroy() {
+    this._managedTilingSprites.destroy();
+    this._renderer = null;
+  }
+  _updateCanBatch(tilingSprite) {
+    const renderableData = this._getTilingSpriteData(tilingSprite);
+    const texture = tilingSprite.texture;
+    let _nonPowOf2wrapping = true;
+    if (this._renderer.type === types/* RendererType */.W.WEBGL) {
+      _nonPowOf2wrapping = this._renderer.context.supports.nonPowOf2wrapping;
+    }
+    renderableData.canBatch = texture.textureMatrix.isSimple && (_nonPowOf2wrapping || texture.source.isPowerOfTwo);
+    return renderableData.canBatch;
+  }
+}
+/** @ignore */
+TilingSpritePipe.extension = {
+  type: [
+    Extensions/* ExtensionType */.Ag.WebGLPipes,
+    Extensions/* ExtensionType */.Ag.WebGPUPipes
+  ],
+  name: "tilingSprite"
+};
+
+
+//# sourceMappingURL=TilingSpritePipe.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/init.mjs
+
+
+
+
+"use strict";
+Extensions/* extensions */.XO.add(CanvasTilingSpritePipe);
+Extensions/* extensions */.XO.add(TilingSpritePipe);
+//# sourceMappingURL=init.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-tiling/TilingSprite.mjs
+
+
+
+
+
+
+
+
+"use strict";
+const _TilingSprite = class _TilingSprite extends ViewContainer/* ViewContainer */.l {
+  constructor(...args) {
+    let options = args[0] || {};
+    if (options instanceof Texture/* Texture */.g) {
+      options = { texture: options };
+    }
+    if (args.length > 1) {
+      (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "use new TilingSprite({ texture, width:100, height:100 }) instead");
+      options.width = args[1];
+      options.height = args[2];
+    }
+    options = { ..._TilingSprite.defaultOptions, ...options };
+    const {
+      texture,
+      anchor,
+      tilePosition,
+      tileScale,
+      tileRotation,
+      width,
+      height,
+      applyAnchorToTexture,
+      roundPixels,
+      ...rest
+    } = options ?? {};
+    super({
+      label: "TilingSprite",
+      ...rest
+    });
+    /** @internal */
+    this.renderPipeId = "tilingSprite";
+    /** @advanced */
+    this.batched = true;
+    this.allowChildren = false;
+    this._anchor = new ObservablePoint/* ObservablePoint */.o(
+      {
+        _onUpdate: () => {
+          this.onViewUpdate();
+        }
+      }
+    );
+    this.applyAnchorToTexture = applyAnchorToTexture;
+    this.texture = texture;
+    this._width = width ?? texture.width;
+    this._height = height ?? texture.height;
+    this._tileTransform = new Transform({
+      observer: {
+        _onUpdate: () => this.onViewUpdate()
+      }
+    });
+    if (anchor) this.anchor = anchor;
+    this.tilePosition = tilePosition;
+    this.tileScale = tileScale;
+    this.tileRotation = tileRotation;
+    this.roundPixels = roundPixels ?? false;
+  }
+  /**
+   * Creates a new tiling sprite based on a source texture or image path.
+   * This is a convenience method that automatically creates and manages textures.
+   * @example
+   * ```ts
+   * // Create a new tiling sprite from an image path
+   * const pattern = TilingSprite.from('pattern.png');
+   * pattern.width = 300; // Set the width of the tiling area
+   * pattern.height = 200; // Set the height of the tiling area
+   *
+   * // Create from options
+   * const texture = Texture.from('pattern.png');
+   * const pattern = TilingSprite.from(texture, {
+   *     width: 300,
+   *     height: 200,
+   *     tileScale: { x: 0.5, y: 0.5 }
+   * });
+   * ```
+   * @param source - The source to create the sprite from. Can be a path to an image or a texture
+   * @param options - Additional options for the tiling sprite
+   * @returns A new tiling sprite based on the source
+   * @see {@link Texture.from} For texture creation details
+   * @see {@link Assets} For asset loading and management
+   */
+  static from(source, options = {}) {
+    if (typeof source === "string") {
+      return new _TilingSprite({
+        texture: Cache/* Cache */.l.get(source),
+        ...options
+      });
+    }
+    return new _TilingSprite({
+      texture: source,
+      ...options
+    });
+  }
+  /**
+   * @see {@link TilingSpriteOptions.applyAnchorToTexture}
+   * @deprecated since 8.0.0
+   * @advanced
+   */
+  get uvRespectAnchor() {
+    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
+    return this.applyAnchorToTexture;
+  }
+  /** @advanced */
+  set uvRespectAnchor(value) {
+    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
+    this.applyAnchorToTexture = value;
+  }
+  /**
+   * Changes frame clamping in corresponding textureMatrix
+   * Change to -0.5 to add a pixel to the edge, recommended for transparent trimmed textures in atlas
+   * @default 0.5
+   * @type {number}
+   * @advanced
+   */
+  get clampMargin() {
+    return this._texture.textureMatrix.clampMargin;
+  }
+  /** @advanced */
+  set clampMargin(value) {
+    this._texture.textureMatrix.clampMargin = value;
+  }
+  /**
+   * The anchor sets the origin point of the sprite. The default value is taken from the {@link Texture}
+   * and passed to the constructor.
+   *
+   * - The default is `(0,0)`, this means the sprite's origin is the top left.
+   * - Setting the anchor to `(0.5,0.5)` means the sprite's origin is centered.
+   * - Setting the anchor to `(1,1)` would mean the sprite's origin point will be the bottom right corner.
+   *
+   * If you pass only single parameter, it will set both x and y to the same value as shown in the example below.
+   * @example
+   * ```ts
+   * // Center the anchor point
+   * sprite.anchor = 0.5; // Sets both x and y to 0.5
+   * sprite.position.set(400, 300); // Sprite will be centered at this position
+   *
+   * // Set specific x/y anchor points
+   * sprite.anchor = {
+   *     x: 1, // Right edge
+   *     y: 0  // Top edge
+   * };
+   *
+   * // Using individual coordinates
+   * sprite.anchor.set(0.5, 1); // Center-bottom
+   *
+   * // For rotation around center
+   * sprite.anchor.set(0.5);
+   * sprite.rotation = Math.PI / 4; // 45 degrees around center
+   *
+   * // For scaling from center
+   * sprite.anchor.set(0.5);
+   * sprite.scale.set(2); // Scales from center point
+   * ```
+   */
+  get anchor() {
+    return this._anchor;
+  }
+  set anchor(value) {
+    typeof value === "number" ? this._anchor.set(value) : this._anchor.copyFrom(value);
+  }
+  /**
+   * The offset of the tiling texture.
+   * Used to scroll or position the repeated pattern.
+   * @example
+   * ```ts
+   * // Offset the tiling pattern by 100 pixels in both x and y directions
+   * tilingSprite.tilePosition = { x: 100, y: 100 };
+   * ```
+   * @default {x: 0, y: 0}
+   */
+  get tilePosition() {
+    return this._tileTransform.position;
+  }
+  set tilePosition(value) {
+    this._tileTransform.position.copyFrom(value);
+  }
+  /**
+   * Scale of the tiling texture.
+   * Affects the size of each repeated instance of the texture.
+   * @example
+   * ```ts
+   * // Scale the texture by 1.5 in both x and y directions
+   * tilingSprite.tileScale = { x: 1.5, y: 1.5 };
+   * ```
+   * @default {x: 1, y: 1}
+   */
+  get tileScale() {
+    return this._tileTransform.scale;
+  }
+  set tileScale(value) {
+    typeof value === "number" ? this._tileTransform.scale.set(value) : this._tileTransform.scale.copyFrom(value);
+  }
+  set tileRotation(value) {
+    this._tileTransform.rotation = value;
+  }
+  /**
+   * Rotation of the tiling texture in radians.
+   * This controls the rotation applied to the texture before tiling.
+   * @example
+   * ```ts
+   * // Rotate the texture by 45 degrees (in radians)
+   * tilingSprite.tileRotation = Math.PI / 4; // 45 degrees
+   * ```
+   * @default 0
+   */
+  get tileRotation() {
+    return this._tileTransform.rotation;
+  }
+  /**
+   * The transform object that controls the tiling texture's position, scale, and rotation.
+   * This transform is independent of the sprite's own transform properties.
+   * @example
+   * ```ts
+   * // Access transform properties directly
+   * sprite.tileTransform.position.set(100, 50);
+   * sprite.tileTransform.scale.set(2);
+   * sprite.tileTransform.rotation = Math.PI / 4;
+   *
+   * // Create smooth scrolling animation
+   * app.ticker.add(() => {
+   *     sprite.tileTransform.position.x += 1;
+   *     sprite.tileTransform.rotation += 0.01;
+   * });
+   *
+   * // Reset transform
+   * sprite.tileTransform.position.set(0);
+   * sprite.tileTransform.scale.set(1);
+   * sprite.tileTransform.rotation = 0;
+   * ```
+   * @returns {Transform} The transform object for the tiling texture
+   * @see {@link Transform} For transform operations
+   * @see {@link TilingSprite#tilePosition} For position control
+   * @see {@link TilingSprite#tileScale} For scale control
+   * @see {@link TilingSprite#tileRotation} For rotation control
+   * @advanced
+   */
+  get tileTransform() {
+    return this._tileTransform;
+  }
+  set texture(value) {
+    value || (value = Texture/* Texture */.g.EMPTY);
+    const currentTexture = this._texture;
+    if (currentTexture === value) return;
+    if (currentTexture && currentTexture.dynamic) currentTexture.off("update", this.onViewUpdate, this);
+    if (value.dynamic) value.on("update", this.onViewUpdate, this);
+    this._texture = value;
+    this.onViewUpdate();
+  }
+  /**
+   * The texture to use for tiling.
+   * This is the image that will be repeated across the sprite.
+   * @example
+   * ```ts
+   * // Use a texture from the asset cache
+   * tilingSprite.texture = Texture.from('assets/pattern.png');
+   * ```
+   * @default Texture.WHITE
+   */
+  get texture() {
+    return this._texture;
+  }
+  /**
+   * The width of the tiling area. This defines how wide the area is that the texture will be tiled across.
+   * @example
+   * ```ts
+   * // Create a tiling sprite
+   * const sprite = new TilingSprite({
+   *     texture: Texture.from('pattern.png'),
+   *     width: 500,
+   *     height: 300
+   * });
+   *
+   * // Adjust width dynamically
+   * sprite.width = 800; // Expands tiling area
+   *
+   * // Update on resize
+   * window.addEventListener('resize', () => {
+   *     sprite.width = app.screen.width;
+   * });
+   * ```
+   * @see {@link TilingSprite#setSize} For setting both width and height efficiently
+   * @see {@link TilingSprite#height} For setting height
+   */
+  set width(value) {
+    this._width = value;
+    this.onViewUpdate();
+  }
+  get width() {
+    return this._width;
+  }
+  set height(value) {
+    this._height = value;
+    this.onViewUpdate();
+  }
+  /**
+   * The height of the tiling area. This defines how tall the area is that the texture will be tiled across.
+   * @example
+   * ```ts
+   * // Create a tiling sprite
+   * const sprite = new TilingSprite({
+   *     texture: Texture.from('pattern.png'),
+   *     width: 500,
+   *     height: 300
+   * });
+   *
+   * // Adjust width dynamically
+   * sprite.height = 800; // Expands tiling area
+   *
+   * // Update on resize
+   * window.addEventListener('resize', () => {
+   *     sprite.height = app.screen.height;
+   * });
+   * ```
+   * @see {@link TilingSprite#setSize} For setting both width and height efficiently
+   * @see {@link TilingSprite#width} For setting width
+   */
+  get height() {
+    return this._height;
+  }
+  /**
+   * Sets the size of the TilingSprite to the specified width and height.
+   * This is faster than setting width and height separately as it only triggers one update.
+   * @example
+   * ```ts
+   * // Set specific dimensions
+   * sprite.setSize(300, 200); // Width: 300, Height: 200
+   *
+   * // Set uniform size (square)
+   * sprite.setSize(400); // Width: 400, Height: 400
+   *
+   * // Set size using object
+   * sprite.setSize({
+   *     width: 500,
+   *     height: 300
+   * });
+   * ```
+   * @param value - This can be either a number for uniform sizing or a Size object with width/height properties
+   * @param height - The height to set. Defaults to the value of `width` if not provided
+   * @see {@link TilingSprite#width} For setting width only
+   * @see {@link TilingSprite#height} For setting height only
+   */
+  setSize(value, height) {
+    if (typeof value === "object") {
+      height = value.height ?? value.width;
+      value = value.width;
+    }
+    this._width = value;
+    this._height = height ?? value;
+    this.onViewUpdate();
+  }
+  /**
+   * Retrieves the size of the TilingSprite as a {@link Size} object.
+   * This method is more efficient than getting width and height separately as it only allocates one object.
+   * @example
+   * ```ts
+   * // Get basic size
+   * const size = sprite.getSize();
+   * console.log(`Size: ${size.width}x${size.height}`);
+   *
+   * // Reuse existing size object
+   * const reuseSize = { width: 0, height: 0 };
+   * sprite.getSize(reuseSize);
+   * ```
+   * @param out - Optional object to store the size in, to avoid allocating a new object
+   * @returns The size of the TilingSprite
+   * @see {@link TilingSprite#width} For getting just the width
+   * @see {@link TilingSprite#height} For getting just the height
+   * @see {@link TilingSprite#setSize} For setting both width and height efficiently
+   */
+  getSize(out) {
+    out || (out = {});
+    out.width = this._width;
+    out.height = this._height;
+    return out;
+  }
+  /** @private */
+  updateBounds() {
+    const bounds = this._bounds;
+    const anchor = this._anchor;
+    const width = this._width;
+    const height = this._height;
+    bounds.minX = -anchor._x * width;
+    bounds.maxX = bounds.minX + width;
+    bounds.minY = -anchor._y * height;
+    bounds.maxY = bounds.minY + height;
+  }
+  /**
+   * Checks if the object contains the given point in local coordinates.
+   * Takes into account the anchor offset when determining boundaries.
+   * @example
+   * ```ts
+   * // Create a tiling sprite
+   * const sprite = new TilingSprite({
+   *     texture: Texture.from('pattern.png'),
+   *     width: 200,
+   *     height: 100,
+   *     anchor: 0.5 // Center anchor
+   * });
+   *
+   * // Basic point check
+   * const contains = sprite.containsPoint({ x: 50, y: 25 });
+   * console.log('Point is inside:', contains);
+   *
+   * // Check with different anchors
+   * sprite.anchor.set(0); // Top-left anchor
+   * console.log('Contains point:', sprite.containsPoint({ x: 150, y: 75 }));
+   * ```
+   * @param point - The point to check in local coordinates
+   * @returns True if the point is within the sprite's bounds
+   * @see {@link TilingSprite#toLocal} For converting global coordinates to local
+   * @see {@link TilingSprite#anchor} For understanding boundary calculations
+   */
+  containsPoint(point) {
+    const width = this._width;
+    const height = this._height;
+    const x1 = -width * this._anchor._x;
+    let y1 = 0;
+    if (point.x >= x1 && point.x <= x1 + width) {
+      y1 = -height * this._anchor._y;
+      if (point.y >= y1 && point.y <= y1 + height) return true;
+    }
+    return false;
+  }
+  /**
+   * Destroys this sprite renderable and optionally its texture.
+   * @param options - Options parameter. A boolean will act as if all options
+   *  have been set to that value
+   * @example
+   * tilingSprite.destroy();
+   * tilingSprite.destroy(true);
+   * tilingSprite.destroy({ texture: true, textureSource: true });
+   */
+  destroy(options = false) {
+    super.destroy(options);
+    this._anchor = null;
+    this._tileTransform = null;
+    this._bounds = null;
+    const destroyTexture = typeof options === "boolean" ? options : options?.texture;
+    if (destroyTexture) {
+      const destroyTextureSource = typeof options === "boolean" ? options : options?.textureSource;
+      this._texture.destroy(destroyTextureSource);
+    }
+    this._texture = null;
+  }
+};
+/**
+ * Default options used when creating a TilingSprite instance.
+ * These values are used as fallbacks when specific options are not provided.
+ * @example
+ * ```ts
+ * // Override default options globally
+ * TilingSprite.defaultOptions.texture = Texture.from('defaultPattern.png');
+ * TilingSprite.defaultOptions.tileScale = { x: 2, y: 2 };
+ *
+ * // Create sprite using default options
+ * const sprite = new TilingSprite();
+ * // Will use defaultPattern.png and scale 2x
+ * ```
+ * @type {TilingSpriteOptions}
+ * @see {@link TilingSpriteOptions} For all available options
+ * @see {@link TilingSprite.from} For creating sprites with custom options
+ * @see {@link Texture.EMPTY} For the default empty texture
+ */
+_TilingSprite.defaultOptions = {
+  /** The texture to use for the sprite. */
+  texture: Texture/* Texture */.g.EMPTY,
+  /** The anchor point of the sprite */
+  anchor: { x: 0, y: 0 },
+  /** The offset of the image that is being tiled. */
+  tilePosition: { x: 0, y: 0 },
+  /** Scaling of the image that is being tiled. */
+  tileScale: { x: 1, y: 1 },
+  /** The rotation of the image that is being tiled. */
+  tileRotation: 0,
+  /**
+   * Flags whether the tiling pattern should originate from the origin instead of the top-left corner in
+   * local space.
+   *
+   * This will make the texture coordinates assigned to each vertex dependent on the value of the anchor. Without
+   * this, the top-left corner always gets the (0, 0) texture coordinate.
+   * @default false
+   */
+  applyAnchorToTexture: false
+};
+let TilingSprite = _TilingSprite;
+
+
+//# sourceMappingURL=TilingSprite.mjs.map
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
 var eventemitter3 = __webpack_require__(2998);
@@ -17404,7 +18834,7 @@ function generateTextureBatchBindGroup(textures, size, key, maxTextures) {
 /* harmony export */ });
 /* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
 /* harmony import */ var _renderers_shared_state_State_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3860);
-/* harmony import */ var _DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(652);
+/* harmony import */ var _DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5858);
 
 
 
@@ -17512,7 +18942,7 @@ _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__/* .extensions */ .XO.add
 
 /***/ },
 
-/***/ 652
+/***/ 5858
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17638,22 +19068,8 @@ var deprecation = __webpack_require__(7927);
 var GlobalResourceRegistry = __webpack_require__(4298);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/buffer/utils/fastCopy.mjs
 var fastCopy = __webpack_require__(8979);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/const.mjs
-var state_const = __webpack_require__(6466);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/getAdjustedBlendModeBlend.mjs
-
-
-"use strict";
-function getAdjustedBlendModeBlend(blendMode, textureSource) {
-  if (textureSource.alphaMode === "no-premultiply-alpha") {
-    return state_const/* BLEND_TO_NPM */.Q[blendMode] || blendMode;
-  }
-  return blendMode;
-}
-
-
-//# sourceMappingURL=getAdjustedBlendModeBlend.mjs.map
-
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/state/getAdjustedBlendModeBlend.mjs
+var getAdjustedBlendModeBlend = __webpack_require__(7084);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getTestContext.mjs
 var getTestContext = __webpack_require__(2371);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/gl/utils/checkMaxIfStatementsInShader.mjs
@@ -17839,7 +19255,7 @@ const _Batcher = class _Batcher {
     let textureBatch = batch.textures;
     textureBatch.clear();
     const firstElement = elements[this.elementStart];
-    let blendMode = getAdjustedBlendModeBlend(firstElement.blendMode, firstElement.texture._source);
+    let blendMode = (0,getAdjustedBlendModeBlend/* getAdjustedBlendModeBlend */.i)(firstElement.blendMode, firstElement.texture._source);
     let topology = firstElement.topology;
     if (this.attributeSize * 4 > this.attributeBuffer.size) {
       this._resizeAttributeBuffer(this.attributeSize * 4);
@@ -17860,7 +19276,7 @@ const _Batcher = class _Batcher {
       elements[i] = null;
       const texture = element.texture;
       const source = texture._source;
-      const adjustedBlendMode = getAdjustedBlendModeBlend(element.blendMode, source);
+      const adjustedBlendMode = (0,getAdjustedBlendModeBlend/* getAdjustedBlendModeBlend */.i)(element.blendMode, source);
       const breakRequired = blendMode !== adjustedBlendMode || topology !== element.topology;
       if (source._batchTick === BATCH_TICK && !breakRequired) {
         element._textureId = source._textureBindLocation;
@@ -20633,8 +22049,8 @@ CanvasStencilMaskPipe.extension = {
 var BlendModePipe = __webpack_require__(3557);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
 var AbstractRenderer = __webpack_require__(3789);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 18 modules
+var SharedSystems = __webpack_require__(9022);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
 var types = __webpack_require__(8838);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
@@ -21816,8 +23232,8 @@ GlBatchAdaptor.extension = {
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
 var AbstractRenderer = __webpack_require__(3789);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 18 modules
+var SharedSystems = __webpack_require__(9022);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
 var types = __webpack_require__(8838);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/GCManagedHash.mjs
@@ -26732,8 +28148,8 @@ GpuBatchAdaptor.extension = {
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs + 1 modules
 var AbstractRenderer = __webpack_require__(3789);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 19 modules
-var SharedSystems = __webpack_require__(9922);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/system/SharedSystems.mjs + 18 modules
+var SharedSystems = __webpack_require__(9022);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
 var types = __webpack_require__(8838);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/gpu/BindGroupSystem.mjs
@@ -31900,6 +33316,30 @@ var STENCIL_MODES = /* @__PURE__ */ ((STENCIL_MODES2) => {
 
 /***/ },
 
+/***/ 7084
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   i: () => (/* binding */ getAdjustedBlendModeBlend)
+/* harmony export */ });
+/* harmony import */ var _const_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6466);
+
+
+"use strict";
+function getAdjustedBlendModeBlend(blendMode, textureSource) {
+  if (textureSource.alphaMode === "no-premultiply-alpha") {
+    return _const_mjs__WEBPACK_IMPORTED_MODULE_0__/* .BLEND_TO_NPM */ .Q[blendMode] || blendMode;
+  }
+  return blendMode;
+}
+
+
+//# sourceMappingURL=getAdjustedBlendModeBlend.mjs.map
+
+
+/***/ },
+
 /***/ 3789
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
@@ -32309,7 +33749,7 @@ let AbstractRenderer = _AbstractRenderer;
 
 /***/ },
 
-/***/ 9922
+/***/ 9022
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -33350,47 +34790,8 @@ let ExtractSystem = _ExtractSystem;
 var Rectangle = __webpack_require__(1111);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getLocalBounds.mjs
 var getLocalBounds = __webpack_require__(3084);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
-var TextureSource = __webpack_require__(9060);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderTexture.mjs
-
-
-
-"use strict";
-class RenderTexture extends Texture/* Texture */.g {
-  /**
-   * Creates a RenderTexture. Pass `dynamic: true` in options to allow resizing after creation.
-   * @param options - Options for the RenderTexture, including width, height, textureOptions, and dynamic.
-   * @returns A new RenderTexture instance.
-   * @example
-   * const textureOptions = { defaultAnchor: { x: 0.5, y: 0.5 } };
-   * const rt = RenderTexture.create({ width: 100, height: 100, dynamic: true, textureOptions });
-   * rt.resize(500, 500);
-   */
-  static create(options) {
-    const { dynamic, textureOptions, ...rest } = options;
-    return new RenderTexture({
-      ...textureOptions,
-      source: new TextureSource/* TextureSource */.v(rest),
-      dynamic: dynamic ?? false
-    });
-  }
-  /**
-   * Resizes the render texture.
-   * @param width - The new width of the render texture.
-   * @param height - The new height of the render texture.
-   * @param resolution - The new resolution of the render texture.
-   * @returns This texture.
-   */
-  resize(width, height, resolution) {
-    this.source.resize(width, height, resolution);
-    return this;
-  }
-}
-
-
-//# sourceMappingURL=RenderTexture.mjs.map
-
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/RenderTexture.mjs
+var RenderTexture = __webpack_require__(6956);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/extract/GenerateTextureSystem.mjs
 
 
@@ -33470,7 +34871,7 @@ class GenerateTextureSystem {
     };
     region.width = Math.max(region.width, 1 / resolution) | 0;
     region.height = Math.max(region.height, 1 / resolution) | 0;
-    const target = RenderTexture.create({
+    const target = RenderTexture/* RenderTexture */.Y.create({
       ...options.textureSourceOptions,
       width: region.width,
       height: region.height,
@@ -34771,6 +36172,56 @@ _utils_pool_GlobalResourceRegistry_mjs__WEBPACK_IMPORTED_MODULE_2__/* .GlobalRes
 
 
 //# sourceMappingURL=CanvasPool.mjs.map
+
+
+/***/ },
+
+/***/ 6956
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Y: () => (/* binding */ RenderTexture)
+/* harmony export */ });
+/* harmony import */ var _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9060);
+/* harmony import */ var _Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4540);
+
+
+
+"use strict";
+class RenderTexture extends _Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g {
+  /**
+   * Creates a RenderTexture. Pass `dynamic: true` in options to allow resizing after creation.
+   * @param options - Options for the RenderTexture, including width, height, textureOptions, and dynamic.
+   * @returns A new RenderTexture instance.
+   * @example
+   * const textureOptions = { defaultAnchor: { x: 0.5, y: 0.5 } };
+   * const rt = RenderTexture.create({ width: 100, height: 100, dynamic: true, textureOptions });
+   * rt.resize(500, 500);
+   */
+  static create(options) {
+    const { dynamic, textureOptions, ...rest } = options;
+    return new RenderTexture({
+      ...textureOptions,
+      source: new _sources_TextureSource_mjs__WEBPACK_IMPORTED_MODULE_0__/* .TextureSource */ .v(rest),
+      dynamic: dynamic ?? false
+    });
+  }
+  /**
+   * Resizes the render texture.
+   * @param width - The new width of the render texture.
+   * @param height - The new height of the render texture.
+   * @param resolution - The new resolution of the render texture.
+   * @returns This texture.
+   */
+  resize(width, height, resolution) {
+    this.source.resize(width, height, resolution);
+    return this;
+  }
+}
+
+
+//# sourceMappingURL=RenderTexture.mjs.map
 
 
 /***/ },
@@ -45195,7 +46646,7 @@ let GraphicsContext = _GraphicsContext;
 /* unused harmony exports GpuGraphicsContext, GraphicsContextRenderData */
 /* harmony import */ var _extensions_Extensions_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6258);
 /* harmony import */ var _rendering_batcher_gpu_getTextureBatchBindGroup_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(62);
-/* harmony import */ var _rendering_batcher_shared_DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(652);
+/* harmony import */ var _rendering_batcher_shared_DefaultBatcher_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5858);
 /* harmony import */ var _rendering_renderers_shared_instructions_InstructionSet_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4543);
 /* harmony import */ var _utils_data_GCManagedHash_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3901);
 /* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7927);

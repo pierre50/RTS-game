@@ -1,12 +1,12 @@
 "use strict";
-(self["webpackChunkrts_game"] = self["webpackChunkrts_game"] || []).push([[792],{
+(self["webpackChunkdawn_of_empires"] = self["webpackChunkdawn_of_empires"] || []).push([[792],{
 
-/***/ 2590
+/***/ 6854
 (__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 41 modules
-var lib = __webpack_require__(5268);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
+var lib = __webpack_require__(9014);
 // EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
 var injectStylesIntoStyleTag = __webpack_require__(4368);
 var injectStylesIntoStyleTag_default = /*#__PURE__*/__webpack_require__.n(injectStylesIntoStyleTag);
@@ -54,6 +54,218 @@ var update = injectStylesIntoStyleTag_default()(styles/* default */.A, options);
 
        /* harmony default export */ const app_styles = (styles/* default */.A && styles/* default */.A.locals ? styles/* default */.A.locals : undefined);
 
+;// ./app/lib/lang.js
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+var TRANSLATIONS = {
+  fr: {
+    newGame: 'Nouvelle Partie',
+    loadGame: 'Charger une Partie',
+    configuration: 'Configuration',
+    players: 'Joueurs',
+    addOpponent: '+ Ajouter un adversaire',
+    mapSettings: 'Paramètres de la Carte',
+    back: '← Retour',
+    startGame: 'Lancer la Partie',
+    computer: 'Ordinateur',
+    you: 'Vous',
+    colName: 'Nom',
+    colCiv: 'Civilisation',
+    colColor: 'Couleur',
+    mapSizeLabel: 'Taille de carte',
+    mapTypeLabel: 'Type de carte',
+    mapTypePlain: 'Plaine',
+    mapTypeContinent: 'Continent',
+    mapTypeLac: 'Lac central',
+    mapTypeIlot: 'Îlots',
+    aiDifficulty: 'Difficulté IA',
+    startingResourcesLabel: 'Ressources de départ',
+    devMode: 'Mode dev (instant build)',
+    revealAll: 'Tout révéler',
+    revealTerrain: 'Révéler le terrain',
+    removePlayer: 'Retirer ce joueur',
+    colorSwatch: 'Couleur : {color} (cliquer pour changer)',
+    diffEasy: 'Facile  — IA lente, pop réduite',
+    diffMedium: 'Moyen   — IA standard',
+    diffHard: 'Difficile — IA rapide, pop accrue',
+    resLow: 'Bas      — 100 / 150 / 50 / 0',
+    resStandard: 'Standard — 200 / 200 / 150 / 0',
+    resHigh: 'Élevé    — 500 / 500 / 300 / 0',
+    resVeryHigh: 'Très élevé — 1000 / 1000 / 750 / 100',
+    civGreek: 'Grecque',
+    menuBtn: 'Menu',
+    save: 'Sauvegarder',
+    load: 'Charger',
+    quit: 'Quitter',
+    cancel: 'Annuler',
+    pause: 'Pause',
+    wood: 'bois',
+    food: 'nourriture',
+    stone: 'pierre',
+    gold: 'or',
+    needMore: 'Vous avez besoin de plus de {resource} !',
+    loadingConfig: 'Chargement config..',
+    loadingInterface: 'Chargement interface..',
+    loadingTerrain: 'Chargement terrain..',
+    loadingBorder: 'Chargement bordures..',
+    loadingGraphics: 'Chargement graphismes..',
+    loadingSounds: 'Chargement sons..',
+    stoneAge: 'Âge de Pierre',
+    toolAge: 'Âge des Outils',
+    bronzeAge: 'Âge de Bronze',
+    ironAge: 'Âge de Fer',
+    needHouses: 'Vous devez construire plus de maisons',
+    // Types affichés dynamiquement dans bottombar-info
+    Greek: 'Grecque',
+    Tree: 'Arbre',
+    Berrybush: 'Buisson de baies',
+    Stone: 'Pierre',
+    Gold: 'Or',
+    Salmon: 'Saumon',
+    House: 'Maison',
+    Dock: 'Quai',
+    TownCenter: 'Centre-ville',
+    Farm: 'Ferme',
+    StoragePit: 'Entrepôt',
+    Granary: 'Grenier',
+    Barracks: 'Caserne',
+    Market: 'Marché',
+    ArcheryRange: "Champ de tir",
+    Stable: 'Écurie',
+    Academy: 'Académie',
+    WatchTower: 'Tour de guet',
+    SentryTower: 'Tour sentinelle',
+    Villager: 'Villageois',
+    Priest: 'Prêtre',
+    Clubman: 'Gourdinier',
+    fisher: 'Pêcheur',
+    hunter: 'Chasseur',
+    farmer: 'Fermier',
+    forager: 'Cueilleur',
+    woodcutter: 'Bûcheron',
+    stoneminer: 'Mineur (pierre)',
+    goldminer: 'Mineur (or)',
+    builder: 'Constructeur',
+    attacker: 'Attaquant',
+    healer: 'Guérisseur'
+  },
+  en: {
+    newGame: 'New Game',
+    loadGame: 'Load Game',
+    configuration: 'Configuration',
+    players: 'Players',
+    addOpponent: '+ Add opponent',
+    mapSettings: 'Map Settings',
+    back: '← Back',
+    startGame: 'Start Game',
+    computer: 'Computer',
+    you: 'You',
+    colName: 'Name',
+    colCiv: 'Civilization',
+    colColor: 'Color',
+    mapSizeLabel: 'Map size',
+    mapTypeLabel: 'Map type',
+    mapTypePlain: 'Plain',
+    mapTypeContinent: 'Continent',
+    mapTypeLac: 'Central lake',
+    mapTypeIlot: 'Islands',
+    aiDifficulty: 'AI Difficulty',
+    startingResourcesLabel: 'Starting Resources',
+    devMode: 'Dev mode (instant build)',
+    revealAll: 'Reveal everything',
+    revealTerrain: 'Reveal terrain',
+    removePlayer: 'Remove player',
+    colorSwatch: 'Color: {color} (click to change)',
+    diffEasy: 'Easy   — Slow AI, reduced pop',
+    diffMedium: 'Medium — Standard AI',
+    diffHard: 'Hard   — Fast AI, increased pop',
+    resLow: 'Low      — 100 / 150 / 50 / 0',
+    resStandard: 'Standard — 200 / 200 / 150 / 0',
+    resHigh: 'High     — 500 / 500 / 300 / 0',
+    resVeryHigh: 'Very High — 1000 / 1000 / 750 / 100',
+    civGreek: 'Greek',
+    menuBtn: 'Menu',
+    save: 'Save',
+    load: 'Load',
+    quit: 'Quit',
+    cancel: 'Cancel',
+    pause: 'Pause',
+    wood: 'wood',
+    food: 'food',
+    stone: 'stone',
+    gold: 'gold',
+    needMore: 'You need more {resource}!',
+    loadingConfig: 'Loading config..',
+    loadingInterface: 'Loading interface..',
+    loadingTerrain: 'Loading terrain..',
+    loadingBorder: 'Loading border..',
+    loadingGraphics: 'Loading graphics..',
+    loadingSounds: 'Loading sounds..',
+    stoneAge: 'Stone Age',
+    toolAge: 'Tool Age',
+    bronzeAge: 'Bronze Age',
+    ironAge: 'Iron Age',
+    needHouses: 'You need to build more houses',
+    // Types displayed dynamically in bottombar-info
+    Greek: 'Greek',
+    Tree: 'Tree',
+    Berrybush: 'Berrybush',
+    Stone: 'Stone',
+    Gold: 'Gold',
+    Salmon: 'Salmon',
+    House: 'House',
+    Dock: 'Dock',
+    TownCenter: 'Town Center',
+    Farm: 'Farm',
+    StoragePit: 'Storage Pit',
+    Granary: 'Granary',
+    Barracks: 'Barracks',
+    Market: 'Market',
+    ArcheryRange: 'Archery Range',
+    Stable: 'Stable',
+    Academy: 'Academy',
+    WatchTower: 'Watch Tower',
+    SentryTower: 'Sentry Tower',
+    Villager: 'Villager',
+    Priest: 'Priest',
+    Clubman: 'Clubman',
+    fisher: 'Fisher',
+    hunter: 'Hunter',
+    farmer: 'Farmer',
+    forager: 'Forager',
+    woodcutter: 'Woodcutter',
+    stoneminer: 'Stone Miner',
+    goldminer: 'Gold Miner',
+    builder: 'Builder',
+    attacker: 'Attacker',
+    healer: 'Healer'
+  }
+};
+var currentLang = localStorage.getItem('lang') || 'fr';
+function t(key, vars) {
+  var _ref, _TRANSLATIONS$current;
+  var str = (_ref = (_TRANSLATIONS$current = TRANSLATIONS[currentLang][key]) !== null && _TRANSLATIONS$current !== void 0 ? _TRANSLATIONS$current : TRANSLATIONS.en[key]) !== null && _ref !== void 0 ? _ref : key;
+  if (vars) {
+    Object.entries(vars).forEach(function (_ref2) {
+      var _ref3 = _slicedToArray(_ref2, 2),
+        k = _ref3[0],
+        v = _ref3[1];
+      str = str.replace("{".concat(k, "}"), v);
+    });
+  }
+  return str;
+}
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+}
+function getLang() {
+  return currentLang;
+}
 // EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
 var sound_lib = __webpack_require__(2250);
 ;// ./app/constants/index.js
@@ -62,6 +274,7 @@ var CELL_HEIGHT = 32;
 var CELL_DEPTH = 16;
 var ACCELERATOR = 1.5;
 var STEP_TIME = 20;
+var BUCKET_SIZE = 8;
 var IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600;
 var LONG_CLICK_DURATION = 200;
 var RESOURCE_TYPES = {
@@ -82,7 +295,9 @@ var BUILDING_TYPES = {
   market: 'Market',
   archeryRange: 'ArcheryRange',
   stable: 'Stable',
-  academy: 'Academy'
+  academy: 'Academy',
+  watchTower: 'WatchTower',
+  sentryTower: 'SentryTower'
 };
 var UNIT_TYPES = {
   villager: 'Villager',
@@ -206,12 +421,12 @@ function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present,
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
-function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function graphics_slicedToArray(r, e) { return graphics_arrayWithHoles(r) || graphics_iterableToArrayLimit(r, e) || graphics_unsupportedIterableToArray(r, e) || graphics_nonIterableRest(); }
+function graphics_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function graphics_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return graphics_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? graphics_arrayLikeToArray(r, a) : void 0; } }
+function graphics_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function graphics_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function graphics_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
@@ -265,7 +480,7 @@ function getBuildingAsset(type, owner, assets) {
  */
 function getTexture(name, assets) {
   var _name$split = name.split('_'),
-    _name$split2 = _slicedToArray(_name$split, 2),
+    _name$split2 = graphics_slicedToArray(_name$split, 2),
     index = _name$split2[0],
     id = _name$split2[1];
   var spritesheet = assets.cache.get(id);
@@ -800,18 +1015,309 @@ function degreeToDirection(degree) {
     return 'southeast';
   }
 }
+;// ./app/services/FogOfWar.js
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = FogOfWar_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function FogOfWar_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return FogOfWar_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? FogOfWar_arrayLikeToArray(r, a) : void 0; } }
+function FogOfWar_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+
+function getPlainCellsAroundPoint(startX, startY, grid) {
+  var dist = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+  var callback = arguments.length > 4 ? arguments[4] : undefined;
+  var result = [];
+  if (dist === 0) {
+    var row = grid[startX];
+    if (row) {
+      var cell = row[startY];
+      if (cell && (!callback || callback(cell))) result.push(cell);
+    }
+    return result;
+  }
+  var minX = Math.max(startX - dist, 0);
+  var maxX = Math.min(startX + dist, grid.length - 1);
+  for (var i = minX; i <= maxX; i++) {
+    var _row = grid[i];
+    if (!_row) continue;
+    var minY = Math.max(startY - dist, 0);
+    var maxY = Math.min(startY + dist, _row.length - 1);
+    for (var j = minY; j <= maxY; j++) {
+      var _cell = _row[j];
+      if (_cell && (!callback || callback(_cell))) result.push(_cell);
+    }
+  }
+  return result;
+}
+function updateAIKnowledge(globalCell, cell, instance) {
+  var owner = instance.owner;
+  if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
+    cell.has = globalCell.has;
+    var has = globalCell.has;
+    if (has.quantity > 0) {
+      var _owner$foundedFish;
+      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees.add(has);
+      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has);
+      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has);
+      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has);
+      if (has.type === RESOURCE_TYPES.salmon) (_owner$foundedFish = owner.foundedFish) === null || _owner$foundedFish === void 0 || _owner$foundedFish.add(has);
+    }
+    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
+      owner.foundedAnimals.add(has);
+    }
+    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
+      owner.foundedEnemyBuildings.add(has);
+    }
+    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
+      owner.foundedEnemyUnits.add(has);
+    }
+  }
+}
+function updateVisibility(instance) {
+  var _instance$visibleCell, _instance$_visibleScr;
+  var cx = instance.i,
+    cy = instance.j,
+    sight = instance.sight,
+    owner = instance.owner,
+    context = instance.context,
+    isDead = instance.isDead;
+  var map = context.map;
+  var player = context.player;
+  var sightSq = sight * sight;
+  var prevVisible = (_instance$visibleCell = instance.visibleCells) !== null && _instance$visibleCell !== void 0 ? _instance$visibleCell : new Set();
+  var newVisible = (_instance$_visibleScr = instance._visibleScratch) !== null && _instance$_visibleScr !== void 0 ? _instance$_visibleScr : new Set();
+  newVisible.clear();
+  if (!isDead) {
+    getPlainCellsAroundPoint(cx, cy, owner.views, sight, function (cell) {
+      var dx = cell.i - cx;
+      var dy = cell.j - cy;
+      if (dx * dx + dy * dy <= sightSq) {
+        newVisible.add(cell);
+      }
+    });
+  }
+  var _iterator = _createForOfIteratorHelper(prevVisible),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var cell = _step.value;
+      if (!newVisible.has(cell)) {
+        var playerCell = player.views[cell.i][cell.j];
+        var globalCell = map.grid[cell.i][cell.j];
+        globalCell.viewBy["delete"](instance);
+        cell.viewBy["delete"](instance);
+        if (!playerCell.viewBy.size && !map.revealEverything) {
+          globalCell.setFog();
+        }
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  var _iterator2 = _createForOfIteratorHelper(newVisible),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var _cell2 = _step2.value;
+      if (!prevVisible.has(_cell2)) {
+        var _globalCell = map.grid[_cell2.i][_cell2.j];
+        _globalCell.updateVisible();
+        _globalCell.viewBy.add(instance);
+        _cell2.viewBy.add(instance);
+        if (!_cell2.viewed) {
+          var _cell2$onViewed;
+          owner.cellViewed++;
+          (_cell2$onViewed = _cell2.onViewed) === null || _cell2$onViewed === void 0 || _cell2$onViewed.call(_cell2);
+          _cell2.viewed = true;
+        }
+        if (!map.revealEverything && owner.isPlayed) {
+          _globalCell.removeFog();
+        } else if (owner.type === PLAYER_TYPES.ai) {
+          updateAIKnowledge(_globalCell, _cell2, instance);
+        }
+        if (_globalCell.has && _globalCell.has.sight && typeof _globalCell.has.detect === 'function') {
+          var distSq = Math.pow(cx - _globalCell.has.i, 2) + Math.pow(cy - _globalCell.has.j, 2);
+          if (distSq <= Math.pow(_globalCell.has.sight, 2)) {
+            _globalCell.has.detect(instance);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  instance.visibleCells = newVisible;
+  instance._visibleScratch = prevVisible;
+}
+;// ./app/services/Pathfinding.js
+function Pathfinding_slicedToArray(r, e) { return Pathfinding_arrayWithHoles(r) || Pathfinding_iterableToArrayLimit(r, e) || Pathfinding_unsupportedIterableToArray(r, e) || Pathfinding_nonIterableRest(); }
+function Pathfinding_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function Pathfinding_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function Pathfinding_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function Pathfinding_toConsumableArray(r) { return Pathfinding_arrayWithoutHoles(r) || Pathfinding_iterableToArray(r) || Pathfinding_unsupportedIterableToArray(r) || Pathfinding_nonIterableSpread(); }
+function Pathfinding_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function Pathfinding_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return Pathfinding_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? Pathfinding_arrayLikeToArray(r, a) : void 0; } }
+function Pathfinding_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function Pathfinding_arrayWithoutHoles(r) { if (Array.isArray(r)) return Pathfinding_arrayLikeToArray(r); }
+function Pathfinding_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+
+var pathStamp = 0;
+var heapData = [];
+var openSet = new Set();
+var closedSet = new Set();
+function getNeighbourCells(startX, startY, grid, dist, callback) {
+  var _grid$startX;
+  var result = [];
+  var startCell = (_grid$startX = grid[startX]) === null || _grid$startX === void 0 ? void 0 : _grid$startX[startY];
+  if (dist === 0) {
+    if (startCell && (!callback || callback(startCell))) result.push(startCell);
+    return result;
+  }
+  for (var dx = -dist; dx <= dist; dx++) {
+    var x = startX + dx;
+    var row = grid[x];
+    if (!row) continue;
+    var dyMax = dist - Math.abs(dx);
+    for (var dy = -dyMax; dy <= dyMax; dy++) {
+      var y = startY + dy;
+      var cell = row[y];
+      if (!cell) continue;
+      if (!callback || callback(cell)) result.push(cell);
+    }
+  }
+  return result;
+}
+function heapPush(f, node) {
+  heapData.push([f, node]);
+  var i = heapData.length - 1;
+  while (i > 0) {
+    var parent = i - 1 >> 1;
+    if (heapData[parent][0] <= heapData[i][0]) break;
+    var _ref = [heapData[i], heapData[parent]];
+    heapData[parent] = _ref[0];
+    heapData[i] = _ref[1];
+    i = parent;
+  }
+}
+function heapPop() {
+  var top = heapData[0];
+  var last = heapData.pop();
+  if (heapData.length > 0) {
+    heapData[0] = last;
+    var i = 0;
+    while (true) {
+      var l = 2 * i + 1;
+      var r = 2 * i + 2;
+      var s = i;
+      if (l < heapData.length && heapData[l][0] < heapData[s][0]) s = l;
+      if (r < heapData.length && heapData[r][0] < heapData[s][0]) s = r;
+      if (s === i) break;
+      var _ref2 = [heapData[i], heapData[s]];
+      heapData[s] = _ref2[0];
+      heapData[i] = _ref2[1];
+      i = s;
+    }
+  }
+  return top;
+}
+function findInstancePath(instance, x, y, map) {
+  var maxZone = 10;
+  var end = map.grid[x][y];
+  var start = map.grid[instance.i][instance.j];
+  var minX = Math.max(Math.min(start.i, end.i) - maxZone, 0);
+  var maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size);
+  var minY = Math.max(Math.min(start.j, end.j) - maxZone, 0);
+  var maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size);
+  var stamp = ++pathStamp;
+  function initCell(cell) {
+    if (cell._ps !== stamp) {
+      cell._ps = stamp;
+      cell._g = Infinity;
+      cell._h = 0;
+      cell._f = Infinity;
+      cell._prev = null;
+    }
+    return cell;
+  }
+  function isCellReachable(cell) {
+    if (cell.solid) return false;
+    var allowWaterCellCategory = instance.category === 'Boat';
+    return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water';
+  }
+  var startCell = initCell(start);
+  var endCell = initCell(end);
+  heapData.length = 0;
+  openSet.clear();
+  closedSet.clear();
+  startCell._g = 0;
+  startCell._h = instancesDistance(startCell, endCell);
+  startCell._f = startCell._h;
+  heapPush(startCell._f, startCell);
+  openSet.add(startCell);
+  var path = [];
+  var _loop = function _loop() {
+      var _heapPop = heapPop(),
+        _heapPop2 = Pathfinding_slicedToArray(_heapPop, 2),
+        pushedF = _heapPop2[0],
+        current = _heapPop2[1];
+      if (pushedF !== current._f || closedSet.has(current)) return 0; // continue
+      if (current === endCell) {
+        path = [endCell];
+        var temp = current;
+        while (temp._prev) {
+          path.push(temp._prev);
+          temp = temp._prev;
+        }
+        return 1; // break
+      }
+      openSet["delete"](current);
+      closedSet.add(current);
+      getNeighbourCells(current.i, current.j, map.grid, 1, function (neighbour) {
+        if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return;
+        initCell(neighbour);
+        var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]);
+        if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+          var tempG = current._g + instancesDistance(neighbour, current);
+          if (!openSet.has(neighbour)) {
+            neighbour._g = tempG;
+            neighbour._h = instancesDistance(neighbour, endCell);
+            neighbour._f = neighbour._g + neighbour._h;
+            neighbour._prev = current;
+            openSet.add(neighbour);
+            heapPush(neighbour._f, neighbour);
+          } else if (tempG < neighbour._g) {
+            neighbour._g = tempG;
+            neighbour._f = neighbour._g + neighbour._h;
+            neighbour._prev = current;
+            heapPush(neighbour._f, neighbour);
+          }
+        }
+      });
+    },
+    _ret;
+  while (heapData.length > 0) {
+    _ret = _loop();
+    if (_ret === 0) continue;
+    if (_ret === 1) break;
+  }
+  path.pop();
+  return Pathfinding_toConsumableArray(path);
+}
 ;// ./app/lib/grid.js
-function grid_slicedToArray(r, e) { return grid_arrayWithHoles(r) || grid_iterableToArrayLimit(r, e) || grid_unsupportedIterableToArray(r, e) || grid_nonIterableRest(); }
-function grid_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function grid_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function grid_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function grid_toConsumableArray(r) { return grid_arrayWithoutHoles(r) || grid_iterableToArray(r) || grid_unsupportedIterableToArray(r) || grid_nonIterableSpread(); }
 function grid_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function grid_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function grid_arrayWithoutHoles(r) { if (Array.isArray(r)) return grid_arrayLikeToArray(r); }
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = grid_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function grid_slicedToArray(r, e) { return grid_arrayWithHoles(r) || grid_iterableToArrayLimit(r, e) || grid_unsupportedIterableToArray(r, e) || grid_nonIterableRest(); }
+function grid_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function grid_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function grid_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function grid_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = grid_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function grid_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return grid_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? grid_arrayLikeToArray(r, a) : void 0; } }
 function grid_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+
+
 
 
 
@@ -890,7 +1396,7 @@ function getInstanceClosestFreeCellPath(instance, target, map) {
     return Math.abs(a.i - instance.i) + Math.abs(a.j - instance.j) - (Math.abs(b.i - instance.i) + Math.abs(b.j - instance.j));
   });
   var best = [];
-  var _iterator = _createForOfIteratorHelper(candidates),
+  var _iterator = grid_createForOfIteratorHelper(candidates),
     _step;
   try {
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
@@ -907,16 +1413,6 @@ function getInstanceClosestFreeCellPath(instance, target, map) {
   return best;
 }
 
-// Monotonically increasing stamp — each A* search gets a unique value so
-// per-cell state from prior searches is ignored without any cleanup pass.
-var _pathStamp = 0;
-
-// Reusable A* structures — reset at the start of each search instead of
-// allocating fresh arrays/sets on every call (~60 allocations/sec with 20 units).
-var _heapData = [];
-var _openSet = new Set();
-var _closedSet = new Set();
-
 /**
  * Get the shortest path for a instance to a destination
  * @param {object} instance
@@ -925,131 +1421,7 @@ var _closedSet = new Set();
  * @param {object} map
  */
 function getInstancePath(instance, x, y, map) {
-  var maxZone = 10;
-  var end = map.grid[x][y];
-  var start = map.grid[instance.i][instance.j];
-  var minX = Math.max(Math.min(start.i, end.i) - maxZone, 0);
-  var maxX = Math.min(Math.max(start.i, end.i) + maxZone, map.size);
-  var minY = Math.max(Math.min(start.j, end.j) - maxZone, 0);
-  var maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size);
-  var stamp = ++_pathStamp;
-
-  // Initialize A* scratch state on a cell the first time this search touches it.
-  // Cells from prior searches have a different _ps value and are treated as fresh.
-  function initCell(cell) {
-    if (cell._ps !== stamp) {
-      cell._ps = stamp;
-      cell._g = Infinity;
-      cell._h = 0;
-      cell._f = Infinity;
-      cell._prev = null;
-    }
-    return cell;
-  }
-  function isCellReachable(cell) {
-    if (cell.solid) return false;
-    var allowWaterCellCategory = instance.category === 'Boat';
-    return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water';
-  }
-  var startCell = initCell(start);
-  var endCell = initCell(end);
-
-  // Min-heap storing [f_at_push, node] pairs.
-  // Stale re-insertions are skipped by comparing stored f with node's current f.
-  _heapData.length = 0;
-  _openSet.clear();
-  _closedSet.clear();
-  function heapPush(f, node) {
-    _heapData.push([f, node]);
-    var i = _heapData.length - 1;
-    while (i > 0) {
-      var parent = i - 1 >> 1;
-      if (_heapData[parent][0] <= _heapData[i][0]) break;
-      var _ref = [_heapData[i], _heapData[parent]];
-      _heapData[parent] = _ref[0];
-      _heapData[i] = _ref[1];
-      i = parent;
-    }
-  }
-  function heapPop() {
-    var top = _heapData[0];
-    var last = _heapData.pop();
-    if (_heapData.length > 0) {
-      _heapData[0] = last;
-      var i = 0;
-      while (true) {
-        var l = 2 * i + 1;
-        var r = 2 * i + 2;
-        var s = i;
-        if (l < _heapData.length && _heapData[l][0] < _heapData[s][0]) s = l;
-        if (r < _heapData.length && _heapData[r][0] < _heapData[s][0]) s = r;
-        if (s === i) break;
-        var _ref2 = [_heapData[i], _heapData[s]];
-        _heapData[s] = _ref2[0];
-        _heapData[i] = _ref2[1];
-        i = s;
-      }
-    }
-    return top;
-  }
-  startCell._g = 0;
-  startCell._h = instancesDistance(startCell, endCell);
-  startCell._f = startCell._h;
-  heapPush(startCell._f, startCell);
-  _openSet.add(startCell);
-  var path = [];
-  var _loop = function _loop() {
-      var _heapPop = heapPop(),
-        _heapPop2 = grid_slicedToArray(_heapPop, 2),
-        pushedF = _heapPop2[0],
-        current = _heapPop2[1];
-      // Skip stale entries (node was re-inserted with a better f)
-      if (pushedF !== current._f || _closedSet.has(current)) return 0; // continue
-      if (current === endCell) {
-        path = [endCell];
-        var temp = current;
-        while (temp._prev) {
-          path.push(temp._prev);
-          temp = temp._prev;
-        }
-        return 1; // break
-      }
-      _openSet["delete"](current);
-      _closedSet.add(current);
-
-      // check neighbours
-      getCellsAroundPoint(current.i, current.j, map.grid, 1, function (neighbour) {
-        // Enforce the search zone boundary (previously implicit via sparse cloneGrid)
-        if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return;
-        initCell(neighbour);
-        var validDiag = !cellIsDiag(current, neighbour) || isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]);
-        if (!_closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
-          var tempG = current._g + instancesDistance(neighbour, current);
-          if (!_openSet.has(neighbour)) {
-            neighbour._g = tempG;
-            neighbour._h = instancesDistance(neighbour, endCell);
-            neighbour._f = neighbour._g + neighbour._h;
-            neighbour._prev = current;
-            _openSet.add(neighbour);
-            heapPush(neighbour._f, neighbour);
-          } else if (tempG < neighbour._g) {
-            // Better path found — update scores and re-insert; old heap entry will be skipped
-            neighbour._g = tempG;
-            neighbour._f = neighbour._g + neighbour._h;
-            neighbour._prev = current;
-            heapPush(neighbour._f, neighbour);
-          }
-        }
-      });
-    },
-    _ret;
-  while (_heapData.length > 0) {
-    _ret = _loop();
-    if (_ret === 0) continue;
-    if (_ret === 1) break;
-  }
-  path.pop();
-  return grid_toConsumableArray(path);
+  return findInstancePath(instance, x, y, map);
 }
 
 /**
@@ -1078,8 +1450,8 @@ function getZoneInGridWithCondition(zone, grid, size, condition) {
       var isFree = true;
 
       // Check the surrounding cells of size `size` to ensure they all meet the condition
-      var surroundingCells = getPlainCellsAroundPoint(i, j, grid, size);
-      var _iterator2 = _createForOfIteratorHelper(surroundingCells),
+      var surroundingCells = grid_getPlainCellsAroundPoint(i, j, grid, size);
+      var _iterator2 = grid_createForOfIteratorHelper(surroundingCells),
         _step2;
       try {
         for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
@@ -1120,20 +1492,32 @@ function findInstancesInSight(instance, condition) {
   var instX = instance.i,
     instY = instance.j,
     sight = instance.sight,
-    grid = instance.parent.grid;
+    map = instance.context.map;
+  var instanceBuckets = map.instanceBuckets;
+  if (!instanceBuckets) return [];
+  var sightSq = sight * sight;
   var instances = [];
-  for (var x = Math.max(instX - sight, 0); x <= Math.min(instX + sight, grid.length - 1); x++) {
-    for (var y = Math.max(instY - sight, 0); y <= Math.min(instY + sight, grid[x].length - 1); y++) {
-      // Check if the cell is within the instance's sight range (squared to avoid sqrt)
-      var dx = x - instX,
-        dy = y - instY;
-      if (dx * dx + dy * dy <= sight * sight) {
-        var cell = grid[x][y];
-
-        // Ensure the cell has an instance and the condition is met
-        if (cell !== null && cell !== void 0 && cell.has && typeof condition === 'function' && condition(cell.has)) {
-          instances.push(cell.has);
+  var minBi = Math.max(Math.floor((instX - sight) / BUCKET_SIZE), 0);
+  var maxBi = Math.min(Math.floor((instX + sight) / BUCKET_SIZE), instanceBuckets.length - 1);
+  var minBj = Math.max(Math.floor((instY - sight) / BUCKET_SIZE), 0);
+  var maxBj = Math.min(Math.floor((instY + sight) / BUCKET_SIZE), instanceBuckets[0].length - 1);
+  for (var bi = minBi; bi <= maxBi; bi++) {
+    for (var bj = minBj; bj <= maxBj; bj++) {
+      var _iterator3 = grid_createForOfIteratorHelper(instanceBuckets[bi][bj]),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var target = _step3.value;
+          var dx = target.i - instX,
+            dy = target.j - instY;
+          if (dx * dx + dy * dy <= sightSq && condition(target)) {
+            instances.push(target);
+          }
         }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
       }
     }
   }
@@ -1147,124 +1531,7 @@ function findInstancesInSight(instance, condition) {
  * @param {object} instance - The instance instance with properties i, j, sight, owner, parent, context.
  */
 function updateInstanceVisibility(instance) {
-  var _instance$visibleCell, _instance$_visibleScr;
-  var cx = instance.i,
-    cy = instance.j,
-    sight = instance.sight,
-    owner = instance.owner,
-    context = instance.context,
-    isDead = instance.isDead;
-  var map = context.map;
-  var player = context.player;
-  var sightSq = sight * sight;
-
-  // Ping-pong two persistent Sets to avoid per-call allocation
-  var prevVisible = (_instance$visibleCell = instance.visibleCells) !== null && _instance$visibleCell !== void 0 ? _instance$visibleCell : new Set();
-  var newVisible = (_instance$_visibleScr = instance._visibleScratch) !== null && _instance$_visibleScr !== void 0 ? _instance$_visibleScr : new Set();
-  newVisible.clear();
-
-  // Collect all cells within sight
-  if (!isDead) {
-    getPlainCellsAroundPoint(cx, cy, owner.views, sight, function (cell) {
-      var dx = cell.i - cx;
-      var dy = cell.j - cy;
-      if (dx * dx + dy * dy <= sightSq) {
-        newVisible.add(cell);
-      }
-    });
-  }
-
-  // Hide cells that left sight
-  var _iterator3 = _createForOfIteratorHelper(prevVisible),
-    _step3;
-  try {
-    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-      var cell = _step3.value;
-      if (!newVisible.has(cell)) {
-        var playerCell = player.views[cell.i][cell.j];
-        var globalCell = map.grid[cell.i][cell.j];
-        globalCell.viewBy["delete"](instance);
-        cell.viewBy["delete"](instance);
-        if (!playerCell.viewBy.size && !map.revealEverything) {
-          globalCell.setFog();
-        }
-      }
-    }
-
-    // Show new cells
-  } catch (err) {
-    _iterator3.e(err);
-  } finally {
-    _iterator3.f();
-  }
-  var _iterator4 = _createForOfIteratorHelper(newVisible),
-    _step4;
-  try {
-    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-      var _cell = _step4.value;
-      if (!prevVisible.has(_cell)) {
-        var _globalCell = map.grid[_cell.i][_cell.j];
-        _globalCell.updateVisible();
-        _globalCell.viewBy.add(instance);
-        _cell.viewBy.add(instance);
-        if (!_cell.viewed) {
-          var _cell$onViewed;
-          owner.cellViewed++;
-          (_cell$onViewed = _cell.onViewed) === null || _cell$onViewed === void 0 || _cell$onViewed.call(_cell);
-          _cell.viewed = true;
-        }
-        if (!map.revealEverything && owner.isPlayed) {
-          _globalCell.removeFog();
-        } else if (owner.type === PLAYER_TYPES.ai) {
-          // Update AI's knowledge of the surroundings (trees, berrybushes, enemy buildings)
-          updateAIKnowledge(_globalCell, _cell, instance);
-        }
-
-        // Optional: detect other instances in sight
-        if (_globalCell.has && _globalCell.has.sight && typeof _globalCell.has.detect === 'function') {
-          var distSq = Math.pow(cx - _globalCell.has.i, 2) + Math.pow(cy - _globalCell.has.j, 2);
-          if (distSq <= Math.pow(_globalCell.has.sight, 2)) {
-            _globalCell.has.detect(instance);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    _iterator4.e(err);
-  } finally {
-    _iterator4.f();
-  }
-  instance.visibleCells = newVisible;
-  instance._visibleScratch = prevVisible;
-}
-
-/**
- * Updates AI knowledge of resources and enemies when an AI instance views a new cell.
- * Called by updateInstanceVisibility when a cell enters sight for the first time.
- */
-function updateAIKnowledge(globalCell, cell, instance) {
-  var owner = instance.owner;
-
-  // Sync local cell's "has" object with the global cell if different
-  if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
-    cell.has = globalCell.has;
-    var has = globalCell.has;
-    if (has.quantity > 0) {
-      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees.add(has);
-      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs.add(has);
-      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones.add(has);
-      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds.add(has);
-    }
-    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
-      owner.foundedAnimals.add(has);
-    }
-    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
-      owner.foundedEnemyBuildings.add(has);
-    }
-    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
-      owner.foundedEnemyUnits.add(has);
-    }
-  }
+  return updateVisibility(instance);
 }
 
 /**
@@ -1294,12 +1561,12 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
     var isFree = true;
 
     // Check the surrounding cells of size `size` to ensure they all meet the condition
-    var surroundingCells = getPlainCellsAroundPoint(randomX, randomY, grid, size);
-    var _iterator5 = _createForOfIteratorHelper(surroundingCells),
-      _step5;
+    var surroundingCells = grid_getPlainCellsAroundPoint(randomX, randomY, grid, size);
+    var _iterator4 = grid_createForOfIteratorHelper(surroundingCells),
+      _step4;
     try {
-      for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-        var surroundingCell = _step5.value;
+      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+        var surroundingCell = _step4.value;
         if (!condition(surroundingCell)) {
           isFree = false;
           break; // Exit early if a cell does not meet the condition
@@ -1308,9 +1575,9 @@ function getRandomZoneInGridWithCondition(zone, grid, size, condition) {
 
       // If the area is free, return the valid cell
     } catch (err) {
-      _iterator5.e(err);
+      _iterator4.e(err);
     } finally {
-      _iterator5.f();
+      _iterator4.f();
     }
     if (isFree) {
       return {
@@ -1393,7 +1660,7 @@ function getPositionInGridAroundInstance(instance, grid, space, size) {
 function instanceIsInPlayerSight(instance, player) {
   if (!(player !== null && player !== void 0 && player.views)) return false;
   var dist = instance.size === 3 ? 1 : 0;
-  var cells = getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist);
+  var cells = grid_getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist);
   return cells.some(function (cell) {
     return cell.viewBy.size > 0;
   });
@@ -1409,7 +1676,7 @@ function instanceIsInPlayerSight(instance, player) {
  * @param {function} [callback] - Optional callback function to filter cells. If provided, it should return true for valid cells.
  * @returns {object[]} - Array of valid cells around the point within the distance.
  */
-function getPlainCellsAroundPoint(startX, startY, grid) {
+function grid_getPlainCellsAroundPoint(startX, startY, grid) {
   var dist = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
   var callback = arguments.length > 4 ? arguments[4] : undefined;
   var result = [];
@@ -1431,8 +1698,8 @@ function getPlainCellsAroundPoint(startX, startY, grid) {
     var minY = Math.max(startY - dist, 0);
     var maxY = Math.min(startY + dist, _row.length - 1);
     for (var j = minY; j <= maxY; j++) {
-      var _cell2 = _row[j];
-      if (_cell2 && (!callback || callback(_cell2))) result.push(_cell2);
+      var _cell = _row[j];
+      if (_cell && (!callback || callback(_cell))) result.push(_cell);
     }
   }
   return result;
@@ -1488,11 +1755,11 @@ function getClosestInstance(instance, instances) {
   var closestDistance = Infinity;
 
   // Iterate through the instances to find the one with the minimum distance to the reference instance
-  var _iterator6 = _createForOfIteratorHelper(instances),
-    _step6;
+  var _iterator5 = grid_createForOfIteratorHelper(instances),
+    _step5;
   try {
-    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-      var targetInstance = _step6.value;
+    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+      var targetInstance = _step5.value;
       var distance = instancesDistance(instance, targetInstance);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -1502,9 +1769,9 @@ function getClosestInstance(instance, instances) {
 
     // Return the closest instance, or false if no valid instance was found
   } catch (err) {
-    _iterator6.e(err);
+    _iterator5.e(err);
   } finally {
-    _iterator6.f();
+    _iterator5.f();
   }
   return closestInstance || false;
 }
@@ -1528,11 +1795,11 @@ function getClosestInstanceWithPath(instance, instances) {
   });
   var closest = null;
   var attempts = 0;
-  var _iterator7 = _createForOfIteratorHelper(sorted),
-    _step7;
+  var _iterator6 = grid_createForOfIteratorHelper(sorted),
+    _step6;
   try {
-    for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-      var target = _step7.value;
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var target = _step6.value;
       // A* path length >= straight-line distance, so skip if already longer than best
       if (closest && instancesDistance(instance, target) >= closest.path.length) break;
       // Cap A* calls — if the N nearest by Euclidean distance are all blocked, farther ones likely are too
@@ -1546,9 +1813,9 @@ function getClosestInstanceWithPath(instance, instances) {
       }
     }
   } catch (err) {
-    _iterator7.e(err);
+    _iterator6.e(err);
   } finally {
-    _iterator7.f();
+    _iterator6.f();
   }
   return closest;
 }
@@ -1864,6 +2131,8 @@ var updateObject = function updateObject(target, operation) {
   }
 };
 var canUpdateMinimap = function canUpdateMinimap(instance, player) {
+  var _instance$context;
+  if ((_instance$context = instance.context) !== null && _instance$context !== void 0 && (_instance$context = _instance$context.map) !== null && _instance$context !== void 0 && _instance$context.revealEverything) return true;
   return instance.owner.isPlayed || player.label !== instance.owner.label && instanceIsInPlayerSight(instance, player);
 };
 
@@ -1977,15 +2246,15 @@ var extra_getActionCondition = function getActionCondition(source, target, actio
 
 
 
-;// ./app/classes/resource.js
-function resource_typeof(o) { "@babel/helpers - typeof"; return resource_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, resource_typeof(o); }
+;// ./app/classes/Instance.js
+function Instance_typeof(o) { "@babel/helpers - typeof"; return Instance_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Instance_typeof(o); }
 function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
 function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
-function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == resource_typeof(i) ? i : i + ""; }
-function _toPrimitive(t, r) { if ("object" != resource_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != resource_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == Instance_typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != Instance_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != Instance_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _callSuper(t, o, e) { return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], _getPrototypeOf(t).constructor) : o.apply(t, e)); }
-function _possibleConstructorReturn(t, e) { if (e && ("object" == resource_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return _assertThisInitialized(t); }
+function _possibleConstructorReturn(t, e) { if (e && ("object" == Instance_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return _assertThisInitialized(t); }
 function _assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
@@ -1994,21 +2263,198 @@ function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf 
 
 
 
-
-var Resource = /*#__PURE__*/function (_Container) {
-  function Resource(options, context) {
-    var _this$quantity, _this$hitPoints;
+var Instance = /*#__PURE__*/function (_Container) {
+  function Instance(context) {
     var _this;
-    _classCallCheck(this, Resource);
-    _this = _callSuper(this, Resource);
+    _classCallCheck(this, Instance);
+    _this = _callSuper(this, Instance);
     _this.context = context;
-    var _this2 = _this,
-      map = _this2.context.map;
     _this.label = uuidv4();
-    _this.family = FAMILY_TYPES.resource;
     _this.selected = false;
     _this.isDead = false;
     _this.isDestroyed = false;
+    _this.interval = null;
+    _this.timeoutId = null;
+    return _this;
+  }
+  _inherits(Instance, _Container);
+  return _createClass(Instance, [{
+    key: "startInterval",
+    value: function startInterval(callback, time) {
+      var immediate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      this.stopInterval();
+      if (immediate) callback();
+      this.interval = this.context.scheduler.add(callback, time);
+    }
+  }, {
+    key: "stopInterval",
+    value: function stopInterval() {
+      if (this.interval) {
+        this.context.scheduler.remove(this.interval);
+        this.interval = null;
+      }
+    }
+  }, {
+    key: "stopTimeout",
+    value: function stopTimeout() {
+      if (this.timeoutId != null) {
+        this.context.scheduler.remove(this.timeoutId);
+        this.timeoutId = null;
+      }
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      var _this$sprite;
+      (_this$sprite = this.sprite) === null || _this$sprite === void 0 || _this$sprite.stop();
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      var _this$sprite2;
+      (_this$sprite2 = this.sprite) === null || _this$sprite2 === void 0 || _this$sprite2.play();
+    }
+  }, {
+    key: "select",
+    value: function select() {
+      var _this$selectionFactor;
+      if (this.selected) return;
+      this.selected = true;
+      var f = (_this$selectionFactor = this.selectionFactor) !== null && _this$selectionFactor !== void 0 ? _this$selectionFactor : this.size;
+      var selection = new lib/* Graphics */.A1g();
+      selection.label = LABEL_TYPES.selection;
+      selection.zIndex = 3;
+      selection.poly([-32 * f, 0, 0, -16 * f, 32 * f, 0, 0, 16 * f]);
+      selection.stroke(COLOR_WHITE);
+      this.addChildAt(selection, 0);
+    }
+  }, {
+    key: "unselect",
+    value: function unselect() {
+      if (!this.selected) return;
+      this.selected = false;
+      var selection = this.getChildByLabel(LABEL_TYPES.selection);
+      if (selection) this.removeChild(selection);
+    }
+  }, {
+    key: "step",
+    value: function step() {
+      if (this.hitPoints <= 0) {
+        this.die();
+      } else if (this.hasPath()) {
+        this.moveToPath();
+      }
+    }
+  }, {
+    key: "getActionCondition",
+    value: function getActionCondition(target) {
+      var action = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.action;
+      return extra_getActionCondition(this, target, action);
+    }
+  }, {
+    key: "setTextures",
+    value: function setTextures(sheet) {
+      setUnitTexture(sheet, this, ACCELERATOR);
+    }
+  }]);
+}(lib/* Container */.mcf);
+;// ./app/ui/ResourceInterface.js
+function ResourceInterface_typeof(o) { "@babel/helpers - typeof"; return ResourceInterface_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ResourceInterface_typeof(o); }
+function ResourceInterface_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function ResourceInterface_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, ResourceInterface_toPropertyKey(o.key), o); } }
+function ResourceInterface_createClass(e, r, t) { return r && ResourceInterface_defineProperties(e.prototype, r), t && ResourceInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function ResourceInterface_toPropertyKey(t) { var i = ResourceInterface_toPrimitive(t, "string"); return "symbol" == ResourceInterface_typeof(i) ? i : i + ""; }
+function ResourceInterface_toPrimitive(t, r) { if ("object" != ResourceInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != ResourceInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var ResourceInterface = /*#__PURE__*/function () {
+  function ResourceInterface(resource) {
+    ResourceInterface_classCallCheck(this, ResourceInterface);
+    this.resource = resource;
+  }
+  return ResourceInterface_createClass(ResourceInterface, [{
+    key: "setDefaultInterface",
+    value: function setDefaultInterface(element, data) {
+      var resource = this.resource;
+      var menu = resource.context.menu;
+      var typeDiv = document.createElement('div');
+      typeDiv.id = MENU_INFO_IDS.type;
+      typeDiv.textContent = t(resource.type);
+      element.appendChild(typeDiv);
+      var iconImg = document.createElement('img');
+      iconImg.id = MENU_INFO_IDS.icon;
+      iconImg.src = getIconPath(data.icon);
+      element.appendChild(iconImg);
+      if (resource.hitPoints) {
+        var hitPointsDiv = document.createElement('div');
+        hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
+        hitPointsDiv.textContent = resource.hitPoints + '/' + resource.totalHitPoints;
+        element.appendChild(hitPointsDiv);
+      }
+      if (resource.quantity) {
+        var quantityDiv = document.createElement('div');
+        quantityDiv.id = MENU_INFO_IDS.quantity;
+        quantityDiv.className = 'resource-quantity';
+        var iconToUse;
+        switch (resource.type) {
+          case RESOURCE_TYPES.tree:
+            iconToUse = menu.infoIcons['wood'];
+            break;
+          case RESOURCE_TYPES.salmon:
+          case RESOURCE_TYPES.berrybush:
+            iconToUse = menu.infoIcons['food'];
+            break;
+          case RESOURCE_TYPES.stone:
+            iconToUse = menu.infoIcons['stone'];
+            break;
+          case RESOURCE_TYPES.gold:
+            iconToUse = menu.infoIcons['gold'];
+            break;
+        }
+        var smallIconImg = document.createElement('img');
+        smallIconImg.src = iconToUse;
+        smallIconImg.className = 'resource-quantity-icon';
+        var textDiv = document.createElement('div');
+        textDiv.id = MENU_INFO_IDS.quantityText;
+        textDiv.textContent = resource.quantity;
+        quantityDiv.appendChild(smallIconImg);
+        quantityDiv.appendChild(textDiv);
+        element.appendChild(quantityDiv);
+      }
+    }
+  }]);
+}();
+;// ./app/classes/resource.js
+function resource_typeof(o) { "@babel/helpers - typeof"; return resource_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, resource_typeof(o); }
+function resource_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function resource_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, resource_toPropertyKey(o.key), o); } }
+function resource_createClass(e, r, t) { return r && resource_defineProperties(e.prototype, r), t && resource_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function resource_toPropertyKey(t) { var i = resource_toPrimitive(t, "string"); return "symbol" == resource_typeof(i) ? i : i + ""; }
+function resource_toPrimitive(t, r) { if ("object" != resource_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != resource_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function resource_callSuper(t, o, e) { return o = resource_getPrototypeOf(o), resource_possibleConstructorReturn(t, resource_isNativeReflectConstruct() ? Reflect.construct(o, e || [], resource_getPrototypeOf(t).constructor) : o.apply(t, e)); }
+function resource_possibleConstructorReturn(t, e) { if (e && ("object" == resource_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return resource_assertThisInitialized(t); }
+function resource_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
+function resource_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (resource_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function resource_getPrototypeOf(t) { return resource_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, resource_getPrototypeOf(t); }
+function resource_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && resource_setPrototypeOf(t, e); }
+function resource_setPrototypeOf(t, e) { return resource_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, resource_setPrototypeOf(t, e); }
+
+
+
+
+
+
+var Resource = /*#__PURE__*/function (_Instance) {
+  function Resource(options, context) {
+    var _this$quantity, _this$hitPoints;
+    var _this;
+    resource_classCallCheck(this, Resource);
+    _this = resource_callSuper(this, Resource, [context]);
+    var _this2 = _this,
+      map = _this2.context.map;
+    _this.family = FAMILY_TYPES.resource;
+    _this.resourceInterface = new ResourceInterface(_this);
     _this.size = 1;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
@@ -2107,37 +2553,11 @@ var Resource = /*#__PURE__*/function (_Container) {
       });
       _this.addChild(_this.sprite);
     }
+    map.addToInstanceBucket(_this);
     return _this;
   }
-  _inherits(Resource, _Container);
-  return _createClass(Resource, [{
-    key: "select",
-    value: function select() {
-      if (this.selected) {
-        return;
-      }
-      this.selected = true;
-      var selection = new lib/* Graphics */.A1g();
-      selection.label = LABEL_TYPES.selection;
-      selection.zIndex = 3;
-      var path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size];
-      selection.poly(path);
-      selection.stroke(COLOR_WHITE);
-      this.addChildAt(selection, 0);
-    }
-  }, {
-    key: "unselect",
-    value: function unselect() {
-      if (!this.selected) {
-        return;
-      }
-      this.selected = false;
-      var selection = this.getChildByLabel(LABEL_TYPES.selection);
-      if (selection) {
-        this.removeChild(selection);
-      }
-    }
-  }, {
+  resource_inherits(Resource, _Instance);
+  return resource_createClass(Resource, [{
     key: "die",
     value: function die(immediate) {
       if (this.isDead) {
@@ -2162,6 +2582,7 @@ var Resource = /*#__PURE__*/function (_Container) {
       }
       map.resources["delete"](this);
       menu.updateResourcesMiniMap();
+      map.removeFromInstanceBucket(this);
       this.isDead = true;
       if (this.type === RESOURCE_TYPES.tree && !immediate) {
         this.onTreeDie();
@@ -2220,54 +2641,489 @@ var Resource = /*#__PURE__*/function (_Container) {
   }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
-      var menu = this.context.menu;
+      return this.resourceInterface.setDefaultInterface(element, data);
+    }
+  }]);
+}(Instance);
+;// ./app/ui/BuildingInterface.js
+function BuildingInterface_typeof(o) { "@babel/helpers - typeof"; return BuildingInterface_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingInterface_typeof(o); }
+function BuildingInterface_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BuildingInterface_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BuildingInterface_toPropertyKey(o.key), o); } }
+function BuildingInterface_createClass(e, r, t) { return r && BuildingInterface_defineProperties(e.prototype, r), t && BuildingInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BuildingInterface_toPropertyKey(t) { var i = BuildingInterface_toPrimitive(t, "string"); return "symbol" == BuildingInterface_typeof(i) ? i : i + ""; }
+function BuildingInterface_toPrimitive(t, r) { if ("object" != BuildingInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var BuildingInterface = /*#__PURE__*/function () {
+  function BuildingInterface(building) {
+    BuildingInterface_classCallCheck(this, BuildingInterface);
+    this.building = building;
+  }
+  return BuildingInterface_createClass(BuildingInterface, [{
+    key: "renderInfo",
+    value: function renderInfo(element, data) {
+      var building = this.building;
+      this.setDefaultInterface(element, data);
+      if (building.displayPopulation && building.owner.isPlayed && building.isBuilt) {
+        element.appendChild(this.getPopulationElement());
+      }
+      element.appendChild(this.getLoadingElement());
+    }
+  }, {
+    key: "getPopulationElement",
+    value: function getPopulationElement() {
+      var building = this.building;
+      var populationDiv = document.createElement('div');
+      populationDiv.id = MENU_INFO_IDS.population;
+      var populationIcon = document.createElement('img');
+      var populationSpan = document.createElement('span');
+      populationSpan.id = MENU_INFO_IDS.populationText;
+      populationSpan.textContent = building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max);
+      populationIcon.src = getIconPath('004_50731');
+      populationDiv.appendChild(populationIcon);
+      populationDiv.appendChild(populationSpan);
+      return populationDiv;
+    }
+  }, {
+    key: "updateLoading",
+    value: function updateLoading() {
+      var _this = this;
+      var building = this.building;
+      var menu = building.context.menu;
+      if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
+        if (building.loading === 10) {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
+            return element.innerHTML = _this.getLoadingElement().innerHTML;
+          });
+        } else if (building.loading > 10) {
+          menu.updateInfo(MENU_INFO_IDS.loadingText, building.loading + '%');
+        } else {
+          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
+            return element.innerHTML = '';
+          });
+        }
+      }
+    }
+  }, {
+    key: "getLoadingElement",
+    value: function getLoadingElement() {
+      var building = this.building;
+      var loadingDiv = document.createElement('div');
+      loadingDiv.className = 'building-loading';
+      loadingDiv.id = MENU_INFO_IDS.loading;
+      if (building.loading && building.owner.isPlayed) {
+        var iconImg = document.createElement('img');
+        iconImg.className = 'building-loading-icon';
+        iconImg.src = getIconPath('009_50731');
+        var textDiv = document.createElement('div');
+        textDiv.id = MENU_INFO_IDS.loadingText;
+        textDiv.textContent = building.loading + '%';
+        loadingDiv.appendChild(iconImg);
+        loadingDiv.appendChild(textDiv);
+      }
+      return loadingDiv;
+    }
+  }, {
+    key: "setDefaultInterface",
+    value: function setDefaultInterface(element, data) {
+      var building = this.building;
+      var menu = building.context.menu;
+      var civDiv = document.createElement('div');
+      civDiv.id = MENU_INFO_IDS.civ;
+      civDiv.textContent = t(building.owner.civ);
+      element.appendChild(civDiv);
       var typeDiv = document.createElement('div');
       typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = this.type;
+      typeDiv.textContent = t(building.type);
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
       iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
-      if (this.hitPoints) {
+      if (building.owner && building.owner.isPlayed) {
         var hitPointsDiv = document.createElement('div');
         hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-        hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
+        hitPointsDiv.textContent = building.hitPoints + '/' + building.totalHitPoints;
         element.appendChild(hitPointsDiv);
-      }
-      if (this.quantity) {
-        var quantityDiv = document.createElement('div');
-        quantityDiv.id = MENU_INFO_IDS.quantity;
-        quantityDiv.className = 'resource-quantity';
-        var iconToUse;
-        switch (this.type) {
-          case RESOURCE_TYPES.tree:
-            iconToUse = menu.infoIcons['wood'];
-            break;
-          case RESOURCE_TYPES.salmon:
-          case RESOURCE_TYPES.berrybush:
-            iconToUse = menu.infoIcons['food'];
-            break;
-          case RESOURCE_TYPES.stone:
-            iconToUse = menu.infoIcons['stone'];
-            break;
-          case RESOURCE_TYPES.gold:
-            iconToUse = menu.infoIcons['gold'];
-            break;
+        if (building.isBuilt && building.quantity) {
+          var quantityDiv = document.createElement('div');
+          quantityDiv.id = MENU_INFO_IDS.quantity;
+          quantityDiv.className = 'resource-quantity';
+          var smallIconImg = document.createElement('img');
+          smallIconImg.src = menu.icons['food'];
+          smallIconImg.className = 'resource-quantity-icon';
+          var textDiv = document.createElement('div');
+          textDiv.id = MENU_INFO_IDS.quantityText;
+          textDiv.textContent = building.quantity;
+          quantityDiv.appendChild(smallIconImg);
+          quantityDiv.appendChild(textDiv);
+          element.appendChild(quantityDiv);
         }
-        var smallIconImg = document.createElement('img');
-        smallIconImg.src = iconToUse;
-        smallIconImg.className = 'resource-quantity-icon';
-        var textDiv = document.createElement('div');
-        textDiv.id = MENU_INFO_IDS.quantityText;
-        textDiv.textContent = this.quantity;
-        quantityDiv.appendChild(smallIconImg);
-        quantityDiv.appendChild(textDiv);
-        element.appendChild(quantityDiv);
       }
     }
   }]);
-}(lib/* Container */.mcf);
+}();
+;// ./app/classes/building/BuildingLifecycle.js
+function BuildingLifecycle_typeof(o) { "@babel/helpers - typeof"; return BuildingLifecycle_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingLifecycle_typeof(o); }
+function BuildingLifecycle_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BuildingLifecycle_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BuildingLifecycle_toPropertyKey(o.key), o); } }
+function BuildingLifecycle_createClass(e, r, t) { return r && BuildingLifecycle_defineProperties(e.prototype, r), t && BuildingLifecycle_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BuildingLifecycle_toPropertyKey(t) { var i = BuildingLifecycle_toPrimitive(t, "string"); return "symbol" == BuildingLifecycle_typeof(i) ? i : i + ""; }
+function BuildingLifecycle_toPrimitive(t, r) { if ("object" != BuildingLifecycle_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingLifecycle_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var BuildingLifecycle = /*#__PURE__*/function () {
+  function BuildingLifecycle(building) {
+    BuildingLifecycle_classCallCheck(this, BuildingLifecycle);
+    this.building = building;
+  }
+  return BuildingLifecycle_createClass(BuildingLifecycle, [{
+    key: "die",
+    value: function die() {
+      var building = this.building;
+      if (building.isDead) {
+        return;
+      }
+      var _building$context = building.context,
+        map = _building$context.map,
+        player = _building$context.player,
+        players = _building$context.players,
+        menu = _building$context.menu;
+      clearTimeout(building.visibilityTimeout);
+      building.stopInterval();
+      building.isDead = true;
+      map.removeFromInstanceBucket(building);
+      if (building.selected && player) {
+        player.unselectAll();
+      }
+      var index = building.owner.buildings.indexOf(building);
+      if (index >= 0) {
+        building.owner.buildings.splice(index, 1);
+      }
+      for (var i = 0; i < players.length; i++) {
+        if (players[i].type === PLAYER_TYPES.ai) {
+          players[i].foundedEnemyBuildings["delete"](building);
+        }
+      }
+      var color = building.getChildByLabel(LABEL_TYPES.color);
+      color && color.destroy();
+      var deco = building.getChildByLabel(LABEL_TYPES.deco);
+      deco && deco.destroy();
+      var fire = building.getChildByLabel(LABEL_TYPES.fire);
+      fire && fire.destroy();
+      var rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size, lib/* Assets */.sP);
+      if (building.type === BUILDING_TYPES.farm) {
+        rubbleSheet = '000_239';
+      }
+      building.sprite.texture = getTexture(rubbleSheet, lib/* Assets */.sP);
+      building.sprite.allowMove = false;
+      building.sprite.eventMode = 'none';
+      building.sprite.allowClick = false;
+      building.zIndex--;
+      if (building.type === BUILDING_TYPES.farm) {
+        changeSpriteColorDirectly(building.sprite, building.owner.color);
+      }
+      updateInstanceVisibility(building);
+      var dist = building.size === 3 ? 1 : 0;
+      grid_getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, function (cell) {
+        if (cell.has === building) {
+          cell.has = null;
+          cell.solid = false;
+          cell.corpses.add(building);
+        }
+      });
+      building.startTimeout(function () {
+        return building.clear();
+      }, RUBBLE_TIME);
+      canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner);
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      var building = this.building;
+      if (building.isDestroyed) {
+        return;
+      }
+      clearTimeout(building.visibilityTimeout);
+      var map = building.context.map;
+      var dist = building.size === 3 ? 1 : 0;
+      grid_getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, function (cell) {
+        cell.corpses["delete"](building);
+      });
+      building.isDestroyed = true;
+      building.destroy({
+        child: true,
+        texture: false
+      });
+    }
+  }]);
+}();
+;// ./app/classes/building/BuildingProduction.js
+function BuildingProduction_typeof(o) { "@babel/helpers - typeof"; return BuildingProduction_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingProduction_typeof(o); }
+function BuildingProduction_slicedToArray(r, e) { return BuildingProduction_arrayWithHoles(r) || BuildingProduction_iterableToArrayLimit(r, e) || BuildingProduction_unsupportedIterableToArray(r, e) || BuildingProduction_nonIterableRest(); }
+function BuildingProduction_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function BuildingProduction_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return BuildingProduction_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? BuildingProduction_arrayLikeToArray(r, a) : void 0; } }
+function BuildingProduction_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function BuildingProduction_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function BuildingProduction_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = BuildingProduction_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function BuildingProduction_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BuildingProduction_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BuildingProduction_toPropertyKey(o.key), o); } }
+function BuildingProduction_createClass(e, r, t) { return r && BuildingProduction_defineProperties(e.prototype, r), t && BuildingProduction_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BuildingProduction_toPropertyKey(t) { var i = BuildingProduction_toPrimitive(t, "string"); return "symbol" == BuildingProduction_typeof(i) ? i : i + ""; }
+function BuildingProduction_toPrimitive(t, r) { if ("object" != BuildingProduction_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingProduction_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+var BuildingProduction = /*#__PURE__*/function () {
+  function BuildingProduction(building) {
+    BuildingProduction_classCallCheck(this, BuildingProduction);
+    this.building = building;
+  }
+  return BuildingProduction_createClass(BuildingProduction, [{
+    key: "placeUnit",
+    value: function placeUnit(type, extra) {
+      var building = this.building;
+      var _building$context = building.context,
+        map = _building$context.map,
+        menu = _building$context.menu;
+      var spawnCell;
+      var config = building.owner.config.units[type];
+      if (config.category === 'Boat') {
+        spawnCell = getFreeCellAroundPoint(building.i, building.j, building.size, map.grid, function (cell) {
+          return cell.category === 'Water' && !cell.solid;
+        });
+      } else {
+        spawnCell = getFreeCellAroundPoint(building.i, building.j, building.size, map.grid, function (cell) {
+          return cell.category !== 'Water' && !cell.solid;
+        });
+      }
+      if (!spawnCell) {
+        return;
+      }
+      building.owner.population++;
+      var unitExtra = extra || building.owner.getUnitExtraOptions && building.owner.getUnitExtraOptions(type) || {};
+      building.owner.createUnit(_objectSpread({
+        i: spawnCell.i,
+        j: spawnCell.j,
+        type: type
+      }, unitExtra));
+      if (building.owner.isPlayed && building.owner.selectedBuilding && building.owner.selectedBuilding.displayPopulation) {
+        menu.updateInfo(MENU_INFO_IDS.populationText, building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max));
+      }
+    }
+  }, {
+    key: "buyUnit",
+    value: function buyUnit(type) {
+      var alreadyPaid = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var force = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var extra = arguments.length > 3 ? arguments[3] : undefined;
+      var building = this.building;
+      var _building$context2 = building.context,
+        menu = _building$context2.menu,
+        map = _building$context2.map;
+      var success = false;
+      var unit = building.owner.config.units[type];
+      if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
+        if (!alreadyPaid) {
+          if (building.owner.type === PLAYER_TYPES.ai) {
+            if (!building.queue.length && building.loading === null) {
+              payCost(building.owner, unit.cost);
+              building.queue.push(type);
+              success = true;
+            }
+          } else {
+            payCost(building.owner, unit.cost);
+            building.queue.push(type);
+            if (building.selected && building.owner.isPlayed) {
+              menu.updateButtonContent(type, building.queue.filter(function (q) {
+                return q === type;
+              }).length);
+            }
+            building.owner.isPlayed && menu.updateTopbar();
+            success = true;
+          }
+        }
+        if (building.loading === null && building.queue[0] || force) {
+          var hasShowedMessage = false;
+          building.loading = force ? building.loading : 0;
+          if (building.selected && building.owner.isPlayed) {
+            building.updateInterfaceLoading();
+          }
+          building.startInterval(function () {
+            if (building.queue[0] !== type) {
+              building.stopInterval();
+              building.loading = null;
+              if (building.queue.length) {
+                building.buyUnit(building.queue[0], true);
+              }
+              hasShowedMessage = false;
+              if (building.selected && building.owner.isPlayed) {
+                var still = building.queue.filter(function (q) {
+                  return q === type;
+                }).length;
+                menu.updateButtonContent(type, still || '');
+                if (still === 0) menu.toggleButtonCancel(type, false);
+                building.updateInterfaceLoading();
+              }
+            } else if (building.loading >= 100 || map.devMode) {
+              building.stopInterval();
+              building.placeUnit(type, extra);
+              building.loading = null;
+              building.queue.shift();
+              if (building.queue.length) {
+                building.buyUnit(building.queue[0], true);
+              }
+              hasShowedMessage = false;
+              if (building.selected && building.owner.isPlayed) {
+                var _still = building.queue.filter(function (q) {
+                  return q === type;
+                }).length;
+                menu.updateButtonContent(type, _still || '');
+                if (_still === 0) menu.toggleButtonCancel(type, false);
+                building.updateInterfaceLoading();
+              }
+            } else if (building.loading < 100) {
+              if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
+                building.loading += 10;
+              } else if (building.owner.isPlayed && !hasShowedMessage) {
+                menu.showMessage(t('needHouses'));
+                hasShowedMessage = true;
+              }
+              if (building.selected && building.owner.isPlayed) {
+                building.updateInterfaceLoading();
+              }
+            }
+          }, unit.trainingTime);
+        }
+        return success;
+      }
+    }
+  }, {
+    key: "cancelTechnology",
+    value: function cancelTechnology() {
+      var building = this.building;
+      var _building$context3 = building.context,
+        player = _building$context3.player,
+        menu = _building$context3.menu;
+      building.stopInterval();
+      refundCost(player, building.technology.cost);
+      building.technology = null;
+      building.loading = null;
+      if (building.owner.isPlayed) {
+        menu.updateBottombar();
+        menu.updateTopbar();
+      }
+    }
+  }, {
+    key: "upgrade",
+    value: function upgrade(type) {
+      var building = this.building;
+      var data = building.owner.config.buildings[type];
+      building.type = type;
+      building.hitPoints = data.totalHitPoints - (building.totalHitPoints - building.hitPoints);
+      for (var _i = 0, _Object$entries = Object.entries(data); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = BuildingProduction_slicedToArray(_Object$entries[_i], 2),
+          key = _Object$entries$_i[0],
+          value = _Object$entries$_i[1];
+        building[key] = value;
+      }
+      var assets = getBuildingAsset(building.type, building.owner, lib/* Assets */.sP);
+      building.sprite.texture = getTexture(assets.images["final"], lib/* Assets */.sP);
+      building.sprite.anchor.set(building.sprite.texture.defaultAnchor.x, building.sprite.texture.defaultAnchor.y);
+      var color = building.getChildByLabel(LABEL_TYPES.color);
+      color === null || color === void 0 || color.destroy();
+      if (assets.images.color) {
+        var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
+        spriteColor.label = LABEL_TYPES.color;
+        changeSpriteColorDirectly(spriteColor, building.owner.color);
+        building.addChild(spriteColor);
+      } else {
+        changeSpriteColorDirectly(building.sprite, building.owner.color);
+      }
+    }
+  }, {
+    key: "buyTechnology",
+    value: function buyTechnology(type, alreadyPaid, force) {
+      var building = this.building;
+      var _building$context4 = building.context,
+        menu = _building$context4.menu,
+        map = _building$context4.map;
+      var success = false;
+      var config = building.owner.techs[type];
+      if (!building.queue.length && building.isBuilt && (force || building.loading === null) && !building.isDead && (alreadyPaid || canAfford(building.owner, config.cost))) {
+        !alreadyPaid && payCost(building.owner, config.cost);
+        success = true;
+        if (building.owner.isPlayed) {
+          menu.updateTopbar();
+        }
+        building.loading = force ? building.loading : 0;
+        building.technology = {
+          config: config,
+          type: type
+        };
+        if (building.selected && building.owner.selectedBuilding === building) {
+          menu.setBottombar(building);
+        }
+        building.startInterval(function () {
+          var _building$technology = building.technology,
+            config = _building$technology.config,
+            type = _building$technology.type;
+          if (building.loading >= 100 || map.devMode) {
+            building.stopInterval();
+            building.loading = null;
+            building.technology = null;
+            if (Array.isArray(building.owner[config.key])) {
+              building.owner[config.key].push(config.value || type);
+            } else {
+              building.owner[config.key] = config.value || type;
+            }
+            if (config.action) {
+              switch (config.action.type) {
+                case 'upgradeUnit':
+                  for (var i = 0; i < building.owner.units.length; i++) {
+                    var unit = building.owner.units[i];
+                    if (unit.type === config.action.source) {
+                      unit.upgrade(config.action.target);
+                    }
+                  }
+                  break;
+                case 'upgradeBuilding':
+                  for (var _i2 = 0; _i2 < building.owner.buildings.length; _i2++) {
+                    var target = building.owner.buildings[_i2];
+                    if (target.type === config.action.source) {
+                      target.upgrade(config.action.target);
+                    }
+                  }
+                  break;
+                case 'improve':
+                  building.owner.updateConfig(config.action.operations);
+                  break;
+              }
+            }
+            var functionName = "on".concat(capitalizeFirstLetter(config.key), "Change");
+            typeof building.owner[functionName] === 'function' && building.owner[functionName](config.value);
+            if (building.owner.isPlayed) {
+              menu.updateBottombar();
+              menu.updateTopbar();
+            }
+          } else if (building.loading < 100) {
+            building.loading += 10;
+            if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
+              building.updateInterfaceLoading();
+            }
+          }
+        }, config.researchTime);
+      }
+      return success;
+    }
+  }]);
+}();
 ;// ./app/classes/projectile.js
 function projectile_typeof(o) { "@babel/helpers - typeof"; return projectile_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, projectile_typeof(o); }
 function projectile_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
@@ -2298,10 +3154,14 @@ var Projectile = /*#__PURE__*/function (_Container) {
     Object.assign(_this, _this.owner.owner.config.projectiles[_this.type]);
     _this.x = _this.owner.x;
     _this.y = _this.owner.y - _this.owner.sprite.height / 2;
-    var _ref = _this.destination || _this.target,
-      targetX = _ref.x,
-      targetY = _ref.y;
-    _this.owner.visible && _this.sounds.start && sound_lib/* sound */.s3.play(Array.isArray(_this.sounds.start) ? maths_randomItem(_this.sounds.start) : _this.sounds.start);
+    var targetPoint = _this.destination || _this.target;
+    if (!targetPoint) {
+      _this.isDead = true;
+      return projectile_possibleConstructorReturn(_this);
+    }
+    var targetX = targetPoint.x,
+      targetY = targetPoint.y;
+    _this.context.controls.instanceInCamera(_this) && _this.sounds.start && sound_lib/* sound */.s3.play(Array.isArray(_this.sounds.start) ? maths_randomItem(_this.sounds.start) : _this.sounds.start);
     var degree = _this.degree || getPointsDegree(_this.x, _this.y, targetX, targetY);
     var sprite = new lib/* Graphics */.A1g();
     sprite.rect(1, 1, _this.size, 1);
@@ -2315,7 +3175,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     _this.addChild(sprite);
     _this.interval = _this.context.scheduler.add(function () {
       if (pointsDistance(_this.x, _this.y, targetX, targetY) <= Math.max(_this.speed, _this.size)) {
-        if (pointsDistance(targetX, targetY, _this.target.x, _this.target.y) <= average(_this.target.width, _this.target.height)) {
+        if (_this.target && !_this.target.isDead && !_this.target.isDestroyed && pointsDistance(targetX, targetY, _this.target.x, _this.target.y) <= average(_this.target.width, _this.target.height)) {
           _this.onHit(_this.target);
         }
         _this.die();
@@ -2355,15 +3215,61 @@ var Projectile = /*#__PURE__*/function (_Container) {
     }
   }]);
 }(lib/* Container */.mcf);
-;// ./app/classes/building.js
+;// ./app/classes/building/BuildingCombat.js
+function BuildingCombat_typeof(o) { "@babel/helpers - typeof"; return BuildingCombat_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingCombat_typeof(o); }
+function BuildingCombat_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BuildingCombat_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BuildingCombat_toPropertyKey(o.key), o); } }
+function BuildingCombat_createClass(e, r, t) { return r && BuildingCombat_defineProperties(e.prototype, r), t && BuildingCombat_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BuildingCombat_toPropertyKey(t) { var i = BuildingCombat_toPrimitive(t, "string"); return "symbol" == BuildingCombat_typeof(i) ? i : i + ""; }
+function BuildingCombat_toPrimitive(t, r) { if ("object" != BuildingCombat_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingCombat_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var BuildingCombat = /*#__PURE__*/function () {
+  function BuildingCombat(building) {
+    BuildingCombat_classCallCheck(this, BuildingCombat);
+    this.building = building;
+  }
+  return BuildingCombat_createClass(BuildingCombat, [{
+    key: "attackAction",
+    value: function attackAction(target) {
+      var building = this.building;
+      var map = building.context.map;
+      building.startAttackInterval(function () {
+        if (extra_getActionCondition(building, target, ACTION_TYPES.attack) && instancesDistance(building, target) <= building.range) {
+          var projectile = new Projectile({
+            owner: building,
+            type: building.projectile,
+            target: target
+          }, building.context);
+          map.addChild(projectile);
+        } else {
+          building.stopAttackInterval();
+        }
+      }, building.rateOfFire);
+    }
+  }, {
+    key: "detect",
+    value: function detect(instance) {
+      var building = this.building;
+      if (building.range && instance.family !== FAMILY_TYPES.animal && !building.attackIntervalId && extra_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
+        this.attackAction(instance);
+      }
+    }
+  }, {
+    key: "isAttacked",
+    value: function isAttacked(instance) {
+      var building = this.building;
+      if (building.isDead) return;
+      if (building.range && extra_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
+        this.attackAction(instance);
+      }
+      building.updateHitPoints(ACTION_TYPES.attack);
+    }
+  }]);
+}();
+;// ./app/classes/building/index.js
 function building_typeof(o) { "@babel/helpers - typeof"; return building_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, building_typeof(o); }
-function building_slicedToArray(r, e) { return building_arrayWithHoles(r) || building_iterableToArrayLimit(r, e) || building_unsupportedIterableToArray(r, e) || building_nonIterableRest(); }
-function building_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function building_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function building_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function _defineProperty(e, r, t) { return (r = building_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function building_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = building_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function building_toConsumableArray(r) { return building_arrayWithoutHoles(r) || building_iterableToArray(r) || building_unsupportedIterableToArray(r) || building_nonIterableSpread(); }
 function building_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -2380,6 +3286,9 @@ function building_callSuper(t, o, e) { return o = building_getPrototypeOf(o), bu
 function building_possibleConstructorReturn(t, e) { if (e && ("object" == building_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return building_assertThisInitialized(t); }
 function building_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function building_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (building_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function _superPropGet(t, o, e, r) { var p = _get(building_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
+function _get() { return _get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = _superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, _get.apply(null, arguments); }
+function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = building_getPrototypeOf(t));); return t; }
 function building_getPrototypeOf(t) { return building_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, building_getPrototypeOf(t); }
 function building_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && building_setPrototypeOf(t, e); }
 function building_setPrototypeOf(t, e) { return building_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, building_setPrototypeOf(t, e); }
@@ -2389,24 +3298,27 @@ function building_setPrototypeOf(t, e) { return building_setPrototypeOf = Object
 
 
 
-var Building = /*#__PURE__*/function (_Container) {
+
+
+
+
+
+var Building = /*#__PURE__*/function (_Instance) {
   function Building(options, context) {
     var _this$quantity, _this$hitPoints;
     var _this;
     building_classCallCheck(this, Building);
-    _this = building_callSuper(this, Building);
-    _this.context = context;
+    _this = building_callSuper(this, Building, [context]);
     var map = context.map,
       controls = context.controls;
-    _this.label = uuidv4();
     _this.family = FAMILY_TYPES.building;
-    _this.selected = false;
+    _this.buildingInterface = new BuildingInterface(_this);
+    _this.buildingLifecycle = new BuildingLifecycle(_this);
+    _this.buildingProduction = new BuildingProduction(_this);
+    _this.buildingCombat = new BuildingCombat(_this);
     _this.queue = [];
     _this.technology = null;
     _this.loading = null;
-    _this.isDead = false;
-    _this.isDestroyed = false;
-    _this.timeoutId = null;
     _this.isUsedBy = null;
     Object.assign(_this, options);
     Object.assign(_this, _this.owner.config.buildings[_this.type]);
@@ -2444,27 +3356,14 @@ var Building = /*#__PURE__*/function (_Container) {
     _this["interface"] = {
       info: function info(element) {
         var assets = getBuildingAsset(_this.type, _this.owner, lib/* Assets */.sP);
-        _this.setDefaultInterface(element, assets);
-        if (_this.displayPopulation && _this.owner.isPlayed && _this.isBuilt) {
-          var populationDiv = document.createElement('div');
-          populationDiv.id = MENU_INFO_IDS.population;
-          var populationIcon = document.createElement('img');
-          var populationSpan = document.createElement('span');
-          populationSpan.id = MENU_INFO_IDS.populationText;
-          populationSpan.textContent = _this.owner.population + '/' + Math.min(POPULATION_MAX, _this.owner.population_max);
-          populationIcon.src = getIconPath('004_50731');
-          populationDiv.appendChild(populationIcon);
-          populationDiv.appendChild(populationSpan);
-          element.appendChild(populationDiv);
-        }
-        element.appendChild(_this.getLoadingElement());
+        _this.buildingInterface.renderInfo(element, assets);
       },
       menu: _this.owner.isPlayed || map.devMode ? [].concat(building_toConsumableArray(units), building_toConsumableArray(technologies)) : []
     };
 
     // Set solid zone
     var dist = _this.size === 3 ? 1 : 0;
-    getPlainCellsAroundPoint(_this.i, _this.j, map.grid, dist, function (cell) {
+    grid_getPlainCellsAroundPoint(_this.i, _this.j, map.grid, dist, function (cell) {
       var set = cell.getChildByLabel(LABEL_TYPES.set);
       if (set) {
         cell.removeChild(set);
@@ -2591,26 +3490,14 @@ var Building = /*#__PURE__*/function (_Container) {
       _this.finalTexture();
       _this.onBuilt();
     }
+    map.addToInstanceBucket(_this);
     return _this;
   }
-  building_inherits(Building, _Container);
+  building_inherits(Building, _Instance);
   return building_createClass(Building, [{
     key: "attackAction",
     value: function attackAction(target) {
-      var _this3 = this;
-      var map = this.context.map;
-      this.startAttackInterval(function () {
-        if (extra_getActionCondition(_this3, target, ACTION_TYPES.attack) && instancesDistance(_this3, target) <= _this3.range) {
-          var projectile = new Projectile({
-            owner: _this3,
-            type: _this3.projectile,
-            target: target
-          }, _this3.context);
-          map.addChild(projectile);
-        } else {
-          _this3.stopAttackInterval();
-        }
-      }, this.rateOfFire);
+      return this.buildingCombat.attackAction(target);
     }
   }, {
     key: "startInterval",
@@ -2642,35 +3529,15 @@ var Building = /*#__PURE__*/function (_Container) {
       }
     }
   }, {
-    key: "pause",
-    value: function pause() {}
-  }, {
-    key: "resume",
-    value: function resume() {}
-  }, {
     key: "startTimeout",
     value: function startTimeout(cb, time) {
       this.stopTimeout();
       this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000 / ACCELERATOR);
     }
   }, {
-    key: "stopTimeout",
-    value: function stopTimeout() {
-      if (this.timeoutId != null) {
-        this.context.scheduler.remove(this.timeoutId);
-        this.timeoutId = null;
-      }
-    }
-  }, {
     key: "isAttacked",
     value: function isAttacked(instance) {
-      if (this.isDead) {
-        return;
-      }
-      if (this.range && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && instancesDistance(this, instance) <= this.range) {
-        this.attackAction(instance);
-      }
-      this.updateHitPoints(ACTION_TYPES.attack);
+      return this.buildingCombat.isAttacked(instance);
     }
   }, {
     key: "updateTexture",
@@ -2691,7 +3558,7 @@ var Building = /*#__PURE__*/function (_Container) {
       } else if (percentage >= 100) {
         this.finalTexture();
         if (!this.isBuilt) {
-          if (this.owner.isPlayed && this.sounds && this.sounds.create) {
+          if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceInCamera(this)) {
             sound_lib/* sound */.s3.play(this.sounds.create);
           }
           this.onBuilt();
@@ -2767,9 +3634,7 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.range && instance.family !== FAMILY_TYPES.animal && !this.attackIntervalId && extra_getActionCondition(this, instance, ACTION_TYPES.attack) && instancesDistance(this, instance) <= this.range) {
-        this.attackAction(instance);
-      }
+      return this.buildingCombat.detect(instance);
     }
   }, {
     key: "updateHitPoints",
@@ -2836,256 +3701,137 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "die",
     value: function die() {
-      var _this4 = this;
-      if (this.isDead) {
-        return;
-      }
-      var _this$context = this.context,
-        map = _this$context.map,
-        player = _this$context.player,
-        players = _this$context.players,
-        menu = _this$context.menu;
-      clearTimeout(this.visibilityTimeout);
-      this.stopInterval();
-      this.isDead = true;
-      if (this.selected && player) {
-        player.unselectAll();
-      }
-
-      // Remove from player buildings
-      var index = this.owner.buildings.indexOf(this);
-      if (index >= 0) {
-        this.owner.buildings.splice(index, 1);
-      }
-      // Remove from view of others players
-      for (var i = 0; i < players.length; i++) {
-        if (players[i].type === PLAYER_TYPES.ai) {
-          players[i].foundedEnemyBuildings["delete"](this);
-        }
-      }
-      var color = this.getChildByLabel(LABEL_TYPES.color);
-      color && color.destroy();
-      var deco = this.getChildByLabel(LABEL_TYPES.deco);
-      deco && deco.destroy();
-      var fire = this.getChildByLabel(LABEL_TYPES.fire);
-      fire && fire.destroy();
-      var rubbleSheet = getBuildingRubbleTextureNameWithSize(this.size, lib/* Assets */.sP);
-      if (this.type === BUILDING_TYPES.farm) {
-        rubbleSheet = '000_239';
-      }
-      this.sprite.texture = getTexture(rubbleSheet, lib/* Assets */.sP);
-      this.sprite.allowMove = false;
-      this.sprite.eventMode = 'none';
-      this.sprite.allowClick = false;
-      this.zIndex--;
-      if (this.type === BUILDING_TYPES.farm) {
-        changeSpriteColorDirectly(this.sprite, this.owner.color);
-      }
-      // Remove solid zone
-      updateInstanceVisibility(this);
-      var dist = this.size === 3 ? 1 : 0;
-      getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
-        if (cell.has === _this4) {
-          cell.has = null;
-          cell.solid = false;
-          cell.corpses.add(_this4);
-        }
-      });
-      this.startTimeout(function () {
-        return _this4.clear();
-      }, RUBBLE_TIME);
-      canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
+      return this.buildingLifecycle.die();
     }
   }, {
     key: "clear",
     value: function clear() {
-      var _this5 = this;
-      if (this.isDestroyed) {
-        return;
-      }
-      clearTimeout(this.visibilityTimeout);
-      var map = this.context.map;
-      var dist = this.size === 3 ? 1 : 0;
-      getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, function (cell) {
-        cell.corpses["delete"](_this5);
-      });
-      this.isDestroyed = true;
-      this.destroy({
-        child: true,
-        texture: false
-      });
+      return this.buildingLifecycle.clear();
     }
   }, {
     key: "select",
     value: function select() {
-      if (this.selected) {
-        return;
-      }
-      var _this$context2 = this.context,
-        menu = _this$context2.menu,
-        player = _this$context2.player;
-      if (this.owner.isPlayed && this.sounds && this.sounds.create) {
-        sound_lib/* sound */.s3.play(this.sounds.create);
-      }
-      this.selected = true;
-      var selection = new lib/* Graphics */.A1g();
-      selection.label = LABEL_TYPES.selection;
-      selection.zIndex = 3;
-      var path = [-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size];
-      selection.poly(path);
-      selection.stroke(COLOR_WHITE);
-      if (this.loading && this.owner.isPlayed) {
-        this.updateInterfaceLoading();
-      }
-      this.addChildAt(selection, 0);
+      var _this$sounds;
+      if (this.selected) return;
+      var _this$context = this.context,
+        menu = _this$context.menu,
+        player = _this$context.player;
+      if (this.owner.isPlayed && (_this$sounds = this.sounds) !== null && _this$sounds !== void 0 && _this$sounds.create) sound_lib/* sound */.s3.play(this.sounds.create);
+      _superPropGet(Building, "select", this, 3)([]);
+      if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading();
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
   }, {
     key: "unselect",
     value: function unselect() {
-      if (!this.selected) {
-        return;
-      }
-      var _this$context3 = this.context,
-        menu = _this$context3.menu,
-        player = _this$context3.player;
-      this.selected = false;
-      var selection = this.getChildByLabel(LABEL_TYPES.selection);
-      if (selection) {
-        this.removeChild(selection);
-      }
+      if (!this.selected) return;
+      _superPropGet(Building, "unselect", this, 3)([]);
+      var _this$context2 = this.context,
+        menu = _this$context2.menu,
+        player = _this$context2.player;
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
   }, {
     key: "placeUnit",
     value: function placeUnit(type) {
-      var _this$context4 = this.context,
-        map = _this$context4.map,
-        menu = _this$context4.menu;
-      var spawnCell;
-      var config = this.owner.config.units[type];
-      if (config.category === 'Boat') {
-        spawnCell = getFreeCellAroundPoint(this.i, this.j, this.size, map.grid, function (cell) {
-          return cell.category === 'Water' && !cell.solid;
-        });
-      } else {
-        spawnCell = getFreeCellAroundPoint(this.i, this.j, this.size, map.grid, function (cell) {
-          return cell.category !== 'Water' && !cell.solid;
-        });
-      }
-      if (!spawnCell) {
-        return;
-      }
-      this.owner.population++;
-      var extra = this.owner.getUnitExtraOptions && this.owner.getUnitExtraOptions(type) || {};
-      this.owner.createUnit(_objectSpread({
-        i: spawnCell.i,
-        j: spawnCell.j,
-        type: type
-      }, extra));
-      if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-        menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
-      }
+      return this.buildingProduction.placeUnit(type);
     }
   }, {
     key: "buyUnit",
     value: function buyUnit(type) {
-      var _this6 = this;
       var alreadyPaid = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var force = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var extra = arguments.length > 3 ? arguments[3] : undefined;
-      var _this$context5 = this.context,
-        menu = _this$context5.menu,
-        map = _this$context5.map;
-      var success = false;
-      var unit = this.owner.config.units[type];
-      if (this.isBuilt && !this.isDead && (canAfford(this.owner, unit.cost) || alreadyPaid)) {
-        if (!alreadyPaid) {
-          if (this.owner.type === PLAYER_TYPES.ai) {
-            if (!this.queue.length && this.loading === null) {
-              payCost(this.owner, unit.cost);
-              this.queue.push(type);
-              success = true;
-            }
-          } else {
-            payCost(this.owner, unit.cost);
-            this.queue.push(type);
-            if (this.selected && this.owner.isPlayed) {
-              menu.updateButtonContent(type, this.queue.filter(function (q) {
-                return q === type;
-              }).length);
-            }
-            this.owner.isPlayed && menu.updateTopbar();
-            success = true;
-          }
-        }
-        if (this.loading === null && this.queue[0] || force) {
-          var hasShowedMessage = false;
-          this.loading = force ? this.loading : 0;
-          if (this.selected && this.owner.isPlayed) {
-            this.updateInterfaceLoading();
-          }
-          this.startInterval(function () {
-            if (_this6.queue[0] !== type) {
-              _this6.stopInterval();
-              _this6.loading = null;
-              if (_this6.queue.length) {
-                _this6.buyUnit(_this6.queue[0], true);
-              }
-              hasShowedMessage = false;
-              if (_this6.selected && _this6.owner.isPlayed) {
-                var still = _this6.queue.filter(function (q) {
-                  return q === type;
-                }).length;
-                menu.updateButtonContent(type, still || '');
-                if (still === 0) menu.toggleButtonCancel(type, false);
-                _this6.updateInterfaceLoading();
-              }
-            } else if (_this6.loading >= 100 || map.devMode) {
-              _this6.stopInterval();
-              _this6.placeUnit(type, extra);
-              _this6.loading = null;
-              _this6.queue.shift();
-              if (_this6.queue.length) {
-                _this6.buyUnit(_this6.queue[0], true);
-              }
-              hasShowedMessage = false;
-              if (_this6.selected && _this6.owner.isPlayed) {
-                var _still = _this6.queue.filter(function (q) {
-                  return q === type;
-                }).length;
-                menu.updateButtonContent(type, _still || '');
-                if (_still === 0) menu.toggleButtonCancel(type, false);
-                _this6.updateInterfaceLoading();
-              }
-            } else if (_this6.loading < 100) {
-              if (_this6.owner.population < Math.min(POPULATION_MAX, _this6.owner.population_max)) {
-                _this6.loading += 10;
-              } else if (_this6.owner.isPlayed && !hasShowedMessage) {
-                menu.showMessage('You need to build more houses');
-                hasShowedMessage = true;
-              }
-              if (_this6.selected && _this6.owner.isPlayed) {
-                _this6.updateInterfaceLoading();
-              }
-            }
-          }, unit.trainingTime);
-        }
-        return success;
-      }
+      return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra);
     }
   }, {
     key: "updateInterfaceLoading",
     value: function updateInterfaceLoading() {
-      var _this7 = this;
-      var menu = this.context.menu;
-      if (this.owner.isPlayed && this.owner.selectedBuilding === this) {
-        if (this.loading === 10) {
+      this.buildingInterface.updateLoading();
+    }
+  }, {
+    key: "getLoadingElement",
+    value: function getLoadingElement() {
+      return this.buildingInterface.getLoadingElement();
+    }
+  }, {
+    key: "cancelTechnology",
+    value: function cancelTechnology() {
+      return this.buildingProduction.cancelTechnology();
+    }
+  }, {
+    key: "upgrade",
+    value: function upgrade(type) {
+      return this.buildingProduction.upgrade(type);
+    }
+  }, {
+    key: "buyTechnology",
+    value: function buyTechnology(type, alreadyPaid, force) {
+      return this.buildingProduction.buyTechnology(type, alreadyPaid, force);
+    }
+  }, {
+    key: "setDefaultInterface",
+    value: function setDefaultInterface(element, data) {
+      this.buildingInterface.setDefaultInterface(element, data);
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      var fire = this.getChildByLabel(LABEL_TYPES.fire);
+      if (fire) fire.children.forEach(function (s) {
+        return s.stop();
+      });
+      var deco = this.getChildByLabel(LABEL_TYPES.deco);
+      if (deco && typeof deco.stop === 'function') deco.stop();
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      var fire = this.getChildByLabel(LABEL_TYPES.fire);
+      if (fire) fire.children.forEach(function (s) {
+        return s.play();
+      });
+      var deco = this.getChildByLabel(LABEL_TYPES.deco);
+      if (deco && typeof deco.play === 'function') deco.play();
+    }
+  }]);
+}(Instance);
+;// ./app/ui/UnitInterface.js
+function UnitInterface_typeof(o) { "@babel/helpers - typeof"; return UnitInterface_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitInterface_typeof(o); }
+function UnitInterface_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitInterface_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitInterface_toPropertyKey(o.key), o); } }
+function UnitInterface_createClass(e, r, t) { return r && UnitInterface_defineProperties(e.prototype, r), t && UnitInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitInterface_toPropertyKey(t) { var i = UnitInterface_toPrimitive(t, "string"); return "symbol" == UnitInterface_typeof(i) ? i : i + ""; }
+function UnitInterface_toPrimitive(t, r) { if ("object" != UnitInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var UnitInterface = /*#__PURE__*/function () {
+  function UnitInterface(unit) {
+    UnitInterface_classCallCheck(this, UnitInterface);
+    this.unit = unit;
+  }
+  return UnitInterface_createClass(UnitInterface, [{
+    key: "updateLoading",
+    value: function updateLoading() {
+      var unit = this.unit;
+      var menu = unit.context.menu;
+      if (unit.selected && unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
+        if (unit.loading === 1) {
+          var iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType];
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            return element.innerHTML = _this7.getLoadingElement().innerHTML;
+            element.replaceChildren();
+            var iconImg = document.createElement('img');
+            iconImg.className = 'unit-loading-icon';
+            iconImg.src = iconSrc;
+            var textDiv = document.createElement('div');
+            textDiv.id = MENU_INFO_IDS.loadingText;
+            textDiv.textContent = unit.loading;
+            element.appendChild(iconImg);
+            element.appendChild(textDiv);
           });
-        } else if (this.loading > 10) {
-          menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading + '%');
+        } else if (unit.loading > 1) {
+          menu.updateInfo(MENU_INFO_IDS.loadingText, unit.loading);
         } else {
           menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
             return element.innerHTML = '';
@@ -3096,177 +3842,1160 @@ var Building = /*#__PURE__*/function (_Container) {
   }, {
     key: "getLoadingElement",
     value: function getLoadingElement() {
+      var unit = this.unit;
+      var menu = unit.context.menu;
       var loadingDiv = document.createElement('div');
-      loadingDiv.className = 'building-loading';
+      loadingDiv.className = 'unit-loading';
       loadingDiv.id = MENU_INFO_IDS.loading;
-      if (this.loading && this.owner.isPlayed) {
+      if (unit.loading) {
         var iconImg = document.createElement('img');
-        iconImg.className = 'building-loading-icon';
-        iconImg.src = getIconPath('009_50731');
+        iconImg.className = 'unit-loading-icon';
+        iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType];
         var textDiv = document.createElement('div');
         textDiv.id = MENU_INFO_IDS.loadingText;
-        textDiv.textContent = this.loading + '%';
+        textDiv.textContent = unit.loading;
         loadingDiv.appendChild(iconImg);
         loadingDiv.appendChild(textDiv);
       }
       return loadingDiv;
     }
   }, {
-    key: "cancelTechnology",
-    value: function cancelTechnology() {
-      var _this$context6 = this.context,
-        player = _this$context6.player,
-        menu = _this$context6.menu;
-      this.stopInterval();
-      refundCost(player, this.technology.cost);
-      this.technology = null;
-      this.loading = null;
-      if (this.owner.isPlayed) {
-        menu.updateBottombar();
-        menu.updateTopbar();
-      }
-    }
-  }, {
-    key: "upgrade",
-    value: function upgrade(type) {
-      var data = this.owner.config.buildings[type];
-      this.type = type;
-      this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints);
-      for (var _i4 = 0, _Object$entries = Object.entries(data); _i4 < _Object$entries.length; _i4++) {
-        var _Object$entries$_i = building_slicedToArray(_Object$entries[_i4], 2),
-          key = _Object$entries$_i[0],
-          value = _Object$entries$_i[1];
-        this[key] = value;
-      }
-      var assets = getBuildingAsset(this.type, this.owner, lib/* Assets */.sP);
-      this.sprite.texture = getTexture(assets.images["final"], lib/* Assets */.sP);
-      this.sprite.anchor.set(this.sprite.texture.defaultAnchor.x, this.sprite.texture.defaultAnchor.y);
-      var color = this.getChildByLabel(LABEL_TYPES.color);
-      color === null || color === void 0 || color.destroy();
-      if (assets.images.color) {
-        var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
-        spriteColor.label = LABEL_TYPES.color;
-        changeSpriteColorDirectly(spriteColor, this.owner.color);
-        this.addChild(spriteColor);
-      } else {
-        changeSpriteColorDirectly(this.sprite, this.owner.color);
-      }
-    }
-  }, {
-    key: "buyTechnology",
-    value: function buyTechnology(type, alreadyPaid, force) {
-      var _this8 = this;
-      var _this$context7 = this.context,
-        menu = _this$context7.menu,
-        map = _this$context7.map;
-      var success = false;
-      var config = this.owner.techs[type];
-      if (!this.queue.length && this.isBuilt && (force || this.loading === null) && !this.isDead && (alreadyPaid || canAfford(this.owner, config.cost))) {
-        !alreadyPaid && payCost(this.owner, config.cost);
-        success = true;
-        if (this.owner.isPlayed) {
-          menu.updateTopbar();
-        }
-        this.loading = force ? this.loading : 0;
-        this.technology = {
-          config: config,
-          type: type
-        };
-        if (this.selected && this.owner.selectedBuilding === this) {
-          menu.setBottombar(this);
-        }
-        this.startInterval(function () {
-          var _this8$technology = _this8.technology,
-            config = _this8$technology.config,
-            type = _this8$technology.type;
-          if (_this8.loading >= 100 || map.devMode) {
-            _this8.stopInterval();
-            _this8.loading = null;
-            _this8.technology = null;
-            if (Array.isArray(_this8.owner[config.key])) {
-              _this8.owner[config.key].push(config.value || type);
-            } else {
-              _this8.owner[config.key] = config.value || type;
-            }
-            if (config.action) {
-              switch (config.action.type) {
-                case 'upgradeUnit':
-                  for (var i = 0; i < _this8.owner.units.length; i++) {
-                    var unit = _this8.owner.units[i];
-                    if (unit.type === config.action.source) {
-                      unit.upgrade(config.action.target);
-                    }
-                  }
-                  break;
-                case 'upgradeBuilding':
-                  for (var _i5 = 0; _i5 < _this8.owner.buildings.length; _i5++) {
-                    var building = _this8.owner.buildings[_i5];
-                    if (building.type === config.action.source) {
-                      building.upgrade(config.action.target);
-                    }
-                  }
-                  break;
-                case 'improve':
-                  _this8.owner.updateConfig(config.action.operations);
-                  break;
-              }
-            }
-            var functionName = "on".concat(capitalizeFirstLetter(config.key), "Change");
-            typeof _this8.owner[functionName] === 'function' && _this8.owner[functionName](config.value);
-            if (_this8.owner.isPlayed) {
-              menu.updateBottombar();
-              menu.updateTopbar();
-            }
-          } else if (_this8.loading < 100) {
-            _this8.loading += 10;
-            if (_this8.owner.isPlayed && _this8.owner.selectedBuilding === _this8) {
-              _this8.updateInterfaceLoading();
-            }
-          }
-        }, config.researchTime);
-      }
-      return success;
-    }
-  }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
-      var menu = this.context.menu;
+      var unit = this.unit;
       var civDiv = document.createElement('div');
       civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = this.owner.civ;
+      civDiv.textContent = t(unit.owner.civ);
       element.appendChild(civDiv);
       var typeDiv = document.createElement('div');
       typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = this.type;
+      typeDiv.textContent = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type);
       element.appendChild(typeDiv);
       var iconImg = document.createElement('img');
       iconImg.id = MENU_INFO_IDS.icon;
       iconImg.src = getIconPath(data.icon);
       element.appendChild(iconImg);
-      if (this.owner && this.owner.isPlayed) {
-        var hitPointsDiv = document.createElement('div');
-        hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-        hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
-        element.appendChild(hitPointsDiv);
-        if (this.isBuilt && this.quantity) {
-          var quantityDiv = document.createElement('div');
-          quantityDiv.id = MENU_INFO_IDS.quantity;
-          quantityDiv.className = 'resource-quantity';
-          var smallIconImg = document.createElement('img');
-          smallIconImg.src = menu.icons['food'];
-          smallIconImg.className = 'resource-quantity-icon';
-          var textDiv = document.createElement('div');
-          textDiv.id = MENU_INFO_IDS.quantityText;
-          textDiv.textContent = this.quantity;
-          quantityDiv.appendChild(smallIconImg);
-          quantityDiv.appendChild(textDiv);
-          element.appendChild(quantityDiv);
+      var hitPointsDiv = document.createElement('div');
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
+      hitPointsDiv.textContent = unit.hitPoints + '/' + unit.totalHitPoints;
+      element.appendChild(hitPointsDiv);
+      var infosDiv = document.createElement('div');
+      infosDiv.id = 'infos';
+      var infos = [['meleeAttack', '007_50731'], ['pierceAttack', '006_50731'], ['meleeArmor', '008_50731'], ['pierceArmor', '010_50731']];
+      for (var i = 0; i < infos.length; i++) {
+        var info = infos[i];
+        if (data[info[0]]) {
+          var infoDiv = document.createElement('div');
+          infoDiv.id = 'info';
+          var attackImg = document.createElement('img');
+          attackImg.src = getIconPath(info[1]);
+          var attackDiv = document.createElement('div');
+          attackDiv.id = info[0];
+          attackDiv.textContent = data[info[0]];
+          infoDiv.appendChild(attackImg);
+          infoDiv.appendChild(attackDiv);
+          infosDiv.appendChild(infoDiv);
+        }
+      }
+      element.appendChild(infosDiv);
+    }
+  }]);
+}();
+;// ./app/classes/unit/UnitCommands.js
+function UnitCommands_typeof(o) { "@babel/helpers - typeof"; return UnitCommands_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitCommands_typeof(o); }
+function UnitCommands_slicedToArray(r, e) { return UnitCommands_arrayWithHoles(r) || UnitCommands_iterableToArrayLimit(r, e) || UnitCommands_unsupportedIterableToArray(r, e) || UnitCommands_nonIterableRest(); }
+function UnitCommands_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function UnitCommands_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return UnitCommands_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? UnitCommands_arrayLikeToArray(r, a) : void 0; } }
+function UnitCommands_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function UnitCommands_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function UnitCommands_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function UnitCommands_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitCommands_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitCommands_toPropertyKey(o.key), o); } }
+function UnitCommands_createClass(e, r, t) { return r && UnitCommands_defineProperties(e.prototype, r), t && UnitCommands_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitCommands_toPropertyKey(t) { var i = UnitCommands_toPrimitive(t, "string"); return "symbol" == UnitCommands_typeof(i) ? i : i + ""; }
+function UnitCommands_toPrimitive(t, r) { if ("object" != UnitCommands_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitCommands_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+function getActionSheet(work, action, unit) {
+  if (!work) {
+    return;
+  }
+  var actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action;
+  return lib/* Assets */.sP.cache.get(unit.allAssets[work][actionSheet]);
+}
+var UnitCommands = /*#__PURE__*/function () {
+  function UnitCommands(unit) {
+    UnitCommands_classCallCheck(this, UnitCommands);
+    this.unit = unit;
+  }
+  return UnitCommands_createClass(UnitCommands, [{
+    key: "commonSendTo",
+    value: function commonSendTo(target, work, action, keepPrevious) {
+      var immediate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      var unit = this.unit;
+      var menu = unit.context.menu;
+      var workFromLoading = getWorkWithLoadingType(unit.loadingType);
+      if (work !== WORK_TYPES.builder && work !== workFromLoading && !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))) {
+        unit.loading = 0;
+        unit.loadingType = null;
+        unit.updateInterfaceLoading();
+      }
+      if (unit.work !== work || unit.action !== action) {
+        unit.work = work;
+        unit.owner.isPlayed && unit.owner.selectedUnit === unit && menu.updateInfo(MENU_INFO_IDS.type, unit.work);
+        if (unit.allAssets && unit.allAssets[work]) {
+          unit.actionSheet = getActionSheet(work, action, unit);
+          if (!unit.loading) {
+            unit.standingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[work][SHEET_TYPES.standing]);
+            unit.walkingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[work][SHEET_TYPES.walking]);
+            unit.dyingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[work][SHEET_TYPES.dying]);
+            unit.corpseSheet = lib/* Assets */.sP.cache.get(unit.allAssets[work][SHEET_TYPES.corpse]);
+          }
+        }
+      }
+      unit.previousDest = keepPrevious ? unit.previousDest : null;
+      return immediate ? unit.sendToEvt(target, action) : unit.sendTo(target, action);
+    }
+  }, {
+    key: "sendToWithCell",
+    value: function sendToWithCell(target, arrivalCell, action) {
+      var unit = this.unit;
+      var map = unit.context.map;
+      unit.handleChangeDest();
+      unit.stopInterval();
+      if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return;
+      if (unit.isUnitAtDest(action, target)) {
+        unit.setDest(target);
+        unit.action = action;
+        unit.degree = getInstanceDegree(unit, target.x, target.y);
+        unit.getAction(action);
+        return;
+      }
+      var path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map);
+      if (path.length) {
+        unit.setDest(target);
+        unit.action = action;
+        unit.setPath(path);
+      } else {
+        unit.sendToEvt(target, action);
+      }
+    }
+  }, {
+    key: "sendToDelivery",
+    value: function sendToDelivery() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      var buildingTypes = [];
+      if (unit.category === 'Boat') {
+        buildingTypes = [BUILDING_TYPES.dock];
+      } else {
+        buildingTypes = [BUILDING_TYPES.townCenter];
+        var buildings = {
+          Granary: unit.owner.config.buildings.Granary,
+          StoragePit: unit.owner.config.buildings.StoragePit
+        };
+        for (var _i = 0, _Object$entries = Object.entries(buildings); _i < _Object$entries.length; _i++) {
+          var _Object$entries$_i = UnitCommands_slicedToArray(_Object$entries[_i], 2),
+            key = _Object$entries$_i[0],
+            value = _Object$entries$_i[1];
+          if (value.accept && value.accept.includes(unit.loadingType)) {
+            buildingTypes.push(key);
+            break;
+          }
+        }
+      }
+      var targets = unit.owner.buildings.filter(function (building) {
+        return extra_getActionCondition(unit, building, ACTION_TYPES.delivery, {
+          buildingTypes: buildingTypes
+        });
+      });
+      var target = getClosestInstance(unit, targets);
+      if (!target) {
+        unit.stop();
+        return;
+      }
+      if (unit.dest) {
+        unit.previousDest = unit.dest;
+      } else {
+        unit.previousDest = map.grid[unit.i][unit.j];
+      }
+      unit.sendTo(target, ACTION_TYPES.delivery);
+    }
+  }, {
+    key: "sendToFish",
+    value: function sendToFish(target) {
+      return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing);
+    }
+  }, {
+    key: "sendToAttack",
+    value: function sendToAttack(target) {
+      return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, {
+        resource: 'attack'
+      });
+    }
+  }, {
+    key: "sendToTakeMeat",
+    value: function sendToTakeMeat(target) {
+      var immediate = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, {
+        actionSheet: SHEET_TYPES.harvest
+      }, immediate);
+    }
+  }, {
+    key: "sendToHunt",
+    value: function sendToHunt(target) {
+      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt);
+    }
+  }, {
+    key: "sendToBuilding",
+    value: function sendToBuilding(target) {
+      return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build);
+    }
+  }, {
+    key: "sendToFarm",
+    value: function sendToFarm(target) {
+      return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm);
+    }
+  }, {
+    key: "sendToTree",
+    value: function sendToTree(target) {
+      return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood);
+    }
+  }, {
+    key: "sendToBerrybush",
+    value: function sendToBerrybush(target) {
+      return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry);
+    }
+  }, {
+    key: "sendToStone",
+    value: function sendToStone(target) {
+      return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone);
+    }
+  }, {
+    key: "sendToGold",
+    value: function sendToGold(target) {
+      return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold);
+    }
+  }]);
+}();
+;// ./app/classes/unit/UnitLifecycle.js
+function UnitLifecycle_typeof(o) { "@babel/helpers - typeof"; return UnitLifecycle_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitLifecycle_typeof(o); }
+function UnitLifecycle_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitLifecycle_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitLifecycle_toPropertyKey(o.key), o); } }
+function UnitLifecycle_createClass(e, r, t) { return r && UnitLifecycle_defineProperties(e.prototype, r), t && UnitLifecycle_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitLifecycle_toPropertyKey(t) { var i = UnitLifecycle_toPrimitive(t, "string"); return "symbol" == UnitLifecycle_typeof(i) ? i : i + ""; }
+function UnitLifecycle_toPrimitive(t, r) { if ("object" != UnitLifecycle_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitLifecycle_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var UnitLifecycle = /*#__PURE__*/function () {
+  function UnitLifecycle(unit) {
+    UnitLifecycle_classCallCheck(this, UnitLifecycle);
+    this.unit = unit;
+  }
+  return UnitLifecycle_createClass(UnitLifecycle, [{
+    key: "decompose",
+    value: function decompose() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      unit.setTextures(SHEET_TYPES.corpse);
+      unit.sprite.animationSpeed = 1 / (CORPSE_TIME * 1000) * ACCELERATOR;
+      if (map.grid[unit.i][unit.j].has === unit) {
+        map.grid[unit.i][unit.j].has = null;
+        map.grid[unit.i][unit.j].corpses.add(unit);
+        map.grid[unit.i][unit.j].solid = false;
+      }
+    }
+  }, {
+    key: "death",
+    value: function death() {
+      var _this = this;
+      var unit = this.unit;
+      unit.setTextures(SHEET_TYPES.dying);
+      unit.zIndex--;
+      unit.sprite.loop = false;
+      unit.sprite.onComplete = function () {
+        updateInstanceVisibility(unit);
+        var index = unit.owner.corpses.indexOf(unit);
+        if (index < 0) {
+          unit.owner.corpses.push(unit);
+        }
+        _this.decompose();
+      };
+    }
+  }, {
+    key: "die",
+    value: function die() {
+      var unit = this.unit;
+      if (unit.isDead) {
+        return;
+      }
+      var _unit$context = unit.context,
+        player = _unit$context.player,
+        menu = _unit$context.menu;
+      unit.sounds && unit.sounds.die && unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.die) ? maths_randomItem(unit.sounds.die) : unit.sounds.die);
+      unit.stopInterval();
+      clearTimeout(unit.visibilityTimeout);
+      if (unit.selected && player.selectedOther === unit) {
+        player.unselectUnit(unit);
+      }
+      if (unit.dest && unit.dest.isUsedBy === unit) {
+        unit.dest.isUsedBy = null;
+      }
+      unit.hitPoints = 0;
+      unit.path = [];
+      unit.action = null;
+      unit.eventMode = 'none';
+      unit.isDead = true;
+      unit.context.map.removeFromInstanceBucket(unit);
+      unit.unselect();
+      if (unit.owner) {
+        unit.owner.population--;
+        if (unit.owner.isPlayed && unit.owner.selectedBuilding && unit.owner.selectedBuilding.displayPopulation) {
+          menu.updateInfo(MENU_INFO_IDS.populationText, unit.owner.population + '/' + Math.min(POPULATION_MAX, unit.owner.population_max));
+        }
+        var index = unit.owner.units.indexOf(unit);
+        if (index >= 0) {
+          unit.owner.units.splice(index, 1);
+        }
+        if (unit.owner.selectedUnit === unit) {
+          menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.hitPoints + '/' + unit.totalHitPoints);
+        }
+      }
+      this.death();
+      canUpdateMinimap(unit, player) && menu.updatePlayerMiniMapEvt(unit.owner);
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      unit.isDestroyed = true;
+      var index = unit.owner.corpses.indexOf(unit);
+      if (index >= 0) {
+        unit.owner.corpses.splice(index, 1);
+      }
+      map.grid[unit.i][unit.j].corpses["delete"](unit);
+      map.removeChild(unit);
+      unit.destroy({
+        child: true,
+        texture: true
+      });
+    }
+  }]);
+}();
+;// ./app/classes/unit/UnitCombat.js
+function UnitCombat_typeof(o) { "@babel/helpers - typeof"; return UnitCombat_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitCombat_typeof(o); }
+function UnitCombat_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitCombat_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitCombat_toPropertyKey(o.key), o); } }
+function UnitCombat_createClass(e, r, t) { return r && UnitCombat_defineProperties(e.prototype, r), t && UnitCombat_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitCombat_toPropertyKey(t) { var i = UnitCombat_toPrimitive(t, "string"); return "symbol" == UnitCombat_typeof(i) ? i : i + ""; }
+function UnitCombat_toPrimitive(t, r) { if ("object" != UnitCombat_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitCombat_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+
+var UnitCombat = /*#__PURE__*/function () {
+  function UnitCombat(unit) {
+    UnitCombat_classCallCheck(this, UnitCombat);
+    this.unit = unit;
+  }
+  return UnitCombat_createClass(UnitCombat, [{
+    key: "detect",
+    value: function detect(instance) {
+      var unit = this.unit;
+      if (unit.work === WORK_TYPES.attacker && instance && instance.family === FAMILY_TYPES.unit && !unit.path.length && !unit.dest && unit.getActionCondition(instance, ACTION_TYPES.attack)) {
+        unit.sendTo(instance, ACTION_TYPES.attack);
+      }
+    }
+  }, {
+    key: "handleAffectNewDestHunter",
+    value: function handleAffectNewDestHunter() {
+      var unit = this.unit;
+      var firstTargets = findInstancesInSight(unit, function (instance) {
+        return unit.getActionCondition(instance, ACTION_TYPES.takemeat);
+      });
+      if (firstTargets.length) {
+        var target = getClosestInstanceWithPath(unit, firstTargets);
+        if (target) {
+          if (unit.action !== ACTION_TYPES.takemeat) {
+            unit.action = ACTION_TYPES.takemeat;
+            if (unit.allAssets[unit.work]) {
+              unit.actionSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].harvestSheet);
+            }
+          }
+          if (instanceContactInstance(unit, target)) {
+            unit.degree = getInstanceDegree(unit, target.x, target.y);
+            unit.getAction(unit.action);
+            return true;
+          }
+          unit.setDest(target.instance);
+          unit.setPath(target.path);
+          return true;
+        }
+      }
+      var secondTargets = findInstancesInSight(unit, function (instance) {
+        return unit.getActionCondition(instance, ACTION_TYPES.hunt);
+      });
+      if (secondTargets.length) {
+        var _target = getClosestInstanceWithPath(unit, secondTargets);
+        if (_target) {
+          if (unit.action !== ACTION_TYPES.hunt) {
+            unit.action = ACTION_TYPES.hunt;
+            if (unit.allAssets[unit.work]) {
+              unit.actionSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].actionSheet);
+            }
+          }
+          if (instanceContactInstance(unit, _target)) {
+            unit.degree = getInstanceDegree(unit, _target.x, _target.y);
+            unit.getAction(unit.action);
+            return true;
+          }
+          unit.setDest(_target.instance);
+          unit.setPath(_target.path);
+          return true;
+        }
+      }
+      return false;
+    }
+  }, {
+    key: "syncMovingTargetDirection",
+    value: function syncMovingTargetDirection() {
+      var unit = this.unit;
+      if (unit.destHasMoved()) {
+        unit.realDest.i = unit.dest.i;
+        unit.realDest.j = unit.dest.j;
+        unit.realDest.x = unit.dest.x;
+        unit.realDest.y = unit.dest.y;
+        var oldDeg = unit.degree;
+        unit.degree = getInstanceDegree(unit, unit.dest.x, unit.dest.y);
+        if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
+          unit.setTextures(SHEET_TYPES.action);
         }
       }
     }
+  }, {
+    key: "handleAttackAction",
+    value: function handleAttackAction() {
+      var _this = this;
+      var unit = this.unit;
+      var _unit$context = unit.context,
+        map = _unit$context.map,
+        menu = _unit$context.menu,
+        player = _unit$context.player;
+      if (!unit.getActionCondition(unit.dest)) {
+        unit.affectNewDest();
+        return;
+      }
+      unit.setTextures(SHEET_TYPES.action);
+      if (unit.range && unit.type !== UNIT_TYPES.villager) {
+        unit.sprite.onLoop = function () {
+          if (!unit.getActionCondition(unit.dest)) {
+            if (unit.dest && unit.dest.hitPoints <= 0) {
+              unit.dest.die();
+            }
+            unit.affectNewDest();
+            return;
+          }
+          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
+            unit.stop();
+            return;
+          }
+          _this.syncMovingTargetDirection();
+        };
+        onSpriteLoopAtFrame(unit.sprite, 6, function () {
+          if (!unit.getActionCondition(unit.dest) || !unit.realDest) return;
+          var projectile = new Projectile({
+            owner: unit,
+            target: unit.dest,
+            type: unit.projectile,
+            destination: unit.realDest
+          }, unit.context);
+          map.addChild(projectile);
+        });
+      } else {
+        unit.startInterval(function () {
+          if (!unit.getActionCondition(unit.dest)) {
+            if (unit.dest && unit.dest.hitPoints <= 0) {
+              unit.dest.die();
+            }
+            unit.affectNewDest();
+            return;
+          }
+          _this.syncMovingTargetDirection();
+          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
+            unit.sendTo(unit.dest, ACTION_TYPES.attack);
+            return;
+          }
+          if (unit.sounds && unit.sounds.hit) {
+            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.hit) ? maths_randomItem(unit.sounds.hit) : unit.sounds.hit);
+          }
+          if (unit.dest.hitPoints > 0) {
+            unit.dest.hitPoints = getHitPointsWithDamage(unit, unit.dest);
+            if (unit.dest.selected && (player.selectedUnit === unit.dest || player.selectedBuilding === unit.dest || player.selectedOther === unit.dest)) {
+              menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints);
+            }
+            unit.dest.isAttacked(unit);
+            if (unit.dest.hitPoints <= 0) {
+              unit.dest.die();
+              unit.affectNewDest();
+            }
+          }
+        }, unit.rateOfFire * 1000, false);
+      }
+    }
   }]);
-}(lib/* Container */.mcf);
-;// ./app/classes/unit.js
+}();
+;// ./app/classes/unit/UnitActions.js
+function UnitActions_typeof(o) { "@babel/helpers - typeof"; return UnitActions_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitActions_typeof(o); }
+function UnitActions_slicedToArray(r, e) { return UnitActions_arrayWithHoles(r) || UnitActions_iterableToArrayLimit(r, e) || UnitActions_unsupportedIterableToArray(r, e) || UnitActions_nonIterableRest(); }
+function UnitActions_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function UnitActions_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return UnitActions_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? UnitActions_arrayLikeToArray(r, a) : void 0; } }
+function UnitActions_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function UnitActions_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function UnitActions_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function UnitActions_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitActions_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitActions_toPropertyKey(o.key), o); } }
+function UnitActions_createClass(e, r, t) { return r && UnitActions_defineProperties(e.prototype, r), t && UnitActions_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitActions_toPropertyKey(t) { var i = UnitActions_toPrimitive(t, "string"); return "symbol" == UnitActions_typeof(i) ? i : i + ""; }
+function UnitActions_toPrimitive(t, r) { if ("object" != UnitActions_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitActions_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+
+var UnitActions = /*#__PURE__*/function () {
+  function UnitActions(unit) {
+    UnitActions_classCallCheck(this, UnitActions);
+    this.unit = unit;
+  }
+  return UnitActions_createClass(UnitActions, [{
+    key: "goBackToPrevious",
+    value: function goBackToPrevious() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      if (!unit.previousDest) {
+        unit.stop();
+        return;
+      }
+      var dest = unit.previousDest;
+      var type = dest.category || dest.type;
+      unit.previousDest = null;
+      if (dest.family === FAMILY_TYPES.animal) {
+        if (unit.getActionCondition(dest, ACTION_TYPES.takemeat)) {
+          unit.sendToTakeMeat(dest, true);
+        } else {
+          unit.sendToEvt(map.grid[dest.i][dest.j], ACTION_TYPES.hunt);
+        }
+      } else if (dest.family === FAMILY_TYPES.building) {
+        if (unit.getActionCondition(dest, ACTION_TYPES.build)) {
+          unit.sendToBuilding(dest);
+        } else if (unit.getActionCondition(dest, ACTION_TYPES.farm)) {
+          unit.sendToFarm(dest);
+        } else {
+          unit.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.build);
+        }
+      } else if (TYPE_ACTION[type]) {
+        if (unit.getActionCondition(dest, TYPE_ACTION[type])) {
+          var sendToFunc = "sendTo".concat(type);
+          typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](dest) : unit.stop();
+        } else {
+          unit.sendTo(map.grid[dest.i][dest.j], TYPE_ACTION[type]);
+        }
+      } else {
+        unit.sendTo(map.grid[dest.i][dest.j]);
+      }
+    }
+  }, {
+    key: "startGathering",
+    value: function startGathering(loadingType, soundId) {
+      var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+        _ref$dieOnEmpty = _ref.dieOnEmpty,
+        dieOnEmpty = _ref$dieOnEmpty === void 0 ? false : _ref$dieOnEmpty,
+        _ref$checkOwner = _ref.checkOwner,
+        checkOwner = _ref$checkOwner === void 0 ? false : _ref$checkOwner,
+        _ref$updateTexture = _ref.updateTexture,
+        updateTexture = _ref$updateTexture === void 0 ? false : _ref$updateTexture;
+      var unit = this.unit;
+      var menu = unit.context.menu;
+      if (!unit.getActionCondition(unit.dest)) {
+        unit.affectNewDest();
+        return;
+      }
+      unit.setTextures(SHEET_TYPES.action);
+      unit.startInterval(function () {
+        if (!unit.getActionCondition(unit.dest)) {
+          if (dieOnEmpty && unit.dest.quantity <= 0) {
+            unit.dest.die();
+          }
+          unit.affectNewDest();
+          return;
+        }
+        if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
+          unit.sendToDelivery();
+          return;
+        }
+        unit.loading++;
+        unit.loadingType = loadingType;
+        unit.updateInterfaceLoading();
+        if (soundId) unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(soundId);
+        if (updateTexture) unit.dest.updateTexture();
+        unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0);
+        if (unit.dest.selected && (!checkOwner || unit.owner.isPlayed)) {
+          menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity);
+        }
+        if (unit.dest.quantity <= 0) {
+          if (dieOnEmpty) unit.dest.die();
+          unit.affectNewDest();
+        }
+        if (unit.loading === 1) {
+          if (unit.allAssets && unit.allAssets[unit.work]) {
+            unit.walkingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].loadedSheet);
+            unit.standingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].standingSheet);
+          }
+        }
+      }, 1 / unit.gatheringRate[unit.work] * 1000, false);
+    }
+  }, {
+    key: "upgrade",
+    value: function upgrade(type) {
+      var unit = this.unit;
+      var data = unit.owner.config.units[type];
+      unit.type = type;
+      unit.hitPoints = data.totalHitPoints - (unit.totalHitPoints - unit.hitPoints);
+      for (var _i = 0, _Object$entries = Object.entries(data); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = UnitActions_slicedToArray(_Object$entries[_i], 2),
+          key = _Object$entries$_i[0],
+          value = _Object$entries$_i[1];
+        unit[key] = value;
+      }
+      for (var _i2 = 0, _Object$entries2 = Object.entries(unit.assets); _i2 < _Object$entries2.length; _i2++) {
+        var _Object$entries2$_i = UnitActions_slicedToArray(_Object$entries2[_i2], 2),
+          _key = _Object$entries2$_i[0],
+          _value = _Object$entries2$_i[1];
+        unit[_key] = lib/* Assets */.sP.cache.get(_value);
+      }
+      if (unit.action && !unit.path.length) {
+        unit.getAction(unit.action);
+      } else {
+        unit.setTextures(unit.currentSheet);
+      }
+    }
+  }, {
+    key: "getAction",
+    value: function getAction(name) {
+      var unit = this.unit;
+      var _unit$context = unit.context,
+        menu = _unit$context.menu,
+        player = _unit$context.player,
+        map = _unit$context.map;
+      unit.sprite.onLoop = null;
+      unit.sprite.onFrameChange = null;
+      switch (name) {
+        case ACTION_TYPES.delivery:
+          if (!unit.getActionCondition(unit.dest, unit.action)) {
+            unit.stop();
+            return;
+          }
+          unit.owner[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType] += unit.loading;
+          unit.owner.isPlayed && menu.updateTopbar();
+          unit.loading = 0;
+          unit.updateInterfaceLoading();
+          if (unit.allAssets && unit.allAssets[unit.work]) {
+            unit.standingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].standingSheet);
+            unit.walkingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].walkingSheet);
+          }
+          if (unit.previousDest) {
+            unit.goBackToPrevious();
+          } else {
+            unit.stop();
+          }
+          break;
+        case ACTION_TYPES.farm:
+          if (!unit.getActionCondition(unit.dest)) {
+            unit.affectNewDest();
+            return;
+          }
+          unit.dest.isUsedBy = unit;
+          unit.setTextures(SHEET_TYPES.action);
+          unit.startInterval(function () {
+            if (!unit.getActionCondition(unit.dest)) {
+              if (unit.dest.quantity <= 0) {
+                unit.dest.die();
+              }
+              unit.affectNewDest();
+              return;
+            }
+            unit.dest.isUsedBy = unit;
+            if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
+              unit.sendToDelivery();
+              unit.dest.isUsedBy = null;
+              return;
+            }
+            unit.loading++;
+            unit.loadingType = LOADING_TYPES.wheat;
+            unit.updateInterfaceLoading();
+            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5178');
+            unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0);
+            if (unit.dest.selected) {
+              menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity);
+            }
+            if (unit.dest.quantity <= 0) {
+              unit.dest.die();
+              unit.affectNewDest();
+            }
+            if (unit.loading === 1) {
+              if (unit.allAssets[unit.work]) {
+                unit.walkingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].loadedSheet);
+              }
+              unit.standingSheet = null;
+            }
+          }, 1 / unit.gatheringRate[unit.work] * 1000, false);
+          break;
+        case ACTION_TYPES.chopwood:
+          if (!unit.getActionCondition(unit.dest)) {
+            unit.affectNewDest();
+            return;
+          }
+          unit.setTextures(SHEET_TYPES.action);
+          unit.startInterval(function () {
+            if (!unit.getActionCondition(unit.dest)) {
+              if (unit.dest.quantity <= 0) {
+                unit.dest.die();
+              }
+              unit.affectNewDest();
+              return;
+            }
+            if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
+              unit.sendToDelivery();
+              return;
+            }
+            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5048');
+            if (unit.dest.hitPoints > 0) {
+              unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0);
+              if (unit.dest.selected) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints > 0 ? unit.dest.hitPoints + '/' + unit.dest.totalHitPoints : '');
+              }
+              if (unit.dest.hitPoints <= 0) {
+                unit.dest.hitPoints = 0;
+                unit.dest.setCuttedTreeTexture();
+              }
+            } else {
+              unit.loading++;
+              unit.loadingType = LOADING_TYPES.wood;
+              unit.updateInterfaceLoading();
+              unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0);
+              if (unit.dest.selected) {
+                menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity);
+              }
+              if (unit.dest.quantity <= 0) {
+                unit.dest.die();
+                unit.affectNewDest();
+              }
+              if (unit.loading === 1) {
+                if (unit.allAssets[unit.work]) {
+                  unit.walkingSheet = lib/* Assets */.sP.cache.get(unit.allAssets[unit.work].loadedSheet);
+                }
+                unit.standingSheet = null;
+              }
+            }
+          }, 1 / unit.gatheringRate[unit.work] * 1000, false);
+          break;
+        case ACTION_TYPES.forageberry:
+          this.startGathering(LOADING_TYPES.berry, '5085', {
+            dieOnEmpty: true
+          });
+          break;
+        case ACTION_TYPES.minestone:
+          this.startGathering(LOADING_TYPES.stone, '5159', {
+            dieOnEmpty: true
+          });
+          break;
+        case ACTION_TYPES.minegold:
+          this.startGathering(LOADING_TYPES.gold, '5159');
+          break;
+        case ACTION_TYPES.build:
+          if (!unit.getActionCondition(unit.dest)) {
+            unit.affectNewDest();
+            return;
+          }
+          unit.setTextures(SHEET_TYPES.action);
+          unit.startInterval(function () {
+            if (!unit.getActionCondition(unit.dest)) {
+              if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
+                unit.sendToFarm(unit.dest);
+              }
+              unit.affectNewDest();
+              return;
+            }
+            if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
+              unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5107');
+              unit.dest.hitPoints = Math.min(Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime), unit.dest.totalHitPoints);
+              if (unit.dest.selected && unit.owner.isPlayed) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints);
+              }
+              unit.dest.updateHitPoints(unit.action);
+            } else {
+              if (!unit.dest.isBuilt) {
+                unit.dest.updateHitPoints(unit.action);
+                unit.dest.isBuilt = true;
+                if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
+                  unit.sendToFarm(unit.dest);
+                }
+              }
+              unit.affectNewDest();
+            }
+          }, 1000, false);
+          break;
+        case ACTION_TYPES.attack:
+          unit.unitCombat.handleAttackAction();
+          break;
+        case ACTION_TYPES.heal:
+          if (!unit.getActionCondition(unit.dest)) {
+            unit.affectNewDest();
+            return;
+          }
+          unit.setTextures(SHEET_TYPES.action);
+          unit.sprite.onLoop = function () {
+            if (!unit.getActionCondition(unit.dest)) {
+              unit.affectNewDest();
+              return;
+            }
+            if (unit.destHasMoved()) {
+              unit.realDest.i = unit.dest.i;
+              unit.realDest.j = unit.dest.j;
+              unit.realDest.x = unit.dest.x;
+              unit.realDest.y = unit.dest.y;
+              var oldDeg = unit.degree;
+              unit.degree = getInstanceDegree(unit, unit.dest.x, unit.dest.y);
+              if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
+                unit.setTextures(SHEET_TYPES.action);
+              }
+            }
+            if (!unit.isUnitAtDest(unit.action, unit.dest)) {
+              unit.sendTo(unit.dest, ACTION_TYPES.heal);
+              return;
+            }
+            if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
+              unit.dest.hitPoints = Math.min(unit.dest.hitPoints + unit.healing, unit.dest.totalHitPoints);
+              if (unit.dest.selected && player.selectedUnit === unit.dest) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints);
+              }
+            }
+          };
+          break;
+        case ACTION_TYPES.takemeat:
+          this.startGathering(LOADING_TYPES.meat, '5178', {
+            checkOwner: true,
+            updateTexture: true
+          });
+          break;
+        case ACTION_TYPES.fishing:
+          this.startGathering(LOADING_TYPES.fish, null, {
+            checkOwner: true
+          });
+          if (unit.category !== 'Boat') {
+            onSpriteLoopAtFrame(unit.sprite, 6, function () {
+              unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5125');
+            });
+          }
+          break;
+        case ACTION_TYPES.hunt:
+          if (!unit.getActionCondition(unit.dest)) {
+            unit.affectNewDest();
+            return;
+          }
+          if (unit.dest.isDead) {
+            unit.previousDest ? unit.goBackToPrevious() : unit.sendToTakeMeat(unit.dest);
+            return;
+          }
+          unit.setTextures(SHEET_TYPES.action);
+          unit.sprite.onLoop = function () {
+            if (!unit.getActionCondition(unit.dest)) {
+              if (unit.dest && unit.dest.hitPoints <= 0) {
+                unit.dest.die();
+                unit.previousDest ? unit.goBackToPrevious() : unit.sendToTakeMeat(unit.dest);
+                return;
+              }
+              unit.affectNewDest();
+              return;
+            }
+            if (!unit.isUnitAtDest(unit.action, unit.dest)) {
+              unit.stop();
+              return;
+            }
+            if (unit.destHasMoved()) {
+              unit.realDest.i = unit.dest.i;
+              unit.realDest.j = unit.dest.j;
+              unit.realDest.x = unit.dest.x;
+              unit.realDest.y = unit.dest.y;
+              var oldDeg = unit.degree;
+              unit.degree = getInstanceDegree(unit, unit.dest.x, unit.dest.y);
+              if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
+                unit.setTextures(SHEET_TYPES.action);
+              }
+            }
+          };
+          onSpriteLoopAtFrame(unit.sprite, 6, function () {
+            if (!unit.getActionCondition(unit.dest) || !unit.realDest) return;
+            var projectile = new Projectile({
+              owner: unit,
+              target: unit.dest,
+              type: 'Spear',
+              destination: unit.realDest,
+              damage: 4
+            }, unit.context);
+            map.addChild(projectile);
+          });
+          break;
+        default:
+          unit.stop();
+      }
+    }
+  }]);
+}();
+;// ./app/classes/unit/UnitMovement.js
+function UnitMovement_typeof(o) { "@babel/helpers - typeof"; return UnitMovement_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, UnitMovement_typeof(o); }
+function UnitMovement_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function UnitMovement_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, UnitMovement_toPropertyKey(o.key), o); } }
+function UnitMovement_createClass(e, r, t) { return r && UnitMovement_defineProperties(e.prototype, r), t && UnitMovement_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function UnitMovement_toPropertyKey(t) { var i = UnitMovement_toPrimitive(t, "string"); return "symbol" == UnitMovement_typeof(i) ? i : i + ""; }
+function UnitMovement_toPrimitive(t, r) { if ("object" != UnitMovement_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitMovement_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var UnitMovement = /*#__PURE__*/function () {
+  function UnitMovement(unit) {
+    UnitMovement_classCallCheck(this, UnitMovement);
+    this.unit = unit;
+  }
+  return UnitMovement_createClass(UnitMovement, [{
+    key: "sendToEvt",
+    value: function sendToEvt(dest, action) {
+      var _map$grid$unit$i$unit;
+      var unit = this.unit;
+      var map = unit.context.map;
+      unit.handleChangeDest();
+      unit.stopInterval();
+      var path = [];
+      if (!dest || dest.isDestroyed || unit.isDead) return;
+      if (unit.isUnitAtDest(action, dest) && (!map.grid[unit.i][unit.j].solid || map.grid[unit.i][unit.j].solid && ((_map$grid$unit$i$unit = map.grid[unit.i][unit.j].has) === null || _map$grid$unit$i$unit === void 0 ? void 0 : _map$grid$unit$i$unit.label) === unit.label)) {
+        unit.setDest(dest);
+        unit.action = action;
+        unit.degree = getInstanceDegree(unit, dest.x, dest.y);
+        unit.getAction(action);
+        return;
+      }
+      if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
+        var allowWaterCellCategory = unit.category === 'Boat';
+        if (map.grid[dest.i][dest.j].solid) {
+          path = getInstanceClosestFreeCellPath(unit, dest, map);
+          if (!path.length && unit.work) {
+            unit.action = action;
+            if (action === ACTION_TYPES.delivery) {
+              unit.stop();
+            } else {
+              unit.affectNewDest();
+            }
+            return;
+          }
+        } else if (!allowWaterCellCategory && dest.category === 'Water') {
+          var cell = getFreeCellAroundPoint(dest.i, dest.j, 1, map.grid, function (cell) {
+            return cell.category !== 'Water' && !cell.solid;
+          });
+          unit.sendToEvt(cell);
+          return;
+        }
+      }
+      if (!path.length) {
+        path = getInstancePath(unit, dest.i, dest.j, map);
+      }
+      if (path.length) {
+        unit.setDest(dest);
+        unit.action = action;
+        unit.setPath(path);
+      } else {
+        unit.stop();
+      }
+    }
+  }, {
+    key: "isUnitAtDest",
+    value: function isUnitAtDest(action, dest) {
+      var unit = this.unit;
+      if (!action) return false;
+      if (!dest) {
+        unit.affectNewDest();
+        return false;
+      }
+      if ((unit.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) && unit.range && instancesDistance(unit, dest) <= unit.range) {
+        return true;
+      }
+      return instanceContactInstance(unit, dest);
+    }
+  }, {
+    key: "destHasMoved",
+    value: function destHasMoved() {
+      var unit = this.unit;
+      return (unit.dest.i !== unit.realDest.i || unit.dest.j !== unit.realDest.j) && instancesDistance(unit, unit.dest) <= unit.sight;
+    }
+  }, {
+    key: "moveToPath",
+    value: function moveToPath() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      var next = unit.path[unit.path.length - 1];
+      var nextCell = map.grid[next.i][next.j];
+      if (!unit.dest || unit.dest.isDestroyed) {
+        unit.affectNewDest();
+        return;
+      }
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.unit && nextCell.has.label !== unit.label && nextCell.has.hasPath() && instancesDistance(unit, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+        unit.sprite.stop();
+        return;
+      }
+      if (nextCell.solid && unit.dest) {
+        unit.sendTo(unit.dest, unit.action);
+        return;
+      }
+      if (!unit.sprite.playing) {
+        unit.sprite.play();
+      }
+      if (instancesDistance(unit, nextCell, false) <= unit.speed) {
+        var oldI = unit.i,
+          oldJ = unit.j;
+        unit.z = nextCell.z;
+        unit.i = nextCell.i;
+        unit.j = nextCell.j;
+        unit.zIndex = getInstanceZIndex(unit);
+        if (unit.currentCell.has === unit) {
+          unit.currentCell.has = null;
+          unit.currentCell.solid = false;
+        }
+        unit.currentCell = map.grid[unit.i][unit.j];
+        if (unit.currentCell.has === null) {
+          unit.currentCell.place(unit);
+          unit.currentCell.solid = true;
+        }
+        map.updateInstanceBucket(unit, oldI, oldJ);
+        updateInstanceVisibility(unit);
+        unit.path.pop();
+        if (unit.destHasMoved()) {
+          unit.sendTo(unit.dest, unit.action);
+          return;
+        }
+        if (unit.isUnitAtDest(unit.action, unit.dest)) {
+          unit.path = [];
+          unit.stopInterval();
+          unit.degree = getInstanceDegree(unit, unit.dest.x, unit.dest.y);
+          unit.getAction(unit.action);
+          return;
+        }
+        if (!unit.path.length) {
+          unit.stop();
+        }
+      } else {
+        var _unit$context = unit.context,
+          menu = _unit$context.menu,
+          player = _unit$context.player;
+        var oldDeg = unit.degree;
+        var speed = unit.speed;
+        if (unit.loading > 0) speed *= 0.8;
+        moveTowardPoint(unit, nextCell.x, nextCell.y, speed);
+        canUpdateMinimap(unit, player) && menu.updatePlayerMiniMap(unit.owner);
+        if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
+          unit.setTextures(SHEET_TYPES.walking);
+        }
+      }
+    }
+  }, {
+    key: "affectNewDest",
+    value: function affectNewDest() {
+      var unit = this.unit;
+      unit.stopInterval();
+      if (unit.previousDest && unit.action !== ACTION_TYPES.delivery) {
+        unit.goBackToPrevious();
+        return;
+      }
+      var handleSuccess = false;
+      if (unit.type === UNIT_TYPES.villager && (unit.action === ACTION_TYPES.takemeat || unit.action === ACTION_TYPES.hunt)) {
+        handleSuccess = unit.handleAffectNewDestHunter();
+      } else if (!unit.dest || unit.dest.family !== FAMILY_TYPES.animal) {
+        var targets = findInstancesInSight(unit, function (instance) {
+          return unit.getActionCondition(instance);
+        });
+        if (targets.length) {
+          var target = getClosestInstanceWithPath(unit, targets);
+          if (target) {
+            if (instanceContactInstance(unit, target)) {
+              unit.degree = getInstanceDegree(unit, target.x, target.y);
+              unit.getAction(unit.action);
+              return;
+            }
+            unit.setDest(target.instance);
+            unit.setPath(target.path);
+            return;
+          }
+        }
+      }
+      if (!handleSuccess) {
+        var notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer];
+        if (unit.loading && !notDeliveryWork.includes(unit.work)) {
+          unit.sendToDelivery();
+        } else {
+          unit.stop();
+        }
+      }
+    }
+  }, {
+    key: "explore",
+    value: function explore() {
+      var unit = this.unit;
+      var map = unit.context.map;
+      var grid = map.grid;
+      var views = unit.owner.views;
+      for (var r = 1; r <= 50; r++) {
+        for (var dx = -r; dx <= r; dx++) {
+          var x = unit.i + dx;
+          var row = grid[x];
+          if (!row) continue;
+          var dyMax = r - Math.abs(dx);
+          for (var _i = 0, _arr = dyMax === 0 ? [0] : [-dyMax, dyMax]; _i < _arr.length; _i++) {
+            var dy = _arr[_i];
+            var cell = row[unit.j + dy];
+            if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
+              unit.sendTo(views[cell.i][cell.j]);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }, {
+    key: "runaway",
+    value: function runaway(instance) {
+      var unit = this.unit;
+      var map = unit.context.map;
+      var di = unit.i - instance.i;
+      var dj = unit.j - instance.j;
+      var len = Math.sqrt(di * di + dj * dj) || 1;
+      for (var dist = unit.sight; dist >= 1; dist--) {
+        var _map$grid$ti$length, _map$grid$ti;
+        var ti = Math.round(unit.i + di / len * dist);
+        var tj = Math.round(unit.j + dj / len * dist);
+        if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < ((_map$grid$ti$length = (_map$grid$ti = map.grid[ti]) === null || _map$grid$ti === void 0 ? void 0 : _map$grid$ti.length) !== null && _map$grid$ti$length !== void 0 ? _map$grid$ti$length : 0)) {
+          var cell = map.grid[ti][tj];
+          if (!cell.solid && !cell.border) {
+            unit.sendTo(unit.owner.views[ti][tj]);
+            return;
+          }
+        }
+      }
+      unit.stop();
+    }
+  }]);
+}();
+;// ./app/classes/unit/index.js
 function unit_typeof(o) { "@babel/helpers - typeof"; return unit_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, unit_typeof(o); }
 function unit_slicedToArray(r, e) { return unit_arrayWithHoles(r) || unit_iterableToArrayLimit(r, e) || unit_unsupportedIterableToArray(r, e) || unit_nonIterableRest(); }
 function unit_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -3283,6 +5012,9 @@ function unit_callSuper(t, o, e) { return o = unit_getPrototypeOf(o), unit_possi
 function unit_possibleConstructorReturn(t, e) { if (e && ("object" == unit_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return unit_assertThisInitialized(t); }
 function unit_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function unit_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (unit_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function unit_superPropGet(t, o, e, r) { var p = unit_get(unit_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
+function unit_get() { return unit_get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = unit_superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, unit_get.apply(null, arguments); }
+function unit_superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = unit_getPrototypeOf(t));); return t; }
 function unit_getPrototypeOf(t) { return unit_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, unit_getPrototypeOf(t); }
 function unit_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && unit_setPrototypeOf(t, e); }
 function unit_setPrototypeOf(t, e) { return unit_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, unit_setPrototypeOf(t, e); }
@@ -3291,31 +5023,41 @@ function unit_setPrototypeOf(t, e) { return unit_setPrototypeOf = Object.setProt
 
 
 
-function getActionSheet(work, action, Assets, unit) {
+
+
+
+
+
+
+function unit_getActionSheet(work, action, Assets, unit) {
   if (!work) {
     return;
   }
   var actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action;
   return Assets.cache.get(unit.allAssets[work][actionSheet]);
 }
-var Unit = /*#__PURE__*/function (_Container) {
+var Unit = /*#__PURE__*/function (_Instance) {
   function Unit(options, context) {
     var _this$x, _this$y, _this$z, _this$quantity, _this$hitPoints, _this$loop;
     var _this;
     unit_classCallCheck(this, Unit);
-    _this = unit_callSuper(this, Unit);
-    _this.context = context;
+    _this = unit_callSuper(this, Unit, [context]);
+    _this.selectionFactor = 0.5;
     var _this2 = _this,
       _this2$context = _this2.context,
       map = _this2$context.map,
       menu = _this2$context.menu;
-    _this.label = uuidv4();
     _this.family = FAMILY_TYPES.unit;
+    _this.unitInterface = new UnitInterface(_this);
+    _this.unitCommands = new UnitCommands(_this);
+    _this.unitLifecycle = new UnitLifecycle(_this);
+    _this.unitCombat = new UnitCombat(_this);
+    _this.unitActions = new UnitActions(_this);
+    _this.unitMovement = new UnitMovement(_this);
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
     _this.path = [];
-    _this.selected = false;
     _this.degree = randomRange(1, 360);
     _this.currentFrame = randomRange(0, 4);
     _this.action = null;
@@ -3323,8 +5065,6 @@ var Unit = /*#__PURE__*/function (_Container) {
     _this.loadingType = null;
     _this.currentSheet = SHEET_TYPES.standing;
     _this.inactif = true;
-    _this.isDead = false;
-    _this.isDestroyed = false;
     _this.x = null;
     _this.y = null;
     _this.z = null;
@@ -3347,6 +5087,7 @@ var Unit = /*#__PURE__*/function (_Container) {
       _this.currentCell.place(_this);
       _this.currentCell.solid = true;
       _this.owner.units.push(_this);
+      map.addToInstanceBucket(_this);
     }
     switch (_this.type) {
       case UNIT_TYPES.villager:
@@ -3373,7 +5114,7 @@ var Unit = /*#__PURE__*/function (_Container) {
         _this[_key] = lib/* Assets */.sP.cache.get(_value);
       }
     }
-    if (_this.owner.isPlayed && map.ready) {
+    if (_this.owner.isPlayed && map.ready && _this.context.controls.instanceInCamera(_this)) {
       sound_lib/* sound */.s3.play(_this.sounds && _this.sounds.create || 5144);
     }
     _this["interface"] = {
@@ -3393,7 +5134,7 @@ var Unit = /*#__PURE__*/function (_Container) {
     };
     _this.allowMove = false;
     _this.eventMode = 'static';
-    _this.actionSheet = _this.actionSheet || getActionSheet(_this.work, _this.action, lib/* Assets */.sP, _this);
+    _this.actionSheet = _this.actionSheet || unit_getActionSheet(_this.work, _this.action, lib/* Assets */.sP, _this);
     _this.sprite = new lib/* AnimatedSprite */.Dl5(_this[SHEET_TYPES.standing].animations['south']);
     _this.sprite.label = LABEL_TYPES.sprite;
     _this.sprite.allowMove = false;
@@ -3493,60 +5234,30 @@ var Unit = /*#__PURE__*/function (_Container) {
       }
     });
     changeSpriteColor(_this.sprite, _this.owner.color);
-    _this.interval = null;
     _this.visibilityTimeout = setTimeout(function () {
       if (!_this.isDestroyed) updateInstanceVisibility(_this);
     });
     return _this;
   }
-  unit_inherits(Unit, _Container);
+  unit_inherits(Unit, _Instance);
   return unit_createClass(Unit, [{
-    key: "pause",
-    value: function pause() {
-      var _this$sprite;
-      (_this$sprite = this.sprite) === null || _this$sprite === void 0 || _this$sprite.stop();
-    }
-  }, {
-    key: "resume",
-    value: function resume() {
-      var _this$sprite2;
-      (_this$sprite2 = this.sprite) === null || _this$sprite2 === void 0 || _this$sprite2.play();
-    }
-  }, {
     key: "select",
     value: function select() {
       if (this.selected) return;
+      unit_superPropGet(Unit, "select", this, 3)([]);
       var _this$context = this.context,
         menu = _this$context.menu,
         player = _this$context.player;
-      this.selected = true;
-      var selection = new lib/* Graphics */.A1g();
-      selection.label = LABEL_TYPES.selection;
-      selection.zIndex = 3;
-
-      // Diamond shape
-      var path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5];
-      selection.poly(path);
-      selection.stroke(COLOR_WHITE);
-      this.addChildAt(selection, 0);
-      if (canUpdateMinimap(this, player)) {
-        menu.updatePlayerMiniMapEvt(this.owner);
-      }
+      canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
   }, {
     key: "unselect",
     value: function unselect() {
-      if (!this.selected) {
-        return;
-      }
+      if (!this.selected) return;
+      unit_superPropGet(Unit, "unselect", this, 3)([]);
       var _this$context2 = this.context,
         menu = _this$context2.menu,
         player = _this$context2.player;
-      this.selected = false;
-      var selection = this.getChildByLabel(LABEL_TYPES.selection);
-      if (selection) {
-        this.removeChild(selection);
-      }
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
   }, {
@@ -3596,726 +5307,66 @@ var Unit = /*#__PURE__*/function (_Container) {
   }, {
     key: "sendToEvt",
     value: function sendToEvt(dest, action) {
-      var _map$grid$this$i$this;
-      var map = this.context.map;
-      this.handleChangeDest();
-      this.stopInterval();
-      var path = [];
-      // No instance we cancel the destination
-      if (!dest || dest.isDestroyed || this.isDead) {
-        return;
-      }
-      // Unit is already beside our target
-      if (this.isUnitAtDest(action, dest) && (!map.grid[this.i][this.j].solid || map.grid[this.i][this.j].solid && ((_map$grid$this$i$this = map.grid[this.i][this.j].has) === null || _map$grid$this$i$this === void 0 ? void 0 : _map$grid$this$i$this.label) === this.label)) {
-        this.setDest(dest);
-        this.action = action;
-        this.degree = getInstanceDegree(this, dest.x, dest.y);
-        this.getAction(action);
-        return;
-      }
-      // Set unit path
-      if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
-        var allowWaterCellCategory = this.category === 'Boat';
-        if (map.grid[dest.i][dest.j].solid) {
-          path = getInstanceClosestFreeCellPath(this, dest, map);
-          if (!path.length && this.work) {
-            this.action = action;
-            if (action === ACTION_TYPES.delivery) {
-              this.stop();
-            } else {
-              this.affectNewDest();
-            }
-            return;
-          }
-        } else if (!allowWaterCellCategory && dest.category === 'Water') {
-          var cell = getFreeCellAroundPoint(dest.i, dest.j, 1, map.grid, function (cell) {
-            return cell.category !== 'Water' && !cell.solid;
-          });
-          this.sendToEvt(cell);
-          return;
-        }
-      }
-      if (!path.length) {
-        path = getInstancePath(this, dest.i, dest.j, map);
-      }
-      // Unit found a path, set the action and play walking animation
-      if (path.length) {
-        this.setDest(dest);
-        this.action = action;
-        this.setPath(path);
-      } else {
-        this.stop();
-      }
-    }
-  }, {
-    key: "getActionCondition",
-    value: function getActionCondition(target) {
-      var action = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.action;
-      var props = arguments.length > 2 ? arguments[2] : undefined;
-      return extra_getActionCondition(this, target, action, props);
+      return this.unitMovement.sendToEvt(dest, action);
     }
   }, {
     key: "goBackToPrevious",
     value: function goBackToPrevious() {
-      var map = this.context.map;
-      if (!this.previousDest) {
-        this.stop();
-        return;
-      }
-      var dest = this.previousDest;
-      var type = dest.category || dest.type;
-      this.previousDest = null;
-      if (dest.family === FAMILY_TYPES.animal) {
-        if (this.getActionCondition(dest, ACTION_TYPES.takemeat)) {
-          this.sendToTakeMeat(dest);
-        } else {
-          this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.hunt);
-        }
-      } else if (dest.family === FAMILY_TYPES.building) {
-        if (this.getActionCondition(dest, ACTION_TYPES.build)) {
-          this.sendToBuilding(dest);
-        } else if (this.getActionCondition(dest, ACTION_TYPES.farm)) {
-          this.sendToFarm(dest);
-        } else {
-          this.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.build);
-        }
-      } else if (TYPE_ACTION[type]) {
-        if (this.getActionCondition(dest, TYPE_ACTION[type])) {
-          var sendToFunc = "sendTo".concat(type);
-          typeof this[sendToFunc] === 'function' ? this[sendToFunc](dest) : this.stop();
-        } else {
-          this.sendTo(map.grid[dest.i][dest.j], TYPE_ACTION[type]);
-        }
-      } else {
-        this.sendTo(map.grid[dest.i][dest.j]);
-      }
+      return this.unitActions.goBackToPrevious();
     }
   }, {
     key: "startGathering",
-    value: function startGathering(loadingType, soundId) {
-      var _this6 = this;
-      var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
-        _ref$dieOnEmpty = _ref.dieOnEmpty,
-        dieOnEmpty = _ref$dieOnEmpty === void 0 ? false : _ref$dieOnEmpty,
-        _ref$checkOwner = _ref.checkOwner,
-        checkOwner = _ref$checkOwner === void 0 ? false : _ref$checkOwner,
-        _ref$updateTexture = _ref.updateTexture,
-        updateTexture = _ref$updateTexture === void 0 ? false : _ref$updateTexture;
-      var menu = this.context.menu;
-      if (!this.getActionCondition(this.dest)) {
-        this.affectNewDest();
-        return;
-      }
-      this.setTextures(SHEET_TYPES.action);
-      this.startInterval(function () {
-        if (!_this6.getActionCondition(_this6.dest)) {
-          if (dieOnEmpty && _this6.dest.quantity <= 0) {
-            _this6.dest.die();
-          }
-          _this6.affectNewDest();
-          return;
-        }
-        if (_this6.loading === _this6.loadingMax[_this6.loadingType] || !_this6.dest) {
-          _this6.sendToDelivery();
-          return;
-        }
-        _this6.loading++;
-        _this6.loadingType = loadingType;
-        _this6.updateInterfaceLoading();
-        if (soundId) _this6.visible && sound_lib/* sound */.s3.play(soundId);
-        if (updateTexture) _this6.dest.updateTexture();
-        _this6.dest.quantity = Math.max(_this6.dest.quantity - 1, 0);
-        if (_this6.dest.selected && (!checkOwner || _this6.owner.isPlayed)) {
-          menu.updateInfo(MENU_INFO_IDS.quantityText, _this6.dest.quantity);
-        }
-        if (_this6.dest.quantity <= 0) {
-          if (dieOnEmpty) _this6.dest.die();
-          _this6.affectNewDest();
-        }
-        if (_this6.loading === 1) {
-          if (_this6.allAssets && _this6.allAssets[_this6.work]) {
-            _this6.walkingSheet = lib/* Assets */.sP.cache.get(_this6.allAssets[_this6.work].loadedSheet);
-          }
-          _this6.standingSheet = null;
-        }
-      }, 1 / this.gatheringRate[this.work] * 1000, false);
+    value: function startGathering(loadingType, soundId, opts) {
+      return this.unitActions.startGathering(loadingType, soundId, opts);
     }
   }, {
     key: "getAction",
     value: function getAction(name) {
-      var _this7 = this;
-      var _this$context3 = this.context,
-        menu = _this$context3.menu,
-        player = _this$context3.player,
-        map = _this$context3.map;
-      this.sprite.onLoop = null;
-      this.sprite.onFrameChange = null;
-      switch (name) {
-        case ACTION_TYPES.delivery:
-          if (!this.getActionCondition(this.dest, this.action)) {
-            this.stop();
-            return;
-          }
-          this.owner[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType] += this.loading;
-          this.owner.isPlayed && menu.updateTopbar();
-          this.loading = 0;
-          this.updateInterfaceLoading();
-          if (this.allAssets && this.allAssets[this.work]) {
-            this.standingSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].standingSheet);
-            this.walkingSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].walkingSheet);
-          }
-          if (this.previousDest) {
-            this.goBackToPrevious();
-          } else {
-            this.stop();
-          }
-          break;
-        case ACTION_TYPES.farm:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.dest.isUsedBy = this;
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this7.getActionCondition(_this7.dest)) {
-              if (_this7.dest.quantity <= 0) {
-                _this7.dest.die();
-              }
-              _this7.affectNewDest();
-              return;
-            }
-            _this7.dest.isUsedBy = _this7;
-            // Villager is full we send him delivery first
-            if (_this7.loading === _this7.loadingMax[_this7.loadingType] || !_this7.dest) {
-              _this7.sendToDelivery();
-              _this7.dest.isUsedBy = null;
-              return;
-            }
-            // Villager farm the farm
-            _this7.loading++;
-            _this7.loadingType = LOADING_TYPES.wheat;
-            _this7.updateInterfaceLoading();
-            _this7.visible && sound_lib/* sound */.s3.play('5178');
-            _this7.dest.quantity = Math.max(_this7.dest.quantity - 1, 0);
-            if (_this7.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, _this7.dest.quantity);
-            }
-            // Destroy farm if it out of quantity
-            if (_this7.dest.quantity <= 0) {
-              _this7.dest.die();
-              _this7.affectNewDest();
-            }
-            // Set the walking with berrybush animation
-            if (_this7.loading === 1) {
-              if (_this7.allAssets[_this7.work]) {
-                _this7.walkingSheet = lib/* Assets */.sP.cache.get(_this7.allAssets[_this7.work].loadedSheet);
-              }
-              _this7.standingSheet = null;
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
-          break;
-        case ACTION_TYPES.chopwood:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this7.getActionCondition(_this7.dest)) {
-              if (_this7.dest.quantity <= 0) {
-                _this7.dest.die();
-              }
-              _this7.affectNewDest();
-              return;
-            }
-            // Villager is full we send him delivery first
-            if (_this7.loading === _this7.loadingMax[_this7.loadingType] || !_this7.dest) {
-              _this7.sendToDelivery();
-              return;
-            }
-            _this7.visible && sound_lib/* sound */.s3.play('5048');
-
-            // Tree destination is still alive we cut him until it's dead
-            if (_this7.dest.hitPoints > 0) {
-              _this7.dest.hitPoints = Math.max(_this7.dest.hitPoints - 1, 0);
-              if (_this7.dest.selected) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints > 0 ? _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints : '');
-              }
-              if (_this7.dest.hitPoints <= 0) {
-                // Set cutted tree texture
-                _this7.dest.hitPoints = 0;
-                _this7.dest.setCuttedTreeTexture();
-              }
-            } else {
-              // Villager cut the stump
-              _this7.loading++;
-              _this7.loadingType = LOADING_TYPES.wood;
-              _this7.updateInterfaceLoading();
-              _this7.dest.quantity = Math.max(_this7.dest.quantity - 1, 0);
-              if (_this7.dest.selected) {
-                menu.updateInfo(MENU_INFO_IDS.quantityText, _this7.dest.quantity);
-              }
-              // Destroy tree if stump out of quantity
-              if (_this7.dest.quantity <= 0) {
-                _this7.dest.die();
-                _this7.affectNewDest();
-              }
-              // Set the walking with wood animation
-              if (_this7.loading === 1) {
-                if (_this7.allAssets[_this7.work]) {
-                  _this7.walkingSheet = lib/* Assets */.sP.cache.get(_this7.allAssets[_this7.work].loadedSheet);
-                }
-                _this7.standingSheet = null;
-              }
-            }
-          }, 1 / this.gatheringRate[this.work] * 1000, false);
-          break;
-        case ACTION_TYPES.forageberry:
-          this.startGathering(LOADING_TYPES.berry, '5085', {
-            dieOnEmpty: true
-          });
-          break;
-        case ACTION_TYPES.minestone:
-          this.startGathering(LOADING_TYPES.stone, '5159', {
-            dieOnEmpty: true
-          });
-          break;
-        case ACTION_TYPES.minegold:
-          this.startGathering(LOADING_TYPES.gold, '5159');
-          break;
-        case ACTION_TYPES.build:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this7.getActionCondition(_this7.dest)) {
-              if (_this7.dest.type === BUILDING_TYPES.farm && !_this7.dest.isUsedBy) {
-                _this7.sendToFarm(_this7.dest);
-              }
-              _this7.affectNewDest();
-              return;
-            }
-            if (_this7.dest.hitPoints < _this7.dest.totalHitPoints) {
-              _this7.visible && sound_lib/* sound */.s3.play('5107');
-              _this7.dest.hitPoints = Math.min(Math.round(_this7.dest.hitPoints + _this7.dest.totalHitPoints / _this7.dest.constructionTime), _this7.dest.totalHitPoints);
-              if (_this7.dest.selected && _this7.owner.isPlayed) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
-              }
-              _this7.dest.updateHitPoints(_this7.action);
-            } else {
-              if (!_this7.dest.isBuilt) {
-                _this7.dest.updateHitPoints(_this7.action);
-                _this7.dest.isBuilt = true;
-                if (_this7.dest.type === BUILDING_TYPES.farm && !_this7.dest.isUsedBy) {
-                  _this7.sendToFarm(_this7.dest);
-                }
-              }
-              _this7.affectNewDest();
-            }
-          }, 1000, false);
-          break;
-        case ACTION_TYPES.attack:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          if (this.range && this.type !== UNIT_TYPES.villager) {
-            this.sprite.onLoop = function () {
-              if (!_this7.getActionCondition(_this7.dest)) {
-                if (_this7.dest && _this7.dest.hitPoints <= 0) {
-                  _this7.dest.die();
-                }
-                _this7.affectNewDest();
-                return;
-              }
-              if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
-                _this7.stop();
-                return;
-              }
-              if (_this7.destHasMoved()) {
-                _this7.realDest.i = _this7.dest.i;
-                _this7.realDest.j = _this7.dest.j;
-                _this7.realDest.x = _this7.dest.x;
-                _this7.realDest.y = _this7.dest.y;
-                var oldDeg = _this7.degree;
-                _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
-                if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
-                  _this7.setTextures(SHEET_TYPES.action);
-                }
-              }
-            };
-            onSpriteLoopAtFrame(this.sprite, 6, function () {
-              var projectile = new Projectile({
-                owner: _this7,
-                target: _this7.dest,
-                type: _this7.projectile,
-                destination: _this7.realDest
-              }, _this7.context);
-              map.addChild(projectile);
-            });
-          } else {
-            this.startInterval(function () {
-              if (!_this7.getActionCondition(_this7.dest)) {
-                if (_this7.dest && _this7.dest.hitPoints <= 0) {
-                  _this7.dest.die();
-                }
-                _this7.affectNewDest();
-                return;
-              }
-              if (_this7.destHasMoved()) {
-                _this7.realDest.i = _this7.dest.i;
-                _this7.realDest.j = _this7.dest.j;
-                _this7.realDest.x = _this7.dest.x;
-                _this7.realDest.y = _this7.dest.y;
-                var oldDeg = _this7.degree;
-                _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
-                if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
-                  _this7.setTextures(SHEET_TYPES.action);
-                }
-              }
-              if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
-                _this7.sendTo(_this7.dest, ACTION_TYPES.attack);
-                return;
-              }
-              if (_this7.sounds && _this7.sounds.hit) {
-                _this7.visible && sound_lib/* sound */.s3.play(Array.isArray(_this7.sounds.hit) ? maths_randomItem(_this7.sounds.hit) : _this7.sounds.hit);
-              }
-              if (_this7.dest.hitPoints > 0) {
-                _this7.dest.hitPoints = getHitPointsWithDamage(_this7, _this7.dest);
-                if (_this7.dest.selected && (player.selectedUnit === _this7.dest || player.selectedBuilding === _this7.dest || player.selectedOther === _this7.dest)) {
-                  menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
-                }
-                _this7.dest.isAttacked(_this7);
-                if (_this7.dest.hitPoints <= 0) {
-                  _this7.dest.die();
-                  _this7.affectNewDest();
-                }
-              }
-            }, this.rateOfFire * 1000, false);
-          }
-          break;
-        case ACTION_TYPES.heal:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.sprite.onLoop = function () {
-            if (!_this7.getActionCondition(_this7.dest)) {
-              _this7.affectNewDest();
-              return;
-            }
-            if (_this7.destHasMoved()) {
-              _this7.realDest.i = _this7.dest.i;
-              _this7.realDest.j = _this7.dest.j;
-              _this7.realDest.x = _this7.dest.x;
-              _this7.realDest.y = _this7.dest.y;
-              var oldDeg = _this7.degree;
-              _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
-              if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
-                _this7.setTextures(SHEET_TYPES.action);
-              }
-            }
-            if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
-              _this7.sendTo(_this7.dest, ACTION_TYPES.heal);
-              return;
-            }
-            if (_this7.dest.hitPoints < _this7.dest.totalHitPoints) {
-              _this7.dest.hitPoints = Math.min(_this7.dest.hitPoints + _this7.healing, _this7.dest.totalHitPoints);
-              if (_this7.dest.selected && player.selectedUnit === _this7.dest) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this7.dest.hitPoints + '/' + _this7.dest.totalHitPoints);
-              }
-            }
-          };
-          break;
-        case ACTION_TYPES.takemeat:
-          this.startGathering(LOADING_TYPES.meat, '5178', {
-            checkOwner: true,
-            updateTexture: true
-          });
-          break;
-        case ACTION_TYPES.fishing:
-          this.startGathering(LOADING_TYPES.fish, null, {
-            checkOwner: true
-          });
-          if (this.category !== 'Boat') {
-            onSpriteLoopAtFrame(this.sprite, 6, function () {
-              _this7.visible && sound_lib/* sound */.s3.play('5125');
-            });
-          }
-          break;
-        case ACTION_TYPES.hunt:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          if (this.dest.isDead) {
-            this.previousDest ? this.goBackToPrevious() : this.sendToTakeMeat(this.dest);
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.sprite.onLoop = function () {
-            if (!_this7.getActionCondition(_this7.dest)) {
-              if (_this7.dest && _this7.dest.hitPoints <= 0) {
-                _this7.dest.die();
-                _this7.previousDest ? _this7.goBackToPrevious() : _this7.sendToTakeMeat(_this7.dest);
-                return;
-              }
-              _this7.affectNewDest();
-              return;
-            }
-            if (!_this7.isUnitAtDest(_this7.action, _this7.dest)) {
-              _this7.stop();
-              return;
-            }
-            if (_this7.destHasMoved()) {
-              _this7.realDest.i = _this7.dest.i;
-              _this7.realDest.j = _this7.dest.j;
-              _this7.realDest.x = _this7.dest.x;
-              _this7.realDest.y = _this7.dest.y;
-              var oldDeg = _this7.degree;
-              _this7.degree = getInstanceDegree(_this7, _this7.dest.x, _this7.dest.y);
-              if (degreeToDirection(oldDeg) !== degreeToDirection(_this7.degree)) {
-                _this7.setTextures(SHEET_TYPES.action);
-              }
-            }
-          };
-          onSpriteLoopAtFrame(this.sprite, 6, function () {
-            var projectile = new Projectile({
-              owner: _this7,
-              target: _this7.dest,
-              type: 'Spear',
-              destination: _this7.realDest,
-              damage: 4
-            }, _this7.context);
-            map.addChild(projectile);
-          });
-          break;
-        default:
-          this.stop();
-      }
+      return this.unitActions.getAction(name);
     }
   }, {
     key: "detect",
     value: function detect(instance) {
-      if (this.work === WORK_TYPES.attacker && instance && instance.family === FAMILY_TYPES.unit && !this.path.length && !this.dest && this.getActionCondition(instance, ACTION_TYPES.attack)) {
-        this.sendTo(instance, ACTION_TYPES.attack);
-      }
+      return this.unitCombat.detect(instance);
     }
   }, {
     key: "handleAffectNewDestHunter",
     value: function handleAffectNewDestHunter() {
-      var _this8 = this;
-      var firstTargets = findInstancesInSight(this, function (instance) {
-        return _this8.getActionCondition(instance, ACTION_TYPES.takemeat);
-      });
-      if (firstTargets.length) {
-        var target = getClosestInstanceWithPath(this, firstTargets);
-        if (target) {
-          if (this.action !== ACTION_TYPES.takemeat) {
-            this.action = ACTION_TYPES.takemeat;
-            if (this.allAssets[this.work]) {
-              this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].harvestSheet);
-            }
-          }
-          if (instanceContactInstance(this, target)) {
-            this.degree = getInstanceDegree(this, target.x, target.y);
-            this.getAction(this.action);
-            return true;
-          }
-          this.setDest(target.instance);
-          this.setPath(target.path);
-          return true;
-        }
-      }
-      var secondTargets = findInstancesInSight(this, function (instance) {
-        return _this8.getActionCondition(instance, ACTION_TYPES.hunt);
-      });
-      if (secondTargets.length) {
-        var _target = getClosestInstanceWithPath(this, secondTargets);
-        if (_target) {
-          if (this.action !== ACTION_TYPES.hunt) {
-            this.action = ACTION_TYPES.hunt;
-            if (this.allAssets[this.work]) {
-              this.actionSheet = lib/* Assets */.sP.cache.get(this.allAssets[this.work].actionSheet);
-            }
-          }
-          if (instanceContactInstance(this, _target)) {
-            this.degree = getInstanceDegree(this, _target.x, _target.y);
-            this.getAction(this.action);
-            return true;
-          }
-          this.setDest(_target.instance);
-          this.setPath(_target.path);
-          return true;
-        }
-      }
-      return false;
+      return this.unitCombat.handleAffectNewDestHunter();
     }
   }, {
     key: "upgrade",
     value: function upgrade(type) {
-      var data = this.owner.config.units[type];
-      this.type = type;
-      this.hitPoints = data.totalHitPoints - (this.totalHitPoints - this.hitPoints);
-      for (var _i4 = 0, _Object$entries3 = Object.entries(data); _i4 < _Object$entries3.length; _i4++) {
-        var _Object$entries3$_i = unit_slicedToArray(_Object$entries3[_i4], 2),
-          key = _Object$entries3$_i[0],
-          value = _Object$entries3$_i[1];
-        this[key] = value;
-      }
-      for (var _i5 = 0, _Object$entries4 = Object.entries(this.assets); _i5 < _Object$entries4.length; _i5++) {
-        var _Object$entries4$_i = unit_slicedToArray(_Object$entries4[_i5], 2),
-          _key2 = _Object$entries4$_i[0],
-          _value2 = _Object$entries4$_i[1];
-        this[_key2] = lib/* Assets */.sP.cache.get(_value2);
-      }
-      if (this.action && !this.path.length) {
-        this.getAction(this.action);
-      } else {
-        this.setTextures(this.currentSheet);
-      }
+      return this.unitActions.upgrade(type);
     }
   }, {
     key: "affectNewDest",
     value: function affectNewDest() {
-      var _this9 = this;
-      this.stopInterval();
-      if (this.previousDest && this.action !== ACTION_TYPES.delivery) {
-        this.goBackToPrevious();
-        return;
-      }
-      var handleSuccess = false;
-      if (this.type === UNIT_TYPES.villager && (this.action === ACTION_TYPES.takemeat || this.action === ACTION_TYPES.hunt)) {
-        handleSuccess = this.handleAffectNewDestHunter();
-      } else if (!this.dest || this.dest.family !== FAMILY_TYPES.animal) {
-        var targets = findInstancesInSight(this, function (instance) {
-          return _this9.getActionCondition(instance);
-        });
-        if (targets.length) {
-          var target = getClosestInstanceWithPath(this, targets);
-          if (target) {
-            if (instanceContactInstance(this, target)) {
-              this.degree = getInstanceDegree(this, target.x, target.y);
-              this.getAction(this.action);
-              return;
-            }
-            this.setDest(target.instance);
-            this.setPath(target.path);
-            return;
-          }
-        }
-      }
-      if (!handleSuccess) {
-        var notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer];
-        if (this.loading && !notDeliveryWork.includes(this.work)) {
-          this.sendToDelivery();
-        } else {
-          this.stop();
-        }
-      }
+      return this.unitMovement.affectNewDest();
     }
   }, {
     key: "isUnitAtDest",
     value: function isUnitAtDest(action, dest) {
-      if (!action) {
-        return false;
-      }
-      if (!dest) {
-        this.affectNewDest();
-        return false;
-      }
-      if ((this.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) && this.range && instancesDistance(this, dest) <= this.range) {
-        return true;
-      }
-      return instanceContactInstance(this, dest);
+      return this.unitMovement.isUnitAtDest(action, dest);
     }
   }, {
     key: "destHasMoved",
     value: function destHasMoved() {
-      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && instancesDistance(this, this.dest) <= this.sight;
+      return this.unitMovement.destHasMoved();
     }
   }, {
     key: "moveToPath",
     value: function moveToPath() {
-      var map = this.context.map;
-      var next = this.path[this.path.length - 1];
-      var nextCell = map.grid[next.i][next.j];
-      if (!this.dest || this.dest.isDestroyed) {
-        this.affectNewDest();
-        return;
-      }
-      // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.unit && nextCell.has.label !== this.label && nextCell.has.hasPath() && instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
-        this.sprite.stop();
-        return;
-      }
-      if (nextCell.solid && this.dest) {
-        this.sendTo(this.dest, this.action);
-        return;
-      }
-      if (!this.sprite.playing) {
-        this.sprite.play();
-      }
-      if (instancesDistance(this, nextCell, false) <= this.speed) {
-        this.z = nextCell.z;
-        this.i = nextCell.i;
-        this.j = nextCell.j;
-        this.zIndex = getInstanceZIndex(this);
-        if (this.currentCell.has === this) {
-          this.currentCell.has = null;
-          this.currentCell.solid = false;
-        }
-        this.currentCell = map.grid[this.i][this.j];
-        if (this.currentCell.has === null) {
-          this.currentCell.place(this);
-          this.currentCell.solid = true;
-        }
-        updateInstanceVisibility(this);
-        this.path.pop();
-
-        // Destination moved
-        if (this.destHasMoved()) {
-          this.sendTo(this.dest, this.action);
-          return;
-        }
-        if (this.isUnitAtDest(this.action, this.dest)) {
-          this.path = [];
-          this.stopInterval();
-          this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
-          this.getAction(this.action);
-          return;
-        }
-        if (!this.path.length) {
-          this.stop();
-        }
-      } else {
-        var _this$context4 = this.context,
-          menu = _this$context4.menu,
-          player = _this$context4.player;
-        // Move to next
-        var oldDeg = this.degree;
-        var speed = this.speed;
-        if (this.loading > 0) {
-          speed *= 0.8;
-        }
-        moveTowardPoint(this, nextCell.x, nextCell.y, speed);
-        canUpdateMinimap(this, player) && menu.updatePlayerMiniMap(this.owner);
-        if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
-          // Change animation according to degree
-          this.setTextures(SHEET_TYPES.walking);
-        }
-      }
+      return this.unitMovement.moveToPath();
     }
   }, {
     key: "isAttacked",
     value: function isAttacked(instance) {
+      var _this$handleIsAttacke;
       if (!instance || this.dest === instance || this.isDead) {
         return;
       }
+      if ((_this$handleIsAttacke = this.handleIsAttacked) !== null && _this$handleIsAttacke !== void 0 && _this$handleIsAttacke.call(this, instance, this)) return;
       var currentDest = this.dest;
       if (this.type === UNIT_TYPES.villager) {
         if (instance.family === FAMILY_TYPES.animal) {
@@ -4359,367 +5410,123 @@ var Unit = /*#__PURE__*/function (_Container) {
       this.interval = this.context.scheduler.add(callback, time);
     }
   }, {
-    key: "stopInterval",
-    value: function stopInterval() {
-      if (this.interval) {
-        this.context.scheduler.remove(this.interval);
-        this.interval = null;
-      }
-    }
-  }, {
-    key: "step",
-    value: function step() {
-      if (this.hitPoints <= 0) {
-        this.die();
-      } else if (this.hasPath()) {
-        this.moveToPath();
-      }
-    }
-  }, {
     key: "explore",
     value: function explore() {
-      var map = this.context.map;
-      var grid = map.grid;
-      var views = this.owner.views;
-      // Scan rings outward, stop at first ring containing an unviewed non-solid cell
-      for (var r = 1; r <= 50; r++) {
-        for (var dx = -r; dx <= r; dx++) {
-          var x = this.i + dx;
-          var row = grid[x];
-          if (!row) continue;
-          var dyMax = r - Math.abs(dx);
-          // Only cells exactly on the ring border (|dx|+|dy|===r)
-          for (var _i6 = 0, _arr = dyMax === 0 ? [0] : [-dyMax, dyMax]; _i6 < _arr.length; _i6++) {
-            var dy = _arr[_i6];
-            var cell = row[this.j + dy];
-            if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
-              this.sendTo(views[cell.i][cell.j]);
-              return;
-            }
-          }
-        }
-      }
+      return this.unitMovement.explore();
     }
   }, {
     key: "runaway",
     value: function runaway(instance) {
-      var map = this.context.map;
-      // Flee in the opposite direction from attacker — O(sight) instead of O(sight²)
-      var di = this.i - instance.i;
-      var dj = this.j - instance.j;
-      var len = Math.sqrt(di * di + dj * dj) || 1;
-      for (var dist = this.sight; dist >= 1; dist--) {
-        var _map$grid$ti$length, _map$grid$ti;
-        var ti = Math.round(this.i + di / len * dist);
-        var tj = Math.round(this.j + dj / len * dist);
-        if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < ((_map$grid$ti$length = (_map$grid$ti = map.grid[ti]) === null || _map$grid$ti === void 0 ? void 0 : _map$grid$ti.length) !== null && _map$grid$ti$length !== void 0 ? _map$grid$ti$length : 0)) {
-          var cell = map.grid[ti][tj];
-          if (!cell.solid && !cell.border) {
-            this.sendTo(this.owner.views[ti][tj]);
-            return;
-          }
-        }
-      }
-      this.stop();
+      return this.unitMovement.runaway(instance);
     }
   }, {
     key: "decompose",
     value: function decompose() {
-      var map = this.context.map;
-      this.setTextures(SHEET_TYPES.corpse);
-      this.sprite.animationSpeed = 1 / (CORPSE_TIME * 1000) * ACCELERATOR;
-      if (map.grid[this.i][this.j].has === this) {
-        map.grid[this.i][this.j].has = null;
-        map.grid[this.i][this.j].corpses.add(this);
-        map.grid[this.i][this.j].solid = false;
-      }
+      return this.unitLifecycle.decompose();
     }
   }, {
     key: "death",
     value: function death() {
-      var _this0 = this;
-      this.setTextures(SHEET_TYPES.dying);
-      this.zIndex--;
-      this.sprite.loop = false;
-      this.sprite.onComplete = function () {
-        updateInstanceVisibility(_this0);
-        // Remove from player units
-        var index = _this0.owner.corpses.indexOf(_this0);
-        if (index < 0) {
-          _this0.owner.corpses.push(_this0);
-        }
-        _this0.decompose();
-      };
+      return this.unitLifecycle.death();
     }
   }, {
     key: "die",
     value: function die() {
-      if (this.isDead) {
-        return;
-      }
-      var _this$context5 = this.context,
-        player = _this$context5.player,
-        menu = _this$context5.menu;
-      this.sounds && this.sounds.die && this.visible && sound_lib/* sound */.s3.play(Array.isArray(this.sounds.die) ? maths_randomItem(this.sounds.die) : this.sounds.die);
-      this.stopInterval();
-      clearTimeout(this.visibilityTimeout);
-      if (this.selected && player.selectedOther === this) {
-        player.unselectUnit(this);
-      }
-      if (this.dest && this.dest.isUsedBy === this) {
-        this.dest.isUsedBy = null;
-      }
-      this.hitPoints = 0;
-      this.path = [];
-      this.action = null;
-      this.eventMode = 'none';
-      this.isDead = true;
-      this.unselect();
-      if (this.owner) {
-        this.owner.population--;
-        if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-          menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
-        }
-        // Remove from player units
-        var index = this.owner.units.indexOf(this);
-        if (index >= 0) {
-          this.owner.units.splice(index, 1);
-        }
-        // Update from player selected unit
-        if (this.owner.selectedUnit === this) {
-          menu.updateInfo(MENU_INFO_IDS.hitPoints, this.hitPoints + '/' + this.totalHitPoints);
-        }
-      }
-      this.death();
-      canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
+      return this.unitLifecycle.die();
     }
   }, {
     key: "clear",
     value: function clear() {
-      var map = this.context.map;
-      this.isDestroyed = true;
-      // Remove from player units
-      var index = this.owner.corpses.indexOf(this);
-      if (index >= 0) {
-        this.owner.corpses.splice(index, 1);
-      }
-      map.grid[this.i][this.j].corpses["delete"](this);
-      map.removeChild(this);
-      this.destroy({
-        child: true,
-        texture: true
-      });
-    }
-  }, {
-    key: "setTextures",
-    value: function setTextures(sheet) {
-      setUnitTexture(sheet, this, ACCELERATOR);
+      return this.unitLifecycle.clear();
     }
   }, {
     key: "updateInterfaceLoading",
     value: function updateInterfaceLoading() {
-      var _this1 = this;
-      var menu = this.context.menu;
-      if (this.selected && this.owner.isPlayed && this.owner.selectedUnit === this) {
-        if (this.loading === 1) {
-          var iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType];
-          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            element.replaceChildren();
-            var iconImg = document.createElement('img');
-            iconImg.className = 'unit-loading-icon';
-            iconImg.src = iconSrc;
-            var textDiv = document.createElement('div');
-            textDiv.id = MENU_INFO_IDS.loadingText;
-            textDiv.textContent = _this1.loading;
-            element.appendChild(iconImg);
-            element.appendChild(textDiv);
-          });
-        } else if (this.loading > 1) {
-          menu.updateInfo(MENU_INFO_IDS.loadingText, this.loading);
-        } else {
-          menu.updateInfo(MENU_INFO_IDS.loading, function (element) {
-            return element.innerHTML = '';
-          });
-        }
-      }
+      this.unitInterface.updateLoading();
     }
   }, {
     key: "getLoadingElement",
     value: function getLoadingElement() {
-      var menu = this.context.menu;
-      var loadingDiv = document.createElement('div');
-      loadingDiv.className = 'unit-loading';
-      loadingDiv.id = MENU_INFO_IDS.loading;
-      if (this.loading) {
-        var iconImg = document.createElement('img');
-        iconImg.className = 'unit-loading-icon';
-        iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(this.loadingType) ? 'food' : this.loadingType];
-        var textDiv = document.createElement('div');
-        textDiv.id = MENU_INFO_IDS.loadingText;
-        textDiv.textContent = this.loading;
-        loadingDiv.appendChild(iconImg);
-        loadingDiv.appendChild(textDiv);
-      }
-      return loadingDiv;
+      return this.unitInterface.getLoadingElement();
     }
   }, {
     key: "commonSendTo",
     value: function commonSendTo(target, work, action, keepPrevious) {
-      var menu = this.context.menu;
-      var workFromLoading = getWorkWithLoadingType(this.loadingType);
-      if (work !== WORK_TYPES.builder && work !== workFromLoading && !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))) {
-        this.loading = 0;
-        this.loadingType = null;
-        this.updateInterfaceLoading();
-      }
-      if (this.work !== work || this.action !== action) {
-        this.work = work;
-        this.owner.isPlayed && this.owner.selectedUnit === this && menu.updateInfo(MENU_INFO_IDS.type, this.work);
-        if (this.allAssets && this.allAssets[work]) {
-          this.actionSheet = getActionSheet(work, action, lib/* Assets */.sP, this);
-          if (!this.loading) {
-            this.standingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.standing]);
-            this.walkingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.walking]);
-            this.dyingSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.dying]);
-            this.corpseSheet = lib/* Assets */.sP.cache.get(this.allAssets[work][SHEET_TYPES.corpse]);
-          }
-        }
-      }
-      this.previousDest = keepPrevious ? this.previousDest : null;
-      return this.sendTo(target, action);
+      var immediate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      return this.unitCommands.commonSendTo(target, work, action, keepPrevious, immediate);
+    }
+
+    // Navigate to arrivalCell but set target as the attack dest.
+    // Avoids the N×M A* calls getInstanceClosestFreeCellPath makes when multiple
+    // units are sent to the same solid target — each unit gets exactly one A* call.
+  }, {
+    key: "sendToWithCell",
+    value: function sendToWithCell(target, arrivalCell, action) {
+      return this.unitCommands.sendToWithCell(target, arrivalCell, action);
     }
   }, {
     key: "sendToDelivery",
     value: function sendToDelivery() {
-      var _this10 = this;
-      var map = this.context.map;
-      var buildingTypes = [];
-      if (this.category === 'Boat') {
-        buildingTypes = [BUILDING_TYPES.dock];
-      } else {
-        buildingTypes = [BUILDING_TYPES.townCenter];
-        var buildings = {
-          Granary: this.owner.config.buildings.Granary,
-          StoragePit: this.owner.config.buildings.StoragePit
-        };
-        for (var _i7 = 0, _Object$entries5 = Object.entries(buildings); _i7 < _Object$entries5.length; _i7++) {
-          var _Object$entries5$_i = unit_slicedToArray(_Object$entries5[_i7], 2),
-            key = _Object$entries5$_i[0],
-            value = _Object$entries5$_i[1];
-          if (value.accept && value.accept.includes(this.loadingType)) {
-            buildingTypes.push(key);
-            break;
-          }
-        }
-      }
-      var targets = this.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(_this10, building, ACTION_TYPES.delivery, {
-          buildingTypes: buildingTypes
-        });
-      });
-      var target = getClosestInstance(this, targets);
-      if (this.dest) {
-        this.previousDest = this.dest;
-      } else {
-        this.previousDest = map.grid[this.i][this.j];
-      }
-      this.sendTo(target, ACTION_TYPES.delivery);
+      return this.unitCommands.sendToDelivery();
     }
   }, {
     key: "sendToFish",
     value: function sendToFish(target) {
-      return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing);
+      return this.unitCommands.sendToFish(target);
     }
   }, {
     key: "sendToAttack",
     value: function sendToAttack(target) {
-      return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, {
-        resource: 'attack'
-      });
+      return this.unitCommands.sendToAttack(target);
     }
   }, {
     key: "sendToTakeMeat",
     value: function sendToTakeMeat(target) {
-      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.takemeat, {
-        actionSheet: SHEET_TYPES.harvest
-      });
+      var immediate = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      return this.unitCommands.sendToTakeMeat(target, immediate);
     }
   }, {
     key: "sendToHunt",
     value: function sendToHunt(target) {
-      return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt);
+      return this.unitCommands.sendToHunt(target);
     }
   }, {
     key: "sendToBuilding",
     value: function sendToBuilding(target) {
-      return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build);
+      return this.unitCommands.sendToBuilding(target);
     }
   }, {
     key: "sendToFarm",
     value: function sendToFarm(target) {
-      return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm);
+      return this.unitCommands.sendToFarm(target);
     }
   }, {
     key: "sendToTree",
     value: function sendToTree(target) {
-      return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood);
+      return this.unitCommands.sendToTree(target);
     }
   }, {
     key: "sendToBerrybush",
     value: function sendToBerrybush(target) {
-      return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry);
+      return this.unitCommands.sendToBerrybush(target);
     }
   }, {
     key: "sendToStone",
     value: function sendToStone(target) {
-      return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone);
+      return this.unitCommands.sendToStone(target);
     }
   }, {
     key: "sendToGold",
     value: function sendToGold(target) {
-      return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold);
+      return this.unitCommands.sendToGold(target);
     }
   }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
-      var civDiv = document.createElement('div');
-      civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = this.owner.civ;
-      element.appendChild(civDiv);
-      var typeDiv = document.createElement('div');
-      typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = this.type === UNIT_TYPES.villager ? this.work || this.type : this.type;
-      element.appendChild(typeDiv);
-      var iconImg = document.createElement('img');
-      iconImg.id = MENU_INFO_IDS.icon;
-      iconImg.src = getIconPath(data.icon);
-      element.appendChild(iconImg);
-      var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-      hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
-      element.appendChild(hitPointsDiv);
-      var infosDiv = document.createElement('div');
-      infosDiv.id = 'infos';
-      var infos = [['meleeAttack', '007_50731'], ['pierceAttack', '006_50731'], ['meleeArmor', '008_50731'], ['pierceArmor', '010_50731']];
-      for (var i = 0; i < infos.length; i++) {
-        var info = infos[i];
-        if (data[info[0]]) {
-          var infoDiv = document.createElement('div');
-          infoDiv.id = 'info';
-          var attackImg = document.createElement('img');
-          attackImg.src = getIconPath(info[1]);
-          var attackDiv = document.createElement('div');
-          attackDiv.id = info[0];
-          attackDiv.textContent = data[info[0]];
-          infoDiv.appendChild(attackImg);
-          infoDiv.appendChild(attackDiv);
-          infosDiv.appendChild(infoDiv);
-        }
-      }
-      element.appendChild(infosDiv);
+      this.unitInterface.setDefaultInterface(element, data);
     }
   }]);
-}(lib/* Container */.mcf);
+}(Instance);
 ;// ./app/classes/players/player.js
 function player_typeof(o) { "@babel/helpers - typeof"; return player_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, player_typeof(o); }
 function player_toConsumableArray(r) { return player_arrayWithoutHoles(r) || player_iterableToArray(r) || player_unsupportedIterableToArray(r) || player_nonIterableSpread(); }
@@ -4936,12 +5743,882 @@ var Player = /*#__PURE__*/function () {
     }
   }]);
 }();
+;// ./app/ai/AIMilitary.js
+function AIMilitary_typeof(o) { "@babel/helpers - typeof"; return AIMilitary_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AIMilitary_typeof(o); }
+function AIMilitary_toConsumableArray(r) { return AIMilitary_arrayWithoutHoles(r) || AIMilitary_iterableToArray(r) || AIMilitary_unsupportedIterableToArray(r) || AIMilitary_nonIterableSpread(); }
+function AIMilitary_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function AIMilitary_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function AIMilitary_arrayWithoutHoles(r) { if (Array.isArray(r)) return AIMilitary_arrayLikeToArray(r); }
+function AIMilitary_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = AIMilitary_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function AIMilitary_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return AIMilitary_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? AIMilitary_arrayLikeToArray(r, a) : void 0; } }
+function AIMilitary_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function AIMilitary_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AIMilitary_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AIMilitary_toPropertyKey(o.key), o); } }
+function AIMilitary_createClass(e, r, t) { return r && AIMilitary_defineProperties(e.prototype, r), t && AIMilitary_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AIMilitary_toPropertyKey(t) { var i = AIMilitary_toPrimitive(t, "string"); return "symbol" == AIMilitary_typeof(i) ? i : i + ""; }
+function AIMilitary_toPrimitive(t, r) { if ("object" != AIMilitary_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AIMilitary_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var AIMilitary = /*#__PURE__*/function () {
+  function AIMilitary(ai, strategy) {
+    AIMilitary_classCallCheck(this, AIMilitary);
+    this.ai = ai;
+    this.strategy = strategy;
+  }
+  return AIMilitary_createClass(AIMilitary, [{
+    key: "sendToAttack",
+    value: function sendToAttack(soldiers, target) {
+      var _map$grid$target$i;
+      var debug = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      if (debug) console.log('Sending soldiers to attack:', target);
+      soldiers.forEach(function (c) {
+        c.assault = true;
+      });
+      var map = this.ai.context.map;
+      var targetCell = (_map$grid$target$i = map.grid[target.i]) === null || _map$grid$target$i === void 0 ? void 0 : _map$grid$target$i[target.j];
+      if (soldiers.length > 1 && targetCell !== null && targetCell !== void 0 && targetCell.solid) {
+        var _targetCell$has;
+        var size = target.size || ((_targetCell$has = targetCell.has) === null || _targetCell$has === void 0 ? void 0 : _targetCell$has.size) || 1;
+        var dist = size === 3 ? 2 : 1;
+        var candidates = getCellsAroundPoint(target.i, target.j, map.grid, dist, function (cell) {
+          return !cell.solid && cell.category !== 'Water';
+        });
+        var taken = new Set();
+        var _iterator = AIMilitary_createForOfIteratorHelper(soldiers),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var soldier = _step.value;
+            var best = null,
+              bestDist = Infinity;
+            var _iterator2 = AIMilitary_createForOfIteratorHelper(candidates),
+              _step2;
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var cell = _step2.value;
+                if (taken.has(cell)) continue;
+                var d = Math.abs(cell.i - soldier.i) + Math.abs(cell.j - soldier.j);
+                if (d < bestDist) {
+                  bestDist = d;
+                  best = cell;
+                }
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+            if (best) {
+              taken.add(best);
+              soldier.sendToWithCell(target, best, ACTION_TYPES.attack);
+            } else {
+              soldier.sendTo(target, ACTION_TYPES.attack);
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+      } else {
+        soldiers.forEach(function (c) {
+          return c.sendTo(target, ACTION_TYPES.attack);
+        });
+      }
+    }
+  }, {
+    key: "getBestEnemyTarget",
+    value: function getBestEnemyTarget() {
+      var foundedEnemyBuildings = this.ai.foundedEnemyBuildings;
+      return AIMilitary_toConsumableArray(foundedEnemyBuildings).find(function (b) {
+        return b.type === BUILDING_TYPES.townCenter;
+      }) || foundedEnemyBuildings.values().next().value;
+    }
+  }, {
+    key: "handleActions",
+    value: function handleActions(_ref) {
+      var waitingMilitary = _ref.waitingMilitary,
+        inactifMilitary = _ref.inactifMilitary,
+        howManySoldiersBeforeAttack = _ref.howManySoldiersBeforeAttack,
+        _ref$debug = _ref.debug,
+        debug = _ref$debug === void 0 ? false : _ref$debug;
+      var ai = this.ai;
+      var difficultyConfig = this.strategy.difficultyConfig;
+      var map = ai.context.map;
+      var actions = 0;
+      var availableMilitary = AIMilitary_toConsumableArray(waitingMilitary);
+      if (ai.foundedEnemyUnits.size > 0 && availableMilitary.length > 0) {
+        var enemyUnit = AIMilitary_toConsumableArray(ai.foundedEnemyUnits).find(function (u) {
+          return u.hitPoints > 0;
+        });
+        if (enemyUnit) {
+          if (debug) console.log('Enemy units spotted! Defending...');
+          this.sendToAttack(availableMilitary.splice(0), enemyUnit, debug);
+          actions++;
+        }
+      }
+      var raidThreshold = difficultyConfig.raidThreshold;
+      var raidSize = difficultyConfig.raidSize;
+      if (raidThreshold > 0 && ai.phase === 'military_build' && availableMilitary.length >= raidThreshold) {
+        var raidTarget = AIMilitary_toConsumableArray(ai.foundedEnemyUnits).find(function (u) {
+          return u.hitPoints > 0 && u.type === UNIT_TYPES.villager;
+        }) || ai.foundedEnemyBuildings.values().next().value;
+        if (raidTarget) {
+          if (debug) console.log("Early raid! Sending ".concat(raidSize, " soldiers to harass."));
+          this.sendToAttack(availableMilitary.splice(0, raidSize), raidTarget, debug);
+          actions++;
+        }
+      }
+      if (ai.phase === 'attack' && availableMilitary.length >= howManySoldiersBeforeAttack) {
+        var defenderCount = Math.max(2, Math.floor(availableMilitary.length * difficultyConfig.defenderRatio));
+        var attackers = availableMilitary.slice(defenderCount);
+        if (attackers.length > 0) {
+          var target = this.getBestEnemyTarget() || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
+          if (debug) console.log("Launching attack wave! ".concat(attackers.length, " attackers, ").concat(defenderCount, " defenders. Target:"), target);
+          this.sendToAttack(attackers, target, debug);
+          actions++;
+        }
+      }
+      if (inactifMilitary.length && ai.foundedEnemyBuildings.size) {
+        var _target = this.getBestEnemyTarget();
+        if (_target) {
+          if (debug) console.log('Redirecting assault soldiers to:', _target);
+          this.sendToAttack(inactifMilitary, _target, debug);
+          actions++;
+        }
+      }
+      return actions;
+    }
+  }]);
+}();
+;// ./app/ai/AIStrategy.js
+function AIStrategy_typeof(o) { "@babel/helpers - typeof"; return AIStrategy_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AIStrategy_typeof(o); }
+function AIStrategy_slicedToArray(r, e) { return AIStrategy_arrayWithHoles(r) || AIStrategy_iterableToArrayLimit(r, e) || AIStrategy_unsupportedIterableToArray(r, e) || AIStrategy_nonIterableRest(); }
+function AIStrategy_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function AIStrategy_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function AIStrategy_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function AIStrategy_toConsumableArray(r) { return AIStrategy_arrayWithoutHoles(r) || AIStrategy_iterableToArray(r) || AIStrategy_unsupportedIterableToArray(r) || AIStrategy_nonIterableSpread(); }
+function AIStrategy_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function AIStrategy_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function AIStrategy_arrayWithoutHoles(r) { if (Array.isArray(r)) return AIStrategy_arrayLikeToArray(r); }
+function AIStrategy_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = AIStrategy_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function AIStrategy_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return AIStrategy_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? AIStrategy_arrayLikeToArray(r, a) : void 0; } }
+function AIStrategy_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function AIStrategy_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AIStrategy_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AIStrategy_toPropertyKey(o.key), o); } }
+function AIStrategy_createClass(e, r, t) { return r && AIStrategy_defineProperties(e.prototype, r), t && AIStrategy_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AIStrategy_defineProperty(e, r, t) { return (r = AIStrategy_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function AIStrategy_toPropertyKey(t) { var i = AIStrategy_toPrimitive(t, "string"); return "symbol" == AIStrategy_typeof(i) ? i : i + ""; }
+function AIStrategy_toPrimitive(t, r) { if ("object" != AIStrategy_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AIStrategy_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var DIFFICULTIES = {
+  easy: {
+    stepDelayBase: 6000,
+    popCapMultiplier: 0.7,
+    attackThreshold: 8,
+    defenderRatio: 0.5,
+    econToMilVillagers: 16,
+    raidThreshold: 0,
+    raidSize: 0
+  },
+  medium: {
+    stepDelayBase: 4000,
+    popCapMultiplier: 1.0,
+    attackThreshold: 5,
+    defenderRatio: 0.3,
+    econToMilVillagers: 12,
+    raidThreshold: 0,
+    raidSize: 0
+  },
+  hard: {
+    stepDelayBase: 2500,
+    popCapMultiplier: 1.3,
+    attackThreshold: 3,
+    defenderRatio: 0.2,
+    econToMilVillagers: 8,
+    raidThreshold: 4,
+    raidSize: 3
+  }
+};
+var NEXT_AGE = {
+  1: 'ToolAge',
+  2: 'BronzeAge',
+  3: 'IronAge'
+};
+var MAX_VILLAGER_PER_AGE = {
+  0: 16,
+  1: 24,
+  2: 40,
+  3: 50
+};
+var VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
+  0: {
+    wood: 40,
+    food: 60,
+    gold: 0,
+    stone: 0
+  },
+  1: {
+    wood: 45,
+    food: 45,
+    gold: 10,
+    stone: 0
+  },
+  2: {
+    wood: 35,
+    food: 35,
+    gold: 20,
+    stone: 10
+  },
+  3: {
+    wood: 30,
+    food: 30,
+    gold: 25,
+    stone: 15
+  }
+};
+var MAX_BUILDING_BY_AGE = {
+  0: {
+    StoragePit: 1,
+    Granary: 1,
+    Barracks: 1,
+    Market: 1
+  },
+  1: {
+    StoragePit: 2,
+    Granary: 2,
+    Farm: 4,
+    Barracks: 1,
+    Market: 1,
+    ArcheryRange: 1,
+    Stable: 1,
+    WatchTower: 2
+  },
+  2: {
+    StoragePit: 3,
+    Granary: 3,
+    Farm: 6,
+    Barracks: 2,
+    Market: 1,
+    ArcheryRange: 1,
+    Stable: 1,
+    Academy: 1,
+    WatchTower: 3,
+    SentryTower: 2
+  },
+  3: {
+    StoragePit: 4,
+    Granary: 4,
+    Farm: 10,
+    Barracks: 2,
+    Market: 1,
+    ArcheryRange: 2,
+    Stable: 1,
+    Academy: 1,
+    WatchTower: 3,
+    SentryTower: 3
+  }
+};
+var TECH_PRIORITY_BY_BUILDING = AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty({}, BUILDING_TYPES.barracks, ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword']), BUILDING_TYPES.archeryRange, ['ImprovedBow', 'CompositeBow']), BUILDING_TYPES.storagePit, ['Toolworking', 'LeatherArmorInfantry', 'Metalworking', 'ScaleArmorInfantry', 'Metallurgy', 'ChainmailInfantry', 'BronzeShield', 'IronShield']), BUILDING_TYPES.market, ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication']), BUILDING_TYPES.granary, ['ResearchWatchTower', 'ResearchSentryTower']);
+var AIStrategy = /*#__PURE__*/function () {
+  function AIStrategy(ai) {
+    var difficulty = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'medium';
+    AIStrategy_classCallCheck(this, AIStrategy);
+    this.ai = ai;
+    this.difficulty = difficulty;
+    this.difficultyConfig = DIFFICULTIES[difficulty] || DIFFICULTIES.medium;
+    this.nextAge = NEXT_AGE;
+    this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE;
+    this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE;
+    this.maxBuildingByAge = MAX_BUILDING_BY_AGE;
+    this.maxInfantryByAge = {
+      0: 8,
+      1: 8,
+      2: 10,
+      3: 12
+    };
+    this.maxArcherByAge = {
+      0: 0,
+      1: 4,
+      2: 6,
+      3: 8
+    };
+    this.maxCavalryByAge = {
+      0: 0,
+      1: 3,
+      2: 4,
+      3: 5
+    };
+    this.maxHopliteByAge = {
+      0: 0,
+      1: 0,
+      2: 2,
+      3: 4
+    };
+    this.techPriorityByBuilding = TECH_PRIORITY_BY_BUILDING;
+    this.military = new AIMilitary(ai, this);
+  }
+  return AIStrategy_createClass(AIStrategy, [{
+    key: "applyConfig",
+    value: function applyConfig(target) {
+      target.difficultyConfig = this.difficultyConfig;
+      target.nextAge = this.nextAge;
+      target.maxVillagerPerAge = this.maxVillagerPerAge;
+      target.villageTargetPercentageByAge = this.villageTargetPercentageByAge;
+      target.maxBuildingByAge = this.maxBuildingByAge;
+      target.maxInfantryByAge = this.maxInfantryByAge;
+      target.maxArcherByAge = this.maxArcherByAge;
+      target.maxCavalryByAge = this.maxCavalryByAge;
+      target.maxHopliteByAge = this.maxHopliteByAge;
+      target.techPriorityByBuilding = this.techPriorityByBuilding;
+    }
+  }, {
+    key: "canResearchTech",
+    value: function canResearchTech(techKey) {
+      var ai = this.ai;
+      var tech = ai.techs[techKey];
+      if (!(tech !== null && tech !== void 0 && tech.conditions)) return true;
+      return tech.conditions.every(function (cond) {
+        if (cond.key === 'age') {
+          if (cond.op === '>=') return ai.age >= cond.value;
+          if (cond.op === '=') return ai.age === cond.value;
+        }
+        if (cond.key === 'technologies') {
+          if (cond.op === 'includes') return ai.technologies.includes(cond.value);
+          if (cond.op === 'notincludes') return !ai.technologies.includes(cond.value);
+        }
+        return true;
+      });
+    }
+  }, {
+    key: "getBestInfantryUnit",
+    value: function getBestInfantryUnit() {
+      var technologies = this.ai.technologies;
+      if (technologies.includes('LongSword')) return 'LongSwordsman';
+      if (technologies.includes('BroadSword')) return 'BroadSwordsman';
+      if (technologies.includes('ShortSword')) return 'ShortSwordsman';
+      if (technologies.includes('BattleAxe')) return 'Axeman';
+      return 'Clubman';
+    }
+  }, {
+    key: "getBestArcherUnit",
+    value: function getBestArcherUnit() {
+      var technologies = this.ai.technologies;
+      if (technologies.includes('CompositeBow')) return 'CompositeBowman';
+      if (technologies.includes('ImprovedBow')) return 'ImprovedBowman';
+      return 'Bowman';
+    }
+  }, {
+    key: "updatePhase",
+    value: function updatePhase(villagersCount, militaryCount) {
+      var ai = this.ai,
+        difficultyConfig = this.difficultyConfig;
+      if (ai.phase === 'economy' && villagersCount >= difficultyConfig.econToMilVillagers) {
+        ai.phase = 'military_build';
+        return 'military_build';
+      }
+      if (ai.phase === 'military_build' && militaryCount >= difficultyConfig.attackThreshold) {
+        ai.phase = 'attack';
+        return 'attack';
+      }
+      if (ai.phase === 'attack' && militaryCount < Math.ceil(difficultyConfig.attackThreshold * 0.4)) {
+        ai.phase = 'military_build';
+        return 'military_build';
+      }
+      return ai.phase;
+    }
+  }, {
+    key: "handleMilitaryActions",
+    value: function handleMilitaryActions(options) {
+      return this.military.handleActions(options);
+    }
+  }, {
+    key: "buyUnits",
+    value: function buyUnits(currentCount, maxCount, buildingList, unitType, extra) {
+      var debug = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+      var unitsNeeded = maxCount - currentCount;
+      var unitsBought = 0;
+      if (unitsNeeded <= 0) return 0;
+      var _iterator = AIStrategy_createForOfIteratorHelper(buildingList),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var building = _step.value;
+          if (unitsBought >= unitsNeeded) break;
+          if (building && building.buyUnit(unitType, false, false, extra)) {
+            unitsBought++;
+            if (debug) console.log("Buying ".concat(unitType, " from ").concat(building.type, ", Total Bought: ").concat(unitsBought));
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      return unitsBought;
+    }
+  }, {
+    key: "handleProductionActions",
+    value: function handleProductionActions(snapshot) {
+      var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var villagers = snapshot.villagers,
+        maxVillagers = snapshot.maxVillagers,
+        towncenters = snapshot.towncenters,
+        infantry = snapshot.infantry,
+        maxInfantry = snapshot.maxInfantry,
+        barracks = snapshot.barracks,
+        infantryUnit = snapshot.infantryUnit,
+        archers = snapshot.archers,
+        maxArcher = snapshot.maxArcher,
+        archeryRanges = snapshot.archeryRanges,
+        archerUnit = snapshot.archerUnit,
+        cavalry = snapshot.cavalry,
+        maxCavalry = snapshot.maxCavalry,
+        stables = snapshot.stables,
+        hoplites = snapshot.hoplites,
+        maxHoplite = snapshot.maxHoplite,
+        academies = snapshot.academies;
+      var actions = 0;
+      actions += this.buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager, undefined, debug);
+      actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, debug);
+      actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, debug);
+      actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, debug);
+      actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, debug);
+      return actions;
+    }
+  }, {
+    key: "buyBuildingIfNeeded",
+    value: function buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback) {
+      var debug = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      var ai = this.ai;
+      var building = ai.config.buildings[buildingType];
+      if (condition && canAfford(ai, building.cost) && ai.hasNotReachBuildingLimit(buildingType, buildingsByType[buildingType])) {
+        var pos = positionCallback();
+        if (pos && ai.buyBuilding(pos.i, pos.j, buildingType)) {
+          if (debug) console.log("Buying building: ".concat(buildingType, " at position:"), pos);
+          return true;
+        }
+      }
+      return false;
+    }
+  }, {
+    key: "handleBuildingActions",
+    value: function handleBuildingActions(snapshot) {
+      var _buildingsByType,
+        _this = this;
+      var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var ai = this.ai;
+      var map = snapshot.map,
+        otherPlayers = snapshot.otherPlayers,
+        towncenters = snapshot.towncenters,
+        houses = snapshot.houses,
+        farms = snapshot.farms,
+        barracks = snapshot.barracks,
+        granarys = snapshot.granarys,
+        storagepits = snapshot.storagepits,
+        markets = snapshot.markets,
+        archeryRanges = snapshot.archeryRanges,
+        stables = snapshot.stables,
+        academies = snapshot.academies,
+        watchTowers = snapshot.watchTowers,
+        sentryTowers = snapshot.sentryTowers,
+        notBuiltHouses = snapshot.notBuiltHouses;
+      var buildingsByType = (_buildingsByType = {}, AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(_buildingsByType, BUILDING_TYPES.house, houses), BUILDING_TYPES.farm, farms), BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.granary, granarys), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.stable, stables), BUILDING_TYPES.academy, academies), BUILDING_TYPES.watchTower, watchTowers), AIStrategy_defineProperty(_buildingsByType, BUILDING_TYPES.sentryTower, sentryTowers));
+      var isEnemyFacing = function isEnemyFacing(origin) {
+        return function (cell) {
+          return otherPlayers.every(function (player) {
+            return instancesDistance(cell, player) <= instancesDistance(origin, player);
+          });
+        };
+      };
+      var buy = function buy(condition, buildingType, positionCallback) {
+        return _this.buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, debug);
+      };
+      var actions = 0;
+      if (buy(ai.population + 2 > ai.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0);
+      })) actions++;
+      if (buy(ai.phase !== 'economy', BUILDING_TYPES.barracks, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(markets.length === 0, BUILDING_TYPES.market, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(barracks.length > 0, BUILDING_TYPES.archeryRange, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(barracks.length > 0, BUILDING_TYPES.stable, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(stables.some(function (s) {
+        return s.isBuilt;
+      }), BUILDING_TYPES.academy, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(true, BUILDING_TYPES.farm, function () {
+        var buildings = [].concat(AIStrategy_toConsumableArray(granarys), AIStrategy_toConsumableArray(towncenters));
+        var _iterator2 = AIStrategy_createForOfIteratorHelper(buildings),
+          _step2;
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var building = _step2.value;
+            var position = getPositionInGridAroundInstance(building, map.grid, [2, 10], 2, false, isEnemyFacing(building), false);
+            if (position) return position;
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+        return null;
+      })) actions++;
+      if (buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      if (buy(ai.technologies.includes('ResearchSentryTower'), BUILDING_TYPES.sentryTower, function () {
+        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, isEnemyFacing(towncenters[0]));
+      })) actions++;
+      return actions;
+    }
+  }, {
+    key: "buyTechnology",
+    value: function buyTechnology(buildingList, technologyType) {
+      var debug = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var bought = 0;
+      var _iterator3 = AIStrategy_createForOfIteratorHelper(buildingList),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var building = _step3.value;
+          if (building && building.buyTechnology(technologyType)) {
+            if (debug) console.log("Buying ".concat(technologyType, " from ").concat(building.type));
+            bought++;
+          }
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+      return bought;
+    }
+  }, {
+    key: "handleTechnologyActions",
+    value: function handleTechnologyActions(snapshot) {
+      var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var ai = this.ai;
+      var maxVillagers = snapshot.maxVillagers,
+        towncenters = snapshot.towncenters,
+        barracks = snapshot.barracks,
+        archeryRanges = snapshot.archeryRanges,
+        storagepits = snapshot.storagepits,
+        markets = snapshot.markets,
+        granarys = snapshot.granarys;
+      var actions = 0;
+      var ageUpCosts = {
+        1: {
+          food: 500
+        },
+        2: {
+          food: 800
+        },
+        3: {
+          food: 1000,
+          gold: 800
+        }
+      };
+      var ageUpBuffers = {
+        1: {
+          food: 200
+        },
+        2: {
+          food: 200
+        },
+        3: {
+          food: 200,
+          gold: 200
+        }
+      };
+      var nextAgeKey = ai.age + 1;
+      if (ai.nextAge[nextAgeKey]) {
+        var cost = ageUpCosts[nextAgeKey] || {};
+        var buffer = ageUpBuffers[nextAgeKey] || {};
+        var popReady = ai.population >= Math.floor(maxVillagers * 0.8);
+        var resReady = Object.entries(cost).every(function (_ref) {
+          var _ref2 = AIStrategy_slicedToArray(_ref, 2),
+            res = _ref2[0],
+            amount = _ref2[1];
+          return ai[res] >= amount + (buffer[res] || 0);
+        });
+        if (popReady && resReady) {
+          actions += this.buyTechnology(towncenters, ai.nextAge[nextAgeKey], debug);
+        }
+      }
+      var buildingListByType = AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty(AIStrategy_defineProperty({}, BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets), BUILDING_TYPES.granary, granarys);
+      for (var _i = 0, _Object$entries = Object.entries(ai.techPriorityByBuilding); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = AIStrategy_slicedToArray(_Object$entries[_i], 2),
+          buildingType = _Object$entries$_i[0],
+          techList = _Object$entries$_i[1];
+        var buildings = buildingListByType[buildingType];
+        if (!(buildings !== null && buildings !== void 0 && buildings.length)) continue;
+        var _iterator4 = AIStrategy_createForOfIteratorHelper(techList),
+          _step4;
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var tech = _step4.value;
+            if (ai.technologies.includes(tech)) continue;
+            if (!this.canResearchTech(tech)) continue;
+            var bought = this.buyTechnology(buildings, tech, debug);
+            if (bought) {
+              actions += bought;
+              break;
+            }
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+      }
+      return actions;
+    }
+  }]);
+}();
+;// ./app/ai/AIEconomy.js
+function AIEconomy_typeof(o) { "@babel/helpers - typeof"; return AIEconomy_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AIEconomy_typeof(o); }
+function AIEconomy_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = AIEconomy_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function AIEconomy_toConsumableArray(r) { return AIEconomy_arrayWithoutHoles(r) || AIEconomy_iterableToArray(r) || AIEconomy_unsupportedIterableToArray(r) || AIEconomy_nonIterableSpread(); }
+function AIEconomy_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function AIEconomy_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return AIEconomy_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? AIEconomy_arrayLikeToArray(r, a) : void 0; } }
+function AIEconomy_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function AIEconomy_arrayWithoutHoles(r) { if (Array.isArray(r)) return AIEconomy_arrayLikeToArray(r); }
+function AIEconomy_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function AIEconomy_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AIEconomy_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AIEconomy_toPropertyKey(o.key), o); } }
+function AIEconomy_createClass(e, r, t) { return r && AIEconomy_defineProperties(e.prototype, r), t && AIEconomy_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AIEconomy_toPropertyKey(t) { var i = AIEconomy_toPrimitive(t, "string"); return "symbol" == AIEconomy_typeof(i) ? i : i + ""; }
+function AIEconomy_toPrimitive(t, r) { if ("object" != AIEconomy_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AIEconomy_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var AIEconomy = /*#__PURE__*/function () {
+  function AIEconomy(ai) {
+    AIEconomy_classCallCheck(this, AIEconomy);
+    this.ai = ai;
+  }
+  return AIEconomy_createClass(AIEconomy, [{
+    key: "getWorkerSnapshot",
+    value: function getWorkerSnapshot(villagers) {
+      var villagersByWork = function villagersByWork(works) {
+        return villagers.filter(function (v) {
+          return !v.inactif && works.includes(v.work);
+        });
+      };
+      var inactifVillagers = villagers.filter(function (v) {
+        return v.inactif && v.action !== ACTION_TYPES.attack;
+      });
+      var villagersForaging = villagersByWork([WORK_TYPES.forager]);
+      var villagersFarming = villagersByWork([WORK_TYPES.farmer]);
+      var villagersHunting = villagersByWork([WORK_TYPES.hunter]);
+      var villagersFishing = villagersByWork([WORK_TYPES.fisher]);
+      var villagersOnFood = [].concat(AIEconomy_toConsumableArray(villagersForaging), AIEconomy_toConsumableArray(villagersFarming), AIEconomy_toConsumableArray(villagersHunting), AIEconomy_toConsumableArray(villagersFishing));
+      var villagersOnWood = villagersByWork([WORK_TYPES.woodcutter]);
+      var villagersOnGold = villagersByWork([WORK_TYPES.goldminer]);
+      var villagersOnStone = villagersByWork([WORK_TYPES.stoneminer]);
+      var builderVillagers = villagersByWork([WORK_TYPES.builder]);
+      return {
+        inactifVillagers: inactifVillagers,
+        villagersForaging: villagersForaging,
+        villagersOnFood: villagersOnFood,
+        villagersOnWood: villagersOnWood,
+        villagersOnGold: villagersOnGold,
+        villagersOnStone: villagersOnStone,
+        builderVillagers: builderVillagers
+      };
+    }
+  }, {
+    key: "getResourceTargets",
+    value: function getResourceTargets(villagersCount) {
+      var ai = this.ai;
+      var woodBoost = ai.wood < 50 ? 15 : 0;
+      var foodBoost = ai.food < 50 ? 15 : 0;
+      return {
+        maxVillagersOnFood: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['food'] + foodBoost),
+        maxVillagersOnWood: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['wood'] + woodBoost),
+        maxVillagersOnGold: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['gold']),
+        maxVillagersOnStone: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['stone'])
+      };
+    }
+  }, {
+    key: "updateScout",
+    value: function updateScout(inactifVillagers) {
+      var ai = this.ai;
+      if (!ai.scout || ai.scout.isDead || ai.scout.hitPoints <= 0) {
+        ai.scout = inactifVillagers[inactifVillagers.length - 1] || null;
+      }
+      if (ai.scout && ai.scout.inactif) {
+        ai.scout.explore();
+      }
+    }
+  }, {
+    key: "assignVillagersToResource",
+    value: function assignVillagersToResource(availableVillagers, villagersOnResource, resourceList, maxVillagersForResource, actionCallback) {
+      for (var i = maxVillagersForResource; i < villagersOnResource.length; i++) {
+        villagersOnResource[i].stop();
+      }
+      if (resourceList.size === 0) return 0;
+      var needed = Math.max(0, maxVillagersForResource - villagersOnResource.length);
+      var toAssign = Math.min(needed, availableVillagers.length);
+      for (var _i = 0; _i < toAssign; _i++) {
+        var villager = availableVillagers.shift();
+        var resource = getClosestInstance(villager, resourceList);
+        actionCallback(villager, resource);
+      }
+      return toAssign;
+    }
+  }, {
+    key: "discoverDeadAnimals",
+    value: function discoverDeadAnimals(map) {
+      var ai = this.ai;
+      var _iterator = AIEconomy_createForOfIteratorHelper(map.gaia.units),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var animal = _step.value;
+          if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
+            ai.foundedDeadAnimals.add(animal);
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }, {
+    key: "assignFoodSources",
+    value: function assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms) {
+      var ai = this.ai;
+      var villagersForaging = workerSnapshot.villagersForaging,
+        villagersOnFood = workerSnapshot.villagersOnFood;
+      var maxVillagersOnFood = targets.maxVillagersOnFood;
+      var actions = 0;
+      var foodWorkersAssigned = villagersOnFood.length;
+      if (ai.foundedDeadAnimals.size > 0) {
+        var toAssign = Math.min(Math.max(0, maxVillagersOnFood - foodWorkersAssigned), availableVillagers.length);
+        for (var i = 0; i < toAssign; i++) {
+          var animal = getClosestInstance(availableVillagers[0], ai.foundedDeadAnimals);
+          if (!animal) break;
+          availableVillagers.shift().sendToTakeMeat(animal);
+          foodWorkersAssigned++;
+          actions++;
+        }
+      }
+      var berriesAssigned = this.assignVillagersToResource(availableVillagers, villagersForaging, ai.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
+        villager.sendToBerrybush(bush);
+      });
+      foodWorkersAssigned += berriesAssigned;
+      actions += berriesAssigned;
+      if (ai.foundedAnimals.size > 0) {
+        var maxHunters = Math.min(2, availableVillagers.length);
+        for (var _i2 = 0; _i2 < maxHunters; _i2++) {
+          if (foodWorkersAssigned >= maxVillagersOnFood) break;
+          var _animal = getClosestInstance(availableVillagers[0], ai.foundedAnimals);
+          if (!_animal) break;
+          availableVillagers.shift().sendToHunt(_animal);
+          foodWorkersAssigned++;
+          actions++;
+        }
+      }
+      if (ai.foundedFish.size > 0) {
+        var maxFishers = Math.min(3, availableVillagers.length);
+        for (var _i3 = 0; _i3 < maxFishers; _i3++) {
+          if (foodWorkersAssigned >= maxVillagersOnFood) break;
+          var fish = getClosestInstance(availableVillagers[0], ai.foundedFish);
+          if (!fish) break;
+          availableVillagers.shift().sendToFish(fish);
+          foodWorkersAssigned++;
+          actions++;
+        }
+      }
+      var foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned);
+      for (var _i4 = 0; _i4 < emptyFarms.length && _i4 < foodShortfall && availableVillagers.length > 0; _i4++) {
+        var villager = availableVillagers.shift();
+        villager.sendToFarm(emptyFarms[_i4]);
+        actions++;
+      }
+      return actions;
+    }
+  }, {
+    key: "assignBuilders",
+    value: function assignBuilders(availableVillagers, notBuiltBuildings, builderVillagers, maxVillagersOnConstruction) {
+      var debug = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      var actions = 0;
+      if (!notBuiltBuildings.length) return actions;
+      var _iterator2 = AIEconomy_createForOfIteratorHelper(notBuiltBuildings),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var building = _step2.value;
+          if (builderVillagers.length >= maxVillagersOnConstruction) break;
+          if (availableVillagers.length === 0) break;
+          var villager = getClosestInstance(building, availableVillagers);
+          if (villager) {
+            if (debug) console.log('Villager sent to build:', building);
+            villager.sendToBuilding(building);
+            availableVillagers.splice(availableVillagers.indexOf(villager), 1);
+            actions++;
+          }
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      return actions;
+    }
+  }, {
+    key: "handleVillagerActions",
+    value: function handleVillagerActions(_ref) {
+      var _this = this;
+      var villagers = _ref.villagers,
+        map = _ref.map,
+        farms = _ref.farms,
+        notBuiltBuildings = _ref.notBuiltBuildings,
+        maxVillagersOnConstruction = _ref.maxVillagersOnConstruction,
+        _ref$debug = _ref.debug,
+        debug = _ref$debug === void 0 ? false : _ref$debug;
+      var workerSnapshot = this.getWorkerSnapshot(villagers);
+      var targets = this.getResourceTargets(villagers.length);
+      var emptyFarms = farms.filter(function (_ref2) {
+        var isUsedBy = _ref2.isUsedBy;
+        return !isUsedBy;
+      });
+      if (debug) console.log("Food: ".concat(workerSnapshot.villagersOnFood.length, "/").concat(targets.maxVillagersOnFood, ", Wood: ").concat(workerSnapshot.villagersOnWood.length, "/").concat(targets.maxVillagersOnWood, ", Stone: ").concat(workerSnapshot.villagersOnStone.length, "/").concat(targets.maxVillagersOnStone, ", Gold: ").concat(workerSnapshot.villagersOnGold.length, "/").concat(targets.maxVillagersOnGold, ", Builders: ").concat(workerSnapshot.builderVillagers.length));
+      this.updateScout(workerSnapshot.inactifVillagers);
+      var availableVillagers = workerSnapshot.inactifVillagers.filter(function (v) {
+        return v !== _this.ai.scout;
+      });
+      var actions = 0;
+      this.discoverDeadAnimals(map);
+      actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms);
+      actions += this.assignVillagersToResource(availableVillagers, workerSnapshot.villagersOnWood, this.ai.foundedTrees, targets.maxVillagersOnWood, function (villager, tree) {
+        villager.sendToTree(tree);
+      });
+      actions += this.assignVillagersToResource(availableVillagers, workerSnapshot.villagersOnStone, this.ai.foundedStones, targets.maxVillagersOnStone, function (villager, stone) {
+        villager.sendToStone(stone);
+      });
+      actions += this.assignVillagersToResource(availableVillagers, workerSnapshot.villagersOnGold, this.ai.foundedGolds, targets.maxVillagersOnGold, function (villager, gold) {
+        villager.sendToGold(gold);
+      });
+      actions += this.assignBuilders(availableVillagers, notBuiltBuildings, workerSnapshot.builderVillagers, maxVillagersOnConstruction, debug);
+      return actions;
+    }
+  }]);
+}();
 ;// ./app/classes/players/ai.js
 function ai_typeof(o) { "@babel/helpers - typeof"; return ai_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ai_typeof(o); }
-function ai_slicedToArray(r, e) { return ai_arrayWithHoles(r) || ai_iterableToArrayLimit(r, e) || ai_unsupportedIterableToArray(r, e) || ai_nonIterableRest(); }
-function ai_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function ai_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function ai_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function ai_toConsumableArray(r) { return ai_arrayWithoutHoles(r) || ai_iterableToArray(r) || ai_unsupportedIterableToArray(r) || ai_nonIterableSpread(); }
 function ai_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function ai_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -4969,6 +6646,8 @@ function ai_setPrototypeOf(t, e) { return ai_setPrototypeOf = Object.setPrototyp
 
 
 
+
+
 var DEBUG = false;
 var AI = /*#__PURE__*/function (_Player) {
   function AI(_ref, context) {
@@ -4985,30 +6664,13 @@ var AI = /*#__PURE__*/function (_Player) {
     _this.foundedStones = new Set();
     _this.foundedAnimals = new Set();
     _this.foundedDeadAnimals = new Set();
+    _this.foundedFish = new Set();
     _this.foundedEnemyBuildings = new Set();
     _this.foundedEnemyUnits = new Set();
     _this.difficulty = props.difficulty || 'medium';
-    var _difficulties = {
-      easy: {
-        stepDelayBase: 6000,
-        popCapMultiplier: 0.7,
-        attackThreshold: 8,
-        defenderRatio: 0.5
-      },
-      medium: {
-        stepDelayBase: 4000,
-        popCapMultiplier: 1.0,
-        attackThreshold: 5,
-        defenderRatio: 0.3
-      },
-      hard: {
-        stepDelayBase: 2500,
-        popCapMultiplier: 1.3,
-        attackThreshold: 3,
-        defenderRatio: 0.2
-      }
-    };
-    _this.difficultyConfig = _difficulties[_this.difficulty] || _difficulties.medium;
+    _this.strategy = new AIStrategy(_this, _this.difficulty);
+    _this.economy = new AIEconomy(_this);
+    _this.strategy.applyConfig(_this);
     _this.stepDelay = _this.difficultyConfig.stepDelayBase;
     _this._scheduleStep();
     _this.selectedUnits = [];
@@ -5016,106 +6678,7 @@ var AI = /*#__PURE__*/function (_Player) {
     _this.selectedBuilding = null;
     _this.selectedOther = null;
     _this.scout = null;
-    _this.nextAge = {
-      1: 'ToolAge',
-      2: 'BronzeAge',
-      3: 'IronAge'
-    };
-    _this.maxVillagerPerAge = {
-      0: 16,
-      1: 24,
-      2: 40,
-      3: 50
-    };
-    _this.villageTargetPercentageByAge = {
-      0: {
-        wood: 40,
-        food: 60,
-        gold: 0,
-        stone: 0
-      },
-      1: {
-        wood: 45,
-        food: 45,
-        gold: 10,
-        stone: 0
-      },
-      2: {
-        wood: 35,
-        food: 35,
-        gold: 20,
-        stone: 10
-      },
-      3: {
-        wood: 30,
-        food: 30,
-        gold: 25,
-        stone: 15
-      }
-    };
-    _this.maxBuildingByAge = {
-      0: {
-        StoragePit: 1,
-        Granary: 1,
-        Barracks: 1,
-        Market: 1
-      },
-      1: {
-        StoragePit: 2,
-        Granary: 2,
-        Farm: 4,
-        Barracks: 1,
-        Market: 1,
-        ArcheryRange: 1,
-        Stable: 1
-      },
-      2: {
-        StoragePit: 3,
-        Granary: 3,
-        Farm: 6,
-        Barracks: 2,
-        Market: 1,
-        ArcheryRange: 1,
-        Stable: 1,
-        Academy: 1
-      },
-      3: {
-        StoragePit: 4,
-        Granary: 4,
-        Farm: 10,
-        Barracks: 2,
-        Market: 1,
-        ArcheryRange: 2,
-        Stable: 1,
-        Academy: 1
-      }
-    };
-    _this.maxInfantryByAge = {
-      0: 8,
-      1: 8,
-      2: 10,
-      3: 12
-    };
-    _this.maxArcherByAge = {
-      0: 0,
-      1: 4,
-      2: 6,
-      3: 8
-    };
-    _this.maxCavalryByAge = {
-      0: 0,
-      1: 3,
-      2: 4,
-      3: 5
-    };
-    _this.maxHopliteByAge = {
-      0: 0,
-      1: 0,
-      2: 2,
-      3: 4
-    };
-    // Priority-ordered tech lists per building type — AI tries them each step and skips if conditions unmet or already researched
-    _this.techPriorityByBuilding = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.barracks, ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword']), BUILDING_TYPES.archeryRange, ['ImprovedBow', 'CompositeBow']), BUILDING_TYPES.storagePit, ['Toolworking', 'LeatherArmorInfantry', 'Metalworking', 'ScaleArmorInfantry', 'Metallurgy', 'ChainmailInfantry', 'BronzeShield', 'IronShield']), BUILDING_TYPES.market, ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication']);
+    _this.phase = 'economy'; // economy | military_build | attack
     return _this;
   }
   ai_inherits(AI, _Player);
@@ -5123,10 +6686,13 @@ var AI = /*#__PURE__*/function (_Player) {
     key: "_scheduleStep",
     value: function _scheduleStep() {
       var _this2 = this;
-      this._stepTimer = setTimeout(function () {
+      this._stepTaskId = this.context.scheduler.add(function () {
         var actions = _this2.step();
-        _this2.stepDelay = actions > 0 ? _this2.difficultyConfig.stepDelayBase : Math.min(Math.round(_this2.stepDelay * 1.5), 12000);
-        _this2._scheduleStep();
+        var newDelay = actions > 0 ? _this2.difficultyConfig.stepDelayBase : Math.min(Math.round(_this2.stepDelay * 1.5), 5000);
+        if (newDelay !== _this2.stepDelay) {
+          _this2.stepDelay = newDelay;
+          _this2.context.scheduler.update(_this2._stepTaskId, newDelay);
+        }
       }, this.stepDelay);
     }
   }, {
@@ -5218,42 +6784,53 @@ var AI = /*#__PURE__*/function (_Player) {
       } finally {
         _iterator6.f();
       }
-      var _iterator7 = ai_createForOfIteratorHelper(this.foundedEnemyBuildings),
+      var _iterator7 = ai_createForOfIteratorHelper(this.foundedFish),
         _step7;
       try {
         for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-          var b = _step7.value;
-          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
+          var _r4 = _step7.value;
+          if (_r4.quantity <= 0 || _r4.isDead) this.foundedFish["delete"](_r4);
         }
       } catch (err) {
         _iterator7.e(err);
       } finally {
         _iterator7.f();
       }
-      var _iterator8 = ai_createForOfIteratorHelper(this.foundedEnemyUnits),
+      var _iterator8 = ai_createForOfIteratorHelper(this.foundedEnemyBuildings),
         _step8;
       try {
         for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-          var u = _step8.value;
-          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+          var b = _step8.value;
+          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
         }
       } catch (err) {
         _iterator8.e(err);
       } finally {
         _iterator8.f();
       }
+      var _iterator9 = ai_createForOfIteratorHelper(this.foundedEnemyUnits),
+        _step9;
+      try {
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var u = _step9.value;
+          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+        }
+      } catch (err) {
+        _iterator9.e(err);
+      } finally {
+        _iterator9.f();
+      }
     }
   }, {
     key: "getUnitExtraOptions",
     value: function getUnitExtraOptions(type) {
       var me = this;
-      return {
+      var options = {
         handleSetDest: function handleSetDest(target) {
           var map = me.context.map;
           if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
             var buildingType = target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit;
             var buildings = me.buildingsByTypes([buildingType]);
-            // Fix: pass .cost to canAfford, not the full building config object
             if (canAfford(me, me.config.buildings[buildingType].cost) && me.hasNotReachBuildingLimit(buildingType, buildings)) {
               var closestBuilding = getClosestInstance(target, [].concat(ai_toConsumableArray(buildings), ai_toConsumableArray(me.buildingsByTypes([BUILDING_TYPES.townCenter]))));
               if (!closestBuilding || instancesDistance(closestBuilding, target) > 5) {
@@ -5266,59 +6843,49 @@ var AI = /*#__PURE__*/function (_Player) {
           }
         }
       };
+      if (type === UNIT_TYPES.villager) {
+        options.handleIsAttacked = function (attacker, unit) {
+          if (attacker.family !== FAMILY_TYPES.animal) {
+            unit.runaway(attacker);
+            return true;
+          }
+          return false;
+        };
+      }
+      return options;
     }
   }, {
     key: "canResearchTech",
     value: function canResearchTech(techKey) {
-      var _this3 = this;
-      var tech = this.techs[techKey];
-      if (!(tech !== null && tech !== void 0 && tech.conditions)) return true;
-      return tech.conditions.every(function (cond) {
-        if (cond.key === 'age') {
-          if (cond.op === '>=') return _this3.age >= cond.value;
-          if (cond.op === '=') return _this3.age === cond.value;
-        }
-        if (cond.key === 'technologies') {
-          if (cond.op === 'includes') return _this3.technologies.includes(cond.value);
-          if (cond.op === 'notincludes') return !_this3.technologies.includes(cond.value);
-        }
-        return true;
-      });
+      return this.strategy.canResearchTech(techKey);
     }
   }, {
     key: "getBestInfantryUnit",
     value: function getBestInfantryUnit() {
-      if (this.technologies.includes('LongSword')) return 'LongSwordsman';
-      if (this.technologies.includes('BroadSword')) return 'BroadSwordsman';
-      if (this.technologies.includes('ShortSword')) return 'ShortSwordsman';
-      if (this.technologies.includes('BattleAxe')) return 'Axeman';
-      return 'Clubman';
+      return this.strategy.getBestInfantryUnit();
     }
   }, {
     key: "getBestArcherUnit",
     value: function getBestArcherUnit() {
-      if (this.technologies.includes('CompositeBow')) return 'CompositeBowman';
-      if (this.technologies.includes('ImprovedBow')) return 'ImprovedBowman';
-      return 'Bowman';
+      return this.strategy.getBestArcherUnit();
     }
   }, {
     key: "step",
     value: function step() {
-      var _this4 = this;
+      var _this3 = this;
       var _this$context = this.context,
         map = _this$context.map,
         paused = _this$context.paused;
       if (paused) return 0;
       var actions = 0;
       var maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier);
-      var maxVillagersOnConstruction = 4;
+      var maxVillagersOnConstruction = 2 + this.age * 2;
       var maxInfantry = this.maxInfantryByAge[this.age];
       var maxArcher = this.maxArcherByAge[this.age];
       var maxCavalry = this.maxCavalryByAge[this.age];
       var maxHoplite = this.maxHopliteByAge[this.age];
       var infantryUnit = this.getBestInfantryUnit();
       var archerUnit = this.getBestArcherUnit();
-      var howManyVillagerBeforeBuyingABarracks = 10;
       var howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold;
       if (DEBUG) {
         console.log('----Step started');
@@ -5328,7 +6895,7 @@ var AI = /*#__PURE__*/function (_Player) {
         var condition = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (unit) {
           return unit.hitPoints > 0;
         };
-        return _this4.units.filter(function (unit) {
+        return _this3.units.filter(function (unit) {
           return unit.type === type && condition(unit);
         });
       };
@@ -5347,6 +6914,10 @@ var AI = /*#__PURE__*/function (_Player) {
       });
       var military = [].concat(ai_toConsumableArray(infantry), ai_toConsumableArray(archers), ai_toConsumableArray(cavalry), ai_toConsumableArray(hoplites));
       if (DEBUG) console.log("Villagers: ".concat(villagers.length, "/").concat(maxVillagers, ", Infantry: ").concat(infantry.length, "/").concat(maxInfantry, " (").concat(infantryUnit, "), Archers: ").concat(archers.length, "/").concat(maxArcher, " (").concat(archerUnit, "), Cavalry: ").concat(cavalry.length, "/").concat(maxCavalry, ", Hoplites: ").concat(hoplites.length, "/").concat(maxHoplite));
+      var previousPhase = this.phase;
+      this.strategy.updatePhase(villagers.length, military.length);
+      if (DEBUG && previousPhase !== this.phase) console.log("Phase: ".concat(previousPhase, " \u2192 ").concat(this.phase));
+      if (DEBUG) console.log("Phase: ".concat(this.phase));
       var towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]);
       var storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit]);
       var houses = this.buildingsByTypes([BUILDING_TYPES.house]);
@@ -5357,40 +6928,17 @@ var AI = /*#__PURE__*/function (_Player) {
       var archeryRanges = this.buildingsByTypes([BUILDING_TYPES.archeryRange]);
       var stables = this.buildingsByTypes([BUILDING_TYPES.stable]);
       var academies = this.buildingsByTypes([BUILDING_TYPES.academy]);
-      var emptyFarms = farms.filter(function (_ref2) {
-        var isUsedBy = _ref2.isUsedBy;
-        return !isUsedBy;
-      });
+      var watchTowers = this.buildingsByTypes([BUILDING_TYPES.watchTower]);
+      var sentryTowers = this.buildingsByTypes([BUILDING_TYPES.sentryTower]);
       if (DEBUG) console.log("Towncenters: ".concat(towncenters.length, ", Houses: ").concat(houses.length, ", StoragePits: ").concat(storagepits.length, ", Granaries: ").concat(granarys.length, ", Barracks: ").concat(barracks.length, ", Markets: ").concat(markets.length));
       var notBuiltBuildings = this.buildings.filter(function (b) {
         return !b.isBuilt || b.hitPoints > 0 && b.hitPoints < b.totalHitPoints;
+      }).sort(function (a, b) {
+        return a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0;
       });
       var notBuiltHouses = notBuiltBuildings.filter(function (b) {
         return b.type === BUILDING_TYPES.house;
       });
-      var villagersByWork = function villagersByWork(works) {
-        return villagers.filter(function (v) {
-          return !v.inactif && works.includes(v.work);
-        });
-      };
-      var inactifVillagers = villagers.filter(function (v) {
-        return v.inactif && v.action !== ACTION_TYPES.attack;
-      });
-
-      // Split food workers by type to avoid stopping farmers when berries run out
-      var villagersForaging = villagersByWork([WORK_TYPES.forager]);
-      var villagersFarming = villagersByWork([WORK_TYPES.farmer]);
-      var villagersHunting = villagersByWork([WORK_TYPES.hunter]);
-      var villagersOnFood = [].concat(ai_toConsumableArray(villagersForaging), ai_toConsumableArray(villagersFarming), ai_toConsumableArray(villagersHunting));
-      var villagersOnWood = villagersByWork([WORK_TYPES.woodcutter]);
-      var villagersOnGold = villagersByWork([WORK_TYPES.goldminer]);
-      var villagersOnStone = villagersByWork([WORK_TYPES.stoneminer]);
-      var builderVillagers = villagersByWork([WORK_TYPES.builder]);
-      var maxVillagersOnFood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['food']);
-      var maxVillagersOnWood = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['wood']);
-      var maxVillagersOnGold = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['gold']);
-      var maxVillagersOnStone = getValuePercentage(villagers.length, this.villageTargetPercentageByAge[this.age]['stone']);
-      if (DEBUG) console.log("Food: ".concat(villagersOnFood.length, "/").concat(maxVillagersOnFood, ", Wood: ").concat(villagersOnWood.length, "/").concat(maxVillagersOnWood, ", Stone: ").concat(villagersOnStone.length, "/").concat(maxVillagersOnStone, ", Gold: ").concat(villagersOnGold.length, "/").concat(maxVillagersOnGold, ", Builders: ").concat(builderVillagers.length));
 
       // Retreat: critically injured assault soldiers fall back and stop attacking
       var RETREAT_HP_RATIO = 0.3;
@@ -5420,404 +6968,54 @@ var AI = /*#__PURE__*/function (_Player) {
       // Remove depleted resources and destroyed enemies from tracked sets
       this.cleanupSets();
 
-      // Scout logic: one villager explores the map incrementally.
-      // Pick the last idle villager so that earlier ones remain available for gathering.
-      // Resources and enemies are discovered naturally through unit sight (updateAIKnowledge in grid.js).
-      if (!this.scout || this.scout.isDead || this.scout.hitPoints <= 0) {
-        this.scout = inactifVillagers[inactifVillagers.length - 1] || null;
-      }
-      if (this.scout && this.scout.inactif) {
-        // explore() finds the nearest unviewed cell (radius 50) — short path, A* always succeeds
-        this.scout.explore();
-      }
-
-      // Mutable pool of idle villagers — scout excluded so it doesn't get reassigned to gather
-      var availableVillagers = inactifVillagers.filter(function (v) {
-        return v !== _this4.scout;
-      });
-
       // Cache otherPlayers once — used in multiple building placement filters below
       var otherPlayers = this.otherPlayers();
-
-      // Assign villagers from the available pool to a resource type.
-      // Stops excess workers and fills shortfall from the available pool.
-      var assignVillagersToResource = function assignVillagersToResource(villagersOnResource, resourceList, maxVillagersForResource, actionCallback) {
-        // Stop workers above quota
-        for (var i = maxVillagersForResource; i < villagersOnResource.length; i++) {
-          villagersOnResource[i].stop();
-        }
-        if (resourceList.size === 0) return 0;
-        var needed = Math.max(0, maxVillagersForResource - villagersOnResource.length);
-        var toAssign = Math.min(needed, availableVillagers.length);
-        for (var _i = 0; _i < toAssign; _i++) {
-          var villager = availableVillagers.shift();
-          var resource = getClosestInstance(villager, resourceList);
-          actionCallback(villager, resource);
-        }
-        return toAssign;
-      };
-
-      // Track food workers assigned this step to avoid double-filling the quota via both berries and farms
-      var foodWorkersAssigned = villagersOnFood.length;
-
-      // Discover dead animals with remaining meat (scan each step so nothing is missed)
-      var _iterator9 = ai_createForOfIteratorHelper(map.gaia.units),
-        _step9;
-      try {
-        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-          var _animal2 = _step9.value;
-          if (_animal2.isDead && !_animal2.isDestroyed && _animal2.quantity > 0) {
-            this.foundedDeadAnimals.add(_animal2);
-          }
-        }
-
-        // Dead animal meat: highest food priority (free meat, no hunting needed)
-      } catch (err) {
-        _iterator9.e(err);
-      } finally {
-        _iterator9.f();
-      }
-      if (this.foundedDeadAnimals.size > 0) {
-        var toAssign = Math.min(Math.max(0, maxVillagersOnFood - foodWorkersAssigned), availableVillagers.length);
-        for (var i = 0; i < toAssign; i++) {
-          var animal = getClosestInstance(availableVillagers[0], this.foundedDeadAnimals);
-          if (!animal) break;
-          availableVillagers.shift().sendToTakeMeat(animal);
-          foodWorkersAssigned++;
-          actions++;
-        }
-      }
-
-      // Food: berries
-      var berriesAssigned = assignVillagersToResource(villagersForaging, this.foundedBerrybushs, maxVillagersOnFood, function (villager, bush) {
-        villager.sendToBerrybush(bush);
+      actions += this.economy.handleVillagerActions({
+        villagers: villagers,
+        map: map,
+        farms: farms,
+        notBuiltBuildings: notBuiltBuildings,
+        maxVillagersOnConstruction: maxVillagersOnConstruction,
+        debug: DEBUG
       });
-      foodWorkersAssigned += berriesAssigned;
-      actions += berriesAssigned;
-
-      // Wood
-      actions += assignVillagersToResource(villagersOnWood, this.foundedTrees, maxVillagersOnWood, function (villager, tree) {
-        villager.sendToTree(tree);
+      actions += this.strategy.handleMilitaryActions({
+        waitingMilitary: waitingMilitary,
+        inactifMilitary: inactifMilitary,
+        howManySoldiersBeforeAttack: howManySoldiersBeforeAttack,
+        debug: DEBUG
       });
-
-      // Hunting live animals (before farms, capped at 2 hunters)
-      if (this.foundedAnimals.size > 0) {
-        var maxHunters = Math.min(2, availableVillagers.length);
-        for (var _i2 = 0; _i2 < maxHunters; _i2++) {
-          if (foodWorkersAssigned >= maxVillagersOnFood) break;
-          var _animal = getClosestInstance(availableVillagers[0], this.foundedAnimals);
-          if (!_animal) break;
-          availableVillagers.shift().sendToHunt(_animal);
-          foodWorkersAssigned++;
-          actions++;
-        }
-      }
-
-      // Food fallback: send to empty farms only when other sources aren't covering the full quota
-      var foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned);
-      for (var _i3 = 0; _i3 < emptyFarms.length && _i3 < foodShortfall && availableVillagers.length > 0; _i3++) {
-        var villager = availableVillagers.shift();
-        villager.sendToFarm(emptyFarms[_i3]);
-        actions++;
-      }
-
-      // Stone
-      actions += assignVillagersToResource(villagersOnStone, this.foundedStones, maxVillagersOnStone, function (villager, stone) {
-        villager.sendToStone(stone);
-      });
-
-      // Gold
-      actions += assignVillagersToResource(villagersOnGold, this.foundedGolds, maxVillagersOnGold, function (villager, gold) {
-        villager.sendToGold(gold);
-      });
-
-      // Construction
-      if (notBuiltBuildings.length) {
-        var _iterator0 = ai_createForOfIteratorHelper(notBuiltBuildings),
-          _step0;
-        try {
-          for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
-            var building = _step0.value;
-            if (builderVillagers.length >= maxVillagersOnConstruction) break;
-            if (availableVillagers.length === 0) break;
-            var _villager = getClosestInstance(building, availableVillagers);
-            if (_villager) {
-              if (DEBUG) console.log('Villager sent to build:', building);
-              _villager.sendToBuilding(building);
-              availableVillagers.splice(availableVillagers.indexOf(_villager), 1);
-              actions++;
-            }
-          }
-        } catch (err) {
-          _iterator0.e(err);
-        } finally {
-          _iterator0.f();
-        }
-      }
-
-      // Attack helpers
-      var sendToAttack = function sendToAttack(soldiers, target) {
-        if (DEBUG) console.log('Sending soldiers to attack:', target);
-        soldiers.forEach(function (c) {
-          c.assault = true;
-          c.sendTo(target, ACTION_TYPES.attack);
-        });
+      var strategySnapshot = {
+        map: map,
+        otherPlayers: otherPlayers,
+        villagers: villagers,
+        maxVillagers: maxVillagers,
+        towncenters: towncenters,
+        infantry: infantry,
+        maxInfantry: maxInfantry,
+        barracks: barracks,
+        infantryUnit: infantryUnit,
+        archers: archers,
+        maxArcher: maxArcher,
+        archeryRanges: archeryRanges,
+        archerUnit: archerUnit,
+        cavalry: cavalry,
+        maxCavalry: maxCavalry,
+        stables: stables,
+        hoplites: hoplites,
+        maxHoplite: maxHoplite,
+        academies: academies,
+        houses: houses,
+        farms: farms,
+        granarys: granarys,
+        storagepits: storagepits,
+        markets: markets,
+        watchTowers: watchTowers,
+        sentryTowers: sentryTowers,
+        notBuiltHouses: notBuiltHouses
       };
-
-      // Pick the best enemy target (prefer TC, then any building)
-      var getBestEnemyTarget = function getBestEnemyTarget() {
-        return ai_toConsumableArray(_this4.foundedEnemyBuildings).find(function (b) {
-          return b.type === BUILDING_TYPES.townCenter;
-        }) || _this4.foundedEnemyBuildings.values().next().value;
-      };
-
-      // Defensive reaction: enemy units spotted → send idle soldiers to defend
-      if (this.foundedEnemyUnits.size > 0 && waitingMilitary.length > 0) {
-        var enemyUnit = ai_toConsumableArray(this.foundedEnemyUnits).find(function (u) {
-          return u.hitPoints > 0;
-        });
-        if (enemyUnit) {
-          if (DEBUG) console.log('Enemy units spotted! Defending...');
-          sendToAttack(waitingMilitary, enemyUnit);
-          actions++;
-        }
-      }
-
-      // Attack wave: keep a defender garrison (defenderRatio), send the rest
-      if (waitingMilitary.length >= howManySoldiersBeforeAttack) {
-        var defenderCount = Math.max(2, Math.floor(waitingMilitary.length * this.difficultyConfig.defenderRatio));
-        var attackers = waitingMilitary.slice(defenderCount);
-        if (attackers.length > 0) {
-          var target = getBestEnemyTarget() || map.grid[randomRange(0, map.grid.length - 1)][randomRange(0, map.grid[0].length - 1)];
-          if (DEBUG) console.log("Launching attack wave! ".concat(attackers.length, " attackers, ").concat(defenderCount, " defenders. Target:"), target);
-          sendToAttack(attackers, target);
-          actions++;
-        }
-      }
-
-      // Soldiers that finished an assault → redirect to next enemy building
-      if (inactifMilitary.length && this.foundedEnemyBuildings.size) {
-        var _target = getBestEnemyTarget();
-        if (_target) {
-          if (DEBUG) console.log('Redirecting assault soldiers to:', _target);
-          sendToAttack(inactifMilitary, _target);
-          actions++;
-        }
-      }
-
-      // Unit Purchasing
-      var buyUnits = function buyUnits(currentCount, maxCount, buildingList, unitType, extra) {
-        var unitsNeeded = maxCount - currentCount;
-        var unitsBought = 0;
-        if (unitsNeeded <= 0) return 0;
-        var _iterator1 = ai_createForOfIteratorHelper(buildingList),
-          _step1;
-        try {
-          for (_iterator1.s(); !(_step1 = _iterator1.n()).done;) {
-            var _building = _step1.value;
-            if (unitsBought >= unitsNeeded) break;
-            if (_building && _building.buyUnit(unitType, false, false, extra)) {
-              unitsBought++;
-              if (DEBUG) console.log("Buying ".concat(unitType, " from ").concat(_building.type, ", Total Bought: ").concat(unitsBought));
-            }
-          }
-        } catch (err) {
-          _iterator1.e(err);
-        } finally {
-          _iterator1.f();
-        }
-        return unitsBought;
-      };
-      actions += buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager);
-      actions += buyUnits(infantry.length, maxInfantry, barracks, infantryUnit);
-      actions += buyUnits(archers.length, maxArcher, archeryRanges, archerUnit);
-      actions += buyUnits(cavalry.length, maxCavalry, stables, 'Scout');
-      actions += buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite');
-
-      // Building Purchasing — use BUILDING_TYPES constants as keys to avoid string/constant mismatches
-      var buyBuildingIfNeeded = function buyBuildingIfNeeded(condition, buildingType, positionCallback) {
-        var list = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.house, houses), BUILDING_TYPES.farm, farms), BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.granary, granarys), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.stable, stables), BUILDING_TYPES.academy, academies);
-        var building = _this4.config.buildings[buildingType];
-        if (condition && canAfford(_this4, building.cost) && _this4.hasNotReachBuildingLimit(buildingType, list[buildingType])) {
-          var pos = positionCallback();
-          if (pos && _this4.buyBuilding(pos.i, pos.j, buildingType)) {
-            if (DEBUG) console.log("Buying building: ".concat(buildingType, " at position:"), pos);
-            return true;
-          }
-        }
-        return false;
-      };
-
-      // House
-      if (buyBuildingIfNeeded(this.population + 2 > this.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0);
-      })) actions++;
-
-      // Barracks
-      if (buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return otherPlayers.every(function (player) {
-            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
-          });
-        });
-      })) actions++;
-
-      // Market
-      if (buyBuildingIfNeeded(markets.length === 0, BUILDING_TYPES.market, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return otherPlayers.every(function (player) {
-            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
-          });
-        });
-      })) actions++;
-
-      // Archery Range (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
-      if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.archeryRange, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return otherPlayers.every(function (player) {
-            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
-          });
-        });
-      })) actions++;
-
-      // Stable (conditions checked inside buyBuilding: age >= 1 + hasBuilt Barracks)
-      if (buyBuildingIfNeeded(barracks.length > 0, BUILDING_TYPES.stable, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return otherPlayers.every(function (player) {
-            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
-          });
-        });
-      })) actions++;
-
-      // Academy (conditions checked inside buyBuilding: age >= 2 + hasBuilt Stable)
-      if (buyBuildingIfNeeded(stables.some(function (s) {
-        return s.isBuilt;
-      }), BUILDING_TYPES.academy, function () {
-        return getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, function (cell) {
-          return otherPlayers.every(function (player) {
-            return instancesDistance(cell, player) <= instancesDistance(towncenters[0], player);
-          });
-        });
-      })) actions++;
-
-      // Farm
-      if (buyBuildingIfNeeded(true, BUILDING_TYPES.farm, function () {
-        var buildings = [].concat(ai_toConsumableArray(granarys), ai_toConsumableArray(towncenters));
-        var _iterator10 = ai_createForOfIteratorHelper(buildings),
-          _step10;
-        try {
-          var _loop = function _loop() {
-              var building = _step10.value;
-              var position = getPositionInGridAroundInstance(building, map.grid, [2, 10], 2, false, function (cell) {
-                return otherPlayers.every(function (player) {
-                  return instancesDistance(cell, player) <= instancesDistance(building, player);
-                });
-              }, false);
-              if (position) return {
-                v: position
-              };
-            },
-            _ret;
-          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-            _ret = _loop();
-            if (_ret) return _ret.v;
-          }
-        } catch (err) {
-          _iterator10.e(err);
-        } finally {
-          _iterator10.f();
-        }
-        return null;
-      })) actions++;
-
-      // Tech / Age Up
-      var buyTechnology = function buyTechnology(buildingList, technologyType) {
-        var bought = 0;
-        var _iterator11 = ai_createForOfIteratorHelper(buildingList),
-          _step11;
-        try {
-          for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-            var _building2 = _step11.value;
-            if (_building2 && _building2.buyTechnology(technologyType)) {
-              if (DEBUG) console.log("Buying ".concat(technologyType, " from ").concat(_building2.type));
-              bought++;
-            }
-          }
-        } catch (err) {
-          _iterator11.e(err);
-        } finally {
-          _iterator11.f();
-        }
-        return bought;
-      };
-      // Age up only when near pop cap AND resources cover cost + buffer (avoid stripping the economy)
-      var ageUpCosts = {
-        1: {
-          food: 500
-        },
-        2: {
-          food: 800
-        },
-        3: {
-          food: 1000,
-          gold: 800
-        }
-      };
-      var ageUpBuffers = {
-        1: {
-          food: 200
-        },
-        2: {
-          food: 200
-        },
-        3: {
-          food: 200,
-          gold: 200
-        }
-      };
-      var nextAgeKey = this.age + 1;
-      if (this.nextAge[nextAgeKey]) {
-        var cost = ageUpCosts[nextAgeKey] || {};
-        var buffer = ageUpBuffers[nextAgeKey] || {};
-        var popReady = this.population >= Math.floor(maxVillagers * 0.8);
-        var resReady = Object.entries(cost).every(function (_ref3) {
-          var _ref4 = ai_slicedToArray(_ref3, 2),
-            res = _ref4[0],
-            amount = _ref4[1];
-          return _this4[res] >= amount + (buffer[res] || 0);
-        });
-        if (popReady && resReady) {
-          actions += buyTechnology(towncenters, this.nextAge[nextAgeKey]);
-        }
-      }
-
-      // Research other technologies — one per building type per step, respecting conditions and prereqs
-      var buildingListByType = ai_defineProperty(ai_defineProperty(ai_defineProperty(ai_defineProperty({}, BUILDING_TYPES.barracks, barracks), BUILDING_TYPES.archeryRange, archeryRanges), BUILDING_TYPES.storagePit, storagepits), BUILDING_TYPES.market, markets);
-      for (var _i4 = 0, _Object$entries = Object.entries(this.techPriorityByBuilding); _i4 < _Object$entries.length; _i4++) {
-        var _Object$entries$_i = ai_slicedToArray(_Object$entries[_i4], 2),
-          buildingType = _Object$entries$_i[0],
-          techList = _Object$entries$_i[1];
-        var buildings = buildingListByType[buildingType];
-        if (!(buildings !== null && buildings !== void 0 && buildings.length)) continue;
-        var _iterator12 = ai_createForOfIteratorHelper(techList),
-          _step12;
-        try {
-          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-            var tech = _step12.value;
-            if (this.technologies.includes(tech)) continue;
-            if (!this.canResearchTech(tech)) continue;
-            var bought = buyTechnology(buildings, tech);
-            if (bought) {
-              actions += bought;
-              break;
-            }
-          }
-        } catch (err) {
-          _iterator12.e(err);
-        } finally {
-          _iterator12.f();
-        }
-      }
+      actions += this.strategy.handleProductionActions(strategySnapshot, DEBUG);
+      actions += this.strategy.handleBuildingActions(strategySnapshot, DEBUG);
+      actions += this.strategy.handleTechnologyActions(strategySnapshot, DEBUG);
       if (DEBUG) console.log('----Step ended');
       return actions;
     }
@@ -5825,12 +7023,463 @@ var AI = /*#__PURE__*/function (_Player) {
     key: "die",
     value: function die() {
       var players = this.context.players;
-      clearTimeout(this._stepTimer);
+      this.context.scheduler.remove(this._stepTaskId);
       players.splice(players.indexOf(this), 1);
     }
   }]);
 }(Player);
-;// ./app/classes/animal.js
+;// ./app/ui/AnimalInterface.js
+function AnimalInterface_typeof(o) { "@babel/helpers - typeof"; return AnimalInterface_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AnimalInterface_typeof(o); }
+function AnimalInterface_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AnimalInterface_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AnimalInterface_toPropertyKey(o.key), o); } }
+function AnimalInterface_createClass(e, r, t) { return r && AnimalInterface_defineProperties(e.prototype, r), t && AnimalInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AnimalInterface_toPropertyKey(t) { var i = AnimalInterface_toPrimitive(t, "string"); return "symbol" == AnimalInterface_typeof(i) ? i : i + ""; }
+function AnimalInterface_toPrimitive(t, r) { if ("object" != AnimalInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AnimalInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var AnimalInterface = /*#__PURE__*/function () {
+  function AnimalInterface(animal) {
+    AnimalInterface_classCallCheck(this, AnimalInterface);
+    this.animal = animal;
+  }
+  return AnimalInterface_createClass(AnimalInterface, [{
+    key: "setDefaultInterface",
+    value: function setDefaultInterface(element, data) {
+      var animal = this.animal;
+      var menu = animal.context.menu;
+      var civDiv = document.createElement('div');
+      civDiv.id = MENU_INFO_IDS.civ;
+      civDiv.textContent = '';
+      element.appendChild(civDiv);
+      var typeDiv = document.createElement('div');
+      typeDiv.id = MENU_INFO_IDS.type;
+      typeDiv.textContent = t(animal.type);
+      element.appendChild(typeDiv);
+      var iconImg = document.createElement('img');
+      iconImg.id = MENU_INFO_IDS.icon;
+      iconImg.src = getIconPath(data.icon);
+      element.appendChild(iconImg);
+      var hitPointsDiv = document.createElement('div');
+      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
+      hitPointsDiv.textContent = animal.hitPoints + '/' + animal.totalHitPoints;
+      element.appendChild(hitPointsDiv);
+      var quantityDiv = document.createElement('div');
+      quantityDiv.id = MENU_INFO_IDS.quantity;
+      quantityDiv.className = 'resource-quantity';
+      var smallIconImg = document.createElement('img');
+      smallIconImg.src = menu.icons['food'];
+      smallIconImg.className = 'resource-quantity-icon';
+      var textDiv = document.createElement('div');
+      textDiv.id = MENU_INFO_IDS.quantityText;
+      textDiv.textContent = animal.quantity;
+      quantityDiv.appendChild(smallIconImg);
+      quantityDiv.appendChild(textDiv);
+      element.appendChild(quantityDiv);
+    }
+  }]);
+}();
+;// ./app/classes/animal/AnimalLifecycle.js
+function AnimalLifecycle_typeof(o) { "@babel/helpers - typeof"; return AnimalLifecycle_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AnimalLifecycle_typeof(o); }
+function AnimalLifecycle_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AnimalLifecycle_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AnimalLifecycle_toPropertyKey(o.key), o); } }
+function AnimalLifecycle_createClass(e, r, t) { return r && AnimalLifecycle_defineProperties(e.prototype, r), t && AnimalLifecycle_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AnimalLifecycle_toPropertyKey(t) { var i = AnimalLifecycle_toPrimitive(t, "string"); return "symbol" == AnimalLifecycle_typeof(i) ? i : i + ""; }
+function AnimalLifecycle_toPrimitive(t, r) { if ("object" != AnimalLifecycle_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AnimalLifecycle_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var AnimalLifecycle = /*#__PURE__*/function () {
+  function AnimalLifecycle(animal) {
+    AnimalLifecycle_classCallCheck(this, AnimalLifecycle);
+    this.animal = animal;
+  }
+  return AnimalLifecycle_createClass(AnimalLifecycle, [{
+    key: "die",
+    value: function die() {
+      var animal = this.animal;
+      if (animal.isDead) return;
+      if (animal.sounds && animal.context.controls.instanceInCamera(animal)) {
+        animal.sounds.die && sound_lib/* sound */.s3.play(animal.sounds.die);
+        animal.sounds.fall && sound_lib/* sound */.s3.play(animal.sounds.fall);
+      }
+      updateInstanceVisibility(animal);
+      animal.owner.population--;
+      animal.stopInterval();
+      animal.stopTimeout();
+      animal.isDead = true;
+      animal.zIndex--;
+      animal.path = [];
+      animal.action = null;
+      animal.death();
+    }
+  }, {
+    key: "death",
+    value: function death() {
+      var animal = this.animal;
+      animal.setTextures(SHEET_TYPES.dying);
+      animal.zIndex--;
+      animal.sprite.loop = false;
+      animal.sprite.onComplete = function () {
+        return animal.decompose();
+      };
+    }
+  }, {
+    key: "decompose",
+    value: function decompose() {
+      var animal = this.animal;
+      var _animal$context = animal.context,
+        player = _animal$context.player,
+        menu = _animal$context.menu;
+      animal.setTextures(SHEET_TYPES.corpse);
+      animal.sprite.animationSpeed = 0;
+      animal.startInterval(function () {
+        if (animal.quantity > 0) {
+          animal.quantity--;
+          if (animal.selected && player.selectedOther === animal) {
+            menu.updateInfo(MENU_INFO_IDS.quantityText, animal.quantity);
+          }
+        }
+        animal.updateTexture();
+      }, 5000);
+    }
+  }, {
+    key: "updateTexture",
+    value: function updateTexture() {
+      var animal = this.animal;
+      var _animal$context2 = animal.context,
+        player = _animal$context2.player,
+        map = _animal$context2.map;
+      var percentage = getPercentage(animal.quantity, animal.totalQuantity);
+      if (percentage > 25 && percentage < 50) {
+        animal.sprite.currentFrame = 1;
+      } else if (percentage > 0 && percentage <= 25) {
+        animal.sprite.currentFrame = 2;
+      } else if (percentage <= 0) {
+        animal.stopInterval();
+        if (map.grid[animal.i][animal.j].has === animal) {
+          map.grid[animal.i][animal.j].has = null;
+          map.grid[animal.i][animal.j].corpses.add(animal);
+          map.grid[animal.i][animal.j].solid = false;
+        }
+        if (animal.selected && player.selectedOther === animal) {
+          player.unselectAll();
+        }
+        animal.sprite.currentFrame = 3;
+        animal.timeoutId = animal.context.scheduler.addOneShot(function () {
+          return animal.clear();
+        }, CORPSE_TIME * 1000);
+      }
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      var animal = this.animal;
+      var map = animal.context.map;
+      animal.stopTimeout();
+      animal.isDestroyed = true;
+      map.grid[animal.i][animal.j].corpses["delete"](animal);
+      map.removeChild(animal);
+      animal.destroy({
+        child: true,
+        texture: true
+      });
+    }
+  }]);
+}();
+;// ./app/classes/animal/AnimalMovement.js
+function AnimalMovement_typeof(o) { "@babel/helpers - typeof"; return AnimalMovement_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AnimalMovement_typeof(o); }
+function AnimalMovement_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AnimalMovement_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AnimalMovement_toPropertyKey(o.key), o); } }
+function AnimalMovement_createClass(e, r, t) { return r && AnimalMovement_defineProperties(e.prototype, r), t && AnimalMovement_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AnimalMovement_toPropertyKey(t) { var i = AnimalMovement_toPrimitive(t, "string"); return "symbol" == AnimalMovement_typeof(i) ? i : i + ""; }
+function AnimalMovement_toPrimitive(t, r) { if ("object" != AnimalMovement_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AnimalMovement_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var AnimalMovement = /*#__PURE__*/function () {
+  function AnimalMovement(animal) {
+    AnimalMovement_classCallCheck(this, AnimalMovement);
+    this.animal = animal;
+  }
+  return AnimalMovement_createClass(AnimalMovement, [{
+    key: "hasPath",
+    value: function hasPath() {
+      return this.animal.path.length > 0;
+    }
+  }, {
+    key: "setDest",
+    value: function setDest(dest) {
+      var animal = this.animal;
+      if (!dest) {
+        animal.stop();
+        return;
+      }
+      animal.dest = dest;
+      animal.realDest = {
+        i: dest.i,
+        j: dest.j
+      };
+    }
+  }, {
+    key: "setPath",
+    value: function setPath(path) {
+      var animal = this.animal;
+      if (!path.length) {
+        animal.stop();
+        return;
+      }
+      animal.setTextures(SHEET_TYPES.walking);
+      animal.inactif = false;
+      animal.path = path;
+      animal.startInterval(function () {
+        return animal.step();
+      }, STEP_TIME, true);
+    }
+  }, {
+    key: "isAnimalAtDest",
+    value: function isAnimalAtDest(action, dest) {
+      var animal = this.animal;
+      if (!action) return false;
+      if (!dest) {
+        animal.affectNewDest();
+        return false;
+      }
+      return instanceContactInstance(animal, dest);
+    }
+  }, {
+    key: "destHasMoved",
+    value: function destHasMoved() {
+      var animal = this.animal;
+      return (animal.dest.i !== animal.realDest.i || animal.dest.j !== animal.realDest.j) && instancesDistance(animal, animal.dest) <= animal.sight;
+    }
+  }, {
+    key: "sendTo",
+    value: function sendTo(dest, action) {
+      var _map$grid$animal$i$an;
+      var animal = this.animal;
+      var map = animal.context.map;
+      animal.stopInterval();
+      if (!dest) {
+        animal.stop();
+        return;
+      }
+      if (this.isAnimalAtDest(action, dest) && (!map.grid[animal.i][animal.j].solid || map.grid[animal.i][animal.j].solid && ((_map$grid$animal$i$an = map.grid[animal.i][animal.j].has) === null || _map$grid$animal$i$an === void 0 ? void 0 : _map$grid$animal$i$an.label) === animal.label)) {
+        animal.setDest(dest);
+        animal.action = action;
+        animal.degree = getInstanceDegree(animal, dest.x, dest.y);
+        animal.getAction(action);
+        return;
+      }
+      var path = [];
+      if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
+        path = getInstanceClosestFreeCellPath(animal, dest, map);
+      } else {
+        path = getInstancePath(animal, dest.i, dest.j, map);
+      }
+      if (path.length) {
+        animal.setDest(dest);
+        animal.action = action;
+        animal.setPath(path);
+      } else {
+        animal.stop();
+      }
+    }
+  }, {
+    key: "moveToPath",
+    value: function moveToPath() {
+      var animal = this.animal;
+      var map = animal.context.map;
+      var next = animal.path[animal.path.length - 1];
+      var nextCell = map.grid[next.i][next.j];
+      if (!animal.dest || animal.dest.isDestroyed) {
+        animal.affectNewDest();
+        return;
+      }
+      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.animal && nextCell.has.label !== animal.label && nextCell.has.hasPath() && instancesDistance(animal, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
+        animal.sprite.stop();
+        return;
+      }
+      if (nextCell.solid && animal.dest) {
+        animal.sendTo(animal.dest, animal.action);
+        return;
+      }
+      if (!animal.sprite.playing) {
+        animal.sprite.play();
+      }
+      animal.zIndex = getInstanceZIndex(animal);
+      if (instancesDistance(animal, nextCell, false) < animal.speed) {
+        var oldI = animal.i,
+          oldJ = animal.j;
+        animal.z = nextCell.z;
+        animal.i = nextCell.i;
+        animal.j = nextCell.j;
+        if (animal.currentCell.has === animal) {
+          animal.currentCell.has = null;
+          animal.currentCell.solid = false;
+        }
+        animal.currentCell = map.grid[animal.i][animal.j];
+        if (animal.currentCell.has === null) {
+          animal.currentCell.place(animal);
+          animal.currentCell.solid = true;
+        }
+        map.updateInstanceBucket(animal, oldI, oldJ);
+        updateInstanceVisibility(animal);
+        animal.path.pop();
+        if (this.destHasMoved()) {
+          animal.sendTo(animal.dest, animal.action);
+          return;
+        }
+        if (this.isAnimalAtDest(animal.action, animal.dest)) {
+          animal.path = [];
+          animal.stopInterval();
+          animal.degree = getInstanceDegree(animal, animal.dest.x, animal.dest.y);
+          animal.getAction(animal.action);
+          return;
+        }
+        if (!animal.path.length) {
+          animal.stop();
+        }
+      } else {
+        var oldDeg = animal.degree;
+        moveTowardPoint(animal, nextCell.x, nextCell.y, animal.speed);
+        if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
+          animal.setTextures(SHEET_TYPES.walking);
+        }
+      }
+    }
+  }]);
+}();
+;// ./app/classes/animal/AnimalCombat.js
+function AnimalCombat_typeof(o) { "@babel/helpers - typeof"; return AnimalCombat_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AnimalCombat_typeof(o); }
+function AnimalCombat_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function AnimalCombat_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AnimalCombat_toPropertyKey(o.key), o); } }
+function AnimalCombat_createClass(e, r, t) { return r && AnimalCombat_defineProperties(e.prototype, r), t && AnimalCombat_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function AnimalCombat_toPropertyKey(t) { var i = AnimalCombat_toPrimitive(t, "string"); return "symbol" == AnimalCombat_typeof(i) ? i : i + ""; }
+function AnimalCombat_toPrimitive(t, r) { if ("object" != AnimalCombat_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AnimalCombat_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var AnimalCombat = /*#__PURE__*/function () {
+  function AnimalCombat(animal) {
+    AnimalCombat_classCallCheck(this, AnimalCombat);
+    this.animal = animal;
+  }
+  return AnimalCombat_createClass(AnimalCombat, [{
+    key: "getReaction",
+    value: function getReaction(instance) {
+      var animal = this.animal;
+      if (animal.strategy === 'runaway') {
+        animal.runaway(instance);
+      } else {
+        animal.sendTo(instance, ACTION_TYPES.attack);
+      }
+    }
+  }, {
+    key: "detect",
+    value: function detect(instance) {
+      var animal = this.animal;
+      if (animal.strategy && instance && instance.family === FAMILY_TYPES.unit && !animal.isDead && !animal.path.length && !animal.dest) {
+        this.getReaction(instance);
+      }
+    }
+  }, {
+    key: "isAttacked",
+    value: function isAttacked(instance) {
+      var animal = this.animal;
+      if (!instance || animal.dest || animal.isDead) return;
+      this.getReaction(instance);
+    }
+  }, {
+    key: "affectNewDest",
+    value: function affectNewDest() {
+      var animal = this.animal;
+      animal.stopInterval();
+      var targets = findInstancesInSight(animal, function (instance) {
+        return animal.getActionCondition(instance);
+      });
+      if (targets.length) {
+        var target = getClosestInstanceWithPath(animal, targets);
+        if (target) {
+          if (instanceContactInstance(animal, target)) {
+            animal.degree = getInstanceDegree(animal, target.x, target.y);
+            animal.getAction(animal.action);
+            return;
+          }
+          animal.setDest(target.instance);
+          animal.setPath(target.path);
+          return;
+        }
+      }
+      animal.stop();
+    }
+  }, {
+    key: "runaway",
+    value: function runaway(instance) {
+      var animal = this.animal;
+      var map = animal.context.map;
+      var dest = null;
+      getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight, function (cell) {
+        if (!cell.solid && (!dest || pointsDistance(cell.i, cell.j, instance.i, instance.j) > pointsDistance(dest.i, dest.j, instance.i, instance.j))) {
+          dest = animal.owner.views[cell.i][cell.j];
+        }
+      });
+      if (dest) {
+        animal.sendTo(dest);
+      } else {
+        animal.stop();
+      }
+    }
+  }, {
+    key: "getAction",
+    value: function getAction(name) {
+      var animal = this.animal;
+      var _animal$context = animal.context,
+        menu = _animal$context.menu,
+        player = _animal$context.player;
+      switch (name) {
+        case ACTION_TYPES.attack:
+          if (!animal.getActionCondition(animal.dest)) {
+            animal.affectNewDest();
+            return;
+          }
+          animal.setTextures(SHEET_TYPES.action);
+          animal.startInterval(function () {
+            if (!animal.getActionCondition(animal.dest)) {
+              if (animal.dest && animal.dest.hitPoints <= 0) {
+                animal.dest.die();
+              }
+              animal.affectNewDest();
+              return;
+            }
+            if (animal.destHasMoved()) {
+              animal.degree = getInstanceDegree(animal, animal.dest.x, animal.dest.y);
+              animal.setTextures(SHEET_TYPES.action);
+            }
+            if (!instanceContactInstance(animal, animal.dest)) {
+              animal.sendTo(animal.dest, ACTION_TYPES.attack);
+              return;
+            }
+            animal.sounds && animal.sounds.hit && animal.context.controls.instanceInCamera(animal) && sound_lib/* sound */.s3.play(animal.sounds.hit);
+            if (animal.dest.hitPoints > 0) {
+              animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest);
+              if (animal.dest.selected && player && (player.selectedUnit === animal.dest || player.selectedBuilding === animal.dest)) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, animal.dest.hitPoints + '/' + animal.dest.totalHitPoints);
+              }
+              animal.dest.isAttacked(animal);
+            }
+            if (animal.dest.hitPoints <= 0) {
+              animal.dest.die();
+              animal.affectNewDest();
+            }
+          }, animal.rateOfFire * 1000, false);
+          break;
+        default:
+          animal.stop();
+      }
+    }
+  }]);
+}();
+;// ./app/classes/animal/index.js
 function animal_typeof(o) { "@babel/helpers - typeof"; return animal_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, animal_typeof(o); }
 function animal_slicedToArray(r, e) { return animal_arrayWithHoles(r) || animal_iterableToArrayLimit(r, e) || animal_unsupportedIterableToArray(r, e) || animal_nonIterableRest(); }
 function animal_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -5854,30 +7503,34 @@ function animal_setPrototypeOf(t, e) { return animal_setPrototypeOf = Object.set
 
 
 
-var Animal = /*#__PURE__*/function (_Container) {
+
+
+
+
+
+var Animal = /*#__PURE__*/function (_Instance) {
   function Animal(options, context) {
     var _this$x, _this$y, _this$z, _this$hitPoints, _this$quantity, _this$loop;
     var _this;
     animal_classCallCheck(this, Animal);
-    _this = animal_callSuper(this, Animal);
-    _this.context = context;
+    _this = animal_callSuper(this, Animal, [context]);
+    _this.selectionFactor = 0.5;
     var _this2 = _this,
       map = _this2.context.map;
-    _this.label = uuidv4();
     _this.family = FAMILY_TYPES.animal;
+    _this.animalInterface = new AnimalInterface(_this);
+    _this.animalLifecycle = new AnimalLifecycle(_this);
+    _this.animalMovement = new AnimalMovement(_this);
+    _this.animalCombat = new AnimalCombat(_this);
     _this.dest = null;
     _this.realDest = null;
     _this.previousDest = null;
     _this.path = [];
-    _this.selected = false;
     _this.degree = randomRange(1, 360);
     _this.action = null;
     _this.currentFrame = 0;
     _this.currentSheet = SHEET_TYPES.standing;
     _this.inactif = true;
-    _this.isDead = false;
-    _this.isDestroyed = false;
-    _this.timeoutId = null;
     _this.x = null;
     _this.y = null;
     _this.z = null;
@@ -5895,6 +7548,7 @@ var Animal = /*#__PURE__*/function (_Container) {
     _this.currentCell.solid = true;
     _this.hitPoints = (_this$hitPoints = _this.hitPoints) !== null && _this$hitPoints !== void 0 ? _this$hitPoints : _this.totalHitPoints;
     _this.quantity = (_this$quantity = _this.quantity) !== null && _this$quantity !== void 0 ? _this$quantity : _this.totalQuantity;
+    map.addToInstanceBucket(_this);
     for (var _i = 0, _Object$entries = Object.entries(_this.assets); _i < _Object$entries.length; _i++) {
       var _Object$entries$_i = animal_slicedToArray(_Object$entries[_i], 2),
         key = _Object$entries$_i[0],
@@ -5976,7 +7630,6 @@ var Animal = /*#__PURE__*/function (_Container) {
         drawInstanceBlinkingSelection(_this);
       }
     });
-    _this.interval = null;
     _this.sprite.updateAnchor = true;
     _this.addChild(_this.sprite);
     setTimeout(function () {
@@ -5984,321 +7637,8 @@ var Animal = /*#__PURE__*/function (_Container) {
     });
     return _this;
   }
-  animal_inherits(Animal, _Container);
+  animal_inherits(Animal, _Instance);
   return animal_createClass(Animal, [{
-    key: "startInterval",
-    value: function startInterval(callback, time) {
-      var immediate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-      this.stopInterval();
-      if (immediate) callback();
-      this.interval = this.context.scheduler.add(callback, time);
-    }
-  }, {
-    key: "stopInterval",
-    value: function stopInterval() {
-      if (this.interval) {
-        this.context.scheduler.remove(this.interval);
-        this.interval = null;
-      }
-    }
-  }, {
-    key: "stopTimeout",
-    value: function stopTimeout() {
-      if (this.timeoutId != null) {
-        this.context.scheduler.remove(this.timeoutId);
-        this.timeoutId = null;
-      }
-    }
-  }, {
-    key: "select",
-    value: function select() {
-      if (this.selected) {
-        return;
-      }
-      this.selected = true;
-      var selection = new lib/* Graphics */.A1g();
-      selection.label = LABEL_TYPES.selection;
-      selection.zIndex = 3;
-      var path = [-32 * 0.5, 0, 0, -16 * 0.5, 32 * 0.5, 0, 0, 16 * 0.5];
-      selection.poly(path);
-      selection.stroke(COLOR_WHITE);
-      this.addChildAt(selection, 0);
-    }
-  }, {
-    key: "unselect",
-    value: function unselect() {
-      if (!this.selected) {
-        return;
-      }
-      this.selected = false;
-      var selection = this.getChildByLabel(LABEL_TYPES.selection);
-      if (selection) {
-        this.removeChild(selection);
-      }
-    }
-  }, {
-    key: "hasPath",
-    value: function hasPath() {
-      return this.path.length > 0;
-    }
-  }, {
-    key: "setDest",
-    value: function setDest(dest) {
-      if (!dest) {
-        this.stop();
-        return;
-      }
-      this.dest = dest;
-      this.realDest = {
-        i: dest.i,
-        j: dest.j
-      };
-    }
-  }, {
-    key: "pause",
-    value: function pause() {
-      var _this$sprite;
-      (_this$sprite = this.sprite) === null || _this$sprite === void 0 || _this$sprite.stop();
-    }
-  }, {
-    key: "resume",
-    value: function resume() {
-      var _this$sprite2;
-      (_this$sprite2 = this.sprite) === null || _this$sprite2 === void 0 || _this$sprite2.play();
-    }
-  }, {
-    key: "setPath",
-    value: function setPath(path) {
-      var _this4 = this;
-      if (!path.length) {
-        this.stop();
-        return;
-      }
-      this.setTextures(SHEET_TYPES.walking);
-      this.inactif = false;
-      this.path = path;
-      this.startInterval(function () {
-        return _this4.step();
-      }, STEP_TIME, true);
-    }
-  }, {
-    key: "isAnimalAtDest",
-    value: function isAnimalAtDest(action, dest) {
-      if (!action) {
-        return false;
-      }
-      if (!dest) {
-        this.affectNewDest();
-        return false;
-      }
-      return instanceContactInstance(this, dest);
-    }
-  }, {
-    key: "sendTo",
-    value: function sendTo(dest, action) {
-      var _map$grid$this$i$this;
-      var map = this.context.map;
-      this.stopInterval();
-      var path = [];
-      // No instance we cancel the destination
-      if (!dest) {
-        this.stop();
-        return;
-      }
-      // Animal is already beside our target
-      if (this.isAnimalAtDest(action, dest) && (!map.grid[this.i][this.j].solid || map.grid[this.i][this.j].solid && ((_map$grid$this$i$this = map.grid[this.i][this.j].has) === null || _map$grid$this$i$this === void 0 ? void 0 : _map$grid$this$i$this.label) === this.label)) {
-        this.setDest(dest);
-        this.action = action;
-        this.degree = getInstanceDegree(this, dest.x, dest.y);
-        this.getAction(action);
-        return;
-      }
-      // Set animal path
-      if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-        path = getInstanceClosestFreeCellPath(this, dest, map);
-      } else {
-        path = getInstancePath(this, dest.i, dest.j, map);
-      }
-      // Animal found a path, set the action and play walking animation
-      if (path.length) {
-        this.setDest(dest);
-        this.action = action;
-        this.setPath(path);
-      } else {
-        this.stop();
-      }
-    }
-  }, {
-    key: "getActionCondition",
-    value: function getActionCondition(target) {
-      return extra_getActionCondition(this, target, this.action);
-    }
-  }, {
-    key: "getAction",
-    value: function getAction(name) {
-      var _this5 = this;
-      var _this$context = this.context,
-        menu = _this$context.menu,
-        player = _this$context.player;
-      switch (name) {
-        case ACTION_TYPES.attack:
-          if (!this.getActionCondition(this.dest)) {
-            this.affectNewDest();
-            return;
-          }
-          this.setTextures(SHEET_TYPES.action);
-          this.startInterval(function () {
-            if (!_this5.getActionCondition(_this5.dest)) {
-              if (_this5.dest && _this5.dest.hitPoints <= 0) {
-                _this5.dest.die();
-              }
-              _this5.affectNewDest();
-              return;
-            }
-            if (_this5.destHasMoved()) {
-              _this5.degree = getInstanceDegree(_this5, _this5.dest.x, _this5.dest.y);
-              _this5.setTextures(SHEET_TYPES.action);
-            }
-            if (!instanceContactInstance(_this5, _this5.dest)) {
-              _this5.sendTo(_this5.dest, ACTION_TYPES.attack);
-              return;
-            }
-            _this5.sounds && _this5.sounds.hit && _this5.visible && sound_lib/* sound */.s3.play(_this5.sounds.hit);
-            if (_this5.dest.hitPoints > 0) {
-              _this5.dest.hitPoints = getHitPointsWithDamage(_this5, _this5.dest);
-              if (_this5.dest.selected && player && (player.selectedUnit === _this5.dest || player.selectedBuilding === _this5.dest)) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, _this5.dest.hitPoints + '/' + _this5.dest.totalHitPoints);
-              }
-              _this5.dest.isAttacked(_this5);
-            }
-            if (_this5.dest.hitPoints <= 0) {
-              _this5.dest.die();
-              _this5.affectNewDest();
-            }
-          }, this.rateOfFire * 1000, false);
-          break;
-        default:
-          this.stop();
-      }
-    }
-  }, {
-    key: "affectNewDest",
-    value: function affectNewDest() {
-      var _this6 = this;
-      this.stopInterval();
-      var targets = findInstancesInSight(this, function (instance) {
-        return _this6.getActionCondition(instance);
-      });
-      if (targets.length) {
-        var target = getClosestInstanceWithPath(this, targets);
-        if (target) {
-          if (instanceContactInstance(this, target)) {
-            this.degree = getInstanceDegree(this, target.x, target.y);
-            this.getAction(this.action);
-            return;
-          }
-          this.setDest(target.instance);
-          this.setPath(target.path);
-          return;
-        }
-      }
-      this.stop();
-      return;
-    }
-  }, {
-    key: "destHasMoved",
-    value: function destHasMoved() {
-      return (this.dest.i !== this.realDest.i || this.dest.j !== this.realDest.j) && instancesDistance(this, this.dest) <= this.sight;
-    }
-  }, {
-    key: "moveToPath",
-    value: function moveToPath() {
-      var map = this.context.map;
-      var next = this.path[this.path.length - 1];
-      var nextCell = map.grid[next.i][next.j];
-      if (!this.dest || this.dest.isDestroyed) {
-        this.affectNewDest();
-        return;
-      }
-      // Collision with another walking unit, we block the mouvement
-      if (nextCell.has && nextCell.has.family === FAMILY_TYPES.animal && nextCell.has.label !== this.label && nextCell.has.hasPath() && instancesDistance(this, nextCell.has) <= 1 && nextCell.has.sprite.playing) {
-        this.sprite.stop();
-        return;
-      }
-      if (nextCell.solid && this.dest) {
-        this.sendTo(this.dest, this.action);
-        return;
-      }
-      if (!this.sprite.playing) {
-        this.sprite.play();
-      }
-      this.zIndex = getInstanceZIndex(this);
-      if (instancesDistance(this, nextCell, false) < this.speed) {
-        this.z = nextCell.z;
-        this.i = nextCell.i;
-        this.j = nextCell.j;
-        if (this.currentCell.has === this) {
-          this.currentCell.has = null;
-          this.currentCell.solid = false;
-        }
-        this.currentCell = map.grid[this.i][this.j];
-        if (this.currentCell.has === null) {
-          this.currentCell.place(this);
-          this.currentCell.solid = true;
-        }
-        updateInstanceVisibility(this);
-        this.path.pop();
-
-        // Destination moved
-        if (this.destHasMoved()) {
-          this.sendTo(this.dest, this.action);
-          return;
-        }
-        if (this.isAnimalAtDest(this.action, this.dest)) {
-          this.path = [];
-          this.stopInterval();
-          this.degree = getInstanceDegree(this, this.dest.x, this.dest.y);
-          this.getAction(this.action);
-          return;
-        }
-        if (!this.path.length) {
-          this.stop();
-        }
-      } else {
-        // Move to next
-        var oldDeg = this.degree;
-        moveTowardPoint(this, nextCell.x, nextCell.y, this.speed);
-        if (degreeToDirection(oldDeg) !== degreeToDirection(this.degree)) {
-          // Change animation according to degree
-          this.setTextures(SHEET_TYPES.walking);
-        }
-      }
-    }
-  }, {
-    key: "getReaction",
-    value: function getReaction(instance) {
-      if (this.strategy === 'runaway') {
-        this.runaway(instance);
-      } else {
-        this.sendTo(instance, ACTION_TYPES.attack);
-      }
-    }
-  }, {
-    key: "detect",
-    value: function detect(instance) {
-      if (this.strategy && instance && instance.family === FAMILY_TYPES.unit && !this.isDead && !this.path.length && !this.dest) {
-        this.getReaction(instance);
-      }
-    }
-  }, {
-    key: "isAttacked",
-    value: function isAttacked(instance) {
-      if (!instance || this.dest || this.isDead) {
-        return;
-      }
-      this.getReaction(instance);
-    }
-  }, {
     key: "stop",
     value: function stop() {
       if (this.currentCell.has && this.currentCell.has.label !== this.label && this.currentCell.solid) {
@@ -6316,164 +7656,108 @@ var Animal = /*#__PURE__*/function (_Container) {
       this.setTextures(SHEET_TYPES.standing);
     }
   }, {
-    key: "step",
-    value: function step() {
-      if (this.hitPoints <= 0) {
-        this.die();
-      } else if (this.hasPath()) {
-        this.moveToPath();
-      }
+    key: "setDefaultInterface",
+    value: function setDefaultInterface(element, data) {
+      return this.animalInterface.setDefaultInterface(element, data);
     }
+
+    // AnimalLifecycle
   }, {
-    key: "runaway",
-    value: function runaway(instance) {
-      var _this7 = this;
-      var map = this.context.map;
-      var dest = null;
-      getCellsAroundPoint(this.i, this.j, map.grid, this.sight, function (cell) {
-        if (!cell.solid && (!dest || pointsDistance(cell.i, cell.j, instance.i, instance.j) > pointsDistance(dest.i, dest.j, instance.i, instance.j))) {
-          dest = _this7.owner.views[cell.i][cell.j];
-          return;
-        }
-      });
-      if (dest) {
-        this.sendTo(dest);
-      } else {
-        this.stop();
-      }
-    }
-  }, {
-    key: "decompose",
-    value: function decompose() {
-      var _this8 = this;
-      var _this$context2 = this.context,
-        player = _this$context2.player,
-        menu = _this$context2.menu;
-      this.setTextures(SHEET_TYPES.corpse);
-      this.sprite.animationSpeed = 0;
-      this.startInterval(function () {
-        if (_this8.quantity > 0) {
-          _this8.quantity--;
-          if (_this8.selected && player.selectedOther === _this8) {
-            menu.updateInfo(MENU_INFO_IDS.quantityText, _this8.quantity);
-          }
-        }
-        _this8.updateTexture();
-      }, 5000);
+    key: "die",
+    value: function die() {
+      return this.animalLifecycle.die();
     }
   }, {
     key: "death",
     value: function death() {
-      var _this9 = this;
-      this.setTextures(SHEET_TYPES.dying);
-      this.zIndex--;
-      this.sprite.loop = false;
-      this.sprite.onComplete = function () {
-        _this9.decompose();
-      };
+      return this.animalLifecycle.death();
     }
   }, {
-    key: "die",
-    value: function die() {
-      if (this.isDead) {
-        return;
-      }
-      if (this.sounds && this.visible) {
-        this.sounds.die && sound_lib/* sound */.s3.play(this.sounds.die);
-        this.sounds.fall && sound_lib/* sound */.s3.play(this.sounds.fall);
-      }
-      updateInstanceVisibility(this);
-      this.owner.population--;
-      this.stopInterval();
-      this.stopTimeout();
-      this.isDead = true;
-      this.zIndex--;
-      this.path = [];
-      this.action = null;
-      this.death();
+    key: "decompose",
+    value: function decompose() {
+      return this.animalLifecycle.decompose();
     }
   }, {
     key: "updateTexture",
     value: function updateTexture() {
-      var _this0 = this;
-      var _this$context3 = this.context,
-        player = _this$context3.player,
-        map = _this$context3.map;
-      var percentage = getPercentage(this.quantity, this.totalQuantity);
-      if (percentage > 25 && percentage < 50) {
-        this.sprite.currentFrame = 1;
-      } else if (percentage > 0 && percentage <= 25) {
-        this.sprite.currentFrame = 2;
-      } else if (percentage <= 0) {
-        this.stopInterval();
-        if (map.grid[this.i][this.j].has === this) {
-          map.grid[this.i][this.j].has = null;
-          map.grid[this.i][this.j].corpses.add(this);
-          map.grid[this.i][this.j].solid = false;
-        }
-        if (this.selected && player.selectedOther === this) {
-          player.unselectAll();
-        }
-        this.sprite.currentFrame = 3;
-        this.timeoutId = this.context.scheduler.addOneShot(function () {
-          return _this0.clear();
-        }, CORPSE_TIME * 1000);
-      }
+      return this.animalLifecycle.updateTexture();
     }
   }, {
     key: "clear",
     value: function clear() {
-      var map = this.context.map;
-      this.stopTimeout();
-      this.isDestroyed = true;
-      // Remove from map corpses
-      map.grid[this.i][this.j].corpses["delete"](this);
-      map.removeChild(this);
-      this.destroy({
-        child: true,
-        texture: true
-      });
+      return this.animalLifecycle.clear();
+    }
+
+    // AnimalMovement
+  }, {
+    key: "hasPath",
+    value: function hasPath() {
+      return this.animalMovement.hasPath();
     }
   }, {
-    key: "setTextures",
-    value: function setTextures(sheet) {
-      setUnitTexture(sheet, this, ACCELERATOR);
+    key: "setDest",
+    value: function setDest(dest) {
+      return this.animalMovement.setDest(dest);
     }
   }, {
-    key: "setDefaultInterface",
-    value: function setDefaultInterface(element, data) {
-      var menu = this.context.menu;
-      var civDiv = document.createElement('div');
-      civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = '';
-      element.appendChild(civDiv);
-      var typeDiv = document.createElement('div');
-      typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = this.type;
-      element.appendChild(typeDiv);
-      var iconImg = document.createElement('img');
-      iconImg.id = MENU_INFO_IDS.icon;
-      iconImg.src = getIconPath(data.icon);
-      element.appendChild(iconImg);
-      var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-      hitPointsDiv.textContent = this.hitPoints + '/' + this.totalHitPoints;
-      element.appendChild(hitPointsDiv);
-      var quantityDiv = document.createElement('div');
-      quantityDiv.id = MENU_INFO_IDS.quantity;
-      quantityDiv.className = 'resource-quantity';
-      var smallIconImg = document.createElement('img');
-      smallIconImg.src = menu.icons['food'];
-      smallIconImg.className = 'resource-quantity-icon';
-      var textDiv = document.createElement('div');
-      textDiv.id = MENU_INFO_IDS.quantityText;
-      textDiv.textContent = this.quantity;
-      quantityDiv.appendChild(smallIconImg);
-      quantityDiv.appendChild(textDiv);
-      element.appendChild(quantityDiv);
+    key: "setPath",
+    value: function setPath(path) {
+      return this.animalMovement.setPath(path);
+    }
+  }, {
+    key: "isAnimalAtDest",
+    value: function isAnimalAtDest(action, dest) {
+      return this.animalMovement.isAnimalAtDest(action, dest);
+    }
+  }, {
+    key: "destHasMoved",
+    value: function destHasMoved() {
+      return this.animalMovement.destHasMoved();
+    }
+  }, {
+    key: "sendTo",
+    value: function sendTo(dest, action) {
+      return this.animalMovement.sendTo(dest, action);
+    }
+  }, {
+    key: "moveToPath",
+    value: function moveToPath() {
+      return this.animalMovement.moveToPath();
+    }
+
+    // AnimalCombat
+  }, {
+    key: "getReaction",
+    value: function getReaction(instance) {
+      return this.animalCombat.getReaction(instance);
+    }
+  }, {
+    key: "detect",
+    value: function detect(instance) {
+      return this.animalCombat.detect(instance);
+    }
+  }, {
+    key: "isAttacked",
+    value: function isAttacked(instance) {
+      return this.animalCombat.isAttacked(instance);
+    }
+  }, {
+    key: "affectNewDest",
+    value: function affectNewDest() {
+      return this.animalCombat.affectNewDest();
+    }
+  }, {
+    key: "runaway",
+    value: function runaway(instance) {
+      return this.animalCombat.runaway(instance);
+    }
+  }, {
+    key: "getAction",
+    value: function getAction(name) {
+      return this.animalCombat.getAction(name);
     }
   }]);
-}(lib/* Container */.mcf);
+}(Instance);
 ;// ./app/classes/players/gaia.js
 function gaia_typeof(o) { "@babel/helpers - typeof"; return gaia_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, gaia_typeof(o); }
 function gaia_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -6606,118 +7890,26 @@ var Human = /*#__PURE__*/function (_Player) {
 
 
 
-;// ./app/classes/cell.js
-function cell_typeof(o) { "@babel/helpers - typeof"; return cell_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, cell_typeof(o); }
-function cell_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = cell_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
-function cell_toConsumableArray(r) { return cell_arrayWithoutHoles(r) || cell_iterableToArray(r) || cell_unsupportedIterableToArray(r) || cell_nonIterableSpread(); }
-function cell_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function cell_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function cell_arrayWithoutHoles(r) { if (Array.isArray(r)) return cell_arrayLikeToArray(r); }
-function cell_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
-function cell_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, cell_toPropertyKey(o.key), o); } }
-function cell_createClass(e, r, t) { return r && cell_defineProperties(e.prototype, r), t && cell_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
-function cell_toPropertyKey(t) { var i = cell_toPrimitive(t, "string"); return "symbol" == cell_typeof(i) ? i : i + ""; }
-function cell_toPrimitive(t, r) { if ("object" != cell_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != cell_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-function cell_callSuper(t, o, e) { return o = cell_getPrototypeOf(o), cell_possibleConstructorReturn(t, cell_isNativeReflectConstruct() ? Reflect.construct(o, e || [], cell_getPrototypeOf(t).constructor) : o.apply(t, e)); }
-function cell_possibleConstructorReturn(t, e) { if (e && ("object" == cell_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return cell_assertThisInitialized(t); }
-function cell_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
-function cell_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (cell_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function cell_getPrototypeOf(t) { return cell_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, cell_getPrototypeOf(t); }
-function cell_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && cell_setPrototypeOf(t, e); }
-function cell_setPrototypeOf(t, e) { return cell_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, cell_setPrototypeOf(t, e); }
-function cell_slicedToArray(r, e) { return cell_arrayWithHoles(r) || cell_iterableToArrayLimit(r, e) || cell_unsupportedIterableToArray(r, e) || cell_nonIterableRest(); }
-function cell_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function cell_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return cell_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? cell_arrayLikeToArray(r, a) : void 0; } }
-function cell_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function cell_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function cell_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+;// ./app/classes/cell/CellFog.js
+/* unused harmony import specifier */ var Texture;
+function CellFog_typeof(o) { "@babel/helpers - typeof"; return CellFog_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, CellFog_typeof(o); }
+function CellFog_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = CellFog_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function CellFog_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return CellFog_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? CellFog_arrayLikeToArray(r, a) : void 0; } }
+function CellFog_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function CellFog_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function CellFog_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, CellFog_toPropertyKey(o.key), o); } }
+function CellFog_createClass(e, r, t) { return r && CellFog_defineProperties(e.prototype, r), t && CellFog_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function CellFog_toPropertyKey(t) { var i = CellFog_toPrimitive(t, "string"); return "symbol" == CellFog_typeof(i) ? i : i + ""; }
+function CellFog_toPrimitive(t, r) { if ("object" != CellFog_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != CellFog_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 
 
 
 
-// Which side to show per cardinal neighbor (di, dj)
-var NEIGHBOR_SIDES = {
-  '-1,0': 'NW',
-  '0,-1': 'NE',
-  '0,1': 'SW',
-  '1,0': 'SE'
-};
-
-// Inner-corner: diagonal neighbor in fog, both shared cardinals visible
-// → draw a small dither patch at the diamond tip between the two cardinal edges
-var CORNER_DATA = {
-  '-1,-1': {
-    corner: 'N',
-    adj: [[-1, 0], [0, -1]]
-  },
-  // N tip  (NW∩NE)
-  '1,-1': {
-    corner: 'E',
-    adj: [[0, -1], [1, 0]]
-  },
-  // E tip  (NE∩SE)
-  '1,1': {
-    corner: 'S',
-    adj: [[1, 0], [0, 1]]
-  },
-  // S tip  (SE∩SW)
-  '-1,1': {
-    corner: 'W',
-    adj: [[0, 1], [-1, 0]]
-  } // W tip  (SW∩NW)
-};
-
-// Pre-parsed neighbor/corner lists — avoid string splitting at runtime
-var _NEIGHBOR_LIST = Object.entries(NEIGHBOR_SIDES).map(function (_ref) {
-  var _ref2 = cell_slicedToArray(_ref, 2),
-    k = _ref2[0],
-    side = _ref2[1];
-  var _k$split$map = k.split(',').map(Number),
-    _k$split$map2 = cell_slicedToArray(_k$split$map, 2),
-    di = _k$split$map2[0],
-    dj = _k$split$map2[1];
-  return {
-    di: di,
-    dj: dj,
-    side: side
-  };
-});
-var _CORNER_LIST = Object.entries(CORNER_DATA).map(function (_ref3) {
-  var _ref4 = cell_slicedToArray(_ref3, 2),
-    k = _ref4[0],
-    _ref4$ = _ref4[1],
-    corner = _ref4$.corner,
-    adj = _ref4$.adj;
-  var _k$split$map3 = k.split(',').map(Number),
-    _k$split$map4 = cell_slicedToArray(_k$split$map3, 2),
-    di = _k$split$map4[0],
-    dj = _k$split$map4[1];
-  return {
-    di: di,
-    dj: dj,
-    corner: corner,
-    adj: adj
-  };
-});
-
-// Static lookup for setDesertBorder — computed once
-var _DESERT_VAL = Array.from({
-  length: 25
-}, function (_, i) {
-  return i < 9 ? [0, 1, 2, 3] : Array.from({
-    length: 4
-  }, function (__, k) {
-    return (i - 9) * 4 + k + 4;
-  });
-});
-
-// Cache keyed by sorted sides e.g. 'NE|NW|SW'
-var _ditherTextures = {};
 var _fogTexture = null;
+var _darknessTexture = null;
+var _fogPatternTexture = null;
 var _DW = 64;
 var _DH = 32;
-var _DAX = 32;
-var _DAY = 16;
 function _insideDiamond(px, py) {
   return px + 2 * py >= 32 && px - 2 * py <= 32 && px - 2 * py >= -32 && px + 2 * py <= 96;
 }
@@ -6735,55 +7927,413 @@ function getFogTexture() {
       ctx.fillRect(px, py, 1, 1);
     }
   }
-  _fogTexture = lib/* Texture */.gPd.from(canvas);
+  _fogTexture = Texture.from(canvas);
   return _fogTexture;
 }
+function getFogPatternTexture() {
+  if (_fogPatternTexture) return _fogPatternTexture;
+  var canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 2;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, 1, 1);
+  ctx.fillRect(1, 1, 1, 1);
+  _fogPatternTexture = lib/* Texture */.gPd.from(canvas);
+  return _fogPatternTexture;
+}
 
-// sides = Set of 'NW','NE','SE','SW', corners = Set of 'N','E','S','W'
-// ONE combined texture — zero overlap possible
-function getDitherTexture(sides) {
-  var corners = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Set();
-  var sidesKey = ['NW', 'NE', 'SE', 'SW'].filter(function (s) {
-    return sides.has(s);
-  }).join('|');
-  var cornersKey = ['N', 'E', 'S', 'W'].filter(function (c) {
-    return corners.has(c);
-  }).join('|');
-  if (!sidesKey && !cornersKey) return null;
-  var key = sidesKey + (cornersKey ? '|C:' + cornersKey : '');
-  if (_ditherTextures[key]) return _ditherTextures[key];
+// Solid black diamond for cells never explored
+function getDarknessTexture() {
+  if (_darknessTexture) return _darknessTexture;
   var canvas = document.createElement('canvas');
   canvas.width = _DW;
   canvas.height = _DH;
   var ctx = canvas.getContext('2d');
-  var K = 10;
+  ctx.fillStyle = '#000';
   for (var px = 0; px < _DW; px++) {
     for (var py = 0; py < _DH; py++) {
-      if (!_insideDiamond(px, py)) continue;
-      var dNW = px + 2 * py - 32;
-      var dNE = 32 - (px - 2 * py);
-      var dSE = 96 - (px + 2 * py);
-      var dSW = px - 2 * py + 32;
-      var inBand = false;
-      if (sides.has('NW') && !inBand && dNW >= 0 && dNW <= K) inBand = true;
-      if (sides.has('NE') && !inBand && dNE >= 0 && dNE <= K) inBand = true;
-      if (sides.has('SE') && !inBand && dSE >= 0 && dSE <= K) inBand = true;
-      if (sides.has('SW') && !inBand && dSW >= 0 && dSW <= K) inBand = true;
-
-      // Inner-corner tips: both adjacent edge distances must be small
-      if (corners.has('N') && !inBand && dNW >= 0 && dNW <= K && dNE >= 0 && dNE <= K) inBand = true;
-      if (corners.has('E') && !inBand && dNE >= 0 && dNE <= K && dSE >= 0 && dSE <= K) inBand = true;
-      if (corners.has('S') && !inBand && dSE >= 0 && dSE <= K && dSW >= 0 && dSW <= K) inBand = true;
-      if (corners.has('W') && !inBand && dSW >= 0 && dSW <= K && dNW >= 0 && dNW <= K) inBand = true;
-      if (!inBand) continue;
-      if ((px + py) % 2 !== 0) continue;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(px, py, 1, 1);
+      if (_insideDiamond(px, py)) ctx.fillRect(px, py, 1, 1);
     }
   }
-  _ditherTextures[key] = lib/* Texture */.gPd.from(canvas);
-  return _ditherTextures[key];
+  _darknessTexture = Texture.from(canvas);
+  return _darknessTexture;
 }
+var CellFog = /*#__PURE__*/function () {
+  function CellFog(cell) {
+    CellFog_classCallCheck(this, CellFog);
+    this.cell = cell;
+  }
+  return CellFog_createClass(CellFog, [{
+    key: "addFogBuilding",
+    value: function addFogBuilding(textureSheet, colorSheet, colorName) {
+      var cell = this.cell;
+      if (cell.context.map.revealTerrain && !cell.context.map.revealEverything) return;
+      var fogLayer = cell.context.map.fogLayer;
+      var addToLayer = function addToLayer(sp) {
+        sp.x = cell.x;
+        sp.y = cell.y;
+        sp.zIndex = 0;
+        if (fogLayer) fogLayer.addChild(sp);else cell.addChild(sp);
+      };
+      var sprite = lib/* Sprite */.kxk.from(getTexture(textureSheet, lib/* Assets */.sP));
+      sprite.label = LABEL_TYPES.buildingFog;
+      sprite.tint = COLOR_FOG;
+      sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
+      sprite.cullable = true;
+      addToLayer(sprite);
+      cell.fogSprites.push({
+        sprite: sprite,
+        textureSheet: textureSheet,
+        colorSheet: colorSheet,
+        colorName: colorName
+      });
+      if (colorSheet) {
+        var spriteColor = lib/* Sprite */.kxk.from(getTexture(colorSheet, lib/* Assets */.sP));
+        spriteColor.label = LABEL_TYPES.buildingFog;
+        spriteColor.tint = COLOR_FOG;
+        changeSpriteColorDirectly(spriteColor, colorName);
+        addToLayer(spriteColor);
+        cell.fogSprites.push({
+          sprite: spriteColor,
+          textureSheet: textureSheet,
+          colorSheet: colorSheet,
+          colorName: colorName
+        });
+      } else {
+        changeSpriteColorDirectly(sprite, colorName);
+      }
+    }
+  }, {
+    key: "removeFogBuilding",
+    value: function removeFogBuilding(instance) {
+      var cell = this.cell;
+      var map = cell.context.map;
+      if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
+        var localCell = map.grid[instance.i][instance.j];
+        localCell.fogSprites.forEach(function (s) {
+          var _s$sprite;
+          return (_s$sprite = s.sprite) === null || _s$sprite === void 0 ? void 0 : _s$sprite.destroy();
+        });
+        localCell.fogSprites = [];
+      }
+    }
+  }, {
+    key: "setFogChildren",
+    value: function setFogChildren(instance, init) {
+      var cell = this.cell;
+      var _cell$context = cell.context,
+        player = _cell$context.player,
+        map = _cell$context.map;
+      if (!instanceIsInPlayerSight(instance, player)) {
+        if (instance.owner && !instance.owner.isPlayed) {
+          if (!init && instance.family === FAMILY_TYPES.building) {
+            if (!map.revealTerrain) {
+              var assets = getBuildingAsset(instance.type, instance.owner, lib/* Assets */.sP);
+              var localCell = map.grid[instance.i][instance.j];
+              localCell.addFogBuilding(assets.images["final"], assets.images.color, instance.owner.color);
+            }
+          }
+          instance.visible = false;
+        }
+      }
+    }
+  }, {
+    key: "_setRemoveChildren",
+    value: function _setRemoveChildren(instance) {
+      var cell = this.cell;
+      var controls = cell.context.controls;
+      if (controls.instanceInCamera(instance)) {
+        instance.visible = true;
+      }
+      for (var i = 0; i < instance.children.length; i++) {
+        if (instance.children[i].tint) {
+          instance.children[i].tint = COLOR_WHITE;
+        }
+      }
+    }
+  }, {
+    key: "_updateEdgeDither",
+    value: function _updateEdgeDither() {
+      var cell = this.cell;
+      var fogLayer = cell.context.map.fogLayer;
+      if (cell._ditherSprite) {
+        if (fogLayer) fogLayer.removeChild(cell._ditherSprite);
+        cell._ditherSprite.destroy();
+        cell._ditherSprite = null;
+      }
+      cell._ditherKey = null;
+    }
+  }, {
+    key: "setFog",
+    value: function setFog(init) {
+      var cell = this.cell;
+      if (cell.has && !cell.has.isDead) {
+        this.setFogChildren(cell.has, init);
+      }
+      if (!cell._hasFog) {
+        cell._hasFog = true;
+        var map = cell.context.map;
+        if (map._fogQueue) {
+          var _cell$context$player$, _cell$context$player$2;
+          var viewed = (_cell$context$player$ = (_cell$context$player$2 = cell.context.player.views[cell.i]) === null || _cell$context$player$2 === void 0 || (_cell$context$player$2 = _cell$context$player$2[cell.j]) === null || _cell$context$player$2 === void 0 ? void 0 : _cell$context$player$2.viewed) !== null && _cell$context$player$ !== void 0 ? _cell$context$player$ : false;
+          var isViewed = viewed || map.revealTerrain;
+          // During init, chunks are already solid black — only queue if cell was viewed
+          // (needs dotted pattern) or if init is already complete (re-fogging during gameplay)
+          if (isViewed || map._fogInitComplete) {
+            map._fogQueue.set(cell, isViewed ? 'fogViewed' : 'fog');
+          }
+        }
+      }
+      this._updateEdgeDither();
+      var grid = cell.context.map.grid;
+      for (var di = -1; di <= 1; di++) {
+        for (var dj = -1; dj <= 1; dj++) {
+          var _grid;
+          if (di === 0 && dj === 0) continue;
+          (_grid = grid[cell.i + di]) === null || _grid === void 0 || (_grid = _grid[cell.j + dj]) === null || _grid === void 0 || _grid.cellFog._updateEdgeDither();
+        }
+      }
+    }
+  }, {
+    key: "removeFog",
+    value: function removeFog() {
+      var cell = this.cell;
+      cell.visible = true;
+      cell.zIndex = 0;
+      if (cell._hasFog) {
+        cell._hasFog = false;
+        var map = cell.context.map;
+        if (map._fogQueue) {
+          map._fogQueue.set(cell, 'clear');
+        }
+      }
+      this._updateEdgeDither();
+      var grid = cell.context.map.grid;
+      for (var di = -1; di <= 1; di++) {
+        for (var dj = -1; dj <= 1; dj++) {
+          var _grid2;
+          if (di === 0 && dj === 0) continue;
+          (_grid2 = grid[cell.i + di]) === null || _grid2 === void 0 || (_grid2 = _grid2[cell.j + dj]) === null || _grid2 === void 0 || _grid2.cellFog._updateEdgeDither();
+        }
+      }
+      if (cell.has) {
+        this.removeFogBuilding(cell.has);
+        this._setRemoveChildren(cell.has);
+      }
+      var _iterator = CellFog_createForOfIteratorHelper(cell.corpses),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var corpse = _step.value;
+          this._setRemoveChildren(corpse);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }]);
+}();
+;// ./app/classes/cell/CellTerrain.js
+function CellTerrain_typeof(o) { "@babel/helpers - typeof"; return CellTerrain_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, CellTerrain_typeof(o); }
+function CellTerrain_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function CellTerrain_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, CellTerrain_toPropertyKey(o.key), o); } }
+function CellTerrain_createClass(e, r, t) { return r && CellTerrain_defineProperties(e.prototype, r), t && CellTerrain_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function CellTerrain_toPropertyKey(t) { var i = CellTerrain_toPrimitive(t, "string"); return "symbol" == CellTerrain_typeof(i) ? i : i + ""; }
+function CellTerrain_toPrimitive(t, r) { if ("object" != CellTerrain_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != CellTerrain_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+// Lookup table for setDesertBorder — indexed by cell sprite index, returns 4 border variants (W/N/S/E)
+var _DESERT_VAL = Array.from({
+  length: 25
+}, function (_, i) {
+  return i < 9 ? [0, 1, 2, 3] : Array.from({
+    length: 4
+  }, function (__, k) {
+    return (i - 9) * 4 + k + 4;
+  });
+});
+var CellTerrain = /*#__PURE__*/function () {
+  function CellTerrain(cell) {
+    CellTerrain_classCallCheck(this, CellTerrain);
+    this.cell = cell;
+  }
+  return CellTerrain_createClass(CellTerrain, [{
+    key: "setDesertBorder",
+    value: function setDesertBorder(direction) {
+      var cell = this.cell;
+      var alreadySet = cell.children.some(function (c) {
+        return c.type === 'border' && c.direction === direction;
+      });
+      if (alreadySet) return;
+      var resourceName = '20002';
+      var cellSpriteTextureName = cell.sprite.texture.label;
+      var cellSpriteIndex = +cellSpriteTextureName.split('_')[0];
+      var dirIndex = {
+        west: 0,
+        north: 1,
+        south: 2,
+        east: 3
+      }[direction];
+      var index = _DESERT_VAL[cellSpriteIndex][dirIndex];
+      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
+      var texture = spritesheet.textures[formatNumber(index) + '_' + resourceName + '.png'];
+      var sprite = new lib/* Sprite */.kxk(texture);
+      sprite.direction = direction;
+      sprite.anchor.set(0.5, 0.5);
+      sprite.type = 'border';
+      cell.addChild(sprite);
+    }
+  }, {
+    key: "setWaterBorder",
+    value: function setWaterBorder(resourceName, index) {
+      var cell = this.cell;
+      var sprite = cell.sprite;
+      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
+      var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
+      cell.border = true;
+      cell.waterBorder = true;
+      if (cell.has && typeof cell.has.die === 'function') {
+        cell.has.die(true);
+      }
+      sprite.texture = texture;
+    }
+  }, {
+    key: "setReliefBorder",
+    value: function setReliefBorder(index) {
+      var elevation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      var cell = this.cell;
+      var sprite = cell.sprite;
+      var resourceName = sprite.texture.label.split('_')[1].split('.')[0];
+      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
+      var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
+      if (elevation) {
+        cell.y -= elevation;
+      }
+      cell.inclined = true;
+      if (cell.has) {
+        cell.has.zIndex = getInstanceZIndex(cell.has);
+      }
+      sprite.label = LABEL_TYPES.sprite;
+      sprite.anchor.set(0.5, 0.5);
+      sprite.texture = texture;
+    }
+  }, {
+    key: "setWater",
+    value: function setWater() {
+      var cell = this.cell;
+      var index = formatNumber(randomRange(0, 3));
+      var resourceName = '15002';
+      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
+      cell.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png'];
+      cell.type = 'Water';
+      cell.category = 'Water';
+    }
+  }, {
+    key: "fillWaterCellsAroundCell",
+    value: function fillWaterCellsAroundCell() {
+      var cell = this.cell;
+      var grid = cell.parent.grid;
+      if (cell.type === 'Water' && !cell.sprite.texture.label.includes('15002')) {
+        this.setWater();
+      }
+      getCellsAroundPoint(cell.i, cell.j, grid, 2, function (neighbor) {
+        if (neighbor.type === 'Water' && cell.type === 'Water') {
+          var dist = instancesDistance(cell, neighbor);
+          var velX = Math.round((cell.i - neighbor.i) / dist);
+          var velY = Math.round((cell.j - neighbor.j) / dist);
+          if (grid[neighbor.i + velX] && grid[neighbor.i + velX][neighbor.j + velY]) {
+            var target = grid[neighbor.i + velX][neighbor.j + velY];
+            var aside = grid[cell.i + neighbor.i - target.i][cell.j + neighbor.j - target.j];
+            if (target.type !== cell.type && aside.type !== cell.type) {
+              if (Math.floor(dist) === 2) {
+                neighbor.setWater();
+                target.setWater();
+              }
+            }
+          }
+        }
+      });
+    }
+  }, {
+    key: "fillReliefCellsAroundCell",
+    value: function fillReliefCellsAroundCell() {
+      var cell = this.cell;
+      var grid = cell.parent.grid;
+      getCellsAroundPoint(cell.i, cell.j, grid, 2, function (neighbor) {
+        if (neighbor.z === cell.z) {
+          var dist = instancesDistance(cell, neighbor);
+          var velX = Math.round((cell.i - neighbor.i) / dist);
+          var velY = Math.round((cell.j - neighbor.j) / dist);
+          if (grid[neighbor.i + velX] && grid[neighbor.i + velX][neighbor.j + velY]) {
+            var target = grid[neighbor.i + velX][neighbor.j + velY];
+            var aside = grid[cell.i + neighbor.i - target.i][cell.j + neighbor.j - target.j];
+            if (target.category !== 'Water' && !target.waterBorder && target.z <= cell.z && target.z !== cell.z && aside.z !== cell.z) {
+              if (Math.floor(dist) === 2) {
+                target.setCellLevel(target.z + 1);
+              }
+            }
+          }
+        }
+      });
+    }
+  }, {
+    key: "setCellLevel",
+    value: function setCellLevel(level) {
+      var cpt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+      var cell = this.cell;
+      if (level === 0) {
+        cell.y += CELL_DEPTH;
+        cell.z = level;
+        return;
+      }
+      var grid = cell.parent.grid;
+      getCellsAroundPoint(cell.i, cell.j, grid, level - cpt, function (neighbor) {
+        if (neighbor.z < cpt) {
+          neighbor.y -= (cpt - neighbor.z) * CELL_DEPTH;
+          neighbor.z = cpt;
+          neighbor.fillReliefCellsAroundCell();
+        }
+      });
+      if (cpt + 1 < level) {
+        cell.setCellLevel(level, cpt + 1);
+      }
+      if (cell.has) {
+        cell.has.zIndex = getInstanceZIndex(cell.has);
+      }
+    }
+  }]);
+}();
+;// ./app/classes/cell/index.js
+function cell_typeof(o) { "@babel/helpers - typeof"; return cell_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, cell_typeof(o); }
+function cell_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = cell_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function cell_toConsumableArray(r) { return cell_arrayWithoutHoles(r) || cell_iterableToArray(r) || cell_unsupportedIterableToArray(r) || cell_nonIterableSpread(); }
+function cell_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function cell_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return cell_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? cell_arrayLikeToArray(r, a) : void 0; } }
+function cell_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function cell_arrayWithoutHoles(r) { if (Array.isArray(r)) return cell_arrayLikeToArray(r); }
+function cell_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function cell_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function cell_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, cell_toPropertyKey(o.key), o); } }
+function cell_createClass(e, r, t) { return r && cell_defineProperties(e.prototype, r), t && cell_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function cell_toPropertyKey(t) { var i = cell_toPrimitive(t, "string"); return "symbol" == cell_typeof(i) ? i : i + ""; }
+function cell_toPrimitive(t, r) { if ("object" != cell_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != cell_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function cell_callSuper(t, o, e) { return o = cell_getPrototypeOf(o), cell_possibleConstructorReturn(t, cell_isNativeReflectConstruct() ? Reflect.construct(o, e || [], cell_getPrototypeOf(t).constructor) : o.apply(t, e)); }
+function cell_possibleConstructorReturn(t, e) { if (e && ("object" == cell_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return cell_assertThisInitialized(t); }
+function cell_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
+function cell_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (cell_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function cell_getPrototypeOf(t) { return cell_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, cell_getPrototypeOf(t); }
+function cell_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && cell_setPrototypeOf(t, e); }
+function cell_setPrototypeOf(t, e) { return cell_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, cell_setPrototypeOf(t, e); }
+
+
+
+
+
 var Cell = /*#__PURE__*/function (_Container) {
   function Cell(options, context) {
     var _this;
@@ -6807,7 +8357,7 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.corpses = new Set();
     _this.fogSprites = [];
     _this._ditherSprite = null;
-    _this._fogOverlay = null;
+    _this._ditherKey = null;
     _this._hasFog = false;
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
@@ -6831,9 +8381,13 @@ var Cell = /*#__PURE__*/function (_Container) {
     _this.sprite.eventMode = 'none';
     _this.sprite.allowClick = false;
     _this.addChild(_this.sprite);
-    _this.fogSprites.forEach(function (sprite) {
-      var _this3;
-      return (_this3 = _this).addFogBuilding.apply(_this3, cell_toConsumableArray(Object.values(sprite)));
+    _this.cellFog = new CellFog(_this);
+    _this.cellTerrain = new CellTerrain(_this);
+
+    // Replay fog building sprites for cells loaded from a save
+    _this.fogSprites.forEach(function (s) {
+      var _this$cellFog;
+      return (_this$cellFog = _this.cellFog).addFogBuilding.apply(_this$cellFog, cell_toConsumableArray(Object.values(s)));
     });
     _this.eventMode = 'none';
     _this.allowMove = false;
@@ -6844,25 +8398,12 @@ var Cell = /*#__PURE__*/function (_Container) {
   return cell_createClass(Cell, [{
     key: "_updateChild",
     value: function _updateChild(instance) {
+      var _instance$owner;
       var _this$context = this.context,
         map = _this$context.map,
         player = _this$context.player;
-      if (map.revealEverything || !instance.owner || instance.owner.isPlayed || instanceIsInPlayerSight(instance, player)) {
-        instance.visible = true;
-      }
-    }
-  }, {
-    key: "_setRemoveChildren",
-    value: function _setRemoveChildren(instance) {
-      var controls = this.context.controls;
-      if (controls.instanceInCamera(instance)) {
-        instance.visible = true;
-      }
-      for (var i = 0; i < instance.children.length; i++) {
-        if (instance.children[i].tint) {
-          instance.children[i].tint = COLOR_WHITE;
-        }
-      }
+      var isInPlayerSight = instanceIsInPlayerSight(instance, player);
+      instance.visible = map.revealEverything || ((_instance$owner = instance.owner) === null || _instance$owner === void 0 ? void 0 : _instance$owner.isPlayed) || isInPlayerSight || instance.family === FAMILY_TYPES.resource || !map.revealTerrain && !instance.owner;
     }
   }, {
     key: "updateVisible",
@@ -6896,354 +8437,84 @@ var Cell = /*#__PURE__*/function (_Container) {
       this.has = entity;
       this.updateVisible();
     }
-  }, {
-    key: "setDesertBorder",
-    value: function setDesertBorder(direction) {
-      // Avoid stacking duplicate border sprites when multiple desert neighbors trigger the same side
-      var alreadySet = this.children.some(function (c) {
-        return c.type === 'border' && c.direction === direction;
-      });
-      if (alreadySet) return;
-      var resourceName = '20002';
-      var cellSprite = this.sprite;
-      var cellSpriteTextureName = cellSprite.texture.label;
-      var cellSpriteIndex = +cellSpriteTextureName.split('_')[0];
-      var dirIndex = {
-        west: 0,
-        north: 1,
-        south: 2,
-        east: 3
-      }[direction];
-      var index = _DESERT_VAL[cellSpriteIndex][dirIndex];
-      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
-      var texture = spritesheet.textures[formatNumber(index) + '_' + resourceName + '.png'];
-      var sprite = new lib/* Sprite */.kxk(texture);
-      sprite.direction = direction;
-      sprite.anchor.set(0.5, 0.5);
-      sprite.type = 'border';
-      this.addChild(sprite);
-    }
-  }, {
-    key: "setWaterBorder",
-    value: function setWaterBorder(resourceName, index) {
-      var sprite = this.sprite;
-      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
-      var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
-      this.border = true;
-      this.waterBorder = true;
-      if (this.has && typeof this.has.die === 'function') {
-        this.has.die(true);
-      }
-      sprite.texture = texture;
-    }
-  }, {
-    key: "setReliefBorder",
-    value: function setReliefBorder(index) {
-      var elevation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      var sprite = this.sprite;
-      var resourceName = sprite.texture.label.split('_')[1].split('.')[0];
-      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
-      var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
-      if (elevation) {
-        this.y -= elevation;
-      }
-      this.inclined = true;
-      if (this.has) {
-        this.has.zIndex = getInstanceZIndex(this.has);
-      }
-      sprite.label = LABEL_TYPES.sprite;
-      sprite.anchor.set(0.5, 0.5);
-      sprite.texture = texture;
-    }
-  }, {
-    key: "setWater",
-    value: function setWater() {
-      var index = formatNumber(randomRange(0, 3));
-      var resourceName = '15002';
-      var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
-      this.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png'];
-      this.type = 'Water';
-      this.category = 'Water';
-    }
-  }, {
-    key: "fillWaterCellsAroundCell",
-    value: function fillWaterCellsAroundCell() {
-      var _this4 = this;
-      var grid = this.parent.grid;
-      if (this.type === 'Water' && !this.sprite.texture.label.includes('15002')) {
-        this.setWater();
-      }
-      getCellsAroundPoint(this.i, this.j, grid, 2, function (cell) {
-        if (cell.type === 'Water' && _this4.type === 'Water') {
-          var dist = instancesDistance(_this4, cell);
-          var velX = Math.round((_this4.i - cell.i) / dist);
-          var velY = Math.round((_this4.j - cell.j) / dist);
-          if (grid[cell.i + velX] && grid[cell.i + velX][cell.j + velY]) {
-            var target = grid[cell.i + velX][cell.j + velY];
-            var aside = grid[_this4.i + cell.i - target.i][_this4.j + cell.j - target.j];
-            if (target.type !== _this4.type && aside.type !== _this4.type) {
-              if (Math.floor(dist) === 2) {
-                cell.setWater();
-                target.setWater();
-              }
-            }
-          }
-        }
-      });
-    }
-  }, {
-    key: "fillReliefCellsAroundCell",
-    value: function fillReliefCellsAroundCell() {
-      var _this5 = this;
-      var grid = this.parent.grid;
-      getCellsAroundPoint(this.i, this.j, grid, 2, function (cell) {
-        if (cell.z === _this5.z) {
-          var dist = instancesDistance(_this5, cell);
-          var velX = Math.round((_this5.i - cell.i) / dist);
-          var velY = Math.round((_this5.j - cell.j) / dist);
-          if (grid[cell.i + velX] && grid[cell.i + velX][cell.j + velY]) {
-            var target = grid[cell.i + velX][cell.j + velY];
-            var aside = grid[_this5.i + cell.i - target.i][_this5.j + cell.j - target.j];
-            if (target.z <= _this5.z && target.z !== _this5.z && aside.z !== _this5.z) {
-              if (Math.floor(dist) === 2) {
-                target.setCellLevel(target.z + 1);
-              }
-            }
-          }
-        }
-      });
-    }
-  }, {
-    key: "setCellLevel",
-    value: function setCellLevel(level) {
-      var cpt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-      if (level === 0) {
-        this.y += CELL_DEPTH;
-        this.z = level;
-        return;
-      }
-      var grid = this.parent.grid;
-      getCellsAroundPoint(this.i, this.j, grid, level - cpt, function (cell) {
-        if (cell.z < cpt) {
-          cell.y -= (cpt - cell.z) * CELL_DEPTH;
-          cell.z = cpt;
-          cell.fillReliefCellsAroundCell(grid);
-        }
-      });
-      if (cpt + 1 < level) {
-        this.setCellLevel(level, cpt + 1);
-      }
-      if (this.has) {
-        this.has.zIndex = getInstanceZIndex(this.has);
-      }
-    }
-  }, {
-    key: "addFogBuilding",
-    value: function addFogBuilding(textureSheet, colorSheet, colorName) {
-      var sprite = lib/* Sprite */.kxk.from(getTexture(textureSheet, lib/* Assets */.sP));
-      sprite.label = LABEL_TYPES.buildingFog;
-      sprite.tint = COLOR_FOG;
-      sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y);
-      this.addChild(sprite);
-      this.fogSprites.push({
-        sprite: sprite,
-        textureSheet: textureSheet,
-        colorSheet: colorSheet,
-        colorName: colorName
-      });
-      if (colorSheet) {
-        var spriteColor = lib/* Sprite */.kxk.from(getTexture(colorSheet, lib/* Assets */.sP));
-        spriteColor.label = LABEL_TYPES.buildingFog;
-        spriteColor.tint = COLOR_FOG;
-        changeSpriteColorDirectly(spriteColor, colorName);
-        this.addChild(spriteColor);
-        this.fogSprites.push({
-          sprite: spriteColor,
-          textureSheet: textureSheet,
-          colorSheet: colorSheet,
-          colorName: colorName
-        });
-      } else {
-        changeSpriteColorDirectly(sprite, colorName);
-      }
-      this.zIndex = 100;
-    }
-  }, {
-    key: "removeFogBuilding",
-    value: function removeFogBuilding(instance) {
-      var map = this.context.map;
-      if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
-        var localCell = map.grid[instance.i][instance.j];
-        localCell.fogSprites.forEach(function (s) {
-          var _s$sprite;
-          return (_s$sprite = s.sprite) === null || _s$sprite === void 0 ? void 0 : _s$sprite.destroy();
-        });
-        localCell.fogSprites = [];
-      }
-    }
-  }, {
-    key: "setFogChildren",
-    value: function setFogChildren(instance, init) {
-      var _this$context3 = this.context,
-        player = _this$context3.player,
-        map = _this$context3.map;
-      if (!instanceIsInPlayerSight(instance, player)) {
-        if (instance.owner && !instance.owner.isPlayed) {
-          if (!init && instance.family === FAMILY_TYPES.building) {
-            var assets = getBuildingAsset(instance.type, instance.owner, lib/* Assets */.sP);
-            var localCell = map.grid[instance.i][instance.j];
-            localCell.addFogBuilding(assets.images["final"], assets.images.color, instance.owner.color);
-          }
-          instance.visible = false;
-        }
-      }
-    }
-  }, {
-    key: "_updateEdgeDither",
-    value: function _updateEdgeDither() {
-      var _this6 = this;
-      var needed = new Set();
-      var neededCorners = new Set();
-      if (this.visible && this.viewBy.size > 0 && !this._hasFog) {
-        var grid = this.context.map.grid;
-        var _iterator2 = cell_createForOfIteratorHelper(_NEIGHBOR_LIST),
-          _step2;
-        try {
-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var _grid;
-            var _step2$value = _step2.value,
-              di = _step2$value.di,
-              dj = _step2$value.dj,
-              side = _step2$value.side;
-            var n = (_grid = grid[this.i + di]) === null || _grid === void 0 ? void 0 : _grid[this.j + dj];
-            if (!n || n._hasFog) needed.add(side);
-          }
-          // Inner-corner: diagonal in fog but both shared cardinals visible
-        } catch (err) {
-          _iterator2.e(err);
-        } finally {
-          _iterator2.f();
-        }
-        var _iterator3 = cell_createForOfIteratorHelper(_CORNER_LIST),
-          _step3;
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var _grid2;
-            var _step3$value = _step3.value,
-              _di = _step3$value.di,
-              _dj = _step3$value.dj,
-              corner = _step3$value.corner,
-              adj = _step3$value.adj;
-            var diag = (_grid2 = grid[this.i + _di]) === null || _grid2 === void 0 ? void 0 : _grid2[this.j + _dj];
-            if (!diag || diag._hasFog) {
-              var bothVisible = adj.every(function (_ref5) {
-                var _grid3;
-                var _ref6 = cell_slicedToArray(_ref5, 2),
-                  cdi = _ref6[0],
-                  cdj = _ref6[1];
-                var cn = (_grid3 = grid[_this6.i + cdi]) === null || _grid3 === void 0 ? void 0 : _grid3[_this6.j + cdj];
-                return cn && !cn._hasFog;
-              });
-              if (bothVisible) neededCorners.add(corner);
-            }
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
-        }
-      }
-      var fogLayer = this.context.map.fogLayer;
-      if (!fogLayer) return;
-      if (needed.size > 0 || neededCorners.size > 0) {
-        var texture = getDitherTexture(needed, neededCorners);
-        if (!this._ditherSprite) {
-          this._ditherSprite = new lib/* Sprite */.kxk(texture);
-          this._ditherSprite.label = LABEL_TYPES.dither;
-          this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH);
-          this._ditherSprite.eventMode = 'none';
-          this._ditherSprite.x = this.x;
-          this._ditherSprite.y = this.y;
-          fogLayer.addChild(this._ditherSprite);
-        } else {
-          this._ditherSprite.texture = texture;
-        }
-      } else {
-        if (this._ditherSprite) {
-          fogLayer.removeChild(this._ditherSprite);
-          this._ditherSprite = null;
-        }
-      }
-    }
+
+    // Fog delegates
   }, {
     key: "setFog",
     value: function setFog(init) {
-      if (this.has && !this.has.isDead) {
-        this.setFogChildren(this.has, init);
-      }
-      if (!this._hasFog && this.context.map.fogLayer) {
-        this._hasFog = true;
-        var overlay = new lib/* Sprite */.kxk(getFogTexture());
-        overlay.label = LABEL_TYPES.fogOverlay;
-        overlay.anchor.set(_DAX / _DW, _DAY / _DH);
-        overlay.eventMode = 'none';
-        overlay.x = this.x;
-        overlay.y = this.y;
-        this.context.map.fogLayer.addChild(overlay);
-        this._fogOverlay = overlay;
-      }
-      // This cell goes fog: remove its dither ring, update visible neighbors
-      this._updateEdgeDither();
-      var grid = this.context.map.grid;
-      for (var di = -1; di <= 1; di++) {
-        for (var dj = -1; dj <= 1; dj++) {
-          var _grid4;
-          if (di === 0 && dj === 0) continue;
-          (_grid4 = grid[this.i + di]) === null || _grid4 === void 0 || (_grid4 = _grid4[this.j + dj]) === null || _grid4 === void 0 || _grid4._updateEdgeDither();
-        }
-      }
+      return this.cellFog.setFog(init);
     }
   }, {
     key: "removeFog",
     value: function removeFog() {
-      this.visible = true;
-      this.zIndex = 0;
-      if (this._hasFog) {
-        this._hasFog = false;
-        this.context.map.fogLayer.removeChild(this._fogOverlay);
-        this._fogOverlay = null;
-      }
-      // This cell is now visible: check edge dither for self and neighbors
-      this._updateEdgeDither();
-      var grid = this.context.map.grid;
-      for (var di = -1; di <= 1; di++) {
-        for (var dj = -1; dj <= 1; dj++) {
-          var _grid5;
-          if (di === 0 && dj === 0) continue;
-          (_grid5 = grid[this.i + di]) === null || _grid5 === void 0 || (_grid5 = _grid5[this.j + dj]) === null || _grid5 === void 0 || _grid5._updateEdgeDither();
-        }
-      }
-      if (this.has) {
-        this.removeFogBuilding(this.has);
-        this._setRemoveChildren(this.has);
-      }
-      var _iterator4 = cell_createForOfIteratorHelper(this.corpses),
-        _step4;
-      try {
-        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-          var corpse = _step4.value;
-          this._setRemoveChildren(corpse);
-        }
-      } catch (err) {
-        _iterator4.e(err);
-      } finally {
-        _iterator4.f();
-      }
+      return this.cellFog.removeFog();
+    }
+  }, {
+    key: "addFogBuilding",
+    value: function addFogBuilding(textureSheet, colorSheet, colorName) {
+      return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName);
+    }
+  }, {
+    key: "removeFogBuilding",
+    value: function removeFogBuilding(instance) {
+      return this.cellFog.removeFogBuilding(instance);
+    }
+  }, {
+    key: "setFogChildren",
+    value: function setFogChildren(instance, init) {
+      return this.cellFog.setFogChildren(instance, init);
+    }
+  }, {
+    key: "_updateEdgeDither",
+    value: function _updateEdgeDither() {
+      return this.cellFog._updateEdgeDither();
+    }
+
+    // Terrain delegates
+  }, {
+    key: "setDesertBorder",
+    value: function setDesertBorder(direction) {
+      return this.cellTerrain.setDesertBorder(direction);
+    }
+  }, {
+    key: "setWaterBorder",
+    value: function setWaterBorder(resourceName, index) {
+      return this.cellTerrain.setWaterBorder(resourceName, index);
+    }
+  }, {
+    key: "setReliefBorder",
+    value: function setReliefBorder(index, elevation) {
+      return this.cellTerrain.setReliefBorder(index, elevation);
+    }
+  }, {
+    key: "setWater",
+    value: function setWater() {
+      return this.cellTerrain.setWater();
+    }
+  }, {
+    key: "fillWaterCellsAroundCell",
+    value: function fillWaterCellsAroundCell() {
+      return this.cellTerrain.fillWaterCellsAroundCell();
+    }
+  }, {
+    key: "fillReliefCellsAroundCell",
+    value: function fillReliefCellsAroundCell() {
+      return this.cellTerrain.fillReliefCellsAroundCell();
+    }
+  }, {
+    key: "setCellLevel",
+    value: function setCellLevel(level, cpt) {
+      return this.cellTerrain.setCellLevel(level, cpt);
     }
   }]);
 }(lib/* Container */.mcf);
 ;// ./app/classes/map.js
 function map_typeof(o) { "@babel/helpers - typeof"; return map_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, map_typeof(o); }
+function map_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = map_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function map_slicedToArray(r, e) { return map_arrayWithHoles(r) || map_iterableToArrayLimit(r, e) || map_unsupportedIterableToArray(r, e) || map_nonIterableRest(); }
+function map_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function map_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function map_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function map_toConsumableArray(r) { return map_arrayWithoutHoles(r) || map_iterableToArray(r) || map_unsupportedIterableToArray(r) || map_nonIterableSpread(); }
 function map_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function map_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return map_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? map_arrayLikeToArray(r, a) : void 0; } }
@@ -7265,6 +8536,7 @@ function map_isNativeReflectConstruct() { try { var t = !Boolean.prototype.value
 function map_getPrototypeOf(t) { return map_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, map_getPrototypeOf(t); }
 function map_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && map_setPrototypeOf(t, e); }
 function map_setPrototypeOf(t, e) { return map_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, map_setPrototypeOf(t, e); }
+
 
 
 
@@ -7310,6 +8582,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.positionsCount = 2;
     _this.gaia = null;
     _this.resources = new Set();
+    _this.instanceBuckets = null;
     _this.eventMode = 'auto';
     _this.allowMove = false;
     _this.allowClick = false;
@@ -7322,6 +8595,54 @@ var map_Map = /*#__PURE__*/function (_Container) {
     value: function setCoordinate(x, y) {
       this.x = x;
       this.y = y;
+    }
+  }, {
+    key: "_ensureBuckets",
+    value: function _ensureBuckets() {
+      if (this.instanceBuckets) return;
+      var bw = Math.ceil(this.grid.length / BUCKET_SIZE);
+      var bh = Math.ceil(this.grid[0].length / BUCKET_SIZE);
+      this.instanceBuckets = Array.from({
+        length: bw
+      }, function () {
+        return Array.from({
+          length: bh
+        }, function () {
+          return new Set();
+        });
+      });
+    }
+  }, {
+    key: "addToInstanceBucket",
+    value: function addToInstanceBucket(instance) {
+      var _this$instanceBuckets;
+      this._ensureBuckets();
+      var bi = Math.floor(instance.i / BUCKET_SIZE);
+      var bj = Math.floor(instance.j / BUCKET_SIZE);
+      (_this$instanceBuckets = this.instanceBuckets[bi]) === null || _this$instanceBuckets === void 0 || (_this$instanceBuckets = _this$instanceBuckets[bj]) === null || _this$instanceBuckets === void 0 || _this$instanceBuckets.add(instance);
+    }
+  }, {
+    key: "removeFromInstanceBucket",
+    value: function removeFromInstanceBucket(instance) {
+      var _this$instanceBuckets2;
+      if (!this.instanceBuckets) return;
+      var bi = Math.floor(instance.i / BUCKET_SIZE);
+      var bj = Math.floor(instance.j / BUCKET_SIZE);
+      (_this$instanceBuckets2 = this.instanceBuckets[bi]) === null || _this$instanceBuckets2 === void 0 || (_this$instanceBuckets2 = _this$instanceBuckets2[bj]) === null || _this$instanceBuckets2 === void 0 || _this$instanceBuckets2["delete"](instance);
+    }
+  }, {
+    key: "updateInstanceBucket",
+    value: function updateInstanceBucket(instance, oldI, oldJ) {
+      if (!this.instanceBuckets) return;
+      var oldBi = Math.floor(oldI / BUCKET_SIZE),
+        oldBj = Math.floor(oldJ / BUCKET_SIZE);
+      var newBi = Math.floor(instance.i / BUCKET_SIZE),
+        newBj = Math.floor(instance.j / BUCKET_SIZE);
+      if (oldBi !== newBi || oldBj !== newBj) {
+        var _this$instanceBuckets3, _this$instanceBuckets4;
+        (_this$instanceBuckets3 = this.instanceBuckets[oldBi]) === null || _this$instanceBuckets3 === void 0 || (_this$instanceBuckets3 = _this$instanceBuckets3[oldBj]) === null || _this$instanceBuckets3 === void 0 || _this$instanceBuckets3["delete"](instance);
+        (_this$instanceBuckets4 = this.instanceBuckets[newBi]) === null || _this$instanceBuckets4 === void 0 || (_this$instanceBuckets4 = _this$instanceBuckets4[newBj]) === null || _this$instanceBuckets4 === void 0 || _this$instanceBuckets4.add(instance);
+      }
     }
   }, {
     key: "generateFromJSON",
@@ -7341,9 +8662,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
         controls = _this$context.controls;
       this.removeChildren();
       this.size = map.length - 1;
-      this.fogLayer = new lib/* Container */.mcf();
-      this.fogLayer.eventMode = 'none';
-      this.fogLayer.zIndex = 1e9;
+      this._initFogChunks();
       this.gaia = new Gaia(this.context);
       for (var i = 0; i <= this.size; i++) {
         var line = map[i];
@@ -7371,12 +8690,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
       this.resources = new Set(resources.map(function (resource) {
         return _this2.addChild(new Resource(resource, _this2.context));
       }));
-      this.formatCellsRelief();
       this.formatCellsWaterBorder();
+      this.clampReliefAroundWater();
+      this.formatCellsRelief();
       this.formatCellsDesert();
-
-      // fogLayer is added last so it always renders above units, buildings, corpses
-      this.addChild(this.fogLayer);
       if (!this.revealEverything) {
         for (var _i2 = 0; _i2 <= this.size; _i2++) {
           for (var _j2 = 0; _j2 <= this.size; _j2++) {
@@ -7466,6 +8783,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
           return processUnit(unit, _this2);
         });
       });
+      this._fogInitComplete = true;
+      this._flushFogQueue();
+      this.bakeTerrainToChunks();
       this.ready = true;
     }
   }, {
@@ -7517,15 +8837,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
         player = _this$context2.player;
       this.gaia = new Gaia(this.context);
       this.generateAnimalsAroundPlayers(this.playersPos);
-
-      //this.generateMapRelief()
-      //this.formatCellsRelief()
-
+      this.generateMapRelief();
+      this.formatCellsRelief();
       this.generateSets();
-      this.fogLayer = new lib/* Container */.mcf();
-      this.fogLayer.eventMode = 'none';
-      this.fogLayer.zIndex = 1e9;
-      this.addChild(this.fogLayer);
+      this._initFogChunks();
       if (!this.revealEverything) {
         for (var i = 0; i <= this.size; i++) {
           for (var j = 0; j <= this.size; j++) {
@@ -7541,12 +8856,16 @@ var map_Map = /*#__PURE__*/function (_Container) {
           updateInstanceVisibility(unit);
         }
       }
+      this._fogInitComplete = true;
+      this._flushFogQueue();
+      this.bakeTerrainToChunks();
       this.ready = true;
       menu.updateResourcesMiniMap();
     }
   }, {
     key: "generatePlayers",
     value: function generatePlayers() {
+      var playersConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
       var context = this.context;
       var players = [];
       var poses = [];
@@ -7561,13 +8880,15 @@ var map_Map = /*#__PURE__*/function (_Container) {
         var posI = (_this$playersPos$pose = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose === void 0 ? void 0 : _this$playersPos$pose.i;
         var posJ = (_this$playersPos$pose2 = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose2 === void 0 ? void 0 : _this$playersPos$pose2.j;
         if (posI && posJ) {
-          var color = colors[_i6];
+          var _playersConfig$_i6$co, _playersConfig$_i, _playersConfig$_i6$ci, _playersConfig$_i2;
+          var color = (_playersConfig$_i6$co = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i = playersConfig[_i6]) === null || _playersConfig$_i === void 0 ? void 0 : _playersConfig$_i.color) !== null && _playersConfig$_i6$co !== void 0 ? _playersConfig$_i6$co : colors[_i6];
+          var civ = (_playersConfig$_i6$ci = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i2 = playersConfig[_i6]) === null || _playersConfig$_i2 === void 0 ? void 0 : _playersConfig$_i2.civ) !== null && _playersConfig$_i6$ci !== void 0 ? _playersConfig$_i6$ci : 'Greek';
           if (!_i6) {
             players.push(new Human({
               i: posI,
               j: posJ,
               age: 0,
-              civ: 'Greek',
+              civ: civ,
               color: color,
               isPlayed: true
             }, context));
@@ -7576,7 +8897,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
               i: posI,
               j: posJ,
               age: 0,
-              civ: 'Greek',
+              civ: civ,
               color: color,
               difficulty: this.difficulty
             }, context));
@@ -7620,6 +8941,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
       var gridHeight = grid[0].length;
       var forestCells = [];
       var pathCells = new Set();
+
+      // Larger range for lac so forests cover the sides between players around the lake
+      var rangeFactor = this.mapType === 'lac' ? 0.55 : 0.40;
+      var forestRange = Math.max(30, Math.floor(this.size * rangeFactor));
 
       // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
       function distSq(x1, y1, x2, y2) {
@@ -7674,8 +8999,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
 
         // Ensure the cluster is far from the player and within bounds
         do {
-          clusterCenterI = playerI + Math.floor(Math.random() * 60 - 30); // Random offset
-          clusterCenterJ = playerJ + Math.floor(Math.random() * 60 - 30);
+          clusterCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          clusterCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
           tries++;
           if (tries > 100) break; // Safety exit
         } while (distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq || clusterCenterI < 0 || clusterCenterI >= gridWidth || clusterCenterJ < 0 || clusterCenterJ >= gridHeight ||
@@ -7701,8 +9026,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
           soloJ = void 0;
         var _tries = 0;
         do {
-          soloI = playerI + Math.floor(Math.random() * 60 - 30); // Random offset within [-30, 30]
-          soloJ = playerJ + Math.floor(Math.random() * 60 - 30);
+          soloI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          soloJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
           _tries++;
           if (_tries > 50) break; // Safety exit to avoid infinite loop
         } while (distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq || soloI < 0 || soloI >= gridWidth || soloJ < 0 || soloJ >= gridHeight ||
@@ -7729,8 +9054,8 @@ var map_Map = /*#__PURE__*/function (_Container) {
           var clearingRadius = Math.floor(Math.random() * 8) + 5; // Random clearing radius between 5 and 13
           var _edgeNoise = Math.random() * 1.5;
           do {
-            clearingCenterI = playerI + Math.floor(Math.random() * 60 - 30); // Random offset
-            clearingCenterJ = playerJ + Math.floor(Math.random() * 60 - 30);
+            clearingCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+            clearingCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
             _tries2++;
             if (_tries2 > 100) break;
           } while (distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq || clearingCenterI < 0 || clearingCenterI >= gridWidth || clearingCenterJ < 0 || clearingCenterJ >= gridHeight ||
@@ -7795,7 +9120,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
         // Ensure again that we're not placing trees on Water, Border, or Solid cells
         if (grid[cell.i][cell.j].category !== 'Water' && !grid[cell.i][cell.j].waterBorder && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
           var isFree = true;
-          getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
+          grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
             var _cell$has;
             if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.type)) {
               isFree = false;
@@ -7874,104 +9199,142 @@ var map_Map = /*#__PURE__*/function (_Container) {
   }, {
     key: "generateTerrain",
     value: function generateTerrain() {
+      var _thresholds$mapType, _biomeThresholds$mapT;
       var gridSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 120;
-      var mapModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'plain';
-      var terrainMap = [];
+      var mapType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'plain';
+      // Seeded 2D value noise — each map generation gets a unique seed
+      var seed = Math.random() * 9999;
+      function hash(x, y) {
+        var n = Math.sin(x * 127.1 + y * 311.7 + seed * 3.7) * 43758.5453;
+        return n - Math.floor(n);
+      }
+      function noise(x, y) {
+        var xi = Math.floor(x),
+          yi = Math.floor(y);
+        var xf = x - xi,
+          yf = y - yi;
+        var smooth = function smooth(t) {
+          return t * t * (3 - 2 * t);
+        };
+        var u = smooth(xf),
+          v = smooth(yf);
+        var a = hash(xi, yi),
+          b = hash(xi + 1, yi);
+        var c = hash(xi, yi + 1),
+          d = hash(xi + 1, yi + 1);
+        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
+      }
 
-      // Initialize the map with default grass (0)
+      // Fractional Brownian Motion — sum of N octaves for natural-looking terrain
+      function fbm(x, y) {
+        var octaves = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
+        var val = 0,
+          amp = 0.5,
+          freq = 1,
+          sum = 0;
+        for (var o = 0; o < octaves; o++) {
+          val += noise(x * freq, y * freq) * amp;
+          sum += amp;
+          amp *= 0.5;
+          freq *= 2;
+        }
+        return val / sum;
+      }
+      var scale = 4 / gridSize;
+      var half = gridSize / 2;
+
+      // Smooth radial falloff: 1.0 at center, 0.0 at edge
+      function radialFalloff(i, j) {
+        var dx = (i - half) / half;
+        var dy = (j - half) / half;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var t = Math.min(1, dist);
+        return 1 - t * t * (3 - 2 * t);
+      }
+
+      // Pre-compute heightmap and biome map
+      var height = new Float32Array(gridSize * gridSize);
+      var biome = new Float32Array(gridSize * gridSize);
       for (var i = 0; i < gridSize; i++) {
-        terrainMap[i] = [];
         for (var j = 0; j < gridSize; j++) {
-          terrainMap[i][j] = 0; // Default to grass
+          height[i * gridSize + j] = fbm(i * scale, j * scale);
+          // Lower frequency (×0.6) → larger biome patches for AoE1-style biome regions
+          biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4);
         }
       }
 
-      // Helper function to generate terrain clusters around a point
-      function generateTerrainCluster(x, y, radius, type) {
-        for (var _i0 = -radius; _i0 <= radius; _i0++) {
-          for (var _j4 = -radius; _j4 <= radius; _j4++) {
-            var nx = x + _i0;
-            var ny = y + _j4;
-            if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && _i0 * _i0 + _j4 * _j4 <= radius * radius) {
-              terrainMap[nx][ny] = type;
-            }
+      // Water threshold per map type
+      var thresholds = {
+        plain: 0.30,
+        continent: 0.40,
+        lac: 0.42,
+        ilot: 0.52
+      };
+      var waterThreshold = (_thresholds$mapType = thresholds[mapType]) !== null && _thresholds$mapType !== void 0 ? _thresholds$mapType : 0.30;
+      var terrainMap = [];
+      for (var _i0 = 0; _i0 < gridSize; _i0++) {
+        terrainMap[_i0] = [];
+        for (var _j4 = 0; _j4 < gridSize; _j4++) {
+          var h = height[_i0 * gridSize + _j4];
+          var fo = radialFalloff(_i0, _j4);
+          if (mapType === 'continent') {
+            // Stronger boost so the continent is large and water stays at the edges
+            h += (fo - 0.5) * 0.75;
+          } else if (mapType === 'lac') {
+            // Depress center (→ lake), raise edges (→ land)
+            h -= (fo - 0.3) * 0.50;
+          } else if (mapType === 'ilot') {
+            // Mild edge depression + higher threshold → scattered islands
+            h += (fo - 0.5) * 0.20;
+          }
+          terrainMap[_i0][_j4] = h < waterThreshold ? 2 : 0;
+        }
+      }
+
+      // Smooth coastlines with 2 passes of cellular automaton.
+      // Removes isolated water/land pixels so water-border transition sprites apply correctly.
+      for (var pass = 0; pass < 2; pass++) {
+        for (var _i1 = 1; _i1 < gridSize - 1; _i1++) {
+          for (var _j5 = 1; _j5 < gridSize - 1; _j5++) {
+            var wn = (terrainMap[_i1 - 1][_j5] === 2 ? 1 : 0) + (terrainMap[_i1 + 1][_j5] === 2 ? 1 : 0) + (terrainMap[_i1][_j5 - 1] === 2 ? 1 : 0) + (terrainMap[_i1][_j5 + 1] === 2 ? 1 : 0);
+            if (terrainMap[_i1][_j5] !== 2 && wn >= 3) terrainMap[_i1][_j5] = 2; // isolated land → water
+            if (terrainMap[_i1][_j5] === 2 && wn <= 1) terrainMap[_i1][_j5] = 0; // isolated water → land
           }
         }
       }
 
-      // Generate water with a smoother, randomized approach
-      function generateWater() {
-        if (mapModel === 'continent') {
-          var edgeSize = 10; // Base edge size for water
-          var roundFactor = 0.15; // Controls the "smoothness" of the water edge
-
-          // Loop through the map and set water in a rounded pattern with random noise
-          for (var _i1 = 0; _i1 < gridSize; _i1++) {
-            for (var _j5 = 0; _j5 < gridSize; _j5++) {
-              var distFromCenter = Math.abs(_i1 - gridSize / 2) + Math.abs(_j5 - gridSize / 2); // Distance from center
-
-              // Add smooth water around the edges with randomized borders
-              var edgeDist = Math.min(_i1, _j5, gridSize - _i1, gridSize - _j5);
-              var randomOffset = Math.random() * 5 - 2.5; // Randomize water edge for more natural look
-
-              if (edgeDist < edgeSize + Math.sin(distFromCenter * roundFactor) * 5 + randomOffset) {
-                terrainMap[_i1][_j5] = 2; // Water
-              }
-            }
-          }
-        } else if (mapModel === 'lac') {
-          var centerX = Math.floor(gridSize / 2);
-          var centerY = Math.floor(gridSize / 2);
-          var baseRadius = Math.floor(gridSize / 4); // Base radius for the lake
-          var _roundFactor = 0.6; // Adjust this for more/less rounding
-
-          // Create a lake with a smoother, randomized border
-          for (var _i10 = -baseRadius; _i10 <= baseRadius; _i10++) {
-            for (var _j6 = -baseRadius; _j6 <= baseRadius; _j6++) {
-              var nx = centerX + _i10;
-              var ny = centerY + _j6;
-              var distanceFromCenter = Math.sqrt(_i10 * _i10 + _j6 * _j6);
-              var noise = Math.sin(distanceFromCenter * _roundFactor) * 2; // Create smooth noise
-              var _randomOffset = Math.random() * 3 - 1.5; // Add randomness to the lake shape
-
-              if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && distanceFromCenter < baseRadius + noise + _randomOffset) {
-                terrainMap[nx][ny] = 2; // Water
-              }
-            }
-          }
-        }
-        // 'plain' model: no water, so do nothing
-      }
-
-      // Generate clusters of desert (1) and jungle (3)
-      function generateLandTerrain() {
-        // Generate desert areas (1)
-        generateClusters(1, 8, 5, 10);
-
-        // Generate jungle areas (3)
-        generateClusters(3, 10, 4, 8);
-      }
-
-      // Generic function to generate clustered terrain types
-      function generateClusters(type, clusterCount, clusterSizeMin, clusterSizeMax) {
-        for (var _i11 = 0; _i11 < clusterCount; _i11++) {
-          var clusterX = Math.floor(Math.random() * gridSize);
-          var clusterY = Math.floor(Math.random() * gridSize);
-          var radius = Math.floor(Math.random() * (clusterSizeMax - clusterSizeMin)) + clusterSizeMin;
-
-          // Ensure we avoid water if generating jungle/desert in the 'lac' or 'continent' models
-          if (type !== 2 && terrainMap[clusterX][clusterY] === 2) {
-            continue; // Skip if this area is water
-          }
-          generateTerrainCluster(clusterX, clusterY, radius, type);
+      // Biome pass on land cells — per-type thresholds and larger-patch noise frequency
+      // for more cohesive desert/jungle zones (AoE1 style)
+      var biomeThresholds = {
+        plain: {
+          lo: 0.38,
+          hi: 0.65
+        },
+        // warmer, drier → more desert
+        continent: {
+          lo: 0.33,
+          hi: 0.67
+        },
+        // balanced
+        lac: {
+          lo: 0.32,
+          hi: 0.68
+        },
+        // balanced
+        ilot: {
+          lo: 0.27,
+          hi: 0.60
+        } // tropical → more jungle
+      };
+      var bt = (_biomeThresholds$mapT = biomeThresholds[mapType]) !== null && _biomeThresholds$mapT !== void 0 ? _biomeThresholds$mapT : biomeThresholds.plain;
+      for (var _i10 = 0; _i10 < gridSize; _i10++) {
+        for (var _j6 = 0; _j6 < gridSize; _j6++) {
+          if (terrainMap[_i10][_j6] === 2) continue;
+          var b = biome[_i10 * gridSize + _j6];
+          if (b < bt.lo) terrainMap[_i10][_j6] = 1; // desert
+          else if (b > bt.hi) terrainMap[_i10][_j6] = 3; // jungle
         }
       }
-
-      // Generate water based on the map model
-      generateWater();
-
-      // Generate desert and jungle clusters
-      generateLandTerrain();
       return terrainMap;
     }
   }, {
@@ -7979,7 +9342,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     value: function generateCells() {
       var z = 0;
       this.grid = [];
-      var terrain = this.generateTerrain(this.size ? this.size + 1 : 121);
+      var terrain = this.generateTerrain(this.size ? this.size + 1 : 121, this.mapType || 'plain');
       this.size = terrain.length - 1;
 
       // Map terrain numbers to cell types
@@ -8005,9 +9368,9 @@ var map_Map = /*#__PURE__*/function (_Container) {
       }
 
       // Post-processing
-      for (var _i12 = 0; _i12 <= this.size; _i12++) {
+      for (var _i11 = 0; _i11 <= this.size; _i11++) {
         for (var _j7 = 0; _j7 <= this.size; _j7++) {
-          this.grid[_i12][_j7].fillWaterCellsAroundCell();
+          this.grid[_i11][_j7].fillWaterCellsAroundCell();
         }
       }
       this.formatCellsWaterBorder();
@@ -8085,54 +9448,157 @@ var map_Map = /*#__PURE__*/function (_Container) {
     key: "generateMapRelief",
     value: function generateMapRelief() {
       var _this4 = this;
+      // Coherent fBm heightmap for natural ridges and hill ranges.
+      // Different seed and coarser scale than terrain noise → large, varied features.
+      var seed = Math.random() * 9999;
+      function hash(x, y) {
+        var n = Math.sin(x * 83.7 + y * 214.3 + seed * 5.1) * 43758.5453;
+        return n - Math.floor(n);
+      }
+      function noise(x, y) {
+        var xi = Math.floor(x),
+          yi = Math.floor(y);
+        var xf = x - xi,
+          yf = y - yi;
+        var s = function s(t) {
+          return t * t * (3 - 2 * t);
+        };
+        var u = s(xf),
+          v = s(yf);
+        var a = hash(xi, yi),
+          b = hash(xi + 1, yi);
+        var c = hash(xi, yi + 1),
+          d = hash(xi + 1, yi + 1);
+        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
+      }
+      function fbm(x, y) {
+        var val = 0,
+          amp = 0.5,
+          freq = 1,
+          sum = 0;
+        for (var o = 0; o < 4; o++) {
+          val += noise(x * freq, y * freq) * amp;
+          sum += amp;
+          amp *= 0.5;
+          freq *= 2;
+        }
+        return val / sum;
+      }
+      var scale = 3 / this.size;
+      var n = this.size + 1;
+      var dist = this.getReliefCoastDistances();
+
+      // Precompute fBm heightmap
+      var reliefH = new Float32Array(n * n);
       for (var i = 0; i <= this.size; i++) {
-        var _loop3 = function _loop3() {
-          var cell = _this4.grid[i][j];
-          if (Math.random() < _this4.chanceOfRelief) {
-            var level = maths_randomItem(_this4.reliefRange);
-            var canGenerate = true;
-            if (getPlainCellsAroundPoint(i, j, _this4.grid, level * 2, function (cell) {
-              if (cell.category === 'Water' || cell.has && cell.has.family === FAMILY_TYPES.building) {
-                canGenerate = false;
-              }
-            })) ;
-            if (canGenerate) {
-              cell.setCellLevel(level);
+        for (var j = 0; j <= this.size; j++) {
+          reliefH[i * n + j] = fbm(i * scale, j * scale);
+        }
+      }
+
+      // Apply relief from highest level to lowest.
+      // maxAllowed keeps beach cells and a few inland rings flat before slopes start.
+      var levelThresholds = [0, 0.66, 0.78, 0.86];
+      for (var targetLevel = 3; targetLevel >= 1; targetLevel--) {
+        var threshold = levelThresholds[targetLevel];
+        for (var _i12 = 0; _i12 <= this.size; _i12++) {
+          for (var _j8 = 0; _j8 <= this.size; _j8++) {
+            var cell = this.grid[_i12][_j8];
+            if (cell.category === 'Water' || cell.has || cell.waterBorder) continue;
+            var maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[_i12 * n + _j8]);
+            var actual = Math.min(targetLevel, maxAllowed);
+            if (reliefH[_i12 * n + _j8] > threshold && actual > cell.z) {
+              cell.setCellLevel(actual);
             }
           }
+        }
+      }
+      this.clampReliefAroundWater(dist);
+
+      // Remove isolated z=1 bumps (direct reset, no propagation)
+      for (var _i13 = 0; _i13 <= this.size; _i13++) {
+        var _loop3 = function _loop3() {
+          var cell = _this4.grid[_i13][_j9];
+          if (cell.z === 1) {
+            var cpt = 0;
+            getCellsAroundPoint(_i13, _j9, _this4.grid, 1, function (c) {
+              if (c.z > 0) cpt++;
+            });
+            if (cpt < 3) _this4.setCellReliefLevelDirect(cell, 0);
+          }
         };
-        for (var j = 0; j <= this.size; j++) {
+        for (var _j9 = 0; _j9 <= this.size; _j9++) {
           _loop3();
         }
       }
-      for (var _i13 = 0; _i13 <= this.size; _i13++) {
-        var _loop4 = function _loop4() {
-          var cell = _this4.grid[_i13][_j8];
-          if (cell.z === 1) {
-            var toRemove = true;
-            var cpt = 0;
-            if (getCellsAroundPoint(_i13, _j8, _this4.grid, 1, function (cell) {
-              if (cell.z > 0) {
-                cpt++;
-              }
-              if (cpt >= 3) {
-                toRemove = false;
-              }
-            })) ;
-            if (toRemove) {
-              cell.setCellLevel(0);
-            }
-          }
-        };
-        for (var _j8 = 0; _j8 <= this.size; _j8++) {
-          _loop4();
+
+      // Fill gaps between close elevated cells
+      for (var _i14 = 0; _i14 <= this.size; _i14++) {
+        for (var _j0 = 0; _j0 <= this.size; _j0++) {
+          this.grid[_i14][_j0].fillReliefCellsAroundCell();
         }
       }
-      // Format cell's relief
-      for (var _i14 = 0; _i14 <= this.size; _i14++) {
-        for (var _j9 = 0; _j9 <= this.size; _j9++) {
-          var cell = this.grid[_i14][_j9];
-          cell.fillReliefCellsAroundCell();
+      this.clampReliefAroundWater(dist);
+    }
+  }, {
+    key: "getReliefCoastDistances",
+    value: function getReliefCoastDistances() {
+      var n = this.size + 1;
+      var dist = new Int16Array(n * n).fill(9999);
+      var queue = [];
+      for (var i = 0; i <= this.size; i++) {
+        for (var j = 0; j <= this.size; j++) {
+          var cell = this.grid[i][j];
+          if (cell.category === 'Water' || cell.waterBorder) {
+            dist[i * n + j] = 0;
+            queue.push(i * n + j);
+          }
+        }
+      }
+      for (var qi = 0; qi < queue.length; qi++) {
+        var idx = queue[qi];
+        var ci = Math.floor(idx / n),
+          cj = idx % n;
+        var d = dist[idx];
+        for (var _i15 = 0, _arr = [[-1, 0], [1, 0], [0, -1], [0, 1]]; _i15 < _arr.length; _i15++) {
+          var _arr$_i = map_slicedToArray(_arr[_i15], 2),
+            di = _arr$_i[0],
+            dj = _arr$_i[1];
+          var ni = ci + di,
+            nj = cj + dj;
+          if (ni < 0 || ni > this.size || nj < 0 || nj > this.size) continue;
+          var nidx = ni * n + nj;
+          if (dist[nidx] > d + 1) {
+            dist[nidx] = d + 1;
+            queue.push(nidx);
+          }
+        }
+      }
+      return dist;
+    }
+  }, {
+    key: "getMaxReliefLevelFromCoastDistance",
+    value: function getMaxReliefLevelFromCoastDistance(distance) {
+      return Math.max(0, distance - 3);
+    }
+  }, {
+    key: "setCellReliefLevelDirect",
+    value: function setCellReliefLevelDirect(cell, level) {
+      var delta = level - cell.z;
+      if (delta === 0) return;
+      cell.y -= delta * CELL_DEPTH;
+      cell.z = level;
+    }
+  }, {
+    key: "clampReliefAroundWater",
+    value: function clampReliefAroundWater() {
+      var dist = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.getReliefCoastDistances();
+      var n = this.size + 1;
+      for (var i = 0; i <= this.size; i++) {
+        for (var j = 0; j <= this.size; j++) {
+          var cell = this.grid[i][j];
+          var maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[i * n + j]);
+          if (cell.z > maxAllowed) this.setCellReliefLevelDirect(cell, maxAllowed);
         }
       }
     }
@@ -8142,6 +9608,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
       for (var i = 0; i <= this.size; i++) {
         for (var j = 0; j <= this.size; j++) {
           var cell = this.grid[i][j];
+          if (cell.category === 'Water' || cell.waterBorder) continue;
           // Side
           if (this.grid[i - 1] && this.grid[i - 1][j].z - cell.z === 1 && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z) && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z)) {
             cell.setReliefBorder('014', CELL_DEPTH / 2);
@@ -8177,40 +9644,44 @@ var map_Map = /*#__PURE__*/function (_Container) {
   }, {
     key: "formatCellsWaterBorder",
     value: function formatCellsWaterBorder() {
+      // Apply 20000 beach tiles to every land cell adjacent to water.
+      // Bitmask priority: deep corners (2 adjacent orthogonal water) first,
+      // then single sides, then diagonal-only outer corners.
+      // No exclusive "other sides NOT water" conditions — handles any coastline shape.
       for (var i = 0; i <= this.size; i++) {
         for (var j = 0; j <= this.size; j++) {
+          var _this$grid, _this$grid2, _this$grid$i, _this$grid$i2, _this$grid3, _this$grid4, _this$grid5, _this$grid6;
           var cell = this.grid[i][j];
-          if (cell.type !== 'Water') {
-            // Side
-            if (this.grid[i - 1] && this.grid[i - 1][j].type === 'Water' && (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') && (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') && (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')) {
-              cell.setWaterBorder('20000', '008');
-            } else if (this.grid[i + 1] && this.grid[i + 1][j].type === 'Water' && (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water') && (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') && (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water')) {
-              cell.setWaterBorder('20000', '009');
-            } else if (this.grid[i][j - 1] && this.grid[i][j - 1].type === 'Water' && (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') && (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') && (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '011');
-            } else if (this.grid[i][j + 1] && this.grid[i][j + 1].type === 'Water' && (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water') && (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') && (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '010');
-            } // Corner
-            else if (this.grid[i - 1] && this.grid[i - 1][j - 1] && this.grid[i - 1][j - 1].type === 'Water' && (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') && (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '005');
-            } else if (this.grid[i + 1] && this.grid[i + 1][j - 1] && this.grid[i + 1][j - 1].type === 'Water' && (!this.grid[i][j - 1] || this.grid[i][j - 1].type !== 'Water') && (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '007');
-            } else if (this.grid[i - 1] && this.grid[i - 1][j + 1] && this.grid[i - 1][j + 1].type === 'Water' && (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') && (!this.grid[i - 1] || this.grid[i - 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '004');
-            } else if (this.grid[i + 1] && this.grid[i + 1][j + 1] && this.grid[i + 1][j + 1].type === 'Water' && (!this.grid[i][j + 1] || this.grid[i][j + 1].type !== 'Water') && (!this.grid[i + 1] || this.grid[i + 1][j].type !== 'Water')) {
-              cell.setWaterBorder('20000', '006');
+          if (cell.type === 'Water') continue;
+          var n = ((_this$grid = this.grid[i - 1]) === null || _this$grid === void 0 || (_this$grid = _this$grid[j]) === null || _this$grid === void 0 ? void 0 : _this$grid.type) === 'Water';
+          var s = ((_this$grid2 = this.grid[i + 1]) === null || _this$grid2 === void 0 || (_this$grid2 = _this$grid2[j]) === null || _this$grid2 === void 0 ? void 0 : _this$grid2.type) === 'Water';
+          var w = ((_this$grid$i = this.grid[i]) === null || _this$grid$i === void 0 || (_this$grid$i = _this$grid$i[j - 1]) === null || _this$grid$i === void 0 ? void 0 : _this$grid$i.type) === 'Water';
+          var e = ((_this$grid$i2 = this.grid[i]) === null || _this$grid$i2 === void 0 || (_this$grid$i2 = _this$grid$i2[j + 1]) === null || _this$grid$i2 === void 0 ? void 0 : _this$grid$i2.type) === 'Water';
+          var nw = ((_this$grid3 = this.grid[i - 1]) === null || _this$grid3 === void 0 || (_this$grid3 = _this$grid3[j - 1]) === null || _this$grid3 === void 0 ? void 0 : _this$grid3.type) === 'Water';
+          var sw = ((_this$grid4 = this.grid[i + 1]) === null || _this$grid4 === void 0 || (_this$grid4 = _this$grid4[j - 1]) === null || _this$grid4 === void 0 ? void 0 : _this$grid4.type) === 'Water';
+          var ne = ((_this$grid5 = this.grid[i - 1]) === null || _this$grid5 === void 0 || (_this$grid5 = _this$grid5[j + 1]) === null || _this$grid5 === void 0 ? void 0 : _this$grid5.type) === 'Water';
+          var se = ((_this$grid6 = this.grid[i + 1]) === null || _this$grid6 === void 0 || (_this$grid6 = _this$grid6[j + 1]) === null || _this$grid6 === void 0 ? void 0 : _this$grid6.type) === 'Water';
+          if (w && n) cell.setWaterBorder('20000', '001');else if (e && s) cell.setWaterBorder('20000', '002');else if (w && s) cell.setWaterBorder('20000', '003');else if (e && n) cell.setWaterBorder('20000', '000');else if (n) cell.setWaterBorder('20000', '008');else if (s) cell.setWaterBorder('20000', '009');else if (w) cell.setWaterBorder('20000', '011');else if (e) cell.setWaterBorder('20000', '010');else if (nw) cell.setWaterBorder('20000', '005');else if (sw) cell.setWaterBorder('20000', '007');else if (ne) cell.setWaterBorder('20000', '004');else if (se) cell.setWaterBorder('20000', '006');
+        }
+      }
+
+      // Apply 20002 overlay on cells adjacent to waterBorder cells —
+      // same approach as formatCellsDesert: the beach tile acts as the "source"
+      // and its grass/jungle/desert neighbours get a sandy gradient on top.
+      for (var _i16 = 0; _i16 <= this.size; _i16++) {
+        for (var _j1 = 0; _j1 <= this.size; _j1++) {
+          var _this$grid7, _this$grid8, _this$grid$_i, _this$grid$_i2;
+          var _cell3 = this.grid[_i16][_j1];
+          if (!_cell3.waterBorder) continue;
+          var overlay = function overlay(neighbor, direction) {
+            if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
+              neighbor.setDesertBorder(direction);
             }
-            // Deep corner
-            else if (this.grid[i][j - 1] && this.grid[i][j - 1].type === 'Water' && this.grid[i - 1] && this.grid[i - 1][j].type === 'Water') {
-              cell.setWaterBorder('20000', '001');
-            } else if (this.grid[i][j + 1] && this.grid[i][j + 1].type === 'Water' && this.grid[i + 1] && this.grid[i + 1][j].type === 'Water') {
-              cell.setWaterBorder('20000', '002');
-            } else if (this.grid[i][j - 1] && this.grid[i][j - 1].type === 'Water' && this.grid[i + 1] && this.grid[i + 1][j].type === 'Water') {
-              cell.setWaterBorder('20000', '003');
-            } else if (this.grid[i][j + 1] && this.grid[i][j + 1].type === 'Water' && this.grid[i - 1] && this.grid[i - 1][j].type === 'Water') {
-              cell.setWaterBorder('20000', '000');
-            }
-          }
+          };
+          overlay((_this$grid7 = this.grid[_i16 - 1]) === null || _this$grid7 === void 0 ? void 0 : _this$grid7[_j1], 'east');
+          overlay((_this$grid8 = this.grid[_i16 + 1]) === null || _this$grid8 === void 0 ? void 0 : _this$grid8[_j1], 'west');
+          overlay((_this$grid$_i = this.grid[_i16]) === null || _this$grid$_i === void 0 ? void 0 : _this$grid$_i[_j1 - 1], 'south');
+          overlay((_this$grid$_i2 = this.grid[_i16]) === null || _this$grid$_i2 === void 0 ? void 0 : _this$grid$_i2[_j1 + 1], 'north');
         }
       }
     }
@@ -8242,36 +9713,42 @@ var map_Map = /*#__PURE__*/function (_Container) {
     key: "findPlayerPlaces",
     value: function findPlayerPlaces() {
       var results = [];
-      var outBorder = 20;
-      var inBorder = Math.floor(this.size / 4);
-      var zones = [{
-        minX: outBorder,
-        minY: this.size / 2 + inBorder,
-        maxX: this.size / 2 - inBorder,
-        maxY: this.size - outBorder
-      }, {
-        minX: outBorder,
-        minY: outBorder,
-        maxX: this.size / 2 - inBorder,
-        maxY: this.size / 2 - inBorder
-      }, {
-        minX: this.size / 2 + inBorder,
-        minY: outBorder,
-        maxX: this.size - outBorder,
-        maxY: this.size / 2 - inBorder
-      }, {
-        minX: this.size / 2 + inBorder,
-        minY: this.size / 2 + inBorder,
-        maxX: this.size - outBorder,
-        maxY: this.size - outBorder
-      }];
-      for (var i = 0; i < zones.length; i++) {
-        var pos = getZoneInGridWithCondition(zones[i], this.grid, 5, function (cell) {
-          return !cell.border && !cell.solid && !cell.inclined;
-        });
-        if (pos) {
-          results.push(pos);
+      var N = this.positionsCount;
+      var center = this.size / 2;
+      // Randomise start angle so map layout varies each game
+      var startAngle = Math.random() * 2 * Math.PI;
+      // Search window radius around each angular candidate
+      var searchHalf = Math.max(8, Math.floor(this.size * 0.07));
+      var border = 12;
+      // Ordered list of candidate radii (outer → inner) to try per slot
+      var radiiFactors = [0.38, 0.30, 0.44, 0.22, 0.46, 0.15];
+      for (var i = 0; i < N; i++) {
+        var angle = startAngle + 2 * Math.PI / N * i;
+        var found = null;
+        var _iterator = map_createForOfIteratorHelper(radiiFactors),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var frac = _step.value;
+            if (found) break;
+            var r = Math.floor(this.size * frac);
+            var ci = Math.round(center + Math.cos(angle) * r);
+            var cj = Math.round(center + Math.sin(angle) * r);
+            found = getZoneInGridWithCondition({
+              minX: Math.max(border, ci - searchHalf),
+              maxX: Math.min(this.size - border, ci + searchHalf),
+              minY: Math.max(border, cj - searchHalf),
+              maxY: Math.min(this.size - border, cj + searchHalf)
+            }, this.grid, 5, function (cell) {
+              return !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water';
+            });
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
         }
+        if (found) results.push(found);
       }
       return results;
     }
@@ -8280,88 +9757,1236 @@ var map_Map = /*#__PURE__*/function (_Container) {
     value: function placeResourceGroup(player, instance, quantity, range) {
       var context = this.context,
         grid = this.grid;
-
-      // Function to get valid cells around a center point within a specific distance
-      function getValidCells(centerI, centerJ, dist) {
+      function getValidCells(ci, cj, radius) {
         var cells = [];
-        // Check surrounding cells within the specified distance
-        for (var dx = -dist; dx <= dist; dx++) {
-          var _loop5 = function _loop5() {
-            var newI = centerI + dx;
-            var newJ = centerJ + dy;
-
-            // Ensure the new coordinates are within the grid bounds
-            if (grid[newI] && grid[newI][newJ]) {
-              var cell = grid[newI][newJ];
-              var isFree = true;
-              getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
-                var _cell$has2;
-                if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has2 = cell.has) === null || _cell$has2 === void 0 ? void 0 : _cell$has2.type)) {
-                  isFree = false;
-                }
-              });
-              // Check if the cell is valid
-              if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-                cells.push({
-                  i: newI,
-                  j: newJ
-                });
+        for (var dx = -radius; dx <= radius; dx++) {
+          var _loop4 = function _loop4() {
+            var _grid$newI2;
+            var newI = ci + dx;
+            var newJ = cj + dy;
+            if (!((_grid$newI2 = grid[newI]) !== null && _grid$newI2 !== void 0 && _grid$newI2[newJ])) return 1; // continue
+            var cell = grid[newI][newJ];
+            var isFree = true;
+            grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (c) {
+              var _c$has;
+              if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_c$has = c.has) === null || _c$has === void 0 ? void 0 : _c$has.type)) {
+                isFree = false;
               }
+            });
+            if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+              cells.push({
+                i: newI,
+                j: newJ
+              });
             }
           };
-          for (var dy = -dist; dy <= dist; dy++) {
-            _loop5();
+          for (var dy = -radius; dy <= radius; dy++) {
+            if (_loop4()) continue;
           }
         }
         return cells;
       }
 
-      // Get a random center point around the player's position within the specified range
-      var randomDistance = randomRange(range[0], range[1]);
-      var centerI = player.i + maths_randomItem([-randomDistance, randomDistance]);
-      var centerJ = player.j + maths_randomItem([-randomDistance, randomDistance]);
+      // Radial placement: random angle + random distance in [range[0], range[1]]
+      var angle = Math.random() * 2 * Math.PI;
+      var dist = range[0] + Math.random() * (range[1] - range[0]);
+      var centerI = Math.round(player.i + Math.cos(angle) * dist);
+      var centerJ = Math.round(player.j + Math.sin(angle) * dist);
 
-      // Gather valid cells around the center point
-      var validCells = getValidCells(centerI, centerJ, 2); // Adjust distance to suit clustering
-
-      // Check if we have enough valid cells to place the required quantity of resources
-      if (validCells.length < quantity) {
-        console.warn('Not enough valid cells found for resource placement.');
-        return; // Exit if not enough valid cells found
-      }
-
-      // Randomly select the required number of cells from the valid cells
+      // Radius 2 → 5×5 tight cluster (AoE1 style), fallback to 3 if not enough cells
+      var validCells = getValidCells(centerI, centerJ, 2);
+      if (validCells.length < quantity) validCells = getValidCells(centerI, centerJ, 3);
+      if (validCells.length < quantity) return;
       var cellsToPlace = [];
       for (var i = 0; i < quantity; i++) {
-        var itemIndex = Math.floor(Math.random() * validCells.length);
-        var cell = validCells[itemIndex];
-        cellsToPlace.push(cell); // Store the selected cell for placement
-        validCells.splice(itemIndex, 1); // Remove it from valid cells to avoid duplicates
+        if (!validCells.length) break;
+        var idx = Math.floor(Math.random() * validCells.length);
+        cellsToPlace.push(validCells.splice(idx, 1)[0]);
       }
-
-      // Place resources in the selected cells
-      for (var _i15 = 0, _cellsToPlace2 = cellsToPlace; _i15 < _cellsToPlace2.length; _i15++) {
-        var _cell3 = _cellsToPlace2[_i15];
+      for (var _i17 = 0, _cellsToPlace2 = cellsToPlace; _i17 < _cellsToPlace2.length; _i17++) {
+        var cell = _cellsToPlace2[_i17];
         this.resources.add(this.addChild(new Resource({
-          i: _cell3.i,
-          j: _cell3.j,
+          i: cell.i,
+          j: cell.j,
           type: instance
         }, context)));
+      }
+    }
+
+    // Bake all terrain cells into RenderTexture chunks and remove them from the live scene graph.
+    // Reduces updateTransformAndChildren from ~14k nodes to ~1 sprite per chunk.
+  }, {
+    key: "bakeTerrainToChunks",
+    value: function bakeTerrainToChunks() {
+      var _this$context$app;
+      var renderer = (_this$context$app = this.context.app) === null || _this$context$app === void 0 ? void 0 : _this$context$app.renderer;
+      if (!renderer) return;
+
+      // Full isometric pixel bounds of the map (with margin for sprite overflow)
+      var _this$_getFogMapBound = this._getFogMapBounds(),
+        minX = _this$_getFogMapBound.minX,
+        minY = _this$_getFogMapBound.minY,
+        maxX = _this$_getFogMapBound.maxX,
+        maxY = _this$_getFogMapBound.maxY,
+        totalW = _this$_getFogMapBound.totalW,
+        totalH = _this$_getFogMapBound.totalH;
+
+      // Cap chunk size at 4096 for broad GPU compatibility
+      var gl = renderer.gl;
+      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
+      var chunksX = Math.ceil(totalW / maxTex);
+      var chunksY = Math.ceil(totalH / maxTex);
+      var chunkW = totalW / chunksX;
+      var chunkH = totalH / chunksY;
+
+      // All cells must be visible during the bake (fog overlay is separate in fogLayer)
+      for (var i = 0; i <= this.size; i++) {
+        for (var j = 0; j <= this.size; j++) {
+          this.grid[i][j].visible = true;
+        }
+      }
+
+      // Move cells out of the live scene graph into an off-screen container.
+      // Cells remain accessible via this.grid for all game logic.
+      var terrainContainer = new lib/* Container */.mcf();
+      for (var _i18 = 0; _i18 <= this.size; _i18++) {
+        for (var _j10 = 0; _j10 <= this.size; _j10++) {
+          terrainContainer.addChild(this.grid[_i18][_j10]);
+        }
+      }
+      for (var cx = 0; cx < chunksX; cx++) {
+        for (var cy = 0; cy < chunksY; cy++) {
+          var cMinX = minX + cx * chunkW;
+          var cMinY = minY + cy * chunkH;
+          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
+          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
+          var rt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var transform = new lib/* Matrix */.uqu().translate(-cMinX, -cMinY);
+          renderer.render({
+            container: terrainContainer,
+            target: rt,
+            transform: transform,
+            clear: true
+          });
+          var sprite = new lib/* Sprite */.kxk(rt);
+          sprite.x = cMinX;
+          sprite.y = cMinY;
+          sprite.zIndex = -1;
+          sprite.eventMode = 'none';
+          sprite.label = 'terrainChunk';
+          this.addChild(sprite);
+        }
+      }
+
+      // Re-initialize entity visibility: cells were moved out of the scene graph so their
+      // updateVisible() was never triggered by the normal render pipeline.
+      // Walk all viewed cells and show their resources/corpses explicitly.
+      var player = this.context.player;
+      for (var _i19 = 0; _i19 <= this.size; _i19++) {
+        for (var _j11 = 0; _j11 <= this.size; _j11++) {
+          var _player$views$_i;
+          var cell = this.grid[_i19][_j11];
+          if ((_player$views$_i = player.views[_i19]) !== null && _player$views$_i !== void 0 && (_player$views$_i = _player$views$_i[_j11]) !== null && _player$views$_i !== void 0 && _player$views$_i.viewed) {
+            cell.updateVisible();
+          }
+        }
+      }
+    }
+  }, {
+    key: "_initFogChunks",
+    value: function _initFogChunks() {
+      var _this$context$app2,
+        _this5 = this;
+      this._fogQueue = new globalThis.Map();
+      this._fogInitComplete = false;
+      this._fogChunks = [];
+      var renderer = (_this$context$app2 = this.context.app) === null || _this$context$app2 === void 0 ? void 0 : _this$context$app2.renderer;
+      if (!renderer) return;
+      var margin = CELL_WIDTH;
+      var minX = -this.size * (CELL_WIDTH / 2) - margin;
+      var minY = -margin;
+      var maxX = this.size * (CELL_WIDTH / 2) + margin;
+      var maxY = this.size * CELL_HEIGHT + margin;
+      var totalW = maxX - minX;
+      var totalH = maxY - minY;
+      var gl = renderer.gl;
+      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
+      var chunksX = Math.ceil(totalW / maxTex);
+      var chunksY = Math.ceil(totalH / maxTex);
+      var chunkW = totalW / chunksX;
+      var chunkH = totalH / chunksY;
+      this._fogBounds = {
+        minX: minX,
+        minY: minY,
+        chunksX: chunksX,
+        chunksY: chunksY,
+        chunkW: chunkW,
+        chunkH: chunkH,
+        totalW: totalW,
+        totalH: totalH
+      };
+      this.fogLayer = new lib/* Container */.mcf();
+      this.fogLayer.eventMode = 'none';
+      this.fogLayer.zIndex = 1e9;
+      this.fogLayer.sortableChildren = true;
+      this.addChild(this.fogLayer);
+
+      // revealEverything = no fog chunks at all, fogLayer stays empty
+      if (this.revealEverything) return;
+      for (var cx = 0; cx < chunksX; cx++) {
+        for (var cy = 0; cy < chunksY; cy++) {
+          var cMinX = minX + cx * chunkW;
+          var cMinY = minY + cy * chunkH;
+          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
+          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
+          var darknessRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var fogRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var edgeRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var emptyC = new lib/* Container */.mcf();
+          renderer.render({
+            container: emptyC,
+            target: darknessRt,
+            clear: true
+          });
+          renderer.render({
+            container: emptyC,
+            target: fogRt,
+            clear: true
+          });
+          renderer.render({
+            container: emptyC,
+            target: edgeRt,
+            clear: true
+          });
+          emptyC.destroy();
+          var pattern = this._createFogPatternSprite(cMinX, cMinY, cW, cH);
+          renderer.render({
+            container: pattern,
+            target: fogRt,
+            clear: false
+          });
+          pattern.destroy();
+          if (!this.revealTerrain) {
+            var blackG = new lib/* Graphics */.A1g();
+            blackG.rect(cMinX, cMinY, cW, cH).fill({
+              color: 0x000000
+            });
+            renderer.render({
+              container: blackG,
+              target: darknessRt,
+              transform: new lib/* Matrix */.uqu().translate(-cMinX, -cMinY),
+              clear: false
+            });
+            blackG.destroy();
+          }
+          var darknessSprite = new lib/* Sprite */.kxk(darknessRt);
+          darknessSprite.x = cMinX;
+          darknessSprite.y = cMinY;
+          darknessSprite.zIndex = 1;
+          darknessSprite.eventMode = 'none';
+          this.fogLayer.addChild(darknessSprite);
+          var fogSprite = new lib/* Sprite */.kxk(fogRt);
+          fogSprite.x = cMinX;
+          fogSprite.y = cMinY;
+          fogSprite.zIndex = 2;
+          fogSprite.eventMode = 'none';
+          this.fogLayer.addChild(fogSprite);
+          var edgeSprite = new lib/* Sprite */.kxk(edgeRt);
+          edgeSprite.x = cMinX;
+          edgeSprite.y = cMinY;
+          edgeSprite.zIndex = 3;
+          edgeSprite.eventMode = 'none';
+          this.fogLayer.addChild(edgeSprite);
+          this._fogChunks.push({
+            darknessRt: darknessRt,
+            fogRt: fogRt,
+            edgeRt: edgeRt,
+            minX: cMinX,
+            minY: cMinY,
+            w: cW,
+            h: cH
+          });
+        }
+      }
+      this._fogTickerCb = function () {
+        // Self-remove if this map is no longer active
+        if (_this5.context.map !== _this5) {
+          _this5.context.app.ticker.remove(_this5._fogTickerCb);
+          return;
+        }
+        _this5._flushFogQueue();
+      };
+      this.context.app.ticker.add(this._fogTickerCb);
+    }
+  }, {
+    key: "_createFogPatternSprite",
+    value: function _createFogPatternSprite(x, y, width, height) {
+      var pattern = new lib/* TilingSprite */.t9Q({
+        texture: getFogPatternTexture(),
+        width: Math.ceil(width),
+        height: Math.ceil(height)
+      });
+      pattern.x = 0;
+      pattern.y = 0;
+      pattern.tilePosition.set(-Math.floor(x), -Math.floor(y));
+      pattern.eventMode = 'none';
+      return pattern;
+    }
+  }, {
+    key: "_getFogMapBounds",
+    value: function _getFogMapBounds() {
+      if (!this.grid.length) {
+        var _margin = CELL_WIDTH + CELL_DEPTH * 4;
+        var _minX = -this.size * (CELL_WIDTH / 2) - _margin;
+        var _minY = -_margin;
+        var _maxX = this.size * (CELL_WIDTH / 2) + _margin;
+        var _maxY = this.size * CELL_HEIGHT + _margin;
+        return {
+          minX: _minX,
+          minY: _minY,
+          maxX: _maxX,
+          maxY: _maxY,
+          totalW: _maxX - _minX,
+          totalH: _maxY - _minY
+        };
+      }
+      var minX = Infinity;
+      var minY = Infinity;
+      var maxX = -Infinity;
+      var maxY = -Infinity;
+      for (var i = 0; i <= this.size; i++) {
+        for (var j = 0; j <= this.size; j++) {
+          var _this$grid$i3;
+          var cell = (_this$grid$i3 = this.grid[i]) === null || _this$grid$i3 === void 0 ? void 0 : _this$grid$i3[j];
+          if (!cell) continue;
+          var bounds = this._getFogCellBounds(cell);
+          minX = Math.min(minX, bounds.minX);
+          minY = Math.min(minY, bounds.minY);
+          maxX = Math.max(maxX, bounds.maxX);
+          maxY = Math.max(maxY, bounds.maxY);
+        }
+      }
+      var margin = CELL_DEPTH;
+      minX -= margin;
+      minY -= margin;
+      maxX += margin;
+      maxY += margin;
+      return {
+        minX: minX,
+        minY: minY,
+        maxX: maxX,
+        maxY: maxY,
+        totalW: maxX - minX,
+        totalH: maxY - minY
+      };
+    }
+  }, {
+    key: "_getFogCellBounds",
+    value: function _getFogCellBounds(cell) {
+      var hw = _DW / 2;
+      var hh = _DH / 2;
+      var _this$_getFogCellCent = this._getFogCellCenter(cell),
+        _this$_getFogCellCent2 = map_slicedToArray(_this$_getFogCellCent, 2),
+        cx = _this$_getFogCellCent2[0],
+        cy = _this$_getFogCellCent2[1];
+      return {
+        minX: cx - hw,
+        minY: cy - hh,
+        maxX: cx + hw,
+        maxY: cy + hh
+      };
+    }
+  }, {
+    key: "_getFogChunksForCell",
+    value: function _getFogChunksForCell(cell) {
+      var bounds = this._getFogCellBounds(cell);
+      return this._fogChunks.filter(function (chunk) {
+        return bounds.maxX >= chunk.minX && bounds.minX <= chunk.minX + chunk.w && bounds.maxY >= chunk.minY && bounds.minY <= chunk.minY + chunk.h;
+      });
+    }
+  }, {
+    key: "_drawFogCellShape",
+    value: function _drawFogCellShape(graphics, cell) {
+      var _this$_getFogCellPoin = this._getFogCellPoints(cell),
+        _this$_getFogCellPoin2 = map_slicedToArray(_this$_getFogCellPoin, 4),
+        top = _this$_getFogCellPoin2[0],
+        right = _this$_getFogCellPoin2[1],
+        bottom = _this$_getFogCellPoin2[2],
+        left = _this$_getFogCellPoin2[3];
+      graphics.poly([top.x, top.y, right.x, right.y, bottom.x, bottom.y, left.x, left.y]);
+    }
+  }, {
+    key: "_getFogCellOpenSides",
+    value: function _getFogCellOpenSides(cell) {
+      var _grid, _grid$cell$i, _grid2, _grid$cell$i2;
+      var grid = this.grid;
+      var _this$_getFogCellPoin3 = this._getFogCellPoints(cell),
+        _this$_getFogCellPoin4 = map_slicedToArray(_this$_getFogCellPoin3, 4),
+        top = _this$_getFogCellPoin4[0],
+        right = _this$_getFogCellPoin4[1],
+        bottom = _this$_getFogCellPoin4[2],
+        left = _this$_getFogCellPoin4[3];
+      var sides = [];
+      var addSide = function addSide(neighbor, from, to) {
+        if (neighbor && !neighbor._hasFog) return;
+        sides.push({
+          from: from,
+          to: to
+        });
+      };
+      addSide((_grid = grid[cell.i - 1]) === null || _grid === void 0 ? void 0 : _grid[cell.j], left, top);
+      addSide((_grid$cell$i = grid[cell.i]) === null || _grid$cell$i === void 0 ? void 0 : _grid$cell$i[cell.j - 1], top, right);
+      addSide((_grid2 = grid[cell.i + 1]) === null || _grid2 === void 0 ? void 0 : _grid2[cell.j], right, bottom);
+      addSide((_grid$cell$i2 = grid[cell.i]) === null || _grid$cell$i2 === void 0 ? void 0 : _grid$cell$i2[cell.j + 1], bottom, left);
+      return sides;
+    }
+  }, {
+    key: "_signedDistanceToFogSide",
+    value: function _signedDistanceToFogSide(point, from, to, cell) {
+      var edgeX = to.x - from.x;
+      var edgeY = to.y - from.y;
+      var len = Math.hypot(edgeX, edgeY);
+      if (len === 0) return 0;
+      var _this$_getFogCellCent3 = this._getFogCellCenter(cell),
+        _this$_getFogCellCent4 = map_slicedToArray(_this$_getFogCellCent3, 2),
+        cx = _this$_getFogCellCent4[0],
+        cy = _this$_getFogCellCent4[1];
+      var pointCross = edgeX * (point.y - from.y) - edgeY * (point.x - from.x);
+      var cellCross = edgeX * (cy - from.y) - edgeY * (cx - from.x);
+      return pointCross * Math.sign(cellCross || 1) / len;
+    }
+  }, {
+    key: "_clipFogErasePolygonBySide",
+    value: function _clipFogErasePolygonBySide(points, from, to, cell, inset) {
+      var _this6 = this;
+      var clipped = [];
+      var isInside = function isInside(point) {
+        return _this6._signedDistanceToFogSide(point, from, to, cell) >= inset;
+      };
+      var intersection = function intersection(a, b) {
+        var da = _this6._signedDistanceToFogSide(a, from, to, cell) - inset;
+        var db = _this6._signedDistanceToFogSide(b, from, to, cell) - inset;
+        var t = da / (da - db);
+        return {
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t
+        };
+      };
+      for (var i = 0; i < points.length; i++) {
+        var current = points[i];
+        var previous = points[(i + points.length - 1) % points.length];
+        var currentInside = isInside(current);
+        var previousInside = isInside(previous);
+        if (currentInside) {
+          if (!previousInside) clipped.push(intersection(previous, current));
+          clipped.push(current);
+        } else if (previousInside) {
+          clipped.push(intersection(previous, current));
+        }
+      }
+      return clipped;
+    }
+  }, {
+    key: "_drawFogEraseCellShape",
+    value: function _drawFogEraseCellShape(graphics, cell) {
+      var inset = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
+      var points = this._getFogCellPoints(cell);
+      var _iterator2 = map_createForOfIteratorHelper(this._getFogCellOpenSides(cell)),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var _step2$value = _step2.value,
+            from = _step2$value.from,
+            to = _step2$value.to;
+          points = this._clipFogErasePolygonBySide(points, from, to, cell, inset);
+          if (points.length < 3) return;
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      graphics.poly(points.flatMap(function (point) {
+        return [point.x, point.y];
+      }));
+    }
+  }, {
+    key: "_getFogEraseRefreshCells",
+    value: function _getFogEraseRefreshCells(cell) {
+      var _grid3, _grid$cell$i3, _grid4, _grid$cell$i4;
+      var grid = this.grid;
+      return [cell, (_grid3 = grid[cell.i - 1]) === null || _grid3 === void 0 ? void 0 : _grid3[cell.j], (_grid$cell$i3 = grid[cell.i]) === null || _grid$cell$i3 === void 0 ? void 0 : _grid$cell$i3[cell.j - 1], (_grid4 = grid[cell.i + 1]) === null || _grid4 === void 0 ? void 0 : _grid4[cell.j], (_grid$cell$i4 = grid[cell.i]) === null || _grid$cell$i4 === void 0 ? void 0 : _grid$cell$i4[cell.j + 1]].filter(function (refreshCell) {
+        return refreshCell && !refreshCell._hasFog;
+      });
+    }
+  }, {
+    key: "_getFogCellCenter",
+    value: function _getFogCellCenter(cell) {
+      return cartesianToIsometric(cell.i, cell.j);
+    }
+  }, {
+    key: "_getFogCellPoints",
+    value: function _getFogCellPoints(cell) {
+      var hw = _DW / 2;
+      var hh = _DH / 2;
+      var _this$_getFogCellCent5 = this._getFogCellCenter(cell),
+        _this$_getFogCellCent6 = map_slicedToArray(_this$_getFogCellCent5, 2),
+        cx = _this$_getFogCellCent6[0],
+        cy = _this$_getFogCellCent6[1];
+      return [{
+        x: cx,
+        y: cy - hh
+      }, {
+        x: cx + hw,
+        y: cy
+      }, {
+        x: cx,
+        y: cy + hh
+      }, {
+        x: cx - hw,
+        y: cy
+      }];
+    }
+  }, {
+    key: "_redrawFogEdgesInChunk",
+    value: function _redrawFogEdgesInChunk(renderer, chunk) {
+      var emptyC = new lib/* Container */.mcf();
+      renderer.render({
+        container: emptyC,
+        target: chunk.edgeRt,
+        clear: true
+      });
+      emptyC.destroy();
+    }
+  }, {
+    key: "_drawVisibleCellsInChunk",
+    value: function _drawVisibleCellsInChunk(graphics, chunk) {
+      var maxX = chunk.minX + chunk.w;
+      var maxY = chunk.minY + chunk.h;
+      for (var i = 0; i <= this.size; i++) {
+        for (var j = 0; j <= this.size; j++) {
+          var cell = this.grid[i][j];
+          if (cell._hasFog) continue;
+          var bounds = this._getFogCellBounds(cell);
+          if (bounds.maxX >= chunk.minX && bounds.minX <= maxX && bounds.maxY >= chunk.minY && bounds.minY <= maxY) {
+            this._drawFogEraseCellShape(graphics, cell);
+          }
+        }
+      }
+    }
+  }, {
+    key: "_flushFogQueue",
+    value: function _flushFogQueue() {
+      var _this$context$app3,
+        _this7 = this;
+      if (!this._fogQueue || this._fogQueue.size === 0) return;
+      var renderer = (_this$context$app3 = this.context.app) === null || _this$context$app3 === void 0 ? void 0 : _this$context$app3.renderer;
+      if (!renderer) return;
+      var chunkUpdates = new globalThis.Map();
+      var addChunkUpdate = function addChunkUpdate(cell, state) {
+        var chunks = _this7._getFogChunksForCell(cell);
+        var _iterator3 = map_createForOfIteratorHelper(chunks),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var chunk = _step3.value;
+            if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, []);
+            chunkUpdates.get(chunk).push({
+              cell: cell,
+              state: state
+            });
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+      };
+      var _iterator4 = map_createForOfIteratorHelper(this._fogQueue),
+        _step4;
+      try {
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          var _step4$value = map_slicedToArray(_step4.value, 2),
+            cell = _step4$value[0],
+            state = _step4$value[1];
+          addChunkUpdate(cell, state);
+          if (state === 'clear') {
+            var _iterator7 = map_createForOfIteratorHelper(this._getFogEraseRefreshCells(cell)),
+              _step7;
+            try {
+              for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+                var refreshCell = _step7.value;
+                if (refreshCell === cell) continue;
+                addChunkUpdate(refreshCell, 'refreshFogErase');
+              }
+            } catch (err) {
+              _iterator7.e(err);
+            } finally {
+              _iterator7.f();
+            }
+          }
+        }
+      } catch (err) {
+        _iterator4.e(err);
+      } finally {
+        _iterator4.f();
+      }
+      this._fogQueue.clear();
+      var _iterator5 = map_createForOfIteratorHelper(chunkUpdates),
+        _step5;
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _step5$value = map_slicedToArray(_step5.value, 2),
+            chunk = _step5$value[0],
+            updates = _step5$value[1];
+          var transform = new lib/* Matrix */.uqu().translate(-chunk.minX, -chunk.minY);
+          var darknessDraw = new lib/* Graphics */.A1g();
+          var darknessErase = new lib/* Graphics */.A1g();
+          var fogErase = new lib/* Graphics */.A1g();
+          var hasDarknessDraw = false;
+          var hasDarknessErase = false;
+          var hasFogErase = false;
+          var needsFogRestore = false;
+          var _iterator8 = map_createForOfIteratorHelper(updates),
+            _step8;
+          try {
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _step8$value = _step8.value,
+                _cell4 = _step8$value.cell,
+                _state = _step8$value.state;
+              if (_state === 'clear') {
+                this._drawFogCellShape(darknessErase, _cell4);
+                this._drawFogEraseCellShape(fogErase, _cell4);
+                hasDarknessErase = true;
+                hasFogErase = true;
+              } else if (_state === 'refreshFogErase') {
+                this._drawFogEraseCellShape(fogErase, _cell4);
+                hasFogErase = true;
+              } else if (_state === 'fogViewed') {
+                this._drawFogCellShape(darknessErase, _cell4);
+                hasDarknessErase = true;
+                needsFogRestore = true;
+              } else {
+                this._drawFogCellShape(darknessDraw, _cell4);
+                hasDarknessDraw = true;
+              }
+            }
+          } catch (err) {
+            _iterator8.e(err);
+          } finally {
+            _iterator8.f();
+          }
+          if (hasDarknessDraw) {
+            darknessDraw.fill({
+              color: 0x000000
+            });
+            renderer.render({
+              container: darknessDraw,
+              target: chunk.darknessRt,
+              transform: transform,
+              clear: false
+            });
+          }
+          if (hasDarknessErase) {
+            darknessErase.blendMode = 'erase';
+            darknessErase.fill({
+              color: 0xffffff
+            });
+            var eraseContainer = new lib/* Container */.mcf();
+            eraseContainer.addChild(darknessErase);
+            renderer.render({
+              container: eraseContainer,
+              target: chunk.darknessRt,
+              transform: transform,
+              clear: false
+            });
+            eraseContainer.removeChildren();
+            eraseContainer.destroy();
+          }
+          if (needsFogRestore) {
+            var pattern = this._createFogPatternSprite(chunk.minX, chunk.minY, chunk.w, chunk.h);
+            renderer.render({
+              container: pattern,
+              target: chunk.fogRt,
+              clear: false
+            });
+            pattern.destroy();
+            this._drawVisibleCellsInChunk(fogErase, chunk);
+            hasFogErase = true;
+          }
+          if (hasFogErase) {
+            fogErase.blendMode = 'erase';
+            fogErase.fill({
+              color: 0xffffff
+            });
+            var _eraseContainer = new lib/* Container */.mcf();
+            _eraseContainer.addChild(fogErase);
+            renderer.render({
+              container: _eraseContainer,
+              target: chunk.fogRt,
+              transform: transform,
+              clear: false
+            });
+            _eraseContainer.removeChildren();
+            _eraseContainer.destroy();
+          }
+          darknessDraw.destroy();
+          darknessErase.destroy();
+          fogErase.destroy();
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+      var _iterator6 = map_createForOfIteratorHelper(this._fogChunks),
+        _step6;
+      try {
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var _chunk = _step6.value;
+          this._redrawFogEdgesInChunk(renderer, _chunk);
+        }
+      } catch (err) {
+        _iterator6.e(err);
+      } finally {
+        _iterator6.f();
       }
     }
   }]);
 }(lib/* Container */.mcf);
 
+;// ./app/lib/uiSound.js
+var _audio = new Audio('assets/sounds/5035.wav');
+_audio.volume = 0.6;
+function playClickSound() {
+  _audio.currentTime = 0;
+  _audio.play()["catch"](function () {});
+}
+;// ./app/ui/MinimapManager.js
+function MinimapManager_typeof(o) { "@babel/helpers - typeof"; return MinimapManager_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MinimapManager_typeof(o); }
+function MinimapManager_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MinimapManager_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MinimapManager_toPropertyKey(o.key), o); } }
+function MinimapManager_createClass(e, r, t) { return r && MinimapManager_defineProperties(e.prototype, r), t && MinimapManager_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MinimapManager_toPropertyKey(t) { var i = MinimapManager_toPrimitive(t, "string"); return "symbol" == MinimapManager_typeof(i) ? i : i + ""; }
+function MinimapManager_toPrimitive(t, r) { if ("object" != MinimapManager_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MinimapManager_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var MinimapManager = /*#__PURE__*/function () {
+  function MinimapManager(menu) {
+    MinimapManager_classCallCheck(this, MinimapManager);
+    this.menu = menu;
+    this.miniMapAlpha = 1.284;
+    this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt.bind(this), 500);
+    this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt.bind(this), 500);
+    this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt.bind(this), 100);
+  }
+  return MinimapManager_createClass(MinimapManager, [{
+    key: "getMinimapFactor",
+    value: function getMinimapFactor() {
+      var map = this.menu.context.map;
+      return (CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2) / 234 * 2;
+    }
+  }, {
+    key: "getMinimapParams",
+    value: function getMinimapParams() {
+      var factor = this.getMinimapFactor() / this.miniMapAlpha;
+      var translate = (CELL_WIDTH / 2 + this.menu.context.map.size * CELL_WIDTH / 2) / 2 / factor;
+      return {
+        factor: factor,
+        translate: translate
+      };
+    }
+  }, {
+    key: "initMiniMap",
+    value: function initMiniMap() {
+      var menu = this.menu;
+      var _this$getMinimapParam = this.getMinimapParams(),
+        translate = _this$getMinimapParam.translate;
+      for (var _i = 0, _arr = [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]; _i < _arr.length; _i++) {
+        var canvas = _arr[_i];
+        canvas.getContext('2d').translate(translate, 0);
+      }
+      var map = menu.context.map;
+      if (map.revealEverything || map.revealTerrain) {
+        this.revealTerrainMinimap();
+      }
+    }
+  }, {
+    key: "revealTerrainMinimap",
+    value: function revealTerrainMinimap() {
+      var menu = this.menu;
+      var map = menu.context.map;
+      var canvas = menu.terrainMinimap;
+      var context = canvas.getContext('2d');
+      var _this$getMinimapParam2 = this.getMinimapParams(),
+        factor = _this$getMinimapParam2.factor,
+        translate = _this$getMinimapParam2.translate;
+      context.clearRect(-translate, 0, canvas.width, canvas.height);
+      for (var i = 0; i <= map.size; i++) {
+        for (var j = 0; j <= map.size; j++) {
+          var cell = map.grid[i][j];
+          canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
+        }
+      }
+    }
+  }, {
+    key: "updateTerrainMiniMap",
+    value: function updateTerrainMiniMap(i, j) {
+      var menu = this.menu;
+      var map = menu.context.map;
+      var canvas = menu.terrainMinimap;
+      var context = canvas.getContext('2d');
+      var _this$getMinimapParam3 = this.getMinimapParams(),
+        factor = _this$getMinimapParam3.factor,
+        translate = _this$getMinimapParam3.translate;
+      var cell = map.grid[i][j];
+      canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
+      if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
+        this.updateResourceMiniMap(cell.has);
+      }
+    }
+  }, {
+    key: "updateResourceMiniMap",
+    value: function updateResourceMiniMap(resource) {
+      var menu = this.menu;
+      var context = menu.resourcesMinimap.getContext('2d');
+      var _this$getMinimapParam4 = this.getMinimapParams(),
+        factor = _this$getMinimapParam4.factor,
+        translate = _this$getMinimapParam4.translate;
+      var squareSize = 4;
+      canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
+    }
+  }, {
+    key: "updateResourcesMiniMapEvt",
+    value: function updateResourcesMiniMapEvt() {
+      var menu = this.menu;
+      var _menu$context = menu.context,
+        map = _menu$context.map,
+        player = _menu$context.player;
+      var canvas = menu.resourcesMinimap;
+      var context = canvas.getContext('2d');
+      var _this$getMinimapParam5 = this.getMinimapParams(),
+        factor = _this$getMinimapParam5.factor,
+        translate = _this$getMinimapParam5.translate;
+      var squareSize = 4;
+      context.clearRect(-translate, 0, canvas.width, canvas.height);
+      map.resources.forEach(function (resource) {
+        var _player$views;
+        var cell = player === null || player === void 0 || (_player$views = player.views) === null || _player$views === void 0 || (_player$views = _player$views[resource.i]) === null || _player$views === void 0 ? void 0 : _player$views[resource.j];
+        if (resource.color && (cell !== null && cell !== void 0 && cell.viewed || map.revealEverything)) {
+          canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
+        }
+      });
+    }
+  }, {
+    key: "updateCameraMiniMapEvt",
+    value: function updateCameraMiniMapEvt() {
+      var menu = this.menu;
+      var _menu$context2 = menu.context,
+        app = _menu$context2.app,
+        controls = _menu$context2.controls;
+      var canvas = menu.cameraMinimap;
+      var context = canvas.getContext('2d');
+      var _this$getMinimapParam6 = this.getMinimapParams(),
+        factor = _this$getMinimapParam6.factor,
+        translate = _this$getMinimapParam6.translate;
+      context.clearRect(-translate, 0, canvas.width, canvas.height);
+      canvasDrawStrokeRectangle(context, controls.camera.x / factor + translate, controls.camera.y / factor, app.screen.width / factor, app.screen.height / factor, 'white');
+    }
+  }, {
+    key: "updatePlayerMiniMapEvt",
+    value: function updatePlayerMiniMapEvt(owner) {
+      if (!owner) return;
+      var menu = this.menu;
+      var _menu$context3 = menu.context,
+        map = _menu$context3.map,
+        player = _menu$context3.player;
+      var squareSize = 4;
+      var _this$getMinimapParam7 = this.getMinimapParams(),
+        factor = _this$getMinimapParam7.factor,
+        translate = _this$getMinimapParam7.translate;
+      var color = owner.colorHex;
+      var id = "minimap-".concat(owner.label);
+      var canvas, context;
+      var existing = menu.playersMinimap.find(function (p) {
+        return p.id === id;
+      });
+      if (existing) {
+        canvas = existing.canvas;
+        context = existing.context;
+      } else {
+        canvas = document.createElement('canvas');
+        context = canvas.getContext('2d');
+        context.translate(translate, 0);
+        menu.playersMinimap.push({
+          id: id,
+          canvas: canvas,
+          context: context
+        });
+        menu.bottombarMap.appendChild(canvas);
+      }
+      context.clearRect(-translate, 0, canvas.width, canvas.height);
+      var isVisible = function isVisible(instance) {
+        return map.revealEverything || owner.isPlayed || instanceIsInPlayerSight(instance, player);
+      };
+      owner.buildings.forEach(function (building) {
+        if (!isVisible(building)) return;
+        var x = building.x,
+          y = building.y,
+          size = building.size,
+          selected = building.selected;
+        var finalSize = squareSize + size;
+        canvasDrawRectangle(context, x / factor - finalSize / 2 + translate, y / factor - finalSize / 2, finalSize, finalSize, selected ? 'white' : color);
+      });
+      owner.units.forEach(function (unit) {
+        if (!isVisible(unit)) return;
+        var x = unit.x,
+          y = unit.y,
+          selected = unit.selected;
+        canvasDrawRectangle(context, x / factor - squareSize / 2 + translate, y / factor - squareSize / 2, squareSize, squareSize, selected ? 'white' : color);
+      });
+    }
+  }]);
+}();
+;// ./app/ui/BottombarManager.js
+function BottombarManager_typeof(o) { "@babel/helpers - typeof"; return BottombarManager_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BottombarManager_typeof(o); }
+function BottombarManager_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function BottombarManager_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? BottombarManager_ownKeys(Object(t), !0).forEach(function (r) { BottombarManager_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : BottombarManager_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function BottombarManager_defineProperty(e, r, t) { return (r = BottombarManager_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function BottombarManager_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BottombarManager_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BottombarManager_toPropertyKey(o.key), o); } }
+function BottombarManager_createClass(e, r, t) { return r && BottombarManager_defineProperties(e.prototype, r), t && BottombarManager_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BottombarManager_toPropertyKey(t) { var i = BottombarManager_toPrimitive(t, "string"); return "symbol" == BottombarManager_typeof(i) ? i : i + ""; }
+function BottombarManager_toPrimitive(t, r) { if ("object" != BottombarManager_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BottombarManager_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+
+
+var BottombarManager = /*#__PURE__*/function () {
+  function BottombarManager(menu) {
+    BottombarManager_classCallCheck(this, BottombarManager);
+    this.menu = menu;
+  }
+  return BottombarManager_createClass(BottombarManager, [{
+    key: "resetInfo",
+    value: function resetInfo() {
+      var menu = this.menu;
+      menu.bottombarInfo.textContent = '';
+      menu.bottombarInfo.style.background = 'transparent';
+      menu._infoCache = null;
+    }
+  }, {
+    key: "generateInfo",
+    value: function generateInfo(selection) {
+      var menu = this.menu;
+      this.resetInfo();
+      menu.bottombarInfo.style.background = 'black';
+      if (typeof selection["interface"].info === 'function') {
+        selection["interface"].info(menu.bottombarInfo);
+      }
+    }
+  }, {
+    key: "updateInfo",
+    value: function updateInfo(target, action) {
+      var menu = this.menu;
+      if (!menu._infoCache) menu._infoCache = new Map();
+      var targetElement = menu._infoCache.get(target);
+      if (!targetElement) {
+        targetElement = menu.bottombarInfo.querySelector("[id=".concat(target, "]"));
+        if (!targetElement) return;
+        menu._infoCache.set(target, targetElement);
+      }
+      return typeof action !== 'function' ? targetElement.textContent = action : action(targetElement);
+    }
+  }, {
+    key: "updateButtonContent",
+    value: function updateButtonContent(target, action) {
+      var menu = this.menu;
+      var targetElement = menu.bottombarMenu.querySelector("[id=".concat(target, "]"));
+      if (!targetElement) return;
+      var contentElement = targetElement.querySelector('[id=content]');
+      if (!contentElement) return;
+      return typeof action !== 'function' ? contentElement.textContent = action : action(contentElement);
+    }
+  }, {
+    key: "toggleButtonCancel",
+    value: function toggleButtonCancel(target, value) {
+      var menu = this.menu;
+      var element = menu.bottombarMenu.querySelector("[id=".concat(target, "-cancel]"));
+      if (!element) return;
+      element.style.display = value ? 'block' : 'none';
+    }
+  }, {
+    key: "updateBottombar",
+    value: function updateBottombar() {
+      var menu = this.menu;
+      var player = menu.context.player;
+      if (player.selectedBuilding || player.selectedUnit) {
+        this.setBottombar(player.selectedBuilding || player.selectedUnit);
+      }
+    }
+  }, {
+    key: "setBottombar",
+    value: function setBottombar() {
+      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var menu = this.menu;
+      var _menu$context = menu.context,
+        controls = _menu$context.controls,
+        player = _menu$context.player;
+      this.resetInfo();
+      menu.bottombarMenu.textContent = '';
+      menu.selection = selection;
+      if (controls.mouseBuilding) {
+        controls.removeMouseBuilding();
+      }
+      if (selection && selection["interface"]) {
+        this.generateInfo(selection);
+        if (selection.family === FAMILY_TYPES.building) {
+          if (!selection.isBuilt) {
+            setMenuRecurs(selection, menu.bottombarMenu, []);
+          } else if (selection.technology) {
+            setMenuRecurs(selection, menu.bottombarMenu, [{
+              icon: 'assets/interface/50721/003_50721.png',
+              id: "".concat(selection.technology, "-cancel"),
+              onClick: function onClick(sel) {
+                sound_lib/* sound */.s3.play('5036');
+                sel.cancelTechnology();
+              }
+            }]);
+          } else {
+            setMenuRecurs(selection, menu.bottombarMenu, selection["interface"].menu || []);
+          }
+        } else {
+          setMenuRecurs(selection, menu.bottombarMenu, selection["interface"].menu || []);
+        }
+      }
+      function setMenuRecurs(sel, element, items, parent) {
+        items.filter(function (btn) {
+          return !btn.hide || !btn.hide();
+        }).forEach(function (btn, index) {
+          var box = document.createElement('div');
+          box.className = 'bottombar-menu-box';
+          box.id = btn.id || "btn-".concat(index);
+          if (typeof btn.onCreate === 'function') {
+            btn.onCreate(sel, box);
+          } else {
+            var img = document.createElement('img');
+            img.src = typeof btn.icon === 'function' ? btn.icon() : btn.icon;
+            img.className = 'img';
+            box.appendChild(img);
+          }
+          if (btn.children) {
+            box.addEventListener('pointerup', function () {
+              sound_lib/* sound */.s3.play('5036');
+              element.textContent = '';
+              controls.removeMouseBuilding();
+              setMenuRecurs(sel, element, btn.children, items);
+            });
+          } else if (typeof btn.onClick === 'function') {
+            box.addEventListener('pointerup', function (evt) {
+              sound_lib/* sound */.s3.play('5036');
+              btn.onClick(sel, evt);
+            });
+          }
+          element.appendChild(box);
+        });
+        if (parent || sel.selected) {
+          var back = document.createElement('div');
+          back.className = 'bottombar-menu-box';
+          var img = document.createElement('img');
+          img.className = 'img';
+          back.id = 'interfaceBackBtn';
+          img.src = 'assets/interface/50721/010_50721.png';
+          if (parent) {
+            back.addEventListener('pointerup', function () {
+              sound_lib/* sound */.s3.play('5036');
+              element.textContent = '';
+              controls.removeMouseBuilding();
+              setMenuRecurs(sel, element, parent);
+            });
+          } else {
+            back.addEventListener('pointerup', function () {
+              sound_lib/* sound */.s3.play('5036');
+              controls.removeMouseBuilding();
+              player.unselectAll();
+            });
+          }
+          back.appendChild(img);
+          element.appendChild(back);
+        }
+      }
+    }
+  }, {
+    key: "getMessage",
+    value: function getMessage(cost) {
+      var player = this.menu.context.player;
+      var resource = Object.keys(cost).find(function (prop) {
+        return player[prop] < cost[prop];
+      });
+      return t('needMore', {
+        resource: t(resource)
+      });
+    }
+  }, {
+    key: "getUnitButton",
+    value: function getUnitButton(type) {
+      var _this = this;
+      var menu = this.menu;
+      var player = menu.context.player;
+      var unit = player.config.units[type];
+      return {
+        id: type,
+        icon: function icon() {
+          return getIconPath(unit.icon);
+        },
+        hide: function hide() {
+          return (unit.conditions || []).some(function (condition) {
+            return !isValidCondition(condition, player);
+          });
+        },
+        onCreate: function onCreate(selection, element) {
+          var div = document.createElement('div');
+          div.className = 'bottombar-menu-column';
+          var cancel = document.createElement('img');
+          cancel.id = "".concat(type, "-cancel");
+          cancel.className = 'img';
+          cancel.src = 'assets/interface/50721/003_50721.png';
+          if (!selection.queue.some(function (q) {
+            return q === type;
+          })) {
+            cancel.style.display = 'none';
+          }
+          cancel.addEventListener('pointerup', function () {
+            sound_lib/* sound */.s3.play('5036');
+            for (var i = 0; i < selection.queue.length; i++) {
+              if (selection.queue[i] === type) {
+                refundCost(player, unit.cost);
+              }
+            }
+            menu.updateTopbar();
+            selection.queue = selection.queue.filter(function (q) {
+              return q !== type;
+            });
+            if (selection.queue[0] !== type) {
+              _this.updateButtonContent(type, '');
+              _this.toggleButtonCancel(type, false);
+            }
+          });
+          var img = document.createElement('img');
+          img.src = getIconPath(unit.icon);
+          img.className = 'img';
+          img.addEventListener('pointerup', function () {
+            sound_lib/* sound */.s3.play('5036');
+            if (canAfford(player, unit.cost)) {
+              if (player.population >= player.population_max) {
+                menu.showMessage(t('needHouses'));
+              }
+              _this.toggleButtonCancel(type, true);
+              selection.buyUnit(type);
+            } else {
+              menu.showMessage(_this.getMessage(unit.cost));
+            }
+          });
+          var queue = selection.queue.filter(function (q) {
+            return q === type;
+          }).length;
+          var counter = document.createElement('div');
+          counter.id = 'content';
+          counter.textContent = queue || '';
+          counter.style.padding = '1px';
+          counter.style.position = 'absolute';
+          div.appendChild(img);
+          div.appendChild(cancel);
+          element.appendChild(div);
+          element.appendChild(counter);
+        }
+      };
+    }
+  }, {
+    key: "getBuildingButton",
+    value: function getBuildingButton(type) {
+      var _this2 = this;
+      var menu = this.menu;
+      var _menu$context2 = menu.context,
+        controls = _menu$context2.controls,
+        player = _menu$context2.player;
+      var config = player.config.buildings[type];
+      return {
+        id: type,
+        icon: function icon() {
+          var assets = getBuildingAsset(type, player, lib/* Assets */.sP);
+          return getIconPath(assets.icon);
+        },
+        hide: function hide() {
+          return (config.conditions || []).some(function (condition) {
+            return !isValidCondition(condition, player);
+          });
+        },
+        onClick: function onClick() {
+          var assets = getBuildingAsset(type, player, lib/* Assets */.sP);
+          controls.removeMouseBuilding();
+          if (canAfford(player, config.cost)) {
+            controls.setMouseBuilding(BottombarManager_objectSpread(BottombarManager_objectSpread(BottombarManager_objectSpread({}, config), assets), {}, {
+              type: type
+            }));
+          } else {
+            menu.showMessage(_this2.getMessage(config.cost));
+          }
+        }
+      };
+    }
+  }, {
+    key: "getTechnologyButton",
+    value: function getTechnologyButton(type) {
+      var _this3 = this;
+      var menu = this.menu;
+      var _menu$context3 = menu.context,
+        controls = _menu$context3.controls,
+        player = _menu$context3.player;
+      var config = player.techs[type];
+      return {
+        icon: getIconPath(config.icon),
+        id: type,
+        hide: function hide() {
+          return (config.conditions || []).some(function (condition) {
+            return player.technologies.includes(type) || !isValidCondition(condition, player);
+          });
+        },
+        onClick: function onClick(selection) {
+          controls.removeMouseBuilding();
+          if (canAfford(player, config.cost)) {
+            selection.buyTechnology(type);
+          } else {
+            menu.showMessage(_this3.getMessage(config.cost));
+          }
+        }
+      };
+    }
+  }]);
+}();
 ;// ./app/classes/menu.js
 function menu_typeof(o) { "@babel/helpers - typeof"; return menu_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, menu_typeof(o); }
-function menu_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function menu_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? menu_ownKeys(Object(t), !0).forEach(function (r) { menu_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : menu_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function menu_defineProperty(e, r, t) { return (r = menu_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function menu_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function menu_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, menu_toPropertyKey(o.key), o); } }
 function menu_createClass(e, r, t) { return r && menu_defineProperties(e.prototype, r), t && menu_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function menu_toPropertyKey(t) { var i = menu_toPrimitive(t, "string"); return "symbol" == menu_typeof(i) ? i : i + ""; }
 function menu_toPrimitive(t, r) { if ("object" != menu_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != menu_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
 
 
 
@@ -8399,16 +11024,18 @@ var Menu = /*#__PURE__*/function () {
     options.className = 'topbar-options';
     var menu = document.createElement('div');
     menu.className = 'topbar-options-menu';
-    menu.innerText = 'Menu';
+    menu.innerText = t('menuBtn');
     menu.addEventListener('pointerdown', function () {
+      playClickSound();
       _this.context.pause();
       var content = document.createElement('div');
       content.className = 'modal-menu';
       var modal = new Modal(content);
       var save = document.createElement('button');
       save.className = 'menu-btn';
-      save.innerText = 'Sauvegarder';
+      save.innerText = t('save');
       save.addEventListener('pointerdown', function () {
+        playClickSound();
         _this.context.save();
         modal.close();
         _this.context.resume();
@@ -8428,19 +11055,22 @@ var Menu = /*#__PURE__*/function () {
         reader.readAsText(evt.target.files[0]);
       });
       load.className = 'input-file menu-btn';
-      load.innerText = 'Charger';
+      load.innerText = t('load');
+      load.addEventListener('pointerdown', playClickSound);
       load.appendChild(input);
       var quit = document.createElement('button');
       quit.className = 'menu-btn secondary';
-      quit.innerText = 'Quitter';
+      quit.innerText = t('quit');
       quit.addEventListener('pointerdown', function () {
+        playClickSound();
         modal.close();
         _this.context.quit();
       });
       var cancel = document.createElement('button');
       cancel.className = 'menu-btn secondary';
-      cancel.innerText = 'Annuler';
+      cancel.innerText = t('cancel');
       cancel.addEventListener('pointerdown', function () {
+        playClickSound();
         modal.close();
         _this.context.resume();
       });
@@ -8468,7 +11098,7 @@ var Menu = /*#__PURE__*/function () {
       var controls = _this.context.controls;
       _this.mouseHoldTimeout = setTimeout(function () {
         _this.longClick = true;
-        var minimapFactor = _this.getMinimapFactor();
+        var minimapFactor = _this.minimapManager.getMinimapFactor();
         var rect = evt.target.getBoundingClientRect();
         var x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor;
         var y = (evt.clientY - rect.top - 3) * minimapFactor;
@@ -8487,7 +11117,7 @@ var Menu = /*#__PURE__*/function () {
         return;
       }
       _this.longClick = false;
-      var minimapFactor = _this.getMinimapFactor();
+      var minimapFactor = _this.minimapManager.getMinimapFactor();
       var rect = evt.target.getBoundingClientRect();
       var x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor;
       var y = (evt.clientY - rect.top - 3) * minimapFactor;
@@ -8496,8 +11126,7 @@ var Menu = /*#__PURE__*/function () {
         var i = Math.min(Math.max(pos[0], 0), map.size);
         var j = Math.min(Math.max(pos[1], 0), map.size);
         if (map.grid[i] && map.grid[i][j]) {
-          var cell = map.grid[i][j];
-          controls.sendUnits(cell);
+          controls.sendUnits(map.grid[i][j]);
         }
       } else {
         controls.setCamera(x, y);
@@ -8534,10 +11163,15 @@ var Menu = /*#__PURE__*/function () {
       evt.stopPropagation();
     });
     IS_MOBILE && document.body.prepend(this.toggle);
-    this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt, 500);
-    this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt, 500);
-    this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt, 100);
-    this.miniMapAlpha = 1.284;
+    this.minimapManager = new MinimapManager(this);
+    this.bottombarManager = new BottombarManager(this);
+
+    // Expose throttled minimap updaters as top-level properties for external callers
+    this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap;
+    this.updateResourcesMiniMap = this.minimapManager.updateResourcesMiniMap;
+    this.updateCameraMiniMap = this.minimapManager.updateCameraMiniMap;
+    this._infoCache = null;
+    this.selection = null;
     this.updateTopbar();
   }
   return menu_createClass(Menu, [{
@@ -8549,168 +11183,37 @@ var Menu = /*#__PURE__*/function () {
   }, {
     key: "init",
     value: function init() {
-      this.initMiniMap();
+      this.minimapManager.initMiniMap();
       this.updateTopbar();
     }
   }, {
-    key: "getMinimapFactor",
-    value: function getMinimapFactor() {
-      var map = this.context.map;
-      return (CELL_WIDTH / 2 + map.size * CELL_WIDTH / 2) / 234 * 2;
+    key: "setResourceBox",
+    value: function setResourceBox(name) {
+      var box = document.createElement('div');
+      box.className = 'resource';
+      var img = document.createElement('img');
+      img.className = 'resource-content';
+      img.src = this.icons[name];
+      this[name] = document.createElement('div');
+      box.appendChild(img);
+      box.appendChild(this[name]);
+      this.resources.appendChild(box);
     }
   }, {
-    key: "getMinimapParams",
-    value: function getMinimapParams() {
-      var factor = this.getMinimapFactor() / this.miniMapAlpha;
-      var translate = (CELL_WIDTH / 2 + this.context.map.size * CELL_WIDTH / 2) / 2 / factor;
-      return {
-        factor: factor,
-        translate: translate
-      };
-    }
-  }, {
-    key: "initMiniMap",
-    value: function initMiniMap() {
-      var _this$getMinimapParam = this.getMinimapParams(),
-        translate = _this$getMinimapParam.translate;
-      for (var _i = 0, _arr = [this.terrainMinimap, this.cameraMinimap, this.resourcesMinimap]; _i < _arr.length; _i++) {
-        var canvas = _arr[_i];
-        canvas.getContext('2d').translate(translate, 0);
-      }
-      var map = this.context.map;
-      if (map.revealEverything || map.revealTerrain) {
-        this.revealTerrainMinimap();
-      }
-    }
-  }, {
-    key: "revealTerrainMinimap",
-    value: function revealTerrainMinimap() {
-      var map = this.context.map;
-      var canvas = this.terrainMinimap;
-      var context = canvas.getContext('2d');
-      var _this$getMinimapParam2 = this.getMinimapParams(),
-        factor = _this$getMinimapParam2.factor,
-        translate = _this$getMinimapParam2.translate;
-      context.clearRect(-translate, 0, canvas.width, canvas.height);
-      for (var i = 0; i <= map.size; i++) {
-        for (var j = 0; j <= map.size; j++) {
-          var cell = map.grid[i][j];
-          canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
-        }
-      }
-    }
-  }, {
-    key: "updateTerrainMiniMap",
-    value: function updateTerrainMiniMap(i, j) {
-      var map = this.context.map;
-      var canvas = this.terrainMinimap;
-      var context = canvas.getContext('2d');
-      var _this$getMinimapParam3 = this.getMinimapParams(),
-        factor = _this$getMinimapParam3.factor,
-        translate = _this$getMinimapParam3.translate;
-      var cell = map.grid[i][j];
-      canvasDrawDiamond(context, cell.x / factor + translate, cell.y / factor, CELL_WIDTH / factor + 1, CELL_HEIGHT / factor + 1, cell.color);
-      if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
-        this.updateResourceMiniMap(cell.has);
-      }
-    }
-  }, {
-    key: "updateResourceMiniMap",
-    value: function updateResourceMiniMap(resource) {
-      var context = this.resourcesMinimap.getContext('2d');
-      var _this$getMinimapParam4 = this.getMinimapParams(),
-        factor = _this$getMinimapParam4.factor,
-        translate = _this$getMinimapParam4.translate;
-      var squareSize = 4;
-      canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
-    }
-  }, {
-    key: "updateResourcesMiniMapEvt",
-    value: function updateResourcesMiniMapEvt() {
-      var _this$context2 = this.context,
-        map = _this$context2.map,
-        player = _this$context2.player;
-      var canvas = this.resourcesMinimap;
-      var context = canvas.getContext('2d');
-      var _this$getMinimapParam5 = this.getMinimapParams(),
-        factor = _this$getMinimapParam5.factor,
-        translate = _this$getMinimapParam5.translate;
-      var squareSize = 4;
-      context.clearRect(-translate, 0, canvas.width, canvas.height);
-      map.resources.forEach(function (resource) {
-        var _player$views;
-        var cell = player === null || player === void 0 || (_player$views = player.views) === null || _player$views === void 0 || (_player$views = _player$views[resource.i]) === null || _player$views === void 0 ? void 0 : _player$views[resource.j];
-        if (resource.color && (cell !== null && cell !== void 0 && cell.viewed || map.revealEverything)) {
-          canvasDrawRectangle(context, resource.x / factor - squareSize / 2 + translate, resource.y / factor - squareSize / 2, squareSize, squareSize, resource.color);
-        }
-      });
-    }
-  }, {
-    key: "updateCameraMiniMapEvt",
-    value: function updateCameraMiniMapEvt() {
-      var _this$context3 = this.context,
-        app = _this$context3.app,
-        controls = _this$context3.controls;
-      var canvas = this.cameraMinimap;
-      var context = canvas.getContext('2d');
-      var _this$getMinimapParam6 = this.getMinimapParams(),
-        factor = _this$getMinimapParam6.factor,
-        translate = _this$getMinimapParam6.translate;
-      context.clearRect(-translate, 0, canvas.width, canvas.height);
-      canvasDrawStrokeRectangle(context, controls.camera.x / factor + translate, controls.camera.y / factor, app.screen.width / factor, app.screen.height / factor, 'white');
-    }
-  }, {
-    key: "updatePlayerMiniMapEvt",
-    value: function updatePlayerMiniMapEvt(owner) {
-      if (!owner) return;
-      var squareSize = 4;
-      var _this$getMinimapParam7 = this.getMinimapParams(),
-        factor = _this$getMinimapParam7.factor,
-        translate = _this$getMinimapParam7.translate;
-      var color = owner.colorHex;
-      var id = "minimap-".concat(owner.label);
-      var canvas, context;
-      var existing = this.playersMinimap.find(function (p) {
-        return p.id === id;
-      });
-      if (existing) {
-        canvas = existing.canvas;
-        context = existing.context;
-      } else {
-        canvas = document.createElement('canvas');
-        context = canvas.getContext('2d');
-        context.translate(translate, 0);
-        this.playersMinimap.push({
-          id: id,
-          canvas: canvas,
-          context: context
-        });
-        this.bottombarMap.appendChild(canvas);
-      }
-      context.clearRect(-translate, 0, canvas.width, canvas.height);
-      owner.buildings.forEach(function (_ref2) {
-        var x = _ref2.x,
-          y = _ref2.y,
-          size = _ref2.size,
-          selected = _ref2.selected;
-        var finalSize = squareSize + size;
-        canvasDrawRectangle(context, x / factor - finalSize / 2 + translate, y / factor - finalSize / 2, finalSize, finalSize, selected ? 'white' : color);
-      });
-      owner.units.forEach(function (_ref3) {
-        var x = _ref3.x,
-          y = _ref3.y,
-          selected = _ref3.selected;
-        canvasDrawRectangle(context, x / factor - squareSize / 2 + translate, y / factor - squareSize / 2, squareSize, squareSize, selected ? 'white' : color);
-      });
-    }
-  }, {
-    key: "getMessage",
-    value: function getMessage(cost) {
+    key: "updateTopbar",
+    value: function updateTopbar() {
+      var _this2 = this;
       var player = this.context.player;
-      var resource = Object.keys(cost).find(function (prop) {
-        return player[prop] < cost[prop];
+      var ageLabels = {
+        0: t('stoneAge'),
+        1: t('toolAge'),
+        2: t('bronzeAge'),
+        3: t('ironAge')
+      };
+      ['wood', 'food', 'stone', 'gold', 'age'].forEach(function (prop) {
+        var val = Math.min(player && player[prop] || 0, 99999);
+        _this2[prop].textContent = prop === 'age' ? ageLabels[val] : val;
       });
-      return "You need more ".concat(resource, " !");
     }
   }, {
     key: "showMessage",
@@ -8734,846 +11237,147 @@ var Menu = /*#__PURE__*/function () {
         box.remove();
       }, 3000);
     }
+
+    // Minimap delegates
   }, {
-    key: "setResourceBox",
-    value: function setResourceBox(name) {
-      var box = document.createElement('div');
-      box.className = 'resource';
-      var img = document.createElement('img');
-      img.className = 'resource-content';
-      img.src = this.icons[name];
-      this[name] = document.createElement('div');
-      box.appendChild(img);
-      box.appendChild(this[name]);
-      this.resources.appendChild(box);
+    key: "getMinimapFactor",
+    value: function getMinimapFactor() {
+      return this.minimapManager.getMinimapFactor();
     }
   }, {
-    key: "updateBottombar",
-    value: function updateBottombar() {
-      var player = this.context.player;
-      if (player.selectedBuilding || player.selectedUnit) {
-        this.setBottombar(player.selectedBuilding || player.selectedUnit);
-      }
+    key: "revealTerrainMinimap",
+    value: function revealTerrainMinimap() {
+      return this.minimapManager.revealTerrainMinimap();
     }
   }, {
-    key: "updateTopbar",
-    value: function updateTopbar() {
-      var _this2 = this;
-      var player = this.context.player;
-      var t = {
-        0: 'Stone Age',
-        1: 'Tool Age',
-        2: 'Bronze Age',
-        3: 'Iron Age'
-      };
-      ['wood', 'food', 'stone', 'gold', 'age'].forEach(function (prop) {
-        var val = Math.min(player && player[prop] || 0, 99999);
-        _this2[prop].textContent = prop === 'age' ? t[val] : val;
-      });
+    key: "updateTerrainMiniMap",
+    value: function updateTerrainMiniMap(i, j) {
+      return this.minimapManager.updateTerrainMiniMap(i, j);
     }
+  }, {
+    key: "updateResourceMiniMap",
+    value: function updateResourceMiniMap(resource) {
+      return this.minimapManager.updateResourceMiniMap(resource);
+    }
+  }, {
+    key: "updatePlayerMiniMapEvt",
+    value: function updatePlayerMiniMapEvt(owner) {
+      return this.minimapManager.updatePlayerMiniMapEvt(owner);
+    }
+  }, {
+    key: "updateResourcesMiniMapEvt",
+    value: function updateResourcesMiniMapEvt() {
+      return this.minimapManager.updateResourcesMiniMapEvt();
+    }
+  }, {
+    key: "updateCameraMiniMapEvt",
+    value: function updateCameraMiniMapEvt() {
+      return this.minimapManager.updateCameraMiniMapEvt();
+    }
+
+    // Bottombar delegates
   }, {
     key: "resetInfo",
     value: function resetInfo() {
-      this.bottombarInfo.textContent = '';
-      this.bottombarInfo.style.background = 'transparent';
-      this._infoCache = null;
+      return this.bottombarManager.resetInfo();
     }
   }, {
     key: "generateInfo",
     value: function generateInfo(selection) {
-      this.resetInfo();
-      this.bottombarInfo.style.background = 'black';
-      if (typeof selection["interface"].info === 'function') {
-        selection["interface"].info(this.bottombarInfo);
-      }
+      return this.bottombarManager.generateInfo(selection);
     }
   }, {
     key: "updateInfo",
     value: function updateInfo(target, action) {
-      if (!this._infoCache) this._infoCache = new Map();
-      var targetElement = this._infoCache.get(target);
-      if (!targetElement) {
-        targetElement = this.bottombarInfo.querySelector("[id=".concat(target, "]"));
-        if (!targetElement) return;
-        this._infoCache.set(target, targetElement);
-      }
-      return typeof action !== 'function' ? targetElement.textContent = action : action(targetElement);
+      return this.bottombarManager.updateInfo(target, action);
     }
   }, {
     key: "updateButtonContent",
     value: function updateButtonContent(target, action) {
-      var targetElement = this.bottombarMenu.querySelector("[id=".concat(target, "]"));
-      if (!targetElement) {
-        return;
-      }
-      var contentElement = targetElement.querySelector('[id=content]');
-      if (!contentElement) {
-        return;
-      }
-      return typeof action !== 'function' ? contentElement.textContent = action : action(contentElement);
+      return this.bottombarManager.updateButtonContent(target, action);
     }
   }, {
     key: "toggleButtonCancel",
     value: function toggleButtonCancel(target, value) {
-      var element = this.bottombarMenu.querySelector("[id=".concat(target, "-cancel]"));
-      if (!element) {
-        return;
-      }
-      element.style.display = value ? 'block' : 'none';
+      return this.bottombarManager.toggleButtonCancel(target, value);
+    }
+  }, {
+    key: "updateBottombar",
+    value: function updateBottombar() {
+      return this.bottombarManager.updateBottombar();
     }
   }, {
     key: "setBottombar",
-    value: function setBottombar() {
-      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var _this$context4 = this.context,
-        controls = _this$context4.controls,
-        player = _this$context4.player;
-      this.resetInfo();
-      this.bottombarMenu.textContent = '';
-      this.selection = selection;
-      if (controls.mouseBuilding) {
-        controls.removeMouseBuilding();
-      }
-      if (selection && selection["interface"]) {
-        this.generateInfo(selection);
-        if (selection.family === FAMILY_TYPES.building) {
-          if (!selection.isBuilt) {
-            setMenuRecurs(selection, this.bottombarMenu, []);
-          } else if (selection.technology) {
-            setMenuRecurs(selection, this.bottombarMenu, [{
-              icon: 'assets/interface/50721/003_50721.png',
-              id: "".concat(selection.technology, "-cancel"),
-              onClick: function onClick(selection) {
-                sound_lib/* sound */.s3.play('5036');
-                selection.cancelTechnology();
-              }
-            }]);
-          } else {
-            setMenuRecurs(selection, this.bottombarMenu, selection["interface"].menu || []);
-          }
-        } else {
-          setMenuRecurs(selection, this.bottombarMenu, selection["interface"].menu || []);
-        }
-      }
-      function setMenuRecurs(selection, element, menu, parent) {
-        menu.filter(function (btn) {
-          return !btn.hide || !btn.hide();
-        }).forEach(function (btn, index) {
-          var box = document.createElement('div');
-          box.className = 'bottombar-menu-box';
-          box.id = btn.id || "btn-".concat(index);
-          if (typeof btn.onCreate === 'function') {
-            btn.onCreate(selection, box);
-          } else {
-            var img = document.createElement('img');
-            img.src = typeof btn.icon === 'function' ? btn.icon() : btn.icon;
-            img.className = 'img';
-            box.appendChild(img);
-          }
-          if (btn.children) {
-            box.addEventListener('pointerup', function () {
-              sound_lib/* sound */.s3.play('5036');
-              element.textContent = '';
-              controls.removeMouseBuilding();
-              setMenuRecurs(selection, element, btn.children, menu);
-            });
-          } else if (typeof btn.onClick === 'function') {
-            box.addEventListener('pointerup', function (evt) {
-              sound_lib/* sound */.s3.play('5036');
-              btn.onClick(selection, evt);
-            });
-          }
-          element.appendChild(box);
-        });
-        if (parent || selection.selected) {
-          var back = document.createElement('div');
-          back.className = 'bottombar-menu-box';
-          var img = document.createElement('img');
-          img.className = 'img';
-          back.id = 'interfaceBackBtn';
-          img.src = 'assets/interface/50721/010_50721.png';
-          if (parent) {
-            back.addEventListener('pointerup', function () {
-              sound_lib/* sound */.s3.play('5036');
-              element.textContent = '';
-              controls.removeMouseBuilding();
-              setMenuRecurs(selection, element, parent);
-            });
-          } else {
-            back.addEventListener('pointerup', function () {
-              sound_lib/* sound */.s3.play('5036');
-              controls.removeMouseBuilding();
-              player.unselectAll();
-            });
-          }
-          back.appendChild(img);
-          element.appendChild(back);
-        }
-      }
+    value: function setBottombar(selection) {
+      return this.bottombarManager.setBottombar(selection);
+    }
+  }, {
+    key: "getMessage",
+    value: function getMessage(cost) {
+      return this.bottombarManager.getMessage(cost);
     }
   }, {
     key: "getUnitButton",
     value: function getUnitButton(type) {
-      var _this3 = this;
-      var player = this.context.player;
-      var unit = player.config.units[type];
-      return {
-        id: type,
-        icon: function icon() {
-          return getIconPath(unit.icon);
-        },
-        hide: function hide() {
-          return (unit.conditions || []).some(function (condition) {
-            return !isValidCondition(condition, player);
-          });
-        },
-        onCreate: function onCreate(selection, element) {
-          var div = document.createElement('div');
-          div.className = 'bottombar-menu-column';
-          var cancel = document.createElement('img');
-          cancel.id = "".concat(type, "-cancel");
-          cancel.className = 'img';
-          cancel.src = 'assets/interface/50721/003_50721.png';
-          if (!selection.queue.some(function (q) {
-            return q === type;
-          })) {
-            cancel.style.display = 'none';
-          }
-          cancel.addEventListener('pointerup', function () {
-            sound_lib/* sound */.s3.play('5036');
-            for (var i = 0; i < selection.queue.length; i++) {
-              if (selection.queue[i] === type) {
-                refundCost(player, unit.cost);
-              }
-            }
-            _this3.updateTopbar();
-            selection.queue = selection.queue.filter(function (q) {
-              return q !== type;
-            });
-            if (selection.queue[0] !== type) {
-              _this3.updateButtonContent(type, '');
-              _this3.toggleButtonCancel(type, false);
-            }
-          });
-          var img = document.createElement('img');
-          img.src = getIconPath(unit.icon);
-          img.className = 'img';
-          img.addEventListener('pointerup', function () {
-            sound_lib/* sound */.s3.play('5036');
-            if (canAfford(player, unit.cost)) {
-              if (player.population >= player.population_max) {
-                _this3.showMessage('You need to build more houses');
-              }
-              _this3.toggleButtonCancel(type, true);
-              selection.buyUnit(type);
-            } else {
-              _this3.showMessage(_this3.getMessage(unit.cost));
-            }
-          });
-          var queue = selection.queue.filter(function (queue) {
-            return queue === type;
-          }).length;
-          var counter = document.createElement('div');
-          counter.id = 'content';
-          counter.textContent = queue || '';
-          counter.style.padding = '1px';
-          counter.style.position = 'absolute';
-          div.appendChild(img);
-          div.appendChild(cancel);
-          element.appendChild(div);
-          element.appendChild(counter);
-        }
-      };
+      return this.bottombarManager.getUnitButton(type);
     }
   }, {
     key: "getBuildingButton",
     value: function getBuildingButton(type) {
-      var _this4 = this;
-      var _this$context5 = this.context,
-        controls = _this$context5.controls,
-        player = _this$context5.player;
-      var config = player.config.buildings[type];
-      return {
-        id: type,
-        icon: function icon() {
-          var assets = getBuildingAsset(type, player, lib/* Assets */.sP);
-          return getIconPath(assets.icon);
-        },
-        hide: function hide() {
-          return (config.conditions || []).some(function (condition) {
-            return !isValidCondition(condition, player);
-          });
-        },
-        onClick: function onClick() {
-          var assets = getBuildingAsset(type, player, lib/* Assets */.sP);
-          controls.removeMouseBuilding();
-          if (canAfford(player, config.cost)) {
-            controls.setMouseBuilding(menu_objectSpread(menu_objectSpread(menu_objectSpread({}, config), assets), {}, {
-              type: type
-            }));
-          } else {
-            _this4.showMessage(_this4.getMessage(config.cost));
-          }
-        }
-      };
+      return this.bottombarManager.getBuildingButton(type);
     }
   }, {
     key: "getTechnologyButton",
     value: function getTechnologyButton(type) {
-      var _this5 = this;
-      var _this$context6 = this.context,
-        controls = _this$context6.controls,
-        player = _this$context6.player;
-      var config = player.techs[type];
-      return {
-        icon: getIconPath(config.icon),
-        id: type,
-        hide: function hide() {
-          return (config.conditions || []).some(function (condition) {
-            return player.technologies.includes(type) || !isValidCondition(condition, player);
-          });
-        },
-        onClick: function onClick(selection) {
-          controls.removeMouseBuilding();
-          if (canAfford(player, config.cost)) {
-            selection.buyTechnology(type);
-          } else {
-            _this5.showMessage(_this5.getMessage(config.cost));
-          }
-        }
-      };
+      return this.bottombarManager.getTechnologyButton(type);
     }
   }]);
 }();
 
-;// ./app/classes/controls.js
-function controls_typeof(o) { "@babel/helpers - typeof"; return controls_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, controls_typeof(o); }
-function controls_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = controls_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
-function controls_slicedToArray(r, e) { return controls_arrayWithHoles(r) || controls_iterableToArrayLimit(r, e) || controls_unsupportedIterableToArray(r, e) || controls_nonIterableRest(); }
-function controls_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function controls_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return controls_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? controls_arrayLikeToArray(r, a) : void 0; } }
-function controls_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function controls_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function controls_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-function controls_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
-function controls_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, controls_toPropertyKey(o.key), o); } }
-function controls_createClass(e, r, t) { return r && controls_defineProperties(e.prototype, r), t && controls_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
-function controls_toPropertyKey(t) { var i = controls_toPrimitive(t, "string"); return "symbol" == controls_typeof(i) ? i : i + ""; }
-function controls_toPrimitive(t, r) { if ("object" != controls_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != controls_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-function controls_callSuper(t, o, e) { return o = controls_getPrototypeOf(o), controls_possibleConstructorReturn(t, controls_isNativeReflectConstruct() ? Reflect.construct(o, e || [], controls_getPrototypeOf(t).constructor) : o.apply(t, e)); }
-function controls_possibleConstructorReturn(t, e) { if (e && ("object" == controls_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return controls_assertThisInitialized(t); }
-function controls_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
-function controls_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (controls_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function controls_getPrototypeOf(t) { return controls_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, controls_getPrototypeOf(t); }
-function controls_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && controls_setPrototypeOf(t, e); }
-function controls_setPrototypeOf(t, e) { return controls_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, controls_setPrototypeOf(t, e); }
+;// ./app/controllers/CameraController.js
+function CameraController_typeof(o) { "@babel/helpers - typeof"; return CameraController_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, CameraController_typeof(o); }
+function CameraController_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = CameraController_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function CameraController_slicedToArray(r, e) { return CameraController_arrayWithHoles(r) || CameraController_iterableToArrayLimit(r, e) || CameraController_unsupportedIterableToArray(r, e) || CameraController_nonIterableRest(); }
+function CameraController_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function CameraController_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return CameraController_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? CameraController_arrayLikeToArray(r, a) : void 0; } }
+function CameraController_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function CameraController_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function CameraController_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function CameraController_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function CameraController_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, CameraController_toPropertyKey(o.key), o); } }
+function CameraController_createClass(e, r, t) { return r && CameraController_defineProperties(e.prototype, r), t && CameraController_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function CameraController_toPropertyKey(t) { var i = CameraController_toPrimitive(t, "string"); return "symbol" == CameraController_typeof(i) ? i : i + ""; }
+function CameraController_toPrimitive(t, r) { if ("object" != CameraController_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != CameraController_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 
 
-
-
-var ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']);
-var Controls = /*#__PURE__*/function (_Container) {
-  function Controls(context) {
-    var _this;
-    controls_classCallCheck(this, Controls);
-    _this = controls_callSuper(this, Controls);
-    _this.context = context;
-    var map = context.map,
-      gamebox = context.gamebox;
-    _this.sortableChildren = true;
-    _this.mouse = {
-      x: 0,
-      y: 0,
-      prevent: false
-    };
-    _this.camera = {
+var CameraController = /*#__PURE__*/function () {
+  function CameraController(context) {
+    CameraController_classCallCheck(this, CameraController);
+    this.context = context;
+    this.camera = {
       x: 0,
       y: 0
     };
-    _this.visibleCells = new Set();
-    _this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2));
-    _this.mouseHoldTimeout;
-    _this.keysPressed = {};
-    _this.keyPressedCount = 0;
-    _this.keyInterval;
-    _this.keySpeed = 0;
-    _this.eventMode = 'auto';
-    _this.allowMove = false;
-    _this.allowClick = false;
-    _this.mouseRectangle;
-    _this.mouseTouch;
-    _this.mouseDrag = false;
-    _this.moveCameraInterval;
-    _this.minimapRectangle = new lib/* Graphics */.A1g();
-    _this.addChild(_this.minimapRectangle);
-    _this._onDocMouseMove = function (evt) {
-      return _this.moveCameraWithMouse(evt);
-    };
-    _this._onDocMouseOut = function () {
-      return clearInterval(_this.moveCameraInterval);
-    };
-    _this._onKeyDown = function (evt) {
-      return _this.onKeyDown(evt);
-    };
-    _this._onKeyUp = function (evt) {
-      return _this.onKeyUp(evt);
-    };
-    _this._onTouchStart = function (evt) {
-      return _this.onTouchStart(evt);
-    };
-    _this._onTouchEnd = function (evt) {
-      return _this.onTouchEnd(evt);
-    };
-    _this._onTouchMove = function (evt) {
-      return _this.onTouchMove(evt);
-    };
-    _this._onMouseMove = function (evt) {
-      return _this.onMouseMove(evt);
-    };
-    _this._onMouseDown = function (evt) {
-      return _this.onMouseDown(evt);
-    };
-    _this._onMouseUp = function (evt) {
-      return _this.onMouseUp(evt);
-    };
-    document.addEventListener('mousemove', _this._onDocMouseMove);
-    document.addEventListener('mouseout', _this._onDocMouseOut);
-    document.addEventListener('keydown', _this._onKeyDown);
-    document.addEventListener('keyup', _this._onKeyUp);
-    gamebox.addEventListener('touchstart', _this._onTouchStart);
-    gamebox.addEventListener('touchend', _this._onTouchEnd);
-    gamebox.addEventListener('touchmove', _this._onTouchMove);
-    gamebox.addEventListener('mousemove', _this._onMouseMove);
-    gamebox.addEventListener('mousedown', _this._onMouseDown);
-    gamebox.addEventListener('mouseup', _this._onMouseUp);
-    return _this;
+    this.visibleCells = new Set();
+    this.moveInterval = null;
+    this._rafPending = false;
   }
-  controls_inherits(Controls, _Container);
-  return controls_createClass(Controls, [{
-    key: "destroy",
-    value: function destroy() {
-      var gamebox = this.context.gamebox;
-      document.removeEventListener('mousemove', this._onDocMouseMove);
-      document.removeEventListener('mouseout', this._onDocMouseOut);
-      document.removeEventListener('keydown', this._onKeyDown);
-      document.removeEventListener('keyup', this._onKeyUp);
-      gamebox.removeEventListener('touchstart', this._onTouchStart);
-      gamebox.removeEventListener('touchend', this._onTouchEnd);
-      gamebox.removeEventListener('touchmove', this._onTouchMove);
-      gamebox.removeEventListener('mousemove', this._onMouseMove);
-      gamebox.removeEventListener('mousedown', this._onMouseDown);
-      gamebox.removeEventListener('mouseup', this._onMouseUp);
-    }
-  }, {
-    key: "onKeyDown",
-    value: function onKeyDown(evt) {
-      var _this2 = this;
-      if (evt.key === 'Delete' || evt.keyCode === 8) {
-        var player = this.context.player;
-        for (var i = 0; i < player.selectedUnits.length; i++) {
-          player.selectedUnits[i].die();
-        }
-        if (player.selectedBuilding) {
-          player.selectedBuilding.die();
-        }
-        return;
-      }
-      var handleMoveCamera = function handleMoveCamera() {
-        if (!_this2.keyInterval) {
-          _this2.keyInterval = setInterval(function () {
-            var _double = _this2.keyPressedCount > 1;
-            if (_this2.keySpeed < 4) {
-              _this2.keySpeed += 0.2;
-            }
-            if (_this2.keysPressed['ArrowLeft']) {
-              _this2.moveCamera('left', _this2.keySpeed, _double);
-            }
-            if (_this2.keysPressed['ArrowUp']) {
-              _this2.moveCamera('up', _this2.keySpeed, _double);
-            }
-            if (_this2.keysPressed['ArrowDown']) {
-              _this2.moveCamera('down', _this2.keySpeed, _double);
-            }
-            if (_this2.keysPressed['ArrowRight']) {
-              _this2.moveCamera('right', _this2.keySpeed, _double);
-            }
-          }, 1);
-        }
-      };
-      if (!evt.repeat) {
-        this.keysPressed[evt.key] = true;
-        this.keyPressedCount++;
-      }
-      if (ARROW_KEYS.has(evt.key)) {
-        handleMoveCamera();
-      }
-    }
-  }, {
-    key: "onKeyUp",
-    value: function onKeyUp(evt) {
-      if (!evt.repeat && this.keysPressed[evt.key]) {
-        delete this.keysPressed[evt.key];
-        this.keyPressedCount--;
-      }
-      if (this.keyPressedCount <= 0) {
-        this.keyPressedCount = 0;
-        clearInterval(this.keyInterval);
-        this.keyInterval = null;
-        this.keySpeed = 0;
-      }
-    }
-  }, {
-    key: "onTouchStart",
-    value: function onTouchStart(evt) {
-      var touch = evt.touches[0];
-      if (evt.touches.length === 2) {
-        this.mouseTouch = {
-          x: touch.pageX,
-          y: touch.pageY
-        };
-      } else {
-        this.onMouseDown(touch);
-      }
-    }
-  }, {
-    key: "onTouchMove",
-    value: function onTouchMove(evt) {
-      var touch = evt.touches[0];
-      if (evt.touches.length === 2) {
-        this.mouse.x = touch.pageX;
-        this.mouse.y = touch.pageY;
-        if (this.mouseTouch) {
-          var speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2;
-          var speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2;
-          if (this.mouse.x > this.mouseTouch.x) {
-            this.moveCamera('left', speedX, false);
-          }
-          if (this.mouse.y > this.mouseTouch.y) {
-            this.moveCamera('up', speedY, false);
-          }
-          if (this.mouse.y < this.mouseTouch.y) {
-            this.moveCamera('down', speedY, false);
-          }
-          if (this.mouse.x < this.mouseTouch.x) {
-            this.moveCamera('right', speedX, false);
-          }
-        }
-        this.mouseTouch = {
-          x: this.mouse.x,
-          y: this.mouse.y
-        };
-      } else {
-        this.onMouseMove(touch);
-      }
-    }
-  }, {
-    key: "onTouchEnd",
-    value: function onTouchEnd(evt) {
-      var touch = evt.changedTouches[0];
-      if (evt.changedTouches.length === 1) {
-        this.onMouseUp(touch);
-      }
-    }
-  }, {
-    key: "onMouseDown",
-    value: function onMouseDown(evt) {
-      this.mouse.x = evt.pageX;
-      this.mouse.y = evt.pageY;
-      if (!this.isMouseInApp(evt)) {
-        return;
-      }
-      this.pointerStart = {
-        x: this.mouse.x,
-        y: this.mouse.y
-      };
-    }
-  }, {
-    key: "onMouseMove",
-    value: function onMouseMove(evt) {
-      var _this$context = this.context,
-        map = _this$context.map,
-        player = _this$context.player,
-        app = _this$context.app;
-      this.mouse.x = evt.pageX;
-      this.mouse.y = evt.pageY;
-
-      // Mouse building to place construction
-      if (this.mouseBuilding) {
-        var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y >= app.screen.height ? app.screen.height - map.y : this.mouse.y - map.y);
-        var i = Math.min(Math.max(pos[0], 0), map.size);
-        var j = Math.min(Math.max(pos[1], 0), map.size);
-        if (map.grid[i] && map.grid[i][j]) {
-          var cell = map.grid[i][j];
-          this.mouseBuilding.x = cell.x - this.camera.x;
-          this.mouseBuilding.y = cell.y - this.camera.y;
-          var isFree = true;
-          var dist = this.mouseBuilding.size === 3 ? 1 : 0;
-          if (this.mouseBuilding.buildOnWater) {
-            var waterBorderedCells = 0;
-            var waterCells = 0;
-            getPlainCellsAroundPoint(i, j, map.grid, dist, function (cell) {
-              if (cell.inclined || cell.solid || !cell.visible) {
-                isFree = false;
-                return;
-              }
-              if (cell.waterBorder) {
-                waterBorderedCells++;
-              } else if (cell.category === 'Water') {
-                waterCells++;
-              }
-            });
-            if (waterBorderedCells < 2 && waterCells < 4) {
-              isFree = false;
-            }
-          } else {
-            getPlainCellsAroundPoint(i, j, map.grid, dist, function (cell) {
-              if (cell.category === 'Water' || cell.solid || cell.inclined || cell.border || !cell.visible) {
-                isFree = false;
-                return;
-              }
-            });
-          }
-          // Color image of mouse building depend on buildable or not
-          var sprite = this.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite);
-          var color = this.mouseBuilding.getChildByLabel(LABEL_TYPES.color);
-          if (isFree) {
-            sprite.tint = COLOR_WHITE;
-            if (color) {
-              color.tint = COLOR_WHITE;
-            }
-          } else {
-            sprite.tint = COLOR_RED;
-            if (color) {
-              color.tint = COLOR_RED;
-            }
-          }
-          this.mouseBuilding.isFree = isFree;
-        }
-        return;
-      }
-
-      // Create and draw mouse selection
-      if (!this.mouseRectangle && this.pointerStart && pointsDistance(this.mouse.x, this.mouse.y, this.pointerStart.x, this.pointerStart.y) > 5) {
-        this.mouseRectangle = {
-          x: this.pointerStart.x,
-          y: this.pointerStart.y,
-          width: 0,
-          height: 0,
-          graph: new lib/* Graphics */.A1g()
-        };
-        app.stage.addChild(this.mouseRectangle.graph);
-      }
-      if (this.mouseRectangle && !this.mouseBuilding) {
-        if (player.selectedUnits.length || player.selectedBuilding) {
-          player.unselectAll();
-        }
-        var graph = this.mouseRectangle.graph;
-        graph.clear();
-        this.mouseRectangle.width = this.mouse.x - this.mouseRectangle.x;
-        this.mouseRectangle.height = this.mouse.y - this.mouseRectangle.y;
-        var x = Math.min(this.mouseRectangle.x, this.mouseRectangle.x + this.mouseRectangle.width);
-        var y = Math.min(this.mouseRectangle.y, this.mouseRectangle.y + this.mouseRectangle.height);
-        var w = Math.abs(this.mouseRectangle.width);
-        var h = Math.abs(this.mouseRectangle.height);
-        graph.rect(x, y, w, h).stroke(COLOR_WHITE);
-      }
-    }
-  }, {
-    key: "onMouseUp",
-    value: function onMouseUp(evt) {
-      var _this$context2 = this.context,
-        menu = _this$context2.menu,
-        map = _this$context2.map,
-        player = _this$context2.player;
-      this.pointerStart = null;
-      clearTimeout(this.mouseHoldTimeout);
-      if (!this.isMouseInApp(evt) || this.mouse.prevent || this.mouseDrag) {
-        this.mouse.prevent = false;
-        return;
-      }
-      (player === null || player === void 0 ? void 0 : player.selectedBuilding) && player.unselectAll();
-      // Select units on mouse rectangle
-      if (this.mouseRectangle) {
-        var selectVillager;
-        var countSelect = 0;
-        player.unselectAll();
-        // Select units inside the rectangle
-        for (var i = 0; i < player.units.length; i++) {
-          var unit = player.units[i];
-          if (player.selectedUnits.length < MAX_SELECT_UNITS && pointInRectangle(unit.x - this.camera.x, unit.y - this.camera.y, this.mouseRectangle.x, this.mouseRectangle.y, this.mouseRectangle.width, this.mouseRectangle.height, true)) {
-            unit.select();
-            countSelect++;
-            if (unit.type === UNIT_TYPES.villager) {
-              selectVillager = unit;
-            }
-            player.selectedUnits.push(unit);
-          }
-        }
-        // Set our bottombar
-        if (countSelect) {
-          if (selectVillager) {
-            player.selectedUnit = selectVillager;
-            menu.setBottombar(selectVillager);
-          } else {
-            // TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
-            player.selectedUnit = player.selectedUnits[0];
-            menu.setBottombar(player.selectedUnits[0]);
-          }
-        }
-        // Reset mouse selection
-        if (this.mouseRectangle) {
-          this.mouseRectangle.graph.destroy(true);
-          this.mouseRectangle = null;
-        }
-        return;
-      }
-      if (this.isMouseInApp(evt)) {
-        var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y);
-        var _i = Math.min(Math.max(pos[0], 0), map.size);
-        var j = Math.min(Math.max(pos[1], 0), map.size);
-        if (map.grid[_i] && map.grid[_i][j]) {
-          var cell = map.grid[_i][j];
-          if ((cell.solid || cell.has) && cell.visible) {
-            return;
-          }
-          if (this.mouseBuilding) {
-            if (cell.inclined || cell.border) {
-              return;
-            }
-            if (this.mouseBuilding.isFree) {
-              if (player.buyBuilding(_i, j, this.mouseBuilding.type)) {
-                this.removeMouseBuilding();
-                if (menu.selection) {
-                  menu.setBottombar(menu.selection);
-                }
-              }
-            }
-          } else if (player !== null && player !== void 0 && player.selectedUnits.length) {
-            // Pointer animation
-            var pointerSheet = lib/* Assets */.sP.cache.get('50405');
-            var pointer = new lib/* AnimatedSprite */.Dl5(pointerSheet.animations['animation']);
-            pointer.animationSpeed = 0.2 * ACCELERATOR;
-            pointer.loop = false;
-            pointer.anchor.set(0.5, 0.5);
-            pointer.x = this.mouse.x;
-            pointer.y = this.mouse.y;
-            pointer.allowMove = false;
-            pointer.allowClick = false;
-            pointer.eventMode = 'auto';
-            pointer.roundPixels = true;
-            pointer.onComplete = function () {
-              pointer.destroy();
-            };
-            pointer.play();
-            this.addChild(pointer);
-            // Send units
-            this.sendUnits(cell);
-          }
-        }
-      }
-    }
-  }, {
-    key: "sendUnits",
-    value: function sendUnits(cell) {
-      var _this$context3 = this.context,
-        player = _this$context3.player,
-        map = _this$context3.map;
-      var minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity;
-      for (var k = 0; k < player.selectedUnits.length; k++) {
-        var _player$selectedUnits = player.selectedUnits[k],
-          i = _player$selectedUnits.i,
-          j = _player$selectedUnits.j;
-        if (i < minX) minX = i;
-        if (j < minY) minY = j;
-        if (i > maxX) maxX = i;
-        if (j > maxY) maxY = j;
-      }
-      var centerX = minX + Math.round((maxX - minX) / 2);
-      var centerY = minY + Math.round((maxY - minY) / 2);
-      var hasSentVillager = false;
-      var hasSentSoldier = false;
-      for (var u = 0; u < player.selectedUnits.length; u++) {
-        var unit = player.selectedUnits[u];
-        var distCenterX = unit.i - centerX;
-        var distCenterY = unit.j - centerY;
-        var finalX = cell.i + distCenterX;
-        var finalY = cell.j + distCenterY;
-        if (unit.type === UNIT_TYPES.villager) {
-          hasSentVillager = true;
-        } else {
-          hasSentSoldier = true;
-        }
-        if (map.grid[finalX] && map.grid[finalX][finalY]) {
-          player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
-        } else {
-          player.selectedUnits[u].sendTo(cell);
-        }
-      }
-      if (hasSentSoldier) {
-        var voice = maths_randomItem(['5075', '5076', '5128', '5164']);
-        sound_lib/* sound */.s3.play(voice);
-      } else if (hasSentVillager) {
-        sound_lib/* sound */.s3.play('5006');
-      }
-    }
-  }, {
-    key: "isMouseInApp",
-    value: function isMouseInApp(evt) {
-      return evt.target && (!evt.target.tagName || evt.target.closest('#game'));
-    }
-  }, {
-    key: "removeMouseBuilding",
-    value: function removeMouseBuilding() {
-      if (!this.mouseBuilding) {
-        return;
-      }
-      this.removeChild(this.mouseBuilding);
-      this.mouseBuilding.destroy();
-      this.mouseBuilding = null;
-    }
-  }, {
-    key: "setMouseBuilding",
-    value: function setMouseBuilding(building) {
-      var _this3 = this;
-      var player = this.context.player;
-      this.mouseBuilding = new lib/* Container */.mcf();
-      var sprite = lib/* Sprite */.kxk.from(getTexture(building.images["final"], lib/* Assets */.sP));
-      sprite.label = LABEL_TYPES.sprite;
-      this.mouseBuilding.addChild(sprite);
-      Object.keys(building).forEach(function (prop) {
-        _this3.mouseBuilding[prop] = building[prop];
-      });
-      this.mouseBuilding.x = this.mouse.x;
-      this.mouseBuilding.y = this.mouse.y;
-      this.mouseBuilding.label = LABEL_TYPES.mouseBuilding;
-      if (building.images.color) {
-        var color = lib/* Sprite */.kxk.from(getTexture(building.images.color, lib/* Assets */.sP));
-        color.label = LABEL_TYPES.color;
-        changeSpriteColor(color, player.color);
-        this.mouseBuilding.addChild(color);
-      } else {
-        changeSpriteColor(sprite, player.color);
-      }
-      this.addChild(this.mouseBuilding);
-    }
-  }, {
-    key: "moveCamera",
-    value: function moveCamera(dir, moveSpeed, isSpeedDivided) {
+  return CameraController_createClass(CameraController, [{
+    key: "move",
+    value: function move(dir, moveSpeed, isSpeedDivided) {
+      var _this = this;
       /**
-       * 	/A\
+       *  /A\
        * /   \
        *B     D
        * \   /
        *  \C/
        */
 
-      var _this$context4 = this.context,
-        map = _this$context4.map,
-        app = _this$context4.app,
-        menu = _this$context4.menu;
+      var _this$context = this.context,
+        map = _this$context.map,
+        app = _this$context.app,
+        menu = _this$context.menu;
       var dividedSpeed = isSpeedDivided ? 1.5 : 1;
       var speed = (moveSpeed || 20) / dividedSpeed;
       var A = {
@@ -9640,13 +11444,19 @@ var Controls = /*#__PURE__*/function (_Container) {
       }
       menu.updateCameraMiniMap();
       map.setCoordinate(-this.camera.x, -this.camera.y);
-      this.updateVisibleCells();
+      if (!this._rafPending) {
+        this._rafPending = true;
+        requestAnimationFrame(function () {
+          _this._rafPending = false;
+          _this.updateVisibleCells();
+        });
+      }
     }
   }, {
-    key: "moveCameraWithMouse",
-    value: function moveCameraWithMouse(evt) {
-      var _this4 = this;
-      clearInterval(this.moveCameraInterval);
+    key: "moveWithMouse",
+    value: function moveWithMouse(evt) {
+      var _this2 = this;
+      this.stopMouseMove();
       var dir = [];
       var mouse = {
         x: evt.pageX,
@@ -9671,12 +11481,18 @@ var Controls = /*#__PURE__*/function (_Container) {
         dir.push('down');
       }
       if (dir.length) {
-        this.moveCameraInterval = setInterval(function () {
+        this.moveInterval = setInterval(function () {
           dir.forEach(function (prop) {
-            _this4.moveCamera(prop, calcs[prop]);
+            _this2.move(prop, calcs[prop]);
           });
         }, 20);
       }
+    }
+  }, {
+    key: "stopMouseMove",
+    value: function stopMouseMove() {
+      clearInterval(this.moveInterval);
+      this.moveInterval = null;
     }
   }, {
     key: "instanceInCamera",
@@ -9687,9 +11503,9 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "getCellOnCamera",
     value: function getCellOnCamera(callback) {
-      var _this$context5 = this.context,
-        map = _this$context5.map,
-        app = _this$context5.app;
+      var _this$context2 = this.context,
+        map = _this$context2.map,
+        app = _this$context2.app;
       var cameraFloor = {
         x: Math.floor(this.camera.x),
         y: Math.floor(this.camera.y)
@@ -9698,13 +11514,11 @@ var Controls = /*#__PURE__*/function (_Container) {
       for (var i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
         for (var j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
           var _isometricToCartesian = isometricToCartesian(i, j),
-            _isometricToCartesian2 = controls_slicedToArray(_isometricToCartesian, 2),
+            _isometricToCartesian2 = CameraController_slicedToArray(_isometricToCartesian, 2),
             cartesianX = _isometricToCartesian2[0],
             cartesianY = _isometricToCartesian2[1];
-          var x = Math.min(Math.max(cartesianX, 0), map.size - 1); // Adjust for index bounds
+          var x = Math.min(Math.max(cartesianX, 0), map.size - 1);
           var y = Math.min(Math.max(cartesianY, 0), map.size - 1);
-
-          // Ensure the coordinates are within bounds and call the callback
           if (map.grid[x] && map.grid[x][y]) {
             callback(map.grid[x][y]);
           }
@@ -9714,12 +11528,11 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "updateVisibleCells",
     value: function updateVisibleCells() {
-      var _this$context6 = this.context,
-        map = _this$context6.map,
-        app = _this$context6.app;
+      var _this$context3 = this.context,
+        map = _this$context3.map,
+        app = _this$context3.app;
       var newVisible = new Set();
-      var margin = CELL_WIDTH; // extra padding for offscreen cells
-
+      var margin = CELL_WIDTH;
       var startX = Math.floor(this.camera.x - margin);
       var endX = Math.floor(this.camera.x + app.screen.width + margin);
       var startY = Math.floor(this.camera.y - margin);
@@ -9728,7 +11541,7 @@ var Controls = /*#__PURE__*/function (_Container) {
         for (var j = startY; j <= endY; j += CELL_HEIGHT / 2) {
           var _map$grid$x;
           var _isometricToCartesian3 = isometricToCartesian(i, j),
-            _isometricToCartesian4 = controls_slicedToArray(_isometricToCartesian3, 2),
+            _isometricToCartesian4 = CameraController_slicedToArray(_isometricToCartesian3, 2),
             cartX = _isometricToCartesian4[0],
             cartY = _isometricToCartesian4[1];
           var x = Math.min(Math.max(cartX, 0), map.size - 1);
@@ -9739,26 +11552,21 @@ var Controls = /*#__PURE__*/function (_Container) {
           }
         }
       }
-
-      // Hide cells that left the viewport
-      var _iterator = controls_createForOfIteratorHelper(this.visibleCells),
+      var _iterator = CameraController_createForOfIteratorHelper(this.visibleCells),
         _step;
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var _cell = _step.value;
           if (!newVisible.has(_cell)) {
-            _cell.visible = false;
             if (_cell.has) _cell.has.visible = false;
           }
         }
-
-        // Show newly visible cells
       } catch (err) {
         _iterator.e(err);
       } finally {
         _iterator.f();
       }
-      var _iterator2 = controls_createForOfIteratorHelper(newVisible),
+      var _iterator2 = CameraController_createForOfIteratorHelper(newVisible),
         _step2;
       try {
         for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
@@ -9775,13 +11583,617 @@ var Controls = /*#__PURE__*/function (_Container) {
       this.visibleCells = newVisible;
     }
   }, {
+    key: "set",
+    value: function set(x, y, direct) {
+      var _this$context4 = this.context,
+        map = _this$context4.map,
+        app = _this$context4.app,
+        menu = _this$context4.menu;
+      this.camera = {
+        x: direct ? x : x - app.screen.width / 2,
+        y: direct ? y : y - app.screen.height / 2
+      };
+      menu && menu.updateCameraMiniMap();
+      map.setCoordinate(-this.camera.x, -this.camera.y);
+      this.updateVisibleCells();
+    }
+  }]);
+}();
+;// ./app/controllers/BuildingPlacer.js
+function BuildingPlacer_typeof(o) { "@babel/helpers - typeof"; return BuildingPlacer_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingPlacer_typeof(o); }
+function BuildingPlacer_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function BuildingPlacer_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, BuildingPlacer_toPropertyKey(o.key), o); } }
+function BuildingPlacer_createClass(e, r, t) { return r && BuildingPlacer_defineProperties(e.prototype, r), t && BuildingPlacer_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function BuildingPlacer_toPropertyKey(t) { var i = BuildingPlacer_toPrimitive(t, "string"); return "symbol" == BuildingPlacer_typeof(i) ? i : i + ""; }
+function BuildingPlacer_toPrimitive(t, r) { if ("object" != BuildingPlacer_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingPlacer_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var BuildingPlacer = /*#__PURE__*/function () {
+  function BuildingPlacer(controls) {
+    BuildingPlacer_classCallCheck(this, BuildingPlacer);
+    this.controls = controls;
+  }
+  return BuildingPlacer_createClass(BuildingPlacer, [{
+    key: "handleMouseMove",
+    value: function handleMouseMove() {
+      var controls = this.controls;
+      var _controls$context = controls.context,
+        map = _controls$context.map,
+        app = _controls$context.app;
+      var pos = isometricToCartesian(controls.mouse.x - map.x, controls.mouse.y >= app.screen.height ? app.screen.height - map.y : controls.mouse.y - map.y);
+      var i = Math.min(Math.max(pos[0], 0), map.size);
+      var j = Math.min(Math.max(pos[1], 0), map.size);
+      if (!map.grid[i] || !map.grid[i][j]) return;
+      var cell = map.grid[i][j];
+      controls.mouseBuilding.x = cell.x - controls.camera.x;
+      controls.mouseBuilding.y = cell.y - controls.camera.y;
+      var isFree = true;
+      var dist = controls.mouseBuilding.size === 3 ? 1 : 0;
+      if (controls.mouseBuilding.buildOnWater) {
+        var waterBorderedCells = 0;
+        var waterCells = 0;
+        grid_getPlainCellsAroundPoint(i, j, map.grid, dist, function (c) {
+          if (c.inclined || c.solid || !c.visible) {
+            isFree = false;
+            return;
+          }
+          if (c.waterBorder) waterBorderedCells++;else if (c.category === 'Water') waterCells++;
+        });
+        if (waterBorderedCells < 2 && waterCells < 4) isFree = false;
+      } else {
+        grid_getPlainCellsAroundPoint(i, j, map.grid, dist, function (c) {
+          if (c.category === 'Water' || c.solid || c.inclined || c.border || !c.visible) {
+            isFree = false;
+          }
+        });
+      }
+      var sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite);
+      var color = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.color);
+      var tint = isFree ? COLOR_WHITE : COLOR_RED;
+      sprite.tint = tint;
+      if (color) color.tint = tint;
+      controls.mouseBuilding.isFree = isFree;
+    }
+  }, {
+    key: "handleMouseUp",
+    value: function handleMouseUp(cell) {
+      var controls = this.controls;
+      var _controls$context2 = controls.context,
+        menu = _controls$context2.menu,
+        player = _controls$context2.player;
+      if (cell.inclined || cell.border) return;
+      if (controls.mouseBuilding.isFree) {
+        if (player.buyBuilding(cell.i, cell.j, controls.mouseBuilding.type)) {
+          controls.removeMouseBuilding();
+          if (menu.selection) {
+            menu.setBottombar(menu.selection);
+          }
+        }
+      }
+    }
+  }, {
+    key: "setMouseBuilding",
+    value: function setMouseBuilding(building) {
+      var controls = this.controls;
+      var player = controls.context.player;
+      controls.mouseBuilding = new lib/* Container */.mcf();
+      var sprite = lib/* Sprite */.kxk.from(getTexture(building.images["final"], lib/* Assets */.sP));
+      sprite.label = LABEL_TYPES.sprite;
+      controls.mouseBuilding.addChild(sprite);
+      Object.keys(building).forEach(function (prop) {
+        controls.mouseBuilding[prop] = building[prop];
+      });
+      controls.mouseBuilding.x = controls.mouse.x;
+      controls.mouseBuilding.y = controls.mouse.y;
+      controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding;
+      if (building.images.color) {
+        var color = lib/* Sprite */.kxk.from(getTexture(building.images.color, lib/* Assets */.sP));
+        color.label = LABEL_TYPES.color;
+        changeSpriteColor(color, player.color);
+        controls.mouseBuilding.addChild(color);
+      } else {
+        changeSpriteColor(sprite, player.color);
+      }
+      controls.addChild(controls.mouseBuilding);
+    }
+  }, {
+    key: "removeMouseBuilding",
+    value: function removeMouseBuilding() {
+      var controls = this.controls;
+      if (!controls.mouseBuilding) return;
+      controls.removeChild(controls.mouseBuilding);
+      controls.mouseBuilding.destroy();
+      controls.mouseBuilding = null;
+    }
+  }]);
+}();
+;// ./app/controllers/SelectionManager.js
+function SelectionManager_typeof(o) { "@babel/helpers - typeof"; return SelectionManager_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, SelectionManager_typeof(o); }
+function SelectionManager_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function SelectionManager_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, SelectionManager_toPropertyKey(o.key), o); } }
+function SelectionManager_createClass(e, r, t) { return r && SelectionManager_defineProperties(e.prototype, r), t && SelectionManager_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function SelectionManager_toPropertyKey(t) { var i = SelectionManager_toPrimitive(t, "string"); return "symbol" == SelectionManager_typeof(i) ? i : i + ""; }
+function SelectionManager_toPrimitive(t, r) { if ("object" != SelectionManager_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != SelectionManager_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+var SelectionManager = /*#__PURE__*/function () {
+  function SelectionManager(controls) {
+    SelectionManager_classCallCheck(this, SelectionManager);
+    this.controls = controls;
+  }
+  return SelectionManager_createClass(SelectionManager, [{
+    key: "handleMouseMove",
+    value: function handleMouseMove() {
+      var controls = this.controls;
+      var _controls$context = controls.context,
+        player = _controls$context.player,
+        app = _controls$context.app;
+      if (!controls.mouseRectangle && controls.pointerStart && pointsDistance(controls.mouse.x, controls.mouse.y, controls.pointerStart.x, controls.pointerStart.y) > 5) {
+        controls.mouseRectangle = {
+          x: controls.pointerStart.x,
+          y: controls.pointerStart.y,
+          width: 0,
+          height: 0,
+          graph: new lib/* Graphics */.A1g()
+        };
+        app.stage.addChild(controls.mouseRectangle.graph);
+      }
+      if (controls.mouseRectangle) {
+        if (player.selectedUnits.length || player.selectedBuilding) {
+          player.unselectAll();
+        }
+        var graph = controls.mouseRectangle.graph;
+        graph.clear();
+        controls.mouseRectangle.width = controls.mouse.x - controls.mouseRectangle.x;
+        controls.mouseRectangle.height = controls.mouse.y - controls.mouseRectangle.y;
+        var x = Math.min(controls.mouseRectangle.x, controls.mouseRectangle.x + controls.mouseRectangle.width);
+        var y = Math.min(controls.mouseRectangle.y, controls.mouseRectangle.y + controls.mouseRectangle.height);
+        var w = Math.abs(controls.mouseRectangle.width);
+        var h = Math.abs(controls.mouseRectangle.height);
+        graph.rect(x, y, w, h).stroke(COLOR_WHITE);
+      }
+    }
+  }, {
+    key: "handleMouseUp",
+    value: function handleMouseUp() {
+      var controls = this.controls;
+      var _controls$context2 = controls.context,
+        menu = _controls$context2.menu,
+        player = _controls$context2.player;
+      var selectVillager;
+      var countSelect = 0;
+      player.unselectAll();
+      for (var i = 0; i < player.units.length; i++) {
+        var unit = player.units[i];
+        if (player.selectedUnits.length < MAX_SELECT_UNITS && pointInRectangle(unit.x - controls.camera.x, unit.y - controls.camera.y, controls.mouseRectangle.x, controls.mouseRectangle.y, controls.mouseRectangle.width, controls.mouseRectangle.height, true)) {
+          unit.select();
+          countSelect++;
+          if (unit.type === UNIT_TYPES.villager) selectVillager = unit;
+          player.selectedUnits.push(unit);
+        }
+      }
+      if (countSelect) {
+        if (selectVillager) {
+          player.selectedUnit = selectVillager;
+          menu.setBottombar(selectVillager);
+        } else {
+          // TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
+          player.selectedUnit = player.selectedUnits[0];
+          menu.setBottombar(player.selectedUnits[0]);
+        }
+      }
+      if (controls.mouseRectangle) {
+        controls.mouseRectangle.graph.destroy(true);
+        controls.mouseRectangle = null;
+      }
+    }
+  }, {
+    key: "handleClick",
+    value: function handleClick(cell) {
+      var controls = this.controls;
+      var pointerSheet = lib/* Assets */.sP.cache.get('50405');
+      var pointer = new lib/* AnimatedSprite */.Dl5(pointerSheet.animations['animation']);
+      pointer.animationSpeed = 0.2 * ACCELERATOR;
+      pointer.loop = false;
+      pointer.anchor.set(0.5, 0.5);
+      pointer.x = controls.mouse.x;
+      pointer.y = controls.mouse.y;
+      pointer.allowMove = false;
+      pointer.allowClick = false;
+      pointer.eventMode = 'auto';
+      pointer.roundPixels = true;
+      pointer.onComplete = function () {
+        pointer.destroy();
+      };
+      pointer.play();
+      controls.addChild(pointer);
+      this.sendUnits(cell);
+    }
+  }, {
+    key: "sendUnits",
+    value: function sendUnits(cell) {
+      var controls = this.controls;
+      var _controls$context3 = controls.context,
+        player = _controls$context3.player,
+        map = _controls$context3.map;
+      var minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      for (var k = 0; k < player.selectedUnits.length; k++) {
+        var _player$selectedUnits = player.selectedUnits[k],
+          i = _player$selectedUnits.i,
+          j = _player$selectedUnits.j;
+        if (i < minX) minX = i;
+        if (j < minY) minY = j;
+        if (i > maxX) maxX = i;
+        if (j > maxY) maxY = j;
+      }
+      var centerX = minX + Math.round((maxX - minX) / 2);
+      var centerY = minY + Math.round((maxY - minY) / 2);
+      var hasSentVillager = false;
+      var hasSentSoldier = false;
+      for (var u = 0; u < player.selectedUnits.length; u++) {
+        var unit = player.selectedUnits[u];
+        var finalX = cell.i + (unit.i - centerX);
+        var finalY = cell.j + (unit.j - centerY);
+        if (unit.type === UNIT_TYPES.villager) hasSentVillager = true;else hasSentSoldier = true;
+        if (map.grid[finalX] && map.grid[finalX][finalY]) {
+          player.selectedUnits[u].sendTo(map.grid[finalX][finalY]);
+        } else {
+          player.selectedUnits[u].sendTo(cell);
+        }
+      }
+      if (hasSentSoldier) {
+        sound_lib/* sound */.s3.play(maths_randomItem(['5075', '5076', '5128', '5164']));
+      } else if (hasSentVillager) {
+        sound_lib/* sound */.s3.play('5006');
+      }
+    }
+  }]);
+}();
+;// ./app/classes/controls.js
+function controls_typeof(o) { "@babel/helpers - typeof"; return controls_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, controls_typeof(o); }
+function controls_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function controls_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, controls_toPropertyKey(o.key), o); } }
+function controls_createClass(e, r, t) { return r && controls_defineProperties(e.prototype, r), t && controls_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function controls_toPropertyKey(t) { var i = controls_toPrimitive(t, "string"); return "symbol" == controls_typeof(i) ? i : i + ""; }
+function controls_toPrimitive(t, r) { if ("object" != controls_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != controls_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function controls_callSuper(t, o, e) { return o = controls_getPrototypeOf(o), controls_possibleConstructorReturn(t, controls_isNativeReflectConstruct() ? Reflect.construct(o, e || [], controls_getPrototypeOf(t).constructor) : o.apply(t, e)); }
+function controls_possibleConstructorReturn(t, e) { if (e && ("object" == controls_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return controls_assertThisInitialized(t); }
+function controls_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
+function controls_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (controls_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function controls_getPrototypeOf(t) { return controls_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, controls_getPrototypeOf(t); }
+function controls_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && controls_setPrototypeOf(t, e); }
+function controls_setPrototypeOf(t, e) { return controls_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, controls_setPrototypeOf(t, e); }
+
+
+
+
+
+var ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']);
+var Controls = /*#__PURE__*/function (_Container) {
+  function Controls(context) {
+    var _this;
+    controls_classCallCheck(this, Controls);
+    _this = controls_callSuper(this, Controls);
+    _this.context = context;
+    var map = context.map,
+      gamebox = context.gamebox;
+    _this.sortableChildren = true;
+    _this.mouse = {
+      x: 0,
+      y: 0,
+      prevent: false
+    };
+    _this.cameraController = new CameraController(context);
+    _this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2));
+    _this.mouseHoldTimeout;
+    _this.keysPressed = {};
+    _this.keyPressedCount = 0;
+    _this.keyInterval;
+    _this.keySpeed = 0;
+    _this.eventMode = 'auto';
+    _this.allowMove = false;
+    _this.allowClick = false;
+    _this.mouseRectangle;
+    _this.mouseTouch;
+    _this.mouseDrag = false;
+    _this.minimapRectangle = new lib/* Graphics */.A1g();
+    _this.addChild(_this.minimapRectangle);
+    _this.fpsVisible = false;
+    _this.fpsEl = document.createElement('div');
+    _this.fpsEl.style.cssText = 'position:fixed;right:10px;z-index:9999;color:#fff;font:bold 14px monospace;' + 'background:rgba(0,0,0,0.65);padding:2px 8px;border-radius:3px;display:none;pointer-events:none;';
+    document.body.appendChild(_this.fpsEl);
+    _this._fpsTicker = function () {
+      if (_this.fpsVisible) {
+        _this.fpsEl.textContent = "FPS: ".concat(Math.round(context.app.ticker.FPS));
+      }
+    };
+    context.app.ticker.add(_this._fpsTicker);
+    _this.buildingPlacer = new BuildingPlacer(_this);
+    _this.selectionManager = new SelectionManager(_this);
+    _this._onDocMouseMove = function (evt) {
+      return _this.moveCameraWithMouse(evt);
+    };
+    _this._onDocMouseOut = function () {
+      return _this.stopMouseCameraMove();
+    };
+    _this._onKeyDown = function (evt) {
+      return _this.onKeyDown(evt);
+    };
+    _this._onKeyUp = function (evt) {
+      return _this.onKeyUp(evt);
+    };
+    _this._onTouchStart = function (evt) {
+      return _this.onTouchStart(evt);
+    };
+    _this._onTouchEnd = function (evt) {
+      return _this.onTouchEnd(evt);
+    };
+    _this._onTouchMove = function (evt) {
+      return _this.onTouchMove(evt);
+    };
+    _this._onMouseMove = function (evt) {
+      return _this.onMouseMove(evt);
+    };
+    _this._onMouseDown = function (evt) {
+      return _this.onMouseDown(evt);
+    };
+    _this._onMouseUp = function (evt) {
+      return _this.onMouseUp(evt);
+    };
+    document.addEventListener('mousemove', _this._onDocMouseMove);
+    document.addEventListener('mouseout', _this._onDocMouseOut);
+    document.addEventListener('keydown', _this._onKeyDown);
+    document.addEventListener('keyup', _this._onKeyUp);
+    gamebox.addEventListener('touchstart', _this._onTouchStart);
+    gamebox.addEventListener('touchend', _this._onTouchEnd);
+    gamebox.addEventListener('touchmove', _this._onTouchMove);
+    gamebox.addEventListener('mousemove', _this._onMouseMove);
+    gamebox.addEventListener('mousedown', _this._onMouseDown);
+    gamebox.addEventListener('mouseup', _this._onMouseUp);
+    return _this;
+  }
+  controls_inherits(Controls, _Container);
+  return controls_createClass(Controls, [{
+    key: "destroy",
+    value: function destroy() {
+      var gamebox = this.context.gamebox;
+      this.context.app.ticker.remove(this._fpsTicker);
+      this.fpsEl.remove();
+      document.removeEventListener('mousemove', this._onDocMouseMove);
+      document.removeEventListener('mouseout', this._onDocMouseOut);
+      document.removeEventListener('keydown', this._onKeyDown);
+      document.removeEventListener('keyup', this._onKeyUp);
+      gamebox.removeEventListener('touchstart', this._onTouchStart);
+      gamebox.removeEventListener('touchend', this._onTouchEnd);
+      gamebox.removeEventListener('touchmove', this._onTouchMove);
+      gamebox.removeEventListener('mousemove', this._onMouseMove);
+      gamebox.removeEventListener('mousedown', this._onMouseDown);
+      gamebox.removeEventListener('mouseup', this._onMouseUp);
+      this.stopMouseCameraMove();
+    }
+  }, {
+    key: "camera",
+    get: function get() {
+      return this.cameraController.camera;
+    }
+  }, {
+    key: "onKeyDown",
+    value: function onKeyDown(evt) {
+      var _this2 = this;
+      if (evt.key === 'f' || evt.key === 'F') {
+        this.fpsVisible = !this.fpsVisible;
+        this.fpsEl.style.display = this.fpsVisible ? 'block' : 'none';
+        return;
+      }
+      if (evt.key === 'Delete' || evt.keyCode === 8) {
+        var player = this.context.player;
+        for (var i = 0; i < player.selectedUnits.length; i++) {
+          player.selectedUnits[i].die();
+        }
+        if (player.selectedBuilding) {
+          player.selectedBuilding.die();
+        }
+        return;
+      }
+      var handleMoveCamera = function handleMoveCamera() {
+        if (!_this2.keyInterval) {
+          _this2.keyInterval = setInterval(function () {
+            var _double = _this2.keyPressedCount > 1;
+            if (_this2.keySpeed < 4) {
+              _this2.keySpeed += 0.2;
+            }
+            if (_this2.keysPressed['ArrowLeft']) _this2.moveCamera('left', _this2.keySpeed, _double);
+            if (_this2.keysPressed['ArrowUp']) _this2.moveCamera('up', _this2.keySpeed, _double);
+            if (_this2.keysPressed['ArrowDown']) _this2.moveCamera('down', _this2.keySpeed, _double);
+            if (_this2.keysPressed['ArrowRight']) _this2.moveCamera('right', _this2.keySpeed, _double);
+          }, 1);
+        }
+      };
+      if (!evt.repeat) {
+        this.keysPressed[evt.key] = true;
+        this.keyPressedCount++;
+      }
+      if (ARROW_KEYS.has(evt.key)) {
+        handleMoveCamera();
+      }
+    }
+  }, {
+    key: "onKeyUp",
+    value: function onKeyUp(evt) {
+      if (!evt.repeat && this.keysPressed[evt.key]) {
+        delete this.keysPressed[evt.key];
+        this.keyPressedCount--;
+      }
+      if (this.keyPressedCount <= 0) {
+        this.keyPressedCount = 0;
+        clearInterval(this.keyInterval);
+        this.keyInterval = null;
+        this.keySpeed = 0;
+      }
+    }
+  }, {
+    key: "onTouchStart",
+    value: function onTouchStart(evt) {
+      var touch = evt.touches[0];
+      if (evt.touches.length === 2) {
+        this.mouseTouch = {
+          x: touch.pageX,
+          y: touch.pageY
+        };
+      } else {
+        this.onMouseDown(touch);
+      }
+    }
+  }, {
+    key: "onTouchMove",
+    value: function onTouchMove(evt) {
+      var touch = evt.touches[0];
+      if (evt.touches.length === 2) {
+        this.mouse.x = touch.pageX;
+        this.mouse.y = touch.pageY;
+        if (this.mouseTouch) {
+          var speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2;
+          var speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2;
+          if (this.mouse.x > this.mouseTouch.x) this.moveCamera('left', speedX, false);
+          if (this.mouse.y > this.mouseTouch.y) this.moveCamera('up', speedY, false);
+          if (this.mouse.y < this.mouseTouch.y) this.moveCamera('down', speedY, false);
+          if (this.mouse.x < this.mouseTouch.x) this.moveCamera('right', speedX, false);
+        }
+        this.mouseTouch = {
+          x: this.mouse.x,
+          y: this.mouse.y
+        };
+      } else {
+        this.onMouseMove(touch);
+      }
+    }
+  }, {
+    key: "onTouchEnd",
+    value: function onTouchEnd(evt) {
+      var touch = evt.changedTouches[0];
+      if (evt.changedTouches.length === 1) {
+        this.onMouseUp(touch);
+      }
+    }
+  }, {
+    key: "onMouseDown",
+    value: function onMouseDown(evt) {
+      this.mouse.x = evt.pageX;
+      this.mouse.y = evt.pageY;
+      if (!this.isMouseInApp(evt)) return;
+      this.pointerStart = {
+        x: this.mouse.x,
+        y: this.mouse.y
+      };
+    }
+  }, {
+    key: "onMouseMove",
+    value: function onMouseMove(evt) {
+      this.mouse.x = evt.pageX;
+      this.mouse.y = evt.pageY;
+      if (this.mouseBuilding) {
+        this.buildingPlacer.handleMouseMove();
+        return;
+      }
+      this.selectionManager.handleMouseMove();
+    }
+  }, {
+    key: "onMouseUp",
+    value: function onMouseUp(evt) {
+      var _this$context = this.context,
+        map = _this$context.map,
+        player = _this$context.player;
+      this.pointerStart = null;
+      clearTimeout(this.mouseHoldTimeout);
+      if (!this.isMouseInApp(evt) || this.mouse.prevent || this.mouseDrag) {
+        this.mouse.prevent = false;
+        return;
+      }
+      (player === null || player === void 0 ? void 0 : player.selectedBuilding) && player.unselectAll();
+      if (this.mouseRectangle) {
+        this.selectionManager.handleMouseUp();
+        return;
+      }
+      if (this.isMouseInApp(evt)) {
+        var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y);
+        var i = Math.min(Math.max(pos[0], 0), map.size);
+        var j = Math.min(Math.max(pos[1], 0), map.size);
+        if (map.grid[i] && map.grid[i][j]) {
+          var cell = map.grid[i][j];
+          if ((cell.solid || cell.has) && cell.visible) return;
+          if (this.mouseBuilding) {
+            this.buildingPlacer.handleMouseUp(cell);
+          } else if (player !== null && player !== void 0 && player.selectedUnits.length) {
+            this.selectionManager.handleClick(cell);
+          }
+        }
+      }
+    }
+  }, {
+    key: "sendUnits",
+    value: function sendUnits(cell) {
+      return this.selectionManager.sendUnits(cell);
+    }
+  }, {
+    key: "isMouseInApp",
+    value: function isMouseInApp(evt) {
+      return evt.target && (!evt.target.tagName || evt.target.closest('#game'));
+    }
+  }, {
+    key: "removeMouseBuilding",
+    value: function removeMouseBuilding() {
+      return this.buildingPlacer.removeMouseBuilding();
+    }
+  }, {
+    key: "setMouseBuilding",
+    value: function setMouseBuilding(building) {
+      return this.buildingPlacer.setMouseBuilding(building);
+    }
+  }, {
+    key: "moveCamera",
+    value: function moveCamera(dir, moveSpeed, isSpeedDivided) {
+      this.cameraController.move(dir, moveSpeed, isSpeedDivided);
+    }
+  }, {
+    key: "moveCameraWithMouse",
+    value: function moveCameraWithMouse(evt) {
+      this.cameraController.moveWithMouse(evt);
+    }
+  }, {
+    key: "stopMouseCameraMove",
+    value: function stopMouseCameraMove() {
+      this.cameraController.stopMouseMove();
+    }
+  }, {
+    key: "instanceInCamera",
+    value: function instanceInCamera(instance) {
+      return this.cameraController.instanceInCamera(instance);
+    }
+  }, {
+    key: "getCellOnCamera",
+    value: function getCellOnCamera(callback) {
+      this.cameraController.getCellOnCamera(callback);
+    }
+  }, {
+    key: "updateVisibleCells",
+    value: function updateVisibleCells() {
+      this.cameraController.updateVisibleCells();
+    }
+  }, {
     key: "init",
     value: function init() {
       var _player$buildings, _player$units;
-      var _this$context7 = this.context,
-        player = _this$context7.player,
-        map = _this$context7.map;
-      // Set camera to player building else unit
+      var _this$context2 = this.context,
+        player = _this$context2.player,
+        map = _this$context2.map;
+      var topbar = document.getElementById('topbar');
+      this.fpsEl.style.top = (topbar ? topbar.clientHeight + 5 : 50) + 'px';
       if (player !== null && player !== void 0 && (_player$buildings = player.buildings) !== null && _player$buildings !== void 0 && _player$buildings.length) {
         this.setCamera(player.buildings[0].x, player.buildings[0].y);
       } else if (player !== null && player !== void 0 && (_player$units = player.units) !== null && _player$units !== void 0 && _player$units.length) {
@@ -9793,22 +12205,12 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "setCamera",
     value: function setCamera(x, y, direct) {
-      var _this$context8 = this.context,
-        map = _this$context8.map,
-        app = _this$context8.app,
-        menu = _this$context8.menu;
-      this.camera = {
-        x: direct ? x : x - app.screen.width / 2,
-        y: direct ? y : y - app.screen.height / 2
-      };
-      menu && menu.updateCameraMiniMap();
-      map.setCoordinate(-this.camera.x, -this.camera.y);
-      this.updateVisibleCells();
+      this.cameraController.set(x, y, direct);
     }
   }]);
 }(lib/* Container */.mcf);
 
-;// ./app/classes/ActionScheduler.js
+;// ./app/lib/ActionScheduler.js
 function ActionScheduler_typeof(o) { "@babel/helpers - typeof"; return ActionScheduler_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, ActionScheduler_typeof(o); }
 function ActionScheduler_slicedToArray(r, e) { return ActionScheduler_arrayWithHoles(r) || ActionScheduler_iterableToArrayLimit(r, e) || ActionScheduler_unsupportedIterableToArray(r, e) || ActionScheduler_nonIterableRest(); }
 function ActionScheduler_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -9863,6 +12265,12 @@ var ActionScheduler = /*#__PURE__*/function () {
       this._tasks["delete"](id);
     }
   }, {
+    key: "update",
+    value: function update(id, intervalMs) {
+      var task = this._tasks.get(id);
+      if (task) task.interval = intervalMs;
+    }
+  }, {
     key: "_tick",
     value: function _tick(deltaMS) {
       if (this._getPaused()) return;
@@ -9901,17 +12309,117 @@ var ActionScheduler = /*#__PURE__*/function () {
     }
   }]);
 }();
+;// ./app/serialization/SaveSerializer.js
+function SaveSerializer_typeof(o) { "@babel/helpers - typeof"; return SaveSerializer_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, SaveSerializer_typeof(o); }
+function SaveSerializer_toConsumableArray(r) { return SaveSerializer_arrayWithoutHoles(r) || SaveSerializer_iterableToArray(r) || SaveSerializer_unsupportedIterableToArray(r) || SaveSerializer_nonIterableSpread(); }
+function SaveSerializer_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function SaveSerializer_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return SaveSerializer_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? SaveSerializer_arrayLikeToArray(r, a) : void 0; } }
+function SaveSerializer_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function SaveSerializer_arrayWithoutHoles(r) { if (Array.isArray(r)) return SaveSerializer_arrayLikeToArray(r); }
+function SaveSerializer_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function SaveSerializer_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function SaveSerializer_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? SaveSerializer_ownKeys(Object(t), !0).forEach(function (r) { SaveSerializer_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : SaveSerializer_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function SaveSerializer_defineProperty(e, r, t) { return (r = SaveSerializer_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function SaveSerializer_toPropertyKey(t) { var i = SaveSerializer_toPrimitive(t, "string"); return "symbol" == SaveSerializer_typeof(i) ? i : i + ""; }
+function SaveSerializer_toPrimitive(t, r) { if ("object" != SaveSerializer_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != SaveSerializer_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+function resourceData(resource) {
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints'])), {}, {
+    textureName: (resource.textureName || '').split('.')[0]
+  });
+}
+function animalData(animal) {
+  var _animal$sprite, _animal$sprite2, _animal$dest, _animal$previousDest;
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(animal, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'zIndex', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed', 'quantity'])), {}, {
+    currentFrame: (_animal$sprite = animal.sprite) === null || _animal$sprite === void 0 ? void 0 : _animal$sprite.currentFrame,
+    loop: (_animal$sprite2 = animal.sprite) === null || _animal$sprite2 === void 0 ? void 0 : _animal$sprite2.loop,
+    dest: animal.dest && [animal.dest.i, animal.dest.j, (_animal$dest = animal.dest) === null || _animal$dest === void 0 ? void 0 : _animal$dest.label],
+    previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label]
+  });
+}
+function unitData(unit) {
+  var _unit$sprite, _unit$sprite2, _unit$dest, _unit$previousDest;
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(unit, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed'])), {}, {
+    currentFrame: (_unit$sprite = unit.sprite) === null || _unit$sprite === void 0 ? void 0 : _unit$sprite.currentFrame,
+    loop: (_unit$sprite2 = unit.sprite) === null || _unit$sprite2 === void 0 ? void 0 : _unit$sprite2.loop,
+    dest: unit.dest && [unit.dest.i, unit.dest.j, (_unit$dest = unit.dest) === null || _unit$dest === void 0 ? void 0 : _unit$dest.label],
+    previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label]
+  });
+}
+function buildingData(building) {
+  var _building$isUsedBy;
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(building, ['label', 'i', 'j', 'type', 'queue', 'technology', 'loading', 'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity'])), {}, {
+    isUsedBy: (_building$isUsedBy = building.isUsedBy) === null || _building$isUsedBy === void 0 ? void 0 : _building$isUsedBy.label
+  });
+}
+function playerData(player) {
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
+    buildings: player.buildings.map(function (b) {
+      return buildingData(b);
+    }),
+    units: player.units.map(function (u) {
+      return unitData(u);
+    }),
+    corpses: player.corpses.map(function (c) {
+      return unitData(c);
+    }),
+    views: player.views.map(function (view) {
+      return view.map(function (cell) {
+        return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(cell, ['i', 'j', 'viewed'])), {}, {
+          viewBy: SaveSerializer_toConsumableArray(cell.viewBy || []).map(function (unit) {
+            return unit.label;
+          })
+        });
+      });
+    })
+  });
+}
+function cellData(cell) {
+  var _cell$has;
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
+    has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
+    fogSprites: cell.fogSprites.map(function (_ref) {
+      var textureSheet = _ref.textureSheet,
+        colorSheet = _ref.colorSheet,
+        colorName = _ref.colorName;
+      return {
+        textureSheet: textureSheet,
+        colorSheet: colorSheet,
+        colorName: colorName
+      };
+    })
+  });
+}
+function serializeGame(context) {
+  return {
+    camera: context.controls.camera,
+    config: {
+      devMode: context.map.devMode,
+      revealEverything: context.map.revealEverything,
+      revealTerrain: context.map.revealTerrain,
+      startingResources: context.map.startingResources
+    },
+    players: context.players.map(function (p) {
+      return playerData(p);
+    }),
+    resources: SaveSerializer_toConsumableArray(context.map.resources).map(function (r) {
+      return resourceData(r);
+    }),
+    map: context.map.grid.map(function (line) {
+      return line.map(function (cell) {
+        return cellData(cell);
+      });
+    }),
+    animals: context.map.gaia.units.map(function (a) {
+      return animalData(a);
+    })
+  };
+}
 ;// ./app/screens/Game.js
 function Game_typeof(o) { "@babel/helpers - typeof"; return Game_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Game_typeof(o); }
 function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function Game_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? Game_ownKeys(Object(t), !0).forEach(function (r) { Game_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : Game_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function Game_defineProperty(e, r, t) { return (r = Game_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-function Game_toConsumableArray(r) { return Game_arrayWithoutHoles(r) || Game_iterableToArray(r) || Game_unsupportedIterableToArray(r) || Game_nonIterableSpread(); }
-function Game_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function Game_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return Game_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? Game_arrayLikeToArray(r, a) : void 0; } }
-function Game_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function Game_arrayWithoutHoles(r) { if (Array.isArray(r)) return Game_arrayLikeToArray(r); }
-function Game_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function Game_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function Game_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, Game_toPropertyKey(o.key), o); } }
 function Game_createClass(e, r, t) { return r && Game_defineProperties(e.prototype, r), t && Game_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -9924,6 +12432,8 @@ function Game_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valu
 function Game_getPrototypeOf(t) { return Game_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, Game_getPrototypeOf(t); }
 function Game_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && Game_setPrototypeOf(t, e); }
 function Game_setPrototypeOf(t, e) { return Game_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, Game_setPrototypeOf(t, e); }
+
+
 
 
 
@@ -9985,6 +12495,7 @@ var Game = /*#__PURE__*/function (_Container) {
         config = this.config;
       context.map = new map_Map(context);
       if (config.size) context.map.size = config.size;
+      if (config.mapType) context.map.mapType = config.mapType;
       if (config.devMode) context.map.devMode = true;
       if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything;
       if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain;
@@ -9992,8 +12503,9 @@ var Game = /*#__PURE__*/function (_Container) {
       if (config.difficulty) context.map.difficulty = config.difficulty;
       context.controls = new Controls(context);
       context.menu = new Menu(context);
-      context.map.generateMap(config.bots != null ? config.bots + 1 : null);
-      context.players = context.map.generatePlayers();
+      var posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null;
+      context.map.generateMap(posCount);
+      context.players = context.map.generatePlayers(config.players || null);
       context.player = context.players[0];
       context.menu.init();
       context.map.placePlayers();
@@ -10028,30 +12540,7 @@ var Game = /*#__PURE__*/function (_Container) {
   }, {
     key: "save",
     value: function save() {
-      var context = this.context;
-      var data = {
-        camera: context.controls.camera,
-        config: {
-          devMode: context.map.devMode,
-          revealEverything: context.map.revealEverything,
-          revealTerrain: context.map.revealTerrain,
-          startingResources: context.map.startingResources
-        },
-        players: context.players.map(function (p) {
-          return Game._playerData(p);
-        }),
-        resources: Game_toConsumableArray(context.map.resources).map(function (r) {
-          return Game._resourceData(r);
-        }),
-        map: context.map.grid.map(function (line) {
-          return line.map(function (cell) {
-            return Game._cellData(cell);
-          });
-        }),
-        animals: context.map.gaia.units.map(function (a) {
-          return Game._animalData(a);
-        })
-      };
+      var data = serializeGame(this.context);
       var workerBlob = new Blob(['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'], {
         type: 'application/javascript'
       });
@@ -10127,7 +12616,7 @@ var Game = /*#__PURE__*/function (_Container) {
       if (pause) {
         var div = document.createElement('div');
         div.id = 'pause';
-        div.innerText = 'Pause';
+        div.innerText = t('pause');
         document.body.appendChild(div);
       } else {
         var _document$getElementB3;
@@ -10146,85 +12635,6 @@ var Game = /*#__PURE__*/function (_Container) {
         }
       }
       this.context.paused = pause;
-    }
-  }], [{
-    key: "_resourceData",
-    value: function _resourceData(resource) {
-      return Game_objectSpread(Game_objectSpread({}, filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints'])), {}, {
-        textureName: (resource.textureName || '').split('.')[0]
-      });
-    }
-  }, {
-    key: "_animalData",
-    value: function _animalData(animal) {
-      var _animal$sprite, _animal$sprite2, _animal$dest, _animal$previousDest;
-      return Game_objectSpread(Game_objectSpread({}, filterObject(animal, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'zIndex', 'degree', 'action', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed', 'quantity'])), {}, {
-        currentFrame: (_animal$sprite = animal.sprite) === null || _animal$sprite === void 0 ? void 0 : _animal$sprite.currentFrame,
-        loop: (_animal$sprite2 = animal.sprite) === null || _animal$sprite2 === void 0 ? void 0 : _animal$sprite2.loop,
-        dest: animal.dest && [animal.dest.i, animal.dest.j, (_animal$dest = animal.dest) === null || _animal$dest === void 0 ? void 0 : _animal$dest.label],
-        previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label]
-      });
-    }
-  }, {
-    key: "_unitData",
-    value: function _unitData(unit) {
-      var _unit$sprite, _unit$sprite2, _unit$dest, _unit$previousDest;
-      return Game_objectSpread(Game_objectSpread({}, filterObject(unit, ['label', 'type', 'i', 'j', 'x', 'y', 'z', 'hitPoints', 'path', 'work', 'realDest', 'degree', 'action', 'loading', 'loadingType', 'direction', 'currentSheet', 'size', 'inactif', 'isDead', 'isDestroyed'])), {}, {
-        currentFrame: (_unit$sprite = unit.sprite) === null || _unit$sprite === void 0 ? void 0 : _unit$sprite.currentFrame,
-        loop: (_unit$sprite2 = unit.sprite) === null || _unit$sprite2 === void 0 ? void 0 : _unit$sprite2.loop,
-        dest: unit.dest && [unit.dest.i, unit.dest.j, (_unit$dest = unit.dest) === null || _unit$dest === void 0 ? void 0 : _unit$dest.label],
-        previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label]
-      });
-    }
-  }, {
-    key: "_buildingData",
-    value: function _buildingData(building) {
-      var _building$isUsedBy;
-      return Game_objectSpread(Game_objectSpread({}, filterObject(building, ['label', 'i', 'j', 'type', 'queue', 'technology', 'loading', 'isDead', 'isDestroyed', 'isBuilt', 'hitPoints', 'quantity'])), {}, {
-        isUsedBy: (_building$isUsedBy = building.isUsedBy) === null || _building$isUsedBy === void 0 ? void 0 : _building$isUsedBy.label
-      });
-    }
-  }, {
-    key: "_playerData",
-    value: function _playerData(player) {
-      return Game_objectSpread(Game_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
-        buildings: player.buildings.map(function (b) {
-          return Game._buildingData(b);
-        }),
-        units: player.units.map(function (u) {
-          return Game._unitData(u);
-        }),
-        corpses: player.corpses.map(function (c) {
-          return Game._unitData(c);
-        }),
-        views: player.views.map(function (view) {
-          return view.map(function (cell) {
-            return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['i', 'j', 'viewed'])), {}, {
-              viewBy: Game_toConsumableArray(cell.viewBy || []).map(function (unit) {
-                return unit.label;
-              })
-            });
-          });
-        })
-      });
-    }
-  }, {
-    key: "_cellData",
-    value: function _cellData(cell) {
-      var _cell$has;
-      return Game_objectSpread(Game_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
-        has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
-        fogSprites: cell.fogSprites.map(function (_ref2) {
-          var textureSheet = _ref2.textureSheet,
-            colorSheet = _ref2.colorSheet,
-            colorName = _ref2.colorName;
-          return {
-            textureSheet: textureSheet,
-            colorSheet: colorSheet,
-            colorName: colorName
-          };
-        })
-      });
     }
   }]);
 }(lib/* Container */.mcf);
@@ -10250,6 +12660,7 @@ function Loader_isNativeReflectConstruct() { try { var t = !Boolean.prototype.va
 function Loader_getPrototypeOf(t) { return Loader_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, Loader_getPrototypeOf(t); }
 function Loader_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && Loader_setPrototypeOf(t, e); }
 function Loader_setPrototypeOf(t, e) { return Loader_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, Loader_setPrototypeOf(t, e); }
+
 
 
 /**
@@ -10292,9 +12703,6 @@ var LoaderScreen = /*#__PURE__*/function (_Container) {
                         lib/* Assets */.sP.addBundle('interface', {
                           50405: 'assets/interface/50405/texture.json'
                         });
-                        lib/* Assets */.sP.addBundle('seeds', {
-                          0: 'assets/seeds/0.txt'
-                        });
                         lib/* Assets */.sP.addBundle('terrain', {
                           15000: 'assets/terrain/15000/texture.json',
                           15001: 'assets/terrain/15001/texture.json',
@@ -10312,37 +12720,33 @@ var LoaderScreen = /*#__PURE__*/function (_Container) {
                         lib/* Assets */.sP.addBundle('sounds', sounds.reduce(function (acc, g) {
                           return Loader_objectSpread(Loader_objectSpread({}, acc), {}, Loader_defineProperty({}, g, "assets/sounds/".concat(g, ".wav")));
                         }, {}));
-                        _this2.loadingDiv.innerHTML = 'Loading config..';
+                        _this2.loadingDiv.innerHTML = t('loadingConfig');
                         _context.n = 1;
                         return lib/* Assets */.sP.loadBundle('config');
                       case 1:
-                        _this2.loadingDiv.innerHTML = 'Loading interface..';
+                        _this2.loadingDiv.innerHTML = t('loadingInterface');
                         _context.n = 2;
                         return lib/* Assets */.sP.loadBundle('interface');
                       case 2:
-                        _this2.loadingDiv.innerHTML = 'Loading seeds..';
+                        _this2.loadingDiv.innerHTML = t('loadingTerrain');
                         _context.n = 3;
-                        return lib/* Assets */.sP.loadBundle('seeds');
-                      case 3:
-                        _this2.loadingDiv.innerHTML = 'Loading terrain..';
-                        _context.n = 4;
                         return lib/* Assets */.sP.loadBundle('terrain');
-                      case 4:
-                        _this2.loadingDiv.innerHTML = 'Loading border..';
-                        _context.n = 5;
+                      case 3:
+                        _this2.loadingDiv.innerHTML = t('loadingBorder');
+                        _context.n = 4;
                         return lib/* Assets */.sP.loadBundle('border');
-                      case 5:
-                        _this2.loadingDiv.innerHTML = 'Loading graphics..';
-                        _context.n = 6;
+                      case 4:
+                        _this2.loadingDiv.innerHTML = t('loadingGraphics');
+                        _context.n = 5;
                         return lib/* Assets */.sP.loadBundle('graphics');
-                      case 6:
-                        _this2.loadingDiv.innerHTML = 'Loading sounds..';
-                        _context.n = 7;
+                      case 5:
+                        _this2.loadingDiv.innerHTML = t('loadingSounds');
+                        _context.n = 6;
                         return lib/* Assets */.sP.loadBundle('sounds');
-                      case 7:
+                      case 6:
                         _this2.loadingDiv.remove();
                         resolve();
-                      case 8:
+                      case 7:
                         return _context.a(2);
                     }
                   }, _callee);
@@ -10369,26 +12773,27 @@ function MainMenu_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { 
 function MainMenu_createClass(e, r, t) { return r && MainMenu_defineProperties(e.prototype, r), t && MainMenu_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function MainMenu_toPropertyKey(t) { var i = MainMenu_toPrimitive(t, "string"); return "symbol" == MainMenu_typeof(i) ? i : i + ""; }
 function MainMenu_toPrimitive(t, r) { if ("object" != MainMenu_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MainMenu_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
 var MainMenu = /*#__PURE__*/function () {
   function MainMenu(onStart, onLoad) {
     MainMenu_classCallCheck(this, MainMenu);
     this.el = document.createElement('div');
     this.el.id = 'main-menu';
+    this.el.style.backgroundImage = "url('/assets/background/bg1.png')";
     var panel = document.createElement('div');
     panel.className = 'menu-panel';
     var title = document.createElement('div');
     title.className = 'menu-title';
-    title.textContent = 'RTS';
-    var subtitle = document.createElement('div');
-    subtitle.className = 'menu-subtitle';
-    subtitle.textContent = 'Age of Empires';
+    title.textContent = 'Dawn of Empires';
     var divider = document.createElement('div');
     divider.className = 'menu-divider';
     var buttons = document.createElement('div');
     buttons.className = 'menu-buttons';
     var btnStart = document.createElement('button');
     btnStart.className = 'menu-btn';
-    btnStart.textContent = 'Nouvelle Partie';
+    btnStart.textContent = t('newGame');
+    btnStart.onmousedown = playClickSound;
     btnStart.onclick = onStart;
     var fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -10405,7 +12810,8 @@ var MainMenu = /*#__PURE__*/function () {
     };
     var btnLoad = document.createElement('button');
     btnLoad.className = 'menu-btn secondary';
-    btnLoad.textContent = 'Charger une Partie';
+    btnLoad.textContent = t('loadGame');
+    btnLoad.onmousedown = playClickSound;
     btnLoad.onclick = function () {
       return fileInput.click();
     };
@@ -10413,7 +12819,6 @@ var MainMenu = /*#__PURE__*/function () {
     buttons.appendChild(btnLoad);
     buttons.appendChild(fileInput);
     panel.appendChild(title);
-    panel.appendChild(subtitle);
     panel.appendChild(divider);
     panel.appendChild(buttons);
     this.el.appendChild(panel);
@@ -10437,27 +12842,43 @@ function MapConfig_defineProperties(e, r) { for (var t = 0; t < r.length; t++) {
 function MapConfig_createClass(e, r, t) { return r && MapConfig_defineProperties(e.prototype, r), t && MapConfig_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function MapConfig_toPropertyKey(t) { var i = MapConfig_toPrimitive(t, "string"); return "symbol" == MapConfig_typeof(i) ? i : i + ""; }
 function MapConfig_toPrimitive(t, r) { if ("object" != MapConfig_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapConfig_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-var DIFFICULTIES = [{
-  label: 'Facile  — IA lente, pop réduite',
+
+
+var MapConfig_DIFFICULTIES = [{
+  label: function label() {
+    return t('diffEasy');
+  },
   value: 'easy'
 }, {
-  label: 'Moyen   — IA standard',
+  label: function label() {
+    return t('diffMedium');
+  },
   value: 'medium'
 }, {
-  label: 'Difficile — IA rapide, pop accrue',
+  label: function label() {
+    return t('diffHard');
+  },
   value: 'hard'
 }];
 var STARTING_RESOURCES = [{
-  label: 'Bas      — 100 / 150 / 50 / 0',
+  label: function label() {
+    return t('resLow');
+  },
   value: 'low'
 }, {
-  label: 'Standard — 200 / 200 / 150 / 0',
+  label: function label() {
+    return t('resStandard');
+  },
   value: 'standard'
 }, {
-  label: 'Élevé    — 500 / 500 / 300 / 0',
+  label: function label() {
+    return t('resHigh');
+  },
   value: 'high'
 }, {
-  label: 'Très élevé — 1000 / 1000 / 750 / 100',
+  label: function label() {
+    return t('resVeryHigh');
+  },
   value: 'very_high'
 }];
 var RESOURCES_MAP = {
@@ -10487,105 +12908,369 @@ var RESOURCES_MAP = {
   }
 };
 var MAP_SIZES = [{
-  label: 'Tiny  (120×120) — 2 joueurs',
-  value: 120
+  label: 'Tiny  (120×120)',
+  value: 120,
+  maxPlayers: 2
 }, {
-  label: 'Small  (144×144) — 3 joueurs',
-  value: 144
+  label: 'Small (144×144)',
+  value: 144,
+  maxPlayers: 3
 }, {
-  label: 'Medium (168×168) — 4 joueurs',
-  value: 168
+  label: 'Medium (168×168)',
+  value: 168,
+  maxPlayers: 4
 }, {
-  label: 'Normal (200×200) — 6 joueurs',
-  value: 200
+  label: 'Normal (200×200)',
+  value: 200,
+  maxPlayers: 6
 }, {
-  label: 'Large  (220×220) — 8 joueurs',
-  value: 220
+  label: 'Large  (220×220)',
+  value: 220,
+  maxPlayers: 8
+}];
+var MAP_TYPES = [{
+  label: function label() {
+    return t('mapTypePlain');
+  },
+  value: 'plain'
+}, {
+  label: function label() {
+    return t('mapTypeContinent');
+  },
+  value: 'continent'
+}, {
+  label: function label() {
+    return t('mapTypeLac');
+  },
+  value: 'lac'
+}, {
+  label: function label() {
+    return t('mapTypeIlot');
+  },
+  value: 'ilot'
+}];
+var CIVS = [{
+  label: function label() {
+    return t('civGreek');
+  },
+  value: 'Greek'
+}];
+var PLAYER_COLORS = [{
+  name: 'blue',
+  hex: '#3f5f9f'
+}, {
+  name: 'red',
+  hex: '#e30b00'
+}, {
+  name: 'yellow',
+  hex: '#c3a31b'
+}, {
+  name: 'brown',
+  hex: '#8b5b37'
+}, {
+  name: 'orange',
+  hex: '#ef6307'
+}, {
+  name: 'green',
+  hex: '#4b6b2b'
+}, {
+  name: 'grey',
+  hex: '#8f8f8f'
+}, {
+  name: 'cyan',
+  hex: '#00837b'
 }];
 var MapConfig = /*#__PURE__*/function () {
   function MapConfig(onPlay, onBack) {
-    var _this = this;
     MapConfig_classCallCheck(this, MapConfig);
+    this.onPlay = onPlay;
+    this.onBack = onBack;
     this.config = {
       size: 120,
-      bots: 1,
+      mapType: 'plain',
       difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
       devMode: false,
       startingResources: RESOURCES_MAP.standard
     };
+    this.maxPlayers = 2;
+    this.players = [{
+      name: t('you'),
+      color: 'blue',
+      civ: 'Greek',
+      isHuman: true
+    }, {
+      name: t('computer') + ' 1',
+      color: 'red',
+      civ: 'Greek',
+      isHuman: false
+    }];
     this.el = document.createElement('div');
     this.el.id = 'map-config';
-    var panel = document.createElement('div');
-    panel.className = 'menu-panel';
-    var title = document.createElement('div');
-    title.className = 'menu-title';
-    title.textContent = 'Nouvelle Partie';
-    var subtitle = document.createElement('div');
-    subtitle.className = 'menu-subtitle';
-    subtitle.textContent = 'Configuration';
-    var divider = document.createElement('div');
-    divider.className = 'menu-divider';
-    var form = document.createElement('div');
-    form.className = 'config-form';
-    form.appendChild(this.createSelect('Carte', MAP_SIZES, 120, function (val) {
-      _this.config.size = parseInt(val);
-    }));
-    var botOptions = Array.from({
-      length: 7
-    }, function (_, i) {
-      return {
-        label: "".concat(i + 1, " bot").concat(i > 0 ? 's' : ''),
-        value: i + 1
-      };
-    });
-    form.appendChild(this.createSelect('Adversaires (IA)', botOptions, 1, function (val) {
-      _this.config.bots = parseInt(val);
-    }));
-    form.appendChild(this.createSelect('Difficulté IA', DIFFICULTIES, 'medium', function (val) {
-      _this.config.difficulty = val;
-    }));
-    form.appendChild(this.createSelect('Ressources de départ', STARTING_RESOURCES, 'standard', function (val) {
-      _this.config.startingResources = RESOURCES_MAP[val];
-    }));
-    form.appendChild(this.createCheckbox('Mode dev (instant build)', false, function (val) {
-      _this.config.devMode = val;
-    }));
-    form.appendChild(this.createCheckbox('Tout révéler', false, function (val) {
-      _this.config.revealEverything = val;
-    }));
-    form.appendChild(this.createCheckbox('Révéler le terrain', false, function (val) {
-      _this.config.revealTerrain = val;
-    }));
-    var divider2 = document.createElement('div');
-    divider2.className = 'menu-divider';
-    var buttons = document.createElement('div');
-    buttons.className = 'menu-buttons';
-    var btnBack = document.createElement('button');
-    btnBack.className = 'menu-btn secondary';
-    btnBack.textContent = '← Retour';
-    btnBack.onclick = onBack;
-    var btnPlay = document.createElement('button');
-    btnPlay.className = 'menu-btn';
-    btnPlay.textContent = 'Lancer la Partie';
-    btnPlay.onclick = function () {
-      return onPlay(MapConfig_objectSpread({}, _this.config));
-    };
-    buttons.appendChild(btnBack);
-    buttons.appendChild(btnPlay);
-    panel.appendChild(title);
-    panel.appendChild(subtitle);
-    panel.appendChild(divider);
-    panel.appendChild(form);
-    panel.appendChild(divider2);
-    panel.appendChild(buttons);
-    this.el.appendChild(panel);
+    this.el.style.backgroundImage = "url('/assets/background/bg2.png')";
+    this._buildUI();
     document.body.appendChild(this.el);
   }
   return MapConfig_createClass(MapConfig, [{
-    key: "createSelect",
-    value: function createSelect(label, options, defaultValue, onChange) {
+    key: "_buildUI",
+    value: function _buildUI() {
+      var _this = this;
+      var panel = document.createElement('div');
+      panel.className = 'menu-panel lobby-panel';
+      var title = document.createElement('div');
+      title.className = 'menu-title';
+      title.textContent = t('newGame');
+      var subtitle = document.createElement('div');
+      subtitle.className = 'menu-subtitle';
+      subtitle.textContent = t('configuration');
+      var divider = document.createElement('div');
+      divider.className = 'menu-divider';
+      var layout = document.createElement('div');
+      layout.className = 'lobby-layout';
+
+      // ── Left column: player table ──
+      var leftCol = document.createElement('div');
+      leftCol.className = 'lobby-col';
+      var leftTitle = document.createElement('div');
+      leftTitle.className = 'lobby-section-title';
+      leftTitle.textContent = t('players');
+      this.playerTableEl = document.createElement('div');
+      this.playerTableEl.className = 'player-table';
+      this.addBotBtn = document.createElement('button');
+      this.addBotBtn.className = 'menu-btn lobby-add-btn';
+      this.addBotBtn.textContent = t('addOpponent');
+      this.addBotBtn.onmousedown = playClickSound;
+      this.addBotBtn.onclick = function () {
+        return _this._addBot();
+      };
+      leftCol.appendChild(leftTitle);
+      leftCol.appendChild(this.playerTableEl);
+      leftCol.appendChild(this.addBotBtn);
+
+      // ── Right column: settings ──
+      var rightCol = document.createElement('div');
+      rightCol.className = 'lobby-col';
+      var rightTitle = document.createElement('div');
+      rightTitle.className = 'lobby-section-title';
+      rightTitle.textContent = t('mapSettings');
+      var settingsForm = document.createElement('div');
+      settingsForm.className = 'config-form lobby-settings-form';
+      settingsForm.appendChild(this._createSelect(t('mapSizeLabel'), MAP_SIZES, 120, function (val) {
+        _this.config.size = parseInt(val);
+        var sizeEntry = MAP_SIZES.find(function (s) {
+          return s.value === parseInt(val);
+        });
+        _this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2;
+        _this._clampPlayers();
+        _this._refreshPlayerTable();
+      }));
+      settingsForm.appendChild(this._createSelect(t('mapTypeLabel'), MAP_TYPES, 'plain', function (val) {
+        _this.config.mapType = val;
+      }));
+      settingsForm.appendChild(this._createSelect(t('aiDifficulty'), MapConfig_DIFFICULTIES, 'medium', function (val) {
+        _this.config.difficulty = val;
+      }));
+      settingsForm.appendChild(this._createSelect(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', function (val) {
+        _this.config.startingResources = RESOURCES_MAP[val];
+      }));
+      settingsForm.appendChild(this._createCheckbox(t('devMode'), false, function (val) {
+        _this.config.devMode = val;
+      }));
+      settingsForm.appendChild(this._createCheckbox(t('revealAll'), false, function (val) {
+        _this.config.revealEverything = val;
+      }));
+      settingsForm.appendChild(this._createCheckbox(t('revealTerrain'), false, function (val) {
+        _this.config.revealTerrain = val;
+      }));
+      rightCol.appendChild(rightTitle);
+      rightCol.appendChild(settingsForm);
+      layout.appendChild(leftCol);
+      layout.appendChild(rightCol);
+      var divider2 = document.createElement('div');
+      divider2.className = 'menu-divider';
+      var buttons = document.createElement('div');
+      buttons.className = 'menu-buttons menu-buttons--row';
+      var btnBack = document.createElement('button');
+      btnBack.className = 'menu-btn secondary';
+      btnBack.textContent = t('back');
+      btnBack.onmousedown = playClickSound;
+      btnBack.onclick = this.onBack;
+      var btnPlay = document.createElement('button');
+      btnPlay.className = 'menu-btn';
+      btnPlay.textContent = t('startGame');
+      btnPlay.onmousedown = playClickSound;
+      btnPlay.onclick = function () {
+        return _this.onPlay(MapConfig_objectSpread(MapConfig_objectSpread({}, _this.config), {}, {
+          players: _this.players.map(function (p) {
+            return MapConfig_objectSpread({}, p);
+          })
+        }));
+      };
+      buttons.appendChild(btnBack);
+      buttons.appendChild(btnPlay);
+      panel.appendChild(title);
+      panel.appendChild(subtitle);
+      panel.appendChild(divider);
+      panel.appendChild(layout);
+      panel.appendChild(divider2);
+      panel.appendChild(buttons);
+      this.el.appendChild(panel);
+      this._refreshPlayerTable();
+    }
+  }, {
+    key: "_usedColors",
+    value: function _usedColors() {
+      return new Set(this.players.map(function (p) {
+        return p.color;
+      }));
+    }
+  }, {
+    key: "_nextAvailableColor",
+    value: function _nextAvailableColor(currentColor) {
+      var used = this._usedColors();
+      var idx = PLAYER_COLORS.findIndex(function (c) {
+        return c.name === currentColor;
+      });
+      for (var offset = 1; offset < PLAYER_COLORS.length; offset++) {
+        var candidate = PLAYER_COLORS[(idx + offset) % PLAYER_COLORS.length];
+        if (!used.has(candidate.name)) return candidate.name;
+      }
+      return currentColor;
+    }
+  }, {
+    key: "_firstAvailableColor",
+    value: function _firstAvailableColor() {
+      var used = this._usedColors();
+      var found = PLAYER_COLORS.find(function (c) {
+        return !used.has(c.name);
+      });
+      return found ? found.name : PLAYER_COLORS[0].name;
+    }
+  }, {
+    key: "_clampPlayers",
+    value: function _clampPlayers() {
+      while (this.players.length > this.maxPlayers) {
+        this.players.pop();
+      }
+    }
+  }, {
+    key: "_addBot",
+    value: function _addBot() {
+      if (this.players.length >= this.maxPlayers) return;
+      var color = this._firstAvailableColor();
+      var botNum = this.players.filter(function (p) {
+        return !p.isHuman;
+      }).length + 1;
+      this.players.push({
+        name: t('computer') + ' ' + botNum,
+        color: color,
+        civ: 'Greek',
+        isHuman: false
+      });
+      this._refreshPlayerTable();
+    }
+  }, {
+    key: "_removePlayer",
+    value: function _removePlayer(index) {
+      this.players.splice(index, 1);
+      var botNum = 1;
+      this.players.forEach(function (p) {
+        if (!p.isHuman) p.name = t('computer') + ' ' + botNum++;
+      });
+      this._refreshPlayerTable();
+    }
+  }, {
+    key: "_cycleColor",
+    value: function _cycleColor(playerIndex) {
+      this.players[playerIndex].color = this._nextAvailableColor(this.players[playerIndex].color);
+      this._refreshPlayerTable();
+    }
+  }, {
+    key: "_refreshPlayerTable",
+    value: function _refreshPlayerTable() {
+      var _this2 = this;
+      this.playerTableEl.innerHTML = '';
+
+      // Header row
+      var header = document.createElement('div');
+      header.className = 'player-table-header';
+      [t('colName'), t('colCiv'), t('colColor'), ''].forEach(function (text) {
+        var cell = document.createElement('div');
+        cell.textContent = text;
+        header.appendChild(cell);
+      });
+      this.playerTableEl.appendChild(header);
+
+      // Player rows
+      this.players.forEach(function (player, i) {
+        var row = document.createElement('div');
+        row.className = 'player-row' + (i % 2 === 0 ? ' player-row--odd' : '');
+
+        // Name
+        var nameCell = document.createElement('div');
+        nameCell.className = 'player-name' + (player.isHuman ? ' human' : '');
+        nameCell.textContent = player.name;
+        row.appendChild(nameCell);
+
+        // Civilization select
+        var civCell = document.createElement('div');
+        civCell.className = 'player-civ';
+        var civSelect = document.createElement('select');
+        CIVS.forEach(function (civ) {
+          var opt = document.createElement('option');
+          opt.value = civ.value;
+          opt.textContent = typeof civ.label === 'function' ? civ.label() : civ.label;
+          if (civ.value === player.civ) opt.selected = true;
+          civSelect.appendChild(opt);
+        });
+        civSelect.onchange = function (e) {
+          _this2.players[i].civ = e.target.value;
+        };
+        civCell.appendChild(civSelect);
+        row.appendChild(civCell);
+
+        // Color swatch
+        var colorCell = document.createElement('div');
+        colorCell.className = 'player-color-cell';
+        var colorData = PLAYER_COLORS.find(function (c) {
+          return c.name === player.color;
+        });
+        var swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = colorData ? colorData.hex : '#fff';
+        swatch.title = t('colorSwatch', {
+          color: player.color
+        });
+        swatch.onmousedown = playClickSound;
+        swatch.onclick = function () {
+          return _this2._cycleColor(i);
+        };
+        colorCell.appendChild(swatch);
+        row.appendChild(colorCell);
+
+        // Remove button (bots only)
+        var actionCell = document.createElement('div');
+        actionCell.className = 'player-action-cell';
+        if (!player.isHuman) {
+          var removeBtn = document.createElement('button');
+          removeBtn.className = 'player-remove';
+          removeBtn.textContent = '×';
+          removeBtn.title = t('removePlayer');
+          removeBtn.onmousedown = playClickSound;
+          removeBtn.onclick = function () {
+            return _this2._removePlayer(i);
+          };
+          actionCell.appendChild(removeBtn);
+        }
+        row.appendChild(actionCell);
+        _this2.playerTableEl.appendChild(row);
+      });
+      this.addBotBtn.disabled = this.players.length >= this.maxPlayers;
+    }
+  }, {
+    key: "_createSelect",
+    value: function _createSelect(label, options, defaultValue, onChange) {
       var row = document.createElement('div');
       row.className = 'config-row';
       var lbl = document.createElement('label');
@@ -10594,7 +13279,7 @@ var MapConfig = /*#__PURE__*/function () {
       options.forEach(function (opt) {
         var option = document.createElement('option');
         option.value = opt.value;
-        option.textContent = opt.label;
+        option.textContent = typeof opt.label === 'function' ? opt.label() : opt.label;
         if (opt.value === defaultValue) option.selected = true;
         select.appendChild(option);
       });
@@ -10606,8 +13291,8 @@ var MapConfig = /*#__PURE__*/function () {
       return row;
     }
   }, {
-    key: "createCheckbox",
-    value: function createCheckbox(label, defaultValue, onChange) {
+    key: "_createCheckbox",
+    value: function _createCheckbox(label, defaultValue, onChange) {
       var row = document.createElement('div');
       row.className = 'config-row config-row--checkbox';
       var lbl = document.createElement('label');
@@ -10735,22 +13420,30 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
 var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `:root {
-  --main-primary-color: #4a3a1e;
-  --main-background-color: rgba(14, 10, 5, 0.95);
+  --main-primary-color: #5e4a22;
+  --main-background-color: rgba(14, 10, 5, 0.80);
   --main-bg-base: #0b0906;
   --main-border-color: transparent;
-  --main-border-radius: 2px;
+  --main-border-radius: 3px;
+  --main-border-radius-lg: 5px;
   --main-border-size: 0px;
   --main-border-style: solid;
-  --main-border-hover: #7a6030;
+  --main-border-hover: #a07830;
   --main-shadow-color: rgba(0, 0, 0, 0.75);
   --main-shadow-dark: #1e1508;
   --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;
-  --main-text-color: #c8b87a;
-  --main-text-muted: #6a5a38;
-  --main-accent-color: #c0a060;
-  --main-accent-bright: #e0c880;
+  --main-text-color: #ddd0a0;
+  --main-text-muted: #8a7850;
+  --main-accent-color: #d4a843;
+  --main-accent-bright: #f0d860;
   --main-accent-hover: rgba(74, 58, 30, 0.55);
+
+  --msg-color: #e84040;
+  --msg-bg: rgba(10, 6, 2, 0.85);
+  --msg-border: #6b1f1f;
+  --msg-padding: 6px 18px;
+  --msg-font-size: 13px;
+  --msg-border-radius: var(--main-border-radius);
 }
 
 html,
@@ -10765,6 +13458,8 @@ button {
   text-shadow: 1px 1px black;
   font-family: sans-serif;
   -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  font-smoothing: none;
 }
 
 body {
@@ -10969,6 +13664,7 @@ img {
   width: fit-content;
   cursor: pointer;
   border: 1px solid var(--main-primary-color);
+  border-radius: var(--main-border-radius);
   padding: 3px 12px;
   color: var(--main-accent-color);
   background: var(--main-background-color);
@@ -11009,9 +13705,22 @@ img {
 }
 
 .message-content {
-  color: #da2424;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 3px;
+  color: var(--msg-color);
+  background: var(--msg-bg);
+  padding: var(--msg-padding);
+  font-size: var(--msg-font-size);
+  border: 1px solid var(--msg-border);
+  border-radius: var(--msg-border-radius);
+  box-shadow: var(--main-box-shadow);
+  letter-spacing: 0.03em;
+  animation: msg-fade 3s ease forwards;
+}
+
+@keyframes msg-fade {
+  0%   { opacity: 0; transform: translateY(6px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .resource-quantity {
@@ -11072,7 +13781,7 @@ img {
   background: var(--main-background-color);
   border: 1px solid var(--main-primary-color);
   box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);
-  border-radius: var(--main-border-radius);
+  border-radius: var(--main-border-radius-lg);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -11093,7 +13802,7 @@ img {
 }
 
 /* ============================================================
-   MAIN MENU / MAP CONFIG  — inspired by Age of Empires I
+   MAIN MENU / MAP CONFIG
    ============================================================ */
 
 #main-menu,
@@ -11105,7 +13814,9 @@ img {
   align-items: center;
   justify-content: center;
   background: var(--main-bg-base);
-  background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .menu-panel {
@@ -11116,6 +13827,7 @@ img {
   padding: 44px 64px;
   background: var(--main-background-color);
   border: 1px solid var(--main-primary-color);
+  border-radius: var(--main-border-radius-lg);
   box-shadow:
     0 0 0 1px var(--main-shadow-dark),
     0 0 40px rgba(0, 0, 0, 0.9),
@@ -11125,6 +13837,7 @@ img {
 .menu-title {
   font-size: 40px;
   font-weight: bold;
+  text-align: center;
   letter-spacing: 8px;
   text-transform: uppercase;
   color: var(--main-accent-color);
@@ -11166,6 +13879,7 @@ img {
   letter-spacing: 2px;
   text-transform: uppercase;
   border: 1px solid var(--main-primary-color) !important;
+  border-radius: var(--main-border-radius) !important;
   color: var(--main-accent-color) !important;
   background: var(--main-background-color) !important;
   transition: background 0.15s, border-color 0.15s, color 0.15s !important;
@@ -11179,13 +13893,15 @@ img {
 
 .menu-btn.secondary {
   color: var(--main-text-muted) !important;
-  border-color: var(--main-shadow-dark) !important;
+  border-color: var(--main-primary-color) !important;
+  opacity: 0.7;
 }
 
 .menu-btn.secondary:hover {
   background: var(--main-accent-hover) !important;
   color: var(--main-accent-color) !important;
-  border-color: var(--main-primary-color) !important;
+  border-color: var(--main-border-hover) !important;
+  opacity: 1;
 }
 
 /* Config form rows */
@@ -11214,6 +13930,7 @@ img {
 .config-row select {
   background: var(--main-background-color);
   border: 1px solid var(--main-primary-color) !important;
+  border-radius: var(--main-border-radius);
   color: var(--main-accent-color) !important;
   padding: 5px 8px;
   min-width: 180px;
@@ -11237,7 +13954,182 @@ img {
   cursor: pointer;
   border: none;
 }
-`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"AAAA;EACE,6BAA6B;EAC7B,8CAA8C;EAC9C,uBAAuB;EACvB,gCAAgC;EAChC,yBAAyB;EACzB,uBAAuB;EACvB,0BAA0B;EAC1B,4BAA4B;EAC5B,wCAAwC;EACxC,2BAA2B;EAC3B,2DAA2D;EAC3D,0BAA0B;EAC1B,0BAA0B;EAC1B,4BAA4B;EAC5B,6BAA6B;EAC7B,2CAA2C;AAC7C;;AAEA;;;;;;EAME,uCAAuC;EACvC,6BAA6B;EAC7B,eAAe;EACf,0BAA0B;EAC1B,uBAAuB;EACvB,4BAA4B;AAC9B;;AAEA;EACE,aAAa;EACb,gBAAgB;EAChB,SAAS;EACT,yBAAyB;EACzB,iBAAiB;EACjB,uBAAuB;AACzB;;AAEA;;EAEE,2CAA2C;EAC3C,iBAAiB;EACjB,wCAAwC;EACxC,kBAAkB;EAClB,eAAe;EACf,kBAAkB;EAClB,6BAA6B;EAC7B,YAAY;EACZ,oBAAoB;EACpB,+BAA+B;AACjC;AACA;;EAEE,0CAA0C;EAC1C,sCAAsC;AACxC;AACA;EACE,wBAAwB;AAC1B;AACA;EACE,YAAY;EACZ,eAAe;EACf,YAAY;EACZ,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,WAAW;EACX,oCAAoC;EACpC,UAAU;EACV,eAAe;EACf,0DAA0D;AAC5D;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;AACd;;AAEA;EACE,OAAO;AACT;;AAEA;EACE,kBAAkB;EAClB,aAAa;EACb,eAAe;EACf,QAAQ;EACR,SAAS;EACT,gCAAgC;EAChC,iBAAiB;AACnB;;AAEA;EACE,wCAAwC;EACxC,WAAW;AACb;;AAEA;EACE,uBAAuB;EACvB,eAAe;AACjB;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,iBAAiB;EACjB,aAAa;EACb,iBAAiB;EACjB,kCAAkC;EAClC,wBAAwB;EACxB,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,aAAa;EACb,aAAa;EACb,uCAAuC;EACvC,wBAAwB;EACxB,aAAa;EACb,YAAY;AACd;;AAEA;EACE,kBAAkB;EAClB,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;EAClC,gBAAgB;EAChB,aAAa;EACb,sBAAsB;EACtB,YAAY;EACZ,QAAQ;AACV;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;AACb;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,aAAa;EACb,eAAe;EACf,QAAQ;EACR,cAAc;EACd,cAAc;EACd,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,aAAa;AACf;;AAEA;EACE,kBAAkB;EAClB,QAAQ;EACR,yDAAyD;AAC3D;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,iBAAiB;EACjB,qDAAqD;AACvD;;AAEA;EACE,kBAAkB;EAClB,OAAO;EACP,MAAM;EACN,WAAW;EACX,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,aAAa;EACb,SAAS;AACX;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,oBAAoB;AACtB;;AAEA;EACE,kBAAkB;EAClB,eAAe;EACf,2CAA2C;EAC3C,iBAAiB;EACjB,+BAA+B;EAC/B,wCAAwC;EACxC,mBAAmB;EACnB,yBAAyB;EACzB,eAAe;EACf,gDAAgD;AAClD;AACA;EACE,oCAAoC;EACpC,sCAAsC;AACxC;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,aAAa;EACb,eAAe;EACf,WAAW;EACX,kBAAkB;AACpB;;AAEA;EACE,cAAc;EACd,8BAA8B;EAC9B,YAAY;AACd;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;;EAEE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,cAAc;EACd,QAAQ;EACR,wBAAwB;EACxB,aAAa;EACb,YAAY;EACZ,2BAA2B;EAC3B,8BAA8B;EAC9B,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,YAAY;EACZ,aAAa;EACb,8BAA8B;EAC9B,aAAa;AACf;;AAEA;EACE,wCAAwC;EACxC,2CAA2C;EAC3C,0EAA0E;EAC1E,wCAAwC;EACxC,kBAAkB;EAClB,QAAQ;EACR,SAAS;EACT,gCAAgC;AAClC;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,QAAQ;EACR,kBAAkB;AACpB;;AAEA;;EAEE,uBAAuB;AACzB;;AAEA;;iEAEiE;;AAEjE;;EAEE,eAAe;EACf,QAAQ;EACR,aAAa;EACb,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,+BAA+B;EAC/B,iGAAiG;AACnG;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,SAAS;EACT,kBAAkB;EAClB,wCAAwC;EACxC,2CAA2C;EAC3C;;;qCAGmC;AACrC;;AAEA;EACE,eAAe;EACf,iBAAiB;EACjB,mBAAmB;EACnB,yBAAyB;EACzB,+BAA+B;EAC/B;;kBAEgB;EAChB,kBAAkB;EAClB,SAAS;AACX;;AAEA;EACE,eAAe;EACf,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;EAC7B,iBAAiB;EACjB,iBAAiB;AACnB;;AAEA;EACE,YAAY;EACZ,WAAW;EACX,0FAA0F;EAC1F,aAAa;AACf;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,iCAAiC;EACjC,uBAAuB;EACvB,6BAA6B;EAC7B,0BAA0B;EAC1B,mBAAmB;EACnB,yBAAyB;EACzB,sDAAsD;EACtD,0CAA0C;EAC1C,mDAAmD;EACnD,wEAAwE;AAC1E;;AAEA;EACE,+CAA+C;EAC/C,2CAA2C;EAC3C,iDAAiD;AACnD;;AAEA;EACE,wCAAwC;EACxC,gDAAgD;AAClD;;AAEA;EACE,+CAA+C;EAC/C,0CAA0C;EAC1C,kDAAkD;AACpD;;AAEA,qBAAqB;AACrB;EACE,aAAa;EACb,sBAAsB;EACtB,SAAS;EACT,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,8BAA8B;EAC9B,SAAS;AACX;;AAEA;EACE,wCAAwC;EACxC,mBAAmB;EACnB,0BAA0B;EAC1B,yBAAyB;EACzB,4BAA4B;AAC9B;;AAEA;EACE,wCAAwC;EACxC,sDAAsD;EACtD,0CAA0C;EAC1C,gBAAgB;EAChB,gBAAgB;EAChB,0BAA0B;EAC1B,eAAe;AACjB;;AAEA;EACE,aAAa;EACb,iDAAiD;AACnD;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,sCAAsC;EACtC,eAAe;EACf,YAAY;AACd","sourcesContent":[":root {\n  --main-primary-color: #4a3a1e;\n  --main-background-color: rgba(14, 10, 5, 0.95);\n  --main-bg-base: #0b0906;\n  --main-border-color: transparent;\n  --main-border-radius: 2px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-border-hover: #7a6030;\n  --main-shadow-color: rgba(0, 0, 0, 0.75);\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n  --main-text-color: #c8b87a;\n  --main-text-muted: #6a5a38;\n  --main-accent-color: #c0a060;\n  --main-accent-bright: #e0c880;\n  --main-accent-hover: rgba(74, 58, 30, 0.55);\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: 1px solid var(--main-primary-color);\n  padding: 3px 12px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  letter-spacing: 1px;\n  text-transform: uppercase;\n  font-size: 11px;\n  transition: background 0.15s, border-color 0.15s;\n}\n.topbar-options-menu:hover {\n  background: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: #da2424;\n  background: rgba(0, 0, 0, 0.4);\n  padding: 3px;\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n.modal-menu .menu-btn,\n.modal-menu .input-file.menu-btn {\n  width: 220px !important;\n}\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG  — inspired by Age of Empires I\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-bg-base);\n  background-image: radial-gradient(ellipse at 50% 38%, rgba(70, 48, 16, 0.18) 0%, transparent 68%);\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 40px rgba(0, 0, 0, 0.9),\n    inset 0 0 24px rgba(0, 0, 0, 0.6);\n}\n\n.menu-title {\n  font-size: 40px;\n  font-weight: bold;\n  letter-spacing: 8px;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  text-shadow:\n    0 0 24px rgba(200, 168, 94, 0.35),\n    2px 2px 0 #000;\n  font-family: serif;\n  margin: 0;\n}\n\n.menu-subtitle {\n  font-size: 11px;\n  letter-spacing: 5px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-top: -12px;\n  text-shadow: none;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box !important;\n  width: 250px !important;\n  padding: 10px 20px !important;\n  font-size: 11px !important;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  border: 1px solid var(--main-primary-color) !important;\n  color: var(--main-accent-color) !important;\n  background: var(--main-background-color) !important;\n  transition: background 0.15s, border-color 0.15s, color 0.15s !important;\n}\n\n.menu-btn:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-bright) !important;\n  border-color: var(--main-border-hover) !important;\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted) !important;\n  border-color: var(--main-shadow-dark) !important;\n}\n\n.menu-btn.secondary:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-primary-color) !important;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 340px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  color: var(--main-text-color) !important;\n  letter-spacing: 1px;\n  font-size: 11px !important;\n  text-transform: uppercase;\n  text-shadow: none !important;\n}\n\n.config-row select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color) !important;\n  color: var(--main-accent-color) !important;\n  padding: 5px 8px;\n  min-width: 180px;\n  font-size: 11px !important;\n  cursor: pointer;\n}\n\n.config-row select:focus {\n  outline: none;\n  border-color: var(--main-border-hover) !important;\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  width: 14px;\n  height: 14px;\n  accent-color: var(--main-border-hover);\n  cursor: pointer;\n  border: none;\n}\n"],"sourceRoot":""}]);
+
+/* ============================================================
+   LOBBY — tableau AOE style
+   ============================================================ */
+
+.lobby-panel {
+  padding: 36px 48px;
+  min-width: 0;
+}
+
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  width: min(82vw, 840px);
+  align-items: start;
+}
+
+.lobby-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-section-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--main-text-muted);
+  margin-bottom: 2px;
+  text-shadow: none;
+}
+
+/* Player table */
+.player-table {
+  border: 1px solid var(--main-primary-color);
+  border-radius: var(--main-border-radius);
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.player-table-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 32px 20px;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--main-primary-color);
+  background: rgba(74, 58, 30, 0.2);
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--main-text-muted);
+}
+
+.player-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 32px 20px;
+  gap: 8px;
+  padding: 5px 10px;
+  align-items: center;
+  border-bottom: 1px solid rgba(74, 58, 30, 0.2);
+}
+
+.player-row:last-child {
+  border-bottom: none;
+}
+
+.player-row--odd {
+  background: rgba(74, 58, 30, 0.08);
+}
+
+.player-name {
+  font-size: 11px;
+  color: var(--main-text-color);
+}
+
+.player-name.human {
+  color: var(--main-accent-color);
+}
+
+.player-civ select {
+  background: var(--main-background-color);
+  border: 1px solid var(--main-primary-color);
+  border-radius: var(--main-border-radius);
+  color: var(--main-accent-color);
+  padding: 3px 4px;
+  font-size: 10px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.player-civ select:focus {
+  outline: none;
+  border-color: var(--main-border-hover);
+}
+
+.player-color-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.color-swatch:hover {
+  border-color: var(--main-accent-color);
+  transform: scale(1.25);
+}
+
+.player-action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-remove {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--main-text-muted) !important;
+  cursor: pointer;
+  padding: 0 !important;
+  font-size: 15px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  line-height: 1;
+}
+
+.player-remove:hover {
+  color: #e30b00 !important;
+  background: none !important;
+}
+
+.lobby-add-btn {
+  margin-top: 4px;
+  width: 100% !important;
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+  padding: 6px 10px !important;
+  border: 1px dashed var(--main-primary-color) !important;
+  color: var(--main-text-muted) !important;
+}
+
+.lobby-add-btn:hover:not(:disabled) {
+  color: var(--main-accent-color) !important;
+  border-color: var(--main-border-hover) !important;
+  background: var(--main-accent-hover) !important;
+}
+
+.lobby-add-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.lobby-settings-form {
+  width: 100% !important;
+}
+
+.lobby-settings-form .config-row select {
+  min-width: 0;
+  flex: 1;
+}
+
+.menu-buttons--row {
+  flex-direction: row !important;
+  gap: 16px !important;
+}
+`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"AAAA;EACE,6BAA6B;EAC7B,8CAA8C;EAC9C,uBAAuB;EACvB,gCAAgC;EAChC,yBAAyB;EACzB,4BAA4B;EAC5B,uBAAuB;EACvB,0BAA0B;EAC1B,4BAA4B;EAC5B,wCAAwC;EACxC,2BAA2B;EAC3B,2DAA2D;EAC3D,0BAA0B;EAC1B,0BAA0B;EAC1B,4BAA4B;EAC5B,6BAA6B;EAC7B,2CAA2C;;EAE3C,oBAAoB;EACpB,8BAA8B;EAC9B,qBAAqB;EACrB,uBAAuB;EACvB,qBAAqB;EACrB,8CAA8C;AAChD;;AAEA;;;;;;EAME,uCAAuC;EACvC,6BAA6B;EAC7B,eAAe;EACf,0BAA0B;EAC1B,uBAAuB;EACvB,4BAA4B;EAC5B,6BAA6B;EAC7B,oBAAoB;AACtB;;AAEA;EACE,aAAa;EACb,gBAAgB;EAChB,SAAS;EACT,yBAAyB;EACzB,iBAAiB;EACjB,uBAAuB;AACzB;;AAEA;;EAEE,2CAA2C;EAC3C,iBAAiB;EACjB,wCAAwC;EACxC,kBAAkB;EAClB,eAAe;EACf,kBAAkB;EAClB,6BAA6B;EAC7B,YAAY;EACZ,oBAAoB;EACpB,+BAA+B;AACjC;AACA;;EAEE,0CAA0C;EAC1C,sCAAsC;AACxC;AACA;EACE,wBAAwB;AAC1B;AACA;EACE,YAAY;EACZ,eAAe;EACf,YAAY;EACZ,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,WAAW;EACX,oCAAoC;EACpC,UAAU;EACV,eAAe;EACf,0DAA0D;AAC5D;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;AACd;;AAEA;EACE,OAAO;AACT;;AAEA;EACE,kBAAkB;EAClB,aAAa;EACb,eAAe;EACf,QAAQ;EACR,SAAS;EACT,gCAAgC;EAChC,iBAAiB;AACnB;;AAEA;EACE,wCAAwC;EACxC,WAAW;AACb;;AAEA;EACE,uBAAuB;EACvB,eAAe;AACjB;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,iBAAiB;EACjB,aAAa;EACb,iBAAiB;EACjB,kCAAkC;EAClC,wBAAwB;EACxB,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,aAAa;EACb,aAAa;EACb,uCAAuC;EACvC,wBAAwB;EACxB,aAAa;EACb,YAAY;AACd;;AAEA;EACE,kBAAkB;EAClB,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;EAClC,gBAAgB;EAChB,aAAa;EACb,sBAAsB;EACtB,YAAY;EACZ,QAAQ;AACV;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;AACb;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,aAAa;EACb,eAAe;EACf,QAAQ;EACR,cAAc;EACd,cAAc;EACd,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,aAAa;AACf;;AAEA;EACE,kBAAkB;EAClB,QAAQ;EACR,yDAAyD;AAC3D;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,iBAAiB;EACjB,qDAAqD;AACvD;;AAEA;EACE,kBAAkB;EAClB,OAAO;EACP,MAAM;EACN,WAAW;EACX,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,aAAa;EACb,SAAS;AACX;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,oBAAoB;AACtB;;AAEA;EACE,kBAAkB;EAClB,eAAe;EACf,2CAA2C;EAC3C,wCAAwC;EACxC,iBAAiB;EACjB,+BAA+B;EAC/B,wCAAwC;EACxC,mBAAmB;EACnB,yBAAyB;EACzB,eAAe;EACf,gDAAgD;AAClD;AACA;EACE,oCAAoC;EACpC,sCAAsC;AACxC;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,aAAa;EACb,eAAe;EACf,WAAW;EACX,kBAAkB;AACpB;;AAEA;EACE,uBAAuB;EACvB,yBAAyB;EACzB,2BAA2B;EAC3B,+BAA+B;EAC/B,mCAAmC;EACnC,uCAAuC;EACvC,kCAAkC;EAClC,sBAAsB;EACtB,oCAAoC;AACtC;;AAEA;EACE,OAAO,UAAU,EAAE,0BAA0B,EAAE;EAC/C,OAAO,UAAU,EAAE,wBAAwB,EAAE;EAC7C,OAAO,UAAU,EAAE;EACnB,OAAO,UAAU,EAAE;AACrB;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;;EAEE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,cAAc;EACd,QAAQ;EACR,wBAAwB;EACxB,aAAa;EACb,YAAY;EACZ,2BAA2B;EAC3B,8BAA8B;EAC9B,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,YAAY;EACZ,aAAa;EACb,8BAA8B;EAC9B,aAAa;AACf;;AAEA;EACE,wCAAwC;EACxC,2CAA2C;EAC3C,0EAA0E;EAC1E,2CAA2C;EAC3C,kBAAkB;EAClB,QAAQ;EACR,SAAS;EACT,gCAAgC;AAClC;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,QAAQ;EACR,kBAAkB;AACpB;;AAEA;;EAEE,uBAAuB;AACzB;;AAEA;;iEAEiE;;AAEjE;;EAEE,eAAe;EACf,QAAQ;EACR,aAAa;EACb,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,+BAA+B;EAC/B,sBAAsB;EACtB,4BAA4B;EAC5B,2BAA2B;AAC7B;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,SAAS;EACT,kBAAkB;EAClB,wCAAwC;EACxC,2CAA2C;EAC3C,2CAA2C;EAC3C;;;qCAGmC;AACrC;;AAEA;EACE,eAAe;EACf,iBAAiB;EACjB,kBAAkB;EAClB,mBAAmB;EACnB,yBAAyB;EACzB,+BAA+B;EAC/B;;kBAEgB;EAChB,kBAAkB;EAClB,SAAS;AACX;;AAEA;EACE,eAAe;EACf,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;EAC7B,iBAAiB;EACjB,iBAAiB;AACnB;;AAEA;EACE,YAAY;EACZ,WAAW;EACX,0FAA0F;EAC1F,aAAa;AACf;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,iCAAiC;EACjC,uBAAuB;EACvB,6BAA6B;EAC7B,0BAA0B;EAC1B,mBAAmB;EACnB,yBAAyB;EACzB,sDAAsD;EACtD,mDAAmD;EACnD,0CAA0C;EAC1C,mDAAmD;EACnD,wEAAwE;AAC1E;;AAEA;EACE,+CAA+C;EAC/C,2CAA2C;EAC3C,iDAAiD;AACnD;;AAEA;EACE,wCAAwC;EACxC,kDAAkD;EAClD,YAAY;AACd;;AAEA;EACE,+CAA+C;EAC/C,0CAA0C;EAC1C,iDAAiD;EACjD,UAAU;AACZ;;AAEA,qBAAqB;AACrB;EACE,aAAa;EACb,sBAAsB;EACtB,SAAS;EACT,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,8BAA8B;EAC9B,SAAS;AACX;;AAEA;EACE,wCAAwC;EACxC,mBAAmB;EACnB,0BAA0B;EAC1B,yBAAyB;EACzB,4BAA4B;AAC9B;;AAEA;EACE,wCAAwC;EACxC,sDAAsD;EACtD,wCAAwC;EACxC,0CAA0C;EAC1C,gBAAgB;EAChB,gBAAgB;EAChB,0BAA0B;EAC1B,eAAe;AACjB;;AAEA;EACE,aAAa;EACb,iDAAiD;AACnD;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,sCAAsC;EACtC,eAAe;EACf,YAAY;AACd;;AAEA;;iEAEiE;;AAEjE;EACE,kBAAkB;EAClB,YAAY;AACd;;AAEA;EACE,aAAa;EACb,8BAA8B;EAC9B,SAAS;EACT,uBAAuB;EACvB,kBAAkB;AACpB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,cAAc;EACd,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;EAC7B,kBAAkB;EAClB,iBAAiB;AACnB;;AAEA,iBAAiB;AACjB;EACE,2CAA2C;EAC3C,wCAAwC;EACxC,8BAA8B;EAC9B,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,iBAAiB;EACjB,kDAAkD;EAClD,iCAAiC;EACjC,cAAc;EACd,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;AAC/B;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,iBAAiB;EACjB,mBAAmB;EACnB,8CAA8C;AAChD;;AAEA;EACE,mBAAmB;AACrB;;AAEA;EACE,kCAAkC;AACpC;;AAEA;EACE,eAAe;EACf,6BAA6B;AAC/B;;AAEA;EACE,+BAA+B;AACjC;;AAEA;EACE,wCAAwC;EACxC,2CAA2C;EAC3C,wCAAwC;EACxC,+BAA+B;EAC/B,gBAAgB;EAChB,eAAe;EACf,eAAe;EACf,WAAW;AACb;;AAEA;EACE,aAAa;EACb,sCAAsC;AACxC;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,kBAAkB;EAClB,0CAA0C;EAC1C,eAAe;EACf,8CAA8C;EAC9C,cAAc;AAChB;;AAEA;EACE,sCAAsC;EACtC,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,2BAA2B;EAC3B,uBAAuB;EACvB,2BAA2B;EAC3B,wCAAwC;EACxC,eAAe;EACf,qBAAqB;EACrB,0BAA0B;EAC1B,sBAAsB;EACtB,uBAAuB;EACvB,cAAc;AAChB;;AAEA;EACE,yBAAyB;EACzB,2BAA2B;AAC7B;;AAEA;EACE,eAAe;EACf,sBAAsB;EACtB,0BAA0B;EAC1B,8BAA8B;EAC9B,4BAA4B;EAC5B,uDAAuD;EACvD,wCAAwC;AAC1C;;AAEA;EACE,0CAA0C;EAC1C,iDAAiD;EACjD,+CAA+C;AACjD;;AAEA;EACE,YAAY;EACZ,mBAAmB;AACrB;;AAEA;EACE,sBAAsB;AACxB;;AAEA;EACE,YAAY;EACZ,OAAO;AACT;;AAEA;EACE,8BAA8B;EAC9B,oBAAoB;AACtB","sourcesContent":[":root {\n  --main-primary-color: #5e4a22;\n  --main-background-color: rgba(14, 10, 5, 0.80);\n  --main-bg-base: #0b0906;\n  --main-border-color: transparent;\n  --main-border-radius: 3px;\n  --main-border-radius-lg: 5px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-border-hover: #a07830;\n  --main-shadow-color: rgba(0, 0, 0, 0.75);\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n  --main-text-color: #ddd0a0;\n  --main-text-muted: #8a7850;\n  --main-accent-color: #d4a843;\n  --main-accent-bright: #f0d860;\n  --main-accent-hover: rgba(74, 58, 30, 0.55);\n\n  --msg-color: #e84040;\n  --msg-bg: rgba(10, 6, 2, 0.85);\n  --msg-border: #6b1f1f;\n  --msg-padding: 6px 18px;\n  --msg-font-size: 13px;\n  --msg-border-radius: var(--main-border-radius);\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n  -moz-osx-font-smoothing: none;\n  font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  padding: 3px 12px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  letter-spacing: 1px;\n  text-transform: uppercase;\n  font-size: 11px;\n  transition: background 0.15s, border-color 0.15s;\n}\n.topbar-options-menu:hover {\n  background: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: var(--msg-color);\n  background: var(--msg-bg);\n  padding: var(--msg-padding);\n  font-size: var(--msg-font-size);\n  border: 1px solid var(--msg-border);\n  border-radius: var(--msg-border-radius);\n  box-shadow: var(--main-box-shadow);\n  letter-spacing: 0.03em;\n  animation: msg-fade 3s ease forwards;\n}\n\n@keyframes msg-fade {\n  0%   { opacity: 0; transform: translateY(6px); }\n  15%  { opacity: 1; transform: translateY(0); }\n  75%  { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius-lg);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n.modal-menu .menu-btn,\n.modal-menu .input-file.menu-btn {\n  width: 220px !important;\n}\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-bg-base);\n  background-size: cover;\n  background-repeat: no-repeat;\n  background-position: center;\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius-lg);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 40px rgba(0, 0, 0, 0.9),\n    inset 0 0 24px rgba(0, 0, 0, 0.6);\n}\n\n.menu-title {\n  font-size: 40px;\n  font-weight: bold;\n  text-align: center;\n  letter-spacing: 8px;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  text-shadow:\n    0 0 24px rgba(200, 168, 94, 0.35),\n    2px 2px 0 #000;\n  font-family: serif;\n  margin: 0;\n}\n\n.menu-subtitle {\n  font-size: 11px;\n  letter-spacing: 5px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-top: -12px;\n  text-shadow: none;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box !important;\n  width: 250px !important;\n  padding: 10px 20px !important;\n  font-size: 11px !important;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  border: 1px solid var(--main-primary-color) !important;\n  border-radius: var(--main-border-radius) !important;\n  color: var(--main-accent-color) !important;\n  background: var(--main-background-color) !important;\n  transition: background 0.15s, border-color 0.15s, color 0.15s !important;\n}\n\n.menu-btn:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-bright) !important;\n  border-color: var(--main-border-hover) !important;\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted) !important;\n  border-color: var(--main-primary-color) !important;\n  opacity: 0.7;\n}\n\n.menu-btn.secondary:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-border-hover) !important;\n  opacity: 1;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 340px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  color: var(--main-text-color) !important;\n  letter-spacing: 1px;\n  font-size: 11px !important;\n  text-transform: uppercase;\n  text-shadow: none !important;\n}\n\n.config-row select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color) !important;\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color) !important;\n  padding: 5px 8px;\n  min-width: 180px;\n  font-size: 11px !important;\n  cursor: pointer;\n}\n\n.config-row select:focus {\n  outline: none;\n  border-color: var(--main-border-hover) !important;\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  width: 14px;\n  height: 14px;\n  accent-color: var(--main-border-hover);\n  cursor: pointer;\n  border: none;\n}\n\n/* ============================================================\n   LOBBY — tableau AOE style\n   ============================================================ */\n\n.lobby-panel {\n  padding: 36px 48px;\n  min-width: 0;\n}\n\n.lobby-layout {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 40px;\n  width: min(82vw, 840px);\n  align-items: start;\n}\n\n.lobby-col {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.lobby-section-title {\n  font-size: 9px;\n  letter-spacing: 3px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-bottom: 2px;\n  text-shadow: none;\n}\n\n/* Player table */\n.player-table {\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  background: rgba(0, 0, 0, 0.3);\n  overflow: hidden;\n}\n\n.player-table-header {\n  display: grid;\n  grid-template-columns: 1fr 100px 32px 20px;\n  gap: 8px;\n  padding: 5px 10px;\n  border-bottom: 1px solid var(--main-primary-color);\n  background: rgba(74, 58, 30, 0.2);\n  font-size: 9px;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n}\n\n.player-row {\n  display: grid;\n  grid-template-columns: 1fr 100px 32px 20px;\n  gap: 8px;\n  padding: 5px 10px;\n  align-items: center;\n  border-bottom: 1px solid rgba(74, 58, 30, 0.2);\n}\n\n.player-row:last-child {\n  border-bottom: none;\n}\n\n.player-row--odd {\n  background: rgba(74, 58, 30, 0.08);\n}\n\n.player-name {\n  font-size: 11px;\n  color: var(--main-text-color);\n}\n\n.player-name.human {\n  color: var(--main-accent-color);\n}\n\n.player-civ select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  padding: 3px 4px;\n  font-size: 10px;\n  cursor: pointer;\n  width: 100%;\n}\n\n.player-civ select:focus {\n  outline: none;\n  border-color: var(--main-border-hover);\n}\n\n.player-color-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.color-swatch {\n  width: 20px;\n  height: 20px;\n  border-radius: 50%;\n  border: 2px solid rgba(255, 255, 255, 0.2);\n  cursor: pointer;\n  transition: border-color 0.15s, transform 0.1s;\n  flex-shrink: 0;\n}\n\n.color-swatch:hover {\n  border-color: var(--main-accent-color);\n  transform: scale(1.25);\n}\n\n.player-action-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.player-remove {\n  background: none !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--main-text-muted) !important;\n  cursor: pointer;\n  padding: 0 !important;\n  font-size: 15px !important;\n  width: auto !important;\n  min-width: 0 !important;\n  line-height: 1;\n}\n\n.player-remove:hover {\n  color: #e30b00 !important;\n  background: none !important;\n}\n\n.lobby-add-btn {\n  margin-top: 4px;\n  width: 100% !important;\n  font-size: 10px !important;\n  letter-spacing: 1px !important;\n  padding: 6px 10px !important;\n  border: 1px dashed var(--main-primary-color) !important;\n  color: var(--main-text-muted) !important;\n}\n\n.lobby-add-btn:hover:not(:disabled) {\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-border-hover) !important;\n  background: var(--main-accent-hover) !important;\n}\n\n.lobby-add-btn:disabled {\n  opacity: 0.3;\n  cursor: not-allowed;\n}\n\n.lobby-settings-form {\n  width: 100% !important;\n}\n\n.lobby-settings-form .config-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.menu-buttons--row {\n  flex-direction: row !important;\n  gap: 16px !important;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -11247,7 +14139,7 @@ img {
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(2590)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(6854)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);
