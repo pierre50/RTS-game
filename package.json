@@ -1,7 +1,7 @@
 {
-  "name": "rts-game",
+  "name": "dawn-of-empires",
   "version": "1.0.0",
-  "description": "RTS game",
+  "description": "Dawn of Empires",
   "author": "Pierre Nicolas <tenzin50@hotmail.fr",
   "main": "main.js",
   "repository": {
@@ -21,7 +21,7 @@
     "lint": "eslint ./app/**/*.js"
   },
   "build": {
-    "appId": "com.pierre50.rts-game",
+    "appId": "com.pierre50.dawn-of-empires",
     "mac": {
       "icon": "assets/icon.icns",
       "category": "your.app.category.type"

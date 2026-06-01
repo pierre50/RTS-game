@@ -311,7 +311,7 @@ export default class Map extends Container {
     menu.updateResourcesMiniMap()
   }
 
-  generatePlayers() {
+  generatePlayers(playersConfig = null) {
     const { context } = this
 
     const players = []
@@ -328,23 +328,17 @@ export default class Map extends Container {
       const posI = this.playersPos[poses[i]]?.i
       const posJ = this.playersPos[poses[i]]?.j
       if (posI && posJ) {
-        const color = colors[i]
+        const color = playersConfig?.[i]?.color ?? colors[i]
+        const civ = playersConfig?.[i]?.civ ?? 'Greek'
         if (!i) {
           players.push(
             new Human(
-              {
-                i: posI,
-                j: posJ,
-                age: 0,
-                civ: 'Greek',
-                color,
-                isPlayed: true,
-              },
+              { i: posI, j: posJ, age: 0, civ, color, isPlayed: true },
               context
             )
           )
         } else if (!this.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ: 'Greek', color, difficulty: this.difficulty }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, difficulty: this.difficulty }, context))
         }
       }
     }

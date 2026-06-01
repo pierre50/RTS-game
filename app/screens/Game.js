@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js'
+import { t } from '../lib/lang'
 import Map from '../classes/map'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
@@ -51,9 +52,10 @@ export default class Game extends Container {
     context.controls = new Controls(context)
     context.menu = new Menu(context)
 
-    context.map.generateMap(config.bots != null ? config.bots + 1 : null)
+    const posCount = config.players ? config.players.length : (config.bots != null ? config.bots + 1 : null)
+    context.map.generateMap(posCount)
 
-    context.players = context.map.generatePlayers()
+    context.players = context.map.generatePlayers(config.players || null)
     context.player = context.players[0]
     context.menu.init()
     context.map.placePlayers()
@@ -245,7 +247,7 @@ export default class Game extends Container {
     if (pause) {
       const div = document.createElement('div')
       div.id = 'pause'
-      div.innerText = 'Pause'
+      div.innerText = t('pause')
       document.body.appendChild(div)
     } else {
       document.getElementById('pause')?.remove()

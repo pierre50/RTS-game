@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound'
+import { t } from '../lib/lang'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import {
   ACCELERATOR,
@@ -1503,12 +1504,12 @@ export class Unit extends Container {
   setDefaultInterface(element, data) {
     const civDiv = document.createElement('div')
     civDiv.id = MENU_INFO_IDS.civ
-    civDiv.textContent = this.owner.civ
+    civDiv.textContent = t(this.owner.civ)
     element.appendChild(civDiv)
 
     const typeDiv = document.createElement('div')
     typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = this.type === UNIT_TYPES.villager ? this.work || this.type : this.type
+    typeDiv.textContent = t(this.type === UNIT_TYPES.villager ? this.work || this.type : this.type)
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')

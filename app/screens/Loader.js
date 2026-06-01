@@ -1,4 +1,5 @@
 import { Assets, Container } from 'pixi.js'
+import { t } from '../lib/lang'
 
 /**
  * Loading Screen
@@ -336,19 +337,19 @@ export default class LoaderScreen extends Container {
         )
       )
 
-      this.loadingDiv.innerHTML = 'Loading config..'
+      this.loadingDiv.innerHTML = t('loadingConfig')
       await Assets.loadBundle('config')
-      this.loadingDiv.innerHTML = 'Loading interface..'
+      this.loadingDiv.innerHTML = t('loadingInterface')
       await Assets.loadBundle('interface')
-      this.loadingDiv.innerHTML = 'Loading seeds..'
+      this.loadingDiv.innerHTML = t('loadingSeeds')
       await Assets.loadBundle('seeds')
-      this.loadingDiv.innerHTML = 'Loading terrain..'
+      this.loadingDiv.innerHTML = t('loadingTerrain')
       await Assets.loadBundle('terrain')
-      this.loadingDiv.innerHTML = 'Loading border..'
+      this.loadingDiv.innerHTML = t('loadingBorder')
       await Assets.loadBundle('border')
-      this.loadingDiv.innerHTML = 'Loading graphics..'
+      this.loadingDiv.innerHTML = t('loadingGraphics')
       await Assets.loadBundle('graphics')
-      this.loadingDiv.innerHTML = 'Loading sounds..'
+      this.loadingDiv.innerHTML = t('loadingSounds')
       await Assets.loadBundle('sounds')
 
       this.loadingDiv.remove()

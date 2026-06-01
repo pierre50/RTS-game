@@ -1,18 +1,20 @@
+import { playClickSound } from '../lib/uiSound'
+import { t } from '../lib/lang'
+
 export default class MainMenu {
   constructor(onStart, onLoad) {
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
+    this.el.style.backgroundImage = "url('/background/bg1.png')"
+    this.el.style.backgroundSize = 'cover'
+    this.el.style.backgroundPosition = 'center'
 
     const panel = document.createElement('div')
     panel.className = 'menu-panel'
 
     const title = document.createElement('div')
     title.className = 'menu-title'
-    title.textContent = 'RTS'
-
-    const subtitle = document.createElement('div')
-    subtitle.className = 'menu-subtitle'
-    subtitle.textContent = 'Age of Empires'
+    title.textContent = 'Dawn of Empires'
 
     const divider = document.createElement('div')
     divider.className = 'menu-divider'
@@ -22,7 +24,8 @@ export default class MainMenu {
 
     const btnStart = document.createElement('button')
     btnStart.className = 'menu-btn'
-    btnStart.textContent = 'Nouvelle Partie'
+    btnStart.textContent = t('newGame')
+    btnStart.onmousedown = playClickSound
     btnStart.onclick = onStart
 
     const fileInput = document.createElement('input')
@@ -39,7 +42,8 @@ export default class MainMenu {
 
     const btnLoad = document.createElement('button')
     btnLoad.className = 'menu-btn secondary'
-    btnLoad.textContent = 'Charger une Partie'
+    btnLoad.textContent = t('loadGame')
+    btnLoad.onmousedown = playClickSound
     btnLoad.onclick = () => fileInput.click()
 
     buttons.appendChild(btnStart)
@@ -47,7 +51,6 @@ export default class MainMenu {
     buttons.appendChild(fileInput)
 
     panel.appendChild(title)
-    panel.appendChild(subtitle)
     panel.appendChild(divider)
     panel.appendChild(buttons)
 

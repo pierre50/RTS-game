@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound'
+import { t } from '../lib/lang'
 import { Container, Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
@@ -253,7 +254,7 @@ export class Resource extends Container {
     } = this
     const typeDiv = document.createElement('div')
     typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = this.type
+    typeDiv.textContent = t(this.type)
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')

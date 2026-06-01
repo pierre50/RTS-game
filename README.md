@@ -1,4 +1,4 @@
-# RTS Game
+# Dawn of Empires
 
 ## Installation
 

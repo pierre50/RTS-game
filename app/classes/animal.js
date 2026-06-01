@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound'
+import { t } from '../lib/lang'
 import { Container, Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import {
   ACCELERATOR,
@@ -654,7 +655,7 @@ export class Animal extends Container {
 
     const typeDiv = document.createElement('div')
     typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = this.type
+    typeDiv.textContent = t(this.type)
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')

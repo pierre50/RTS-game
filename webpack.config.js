@@ -39,7 +39,10 @@ module.exports = {
       template: './public/index.html',
     }),
     new CopyWebpackPlugin({
-      patterns: [{ from: 'public/assets', to: 'assets' }],
+      patterns: [
+        { from: 'public/assets', to: 'assets' },
+        { from: 'public/background', to: 'background' },
+      ],
     }),
   ],
   optimization: {

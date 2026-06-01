@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound'
+import { t } from '../lib/lang'
 import { Container, Assets, Sprite, AnimatedSprite, Graphics } from 'pixi.js'
 import {
   ACCELERATOR,
@@ -723,7 +724,7 @@ export class Building extends Container {
             if (this.owner.population < Math.min(POPULATION_MAX, this.owner.population_max)) {
               this.loading += 10
             } else if (this.owner.isPlayed && !hasShowedMessage) {
-              menu.showMessage('You need to build more houses')
+              menu.showMessage(t('needHouses'))
               hasShowedMessage = true
             }
             if (this.selected && this.owner.isPlayed) {
@@ -887,12 +888,12 @@ export class Building extends Container {
 
     const civDiv = document.createElement('div')
     civDiv.id = MENU_INFO_IDS.civ
-    civDiv.textContent = this.owner.civ
+    civDiv.textContent = t(this.owner.civ)
     element.appendChild(civDiv)
 
     const typeDiv = document.createElement('div')
     typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = this.type
+    typeDiv.textContent = t(this.type)
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')

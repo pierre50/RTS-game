@@ -14,6 +14,8 @@ import {
 } from '../lib'
 import { CELL_WIDTH, CELL_HEIGHT, LONG_CLICK_DURATION, IS_MOBILE, FAMILY_TYPES } from '../constants'
 import { sound } from '@pixi/sound'
+import { playClickSound } from '../lib/uiSound'
+import { t } from '../lib/lang'
 
 export default class Menu {
   constructor(context) {
@@ -49,16 +51,18 @@ export default class Menu {
     options.className = 'topbar-options'
     const menu = document.createElement('div')
     menu.className = 'topbar-options-menu'
-    menu.innerText = 'Menu'
+    menu.innerText = t('menuBtn')
     menu.addEventListener('pointerdown', () => {
+      playClickSound()
       this.context.pause()
       const content = document.createElement('div')
       content.className = 'modal-menu'
       const modal = new Modal(content)
       const save = document.createElement('button')
       save.className = 'menu-btn'
-      save.innerText = 'Sauvegarder'
+      save.innerText = t('save')
       save.addEventListener('pointerdown', () => {
+        playClickSound()
         this.context.save()
         modal.close()
         this.context.resume()
@@ -77,19 +81,22 @@ export default class Menu {
         reader.readAsText(evt.target.files[0])
       })
       load.className = 'input-file menu-btn'
-      load.innerText = 'Charger'
+      load.innerText = t('load')
+      load.addEventListener('pointerdown', playClickSound)
       load.appendChild(input)
       const quit = document.createElement('button')
       quit.className = 'menu-btn secondary'
-      quit.innerText = 'Quitter'
+      quit.innerText = t('quit')
       quit.addEventListener('pointerdown', () => {
+        playClickSound()
         modal.close()
         this.context.quit()
       })
       const cancel = document.createElement('button')
       cancel.className = 'menu-btn secondary'
-      cancel.innerText = 'Annuler'
+      cancel.innerText = t('cancel')
       cancel.addEventListener('pointerdown', () => {
+        playClickSound()
         modal.close()
         this.context.resume()
       })
@@ -363,7 +370,7 @@ export default class Menu {
       context: { player },
     } = this
     const resource = Object.keys(cost).find(prop => player[prop] < cost[prop])
-    return `You need more ${resource} !`
+    return t('needMore', { resource: t(resource) })
   }
 
   showMessage(message) {
@@ -417,15 +424,15 @@ export default class Menu {
     const {
       context: { player },
     } = this
-    const t = {
-      0: 'Stone Age',
-      1: 'Tool Age',
-      2: 'Bronze Age',
-      3: 'Iron Age',
+    const ageLabels = {
+      0: t('stoneAge'),
+      1: t('toolAge'),
+      2: t('bronzeAge'),
+      3: t('ironAge'),
     }
     ;['wood', 'food', 'stone', 'gold', 'age'].forEach(prop => {
       const val = Math.min((player && player[prop]) || 0, 99999)
-      this[prop].textContent = prop === 'age' ? t[val] : val
+      this[prop].textContent = prop === 'age' ? ageLabels[val] : val
     })
   }
 
@@ -606,7 +613,7 @@ export default class Menu {
           sound.play('5036')
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.population_max) {
-              this.showMessage('You need to build more houses')
+              this.showMessage(t('needHouses'))
             }
             this.toggleButtonCancel(type, true)
             selection.buyUnit(type)
