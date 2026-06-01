@@ -143,6 +143,7 @@ export class Resource extends Container {
 
       this.addChild(this.sprite)
     }
+    map.addToInstanceBucket(this)
   }
 
   select() {
@@ -191,6 +192,7 @@ export class Resource extends Container {
     }
     map.resources.delete(this)
     menu.updateResourcesMiniMap()
+    map.removeFromInstanceBucket(this)
     this.isDead = true
     if (this.type === RESOURCE_TYPES.tree && !immediate) {
       this.onTreeDie()

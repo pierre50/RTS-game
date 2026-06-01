@@ -84,6 +84,7 @@ export class Animal extends Container {
 
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     this.quantity = this.quantity ?? this.totalQuantity
+    map.addToInstanceBucket(this)
 
     for (const [key, value] of Object.entries(this.assets)) {
       this[key] = Assets.cache.get(value)
@@ -345,7 +346,7 @@ export class Animal extends Container {
               return
             }
 
-            this.sounds && this.sounds.hit && this.visible && sound.play(this.sounds.hit)
+            this.sounds && this.sounds.hit && this.context.controls.instanceInCamera(this) && sound.play(this.sounds.hit)
 
             if (this.dest.hitPoints > 0) {
               this.dest.hitPoints = getHitPointsWithDamage(this, this.dest)
@@ -433,6 +434,7 @@ export class Animal extends Container {
 
     this.zIndex = getInstanceZIndex(this)
     if (instancesDistance(this, nextCell, false) < this.speed) {
+      const oldI = this.i, oldJ = this.j
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
@@ -447,6 +449,7 @@ export class Animal extends Container {
         this.currentCell.solid = true
       }
 
+      map.updateInstanceBucket(this, oldI, oldJ)
       updateInstanceVisibility(this)
       this.path.pop()
 
@@ -582,7 +585,7 @@ export class Animal extends Container {
     if (this.isDead) {
       return
     }
-    if (this.sounds && this.visible) {
+    if (this.sounds && this.context.controls.instanceInCamera(this)) {
       this.sounds.die && sound.play(this.sounds.die)
       this.sounds.fall && sound.play(this.sounds.fall)
     }

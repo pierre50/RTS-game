@@ -10,7 +10,7 @@ import {
   colors,
   updateInstanceVisibility,
 } from '../lib'
-import { BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { BUCKET_SIZE, BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { Cell } from './cell'
 
 /**
@@ -54,6 +54,7 @@ export default class Map extends Container {
     this.positionsCount = 2
     this.gaia = null
     this.resources = new Set()
+    this.instanceBuckets = null
 
     this.eventMode = 'auto'
     this.allowMove = false
@@ -64,6 +65,37 @@ export default class Map extends Container {
   setCoordinate(x, y) {
     this.x = x
     this.y = y
+  }
+
+  _ensureBuckets() {
+    if (this.instanceBuckets) return
+    const bw = Math.ceil(this.grid.length / BUCKET_SIZE)
+    const bh = Math.ceil(this.grid[0].length / BUCKET_SIZE)
+    this.instanceBuckets = Array.from({ length: bw }, () => Array.from({ length: bh }, () => new Set()))
+  }
+
+  addToInstanceBucket(instance) {
+    this._ensureBuckets()
+    const bi = Math.floor(instance.i / BUCKET_SIZE)
+    const bj = Math.floor(instance.j / BUCKET_SIZE)
+    this.instanceBuckets[bi]?.[bj]?.add(instance)
+  }
+
+  removeFromInstanceBucket(instance) {
+    if (!this.instanceBuckets) return
+    const bi = Math.floor(instance.i / BUCKET_SIZE)
+    const bj = Math.floor(instance.j / BUCKET_SIZE)
+    this.instanceBuckets[bi]?.[bj]?.delete(instance)
+  }
+
+  updateInstanceBucket(instance, oldI, oldJ) {
+    if (!this.instanceBuckets) return
+    const oldBi = Math.floor(oldI / BUCKET_SIZE), oldBj = Math.floor(oldJ / BUCKET_SIZE)
+    const newBi = Math.floor(instance.i / BUCKET_SIZE), newBj = Math.floor(instance.j / BUCKET_SIZE)
+    if (oldBi !== newBi || oldBj !== newBj) {
+      this.instanceBuckets[oldBi]?.[oldBj]?.delete(instance)
+      this.instanceBuckets[newBi]?.[newBj]?.add(instance)
+    }
   }
 
   generateFromJSON({ map, players, camera, resources, animals }) {

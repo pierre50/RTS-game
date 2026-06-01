@@ -146,10 +146,15 @@ export class AI extends Player {
   }
 
   _scheduleStep() {
-    this._stepTimer = setTimeout(() => {
+    this._stepTaskId = this.context.scheduler.add(() => {
       const actions = this.step()
-      this.stepDelay = actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 5000)
-      this._scheduleStep()
+      const newDelay = actions > 0
+        ? this.difficultyConfig.stepDelayBase
+        : Math.min(Math.round(this.stepDelay * 1.5), 5000)
+      if (newDelay !== this.stepDelay) {
+        this.stepDelay = newDelay
+        this.context.scheduler.update(this._stepTaskId, newDelay)
+      }
     }, this.stepDelay)
   }
 
@@ -798,7 +803,7 @@ export class AI extends Player {
     const {
       context: { players },
     } = this
-    clearTimeout(this._stepTimer)
+    this.context.scheduler.remove(this._stepTaskId)
     players.splice(players.indexOf(this), 1)
   }
 }

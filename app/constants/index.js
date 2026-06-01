@@ -4,6 +4,7 @@ export const CELL_DEPTH = 16
 
 export const ACCELERATOR = 1.5
 export const STEP_TIME = 20
+export const BUCKET_SIZE = 8
 
 export const IS_MOBILE = window.innerWidth <= 800 && window.innerHeight <= 600
 export const LONG_CLICK_DURATION = 200

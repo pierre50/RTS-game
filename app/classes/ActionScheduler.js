@@ -23,6 +23,11 @@ export class ActionScheduler {
     this._tasks.delete(id)
   }
 
+  update(id, intervalMs) {
+    const task = this._tasks.get(id)
+    if (task) task.interval = intervalMs
+  }
+
   _tick(deltaMS) {
     if (this._getPaused()) return
     this._toRemove.length = 0

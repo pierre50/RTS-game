@@ -27,7 +27,7 @@ export class Projectile extends Container {
     this.y = this.owner.y - this.owner.sprite.height / 2
     const { x: targetX, y: targetY } = this.destination || this.target
 
-    this.owner.visible &&
+    this.context.controls.instanceInCamera(this) &&
       this.sounds.start &&
       sound.play(Array.isArray(this.sounds.start) ? randomItem(this.sounds.start) : this.sounds.start)
 

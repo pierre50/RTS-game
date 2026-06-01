@@ -243,6 +243,7 @@ export class Building extends Container {
       this.finalTexture()
       this.onBuilt()
     }
+    map.addToInstanceBucket(this)
   }
 
   attackAction(target) {
@@ -342,7 +343,7 @@ export class Building extends Container {
     } else if (percentage >= 100) {
       this.finalTexture()
       if (!this.isBuilt) {
-        if (this.owner.isPlayed && this.sounds && this.sounds.create) {
+        if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceInCamera(this)) {
           sound.play(this.sounds.create)
         }
         this.onBuilt()
@@ -513,6 +514,7 @@ export class Building extends Container {
     clearTimeout(this.visibilityTimeout)
     this.stopInterval()
     this.isDead = true
+    map.removeFromInstanceBucket(this)
     if (this.selected && player) {
       player.unselectAll()
     }

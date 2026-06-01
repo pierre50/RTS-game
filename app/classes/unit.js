@@ -109,6 +109,7 @@ export class Unit extends Container {
       this.currentCell.place(this)
       this.currentCell.solid = true
       this.owner.units.push(this)
+      map.addToInstanceBucket(this)
     }
     switch (this.type) {
       case UNIT_TYPES.villager:
@@ -131,7 +132,7 @@ export class Unit extends Container {
       }
     }
 
-    if (this.owner.isPlayed && map.ready) {
+    if (this.owner.isPlayed && map.ready && this.context.controls.instanceInCamera(this)) {
       sound.play((this.sounds && this.sounds.create) || 5144)
     }
 
@@ -487,7 +488,7 @@ export class Unit extends Container {
         this.loading++
         this.loadingType = loadingType
         this.updateInterfaceLoading()
-        if (soundId) this.visible && sound.play(soundId)
+        if (soundId) this.context.controls.instanceInCamera(this) && sound.play(soundId)
         if (updateTexture) this.dest.updateTexture()
         this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
         if (this.dest.selected && (!checkOwner || this.owner.isPlayed)) {
@@ -564,7 +565,7 @@ export class Unit extends Container {
             this.loadingType = LOADING_TYPES.wheat
             this.updateInterfaceLoading()
 
-            this.visible && sound.play('5178')
+            this.context.controls.instanceInCamera(this) && sound.play('5178')
             this.dest.quantity = Math.max(this.dest.quantity - 1, 0)
             if (this.dest.selected) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, this.dest.quantity)
@@ -607,7 +608,7 @@ export class Unit extends Container {
               return
             }
 
-            this.visible && sound.play('5048')
+            this.context.controls.instanceInCamera(this) && sound.play('5048')
 
             // Tree destination is still alive we cut him until it's dead
             if (this.dest.hitPoints > 0) {
@@ -677,7 +678,7 @@ export class Unit extends Container {
               return
             }
             if (this.dest.hitPoints < this.dest.totalHitPoints) {
-              this.visible && sound.play('5107')
+              this.context.controls.instanceInCamera(this) && sound.play('5107')
               this.dest.hitPoints = Math.min(
                 Math.round(this.dest.hitPoints + this.dest.totalHitPoints / this.dest.constructionTime),
                 this.dest.totalHitPoints
@@ -770,7 +771,7 @@ export class Unit extends Container {
                 return
               }
               if (this.sounds && this.sounds.hit) {
-                this.visible &&
+                this.context.controls.instanceInCamera(this) &&
                   sound.play(Array.isArray(this.sounds.hit) ? randomItem(this.sounds.hit) : this.sounds.hit)
               }
               if (this.dest.hitPoints > 0) {
@@ -836,7 +837,7 @@ export class Unit extends Container {
         this.startGathering(LOADING_TYPES.fish, null, { checkOwner: true })
         if (this.category !== 'Boat') {
           onSpriteLoopAtFrame(this.sprite, 6, () => {
-            this.visible && sound.play('5125')
+            this.context.controls.instanceInCamera(this) && sound.play('5125')
           })
         }
         break
@@ -1065,6 +1066,7 @@ export class Unit extends Container {
     }
 
     if (instancesDistance(this, nextCell, false) <= this.speed) {
+      const oldI = this.i, oldJ = this.j
       this.z = nextCell.z
       this.i = nextCell.i
       this.j = nextCell.j
@@ -1078,6 +1080,7 @@ export class Unit extends Container {
         this.currentCell.place(this)
         this.currentCell.solid = true
       }
+      map.updateInstanceBucket(this, oldI, oldJ)
       updateInstanceVisibility(this)
       this.path.pop()
 
@@ -1260,7 +1263,7 @@ export class Unit extends Container {
 
     this.sounds &&
       this.sounds.die &&
-      this.visible &&
+      this.context.controls.instanceInCamera(this) &&
       sound.play(Array.isArray(this.sounds.die) ? randomItem(this.sounds.die) : this.sounds.die)
 
     this.stopInterval()
@@ -1276,6 +1279,7 @@ export class Unit extends Container {
     this.action = null
     this.eventMode = 'none'
     this.isDead = true
+    this.context.map.removeFromInstanceBucket(this)
     this.unselect()
     if (this.owner) {
       this.owner.population--

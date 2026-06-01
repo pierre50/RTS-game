@@ -1,4 +1,4 @@
-import { ACCELERATOR, FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
+import { ACCELERATOR, BUCKET_SIZE, FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree, cellIsDiag } from './maths'
 
 /**
@@ -286,24 +286,24 @@ export function getZoneInGridWithCondition(zone, grid, size, condition) {
  * @returns {Array} - List of instances that are within the sight range and match the condition.
  */
 export function findInstancesInSight(instance, condition) {
-  const {
-    i: instX,
-    j: instY,
-    sight,
-    parent: { grid },
-  } = instance
-  let instances = []
+  const { i: instX, j: instY, sight, context: { map } } = instance
+  const { instanceBuckets } = map
+  if (!instanceBuckets) return []
 
-  for (let x = Math.max(instX - sight, 0); x <= Math.min(instX + sight, grid.length - 1); x++) {
-    for (let y = Math.max(instY - sight, 0); y <= Math.min(instY + sight, grid[x].length - 1); y++) {
-      // Check if the cell is within the instance's sight range (squared to avoid sqrt)
-      const dx = x - instX, dy = y - instY
-      if (dx * dx + dy * dy <= sight * sight) {
-        const cell = grid[x][y]
+  const sightSq = sight * sight
+  const instances = []
 
-        // Ensure the cell has an instance and the condition is met
-        if (cell?.has && typeof condition === 'function' && condition(cell.has)) {
-          instances.push(cell.has)
+  const minBi = Math.max(Math.floor((instX - sight) / BUCKET_SIZE), 0)
+  const maxBi = Math.min(Math.floor((instX + sight) / BUCKET_SIZE), instanceBuckets.length - 1)
+  const minBj = Math.max(Math.floor((instY - sight) / BUCKET_SIZE), 0)
+  const maxBj = Math.min(Math.floor((instY + sight) / BUCKET_SIZE), instanceBuckets[0].length - 1)
+
+  for (let bi = minBi; bi <= maxBi; bi++) {
+    for (let bj = minBj; bj <= maxBj; bj++) {
+      for (const target of instanceBuckets[bi][bj]) {
+        const dx = target.i - instX, dy = target.j - instY
+        if (dx * dx + dy * dy <= sightSq && condition(target)) {
+          instances.push(target)
         }
       }
     }
