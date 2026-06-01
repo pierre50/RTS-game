@@ -70,14 +70,13 @@ export class Cell extends Container {
 
   _updateChild(instance) {
     const { map, player } = this.context
-    if (
+    const isInPlayerSight = instanceIsInPlayerSight(instance, player)
+    instance.visible =
       map.revealEverything ||
-      !instance.owner ||
-      instance.owner.isPlayed ||
-      instanceIsInPlayerSight(instance, player)
-    ) {
-      instance.visible = true
-    }
+      instance.owner?.isPlayed ||
+      isInPlayerSight ||
+      instance.family === FAMILY_TYPES.resource ||
+      (!map.revealTerrain && !instance.owner)
   }
 
   updateVisible() {

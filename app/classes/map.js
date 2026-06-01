@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite, RenderTexture, Matrix, Graphics } from 'pixi.js'
+import { Container, Assets, Sprite, RenderTexture, Matrix, Graphics, TilingSprite } from 'pixi.js'
 import { Resource } from './resource'
 import { Human, AI, Gaia } from './players'
 import {
@@ -9,10 +9,11 @@ import {
   getCellsAroundPoint,
   colors,
   updateInstanceVisibility,
+  cartesianToIsometric,
 } from '../lib'
 import { BUCKET_SIZE, BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { Cell } from './cell'
-import { getFogTexture, getDarknessTexture, _DW, _DH, _DAX, _DAY } from './cell/CellFog'
+import { _DW, _DH, getFogPatternTexture } from './cell/CellFog'
 
 /**
  * 
@@ -131,8 +132,9 @@ export default class Map extends Container {
     }
     this.resources = new Set(resources.map(resource => this.addChild(new Resource(resource, this.context))))
 
-    this.formatCellsRelief()
     this.formatCellsWaterBorder()
+    this.clampReliefAroundWater()
+    this.formatCellsRelief()
     this.formatCellsDesert()
 
     if (!this.revealEverything) {
@@ -855,18 +857,72 @@ export default class Map extends Container {
     const scale = 3 / this.size
     const n = this.size + 1
 
-    // BFS from water cells to compute distance-to-water for every cell.
-    // This caps the maximum relief level: a cell N steps from water can be at most N-1.
-    const dist = new Int16Array(n * n).fill(9999)
-    const queue = []
+    const dist = this.getReliefCoastDistances()
+
+    // Precompute fBm heightmap
+    const reliefH = new Float32Array(n * n)
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
-        if (this.grid[i][j].category === 'Water') {
+        reliefH[i * n + j] = fbm(i * scale, j * scale)
+      }
+    }
+
+    // Apply relief from highest level to lowest.
+    // maxAllowed keeps beach cells and a few inland rings flat before slopes start.
+    const levelThresholds = [0, 0.66, 0.78, 0.86]
+    for (let targetLevel = 3; targetLevel >= 1; targetLevel--) {
+      const threshold = levelThresholds[targetLevel]
+      for (let i = 0; i <= this.size; i++) {
+        for (let j = 0; j <= this.size; j++) {
+          const cell = this.grid[i][j]
+          if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
+          const maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
+          const actual = Math.min(targetLevel, maxAllowed)
+          if (reliefH[i * n + j] > threshold && actual > cell.z) {
+            cell.setCellLevel(actual)
+          }
+        }
+      }
+    }
+
+    this.clampReliefAroundWater(dist)
+
+    // Remove isolated z=1 bumps (direct reset, no propagation)
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        if (cell.z === 1) {
+          let cpt = 0
+          getCellsAroundPoint(i, j, this.grid, 1, c => { if (c.z > 0) cpt++ })
+          if (cpt < 3) this.setCellReliefLevelDirect(cell, 0)
+        }
+      }
+    }
+
+    // Fill gaps between close elevated cells
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        this.grid[i][j].fillReliefCellsAroundCell()
+      }
+    }
+    this.clampReliefAroundWater(dist)
+  }
+
+  getReliefCoastDistances() {
+    const n = this.size + 1
+    const dist = new Int16Array(n * n).fill(9999)
+    const queue = []
+
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        if (cell.category === 'Water' || cell.waterBorder) {
           dist[i * n + j] = 0
           queue.push(i * n + j)
         }
       }
     }
+
     for (let qi = 0; qi < queue.length; qi++) {
       const idx = queue[qi]
       const ci = Math.floor(idx / n), cj = idx % n
@@ -882,67 +938,27 @@ export default class Map extends Container {
       }
     }
 
-    // Precompute fBm heightmap
-    const reliefH = new Float32Array(n * n)
-    for (let i = 0; i <= this.size; i++) {
-      for (let j = 0; j <= this.size; j++) {
-        reliefH[i * n + j] = fbm(i * scale, j * scale)
-      }
-    }
+    return dist
+  }
 
-    // Helper: directly set a cell's z level and adjust its y position accordingly.
-    // Unlike setCellLevel(), this does NOT propagate to neighbours.
-    const setLevelDirect = (cell, level) => {
-      const delta = level - cell.z
-      if (delta === 0) return
-      cell.y -= delta * CELL_DEPTH
-      cell.z = level
-    }
+  getMaxReliefLevelFromCoastDistance(distance) {
+    return Math.max(0, distance - 3)
+  }
 
-    // Apply relief from highest level to lowest.
-    // maxAllowed = dist - 1 ensures terrain always steps down to 0 before water.
-    const levelThresholds = [0, 0.66, 0.78, 0.86]
-    for (let targetLevel = 3; targetLevel >= 1; targetLevel--) {
-      const threshold = levelThresholds[targetLevel]
-      for (let i = 0; i <= this.size; i++) {
-        for (let j = 0; j <= this.size; j++) {
-          const cell = this.grid[i][j]
-          if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
-          const maxAllowed = Math.max(0, dist[i * n + j] - 1)
-          const actual = Math.min(targetLevel, maxAllowed)
-          if (reliefH[i * n + j] > threshold && actual > cell.z) {
-            cell.setCellLevel(actual)
-          }
-        }
-      }
-    }
+  setCellReliefLevelDirect(cell, level) {
+    const delta = level - cell.z
+    if (delta === 0) return
+    cell.y -= delta * CELL_DEPTH
+    cell.z = level
+  }
 
-    // Hard constraint: directly clamp any cell that setCellLevel propagation raised
-    // beyond its allowed level. Use setLevelDirect to avoid further propagation.
+  clampReliefAroundWater(dist = this.getReliefCoastDistances()) {
+    const n = this.size + 1
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
-        const maxAllowed = Math.max(0, dist[i * n + j] - 1)
-        if (cell.z > maxAllowed) setLevelDirect(cell, maxAllowed)
-      }
-    }
-
-    // Remove isolated z=1 bumps (direct reset, no propagation)
-    for (let i = 0; i <= this.size; i++) {
-      for (let j = 0; j <= this.size; j++) {
-        const cell = this.grid[i][j]
-        if (cell.z === 1) {
-          let cpt = 0
-          getCellsAroundPoint(i, j, this.grid, 1, c => { if (c.z > 0) cpt++ })
-          if (cpt < 3) setLevelDirect(cell, 0)
-        }
-      }
-    }
-
-    // Fill gaps between close elevated cells
-    for (let i = 0; i <= this.size; i++) {
-      for (let j = 0; j <= this.size; j++) {
-        this.grid[i][j].fillReliefCellsAroundCell()
+        const maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
+        if (cell.z > maxAllowed) this.setCellReliefLevelDirect(cell, maxAllowed)
       }
     }
   }
@@ -951,6 +967,7 @@ export default class Map extends Container {
     for (let i = 0; i <= this.size; i++) {
       for (let j = 0; j <= this.size; j++) {
         const cell = this.grid[i][j]
+        if (cell.category === 'Water' || cell.waterBorder) continue
         // Side
         if (
           this.grid[i - 1] &&
@@ -1225,13 +1242,7 @@ export default class Map extends Container {
     if (!renderer) return
 
     // Full isometric pixel bounds of the map (with margin for sprite overflow)
-    const margin = CELL_WIDTH
-    const minX = -this.size * (CELL_WIDTH / 2) - margin
-    const minY = -margin
-    const maxX = this.size * (CELL_WIDTH / 2) + margin
-    const maxY = this.size * CELL_HEIGHT + margin
-    const totalW = maxX - minX
-    const totalH = maxY - minY
+    const { minX, minY, maxX, maxY, totalW, totalH } = this._getFogMapBounds()
 
     // Cap chunk size at 4096 for broad GPU compatibility
     const gl = renderer.gl
@@ -1333,30 +1344,56 @@ export default class Map extends Container {
         const cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW)
         const cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH)
 
-        const rt = RenderTexture.create({ width: cW, height: cH })
+        const darknessRt = RenderTexture.create({ width: cW, height: cH })
+        const fogRt = RenderTexture.create({ width: cW, height: cH })
+        const edgeRt = RenderTexture.create({ width: cW, height: cH })
+        const emptyC = new Container()
+        renderer.render({ container: emptyC, target: darknessRt, clear: true })
+        renderer.render({ container: emptyC, target: fogRt, clear: true })
+        renderer.render({ container: emptyC, target: edgeRt, clear: true })
+        emptyC.destroy()
 
-        if (this.revealTerrain) {
-          // Start transparent — dotted fog pattern is drawn per-cell via _flushFogQueue
-          // (drawing dots on black = still black; needs transparent base to show through)
-          const emptyC = new Container()
-          renderer.render({ container: emptyC, target: rt, clear: true })
-          emptyC.destroy()
-        } else {
-          // Normal mode: solid black, cells are erased as they become visible
+        const pattern = this._createFogPatternSprite(cMinX, cMinY, cW, cH)
+        renderer.render({ container: pattern, target: fogRt, clear: false })
+        pattern.destroy()
+
+        if (!this.revealTerrain) {
           const blackG = new Graphics()
-          blackG.rect(0, 0, cW, cH).fill({ color: 0x000000 })
-          renderer.render({ container: blackG, target: rt, clear: true })
+          blackG.rect(cMinX, cMinY, cW, cH).fill({ color: 0x000000 })
+          renderer.render({ container: blackG, target: darknessRt, transform: new Matrix().translate(-cMinX, -cMinY), clear: false })
           blackG.destroy()
         }
 
-        const sprite = new Sprite(rt)
-        sprite.x = cMinX
-        sprite.y = cMinY
-        sprite.zIndex = 1
-        sprite.eventMode = 'none'
-        this.fogLayer.addChild(sprite)
+        const darknessSprite = new Sprite(darknessRt)
+        darknessSprite.x = cMinX
+        darknessSprite.y = cMinY
+        darknessSprite.zIndex = 1
+        darknessSprite.eventMode = 'none'
+        this.fogLayer.addChild(darknessSprite)
 
-        this._fogChunks.push({ rt, minX: cMinX, minY: cMinY, w: cW, h: cH })
+        const fogSprite = new Sprite(fogRt)
+        fogSprite.x = cMinX
+        fogSprite.y = cMinY
+        fogSprite.zIndex = 2
+        fogSprite.eventMode = 'none'
+        this.fogLayer.addChild(fogSprite)
+
+        const edgeSprite = new Sprite(edgeRt)
+        edgeSprite.x = cMinX
+        edgeSprite.y = cMinY
+        edgeSprite.zIndex = 3
+        edgeSprite.eventMode = 'none'
+        this.fogLayer.addChild(edgeSprite)
+
+        this._fogChunks.push({
+          darknessRt,
+          fogRt,
+          edgeRt,
+          minX: cMinX,
+          minY: cMinY,
+          w: cW,
+          h: cH,
+        })
       }
     }
 
@@ -1371,14 +1408,197 @@ export default class Map extends Container {
     this.context.app.ticker.add(this._fogTickerCb)
   }
 
-  _getFogChunkFor(x, y) {
-    const { _fogBounds, _fogChunks } = this
-    if (!_fogBounds || !_fogChunks) return null
-    const { minX, minY, chunksX, chunksY, chunkW, chunkH } = _fogBounds
-    const cx = Math.min(Math.floor((x - minX) / chunkW), chunksX - 1)
-    const cy = Math.min(Math.floor((y - minY) / chunkH), chunksY - 1)
-    const idx = cy + cx * chunksY
-    return _fogChunks[idx] ?? null
+  _createFogPatternSprite(x, y, width, height) {
+    const pattern = new TilingSprite({
+      texture: getFogPatternTexture(),
+      width: Math.ceil(width),
+      height: Math.ceil(height),
+    })
+    pattern.x = 0
+    pattern.y = 0
+    pattern.tilePosition.set(-Math.floor(x), -Math.floor(y))
+    pattern.eventMode = 'none'
+    return pattern
+  }
+
+  _getFogMapBounds() {
+    if (!this.grid.length) {
+      const margin = CELL_WIDTH + CELL_DEPTH * 4
+      const minX = -this.size * (CELL_WIDTH / 2) - margin
+      const minY = -margin
+      const maxX = this.size * (CELL_WIDTH / 2) + margin
+      const maxY = this.size * CELL_HEIGHT + margin
+      return { minX, minY, maxX, maxY, totalW: maxX - minX, totalH: maxY - minY }
+    }
+
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i]?.[j]
+        if (!cell) continue
+        const bounds = this._getFogCellBounds(cell)
+        minX = Math.min(minX, bounds.minX)
+        minY = Math.min(minY, bounds.minY)
+        maxX = Math.max(maxX, bounds.maxX)
+        maxY = Math.max(maxY, bounds.maxY)
+      }
+    }
+
+    const margin = CELL_DEPTH
+    minX -= margin
+    minY -= margin
+    maxX += margin
+    maxY += margin
+    return { minX, minY, maxX, maxY, totalW: maxX - minX, totalH: maxY - minY }
+  }
+
+  _getFogCellBounds(cell) {
+    const hw = _DW / 2
+    const hh = _DH / 2
+    const [cx, cy] = this._getFogCellCenter(cell)
+    return {
+      minX: cx - hw,
+      minY: cy - hh,
+      maxX: cx + hw,
+      maxY: cy + hh,
+    }
+  }
+
+  _getFogChunksForCell(cell) {
+    const bounds = this._getFogCellBounds(cell)
+    return this._fogChunks.filter(chunk =>
+      bounds.maxX >= chunk.minX &&
+      bounds.minX <= chunk.minX + chunk.w &&
+      bounds.maxY >= chunk.minY &&
+      bounds.minY <= chunk.minY + chunk.h
+    )
+  }
+
+  _drawFogCellShape(graphics, cell) {
+    const [top, right, bottom, left] = this._getFogCellPoints(cell)
+    graphics.poly([top.x, top.y, right.x, right.y, bottom.x, bottom.y, left.x, left.y])
+  }
+
+  _getFogCellOpenSides(cell) {
+    const { grid } = this
+    const [top, right, bottom, left] = this._getFogCellPoints(cell)
+    const sides = []
+    const addSide = (neighbor, from, to) => {
+      if (neighbor && !neighbor._hasFog) return
+      sides.push({ from, to })
+    }
+
+    addSide(grid[cell.i - 1]?.[cell.j], left, top)
+    addSide(grid[cell.i]?.[cell.j - 1], top, right)
+    addSide(grid[cell.i + 1]?.[cell.j], right, bottom)
+    addSide(grid[cell.i]?.[cell.j + 1], bottom, left)
+    return sides
+  }
+
+  _signedDistanceToFogSide(point, from, to, cell) {
+    const edgeX = to.x - from.x
+    const edgeY = to.y - from.y
+    const len = Math.hypot(edgeX, edgeY)
+    if (len === 0) return 0
+    const [cx, cy] = this._getFogCellCenter(cell)
+    const pointCross = edgeX * (point.y - from.y) - edgeY * (point.x - from.x)
+    const cellCross = edgeX * (cy - from.y) - edgeY * (cx - from.x)
+    return pointCross * Math.sign(cellCross || 1) / len
+  }
+
+  _clipFogErasePolygonBySide(points, from, to, cell, inset) {
+    const clipped = []
+    const isInside = point => this._signedDistanceToFogSide(point, from, to, cell) >= inset
+    const intersection = (a, b) => {
+      const da = this._signedDistanceToFogSide(a, from, to, cell) - inset
+      const db = this._signedDistanceToFogSide(b, from, to, cell) - inset
+      const t = da / (da - db)
+      return {
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+      }
+    }
+
+    for (let i = 0; i < points.length; i++) {
+      const current = points[i]
+      const previous = points[(i + points.length - 1) % points.length]
+      const currentInside = isInside(current)
+      const previousInside = isInside(previous)
+
+      if (currentInside) {
+        if (!previousInside) clipped.push(intersection(previous, current))
+        clipped.push(current)
+      } else if (previousInside) {
+        clipped.push(intersection(previous, current))
+      }
+    }
+
+    return clipped
+  }
+
+  _drawFogEraseCellShape(graphics, cell, inset = 5) {
+    let points = this._getFogCellPoints(cell)
+    for (const { from, to } of this._getFogCellOpenSides(cell)) {
+      points = this._clipFogErasePolygonBySide(points, from, to, cell, inset)
+      if (points.length < 3) return
+    }
+    graphics.poly(points.flatMap(point => [point.x, point.y]))
+  }
+
+  _getFogEraseRefreshCells(cell) {
+    const { grid } = this
+    return [
+      cell,
+      grid[cell.i - 1]?.[cell.j],
+      grid[cell.i]?.[cell.j - 1],
+      grid[cell.i + 1]?.[cell.j],
+      grid[cell.i]?.[cell.j + 1],
+    ].filter(refreshCell => refreshCell && !refreshCell._hasFog)
+  }
+
+  _getFogCellCenter(cell) {
+    return cartesianToIsometric(cell.i, cell.j)
+  }
+
+  _getFogCellPoints(cell) {
+    const hw = _DW / 2
+    const hh = _DH / 2
+    const [cx, cy] = this._getFogCellCenter(cell)
+    return [
+      { x: cx, y: cy - hh },
+      { x: cx + hw, y: cy },
+      { x: cx, y: cy + hh },
+      { x: cx - hw, y: cy },
+    ]
+  }
+
+  _redrawFogEdgesInChunk(renderer, chunk) {
+    const emptyC = new Container()
+    renderer.render({ container: emptyC, target: chunk.edgeRt, clear: true })
+    emptyC.destroy()
+  }
+
+  _drawVisibleCellsInChunk(graphics, chunk) {
+    const maxX = chunk.minX + chunk.w
+    const maxY = chunk.minY + chunk.h
+    for (let i = 0; i <= this.size; i++) {
+      for (let j = 0; j <= this.size; j++) {
+        const cell = this.grid[i][j]
+        if (cell._hasFog) continue
+        const bounds = this._getFogCellBounds(cell)
+        if (
+          bounds.maxX >= chunk.minX &&
+          bounds.minX <= maxX &&
+          bounds.maxY >= chunk.minY &&
+          bounds.minY <= maxY
+        ) {
+          this._drawFogEraseCellShape(graphics, cell)
+        }
+      }
+    }
   }
 
   _flushFogQueue() {
@@ -1386,49 +1606,91 @@ export default class Map extends Container {
     const renderer = this.context.app?.renderer
     if (!renderer) return
 
-    // Group updates by chunk
     const chunkUpdates = new globalThis.Map()
+    const addChunkUpdate = (cell, state) => {
+      const chunks = this._getFogChunksForCell(cell)
+      for (const chunk of chunks) {
+        if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, [])
+        chunkUpdates.get(chunk).push({ cell, state })
+      }
+    }
+
     for (const [cell, state] of this._fogQueue) {
-      const chunk = this._getFogChunkFor(cell.x, cell.y)
-      if (!chunk) continue
-      if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, [])
-      chunkUpdates.get(chunk).push({ cell, state })
+      addChunkUpdate(cell, state)
+      if (state === 'clear') {
+        for (const refreshCell of this._getFogEraseRefreshCells(cell)) {
+          if (refreshCell === cell) continue
+          addChunkUpdate(refreshCell, 'refreshFogErase')
+        }
+      }
     }
     this._fogQueue.clear()
 
-    const hw = _DW / 2
-    const hh = _DH / 2
-
     for (const [chunk, updates] of chunkUpdates) {
       const transform = new Matrix().translate(-chunk.minX, -chunk.minY)
-      const drawContainer = new Container()
-      const eraseContainer = new Container()
+      const darknessDraw = new Graphics()
+      const darknessErase = new Graphics()
+      const fogErase = new Graphics()
+      let hasDarknessDraw = false
+      let hasDarknessErase = false
+      let hasFogErase = false
+      let needsFogRestore = false
 
       for (const { cell, state } of updates) {
         if (state === 'clear') {
-          const g = new Graphics()
-          g.blendMode = 'erase'
-          const cx = cell.x, cy = cell.y
-          g.poly([cx, cy - hh, cx + hw, cy, cx, cy + hh, cx - hw, cy]).fill({ color: 0xffffff })
-          eraseContainer.addChild(g)
+          this._drawFogCellShape(darknessErase, cell)
+          this._drawFogEraseCellShape(fogErase, cell)
+          hasDarknessErase = true
+          hasFogErase = true
+        } else if (state === 'refreshFogErase') {
+          this._drawFogEraseCellShape(fogErase, cell)
+          hasFogErase = true
+        } else if (state === 'fogViewed') {
+          this._drawFogCellShape(darknessErase, cell)
+          hasDarknessErase = true
+          needsFogRestore = true
         } else {
-          const s = new Sprite(state === 'fogViewed' ? getFogTexture() : getDarknessTexture())
-          s.anchor.set(_DAX / _DW, _DAY / _DH)
-          s.x = cell.x
-          s.y = cell.y
-          drawContainer.addChild(s)
+          this._drawFogCellShape(darknessDraw, cell)
+          hasDarknessDraw = true
         }
       }
 
-      if (drawContainer.children.length) {
-        renderer.render({ container: drawContainer, target: chunk.rt, transform, clear: false })
+      if (hasDarknessDraw) {
+        darknessDraw.fill({ color: 0x000000 })
+        renderer.render({ container: darknessDraw, target: chunk.darknessRt, transform, clear: false })
       }
-      if (eraseContainer.children.length) {
-        renderer.render({ container: eraseContainer, target: chunk.rt, transform, clear: false })
+      if (hasDarknessErase) {
+        darknessErase.blendMode = 'erase'
+        darknessErase.fill({ color: 0xffffff })
+        const eraseContainer = new Container()
+        eraseContainer.addChild(darknessErase)
+        renderer.render({ container: eraseContainer, target: chunk.darknessRt, transform, clear: false })
+        eraseContainer.removeChildren()
+        eraseContainer.destroy()
       }
+      if (needsFogRestore) {
+        const pattern = this._createFogPatternSprite(chunk.minX, chunk.minY, chunk.w, chunk.h)
+        renderer.render({ container: pattern, target: chunk.fogRt, clear: false })
+        pattern.destroy()
+        this._drawVisibleCellsInChunk(fogErase, chunk)
+        hasFogErase = true
+      }
+      if (hasFogErase) {
+        fogErase.blendMode = 'erase'
+        fogErase.fill({ color: 0xffffff })
+        const eraseContainer = new Container()
+        eraseContainer.addChild(fogErase)
+        renderer.render({ container: eraseContainer, target: chunk.fogRt, transform, clear: false })
+        eraseContainer.removeChildren()
+        eraseContainer.destroy()
+      }
+      darknessDraw.destroy()
+      darknessErase.destroy()
+      fogErase.destroy()
+    }
 
-      drawContainer.destroy({ children: true })
-      eraseContainer.destroy({ children: true })
+    for (const chunk of this._fogChunks) {
+      this._redrawFogEdgesInChunk(renderer, chunk)
     }
   }
 }

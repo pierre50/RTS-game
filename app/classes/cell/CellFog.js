@@ -3,39 +3,12 @@ import { Assets } from 'pixi.js'
 import { getBuildingAsset, getTexture, changeSpriteColorDirectly, instanceIsInPlayerSight } from '../../lib'
 import { COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 
-// Which side to show per cardinal neighbor (di, dj)
-const NEIGHBOR_SIDES = {
-  '-1,0': 'NW',
-  '0,-1': 'NE',
-  '0,1':  'SW',
-  '1,0':  'SE',
-}
-
-// Inner-corner: diagonal neighbor in fog, both shared cardinals visible
-const CORNER_DATA = {
-  '-1,-1': { corner: 'N', adj: [[-1, 0], [0, -1]] },
-  '1,-1':  { corner: 'E', adj: [[0, -1], [1, 0]] },
-  '1,1':   { corner: 'S', adj: [[1, 0], [0, 1]] },
-  '-1,1':  { corner: 'W', adj: [[0, 1], [-1, 0]] },
-}
-
-const _NEIGHBOR_LIST = Object.entries(NEIGHBOR_SIDES).map(([k, side]) => {
-  const [di, dj] = k.split(',').map(Number)
-  return { di, dj, side }
-})
-const _CORNER_LIST = Object.entries(CORNER_DATA).map(([k, { corner, adj }]) => {
-  const [di, dj] = k.split(',').map(Number)
-  return { di, dj, corner, adj }
-})
-
-const _ditherTextures = {}
 let _fogTexture = null
 let _darknessTexture = null
+let _fogPatternTexture = null
 
 export const _DW = 64
 export const _DH = 32
-export const _DAX = 32
-export const _DAY = 16
 
 function _insideDiamond(px, py) {
   return (
@@ -64,6 +37,19 @@ export function getFogTexture() {
   return _fogTexture
 }
 
+export function getFogPatternTexture() {
+  if (_fogPatternTexture) return _fogPatternTexture
+  const canvas = document.createElement('canvas')
+  canvas.width = 2
+  canvas.height = 2
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#000'
+  ctx.fillRect(0, 0, 1, 1)
+  ctx.fillRect(1, 1, 1, 1)
+  _fogPatternTexture = Texture.from(canvas)
+  return _fogPatternTexture
+}
+
 // Solid black diamond for cells never explored
 export function getDarknessTexture() {
   if (_darknessTexture) return _darknessTexture
@@ -81,51 +67,6 @@ export function getDarknessTexture() {
   return _darknessTexture
 }
 
-function getDitherTexture(sides, corners = new Set()) {
-  const sidesKey = ['NW', 'NE', 'SE', 'SW'].filter(s => sides.has(s)).join('|')
-  const cornersKey = ['N', 'E', 'S', 'W'].filter(c => corners.has(c)).join('|')
-  if (!sidesKey && !cornersKey) return null
-  const key = sidesKey + (cornersKey ? '|C:' + cornersKey : '')
-  if (_ditherTextures[key]) return _ditherTextures[key]
-
-  const canvas = document.createElement('canvas')
-  canvas.width = _DW
-  canvas.height = _DH
-  const ctx = canvas.getContext('2d')
-  const K = 10
-
-  for (let px = 0; px < _DW; px++) {
-    for (let py = 0; py < _DH; py++) {
-      if (!_insideDiamond(px, py)) continue
-
-      const dNW = (px + 2 * py) - 32
-      const dNE = 32 - (px - 2 * py)
-      const dSE = 96 - (px + 2 * py)
-      const dSW = (px - 2 * py) + 32
-
-      let inBand = false
-      if (sides.has('NW') && !inBand && dNW >= 0 && dNW <= K) inBand = true
-      if (sides.has('NE') && !inBand && dNE >= 0 && dNE <= K) inBand = true
-      if (sides.has('SE') && !inBand && dSE >= 0 && dSE <= K) inBand = true
-      if (sides.has('SW') && !inBand && dSW >= 0 && dSW <= K) inBand = true
-
-      if (corners.has('N') && !inBand && dNW >= 0 && dNW <= K && dNE >= 0 && dNE <= K) inBand = true
-      if (corners.has('E') && !inBand && dNE >= 0 && dNE <= K && dSE >= 0 && dSE <= K) inBand = true
-      if (corners.has('S') && !inBand && dSE >= 0 && dSE <= K && dSW >= 0 && dSW <= K) inBand = true
-      if (corners.has('W') && !inBand && dSW >= 0 && dSW <= K && dNW >= 0 && dNW <= K) inBand = true
-
-      if (!inBand) continue
-      if ((px + py) % 2 !== 0) continue
-
-      ctx.fillStyle = '#000'
-      ctx.fillRect(px, py, 1, 1)
-    }
-  }
-
-  _ditherTextures[key] = Texture.from(canvas)
-  return _ditherTextures[key]
-}
-
 export class CellFog {
   constructor(cell) {
     this.cell = cell
@@ -133,6 +74,8 @@ export class CellFog {
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
     const { cell } = this
+    if (cell.context.map.revealTerrain && !cell.context.map.revealEverything) return
+
     const fogLayer = cell.context.map.fogLayer
     const addToLayer = sp => {
       sp.x = cell.x
@@ -177,9 +120,11 @@ export class CellFog {
     if (!instanceIsInPlayerSight(instance, player)) {
       if (instance.owner && !instance.owner.isPlayed) {
         if (!init && instance.family === FAMILY_TYPES.building) {
-          const assets = getBuildingAsset(instance.type, instance.owner, Assets)
-          const localCell = map.grid[instance.i][instance.j]
-          localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)
+          if (!map.revealTerrain) {
+            const assets = getBuildingAsset(instance.type, instance.owner, Assets)
+            const localCell = map.grid[instance.i][instance.j]
+            localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)
+          }
         }
         instance.visible = false
       }
@@ -201,58 +146,13 @@ export class CellFog {
 
   _updateEdgeDither() {
     const { cell } = this
-    const needed = new Set()
-    const neededCorners = new Set()
-
-    if (cell.visible && cell.viewBy.size > 0 && !cell._hasFog) {
-      const { grid } = cell.context.map
-      for (const { di, dj, side } of _NEIGHBOR_LIST) {
-        const n = grid[cell.i + di]?.[cell.j + dj]
-        if (!n || n._hasFog) needed.add(side)
-      }
-      for (const { di, dj, corner, adj } of _CORNER_LIST) {
-        const diag = grid[cell.i + di]?.[cell.j + dj]
-        if (!diag || diag._hasFog) {
-          const bothVisible = adj.every(([cdi, cdj]) => {
-            const cn = grid[cell.i + cdi]?.[cell.j + cdj]
-            return cn && !cn._hasFog
-          })
-          if (bothVisible) neededCorners.add(corner)
-        }
-      }
-    }
-
-    // Compute key and skip update if nothing changed
-    const sidesKey = ['NW', 'NE', 'SE', 'SW'].filter(s => needed.has(s)).join('|')
-    const cornersKey = ['N', 'E', 'S', 'W'].filter(c => neededCorners.has(c)).join('|')
-    const ditherKey = sidesKey + (cornersKey ? '|C:' + cornersKey : '')
-    if (cell._ditherKey === ditherKey) return
-    cell._ditherKey = ditherKey
-
     const fogLayer = cell.context.map.fogLayer
-    if (!fogLayer) return
-    if (needed.size > 0 || neededCorners.size > 0) {
-      const texture = getDitherTexture(needed, neededCorners)
-      if (!cell._ditherSprite) {
-        cell._ditherSprite = new Sprite(texture)
-        cell._ditherSprite.label = LABEL_TYPES.dither
-        cell._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH)
-        cell._ditherSprite.eventMode = 'none'
-        cell._ditherSprite.cullable = true
-        cell._ditherSprite.zIndex = 2
-        cell._ditherSprite.x = cell.x
-        cell._ditherSprite.y = cell.y
-        fogLayer.addChild(cell._ditherSprite)
-      } else {
-        cell._ditherSprite.texture = texture
-      }
-    } else {
-      if (cell._ditherSprite) {
-        fogLayer.removeChild(cell._ditherSprite)
-        cell._ditherSprite.destroy()
-        cell._ditherSprite = null
-      }
+    if (cell._ditherSprite) {
+      if (fogLayer) fogLayer.removeChild(cell._ditherSprite)
+      cell._ditherSprite.destroy()
+      cell._ditherSprite = null
     }
+    cell._ditherKey = null
   }
 
   setFog(init) {

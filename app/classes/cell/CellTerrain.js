@@ -107,7 +107,13 @@ export class CellTerrain {
         if (grid[neighbor.i + velX] && grid[neighbor.i + velX][neighbor.j + velY]) {
           const target = grid[neighbor.i + velX][neighbor.j + velY]
           const aside = grid[cell.i + neighbor.i - target.i][cell.j + neighbor.j - target.j]
-          if (target.z <= cell.z && target.z !== cell.z && aside.z !== cell.z) {
+          if (
+            target.category !== 'Water' &&
+            !target.waterBorder &&
+            target.z <= cell.z &&
+            target.z !== cell.z &&
+            aside.z !== cell.z
+          ) {
             if (Math.floor(dist) === 2) {
               target.setCellLevel(target.z + 1)
             }
