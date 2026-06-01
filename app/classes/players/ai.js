@@ -33,9 +33,9 @@ export class AI extends Player {
     this.foundedEnemyUnits = new Set()
     this.difficulty = props.difficulty || 'medium'
     const _difficulties = {
-      easy:   { stepDelayBase: 6000, popCapMultiplier: 0.7, attackThreshold: 8,  defenderRatio: 0.5 },
-      medium: { stepDelayBase: 4000, popCapMultiplier: 1.0, attackThreshold: 5,  defenderRatio: 0.3 },
-      hard:   { stepDelayBase: 2500, popCapMultiplier: 1.3, attackThreshold: 3,  defenderRatio: 0.2 },
+      easy:   { stepDelayBase: 6000, popCapMultiplier: 0.7, attackThreshold: 8, defenderRatio: 0.5, econToMilVillagers: 16, raidThreshold: 0, raidSize: 0 },
+      medium: { stepDelayBase: 4000, popCapMultiplier: 1.0, attackThreshold: 5, defenderRatio: 0.3, econToMilVillagers: 12, raidThreshold: 0, raidSize: 0 },
+      hard:   { stepDelayBase: 2500, popCapMultiplier: 1.3, attackThreshold: 3, defenderRatio: 0.2, econToMilVillagers: 8,  raidThreshold: 4, raidSize: 3 },
     }
     this.difficultyConfig = _difficulties[this.difficulty] || _difficulties.medium
     this.stepDelay = this.difficultyConfig.stepDelayBase
@@ -45,6 +45,7 @@ export class AI extends Player {
     this.selectedBuilding = null
     this.selectedOther = null
     this.scout = null
+    this.phase = 'economy' // economy | military_build | attack
 
     this.nextAge = {
       1: 'ToolAge',
@@ -98,6 +99,7 @@ export class AI extends Player {
         Market: 1,
         ArcheryRange: 1,
         Stable: 1,
+        WatchTower: 2,
       },
       2: {
         StoragePit: 3,
@@ -108,6 +110,8 @@ export class AI extends Player {
         ArcheryRange: 1,
         Stable: 1,
         Academy: 1,
+        WatchTower: 3,
+        SentryTower: 2,
       },
       3: {
         StoragePit: 4,
@@ -118,6 +122,8 @@ export class AI extends Player {
         ArcheryRange: 2,
         Stable: 1,
         Academy: 1,
+        WatchTower: 3,
+        SentryTower: 3,
       },
     }
     this.maxInfantryByAge = { 0: 8, 1: 8,  2: 10, 3: 12 }
@@ -133,6 +139,7 @@ export class AI extends Player {
         'Metallurgy', 'ChainmailInfantry', 'BronzeShield', 'IronShield',
       ],
       [BUILDING_TYPES.market]: ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication'],
+      [BUILDING_TYPES.granary]: ['ResearchWatchTower', 'ResearchSentryTower'],
     }
   }
 
@@ -256,7 +263,6 @@ export class AI extends Player {
     const maxHoplite  = this.maxHopliteByAge[this.age]
     const infantryUnit = this.getBestInfantryUnit()
     const archerUnit   = this.getBestArcherUnit()
-    const howManyVillagerBeforeBuyingABarracks = 10
     const howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold
 
     if (DEBUG) {
@@ -278,6 +284,22 @@ export class AI extends Player {
 
     if (DEBUG) console.log(`Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Hoplites: ${hoplites.length}/${maxHoplite}`)
 
+    // Phase transitions: economy → military_build → attack
+    if (this.phase === 'economy' && villagers.length >= this.difficultyConfig.econToMilVillagers) {
+      this.phase = 'military_build'
+      if (DEBUG) console.log('Phase: economy → military_build')
+    }
+    if (this.phase === 'military_build' && military.length >= howManySoldiersBeforeAttack) {
+      this.phase = 'attack'
+      if (DEBUG) console.log('Phase: military_build → attack')
+    }
+    // Fall back to rebuilding if the army is decimated after a wave
+    if (this.phase === 'attack' && military.length < Math.ceil(howManySoldiersBeforeAttack * 0.4)) {
+      this.phase = 'military_build'
+      if (DEBUG) console.log('Phase: attack → military_build (army depleted)')
+    }
+    if (DEBUG) console.log(`Phase: ${this.phase}`)
+
     const towncenters   = this.buildingsByTypes([BUILDING_TYPES.townCenter])
     const storagepits   = this.buildingsByTypes([BUILDING_TYPES.storagePit])
     const houses        = this.buildingsByTypes([BUILDING_TYPES.house])
@@ -288,6 +310,8 @@ export class AI extends Player {
     const archeryRanges = this.buildingsByTypes([BUILDING_TYPES.archeryRange])
     const stables       = this.buildingsByTypes([BUILDING_TYPES.stable])
     const academies     = this.buildingsByTypes([BUILDING_TYPES.academy])
+    const watchTowers   = this.buildingsByTypes([BUILDING_TYPES.watchTower])
+    const sentryTowers  = this.buildingsByTypes([BUILDING_TYPES.sentryTower])
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
 
     if (DEBUG)
@@ -488,20 +512,37 @@ export class AI extends Player {
       [...this.foundedEnemyBuildings].find(b => b.type === BUILDING_TYPES.townCenter) ||
       this.foundedEnemyBuildings.values().next().value
 
-    // Defensive reaction: enemy units spotted → send idle soldiers to defend
-    if (this.foundedEnemyUnits.size > 0 && waitingMilitary.length > 0) {
+    // Mutable military pool — consumed in priority order: defense → early raid → main wave
+    const availableMilitary = [...waitingMilitary]
+
+    // Defense (highest priority): any spotted enemy unit → all idle soldiers react
+    if (this.foundedEnemyUnits.size > 0 && availableMilitary.length > 0) {
       const enemyUnit = [...this.foundedEnemyUnits].find(u => u.hitPoints > 0)
       if (enemyUnit) {
         if (DEBUG) console.log('Enemy units spotted! Defending...')
-        sendToAttack(waitingMilitary, enemyUnit)
+        sendToAttack(availableMilitary.splice(0), enemyUnit)
         actions++
       }
     }
 
-    // Attack wave: keep a defender garrison (defenderRatio), send the rest
-    if (waitingMilitary.length >= howManySoldiersBeforeAttack) {
-      const defenderCount = Math.max(2, Math.floor(waitingMilitary.length * this.difficultyConfig.defenderRatio))
-      const attackers = waitingMilitary.slice(defenderCount)
+    // Early raid (hard difficulty, military_build phase): harass enemy villagers before the main wave
+    const raidThreshold = this.difficultyConfig.raidThreshold
+    const raidSize = this.difficultyConfig.raidSize
+    if (raidThreshold > 0 && this.phase === 'military_build' && availableMilitary.length >= raidThreshold) {
+      const raidTarget =
+        [...this.foundedEnemyUnits].find(u => u.hitPoints > 0 && u.type === UNIT_TYPES.villager) ||
+        this.foundedEnemyBuildings.values().next().value
+      if (raidTarget) {
+        if (DEBUG) console.log(`Early raid! Sending ${raidSize} soldiers to harass.`)
+        sendToAttack(availableMilitary.splice(0, raidSize), raidTarget)
+        actions++
+      }
+    }
+
+    // Main attack wave (attack phase only): keep a garrison, send the rest
+    if (this.phase === 'attack' && availableMilitary.length >= howManySoldiersBeforeAttack) {
+      const defenderCount = Math.max(2, Math.floor(availableMilitary.length * this.difficultyConfig.defenderRatio))
+      const attackers = availableMilitary.slice(defenderCount)
       if (attackers.length > 0) {
         const target =
           getBestEnemyTarget() ||
@@ -555,6 +596,8 @@ export class AI extends Player {
         [BUILDING_TYPES.archeryRange]: archeryRanges,
         [BUILDING_TYPES.stable]: stables,
         [BUILDING_TYPES.academy]: academies,
+        [BUILDING_TYPES.watchTower]: watchTowers,
+        [BUILDING_TYPES.sentryTower]: sentryTowers,
       }
       const building = this.config.buildings[buildingType]
       if (
@@ -576,8 +619,8 @@ export class AI extends Player {
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
     )) actions++
 
-    // Barracks
-    if (buyBuildingIfNeeded(villagers.length > howManyVillagerBeforeBuyingABarracks, BUILDING_TYPES.barracks, () =>
+    // Barracks — only once economy phase ends
+    if (buyBuildingIfNeeded(this.phase !== 'economy', BUILDING_TYPES.barracks, () =>
       getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, cell =>
         otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
       )
@@ -629,6 +672,20 @@ export class AI extends Player {
       return null
     })) actions++
 
+    // WatchTower — place on the enemy-facing perimeter once the research is done
+    if (buyBuildingIfNeeded(this.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, cell =>
+        otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
+      )
+    )) actions++
+
+    // SentryTower — replaces WatchTower role at age 2+
+    if (buyBuildingIfNeeded(this.technologies.includes('ResearchSentryTower'), BUILDING_TYPES.sentryTower, () =>
+      getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, cell =>
+        otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(towncenters[0], player))
+      )
+    )) actions++
+
     // Tech / Age Up
     const buyTechnology = (buildingList, technologyType) => {
       let bought = 0
@@ -660,6 +717,7 @@ export class AI extends Player {
       [BUILDING_TYPES.archeryRange]: archeryRanges,
       [BUILDING_TYPES.storagePit]:   storagepits,
       [BUILDING_TYPES.market]:       markets,
+      [BUILDING_TYPES.granary]:      granarys,
     }
     for (const [buildingType, techList] of Object.entries(this.techPriorityByBuilding)) {
       const buildings = buildingListByType[buildingType]

@@ -28,6 +28,8 @@ export const BUILDING_TYPES = {
   archeryRange: 'ArcheryRange',
   stable: 'Stable',
   academy: 'Academy',
+  watchTower: 'WatchTower',
+  sentryTower: 'SentryTower',
 }
 
 export const UNIT_TYPES = {

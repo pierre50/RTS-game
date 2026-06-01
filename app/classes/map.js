@@ -78,6 +78,7 @@ export default class Map extends Container {
     this.fogLayer = new Container()
     this.fogLayer.eventMode = 'none'
     this.fogLayer.zIndex = 1e9
+    this.fogLayer.cullableChildren = true
 
     this.gaia = new Gaia(this.context)
 
@@ -254,6 +255,7 @@ export default class Map extends Container {
     this.fogLayer = new Container()
     this.fogLayer.eventMode = 'none'
     this.fogLayer.zIndex = 1e9
+    this.fogLayer.cullableChildren = true
     this.addChild(this.fogLayer)
 
     if (!this.revealEverything) {

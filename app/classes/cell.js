@@ -389,6 +389,7 @@ export class Cell extends Container {
     sprite.label = LABEL_TYPES.buildingFog
     sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
+    sprite.cullable = true
     addToLayer(sprite)
     this.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
     if (colorSheet) {
@@ -458,6 +459,7 @@ export class Cell extends Container {
         this._ditherSprite.label = LABEL_TYPES.dither
         this._ditherSprite.anchor.set(_DAX / _DW, _DAY / _DH)
         this._ditherSprite.eventMode = 'none'
+        this._ditherSprite.cullable = true
         this._ditherSprite.x = this.x
         this._ditherSprite.y = this.y
         fogLayer.addChild(this._ditherSprite)
@@ -484,6 +486,7 @@ export class Cell extends Container {
       overlay.label = LABEL_TYPES.fogOverlay
       overlay.anchor.set(_DAX / _DW, _DAY / _DH)
       overlay.eventMode = 'none'
+      overlay.cullable = true
       overlay.x = this.x
       overlay.y = this.y
       this.context.map.fogLayer.addChild(overlay)
