@@ -1,7 +1,7 @@
 "use strict";
 (self["webpackChunkdawn_of_empires"] = self["webpackChunkdawn_of_empires"] || []).push([[792],{
 
-/***/ 6854
+/***/ 6340
 (__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
@@ -65,16 +65,20 @@ var TRANSLATIONS = {
   fr: {
     newGame: 'Nouvelle Partie',
     loadGame: 'Charger une Partie',
+    settings: 'Paramètres',
+    language: 'Langue',
     configuration: 'Configuration',
     players: 'Joueurs',
     addOpponent: '+ Ajouter un adversaire',
+    playerCount: 'Nombre de joueurs',
     mapSettings: 'Paramètres de la Carte',
-    back: '← Retour',
+    back: 'Retour',
     startGame: 'Lancer la Partie',
     computer: 'Ordinateur',
     you: 'Vous',
     colName: 'Nom',
     colCiv: 'Civilisation',
+    colTeam: 'Équipe',
     colColor: 'Couleur',
     mapSizeLabel: 'Taille de carte',
     mapTypeLabel: 'Type de carte',
@@ -84,11 +88,13 @@ var TRANSLATIONS = {
     mapTypeIlot: 'Îlots',
     aiDifficulty: 'Difficulté IA',
     startingResourcesLabel: 'Ressources de départ',
+    mapResourcesLabel: 'Ressources sur la carte',
     devMode: 'Mode dev (instant build)',
     revealAll: 'Tout révéler',
     revealTerrain: 'Révéler le terrain',
     removePlayer: 'Retirer ce joueur',
     colorSwatch: 'Couleur : {color} (cliquer pour changer)',
+    teamInput: '- = aucune alliance. Même numéro 1-9 = alliés.',
     diffEasy: 'Facile  — IA lente, pop réduite',
     diffMedium: 'Moyen   — IA standard',
     diffHard: 'Difficile — IA rapide, pop accrue',
@@ -96,6 +102,9 @@ var TRANSLATIONS = {
     resStandard: 'Standard — 200 / 200 / 150 / 0',
     resHigh: 'Élevé    — 500 / 500 / 300 / 0',
     resVeryHigh: 'Très élevé — 1000 / 1000 / 750 / 100',
+    mapResourcesLow: 'Faible',
+    mapResourcesModerate: 'Modéré',
+    mapResourcesHigh: 'Beaucoup',
     civGreek: 'Grecque',
     menuBtn: 'Menu',
     save: 'Sauvegarder',
@@ -103,6 +112,7 @@ var TRANSLATIONS = {
     quit: 'Quitter',
     cancel: 'Annuler',
     pause: 'Pause',
+    victory: 'Victoire',
     wood: 'bois',
     food: 'nourriture',
     stone: 'pierre',
@@ -156,16 +166,20 @@ var TRANSLATIONS = {
   en: {
     newGame: 'New Game',
     loadGame: 'Load Game',
+    settings: 'Settings',
+    language: 'Language',
     configuration: 'Configuration',
     players: 'Players',
     addOpponent: '+ Add opponent',
+    playerCount: 'Player count',
     mapSettings: 'Map Settings',
-    back: '← Back',
+    back: 'Back',
     startGame: 'Start Game',
     computer: 'Computer',
     you: 'You',
     colName: 'Name',
     colCiv: 'Civilization',
+    colTeam: 'Team',
     colColor: 'Color',
     mapSizeLabel: 'Map size',
     mapTypeLabel: 'Map type',
@@ -175,11 +189,13 @@ var TRANSLATIONS = {
     mapTypeIlot: 'Islands',
     aiDifficulty: 'AI Difficulty',
     startingResourcesLabel: 'Starting Resources',
+    mapResourcesLabel: 'Map Resources',
     devMode: 'Dev mode (instant build)',
     revealAll: 'Reveal everything',
     revealTerrain: 'Reveal terrain',
     removePlayer: 'Remove player',
     colorSwatch: 'Color: {color} (click to change)',
+    teamInput: '- = no alliance. Same number 1-9 = allies.',
     diffEasy: 'Easy   — Slow AI, reduced pop',
     diffMedium: 'Medium — Standard AI',
     diffHard: 'Hard   — Fast AI, increased pop',
@@ -187,6 +203,9 @@ var TRANSLATIONS = {
     resStandard: 'Standard — 200 / 200 / 150 / 0',
     resHigh: 'High     — 500 / 500 / 300 / 0',
     resVeryHigh: 'Very High — 1000 / 1000 / 750 / 100',
+    mapResourcesLow: 'Low',
+    mapResourcesModerate: 'Moderate',
+    mapResourcesHigh: 'High',
     civGreek: 'Greek',
     menuBtn: 'Menu',
     save: 'Save',
@@ -194,6 +213,7 @@ var TRANSLATIONS = {
     quit: 'Quit',
     cancel: 'Cancel',
     pause: 'Pause',
+    victory: 'Victory',
     wood: 'wood',
     food: 'food',
     stone: 'stone',
@@ -245,29 +265,41 @@ var TRANSLATIONS = {
     healer: 'Healer'
   }
 };
-var currentLang = localStorage.getItem('lang') || 'fr';
+var LANG_STORAGE_KEY = 'lang';
+var SUPPORTED_LANGS = [{
+  code: 'fr',
+  label: 'Français'
+}, {
+  code: 'en',
+  label: 'English'
+}];
+function normalizeLang(lang) {
+  return SUPPORTED_LANGS.some(function (_ref) {
+    var code = _ref.code;
+    return code === lang;
+  }) ? lang : 'fr';
+}
+var currentLang = normalizeLang(localStorage.getItem(LANG_STORAGE_KEY));
 function t(key, vars) {
-  var _ref, _TRANSLATIONS$current;
-  var str = (_ref = (_TRANSLATIONS$current = TRANSLATIONS[currentLang][key]) !== null && _TRANSLATIONS$current !== void 0 ? _TRANSLATIONS$current : TRANSLATIONS.en[key]) !== null && _ref !== void 0 ? _ref : key;
+  var _ref2, _TRANSLATIONS$current;
+  var str = (_ref2 = (_TRANSLATIONS$current = TRANSLATIONS[currentLang][key]) !== null && _TRANSLATIONS$current !== void 0 ? _TRANSLATIONS$current : TRANSLATIONS.en[key]) !== null && _ref2 !== void 0 ? _ref2 : key;
   if (vars) {
-    Object.entries(vars).forEach(function (_ref2) {
-      var _ref3 = _slicedToArray(_ref2, 2),
-        k = _ref3[0],
-        v = _ref3[1];
+    Object.entries(vars).forEach(function (_ref3) {
+      var _ref4 = _slicedToArray(_ref3, 2),
+        k = _ref4[0],
+        v = _ref4[1];
       str = str.replace("{".concat(k, "}"), v);
     });
   }
   return str;
 }
 function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem('lang', lang);
+  currentLang = normalizeLang(lang);
+  localStorage.setItem(LANG_STORAGE_KEY, currentLang);
 }
 function getLang() {
   return currentLang;
 }
-// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
-var sound_lib = __webpack_require__(2250);
 ;// ./app/constants/index.js
 var CELL_WIDTH = 64;
 var CELL_HEIGHT = 32;
@@ -302,7 +334,18 @@ var BUILDING_TYPES = {
 var UNIT_TYPES = {
   villager: 'Villager',
   priest: 'Priest',
-  clubman: 'Clubman'
+  clubman: 'Clubman',
+  axeman: 'Axeman',
+  shortSwordsman: 'ShortSwordsman',
+  broadSwordsman: 'BroadSwordsman',
+  longSwordsman: 'LongSwordsman',
+  hoplite: 'Hoplite',
+  bowman: 'Bowman',
+  improvedBowman: 'ImprovedBowman',
+  compositeBowman: 'CompositeBowman',
+  chariotArcher: 'ChariotArcher',
+  scout: 'Scout',
+  fishingBoat: 'FishingBoat'
 };
 var MENU_INFO_IDS = {
   loading: 'loading',
@@ -414,6 +457,8 @@ var CORPSE_TIME = 120;
 var RUBBLE_TIME = 120;
 var MAX_SELECT_UNITS = 10;
 var POPULATION_MAX = 200;
+// EXTERNAL MODULE: ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/index.mjs + 29 modules
+var sound_lib = __webpack_require__(2250);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/multi-color-replace/MultiColorReplaceFilter.mjs + 4 modules
 var MultiColorReplaceFilter = __webpack_require__(2973);
 ;// ./app/lib/graphics.js
@@ -1016,6 +1061,10 @@ function degreeToDirection(degree) {
   }
 }
 ;// ./app/services/FogOfWar.js
+function FogOfWar_toConsumableArray(r) { return FogOfWar_arrayWithoutHoles(r) || FogOfWar_iterableToArray(r) || FogOfWar_unsupportedIterableToArray(r) || FogOfWar_nonIterableSpread(); }
+function FogOfWar_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function FogOfWar_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function FogOfWar_arrayWithoutHoles(r) { if (Array.isArray(r)) return FogOfWar_arrayLikeToArray(r); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = FogOfWar_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function FogOfWar_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return FogOfWar_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? FogOfWar_arrayLikeToArray(r, a) : void 0; } }
 function FogOfWar_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
@@ -1046,8 +1095,8 @@ function getPlainCellsAroundPoint(startX, startY, grid) {
   }
   return result;
 }
-function updateAIKnowledge(globalCell, cell, instance) {
-  var owner = instance.owner;
+function updateAIKnowledge(globalCell, cell, viewer) {
+  var owner = viewer;
   if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
     cell.has = globalCell.has;
     var has = globalCell.has;
@@ -1062,10 +1111,10 @@ function updateAIKnowledge(globalCell, cell, instance) {
     if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
       owner.foundedAnimals.add(has);
     }
-    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
+    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyBuildings.add(has);
     }
-    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
+    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyUnits.add(has);
     }
   }
@@ -1099,10 +1148,23 @@ function updateVisibility(instance) {
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
       var cell = _step.value;
       if (!newVisible.has(cell)) {
-        var playerCell = player.views[cell.i][cell.j];
+        var visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner];
         var globalCell = map.grid[cell.i][cell.j];
-        globalCell.viewBy["delete"](instance);
-        cell.viewBy["delete"](instance);
+        var _iterator3 = _createForOfIteratorHelper(visiblePlayers),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var viewer = _step3.value;
+            var viewerCell = viewer.views[cell.i][cell.j];
+            viewerCell.viewBy["delete"](instance);
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+        var playerCell = player.views[cell.i][cell.j];
+        globalCell.viewBy = new Set(FogOfWar_toConsumableArray(playerCell.viewBy));
         if (!playerCell.viewBy.size && !map.revealEverything) {
           globalCell.setFog();
         }
@@ -1120,19 +1182,33 @@ function updateVisibility(instance) {
       var _cell2 = _step2.value;
       if (!prevVisible.has(_cell2)) {
         var _globalCell = map.grid[_cell2.i][_cell2.j];
-        _globalCell.updateVisible();
-        _globalCell.viewBy.add(instance);
-        _cell2.viewBy.add(instance);
-        if (!_cell2.viewed) {
-          var _cell2$onViewed;
-          owner.cellViewed++;
-          (_cell2$onViewed = _cell2.onViewed) === null || _cell2$onViewed === void 0 || _cell2$onViewed.call(_cell2);
-          _cell2.viewed = true;
+        var _visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner];
+        var _iterator4 = _createForOfIteratorHelper(_visiblePlayers),
+          _step4;
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var _viewer = _step4.value;
+            var _viewerCell = _viewer.views[_cell2.i][_cell2.j];
+            _viewerCell.viewBy.add(instance);
+            if (!_viewerCell.viewed) {
+              var _viewerCell$onViewed;
+              _viewer.cellViewed++;
+              (_viewerCell$onViewed = _viewerCell.onViewed) === null || _viewerCell$onViewed === void 0 || _viewerCell$onViewed.call(_viewerCell);
+              _viewerCell.viewed = true;
+            }
+            if (_viewer.type === PLAYER_TYPES.ai) {
+              updateAIKnowledge(_globalCell, _viewerCell, _viewer);
+            }
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
         }
-        if (!map.revealEverything && owner.isPlayed) {
+        _globalCell.viewBy = new Set(FogOfWar_toConsumableArray(player.views[_cell2.i][_cell2.j].viewBy));
+        _globalCell.updateVisible();
+        if (!map.revealEverything && player.views[_cell2.i][_cell2.j].viewBy.has(instance)) {
           _globalCell.removeFog();
-        } else if (owner.type === PLAYER_TYPES.ai) {
-          updateAIKnowledge(_globalCell, _cell2, instance);
         }
         if (_globalCell.has && _globalCell.has.sight && typeof _globalCell.has.detect === 'function') {
           var distSq = Math.pow(cx - _globalCell.has.i, 2) + Math.pow(cy - _globalCell.has.j, 2);
@@ -1706,6 +1782,52 @@ function grid_getPlainCellsAroundPoint(startX, startY, grid) {
 }
 
 /**
+ * Check whether a building can be placed on the requested grid footprint.
+ *
+ * Land buildings must stay fully on walkable land. Water buildings such as
+ * docks need a mixed shore/water footprint matching the placement preview.
+ *
+ * @param {object[][]} grid
+ * @param {number} i
+ * @param {number} j
+ * @param {object} building
+ * @param {object} [options]
+ * @param {boolean} [options.requireVisible=false]
+ * @returns {boolean}
+ */
+function canPlaceBuildingAt(grid, i, j, building) {
+  var _ref = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {},
+    _ref$requireVisible = _ref.requireVisible,
+    requireVisible = _ref$requireVisible === void 0 ? false : _ref$requireVisible;
+  var dist = building.size === 3 ? 1 : 0;
+  var cells = grid_getPlainCellsAroundPoint(i, j, grid, dist);
+  var expectedCells = dist === 0 ? 1 : Math.pow(dist * 2 + 1, 2);
+  if (cells.length !== expectedCells) return false;
+  if (building.buildOnWater) {
+    var waterBorderedCells = 0;
+    var waterCells = 0;
+    var _iterator5 = grid_createForOfIteratorHelper(cells),
+      _step5;
+    try {
+      for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+        var cell = _step5.value;
+        if (cell.inclined || cell.solid || requireVisible && !cell.visible) return false;
+        if (cell.waterBorder) waterBorderedCells++;else if (cell.category === 'Water') waterCells++;
+      }
+    } catch (err) {
+      _iterator5.e(err);
+    } finally {
+      _iterator5.f();
+    }
+    return waterBorderedCells >= 2 || waterCells >= 4;
+  }
+  var groundLevel = cells[0].z;
+  return cells.every(function (cell) {
+    return cell.category !== 'Water' && !cell.waterBorder && !cell.solid && !cell.inclined && !cell.border && cell.z === groundLevel && (!requireVisible || cell.visible);
+  });
+}
+
+/**
  * Get the coordinates around a point within a Manhattan distance (safe for irregular grids)
  * @param {number} startX
  * @param {number} startY
@@ -1755,11 +1877,11 @@ function getClosestInstance(instance, instances) {
   var closestDistance = Infinity;
 
   // Iterate through the instances to find the one with the minimum distance to the reference instance
-  var _iterator5 = grid_createForOfIteratorHelper(instances),
-    _step5;
+  var _iterator6 = grid_createForOfIteratorHelper(instances),
+    _step6;
   try {
-    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-      var targetInstance = _step5.value;
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var targetInstance = _step6.value;
       var distance = instancesDistance(instance, targetInstance);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -1769,9 +1891,9 @@ function getClosestInstance(instance, instances) {
 
     // Return the closest instance, or false if no valid instance was found
   } catch (err) {
-    _iterator5.e(err);
+    _iterator6.e(err);
   } finally {
-    _iterator5.f();
+    _iterator6.f();
   }
   return closestInstance || false;
 }
@@ -1795,11 +1917,11 @@ function getClosestInstanceWithPath(instance, instances) {
   });
   var closest = null;
   var attempts = 0;
-  var _iterator6 = grid_createForOfIteratorHelper(sorted),
-    _step6;
+  var _iterator7 = grid_createForOfIteratorHelper(sorted),
+    _step7;
   try {
-    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-      var target = _step6.value;
+    for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+      var target = _step7.value;
       // A* path length >= straight-line distance, so skip if already longer than best
       if (closest && instancesDistance(instance, target) >= closest.path.length) break;
       // Cap A* calls — if the N nearest by Euclidean distance are all blocked, farther ones likely are too
@@ -1813,9 +1935,9 @@ function getClosestInstanceWithPath(instance, instances) {
       }
     }
   } catch (err) {
-    _iterator6.e(err);
+    _iterator7.e(err);
   } finally {
-    _iterator6.f();
+    _iterator7.f();
   }
   return closest;
 }
@@ -1838,7 +1960,6 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
     return;
   }
   var sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse];
-  // Sheet don't exist we just block the current sheet
   if (!instance[sheet]) {
     if (instance.currentSheet !== SHEET_TYPES.walking && instance.walkingSheet) {
       instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]];
@@ -1850,7 +1971,6 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
     instance.sprite.anchor.set(instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.x, instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.y);
     return;
   }
-  // Reset action loop
   if (!sheetToReset.includes(sheet)) {
     instance.sprite.onLoop = null;
     instance.sprite.onFrameChange = null;
@@ -1878,13 +1998,6 @@ function setUnitTexture(sheet, instance, ACCELERATOR) {
   instance.sprite.animationSpeed = ((_ref = (_instance$sheet$data$ = instance[sheet].data.animationSpeed) !== null && _instance$sheet$data$ !== void 0 ? _instance$sheet$data$ : animationSpeed[sheet]) !== null && _ref !== void 0 ? _ref : 0.3) * ACCELERATOR;
   _goto && _goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(_goto) : instance.sprite.play();
 }
-
-/**
- * Filters an object by the specified keys.
- * @param {object} obj - The object to filter.
- * @param {Array<string>} keys - The keys to retain in the new object.
- * @returns {object} - The filtered object.
- */
 function filterObject(obj, keys) {
   if (extra_typeof(obj) !== 'object' || obj === null) {
     throw new Error('Expected an object to filter.');
@@ -1896,11 +2009,6 @@ function filterObject(obj, keys) {
     return acc;
   }, {});
 }
-
-/**
- * Modal constructor for displaying content in a modal dialog.
- * @param {HTMLElement} content - The content to display inside the modal.
- */
 var Modal = function Modal(content) {
   if (!(content instanceof HTMLElement)) {
     throw new Error('Content must be an HTML element.');
@@ -1925,12 +2033,6 @@ var Modal = function Modal(content) {
   };
   this.open();
 };
-
-/**
- * Custom timeout implementation with pause and resume functionality.
- * @param {function} callback - The function to execute after the delay.
- * @param {number} delay - The delay in milliseconds.
- */
 var CustomTimeout = function CustomTimeout(callback, delay) {
   var _this = this;
   if (typeof callback !== 'function' || typeof delay !== 'number') {
@@ -1947,7 +2049,7 @@ var CustomTimeout = function CustomTimeout(callback, delay) {
   };
   this.resume = function () {
     if (timerId) {
-      return; // Already running
+      return;
     }
     start = Date.now();
     timerId = window.setTimeout(callback, remaining);
@@ -1957,16 +2059,8 @@ var CustomTimeout = function CustomTimeout(callback, delay) {
     remaining = delay;
     _this.resume();
   };
-  this.resume(); // Start the timer immediately
+  this.resume();
 };
-
-/**
- * Throttles a function to ensure it only executes once within a specified time frame.
- * @param {Function} callback - The function to throttle.
- * @param {number} wait - The time frame in milliseconds to throttle calls.
- * @param {boolean} [immediate=false] - If true, trigger the function on the leading edge instead of the trailing.
- * @returns {Function} - The throttled function.
- */
 function throttle(callback, wait) {
   var immediate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
   if (typeof callback !== 'function' || typeof wait !== 'number') {
@@ -1993,13 +2087,6 @@ function throttle(callback, wait) {
     }
   };
 }
-
-/**
- * Debounces a function to ensure it only executes after a specified delay.
- * @param {Function} callback - The function to debounce.
- * @param {number} wait - The delay in milliseconds before the function can be called again.
- * @returns {Function} - The debounced function.
- */
 var debounce = function debounce(callback, wait) {
   if (typeof callback !== 'function' || typeof wait !== 'number') {
     throw new Error('Invalid arguments: callback must be a function and wait must be a number.');
@@ -2016,12 +2103,6 @@ var debounce = function debounce(callback, wait) {
     }, wait);
   };
 };
-
-/**
- * Maps loading types to their corresponding work roles.
- * @param {string} loadingType - The type of resource being loaded.
- * @returns {string} - The corresponding work role for the loading type.
- */
 function getWorkWithLoadingType(loadingType) {
   var workMapping = {
     wheat: WORK_TYPES.farmer,
@@ -2032,57 +2113,14 @@ function getWorkWithLoadingType(loadingType) {
     meat: WORK_TYPES.hunter,
     fish: WORK_TYPES.fisher
   };
-  return workMapping[loadingType] || 'default'; // Fallback to 'default' if loadingType is not found
+  return workMapping[loadingType] || 'default';
 }
-
-/**
- * Capitalizes the first letter of a string.
- * @param {string} string - The input string to capitalize.
- * @returns {string} - The string with the first letter capitalized.
- */
 function capitalizeFirstLetter(string) {
   if (typeof string !== 'string') {
     throw new TypeError('Expected a string');
   }
   return string.length > 0 ? string.charAt(0).toUpperCase() + string.slice(1) : '';
 }
-
-/**
- * Calculates the damage dealt by a source to a target.
- * @param {object} source - The attacking unit with attack attributes.
- * @param {object} target - The defending unit with armor attributes.
- * @returns {number} The calculated damage, at least 1.
- */
-function getDamage(source, target) {
-  var meleeAttack = source.meleeAttack || 0;
-  var pierceAttack = source.pierceAttack || 0;
-  var meleeArmor = target.meleeArmor || 0;
-  var pierceArmor = target.pierceArmor || 0;
-
-  // Calculate damage considering armor
-  return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor));
-}
-
-/**
- * Calculates the remaining hit points of a target after taking damage.
- * @param {object} source - The attacking unit (for damage calculation).
- * @param {object} target - The defending unit with hit points.
- * @param {number} [defaultDamage] - An optional damage value.
- * @returns {number} The remaining hit points of the target, at least 0.
- */
-function getHitPointsWithDamage(source, target, defaultDamage) {
-  var damage = defaultDamage || getDamage(source, target);
-  return Math.max(0, target.hitPoints - damage);
-}
-
-/**
- * Updates a nested property in an object based on the specified operation.
- * @param {Object} target - The object to be updated.
- * @param {Object} operation - An object describing the update operation.
- * @param {string} operation.key - The key representing the path to the property.
- * @param {string} operation.op - The operation to perform ('*' or '+').
- * @param {number} operation.value - The value to use in the operation.
- */
 var updateObject = function updateObject(target, operation) {
   if (extra_typeof(target) !== 'object' || target === null) {
     throw new Error('Target must be a non-null object.');
@@ -2102,8 +2140,6 @@ var updateObject = function updateObject(target, operation) {
   }
   var keys = operation.key.split('.');
   var result = target;
-
-  // Navigate to the specified path
   var _iterator = extra_createForOfIteratorHelper(keys),
     _step;
   try {
@@ -2133,19 +2169,37 @@ var updateObject = function updateObject(target, operation) {
 var canUpdateMinimap = function canUpdateMinimap(instance, player) {
   var _instance$context;
   if ((_instance$context = instance.context) !== null && _instance$context !== void 0 && (_instance$context = _instance$context.map) !== null && _instance$context !== void 0 && _instance$context.revealEverything) return true;
-  return instance.owner.isPlayed || player.label !== instance.owner.label && instanceIsInPlayerSight(instance, player);
+  return playerCanSeeInstance(instance, player);
 };
+var playerCanSeeInstance = function playerCanSeeInstance(instance, player) {
+  var _instance$owner;
+  if (!instance || !player) return false;
+  return ((_instance$owner = instance.owner) === null || _instance$owner === void 0 ? void 0 : _instance$owner.label) === player.label || instanceIsInPlayerSight(instance, player);
+};
+;// ./app/lib/combat.js
 
-/**
- * Checks if a given condition is valid based on specified values.
- * @param {Object} condition - The condition object containing operation, key, and value.
- * @param {Object} values - The values to evaluate against.
- * @returns {boolean} - True if the condition is valid, false otherwise.
- */
+function getDamage(source, target) {
+  var meleeAttack = source.meleeAttack || 0;
+  var pierceAttack = source.pierceAttack || 0;
+  var meleeArmor = target.meleeArmor || 0;
+  var pierceArmor = target.pierceArmor || 0;
+  return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor));
+}
+function getHitPointsWithDamage(source, target, defaultDamage) {
+  var damage = defaultDamage || getDamage(source, target);
+  return Math.max(0, target.hitPoints - damage);
+}
+var arraysEqual = function arraysEqual(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  var sortedA = a.slice().sort();
+  var sortedB = b.slice().sort();
+  return sortedA.every(function (val, index) {
+    return val === sortedB[index];
+  });
+};
 var isValidCondition = function isValidCondition(condition, values) {
-  if (!condition) {
-    return true; // No condition means it's always valid
-  }
+  if (!condition) return true;
   var op = condition.op,
     key = condition.key,
     value = condition.value;
@@ -2176,26 +2230,8 @@ var isValidCondition = function isValidCondition(condition, values) {
       throw new Error("Invalid condition operation provided: ".concat(op));
   }
 };
-
-/**
- * Compares two arrays for equality, disregarding order.
- * @param {Array} a - The first array.
- * @param {Array} b - The second array.
- * @returns {boolean} - True if arrays are equal, false otherwise.
- */
-var arraysEqual = function arraysEqual(a, b) {
-  if (!Array.isArray(a) || !Array.isArray(b)) return false;
-  if (a.length !== b.length) return false;
-  var sortedA = a.slice().sort();
-  var sortedB = b.slice().sort();
-  return sortedA.every(function (val, index) {
-    return val === sortedB[index];
-  });
-};
-var extra_getActionCondition = function getActionCondition(source, target, action, props) {
-  if (!action) {
-    return false;
-  }
+var combat_getActionCondition = function getActionCondition(source, target, action, props) {
+  if (!action) return false;
   var conditions = {
     delivery: function delivery(props) {
       return source.loading > 0 && target.hitPoints > 0 && target.isBuilt && (!props || props.buildingTypes.includes(target.type));
@@ -2230,17 +2266,18 @@ var extra_getActionCondition = function getActionCondition(source, target, actio
       return source.type === UNIT_TYPES.villager && ((_target$owner2 = target.owner) === null || _target$owner2 === void 0 ? void 0 : _target$owner2.label) === source.owner.label && target.family === FAMILY_TYPES.building && target.hitPoints > 0 && (!target.isBuilt || target.hitPoints < target.totalHitPoints) && !target.isDead;
     },
     attack: function attack() {
-      var _target$owner3;
-      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) !== source.owner.label && [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) && target.hitPoints > 0 && !target.isDead;
+      var _source$owner;
+      return target && ((_source$owner = source.owner) === null || _source$owner === void 0 ? void 0 : _source$owner.isEnemy(target.owner)) && [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) && target.hitPoints > 0 && !target.isDead;
     },
     heal: function heal() {
-      var _target$owner4;
-      return target && ((_target$owner4 = target.owner) === null || _target$owner4 === void 0 ? void 0 : _target$owner4.label) === source.owner.label && target.family === FAMILY_TYPES.unit && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
+      var _target$owner3;
+      return target && ((_target$owner3 = target.owner) === null || _target$owner3 === void 0 ? void 0 : _target$owner3.label) === source.owner.label && target.family === FAMILY_TYPES.unit && target.hitPoints > 0 && target.hitPoints < target.totalHitPoints && !target.isDead;
     }
   };
   return target && target !== source && source.hitPoints > 0 && !source.isDead && conditions[action](props);
 };
 ;// ./app/lib/index.js
+
 
 
 
@@ -2349,7 +2386,7 @@ var Instance = /*#__PURE__*/function (_Container) {
     key: "getActionCondition",
     value: function getActionCondition(target) {
       var action = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.action;
-      return extra_getActionCondition(this, target, action);
+      return combat_getActionCondition(this, target, action);
     }
   }, {
     key: "setTextures",
@@ -2509,7 +2546,7 @@ var Resource = /*#__PURE__*/function (_Instance) {
           _this3$context = _this3.context,
           player = _this3$context.player,
           menu = _this3$context.menu;
-        if (!player.selectedUnits.length && (instanceIsInPlayerSight(_this, player) || map.revealEverything)) {
+        if (!player.selectedUnits.length && (playerCanSeeInstance(_this, player) || map.revealEverything)) {
           player.unselectAll();
           _this.select();
           menu.setBottombar(_this);
@@ -2531,7 +2568,7 @@ var Resource = /*#__PURE__*/function (_Instance) {
         var hasOther = false;
         for (var i = 0; i < player.selectedUnits.length; i++) {
           var unit = player.selectedUnits[i];
-          if (extra_getActionCondition(unit, _this, action)) {
+          if (combat_getActionCondition(unit, _this, action)) {
             hasVillager = true;
             var sendToFunc = "sendTo".concat(_this.category || _this.type);
             typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](_this) : unit.sendTo(_this);
@@ -2645,6 +2682,28 @@ var Resource = /*#__PURE__*/function (_Instance) {
     }
   }]);
 }(Instance);
+;// ./app/ui/BaseEntityInterface.js
+
+function appendBaseEntityInfo(element, civText, typeText, iconSrc, hitPoints, totalHitPoints) {
+  var civDiv = document.createElement('div');
+  civDiv.id = MENU_INFO_IDS.civ;
+  civDiv.textContent = civText;
+  element.appendChild(civDiv);
+  var typeDiv = document.createElement('div');
+  typeDiv.id = MENU_INFO_IDS.type;
+  typeDiv.textContent = typeText;
+  element.appendChild(typeDiv);
+  var iconImg = document.createElement('img');
+  iconImg.id = MENU_INFO_IDS.icon;
+  iconImg.src = iconSrc;
+  element.appendChild(iconImg);
+  if (hitPoints !== undefined) {
+    var hitPointsDiv = document.createElement('div');
+    hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
+    hitPointsDiv.textContent = hitPoints + '/' + totalHitPoints;
+    element.appendChild(hitPointsDiv);
+  }
+}
 ;// ./app/ui/BuildingInterface.js
 function BuildingInterface_typeof(o) { "@babel/helpers - typeof"; return BuildingInterface_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, BuildingInterface_typeof(o); }
 function BuildingInterface_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
@@ -2652,6 +2711,7 @@ function BuildingInterface_defineProperties(e, r) { for (var t = 0; t < r.length
 function BuildingInterface_createClass(e, r, t) { return r && BuildingInterface_defineProperties(e.prototype, r), t && BuildingInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function BuildingInterface_toPropertyKey(t) { var i = BuildingInterface_toPrimitive(t, "string"); return "symbol" == BuildingInterface_typeof(i) ? i : i + ""; }
 function BuildingInterface_toPrimitive(t, r) { if ("object" != BuildingInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != BuildingInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
 
 
 
@@ -2727,39 +2787,24 @@ var BuildingInterface = /*#__PURE__*/function () {
   }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
+      var _building$owner, _building$owner2;
       var building = this.building;
       var menu = building.context.menu;
-      var civDiv = document.createElement('div');
-      civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = t(building.owner.civ);
-      element.appendChild(civDiv);
-      var typeDiv = document.createElement('div');
-      typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = t(building.type);
-      element.appendChild(typeDiv);
-      var iconImg = document.createElement('img');
-      iconImg.id = MENU_INFO_IDS.icon;
-      iconImg.src = getIconPath(data.icon);
-      element.appendChild(iconImg);
-      if (building.owner && building.owner.isPlayed) {
-        var hitPointsDiv = document.createElement('div');
-        hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-        hitPointsDiv.textContent = building.hitPoints + '/' + building.totalHitPoints;
-        element.appendChild(hitPointsDiv);
-        if (building.isBuilt && building.quantity) {
-          var quantityDiv = document.createElement('div');
-          quantityDiv.id = MENU_INFO_IDS.quantity;
-          quantityDiv.className = 'resource-quantity';
-          var smallIconImg = document.createElement('img');
-          smallIconImg.src = menu.icons['food'];
-          smallIconImg.className = 'resource-quantity-icon';
-          var textDiv = document.createElement('div');
-          textDiv.id = MENU_INFO_IDS.quantityText;
-          textDiv.textContent = building.quantity;
-          quantityDiv.appendChild(smallIconImg);
-          quantityDiv.appendChild(textDiv);
-          element.appendChild(quantityDiv);
-        }
+      var hitPoints = (_building$owner = building.owner) !== null && _building$owner !== void 0 && _building$owner.isPlayed ? building.hitPoints : undefined;
+      appendBaseEntityInfo(element, t(building.owner.civ), t(building.type), getIconPath(data.icon), hitPoints, building.totalHitPoints);
+      if ((_building$owner2 = building.owner) !== null && _building$owner2 !== void 0 && _building$owner2.isPlayed && building.isBuilt && building.quantity) {
+        var quantityDiv = document.createElement('div');
+        quantityDiv.id = MENU_INFO_IDS.quantity;
+        quantityDiv.className = 'resource-quantity';
+        var smallIconImg = document.createElement('img');
+        smallIconImg.src = menu.icons['food'];
+        smallIconImg.className = 'resource-quantity-icon';
+        var textDiv = document.createElement('div');
+        textDiv.id = MENU_INFO_IDS.quantityText;
+        textDiv.textContent = building.quantity;
+        quantityDiv.appendChild(smallIconImg);
+        quantityDiv.appendChild(textDiv);
+        element.appendChild(quantityDiv);
       }
     }
   }]);
@@ -2774,18 +2819,191 @@ function BuildingLifecycle_toPrimitive(t, r) { if ("object" != BuildingLifecycle
 
 
 
+
+
 var BuildingLifecycle = /*#__PURE__*/function () {
   function BuildingLifecycle(building) {
     BuildingLifecycle_classCallCheck(this, BuildingLifecycle);
     this.building = building;
   }
   return BuildingLifecycle_createClass(BuildingLifecycle, [{
+    key: "updateTexture",
+    value: function updateTexture() {
+      var building = this.building;
+      var menu = building.context.menu;
+      var percentage = getPercentage(building.hitPoints, building.totalHitPoints);
+      var buildSpritesheetId = building.sprite.texture.label.split('_')[1].split('.')[0];
+      var buildSpritesheet = lib/* Assets */.sP.cache.get(buildSpritesheetId);
+      if (percentage >= 25 && percentage < 50) {
+        building.sprite.texture = buildSpritesheet.textures["001_".concat(buildSpritesheetId, ".png")];
+      } else if (percentage >= 50 && percentage < 75) {
+        building.sprite.texture = buildSpritesheet.textures["002_".concat(buildSpritesheetId, ".png")];
+      } else if (percentage >= 75 && percentage < 99) {
+        building.sprite.texture = buildSpritesheet.textures["003_".concat(buildSpritesheetId, ".png")];
+      } else if (percentage >= 100) {
+        building.finalTexture();
+        if (!building.isBuilt) {
+          var _building$sounds;
+          if (building.owner.isPlayed && (_building$sounds = building.sounds) !== null && _building$sounds !== void 0 && _building$sounds.create && building.context.controls.instanceIsAudible(building)) {
+            sound_lib/* sound */.s3.play(building.sounds.create);
+          }
+          building.onBuilt();
+        }
+        building.isBuilt = true;
+        if (!building.owner.hasBuilt.includes(building.type)) {
+          building.owner.hasBuilt.push(building.type);
+        }
+        if (building.owner.isPlayed && building.selected) {
+          menu.setBottombar(building);
+        }
+        updateInstanceVisibility(building);
+      }
+    }
+  }, {
+    key: "finalTexture",
+    value: function finalTexture() {
+      var building = this.building;
+      var assets = getBuildingAsset(building.type, building.owner, lib/* Assets */.sP);
+      var texture = getTexture(assets.images["final"], lib/* Assets */.sP);
+      building.sprite.texture = texture;
+      building.sprite.hitArea = texture.hitArea ? new lib/* Polygon */.tS(texture.hitArea) : new lib/* Polygon */.tS([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size]);
+      building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
+      var color = building.getChildByLabel(LABEL_TYPES.color);
+      if (color) color.destroy();
+      if (assets.images.color) {
+        var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
+        spriteColor.label = LABEL_TYPES.color;
+        changeSpriteColorDirectly(spriteColor, building.owner.color);
+        building.addChild(spriteColor);
+      } else {
+        changeSpriteColorDirectly(building.sprite, building.owner.color);
+      }
+      if (building.type === BUILDING_TYPES.house) {
+        if (building.owner.age === 0) {
+          var spritesheetFire = lib/* Assets */.sP.cache.get('347');
+          var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
+          spriteFire.label = LABEL_TYPES.deco;
+          spriteFire.allowMove = false;
+          spriteFire.allowClick = false;
+          spriteFire.eventMode = 'none';
+          spriteFire.roundPixels = true;
+          spriteFire.x = 10;
+          spriteFire.y = 5;
+          spriteFire.play();
+          spriteFire.animationSpeed = 0.2 * ACCELERATOR;
+          building.addChild(spriteFire);
+        } else {
+          var fire = building.getChildByLabel(LABEL_TYPES.deco);
+          if (fire) fire.destroy();
+        }
+      }
+    }
+  }, {
+    key: "generateFire",
+    value: function generateFire(spriteId) {
+      var building = this.building;
+      var fire = building.getChildByLabel(LABEL_TYPES.fire);
+      var spritesheetFire = lib/* Assets */.sP.cache.get(spriteId);
+      if (fire) {
+        for (var i = 0; i < fire.children.length; i++) {
+          fire.children[i].textures = spritesheetFire.animations['fire'];
+          fire.children[i].play();
+        }
+      } else {
+        var newFire = new lib/* Container */.mcf();
+        newFire.label = LABEL_TYPES.fire;
+        newFire.allowMove = false;
+        newFire.allowClick = false;
+        newFire.eventMode = 'none';
+        var poses = [[0, 0]];
+        if (building.size === 3) {
+          poses = [[0, -32], [-64, 0], [0, 32], [64, 0]];
+        }
+        for (var _i = 0; _i < poses.length; _i++) {
+          var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
+          spriteFire.allowMove = false;
+          spriteFire.allowClick = false;
+          spriteFire.eventMode = 'none';
+          spriteFire.roundPixels = true;
+          spriteFire.x = poses[_i][0];
+          spriteFire.y = poses[_i][1];
+          spriteFire.play();
+          spriteFire.animationSpeed = 0.2 * ACCELERATOR;
+          newFire.addChild(spriteFire);
+        }
+        building.addChild(newFire);
+      }
+    }
+  }, {
+    key: "onBuilt",
+    value: function onBuilt() {
+      var building = this.building;
+      var menu = building.context.menu;
+      if (building.increasePopulation) {
+        var _building$owner$selec;
+        building.owner.population_max += building.increasePopulation;
+        if (building.owner.isPlayed && (_building$owner$selec = building.owner.selectedBuilding) !== null && _building$owner$selec !== void 0 && _building$owner$selec.displayPopulation) {
+          menu.updateInfo(MENU_INFO_IDS.populationText, building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max));
+        }
+      }
+      if (building.owner.isPlayed && building.selected) {
+        menu.setBottombar(building);
+      }
+    }
+  }, {
+    key: "updateHitPoints",
+    value: function updateHitPoints(action) {
+      var building = this.building;
+      if (building.hitPoints > building.totalHitPoints) {
+        building.hitPoints = building.totalHitPoints;
+      }
+      var percentage = getPercentage(building.hitPoints, building.totalHitPoints);
+      if (building.hitPoints <= 0) {
+        building.die();
+      }
+      if (action === ACTION_TYPES.build && !building.isBuilt) {
+        building.updateTexture();
+      } else if (action === ACTION_TYPES.attack && building.isBuilt || action === ACTION_TYPES.build && building.isBuilt) {
+        if (percentage > 0 && percentage < 25) {
+          building.generateFire('450');
+        } else if (percentage >= 25 && percentage < 50) {
+          building.generateFire('452');
+        } else if (percentage >= 50 && percentage < 75) {
+          building.generateFire('347');
+        } else if (percentage >= 75) {
+          var fire = building.getChildByLabel(LABEL_TYPES.fire);
+          if (fire) building.removeChild(fire);
+        }
+      }
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      var building = this.building;
+      var fire = building.getChildByLabel(LABEL_TYPES.fire);
+      if (fire) fire.children.forEach(function (s) {
+        return s.stop();
+      });
+      var deco = building.getChildByLabel(LABEL_TYPES.deco);
+      if (deco && typeof deco.stop === 'function') deco.stop();
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      var building = this.building;
+      var fire = building.getChildByLabel(LABEL_TYPES.fire);
+      if (fire) fire.children.forEach(function (s) {
+        return s.play();
+      });
+      var deco = building.getChildByLabel(LABEL_TYPES.deco);
+      if (deco && typeof deco.play === 'function') deco.play();
+    }
+  }, {
     key: "die",
     value: function die() {
+      var _building$context$che, _building$context2;
       var building = this.building;
-      if (building.isDead) {
-        return;
-      }
+      if (building.isDead) return;
       var _building$context = building.context,
         map = _building$context.map,
         player = _building$context.player,
@@ -2838,14 +3056,13 @@ var BuildingLifecycle = /*#__PURE__*/function () {
         return building.clear();
       }, RUBBLE_TIME);
       canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner);
+      (_building$context$che = (_building$context2 = building.context).checkVictory) === null || _building$context$che === void 0 || _building$context$che.call(_building$context2);
     }
   }, {
     key: "clear",
     value: function clear() {
       var building = this.building;
-      if (building.isDestroyed) {
-        return;
-      }
+      if (building.isDestroyed) return;
       clearTimeout(building.visibilityTimeout);
       var map = building.context.map;
       var dist = building.size === 3 ? 1 : 0;
@@ -3161,7 +3378,7 @@ var Projectile = /*#__PURE__*/function (_Container) {
     }
     var targetX = targetPoint.x,
       targetY = targetPoint.y;
-    _this.context.controls.instanceInCamera(_this) && _this.sounds.start && sound_lib/* sound */.s3.play(Array.isArray(_this.sounds.start) ? maths_randomItem(_this.sounds.start) : _this.sounds.start);
+    _this.context.controls.instanceIsAudible(_this) && _this.sounds.start && sound_lib/* sound */.s3.play(Array.isArray(_this.sounds.start) ? maths_randomItem(_this.sounds.start) : _this.sounds.start);
     var degree = _this.degree || getPointsDegree(_this.x, _this.y, targetX, targetY);
     var sprite = new lib/* Graphics */.A1g();
     sprite.rect(1, 1, _this.size, 1);
@@ -3236,7 +3453,7 @@ var BuildingCombat = /*#__PURE__*/function () {
       var building = this.building;
       var map = building.context.map;
       building.startAttackInterval(function () {
-        if (extra_getActionCondition(building, target, ACTION_TYPES.attack) && instancesDistance(building, target) <= building.range) {
+        if (combat_getActionCondition(building, target, ACTION_TYPES.attack) && instancesDistance(building, target) <= building.range) {
           var projectile = new Projectile({
             owner: building,
             type: building.projectile,
@@ -3252,7 +3469,7 @@ var BuildingCombat = /*#__PURE__*/function () {
     key: "detect",
     value: function detect(instance) {
       var building = this.building;
-      if (building.range && instance.family !== FAMILY_TYPES.animal && !building.attackIntervalId && extra_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
+      if (building.range && instance.family !== FAMILY_TYPES.animal && !building.attackIntervalId && combat_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
         this.attackAction(instance);
       }
     }
@@ -3260,8 +3477,8 @@ var BuildingCombat = /*#__PURE__*/function () {
     key: "isAttacked",
     value: function isAttacked(instance) {
       var building = this.building;
-      if (building.isDead) return;
-      if (building.range && extra_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
+      if (building.isDead || !combat_getActionCondition(building, instance, ACTION_TYPES.attack)) return;
+      if (building.range && combat_getActionCondition(building, instance, ACTION_TYPES.attack) && instancesDistance(building, instance) <= building.range) {
         this.attackAction(instance);
       }
       building.updateHitPoints(ACTION_TYPES.attack);
@@ -3292,7 +3509,6 @@ function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !==
 function building_getPrototypeOf(t) { return building_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, building_getPrototypeOf(t); }
 function building_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && building_setPrototypeOf(t, e); }
 function building_setPrototypeOf(t, e) { return building_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, building_setPrototypeOf(t, e); }
-
 
 
 
@@ -3382,8 +3598,28 @@ var Building = /*#__PURE__*/function (_Instance) {
       }
       cell.has = _this;
       cell.solid = true;
-      _this.owner.views[cell.i][cell.j].viewBy.add(_this);
-      if (_this.owner.isPlayed && !map.revealEverything) {
+      var visiblePlayers = _this.owner.visiblePlayers ? _this.owner.visiblePlayers() : [_this.owner];
+      var _iterator2 = building_createForOfIteratorHelper(visiblePlayers),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var viewer = _step2.value;
+          var viewerCell = viewer.views[cell.i][cell.j];
+          viewerCell.viewBy.add(_this);
+          if (!viewerCell.viewed) {
+            var _viewerCell$onViewed;
+            viewer.cellViewed++;
+            (_viewerCell$onViewed = viewerCell.onViewed) === null || _viewerCell$onViewed === void 0 || _viewerCell$onViewed.call(viewerCell);
+            viewerCell.viewed = true;
+          }
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      cell.viewBy = new Set(building_toConsumableArray(_this.context.player.views[cell.i][cell.j].viewBy));
+      if (_this.context.player.views[cell.i][cell.j].viewBy.has(_this) && !map.revealEverything) {
         cell.removeFog();
       }
     });
@@ -3405,12 +3641,11 @@ var Building = /*#__PURE__*/function (_Instance) {
         var hasSentOther = false;
         controls.mouse.prevent = true;
         if (_this.owner.isPlayed) {
-          // Send Villager to build the building
           if (!_this.isBuilt) {
             for (var i = 0; i < player.selectedUnits.length; i++) {
               var unit = player.selectedUnits[i];
               if (unit.type === UNIT_TYPES.villager) {
-                if (extra_getActionCondition(unit, _this, ACTION_TYPES.build)) {
+                if (combat_getActionCondition(unit, _this, ACTION_TYPES.build)) {
                   hasSentVillager = true;
                   unit.sendToBuilding(_this);
                 }
@@ -3432,18 +3667,17 @@ var Building = /*#__PURE__*/function (_Instance) {
               return;
             }
           } else if (player.selectedUnits) {
-            // Send Villager to give loading of resources
             for (var _i = 0; _i < player.selectedUnits.length; _i++) {
               var _unit = player.selectedUnits[_i];
               var accept = _unit.category === 'Boat' ? _this.type === BUILDING_TYPES.dock : _this.type === BUILDING_TYPES.townCenter || _this.accept && _this.accept.includes(_unit.loadingType);
-              if (_unit.type === UNIT_TYPES.villager && extra_getActionCondition(_unit, _this, ACTION_TYPES.build)) {
+              if (_unit.type === UNIT_TYPES.villager && combat_getActionCondition(_unit, _this, ACTION_TYPES.build)) {
                 hasSentVillager = true;
                 _unit.previousDest = null;
                 _unit.sendToBuilding(_this);
-              } else if (_unit.type === UNIT_TYPES.villager && extra_getActionCondition(_unit, _this, ACTION_TYPES.farm)) {
+              } else if (_unit.type === UNIT_TYPES.villager && combat_getActionCondition(_unit, _this, ACTION_TYPES.farm)) {
                 hasSentVillager = true;
                 _unit.sendToFarm(_this);
-              } else if (accept && extra_getActionCondition(_unit, _this, ACTION_TYPES.delivery, {
+              } else if (accept && combat_getActionCondition(_unit, _this, ACTION_TYPES.delivery, {
                 buildingTypes: [_this.type]
               })) {
                 hasSentVillager = true;
@@ -3465,16 +3699,26 @@ var Building = /*#__PURE__*/function (_Instance) {
             _this.owner.selectedBuilding = _this;
           }
         } else if (player.selectedUnits.length) {
-          drawInstanceBlinkingSelection(_this);
+          var hasSentAttacker = false;
           for (var _i2 = 0; _i2 < player.selectedUnits.length; _i2++) {
             var playerUnit = player.selectedUnits[_i2];
+            if (!combat_getActionCondition(playerUnit, _this, ACTION_TYPES.attack)) continue;
+            hasSentAttacker = true;
             if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(_this);
             } else {
               playerUnit.sendTo(_this, ACTION_TYPES.attack);
             }
           }
-        } else if (instanceIsInPlayerSight(_this, player) || map.revealEverything) {
+          if (hasSentAttacker) {
+            drawInstanceBlinkingSelection(_this);
+          } else if (playerCanSeeInstance(_this, player) || map.revealEverything) {
+            player.unselectAll();
+            _this.select();
+            menu.setBottombar(_this);
+            player.selectedOther = _this;
+          }
+        } else if (playerCanSeeInstance(_this, player) || map.revealEverything) {
           player.unselectAll();
           _this.select();
           menu.setBottombar(_this);
@@ -3540,173 +3784,9 @@ var Building = /*#__PURE__*/function (_Instance) {
       return this.buildingCombat.isAttacked(instance);
     }
   }, {
-    key: "updateTexture",
-    value: function updateTexture() {
-      var menu = this.context.menu;
-      var percentage = getPercentage(this.hitPoints, this.totalHitPoints);
-      var buildSpritesheetId = this.sprite.texture.label.split('_')[1].split('.')[0];
-      var buildSpritesheet = lib/* Assets */.sP.cache.get(buildSpritesheetId);
-      if (percentage >= 25 && percentage < 50) {
-        var textureName = "001_".concat(buildSpritesheetId, ".png");
-        this.sprite.texture = buildSpritesheet.textures[textureName];
-      } else if (percentage >= 50 && percentage < 75) {
-        var _textureName = "002_".concat(buildSpritesheetId, ".png");
-        this.sprite.texture = buildSpritesheet.textures[_textureName];
-      } else if (percentage >= 75 && percentage < 99) {
-        var _textureName2 = "003_".concat(buildSpritesheetId, ".png");
-        this.sprite.texture = buildSpritesheet.textures[_textureName2];
-      } else if (percentage >= 100) {
-        this.finalTexture();
-        if (!this.isBuilt) {
-          if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceInCamera(this)) {
-            sound_lib/* sound */.s3.play(this.sounds.create);
-          }
-          this.onBuilt();
-        }
-        this.isBuilt = true;
-        if (!this.owner.hasBuilt.includes(this.type)) {
-          this.owner.hasBuilt.push(this.type);
-        }
-        if (this.owner.isPlayed && this.selected) {
-          menu.setBottombar(this);
-        }
-        updateInstanceVisibility(this);
-      }
-    }
-  }, {
-    key: "onBuilt",
-    value: function onBuilt() {
-      var menu = this.context.menu;
-      if (this.increasePopulation) {
-        // Increase player population and continue all unit creation that was paused
-        this.owner.population_max += this.increasePopulation;
-        // Update bottombar with population_max if house selected
-        if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-          menu.updateInfo(MENU_INFO_IDS.populationText, this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max));
-        }
-      }
-      if (this.owner.isPlayed && this.selected) {
-        menu.setBottombar(this);
-      }
-    }
-  }, {
-    key: "finalTexture",
-    value: function finalTexture() {
-      var assets = getBuildingAsset(this.type, this.owner, lib/* Assets */.sP);
-      var texture = getTexture(assets.images["final"], lib/* Assets */.sP);
-      this.sprite.texture = texture;
-      this.sprite.hitArea = texture.hitArea ? new lib/* Polygon */.tS(texture.hitArea) : new lib/* Polygon */.tS([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size]);
-      this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y);
-      var color = this.getChildByLabel(LABEL_TYPES.color);
-      if (color) {
-        color.destroy();
-      }
-      if (assets.images.color) {
-        var spriteColor = lib/* Sprite */.kxk.from(getTexture(assets.images.color, lib/* Assets */.sP));
-        spriteColor.label = LABEL_TYPES.color;
-        changeSpriteColorDirectly(spriteColor, this.owner.color);
-        this.addChild(spriteColor);
-      } else {
-        changeSpriteColorDirectly(this.sprite, this.owner.color);
-      }
-      if (this.type === BUILDING_TYPES.house) {
-        if (this.owner.age === 0) {
-          var spritesheetFire = lib/* Assets */.sP.cache.get('347');
-          var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
-          spriteFire.label = LABEL_TYPES.deco;
-          spriteFire.allowMove = false;
-          spriteFire.allowClick = false;
-          spriteFire.eventMode = 'none';
-          spriteFire.roundPixels = true;
-          spriteFire.x = 10;
-          spriteFire.y = 5;
-          spriteFire.play();
-          spriteFire.animationSpeed = 0.2 * ACCELERATOR;
-          this.addChild(spriteFire);
-        } else {
-          var fire = this.getChildByLabel(LABEL_TYPES.deco);
-          if (fire) {
-            fire.destroy();
-          }
-        }
-      }
-    }
-  }, {
     key: "detect",
     value: function detect(instance) {
       return this.buildingCombat.detect(instance);
-    }
-  }, {
-    key: "updateHitPoints",
-    value: function updateHitPoints(action) {
-      if (this.hitPoints > this.totalHitPoints) {
-        this.hitPoints = this.totalHitPoints;
-      }
-      var percentage = getPercentage(this.hitPoints, this.totalHitPoints);
-      if (this.hitPoints <= 0) {
-        this.die();
-      }
-      if (action === ACTION_TYPES.build && !this.isBuilt) {
-        this.updateTexture();
-      } else if (action === ACTION_TYPES.attack && this.isBuilt || action === ACTION_TYPES.build && this.isBuilt) {
-        if (percentage > 0 && percentage < 25) {
-          this.generateFire('450');
-        } else if (percentage >= 25 && percentage < 50) {
-          this.generateFire('452');
-        } else if (percentage >= 50 && percentage < 75) {
-          this.generateFire('347');
-        } else if (percentage >= 75) {
-          var fire = this.getChildByLabel(LABEL_TYPES.fire);
-          if (fire) {
-            this.removeChild(fire);
-          }
-        }
-      }
-    }
-  }, {
-    key: "generateFire",
-    value: function generateFire(spriteId) {
-      var fire = this.getChildByLabel(LABEL_TYPES.fire);
-      var spritesheetFire = lib/* Assets */.sP.cache.get(spriteId);
-      if (fire) {
-        for (var i = 0; i < fire.children.length; i++) {
-          fire.children[i].textures = spritesheetFire.animations['fire'];
-          fire.children[i].play();
-        }
-      } else {
-        var newFire = new lib/* Container */.mcf();
-        newFire.label = LABEL_TYPES.fire;
-        newFire.allowMove = false;
-        newFire.allowClick = false;
-        newFire.eventMode = 'none';
-        var poses = [[0, 0]];
-        if (this.size === 3) {
-          poses = [[0, -32], [-64, 0], [0, 32], [64, 0]];
-        }
-        for (var _i3 = 0; _i3 < poses.length; _i3++) {
-          var spriteFire = new lib/* AnimatedSprite */.Dl5(spritesheetFire.animations['fire']);
-          spriteFire.allowMove = false;
-          spriteFire.allowClick = false;
-          spriteFire.eventMode = 'none';
-          spriteFire.roundPixels = true;
-          spriteFire.x = poses[_i3][0];
-          spriteFire.y = poses[_i3][1];
-          spriteFire.play();
-          spriteFire.animationSpeed = 0.2 * ACCELERATOR;
-          newFire.addChild(spriteFire);
-        }
-        this.addChild(newFire);
-      }
-    }
-  }, {
-    key: "die",
-    value: function die() {
-      return this.buildingLifecycle.die();
-    }
-  }, {
-    key: "clear",
-    value: function clear() {
-      return this.buildingLifecycle.clear();
     }
   }, {
     key: "select",
@@ -3731,6 +3811,55 @@ var Building = /*#__PURE__*/function (_Instance) {
         player = _this$context2.player;
       canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner);
     }
+
+    // BuildingLifecycle
+  }, {
+    key: "updateTexture",
+    value: function updateTexture() {
+      return this.buildingLifecycle.updateTexture();
+    }
+  }, {
+    key: "finalTexture",
+    value: function finalTexture() {
+      return this.buildingLifecycle.finalTexture();
+    }
+  }, {
+    key: "generateFire",
+    value: function generateFire(spriteId) {
+      return this.buildingLifecycle.generateFire(spriteId);
+    }
+  }, {
+    key: "onBuilt",
+    value: function onBuilt() {
+      return this.buildingLifecycle.onBuilt();
+    }
+  }, {
+    key: "updateHitPoints",
+    value: function updateHitPoints(action) {
+      return this.buildingLifecycle.updateHitPoints(action);
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      return this.buildingLifecycle.pause();
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      return this.buildingLifecycle.resume();
+    }
+  }, {
+    key: "die",
+    value: function die() {
+      return this.buildingLifecycle.die();
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      return this.buildingLifecycle.clear();
+    }
+
+    // BuildingProduction
   }, {
     key: "placeUnit",
     value: function placeUnit(type) {
@@ -3743,16 +3872,6 @@ var Building = /*#__PURE__*/function (_Instance) {
       var force = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var extra = arguments.length > 3 ? arguments[3] : undefined;
       return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra);
-    }
-  }, {
-    key: "updateInterfaceLoading",
-    value: function updateInterfaceLoading() {
-      this.buildingInterface.updateLoading();
-    }
-  }, {
-    key: "getLoadingElement",
-    value: function getLoadingElement() {
-      return this.buildingInterface.getLoadingElement();
     }
   }, {
     key: "cancelTechnology",
@@ -3769,30 +3888,22 @@ var Building = /*#__PURE__*/function (_Instance) {
     value: function buyTechnology(type, alreadyPaid, force) {
       return this.buildingProduction.buyTechnology(type, alreadyPaid, force);
     }
+
+    // BuildingInterface
+  }, {
+    key: "updateInterfaceLoading",
+    value: function updateInterfaceLoading() {
+      this.buildingInterface.updateLoading();
+    }
+  }, {
+    key: "getLoadingElement",
+    value: function getLoadingElement() {
+      return this.buildingInterface.getLoadingElement();
+    }
   }, {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
       this.buildingInterface.setDefaultInterface(element, data);
-    }
-  }, {
-    key: "pause",
-    value: function pause() {
-      var fire = this.getChildByLabel(LABEL_TYPES.fire);
-      if (fire) fire.children.forEach(function (s) {
-        return s.stop();
-      });
-      var deco = this.getChildByLabel(LABEL_TYPES.deco);
-      if (deco && typeof deco.stop === 'function') deco.stop();
-    }
-  }, {
-    key: "resume",
-    value: function resume() {
-      var fire = this.getChildByLabel(LABEL_TYPES.fire);
-      if (fire) fire.children.forEach(function (s) {
-        return s.play();
-      });
-      var deco = this.getChildByLabel(LABEL_TYPES.deco);
-      if (deco && typeof deco.play === 'function') deco.play();
     }
   }]);
 }(Instance);
@@ -3803,6 +3914,7 @@ function UnitInterface_defineProperties(e, r) { for (var t = 0; t < r.length; t+
 function UnitInterface_createClass(e, r, t) { return r && UnitInterface_defineProperties(e.prototype, r), t && UnitInterface_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function UnitInterface_toPropertyKey(t) { var i = UnitInterface_toPrimitive(t, "string"); return "symbol" == UnitInterface_typeof(i) ? i : i + ""; }
 function UnitInterface_toPrimitive(t, r) { if ("object" != UnitInterface_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != UnitInterface_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
 
 
 
@@ -3863,22 +3975,8 @@ var UnitInterface = /*#__PURE__*/function () {
     key: "setDefaultInterface",
     value: function setDefaultInterface(element, data) {
       var unit = this.unit;
-      var civDiv = document.createElement('div');
-      civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = t(unit.owner.civ);
-      element.appendChild(civDiv);
-      var typeDiv = document.createElement('div');
-      typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type);
-      element.appendChild(typeDiv);
-      var iconImg = document.createElement('img');
-      iconImg.id = MENU_INFO_IDS.icon;
-      iconImg.src = getIconPath(data.icon);
-      element.appendChild(iconImg);
-      var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-      hitPointsDiv.textContent = unit.hitPoints + '/' + unit.totalHitPoints;
-      element.appendChild(hitPointsDiv);
+      var typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type);
+      appendBaseEntityInfo(element, t(unit.owner.civ), typeText, getIconPath(data.icon), unit.hitPoints, unit.totalHitPoints);
       var infosDiv = document.createElement('div');
       infosDiv.id = 'infos';
       var infos = [['meleeAttack', '007_50731'], ['pierceAttack', '006_50731'], ['meleeArmor', '008_50731'], ['pierceArmor', '010_50731']];
@@ -3965,6 +4063,7 @@ var UnitCommands = /*#__PURE__*/function () {
       unit.handleChangeDest();
       unit.stopInterval();
       if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return;
+      if (action === ACTION_TYPES.attack && !combat_getActionCondition(unit, target, ACTION_TYPES.attack)) return;
       if (unit.isUnitAtDest(action, target)) {
         unit.setDest(target);
         unit.action = action;
@@ -4006,7 +4105,7 @@ var UnitCommands = /*#__PURE__*/function () {
         }
       }
       var targets = unit.owner.buildings.filter(function (building) {
-        return extra_getActionCondition(unit, building, ACTION_TYPES.delivery, {
+        return combat_getActionCondition(unit, building, ACTION_TYPES.delivery, {
           buildingTypes: buildingTypes
         });
       });
@@ -4030,6 +4129,7 @@ var UnitCommands = /*#__PURE__*/function () {
   }, {
     key: "sendToAttack",
     value: function sendToAttack(target) {
+      if (!combat_getActionCondition(this.unit, target, ACTION_TYPES.attack)) return;
       return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, {
         resource: 'attack'
       });
@@ -4127,6 +4227,7 @@ var UnitLifecycle = /*#__PURE__*/function () {
   }, {
     key: "die",
     value: function die() {
+      var _unit$context$checkVi, _unit$context2;
       var unit = this.unit;
       if (unit.isDead) {
         return;
@@ -4134,7 +4235,7 @@ var UnitLifecycle = /*#__PURE__*/function () {
       var _unit$context = unit.context,
         player = _unit$context.player,
         menu = _unit$context.menu;
-      unit.sounds && unit.sounds.die && unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.die) ? maths_randomItem(unit.sounds.die) : unit.sounds.die);
+      unit.sounds && unit.sounds.die && unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.die) ? maths_randomItem(unit.sounds.die) : unit.sounds.die);
       unit.stopInterval();
       clearTimeout(unit.visibilityTimeout);
       if (unit.selected && player.selectedOther === unit) {
@@ -4165,6 +4266,7 @@ var UnitLifecycle = /*#__PURE__*/function () {
       }
       this.death();
       canUpdateMinimap(unit, player) && menu.updatePlayerMiniMapEvt(unit.owner);
+      (_unit$context$checkVi = (_unit$context2 = unit.context).checkVictory) === null || _unit$context$checkVi === void 0 || _unit$context$checkVi.call(_unit$context2);
     }
   }, {
     key: "clear",
@@ -4330,7 +4432,7 @@ var UnitCombat = /*#__PURE__*/function () {
             return;
           }
           if (unit.sounds && unit.sounds.hit) {
-            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.hit) ? maths_randomItem(unit.sounds.hit) : unit.sounds.hit);
+            unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play(Array.isArray(unit.sounds.hit) ? maths_randomItem(unit.sounds.hit) : unit.sounds.hit);
           }
           if (unit.dest.hitPoints > 0) {
             unit.dest.hitPoints = getHitPointsWithDamage(unit, unit.dest);
@@ -4440,7 +4542,7 @@ var UnitActions = /*#__PURE__*/function () {
         unit.loading++;
         unit.loadingType = loadingType;
         unit.updateInterfaceLoading();
-        if (soundId) unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play(soundId);
+        if (soundId) unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play(soundId);
         if (updateTexture) unit.dest.updateTexture();
         unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0);
         if (unit.dest.selected && (!checkOwner || unit.owner.isPlayed)) {
@@ -4537,7 +4639,7 @@ var UnitActions = /*#__PURE__*/function () {
             unit.loading++;
             unit.loadingType = LOADING_TYPES.wheat;
             unit.updateInterfaceLoading();
-            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5178');
+            unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play('5178');
             unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0);
             if (unit.dest.selected) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity);
@@ -4572,7 +4674,7 @@ var UnitActions = /*#__PURE__*/function () {
               unit.sendToDelivery();
               return;
             }
-            unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5048');
+            unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play('5048');
             if (unit.dest.hitPoints > 0) {
               unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0);
               if (unit.dest.selected) {
@@ -4631,7 +4733,7 @@ var UnitActions = /*#__PURE__*/function () {
               return;
             }
             if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
-              unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5107');
+              unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play('5107');
               unit.dest.hitPoints = Math.min(Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime), unit.dest.totalHitPoints);
               if (unit.dest.selected && unit.owner.isPlayed) {
                 menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints);
@@ -4698,7 +4800,7 @@ var UnitActions = /*#__PURE__*/function () {
           });
           if (unit.category !== 'Boat') {
             onSpriteLoopAtFrame(unit.sprite, 6, function () {
-              unit.context.controls.instanceInCamera(unit) && sound_lib/* sound */.s3.play('5125');
+              unit.context.controls.instanceIsAudible(unit) && sound_lib/* sound */.s3.play('5125');
             });
           }
           break;
@@ -5114,7 +5216,7 @@ var Unit = /*#__PURE__*/function (_Instance) {
         _this[_key] = lib/* Assets */.sP.cache.get(_value);
       }
     }
-    if (_this.owner.isPlayed && map.ready && _this.context.controls.instanceInCamera(_this)) {
+    if (_this.owner.isPlayed && map.ready && _this.context.controls.instanceIsAudible(_this)) {
       sound_lib/* sound */.s3.play(_this.sounds && _this.sounds.create || 5144);
     }
     _this["interface"] = {
@@ -5225,7 +5327,7 @@ var Unit = /*#__PURE__*/function (_Instance) {
         }
         if (hasSentAttacker) {
           drawInstanceBlinkingSelection(_this);
-        } else if (player.selectedOther !== _this && instanceIsInPlayerSight(_this, player) || map.revealEverything) {
+        } else if (player.selectedOther !== _this && playerCanSeeInstance(_this, player) || map.revealEverything) {
           player.unselectAll();
           _this.select();
           menu.setBottombar(_this);
@@ -5363,7 +5465,7 @@ var Unit = /*#__PURE__*/function (_Instance) {
     key: "isAttacked",
     value: function isAttacked(instance) {
       var _this$handleIsAttacke;
-      if (!instance || this.dest === instance || this.isDead) {
+      if (!instance || this.dest === instance || this.isDead || !this.getActionCondition(instance, ACTION_TYPES.attack)) {
         return;
       }
       if ((_this$handleIsAttacke = this.handleIsAttacked) !== null && _this$handleIsAttacke !== void 0 && _this$handleIsAttacke.call(this, instance, this)) return;
@@ -5573,6 +5675,8 @@ var Player = /*#__PURE__*/function () {
     Object.keys(options).forEach(function (prop) {
       _this[prop] = options[prop];
     });
+    this.team = this.team == null || this.team === '' ? null : Number(this.team);
+    if (!Number.isFinite(this.team)) this.team = null;
     this.population_max = this.population_max || (map.devMode ? POPULATION_MAX : 0);
     this.colorHex = getHexColor(this.color);
     this.config = player_objectSpread({}, lib/* Assets */.sP.cache.get('config'));
@@ -5621,7 +5725,7 @@ var Player = /*#__PURE__*/function () {
         for (var i = 0; i < this.selectedUnits.length; i++) {
           var unit = this.selectedUnits[i];
           if (unit.type === UNIT_TYPES.villager) {
-            if (extra_getActionCondition(unit, building, ACTION_TYPES.build)) {
+            if (combat_getActionCondition(unit, building, ACTION_TYPES.build)) {
               hasSentVillager = true;
               unit.sendToBuilding(building);
             }
@@ -5682,6 +5786,32 @@ var Player = /*#__PURE__*/function () {
       return others;
     }
   }, {
+    key: "isAlliedWith",
+    value: function isAlliedWith(player) {
+      return !!player && player.label !== this.label && this.team !== null && this.team === player.team;
+    }
+  }, {
+    key: "isEnemy",
+    value: function isEnemy(player) {
+      return !!player && player.label !== this.label && !this.isAlliedWith(player);
+    }
+  }, {
+    key: "enemyPlayers",
+    value: function enemyPlayers() {
+      var _this2 = this;
+      return this.otherPlayers().filter(function (player) {
+        return _this2.isEnemy(player);
+      });
+    }
+  }, {
+    key: "visiblePlayers",
+    value: function visiblePlayers() {
+      var _this3 = this;
+      return [this].concat(player_toConsumableArray(this.otherPlayers().filter(function (player) {
+        return _this3.isAlliedWith(player);
+      })));
+    }
+  }, {
     key: "updateConfig",
     value: function updateConfig(operations) {
       for (var i = 0; i < operations.length; i++) {
@@ -5700,14 +5830,14 @@ var Player = /*#__PURE__*/function () {
   }, {
     key: "buyBuilding",
     value: function buyBuilding(i, j, type) {
-      var _this2 = this;
+      var _this4 = this;
       var _this$context3 = this.context,
         menu = _this$context3.menu,
         map = _this$context3.map;
       var config = this.config.buildings[type];
       if (canAfford(this, config.cost) && (!config.conditions || config.conditions.every(function (condition) {
-        return isValidCondition(condition, _this2);
-      }))) {
+        return isValidCondition(condition, _this4);
+      })) && canPlaceBuildingAt(map.grid, i, j, config)) {
         this.spawnBuilding({
           i: i,
           j: j,
@@ -5770,6 +5900,7 @@ var AIMilitary = /*#__PURE__*/function () {
     value: function sendToAttack(soldiers, target) {
       var _map$grid$target$i;
       var debug = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      if (target !== null && target !== void 0 && target.owner && !this.ai.isEnemy(target.owner)) return;
       if (debug) console.log('Sending soldiers to attack:', target);
       soldiers.forEach(function (c) {
         c.assault = true;
@@ -5829,10 +5960,22 @@ var AIMilitary = /*#__PURE__*/function () {
   }, {
     key: "getBestEnemyTarget",
     value: function getBestEnemyTarget() {
+      var _this = this;
       var foundedEnemyBuildings = this.ai.foundedEnemyBuildings;
+      var enemyPlayers = this.ai.enemyPlayers();
       return AIMilitary_toConsumableArray(foundedEnemyBuildings).find(function (b) {
-        return b.type === BUILDING_TYPES.townCenter;
-      }) || foundedEnemyBuildings.values().next().value;
+        return b.type === BUILDING_TYPES.townCenter && _this.ai.isEnemy(b.owner);
+      }) || AIMilitary_toConsumableArray(foundedEnemyBuildings).find(function (b) {
+        return _this.ai.isEnemy(b.owner);
+      }) || enemyPlayers.flatMap(function (player) {
+        return player.buildings;
+      }).find(function (b) {
+        return b.type === BUILDING_TYPES.townCenter && b.hitPoints > 0 && !b.isDead;
+      }) || enemyPlayers.flatMap(function (player) {
+        return player.buildings;
+      }).find(function (b) {
+        return b.hitPoints > 0 && !b.isDead;
+      }) || enemyPlayers[0];
     }
   }, {
     key: "handleActions",
@@ -5849,11 +5992,12 @@ var AIMilitary = /*#__PURE__*/function () {
       var availableMilitary = AIMilitary_toConsumableArray(waitingMilitary);
       if (ai.foundedEnemyUnits.size > 0 && availableMilitary.length > 0) {
         var enemyUnit = AIMilitary_toConsumableArray(ai.foundedEnemyUnits).find(function (u) {
-          return u.hitPoints > 0;
+          return u.hitPoints > 0 && ai.isEnemy(u.owner);
         });
         if (enemyUnit) {
           if (debug) console.log('Enemy units spotted! Defending...');
-          this.sendToAttack(availableMilitary.splice(0), enemyUnit, debug);
+          var responseCount = Math.max(1, Math.ceil(availableMilitary.length / 2));
+          this.sendToAttack(availableMilitary.splice(0, responseCount), enemyUnit, debug);
           actions++;
         }
       }
@@ -5861,8 +6005,8 @@ var AIMilitary = /*#__PURE__*/function () {
       var raidSize = difficultyConfig.raidSize;
       if (raidThreshold > 0 && ai.phase === 'military_build' && availableMilitary.length >= raidThreshold) {
         var raidTarget = AIMilitary_toConsumableArray(ai.foundedEnemyUnits).find(function (u) {
-          return u.hitPoints > 0 && u.type === UNIT_TYPES.villager;
-        }) || ai.foundedEnemyBuildings.values().next().value;
+          return u.hitPoints > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner);
+        }) || this.getBestEnemyTarget();
         if (raidTarget) {
           if (debug) console.log("Early raid! Sending ".concat(raidSize, " soldiers to harass."));
           this.sendToAttack(availableMilitary.splice(0, raidSize), raidTarget, debug);
@@ -6118,6 +6262,10 @@ var AIStrategy = /*#__PURE__*/function () {
       if (ai.phase === 'economy' && villagersCount >= difficultyConfig.econToMilVillagers) {
         ai.phase = 'military_build';
         return 'military_build';
+      }
+      if (ai.phase === 'military_build' && villagersCount < Math.floor(difficultyConfig.econToMilVillagers * 0.6)) {
+        ai.phase = 'economy';
+        return 'economy';
       }
       if (ai.phase === 'military_build' && militaryCount >= difficultyConfig.attackThreshold) {
         ai.phase = 'attack';
@@ -6478,27 +6626,64 @@ var AIEconomy = /*#__PURE__*/function () {
       return toAssign;
     }
   }, {
-    key: "discoverDeadAnimals",
-    value: function discoverDeadAnimals(map) {
+    key: "isSafeToHunt",
+    value: function isSafeToHunt(animal) {
       var ai = this.ai;
-      var _iterator = AIEconomy_createForOfIteratorHelper(map.gaia.units),
+      if (animal.meleeAttack) return false;
+      var dangerRadius = 15;
+      var _iterator = AIEconomy_createForOfIteratorHelper(ai.foundedEnemyBuildings),
         _step;
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var animal = _step.value;
-          if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
-            ai.foundedDeadAnimals.add(animal);
-          }
+          var b = _step.value;
+          if (instancesDistance(animal, b) < dangerRadius) return false;
         }
       } catch (err) {
         _iterator.e(err);
       } finally {
         _iterator.f();
       }
+      var _iterator2 = AIEconomy_createForOfIteratorHelper(ai.foundedEnemyUnits),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var u = _step2.value;
+          if (instancesDistance(animal, u) < dangerRadius) return false;
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      return true;
+    }
+  }, {
+    key: "discoverDeadAnimals",
+    value: function discoverDeadAnimals(map) {
+      var ai = this.ai;
+      var _iterator3 = AIEconomy_createForOfIteratorHelper(map.gaia.units),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var animal = _step3.value;
+          if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
+            var _ai$views;
+            var viewerCell = (_ai$views = ai.views) === null || _ai$views === void 0 || (_ai$views = _ai$views[animal.i]) === null || _ai$views === void 0 ? void 0 : _ai$views[animal.j];
+            if ((viewerCell === null || viewerCell === void 0 ? void 0 : viewerCell.viewBy.size) > 0) {
+              ai.foundedDeadAnimals.add(animal);
+            }
+          }
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
     }
   }, {
     key: "assignFoodSources",
     value: function assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms) {
+      var _this = this;
       var ai = this.ai;
       var villagersForaging = workerSnapshot.villagersForaging,
         villagersOnFood = workerSnapshot.villagersOnFood;
@@ -6520,11 +6705,14 @@ var AIEconomy = /*#__PURE__*/function () {
       });
       foodWorkersAssigned += berriesAssigned;
       actions += berriesAssigned;
-      if (ai.foundedAnimals.size > 0) {
+      var safeAnimals = new Set(AIEconomy_toConsumableArray(ai.foundedAnimals).filter(function (a) {
+        return _this.isSafeToHunt(a);
+      }));
+      if (safeAnimals.size > 0) {
         var maxHunters = Math.min(2, availableVillagers.length);
         for (var _i2 = 0; _i2 < maxHunters; _i2++) {
           if (foodWorkersAssigned >= maxVillagersOnFood) break;
-          var _animal = getClosestInstance(availableVillagers[0], ai.foundedAnimals);
+          var _animal = getClosestInstance(availableVillagers[0], safeAnimals);
           if (!_animal) break;
           availableVillagers.shift().sendToHunt(_animal);
           foodWorkersAssigned++;
@@ -6556,32 +6744,43 @@ var AIEconomy = /*#__PURE__*/function () {
       var debug = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
       var actions = 0;
       if (!notBuiltBuildings.length) return actions;
-      var _iterator2 = AIEconomy_createForOfIteratorHelper(notBuiltBuildings),
-        _step2;
+      var currentBuilders = builderVillagers.length;
+      var _iterator4 = AIEconomy_createForOfIteratorHelper(notBuiltBuildings),
+        _step4;
       try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var building = _step2.value;
-          if (builderVillagers.length >= maxVillagersOnConstruction) break;
-          if (availableVillagers.length === 0) break;
-          var villager = getClosestInstance(building, availableVillagers);
-          if (villager) {
-            if (debug) console.log('Villager sent to build:', building);
-            villager.sendToBuilding(building);
-            availableVillagers.splice(availableVillagers.indexOf(villager), 1);
-            actions++;
-          }
+        var _loop = function _loop() {
+            var building = _step4.value;
+            if (currentBuilders >= maxVillagersOnConstruction) return 0; // break
+            if (availableVillagers.length === 0) return 0; // break
+            var villager = AIEconomy_toConsumableArray(availableVillagers).sort(function (a, b) {
+              return Math.abs(a.i - building.i) + Math.abs(a.j - building.j) - (Math.abs(b.i - building.i) + Math.abs(b.j - building.j));
+            }).find(function (candidate) {
+              return getInstanceClosestFreeCellPath(candidate, building, candidate.context.map).length;
+            });
+            if (villager) {
+              if (debug) console.log('Villager sent to build:', building);
+              villager.sendToBuilding(building);
+              availableVillagers.splice(availableVillagers.indexOf(villager), 1);
+              currentBuilders++;
+              actions++;
+            }
+          },
+          _ret;
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          _ret = _loop();
+          if (_ret === 0) break;
         }
       } catch (err) {
-        _iterator2.e(err);
+        _iterator4.e(err);
       } finally {
-        _iterator2.f();
+        _iterator4.f();
       }
       return actions;
     }
   }, {
     key: "handleVillagerActions",
     value: function handleVillagerActions(_ref) {
-      var _this = this;
+      var _this2 = this;
       var villagers = _ref.villagers,
         map = _ref.map,
         farms = _ref.farms,
@@ -6598,10 +6797,11 @@ var AIEconomy = /*#__PURE__*/function () {
       if (debug) console.log("Food: ".concat(workerSnapshot.villagersOnFood.length, "/").concat(targets.maxVillagersOnFood, ", Wood: ").concat(workerSnapshot.villagersOnWood.length, "/").concat(targets.maxVillagersOnWood, ", Stone: ").concat(workerSnapshot.villagersOnStone.length, "/").concat(targets.maxVillagersOnStone, ", Gold: ").concat(workerSnapshot.villagersOnGold.length, "/").concat(targets.maxVillagersOnGold, ", Builders: ").concat(workerSnapshot.builderVillagers.length));
       this.updateScout(workerSnapshot.inactifVillagers);
       var availableVillagers = workerSnapshot.inactifVillagers.filter(function (v) {
-        return v !== _this.ai.scout;
+        return v !== _this2.ai.scout;
       });
       var actions = 0;
       this.discoverDeadAnimals(map);
+      actions += this.assignBuilders(availableVillagers, notBuiltBuildings, workerSnapshot.builderVillagers, maxVillagersOnConstruction, debug);
       actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms);
       actions += this.assignVillagersToResource(availableVillagers, workerSnapshot.villagersOnWood, this.ai.foundedTrees, targets.maxVillagersOnWood, function (villager, tree) {
         villager.sendToTree(tree);
@@ -6612,7 +6812,6 @@ var AIEconomy = /*#__PURE__*/function () {
       actions += this.assignVillagersToResource(availableVillagers, workerSnapshot.villagersOnGold, this.ai.foundedGolds, targets.maxVillagersOnGold, function (villager, gold) {
         villager.sendToGold(gold);
       });
-      actions += this.assignBuilders(availableVillagers, notBuiltBuildings, workerSnapshot.builderVillagers, maxVillagersOnConstruction, debug);
       return actions;
     }
   }]);
@@ -6801,7 +7000,7 @@ var AI = /*#__PURE__*/function (_Player) {
       try {
         for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
           var b = _step8.value;
-          if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings["delete"](b);
+          if (b.isDead || b.isDestroyed || !this.isEnemy(b.owner)) this.foundedEnemyBuildings["delete"](b);
         }
       } catch (err) {
         _iterator8.e(err);
@@ -6813,7 +7012,7 @@ var AI = /*#__PURE__*/function (_Player) {
       try {
         for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
           var u = _step9.value;
-          if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits["delete"](u);
+          if (u.isDead || u.isDestroyed || u.hitPoints <= 0 || !this.isEnemy(u.owner)) this.foundedEnemyUnits["delete"](u);
         }
       } catch (err) {
         _iterator9.e(err);
@@ -6845,7 +7044,7 @@ var AI = /*#__PURE__*/function (_Player) {
       };
       if (type === UNIT_TYPES.villager) {
         options.handleIsAttacked = function (attacker, unit) {
-          if (attacker.family !== FAMILY_TYPES.animal) {
+          if (attacker.family !== FAMILY_TYPES.animal || attacker.meleeAttack) {
             unit.runaway(attacker);
             return true;
           }
@@ -6968,8 +7167,8 @@ var AI = /*#__PURE__*/function (_Player) {
       // Remove depleted resources and destroyed enemies from tracked sets
       this.cleanupSets();
 
-      // Cache otherPlayers once — used in multiple building placement filters below
-      var otherPlayers = this.otherPlayers();
+      // Cache enemy players once — used in multiple building placement filters below
+      var otherPlayers = this.enemyPlayers();
       actions += this.economy.handleVillagerActions({
         villagers: villagers,
         map: map,
@@ -7038,6 +7237,7 @@ function AnimalInterface_toPrimitive(t, r) { if ("object" != AnimalInterface_typ
 
 
 
+
 var AnimalInterface = /*#__PURE__*/function () {
   function AnimalInterface(animal) {
     AnimalInterface_classCallCheck(this, AnimalInterface);
@@ -7048,22 +7248,7 @@ var AnimalInterface = /*#__PURE__*/function () {
     value: function setDefaultInterface(element, data) {
       var animal = this.animal;
       var menu = animal.context.menu;
-      var civDiv = document.createElement('div');
-      civDiv.id = MENU_INFO_IDS.civ;
-      civDiv.textContent = '';
-      element.appendChild(civDiv);
-      var typeDiv = document.createElement('div');
-      typeDiv.id = MENU_INFO_IDS.type;
-      typeDiv.textContent = t(animal.type);
-      element.appendChild(typeDiv);
-      var iconImg = document.createElement('img');
-      iconImg.id = MENU_INFO_IDS.icon;
-      iconImg.src = getIconPath(data.icon);
-      element.appendChild(iconImg);
-      var hitPointsDiv = document.createElement('div');
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints;
-      hitPointsDiv.textContent = animal.hitPoints + '/' + animal.totalHitPoints;
-      element.appendChild(hitPointsDiv);
+      appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints);
       var quantityDiv = document.createElement('div');
       quantityDiv.id = MENU_INFO_IDS.quantity;
       quantityDiv.className = 'resource-quantity';
@@ -7099,7 +7284,7 @@ var AnimalLifecycle = /*#__PURE__*/function () {
     value: function die() {
       var animal = this.animal;
       if (animal.isDead) return;
-      if (animal.sounds && animal.context.controls.instanceInCamera(animal)) {
+      if (animal.sounds && animal.context.controls.instanceIsAudible(animal)) {
         animal.sounds.die && sound_lib/* sound */.s3.play(animal.sounds.die);
         animal.sounds.fall && sound_lib/* sound */.s3.play(animal.sounds.fall);
       }
@@ -7459,7 +7644,7 @@ var AnimalCombat = /*#__PURE__*/function () {
               animal.sendTo(animal.dest, ACTION_TYPES.attack);
               return;
             }
-            animal.sounds && animal.sounds.hit && animal.context.controls.instanceInCamera(animal) && sound_lib/* sound */.s3.play(animal.sounds.hit);
+            animal.sounds && animal.sounds.hit && animal.context.controls.instanceIsAudible(animal) && sound_lib/* sound */.s3.play(animal.sounds.hit);
             if (animal.dest.hitPoints > 0) {
               animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest);
               if (animal.dest.selected && player && (player.selectedUnit === animal.dest || player.selectedBuilding === animal.dest)) {
@@ -7593,27 +7778,27 @@ var Animal = /*#__PURE__*/function (_Instance) {
         for (var i = 0; i < player.selectedUnits.length; i++) {
           var playerUnit = player.selectedUnits[i];
           if (playerUnit.type === UNIT_TYPES.villager) {
-            if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.hunt)) {
+            if (combat_getActionCondition(playerUnit, _this, ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
-            } else if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.takemeat)) {
+            } else if (combat_getActionCondition(playerUnit, _this, ACTION_TYPES.takemeat)) {
               playerUnit.sendToTakeMeat(_this);
               hasSentVillager = true;
               drawDestinationRectangle = true;
             }
-          } else if (extra_getActionCondition(playerUnit, _this, ACTION_TYPES.attack)) {
+          } else if (combat_getActionCondition(playerUnit, _this, ACTION_TYPES.attack)) {
             playerUnit.sendTo(_this, ACTION_TYPES.attack);
             drawDestinationRectangle = true;
             hasSentOther = true;
           }
         }
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
-        if (extra_getActionCondition(player.selectedBuilding, _this, ACTION_TYPES.attack) && instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
+        if (combat_getActionCondition(player.selectedBuilding, _this, ACTION_TYPES.attack) && instancesDistance(player.selectedBuilding, _this) <= player.selectedBuilding.range) {
           player.selectedBuilding.attackAction(_this);
           drawDestinationRectangle = true;
         }
-      } else if ((instanceIsInPlayerSight(_this, player) || map.revealEverything) && _this.quantity > 0) {
+      } else if ((playerCanSeeInstance(_this, player) || map.revealEverything) && _this.quantity > 0) {
         player.unselectAll();
         _this.select();
         menu.setBottombar(_this);
@@ -8025,7 +8210,7 @@ var CellFog = /*#__PURE__*/function () {
       var _cell$context = cell.context,
         player = _cell$context.player,
         map = _cell$context.map;
-      if (!instanceIsInPlayerSight(instance, player)) {
+      if (!playerCanSeeInstance(instance, player)) {
         if (instance.owner && !instance.owner.isPlayed) {
           if (!init && instance.family === FAMILY_TYPES.building) {
             if (!map.revealTerrain) {
@@ -8075,8 +8260,8 @@ var CellFog = /*#__PURE__*/function () {
         cell._hasFog = true;
         var map = cell.context.map;
         if (map._fogQueue) {
-          var _cell$context$player$, _cell$context$player$2;
-          var viewed = (_cell$context$player$ = (_cell$context$player$2 = cell.context.player.views[cell.i]) === null || _cell$context$player$2 === void 0 || (_cell$context$player$2 = _cell$context$player$2[cell.j]) === null || _cell$context$player$2 === void 0 ? void 0 : _cell$context$player$2.viewed) !== null && _cell$context$player$ !== void 0 ? _cell$context$player$ : false;
+          var _cell$context$player$, _cell$context$player;
+          var viewed = (_cell$context$player$ = (_cell$context$player = cell.context.player) === null || _cell$context$player === void 0 || (_cell$context$player = _cell$context$player.views) === null || _cell$context$player === void 0 || (_cell$context$player = _cell$context$player[cell.i]) === null || _cell$context$player === void 0 || (_cell$context$player = _cell$context$player[cell.j]) === null || _cell$context$player === void 0 ? void 0 : _cell$context$player.viewed) !== null && _cell$context$player$ !== void 0 ? _cell$context$player$ : false;
           var isViewed = viewed || map.revealTerrain;
           // During init, chunks are already solid black — only queue if cell was viewed
           // (needs dotted pattern) or if init is already complete (re-fogging during gameplay)
@@ -8208,9 +8393,22 @@ var CellTerrain = /*#__PURE__*/function () {
       var elevation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       var cell = this.cell;
       var sprite = cell.sprite;
-      var resourceName = sprite.texture.label.split('_')[1].split('.')[0];
+      var label = sprite.texture.label;
+      if (!label || !label.includes('_')) {
+        console.log("[relief] BAD LABEL at [".concat(cell.i, ",").concat(cell.j, "]: \"").concat(label, "\""));
+        return;
+      }
+      var resourceName = label.split('_')[1].split('.')[0];
       var spritesheet = lib/* Assets */.sP.cache.get(resourceName);
+      if (!spritesheet) {
+        console.log("[relief] NO SPRITESHEET \"".concat(resourceName, "\" at [").concat(cell.i, ",").concat(cell.j, "]"));
+        return;
+      }
       var texture = spritesheet.textures[index + '_' + resourceName + '.png'];
+      if (!texture) {
+        console.log("[relief] MISSING TEXTURE \"".concat(index, "_").concat(resourceName, ".png\" at [").concat(cell.i, ",").concat(cell.j, "]"));
+        return;
+      }
       if (elevation) {
         cell.y -= elevation;
       }
@@ -8293,7 +8491,7 @@ var CellTerrain = /*#__PURE__*/function () {
       }
       var grid = cell.parent.grid;
       getCellsAroundPoint(cell.i, cell.j, grid, level - cpt, function (neighbor) {
-        if (neighbor.z < cpt) {
+        if (neighbor.z < cpt && !neighbor.has) {
           neighbor.y -= (cpt - neighbor.z) * CELL_DEPTH;
           neighbor.z = cpt;
           neighbor.fillReliefCellsAroundCell();
@@ -8402,7 +8600,7 @@ var Cell = /*#__PURE__*/function (_Container) {
       var _this$context = this.context,
         map = _this$context.map,
         player = _this$context.player;
-      var isInPlayerSight = instanceIsInPlayerSight(instance, player);
+      var isInPlayerSight = playerCanSeeInstance(instance, player);
       instance.visible = map.revealEverything || ((_instance$owner = instance.owner) === null || _instance$owner === void 0 ? void 0 : _instance$owner.isPlayed) || isInPlayerSight || instance.family === FAMILY_TYPES.resource || !map.revealTerrain && !instance.owner;
     }
   }, {
@@ -8508,22 +8706,1962 @@ var Cell = /*#__PURE__*/function (_Container) {
     }
   }]);
 }(lib/* Container */.mcf);
-;// ./app/classes/map.js
+;// ./app/classes/map/MapGeneration.js
+function MapGeneration_typeof(o) { "@babel/helpers - typeof"; return MapGeneration_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapGeneration_typeof(o); }
+function MapGeneration_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MapGeneration_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function MapGeneration_toConsumableArray(r) { return MapGeneration_arrayWithoutHoles(r) || MapGeneration_iterableToArray(r) || MapGeneration_unsupportedIterableToArray(r) || MapGeneration_nonIterableSpread(); }
+function MapGeneration_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function MapGeneration_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapGeneration_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapGeneration_arrayLikeToArray(r, a) : void 0; } }
+function MapGeneration_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function MapGeneration_arrayWithoutHoles(r) { if (Array.isArray(r)) return MapGeneration_arrayLikeToArray(r); }
+function MapGeneration_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function MapGeneration_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function MapGeneration_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? MapGeneration_ownKeys(Object(t), !0).forEach(function (r) { MapGeneration_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : MapGeneration_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function MapGeneration_defineProperty(e, r, t) { return (r = MapGeneration_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function MapGeneration_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MapGeneration_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapGeneration_toPropertyKey(o.key), o); } }
+function MapGeneration_createClass(e, r, t) { return r && MapGeneration_defineProperties(e.prototype, r), t && MapGeneration_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MapGeneration_toPropertyKey(t) { var i = MapGeneration_toPrimitive(t, "string"); return "symbol" == MapGeneration_typeof(i) ? i : i + ""; }
+function MapGeneration_toPrimitive(t, r) { if ("object" != MapGeneration_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapGeneration_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+
+
+var MapGeneration = /*#__PURE__*/function () {
+  function MapGeneration(map) {
+    MapGeneration_classCallCheck(this, MapGeneration);
+    this.map = map;
+  }
+  return MapGeneration_createClass(MapGeneration, [{
+    key: "generateFromJSON",
+    value: function generateFromJSON(_ref) {
+      var _this = this;
+      var map = _ref.map,
+        players = _ref.players,
+        camera = _ref.camera,
+        resources = _ref.resources,
+        animals = _ref.animals;
+      var classMap = {
+        Human: Human,
+        AI: AI
+      };
+      var _this$map$context = this.map.context,
+        menu = _this$map$context.menu,
+        controls = _this$map$context.controls;
+      this.map.removeChildren();
+      this.map.size = map.length - 1;
+      this.map.context.players = players.map(function (player) {
+        var p = new classMap[player.type](MapGeneration_objectSpread(MapGeneration_objectSpread({}, player), {}, {
+          corpses: [],
+          buildings: [],
+          units: []
+        }), _this.map.context);
+        if (player.isPlayed) {
+          _this.map.context.player = p;
+        }
+        return p;
+      });
+      this.map._initFogChunks();
+      this.map.gaia = new Gaia(this.map.context);
+      for (var i = 0; i <= this.map.size; i++) {
+        var line = map[i];
+        for (var j = 0; j <= this.map.size; j++) {
+          if (!this.map.grid[i]) {
+            this.map.grid[i] = [];
+          }
+          var cell = line[j];
+          var newCell = new Cell({
+            i: i,
+            j: j,
+            z: cell.z,
+            type: cell.type,
+            fogSprites: cell.fogSprites
+          }, this.map.context);
+          this.map.addChild(newCell);
+          this.map.grid[i][j] = newCell;
+        }
+      }
+      for (var _i = 0; _i <= this.map.size; _i++) {
+        for (var _j = 0; _j <= this.map.size; _j++) {
+          this.map.grid[_i][_j].fillWaterCellsAroundCell();
+        }
+      }
+      this.map.resources = new Set(resources.map(function (resource) {
+        return _this.map.addChild(new Resource(resource, _this.map.context));
+      }));
+      this.map.formatCellsWaterBorder();
+      this.map.clampReliefAroundWater();
+      this.map.formatCellsRelief();
+      this.map.formatCellsDesert();
+      if (!this.map.revealEverything) {
+        for (var _i2 = 0; _i2 <= this.map.size; _i2++) {
+          for (var _j2 = 0; _j2 <= this.map.size; _j2++) {
+            this.map.grid[_i2][_j2].setFog();
+          }
+        }
+      }
+      controls.setCamera(camera.x, camera.y, true);
+      menu.init();
+      menu.updateResourcesMiniMap();
+      this.map.context.players.forEach(function (player, index) {
+        var _players$index = players[index],
+          buildings = _players$index.buildings,
+          units = _players$index.units,
+          corpses = _players$index.corpses;
+        player.buildings = buildings.map(function (building) {
+          return player.createBuilding(building);
+        });
+        player.units = units.map(function (unit) {
+          return player.createUnit(unit);
+        });
+        player.corpses = corpses.map(function (unit) {
+          return player.createUnit(unit);
+        });
+      });
+      animals.forEach(function (animal) {
+        return _this.map.gaia.createAnimal(animal);
+      });
+      function getDest(val, map) {
+        if (val) {
+          if (Array.isArray(val)) {
+            return val[2] ? map.getChildByLabel(val[2]) : map.grid[val[0]][val[1]];
+          } else {
+            return map.getChildByLabel(val);
+          }
+        }
+        return null;
+      }
+      function processUnit(unit, context) {
+        if (unit.previousDest) {
+          unit.previousDest = getDest(unit.previousDest, context);
+        }
+        if (unit.dest && !unit.isDead) {
+          var dest = getDest(unit.dest, context);
+          if (dest) {
+            unit.commonSendTo ? unit.commonSendTo(dest, unit.work, unit.action, true) : unit.sendTo(dest, unit.action);
+          } else {
+            unit.stop();
+          }
+        }
+      }
+      this.map.gaia.units.forEach(function (animal) {
+        return processUnit(animal, _this.map);
+      });
+      this.map.context.players.forEach(function (player) {
+        for (var _i3 = 0; _i3 <= _this.map.size; _i3++) {
+          var _line = player.views[_i3];
+          for (var _j3 = 0; _j3 <= _this.map.size; _j3++) {
+            var _cell = _line[_j3];
+            if (_cell.viewed) {
+              _cell.onViewed();
+            }
+            _cell.viewBy = new Set(MapGeneration_toConsumableArray(_cell.viewBy).map(function (name) {
+              return getDest(name, _this.map);
+            }).filter(Boolean));
+            if (player.isPlayed && _cell.viewed) {
+              if (!_cell.viewBy.size) {
+                _this.map.grid[_i3][_j3].setFog(true);
+              } else {
+                _this.map.grid[_i3][_j3].removeFog();
+              }
+            }
+          }
+        }
+        player.units.forEach(function (unit) {
+          return processUnit(unit, _this.map);
+        });
+      });
+      this.map._fogInitComplete = true;
+      this.map._flushFogQueue();
+      this.map.bakeTerrainToChunks();
+      this.map.ready = true;
+    }
+  }, {
+    key: "generateMap",
+    value: function generateMap() {
+      var positionsCountOverride = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var repeat = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      this.map.removeChildren();
+      this.map.generateCells();
+      switch (this.map.size) {
+        case 120:
+          this.map.positionsCount = 2;
+          break;
+        case 144:
+          this.map.positionsCount = 3;
+          break;
+        case 168:
+          this.map.positionsCount = 4;
+          break;
+        case 200:
+          this.map.positionsCount = 6;
+          break;
+        case 220:
+          this.map.positionsCount = 8;
+          break;
+        default:
+          this.map.positionsCount = 2;
+      }
+      if (positionsCountOverride !== null) {
+        this.map.positionsCount = positionsCountOverride;
+      }
+      this.map.totalCells = Math.pow(this.map.size + 1, 2);
+      this.map.playersPos = this.map.findPlayerPlaces();
+      if (this.map.playersPos.length < this.map.positionsCount) {
+        if (repeat >= 10) {
+          alert('Error while generating the map');
+          return;
+        }
+        this.map.generateMap(positionsCountOverride, repeat + 1);
+        return;
+      }
+      this.map.generateResourcesAroundPlayers(this.map.playersPos);
+      this.map.generateNeutralResourceGroups(this.map.playersPos);
+    }
+  }, {
+    key: "stylishMap",
+    value: function stylishMap() {
+      var _this$map$context2 = this.map.context,
+        menu = _this$map$context2.menu,
+        player = _this$map$context2.player;
+      this.map.gaia = new Gaia(this.map.context);
+      this.map.generateAnimalsAroundPlayers(this.map.playersPos);
+      this.map.generateMapRelief();
+      this.map.formatCellsRelief();
+      this.map.generateSets();
+      this.map._initFogChunks();
+      if (!this.map.revealEverything) {
+        for (var i = 0; i <= this.map.size; i++) {
+          for (var j = 0; j <= this.map.size; j++) {
+            this.map.grid[i][j].setFog();
+          }
+        }
+        for (var _i4 = 0; _i4 < player.buildings.length; _i4++) {
+          var building = player.buildings[_i4];
+          updateInstanceVisibility(building);
+        }
+        for (var _i5 = 0; _i5 < player.units.length; _i5++) {
+          var unit = player.units[_i5];
+          updateInstanceVisibility(unit);
+        }
+      }
+      this.map._fogInitComplete = true;
+      this.map._flushFogQueue();
+      this.map.bakeTerrainToChunks();
+      this.map.ready = true;
+      menu.updateResourcesMiniMap();
+    }
+  }, {
+    key: "generatePlayers",
+    value: function generatePlayers() {
+      var playersConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var context = this.map.context;
+      var players = [];
+      var poses = [];
+      var randoms = Array.from(Array(this.map.playersPos.length).keys());
+      for (var i = 0; i < this.map.playersPos.length; i++) {
+        var pos = maths_randomItem(randoms);
+        poses.push(pos);
+        randoms.splice(randoms.indexOf(pos), 1);
+      }
+      for (var _i6 = 0; _i6 < this.map.positionsCount; _i6++) {
+        var _this$map$playersPos$, _this$map$playersPos$2;
+        var posI = (_this$map$playersPos$ = this.map.playersPos[poses[_i6]]) === null || _this$map$playersPos$ === void 0 ? void 0 : _this$map$playersPos$.i;
+        var posJ = (_this$map$playersPos$2 = this.map.playersPos[poses[_i6]]) === null || _this$map$playersPos$2 === void 0 ? void 0 : _this$map$playersPos$2.j;
+        if (posI && posJ) {
+          var _playersConfig$_i6$co, _playersConfig$_i, _playersConfig$_i6$ci, _playersConfig$_i2, _playersConfig$_i6$te, _playersConfig$_i3;
+          var color = (_playersConfig$_i6$co = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i = playersConfig[_i6]) === null || _playersConfig$_i === void 0 ? void 0 : _playersConfig$_i.color) !== null && _playersConfig$_i6$co !== void 0 ? _playersConfig$_i6$co : colors[_i6];
+          var civ = (_playersConfig$_i6$ci = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i2 = playersConfig[_i6]) === null || _playersConfig$_i2 === void 0 ? void 0 : _playersConfig$_i2.civ) !== null && _playersConfig$_i6$ci !== void 0 ? _playersConfig$_i6$ci : 'Greek';
+          var team = (_playersConfig$_i6$te = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i3 = playersConfig[_i6]) === null || _playersConfig$_i3 === void 0 ? void 0 : _playersConfig$_i3.team) !== null && _playersConfig$_i6$te !== void 0 ? _playersConfig$_i6$te : null;
+          if (!_i6) {
+            players.push(new Human({
+              i: posI,
+              j: posJ,
+              age: 0,
+              civ: civ,
+              color: color,
+              team: team,
+              isPlayed: true
+            }, context));
+          } else if (!this.map.noAI) {
+            players.push(new AI({
+              i: posI,
+              j: posJ,
+              age: 0,
+              civ: civ,
+              color: color,
+              team: team,
+              difficulty: this.map.difficulty
+            }, context));
+          }
+        }
+      }
+      return players;
+    }
+  }, {
+    key: "placePlayers",
+    value: function placePlayers() {
+      var players = this.map.context.players;
+      for (var i = 0; i < players.length; i++) {
+        var player = players[i];
+        var towncenter = player.spawnBuilding({
+          i: player.i,
+          j: player.j,
+          type: BUILDING_TYPES.townCenter,
+          isBuilt: true
+        });
+        for (var _i7 = 0; _i7 < this.map.startingUnits; _i7++) {
+          towncenter.placeUnit(UNIT_TYPES.villager);
+        }
+      }
+    }
+  }, {
+    key: "generateCells",
+    value: function generateCells() {
+      var z = 0;
+      this.map.grid = [];
+      var terrain = this.map.generateTerrain(this.map.size ? this.map.size + 1 : 121, this.map.mapType || 'plain');
+      this.map.size = terrain.length - 1;
+      var terrainMap = {
+        0: 'Grass',
+        1: 'Desert',
+        2: 'Water',
+        3: 'Jungle'
+      };
+      for (var i = 0; i <= this.map.size; i++) {
+        if (!this.map.grid[i]) this.map.grid[i] = [];
+        for (var j = 0; j <= this.map.size; j++) {
+          var type = terrainMap[terrain[i][j]];
+          var cell = new Cell({
+            i: i,
+            j: j,
+            z: z,
+            type: type
+          }, this.map.context);
+          this.map.addChild(cell);
+          this.map.grid[i][j] = cell;
+        }
+      }
+      for (var _i8 = 0; _i8 <= this.map.size; _i8++) {
+        for (var _j4 = 0; _j4 <= this.map.size; _j4++) {
+          this.map.grid[_i8][_j4].fillWaterCellsAroundCell();
+        }
+      }
+      this.map.formatCellsWaterBorder();
+      this.map.formatCellsDesert();
+    }
+  }, {
+    key: "generateTerrain",
+    value: function generateTerrain() {
+      var _thresholds$mapType, _biomeThresholds$mapT;
+      var gridSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 120;
+      var mapType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'plain';
+      var seed = Math.random() * 9999;
+      function hash(x, y) {
+        var n = Math.sin(x * 127.1 + y * 311.7 + seed * 3.7) * 43758.5453;
+        return n - Math.floor(n);
+      }
+      function noise(x, y) {
+        var xi = Math.floor(x),
+          yi = Math.floor(y);
+        var xf = x - xi,
+          yf = y - yi;
+        var smooth = function smooth(t) {
+          return t * t * (3 - 2 * t);
+        };
+        var u = smooth(xf),
+          v = smooth(yf);
+        var a = hash(xi, yi),
+          b = hash(xi + 1, yi);
+        var c = hash(xi, yi + 1),
+          d = hash(xi + 1, yi + 1);
+        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
+      }
+      function fbm(x, y) {
+        var octaves = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
+        var val = 0,
+          amp = 0.5,
+          freq = 1,
+          sum = 0;
+        for (var o = 0; o < octaves; o++) {
+          val += noise(x * freq, y * freq) * amp;
+          sum += amp;
+          amp *= 0.5;
+          freq *= 2;
+        }
+        return val / sum;
+      }
+      var scale = 4 / gridSize;
+      var half = gridSize / 2;
+      function radialFalloff(i, j) {
+        var dx = (i - half) / half;
+        var dy = (j - half) / half;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var t = Math.min(1, dist);
+        return 1 - t * t * (3 - 2 * t);
+      }
+      var height = new Float32Array(gridSize * gridSize);
+      var biome = new Float32Array(gridSize * gridSize);
+      for (var i = 0; i < gridSize; i++) {
+        for (var j = 0; j < gridSize; j++) {
+          height[i * gridSize + j] = fbm(i * scale, j * scale);
+          biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4);
+        }
+      }
+      var thresholds = {
+        plain: 0.30,
+        continent: 0.40,
+        lac: 0.42,
+        ilot: 0.52
+      };
+      var waterThreshold = (_thresholds$mapType = thresholds[mapType]) !== null && _thresholds$mapType !== void 0 ? _thresholds$mapType : 0.30;
+      var terrainMap = [];
+      for (var _i9 = 0; _i9 < gridSize; _i9++) {
+        terrainMap[_i9] = [];
+        for (var _j5 = 0; _j5 < gridSize; _j5++) {
+          var h = height[_i9 * gridSize + _j5];
+          var fo = radialFalloff(_i9, _j5);
+          if (mapType === 'continent') {
+            h += (fo - 0.5) * 0.75;
+          } else if (mapType === 'lac') {
+            h -= (fo - 0.3) * 0.50;
+          } else if (mapType === 'ilot') {
+            h += (fo - 0.5) * 0.20;
+          }
+          terrainMap[_i9][_j5] = h < waterThreshold ? 2 : 0;
+        }
+      }
+      for (var pass = 0; pass < 2; pass++) {
+        for (var _i0 = 1; _i0 < gridSize - 1; _i0++) {
+          for (var _j6 = 1; _j6 < gridSize - 1; _j6++) {
+            var wn = (terrainMap[_i0 - 1][_j6] === 2 ? 1 : 0) + (terrainMap[_i0 + 1][_j6] === 2 ? 1 : 0) + (terrainMap[_i0][_j6 - 1] === 2 ? 1 : 0) + (terrainMap[_i0][_j6 + 1] === 2 ? 1 : 0);
+            if (terrainMap[_i0][_j6] !== 2 && wn >= 3) terrainMap[_i0][_j6] = 2;
+            if (terrainMap[_i0][_j6] === 2 && wn <= 1) terrainMap[_i0][_j6] = 0;
+          }
+        }
+      }
+      var biomeThresholds = {
+        plain: {
+          lo: 0.38,
+          hi: 0.65
+        },
+        continent: {
+          lo: 0.33,
+          hi: 0.67
+        },
+        lac: {
+          lo: 0.32,
+          hi: 0.68
+        },
+        ilot: {
+          lo: 0.27,
+          hi: 0.60
+        }
+      };
+      var bt = (_biomeThresholds$mapT = biomeThresholds[mapType]) !== null && _biomeThresholds$mapT !== void 0 ? _biomeThresholds$mapT : biomeThresholds.plain;
+      for (var _i1 = 0; _i1 < gridSize; _i1++) {
+        for (var _j7 = 0; _j7 < gridSize; _j7++) {
+          if (terrainMap[_i1][_j7] === 2) continue;
+          var b = biome[_i1 * gridSize + _j7];
+          if (b < bt.lo) terrainMap[_i1][_j7] = 1;else if (b > bt.hi) terrainMap[_i1][_j7] = 3;
+        }
+      }
+      return terrainMap;
+    }
+  }, {
+    key: "generateSets",
+    value: function generateSets() {
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          if (getCellsAroundPoint(i, j, this.map.grid, 1, function (neighbour) {
+            return neighbour.solid;
+          }).length > 0) {
+            continue;
+          }
+          if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
+            if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
+              var randomSpritesheet = randomRange(292, 301).toString();
+              var spritesheet = lib/* Assets */.sP.cache.get(randomSpritesheet);
+              var texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
+              var floor = lib/* Sprite */.kxk.from(texture);
+              floor.label = LABEL_TYPES.floor;
+              floor.roundPixels = true;
+              floor.allowMove = false;
+              floor.eventMode = 'none';
+              floor.allowClick = false;
+              floor.updateAnchor = true;
+              cell.addChild(floor);
+            }
+            if (Math.random() < this.map.chanceOfSets) {
+              if (cell.category !== 'Water') {
+                var type = maths_randomItem(['tree', 'rock', 'animal']);
+                switch (type) {
+                  case 'rock':
+                    {
+                      var _randomSpritesheet = randomRange(531, 534).toString();
+                      var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
+                      var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
+                      var rock = lib/* Sprite */.kxk.from(_texture);
+                      rock.label = LABEL_TYPES.set;
+                      rock.roundPixels = true;
+                      rock.allowMove = false;
+                      rock.eventMode = 'none';
+                      rock.allowClick = false;
+                      rock.updateAnchor = true;
+                      cell.addChild(rock);
+                      break;
+                    }
+                  case 'animal':
+                    {
+                      var animals = lib/* Assets */.sP.cache.get('config').animals;
+                      var animalType = maths_randomItem(Object.keys(animals));
+                      this.map.gaia.createAnimal({
+                        i: i,
+                        j: j,
+                        type: animalType
+                      });
+                      break;
+                    }
+                }
+              } else {
+                this.map.resources.add(this.map.addChild(new Resource({
+                  i: i,
+                  j: j,
+                  type: RESOURCE_TYPES.salmon
+                }, this.map.context)));
+              }
+            }
+          }
+        }
+      }
+    }
+  }, {
+    key: "findPlayerPlaces",
+    value: function findPlayerPlaces() {
+      var results = [];
+      var N = this.map.positionsCount;
+      var center = this.map.size / 2;
+      var startAngle = Math.random() * 2 * Math.PI;
+      var searchHalf = Math.max(8, Math.floor(this.map.size * 0.07));
+      var border = 12;
+      var radiiFactors = [0.38, 0.30, 0.44, 0.22, 0.46, 0.15];
+      for (var i = 0; i < N; i++) {
+        var angle = startAngle + 2 * Math.PI / N * i;
+        var found = null;
+        var _iterator = MapGeneration_createForOfIteratorHelper(radiiFactors),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var frac = _step.value;
+            if (found) break;
+            var r = Math.floor(this.map.size * frac);
+            var ci = Math.round(center + Math.cos(angle) * r);
+            var cj = Math.round(center + Math.sin(angle) * r);
+            found = getZoneInGridWithCondition({
+              minX: Math.max(border, ci - searchHalf),
+              maxX: Math.min(this.map.size - border, ci + searchHalf),
+              minY: Math.max(border, cj - searchHalf),
+              maxY: Math.min(this.map.size - border, cj + searchHalf)
+            }, this.map.grid, 5, function (cell) {
+              return !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water';
+            });
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+        if (found) results.push(found);
+      }
+      return results;
+    }
+  }]);
+}();
+;// ./app/classes/map/MapResources.js
+function MapResources_typeof(o) { "@babel/helpers - typeof"; return MapResources_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapResources_typeof(o); }
+function MapResources_slicedToArray(r, e) { return MapResources_arrayWithHoles(r) || MapResources_iterableToArrayLimit(r, e) || MapResources_unsupportedIterableToArray(r, e) || MapResources_nonIterableRest(); }
+function MapResources_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function MapResources_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapResources_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapResources_arrayLikeToArray(r, a) : void 0; } }
+function MapResources_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function MapResources_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function MapResources_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function MapResources_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MapResources_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapResources_toPropertyKey(o.key), o); } }
+function MapResources_createClass(e, r, t) { return r && MapResources_defineProperties(e.prototype, r), t && MapResources_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MapResources_toPropertyKey(t) { var i = MapResources_toPrimitive(t, "string"); return "symbol" == MapResources_typeof(i) ? i : i + ""; }
+function MapResources_toPrimitive(t, r) { if ("object" != MapResources_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapResources_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+var RESOURCE_DENSITY_PROFILES = {
+  low: {
+    neutralGroups: {
+      berrybush: 2,
+      stone: 2,
+      gold: 2,
+      tree: 4
+    },
+    minNeutralDistance: 28,
+    playerSafeDistance: 34
+  },
+  moderate: {
+    neutralGroups: {
+      berrybush: 4,
+      stone: 4,
+      gold: 4,
+      tree: 7
+    },
+    minNeutralDistance: 24,
+    playerSafeDistance: 30
+  },
+  high: {
+    neutralGroups: {
+      berrybush: 7,
+      stone: 6,
+      gold: 6,
+      tree: 11
+    },
+    minNeutralDistance: 20,
+    playerSafeDistance: 26
+  }
+};
+var MapResources = /*#__PURE__*/function () {
+  function MapResources(map) {
+    MapResources_classCallCheck(this, MapResources);
+    this.map = map;
+  }
+  return MapResources_createClass(MapResources, [{
+    key: "generateForestAroundPlayer",
+    value: function generateForestAroundPlayer(player, treeCount) {
+      var _this = this;
+      var clusterCount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 12;
+      var minClusterRadius = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 5;
+      var maxClusterRadius = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 10;
+      var safeDistance = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 20;
+      var clearingProbability = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0.6;
+      var grid = this.map.grid;
+      var playerI = player.i,
+        playerJ = player.j;
+      var gridWidth = grid.length;
+      var gridHeight = grid[0].length;
+      var forestCells = [];
+      var pathCells = new Set();
+      var rangeFactor = this.map.mapType === 'lac' ? 0.55 : 0.40;
+      var forestRange = Math.max(30, Math.floor(this.map.size * rangeFactor));
+      function distSq(x1, y1, x2, y2) {
+        return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
+      }
+      var safeDistanceSq = Math.pow(safeDistance, 2);
+      function createCircle(centerI, centerJ, radius) {
+        var density = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0.7;
+        var edgeNoise = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+        var circleCells = [];
+        for (var x = -radius; x <= radius; x++) {
+          for (var y = -radius; y <= radius; y++) {
+            var noise = Math.random() * edgeNoise - edgeNoise / 2;
+            var effectiveRadius = radius - noise;
+            if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
+              var cellI = centerI + x;
+              var cellJ = centerJ + y;
+              if (cellI >= 0 && cellI < gridWidth && cellJ >= 0 && cellJ < gridHeight && !grid[cellI][cellJ].solid && grid[cellI][cellJ].category !== 'Water' && grid[cellI][cellJ].type !== 'Border' && !grid[cellI][cellJ].inclined && Math.random() < density) {
+                circleCells.push({
+                  i: cellI,
+                  j: cellJ
+                });
+              }
+            }
+          }
+        }
+        return circleCells;
+      }
+      for (var cluster = 0; cluster < clusterCount; cluster++) {
+        var clusterCenterI = void 0,
+          clusterCenterJ = void 0;
+        var tries = 0;
+        var clusterRadius = Math.floor(Math.random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius;
+        var clusterDensity = Math.random() * 0.5 + 0.5;
+        var edgeNoise = Math.random() * 2;
+        do {
+          clusterCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          clusterCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          tries++;
+          if (tries > 100) break;
+        } while (distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq || clusterCenterI < 0 || clusterCenterI >= gridWidth || clusterCenterJ < 0 || clusterCenterJ >= gridHeight || grid[clusterCenterI][clusterCenterJ].category === 'Water' || grid[clusterCenterI][clusterCenterJ].solid || grid[clusterCenterI][clusterCenterJ].inclined);
+        if (tries <= 100) {
+          var treeCluster = createCircle(clusterCenterI, clusterCenterJ, clusterRadius, clusterDensity, edgeNoise);
+          treeCluster.forEach(function (cell) {
+            return forestCells.push(cell);
+          });
+        }
+      }
+      var scatteredTreeCount = Math.floor(treeCount * 0.2);
+      for (var i = 0; i < scatteredTreeCount; i++) {
+        var soloI = void 0,
+          soloJ = void 0;
+        var _tries = 0;
+        do {
+          soloI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          soloJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
+          _tries++;
+          if (_tries > 50) break;
+        } while (distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq || soloI < 0 || soloI >= gridWidth || soloJ < 0 || soloJ >= gridHeight || grid[soloI][soloJ].category === 'Water' || grid[soloI][soloJ].solid || grid[soloI][soloJ].inclined);
+        if (_tries <= 50) {
+          forestCells.push({
+            i: soloI,
+            j: soloJ
+          });
+        }
+      }
+      var _loop = function _loop() {
+        if (Math.random() < clearingProbability) {
+          var clearingCenterI, clearingCenterJ;
+          var _tries2 = 0;
+          var clearingRadius = Math.floor(Math.random() * 8) + 5;
+          var _edgeNoise = Math.random() * 1.5;
+          do {
+            clearingCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
+            clearingCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
+            _tries2++;
+            if (_tries2 > 100) break;
+          } while (distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq || clearingCenterI < 0 || clearingCenterI >= gridWidth || clearingCenterJ < 0 || clearingCenterJ >= gridHeight || grid[clearingCenterI][clearingCenterJ].category === 'Water' || grid[clearingCenterI][clearingCenterJ].solid || grid[clearingCenterI][clearingCenterJ].inclined);
+          if (_tries2 <= 100) {
+            var clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, _edgeNoise);
+            var clearingSet = new Set(clearingCells.map(function (c) {
+              return "".concat(c.i, ",").concat(c.j);
+            }));
+            forestCells = forestCells.filter(function (c) {
+              return !clearingSet.has("".concat(c.i, ",").concat(c.j));
+            });
+          }
+        }
+      };
+      for (var clearing = 0; clearing < clusterCount; clearing++) {
+        _loop();
+      }
+      var pathLength = 20;
+      var pathDirection = Math.random() > 0.5 ? 1 : -1;
+      for (var step = 0; step < pathLength; step++) {
+        var offsetX = step * pathDirection;
+        var offsetY = step;
+        var ni = playerI + offsetX;
+        var nj = playerJ + offsetY;
+        if (ni >= 0 && ni < gridWidth && nj >= 0 && nj < gridHeight && distSq(ni, nj, playerI, playerJ) >= safeDistanceSq) {
+          var randOffsetX = Math.random() > 0.5 ? 1 : -1;
+          var randOffsetY = Math.random() > 0.5 ? 1 : -1;
+          pathCells.add("".concat(ni + randOffsetX, ",").concat(nj + randOffsetY));
+        }
+      }
+      for (var idx = forestCells.length - 1; idx >= 0; idx--) {
+        if (pathCells.has("".concat(forestCells[idx].i, ",").concat(forestCells[idx].j))) {
+          forestCells.splice(idx, 1);
+        }
+      }
+      var cellsToPlace = [];
+      for (var _i = 0; _i < treeCount; _i++) {
+        if (forestCells.length === 0) break;
+        var itemIndex = Math.floor(Math.random() * forestCells.length);
+        var cell = forestCells[itemIndex];
+        cellsToPlace.push(cell);
+        forestCells.splice(itemIndex, 1);
+      }
+      var _loop2 = function _loop2() {
+        var cell = _cellsToPlace[_i2];
+        if (grid[cell.i][cell.j].category !== 'Water' && !grid[cell.i][cell.j].waterBorder && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
+          var isFree = true;
+          grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
+            var _cell$has;
+            if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.type)) {
+              isFree = false;
+            }
+          });
+          isFree && _this.map.resources.add(_this.map.addChild(new Resource({
+            i: cell.i,
+            j: cell.j,
+            type: RESOURCE_TYPES.tree
+          }, _this.map.context)));
+        }
+      };
+      for (var _i2 = 0, _cellsToPlace = cellsToPlace; _i2 < _cellsToPlace.length; _i2++) {
+        _loop2();
+      }
+    }
+  }, {
+    key: "placeAnimalHerd",
+    value: function placeAnimalHerd(player, quantity, range) {
+      var grid = this.map.grid;
+      var randomDistance = randomRange(range[0], range[1]);
+      var centerI = player.i + maths_randomItem([-randomDistance, randomDistance]);
+      var centerJ = player.j + maths_randomItem([-randomDistance, randomDistance]);
+      var validCells = [];
+      for (var dx = -3; dx <= 3; dx++) {
+        for (var dy = -3; dy <= 3; dy++) {
+          var _grid$newI;
+          var newI = centerI + dx;
+          var newJ = centerJ + dy;
+          if ((_grid$newI = grid[newI]) !== null && _grid$newI !== void 0 && _grid$newI[newJ]) {
+            var cell = grid[newI][newJ];
+            if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+              validCells.push({
+                i: newI,
+                j: newJ
+              });
+            }
+          }
+        }
+      }
+      var toPlace = Math.min(quantity, validCells.length);
+      for (var i = 0; i < toPlace; i++) {
+        var idx = Math.floor(Math.random() * validCells.length);
+        var _cell = validCells.splice(idx, 1)[0];
+        this.map.gaia.createAnimal({
+          i: _cell.i,
+          j: _cell.j,
+          type: 'Gazelle'
+        });
+      }
+    }
+  }, {
+    key: "generateAnimalsAroundPlayers",
+    value: function generateAnimalsAroundPlayers(playersPos) {
+      for (var i = 0; i < playersPos.length; i++) {
+        this.map.placeAnimalHerd(playersPos[i], 5, [8, 14]);
+        this.map.placeAnimalHerd(playersPos[i], 4, [16, 24]);
+      }
+    }
+  }, {
+    key: "generateResourcesAroundPlayers",
+    value: function generateResourcesAroundPlayers(playersPos) {
+      for (var i = 0; i < playersPos.length; i++) {
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [7, 14]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [14, 22]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [22, 29]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [7, 14]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [14, 22]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [22, 29]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [7, 14]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [14, 22]);
+        this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [22, 29]);
+        this.map.generateForestAroundPlayer(playersPos[i], this.map.size * 4);
+      }
+    }
+  }, {
+    key: "generateNeutralResourceGroups",
+    value: function generateNeutralResourceGroups(playersPos) {
+      var _RESOURCE_DENSITY_PRO;
+      var profile = (_RESOURCE_DENSITY_PRO = RESOURCE_DENSITY_PROFILES[this.map.resourceDensity]) !== null && _RESOURCE_DENSITY_PRO !== void 0 ? _RESOURCE_DENSITY_PRO : RESOURCE_DENSITY_PROFILES.moderate;
+      var placedCenters = [];
+      var sizeScale = Math.max(1, Math.round(Math.pow(this.map.size / 120, 2)));
+      var groupEntries = [[RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2], [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2], [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2], [RESOURCE_TYPES.tree, profile.neutralGroups.tree, 14, 4]];
+      for (var _i3 = 0, _groupEntries = groupEntries; _i3 < _groupEntries.length; _i3++) {
+        var _groupEntries$_i = MapResources_slicedToArray(_groupEntries[_i3], 4),
+          type = _groupEntries$_i[0],
+          baseCount = _groupEntries$_i[1],
+          quantity = _groupEntries$_i[2],
+          radius = _groupEntries$_i[3];
+        var targetCount = baseCount * sizeScale;
+        for (var i = 0; i < targetCount; i++) {
+          var center = this.map.findNeutralResourceCenter(playersPos, placedCenters, profile.playerSafeDistance, profile.minNeutralDistance);
+          if (!center) break;
+          if (this.map.placeResourceGroupAt(center, type, quantity, radius)) {
+            placedCenters.push(center);
+          }
+        }
+      }
+    }
+  }, {
+    key: "findNeutralResourceCenter",
+    value: function findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {
+      var _this2 = this;
+      var border = 10;
+      var playerSafeDistanceSq = Math.pow(playerSafeDistance, 2);
+      var minNeutralDistanceSq = Math.pow(minNeutralDistance, 2);
+      var _loop3 = function _loop3() {
+          var _this2$map$grid$i;
+          var i = randomRange(border, _this2.map.size - border);
+          var j = randomRange(border, _this2.map.size - border);
+          var cell = (_this2$map$grid$i = _this2.map.grid[i]) === null || _this2$map$grid$i === void 0 ? void 0 : _this2$map$grid$i[j];
+          if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) return 0; // continue
+          var tooCloseToPlayer = playersPos.some(function (pos) {
+            return Math.pow(pos.i - i, 2) + Math.pow(pos.j - j, 2) < playerSafeDistanceSq;
+          });
+          if (tooCloseToPlayer) return 0; // continue
+          var tooCloseToGroup = placedCenters.some(function (pos) {
+            return Math.pow(pos.i - i, 2) + Math.pow(pos.j - j, 2) < minNeutralDistanceSq;
+          });
+          if (tooCloseToGroup) return 0; // continue
+          return {
+            v: {
+              i: i,
+              j: j
+            }
+          };
+        },
+        _ret;
+      for (var attempt = 0; attempt < 300; attempt++) {
+        _ret = _loop3();
+        if (_ret === 0) continue;
+        if (_ret) return _ret.v;
+      }
+      return null;
+    }
+  }, {
+    key: "placeResourceGroup",
+    value: function placeResourceGroup(player, instance, quantity, range) {
+      var angle = Math.random() * 2 * Math.PI;
+      var dist = range[0] + Math.random() * (range[1] - range[0]);
+      var centerI = Math.round(player.i + Math.cos(angle) * dist);
+      var centerJ = Math.round(player.j + Math.sin(angle) * dist);
+      return this.map.placeResourceGroupAt({
+        i: centerI,
+        j: centerJ
+      }, instance, quantity);
+    }
+  }, {
+    key: "placeResourceGroupAt",
+    value: function placeResourceGroupAt(center, instance, quantity) {
+      var clusterRadius = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 2;
+      var _this$map = this.map,
+        context = _this$map.context,
+        grid = _this$map.grid;
+      function getValidCells(ci, cj, radius) {
+        var cells = [];
+        for (var dx = -radius; dx <= radius; dx++) {
+          var _loop4 = function _loop4() {
+            var _grid$newI2;
+            var newI = ci + dx;
+            var newJ = cj + dy;
+            if (!((_grid$newI2 = grid[newI]) !== null && _grid$newI2 !== void 0 && _grid$newI2[newJ])) return 1; // continue
+            var cell = grid[newI][newJ];
+            var isFree = true;
+            grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (c) {
+              var _c$has;
+              if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_c$has = c.has) === null || _c$has === void 0 ? void 0 : _c$has.type)) {
+                isFree = false;
+              }
+            });
+            if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+              cells.push({
+                i: newI,
+                j: newJ
+              });
+            }
+          };
+          for (var dy = -radius; dy <= radius; dy++) {
+            if (_loop4()) continue;
+          }
+        }
+        return cells;
+      }
+      var validCells = getValidCells(center.i, center.j, clusterRadius);
+      if (validCells.length < quantity) validCells = getValidCells(center.i, center.j, clusterRadius + 1);
+      if (validCells.length < quantity) return false;
+      var cellsToPlace = [];
+      for (var i = 0; i < quantity; i++) {
+        if (!validCells.length) break;
+        var idx = Math.floor(Math.random() * validCells.length);
+        cellsToPlace.push(validCells.splice(idx, 1)[0]);
+      }
+      for (var _i4 = 0, _cellsToPlace2 = cellsToPlace; _i4 < _cellsToPlace2.length; _i4++) {
+        var cell = _cellsToPlace2[_i4];
+        this.map.resources.add(this.map.addChild(new Resource({
+          i: cell.i,
+          j: cell.j,
+          type: instance
+        }, context)));
+      }
+      return true;
+    }
+  }]);
+}();
+;// ./app/classes/map/MapTerrain.js
+function MapTerrain_typeof(o) { "@babel/helpers - typeof"; return MapTerrain_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapTerrain_typeof(o); }
+function MapTerrain_slicedToArray(r, e) { return MapTerrain_arrayWithHoles(r) || MapTerrain_iterableToArrayLimit(r, e) || MapTerrain_unsupportedIterableToArray(r, e) || MapTerrain_nonIterableRest(); }
+function MapTerrain_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function MapTerrain_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function MapTerrain_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function MapTerrain_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MapTerrain_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n2 = 0, F = function F() {}; return { s: F, n: function n() { return _n2 >= r.length ? { done: !0 } : { done: !1, value: r[_n2++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function MapTerrain_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapTerrain_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapTerrain_arrayLikeToArray(r, a) : void 0; } }
+function MapTerrain_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function MapTerrain_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MapTerrain_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapTerrain_toPropertyKey(o.key), o); } }
+function MapTerrain_createClass(e, r, t) { return r && MapTerrain_defineProperties(e.prototype, r), t && MapTerrain_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MapTerrain_toPropertyKey(t) { var i = MapTerrain_toPrimitive(t, "string"); return "symbol" == MapTerrain_typeof(i) ? i : i + ""; }
+function MapTerrain_toPrimitive(t, r) { if ("object" != MapTerrain_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapTerrain_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+var MapTerrain = /*#__PURE__*/function () {
+  function MapTerrain(map) {
+    MapTerrain_classCallCheck(this, MapTerrain);
+    this.map = map;
+  }
+  return MapTerrain_createClass(MapTerrain, [{
+    key: "generateMapRelief",
+    value: function generateMapRelief() {
+      var _this = this;
+      var seed = Math.random() * 9999;
+      function hash(x, y) {
+        var n = Math.sin(x * 83.7 + y * 214.3 + seed * 5.1) * 43758.5453;
+        return n - Math.floor(n);
+      }
+      function noise(x, y) {
+        var xi = Math.floor(x),
+          yi = Math.floor(y);
+        var xf = x - xi,
+          yf = y - yi;
+        var s = function s(t) {
+          return t * t * (3 - 2 * t);
+        };
+        var u = s(xf),
+          v = s(yf);
+        var a = hash(xi, yi),
+          b = hash(xi + 1, yi);
+        var c = hash(xi, yi + 1),
+          d = hash(xi + 1, yi + 1);
+        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
+      }
+      function fbm(x, y) {
+        var val = 0,
+          amp = 0.5,
+          freq = 1,
+          sum = 0;
+        for (var o = 0; o < 4; o++) {
+          val += noise(x * freq, y * freq) * amp;
+          sum += amp;
+          amp *= 0.5;
+          freq *= 2;
+        }
+        return val / sum;
+      }
+      var scale = 3 / this.map.size;
+      var n = this.map.size + 1;
+      var dist = this.map.getReliefCoastDistances();
+      var reliefH = new Float32Array(n * n);
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          reliefH[i * n + j] = fbm(i * scale, j * scale);
+        }
+      }
+      var levelThresholds = [0, 0.66, 0.78, 0.86];
+      for (var targetLevel = 3; targetLevel >= 1; targetLevel--) {
+        var threshold = levelThresholds[targetLevel];
+        for (var _i = 0; _i <= this.map.size; _i++) {
+          for (var _j = 0; _j <= this.map.size; _j++) {
+            var cell = this.map.grid[_i][_j];
+            if (cell.category === 'Water' || cell.has || cell.waterBorder || this.map.isInPlayerStartFlatZone(_i, _j)) continue;
+            var maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[_i * n + _j]);
+            var actual = Math.min(targetLevel, maxAllowed);
+            if (reliefH[_i * n + _j] > threshold && actual > cell.z) {
+              cell.setCellLevel(actual);
+            }
+          }
+        }
+      }
+      this.map.clampReliefAroundWater(dist);
+      for (var _i2 = 0; _i2 <= this.map.size; _i2++) {
+        var _loop = function _loop() {
+          var cell = _this.map.grid[_i2][_j2];
+          if (cell.z === 1) {
+            var cpt = 0;
+            getCellsAroundPoint(_i2, _j2, _this.map.grid, 1, function (c) {
+              if (c.z > 0) cpt++;
+            });
+            if (cpt < 3) _this.map.setCellReliefLevelDirect(cell, 0);
+          }
+        };
+        for (var _j2 = 0; _j2 <= this.map.size; _j2++) {
+          _loop();
+        }
+      }
+      for (var _i3 = 0; _i3 <= this.map.size; _i3++) {
+        for (var _j3 = 0; _j3 <= this.map.size; _j3++) {
+          this.map.grid[_i3][_j3].fillReliefCellsAroundCell();
+        }
+      }
+      this.map.flattenPlayerStartZones();
+      this.map.clampReliefAroundWater(dist);
+    }
+  }, {
+    key: "isInPlayerStartFlatZone",
+    value: function isInPlayerStartFlatZone(i, j) {
+      var radius = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4;
+      return this.map.playersPos.some(function (pos) {
+        return Math.abs(pos.i - i) <= radius && Math.abs(pos.j - j) <= radius;
+      });
+    }
+  }, {
+    key: "flattenPlayerStartZones",
+    value: function flattenPlayerStartZones() {
+      var radius = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 4;
+      var _iterator = MapTerrain_createForOfIteratorHelper(this.map.playersPos),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var pos = _step.value;
+          var cells = grid_getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius);
+          var _iterator2 = MapTerrain_createForOfIteratorHelper(cells),
+            _step2;
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var cell = _step2.value;
+              if (cell.category !== 'Water' && !cell.waterBorder && cell.z !== 0) {
+                this.map.setCellReliefLevelDirect(cell, 0);
+              }
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }, {
+    key: "getReliefCoastDistances",
+    value: function getReliefCoastDistances() {
+      var n = this.map.size + 1;
+      var dist = new Int16Array(n * n).fill(9999);
+      var queue = [];
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          if (cell.category === 'Water' || cell.waterBorder) {
+            dist[i * n + j] = 0;
+            queue.push(i * n + j);
+          }
+        }
+      }
+      for (var qi = 0; qi < queue.length; qi++) {
+        var idx = queue[qi];
+        var ci = Math.floor(idx / n),
+          cj = idx % n;
+        var d = dist[idx];
+        for (var _i4 = 0, _arr = [[-1, 0], [1, 0], [0, -1], [0, 1]]; _i4 < _arr.length; _i4++) {
+          var _arr$_i = MapTerrain_slicedToArray(_arr[_i4], 2),
+            di = _arr$_i[0],
+            dj = _arr$_i[1];
+          var ni = ci + di,
+            nj = cj + dj;
+          if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue;
+          var nidx = ni * n + nj;
+          if (dist[nidx] > d + 1) {
+            dist[nidx] = d + 1;
+            queue.push(nidx);
+          }
+        }
+      }
+      return dist;
+    }
+  }, {
+    key: "getMaxReliefLevelFromCoastDistance",
+    value: function getMaxReliefLevelFromCoastDistance(distance) {
+      return Math.max(0, distance - 3);
+    }
+  }, {
+    key: "setCellReliefLevelDirect",
+    value: function setCellReliefLevelDirect(cell, level) {
+      var delta = level - cell.z;
+      if (delta === 0) return;
+      cell.y -= delta * CELL_DEPTH;
+      cell.z = level;
+    }
+  }, {
+    key: "clampReliefAroundWater",
+    value: function clampReliefAroundWater() {
+      var dist = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.map.getReliefCoastDistances();
+      var n = this.map.size + 1;
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          var maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j]);
+          if (cell.z > maxAllowed) this.map.setCellReliefLevelDirect(cell, maxAllowed);
+        }
+      }
+    }
+  }, {
+    key: "formatCellsRelief",
+    value: function formatCellsRelief() {
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var _this$map$grid$j$z, _this$map$grid, _this$map$grid$j$z2, _this$map$grid2, _this$map$grid$i$z, _this$map$grid$i, _this$map$grid$i$z2, _this$map$grid$i2;
+          var cell = this.map.grid[i][j];
+          var _n = (_this$map$grid$j$z = (_this$map$grid = this.map.grid[i - 1]) === null || _this$map$grid === void 0 || (_this$map$grid = _this$map$grid[j]) === null || _this$map$grid === void 0 ? void 0 : _this$map$grid.z) !== null && _this$map$grid$j$z !== void 0 ? _this$map$grid$j$z : cell.z;
+          var _s = (_this$map$grid$j$z2 = (_this$map$grid2 = this.map.grid[i + 1]) === null || _this$map$grid2 === void 0 || (_this$map$grid2 = _this$map$grid2[j]) === null || _this$map$grid2 === void 0 ? void 0 : _this$map$grid2.z) !== null && _this$map$grid$j$z2 !== void 0 ? _this$map$grid$j$z2 : cell.z;
+          var _w = (_this$map$grid$i$z = (_this$map$grid$i = this.map.grid[i]) === null || _this$map$grid$i === void 0 || (_this$map$grid$i = _this$map$grid$i[j - 1]) === null || _this$map$grid$i === void 0 ? void 0 : _this$map$grid$i.z) !== null && _this$map$grid$i$z !== void 0 ? _this$map$grid$i$z : cell.z;
+          var _e = (_this$map$grid$i$z2 = (_this$map$grid$i2 = this.map.grid[i]) === null || _this$map$grid$i2 === void 0 || (_this$map$grid$i2 = _this$map$grid$i2[j + 1]) === null || _this$map$grid$i2 === void 0 ? void 0 : _this$map$grid$i2.z) !== null && _this$map$grid$i$z2 !== void 0 ? _this$map$grid$i$z2 : cell.z;
+          if ((cell.category === 'Water' || cell.waterBorder) && (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z)) {
+            console.log("[relief] SKIPPED waterBorder at [".concat(i, ",").concat(j, "] z=").concat(cell.z, " N=").concat(_n, " S=").concat(_s, " W=").concat(_w, " E=").concat(_e));
+          }
+          if (cell.category === 'Water' || cell.waterBorder) continue;
+          if (this.map.grid[i - 1] && this.map.grid[i - 1][j].z - cell.z >= 1 && (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) && (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) && (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z)) {
+            cell.setReliefBorder('014', CELL_DEPTH / 2);
+          } else if (this.map.grid[i + 1] && this.map.grid[i + 1][j].z - cell.z >= 1 && (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z) && (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) && (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z)) {
+            cell.setReliefBorder('015', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j - 1] && this.map.grid[i][j - 1].z - cell.z >= 1 && (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) && (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) && (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)) {
+            cell.setReliefBorder('016', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j + 1] && this.map.grid[i][j + 1].z - cell.z >= 1 && (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) && (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) && (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)) {
+            cell.setReliefBorder('013', CELL_DEPTH / 2);
+          } else if (this.map.grid[i - 1] && this.map.grid[i - 1][j - 1] && this.map.grid[i - 1][j - 1].z - cell.z >= 1 && (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) && (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)) {
+            cell.setReliefBorder('010', CELL_DEPTH / 2);
+          } else if (this.map.grid[i + 1] && this.map.grid[i + 1][j - 1] && this.map.grid[i + 1][j - 1].z - cell.z >= 1 && (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) && (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z)) {
+            cell.setReliefBorder('012');
+          } else if (this.map.grid[i - 1] && this.map.grid[i - 1][j + 1] && this.map.grid[i - 1][j + 1].z - cell.z >= 1 && (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) && (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)) {
+            cell.setReliefBorder('011');
+          } else if (this.map.grid[i + 1] && this.map.grid[i + 1][j + 1] && this.map.grid[i + 1][j + 1].z - cell.z >= 1 && (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) && (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z)) {
+            cell.setReliefBorder('009', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j - 1] && this.map.grid[i][j - 1].z - cell.z >= 1 && this.map.grid[i - 1] && this.map.grid[i - 1][j].z - cell.z >= 1) {
+            cell.setReliefBorder('022', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j + 1] && this.map.grid[i][j + 1].z - cell.z >= 1 && this.map.grid[i + 1] && this.map.grid[i + 1][j].z - cell.z >= 1) {
+            cell.setReliefBorder('021', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j - 1] && this.map.grid[i][j - 1].z - cell.z >= 1 && this.map.grid[i + 1] && this.map.grid[i + 1][j].z - cell.z >= 1) {
+            cell.setReliefBorder('023', CELL_DEPTH);
+          } else if (this.map.grid[i][j + 1] && this.map.grid[i][j + 1].z - cell.z >= 1 && this.map.grid[i - 1] && this.map.grid[i - 1][j].z - cell.z >= 1) {
+            cell.setReliefBorder('024', CELL_DEPTH);
+          } else if (this.map.grid[i - 1] && this.map.grid[i - 1][j].z - cell.z >= 1 && this.map.grid[i + 1] && this.map.grid[i + 1][j].z - cell.z >= 1) {
+            cell.setReliefBorder('017', CELL_DEPTH / 2);
+          } else if (this.map.grid[i][j - 1] && this.map.grid[i][j - 1].z - cell.z >= 1 && this.map.grid[i][j + 1] && this.map.grid[i][j + 1].z - cell.z >= 1) {
+            cell.setReliefBorder('018', CELL_DEPTH / 2);
+          } else {
+            var _this$map$grid$z, _this$map$grid3, _this$map$grid$z2, _this$map$grid4, _this$map$grid$z3, _this$map$grid5, _this$map$grid$z4, _this$map$grid6;
+            var _nw = (_this$map$grid$z = (_this$map$grid3 = this.map.grid[i - 1]) === null || _this$map$grid3 === void 0 || (_this$map$grid3 = _this$map$grid3[j - 1]) === null || _this$map$grid3 === void 0 ? void 0 : _this$map$grid3.z) !== null && _this$map$grid$z !== void 0 ? _this$map$grid$z : cell.z;
+            var _ne = (_this$map$grid$z2 = (_this$map$grid4 = this.map.grid[i - 1]) === null || _this$map$grid4 === void 0 || (_this$map$grid4 = _this$map$grid4[j + 1]) === null || _this$map$grid4 === void 0 ? void 0 : _this$map$grid4.z) !== null && _this$map$grid$z2 !== void 0 ? _this$map$grid$z2 : cell.z;
+            var _sw = (_this$map$grid$z3 = (_this$map$grid5 = this.map.grid[i + 1]) === null || _this$map$grid5 === void 0 || (_this$map$grid5 = _this$map$grid5[j - 1]) === null || _this$map$grid5 === void 0 ? void 0 : _this$map$grid5.z) !== null && _this$map$grid$z3 !== void 0 ? _this$map$grid$z3 : cell.z;
+            var _se = (_this$map$grid$z4 = (_this$map$grid6 = this.map.grid[i + 1]) === null || _this$map$grid6 === void 0 || (_this$map$grid6 = _this$map$grid6[j + 1]) === null || _this$map$grid6 === void 0 ? void 0 : _this$map$grid6.z) !== null && _this$map$grid$z4 !== void 0 ? _this$map$grid$z4 : cell.z;
+            if (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z || _nw > cell.z || _ne > cell.z || _sw > cell.z || _se > cell.z) {
+              console.log("[relief] UNHANDLED at [".concat(i, ",").concat(j, "] z=").concat(cell.z, " N=").concat(_n, " S=").concat(_s, " W=").concat(_w, " E=").concat(_e, " NW=").concat(_nw, " NE=").concat(_ne, " SW=").concat(_sw, " SE=").concat(_se));
+            }
+          }
+        }
+      }
+    }
+  }, {
+    key: "formatCellsWaterBorder",
+    value: function formatCellsWaterBorder() {
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var _this$map$grid7, _this$map$grid8, _this$map$grid$i3, _this$map$grid$i4, _this$map$grid9, _this$map$grid0, _this$map$grid1, _this$map$grid10;
+          var cell = this.map.grid[i][j];
+          if (cell.type === 'Water') continue;
+          var n = ((_this$map$grid7 = this.map.grid[i - 1]) === null || _this$map$grid7 === void 0 || (_this$map$grid7 = _this$map$grid7[j]) === null || _this$map$grid7 === void 0 ? void 0 : _this$map$grid7.type) === 'Water';
+          var s = ((_this$map$grid8 = this.map.grid[i + 1]) === null || _this$map$grid8 === void 0 || (_this$map$grid8 = _this$map$grid8[j]) === null || _this$map$grid8 === void 0 ? void 0 : _this$map$grid8.type) === 'Water';
+          var w = ((_this$map$grid$i3 = this.map.grid[i]) === null || _this$map$grid$i3 === void 0 || (_this$map$grid$i3 = _this$map$grid$i3[j - 1]) === null || _this$map$grid$i3 === void 0 ? void 0 : _this$map$grid$i3.type) === 'Water';
+          var e = ((_this$map$grid$i4 = this.map.grid[i]) === null || _this$map$grid$i4 === void 0 || (_this$map$grid$i4 = _this$map$grid$i4[j + 1]) === null || _this$map$grid$i4 === void 0 ? void 0 : _this$map$grid$i4.type) === 'Water';
+          var nw = ((_this$map$grid9 = this.map.grid[i - 1]) === null || _this$map$grid9 === void 0 || (_this$map$grid9 = _this$map$grid9[j - 1]) === null || _this$map$grid9 === void 0 ? void 0 : _this$map$grid9.type) === 'Water';
+          var sw = ((_this$map$grid0 = this.map.grid[i + 1]) === null || _this$map$grid0 === void 0 || (_this$map$grid0 = _this$map$grid0[j - 1]) === null || _this$map$grid0 === void 0 ? void 0 : _this$map$grid0.type) === 'Water';
+          var ne = ((_this$map$grid1 = this.map.grid[i - 1]) === null || _this$map$grid1 === void 0 || (_this$map$grid1 = _this$map$grid1[j + 1]) === null || _this$map$grid1 === void 0 ? void 0 : _this$map$grid1.type) === 'Water';
+          var se = ((_this$map$grid10 = this.map.grid[i + 1]) === null || _this$map$grid10 === void 0 || (_this$map$grid10 = _this$map$grid10[j + 1]) === null || _this$map$grid10 === void 0 ? void 0 : _this$map$grid10.type) === 'Water';
+          if (w && n) cell.setWaterBorder('20000', '001');else if (e && s) cell.setWaterBorder('20000', '002');else if (w && s) cell.setWaterBorder('20000', '003');else if (e && n) cell.setWaterBorder('20000', '000');else if (n) cell.setWaterBorder('20000', '008');else if (s) cell.setWaterBorder('20000', '009');else if (w) cell.setWaterBorder('20000', '011');else if (e) cell.setWaterBorder('20000', '010');else if (nw) cell.setWaterBorder('20000', '005');else if (sw) cell.setWaterBorder('20000', '007');else if (ne) cell.setWaterBorder('20000', '004');else if (se) cell.setWaterBorder('20000', '006');
+        }
+      }
+      for (var _i5 = 0; _i5 <= this.map.size; _i5++) {
+        for (var _j4 = 0; _j4 <= this.map.size; _j4++) {
+          var _this$map$grid11, _this$map$grid12, _this$map$grid$_i, _this$map$grid$_i2;
+          var _cell = this.map.grid[_i5][_j4];
+          if (!_cell.waterBorder) continue;
+          var overlay = function overlay(neighbor, direction) {
+            if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
+              neighbor.setDesertBorder(direction);
+            }
+          };
+          overlay((_this$map$grid11 = this.map.grid[_i5 - 1]) === null || _this$map$grid11 === void 0 ? void 0 : _this$map$grid11[_j4], 'east');
+          overlay((_this$map$grid12 = this.map.grid[_i5 + 1]) === null || _this$map$grid12 === void 0 ? void 0 : _this$map$grid12[_j4], 'west');
+          overlay((_this$map$grid$_i = this.map.grid[_i5]) === null || _this$map$grid$_i === void 0 ? void 0 : _this$map$grid$_i[_j4 - 1], 'south');
+          overlay((_this$map$grid$_i2 = this.map.grid[_i5]) === null || _this$map$grid$_i2 === void 0 ? void 0 : _this$map$grid$_i2[_j4 + 1], 'north');
+        }
+      }
+    }
+  }, {
+    key: "formatCellsDesert",
+    value: function formatCellsDesert() {
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          var typeToFormat = ['Grass', 'Jungle'];
+          if (cell.type === 'Desert') {
+            if (this.map.grid[i - 1] && this.map.grid[i - 1][j] && typeToFormat.includes(this.map.grid[i - 1][j].type)) {
+              this.map.grid[i - 1][j].setDesertBorder('east');
+            }
+            if (this.map.grid[i + 1] && this.map.grid[i + 1][j] && typeToFormat.includes(this.map.grid[i + 1][j].type)) {
+              this.map.grid[i + 1][j].setDesertBorder('west');
+            }
+            if (this.map.grid[i][j - 1] && typeToFormat.includes(this.map.grid[i][j - 1].type)) {
+              this.map.grid[i][j - 1].setDesertBorder('south');
+            }
+            if (this.map.grid[i][j + 1] && typeToFormat.includes(this.map.grid[i][j + 1].type)) {
+              this.map.grid[i][j + 1].setDesertBorder('north');
+            }
+          }
+        }
+      }
+    }
+  }]);
+}();
+;// ./app/classes/map/MapFog.js
+function MapFog_typeof(o) { "@babel/helpers - typeof"; return MapFog_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapFog_typeof(o); }
+function MapFog_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MapFog_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function MapFog_slicedToArray(r, e) { return MapFog_arrayWithHoles(r) || MapFog_iterableToArrayLimit(r, e) || MapFog_unsupportedIterableToArray(r, e) || MapFog_nonIterableRest(); }
+function MapFog_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function MapFog_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapFog_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapFog_arrayLikeToArray(r, a) : void 0; } }
+function MapFog_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function MapFog_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function MapFog_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function MapFog_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function MapFog_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapFog_toPropertyKey(o.key), o); } }
+function MapFog_createClass(e, r, t) { return r && MapFog_defineProperties(e.prototype, r), t && MapFog_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function MapFog_toPropertyKey(t) { var i = MapFog_toPrimitive(t, "string"); return "symbol" == MapFog_typeof(i) ? i : i + ""; }
+function MapFog_toPrimitive(t, r) { if ("object" != MapFog_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != MapFog_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+
+
+var MapFog = /*#__PURE__*/function () {
+  function MapFog(map) {
+    MapFog_classCallCheck(this, MapFog);
+    this.map = map;
+  }
+  return MapFog_createClass(MapFog, [{
+    key: "bakeTerrainToChunks",
+    value: function bakeTerrainToChunks() {
+      var _this$map$context$app;
+      var renderer = (_this$map$context$app = this.map.context.app) === null || _this$map$context$app === void 0 ? void 0 : _this$map$context$app.renderer;
+      if (!renderer) return;
+      var _this$map$_getFogMapB = this.map._getFogMapBounds(),
+        minX = _this$map$_getFogMapB.minX,
+        minY = _this$map$_getFogMapB.minY,
+        maxX = _this$map$_getFogMapB.maxX,
+        maxY = _this$map$_getFogMapB.maxY,
+        totalW = _this$map$_getFogMapB.totalW,
+        totalH = _this$map$_getFogMapB.totalH;
+      var gl = renderer.gl;
+      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
+      var chunksX = Math.ceil(totalW / maxTex);
+      var chunksY = Math.ceil(totalH / maxTex);
+      var chunkW = totalW / chunksX;
+      var chunkH = totalH / chunksY;
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          this.map.grid[i][j].visible = true;
+        }
+      }
+      var terrainContainer = new lib/* Container */.mcf();
+      for (var _i = 0; _i <= this.map.size; _i++) {
+        for (var _j = 0; _j <= this.map.size; _j++) {
+          terrainContainer.addChild(this.map.grid[_i][_j]);
+        }
+      }
+      for (var cx = 0; cx < chunksX; cx++) {
+        for (var cy = 0; cy < chunksY; cy++) {
+          var cMinX = minX + cx * chunkW;
+          var cMinY = minY + cy * chunkH;
+          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
+          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
+          var rt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var transform = new lib/* Matrix */.uqu().translate(-cMinX, -cMinY);
+          renderer.render({
+            container: terrainContainer,
+            target: rt,
+            transform: transform,
+            clear: true
+          });
+          var sprite = new lib/* Sprite */.kxk(rt);
+          sprite.x = cMinX;
+          sprite.y = cMinY;
+          sprite.zIndex = -1;
+          sprite.eventMode = 'none';
+          sprite.label = 'terrainChunk';
+          this.map.addChild(sprite);
+        }
+      }
+      var player = this.map.context.player;
+      for (var _i2 = 0; _i2 <= this.map.size; _i2++) {
+        for (var _j2 = 0; _j2 <= this.map.size; _j2++) {
+          var _player$views$_i;
+          var cell = this.map.grid[_i2][_j2];
+          if ((_player$views$_i = player.views[_i2]) !== null && _player$views$_i !== void 0 && (_player$views$_i = _player$views$_i[_j2]) !== null && _player$views$_i !== void 0 && _player$views$_i.viewed) {
+            cell.updateVisible();
+          }
+        }
+      }
+    }
+  }, {
+    key: "_initFogChunks",
+    value: function _initFogChunks() {
+      var _this$map$context$app2,
+        _this = this;
+      this.map._fogQueue = new globalThis.Map();
+      this.map._fogInitComplete = false;
+      this.map._fogChunks = [];
+      var renderer = (_this$map$context$app2 = this.map.context.app) === null || _this$map$context$app2 === void 0 ? void 0 : _this$map$context$app2.renderer;
+      if (!renderer) return;
+      var margin = CELL_WIDTH;
+      var minX = -this.map.size * (CELL_WIDTH / 2) - margin;
+      var minY = -margin;
+      var maxX = this.map.size * (CELL_WIDTH / 2) + margin;
+      var maxY = this.map.size * CELL_HEIGHT + margin;
+      var totalW = maxX - minX;
+      var totalH = maxY - minY;
+      var gl = renderer.gl;
+      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
+      var chunksX = Math.ceil(totalW / maxTex);
+      var chunksY = Math.ceil(totalH / maxTex);
+      var chunkW = totalW / chunksX;
+      var chunkH = totalH / chunksY;
+      this.map._fogBounds = {
+        minX: minX,
+        minY: minY,
+        chunksX: chunksX,
+        chunksY: chunksY,
+        chunkW: chunkW,
+        chunkH: chunkH,
+        totalW: totalW,
+        totalH: totalH
+      };
+      this.map.fogLayer = new lib/* Container */.mcf();
+      this.map.fogLayer.eventMode = 'none';
+      this.map.fogLayer.zIndex = 1e9;
+      this.map.fogLayer.sortableChildren = true;
+      this.map.addChild(this.map.fogLayer);
+      if (this.map.revealEverything) return;
+      for (var cx = 0; cx < chunksX; cx++) {
+        for (var cy = 0; cy < chunksY; cy++) {
+          var cMinX = minX + cx * chunkW;
+          var cMinY = minY + cy * chunkH;
+          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
+          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
+          var darknessRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var fogRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var edgeRt = lib/* RenderTexture */.Y7R.create({
+            width: cW,
+            height: cH
+          });
+          var emptyC = new lib/* Container */.mcf();
+          renderer.render({
+            container: emptyC,
+            target: darknessRt,
+            clear: true
+          });
+          renderer.render({
+            container: emptyC,
+            target: fogRt,
+            clear: true
+          });
+          renderer.render({
+            container: emptyC,
+            target: edgeRt,
+            clear: true
+          });
+          emptyC.destroy();
+          var pattern = this.map._createFogPatternSprite(cMinX, cMinY, cW, cH);
+          renderer.render({
+            container: pattern,
+            target: fogRt,
+            clear: false
+          });
+          pattern.destroy();
+          if (!this.map.revealTerrain) {
+            var blackG = new lib/* Graphics */.A1g();
+            blackG.rect(cMinX, cMinY, cW, cH).fill({
+              color: 0x000000
+            });
+            renderer.render({
+              container: blackG,
+              target: darknessRt,
+              transform: new lib/* Matrix */.uqu().translate(-cMinX, -cMinY),
+              clear: false
+            });
+            blackG.destroy();
+          }
+          var darknessSprite = new lib/* Sprite */.kxk(darknessRt);
+          darknessSprite.x = cMinX;
+          darknessSprite.y = cMinY;
+          darknessSprite.zIndex = 1;
+          darknessSprite.eventMode = 'none';
+          this.map.fogLayer.addChild(darknessSprite);
+          var fogSprite = new lib/* Sprite */.kxk(fogRt);
+          fogSprite.x = cMinX;
+          fogSprite.y = cMinY;
+          fogSprite.zIndex = 2;
+          fogSprite.eventMode = 'none';
+          this.map.fogLayer.addChild(fogSprite);
+          var edgeSprite = new lib/* Sprite */.kxk(edgeRt);
+          edgeSprite.x = cMinX;
+          edgeSprite.y = cMinY;
+          edgeSprite.zIndex = 3;
+          edgeSprite.eventMode = 'none';
+          this.map.fogLayer.addChild(edgeSprite);
+          this.map._fogChunks.push({
+            darknessRt: darknessRt,
+            fogRt: fogRt,
+            edgeRt: edgeRt,
+            minX: cMinX,
+            minY: cMinY,
+            w: cW,
+            h: cH
+          });
+        }
+      }
+      this.map._fogTickerCb = function () {
+        if (_this.map.context.map !== _this.map) {
+          _this.map.context.app.ticker.remove(_this.map._fogTickerCb);
+          return;
+        }
+        _this.map._flushFogQueue();
+      };
+      this.map.context.app.ticker.add(this.map._fogTickerCb);
+    }
+  }, {
+    key: "_createFogPatternSprite",
+    value: function _createFogPatternSprite(x, y, width, height) {
+      var pattern = new lib/* TilingSprite */.t9Q({
+        texture: getFogPatternTexture(),
+        width: Math.ceil(width),
+        height: Math.ceil(height)
+      });
+      pattern.x = 0;
+      pattern.y = 0;
+      pattern.tilePosition.set(-Math.floor(x), -Math.floor(y));
+      pattern.eventMode = 'none';
+      return pattern;
+    }
+  }, {
+    key: "_getFogMapBounds",
+    value: function _getFogMapBounds() {
+      if (!this.map.grid.length) {
+        var _margin = CELL_WIDTH + CELL_DEPTH * 4;
+        var _minX = -this.map.size * (CELL_WIDTH / 2) - _margin;
+        var _minY = -_margin;
+        var _maxX = this.map.size * (CELL_WIDTH / 2) + _margin;
+        var _maxY = this.map.size * CELL_HEIGHT + _margin;
+        return {
+          minX: _minX,
+          minY: _minY,
+          maxX: _maxX,
+          maxY: _maxY,
+          totalW: _maxX - _minX,
+          totalH: _maxY - _minY
+        };
+      }
+      var minX = Infinity;
+      var minY = Infinity;
+      var maxX = -Infinity;
+      var maxY = -Infinity;
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var _this$map$grid$i;
+          var cell = (_this$map$grid$i = this.map.grid[i]) === null || _this$map$grid$i === void 0 ? void 0 : _this$map$grid$i[j];
+          if (!cell) continue;
+          var bounds = this.map._getFogCellBounds(cell);
+          minX = Math.min(minX, bounds.minX);
+          minY = Math.min(minY, bounds.minY);
+          maxX = Math.max(maxX, bounds.maxX);
+          maxY = Math.max(maxY, bounds.maxY);
+        }
+      }
+      var margin = CELL_DEPTH;
+      minX -= margin;
+      minY -= margin;
+      maxX += margin;
+      maxY += margin;
+      return {
+        minX: minX,
+        minY: minY,
+        maxX: maxX,
+        maxY: maxY,
+        totalW: maxX - minX,
+        totalH: maxY - minY
+      };
+    }
+  }, {
+    key: "_getFogCellBounds",
+    value: function _getFogCellBounds(cell) {
+      var hw = _DW / 2;
+      var hh = _DH / 2;
+      var _this$map$_getFogCell = this.map._getFogCellCenter(cell),
+        _this$map$_getFogCell2 = MapFog_slicedToArray(_this$map$_getFogCell, 2),
+        cx = _this$map$_getFogCell2[0],
+        cy = _this$map$_getFogCell2[1];
+      return {
+        minX: cx - hw,
+        minY: cy - hh,
+        maxX: cx + hw,
+        maxY: cy + hh
+      };
+    }
+  }, {
+    key: "_getFogChunksForCell",
+    value: function _getFogChunksForCell(cell) {
+      var bounds = this.map._getFogCellBounds(cell);
+      return this.map._fogChunks.filter(function (chunk) {
+        return bounds.maxX >= chunk.minX && bounds.minX <= chunk.minX + chunk.w && bounds.maxY >= chunk.minY && bounds.minY <= chunk.minY + chunk.h;
+      });
+    }
+  }, {
+    key: "_drawFogCellShape",
+    value: function _drawFogCellShape(graphics, cell) {
+      var _this$map$_getFogCell3 = this.map._getFogCellPoints(cell),
+        _this$map$_getFogCell4 = MapFog_slicedToArray(_this$map$_getFogCell3, 4),
+        top = _this$map$_getFogCell4[0],
+        right = _this$map$_getFogCell4[1],
+        bottom = _this$map$_getFogCell4[2],
+        left = _this$map$_getFogCell4[3];
+      graphics.poly([top.x, top.y, right.x, right.y, bottom.x, bottom.y, left.x, left.y]);
+    }
+  }, {
+    key: "_getFogCellOpenSides",
+    value: function _getFogCellOpenSides(cell) {
+      var _grid, _grid$cell$i, _grid2, _grid$cell$i2;
+      var grid = this.map.grid;
+      var _this$map$_getFogCell5 = this.map._getFogCellPoints(cell),
+        _this$map$_getFogCell6 = MapFog_slicedToArray(_this$map$_getFogCell5, 4),
+        top = _this$map$_getFogCell6[0],
+        right = _this$map$_getFogCell6[1],
+        bottom = _this$map$_getFogCell6[2],
+        left = _this$map$_getFogCell6[3];
+      var sides = [];
+      var addSide = function addSide(neighbor, from, to) {
+        if (neighbor && !neighbor._hasFog) return;
+        sides.push({
+          from: from,
+          to: to
+        });
+      };
+      addSide((_grid = grid[cell.i - 1]) === null || _grid === void 0 ? void 0 : _grid[cell.j], left, top);
+      addSide((_grid$cell$i = grid[cell.i]) === null || _grid$cell$i === void 0 ? void 0 : _grid$cell$i[cell.j - 1], top, right);
+      addSide((_grid2 = grid[cell.i + 1]) === null || _grid2 === void 0 ? void 0 : _grid2[cell.j], right, bottom);
+      addSide((_grid$cell$i2 = grid[cell.i]) === null || _grid$cell$i2 === void 0 ? void 0 : _grid$cell$i2[cell.j + 1], bottom, left);
+      return sides;
+    }
+  }, {
+    key: "_signedDistanceToFogSide",
+    value: function _signedDistanceToFogSide(point, from, to, cell) {
+      var edgeX = to.x - from.x;
+      var edgeY = to.y - from.y;
+      var len = Math.hypot(edgeX, edgeY);
+      if (len === 0) return 0;
+      var _this$map$_getFogCell7 = this.map._getFogCellCenter(cell),
+        _this$map$_getFogCell8 = MapFog_slicedToArray(_this$map$_getFogCell7, 2),
+        cx = _this$map$_getFogCell8[0],
+        cy = _this$map$_getFogCell8[1];
+      var pointCross = edgeX * (point.y - from.y) - edgeY * (point.x - from.x);
+      var cellCross = edgeX * (cy - from.y) - edgeY * (cx - from.x);
+      return pointCross * Math.sign(cellCross || 1) / len;
+    }
+  }, {
+    key: "_clipFogErasePolygonBySide",
+    value: function _clipFogErasePolygonBySide(points, from, to, cell, inset) {
+      var _this2 = this;
+      var clipped = [];
+      var isInside = function isInside(point) {
+        return _this2.map._signedDistanceToFogSide(point, from, to, cell) >= inset;
+      };
+      var intersection = function intersection(a, b) {
+        var da = _this2.map._signedDistanceToFogSide(a, from, to, cell) - inset;
+        var db = _this2.map._signedDistanceToFogSide(b, from, to, cell) - inset;
+        var t = da / (da - db);
+        return {
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t
+        };
+      };
+      for (var i = 0; i < points.length; i++) {
+        var current = points[i];
+        var previous = points[(i + points.length - 1) % points.length];
+        var currentInside = isInside(current);
+        var previousInside = isInside(previous);
+        if (currentInside) {
+          if (!previousInside) clipped.push(intersection(previous, current));
+          clipped.push(current);
+        } else if (previousInside) {
+          clipped.push(intersection(previous, current));
+        }
+      }
+      return clipped;
+    }
+  }, {
+    key: "_drawFogEraseCellShape",
+    value: function _drawFogEraseCellShape(graphics, cell) {
+      var inset = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
+      var points = this.map._getFogCellPoints(cell);
+      var _iterator = MapFog_createForOfIteratorHelper(this.map._getFogCellOpenSides(cell)),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _step$value = _step.value,
+            from = _step$value.from,
+            to = _step$value.to;
+          points = this.map._clipFogErasePolygonBySide(points, from, to, cell, inset);
+          if (points.length < 3) return;
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      graphics.poly(points.flatMap(function (point) {
+        return [point.x, point.y];
+      }));
+    }
+  }, {
+    key: "_getFogEraseRefreshCells",
+    value: function _getFogEraseRefreshCells(cell) {
+      var _grid3, _grid$cell$i3, _grid4, _grid$cell$i4;
+      var grid = this.map.grid;
+      return [cell, (_grid3 = grid[cell.i - 1]) === null || _grid3 === void 0 ? void 0 : _grid3[cell.j], (_grid$cell$i3 = grid[cell.i]) === null || _grid$cell$i3 === void 0 ? void 0 : _grid$cell$i3[cell.j - 1], (_grid4 = grid[cell.i + 1]) === null || _grid4 === void 0 ? void 0 : _grid4[cell.j], (_grid$cell$i4 = grid[cell.i]) === null || _grid$cell$i4 === void 0 ? void 0 : _grid$cell$i4[cell.j + 1]].filter(function (refreshCell) {
+        return refreshCell && !refreshCell._hasFog;
+      });
+    }
+  }, {
+    key: "_getFogCellCenter",
+    value: function _getFogCellCenter(cell) {
+      return cartesianToIsometric(cell.i, cell.j);
+    }
+  }, {
+    key: "_getFogCellPoints",
+    value: function _getFogCellPoints(cell) {
+      var hw = _DW / 2;
+      var hh = _DH / 2;
+      var _this$map$_getFogCell9 = this.map._getFogCellCenter(cell),
+        _this$map$_getFogCell0 = MapFog_slicedToArray(_this$map$_getFogCell9, 2),
+        cx = _this$map$_getFogCell0[0],
+        cy = _this$map$_getFogCell0[1];
+      return [{
+        x: cx,
+        y: cy - hh
+      }, {
+        x: cx + hw,
+        y: cy
+      }, {
+        x: cx,
+        y: cy + hh
+      }, {
+        x: cx - hw,
+        y: cy
+      }];
+    }
+  }, {
+    key: "_redrawFogEdgesInChunk",
+    value: function _redrawFogEdgesInChunk(renderer, chunk) {
+      var emptyC = new lib/* Container */.mcf();
+      renderer.render({
+        container: emptyC,
+        target: chunk.edgeRt,
+        clear: true
+      });
+      emptyC.destroy();
+    }
+  }, {
+    key: "_drawVisibleCellsInChunk",
+    value: function _drawVisibleCellsInChunk(graphics, chunk) {
+      var maxX = chunk.minX + chunk.w;
+      var maxY = chunk.minY + chunk.h;
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          if (cell._hasFog) continue;
+          var bounds = this.map._getFogCellBounds(cell);
+          if (bounds.maxX >= chunk.minX && bounds.minX <= maxX && bounds.maxY >= chunk.minY && bounds.minY <= maxY) {
+            this.map._drawFogEraseCellShape(graphics, cell);
+          }
+        }
+      }
+    }
+  }, {
+    key: "_flushFogQueue",
+    value: function _flushFogQueue() {
+      var _this$map$context$app3,
+        _this3 = this;
+      if (!this.map._fogQueue || this.map._fogQueue.size === 0) return;
+      var renderer = (_this$map$context$app3 = this.map.context.app) === null || _this$map$context$app3 === void 0 ? void 0 : _this$map$context$app3.renderer;
+      if (!renderer) return;
+      var chunkUpdates = new globalThis.Map();
+      var addChunkUpdate = function addChunkUpdate(cell, state) {
+        var chunks = _this3.map._getFogChunksForCell(cell);
+        var _iterator2 = MapFog_createForOfIteratorHelper(chunks),
+          _step2;
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var chunk = _step2.value;
+            if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, []);
+            chunkUpdates.get(chunk).push({
+              cell: cell,
+              state: state
+            });
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+      };
+      var _iterator3 = MapFog_createForOfIteratorHelper(this.map._fogQueue),
+        _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var _step3$value = MapFog_slicedToArray(_step3.value, 2),
+            cell = _step3$value[0],
+            state = _step3$value[1];
+          addChunkUpdate(cell, state);
+          if (state === 'clear') {
+            var _iterator6 = MapFog_createForOfIteratorHelper(this.map._getFogEraseRefreshCells(cell)),
+              _step6;
+            try {
+              for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+                var refreshCell = _step6.value;
+                if (refreshCell === cell) continue;
+                addChunkUpdate(refreshCell, 'refreshFogErase');
+              }
+            } catch (err) {
+              _iterator6.e(err);
+            } finally {
+              _iterator6.f();
+            }
+          }
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+      this.map._fogQueue.clear();
+      var _iterator4 = MapFog_createForOfIteratorHelper(chunkUpdates),
+        _step4;
+      try {
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          var _step4$value = MapFog_slicedToArray(_step4.value, 2),
+            chunk = _step4$value[0],
+            updates = _step4$value[1];
+          var transform = new lib/* Matrix */.uqu().translate(-chunk.minX, -chunk.minY);
+          var darknessDraw = new lib/* Graphics */.A1g();
+          var darknessErase = new lib/* Graphics */.A1g();
+          var fogErase = new lib/* Graphics */.A1g();
+          var hasDarknessDraw = false;
+          var hasDarknessErase = false;
+          var hasFogErase = false;
+          var needsFogRestore = false;
+          var _iterator7 = MapFog_createForOfIteratorHelper(updates),
+            _step7;
+          try {
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+              var _step7$value = _step7.value,
+                _cell = _step7$value.cell,
+                _state = _step7$value.state;
+              if (_state === 'clear') {
+                this.map._drawFogCellShape(darknessErase, _cell);
+                this.map._drawFogEraseCellShape(fogErase, _cell);
+                hasDarknessErase = true;
+                hasFogErase = true;
+              } else if (_state === 'refreshFogErase') {
+                this.map._drawFogEraseCellShape(fogErase, _cell);
+                hasFogErase = true;
+              } else if (_state === 'fogViewed') {
+                this.map._drawFogCellShape(darknessErase, _cell);
+                hasDarknessErase = true;
+                needsFogRestore = true;
+              } else {
+                this.map._drawFogCellShape(darknessDraw, _cell);
+                hasDarknessDraw = true;
+              }
+            }
+          } catch (err) {
+            _iterator7.e(err);
+          } finally {
+            _iterator7.f();
+          }
+          if (hasDarknessDraw) {
+            darknessDraw.fill({
+              color: 0x000000
+            });
+            renderer.render({
+              container: darknessDraw,
+              target: chunk.darknessRt,
+              transform: transform,
+              clear: false
+            });
+          }
+          if (hasDarknessErase) {
+            darknessErase.blendMode = 'erase';
+            darknessErase.fill({
+              color: 0xffffff
+            });
+            var eraseContainer = new lib/* Container */.mcf();
+            eraseContainer.addChild(darknessErase);
+            renderer.render({
+              container: eraseContainer,
+              target: chunk.darknessRt,
+              transform: transform,
+              clear: false
+            });
+            eraseContainer.removeChildren();
+            eraseContainer.destroy();
+          }
+          if (needsFogRestore) {
+            var pattern = this.map._createFogPatternSprite(chunk.minX, chunk.minY, chunk.w, chunk.h);
+            renderer.render({
+              container: pattern,
+              target: chunk.fogRt,
+              clear: false
+            });
+            pattern.destroy();
+            this.map._drawVisibleCellsInChunk(fogErase, chunk);
+            hasFogErase = true;
+          }
+          if (hasFogErase) {
+            fogErase.blendMode = 'erase';
+            fogErase.fill({
+              color: 0xffffff
+            });
+            var _eraseContainer = new lib/* Container */.mcf();
+            _eraseContainer.addChild(fogErase);
+            renderer.render({
+              container: _eraseContainer,
+              target: chunk.fogRt,
+              transform: transform,
+              clear: false
+            });
+            _eraseContainer.removeChildren();
+            _eraseContainer.destroy();
+          }
+          darknessDraw.destroy();
+          darknessErase.destroy();
+          fogErase.destroy();
+        }
+      } catch (err) {
+        _iterator4.e(err);
+      } finally {
+        _iterator4.f();
+      }
+      var _iterator5 = MapFog_createForOfIteratorHelper(this.map._fogChunks),
+        _step5;
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _chunk = _step5.value;
+          this.map._redrawFogEdgesInChunk(renderer, _chunk);
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+    }
+  }]);
+}();
+;// ./app/classes/map/index.js
 function map_typeof(o) { "@babel/helpers - typeof"; return map_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, map_typeof(o); }
-function map_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = map_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
-function map_slicedToArray(r, e) { return map_arrayWithHoles(r) || map_iterableToArrayLimit(r, e) || map_unsupportedIterableToArray(r, e) || map_nonIterableRest(); }
-function map_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function map_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function map_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-function map_toConsumableArray(r) { return map_arrayWithoutHoles(r) || map_iterableToArray(r) || map_unsupportedIterableToArray(r) || map_nonIterableSpread(); }
-function map_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function map_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return map_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? map_arrayLikeToArray(r, a) : void 0; } }
-function map_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function map_arrayWithoutHoles(r) { if (Array.isArray(r)) return map_arrayLikeToArray(r); }
-function map_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function map_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function map_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? map_ownKeys(Object(t), !0).forEach(function (r) { map_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : map_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function map_defineProperty(e, r, t) { return (r = map_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function map_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function map_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, map_toPropertyKey(o.key), o); } }
 function map_createClass(e, r, t) { return r && map_defineProperties(e.prototype, r), t && map_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -8542,14 +10680,6 @@ function map_setPrototypeOf(t, e) { return map_setPrototypeOf = Object.setProtot
 
 
 
-
-
-/**
- * 
- *  Map size	      Tiny	      Small	    Medium	    Normal	    Large	
-    Player count	  2	          3	        4	          6	          8
-    Dimensions	    120×120	    144×144 	168×168	    200×200	    220×220
- */
 var map_Map = /*#__PURE__*/function (_Container) {
   function Map(context) {
     var _this;
@@ -8573,6 +10703,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
       stone: 150,
       gold: 0
     };
+    _this.resourceDensity = 'moderate';
     _this.revealEverything = false;
     _this.revealTerrain = false;
     _this.x = 0;
@@ -8587,6 +10718,10 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.allowMove = false;
     _this.allowClick = false;
     _this.totalCells;
+    _this.mapGeneration = new MapGeneration(_this);
+    _this.mapResources = new MapResources(_this);
+    _this.mapTerrain = new MapTerrain(_this);
+    _this.mapFog = new MapFog(_this);
     return _this;
   }
   map_inherits(Map, _Container);
@@ -8644,1825 +10779,238 @@ var map_Map = /*#__PURE__*/function (_Container) {
         (_this$instanceBuckets4 = this.instanceBuckets[newBi]) === null || _this$instanceBuckets4 === void 0 || (_this$instanceBuckets4 = _this$instanceBuckets4[newBj]) === null || _this$instanceBuckets4 === void 0 || _this$instanceBuckets4.add(instance);
       }
     }
+
+    // MapGeneration
   }, {
     key: "generateFromJSON",
-    value: function generateFromJSON(_ref) {
-      var _this2 = this;
-      var map = _ref.map,
-        players = _ref.players,
-        camera = _ref.camera,
-        resources = _ref.resources,
-        animals = _ref.animals;
-      var classMap = {
-        Human: Human,
-        AI: AI
-      };
-      var _this$context = this.context,
-        menu = _this$context.menu,
-        controls = _this$context.controls;
-      this.removeChildren();
-      this.size = map.length - 1;
-      this._initFogChunks();
-      this.gaia = new Gaia(this.context);
-      for (var i = 0; i <= this.size; i++) {
-        var line = map[i];
-        for (var j = 0; j <= this.size; j++) {
-          if (!this.grid[i]) {
-            this.grid[i] = [];
-          }
-          var cell = line[j];
-          var newCell = new Cell({
-            i: i,
-            j: j,
-            z: cell.z,
-            type: cell.type,
-            fogSprites: cell.fogSprites
-          }, this.context);
-          this.addChild(newCell);
-          this.grid[i][j] = newCell;
-        }
-      }
-      for (var _i = 0; _i <= this.size; _i++) {
-        for (var _j = 0; _j <= this.size; _j++) {
-          this.grid[_i][_j].fillWaterCellsAroundCell();
-        }
-      }
-      this.resources = new Set(resources.map(function (resource) {
-        return _this2.addChild(new Resource(resource, _this2.context));
-      }));
-      this.formatCellsWaterBorder();
-      this.clampReliefAroundWater();
-      this.formatCellsRelief();
-      this.formatCellsDesert();
-      if (!this.revealEverything) {
-        for (var _i2 = 0; _i2 <= this.size; _i2++) {
-          for (var _j2 = 0; _j2 <= this.size; _j2++) {
-            this.grid[_i2][_j2].setFog();
-          }
-        }
-      }
-      this.context.players = players.map(function (player) {
-        var p = new classMap[player.type](map_objectSpread(map_objectSpread({}, player), {}, {
-          corpses: [],
-          buildings: [],
-          units: []
-        }), _this2.context);
-        if (player.isPlayed) {
-          _this2.context.player = p;
-        }
-        return p;
-      });
-      controls.setCamera(camera.x, camera.y, true);
-      menu.init();
-      menu.updateResourcesMiniMap();
-      this.context.players.forEach(function (player, index) {
-        var _players$index = players[index],
-          buildings = _players$index.buildings,
-          units = _players$index.units,
-          corpses = _players$index.corpses;
-        player.buildings = buildings.map(function (building) {
-          return player.createBuilding(building);
-        });
-        player.units = units.map(function (unit) {
-          return player.createUnit(unit);
-        });
-        player.corpses = corpses.map(function (unit) {
-          return player.createUnit(unit);
-        });
-      });
-      animals.forEach(function (animal) {
-        return _this2.gaia.createAnimal(animal);
-      });
-      function getDest(val, map) {
-        if (val) {
-          if (Array.isArray(val)) {
-            return val[2] ? map.getChildByLabel(val[2]) : map.grid[val[0]][val[1]];
-          } else {
-            return map.getChildByLabel(val);
-          }
-        }
-        return null;
-      }
-      function processUnit(unit, context) {
-        if (unit.previousDest) {
-          unit.previousDest = getDest(unit.previousDest, context);
-        }
-        if (unit.dest && !unit.isDead) {
-          var dest = getDest(unit.dest, context);
-          if (dest) {
-            unit.commonSendTo ? unit.commonSendTo(dest, unit.work, unit.action, true) : unit.sendTo(dest, unit.action);
-          } else {
-            unit.stop();
-          }
-        }
-      }
-      this.gaia.units.forEach(function (animal) {
-        return processUnit(animal, _this2);
-      });
-      this.context.players.forEach(function (player) {
-        for (var _i3 = 0; _i3 <= _this2.size; _i3++) {
-          var _line = player.views[_i3];
-          for (var _j3 = 0; _j3 <= _this2.size; _j3++) {
-            var _cell = _line[_j3];
-            if (_cell.viewed) {
-              _cell.onViewed();
-            }
-            _cell.viewBy = new Set(map_toConsumableArray(_cell.viewBy).map(function (name) {
-              return getDest(name, _this2);
-            }).filter(Boolean));
-            if (player.isPlayed && _cell.viewed) {
-              if (!_cell.viewBy.size) {
-                _this2.grid[_i3][_j3].setFog(true);
-              } else {
-                _this2.grid[_i3][_j3].removeFog();
-              }
-            }
-          }
-        }
-        player.units.forEach(function (unit) {
-          return processUnit(unit, _this2);
-        });
-      });
-      this._fogInitComplete = true;
-      this._flushFogQueue();
-      this.bakeTerrainToChunks();
-      this.ready = true;
+    value: function generateFromJSON(data) {
+      return this.mapGeneration.generateFromJSON(data);
     }
   }, {
     key: "generateMap",
     value: function generateMap() {
       var positionsCountOverride = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
       var repeat = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      this.removeChildren();
-      this.generateCells();
-      switch (this.size) {
-        case 120:
-          this.positionsCount = 2;
-          break;
-        case 144:
-          this.positionsCount = 3;
-          break;
-        case 168:
-          this.positionsCount = 4;
-          break;
-        case 200:
-          this.positionsCount = 6;
-          break;
-        case 220:
-          this.positionsCount = 8;
-          break;
-        default:
-          this.positionsCount = 2;
-      }
-      if (positionsCountOverride !== null) {
-        this.positionsCount = positionsCountOverride;
-      }
-      this.totalCells = Math.pow(this.size + 1, 2);
-      this.playersPos = this.findPlayerPlaces();
-      if (this.playersPos.length < this.positionsCount) {
-        if (repeat >= 10) {
-          alert('Error while generating the map');
-          return;
-        }
-        this.generateMap(positionsCountOverride, repeat + 1);
-        return;
-      }
-      this.generateResourcesAroundPlayers(this.playersPos);
+      return this.mapGeneration.generateMap(positionsCountOverride, repeat);
     }
   }, {
     key: "stylishMap",
     value: function stylishMap() {
-      var _this$context2 = this.context,
-        menu = _this$context2.menu,
-        player = _this$context2.player;
-      this.gaia = new Gaia(this.context);
-      this.generateAnimalsAroundPlayers(this.playersPos);
-      this.generateMapRelief();
-      this.formatCellsRelief();
-      this.generateSets();
-      this._initFogChunks();
-      if (!this.revealEverything) {
-        for (var i = 0; i <= this.size; i++) {
-          for (var j = 0; j <= this.size; j++) {
-            this.grid[i][j].setFog();
-          }
-        }
-        for (var _i4 = 0; _i4 < player.buildings.length; _i4++) {
-          var building = player.buildings[_i4];
-          updateInstanceVisibility(building);
-        }
-        for (var _i5 = 0; _i5 < player.units.length; _i5++) {
-          var unit = player.units[_i5];
-          updateInstanceVisibility(unit);
-        }
-      }
-      this._fogInitComplete = true;
-      this._flushFogQueue();
-      this.bakeTerrainToChunks();
-      this.ready = true;
-      menu.updateResourcesMiniMap();
+      return this.mapGeneration.stylishMap();
     }
   }, {
     key: "generatePlayers",
     value: function generatePlayers() {
       var playersConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var context = this.context;
-      var players = [];
-      var poses = [];
-      var randoms = Array.from(Array(this.playersPos.length).keys());
-      for (var i = 0; i < this.playersPos.length; i++) {
-        var pos = maths_randomItem(randoms);
-        poses.push(pos);
-        randoms.splice(randoms.indexOf(pos), 1);
-      }
-      for (var _i6 = 0; _i6 < this.positionsCount; _i6++) {
-        var _this$playersPos$pose, _this$playersPos$pose2;
-        var posI = (_this$playersPos$pose = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose === void 0 ? void 0 : _this$playersPos$pose.i;
-        var posJ = (_this$playersPos$pose2 = this.playersPos[poses[_i6]]) === null || _this$playersPos$pose2 === void 0 ? void 0 : _this$playersPos$pose2.j;
-        if (posI && posJ) {
-          var _playersConfig$_i6$co, _playersConfig$_i, _playersConfig$_i6$ci, _playersConfig$_i2;
-          var color = (_playersConfig$_i6$co = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i = playersConfig[_i6]) === null || _playersConfig$_i === void 0 ? void 0 : _playersConfig$_i.color) !== null && _playersConfig$_i6$co !== void 0 ? _playersConfig$_i6$co : colors[_i6];
-          var civ = (_playersConfig$_i6$ci = playersConfig === null || playersConfig === void 0 || (_playersConfig$_i2 = playersConfig[_i6]) === null || _playersConfig$_i2 === void 0 ? void 0 : _playersConfig$_i2.civ) !== null && _playersConfig$_i6$ci !== void 0 ? _playersConfig$_i6$ci : 'Greek';
-          if (!_i6) {
-            players.push(new Human({
-              i: posI,
-              j: posJ,
-              age: 0,
-              civ: civ,
-              color: color,
-              isPlayed: true
-            }, context));
-          } else if (!this.noAI) {
-            players.push(new AI({
-              i: posI,
-              j: posJ,
-              age: 0,
-              civ: civ,
-              color: color,
-              difficulty: this.difficulty
-            }, context));
-          }
-        }
-      }
-      return players;
+      return this.mapGeneration.generatePlayers(playersConfig);
     }
   }, {
     key: "placePlayers",
     value: function placePlayers() {
-      var players = this.context.players;
-
-      // Place a town center
-      for (var i = 0; i < players.length; i++) {
-        var player = players[i];
-        var towncenter = player.spawnBuilding({
-          i: player.i,
-          j: player.j,
-          type: BUILDING_TYPES.townCenter,
-          isBuilt: true
-        });
-        for (var _i7 = 0; _i7 < this.startingUnits; _i7++) {
-          towncenter.placeUnit(UNIT_TYPES.villager);
-        }
-      }
-    }
-  }, {
-    key: "generateForestAroundPlayer",
-    value: function generateForestAroundPlayer(player, treeCount) {
-      var _this3 = this;
-      var clusterCount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 12;
-      var minClusterRadius = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 5;
-      var maxClusterRadius = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 10;
-      var safeDistance = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 20;
-      var clearingProbability = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0.6;
-      var grid = this.grid;
-      var playerI = player.i,
-        playerJ = player.j;
-      var gridWidth = grid.length;
-      var gridHeight = grid[0].length;
-      var forestCells = [];
-      var pathCells = new Set();
-
-      // Larger range for lac so forests cover the sides between players around the lake
-      var rangeFactor = this.mapType === 'lac' ? 0.55 : 0.40;
-      var forestRange = Math.max(30, Math.floor(this.size * rangeFactor));
-
-      // Squared distance — avoids Math.sqrt in hot loops; compare against safeDistance**2
-      function distSq(x1, y1, x2, y2) {
-        return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
-      }
-      var safeDistanceSq = Math.pow(safeDistance, 2);
-
-      // Function to create a circle of points within a grid, checking boundaries
-      function createCircle(centerI, centerJ, radius) {
-        var density = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0.7;
-        var edgeNoise = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-        var circleCells = [];
-        for (var x = -radius; x <= radius; x++) {
-          for (var y = -radius; y <= radius; y++) {
-            var noise = Math.random() * edgeNoise - edgeNoise / 2; // Random edge noise
-            var effectiveRadius = radius - noise;
-            if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
-              // If within noisy circle
-              var cellI = centerI + x;
-              var cellJ = centerJ + y;
-              if (cellI >= 0 && cellI < gridWidth &&
-              // Ensure cell is within grid bounds
-              cellJ >= 0 && cellJ < gridHeight && !grid[cellI][cellJ].solid &&
-              // Ensure the cell is not solid
-              grid[cellI][cellJ].category !== 'Water' &&
-              // Ensure not water
-              grid[cellI][cellJ].type !== 'Border' &&
-              // Ensure not border
-              !grid[cellI][cellJ].inclined &&
-              // Ensure not inclined
-              Math.random() < density // Tree density control
-              ) {
-                circleCells.push({
-                  i: cellI,
-                  j: cellJ
-                });
-              }
-            }
-          }
-        }
-        return circleCells;
-      }
-
-      // Create forest clusters
-      for (var cluster = 0; cluster < clusterCount; cluster++) {
-        var clusterCenterI = void 0,
-          clusterCenterJ = void 0;
-        var tries = 0;
-        var clusterRadius = Math.floor(Math.random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius; // Random radius
-        var clusterDensity = Math.random() * 0.5 + 0.5; // Density between 0.5 and 1
-        var edgeNoise = Math.random() * 2; // Noise for organic shapes
-
-        // Ensure the cluster is far from the player and within bounds
-        do {
-          clusterCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
-          clusterCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
-          tries++;
-          if (tries > 100) break; // Safety exit
-        } while (distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq || clusterCenterI < 0 || clusterCenterI >= gridWidth || clusterCenterJ < 0 || clusterCenterJ >= gridHeight ||
-        // Stay within grid bounds
-        grid[clusterCenterI][clusterCenterJ].category === 'Water' ||
-        // Avoid water cells
-        grid[clusterCenterI][clusterCenterJ].solid ||
-        // Avoid solid cells
-        grid[clusterCenterI][clusterCenterJ].inclined // Avoid inclined cells
-        );
-        if (tries <= 100) {
-          var treeCluster = createCircle(clusterCenterI, clusterCenterJ, clusterRadius, clusterDensity, edgeNoise);
-          treeCluster.forEach(function (cell) {
-            return forestCells.push(cell);
-          });
-        }
-      }
-
-      // Scattered solo trees (20% of total trees)
-      var scatteredTreeCount = Math.floor(treeCount * 0.2);
-      for (var i = 0; i < scatteredTreeCount; i++) {
-        var soloI = void 0,
-          soloJ = void 0;
-        var _tries = 0;
-        do {
-          soloI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
-          soloJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
-          _tries++;
-          if (_tries > 50) break; // Safety exit to avoid infinite loop
-        } while (distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq || soloI < 0 || soloI >= gridWidth || soloJ < 0 || soloJ >= gridHeight ||
-        // Stay within grid bounds
-        grid[soloI][soloJ].category === 'Water' ||
-        // Avoid water cells
-        grid[soloI][soloJ].solid ||
-        // Avoid solid cells
-        grid[soloI][soloJ].inclined // Avoid inclined cells
-        );
-        if (_tries <= 50) {
-          forestCells.push({
-            i: soloI,
-            j: soloJ
-          });
-        }
-      }
-
-      // Generate random clearings based on clearingProbability
-      var _loop = function _loop() {
-        if (Math.random() < clearingProbability) {
-          var clearingCenterI, clearingCenterJ;
-          var _tries2 = 0;
-          var clearingRadius = Math.floor(Math.random() * 8) + 5; // Random clearing radius between 5 and 13
-          var _edgeNoise = Math.random() * 1.5;
-          do {
-            clearingCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange);
-            clearingCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange);
-            _tries2++;
-            if (_tries2 > 100) break;
-          } while (distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq || clearingCenterI < 0 || clearingCenterI >= gridWidth || clearingCenterJ < 0 || clearingCenterJ >= gridHeight ||
-          // Stay within grid bounds
-          grid[clearingCenterI][clearingCenterJ].category === 'Water' ||
-          // Avoid water cells
-          grid[clearingCenterI][clearingCenterJ].solid ||
-          // Avoid solid cells
-          grid[clearingCenterI][clearingCenterJ].inclined // Avoid inclined cells
-          );
-          if (_tries2 <= 100) {
-            var clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, _edgeNoise);
-            var clearingSet = new Set(clearingCells.map(function (c) {
-              return "".concat(c.i, ",").concat(c.j);
-            }));
-            forestCells = forestCells.filter(function (c) {
-              return !clearingSet.has("".concat(c.i, ",").concat(c.j));
-            });
-          }
-        }
-      };
-      for (var clearing = 0; clearing < clusterCount; clearing++) {
-        _loop();
-      }
-
-      // Generate diagonal paths
-      var pathLength = 20;
-      var pathDirection = Math.random() > 0.5 ? 1 : -1; // Random path direction
-
-      for (var step = 0; step < pathLength; step++) {
-        var offsetX = step * pathDirection;
-        var offsetY = step;
-        var ni = playerI + offsetX;
-        var nj = playerJ + offsetY;
-        if (ni >= 0 && ni < gridWidth && nj >= 0 && nj < gridHeight && distSq(ni, nj, playerI, playerJ) >= safeDistanceSq) {
-          var randOffsetX = Math.random() > 0.5 ? 1 : -1;
-          var randOffsetY = Math.random() > 0.5 ? 1 : -1;
-          pathCells.add("".concat(ni + randOffsetX, ",").concat(nj + randOffsetY));
-        }
-      }
-
-      // Remove path cells from forestCells
-      for (var idx = forestCells.length - 1; idx >= 0; idx--) {
-        if (pathCells.has("".concat(forestCells[idx].i, ",").concat(forestCells[idx].j))) {
-          forestCells.splice(idx, 1);
-        }
-      }
-
-      // Select and place trees in the forest cells
-      var cellsToPlace = [];
-      for (var _i8 = 0; _i8 < treeCount; _i8++) {
-        if (forestCells.length === 0) break;
-        var itemIndex = Math.floor(Math.random() * forestCells.length);
-        var cell = forestCells[itemIndex];
-        cellsToPlace.push(cell);
-        forestCells.splice(itemIndex, 1);
-      }
-
-      // Place the trees in the selected cells
-      var _loop2 = function _loop2() {
-        var cell = _cellsToPlace[_i9];
-        // Ensure again that we're not placing trees on Water, Border, or Solid cells
-        if (grid[cell.i][cell.j].category !== 'Water' && !grid[cell.i][cell.j].waterBorder && !grid[cell.i][cell.j].solid && !grid[cell.i][cell.j].inclined) {
-          var isFree = true;
-          grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (cell) {
-            var _cell$has;
-            if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.type)) {
-              isFree = false;
-            }
-          });
-          isFree && _this3.resources.add(_this3.addChild(new Resource({
-            i: cell.i,
-            j: cell.j,
-            type: RESOURCE_TYPES.tree
-          }, _this3.context)));
-        }
-      };
-      for (var _i9 = 0, _cellsToPlace = cellsToPlace; _i9 < _cellsToPlace.length; _i9++) {
-        _loop2();
-      }
-    }
-  }, {
-    key: "placeAnimalHerd",
-    value: function placeAnimalHerd(player, quantity, range) {
-      var grid = this.grid;
-      var randomDistance = randomRange(range[0], range[1]);
-      var centerI = player.i + maths_randomItem([-randomDistance, randomDistance]);
-      var centerJ = player.j + maths_randomItem([-randomDistance, randomDistance]);
-      var validCells = [];
-      for (var dx = -3; dx <= 3; dx++) {
-        for (var dy = -3; dy <= 3; dy++) {
-          var _grid$newI;
-          var newI = centerI + dx;
-          var newJ = centerJ + dy;
-          if ((_grid$newI = grid[newI]) !== null && _grid$newI !== void 0 && _grid$newI[newJ]) {
-            var cell = grid[newI][newJ];
-            if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-              validCells.push({
-                i: newI,
-                j: newJ
-              });
-            }
-          }
-        }
-      }
-      var toPlace = Math.min(quantity, validCells.length);
-      for (var i = 0; i < toPlace; i++) {
-        var idx = Math.floor(Math.random() * validCells.length);
-        var _cell2 = validCells.splice(idx, 1)[0];
-        this.gaia.createAnimal({
-          i: _cell2.i,
-          j: _cell2.j,
-          type: 'Gazelle'
-        });
-      }
-    }
-  }, {
-    key: "generateAnimalsAroundPlayers",
-    value: function generateAnimalsAroundPlayers(playersPos) {
-      for (var i = 0; i < playersPos.length; i++) {
-        this.placeAnimalHerd(playersPos[i], 5, [8, 14]);
-        this.placeAnimalHerd(playersPos[i], 4, [16, 24]);
-      }
-    }
-  }, {
-    key: "generateResourcesAroundPlayers",
-    value: function generateResourcesAroundPlayers(playersPos) {
-      for (var i = 0; i < playersPos.length; i++) {
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [7, 14]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [14, 22]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [22, 29]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [7, 14]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [14, 22]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [22, 29]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [7, 14]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [14, 22]);
-        this.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [22, 29]);
-        this.generateForestAroundPlayer(playersPos[i], this.size * 4);
-      }
-    }
-  }, {
-    key: "generateTerrain",
-    value: function generateTerrain() {
-      var _thresholds$mapType, _biomeThresholds$mapT;
-      var gridSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 120;
-      var mapType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'plain';
-      // Seeded 2D value noise — each map generation gets a unique seed
-      var seed = Math.random() * 9999;
-      function hash(x, y) {
-        var n = Math.sin(x * 127.1 + y * 311.7 + seed * 3.7) * 43758.5453;
-        return n - Math.floor(n);
-      }
-      function noise(x, y) {
-        var xi = Math.floor(x),
-          yi = Math.floor(y);
-        var xf = x - xi,
-          yf = y - yi;
-        var smooth = function smooth(t) {
-          return t * t * (3 - 2 * t);
-        };
-        var u = smooth(xf),
-          v = smooth(yf);
-        var a = hash(xi, yi),
-          b = hash(xi + 1, yi);
-        var c = hash(xi, yi + 1),
-          d = hash(xi + 1, yi + 1);
-        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
-      }
-
-      // Fractional Brownian Motion — sum of N octaves for natural-looking terrain
-      function fbm(x, y) {
-        var octaves = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
-        var val = 0,
-          amp = 0.5,
-          freq = 1,
-          sum = 0;
-        for (var o = 0; o < octaves; o++) {
-          val += noise(x * freq, y * freq) * amp;
-          sum += amp;
-          amp *= 0.5;
-          freq *= 2;
-        }
-        return val / sum;
-      }
-      var scale = 4 / gridSize;
-      var half = gridSize / 2;
-
-      // Smooth radial falloff: 1.0 at center, 0.0 at edge
-      function radialFalloff(i, j) {
-        var dx = (i - half) / half;
-        var dy = (j - half) / half;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        var t = Math.min(1, dist);
-        return 1 - t * t * (3 - 2 * t);
-      }
-
-      // Pre-compute heightmap and biome map
-      var height = new Float32Array(gridSize * gridSize);
-      var biome = new Float32Array(gridSize * gridSize);
-      for (var i = 0; i < gridSize; i++) {
-        for (var j = 0; j < gridSize; j++) {
-          height[i * gridSize + j] = fbm(i * scale, j * scale);
-          // Lower frequency (×0.6) → larger biome patches for AoE1-style biome regions
-          biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4);
-        }
-      }
-
-      // Water threshold per map type
-      var thresholds = {
-        plain: 0.30,
-        continent: 0.40,
-        lac: 0.42,
-        ilot: 0.52
-      };
-      var waterThreshold = (_thresholds$mapType = thresholds[mapType]) !== null && _thresholds$mapType !== void 0 ? _thresholds$mapType : 0.30;
-      var terrainMap = [];
-      for (var _i0 = 0; _i0 < gridSize; _i0++) {
-        terrainMap[_i0] = [];
-        for (var _j4 = 0; _j4 < gridSize; _j4++) {
-          var h = height[_i0 * gridSize + _j4];
-          var fo = radialFalloff(_i0, _j4);
-          if (mapType === 'continent') {
-            // Stronger boost so the continent is large and water stays at the edges
-            h += (fo - 0.5) * 0.75;
-          } else if (mapType === 'lac') {
-            // Depress center (→ lake), raise edges (→ land)
-            h -= (fo - 0.3) * 0.50;
-          } else if (mapType === 'ilot') {
-            // Mild edge depression + higher threshold → scattered islands
-            h += (fo - 0.5) * 0.20;
-          }
-          terrainMap[_i0][_j4] = h < waterThreshold ? 2 : 0;
-        }
-      }
-
-      // Smooth coastlines with 2 passes of cellular automaton.
-      // Removes isolated water/land pixels so water-border transition sprites apply correctly.
-      for (var pass = 0; pass < 2; pass++) {
-        for (var _i1 = 1; _i1 < gridSize - 1; _i1++) {
-          for (var _j5 = 1; _j5 < gridSize - 1; _j5++) {
-            var wn = (terrainMap[_i1 - 1][_j5] === 2 ? 1 : 0) + (terrainMap[_i1 + 1][_j5] === 2 ? 1 : 0) + (terrainMap[_i1][_j5 - 1] === 2 ? 1 : 0) + (terrainMap[_i1][_j5 + 1] === 2 ? 1 : 0);
-            if (terrainMap[_i1][_j5] !== 2 && wn >= 3) terrainMap[_i1][_j5] = 2; // isolated land → water
-            if (terrainMap[_i1][_j5] === 2 && wn <= 1) terrainMap[_i1][_j5] = 0; // isolated water → land
-          }
-        }
-      }
-
-      // Biome pass on land cells — per-type thresholds and larger-patch noise frequency
-      // for more cohesive desert/jungle zones (AoE1 style)
-      var biomeThresholds = {
-        plain: {
-          lo: 0.38,
-          hi: 0.65
-        },
-        // warmer, drier → more desert
-        continent: {
-          lo: 0.33,
-          hi: 0.67
-        },
-        // balanced
-        lac: {
-          lo: 0.32,
-          hi: 0.68
-        },
-        // balanced
-        ilot: {
-          lo: 0.27,
-          hi: 0.60
-        } // tropical → more jungle
-      };
-      var bt = (_biomeThresholds$mapT = biomeThresholds[mapType]) !== null && _biomeThresholds$mapT !== void 0 ? _biomeThresholds$mapT : biomeThresholds.plain;
-      for (var _i10 = 0; _i10 < gridSize; _i10++) {
-        for (var _j6 = 0; _j6 < gridSize; _j6++) {
-          if (terrainMap[_i10][_j6] === 2) continue;
-          var b = biome[_i10 * gridSize + _j6];
-          if (b < bt.lo) terrainMap[_i10][_j6] = 1; // desert
-          else if (b > bt.hi) terrainMap[_i10][_j6] = 3; // jungle
-        }
-      }
-      return terrainMap;
+      return this.mapGeneration.placePlayers();
     }
   }, {
     key: "generateCells",
     value: function generateCells() {
-      var z = 0;
-      this.grid = [];
-      var terrain = this.generateTerrain(this.size ? this.size + 1 : 121, this.mapType || 'plain');
-      this.size = terrain.length - 1;
-
-      // Map terrain numbers to cell types
-      var terrainMap = {
-        0: 'Grass',
-        1: 'Desert',
-        2: 'Water',
-        3: 'Jungle'
-      };
-      for (var i = 0; i <= this.size; i++) {
-        if (!this.grid[i]) this.grid[i] = [];
-        for (var j = 0; j <= this.size; j++) {
-          var type = terrainMap[terrain[i][j]];
-          var cell = new Cell({
-            i: i,
-            j: j,
-            z: z,
-            type: type
-          }, this.context);
-          this.addChild(cell); // ensures cell.parent is set
-          this.grid[i][j] = cell;
-        }
-      }
-
-      // Post-processing
-      for (var _i11 = 0; _i11 <= this.size; _i11++) {
-        for (var _j7 = 0; _j7 <= this.size; _j7++) {
-          this.grid[_i11][_j7].fillWaterCellsAroundCell();
-        }
-      }
-      this.formatCellsWaterBorder();
-      this.formatCellsDesert();
+      return this.mapGeneration.generateCells();
+    }
+  }, {
+    key: "generateTerrain",
+    value: function generateTerrain() {
+      var gridSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 120;
+      var mapType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'plain';
+      return this.mapGeneration.generateTerrain(gridSize, mapType);
     }
   }, {
     key: "generateSets",
     value: function generateSets() {
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          if (getCellsAroundPoint(i, j, this.grid, 1, function (neighbour) {
-            return neighbour.solid;
-          }).length > 0) {
-            continue;
-          }
-          if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-            if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.size && j < this.size) {
-              var randomSpritesheet = randomRange(292, 301).toString();
-              var spritesheet = lib/* Assets */.sP.cache.get(randomSpritesheet);
-              var texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
-              var floor = lib/* Sprite */.kxk.from(texture);
-              floor.label = LABEL_TYPES.floor;
-              floor.roundPixels = true;
-              floor.allowMove = false;
-              floor.eventMode = 'none';
-              floor.allowClick = false;
-              floor.updateAnchor = true;
-              cell.addChild(floor);
-            }
-            if (Math.random() < this.chanceOfSets) {
-              if (cell.category !== 'Water') {
-                var type = maths_randomItem(['tree', 'rock', 'animal']);
-                switch (type) {
-                  case 'rock':
-                    {
-                      var _randomSpritesheet = randomRange(531, 534).toString();
-                      var _spritesheet = lib/* Assets */.sP.cache.get(_randomSpritesheet);
-                      var _texture = _spritesheet.textures['000_' + _randomSpritesheet + '.png'];
-                      var rock = lib/* Sprite */.kxk.from(_texture);
-                      rock.label = LABEL_TYPES.set;
-                      rock.roundPixels = true;
-                      rock.allowMove = false;
-                      rock.eventMode = 'none';
-                      rock.allowClick = false;
-                      rock.updateAnchor = true;
-                      cell.addChild(rock);
-                      break;
-                    }
-                  case 'animal':
-                    {
-                      var animals = lib/* Assets */.sP.cache.get('config').animals;
-                      var animalType = maths_randomItem(Object.keys(animals));
-                      this.gaia.createAnimal({
-                        i: i,
-                        j: j,
-                        type: animalType
-                      });
-                      break;
-                    }
-                }
-              } else {
-                this.resources.add(this.addChild(new Resource({
-                  i: i,
-                  j: j,
-                  type: RESOURCE_TYPES.salmon
-                }, this.context)));
-              }
-            }
-          }
-        }
-      }
-    }
-  }, {
-    key: "generateMapRelief",
-    value: function generateMapRelief() {
-      var _this4 = this;
-      // Coherent fBm heightmap for natural ridges and hill ranges.
-      // Different seed and coarser scale than terrain noise → large, varied features.
-      var seed = Math.random() * 9999;
-      function hash(x, y) {
-        var n = Math.sin(x * 83.7 + y * 214.3 + seed * 5.1) * 43758.5453;
-        return n - Math.floor(n);
-      }
-      function noise(x, y) {
-        var xi = Math.floor(x),
-          yi = Math.floor(y);
-        var xf = x - xi,
-          yf = y - yi;
-        var s = function s(t) {
-          return t * t * (3 - 2 * t);
-        };
-        var u = s(xf),
-          v = s(yf);
-        var a = hash(xi, yi),
-          b = hash(xi + 1, yi);
-        var c = hash(xi, yi + 1),
-          d = hash(xi + 1, yi + 1);
-        return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v;
-      }
-      function fbm(x, y) {
-        var val = 0,
-          amp = 0.5,
-          freq = 1,
-          sum = 0;
-        for (var o = 0; o < 4; o++) {
-          val += noise(x * freq, y * freq) * amp;
-          sum += amp;
-          amp *= 0.5;
-          freq *= 2;
-        }
-        return val / sum;
-      }
-      var scale = 3 / this.size;
-      var n = this.size + 1;
-      var dist = this.getReliefCoastDistances();
-
-      // Precompute fBm heightmap
-      var reliefH = new Float32Array(n * n);
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          reliefH[i * n + j] = fbm(i * scale, j * scale);
-        }
-      }
-
-      // Apply relief from highest level to lowest.
-      // maxAllowed keeps beach cells and a few inland rings flat before slopes start.
-      var levelThresholds = [0, 0.66, 0.78, 0.86];
-      for (var targetLevel = 3; targetLevel >= 1; targetLevel--) {
-        var threshold = levelThresholds[targetLevel];
-        for (var _i12 = 0; _i12 <= this.size; _i12++) {
-          for (var _j8 = 0; _j8 <= this.size; _j8++) {
-            var cell = this.grid[_i12][_j8];
-            if (cell.category === 'Water' || cell.has || cell.waterBorder) continue;
-            var maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[_i12 * n + _j8]);
-            var actual = Math.min(targetLevel, maxAllowed);
-            if (reliefH[_i12 * n + _j8] > threshold && actual > cell.z) {
-              cell.setCellLevel(actual);
-            }
-          }
-        }
-      }
-      this.clampReliefAroundWater(dist);
-
-      // Remove isolated z=1 bumps (direct reset, no propagation)
-      for (var _i13 = 0; _i13 <= this.size; _i13++) {
-        var _loop3 = function _loop3() {
-          var cell = _this4.grid[_i13][_j9];
-          if (cell.z === 1) {
-            var cpt = 0;
-            getCellsAroundPoint(_i13, _j9, _this4.grid, 1, function (c) {
-              if (c.z > 0) cpt++;
-            });
-            if (cpt < 3) _this4.setCellReliefLevelDirect(cell, 0);
-          }
-        };
-        for (var _j9 = 0; _j9 <= this.size; _j9++) {
-          _loop3();
-        }
-      }
-
-      // Fill gaps between close elevated cells
-      for (var _i14 = 0; _i14 <= this.size; _i14++) {
-        for (var _j0 = 0; _j0 <= this.size; _j0++) {
-          this.grid[_i14][_j0].fillReliefCellsAroundCell();
-        }
-      }
-      this.clampReliefAroundWater(dist);
-    }
-  }, {
-    key: "getReliefCoastDistances",
-    value: function getReliefCoastDistances() {
-      var n = this.size + 1;
-      var dist = new Int16Array(n * n).fill(9999);
-      var queue = [];
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          if (cell.category === 'Water' || cell.waterBorder) {
-            dist[i * n + j] = 0;
-            queue.push(i * n + j);
-          }
-        }
-      }
-      for (var qi = 0; qi < queue.length; qi++) {
-        var idx = queue[qi];
-        var ci = Math.floor(idx / n),
-          cj = idx % n;
-        var d = dist[idx];
-        for (var _i15 = 0, _arr = [[-1, 0], [1, 0], [0, -1], [0, 1]]; _i15 < _arr.length; _i15++) {
-          var _arr$_i = map_slicedToArray(_arr[_i15], 2),
-            di = _arr$_i[0],
-            dj = _arr$_i[1];
-          var ni = ci + di,
-            nj = cj + dj;
-          if (ni < 0 || ni > this.size || nj < 0 || nj > this.size) continue;
-          var nidx = ni * n + nj;
-          if (dist[nidx] > d + 1) {
-            dist[nidx] = d + 1;
-            queue.push(nidx);
-          }
-        }
-      }
-      return dist;
-    }
-  }, {
-    key: "getMaxReliefLevelFromCoastDistance",
-    value: function getMaxReliefLevelFromCoastDistance(distance) {
-      return Math.max(0, distance - 3);
-    }
-  }, {
-    key: "setCellReliefLevelDirect",
-    value: function setCellReliefLevelDirect(cell, level) {
-      var delta = level - cell.z;
-      if (delta === 0) return;
-      cell.y -= delta * CELL_DEPTH;
-      cell.z = level;
-    }
-  }, {
-    key: "clampReliefAroundWater",
-    value: function clampReliefAroundWater() {
-      var dist = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.getReliefCoastDistances();
-      var n = this.size + 1;
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          var maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[i * n + j]);
-          if (cell.z > maxAllowed) this.setCellReliefLevelDirect(cell, maxAllowed);
-        }
-      }
-    }
-  }, {
-    key: "formatCellsRelief",
-    value: function formatCellsRelief() {
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          if (cell.category === 'Water' || cell.waterBorder) continue;
-          // Side
-          if (this.grid[i - 1] && this.grid[i - 1][j].z - cell.z === 1 && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z) && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z)) {
-            cell.setReliefBorder('014', CELL_DEPTH / 2);
-          } else if (this.grid[i + 1] && this.grid[i + 1][j].z - cell.z === 1 && (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z) && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z)) {
-            cell.setReliefBorder('015', CELL_DEPTH / 2);
-          } else if (this.grid[i][j - 1] && this.grid[i][j - 1].z - cell.z === 1 && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z) && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z) && (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)) {
-            cell.setReliefBorder('016', CELL_DEPTH / 2);
-          } else if (this.grid[i][j + 1] && this.grid[i][j + 1].z - cell.z === 1 && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z) && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)) {
-            cell.setReliefBorder('013', CELL_DEPTH / 2);
-          } // Corner
-          else if (this.grid[i - 1] && this.grid[i - 1][j - 1] && this.grid[i - 1][j - 1].z - cell.z === 1 && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)) {
-            cell.setReliefBorder('010', CELL_DEPTH / 2);
-          } else if (this.grid[i + 1] && this.grid[i + 1][j - 1] && this.grid[i + 1][j - 1].z - cell.z === 1 && (!this.grid[i][j - 1] || this.grid[i][j - 1].z <= cell.z) && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z)) {
-            cell.setReliefBorder('012');
-          } else if (this.grid[i - 1] && this.grid[i - 1][j + 1] && this.grid[i - 1][j + 1].z - cell.z === 1 && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z) && (!this.grid[i - 1] || this.grid[i - 1][j].z <= cell.z)) {
-            cell.setReliefBorder('011');
-          } else if (this.grid[i + 1] && this.grid[i + 1][j + 1] && this.grid[i + 1][j + 1].z - cell.z === 1 && (!this.grid[i][j + 1] || this.grid[i][j + 1].z <= cell.z) && (!this.grid[i + 1] || this.grid[i + 1][j].z <= cell.z)) {
-            cell.setReliefBorder('009', CELL_DEPTH / 2);
-          }
-          // Deep corner
-          else if (this.grid[i][j - 1] && this.grid[i][j - 1].z - cell.z === 1 && this.grid[i - 1] && this.grid[i - 1][j].z - cell.z === 1) {
-            cell.setReliefBorder('022', CELL_DEPTH / 2);
-          } else if (this.grid[i][j + 1] && this.grid[i][j + 1].z - cell.z === 1 && this.grid[i + 1] && this.grid[i + 1][j].z - cell.z === 1) {
-            cell.setReliefBorder('021', CELL_DEPTH / 2);
-          } else if (this.grid[i][j - 1] && this.grid[i][j - 1].z - cell.z === 1 && this.grid[i + 1] && this.grid[i + 1][j].z - cell.z === 1) {
-            cell.setReliefBorder('023', CELL_DEPTH);
-          } else if (this.grid[i][j + 1] && this.grid[i][j + 1].z - cell.z === 1 && this.grid[i - 1] && this.grid[i - 1][j].z - cell.z === 1) {
-            cell.setReliefBorder('024', CELL_DEPTH);
-          }
-        }
-      }
-    }
-  }, {
-    key: "formatCellsWaterBorder",
-    value: function formatCellsWaterBorder() {
-      // Apply 20000 beach tiles to every land cell adjacent to water.
-      // Bitmask priority: deep corners (2 adjacent orthogonal water) first,
-      // then single sides, then diagonal-only outer corners.
-      // No exclusive "other sides NOT water" conditions — handles any coastline shape.
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var _this$grid, _this$grid2, _this$grid$i, _this$grid$i2, _this$grid3, _this$grid4, _this$grid5, _this$grid6;
-          var cell = this.grid[i][j];
-          if (cell.type === 'Water') continue;
-          var n = ((_this$grid = this.grid[i - 1]) === null || _this$grid === void 0 || (_this$grid = _this$grid[j]) === null || _this$grid === void 0 ? void 0 : _this$grid.type) === 'Water';
-          var s = ((_this$grid2 = this.grid[i + 1]) === null || _this$grid2 === void 0 || (_this$grid2 = _this$grid2[j]) === null || _this$grid2 === void 0 ? void 0 : _this$grid2.type) === 'Water';
-          var w = ((_this$grid$i = this.grid[i]) === null || _this$grid$i === void 0 || (_this$grid$i = _this$grid$i[j - 1]) === null || _this$grid$i === void 0 ? void 0 : _this$grid$i.type) === 'Water';
-          var e = ((_this$grid$i2 = this.grid[i]) === null || _this$grid$i2 === void 0 || (_this$grid$i2 = _this$grid$i2[j + 1]) === null || _this$grid$i2 === void 0 ? void 0 : _this$grid$i2.type) === 'Water';
-          var nw = ((_this$grid3 = this.grid[i - 1]) === null || _this$grid3 === void 0 || (_this$grid3 = _this$grid3[j - 1]) === null || _this$grid3 === void 0 ? void 0 : _this$grid3.type) === 'Water';
-          var sw = ((_this$grid4 = this.grid[i + 1]) === null || _this$grid4 === void 0 || (_this$grid4 = _this$grid4[j - 1]) === null || _this$grid4 === void 0 ? void 0 : _this$grid4.type) === 'Water';
-          var ne = ((_this$grid5 = this.grid[i - 1]) === null || _this$grid5 === void 0 || (_this$grid5 = _this$grid5[j + 1]) === null || _this$grid5 === void 0 ? void 0 : _this$grid5.type) === 'Water';
-          var se = ((_this$grid6 = this.grid[i + 1]) === null || _this$grid6 === void 0 || (_this$grid6 = _this$grid6[j + 1]) === null || _this$grid6 === void 0 ? void 0 : _this$grid6.type) === 'Water';
-          if (w && n) cell.setWaterBorder('20000', '001');else if (e && s) cell.setWaterBorder('20000', '002');else if (w && s) cell.setWaterBorder('20000', '003');else if (e && n) cell.setWaterBorder('20000', '000');else if (n) cell.setWaterBorder('20000', '008');else if (s) cell.setWaterBorder('20000', '009');else if (w) cell.setWaterBorder('20000', '011');else if (e) cell.setWaterBorder('20000', '010');else if (nw) cell.setWaterBorder('20000', '005');else if (sw) cell.setWaterBorder('20000', '007');else if (ne) cell.setWaterBorder('20000', '004');else if (se) cell.setWaterBorder('20000', '006');
-        }
-      }
-
-      // Apply 20002 overlay on cells adjacent to waterBorder cells —
-      // same approach as formatCellsDesert: the beach tile acts as the "source"
-      // and its grass/jungle/desert neighbours get a sandy gradient on top.
-      for (var _i16 = 0; _i16 <= this.size; _i16++) {
-        for (var _j1 = 0; _j1 <= this.size; _j1++) {
-          var _this$grid7, _this$grid8, _this$grid$_i, _this$grid$_i2;
-          var _cell3 = this.grid[_i16][_j1];
-          if (!_cell3.waterBorder) continue;
-          var overlay = function overlay(neighbor, direction) {
-            if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
-              neighbor.setDesertBorder(direction);
-            }
-          };
-          overlay((_this$grid7 = this.grid[_i16 - 1]) === null || _this$grid7 === void 0 ? void 0 : _this$grid7[_j1], 'east');
-          overlay((_this$grid8 = this.grid[_i16 + 1]) === null || _this$grid8 === void 0 ? void 0 : _this$grid8[_j1], 'west');
-          overlay((_this$grid$_i = this.grid[_i16]) === null || _this$grid$_i === void 0 ? void 0 : _this$grid$_i[_j1 - 1], 'south');
-          overlay((_this$grid$_i2 = this.grid[_i16]) === null || _this$grid$_i2 === void 0 ? void 0 : _this$grid$_i2[_j1 + 1], 'north');
-        }
-      }
-    }
-  }, {
-    key: "formatCellsDesert",
-    value: function formatCellsDesert() {
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          var typeToFormat = ['Grass', 'Jungle'];
-          if (cell.type === 'Desert') {
-            if (this.grid[i - 1] && this.grid[i - 1][j] && typeToFormat.includes(this.grid[i - 1][j].type)) {
-              this.grid[i - 1][j].setDesertBorder('east');
-            }
-            if (this.grid[i + 1] && this.grid[i + 1][j] && typeToFormat.includes(this.grid[i + 1][j].type)) {
-              this.grid[i + 1][j].setDesertBorder('west');
-            }
-            if (this.grid[i][j - 1] && typeToFormat.includes(this.grid[i][j - 1].type)) {
-              this.grid[i][j - 1].setDesertBorder('south');
-            }
-            if (this.grid[i][j + 1] && typeToFormat.includes(this.grid[i][j + 1].type)) {
-              this.grid[i][j + 1].setDesertBorder('north');
-            }
-          }
-        }
-      }
+      return this.mapGeneration.generateSets();
     }
   }, {
     key: "findPlayerPlaces",
     value: function findPlayerPlaces() {
-      var results = [];
-      var N = this.positionsCount;
-      var center = this.size / 2;
-      // Randomise start angle so map layout varies each game
-      var startAngle = Math.random() * 2 * Math.PI;
-      // Search window radius around each angular candidate
-      var searchHalf = Math.max(8, Math.floor(this.size * 0.07));
-      var border = 12;
-      // Ordered list of candidate radii (outer → inner) to try per slot
-      var radiiFactors = [0.38, 0.30, 0.44, 0.22, 0.46, 0.15];
-      for (var i = 0; i < N; i++) {
-        var angle = startAngle + 2 * Math.PI / N * i;
-        var found = null;
-        var _iterator = map_createForOfIteratorHelper(radiiFactors),
-          _step;
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var frac = _step.value;
-            if (found) break;
-            var r = Math.floor(this.size * frac);
-            var ci = Math.round(center + Math.cos(angle) * r);
-            var cj = Math.round(center + Math.sin(angle) * r);
-            found = getZoneInGridWithCondition({
-              minX: Math.max(border, ci - searchHalf),
-              maxX: Math.min(this.size - border, ci + searchHalf),
-              minY: Math.max(border, cj - searchHalf),
-              maxY: Math.min(this.size - border, cj + searchHalf)
-            }, this.grid, 5, function (cell) {
-              return !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water';
-            });
-          }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
-        }
-        if (found) results.push(found);
-      }
-      return results;
+      return this.mapGeneration.findPlayerPlaces();
+    }
+
+    // MapResources
+  }, {
+    key: "generateForestAroundPlayer",
+    value: function generateForestAroundPlayer(player, treeCount, clusterCount, minClusterRadius, maxClusterRadius, safeDistance, clearingProbability) {
+      return this.mapResources.generateForestAroundPlayer(player, treeCount, clusterCount, minClusterRadius, maxClusterRadius, safeDistance, clearingProbability);
+    }
+  }, {
+    key: "placeAnimalHerd",
+    value: function placeAnimalHerd(player, quantity, range) {
+      return this.mapResources.placeAnimalHerd(player, quantity, range);
+    }
+  }, {
+    key: "generateAnimalsAroundPlayers",
+    value: function generateAnimalsAroundPlayers(playersPos) {
+      return this.mapResources.generateAnimalsAroundPlayers(playersPos);
+    }
+  }, {
+    key: "generateResourcesAroundPlayers",
+    value: function generateResourcesAroundPlayers(playersPos) {
+      return this.mapResources.generateResourcesAroundPlayers(playersPos);
+    }
+  }, {
+    key: "generateNeutralResourceGroups",
+    value: function generateNeutralResourceGroups(playersPos) {
+      return this.mapResources.generateNeutralResourceGroups(playersPos);
+    }
+  }, {
+    key: "findNeutralResourceCenter",
+    value: function findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {
+      return this.mapResources.findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance);
     }
   }, {
     key: "placeResourceGroup",
     value: function placeResourceGroup(player, instance, quantity, range) {
-      var context = this.context,
-        grid = this.grid;
-      function getValidCells(ci, cj, radius) {
-        var cells = [];
-        for (var dx = -radius; dx <= radius; dx++) {
-          var _loop4 = function _loop4() {
-            var _grid$newI2;
-            var newI = ci + dx;
-            var newJ = cj + dy;
-            if (!((_grid$newI2 = grid[newI]) !== null && _grid$newI2 !== void 0 && _grid$newI2[newJ])) return 1; // continue
-            var cell = grid[newI][newJ];
-            var isFree = true;
-            grid_getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, function (c) {
-              var _c$has;
-              if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes((_c$has = c.has) === null || _c$has === void 0 ? void 0 : _c$has.type)) {
-                isFree = false;
-              }
-            });
-            if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-              cells.push({
-                i: newI,
-                j: newJ
-              });
-            }
-          };
-          for (var dy = -radius; dy <= radius; dy++) {
-            if (_loop4()) continue;
-          }
-        }
-        return cells;
-      }
-
-      // Radial placement: random angle + random distance in [range[0], range[1]]
-      var angle = Math.random() * 2 * Math.PI;
-      var dist = range[0] + Math.random() * (range[1] - range[0]);
-      var centerI = Math.round(player.i + Math.cos(angle) * dist);
-      var centerJ = Math.round(player.j + Math.sin(angle) * dist);
-
-      // Radius 2 → 5×5 tight cluster (AoE1 style), fallback to 3 if not enough cells
-      var validCells = getValidCells(centerI, centerJ, 2);
-      if (validCells.length < quantity) validCells = getValidCells(centerI, centerJ, 3);
-      if (validCells.length < quantity) return;
-      var cellsToPlace = [];
-      for (var i = 0; i < quantity; i++) {
-        if (!validCells.length) break;
-        var idx = Math.floor(Math.random() * validCells.length);
-        cellsToPlace.push(validCells.splice(idx, 1)[0]);
-      }
-      for (var _i17 = 0, _cellsToPlace2 = cellsToPlace; _i17 < _cellsToPlace2.length; _i17++) {
-        var cell = _cellsToPlace2[_i17];
-        this.resources.add(this.addChild(new Resource({
-          i: cell.i,
-          j: cell.j,
-          type: instance
-        }, context)));
-      }
+      return this.mapResources.placeResourceGroup(player, instance, quantity, range);
+    }
+  }, {
+    key: "placeResourceGroupAt",
+    value: function placeResourceGroupAt(center, instance, quantity, clusterRadius) {
+      return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius);
     }
 
-    // Bake all terrain cells into RenderTexture chunks and remove them from the live scene graph.
-    // Reduces updateTransformAndChildren from ~14k nodes to ~1 sprite per chunk.
+    // MapTerrain
+  }, {
+    key: "generateMapRelief",
+    value: function generateMapRelief() {
+      return this.mapTerrain.generateMapRelief();
+    }
+  }, {
+    key: "isInPlayerStartFlatZone",
+    value: function isInPlayerStartFlatZone(i, j, radius) {
+      return this.mapTerrain.isInPlayerStartFlatZone(i, j, radius);
+    }
+  }, {
+    key: "flattenPlayerStartZones",
+    value: function flattenPlayerStartZones(radius) {
+      return this.mapTerrain.flattenPlayerStartZones(radius);
+    }
+  }, {
+    key: "getReliefCoastDistances",
+    value: function getReliefCoastDistances() {
+      return this.mapTerrain.getReliefCoastDistances();
+    }
+  }, {
+    key: "getMaxReliefLevelFromCoastDistance",
+    value: function getMaxReliefLevelFromCoastDistance(distance) {
+      return this.mapTerrain.getMaxReliefLevelFromCoastDistance(distance);
+    }
+  }, {
+    key: "setCellReliefLevelDirect",
+    value: function setCellReliefLevelDirect(cell, level) {
+      return this.mapTerrain.setCellReliefLevelDirect(cell, level);
+    }
+  }, {
+    key: "clampReliefAroundWater",
+    value: function clampReliefAroundWater(dist) {
+      return this.mapTerrain.clampReliefAroundWater(dist);
+    }
+  }, {
+    key: "formatCellsRelief",
+    value: function formatCellsRelief() {
+      return this.mapTerrain.formatCellsRelief();
+    }
+  }, {
+    key: "formatCellsWaterBorder",
+    value: function formatCellsWaterBorder() {
+      return this.mapTerrain.formatCellsWaterBorder();
+    }
+  }, {
+    key: "formatCellsDesert",
+    value: function formatCellsDesert() {
+      return this.mapTerrain.formatCellsDesert();
+    }
+
+    // MapFog
   }, {
     key: "bakeTerrainToChunks",
     value: function bakeTerrainToChunks() {
-      var _this$context$app;
-      var renderer = (_this$context$app = this.context.app) === null || _this$context$app === void 0 ? void 0 : _this$context$app.renderer;
-      if (!renderer) return;
-
-      // Full isometric pixel bounds of the map (with margin for sprite overflow)
-      var _this$_getFogMapBound = this._getFogMapBounds(),
-        minX = _this$_getFogMapBound.minX,
-        minY = _this$_getFogMapBound.minY,
-        maxX = _this$_getFogMapBound.maxX,
-        maxY = _this$_getFogMapBound.maxY,
-        totalW = _this$_getFogMapBound.totalW,
-        totalH = _this$_getFogMapBound.totalH;
-
-      // Cap chunk size at 4096 for broad GPU compatibility
-      var gl = renderer.gl;
-      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
-      var chunksX = Math.ceil(totalW / maxTex);
-      var chunksY = Math.ceil(totalH / maxTex);
-      var chunkW = totalW / chunksX;
-      var chunkH = totalH / chunksY;
-
-      // All cells must be visible during the bake (fog overlay is separate in fogLayer)
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          this.grid[i][j].visible = true;
-        }
-      }
-
-      // Move cells out of the live scene graph into an off-screen container.
-      // Cells remain accessible via this.grid for all game logic.
-      var terrainContainer = new lib/* Container */.mcf();
-      for (var _i18 = 0; _i18 <= this.size; _i18++) {
-        for (var _j10 = 0; _j10 <= this.size; _j10++) {
-          terrainContainer.addChild(this.grid[_i18][_j10]);
-        }
-      }
-      for (var cx = 0; cx < chunksX; cx++) {
-        for (var cy = 0; cy < chunksY; cy++) {
-          var cMinX = minX + cx * chunkW;
-          var cMinY = minY + cy * chunkH;
-          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
-          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
-          var rt = lib/* RenderTexture */.Y7R.create({
-            width: cW,
-            height: cH
-          });
-          var transform = new lib/* Matrix */.uqu().translate(-cMinX, -cMinY);
-          renderer.render({
-            container: terrainContainer,
-            target: rt,
-            transform: transform,
-            clear: true
-          });
-          var sprite = new lib/* Sprite */.kxk(rt);
-          sprite.x = cMinX;
-          sprite.y = cMinY;
-          sprite.zIndex = -1;
-          sprite.eventMode = 'none';
-          sprite.label = 'terrainChunk';
-          this.addChild(sprite);
-        }
-      }
-
-      // Re-initialize entity visibility: cells were moved out of the scene graph so their
-      // updateVisible() was never triggered by the normal render pipeline.
-      // Walk all viewed cells and show their resources/corpses explicitly.
-      var player = this.context.player;
-      for (var _i19 = 0; _i19 <= this.size; _i19++) {
-        for (var _j11 = 0; _j11 <= this.size; _j11++) {
-          var _player$views$_i;
-          var cell = this.grid[_i19][_j11];
-          if ((_player$views$_i = player.views[_i19]) !== null && _player$views$_i !== void 0 && (_player$views$_i = _player$views$_i[_j11]) !== null && _player$views$_i !== void 0 && _player$views$_i.viewed) {
-            cell.updateVisible();
-          }
-        }
-      }
+      return this.mapFog.bakeTerrainToChunks();
     }
   }, {
     key: "_initFogChunks",
     value: function _initFogChunks() {
-      var _this$context$app2,
-        _this5 = this;
-      this._fogQueue = new globalThis.Map();
-      this._fogInitComplete = false;
-      this._fogChunks = [];
-      var renderer = (_this$context$app2 = this.context.app) === null || _this$context$app2 === void 0 ? void 0 : _this$context$app2.renderer;
-      if (!renderer) return;
-      var margin = CELL_WIDTH;
-      var minX = -this.size * (CELL_WIDTH / 2) - margin;
-      var minY = -margin;
-      var maxX = this.size * (CELL_WIDTH / 2) + margin;
-      var maxY = this.size * CELL_HEIGHT + margin;
-      var totalW = maxX - minX;
-      var totalH = maxY - minY;
-      var gl = renderer.gl;
-      var maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096;
-      var chunksX = Math.ceil(totalW / maxTex);
-      var chunksY = Math.ceil(totalH / maxTex);
-      var chunkW = totalW / chunksX;
-      var chunkH = totalH / chunksY;
-      this._fogBounds = {
-        minX: minX,
-        minY: minY,
-        chunksX: chunksX,
-        chunksY: chunksY,
-        chunkW: chunkW,
-        chunkH: chunkH,
-        totalW: totalW,
-        totalH: totalH
-      };
-      this.fogLayer = new lib/* Container */.mcf();
-      this.fogLayer.eventMode = 'none';
-      this.fogLayer.zIndex = 1e9;
-      this.fogLayer.sortableChildren = true;
-      this.addChild(this.fogLayer);
-
-      // revealEverything = no fog chunks at all, fogLayer stays empty
-      if (this.revealEverything) return;
-      for (var cx = 0; cx < chunksX; cx++) {
-        for (var cy = 0; cy < chunksY; cy++) {
-          var cMinX = minX + cx * chunkW;
-          var cMinY = minY + cy * chunkH;
-          var cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW);
-          var cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH);
-          var darknessRt = lib/* RenderTexture */.Y7R.create({
-            width: cW,
-            height: cH
-          });
-          var fogRt = lib/* RenderTexture */.Y7R.create({
-            width: cW,
-            height: cH
-          });
-          var edgeRt = lib/* RenderTexture */.Y7R.create({
-            width: cW,
-            height: cH
-          });
-          var emptyC = new lib/* Container */.mcf();
-          renderer.render({
-            container: emptyC,
-            target: darknessRt,
-            clear: true
-          });
-          renderer.render({
-            container: emptyC,
-            target: fogRt,
-            clear: true
-          });
-          renderer.render({
-            container: emptyC,
-            target: edgeRt,
-            clear: true
-          });
-          emptyC.destroy();
-          var pattern = this._createFogPatternSprite(cMinX, cMinY, cW, cH);
-          renderer.render({
-            container: pattern,
-            target: fogRt,
-            clear: false
-          });
-          pattern.destroy();
-          if (!this.revealTerrain) {
-            var blackG = new lib/* Graphics */.A1g();
-            blackG.rect(cMinX, cMinY, cW, cH).fill({
-              color: 0x000000
-            });
-            renderer.render({
-              container: blackG,
-              target: darknessRt,
-              transform: new lib/* Matrix */.uqu().translate(-cMinX, -cMinY),
-              clear: false
-            });
-            blackG.destroy();
-          }
-          var darknessSprite = new lib/* Sprite */.kxk(darknessRt);
-          darknessSprite.x = cMinX;
-          darknessSprite.y = cMinY;
-          darknessSprite.zIndex = 1;
-          darknessSprite.eventMode = 'none';
-          this.fogLayer.addChild(darknessSprite);
-          var fogSprite = new lib/* Sprite */.kxk(fogRt);
-          fogSprite.x = cMinX;
-          fogSprite.y = cMinY;
-          fogSprite.zIndex = 2;
-          fogSprite.eventMode = 'none';
-          this.fogLayer.addChild(fogSprite);
-          var edgeSprite = new lib/* Sprite */.kxk(edgeRt);
-          edgeSprite.x = cMinX;
-          edgeSprite.y = cMinY;
-          edgeSprite.zIndex = 3;
-          edgeSprite.eventMode = 'none';
-          this.fogLayer.addChild(edgeSprite);
-          this._fogChunks.push({
-            darknessRt: darknessRt,
-            fogRt: fogRt,
-            edgeRt: edgeRt,
-            minX: cMinX,
-            minY: cMinY,
-            w: cW,
-            h: cH
-          });
-        }
-      }
-      this._fogTickerCb = function () {
-        // Self-remove if this map is no longer active
-        if (_this5.context.map !== _this5) {
-          _this5.context.app.ticker.remove(_this5._fogTickerCb);
-          return;
-        }
-        _this5._flushFogQueue();
-      };
-      this.context.app.ticker.add(this._fogTickerCb);
+      return this.mapFog._initFogChunks();
     }
   }, {
     key: "_createFogPatternSprite",
     value: function _createFogPatternSprite(x, y, width, height) {
-      var pattern = new lib/* TilingSprite */.t9Q({
-        texture: getFogPatternTexture(),
-        width: Math.ceil(width),
-        height: Math.ceil(height)
-      });
-      pattern.x = 0;
-      pattern.y = 0;
-      pattern.tilePosition.set(-Math.floor(x), -Math.floor(y));
-      pattern.eventMode = 'none';
-      return pattern;
+      return this.mapFog._createFogPatternSprite(x, y, width, height);
     }
   }, {
     key: "_getFogMapBounds",
     value: function _getFogMapBounds() {
-      if (!this.grid.length) {
-        var _margin = CELL_WIDTH + CELL_DEPTH * 4;
-        var _minX = -this.size * (CELL_WIDTH / 2) - _margin;
-        var _minY = -_margin;
-        var _maxX = this.size * (CELL_WIDTH / 2) + _margin;
-        var _maxY = this.size * CELL_HEIGHT + _margin;
-        return {
-          minX: _minX,
-          minY: _minY,
-          maxX: _maxX,
-          maxY: _maxY,
-          totalW: _maxX - _minX,
-          totalH: _maxY - _minY
-        };
-      }
-      var minX = Infinity;
-      var minY = Infinity;
-      var maxX = -Infinity;
-      var maxY = -Infinity;
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var _this$grid$i3;
-          var cell = (_this$grid$i3 = this.grid[i]) === null || _this$grid$i3 === void 0 ? void 0 : _this$grid$i3[j];
-          if (!cell) continue;
-          var bounds = this._getFogCellBounds(cell);
-          minX = Math.min(minX, bounds.minX);
-          minY = Math.min(minY, bounds.minY);
-          maxX = Math.max(maxX, bounds.maxX);
-          maxY = Math.max(maxY, bounds.maxY);
-        }
-      }
-      var margin = CELL_DEPTH;
-      minX -= margin;
-      minY -= margin;
-      maxX += margin;
-      maxY += margin;
-      return {
-        minX: minX,
-        minY: minY,
-        maxX: maxX,
-        maxY: maxY,
-        totalW: maxX - minX,
-        totalH: maxY - minY
-      };
+      return this.mapFog._getFogMapBounds();
     }
   }, {
     key: "_getFogCellBounds",
     value: function _getFogCellBounds(cell) {
-      var hw = _DW / 2;
-      var hh = _DH / 2;
-      var _this$_getFogCellCent = this._getFogCellCenter(cell),
-        _this$_getFogCellCent2 = map_slicedToArray(_this$_getFogCellCent, 2),
-        cx = _this$_getFogCellCent2[0],
-        cy = _this$_getFogCellCent2[1];
-      return {
-        minX: cx - hw,
-        minY: cy - hh,
-        maxX: cx + hw,
-        maxY: cy + hh
-      };
+      return this.mapFog._getFogCellBounds(cell);
     }
   }, {
     key: "_getFogChunksForCell",
     value: function _getFogChunksForCell(cell) {
-      var bounds = this._getFogCellBounds(cell);
-      return this._fogChunks.filter(function (chunk) {
-        return bounds.maxX >= chunk.minX && bounds.minX <= chunk.minX + chunk.w && bounds.maxY >= chunk.minY && bounds.minY <= chunk.minY + chunk.h;
-      });
+      return this.mapFog._getFogChunksForCell(cell);
     }
   }, {
     key: "_drawFogCellShape",
     value: function _drawFogCellShape(graphics, cell) {
-      var _this$_getFogCellPoin = this._getFogCellPoints(cell),
-        _this$_getFogCellPoin2 = map_slicedToArray(_this$_getFogCellPoin, 4),
-        top = _this$_getFogCellPoin2[0],
-        right = _this$_getFogCellPoin2[1],
-        bottom = _this$_getFogCellPoin2[2],
-        left = _this$_getFogCellPoin2[3];
-      graphics.poly([top.x, top.y, right.x, right.y, bottom.x, bottom.y, left.x, left.y]);
+      return this.mapFog._drawFogCellShape(graphics, cell);
     }
   }, {
     key: "_getFogCellOpenSides",
     value: function _getFogCellOpenSides(cell) {
-      var _grid, _grid$cell$i, _grid2, _grid$cell$i2;
-      var grid = this.grid;
-      var _this$_getFogCellPoin3 = this._getFogCellPoints(cell),
-        _this$_getFogCellPoin4 = map_slicedToArray(_this$_getFogCellPoin3, 4),
-        top = _this$_getFogCellPoin4[0],
-        right = _this$_getFogCellPoin4[1],
-        bottom = _this$_getFogCellPoin4[2],
-        left = _this$_getFogCellPoin4[3];
-      var sides = [];
-      var addSide = function addSide(neighbor, from, to) {
-        if (neighbor && !neighbor._hasFog) return;
-        sides.push({
-          from: from,
-          to: to
-        });
-      };
-      addSide((_grid = grid[cell.i - 1]) === null || _grid === void 0 ? void 0 : _grid[cell.j], left, top);
-      addSide((_grid$cell$i = grid[cell.i]) === null || _grid$cell$i === void 0 ? void 0 : _grid$cell$i[cell.j - 1], top, right);
-      addSide((_grid2 = grid[cell.i + 1]) === null || _grid2 === void 0 ? void 0 : _grid2[cell.j], right, bottom);
-      addSide((_grid$cell$i2 = grid[cell.i]) === null || _grid$cell$i2 === void 0 ? void 0 : _grid$cell$i2[cell.j + 1], bottom, left);
-      return sides;
+      return this.mapFog._getFogCellOpenSides(cell);
     }
   }, {
     key: "_signedDistanceToFogSide",
     value: function _signedDistanceToFogSide(point, from, to, cell) {
-      var edgeX = to.x - from.x;
-      var edgeY = to.y - from.y;
-      var len = Math.hypot(edgeX, edgeY);
-      if (len === 0) return 0;
-      var _this$_getFogCellCent3 = this._getFogCellCenter(cell),
-        _this$_getFogCellCent4 = map_slicedToArray(_this$_getFogCellCent3, 2),
-        cx = _this$_getFogCellCent4[0],
-        cy = _this$_getFogCellCent4[1];
-      var pointCross = edgeX * (point.y - from.y) - edgeY * (point.x - from.x);
-      var cellCross = edgeX * (cy - from.y) - edgeY * (cx - from.x);
-      return pointCross * Math.sign(cellCross || 1) / len;
+      return this.mapFog._signedDistanceToFogSide(point, from, to, cell);
     }
   }, {
     key: "_clipFogErasePolygonBySide",
     value: function _clipFogErasePolygonBySide(points, from, to, cell, inset) {
-      var _this6 = this;
-      var clipped = [];
-      var isInside = function isInside(point) {
-        return _this6._signedDistanceToFogSide(point, from, to, cell) >= inset;
-      };
-      var intersection = function intersection(a, b) {
-        var da = _this6._signedDistanceToFogSide(a, from, to, cell) - inset;
-        var db = _this6._signedDistanceToFogSide(b, from, to, cell) - inset;
-        var t = da / (da - db);
-        return {
-          x: a.x + (b.x - a.x) * t,
-          y: a.y + (b.y - a.y) * t
-        };
-      };
-      for (var i = 0; i < points.length; i++) {
-        var current = points[i];
-        var previous = points[(i + points.length - 1) % points.length];
-        var currentInside = isInside(current);
-        var previousInside = isInside(previous);
-        if (currentInside) {
-          if (!previousInside) clipped.push(intersection(previous, current));
-          clipped.push(current);
-        } else if (previousInside) {
-          clipped.push(intersection(previous, current));
-        }
-      }
-      return clipped;
+      return this.mapFog._clipFogErasePolygonBySide(points, from, to, cell, inset);
     }
   }, {
     key: "_drawFogEraseCellShape",
-    value: function _drawFogEraseCellShape(graphics, cell) {
-      var inset = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
-      var points = this._getFogCellPoints(cell);
-      var _iterator2 = map_createForOfIteratorHelper(this._getFogCellOpenSides(cell)),
-        _step2;
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var _step2$value = _step2.value,
-            from = _step2$value.from,
-            to = _step2$value.to;
-          points = this._clipFogErasePolygonBySide(points, from, to, cell, inset);
-          if (points.length < 3) return;
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
-      }
-      graphics.poly(points.flatMap(function (point) {
-        return [point.x, point.y];
-      }));
+    value: function _drawFogEraseCellShape(graphics, cell, inset) {
+      return this.mapFog._drawFogEraseCellShape(graphics, cell, inset);
     }
   }, {
     key: "_getFogEraseRefreshCells",
     value: function _getFogEraseRefreshCells(cell) {
-      var _grid3, _grid$cell$i3, _grid4, _grid$cell$i4;
-      var grid = this.grid;
-      return [cell, (_grid3 = grid[cell.i - 1]) === null || _grid3 === void 0 ? void 0 : _grid3[cell.j], (_grid$cell$i3 = grid[cell.i]) === null || _grid$cell$i3 === void 0 ? void 0 : _grid$cell$i3[cell.j - 1], (_grid4 = grid[cell.i + 1]) === null || _grid4 === void 0 ? void 0 : _grid4[cell.j], (_grid$cell$i4 = grid[cell.i]) === null || _grid$cell$i4 === void 0 ? void 0 : _grid$cell$i4[cell.j + 1]].filter(function (refreshCell) {
-        return refreshCell && !refreshCell._hasFog;
-      });
+      return this.mapFog._getFogEraseRefreshCells(cell);
     }
   }, {
     key: "_getFogCellCenter",
     value: function _getFogCellCenter(cell) {
-      return cartesianToIsometric(cell.i, cell.j);
+      return this.mapFog._getFogCellCenter(cell);
     }
   }, {
     key: "_getFogCellPoints",
     value: function _getFogCellPoints(cell) {
-      var hw = _DW / 2;
-      var hh = _DH / 2;
-      var _this$_getFogCellCent5 = this._getFogCellCenter(cell),
-        _this$_getFogCellCent6 = map_slicedToArray(_this$_getFogCellCent5, 2),
-        cx = _this$_getFogCellCent6[0],
-        cy = _this$_getFogCellCent6[1];
-      return [{
-        x: cx,
-        y: cy - hh
-      }, {
-        x: cx + hw,
-        y: cy
-      }, {
-        x: cx,
-        y: cy + hh
-      }, {
-        x: cx - hw,
-        y: cy
-      }];
+      return this.mapFog._getFogCellPoints(cell);
     }
   }, {
     key: "_redrawFogEdgesInChunk",
     value: function _redrawFogEdgesInChunk(renderer, chunk) {
-      var emptyC = new lib/* Container */.mcf();
-      renderer.render({
-        container: emptyC,
-        target: chunk.edgeRt,
-        clear: true
-      });
-      emptyC.destroy();
+      return this.mapFog._redrawFogEdgesInChunk(renderer, chunk);
     }
   }, {
     key: "_drawVisibleCellsInChunk",
     value: function _drawVisibleCellsInChunk(graphics, chunk) {
-      var maxX = chunk.minX + chunk.w;
-      var maxY = chunk.minY + chunk.h;
-      for (var i = 0; i <= this.size; i++) {
-        for (var j = 0; j <= this.size; j++) {
-          var cell = this.grid[i][j];
-          if (cell._hasFog) continue;
-          var bounds = this._getFogCellBounds(cell);
-          if (bounds.maxX >= chunk.minX && bounds.minX <= maxX && bounds.maxY >= chunk.minY && bounds.minY <= maxY) {
-            this._drawFogEraseCellShape(graphics, cell);
-          }
-        }
-      }
+      return this.mapFog._drawVisibleCellsInChunk(graphics, chunk);
     }
   }, {
     key: "_flushFogQueue",
     value: function _flushFogQueue() {
-      var _this$context$app3,
-        _this7 = this;
-      if (!this._fogQueue || this._fogQueue.size === 0) return;
-      var renderer = (_this$context$app3 = this.context.app) === null || _this$context$app3 === void 0 ? void 0 : _this$context$app3.renderer;
-      if (!renderer) return;
-      var chunkUpdates = new globalThis.Map();
-      var addChunkUpdate = function addChunkUpdate(cell, state) {
-        var chunks = _this7._getFogChunksForCell(cell);
-        var _iterator3 = map_createForOfIteratorHelper(chunks),
-          _step3;
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var chunk = _step3.value;
-            if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, []);
-            chunkUpdates.get(chunk).push({
-              cell: cell,
-              state: state
-            });
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
-        }
-      };
-      var _iterator4 = map_createForOfIteratorHelper(this._fogQueue),
-        _step4;
-      try {
-        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-          var _step4$value = map_slicedToArray(_step4.value, 2),
-            cell = _step4$value[0],
-            state = _step4$value[1];
-          addChunkUpdate(cell, state);
-          if (state === 'clear') {
-            var _iterator7 = map_createForOfIteratorHelper(this._getFogEraseRefreshCells(cell)),
-              _step7;
-            try {
-              for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-                var refreshCell = _step7.value;
-                if (refreshCell === cell) continue;
-                addChunkUpdate(refreshCell, 'refreshFogErase');
-              }
-            } catch (err) {
-              _iterator7.e(err);
-            } finally {
-              _iterator7.f();
-            }
-          }
-        }
-      } catch (err) {
-        _iterator4.e(err);
-      } finally {
-        _iterator4.f();
-      }
-      this._fogQueue.clear();
-      var _iterator5 = map_createForOfIteratorHelper(chunkUpdates),
-        _step5;
-      try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var _step5$value = map_slicedToArray(_step5.value, 2),
-            chunk = _step5$value[0],
-            updates = _step5$value[1];
-          var transform = new lib/* Matrix */.uqu().translate(-chunk.minX, -chunk.minY);
-          var darknessDraw = new lib/* Graphics */.A1g();
-          var darknessErase = new lib/* Graphics */.A1g();
-          var fogErase = new lib/* Graphics */.A1g();
-          var hasDarknessDraw = false;
-          var hasDarknessErase = false;
-          var hasFogErase = false;
-          var needsFogRestore = false;
-          var _iterator8 = map_createForOfIteratorHelper(updates),
-            _step8;
-          try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var _step8$value = _step8.value,
-                _cell4 = _step8$value.cell,
-                _state = _step8$value.state;
-              if (_state === 'clear') {
-                this._drawFogCellShape(darknessErase, _cell4);
-                this._drawFogEraseCellShape(fogErase, _cell4);
-                hasDarknessErase = true;
-                hasFogErase = true;
-              } else if (_state === 'refreshFogErase') {
-                this._drawFogEraseCellShape(fogErase, _cell4);
-                hasFogErase = true;
-              } else if (_state === 'fogViewed') {
-                this._drawFogCellShape(darknessErase, _cell4);
-                hasDarknessErase = true;
-                needsFogRestore = true;
-              } else {
-                this._drawFogCellShape(darknessDraw, _cell4);
-                hasDarknessDraw = true;
-              }
-            }
-          } catch (err) {
-            _iterator8.e(err);
-          } finally {
-            _iterator8.f();
-          }
-          if (hasDarknessDraw) {
-            darknessDraw.fill({
-              color: 0x000000
-            });
-            renderer.render({
-              container: darknessDraw,
-              target: chunk.darknessRt,
-              transform: transform,
-              clear: false
-            });
-          }
-          if (hasDarknessErase) {
-            darknessErase.blendMode = 'erase';
-            darknessErase.fill({
-              color: 0xffffff
-            });
-            var eraseContainer = new lib/* Container */.mcf();
-            eraseContainer.addChild(darknessErase);
-            renderer.render({
-              container: eraseContainer,
-              target: chunk.darknessRt,
-              transform: transform,
-              clear: false
-            });
-            eraseContainer.removeChildren();
-            eraseContainer.destroy();
-          }
-          if (needsFogRestore) {
-            var pattern = this._createFogPatternSprite(chunk.minX, chunk.minY, chunk.w, chunk.h);
-            renderer.render({
-              container: pattern,
-              target: chunk.fogRt,
-              clear: false
-            });
-            pattern.destroy();
-            this._drawVisibleCellsInChunk(fogErase, chunk);
-            hasFogErase = true;
-          }
-          if (hasFogErase) {
-            fogErase.blendMode = 'erase';
-            fogErase.fill({
-              color: 0xffffff
-            });
-            var _eraseContainer = new lib/* Container */.mcf();
-            _eraseContainer.addChild(fogErase);
-            renderer.render({
-              container: _eraseContainer,
-              target: chunk.fogRt,
-              transform: transform,
-              clear: false
-            });
-            _eraseContainer.removeChildren();
-            _eraseContainer.destroy();
-          }
-          darknessDraw.destroy();
-          darknessErase.destroy();
-          fogErase.destroy();
-        }
-      } catch (err) {
-        _iterator5.e(err);
-      } finally {
-        _iterator5.f();
-      }
-      var _iterator6 = map_createForOfIteratorHelper(this._fogChunks),
-        _step6;
-      try {
-        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-          var _chunk = _step6.value;
-          this._redrawFogEdgesInChunk(renderer, _chunk);
-        }
-      } catch (err) {
-        _iterator6.e(err);
-      } finally {
-        _iterator6.f();
-      }
+      return this.mapFog._flushFogQueue();
     }
   }]);
 }(lib/* Container */.mcf);
@@ -10512,13 +11060,27 @@ var MinimapManager = /*#__PURE__*/function () {
     key: "initMiniMap",
     value: function initMiniMap() {
       var menu = this.menu;
+      var map = menu.context.map;
       var _this$getMinimapParam = this.getMinimapParams(),
+        factor = _this$getMinimapParam.factor,
         translate = _this$getMinimapParam.translate;
       for (var _i = 0, _arr = [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]; _i < _arr.length; _i++) {
         var canvas = _arr[_i];
         canvas.getContext('2d').translate(translate, 0);
       }
-      var map = menu.context.map;
+      var N = map.size;
+      var canvasW = menu.terrainMinimap.width;
+      var canvasH = menu.terrainMinimap.height;
+      var centerX = 2 * translate;
+      var halfW = N * CELL_WIDTH / 2 / factor;
+      var halfH = N * CELL_HEIGHT / 2 / factor;
+      var px = function px(v) {
+        return "".concat((v / canvasW * 100).toFixed(2), "%");
+      };
+      var py = function py(v) {
+        return "".concat((v / canvasH * 100).toFixed(2), "%");
+      };
+      menu.bottombarMap.style.clipPath = "polygon(".concat(px(centerX), " 0%, ").concat(px(centerX + halfW), " ").concat(py(halfH), ", ").concat(px(centerX), " ").concat(py(halfH * 2), ", ").concat(px(centerX - halfW), " ").concat(py(halfH), ")");
       if (map.revealEverything || map.revealTerrain) {
         this.revealTerrainMinimap();
       }
@@ -10639,7 +11201,7 @@ var MinimapManager = /*#__PURE__*/function () {
       }
       context.clearRect(-translate, 0, canvas.width, canvas.height);
       var isVisible = function isVisible(instance) {
-        return map.revealEverything || owner.isPlayed || instanceIsInPlayerSight(instance, player);
+        return map.revealEverything || playerCanSeeInstance(instance, player);
       };
       owner.buildings.forEach(function (building) {
         if (!isVisible(building)) return;
@@ -10686,7 +11248,7 @@ var BottombarManager = /*#__PURE__*/function () {
     value: function resetInfo() {
       var menu = this.menu;
       menu.bottombarInfo.textContent = '';
-      menu.bottombarInfo.style.background = 'transparent';
+      menu.bottombarInfo.style.background = null;
       menu._infoCache = null;
     }
   }, {
@@ -11628,26 +12190,9 @@ var BuildingPlacer = /*#__PURE__*/function () {
       var cell = map.grid[i][j];
       controls.mouseBuilding.x = cell.x - controls.camera.x;
       controls.mouseBuilding.y = cell.y - controls.camera.y;
-      var isFree = true;
-      var dist = controls.mouseBuilding.size === 3 ? 1 : 0;
-      if (controls.mouseBuilding.buildOnWater) {
-        var waterBorderedCells = 0;
-        var waterCells = 0;
-        grid_getPlainCellsAroundPoint(i, j, map.grid, dist, function (c) {
-          if (c.inclined || c.solid || !c.visible) {
-            isFree = false;
-            return;
-          }
-          if (c.waterBorder) waterBorderedCells++;else if (c.category === 'Water') waterCells++;
-        });
-        if (waterBorderedCells < 2 && waterCells < 4) isFree = false;
-      } else {
-        grid_getPlainCellsAroundPoint(i, j, map.grid, dist, function (c) {
-          if (c.category === 'Water' || c.solid || c.inclined || c.border || !c.visible) {
-            isFree = false;
-          }
-        });
-      }
+      var isFree = canPlaceBuildingAt(map.grid, i, j, controls.mouseBuilding, {
+        requireVisible: true
+      });
       var sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite);
       var color = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.color);
       var tint = isFree ? COLOR_WHITE : COLOR_RED;
@@ -11986,6 +12531,7 @@ var Controls = /*#__PURE__*/function (_Container) {
     key: "onKeyDown",
     value: function onKeyDown(evt) {
       var _this2 = this;
+      if (this.context.devConsoleOpen) return;
       if (evt.key === 'f' || evt.key === 'F') {
         this.fpsVisible = !this.fpsVisible;
         this.fpsEl.style.display = this.fpsVisible ? 'block' : 'none';
@@ -12026,6 +12572,10 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "onKeyUp",
     value: function onKeyUp(evt) {
+      if (this.context.devConsoleOpen) {
+        this.stopKeyboardMove();
+        return;
+      }
       if (!evt.repeat && this.keysPressed[evt.key]) {
         delete this.keysPressed[evt.key];
         this.keyPressedCount--;
@@ -12084,6 +12634,7 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "onMouseDown",
     value: function onMouseDown(evt) {
+      if (this.context.devConsoleOpen) return;
       this.mouse.x = evt.pageX;
       this.mouse.y = evt.pageY;
       if (!this.isMouseInApp(evt)) return;
@@ -12097,6 +12648,7 @@ var Controls = /*#__PURE__*/function (_Container) {
     value: function onMouseMove(evt) {
       this.mouse.x = evt.pageX;
       this.mouse.y = evt.pageY;
+      if (this.context.devConsoleOpen) return;
       if (this.mouseBuilding) {
         this.buildingPlacer.handleMouseMove();
         return;
@@ -12106,6 +12658,7 @@ var Controls = /*#__PURE__*/function (_Container) {
   }, {
     key: "onMouseUp",
     value: function onMouseUp(evt) {
+      if (this.context.devConsoleOpen) return;
       var _this$context = this.context,
         map = _this$context.map,
         player = _this$context.player;
@@ -12141,6 +12694,16 @@ var Controls = /*#__PURE__*/function (_Container) {
       return this.selectionManager.sendUnits(cell);
     }
   }, {
+    key: "getCellUnderCursor",
+    value: function getCellUnderCursor() {
+      var _map$grid$i;
+      var map = this.context.map;
+      var pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y);
+      var i = Math.min(Math.max(pos[0], 0), map.size);
+      var j = Math.min(Math.max(pos[1], 0), map.size);
+      return ((_map$grid$i = map.grid[i]) === null || _map$grid$i === void 0 ? void 0 : _map$grid$i[j]) || null;
+    }
+  }, {
     key: "isMouseInApp",
     value: function isMouseInApp(evt) {
       return evt.target && (!evt.target.tagName || evt.target.closest('#game'));
@@ -12171,9 +12734,28 @@ var Controls = /*#__PURE__*/function (_Container) {
       this.cameraController.stopMouseMove();
     }
   }, {
+    key: "stopKeyboardMove",
+    value: function stopKeyboardMove() {
+      this.keysPressed = {};
+      this.keyPressedCount = 0;
+      clearInterval(this.keyInterval);
+      this.keyInterval = null;
+      this.keySpeed = 0;
+    }
+  }, {
     key: "instanceInCamera",
     value: function instanceInCamera(instance) {
       return this.cameraController.instanceInCamera(instance);
+    }
+  }, {
+    key: "instanceIsAudible",
+    value: function instanceIsAudible(instance) {
+      var _instance$owner, _instance$owner2, _instance$owner3, _instance$target;
+      var map = this.context.map;
+      if (!this.instanceInCamera(instance)) return false;
+      if (map.revealEverything) return true;
+      if ((_instance$owner = instance.owner) !== null && _instance$owner !== void 0 && _instance$owner.isPlayed || (_instance$owner2 = instance.owner) !== null && _instance$owner2 !== void 0 && (_instance$owner2 = _instance$owner2.owner) !== null && _instance$owner2 !== void 0 && _instance$owner2.isPlayed) return true;
+      return Boolean(instance.visible || ((_instance$owner3 = instance.owner) === null || _instance$owner3 === void 0 ? void 0 : _instance$owner3.visible) || ((_instance$target = instance.target) === null || _instance$target === void 0 ? void 0 : _instance$target.visible));
     }
   }, {
     key: "getCellOnCamera",
@@ -12323,6 +12905,34 @@ function SaveSerializer_defineProperty(e, r, t) { return (r = SaveSerializer_toP
 function SaveSerializer_toPropertyKey(t) { var i = SaveSerializer_toPrimitive(t, "string"); return "symbol" == SaveSerializer_typeof(i) ? i : i + ""; }
 function SaveSerializer_toPrimitive(t, r) { if ("object" != SaveSerializer_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != SaveSerializer_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 
+function cameraData(camera) {
+  var _camera$x, _camera$y;
+  return {
+    x: (_camera$x = camera === null || camera === void 0 ? void 0 : camera.x) !== null && _camera$x !== void 0 ? _camera$x : 0,
+    y: (_camera$y = camera === null || camera === void 0 ? void 0 : camera.y) !== null && _camera$y !== void 0 ? _camera$y : 0
+  };
+}
+function pathData() {
+  var path = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return path.map(function (_ref) {
+    var i = _ref.i,
+      j = _ref.j;
+    return {
+      i: i,
+      j: j
+    };
+  });
+}
+function destinationData(dest) {
+  if (!dest) return dest;
+  return {
+    i: dest.i,
+    j: dest.j,
+    x: dest.x,
+    y: dest.y,
+    label: dest.label
+  };
+}
 function resourceData(resource) {
   return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints'])), {}, {
     textureName: (resource.textureName || '').split('.')[0]
@@ -12334,7 +12944,9 @@ function animalData(animal) {
     currentFrame: (_animal$sprite = animal.sprite) === null || _animal$sprite === void 0 ? void 0 : _animal$sprite.currentFrame,
     loop: (_animal$sprite2 = animal.sprite) === null || _animal$sprite2 === void 0 ? void 0 : _animal$sprite2.loop,
     dest: animal.dest && [animal.dest.i, animal.dest.j, (_animal$dest = animal.dest) === null || _animal$dest === void 0 ? void 0 : _animal$dest.label],
-    previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label]
+    previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, (_animal$previousDest = animal.previousDest) === null || _animal$previousDest === void 0 ? void 0 : _animal$previousDest.label],
+    path: pathData(animal.path),
+    realDest: destinationData(animal.realDest)
   });
 }
 function unitData(unit) {
@@ -12343,7 +12955,9 @@ function unitData(unit) {
     currentFrame: (_unit$sprite = unit.sprite) === null || _unit$sprite === void 0 ? void 0 : _unit$sprite.currentFrame,
     loop: (_unit$sprite2 = unit.sprite) === null || _unit$sprite2 === void 0 ? void 0 : _unit$sprite2.loop,
     dest: unit.dest && [unit.dest.i, unit.dest.j, (_unit$dest = unit.dest) === null || _unit$dest === void 0 ? void 0 : _unit$dest.label],
-    previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label]
+    previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, (_unit$previousDest = unit.previousDest) === null || _unit$previousDest === void 0 ? void 0 : _unit$previousDest.label],
+    path: pathData(unit.path),
+    realDest: destinationData(unit.realDest)
   });
 }
 function buildingData(building) {
@@ -12353,7 +12967,7 @@ function buildingData(building) {
   });
 }
 function playerData(player) {
-  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
+  return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(player, ['label', 'age', 'type', 'wood', 'food', 'stone', 'gold', 'civ', 'color', 'team', 'population', 'population_max', 'technologies', 'cellViewed', 'isPlayed', 'hasBuilt'])), {}, {
     buildings: player.buildings.map(function (b) {
       return buildingData(b);
     }),
@@ -12378,10 +12992,10 @@ function cellData(cell) {
   var _cell$has;
   return SaveSerializer_objectSpread(SaveSerializer_objectSpread({}, filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder'])), {}, {
     has: (_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.label,
-    fogSprites: cell.fogSprites.map(function (_ref) {
-      var textureSheet = _ref.textureSheet,
-        colorSheet = _ref.colorSheet,
-        colorName = _ref.colorName;
+    fogSprites: cell.fogSprites.map(function (_ref2) {
+      var textureSheet = _ref2.textureSheet,
+        colorSheet = _ref2.colorSheet,
+        colorName = _ref2.colorName;
       return {
         textureSheet: textureSheet,
         colorSheet: colorSheet,
@@ -12392,12 +13006,13 @@ function cellData(cell) {
 }
 function serializeGame(context) {
   return {
-    camera: context.controls.camera,
+    camera: cameraData(context.controls.camera),
     config: {
       devMode: context.map.devMode,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
-      startingResources: context.map.startingResources
+      startingResources: context.map.startingResources,
+      resourceDensity: context.map.resourceDensity
     },
     players: context.players.map(function (p) {
       return playerData(p);
@@ -12415,6 +13030,783 @@ function serializeGame(context) {
     })
   };
 }
+;// ./app/dev-console/DevCommandRegistry.js
+function DevCommandRegistry_typeof(o) { "@babel/helpers - typeof"; return DevCommandRegistry_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, DevCommandRegistry_typeof(o); }
+function _toArray(r) { return DevCommandRegistry_arrayWithHoles(r) || DevCommandRegistry_iterableToArray(r) || DevCommandRegistry_unsupportedIterableToArray(r) || DevCommandRegistry_nonIterableRest(); }
+function DevCommandRegistry_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function DevCommandRegistry_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function DevCommandRegistry_toConsumableArray(r) { return DevCommandRegistry_arrayWithoutHoles(r) || DevCommandRegistry_iterableToArray(r) || DevCommandRegistry_unsupportedIterableToArray(r) || DevCommandRegistry_nonIterableSpread(); }
+function DevCommandRegistry_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function DevCommandRegistry_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return DevCommandRegistry_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? DevCommandRegistry_arrayLikeToArray(r, a) : void 0; } }
+function DevCommandRegistry_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function DevCommandRegistry_arrayWithoutHoles(r) { if (Array.isArray(r)) return DevCommandRegistry_arrayLikeToArray(r); }
+function DevCommandRegistry_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function DevCommandRegistry_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function DevCommandRegistry_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, DevCommandRegistry_toPropertyKey(o.key), o); } }
+function DevCommandRegistry_createClass(e, r, t) { return r && DevCommandRegistry_defineProperties(e.prototype, r), t && DevCommandRegistry_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function DevCommandRegistry_toPropertyKey(t) { var i = DevCommandRegistry_toPrimitive(t, "string"); return "symbol" == DevCommandRegistry_typeof(i) ? i : i + ""; }
+function DevCommandRegistry_toPrimitive(t, r) { if ("object" != DevCommandRegistry_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != DevCommandRegistry_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var DevCommandRegistry = /*#__PURE__*/function () {
+  function DevCommandRegistry() {
+    DevCommandRegistry_classCallCheck(this, DevCommandRegistry);
+    this.commands = new Map();
+    this.aliases = new Map();
+  }
+  return DevCommandRegistry_createClass(DevCommandRegistry, [{
+    key: "register",
+    value: function register(command) {
+      var _this = this;
+      this.commands.set(command.name, command);
+      (command.aliases || []).forEach(function (alias) {
+        return _this.aliases.set(alias, command.name);
+      });
+    }
+  }, {
+    key: "get",
+    value: function get(name) {
+      return this.commands.get(name) || this.commands.get(this.aliases.get(name));
+    }
+  }, {
+    key: "all",
+    value: function all() {
+      return DevCommandRegistry_toConsumableArray(this.commands.values());
+    }
+  }, {
+    key: "names",
+    value: function names() {
+      return DevCommandRegistry_toConsumableArray(new Set([].concat(DevCommandRegistry_toConsumableArray(this.commands.keys()), DevCommandRegistry_toConsumableArray(this.aliases.keys())))).sort();
+    }
+  }, {
+    key: "complete",
+    value: function complete(input, context) {
+      var endsWithSpace = /\s$/.test(input);
+      var parts = input.trim().split(/\s+/).filter(Boolean);
+      if (!parts.length || parts.length === 1 && !endsWithSpace) {
+        var _prefix = parts[0] || '';
+        return this.names().filter(function (name) {
+          return name.startsWith(_prefix);
+        });
+      }
+      var _parts = _toArray(parts),
+        cmdName = _parts[0],
+        argParts = DevCommandRegistry_arrayLikeToArray(_parts).slice(1);
+      var command = this.get(cmdName);
+      if (!(command !== null && command !== void 0 && command.complete)) return [];
+      var prefix = endsWithSpace ? '' : argParts[argParts.length - 1] || '';
+      var confirmedArgs = endsWithSpace ? argParts : argParts.slice(0, -1);
+      var suggestions = command.complete(confirmedArgs, context);
+      return suggestions.filter(function (s) {
+        return s.toLowerCase().startsWith(prefix.toLowerCase());
+      });
+    }
+  }, {
+    key: "execute",
+    value: function execute(input, context) {
+      var _input$trim$split = input.trim().split(/\s+/),
+        _input$trim$split2 = _toArray(_input$trim$split),
+        name = _input$trim$split2[0],
+        args = DevCommandRegistry_arrayLikeToArray(_input$trim$split2).slice(1);
+      var command = this.get(name);
+      if (!command) {
+        return {
+          ok: false,
+          message: "Unknown command: ".concat(name)
+        };
+      }
+      return command.run(args, context);
+    }
+  }]);
+}();
+;// ./app/dev-console/DevCommandActions.js
+function DevCommandActions_typeof(o) { "@babel/helpers - typeof"; return DevCommandActions_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, DevCommandActions_typeof(o); }
+function DevCommandActions_toConsumableArray(r) { return DevCommandActions_arrayWithoutHoles(r) || DevCommandActions_iterableToArray(r) || DevCommandActions_unsupportedIterableToArray(r) || DevCommandActions_nonIterableSpread(); }
+function DevCommandActions_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function DevCommandActions_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return DevCommandActions_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? DevCommandActions_arrayLikeToArray(r, a) : void 0; } }
+function DevCommandActions_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function DevCommandActions_arrayWithoutHoles(r) { if (Array.isArray(r)) return DevCommandActions_arrayLikeToArray(r); }
+function DevCommandActions_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function DevCommandActions_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function DevCommandActions_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? DevCommandActions_ownKeys(Object(t), !0).forEach(function (r) { DevCommandActions_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : DevCommandActions_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function DevCommandActions_defineProperty(e, r, t) { return (r = DevCommandActions_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function DevCommandActions_toPropertyKey(t) { var i = DevCommandActions_toPrimitive(t, "string"); return "symbol" == DevCommandActions_typeof(i) ? i : i + ""; }
+function DevCommandActions_toPrimitive(t, r) { if ("object" != DevCommandActions_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != DevCommandActions_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+var RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'];
+function normalize(value) {
+  return String(value || '').toLowerCase();
+}
+function findKey(source, value) {
+  var wanted = normalize(value);
+  return Object.keys(source).find(function (key) {
+    return normalize(key) === wanted;
+  });
+}
+function getAmount(value) {
+  var fallback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+  var amount = Number(value !== null && value !== void 0 ? value : fallback);
+  return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback;
+}
+function getSpawnCell(context) {
+  var buildingConfig = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  var map = context.map,
+    controls = context.controls;
+  var cursorCell = controls.getCellUnderCursor();
+  if (!cursorCell) return null;
+  if (!buildingConfig && !cursorCell.solid && !cursorCell.has) return cursorCell;
+  if (buildingConfig && canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig)) return cursorCell;
+  var maxRadius = 8;
+  for (var radius = 1; radius <= maxRadius; radius++) {
+    for (var di = -radius; di <= radius; di++) {
+      for (var dj = -radius; dj <= radius; dj++) {
+        var _map$grid;
+        if (Math.abs(di) !== radius && Math.abs(dj) !== radius) continue;
+        var cell = (_map$grid = map.grid[cursorCell.i + di]) === null || _map$grid === void 0 ? void 0 : _map$grid[cursorCell.j + dj];
+        if (!cell) continue;
+        if (buildingConfig) {
+          if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig)) return cell;
+        } else if (!cell.solid && !cell.has) {
+          return cell;
+        }
+      }
+    }
+  }
+  return null;
+}
+function addResources(player, resourceName, amount) {
+  if (resourceName === 'all') {
+    RESOURCE_NAMES.forEach(function (name) {
+      player[name] += amount;
+    });
+    return "Added ".concat(amount, " to all resources");
+  }
+  if (!RESOURCE_NAMES.includes(resourceName)) {
+    return "Unknown resource: ".concat(resourceName);
+  }
+  player[resourceName] += amount;
+  return "Added ".concat(amount, " ").concat(resourceName);
+}
+function spawnUnits(context, typeName) {
+  var count = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+  var player = context.player,
+    menu = context.menu;
+  var type = findKey(player.config.units, typeName);
+  if (!type) return {
+    ok: false,
+    message: "Unknown unit: ".concat(typeName)
+  };
+  var spawned = 0;
+  for (var i = 0; i < getAmount(count); i++) {
+    var cell = getSpawnCell(context);
+    if (!cell) break;
+    player.createUnit({
+      i: cell.i,
+      j: cell.j,
+      type: type
+    });
+    player.population++;
+    spawned++;
+  }
+  if (!spawned) return {
+    ok: false,
+    message: 'No free cell near cursor'
+  };
+  menu.updateTopbar();
+  menu.updatePlayerMiniMapEvt(player);
+  return {
+    ok: true,
+    message: "Spawned ".concat(spawned, " ").concat(type)
+  };
+}
+function spawnBuilding(context, typeName) {
+  var player = context.player,
+    menu = context.menu;
+  var type = findKey(player.config.buildings, typeName);
+  if (!type) return {
+    ok: false,
+    message: "Unknown building: ".concat(typeName)
+  };
+  var cell = getSpawnCell(context, player.config.buildings[type]);
+  if (!cell) return {
+    ok: false,
+    message: 'No buildable cell near cursor'
+  };
+  var building = player.createBuilding({
+    i: cell.i,
+    j: cell.j,
+    type: type,
+    isBuilt: true
+  });
+  if (!player.hasBuilt.includes(type)) player.hasBuilt.push(type);
+  building.updateTexture();
+  menu.updateTopbar();
+  menu.updatePlayerMiniMapEvt(player);
+  return {
+    ok: true,
+    message: "Spawned ".concat(type)
+  };
+}
+function applyTechnology(context, typeName) {
+  var player = context.player,
+    menu = context.menu;
+  var type = findKey(player.techs, typeName);
+  if (!type) return {
+    ok: false,
+    message: "Unknown technology: ".concat(typeName)
+  };
+  if (player.technologies.includes(type)) return {
+    ok: true,
+    message: "".concat(type, " already unlocked")
+  };
+  var config = player.techs[type];
+  if (Array.isArray(player[config.key])) {
+    player[config.key].push(config.value || type);
+  } else {
+    player[config.key] = config.value || type;
+  }
+  if (config.action) {
+    switch (config.action.type) {
+      case 'upgradeUnit':
+        player.units.forEach(function (unit) {
+          if (unit.type === config.action.source) unit.upgrade(config.action.target);
+        });
+        break;
+      case 'upgradeBuilding':
+        player.buildings.forEach(function (building) {
+          if (building.type === config.action.source) building.upgrade(config.action.target);
+        });
+        break;
+      case 'improve':
+        player.updateConfig(config.action.operations.map(function (operation) {
+          return DevCommandActions_objectSpread(DevCommandActions_objectSpread({}, operation), {}, {
+            value: Number(operation.value)
+          });
+        }));
+        break;
+    }
+  }
+  var handler = "on".concat(capitalizeFirstLetter(config.key), "Change");
+  typeof player[handler] === 'function' && player[handler](config.value);
+  menu.updateBottombar();
+  menu.updateTopbar();
+  return {
+    ok: true,
+    message: "Unlocked ".concat(type)
+  };
+}
+function setAge(context, value) {
+  var age = Number(value);
+  if (!Number.isInteger(age) || age < 0 || age > 3) return {
+    ok: false,
+    message: 'Age must be between 0 and 3'
+  };
+  context.player.age = age;
+  context.player.onAgeChange();
+  context.menu.updateBottombar();
+  context.menu.updateTopbar();
+  return {
+    ok: true,
+    message: "Age set to ".concat(age)
+  };
+}
+function setCiv(context, value) {
+  var civ = value ? capitalizeFirstLetter(value.toLowerCase()) : '';
+  if (!civ) return {
+    ok: false,
+    message: 'Usage: civ <name>'
+  };
+  context.player.civ = civ;
+  context.player.onAgeChange();
+  context.menu.updateBottombar();
+  return {
+    ok: true,
+    message: "Civilization set to ".concat(civ)
+  };
+}
+function killEntities(context) {
+  var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'enemies';
+  var player = context.player;
+  if (target === 'enemies') {
+    var enemies = player.enemyPlayers();
+    var count = 0;
+    enemies.forEach(function (enemy) {
+      count += enemy.units.length + enemy.buildings.length;
+      DevCommandActions_toConsumableArray(enemy.units).forEach(function (u) {
+        return u.die();
+      });
+      DevCommandActions_toConsumableArray(enemy.buildings).forEach(function (b) {
+        return b.die();
+      });
+    });
+    if (!count) return {
+      ok: false,
+      message: 'No enemies found'
+    };
+    return {
+      ok: true,
+      message: "Killed ".concat(count, " enemy entities")
+    };
+  }
+  if (target === 'all') {
+    var _count = player.units.length + player.buildings.length;
+    DevCommandActions_toConsumableArray(player.units).forEach(function (u) {
+      return u.die();
+    });
+    DevCommandActions_toConsumableArray(player.buildings).forEach(function (b) {
+      return b.die();
+    });
+    return {
+      ok: true,
+      message: "Killed ".concat(_count, " of your entities")
+    };
+  }
+  return {
+    ok: false,
+    message: 'Usage: kill [enemies|all]'
+  };
+}
+function healAll(context) {
+  var player = context.player;
+  DevCommandActions_toConsumableArray(player.units).forEach(function (u) {
+    u.hitPoints = u.totalHitPoints;
+  });
+  DevCommandActions_toConsumableArray(player.buildings).forEach(function (b) {
+    b.hitPoints = b.totalHitPoints;
+  });
+  var count = player.units.length + player.buildings.length;
+  return {
+    ok: true,
+    message: "Healed ".concat(count, " entities to full HP")
+  };
+}
+function toggleFog(context, value) {
+  var _map$fogLayer$visible, _map$fogLayer;
+  var map = context.map,
+    menu = context.menu,
+    players = context.players;
+  var currently = (_map$fogLayer$visible = (_map$fogLayer = map.fogLayer) === null || _map$fogLayer === void 0 ? void 0 : _map$fogLayer.visible) !== null && _map$fogLayer$visible !== void 0 ? _map$fogLayer$visible : !map.revealEverything;
+  var showFog = value === 'on' ? true : value === 'off' ? false : !currently;
+  map.revealEverything = !showFog;
+  if (map.fogLayer) map.fogLayer.visible = showFog;
+  if (!showFog) menu.revealTerrainMinimap();
+  menu.updateResourcesMiniMapEvt();
+  players.forEach(function (p) {
+    return menu.updatePlayerMiniMapEvt(p);
+  });
+  return {
+    ok: true,
+    message: "Fog of war: ".concat(showFog ? 'on' : 'off')
+  };
+}
+;// ./app/dev-console/createDevCommands.js
+function createDevCommands_slicedToArray(r, e) { return createDevCommands_arrayWithHoles(r) || createDevCommands_iterableToArrayLimit(r, e) || createDevCommands_unsupportedIterableToArray(r, e) || createDevCommands_nonIterableRest(); }
+function createDevCommands_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function createDevCommands_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return createDevCommands_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? createDevCommands_arrayLikeToArray(r, a) : void 0; } }
+function createDevCommands_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function createDevCommands_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function createDevCommands_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+
+
+var createDevCommands_RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold'];
+function createDevCommands() {
+  var registry = new DevCommandRegistry();
+  registry.register({
+    name: 'help',
+    aliases: ['?'],
+    describe: 'Show available commands',
+    run: function run(_ref, _ref2) {
+      var _ref3 = createDevCommands_slicedToArray(_ref, 1),
+        cmd = _ref3[0];
+      var commands = _ref2.commands;
+      if (cmd) {
+        var _c$aliases;
+        var c = commands.get(cmd);
+        if (!c) return {
+          ok: false,
+          message: "Unknown command: ".concat(cmd)
+        };
+        var _lines = [c.usage || c.name];
+        if (c.describe) _lines.push(c.describe);
+        if ((_c$aliases = c.aliases) !== null && _c$aliases !== void 0 && _c$aliases.length) _lines.push("Aliases: ".concat(c.aliases.join(', ')));
+        return {
+          ok: true,
+          message: _lines.join('\n')
+        };
+      }
+      var lines = commands.all().map(function (c) {
+        return "".concat((c.usage || c.name).padEnd(32), " ").concat(c.describe || '');
+      });
+      return {
+        ok: true,
+        message: lines.join('\n')
+      };
+    }
+  });
+  registry.register({
+    name: 'list',
+    aliases: ['ls'],
+    usage: 'list <units|buildings|techs|resources>',
+    describe: 'List available items for a category',
+    complete: function complete() {
+      return ['units', 'buildings', 'techs', 'resources'];
+    },
+    run: function run(_ref4, _ref5) {
+      var _ref6 = createDevCommands_slicedToArray(_ref4, 1),
+        category = _ref6[0];
+      var player = _ref5.player;
+      switch (category === null || category === void 0 ? void 0 : category.toLowerCase()) {
+        case 'units':
+          return {
+            ok: true,
+            message: Object.keys(player.config.units).join('  ')
+          };
+        case 'buildings':
+          return {
+            ok: true,
+            message: Object.keys(player.config.buildings).join('  ')
+          };
+        case 'techs':
+          return {
+            ok: true,
+            message: Object.keys(player.techs).join('  ')
+          };
+        case 'resources':
+          return {
+            ok: true,
+            message: createDevCommands_RESOURCE_NAMES.join('  ')
+          };
+        default:
+          return {
+            ok: false,
+            message: 'Usage: list <units|buildings|techs|resources>'
+          };
+      }
+    }
+  });
+  registry.register({
+    name: 'spawn',
+    aliases: ['unit'],
+    usage: 'spawn <unit> [count]',
+    describe: 'Spawn units near cursor',
+    complete: function complete(_args, _ref7) {
+      var _player$config;
+      var player = _ref7.player;
+      return Object.keys((player === null || player === void 0 || (_player$config = player.config) === null || _player$config === void 0 ? void 0 : _player$config.units) || {});
+    },
+    run: function run(_ref8, context) {
+      var _ref9 = createDevCommands_slicedToArray(_ref8, 2),
+        type = _ref9[0],
+        count = _ref9[1];
+      if (!type) return {
+        ok: false,
+        message: 'Usage: spawn <unit> [count]'
+      };
+      return spawnUnits(context, type, count);
+    }
+  });
+  registry.register({
+    name: 'building',
+    aliases: ['build'],
+    usage: 'building <type>',
+    describe: 'Spawn a building near cursor',
+    complete: function complete(_args, _ref0) {
+      var _player$config2;
+      var player = _ref0.player;
+      return Object.keys((player === null || player === void 0 || (_player$config2 = player.config) === null || _player$config2 === void 0 ? void 0 : _player$config2.buildings) || {});
+    },
+    run: function run(_ref1, context) {
+      var _ref10 = createDevCommands_slicedToArray(_ref1, 1),
+        type = _ref10[0];
+      if (!type) return {
+        ok: false,
+        message: 'Usage: building <type>'
+      };
+      return spawnBuilding(context, type);
+    }
+  });
+  registry.register({
+    name: 'resources',
+    aliases: ['res'],
+    usage: 'resources [wood|food|stone|gold|all] [amount]',
+    describe: 'Add resources to player',
+    complete: function complete() {
+      return createDevCommands_RESOURCE_NAMES;
+    },
+    run: function run(_ref11, context) {
+      var _ref12 = createDevCommands_slicedToArray(_ref11, 2),
+        _ref12$ = _ref12[0],
+        resource = _ref12$ === void 0 ? 'all' : _ref12$,
+        _ref12$2 = _ref12[1],
+        amount = _ref12$2 === void 0 ? 1000 : _ref12$2;
+      var parsedAmount = Number(amount);
+      if (!Number.isFinite(parsedAmount)) return {
+        ok: false,
+        message: 'Amount must be a number'
+      };
+      var message = addResources(context.player, resource.toLowerCase(), parsedAmount);
+      context.menu.updateTopbar();
+      return {
+        ok: !message.startsWith('Unknown'),
+        message: message
+      };
+    }
+  });
+  registry.register({
+    name: 'tech',
+    aliases: ['technology'],
+    usage: 'tech <technology>',
+    describe: 'Unlock a technology',
+    complete: function complete(_args, _ref13) {
+      var player = _ref13.player;
+      return Object.keys((player === null || player === void 0 ? void 0 : player.techs) || {});
+    },
+    run: function run(_ref14, context) {
+      var _ref15 = createDevCommands_slicedToArray(_ref14, 1),
+        type = _ref15[0];
+      if (!type) return {
+        ok: false,
+        message: 'Usage: tech <technology>'
+      };
+      return applyTechnology(context, type);
+    }
+  });
+  registry.register({
+    name: 'age',
+    usage: 'age <0-3>',
+    describe: 'Set player age',
+    complete: function complete() {
+      return ['0', '1', '2', '3'];
+    },
+    run: function run(_ref16, context) {
+      var _ref17 = createDevCommands_slicedToArray(_ref16, 1),
+        value = _ref17[0];
+      return setAge(context, value);
+    }
+  });
+  registry.register({
+    name: 'civ',
+    usage: 'civ <name>',
+    describe: 'Set player civilization',
+    run: function run(_ref18, context) {
+      var _ref19 = createDevCommands_slicedToArray(_ref18, 1),
+        value = _ref19[0];
+      return setCiv(context, value);
+    }
+  });
+  registry.register({
+    name: 'kill',
+    usage: 'kill [enemies|all]',
+    describe: 'Kill enemies (default) or all your entities',
+    complete: function complete() {
+      return ['enemies', 'all'];
+    },
+    run: function run(_ref20, context) {
+      var _ref21 = createDevCommands_slicedToArray(_ref20, 1),
+        _ref21$ = _ref21[0],
+        target = _ref21$ === void 0 ? 'enemies' : _ref21$;
+      return killEntities(context, target);
+    }
+  });
+  registry.register({
+    name: 'win',
+    describe: 'Instantly win by killing all enemies',
+    run: function run(_args, context) {
+      return killEntities(context, 'enemies');
+    }
+  });
+  registry.register({
+    name: 'heal',
+    describe: 'Restore all your units and buildings to full HP',
+    run: function run(_args, context) {
+      return healAll(context);
+    }
+  });
+  registry.register({
+    name: 'fog',
+    usage: 'fog [on|off]',
+    describe: 'Toggle fog of war',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref22, context) {
+      var _ref23 = createDevCommands_slicedToArray(_ref22, 1),
+        value = _ref23[0];
+      return toggleFog(context, value);
+    }
+  });
+  return registry;
+}
+;// ./app/dev-console/DevConsole.js
+function DevConsole_typeof(o) { "@babel/helpers - typeof"; return DevConsole_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, DevConsole_typeof(o); }
+function DevConsole_toConsumableArray(r) { return DevConsole_arrayWithoutHoles(r) || DevConsole_iterableToArray(r) || DevConsole_unsupportedIterableToArray(r) || DevConsole_nonIterableSpread(); }
+function DevConsole_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function DevConsole_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return DevConsole_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? DevConsole_arrayLikeToArray(r, a) : void 0; } }
+function DevConsole_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function DevConsole_arrayWithoutHoles(r) { if (Array.isArray(r)) return DevConsole_arrayLikeToArray(r); }
+function DevConsole_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function DevConsole_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function DevConsole_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? DevConsole_ownKeys(Object(t), !0).forEach(function (r) { DevConsole_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : DevConsole_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function DevConsole_defineProperty(e, r, t) { return (r = DevConsole_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function DevConsole_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function DevConsole_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, DevConsole_toPropertyKey(o.key), o); } }
+function DevConsole_createClass(e, r, t) { return r && DevConsole_defineProperties(e.prototype, r), t && DevConsole_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function DevConsole_toPropertyKey(t) { var i = DevConsole_toPrimitive(t, "string"); return "symbol" == DevConsole_typeof(i) ? i : i + ""; }
+function DevConsole_toPrimitive(t, r) { if ("object" != DevConsole_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != DevConsole_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+var DevConsole = /*#__PURE__*/function () {
+  function DevConsole(context) {
+    var _this = this;
+    DevConsole_classCallCheck(this, DevConsole);
+    this.context = context;
+    this.commands = createDevCommands();
+    this.history = [];
+    this.historyIndex = 0;
+    this.isOpen = false;
+    this.root = null;
+    this.input = null;
+    this._onKeyDown = function (evt) {
+      return _this.onKeyDown(evt);
+    };
+    this._onSubmit = function (evt) {
+      return _this.onSubmit(evt);
+    };
+    document.addEventListener('keydown', this._onKeyDown);
+  }
+  return DevConsole_createClass(DevConsole, [{
+    key: "destroy",
+    value: function destroy() {
+      document.removeEventListener('keydown', this._onKeyDown);
+      this.close();
+    }
+  }, {
+    key: "open",
+    value: function open() {
+      var _this$context$control,
+        _this$context$control2,
+        _this2 = this;
+      if (this.isOpen || this.context.victory) return;
+      this.isOpen = true;
+      this.context.devConsoleOpen = true;
+      (_this$context$control = this.context.controls) === null || _this$context$control === void 0 || (_this$context$control2 = _this$context$control.stopKeyboardMove) === null || _this$context$control2 === void 0 || _this$context$control2.call(_this$context$control);
+      this.root = document.createElement('div');
+      this.root.id = 'dev-console';
+      var panel = document.createElement('form');
+      panel.className = 'dev-console-panel';
+      panel.addEventListener('submit', this._onSubmit);
+      this.log = document.createElement('div');
+      this.log.className = 'dev-console-log';
+      this.log.style.whiteSpace = 'pre-line';
+      this.log.textContent = 'Type help';
+      this.input = document.createElement('input');
+      this.input.className = 'dev-console-input';
+      this.input.type = 'text';
+      this.input.spellcheck = false;
+      this.input.autocomplete = 'off';
+      panel.appendChild(this.log);
+      panel.appendChild(this.input);
+      this.root.appendChild(panel);
+      this.context.gamebox.appendChild(this.root);
+      requestAnimationFrame(function () {
+        var _this2$input;
+        return (_this2$input = _this2.input) === null || _this2$input === void 0 ? void 0 : _this2$input.focus();
+      });
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      var _this$root;
+      if (!this.isOpen) return;
+      this.isOpen = false;
+      this.context.devConsoleOpen = false;
+      (_this$root = this.root) === null || _this$root === void 0 || _this$root.remove();
+      this.root = null;
+      this.input = null;
+      this.log = null;
+    }
+  }, {
+    key: "onKeyDown",
+    value: function onKeyDown(evt) {
+      if (!this.isOpen && evt.key === 'Enter') {
+        evt.preventDefault();
+        this.open();
+        return;
+      }
+      if (!this.isOpen) return;
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        this.close();
+        return;
+      }
+      if (evt.key === 'Enter') {
+        evt.preventDefault();
+        this.executeInput();
+        return;
+      }
+      if (evt.key === 'ArrowUp') {
+        evt.preventDefault();
+        this.navigateHistory(-1);
+        return;
+      }
+      if (evt.key === 'ArrowDown') {
+        evt.preventDefault();
+        this.navigateHistory(1);
+        return;
+      }
+      if (evt.key === 'Tab') {
+        evt.preventDefault();
+        this.autocomplete();
+      }
+    }
+  }, {
+    key: "onSubmit",
+    value: function onSubmit(evt) {
+      evt.preventDefault();
+      this.executeInput();
+    }
+  }, {
+    key: "executeInput",
+    value: function executeInput() {
+      var input = this.input.value.trim();
+      if (!input) return;
+      this.history.push(input);
+      this.historyIndex = this.history.length;
+      var result = this.commands.execute(input, DevConsole_objectSpread(DevConsole_objectSpread({}, this.context), {}, {
+        commands: this.commands
+      }));
+      this.log.textContent = result.message;
+      this.log.dataset.status = result.ok ? 'ok' : 'error';
+      this.input.value = '';
+      this.input.focus();
+    }
+  }, {
+    key: "navigateHistory",
+    value: function navigateHistory(direction) {
+      if (!this.history.length) return;
+      this.historyIndex = Math.max(0, Math.min(this.history.length, this.historyIndex + direction));
+      this.input.value = this.history[this.historyIndex] || '';
+      this.input.setSelectionRange(this.input.value.length, this.input.value.length);
+    }
+  }, {
+    key: "autocomplete",
+    value: function autocomplete() {
+      var raw = this.input.value;
+      if (!raw.trim()) return;
+      var context = DevConsole_objectSpread(DevConsole_objectSpread({}, this.context), {}, {
+        commands: this.commands
+      });
+      var matches = this.commands.complete(raw, context);
+      if (!matches.length) return;
+      if (matches.length === 1) {
+        var endsWithSpace = /\s$/.test(raw);
+        var tokens = raw.trim().split(/\s+/);
+        var base = endsWithSpace ? tokens : tokens.slice(0, -1);
+        this.input.value = "".concat([].concat(DevConsole_toConsumableArray(base), [matches[0]]).join(' '), " ");
+      } else {
+        this.log.textContent = matches.join('  ');
+        this.log.dataset.status = 'ok';
+      }
+    }
+  }]);
+}();
 ;// ./app/screens/Game.js
 function Game_typeof(o) { "@babel/helpers - typeof"; return Game_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, Game_typeof(o); }
 function Game_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -12432,6 +13824,7 @@ function Game_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valu
 function Game_getPrototypeOf(t) { return Game_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, Game_getPrototypeOf(t); }
 function Game_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && Game_setPrototypeOf(t, e); }
 function Game_setPrototypeOf(t, e) { return Game_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, Game_setPrototypeOf(t, e); }
+
 
 
 
@@ -12463,7 +13856,10 @@ var Game = /*#__PURE__*/function (_Container) {
       players: [],
       map: null,
       controls: null,
+      devConsole: null,
+      devConsoleOpen: false,
       paused: false,
+      victory: false,
       scheduler: null,
       save: function save() {
         return _this.save();
@@ -12475,10 +13871,13 @@ var Game = /*#__PURE__*/function (_Container) {
         return _this.togglePause(true);
       },
       resume: function resume() {
-        return _this.togglePause(false);
+        if (!_this.context.victory) _this.togglePause(false);
       },
       quit: function quit() {
         return _this.quit();
+      },
+      checkVictory: function checkVictory() {
+        return _this.checkVictory();
       }
     };
     _this.context.scheduler = new ActionScheduler(app, function () {
@@ -12500,9 +13899,11 @@ var Game = /*#__PURE__*/function (_Container) {
       if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything;
       if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain;
       if (config.startingResources) context.map.startingResources = config.startingResources;
+      if (config.resourceDensity) context.map.resourceDensity = config.resourceDensity;
       if (config.difficulty) context.map.difficulty = config.difficulty;
       context.controls = new Controls(context);
       context.menu = new Menu(context);
+      context.devConsole = new DevConsole(context);
       var posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null;
       context.map.generateMap(posCount);
       context.players = context.map.generatePlayers(config.players || null);
@@ -12514,13 +13915,16 @@ var Game = /*#__PURE__*/function (_Container) {
       this.addChild(context.map);
       this.addChild(context.controls);
       this._attachWindowListeners();
+      this.checkVictory();
     }
   }, {
     key: "_attachWindowListeners",
     value: function _attachWindowListeners() {
       var _this2 = this;
       this._onKeydown = function (evt) {
+        if (_this2.context.devConsoleOpen) return;
         if (evt.key === 'p') {
+          if (_this2.context.victory) return;
           _this2.context.paused ? _this2.context.resume() : _this2.context.pause();
         }
       };
@@ -12568,10 +13972,12 @@ var Game = /*#__PURE__*/function (_Container) {
   }, {
     key: "load",
     value: function load(json) {
-      var _document$getElementB;
+      var _document$getElementB, _document$getElementB2, _this$context$devCons;
       (_document$getElementB = document.getElementById('pause')) === null || _document$getElementB === void 0 || _document$getElementB.remove();
+      (_document$getElementB2 = document.getElementById('victory')) === null || _document$getElementB2 === void 0 || _document$getElementB2.remove();
       this._removeWindowListeners();
       this.context.controls.destroy();
+      (_this$context$devCons = this.context.devConsole) === null || _this$context$devCons === void 0 || _this$context$devCons.destroy();
       this.context.menu.destroy();
       this.removeChildren();
       this.context = Game_objectSpread(Game_objectSpread({}, this.context), {}, {
@@ -12579,7 +13985,10 @@ var Game = /*#__PURE__*/function (_Container) {
         players: [],
         map: null,
         controls: null,
-        paused: false
+        devConsole: null,
+        devConsoleOpen: false,
+        paused: false,
+        victory: false
       });
       var context = this.context;
       context.map = new map_Map(context);
@@ -12588,39 +13997,70 @@ var Game = /*#__PURE__*/function (_Container) {
         if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything;
         if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain;
         if (json.config.startingResources) context.map.startingResources = json.config.startingResources;
+        if (json.config.resourceDensity) context.map.resourceDensity = json.config.resourceDensity;
       }
       context.controls = new Controls(context);
       context.menu = new Menu(context);
+      context.devConsole = new DevConsole(context);
       context.map.generateFromJSON(json);
       this.addChild(context.map);
       this.addChild(context.controls);
       this._attachWindowListeners();
+      this.checkVictory();
     }
   }, {
     key: "quit",
     value: function quit() {
-      var _document$getElementB2;
-      (_document$getElementB2 = document.getElementById('pause')) === null || _document$getElementB2 === void 0 || _document$getElementB2.remove();
+      var _document$getElementB3, _document$getElementB4, _this$context$devCons2;
+      (_document$getElementB3 = document.getElementById('pause')) === null || _document$getElementB3 === void 0 || _document$getElementB3.remove();
+      (_document$getElementB4 = document.getElementById('victory')) === null || _document$getElementB4 === void 0 || _document$getElementB4.remove();
       this._removeWindowListeners();
       this.context.controls.destroy();
+      (_this$context$devCons2 = this.context.devConsole) === null || _this$context$devCons2 === void 0 || _this$context$devCons2.destroy();
       this.context.menu.destroy();
       this.removeChildren();
       if (this.onQuit) this.onQuit();
     }
   }, {
+    key: "checkVictory",
+    value: function checkVictory() {
+      var player = this.context.player;
+      if (this.context.victory || !player) return;
+      var enemies = player.enemyPlayers();
+      if (!enemies.length) return;
+      var hasLivingEnemies = enemies.some(function (enemy) {
+        return enemy.units.length > 0 || enemy.buildings.length > 0;
+      });
+      if (hasLivingEnemies) return;
+      this.context.victory = true;
+      this.togglePause(true, {
+        silent: true
+      });
+      var div = document.createElement('div');
+      div.id = 'victory';
+      div.innerText = t('victory');
+      document.body.appendChild(div);
+    }
+  }, {
     key: "togglePause",
     value: function togglePause(pause) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      if (this.context.victory && !pause) return;
       var _this$context = this.context,
         map = _this$context.map,
         players = _this$context.players;
       if (pause) {
-        var div = document.createElement('div');
-        div.id = 'pause';
-        div.innerText = t('pause');
-        document.body.appendChild(div);
+        var _document$getElementB5;
+        (_document$getElementB5 = document.getElementById('pause')) === null || _document$getElementB5 === void 0 || _document$getElementB5.remove();
+        if (!options.silent) {
+          var div = document.createElement('div');
+          div.id = 'pause';
+          div.innerText = t('pause');
+          document.body.appendChild(div);
+        }
       } else {
-        var _document$getElementB3;
-        (_document$getElementB3 = document.getElementById('pause')) === null || _document$getElementB3 === void 0 || _document$getElementB3.remove();
+        var _document$getElementB6;
+        (_document$getElementB6 = document.getElementById('pause')) === null || _document$getElementB6 === void 0 || _document$getElementB6.remove();
       }
       for (var i = 0; i < map.gaia.units.length; i++) {
         pause ? map.gaia.units[i].pause() : map.gaia.units[i].resume();
@@ -12778,53 +14218,142 @@ function MainMenu_toPrimitive(t, r) { if ("object" != MainMenu_typeof(t) || !t) 
 var MainMenu = /*#__PURE__*/function () {
   function MainMenu(onStart, onLoad) {
     MainMenu_classCallCheck(this, MainMenu);
+    this.onStart = onStart;
+    this.onLoad = onLoad;
     this.el = document.createElement('div');
     this.el.id = 'main-menu';
     this.el.style.backgroundImage = "url('/assets/background/bg1.png')";
-    var panel = document.createElement('div');
-    panel.className = 'menu-panel';
-    var title = document.createElement('div');
-    title.className = 'menu-title';
-    title.textContent = 'Dawn of Empires';
-    var divider = document.createElement('div');
-    divider.className = 'menu-divider';
-    var buttons = document.createElement('div');
-    buttons.className = 'menu-buttons';
-    var btnStart = document.createElement('button');
-    btnStart.className = 'menu-btn';
-    btnStart.textContent = t('newGame');
-    btnStart.onmousedown = playClickSound;
-    btnStart.onclick = onStart;
-    var fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-    fileInput.style.display = 'none';
-    fileInput.onchange = function (evt) {
-      var file = evt.target.files[0];
-      if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        return onLoad(JSON.parse(e.target.result));
-      };
-      reader.readAsText(file);
-    };
-    var btnLoad = document.createElement('button');
-    btnLoad.className = 'menu-btn secondary';
-    btnLoad.textContent = t('loadGame');
-    btnLoad.onmousedown = playClickSound;
-    btnLoad.onclick = function () {
-      return fileInput.click();
-    };
-    buttons.appendChild(btnStart);
-    buttons.appendChild(btnLoad);
-    buttons.appendChild(fileInput);
-    panel.appendChild(title);
-    panel.appendChild(divider);
-    panel.appendChild(buttons);
-    this.el.appendChild(panel);
+    this._showMain();
     document.body.appendChild(this.el);
   }
   return MainMenu_createClass(MainMenu, [{
+    key: "_clear",
+    value: function _clear() {
+      this.el.innerHTML = '';
+    }
+  }, {
+    key: "_createPanel",
+    value: function _createPanel(subtitleKey) {
+      var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+        _ref$logo = _ref.logo,
+        logo = _ref$logo === void 0 ? true : _ref$logo;
+      var panel = document.createElement('div');
+      panel.className = 'menu-panel';
+      if (logo) {
+        var title = document.createElement('img');
+        title.className = 'menu-title';
+        title.src = '/assets/logo.png';
+        title.alt = 'Dawn of Empires';
+        panel.appendChild(title);
+      } else {
+        var _title = document.createElement('div');
+        _title.className = 'menu-title';
+        _title.textContent = t(subtitleKey);
+        panel.appendChild(_title);
+      }
+      var divider = document.createElement('div');
+      divider.className = 'menu-divider';
+      panel.appendChild(divider);
+      return panel;
+    }
+  }, {
+    key: "_showMain",
+    value: function _showMain() {
+      var _this = this;
+      this._clear();
+      var panel = this._createPanel();
+      panel.classList.add('menu-panel--home');
+      var buttons = document.createElement('div');
+      buttons.className = 'menu-buttons';
+      var btnStart = document.createElement('button');
+      btnStart.className = 'menu-btn';
+      btnStart.textContent = t('newGame');
+      btnStart.onmousedown = playClickSound;
+      btnStart.onclick = this.onStart;
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.json';
+      fileInput.style.display = 'none';
+      fileInput.onchange = function (evt) {
+        var file = evt.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          return _this.onLoad(JSON.parse(e.target.result));
+        };
+        reader.readAsText(file);
+      };
+      var btnLoad = document.createElement('button');
+      btnLoad.className = 'menu-btn secondary';
+      btnLoad.textContent = t('loadGame');
+      btnLoad.onmousedown = playClickSound;
+      btnLoad.onclick = function () {
+        return fileInput.click();
+      };
+      var btnSettings = document.createElement('button');
+      btnSettings.className = 'menu-btn secondary';
+      btnSettings.textContent = t('settings');
+      btnSettings.onmousedown = playClickSound;
+      btnSettings.onclick = function () {
+        return _this._showSettings();
+      };
+      buttons.appendChild(btnStart);
+      buttons.appendChild(btnLoad);
+      buttons.appendChild(btnSettings);
+      buttons.appendChild(fileInput);
+      var copyright = document.createElement('div');
+      copyright.className = 'menu-copyright';
+      copyright.textContent = '© 2026 Dawn of Empires';
+      panel.appendChild(buttons);
+      this.el.appendChild(panel);
+      this.el.appendChild(copyright);
+    }
+  }, {
+    key: "_showSettings",
+    value: function _showSettings() {
+      var _this2 = this;
+      this._clear();
+      var panel = this._createPanel('settings', {
+        logo: false
+      });
+      var form = document.createElement('div');
+      form.className = 'config-form';
+      var row = document.createElement('div');
+      row.className = 'config-row';
+      var label = document.createElement('label');
+      label.textContent = t('language');
+      var select = document.createElement('select');
+      SUPPORTED_LANGS.forEach(function (_ref2) {
+        var code = _ref2.code,
+          label = _ref2.label;
+        var option = document.createElement('option');
+        option.value = code;
+        option.textContent = label;
+        select.appendChild(option);
+      });
+      select.value = getLang();
+      select.onchange = function (evt) {
+        setLang(evt.target.value);
+        _this2._showSettings();
+      };
+      row.appendChild(label);
+      row.appendChild(select);
+      form.appendChild(row);
+      var buttons = document.createElement('div');
+      buttons.className = 'menu-buttons';
+      var btnBack = document.createElement('button');
+      btnBack.className = 'menu-btn secondary';
+      btnBack.textContent = t('back');
+      btnBack.onmousedown = playClickSound;
+      btnBack.onclick = function () {
+        return _this2._showMain();
+      };
+      buttons.appendChild(btnBack);
+      panel.appendChild(form);
+      panel.appendChild(buttons);
+      this.el.appendChild(panel);
+    }
+  }, {
     key: "destroy",
     value: function destroy() {
       this.el.remove();
@@ -12880,6 +14409,22 @@ var STARTING_RESOURCES = [{
     return t('resVeryHigh');
   },
   value: 'very_high'
+}];
+var MAP_RESOURCE_DENSITIES = [{
+  label: function label() {
+    return t('mapResourcesLow');
+  },
+  value: 'low'
+}, {
+  label: function label() {
+    return t('mapResourcesModerate');
+  },
+  value: 'moderate'
+}, {
+  label: function label() {
+    return t('mapResourcesHigh');
+  },
+  value: 'high'
 }];
 var RESOURCES_MAP = {
   low: {
@@ -12992,18 +14537,21 @@ var MapConfig = /*#__PURE__*/function () {
       revealEverything: false,
       revealTerrain: false,
       devMode: false,
-      startingResources: RESOURCES_MAP.standard
+      startingResources: RESOURCES_MAP.standard,
+      resourceDensity: 'moderate'
     };
     this.maxPlayers = 2;
     this.players = [{
       name: t('you'),
       color: 'blue',
       civ: 'Greek',
+      team: null,
       isHuman: true
     }, {
       name: t('computer') + ' 1',
       color: 'red',
       civ: 'Greek',
+      team: null,
       isHuman: false
     }];
     this.el = document.createElement('div');
@@ -13021,9 +14569,6 @@ var MapConfig = /*#__PURE__*/function () {
       var title = document.createElement('div');
       title.className = 'menu-title';
       title.textContent = t('newGame');
-      var subtitle = document.createElement('div');
-      subtitle.className = 'menu-subtitle';
-      subtitle.textContent = t('configuration');
       var divider = document.createElement('div');
       divider.className = 'menu-divider';
       var layout = document.createElement('div');
@@ -13032,28 +14577,15 @@ var MapConfig = /*#__PURE__*/function () {
       // ── Left column: player table ──
       var leftCol = document.createElement('div');
       leftCol.className = 'lobby-col';
-      var leftTitle = document.createElement('div');
-      leftTitle.className = 'lobby-section-title';
-      leftTitle.textContent = t('players');
       this.playerTableEl = document.createElement('div');
       this.playerTableEl.className = 'player-table';
-      this.addBotBtn = document.createElement('button');
-      this.addBotBtn.className = 'menu-btn lobby-add-btn';
-      this.addBotBtn.textContent = t('addOpponent');
-      this.addBotBtn.onmousedown = playClickSound;
-      this.addBotBtn.onclick = function () {
-        return _this._addBot();
-      };
-      leftCol.appendChild(leftTitle);
+      this.playerCountRow = this._createPlayerCountSelect();
+      leftCol.appendChild(this.playerCountRow);
       leftCol.appendChild(this.playerTableEl);
-      leftCol.appendChild(this.addBotBtn);
 
       // ── Right column: settings ──
       var rightCol = document.createElement('div');
       rightCol.className = 'lobby-col';
-      var rightTitle = document.createElement('div');
-      rightTitle.className = 'lobby-section-title';
-      rightTitle.textContent = t('mapSettings');
       var settingsForm = document.createElement('div');
       settingsForm.className = 'config-form lobby-settings-form';
       settingsForm.appendChild(this._createSelect(t('mapSizeLabel'), MAP_SIZES, 120, function (val) {
@@ -13063,6 +14595,7 @@ var MapConfig = /*#__PURE__*/function () {
         });
         _this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2;
         _this._clampPlayers();
+        _this._refreshPlayerCountSelect();
         _this._refreshPlayerTable();
       }));
       settingsForm.appendChild(this._createSelect(t('mapTypeLabel'), MAP_TYPES, 'plain', function (val) {
@@ -13074,6 +14607,9 @@ var MapConfig = /*#__PURE__*/function () {
       settingsForm.appendChild(this._createSelect(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', function (val) {
         _this.config.startingResources = RESOURCES_MAP[val];
       }));
+      settingsForm.appendChild(this._createSelect(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', function (val) {
+        _this.config.resourceDensity = val;
+      }));
       settingsForm.appendChild(this._createCheckbox(t('devMode'), false, function (val) {
         _this.config.devMode = val;
       }));
@@ -13083,7 +14619,6 @@ var MapConfig = /*#__PURE__*/function () {
       settingsForm.appendChild(this._createCheckbox(t('revealTerrain'), false, function (val) {
         _this.config.revealTerrain = val;
       }));
-      rightCol.appendChild(rightTitle);
       rightCol.appendChild(settingsForm);
       layout.appendChild(leftCol);
       layout.appendChild(rightCol);
@@ -13110,7 +14645,6 @@ var MapConfig = /*#__PURE__*/function () {
       buttons.appendChild(btnBack);
       buttons.appendChild(btnPlay);
       panel.appendChild(title);
-      panel.appendChild(subtitle);
       panel.appendChild(divider);
       panel.appendChild(layout);
       panel.appendChild(divider2);
@@ -13153,6 +14687,9 @@ var MapConfig = /*#__PURE__*/function () {
       while (this.players.length > this.maxPlayers) {
         this.players.pop();
       }
+      while (this.players.length < 2) {
+        this._addBot();
+      }
     }
   }, {
     key: "_addBot",
@@ -13166,24 +14703,42 @@ var MapConfig = /*#__PURE__*/function () {
         name: t('computer') + ' ' + botNum,
         color: color,
         civ: 'Greek',
+        team: null,
         isHuman: false
       });
-      this._refreshPlayerTable();
     }
   }, {
-    key: "_removePlayer",
-    value: function _removePlayer(index) {
-      this.players.splice(index, 1);
+    key: "_setPlayerCount",
+    value: function _setPlayerCount(count) {
+      var playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers));
+      while (this.players.length < playerCount) {
+        this._addBot();
+      }
+      while (this.players.length > playerCount) {
+        var lastBotIndex = this.players.map(function (p) {
+          return p.isHuman;
+        }).lastIndexOf(false);
+        if (lastBotIndex === -1) break;
+        this.players.splice(lastBotIndex, 1);
+      }
       var botNum = 1;
       this.players.forEach(function (p) {
         if (!p.isHuman) p.name = t('computer') + ' ' + botNum++;
       });
+      this._refreshPlayerCountSelect();
       this._refreshPlayerTable();
     }
   }, {
     key: "_cycleColor",
     value: function _cycleColor(playerIndex) {
       this.players[playerIndex].color = this._nextAvailableColor(this.players[playerIndex].color);
+      this._refreshPlayerTable();
+    }
+  }, {
+    key: "_cycleTeam",
+    value: function _cycleTeam(playerIndex) {
+      var current = this.players[playerIndex].team;
+      this.players[playerIndex].team = current === null || current >= 9 ? current === null ? 1 : null : current + 1;
       this._refreshPlayerTable();
     }
   }, {
@@ -13195,7 +14750,7 @@ var MapConfig = /*#__PURE__*/function () {
       // Header row
       var header = document.createElement('div');
       header.className = 'player-table-header';
-      [t('colName'), t('colCiv'), t('colColor'), ''].forEach(function (text) {
+      [t('colName'), t('colCiv'), t('colTeam'), t('colColor')].forEach(function (text) {
         var cell = document.createElement('div');
         cell.textContent = text;
         header.appendChild(cell);
@@ -13204,6 +14759,7 @@ var MapConfig = /*#__PURE__*/function () {
 
       // Player rows
       this.players.forEach(function (player, i) {
+        var _player$team;
         var row = document.createElement('div');
         row.className = 'player-row' + (i % 2 === 0 ? ' player-row--odd' : '');
 
@@ -13230,6 +14786,21 @@ var MapConfig = /*#__PURE__*/function () {
         civCell.appendChild(civSelect);
         row.appendChild(civCell);
 
+        // Team button: "-" means no alliance, equal numbers are allied
+        var teamCell = document.createElement('div');
+        teamCell.className = 'player-team';
+        var teamBtn = document.createElement('button');
+        teamBtn.className = 'team-cycle';
+        teamBtn.type = 'button';
+        teamBtn.textContent = (_player$team = player.team) !== null && _player$team !== void 0 ? _player$team : '-';
+        teamBtn.title = t('teamInput');
+        teamBtn.onmousedown = playClickSound;
+        teamBtn.onclick = function () {
+          return _this2._cycleTeam(i);
+        };
+        teamCell.appendChild(teamBtn);
+        row.appendChild(teamCell);
+
         // Color swatch
         var colorCell = document.createElement('div');
         colorCell.className = 'player-color-cell';
@@ -13248,25 +14819,39 @@ var MapConfig = /*#__PURE__*/function () {
         };
         colorCell.appendChild(swatch);
         row.appendChild(colorCell);
-
-        // Remove button (bots only)
-        var actionCell = document.createElement('div');
-        actionCell.className = 'player-action-cell';
-        if (!player.isHuman) {
-          var removeBtn = document.createElement('button');
-          removeBtn.className = 'player-remove';
-          removeBtn.textContent = '×';
-          removeBtn.title = t('removePlayer');
-          removeBtn.onmousedown = playClickSound;
-          removeBtn.onclick = function () {
-            return _this2._removePlayer(i);
-          };
-          actionCell.appendChild(removeBtn);
-        }
-        row.appendChild(actionCell);
         _this2.playerTableEl.appendChild(row);
       });
-      this.addBotBtn.disabled = this.players.length >= this.maxPlayers;
+    }
+  }, {
+    key: "_createPlayerCountSelect",
+    value: function _createPlayerCountSelect() {
+      var _this3 = this;
+      var row = document.createElement('div');
+      row.className = 'config-row player-count-row';
+      var lbl = document.createElement('label');
+      lbl.textContent = t('playerCount');
+      this.playerCountSelect = document.createElement('select');
+      this.playerCountSelect.onmousedown = playClickSound;
+      this.playerCountSelect.onchange = function (e) {
+        return _this3._setPlayerCount(e.target.value);
+      };
+      row.appendChild(lbl);
+      row.appendChild(this.playerCountSelect);
+      this._refreshPlayerCountSelect();
+      return row;
+    }
+  }, {
+    key: "_refreshPlayerCountSelect",
+    value: function _refreshPlayerCountSelect() {
+      if (!this.playerCountSelect) return;
+      this.playerCountSelect.innerHTML = '';
+      for (var count = 2; count <= this.maxPlayers; count++) {
+        var option = document.createElement('option');
+        option.value = count;
+        option.textContent = count;
+        if (count === this.players.length) option.selected = true;
+        this.playerCountSelect.appendChild(option);
+      }
     }
   }, {
     key: "_createSelect",
@@ -13414,36 +14999,48 @@ entry_asyncToGenerator(/*#__PURE__*/entry_regenerator().m(function _callee() {
 /* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3990);
 /* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(525);
+/* harmony import */ var _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2__);
 // Imports
 
 
+
+var ___CSS_LOADER_URL_IMPORT_0___ = new URL(/* asset import */ __webpack_require__(2043), __webpack_require__.b);
 var ___CSS_LOADER_EXPORT___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
+var ___CSS_LOADER_URL_REPLACEMENT_0___ = _node_modules_pnpm_css_loader_7_1_4_webpack_5_107_2_node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2___default()(___CSS_LOADER_URL_IMPORT_0___);
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `:root {
-  --main-primary-color: #5e4a22;
-  --main-background-color: rgba(14, 10, 5, 0.80);
-  --main-bg-base: #0b0906;
-  --main-border-color: transparent;
-  --main-border-radius: 3px;
-  --main-border-radius-lg: 5px;
-  --main-border-size: 0px;
-  --main-border-style: solid;
-  --main-border-hover: #a07830;
-  --main-shadow-color: rgba(0, 0, 0, 0.75);
-  --main-shadow-dark: #1e1508;
-  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;
-  --main-text-color: #ddd0a0;
-  --main-text-muted: #8a7850;
-  --main-accent-color: #d4a843;
-  --main-accent-bright: #f0d860;
-  --main-accent-hover: rgba(74, 58, 30, 0.55);
+  --main-primary-color: #8b6914;
+  --main-background-color: #e4c99b;
+  --main-control-color: #d8b878;
+  --main-border-radius: 0px;
+  --main-border-radius-lg: 0px;
 
-  --msg-color: #e84040;
-  --msg-bg: rgba(10, 6, 2, 0.85);
-  --msg-border: #6b1f1f;
+  --border-ui:    1px solid  #efdec7;
+  --border-btn:   2px outset #efdec7;
+  --border-slot:  2px inset  #efdec7;
+  --border-panel: 4px double #efdec7;
+  --main-shadow-dark: #1e1508;
+  --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+  --main-text-color: #1a0e00;
+  --main-text-muted: #6b5220;
+  --main-accent-color: #3d2000;
+  --main-accent-bright: #1a0e00;
+  --main-accent-hover: #c9a572;
+
+  --danger-color: #cc1100;
+
+  --msg-color: #ff5050;
+  --msg-bg: #0a0602;
+  --msg-border: #9a2020;
   --msg-padding: 6px 18px;
   --msg-font-size: 13px;
   --msg-border-radius: var(--main-border-radius);
+}
+
+@font-face {
+  font-family: 'VT323';
+  src: url(${___CSS_LOADER_URL_REPLACEMENT_0___}) format('truetype');
 }
 
 html,
@@ -13455,7 +15052,7 @@ button {
   border-color: var(--main-primary-color);
   color: var(--main-text-color);
   font-size: 12px;
-  text-shadow: 1px 1px black;
+  text-shadow: 1px 1px white;
   font-family: sans-serif;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: none;
@@ -13473,21 +15070,18 @@ body {
 
 button,
 .input-file {
-  border: 1px solid var(--main-primary-color);
+  border: var(--border-ui);
   padding: 6px 15px;
   border-radius: var(--main-border-radius);
   position: relative;
   cursor: pointer;
   text-align: center;
   background-color: transparent;
-  width: 200px;
-  transition: all 0.2s;
   color: var(--main-accent-color);
 }
 button:hover,
 .input-file:hover {
-  background-color: var(--main-accent-hover);
-  border-color: var(--main-border-hover);
+  border-style: inset;
 }
 .input-file {
   width: calc(100% - 32px);
@@ -13511,6 +15105,8 @@ button:hover,
   align-items: center;
   justify-content: center;
   height: 100%;
+  color:white;
+  text-shadow:none;
 }
 
 #game {
@@ -13527,6 +15123,25 @@ button:hover,
   margin-top: -66px;
 }
 
+#victory {
+  position: absolute;
+  z-index: 1000;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--main-accent-bright);
+  font-size: 82px;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  text-shadow:
+    0 2px 0 #2b1605,
+    0 0 14px black,
+    0 0 28px black;
+}
+
 .bar {
   background: var(--main-background-color);
   width: 100%;
@@ -13537,13 +15152,14 @@ img {
   user-drag: none;
 }
 
-.img {
+.bottombar-menu-box .img {
   object-fit: none;
   height: 45px;
   width: 45px;
-  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  border: var(--border-slot);
   border-radius: var(--main-border-radius);
-  box-shadow: var(--main-box-shadow);
+  background: #080604;
+  cursor: pointer;
 }
 
 .topbar {
@@ -13556,6 +15172,7 @@ img {
   width: calc(100% - 20px);
   align-items: center;
   justify-content: center;
+  border-bottom: var(--border-btn);
 }
 
 .bottombar {
@@ -13567,18 +15184,21 @@ img {
   width: calc(100% - 10px);
   grid-gap: 5px;
   padding: 5px;
+  border-top:  var(--border-btn);
 }
 
 .bottombar-info {
   position: relative;
-  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
+  border: var(--border-slot);
   border-radius: var(--main-border-radius);
-  box-shadow: var(--main-box-shadow);
+  background: #00000040;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: 2px;
   gap: 1px;
+  text-shadow: none;
+  color: white;
 }
 
 .bottombar-info #icon {
@@ -13605,7 +15225,7 @@ img {
 .bottombar-menu {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 1px;
   padding: 5px 0;
   overflow: auto;
   max-width: 500px;
@@ -13624,15 +15244,18 @@ img {
 
 .bottombar-map-wrap {
   position: relative;
-  top: 2px;
-  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));
+  filter:
+    drop-shadow(-2px 0 0 #9B9081)
+    drop-shadow(0 -2px 0 #9B9081)
+    drop-shadow(2px 0 0 #efdec7)
+    drop-shadow(0 2px 0 #efdec7);
 }
 
 .bottombar-map {
   width: 100%;
   height: 100%;
   background: black;
-  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 .bottombar-map canvas {
@@ -13663,19 +15286,15 @@ img {
 .topbar-options-menu {
   width: fit-content;
   cursor: pointer;
-  border: 1px solid var(--main-primary-color);
+  border: var(--border-btn);
   border-radius: var(--main-border-radius);
-  padding: 3px 12px;
+  padding: 1px 10px;
   color: var(--main-accent-color);
   background: var(--main-background-color);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-size: 11px;
-  transition: background 0.15s, border-color 0.15s;
+  font-size: 12px;
 }
 .topbar-options-menu:hover {
-  background: var(--main-accent-hover);
-  border-color: var(--main-border-hover);
+  border-style: inset;
 }
 
 .resource {
@@ -13690,11 +15309,9 @@ img {
 
 .resource-content {
   object-fit: none;
-  height: 13px;
-  width: 20px;
-  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);
-  border-radius: var(--main-border-radius);
-  box-shadow: var(--main-box-shadow);
+  height: 15px;
+  width: 24px;
+  border: var(--border-slot);
 }
 
 .message {
@@ -13717,10 +15334,20 @@ img {
 }
 
 @keyframes msg-fade {
-  0%   { opacity: 0; transform: translateY(6px); }
-  15%  { opacity: 1; transform: translateY(0); }
-  75%  { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .resource-quantity {
@@ -13779,8 +15406,10 @@ img {
 
 .modal-content {
   background: var(--main-background-color);
-  border: 1px solid var(--main-primary-color);
-  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);
+  border: var(--border-panel);
+  box-shadow:
+    0 0 0 1px var(--main-shadow-dark),
+    0 0 30px rgba(0, 0, 0, 0.9);
   border-radius: var(--main-border-radius-lg);
   position: absolute;
   top: 50%;
@@ -13796,10 +15425,6 @@ img {
   padding: 24px 32px;
 }
 
-.modal-menu .menu-btn,
-.modal-menu .input-file.menu-btn {
-  width: 220px !important;
-}
 
 /* ============================================================
    MAIN MENU / MAP CONFIG
@@ -13813,7 +15438,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--main-bg-base);
+  background: var(--main-background-color);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -13826,35 +15451,34 @@ img {
   gap: 18px;
   padding: 44px 64px;
   background: var(--main-background-color);
-  border: 1px solid var(--main-primary-color);
+  border: var(--border-panel);
   border-radius: var(--main-border-radius-lg);
-  box-shadow:
-    0 0 0 1px var(--main-shadow-dark),
-    0 0 40px rgba(0, 0, 0, 0.9),
-    inset 0 0 24px rgba(0, 0, 0, 0.6);
 }
 
-.menu-title {
-  font-size: 40px;
-  font-weight: bold;
-  text-align: center;
-  letter-spacing: 8px;
-  text-transform: uppercase;
-  color: var(--main-accent-color);
-  text-shadow:
-    0 0 24px rgba(200, 168, 94, 0.35),
-    2px 2px 0 #000;
-  font-family: serif;
+.menu-panel--home {
+  background: transparent;
+  border: 0;
+  gap: 24px;
+  padding-top: 0;
+}
+
+img.menu-title {
+  display: block;
+  width: min(420px, 74vw);
+  height: auto;
   margin: 0;
 }
 
-.menu-subtitle {
-  font-size: 11px;
-  letter-spacing: 5px;
+.menu-panel--home img.menu-title {
+  width: min(620px, 88vw);
+}
+
+div.menu-title {
+  font-size: 16px;
+  font-weight: bold;
   text-transform: uppercase;
-  color: var(--main-text-muted);
-  margin-top: -12px;
-  text-shadow: none;
+  color: var(--main-accent-color);
+  margin: 0;
 }
 
 .menu-divider {
@@ -13862,6 +15486,10 @@ img {
   height: 1px;
   background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);
   margin: 2px 0;
+}
+
+.menu-panel--home .menu-divider {
+  display: none;
 }
 
 .menu-buttons {
@@ -13872,36 +15500,51 @@ img {
 }
 
 .menu-btn {
-  box-sizing: border-box !important;
-  width: 250px !important;
-  padding: 10px 20px !important;
-  font-size: 11px !important;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  border: 1px solid var(--main-primary-color) !important;
-  border-radius: var(--main-border-radius) !important;
-  color: var(--main-accent-color) !important;
-  background: var(--main-background-color) !important;
-  transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+  box-sizing: border-box;
+  width: 250px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  color: var(--main-accent-color);
+  background: var(--main-background-color);
+}
+
+.menu-panel--home .menu-btn {
+  width: 320px;
+  padding: 12px 26px;
+  font-size: 18px;
+  color: #efdec7;
+  text-shadow: 1px 1px 0 black;
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .menu-btn:hover {
-  background: var(--main-accent-hover) !important;
-  color: var(--main-accent-bright) !important;
-  border-color: var(--main-border-hover) !important;
+  border-style: inset;
+}
+
+.menu-panel--home .menu-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .menu-btn.secondary {
-  color: var(--main-text-muted) !important;
-  border-color: var(--main-primary-color) !important;
-  opacity: 0.7;
+  color: var(--main-text-muted);
 }
 
-.menu-btn.secondary:hover {
-  background: var(--main-accent-hover) !important;
-  color: var(--main-accent-color) !important;
-  border-color: var(--main-border-hover) !important;
-  opacity: 1;
+.menu-panel--home .menu-btn.secondary {
+  color: #efdec7;
+}
+
+.menu-copyright {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 12px;
+  text-shadow: 1px 1px 0 black;
+  white-space: nowrap;
 }
 
 /* Config form rows */
@@ -13909,7 +15552,7 @@ img {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 340px;
+  width: 300px;
 }
 
 .config-row {
@@ -13920,27 +15563,60 @@ img {
 }
 
 .config-row label {
-  color: var(--main-text-color) !important;
-  letter-spacing: 1px;
-  font-size: 11px !important;
-  text-transform: uppercase;
-  text-shadow: none !important;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.config-row select,
+.player-civ select,
+.team-cycle {
+  box-sizing: border-box;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
+    var(--main-control-color);
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  color: var(--main-accent-color);
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset -1px -1px 0 rgba(61, 32, 0, 0.35);
+}
+
+.config-row select,
+.player-civ select {
+  appearance: none;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
+    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),
+    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);
+  background-position:
+    0 0,
+    calc(100% - 12px) 50%,
+    calc(100% - 7px) 50%;
+  background-size:
+    auto,
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding: 5px 22px 5px 8px;
 }
 
 .config-row select {
-  background: var(--main-background-color);
-  border: 1px solid var(--main-primary-color) !important;
-  border-radius: var(--main-border-radius);
-  color: var(--main-accent-color) !important;
-  padding: 5px 8px;
   min-width: 180px;
-  font-size: 11px !important;
-  cursor: pointer;
 }
 
-.config-row select:focus {
+.config-row select:hover,
+.config-row select:focus,
+.player-civ select:hover,
+.player-civ select:focus,
+.team-cycle:hover,
+.team-cycle:focus {
   outline: none;
-  border-color: var(--main-border-hover) !important;
+  border-style: inset;
+  background-color: var(--main-accent-hover);
 }
 
 .config-row--checkbox {
@@ -13948,11 +15624,37 @@ img {
 }
 
 .config-row input[type='checkbox'] {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--main-border-hover);
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  background: var(--main-control-color);
+  border: var(--border-slot);
   cursor: pointer;
-  border: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.config-row input[type='checkbox']::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--main-accent-color);
+  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
+  transform: scale(0);
+}
+
+.config-row input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+
+.config-row input[type='checkbox']:hover,
+.config-row input[type='checkbox']:focus {
+  outline: none;
+  background: var(--main-accent-hover);
 }
 
 /* ============================================================
@@ -13978,51 +15680,31 @@ img {
   gap: 8px;
 }
 
-.lobby-section-title {
-  font-size: 9px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--main-text-muted);
-  margin-bottom: 2px;
-  text-shadow: none;
-}
-
 /* Player table */
 .player-table {
-  border: 1px solid var(--main-primary-color);
-  border-radius: var(--main-border-radius);
-  background: rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
 .player-table-header {
   display: grid;
-  grid-template-columns: 1fr 100px 32px 20px;
+  grid-template-columns: 1fr 100px 48px 48px;
   gap: 8px;
-  padding: 5px 10px;
-  border-bottom: 1px solid var(--main-primary-color);
-  background: rgba(74, 58, 30, 0.2);
-  font-size: 9px;
-  letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--main-text-muted);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: bold;
 }
 
 .player-row {
   display: grid;
-  grid-template-columns: 1fr 100px 32px 20px;
+  grid-template-columns: 1fr 100px 48px 48px;
   gap: 8px;
   padding: 5px 10px;
   align-items: center;
-  border-bottom: 1px solid rgba(74, 58, 30, 0.2);
-}
-
-.player-row:last-child {
-  border-bottom: none;
 }
 
 .player-row--odd {
-  background: rgba(74, 58, 30, 0.08);
+  background: rgba(61, 32, 0, 0.06);
 }
 
 .player-name {
@@ -14035,19 +15717,17 @@ img {
 }
 
 .player-civ select {
-  background: var(--main-background-color);
-  border: 1px solid var(--main-primary-color);
-  border-radius: var(--main-border-radius);
-  color: var(--main-accent-color);
-  padding: 3px 4px;
-  font-size: 10px;
-  cursor: pointer;
+  padding-top: 3px;
+  padding-bottom: 3px;
   width: 100%;
 }
 
-.player-civ select:focus {
-  outline: none;
-  border-color: var(--main-border-hover);
+.team-cycle {
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  line-height: 20px;
+  text-align: center;
 }
 
 .player-color-cell {
@@ -14057,67 +15737,36 @@ img {
 }
 
 .color-swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
   flex-shrink: 0;
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.35),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .color-swatch:hover {
-  border-color: var(--main-accent-color);
-  transform: scale(1.25);
+  border-style: inset;
+  box-shadow:
+    inset 2px 2px 0 rgba(0, 0, 0, 0.35),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.25);
 }
 
-.player-action-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.player-remove {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--main-text-muted) !important;
-  cursor: pointer;
-  padding: 0 !important;
-  font-size: 15px !important;
-  width: auto !important;
-  min-width: 0 !important;
-  line-height: 1;
-}
-
-.player-remove:hover {
-  color: #e30b00 !important;
-  background: none !important;
-}
-
-.lobby-add-btn {
+.player-count-row {
   margin-top: 4px;
-  width: 100% !important;
-  font-size: 10px !important;
-  letter-spacing: 1px !important;
-  padding: 6px 10px !important;
-  border: 1px dashed var(--main-primary-color) !important;
-  color: var(--main-text-muted) !important;
 }
 
-.lobby-add-btn:hover:not(:disabled) {
-  color: var(--main-accent-color) !important;
-  border-color: var(--main-border-hover) !important;
-  background: var(--main-accent-hover) !important;
-}
-
-.lobby-add-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.player-count-row select {
+  min-width: 0;
+  flex: 1;
 }
 
 .lobby-settings-form {
-  width: 100% !important;
+  width: 100%;
 }
 
 .lobby-settings-form .config-row select {
@@ -14126,20 +15775,102 @@ img {
 }
 
 .menu-buttons--row {
-  flex-direction: row !important;
-  gap: 16px !important;
+  flex-direction: row;
+  gap: 16px;
 }
-`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"AAAA;EACE,6BAA6B;EAC7B,8CAA8C;EAC9C,uBAAuB;EACvB,gCAAgC;EAChC,yBAAyB;EACzB,4BAA4B;EAC5B,uBAAuB;EACvB,0BAA0B;EAC1B,4BAA4B;EAC5B,wCAAwC;EACxC,2BAA2B;EAC3B,2DAA2D;EAC3D,0BAA0B;EAC1B,0BAA0B;EAC1B,4BAA4B;EAC5B,6BAA6B;EAC7B,2CAA2C;;EAE3C,oBAAoB;EACpB,8BAA8B;EAC9B,qBAAqB;EACrB,uBAAuB;EACvB,qBAAqB;EACrB,8CAA8C;AAChD;;AAEA;;;;;;EAME,uCAAuC;EACvC,6BAA6B;EAC7B,eAAe;EACf,0BAA0B;EAC1B,uBAAuB;EACvB,4BAA4B;EAC5B,6BAA6B;EAC7B,oBAAoB;AACtB;;AAEA;EACE,aAAa;EACb,gBAAgB;EAChB,SAAS;EACT,yBAAyB;EACzB,iBAAiB;EACjB,uBAAuB;AACzB;;AAEA;;EAEE,2CAA2C;EAC3C,iBAAiB;EACjB,wCAAwC;EACxC,kBAAkB;EAClB,eAAe;EACf,kBAAkB;EAClB,6BAA6B;EAC7B,YAAY;EACZ,oBAAoB;EACpB,+BAA+B;AACjC;AACA;;EAEE,0CAA0C;EAC1C,sCAAsC;AACxC;AACA;EACE,wBAAwB;AAC1B;AACA;EACE,YAAY;EACZ,eAAe;EACf,YAAY;EACZ,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,WAAW;EACX,oCAAoC;EACpC,UAAU;EACV,eAAe;EACf,0DAA0D;AAC5D;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;AACd;;AAEA;EACE,OAAO;AACT;;AAEA;EACE,kBAAkB;EAClB,aAAa;EACb,eAAe;EACf,QAAQ;EACR,SAAS;EACT,gCAAgC;EAChC,iBAAiB;AACnB;;AAEA;EACE,wCAAwC;EACxC,WAAW;AACb;;AAEA;EACE,uBAAuB;EACvB,eAAe;AACjB;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,iBAAiB;EACjB,aAAa;EACb,iBAAiB;EACjB,kCAAkC;EAClC,wBAAwB;EACxB,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,aAAa;EACb,aAAa;EACb,uCAAuC;EACvC,wBAAwB;EACxB,aAAa;EACb,YAAY;AACd;;AAEA;EACE,kBAAkB;EAClB,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;EAClC,gBAAgB;EAChB,aAAa;EACb,sBAAsB;EACtB,YAAY;EACZ,QAAQ;AACV;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;AACb;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,aAAa;EACb,eAAe;EACf,QAAQ;EACR,cAAc;EACd,cAAc;EACd,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,aAAa;AACf;;AAEA;EACE,kBAAkB;EAClB,QAAQ;EACR,yDAAyD;AAC3D;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,iBAAiB;EACjB,qDAAqD;AACvD;;AAEA;EACE,kBAAkB;EAClB,OAAO;EACP,MAAM;EACN,WAAW;EACX,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,aAAa;EACb,SAAS;AACX;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,oBAAoB;AACtB;;AAEA;EACE,kBAAkB;EAClB,eAAe;EACf,2CAA2C;EAC3C,wCAAwC;EACxC,iBAAiB;EACjB,+BAA+B;EAC/B,wCAAwC;EACxC,mBAAmB;EACnB,yBAAyB;EACzB,eAAe;EACf,gDAAgD;AAClD;AACA;EACE,oCAAoC;EACpC,sCAAsC;AACxC;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,iFAAiF;EACjF,wCAAwC;EACxC,kCAAkC;AACpC;;AAEA;EACE,aAAa;EACb,eAAe;EACf,WAAW;EACX,kBAAkB;AACpB;;AAEA;EACE,uBAAuB;EACvB,yBAAyB;EACzB,2BAA2B;EAC3B,+BAA+B;EAC/B,mCAAmC;EACnC,uCAAuC;EACvC,kCAAkC;EAClC,sBAAsB;EACtB,oCAAoC;AACtC;;AAEA;EACE,OAAO,UAAU,EAAE,0BAA0B,EAAE;EAC/C,OAAO,UAAU,EAAE,wBAAwB,EAAE;EAC7C,OAAO,UAAU,EAAE;EACnB,OAAO,UAAU,EAAE;AACrB;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;;EAEE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,cAAc;EACd,QAAQ;EACR,wBAAwB;EACxB,aAAa;EACb,YAAY;EACZ,2BAA2B;EAC3B,8BAA8B;EAC9B,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,YAAY;EACZ,aAAa;EACb,8BAA8B;EAC9B,aAAa;AACf;;AAEA;EACE,wCAAwC;EACxC,2CAA2C;EAC3C,0EAA0E;EAC1E,2CAA2C;EAC3C,kBAAkB;EAClB,QAAQ;EACR,SAAS;EACT,gCAAgC;AAClC;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,QAAQ;EACR,kBAAkB;AACpB;;AAEA;;EAEE,uBAAuB;AACzB;;AAEA;;iEAEiE;;AAEjE;;EAEE,eAAe;EACf,QAAQ;EACR,aAAa;EACb,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,+BAA+B;EAC/B,sBAAsB;EACtB,4BAA4B;EAC5B,2BAA2B;AAC7B;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,SAAS;EACT,kBAAkB;EAClB,wCAAwC;EACxC,2CAA2C;EAC3C,2CAA2C;EAC3C;;;qCAGmC;AACrC;;AAEA;EACE,eAAe;EACf,iBAAiB;EACjB,kBAAkB;EAClB,mBAAmB;EACnB,yBAAyB;EACzB,+BAA+B;EAC/B;;kBAEgB;EAChB,kBAAkB;EAClB,SAAS;AACX;;AAEA;EACE,eAAe;EACf,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;EAC7B,iBAAiB;EACjB,iBAAiB;AACnB;;AAEA;EACE,YAAY;EACZ,WAAW;EACX,0FAA0F;EAC1F,aAAa;AACf;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,iCAAiC;EACjC,uBAAuB;EACvB,6BAA6B;EAC7B,0BAA0B;EAC1B,mBAAmB;EACnB,yBAAyB;EACzB,sDAAsD;EACtD,mDAAmD;EACnD,0CAA0C;EAC1C,mDAAmD;EACnD,wEAAwE;AAC1E;;AAEA;EACE,+CAA+C;EAC/C,2CAA2C;EAC3C,iDAAiD;AACnD;;AAEA;EACE,wCAAwC;EACxC,kDAAkD;EAClD,YAAY;AACd;;AAEA;EACE,+CAA+C;EAC/C,0CAA0C;EAC1C,iDAAiD;EACjD,UAAU;AACZ;;AAEA,qBAAqB;AACrB;EACE,aAAa;EACb,sBAAsB;EACtB,SAAS;EACT,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,8BAA8B;EAC9B,SAAS;AACX;;AAEA;EACE,wCAAwC;EACxC,mBAAmB;EACnB,0BAA0B;EAC1B,yBAAyB;EACzB,4BAA4B;AAC9B;;AAEA;EACE,wCAAwC;EACxC,sDAAsD;EACtD,wCAAwC;EACxC,0CAA0C;EAC1C,gBAAgB;EAChB,gBAAgB;EAChB,0BAA0B;EAC1B,eAAe;AACjB;;AAEA;EACE,aAAa;EACb,iDAAiD;AACnD;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,sCAAsC;EACtC,eAAe;EACf,YAAY;AACd;;AAEA;;iEAEiE;;AAEjE;EACE,kBAAkB;EAClB,YAAY;AACd;;AAEA;EACE,aAAa;EACb,8BAA8B;EAC9B,SAAS;EACT,uBAAuB;EACvB,kBAAkB;AACpB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,cAAc;EACd,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;EAC7B,kBAAkB;EAClB,iBAAiB;AACnB;;AAEA,iBAAiB;AACjB;EACE,2CAA2C;EAC3C,wCAAwC;EACxC,8BAA8B;EAC9B,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,iBAAiB;EACjB,kDAAkD;EAClD,iCAAiC;EACjC,cAAc;EACd,mBAAmB;EACnB,yBAAyB;EACzB,6BAA6B;AAC/B;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,iBAAiB;EACjB,mBAAmB;EACnB,8CAA8C;AAChD;;AAEA;EACE,mBAAmB;AACrB;;AAEA;EACE,kCAAkC;AACpC;;AAEA;EACE,eAAe;EACf,6BAA6B;AAC/B;;AAEA;EACE,+BAA+B;AACjC;;AAEA;EACE,wCAAwC;EACxC,2CAA2C;EAC3C,wCAAwC;EACxC,+BAA+B;EAC/B,gBAAgB;EAChB,eAAe;EACf,eAAe;EACf,WAAW;AACb;;AAEA;EACE,aAAa;EACb,sCAAsC;AACxC;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,kBAAkB;EAClB,0CAA0C;EAC1C,eAAe;EACf,8CAA8C;EAC9C,cAAc;AAChB;;AAEA;EACE,sCAAsC;EACtC,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,2BAA2B;EAC3B,uBAAuB;EACvB,2BAA2B;EAC3B,wCAAwC;EACxC,eAAe;EACf,qBAAqB;EACrB,0BAA0B;EAC1B,sBAAsB;EACtB,uBAAuB;EACvB,cAAc;AAChB;;AAEA;EACE,yBAAyB;EACzB,2BAA2B;AAC7B;;AAEA;EACE,eAAe;EACf,sBAAsB;EACtB,0BAA0B;EAC1B,8BAA8B;EAC9B,4BAA4B;EAC5B,uDAAuD;EACvD,wCAAwC;AAC1C;;AAEA;EACE,0CAA0C;EAC1C,iDAAiD;EACjD,+CAA+C;AACjD;;AAEA;EACE,YAAY;EACZ,mBAAmB;AACrB;;AAEA;EACE,sBAAsB;AACxB;;AAEA;EACE,YAAY;EACZ,OAAO;AACT;;AAEA;EACE,8BAA8B;EAC9B,oBAAoB;AACtB","sourcesContent":[":root {\n  --main-primary-color: #5e4a22;\n  --main-background-color: rgba(14, 10, 5, 0.80);\n  --main-bg-base: #0b0906;\n  --main-border-color: transparent;\n  --main-border-radius: 3px;\n  --main-border-radius-lg: 5px;\n  --main-border-size: 0px;\n  --main-border-style: solid;\n  --main-border-hover: #a07830;\n  --main-shadow-color: rgba(0, 0, 0, 0.75);\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: var(--main-shadow-color) 0px 0px 3px 0px;\n  --main-text-color: #ddd0a0;\n  --main-text-muted: #8a7850;\n  --main-accent-color: #d4a843;\n  --main-accent-bright: #f0d860;\n  --main-accent-hover: rgba(74, 58, 30, 0.55);\n\n  --msg-color: #e84040;\n  --msg-bg: rgba(10, 6, 2, 0.85);\n  --msg-border: #6b1f1f;\n  --msg-padding: 6px 18px;\n  --msg-font-size: 13px;\n  --msg-border-radius: var(--main-border-radius);\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px black;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n  -moz-osx-font-smoothing: none;\n  font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: 1px solid var(--main-primary-color);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  width: 200px;\n  transition: all 0.2s;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  background-color: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 5px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  top: 2px;\n  filter: drop-shadow(0px 0px 3px var(--main-shadow-color));\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 1%, 100% 48%, 50% 96%, 0% 48%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  padding: 3px 12px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  letter-spacing: 1px;\n  text-transform: uppercase;\n  font-size: 11px;\n  transition: background 0.15s, border-color 0.15s;\n}\n.topbar-options-menu:hover {\n  background: var(--main-accent-hover);\n  border-color: var(--main-border-hover);\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 13px;\n  width: 20px;\n  border: var(--main-border-size) var(--main-border-style) var(--main-border-color);\n  border-radius: var(--main-border-radius);\n  box-shadow: var(--main-box-shadow);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: var(--msg-color);\n  background: var(--msg-bg);\n  padding: var(--msg-padding);\n  font-size: var(--msg-font-size);\n  border: 1px solid var(--msg-border);\n  border-radius: var(--msg-border-radius);\n  box-shadow: var(--main-box-shadow);\n  letter-spacing: 0.03em;\n  animation: msg-fade 3s ease forwards;\n}\n\n@keyframes msg-fade {\n  0%   { opacity: 0; transform: translateY(6px); }\n  15%  { opacity: 1; transform: translateY(0); }\n  75%  { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  box-shadow: 0 0 0 1px var(--main-shadow-dark), 0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius-lg);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n.modal-menu .menu-btn,\n.modal-menu .input-file.menu-btn {\n  width: 220px !important;\n}\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-bg-base);\n  background-size: cover;\n  background-repeat: no-repeat;\n  background-position: center;\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius-lg);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 40px rgba(0, 0, 0, 0.9),\n    inset 0 0 24px rgba(0, 0, 0, 0.6);\n}\n\n.menu-title {\n  font-size: 40px;\n  font-weight: bold;\n  text-align: center;\n  letter-spacing: 8px;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  text-shadow:\n    0 0 24px rgba(200, 168, 94, 0.35),\n    2px 2px 0 #000;\n  font-family: serif;\n  margin: 0;\n}\n\n.menu-subtitle {\n  font-size: 11px;\n  letter-spacing: 5px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-top: -12px;\n  text-shadow: none;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box !important;\n  width: 250px !important;\n  padding: 10px 20px !important;\n  font-size: 11px !important;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  border: 1px solid var(--main-primary-color) !important;\n  border-radius: var(--main-border-radius) !important;\n  color: var(--main-accent-color) !important;\n  background: var(--main-background-color) !important;\n  transition: background 0.15s, border-color 0.15s, color 0.15s !important;\n}\n\n.menu-btn:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-bright) !important;\n  border-color: var(--main-border-hover) !important;\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted) !important;\n  border-color: var(--main-primary-color) !important;\n  opacity: 0.7;\n}\n\n.menu-btn.secondary:hover {\n  background: var(--main-accent-hover) !important;\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-border-hover) !important;\n  opacity: 1;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 340px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  color: var(--main-text-color) !important;\n  letter-spacing: 1px;\n  font-size: 11px !important;\n  text-transform: uppercase;\n  text-shadow: none !important;\n}\n\n.config-row select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color) !important;\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color) !important;\n  padding: 5px 8px;\n  min-width: 180px;\n  font-size: 11px !important;\n  cursor: pointer;\n}\n\n.config-row select:focus {\n  outline: none;\n  border-color: var(--main-border-hover) !important;\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  width: 14px;\n  height: 14px;\n  accent-color: var(--main-border-hover);\n  cursor: pointer;\n  border: none;\n}\n\n/* ============================================================\n   LOBBY — tableau AOE style\n   ============================================================ */\n\n.lobby-panel {\n  padding: 36px 48px;\n  min-width: 0;\n}\n\n.lobby-layout {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 40px;\n  width: min(82vw, 840px);\n  align-items: start;\n}\n\n.lobby-col {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n.lobby-section-title {\n  font-size: 9px;\n  letter-spacing: 3px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n  margin-bottom: 2px;\n  text-shadow: none;\n}\n\n/* Player table */\n.player-table {\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  background: rgba(0, 0, 0, 0.3);\n  overflow: hidden;\n}\n\n.player-table-header {\n  display: grid;\n  grid-template-columns: 1fr 100px 32px 20px;\n  gap: 8px;\n  padding: 5px 10px;\n  border-bottom: 1px solid var(--main-primary-color);\n  background: rgba(74, 58, 30, 0.2);\n  font-size: 9px;\n  letter-spacing: 2px;\n  text-transform: uppercase;\n  color: var(--main-text-muted);\n}\n\n.player-row {\n  display: grid;\n  grid-template-columns: 1fr 100px 32px 20px;\n  gap: 8px;\n  padding: 5px 10px;\n  align-items: center;\n  border-bottom: 1px solid rgba(74, 58, 30, 0.2);\n}\n\n.player-row:last-child {\n  border-bottom: none;\n}\n\n.player-row--odd {\n  background: rgba(74, 58, 30, 0.08);\n}\n\n.player-name {\n  font-size: 11px;\n  color: var(--main-text-color);\n}\n\n.player-name.human {\n  color: var(--main-accent-color);\n}\n\n.player-civ select {\n  background: var(--main-background-color);\n  border: 1px solid var(--main-primary-color);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  padding: 3px 4px;\n  font-size: 10px;\n  cursor: pointer;\n  width: 100%;\n}\n\n.player-civ select:focus {\n  outline: none;\n  border-color: var(--main-border-hover);\n}\n\n.player-color-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.color-swatch {\n  width: 20px;\n  height: 20px;\n  border-radius: 50%;\n  border: 2px solid rgba(255, 255, 255, 0.2);\n  cursor: pointer;\n  transition: border-color 0.15s, transform 0.1s;\n  flex-shrink: 0;\n}\n\n.color-swatch:hover {\n  border-color: var(--main-accent-color);\n  transform: scale(1.25);\n}\n\n.player-action-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.player-remove {\n  background: none !important;\n  border: none !important;\n  box-shadow: none !important;\n  color: var(--main-text-muted) !important;\n  cursor: pointer;\n  padding: 0 !important;\n  font-size: 15px !important;\n  width: auto !important;\n  min-width: 0 !important;\n  line-height: 1;\n}\n\n.player-remove:hover {\n  color: #e30b00 !important;\n  background: none !important;\n}\n\n.lobby-add-btn {\n  margin-top: 4px;\n  width: 100% !important;\n  font-size: 10px !important;\n  letter-spacing: 1px !important;\n  padding: 6px 10px !important;\n  border: 1px dashed var(--main-primary-color) !important;\n  color: var(--main-text-muted) !important;\n}\n\n.lobby-add-btn:hover:not(:disabled) {\n  color: var(--main-accent-color) !important;\n  border-color: var(--main-border-hover) !important;\n  background: var(--main-accent-hover) !important;\n}\n\n.lobby-add-btn:disabled {\n  opacity: 0.3;\n  cursor: not-allowed;\n}\n\n.lobby-settings-form {\n  width: 100% !important;\n}\n\n.lobby-settings-form .config-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.menu-buttons--row {\n  flex-direction: row !important;\n  gap: 16px !important;\n}\n"],"sourceRoot":""}]);
+
+#dev-console {
+  position: absolute;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.dev-console-panel {
+  position: absolute;
+  right: 14px;
+  bottom: 138px;
+  width: min(420px, calc(100vw - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 8px;
+  background: var(--main-background-color);
+  border: var(--border-panel);
+  border-radius: var(--main-border-radius-lg);
+  box-shadow:
+    0 0 0 1px var(--main-shadow-dark),
+    0 0 18px rgba(0, 0, 0, 0.75);
+}
+
+.dev-console-log {
+  min-height: 22px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 7px;
+  overflow: hidden;
+  text-shadow: 1px 1px white;
+  color: var(--main-text-muted);
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(61, 32, 0, 0.08);
+  border: var(--border-slot);
+  border-radius: var(--main-border-radius);
+}
+
+.dev-console-log[data-status='ok'] {
+  color: var(--main-accent-color);
+}
+
+.dev-console-log[data-status='error'] {
+  color: var(--danger-color);
+}
+
+.dev-console-input {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  color: var(--main-accent-color);
+  font-size: 12px;
+  font-weight: bold;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
+    var(--main-control-color);
+  border: var(--border-slot);
+  border-radius: var(--main-border-radius);
+  outline: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dev-console-input:focus {
+  background-color: var(--main-accent-hover);
+  border-color: #efdec7;
+}
+`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"AAAA;EACE,6BAA6B;EAC7B,gCAAgC;EAChC,6BAA6B;EAC7B,yBAAyB;EACzB,4BAA4B;;EAE5B,kCAAkC;EAClC,kCAAkC;EAClC,kCAAkC;EAClC,kCAAkC;EAClC,2BAA2B;EAC3B,gDAAgD;EAChD,0BAA0B;EAC1B,0BAA0B;EAC1B,4BAA4B;EAC5B,6BAA6B;EAC7B,4BAA4B;;EAE5B,uBAAuB;;EAEvB,oBAAoB;EACpB,iBAAiB;EACjB,qBAAqB;EACrB,uBAAuB;EACvB,qBAAqB;EACrB,8CAA8C;AAChD;;AAEA;EACE,oBAAoB;EACpB,+DAAuE;AACzE;;AAEA;;;;;;EAME,uCAAuC;EACvC,6BAA6B;EAC7B,eAAe;EACf,0BAA0B;EAC1B,uBAAuB;EACvB,4BAA4B;EAC5B,6BAA6B;EAC7B,oBAAoB;AACtB;;AAEA;EACE,aAAa;EACb,gBAAgB;EAChB,SAAS;EACT,yBAAyB;EACzB,iBAAiB;EACjB,uBAAuB;AACzB;;AAEA;;EAEE,wBAAwB;EACxB,iBAAiB;EACjB,wCAAwC;EACxC,kBAAkB;EAClB,eAAe;EACf,kBAAkB;EAClB,6BAA6B;EAC7B,+BAA+B;AACjC;AACA;;EAEE,mBAAmB;AACrB;AACA;EACE,wBAAwB;AAC1B;AACA;EACE,YAAY;EACZ,eAAe;EACf,YAAY;EACZ,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,WAAW;EACX,oCAAoC;EACpC,UAAU;EACV,eAAe;EACf,0DAA0D;AAC5D;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;EACZ,WAAW;EACX,gBAAgB;AAClB;;AAEA;EACE,OAAO;AACT;;AAEA;EACE,kBAAkB;EAClB,aAAa;EACb,eAAe;EACf,QAAQ;EACR,SAAS;EACT,gCAAgC;EAChC,iBAAiB;AACnB;;AAEA;EACE,kBAAkB;EAClB,aAAa;EACb,QAAQ;EACR,SAAS;EACT,gCAAgC;EAChC,gCAAgC;EAChC,eAAe;EACf,iBAAiB;EACjB,cAAc;EACd,kBAAkB;EAClB,yBAAyB;EACzB,mBAAmB;EACnB;;;kBAGgB;AAClB;;AAEA;EACE,wCAAwC;EACxC,WAAW;AACb;;AAEA;EACE,uBAAuB;EACvB,eAAe;AACjB;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,0BAA0B;EAC1B,wCAAwC;EACxC,mBAAmB;EACnB,eAAe;AACjB;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,iBAAiB;EACjB,aAAa;EACb,iBAAiB;EACjB,kCAAkC;EAClC,wBAAwB;EACxB,mBAAmB;EACnB,uBAAuB;EACvB,gCAAgC;AAClC;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,aAAa;EACb,aAAa;EACb,uCAAuC;EACvC,wBAAwB;EACxB,aAAa;EACb,YAAY;EACZ,8BAA8B;AAChC;;AAEA;EACE,kBAAkB;EAClB,0BAA0B;EAC1B,wCAAwC;EACxC,qBAAqB;EACrB,gBAAgB;EAChB,aAAa;EACb,sBAAsB;EACtB,YAAY;EACZ,QAAQ;EACR,iBAAiB;EACjB,YAAY;AACd;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;AACb;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,sBAAsB;AACxB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,aAAa;EACb,eAAe;EACf,QAAQ;EACR,cAAc;EACd,cAAc;EACd,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,aAAa;AACf;;AAEA;EACE,kBAAkB;EAClB;;;;gCAI8B;AAChC;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,iBAAiB;EACjB,sDAAsD;AACxD;;AAEA;EACE,kBAAkB;EAClB,OAAO;EACP,MAAM;EACN,WAAW;EACX,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,aAAa;EACb,SAAS;AACX;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,oBAAoB;AACtB;;AAEA;EACE,kBAAkB;EAClB,eAAe;EACf,yBAAyB;EACzB,wCAAwC;EACxC,iBAAiB;EACjB,+BAA+B;EAC/B,wCAAwC;EACxC,eAAe;AACjB;AACA;EACE,mBAAmB;AACrB;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,gBAAgB;EAChB,YAAY;EACZ,WAAW;EACX,0BAA0B;AAC5B;;AAEA;EACE,aAAa;EACb,eAAe;EACf,WAAW;EACX,kBAAkB;AACpB;;AAEA;EACE,uBAAuB;EACvB,yBAAyB;EACzB,2BAA2B;EAC3B,+BAA+B;EAC/B,mCAAmC;EACnC,uCAAuC;EACvC,kCAAkC;EAClC,sBAAsB;EACtB,oCAAoC;AACtC;;AAEA;EACE;IACE,UAAU;IACV,0BAA0B;EAC5B;EACA;IACE,UAAU;IACV,wBAAwB;EAC1B;EACA;IACE,UAAU;EACZ;EACA;IACE,UAAU;EACZ;AACF;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;EACE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;EACnB,mBAAmB;EACnB,QAAQ;AACV;;AAEA;;EAEE,kBAAkB;EAClB,SAAS;EACT,SAAS;EACT,aAAa;EACb,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,cAAc;EACd,QAAQ;EACR,wBAAwB;EACxB,aAAa;EACb,YAAY;EACZ,2BAA2B;EAC3B,8BAA8B;EAC9B,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,kBAAkB;EAClB,MAAM;EACN,OAAO;EACP,YAAY;EACZ,aAAa;EACb,8BAA8B;EAC9B,aAAa;AACf;;AAEA;EACE,wCAAwC;EACxC,2BAA2B;EAC3B;;+BAE6B;EAC7B,2CAA2C;EAC3C,kBAAkB;EAClB,QAAQ;EACR,SAAS;EACT,gCAAgC;AAClC;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,QAAQ;EACR,kBAAkB;AACpB;;;AAGA;;iEAEiE;;AAEjE;;EAEE,eAAe;EACf,QAAQ;EACR,aAAa;EACb,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,wCAAwC;EACxC,sBAAsB;EACtB,4BAA4B;EAC5B,2BAA2B;AAC7B;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,mBAAmB;EACnB,SAAS;EACT,kBAAkB;EAClB,wCAAwC;EACxC,2BAA2B;EAC3B,2CAA2C;AAC7C;;AAEA;EACE,uBAAuB;EACvB,SAAS;EACT,SAAS;EACT,cAAc;AAChB;;AAEA;EACE,cAAc;EACd,uBAAuB;EACvB,YAAY;EACZ,SAAS;AACX;;AAEA;EACE,uBAAuB;AACzB;;AAEA;EACE,eAAe;EACf,iBAAiB;EACjB,yBAAyB;EACzB,+BAA+B;EAC/B,SAAS;AACX;;AAEA;EACE,YAAY;EACZ,WAAW;EACX,0FAA0F;EAC1F,aAAa;AACf;;AAEA;EACE,aAAa;AACf;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;EACR,mBAAmB;AACrB;;AAEA;EACE,sBAAsB;EACtB,YAAY;EACZ,iBAAiB;EACjB,eAAe;EACf,iBAAiB;EACjB,yBAAyB;EACzB,wCAAwC;EACxC,+BAA+B;EAC/B,wCAAwC;AAC1C;;AAEA;EACE,YAAY;EACZ,kBAAkB;EAClB,eAAe;EACf,cAAc;EACd,4BAA4B;EAC5B,+BAA+B;AACjC;;AAEA;EACE,mBAAmB;AACrB;;AAEA;EACE,8BAA8B;AAChC;;AAEA;EACE,6BAA6B;AAC/B;;AAEA;EACE,cAAc;AAChB;;AAEA;EACE,kBAAkB;EAClB,YAAY;EACZ,SAAS;EACT,2BAA2B;EAC3B,YAAY;EACZ,eAAe;EACf,4BAA4B;EAC5B,mBAAmB;AACrB;;AAEA,qBAAqB;AACrB;EACE,aAAa;EACb,sBAAsB;EACtB,SAAS;EACT,YAAY;AACd;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,8BAA8B;EAC9B,SAAS;AACX;;AAEA;EACE,eAAe;EACf,iBAAiB;AACnB;;AAEA;;;EAGE,sBAAsB;EACtB;;6BAE2B;EAC3B,yBAAyB;EACzB,wCAAwC;EACxC,+BAA+B;EAC/B,eAAe;EACf,iBAAiB;EACjB,eAAe;EACf;;2CAEyC;AAC3C;;AAEA;;EAEE,gBAAgB;EAChB;;;0EAGwE;EACxE;;;wBAGsB;EACtB;;;WAGS;EACT,4BAA4B;EAC5B,yBAAyB;AAC3B;;AAEA;EACE,gBAAgB;AAClB;;AAEA;;;;;;EAME,aAAa;EACb,mBAAmB;EACnB,0CAA0C;AAC5C;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,gBAAgB;EAChB,aAAa;EACb,mBAAmB;EACnB,WAAW;EACX,YAAY;EACZ,SAAS;EACT,qCAAqC;EACrC,0BAA0B;EAC1B,eAAe;EACf;;8CAE4C;AAC9C;;AAEA;EACE,WAAW;EACX,UAAU;EACV,WAAW;EACX,oCAAoC;EACpC,+CAA+C;EAC/C,mBAAmB;AACrB;;AAEA;EACE,mBAAmB;AACrB;;AAEA;;EAEE,aAAa;EACb,oCAAoC;AACtC;;AAEA;;iEAEiE;;AAEjE;EACE,kBAAkB;EAClB,YAAY;AACd;;AAEA;EACE,aAAa;EACb,8BAA8B;EAC9B,SAAS;EACT,uBAAuB;EACvB,kBAAkB;AACpB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,QAAQ;AACV;;AAEA,iBAAiB;AACjB;EACE,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,yBAAyB;EACzB,iBAAiB;EACjB,eAAe;EACf,iBAAiB;AACnB;;AAEA;EACE,aAAa;EACb,0CAA0C;EAC1C,QAAQ;EACR,iBAAiB;EACjB,mBAAmB;AACrB;;AAEA;EACE,iCAAiC;AACnC;;AAEA;EACE,eAAe;EACf,6BAA6B;AAC/B;;AAEA;EACE,+BAA+B;AACjC;;AAEA;EACE,gBAAgB;EAChB,mBAAmB;EACnB,WAAW;AACb;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;AACzB;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,sBAAsB;EACtB,yBAAyB;EACzB,wCAAwC;EACxC,eAAe;EACf,cAAc;EACd;;yCAEuC;AACzC;;AAEA;EACE,mBAAmB;EACnB;;+CAE6C;AAC/C;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,YAAY;EACZ,OAAO;AACT;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,YAAY;EACZ,OAAO;AACT;;AAEA;EACE,mBAAmB;EACnB,SAAS;AACX;;AAEA;EACE,kBAAkB;EAClB,QAAQ;EACR,aAAa;EACb,+BAA+B;AACjC;;AAEA;EACE,kBAAkB;EAClB,WAAW;EACX,aAAa;EACb,qCAAqC;EACrC,aAAa;EACb,sBAAsB;EACtB,QAAQ;EACR,SAAS;EACT,YAAY;EACZ,wCAAwC;EACxC,2BAA2B;EAC3B,2CAA2C;EAC3C;;gCAE8B;AAChC;;AAEA;EACE,gBAAgB;EAChB,eAAe;EACf,sBAAsB;EACtB,gBAAgB;EAChB,gBAAgB;EAChB,0BAA0B;EAC1B,6BAA6B;EAC7B,eAAe;EACf,iBAAiB;EACjB,iBAAiB;EACjB,uBAAuB;EACvB,mBAAmB;EACnB,iCAAiC;EACjC,0BAA0B;EAC1B,wCAAwC;AAC1C;;AAEA;EACE,+BAA+B;AACjC;;AAEA;EACE,0BAA0B;AAC5B;;AAEA;EACE,WAAW;EACX,YAAY;EACZ,sBAAsB;EACtB,gBAAgB;EAChB,+BAA+B;EAC/B,eAAe;EACf,iBAAiB;EACjB;;6BAE2B;EAC3B,0BAA0B;EAC1B,wCAAwC;EACxC,aAAa;EACb;;8CAE4C;AAC9C;;AAEA;EACE,0CAA0C;EAC1C,qBAAqB;AACvB","sourcesContent":[":root {\n  --main-primary-color: #8b6914;\n  --main-background-color: #e4c99b;\n  --main-control-color: #d8b878;\n  --main-border-radius: 0px;\n  --main-border-radius-lg: 0px;\n\n  --border-ui:    1px solid  #efdec7;\n  --border-btn:   2px outset #efdec7;\n  --border-slot:  2px inset  #efdec7;\n  --border-panel: 4px double #efdec7;\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);\n  --main-text-color: #1a0e00;\n  --main-text-muted: #6b5220;\n  --main-accent-color: #3d2000;\n  --main-accent-bright: #1a0e00;\n  --main-accent-hover: #c9a572;\n\n  --danger-color: #cc1100;\n\n  --msg-color: #ff5050;\n  --msg-bg: #0a0602;\n  --msg-border: #9a2020;\n  --msg-padding: 6px 18px;\n  --msg-font-size: 13px;\n  --msg-border-radius: var(--main-border-radius);\n}\n\n@font-face {\n  font-family: 'VT323';\n  src: url('../public/assets/fonts/VT323-Regular.ttf') format('truetype');\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px white;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n  -moz-osx-font-smoothing: none;\n  font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: var(--border-ui);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  border-style: inset;\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n  color:white;\n  text-shadow:none;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n#victory {\n  position: absolute;\n  z-index: 1000;\n  top: 42%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  color: var(--main-accent-bright);\n  font-size: 82px;\n  font-weight: bold;\n  line-height: 1;\n  text-align: center;\n  text-transform: uppercase;\n  letter-spacing: 8px;\n  text-shadow:\n    0 2px 0 #2b1605,\n    0 0 14px black,\n    0 0 28px black;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.bottombar-menu-box .img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #080604;\n  cursor: pointer;\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n  border-bottom: var(--border-btn);\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n  border-top:  var(--border-btn);\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #00000040;\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n  text-shadow: none;\n  color: white;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 1px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  filter:\n    drop-shadow(-2px 0 0 #9B9081)\n    drop-shadow(0 -2px 0 #9B9081)\n    drop-shadow(2px 0 0 #efdec7)\n    drop-shadow(0 2px 0 #efdec7);\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  padding: 1px 10px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  font-size: 12px;\n}\n.topbar-options-menu:hover {\n  border-style: inset;\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 15px;\n  width: 24px;\n  border: var(--border-slot);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: var(--msg-color);\n  background: var(--msg-bg);\n  padding: var(--msg-padding);\n  font-size: var(--msg-font-size);\n  border: 1px solid var(--msg-border);\n  border-radius: var(--msg-border-radius);\n  box-shadow: var(--main-box-shadow);\n  letter-spacing: 0.03em;\n  animation: msg-fade 3s ease forwards;\n}\n\n@keyframes msg-fade {\n  0% {\n    opacity: 0;\n    transform: translateY(6px);\n  }\n  15% {\n    opacity: 1;\n    transform: translateY(0);\n  }\n  75% {\n    opacity: 1;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius-lg);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-background-color);\n  background-size: cover;\n  background-repeat: no-repeat;\n  background-position: center;\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n}\n\n.menu-panel--home {\n  background: transparent;\n  border: 0;\n  gap: 24px;\n  padding-top: 0;\n}\n\nimg.menu-title {\n  display: block;\n  width: min(420px, 74vw);\n  height: auto;\n  margin: 0;\n}\n\n.menu-panel--home img.menu-title {\n  width: min(620px, 88vw);\n}\n\ndiv.menu-title {\n  font-size: 16px;\n  font-weight: bold;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  margin: 0;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-panel--home .menu-divider {\n  display: none;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box;\n  width: 250px;\n  padding: 8px 20px;\n  font-size: 14px;\n  font-weight: bold;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n}\n\n.menu-panel--home .menu-btn {\n  width: 320px;\n  padding: 12px 26px;\n  font-size: 18px;\n  color: #efdec7;\n  text-shadow: 1px 1px 0 black;\n  background: rgba(0, 0, 0, 0.45);\n}\n\n.menu-btn:hover {\n  border-style: inset;\n}\n\n.menu-panel--home .menu-btn:hover {\n  background: rgba(0, 0, 0, 0.6);\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted);\n}\n\n.menu-panel--home .menu-btn.secondary {\n  color: #efdec7;\n}\n\n.menu-copyright {\n  position: absolute;\n  bottom: 16px;\n  left: 50%;\n  transform: translateX(-50%);\n  color: white;\n  font-size: 12px;\n  text-shadow: 1px 1px 0 black;\n  white-space: nowrap;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 300px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.config-row select,\n.player-civ select,\n.team-cycle {\n  box-sizing: border-box;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  font-size: 11px;\n  font-weight: bold;\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(255, 255, 255, 0.45),\n    inset -1px -1px 0 rgba(61, 32, 0, 0.35);\n}\n\n.config-row select,\n.player-civ select {\n  appearance: none;\n  background-image:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),\n    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);\n  background-position:\n    0 0,\n    calc(100% - 12px) 50%,\n    calc(100% - 7px) 50%;\n  background-size:\n    auto,\n    5px 5px,\n    5px 5px;\n  background-repeat: no-repeat;\n  padding: 5px 22px 5px 8px;\n}\n\n.config-row select {\n  min-width: 180px;\n}\n\n.config-row select:hover,\n.config-row select:focus,\n.player-civ select:hover,\n.player-civ select:focus,\n.team-cycle:hover,\n.team-cycle:focus {\n  outline: none;\n  border-style: inset;\n  background-color: var(--main-accent-hover);\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  appearance: none;\n  display: grid;\n  place-items: center;\n  width: 18px;\n  height: 18px;\n  margin: 0;\n  background: var(--main-control-color);\n  border: var(--border-slot);\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.config-row input[type='checkbox']::before {\n  content: '';\n  width: 8px;\n  height: 8px;\n  background: var(--main-accent-color);\n  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);\n  transform: scale(0);\n}\n\n.config-row input[type='checkbox']:checked::before {\n  transform: scale(1);\n}\n\n.config-row input[type='checkbox']:hover,\n.config-row input[type='checkbox']:focus {\n  outline: none;\n  background: var(--main-accent-hover);\n}\n\n/* ============================================================\n   LOBBY — tableau AOE style\n   ============================================================ */\n\n.lobby-panel {\n  padding: 36px 48px;\n  min-width: 0;\n}\n\n.lobby-layout {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 40px;\n  width: min(82vw, 840px);\n  align-items: start;\n}\n\n.lobby-col {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n/* Player table */\n.player-table {\n  overflow: hidden;\n}\n\n.player-table-header {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  text-transform: uppercase;\n  padding: 5px 10px;\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.player-row {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  padding: 5px 10px;\n  align-items: center;\n}\n\n.player-row--odd {\n  background: rgba(61, 32, 0, 0.06);\n}\n\n.player-name {\n  font-size: 11px;\n  color: var(--main-text-color);\n}\n\n.player-name.human {\n  color: var(--main-accent-color);\n}\n\n.player-civ select {\n  padding-top: 3px;\n  padding-bottom: 3px;\n  width: 100%;\n}\n\n.team-cycle {\n  width: 100%;\n  height: 22px;\n  padding: 0;\n  line-height: 20px;\n  text-align: center;\n}\n\n.player-color-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.color-swatch {\n  width: 22px;\n  height: 22px;\n  box-sizing: border-box;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  cursor: pointer;\n  flex-shrink: 0;\n  box-shadow:\n    inset 2px 2px 0 rgba(255, 255, 255, 0.35),\n    inset -2px -2px 0 rgba(0, 0, 0, 0.35);\n}\n\n.color-swatch:hover {\n  border-style: inset;\n  box-shadow:\n    inset 2px 2px 0 rgba(0, 0, 0, 0.35),\n    inset -2px -2px 0 rgba(255, 255, 255, 0.25);\n}\n\n.player-count-row {\n  margin-top: 4px;\n}\n\n.player-count-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.lobby-settings-form {\n  width: 100%;\n}\n\n.lobby-settings-form .config-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.menu-buttons--row {\n  flex-direction: row;\n  gap: 16px;\n}\n\n#dev-console {\n  position: absolute;\n  inset: 0;\n  z-index: 1200;\n  background: rgba(0, 0, 0, 0.42);\n}\n\n.dev-console-panel {\n  position: absolute;\n  right: 14px;\n  bottom: 138px;\n  width: min(420px, calc(100vw - 28px));\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin: 0;\n  padding: 8px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 18px rgba(0, 0, 0, 0.75);\n}\n\n.dev-console-log {\n  min-height: 22px;\n  max-width: 100%;\n  box-sizing: border-box;\n  padding: 4px 7px;\n  overflow: hidden;\n  text-shadow: 1px 1px white;\n  color: var(--main-text-muted);\n  font-size: 11px;\n  font-weight: bold;\n  line-height: 14px;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  background: rgba(61, 32, 0, 0.08);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n}\n\n.dev-console-log[data-status='ok'] {\n  color: var(--main-accent-color);\n}\n\n.dev-console-log[data-status='error'] {\n  color: var(--danger-color);\n}\n\n.dev-console-input {\n  width: 100%;\n  height: 30px;\n  box-sizing: border-box;\n  padding: 5px 8px;\n  color: var(--main-accent-color);\n  font-size: 12px;\n  font-weight: bold;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  outline: none;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.dev-console-input:focus {\n  background-color: var(--main-accent-hover);\n  border-color: #efdec7;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
+
+/***/ },
+
+/***/ 2043
+(module, __unused_webpack_exports, __webpack_require__) {
+
+module.exports = __webpack_require__.p + "2bc43ad8eb2f60b39f27.ttf";
 
 /***/ }
 
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(6854)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(6340)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);
