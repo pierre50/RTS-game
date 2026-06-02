@@ -1469,8 +1469,8 @@ class TelephoneFilter extends Filter {
 
 //# sourceMappingURL=index.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
-var lib = __webpack_require__(9014);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 65 modules
+var lib = __webpack_require__(2133);
 ;// ./node_modules/.pnpm/@pixi+sound@6.0.1_pixi.js@8.18.1/node_modules/@pixi/sound/lib/htmlaudio/HTMLAudioContext.mjs
 
 
@@ -3744,8 +3744,8 @@ __webpack_require__.d(__webpack_exports__, {
   N: () => (/* binding */ MultiColorReplaceFilter)
 });
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
-var lib = __webpack_require__(9014);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 65 modules
+var lib = __webpack_require__(2133);
 ;// ./node_modules/.pnpm/pixi-filters@6.1.5_pixi.js@8.18.1/node_modules/pixi-filters/lib/defaults/default2.mjs
 var vertex = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
 
@@ -8798,8 +8798,8 @@ Extensions/* extensions */.XO.mixin(Container/* Container */.mc, FederatedContai
 var init = __webpack_require__(4571);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/init.mjs + 5 modules
 var rendering_init = __webpack_require__(6641);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/init.mjs + 9 modules
-var filters_init = __webpack_require__(7822);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/init.mjs + 8 modules
+var filters_init = __webpack_require__(3190);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment-browser/browserAll.mjs
 
 
@@ -8821,7 +8821,7 @@ var filters_init = __webpack_require__(7822);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _spritesheet_init_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4571);
 /* harmony import */ var _rendering_init_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6641);
-/* harmony import */ var _filters_init_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7822);
+/* harmony import */ var _filters_init_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3190);
 
 
 
@@ -9308,7 +9308,7 @@ class FilterEffect {
 
 /***/ },
 
-/***/ 7822
+/***/ 3190
 (__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -9354,40 +9354,8 @@ function getGlobalRenderableBounds(renderables, bounds) {
 
 //# sourceMappingURL=getRenderableBounds.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
-var TexturePool = __webpack_require__(7118);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/utils/getPo2TextureFromSource.mjs
-
-
-
-"use strict";
-const tempBounds = new Bounds/* Bounds */.c();
-function getPo2TextureFromSource(image, width, height, resolution, autoGenerateMipmaps = false) {
-  const bounds = tempBounds;
-  bounds.minX = 0;
-  bounds.minY = 0;
-  bounds.maxX = image.width / resolution | 0;
-  bounds.maxY = image.height / resolution | 0;
-  const texture = TexturePool/* TexturePool */.W.getOptimalTexture(
-    bounds.width,
-    bounds.height,
-    resolution,
-    false,
-    autoGenerateMipmaps
-  );
-  texture.source.uploadMethodId = "image";
-  texture.source.resource = image;
-  texture.source.alphaMode = "premultiply-alpha-on-upload";
-  texture.frame.width = width / resolution;
-  texture.frame.height = height / resolution;
-  texture.source.emit("update", texture.source);
-  texture.updateUvs();
-  return texture;
-}
-
-
-//# sourceMappingURL=getPo2TextureFromSource.mjs.map
-
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/utils/getPo2TextureFromSource.mjs
+var getPo2TextureFromSource = __webpack_require__(6609);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/filters/CanvasFilterSystem.mjs
 
 
@@ -9576,7 +9544,7 @@ class CanvasFilterSystem {
     );
     context.filter = "none";
     context.globalAlpha = 1;
-    return getPo2TextureFromSource(canvas, width, height, resolution);
+    return (0,getPo2TextureFromSource/* getPo2TextureFromSource */.M)(canvas, width, height, resolution);
   }
   /**
    * Calculate the filter area bounds.
@@ -9759,6 +9727,8 @@ var Geometry = __webpack_require__(4158);
 var UniformGroup = __webpack_require__(5658);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
 var Texture = __webpack_require__(4540);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
+var TexturePool = __webpack_require__(7118);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/types.mjs
 var types = __webpack_require__(8838);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
@@ -10412,7 +10382,7 @@ Extensions/* extensions */.XO.add(FilterPipe);
 
 /***/ },
 
-/***/ 9014
+/***/ 2133
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -10436,6 +10406,7 @@ __webpack_require__.d(__webpack_exports__, {
   tS: () => (/* reexport */ Polygon/* Polygon */.t),
   Y7R: () => (/* reexport */ RenderTexture/* RenderTexture */.Y),
   kxk: () => (/* reexport */ Sprite/* Sprite */.k),
+  EYj: () => (/* reexport */ Text),
   gPd: () => (/* reexport */ Texture/* Texture */.g),
   RvI: () => (/* reexport */ Ticker/* Ticker */.R),
   t9Q: () => (/* reexport */ TilingSprite),
@@ -10444,7 +10415,7 @@ __webpack_require__.d(__webpack_exports__, {
   AeT: () => (/* reexport */ path/* path */.A)
 });
 
-// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGDefsCollector, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSVGFillAttributes, buildSVGPath, buildSVGStrokeAttributes, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, graphicsContextToSvg, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
+// UNUSED EXPORTS: AbstractBitmapFont, AbstractBitmapTextPipe, AbstractRenderer, AbstractSplitText, AbstractText, AbstractTextSystem, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, ApplicationInitHook, AssetsClass, BLEND_TO_NPM, BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, Cache, CanvasBatchAdaptor, CanvasBitmapTextPipe, CanvasColorMaskPipe, CanvasContextSystem, CanvasFilterSystem, CanvasGraphicsAdaptor, CanvasGraphicsContextSystem, CanvasGraphicsPipe, CanvasLimitsSystem, CanvasNineSliceSpritePipe, CanvasObserver, CanvasParticleContainerAdaptor, CanvasParticleContainerPipe, CanvasPool, CanvasPoolClass, CanvasRenderTargetAdaptor, CanvasRenderTargetSystem, CanvasRenderer, CanvasRendererTextSystem, CanvasSource, CanvasStencilMaskPipe, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, CanvasTextureSystem, CanvasTilingSpritePipe, Circle, ColorBlend, ColorBurnBlend, ColorDodgeBlend, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, CubeTexture, CubeTextureSource, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DarkenBlend, DefaultBatcher, DefaultShader, DifferenceBlend, DisplacementFilter, DivideBlend, DynamicBitmapFont, Ellipse, EventBoundary, EventSystem, EventsTicker, ExclusionBlend, ExternalSource, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GCManagedHash, GCSystem, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GPUTextureGpuData, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometryGpuData, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferData, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HardLightBlend, HardMixBlend, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, LightenBlend, LinearBurnBlend, LinearDodgeBlend, LinearLightBlend, Loader, LuminosityBlend, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NEWLINES, NEWLINES_SET, NEWLINE_MATCH_REGEX, NEWLINE_SPLIT_REGEX, NOOP, NegationBlend, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, OverlayBlend, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PinLightBlend, PipelineSystem, PlaneGeometry, Point, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGDefsCollector, SVGParser, SaturationBlend, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SoftLightBlend, SplitBitmapText, SplitText, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SubtractBlend, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, TextStyle, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, TickerListener, TickerPlugin, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, VividLightBlend, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WebWorkerAdapter, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, alphaFrag, alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplateWgsl, blockDataMap, blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSVGFillAttributes, buildSVGPath, buildSVGStrokeAttributes, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canUseNewCanvasBlendModes, canvasTextSplit, canvasUtils, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collapseNewlines, collapseSpaces, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, colorMatrixFilterFrag, colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createGlUploadCubeTextureResource, createGpuUploadCubeTextureResource, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, defaultFilterVert, defaultValue, definedProps, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, displacementFrag, displacementVert, displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getCharacterGroups, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxMiterRatio, getMaxTexturesPerBatch, getOrientationOfPoints, getPlainText, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, graphicsContextToSvg, groupD8, hasCachedCanvasTexture, hasTagMarkup, hasTagStyles, hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isBreakAfterChar, isBreakingSpace, isCanvasFilterCapable, isCollapsibleSpace, isMobile, isNewline, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapCanvasBlendModesToPixi, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapViewDimensionToGlTarget, mapWebGLBlendModesToPixi, maskFrag, maskVert, maskWgsl, matrixPool, measureHtmlText, measureMixin, measureTaggedText, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, noiseFrag, noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, parseTaggedText, particleData, particlesFrag, particlesVert, particlesWgsl, passthroughFrag, passthroughWgsl, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, tokenize, tokenizeTaggedRuns, transformVertices, triangulateWithHoles, trimRight, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid, uniformParsers, unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, webworkerExt, wordWrap, wordWrapTaggedLines, wrapModeToGlAddress
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
 var Extensions = __webpack_require__(6258);
@@ -11265,7 +11236,7 @@ const loadBitmapFont = {
     }
     const [loadedTextures, { BitmapFont }] = await Promise.all([
       loader.load(textureUrls),
-      __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 2049))
+      __webpack_require__.e(/* import() */ 96).then(__webpack_require__.bind(__webpack_require__, 4672))
     ]);
     const textures = textureUrls.map((url) => loadedTextures[url.src]);
     const bitmapFont = new BitmapFont({
@@ -13433,8 +13404,8 @@ var RenderTexture = __webpack_require__(6956);
 var textureFrom = __webpack_require__(7574);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/Graphics.mjs + 4 modules
 var Graphics = __webpack_require__(5338);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1031);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
+var Sprite = __webpack_require__(289);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite-animated/AnimatedSprite.mjs
 
 
@@ -15397,6 +15368,1390 @@ let TilingSprite = _TilingSprite;
 
 
 //# sourceMappingURL=TilingSprite.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/TextureSource.mjs
+var TextureSource = __webpack_require__(9060);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
+var TextureStyle = __webpack_require__(7187);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/AbstractText.mjs
+
+
+
+
+"use strict";
+class AbstractText extends ViewContainer/* ViewContainer */.l {
+  constructor(options, styleClass) {
+    const { text, resolution, style, anchor, width, height, roundPixels, ...rest } = options;
+    super({
+      ...rest
+    });
+    /** @internal */
+    this.batched = true;
+    /** @internal */
+    this._resolution = null;
+    /** @internal */
+    this._autoResolution = true;
+    /** @internal */
+    this._didTextUpdate = true;
+    this._styleClass = styleClass;
+    this.text = text ?? "";
+    this.style = style;
+    this.resolution = resolution ?? null;
+    this.allowChildren = false;
+    this._anchor = new ObservablePoint/* ObservablePoint */.o(
+      {
+        _onUpdate: () => {
+          this.onViewUpdate();
+        }
+      }
+    );
+    if (anchor) this.anchor = anchor;
+    this.roundPixels = roundPixels ?? false;
+    if (width !== void 0) this.width = width;
+    if (height !== void 0) this.height = height;
+  }
+  /**
+   * The anchor point of the text that controls the origin point for positioning and rotation.
+   * Can be a number (same value for x/y) or a PointData object.
+   * - (0,0) is top-left
+   * - (0.5,0.5) is center
+   * - (1,1) is bottom-right
+   * ```ts
+   * // Set anchor to center
+   * const text = new Text({
+   *     text: 'Hello Pixi!',
+   *     anchor: 0.5 // Same as { x: 0.5, y: 0.5 }
+   * });
+   * // Set anchor to top-left
+   * const text2 = new Text({
+   *     text: 'Hello Pixi!',
+   *     anchor: { x: 0, y: 0 } // Top-left corner
+   * });
+   * // Set anchor to bottom-right
+   * const text3 = new Text({
+   *     text: 'Hello Pixi!',
+   *     anchor: { x: 1, y: 1 } // Bottom-right corner
+   * });
+   * ```
+   * @default { x: 0, y: 0 }
+   */
+  get anchor() {
+    return this._anchor;
+  }
+  set anchor(value) {
+    typeof value === "number" ? this._anchor.set(value) : this._anchor.copyFrom(value);
+  }
+  /**
+   * The text content to display. Use '\n' for line breaks.
+   * Accepts strings, numbers, or objects with toString() method.
+   * @example
+   * ```ts
+   * const text = new Text({
+   *     text: 'Hello Pixi!',
+   * });
+   * const multilineText = new Text({
+   *     text: 'Line 1\nLine 2\nLine 3',
+   * });
+   * const numberText = new Text({
+   *     text: 12345, // Will be converted to '12345'
+   * });
+   * const objectText = new Text({
+   *     text: { toString: () => 'Object Text' }, // Custom toString
+   * });
+   *
+   * // Update text dynamically
+   * text.text = 'Updated Text'; // Re-renders with new text
+   * text.text = 67890; // Updates to '67890'
+   * text.text = { toString: () => 'Dynamic Text' }; // Uses custom toString method
+   * // Clear text
+   * text.text = ''; // Clears the text
+   * ```
+   * @default ''
+   */
+  set text(value) {
+    value = value.toString();
+    if (this._text === value) return;
+    this._text = value;
+    this.onViewUpdate();
+  }
+  get text() {
+    return this._text;
+  }
+  /**
+   * The resolution/device pixel ratio for rendering.
+   * Higher values result in sharper text at the cost of performance.
+   * Set to null for auto-resolution based on device.
+   * @example
+   * ```ts
+   * const text = new Text({
+   *     text: 'Hello Pixi!',
+   *     resolution: 2 // High DPI for sharper text
+   * });
+   * const autoResText = new Text({
+   *     text: 'Auto Resolution',
+   *     resolution: null // Use device's pixel ratio
+   * });
+   * ```
+   * @default null
+   */
+  set resolution(value) {
+    this._autoResolution = value === null;
+    this._resolution = value;
+    this.onViewUpdate();
+  }
+  get resolution() {
+    return this._resolution;
+  }
+  get style() {
+    return this._style;
+  }
+  /**
+   * The style configuration for the text.
+   * Can be a TextStyle instance or a configuration object.
+   * Supports canvas text styles, HTML text styles, and bitmap text styles.
+   * @example
+   * ```ts
+   * const text = new Text({
+   *     text: 'Styled Text',
+   *     style: {
+   *         fontSize: 24,
+   *         fill: 0xff1010, // Red color
+   *         fontFamily: 'Arial',
+   *         align: 'center', // Center alignment
+   *         stroke: { color: '#4a1850', width: 5 }, // Purple stroke
+   *         dropShadow: {
+   *             color: '#000000', // Black shadow
+   *             blur: 4, // Shadow blur
+   *             distance: 6 // Shadow distance
+   *         }
+   *     }
+   * });
+   * const htmlText = new HTMLText({
+   *     text: 'HTML Styled Text',
+   *     style: {
+   *         fontSize: '20px',
+   *         fill: 'blue',
+   *         fontFamily: 'Verdana',
+   *     }
+   * });
+   * const bitmapText = new BitmapText({
+   *     text: 'Bitmap Styled Text',
+   *     style: {
+   *         fontName: 'Arial',
+   *         fontSize: 32,
+   *     }
+   * })
+   *
+   * // Update style dynamically
+   * text.style = {
+   *     fontSize: 30, // Change font size
+   *     fill: 0x00ff00, // Change color to green
+   *     align: 'right', // Change alignment to right
+   *     stroke: { color: '#000000', width: 2 }, // Add black stroke
+   * }
+   */
+  set style(style) {
+    style || (style = {});
+    this._style?.off("update", this.onViewUpdate, this);
+    if (style instanceof this._styleClass) {
+      this._style = style;
+    } else {
+      this._style = new this._styleClass(style);
+    }
+    this._style.on("update", this.onViewUpdate, this);
+    this.onViewUpdate();
+  }
+  /**
+   * The width of the sprite, setting this will actually modify the scale to achieve the value set.
+   * @example
+   * ```ts
+   * // Set width directly
+   * texture.width = 200;
+   * console.log(texture.scale.x); // Scale adjusted to match width
+   *
+   * // For better performance when setting both width and height
+   * texture.setSize(300, 400); // Avoids recalculating bounds twice
+   * ```
+   */
+  get width() {
+    return Math.abs(this.scale.x) * this.bounds.width;
+  }
+  set width(value) {
+    this._setWidth(value, this.bounds.width);
+  }
+  /**
+   * The height of the sprite, setting this will actually modify the scale to achieve the value set.
+   * @example
+   * ```ts
+   * // Set height directly
+   * texture.height = 200;
+   * console.log(texture.scale.y); // Scale adjusted to match height
+   *
+   * // For better performance when setting both width and height
+   * texture.setSize(300, 400); // Avoids recalculating bounds twice
+   * ```
+   */
+  get height() {
+    return Math.abs(this.scale.y) * this.bounds.height;
+  }
+  set height(value) {
+    this._setHeight(value, this.bounds.height);
+  }
+  /**
+   * Retrieves the size of the Text as a [Size]{@link Size} object based on the texture dimensions and scale.
+   * This is faster than getting width and height separately as it only calculates the bounds once.
+   * @example
+   * ```ts
+   * // Basic size retrieval
+   * const text = new Text({
+   *     text: 'Hello Pixi!',
+   *     style: { fontSize: 24 }
+   * });
+   * const size = text.getSize();
+   * console.log(`Size: ${size.width}x${size.height}`);
+   *
+   * // Reuse existing size object
+   * const reuseSize = { width: 0, height: 0 };
+   * text.getSize(reuseSize);
+   * ```
+   * @param out - Optional object to store the size in, to avoid allocating a new object
+   * @returns The size of the Sprite
+   * @see {@link Text#width} For getting just the width
+   * @see {@link Text#height} For getting just the height
+   * @see {@link Text#setSize} For setting both width and height
+   */
+  getSize(out) {
+    out || (out = {});
+    out.width = Math.abs(this.scale.x) * this.bounds.width;
+    out.height = Math.abs(this.scale.y) * this.bounds.height;
+    return out;
+  }
+  /**
+   * Sets the size of the Text to the specified width and height.
+   * This is faster than setting width and height separately as it only recalculates bounds once.
+   * @example
+   * ```ts
+   * // Basic size setting
+   * const text = new Text({
+   *    text: 'Hello Pixi!',
+   *    style: { fontSize: 24 }
+   * });
+   * text.setSize(100, 200); // Width: 100, Height: 200
+   *
+   * // Set uniform size
+   * text.setSize(100); // Sets both width and height to 100
+   *
+   * // Set size with object
+   * text.setSize({
+   *     width: 200,
+   *     height: 300
+   * });
+   * ```
+   * @param value - This can be either a number or a {@link Size} object
+   * @param height - The height to set. Defaults to the value of `width` if not provided
+   * @see {@link Text#width} For setting width only
+   * @see {@link Text#height} For setting height only
+   */
+  setSize(value, height) {
+    if (typeof value === "object") {
+      height = value.height ?? value.width;
+      value = value.width;
+    } else {
+      height ?? (height = value);
+    }
+    value !== void 0 && this._setWidth(value, this.bounds.width);
+    height !== void 0 && this._setHeight(height, this.bounds.height);
+  }
+  /**
+   * Checks if the object contains the given point in local coordinates.
+   * Uses the text's bounds for hit testing.
+   * @example
+   * ```ts
+   * // Basic point check
+   * const localPoint = { x: 50, y: 25 };
+   * const contains = text.containsPoint(localPoint);
+   * console.log('Point is inside:', contains);
+   * ```
+   * @param point - The point to check in local coordinates
+   * @returns True if the point is within the text's bounds
+   * @see {@link Container#toLocal} For converting global coordinates to local
+   */
+  containsPoint(point) {
+    const width = this.bounds.width;
+    const height = this.bounds.height;
+    const x1 = -width * this.anchor.x;
+    let y1 = 0;
+    if (point.x >= x1 && point.x <= x1 + width) {
+      y1 = -height * this.anchor.y;
+      if (point.y >= y1 && point.y <= y1 + height) return true;
+    }
+    return false;
+  }
+  /** @internal */
+  onViewUpdate() {
+    if (!this.didViewUpdate) this._didTextUpdate = true;
+    super.onViewUpdate();
+  }
+  /**
+   * Destroys this text renderable and optionally its style texture.
+   * @param options - Options parameter. A boolean will act as if all options
+   *  have been set to that value
+   * @example
+   * // Destroys the text and its style
+   * text.destroy({ style: true, texture: true, textureSource: true });
+   * text.destroy(true);
+   * text.destroy() // Destroys the text, but not its style
+   */
+  destroy(options = false) {
+    super.destroy(options);
+    this.owner = null;
+    this._bounds = null;
+    this._anchor = null;
+    if (typeof options === "boolean" ? options : options?.style) {
+      this._style.destroy(options);
+    }
+    this._style = null;
+    this._text = null;
+  }
+  /**
+   * Returns a unique key for this instance.
+   * This key is used for caching.
+   * @returns {string} Unique key for the instance
+   */
+  get styleKey() {
+    return `${this._text}:${this._style.styleKey}:${this._resolution}`;
+  }
+}
+function ensureTextOptions(args, name) {
+  let options = args[0] ?? {};
+  if (typeof options === "string" || args[1]) {
+    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, `use new ${name}({ text: "hi!", style }) instead`);
+    options = {
+      text: options,
+      style: args[1]
+    };
+  }
+  return options;
+}
+
+
+//# sourceMappingURL=AbstractText.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/shapes/Rectangle.mjs
+var Rectangle = __webpack_require__(1111);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
+var CanvasPool = __webpack_require__(1281);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/misc/pow2.mjs
+var pow2 = __webpack_require__(806);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/canvas/getCanvasBoundingBox.mjs
+
+
+
+
+"use strict";
+let _internalCanvas = null;
+let _internalContext = null;
+function ensureInternalCanvas(width, height) {
+  if (!_internalCanvas) {
+    _internalCanvas = adapter/* DOMAdapter */.e.get().createCanvas(256, 128);
+    _internalContext = _internalCanvas.getContext("2d", { willReadFrequently: true });
+    _internalContext.globalCompositeOperation = "copy";
+    _internalContext.globalAlpha = 1;
+  }
+  if (_internalCanvas.width < width || _internalCanvas.height < height) {
+    _internalCanvas.width = (0,pow2/* nextPow2 */.U5)(width);
+    _internalCanvas.height = (0,pow2/* nextPow2 */.U5)(height);
+  }
+}
+function checkRow(data, width, y) {
+  for (let x = 0, index = 4 * y * width; x < width; ++x, index += 4) {
+    if (data[index + 3] !== 0) return false;
+  }
+  return true;
+}
+function checkColumn(data, width, x, top, bottom) {
+  const stride = 4 * width;
+  for (let y = top, index = top * stride + 4 * x; y <= bottom; ++y, index += stride) {
+    if (data[index + 3] !== 0) return false;
+  }
+  return true;
+}
+function getCanvasBoundingBox(...args) {
+  let options = args[0];
+  if (!options.canvas) {
+    options = { canvas: args[0], resolution: args[1] };
+  }
+  const { canvas } = options;
+  const resolution = Math.min(options.resolution ?? 1, 1);
+  const width = options.width ?? canvas.width;
+  const height = options.height ?? canvas.height;
+  let output = options.output;
+  ensureInternalCanvas(width, height);
+  if (!_internalContext) {
+    throw new TypeError("Failed to get canvas 2D context");
+  }
+  _internalContext.drawImage(
+    canvas,
+    0,
+    0,
+    width,
+    height,
+    0,
+    0,
+    width * resolution,
+    height * resolution
+  );
+  const imageData = _internalContext.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  let left = 0;
+  let top = 0;
+  let right = width - 1;
+  let bottom = height - 1;
+  while (top < height && checkRow(data, width, top)) ++top;
+  if (top === height) return Rectangle/* Rectangle */.M.EMPTY;
+  while (checkRow(data, width, bottom)) --bottom;
+  while (checkColumn(data, width, left, top, bottom)) ++left;
+  while (checkColumn(data, width, right, top, bottom)) --right;
+  ++right;
+  ++bottom;
+  _internalContext.globalCompositeOperation = "source-over";
+  _internalContext.strokeRect(left, top, right - left, bottom - top);
+  _internalContext.globalCompositeOperation = "copy";
+  output ?? (output = new Rectangle/* Rectangle */.M());
+  output.set(left / resolution, top / resolution, (right - left) / resolution, (bottom - top) / resolution);
+  return output;
+}
+
+
+//# sourceMappingURL=getCanvasBoundingBox.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs + 3 modules
+var CanvasTextMetrics = __webpack_require__(5346);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/fontStringFromTextStyle.mjs
+var fontStringFromTextStyle = __webpack_require__(1831);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
+var getCanvasFillStyle = __webpack_require__(2039);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextGenerator.mjs
+
+
+
+
+
+
+
+
+"use strict";
+const tempRect = new Rectangle/* Rectangle */.M();
+function countSpaces(text) {
+  let count = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 32) count++;
+  }
+  return count;
+}
+class CanvasTextGeneratorClass {
+  /**
+   * Creates a canvas with the specified text rendered to it.
+   *
+   * Generates a canvas of appropriate size, renders the text with the provided style,
+   * and returns both the canvas/context and a Rectangle representing the text bounds.
+   *
+   * When trim is enabled in the style, the frame will represent the bounds of the
+   * non-transparent pixels, which can be smaller than the full canvas.
+   * @param options - The options for generating the text canvas
+   * @param options.text - The text to render
+   * @param options.style - The style to apply to the text
+   * @param options.resolution - The resolution of the canvas (defaults to 1)
+   * @param options.padding
+   * @returns An object containing the canvas/context and the frame (bounds) of the text
+   */
+  getCanvasAndContext(options) {
+    const { text, style, resolution = 1 } = options;
+    const padding = style._getFinalPadding();
+    const measured = CanvasTextMetrics/* CanvasTextMetrics */.P.measureText(text || " ", style);
+    const width = Math.ceil(Math.ceil(Math.max(1, measured.width) + padding * 2) * resolution);
+    const height = Math.ceil(Math.ceil(Math.max(1, measured.height) + padding * 2) * resolution);
+    const canvasAndContext = CanvasPool/* CanvasPool */.N.getOptimalCanvasAndContext(width, height);
+    this._renderTextToCanvas(style, padding, resolution, canvasAndContext, measured);
+    const frame = style.trim ? getCanvasBoundingBox({ canvas: canvasAndContext.canvas, width, height, resolution: 1, output: tempRect }) : tempRect.set(0, 0, width, height);
+    return {
+      canvasAndContext,
+      frame
+    };
+  }
+  /**
+   * Returns a canvas and context to the pool.
+   *
+   * This should be called when you're done with the canvas to allow reuse
+   * and prevent memory leaks.
+   * @param canvasAndContext - The canvas and context to return to the pool
+   */
+  returnCanvasAndContext(canvasAndContext) {
+    CanvasPool/* CanvasPool */.N.returnCanvasAndContext(canvasAndContext);
+  }
+  /**
+   * Renders text to its canvas, and updates its texture.
+   * @param style - The style of the text
+   * @param padding - The padding of the text
+   * @param resolution - The resolution of the text
+   * @param canvasAndContext - The canvas and context to render the text to
+   * @param measured - Pre-measured text metrics to avoid duplicate measurement
+   */
+  _renderTextToCanvas(style, padding, resolution, canvasAndContext, measured) {
+    if (measured.runsByLine && measured.runsByLine.length > 0) {
+      this._renderTaggedTextToCanvas(measured, style, padding, resolution, canvasAndContext);
+      return;
+    }
+    const { canvas, context } = canvasAndContext;
+    const font = (0,fontStringFromTextStyle/* fontStringFromTextStyle */.Z)(style);
+    const lines = measured.lines;
+    const lineHeight = measured.lineHeight;
+    const lineWidths = measured.lineWidths;
+    const maxLineWidth = measured.maxLineWidth;
+    const fontProperties = measured.fontProperties;
+    const height = canvas.height;
+    context.resetTransform();
+    context.scale(resolution, resolution);
+    context.textBaseline = style.textBaseline;
+    if (style._stroke?.width) {
+      const strokeStyle = style._stroke;
+      context.lineWidth = strokeStyle.width;
+      context.miterLimit = strokeStyle.miterLimit;
+      context.lineJoin = strokeStyle.join;
+      context.lineCap = strokeStyle.cap;
+    }
+    context.font = font;
+    let linePositionX;
+    let linePositionY;
+    const passesCount = style.dropShadow ? 2 : 1;
+    const strokeWidth = style._stroke?.width ?? 0;
+    const halfStroke = strokeWidth / 2;
+    let linePositionYShift = (lineHeight - fontProperties.fontSize) / 2;
+    if (lineHeight - fontProperties.fontSize < 0) {
+      linePositionYShift = 0;
+    }
+    for (let i = 0; i < passesCount; ++i) {
+      const isShadowPass = style.dropShadow && i === 0;
+      const dsOffsetText = isShadowPass ? Math.ceil(Math.max(1, height) + padding * 2) : 0;
+      const dsOffsetShadow = dsOffsetText * resolution;
+      if (isShadowPass) {
+        this._setupDropShadow(context, style, resolution, dsOffsetShadow);
+      } else {
+        const gradientBounds = style._gradientBounds;
+        const gradientOffset = style._gradientOffset;
+        if (gradientBounds) {
+          const gradientMetrics = {
+            width: gradientBounds.width,
+            height: gradientBounds.height,
+            lineHeight: gradientBounds.height,
+            lines: measured.lines
+          };
+          this._setFillAndStrokeStyles(
+            context,
+            style,
+            gradientMetrics,
+            padding,
+            halfStroke,
+            gradientOffset?.x ?? 0,
+            gradientOffset?.y ?? 0
+          );
+        } else if (gradientOffset) {
+          this._setFillAndStrokeStyles(
+            context,
+            style,
+            measured,
+            padding,
+            halfStroke,
+            gradientOffset.x,
+            gradientOffset.y
+          );
+        } else {
+          this._setFillAndStrokeStyles(context, style, measured, padding, halfStroke);
+        }
+        context.shadowColor = "rgba(0,0,0,0)";
+      }
+      for (let j = 0; j < lines.length; j++) {
+        linePositionX = halfStroke;
+        linePositionY = halfStroke + j * lineHeight + fontProperties.ascent + linePositionYShift;
+        linePositionX += this._getAlignmentOffset(lineWidths[j], maxLineWidth, style.align);
+        let wordSpacing = 0;
+        if (style.align === "justify" && style.wordWrap && j < lines.length - 1) {
+          const spaces = countSpaces(lines[j]);
+          if (spaces > 0) {
+            wordSpacing = (maxLineWidth - lineWidths[j]) / spaces;
+          }
+        }
+        if (style._stroke?.width) {
+          this._drawLetterSpacing(
+            lines[j],
+            style,
+            canvasAndContext,
+            linePositionX + padding,
+            linePositionY + padding - dsOffsetText,
+            true,
+            wordSpacing
+          );
+        }
+        if (style._fill !== void 0) {
+          this._drawLetterSpacing(
+            lines[j],
+            style,
+            canvasAndContext,
+            linePositionX + padding,
+            linePositionY + padding - dsOffsetText,
+            false,
+            wordSpacing
+          );
+        }
+      }
+    }
+  }
+  /**
+   * Renders tagged text (with per-run styles) to canvas.
+   * @param measured - The measured text metrics containing runsByLine
+   * @param style - The base text style
+   * @param padding - The padding of the text
+   * @param resolution - The resolution of the text
+   * @param canvasAndContext - The canvas and context to render to
+   */
+  _renderTaggedTextToCanvas(measured, style, padding, resolution, canvasAndContext) {
+    const { canvas, context } = canvasAndContext;
+    const { runsByLine, lineWidths, maxLineWidth, lineAscents, lineHeights, hasDropShadow } = measured;
+    const height = canvas.height;
+    context.resetTransform();
+    context.scale(resolution, resolution);
+    context.textBaseline = style.textBaseline;
+    const passesCount = hasDropShadow ? 2 : 1;
+    let maxStrokeWidth = style._stroke?.width ?? 0;
+    for (const lineRuns of runsByLine) {
+      for (const run of lineRuns) {
+        const w = run.style._stroke?.width ?? 0;
+        if (w > maxStrokeWidth) maxStrokeWidth = w;
+      }
+    }
+    const halfStroke = maxStrokeWidth / 2;
+    const runDataByLine = [];
+    for (let lineIndex = 0; lineIndex < runsByLine.length; lineIndex++) {
+      const lineRuns = runsByLine[lineIndex];
+      const runData = [];
+      for (const run of lineRuns) {
+        const font = (0,fontStringFromTextStyle/* fontStringFromTextStyle */.Z)(run.style);
+        context.font = font;
+        runData.push({
+          width: CanvasTextMetrics/* CanvasTextMetrics */.P._measureText(run.text, run.style.letterSpacing, context),
+          font
+        });
+      }
+      runDataByLine.push(runData);
+    }
+    for (let pass = 0; pass < passesCount; ++pass) {
+      const isShadowPass = hasDropShadow && pass === 0;
+      const dsOffsetText = isShadowPass ? Math.ceil(Math.max(1, height) + padding * 2) : 0;
+      const dsOffsetShadow = dsOffsetText * resolution;
+      if (!isShadowPass) {
+        context.shadowColor = "rgba(0,0,0,0)";
+      }
+      let currentY = halfStroke;
+      for (let lineIndex = 0; lineIndex < runsByLine.length; lineIndex++) {
+        const lineRuns = runsByLine[lineIndex];
+        const lineWidth = lineWidths[lineIndex];
+        const lineAscent = lineAscents[lineIndex];
+        const currentLineHeight = lineHeights[lineIndex];
+        const lineRunData = runDataByLine[lineIndex];
+        let linePositionX = halfStroke;
+        linePositionX += this._getAlignmentOffset(lineWidth, maxLineWidth, style.align);
+        let wordSpacing = 0;
+        if (style.align === "justify" && style.wordWrap && lineIndex < runsByLine.length - 1) {
+          let totalSpaces = 0;
+          for (const run of lineRuns) {
+            totalSpaces += countSpaces(run.text);
+          }
+          if (totalSpaces > 0) {
+            wordSpacing = (maxLineWidth - lineWidth) / totalSpaces;
+          }
+        }
+        const linePositionY = currentY + lineAscent;
+        let runX = linePositionX + padding;
+        for (let runIndex = 0; runIndex < lineRuns.length; runIndex++) {
+          const run = lineRuns[runIndex];
+          const { width: runWidth, font: runFont } = lineRunData[runIndex];
+          context.font = runFont;
+          context.textBaseline = run.style.textBaseline;
+          if (run.style._stroke?.width) {
+            const runStroke = run.style._stroke;
+            context.lineWidth = runStroke.width;
+            context.miterLimit = runStroke.miterLimit;
+            context.lineJoin = runStroke.join;
+            context.lineCap = runStroke.cap;
+            if (isShadowPass) {
+              if (run.style.dropShadow) {
+                this._setupDropShadow(
+                  context,
+                  run.style,
+                  resolution,
+                  dsOffsetShadow
+                );
+              } else {
+                const spacesSkipped = countSpaces(run.text);
+                runX += runWidth + spacesSkipped * wordSpacing;
+                continue;
+              }
+            } else {
+              const runFontProps = CanvasTextMetrics/* CanvasTextMetrics */.P.measureFont(runFont);
+              const runHeight = run.style.lineHeight || runFontProps.fontSize;
+              const runMetrics = {
+                width: runWidth,
+                height: runHeight,
+                lineHeight: runHeight,
+                lines: [run.text]
+              };
+              context.strokeStyle = (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(
+                runStroke,
+                context,
+                runMetrics,
+                padding * 2,
+                runX - padding,
+                currentY
+              );
+            }
+            this._drawLetterSpacing(
+              run.text,
+              run.style,
+              canvasAndContext,
+              runX,
+              linePositionY + padding - dsOffsetText,
+              true,
+              wordSpacing
+            );
+          }
+          const spacesInRun = countSpaces(run.text);
+          runX += runWidth + spacesInRun * wordSpacing;
+        }
+        runX = linePositionX + padding;
+        for (let runIndex = 0; runIndex < lineRuns.length; runIndex++) {
+          const run = lineRuns[runIndex];
+          const { width: runWidth, font: runFont } = lineRunData[runIndex];
+          context.font = runFont;
+          context.textBaseline = run.style.textBaseline;
+          if (run.style._fill !== void 0) {
+            if (isShadowPass) {
+              if (run.style.dropShadow) {
+                this._setupDropShadow(
+                  context,
+                  run.style,
+                  resolution,
+                  dsOffsetShadow
+                );
+              } else {
+                const spacesSkipped = countSpaces(run.text);
+                runX += runWidth + spacesSkipped * wordSpacing;
+                continue;
+              }
+            } else {
+              const runFontProps = CanvasTextMetrics/* CanvasTextMetrics */.P.measureFont(runFont);
+              const runHeight = run.style.lineHeight || runFontProps.fontSize;
+              const runMetrics = {
+                width: runWidth,
+                height: runHeight,
+                lineHeight: runHeight,
+                lines: [run.text]
+              };
+              context.fillStyle = (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(
+                run.style._fill,
+                context,
+                runMetrics,
+                padding * 2,
+                runX - padding,
+                currentY
+              );
+            }
+            this._drawLetterSpacing(
+              run.text,
+              run.style,
+              canvasAndContext,
+              runX,
+              linePositionY + padding - dsOffsetText,
+              false,
+              wordSpacing
+            );
+          }
+          const spacesInFillRun = countSpaces(run.text);
+          runX += runWidth + spacesInFillRun * wordSpacing;
+        }
+        currentY += currentLineHeight;
+      }
+    }
+  }
+  /**
+   * Sets fill and stroke styles on the canvas context for text rendering.
+   * @param context - The canvas context
+   * @param style - The text style
+   * @param metrics - The text metrics for gradient calculation
+   * @param padding - The padding value
+   * @param halfStroke - Half the stroke width
+   * @param offsetX - X offset for gradient positioning
+   * @param offsetY - Y offset for gradient positioning
+   */
+  _setFillAndStrokeStyles(context, style, metrics, padding, halfStroke, offsetX = 0, offsetY = 0) {
+    context.fillStyle = style._fill ? (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(style._fill, context, metrics, padding * 2, offsetX, offsetY) : null;
+    if (style._stroke?.width) {
+      const strokePadding = halfStroke + padding * 2;
+      context.strokeStyle = (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(
+        style._stroke,
+        context,
+        metrics,
+        strokePadding,
+        offsetX,
+        offsetY
+      );
+    }
+  }
+  /**
+   * Sets up the canvas context for drop shadow rendering.
+   * @param context - The canvas context
+   * @param style - The text style containing drop shadow options
+   * @param resolution - The resolution multiplier
+   * @param dsOffsetShadow - The shadow Y offset
+   */
+  _setupDropShadow(context, style, resolution, dsOffsetShadow) {
+    context.fillStyle = "black";
+    context.strokeStyle = "black";
+    const shadowOptions = style.dropShadow;
+    const dropShadowColor = shadowOptions.color;
+    const dropShadowAlpha = shadowOptions.alpha;
+    context.shadowColor = Color/* Color */.Q.shared.setValue(dropShadowColor).setAlpha(dropShadowAlpha).toRgbaString();
+    const dropShadowBlur = shadowOptions.blur * resolution;
+    const dropShadowDistance = shadowOptions.distance * resolution;
+    context.shadowBlur = dropShadowBlur;
+    context.shadowOffsetX = Math.cos(shadowOptions.angle) * dropShadowDistance;
+    context.shadowOffsetY = Math.sin(shadowOptions.angle) * dropShadowDistance + dsOffsetShadow;
+  }
+  /**
+   * Calculates the X offset for text alignment.
+   * @param lineWidth - The width of the current line
+   * @param alignWidth - The width to align against
+   * @param align - The text alignment
+   * @returns The X offset for this line
+   */
+  _getAlignmentOffset(lineWidth, alignWidth, align) {
+    if (align === "right") {
+      return alignWidth - lineWidth;
+    } else if (align === "center") {
+      return (alignWidth - lineWidth) / 2;
+    }
+    return 0;
+  }
+  /**
+   * Render the text with letter-spacing.
+   *
+   * This method handles rendering text with the correct letter spacing, using either:
+   * 1. Native letter spacing if supported by the browser
+   * 2. Manual letter spacing calculation if not natively supported
+   *
+   * For manual letter spacing, it calculates the position of each character
+   * based on its width and the desired spacing.
+   * @param text - The text to draw
+   * @param style - The text style to apply
+   * @param canvasAndContext - The canvas and context to draw to
+   * @param x - Horizontal position to draw the text
+   * @param y - Vertical position to draw the text
+   * @param isStroke - Whether to render the stroke (true) or fill (false)
+   * @param wordSpacing - Extra spacing to add between words (for justify alignment)
+   * @private
+   */
+  _drawLetterSpacing(text, style, canvasAndContext, x, y, isStroke = false, wordSpacing = 0) {
+    const { context } = canvasAndContext;
+    const letterSpacing = style.letterSpacing;
+    let useExperimentalLetterSpacing = false;
+    if (CanvasTextMetrics/* CanvasTextMetrics */.P.experimentalLetterSpacingSupported) {
+      if (CanvasTextMetrics/* CanvasTextMetrics */.P.experimentalLetterSpacing) {
+        context.letterSpacing = `${letterSpacing}px`;
+        context.textLetterSpacing = `${letterSpacing}px`;
+        useExperimentalLetterSpacing = true;
+      } else {
+        context.letterSpacing = "0px";
+        context.textLetterSpacing = "0px";
+      }
+    }
+    if ((letterSpacing === 0 || useExperimentalLetterSpacing) && wordSpacing === 0) {
+      if (isStroke) {
+        context.strokeText(text, x, y);
+      } else {
+        context.fillText(text, x, y);
+      }
+      return;
+    }
+    if (wordSpacing !== 0 && (letterSpacing === 0 || useExperimentalLetterSpacing)) {
+      const words = text.split(" ");
+      let currentPosition2 = x;
+      const spaceWidth = context.measureText(" ").width;
+      for (let i = 0; i < words.length; i++) {
+        if (isStroke) {
+          context.strokeText(words[i], currentPosition2, y);
+        } else {
+          context.fillText(words[i], currentPosition2, y);
+        }
+        currentPosition2 += context.measureText(words[i]).width + spaceWidth + wordSpacing;
+      }
+      return;
+    }
+    let currentPosition = x;
+    const stringArray = CanvasTextMetrics/* CanvasTextMetrics */.P.graphemeSegmenter(text);
+    let previousWidth = context.measureText(text).width;
+    let currentWidth = 0;
+    for (let i = 0; i < stringArray.length; ++i) {
+      const currentChar = stringArray[i];
+      if (isStroke) {
+        context.strokeText(currentChar, currentPosition, y);
+      } else {
+        context.fillText(currentChar, currentPosition, y);
+      }
+      let textStr = "";
+      for (let j = i + 1; j < stringArray.length; ++j) {
+        textStr += stringArray[j];
+      }
+      currentWidth = context.measureText(textStr).width;
+      currentPosition += previousWidth - currentWidth + letterSpacing;
+      if (currentChar === " ") currentPosition += wordSpacing;
+      previousWidth = currentWidth;
+    }
+  }
+}
+const CanvasTextGenerator = new CanvasTextGeneratorClass();
+
+
+//# sourceMappingURL=CanvasTextGenerator.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/TextStyle.mjs
+var TextStyle = __webpack_require__(7632);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/updateQuadBounds.mjs
+var updateQuadBounds = __webpack_require__(5385);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/utils/updateTextBounds.mjs
+
+
+"use strict";
+function updateTextBounds(batchableSprite, text) {
+  const { texture, bounds } = batchableSprite;
+  const padding = text._style._getFinalPadding();
+  (0,updateQuadBounds/* updateQuadBounds */.y)(bounds, text._anchor, texture);
+  const paddingOffset = text._anchor._x * padding * 2;
+  const paddingOffsetY = text._anchor._y * padding * 2;
+  bounds.minX -= padding - paddingOffset;
+  bounds.minY -= padding - paddingOffsetY;
+  bounds.maxX -= padding - paddingOffset;
+  bounds.maxY -= padding - paddingOffsetY;
+}
+
+
+//# sourceMappingURL=updateTextBounds.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/BatchableSprite.mjs
+var BatchableSprite = __webpack_require__(5185);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/BatchableText.mjs
+
+
+"use strict";
+class BatchableText extends BatchableSprite/* BatchableSprite */.K {
+}
+
+
+//# sourceMappingURL=BatchableText.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextPipe.mjs
+
+
+
+
+
+"use strict";
+class CanvasTextPipe {
+  constructor(renderer) {
+    this._renderer = renderer;
+    renderer.runners.resolutionChange.add(this);
+    this._managedTexts = new GCManagedHash/* GCManagedHash */.s({
+      renderer,
+      type: "renderable",
+      onUnload: this.onTextUnload.bind(this),
+      name: "canvasText"
+    });
+  }
+  resolutionChange() {
+    for (const key in this._managedTexts.items) {
+      const text = this._managedTexts.items[key];
+      if (text?._autoResolution) text.onViewUpdate();
+    }
+  }
+  validateRenderable(text) {
+    const gpuText = this._getGpuText(text);
+    const newKey = text.styleKey;
+    if (gpuText.currentKey !== newKey) return true;
+    return text._didTextUpdate;
+  }
+  addRenderable(text, instructionSet) {
+    const batchableText = this._getGpuText(text);
+    if (text._didTextUpdate) {
+      const resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
+      if (batchableText.currentKey !== text.styleKey || text._resolution !== resolution) {
+        this._updateGpuText(text);
+      }
+      text._didTextUpdate = false;
+      updateTextBounds(batchableText, text);
+    }
+    this._renderer.renderPipes.batch.addToBatch(batchableText, instructionSet);
+  }
+  updateRenderable(text) {
+    const batchableText = this._getGpuText(text);
+    batchableText._batcher.updateElement(batchableText);
+  }
+  _updateGpuText(text) {
+    const batchableText = this._getGpuText(text);
+    if (batchableText.texture) {
+      this._renderer.canvasText.decreaseReferenceCount(batchableText.currentKey);
+    }
+    text._resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
+    batchableText.texture = this._renderer.canvasText.getManagedTexture(text);
+    batchableText.currentKey = text.styleKey;
+  }
+  _getGpuText(text) {
+    return text._gpuData[this._renderer.uid] || this.initGpuText(text);
+  }
+  initGpuText(text) {
+    const batchableText = new BatchableText();
+    batchableText.currentKey = "--";
+    batchableText.renderable = text;
+    batchableText.transform = text.groupTransform;
+    batchableText.bounds = { minX: 0, maxX: 1, minY: 0, maxY: 0 };
+    batchableText.roundPixels = this._renderer._roundPixels | text._roundPixels;
+    text._gpuData[this._renderer.uid] = batchableText;
+    this._managedTexts.add(text);
+    return batchableText;
+  }
+  onTextUnload(text) {
+    const gpuData = text._gpuData[this._renderer.uid];
+    if (!gpuData) return;
+    const { canvasText } = this._renderer;
+    const refCount = canvasText.getReferenceCount(gpuData.currentKey);
+    if (refCount > 0) {
+      canvasText.decreaseReferenceCount(gpuData.currentKey);
+    } else if (gpuData.texture) {
+      canvasText.returnTexture(gpuData.texture);
+    }
+  }
+  destroy() {
+    this._managedTexts.destroy();
+    this._renderer = null;
+  }
+}
+/** @ignore */
+CanvasTextPipe.extension = {
+  type: [
+    Extensions/* ExtensionType */.Ag.WebGLPipes,
+    Extensions/* ExtensionType */.Ag.WebGPUPipes,
+    Extensions/* ExtensionType */.Ag.CanvasPipes
+  ],
+  name: "text"
+};
+
+
+//# sourceMappingURL=CanvasTextPipe.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TexturePool.mjs
+var TexturePool = __webpack_require__(7118);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/utils/getPo2TextureFromSource.mjs
+var getPo2TextureFromSource = __webpack_require__(6609);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/shared/AbstractTextSystem.mjs
+
+
+
+
+
+
+
+"use strict";
+class AbstractTextSystem {
+  constructor(renderer, retainCanvasContext) {
+    this._activeTextures = {};
+    this._renderer = renderer;
+    this._retainCanvasContext = retainCanvasContext;
+  }
+  getTexture(options, _resolution, _style, _textKey) {
+    if (typeof options === "string") {
+      (0,deprecation/* deprecation */.t6)("8.0.0", "CanvasTextSystem.getTexture: Use object TextOptions instead of separate arguments");
+      options = {
+        text: options,
+        style: _style,
+        resolution: _resolution
+      };
+    }
+    if (!(options.style instanceof TextStyle/* TextStyle */.x)) {
+      options.style = new TextStyle/* TextStyle */.x(options.style);
+    }
+    if (!(options.textureStyle instanceof TextureStyle/* TextureStyle */.n)) {
+      options.textureStyle = new TextureStyle/* TextureStyle */.n(options.textureStyle);
+    }
+    if (typeof options.text !== "string") {
+      options.text = options.text.toString();
+    }
+    const { text, style, textureStyle, autoGenerateMipmaps } = options;
+    const resolution = options.resolution ?? this._renderer.resolution;
+    const { frame, canvasAndContext } = CanvasTextGenerator.getCanvasAndContext({
+      text,
+      style,
+      resolution
+    });
+    const texture = (0,getPo2TextureFromSource/* getPo2TextureFromSource */.M)(
+      canvasAndContext.canvas,
+      frame.width,
+      frame.height,
+      resolution,
+      autoGenerateMipmaps
+    );
+    if (textureStyle) texture.source.style = textureStyle;
+    if (style.trim) {
+      frame.pad(style.padding);
+      texture.frame.copyFrom(frame);
+      texture.frame.scale(1 / resolution);
+      texture.updateUvs();
+    }
+    if (style.filters) {
+      const filteredTexture = this._applyFilters(texture, style.filters);
+      this.returnTexture(texture);
+      CanvasTextGenerator.returnCanvasAndContext(canvasAndContext);
+      return filteredTexture;
+    }
+    this._renderer.texture.initSource(texture._source);
+    if (!this._retainCanvasContext) {
+      CanvasTextGenerator.returnCanvasAndContext(canvasAndContext);
+    }
+    return texture;
+  }
+  /**
+   * Returns a texture that was created wit the above `getTexture` function.
+   * Handy if you are done with a texture and want to return it to the pool.
+   * @param texture - The texture to be returned.
+   */
+  returnTexture(texture) {
+    const source = texture.source;
+    const resource = source.resource;
+    if (this._retainCanvasContext && resource?.getContext) {
+      const context = resource.getContext("2d");
+      if (context) {
+        CanvasTextGenerator.returnCanvasAndContext({ canvas: resource, context });
+      }
+    }
+    source.resource = null;
+    source.uploadMethodId = "unknown";
+    source.alphaMode = "no-premultiply-alpha";
+    TexturePool/* TexturePool */.W.returnTexture(texture, true);
+  }
+  /**
+   * Renders text to its canvas, and updates its texture.
+   * @deprecated since 8.10.0
+   */
+  renderTextToCanvas() {
+    (0,deprecation/* deprecation */.t6)(
+      "8.10.0",
+      "CanvasTextSystem.renderTextToCanvas: no longer supported, use CanvasTextSystem.getTexture instead"
+    );
+  }
+  /**
+   * Gets or creates a managed texture for a Text object. This method handles texture reuse and reference counting.
+   * @param text - The Text object that needs a texture
+   * @returns A Texture instance that represents the rendered text
+   * @remarks
+   * This method performs the following:
+   * 1. Sets the appropriate resolution based on auto-resolution settings
+   * 2. Checks if a texture already exists for the text's style
+   * 3. Creates a new texture if needed or returns an existing one
+   * 4. Manages reference counting for texture reuse
+   */
+  getManagedTexture(text) {
+    text._resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
+    const textKey = text.styleKey;
+    if (this._activeTextures[textKey]) {
+      this._increaseReferenceCount(textKey);
+      return this._activeTextures[textKey].texture;
+    }
+    const texture = this.getTexture({
+      text: text.text,
+      style: text.style,
+      resolution: text._resolution,
+      textureStyle: text.textureStyle,
+      autoGenerateMipmaps: text.autoGenerateMipmaps
+    });
+    this._activeTextures[textKey] = {
+      texture,
+      usageCount: 1
+    };
+    return texture;
+  }
+  /**
+   * Decreases the reference count for a texture associated with a text key.
+   * When the reference count reaches zero, the texture is returned to the pool.
+   * @param textKey - The unique key identifying the text style configuration
+   * @remarks
+   * This method is crucial for memory management, ensuring textures are properly
+   * cleaned up when they are no longer needed by any Text instances.
+   */
+  decreaseReferenceCount(textKey) {
+    const activeTexture = this._activeTextures[textKey];
+    if (!activeTexture) return;
+    activeTexture.usageCount--;
+    if (activeTexture.usageCount === 0) {
+      this.returnTexture(activeTexture.texture);
+      this._activeTextures[textKey] = null;
+    }
+  }
+  /**
+   * Gets the current reference count for a texture associated with a text key.
+   * @param textKey - The unique key identifying the text style configuration
+   * @returns The number of Text instances currently using this texture
+   */
+  getReferenceCount(textKey) {
+    return this._activeTextures[textKey]?.usageCount ?? 0;
+  }
+  _increaseReferenceCount(textKey) {
+    this._activeTextures[textKey].usageCount++;
+  }
+  /**
+   * Applies the specified filters to the given texture.
+   *
+   * This method takes a texture and a list of filters, applies the filters to the texture,
+   * and returns the resulting texture. It also ensures that the alpha mode of the resulting
+   * texture is set to 'premultiplied-alpha'.
+   * @param {Texture} texture - The texture to which the filters will be applied.
+   * @param {Filter[]} filters - The filters to apply to the texture.
+   * @returns {Texture} The resulting texture after all filters have been applied.
+   */
+  _applyFilters(texture, filters) {
+    const currentRenderTarget = this._renderer.renderTarget.renderTarget;
+    const resultTexture = this._renderer.filter.generateFilteredTexture({
+      texture,
+      filters
+    });
+    this._renderer.renderTarget.bind(currentRenderTarget, false);
+    return resultTexture;
+  }
+  destroy() {
+    this._renderer = null;
+    for (const key in this._activeTextures) {
+      if (this._activeTextures[key]) this.returnTexture(this._activeTextures[key].texture);
+    }
+    this._activeTextures = null;
+  }
+}
+
+
+//# sourceMappingURL=AbstractTextSystem.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextSystem.mjs
+
+
+
+"use strict";
+class CanvasRendererTextSystem extends AbstractTextSystem {
+  constructor(renderer) {
+    super(renderer, true);
+  }
+}
+/** @ignore */
+CanvasRendererTextSystem.extension = {
+  type: [
+    Extensions/* ExtensionType */.Ag.CanvasSystem
+  ],
+  name: "canvasText"
+};
+
+
+//# sourceMappingURL=CanvasTextSystem.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/shared/GpuTextSystem.mjs
+
+
+
+"use strict";
+class CanvasTextSystem extends AbstractTextSystem {
+  constructor(renderer) {
+    super(renderer, false);
+  }
+}
+/** @ignore */
+CanvasTextSystem.extension = {
+  type: [
+    Extensions/* ExtensionType */.Ag.WebGLSystem,
+    Extensions/* ExtensionType */.Ag.WebGPUSystem
+  ],
+  name: "canvasText"
+};
+
+
+//# sourceMappingURL=GpuTextSystem.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/init.mjs
+
+
+
+
+
+"use strict";
+Extensions/* extensions */.XO.add(CanvasRendererTextSystem);
+Extensions/* extensions */.XO.add(CanvasTextSystem);
+Extensions/* extensions */.XO.add(CanvasTextPipe);
+//# sourceMappingURL=init.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/Text.mjs
+
+
+
+
+
+
+
+
+"use strict";
+class Text extends AbstractText {
+  constructor(...args) {
+    const options = ensureTextOptions(args, "Text");
+    super(options, TextStyle/* TextStyle */.x);
+    /** @internal */
+    this.renderPipeId = "text";
+    if (options.textureStyle) {
+      this.textureStyle = options.textureStyle instanceof TextureStyle/* TextureStyle */.n ? options.textureStyle : new TextureStyle/* TextureStyle */.n(options.textureStyle);
+    }
+    this.autoGenerateMipmaps = options.autoGenerateMipmaps ?? TextureSource/* TextureSource */.v.defaultOptions.autoGenerateMipmaps;
+  }
+  /** @private */
+  updateBounds() {
+    const bounds = this._bounds;
+    const anchor = this._anchor;
+    let width = 0;
+    let height = 0;
+    if (this._style.trim) {
+      const { frame, canvasAndContext } = CanvasTextGenerator.getCanvasAndContext({
+        text: this.text,
+        style: this._style,
+        resolution: 1
+      });
+      CanvasTextGenerator.returnCanvasAndContext(canvasAndContext);
+      width = frame.width;
+      height = frame.height;
+    } else {
+      const canvasMeasurement = CanvasTextMetrics/* CanvasTextMetrics */.P.measureText(
+        this._text,
+        this._style
+      );
+      width = canvasMeasurement.width;
+      height = canvasMeasurement.height;
+    }
+    bounds.minX = -anchor._x * width;
+    bounds.maxX = bounds.minX + width;
+    bounds.minY = -anchor._y * height;
+    bounds.maxY = bounds.minY + height;
+  }
+}
+
+
+//# sourceMappingURL=Text.mjs.map
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/eventemitter3@5.0.4/node_modules/eventemitter3/index.mjs
 var eventemitter3 = __webpack_require__(2998);
@@ -18858,7 +20213,7 @@ function generateTextureBatchBindGroup(textures, size, key, maxTextures) {
 
 /***/ },
 
-/***/ 3412
+/***/ 1031
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -20679,8 +22034,8 @@ const textureBitGl = {
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/extensions/Extensions.mjs
 var Extensions = __webpack_require__(6258);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1031);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
+var Sprite = __webpack_require__(289);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/Bounds.mjs
 var Bounds = __webpack_require__(1985);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
@@ -21024,8 +22379,8 @@ class MaskFilter extends Filter/* Filter */.d {
 var Bounds = __webpack_require__(1985);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/container/bounds/getGlobalBounds.mjs
 var getGlobalBounds = __webpack_require__(32);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs + 1 modules
-var Sprite = __webpack_require__(1031);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
+var Sprite = __webpack_require__(289);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/pool/PoolGroup.mjs + 1 modules
 var PoolGroup = __webpack_require__(8118);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
@@ -21757,7 +23112,7 @@ let CanvasBatchAdaptor = _CanvasBatchAdaptor;
 //# sourceMappingURL=CanvasBatchAdaptor.mjs.map
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
-var BatcherPipe = __webpack_require__(3412);
+var BatcherPipe = __webpack_require__(1031);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
 var AlphaMaskPipe = __webpack_require__(9793);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/color/CanvasColorMaskPipe.mjs
@@ -34124,7 +35479,7 @@ var SpritePipe = __webpack_require__(6109);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/global/globalHooks.mjs
 var globalHooks = __webpack_require__(7398);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/batcher/shared/BatcherPipe.mjs
-var BatcherPipe = __webpack_require__(3412);
+var BatcherPipe = __webpack_require__(1031);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMaskPipe.mjs + 4 modules
 var AlphaMaskPipe = __webpack_require__(9793);
 ;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/mask/color/ColorMaskPipe.mjs
@@ -49164,48 +50519,18 @@ class BatchableSprite {
 
 /***/ },
 
-/***/ 1031
+/***/ 289
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-
-// EXPORTS
-__webpack_require__.d(__webpack_exports__, {
-  k: () => (/* binding */ Sprite)
-});
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/point/ObservablePoint.mjs
-var ObservablePoint = __webpack_require__(6489);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/Texture.mjs + 1 modules
-var Texture = __webpack_require__(4540);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/updateQuadBounds.mjs
-
-function updateQuadBounds(bounds, anchor, texture) {
-  const { width, height } = texture.orig;
-  const trim = texture.trim;
-  if (trim) {
-    const sourceWidth = trim.width;
-    const sourceHeight = trim.height;
-    bounds.minX = trim.x - anchor._x * width;
-    bounds.maxX = bounds.minX + sourceWidth;
-    bounds.minY = trim.y - anchor._y * height;
-    bounds.maxY = bounds.minY + sourceHeight;
-  } else {
-    bounds.minX = -anchor._x * width;
-    bounds.maxX = bounds.minX + width;
-    bounds.minY = -anchor._y * height;
-    bounds.maxY = bounds.minY + height;
-  }
-}
-
-
-//# sourceMappingURL=updateQuadBounds.mjs.map
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/deprecation.mjs
-var deprecation = __webpack_require__(7927);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/view/ViewContainer.mjs
-var ViewContainer = __webpack_require__(2366);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   k: () => (/* binding */ Sprite)
+/* harmony export */ });
+/* harmony import */ var _maths_point_ObservablePoint_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6489);
+/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4540);
+/* harmony import */ var _utils_data_updateQuadBounds_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5385);
+/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7927);
+/* harmony import */ var _view_ViewContainer_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2366);
 
 
 
@@ -49213,15 +50538,15 @@ var ViewContainer = __webpack_require__(2366);
 
 
 "use strict";
-class Sprite extends ViewContainer/* ViewContainer */.l {
+class Sprite extends _view_ViewContainer_mjs__WEBPACK_IMPORTED_MODULE_4__/* .ViewContainer */ .l {
   /**
    * @param options - The options for creating the sprite.
    */
-  constructor(options = Texture/* Texture */.g.EMPTY) {
-    if (options instanceof Texture/* Texture */.g) {
+  constructor(options = _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g.EMPTY) {
+    if (options instanceof _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g) {
       options = { texture: options };
     }
-    const { texture = Texture/* Texture */.g.EMPTY, anchor, roundPixels, width, height, ...rest } = options;
+    const { texture = _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g.EMPTY, anchor, roundPixels, width, height, ...rest } = options;
     super({
       label: "Sprite",
       ...rest
@@ -49231,7 +50556,7 @@ class Sprite extends ViewContainer/* ViewContainer */.l {
     /** @internal */
     this.batched = true;
     this._visualBounds = { minX: 0, maxX: 1, minY: 0, maxY: 0 };
-    this._anchor = new ObservablePoint/* ObservablePoint */.o(
+    this._anchor = new _maths_point_ObservablePoint_mjs__WEBPACK_IMPORTED_MODULE_0__/* .ObservablePoint */ .o(
       {
         _onUpdate: () => {
           this.onViewUpdate();
@@ -49272,13 +50597,13 @@ class Sprite extends ViewContainer/* ViewContainer */.l {
    * @see {@link Assets} For asset loading and management
    */
   static from(source, skipCache = false) {
-    if (source instanceof Texture/* Texture */.g) {
+    if (source instanceof _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g) {
       return new Sprite(source);
     }
-    return new Sprite(Texture/* Texture */.g.from(source, skipCache));
+    return new Sprite(_rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g.from(source, skipCache));
   }
   set texture(value) {
-    value || (value = Texture/* Texture */.g.EMPTY);
+    value || (value = _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Texture */ .g.EMPTY);
     const currentTexture = this._texture;
     if (currentTexture === value) return;
     if (currentTexture && currentTexture.dynamic) currentTexture.off("update", this.onViewUpdate, this);
@@ -49334,7 +50659,7 @@ class Sprite extends ViewContainer/* ViewContainer */.l {
    * // console.log(visualBounds); // { minX: -4, maxX: 62, minY: -4, maxY: 60 }
    */
   get visualBounds() {
-    updateQuadBounds(this._visualBounds, this._anchor, this._texture);
+    (0,_utils_data_updateQuadBounds_mjs__WEBPACK_IMPORTED_MODULE_2__/* .updateQuadBounds */ .y)(this._visualBounds, this._anchor, this._texture);
     return this._visualBounds;
   }
   /**
@@ -49342,7 +50667,7 @@ class Sprite extends ViewContainer/* ViewContainer */.l {
    * @ignore
    */
   get sourceBounds() {
-    (0,deprecation/* deprecation */.t6)("8.6.1", "Sprite.sourceBounds is deprecated, use visualBounds instead.");
+    (0,_utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__/* .deprecation */ .t6)("8.6.1", "Sprite.sourceBounds is deprecated, use visualBounds instead.");
     return this.visualBounds;
   }
   /** @private */
@@ -49615,7 +50940,7 @@ SpritePipe.extension = {
 
 /***/ },
 
-/***/ 2049
+/***/ 4672
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -49731,1168 +51056,591 @@ class AbstractBitmapFont extends eventemitter3/* default */.A {
 
 //# sourceMappingURL=AbstractBitmapFont.mjs.map
 
-;// ./node_modules/.pnpm/tiny-lru@11.4.7/node_modules/tiny-lru/dist/tiny-lru.js
-/**
- * tiny-lru
- *
- * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
- * @license BSD-3-Clause
- * @version 11.4.7
- */
-/**
- * A high-performance Least Recently Used (LRU) cache implementation with optional TTL support.
- * Items are automatically evicted when the cache reaches its maximum size,
- * removing the least recently used items first. All core operations (get, set, delete) are O(1).
- *
- * @class LRU
- * @example
- * // Create a cache with max 100 items
- * const cache = new LRU(100);
- * cache.set('key1', 'value1');
- * console.log(cache.get('key1')); // 'value1'
- *
- * @example
- * // Create a cache with TTL
- * const cache = new LRU(100, 5000); // 5 second TTL
- * cache.set('key1', 'value1');
- * // After 5 seconds, key1 will be expired
- */
-class LRU {
-	/**
-	 * Creates a new LRU cache instance.
-	 * Note: Constructor does not validate parameters. Use lru() factory function for parameter validation.
-	 *
-	 * @constructor
-	 * @param {number} [max=0] - Maximum number of items to store. 0 means unlimited.
-	 * @param {number} [ttl=0] - Time to live in milliseconds. 0 means no expiration.
-	 * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
-	 * @example
-	 * const cache = new LRU(1000, 60000, true); // 1000 items, 1 minute TTL, reset on access
-	 * @see {@link lru} For parameter validation
-	 * @since 1.0.0
-	 */
-	constructor (max = 0, ttl = 0, resetTtl = false) {
-		this.first = null;
-		this.items = Object.create(null);
-		this.last = null;
-		this.max = max;
-		this.resetTtl = resetTtl;
-		this.size = 0;
-		this.ttl = ttl;
-	}
-
-	/**
-	 * Removes all items from the cache.
-	 *
-	 * @method clear
-	 * @memberof LRU
-	 * @returns {LRU} The LRU instance for method chaining.
-	 * @example
-	 * cache.clear();
-	 * console.log(cache.size); // 0
-	 * @since 1.0.0
-	 */
-	clear () {
-		this.first = null;
-		this.items = Object.create(null);
-		this.last = null;
-		this.size = 0;
-
-		return this;
-	}
-
-	/**
-	 * Removes an item from the cache by key.
-	 *
-	 * @method delete
-	 * @memberof LRU
-	 * @param {string} key - The key of the item to delete.
-	 * @returns {LRU} The LRU instance for method chaining.
-	 * @example
-	 * cache.set('key1', 'value1');
-	 * cache.delete('key1');
-	 * console.log(cache.has('key1')); // false
-	 * @see {@link LRU#has}
-	 * @see {@link LRU#clear}
-	 * @since 1.0.0
-	 */
-	delete (key) {
-		if (this.has(key)) {
-			const item = this.items[key];
-
-			delete this.items[key];
-			this.size--;
-
-			if (item.prev !== null) {
-				item.prev.next = item.next;
-			}
-
-			if (item.next !== null) {
-				item.next.prev = item.prev;
-			}
-
-			if (this.first === item) {
-				this.first = item.next;
-			}
-
-			if (this.last === item) {
-				this.last = item.prev;
-			}
-		}
-
-		return this;
-	}
-
-	/**
-	 * Returns an array of [key, value] pairs for the specified keys.
-	 * Order follows LRU order (least to most recently used).
-	 *
-	 * @method entries
-	 * @memberof LRU
-	 * @param {string[]} [keys=this.keys()] - Array of keys to get entries for. Defaults to all keys.
-	 * @returns {Array<Array<*>>} Array of [key, value] pairs in LRU order.
-	 * @example
-	 * cache.set('a', 1).set('b', 2);
-	 * console.log(cache.entries()); // [['a', 1], ['b', 2]]
-	 * console.log(cache.entries(['a'])); // [['a', 1]]
-	 * @see {@link LRU#keys}
-	 * @see {@link LRU#values}
-	 * @since 11.1.0
-	 */
-	entries (keys = this.keys()) {
-		const result = new Array(keys.length);
-		for (let i = 0; i < keys.length; i++) {
-			const key = keys[i];
-			result[i] = [key, this.get(key)];
-		}
-
-		return result;
-	}
-
-	/**
-	 * Removes the least recently used item from the cache.
-	 *
-	 * @method evict
-	 * @memberof LRU
-	 * @param {boolean} [bypass=false] - Whether to force eviction even when cache is empty.
-	 * @returns {LRU} The LRU instance for method chaining.
-	 * @example
-	 * cache.set('old', 'value').set('new', 'value');
-	 * cache.evict(); // Removes 'old' item
-	 * @see {@link LRU#setWithEvicted}
-	 * @since 1.0.0
-	 */
-	evict (bypass = false) {
-		if (bypass || this.size > 0) {
-			const item = this.first;
-
-			delete this.items[item.key];
-
-			if (--this.size === 0) {
-				this.first = null;
-				this.last = null;
-			} else {
-				this.first = item.next;
-				this.first.prev = null;
-			}
-		}
-
-		return this;
-	}
-
-	/**
-	 * Returns the expiration timestamp for a given key.
-	 *
-	 * @method expiresAt
-	 * @memberof LRU
-	 * @param {string} key - The key to check expiration for.
-	 * @returns {number|undefined} The expiration timestamp in milliseconds, or undefined if key doesn't exist.
-	 * @example
-	 * const cache = new LRU(100, 5000); // 5 second TTL
-	 * cache.set('key1', 'value1');
-	 * console.log(cache.expiresAt('key1')); // timestamp 5 seconds from now
-	 * @see {@link LRU#get}
-	 * @see {@link LRU#has}
-	 * @since 1.0.0
-	 */
-	expiresAt (key) {
-		let result;
-
-		if (this.has(key)) {
-			result = this.items[key].expiry;
-		}
-
-		return result;
-	}
-
-	/**
-	 * Retrieves a value from the cache by key. Updates the item's position to most recently used.
-	 *
-	 * @method get
-	 * @memberof LRU
-	 * @param {string} key - The key to retrieve.
-	 * @returns {*} The value associated with the key, or undefined if not found or expired.
-	 * @example
-	 * cache.set('key1', 'value1');
-	 * console.log(cache.get('key1')); // 'value1'
-	 * console.log(cache.get('nonexistent')); // undefined
-	 * @see {@link LRU#set}
-	 * @see {@link LRU#has}
-	 * @since 1.0.0
-	 */
-	get (key) {
-		const item = this.items[key];
-
-		if (item !== undefined) {
-			// Check TTL only if enabled to avoid unnecessary Date.now() calls
-			if (this.ttl > 0) {
-				if (item.expiry <= Date.now()) {
-					this.delete(key);
-
-					return undefined;
-				}
-			}
-
-			// Fast LRU update without full set() overhead
-			this.moveToEnd(item);
-
-			return item.value;
-		}
-
-		return undefined;
-	}
-
-	/**
-	 * Checks if a key exists in the cache.
-	 *
-	 * @method has
-	 * @memberof LRU
-	 * @param {string} key - The key to check for.
-	 * @returns {boolean} True if the key exists, false otherwise.
-	 * @example
-	 * cache.set('key1', 'value1');
-	 * console.log(cache.has('key1')); // true
-	 * console.log(cache.has('nonexistent')); // false
-	 * @see {@link LRU#get}
-	 * @see {@link LRU#delete}
-	 * @since 9.0.0
-	 */
-	has (key) {
-		return key in this.items;
-	}
-
-	/**
-	 * Efficiently moves an item to the end of the LRU list (most recently used position).
-	 * This is an internal optimization method that avoids the overhead of the full set() operation
-	 * when only LRU position needs to be updated.
-	 *
-	 * @method moveToEnd
-	 * @memberof LRU
-	 * @param {Object} item - The cache item with prev/next pointers to reposition.
-	 * @private
-	 * @since 11.3.5
-	 */
-	moveToEnd (item) {
-		// If already at the end, nothing to do
-		if (this.last === item) {
-			return;
-		}
-
-		// Remove item from current position in the list
-		if (item.prev !== null) {
-			item.prev.next = item.next;
-		}
-
-		if (item.next !== null) {
-			item.next.prev = item.prev;
-		}
-
-		// Update first pointer if this was the first item
-		if (this.first === item) {
-			this.first = item.next;
-		}
-
-		// Add item to the end
-		item.prev = this.last;
-		item.next = null;
-
-		if (this.last !== null) {
-			this.last.next = item;
-		}
-
-		this.last = item;
-
-		// Handle edge case: if this was the only item, it's also first
-		if (this.first === null) {
-			this.first = item;
-		}
-	}
-
-	/**
-	 * Returns an array of all keys in the cache, ordered from least to most recently used.
-	 *
-	 * @method keys
-	 * @memberof LRU
-	 * @returns {string[]} Array of keys in LRU order.
-	 * @example
-	 * cache.set('a', 1).set('b', 2);
-	 * cache.get('a'); // Move 'a' to most recent
-	 * console.log(cache.keys()); // ['b', 'a']
-	 * @see {@link LRU#values}
-	 * @see {@link LRU#entries}
-	 * @since 9.0.0
-	 */
-	keys () {
-		const result = new Array(this.size);
-		let x = this.first;
-		let i = 0;
-
-		while (x !== null) {
-			result[i++] = x.key;
-			x = x.next;
-		}
-
-		return result;
-	}
-
-	/**
-	 * Sets a value in the cache and returns any evicted item.
-	 *
-	 * @method setWithEvicted
-	 * @memberof LRU
-	 * @param {string} key - The key to set.
-	 * @param {*} value - The value to store.
-	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
-	 * @returns {Object|null} The evicted item (if any) with shape {key, value, expiry, prev, next}, or null.
-	 * @example
-	 * const cache = new LRU(2);
-	 * cache.set('a', 1).set('b', 2);
-	 * const evicted = cache.setWithEvicted('c', 3); // evicted = {key: 'a', value: 1, ...}
-	 * @see {@link LRU#set}
-	 * @see {@link LRU#evict}
-	 * @since 11.3.0
-	 */
-	setWithEvicted (key, value, resetTtl = this.resetTtl) {
-		let evicted = null;
-
-		if (this.has(key)) {
-			this.set(key, value, true, resetTtl);
-		} else {
-			if (this.max > 0 && this.size === this.max) {
-				evicted = {...this.first};
-				this.evict(true);
-			}
-
-			let item = this.items[key] = {
-				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
-				key: key,
-				prev: this.last,
-				next: null,
-				value
-			};
-
-			if (++this.size === 1) {
-				this.first = item;
-			} else {
-				this.last.next = item;
-			}
-
-			this.last = item;
-		}
-
-		return evicted;
-	}
-
-	/**
-	 * Sets a value in the cache. Updates the item's position to most recently used.
-	 *
-	 * @method set
-	 * @memberof LRU
-	 * @param {string} key - The key to set.
-	 * @param {*} value - The value to store.
-	 * @param {boolean} [bypass=false] - Internal parameter for setWithEvicted method.
-	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
-	 * @returns {LRU} The LRU instance for method chaining.
-	 * @example
-	 * cache.set('key1', 'value1')
-	 *      .set('key2', 'value2')
-	 *      .set('key3', 'value3');
-	 * @see {@link LRU#get}
-	 * @see {@link LRU#setWithEvicted}
-	 * @since 1.0.0
-	 */
-	set (key, value, bypass = false, resetTtl = this.resetTtl) {
-		let item = this.items[key];
-
-		if (bypass || item !== undefined) {
-			// Existing item: update value and position
-			item.value = value;
-
-			if (bypass === false && resetTtl) {
-				item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
-			}
-
-			// Always move to end, but the bypass parameter affects TTL reset behavior
-			this.moveToEnd(item);
-		} else {
-			// New item: check for eviction and create
-			if (this.max > 0 && this.size === this.max) {
-				this.evict(true);
-			}
-
-			item = this.items[key] = {
-				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
-				key: key,
-				prev: this.last,
-				next: null,
-				value
-			};
-
-			if (++this.size === 1) {
-				this.first = item;
-			} else {
-				this.last.next = item;
-			}
-
-			this.last = item;
-		}
-
-		return this;
-	}
-
-	/**
-	 * Returns an array of all values in the cache for the specified keys.
-	 * Order follows LRU order (least to most recently used).
-	 *
-	 * @method values
-	 * @memberof LRU
-	 * @param {string[]} [keys=this.keys()] - Array of keys to get values for. Defaults to all keys.
-	 * @returns {Array<*>} Array of values corresponding to the keys in LRU order.
-	 * @example
-	 * cache.set('a', 1).set('b', 2);
-	 * console.log(cache.values()); // [1, 2]
-	 * console.log(cache.values(['a'])); // [1]
-	 * @see {@link LRU#keys}
-	 * @see {@link LRU#entries}
-	 * @since 11.1.0
-	 */
-	values (keys = this.keys()) {
-		const result = new Array(keys.length);
-		for (let i = 0; i < keys.length; i++) {
-			result[i] = this.get(keys[i]);
-		}
-
-		return result;
-	}
-}
-
-/**
- * Factory function to create a new LRU cache instance with parameter validation.
- *
- * @function lru
- * @param {number} [max=1000] - Maximum number of items to store. Must be >= 0. Use 0 for unlimited size.
- * @param {number} [ttl=0] - Time to live in milliseconds. Must be >= 0. Use 0 for no expiration.
- * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
- * @returns {LRU} A new LRU cache instance.
- * @throws {TypeError} When parameters are invalid (negative numbers or wrong types).
- * @example
- * // Create cache with factory function
- * const cache = lru(100, 5000, true);
- * cache.set('key', 'value');
- *
- * @example
- * // Error handling
- * try {
- *   const cache = lru(-1); // Invalid max
- * } catch (error) {
- *   console.error(error.message); // "Invalid max value"
- * }
- * @see {@link LRU}
- * @since 1.0.0
- */
-function lru (max = 1000, ttl = 0, resetTtl = false) {
-	if (isNaN(max) || max < 0) {
-		throw new TypeError("Invalid max value");
-	}
-
-	if (isNaN(ttl) || ttl < 0) {
-		throw new TypeError("Invalid ttl value");
-	}
-
-	if (typeof resetTtl !== "boolean") {
-		throw new TypeError("Invalid resetTtl value");
-	}
-
-	return new LRU(max, ttl, resetTtl);
-}
+// EXTERNAL MODULE: ./node_modules/.pnpm/tiny-lru@11.4.7/node_modules/tiny-lru/dist/tiny-lru.js
+var tiny_lru = __webpack_require__(992);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/assets/cache/Cache.mjs
 var Cache = __webpack_require__(4332);
 // EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/logging/warn.mjs
 var warn = __webpack_require__(2555);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
-var adapter = __webpack_require__(5886);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/parseTaggedText.mjs
-
-function hasTagStyles(style) {
-  return !!style.tagStyles && Object.keys(style.tagStyles).length > 0;
-}
-function hasTagMarkup(text) {
-  return text.includes("<");
-}
-function createMergedStyle(baseStyle, overrides) {
-  return baseStyle.clone().assign(overrides);
-}
-function parseTaggedText(text, style) {
-  const runs = [];
-  const tagStyles = style.tagStyles;
-  if (!hasTagStyles(style) || !hasTagMarkup(text)) {
-    runs.push({ text, style });
-    return runs;
-  }
-  const styleStack = [style];
-  const tagStack = [];
-  let currentText = "";
-  let i = 0;
-  while (i < text.length) {
-    const char = text[i];
-    if (char === "<") {
-      const closeIndex = text.indexOf(">", i);
-      if (closeIndex === -1) {
-        currentText += char;
-        i++;
-        continue;
-      }
-      const nextOpenIndex = text.indexOf("<", i + 1);
-      if (nextOpenIndex !== -1 && nextOpenIndex < closeIndex) {
-        currentText += char;
-        i++;
-        continue;
-      }
-      const tagContent = text.slice(i + 1, closeIndex);
-      if (tagContent.startsWith("/")) {
-        const closingTagName = tagContent.slice(1).trim();
-        if (tagStack.length > 0 && tagStack[tagStack.length - 1] === closingTagName) {
-          if (currentText.length > 0) {
-            runs.push({
-              text: currentText,
-              style: styleStack[styleStack.length - 1]
-            });
-            currentText = "";
-          }
-          styleStack.pop();
-          tagStack.pop();
-          i = closeIndex + 1;
-          continue;
-        } else {
-          currentText += text.slice(i, closeIndex + 1);
-          i = closeIndex + 1;
-          continue;
-        }
-      } else {
-        const tagName = tagContent.trim();
-        if (tagStyles[tagName]) {
-          if (currentText.length > 0) {
-            runs.push({
-              text: currentText,
-              style: styleStack[styleStack.length - 1]
-            });
-            currentText = "";
-          }
-          const currentStyle = styleStack[styleStack.length - 1];
-          const mergedStyle = createMergedStyle(currentStyle, tagStyles[tagName]);
-          styleStack.push(mergedStyle);
-          tagStack.push(tagName);
-          i = closeIndex + 1;
-          continue;
-        } else {
-          currentText += text.slice(i, closeIndex + 1);
-          i = closeIndex + 1;
-          continue;
-        }
-      }
-    } else {
-      currentText += char;
-      i++;
-    }
-  }
-  if (currentText.length > 0) {
-    runs.push({
-      text: currentText,
-      style: styleStack[styleStack.length - 1]
-    });
-  }
-  return runs;
-}
-function getPlainText(text, style) {
-  if (!hasTagStyles(style) || !hasTagMarkup(text)) {
-    return text;
-  }
-  const runs = parseTaggedText(text, style);
-  return runs.map((run) => run.text).join("");
-}
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs + 3 modules
+var CanvasTextMetrics = __webpack_require__(5346);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/TextStyle.mjs
+var TextStyle = __webpack_require__(7632);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
+var Color = __webpack_require__(1640);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
+var CanvasPool = __webpack_require__(1281);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
+var ImageSource = __webpack_require__(1950);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
+var TextureStyle = __webpack_require__(7187);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/fontStringFromTextStyle.mjs
+var fontStringFromTextStyle = __webpack_require__(1831);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
+var getCanvasFillStyle = __webpack_require__(2039);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/DynamicBitmapFont.mjs
 
 
-//# sourceMappingURL=parseTaggedText.mjs.map
-
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/textTokenization.mjs
-
-const NEWLINES = [
-  10,
-  // line feed
-  13
-  // carriage return
-];
-const NEWLINES_SET = new Set(NEWLINES);
-const BREAKING_SPACES = [
-  9,
-  // character tabulation
-  32,
-  // space
-  8192,
-  // en quad
-  8193,
-  // em quad
-  8194,
-  // en space
-  8195,
-  // em space
-  8196,
-  // three-per-em space
-  8197,
-  // four-per-em space
-  8198,
-  // six-per-em space
-  8200,
-  // punctuation space
-  8201,
-  // thin space
-  8202,
-  // hair space
-  8287,
-  // medium mathematical space
-  12288
-  // ideographic space
-];
-const BREAKING_SPACES_SET = new Set(BREAKING_SPACES);
-const COLLAPSIBLE_SPACES = [
-  9,
-  // character tabulation (tab)
-  32
-  // space
-];
-const COLLAPSIBLE_SPACES_SET = new Set(COLLAPSIBLE_SPACES);
-const BREAK_AFTER_CHARS = [
-  45,
-  // hyphen-minus
-  8208,
-  // unicode hyphen
-  8211,
-  // en-dash
-  8212,
-  // em-dash
-  173
-  // soft hyphen
-];
-const BREAK_AFTER_CHARS_SET = new Set(BREAK_AFTER_CHARS);
-const NEWLINE_SPLIT_REGEX = /(\r\n|\r|\n)/;
-const NEWLINE_MATCH_REGEX = /(?:\r\n|\r|\n)/;
-function isNewline(char) {
-  if (typeof char !== "string") {
-    return false;
-  }
-  return NEWLINES_SET.has(char.charCodeAt(0));
-}
-function isBreakingSpace(char, _nextChar) {
-  if (typeof char !== "string") {
-    return false;
-  }
-  return BREAKING_SPACES_SET.has(char.charCodeAt(0));
-}
-function isCollapsibleSpace(char) {
-  if (typeof char !== "string") {
-    return false;
-  }
-  return COLLAPSIBLE_SPACES_SET.has(char.charCodeAt(0));
-}
-function isBreakAfterChar(char) {
-  if (typeof char !== "string") {
-    return false;
-  }
-  return BREAK_AFTER_CHARS_SET.has(char.charCodeAt(0));
-}
-function collapseSpaces(whiteSpace) {
-  return whiteSpace === "normal" || whiteSpace === "pre-line";
-}
-function collapseNewlines(whiteSpace) {
-  return whiteSpace === "normal";
-}
-function trimRight(text) {
-  if (typeof text !== "string") {
-    return "";
-  }
-  let i = text.length - 1;
-  while (i >= 0 && isBreakingSpace(text[i])) {
-    i--;
-  }
-  return i < text.length - 1 ? text.slice(0, i + 1) : text;
-}
-function tokenize(text) {
-  const tokens = [];
-  const tokenChars = [];
-  if (typeof text !== "string") {
-    return tokens;
-  }
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-    if (isBreakingSpace(char, nextChar) || isNewline(char)) {
-      if (tokenChars.length > 0) {
-        tokens.push(tokenChars.join(""));
-        tokenChars.length = 0;
-      }
-      if (char === "\r" && nextChar === "\n") {
-        tokens.push("\r\n");
-        i++;
-      } else {
-        tokens.push(char);
-      }
-      continue;
-    }
-    tokenChars.push(char);
-    if (isBreakAfterChar(char) && nextChar && !isBreakingSpace(nextChar) && !isNewline(nextChar)) {
-      tokens.push(tokenChars.join(""));
-      tokenChars.length = 0;
-    }
-  }
-  if (tokenChars.length > 0) {
-    tokens.push(tokenChars.join(""));
-  }
-  return tokens;
-}
-function getCharacterGroups(token, breakWords, splitFn, canBreakCharsFn) {
-  const characters = splitFn(token);
-  const groups = [];
-  for (let j = 0; j < characters.length; j++) {
-    let char = characters[j];
-    let lastChar = char;
-    let k = 1;
-    while (characters[j + k]) {
-      const nextChar = characters[j + k];
-      if (!canBreakCharsFn(lastChar, nextChar, token, j, breakWords)) {
-        char += nextChar;
-        lastChar = nextChar;
-        k++;
-      } else {
-        break;
-      }
-    }
-    j += k - 1;
-    groups.push(char);
-  }
-  return groups;
-}
 
 
-//# sourceMappingURL=textTokenization.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/measureTaggedText.mjs
+
+
+
+
+
 
 
 
 "use strict";
-const NEWLINE_TO_SPACE_REGEX = /\r\n|\r|\n/g;
-function measureTaggedText(text, style, wordWrap, context, measureTextFn, wrapMeasureTextFn, measureFontFn, canBreakCharsFn, wordWrapSplitFn) {
-  const runs = parseTaggedText(text, style);
-  const shouldCollapseNewlines = collapseNewlines(style.whiteSpace);
-  if (shouldCollapseNewlines) {
-    for (let i = 0; i < runs.length; i++) {
-      const run = runs[i];
-      runs[i] = { text: run.text.replace(NEWLINE_TO_SPACE_REGEX, " "), style: run.style };
+const _DynamicBitmapFont = class _DynamicBitmapFont extends AbstractBitmapFont {
+  /**
+   * @param options - The options for the dynamic bitmap font.
+   */
+  constructor(options) {
+    super();
+    /**
+     * this is a resolution modifier for the font size..
+     * texture resolution will also be used to scale texture according to its font size also
+     */
+    this.resolution = 1;
+    /** The pages of the font. */
+    this.pages = [];
+    this._padding = 0;
+    this._measureCache = /* @__PURE__ */ Object.create(null);
+    this._currentChars = [];
+    this._currentX = 0;
+    this._currentY = 0;
+    this._currentMaxCharHeight = 0;
+    this._currentPageIndex = -1;
+    this._skipKerning = false;
+    const dynamicOptions = { ..._DynamicBitmapFont.defaultOptions, ...options };
+    this._textureSize = dynamicOptions.textureSize;
+    this._mipmap = dynamicOptions.mipmap;
+    const style = dynamicOptions.style.clone();
+    if (dynamicOptions.overrideFill) {
+      style._fill.color = 16777215;
+      style._fill.alpha = 1;
+      style._fill.texture = Texture/* Texture */.g.WHITE;
+      style._fill.fill = null;
     }
-  }
-  const runsByLine = [];
-  let currentLineRuns = [];
-  for (const run of runs) {
-    const parts = run.text.split(NEWLINE_SPLIT_REGEX);
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (part === "\r\n" || part === "\r" || part === "\n") {
-        runsByLine.push(currentLineRuns);
-        currentLineRuns = [];
-      } else if (part.length > 0) {
-        currentLineRuns.push({ text: part, style: run.style });
+    this.applyFillAsTint = dynamicOptions.overrideFill;
+    const requestedFontSize = style.fontSize;
+    style.fontSize = this.baseMeasurementFontSize;
+    const font = (0,fontStringFromTextStyle/* fontStringFromTextStyle */.Z)(style);
+    if (dynamicOptions.overrideSize) {
+      if (style._stroke) {
+        style._stroke.width *= this.baseRenderedFontSize / requestedFontSize;
       }
+      if (style.dropShadow) {
+        style.dropShadow.blur *= this.baseRenderedFontSize / requestedFontSize;
+        style.dropShadow.distance *= this.baseRenderedFontSize / requestedFontSize;
+      }
+    } else {
+      style.fontSize = this.baseRenderedFontSize = requestedFontSize;
     }
-  }
-  if (currentLineRuns.length > 0 || runsByLine.length === 0) {
-    runsByLine.push(currentLineRuns);
-  }
-  const wrappedRunsByLine = wordWrap ? wordWrapTaggedLines(
-    runsByLine,
-    style,
-    context,
-    wrapMeasureTextFn,
-    canBreakCharsFn,
-    wordWrapSplitFn
-  ) : runsByLine;
-  const lineWidths = [];
-  const lineAscents = [];
-  const lineDescents = [];
-  const lineHeightsArr = [];
-  const lines = [];
-  let maxLineWidth = 0;
-  const baseFont = style._fontString;
-  const baseFontProps = measureFontFn(baseFont);
-  if (baseFontProps.fontSize === 0) {
-    baseFontProps.fontSize = style.fontSize;
-    baseFontProps.ascent = style.fontSize;
-  }
-  let lastFont = "";
-  let hasDropShadow = !!style.dropShadow;
-  let maxRunStrokeWidth = style._stroke?.width || 0;
-  for (const lineRuns of wrappedRunsByLine) {
-    let lineWidth = 0;
-    let lineAscent = baseFontProps.ascent;
-    let lineDescent = baseFontProps.descent;
-    let lineText = "";
-    for (const run of lineRuns) {
-      const runFont = run.style._fontString;
-      const runFontProps = measureFontFn(runFont);
-      if (runFont !== lastFont) {
-        context.font = runFont;
-        lastFont = runFont;
-      }
-      const runWidth = measureTextFn(run.text, run.style.letterSpacing, context);
-      lineWidth += runWidth;
-      lineAscent = Math.max(lineAscent, runFontProps.ascent);
-      lineDescent = Math.max(lineDescent, runFontProps.descent);
-      lineText += run.text;
-      const runStrokeWidth = run.style._stroke?.width || 0;
-      if (runStrokeWidth > maxRunStrokeWidth) maxRunStrokeWidth = runStrokeWidth;
-      if (!hasDropShadow && run.style.dropShadow) {
-        hasDropShadow = true;
-      }
+    this._style = style;
+    this._skipKerning = dynamicOptions.skipKerning ?? false;
+    this.resolution = dynamicOptions.resolution ?? 1;
+    this._padding = dynamicOptions.padding ?? 4;
+    if (dynamicOptions.textureStyle) {
+      this._textureStyle = dynamicOptions.textureStyle instanceof TextureStyle/* TextureStyle */.n ? dynamicOptions.textureStyle : new TextureStyle/* TextureStyle */.n(dynamicOptions.textureStyle);
     }
-    if (lineRuns.length === 0) {
-      lineAscent = baseFontProps.ascent;
-      lineDescent = baseFontProps.descent;
-    }
-    lineWidths.push(lineWidth);
-    lineAscents.push(lineAscent);
-    lineDescents.push(lineDescent);
-    lines.push(lineText);
-    const computedLineHeight = style.lineHeight || lineAscent + lineDescent;
-    lineHeightsArr.push(computedLineHeight + style.leading);
-    maxLineWidth = Math.max(maxLineWidth, lineWidth);
+    this.fontMetrics = CanvasTextMetrics/* CanvasTextMetrics */.P.measureFont(font);
+    this.lineHeight = style.lineHeight || this.fontMetrics.fontSize || style.fontSize;
   }
-  const strokeWidth = maxRunStrokeWidth;
-  const width = maxLineWidth + strokeWidth + (style.dropShadow ? style.dropShadow.distance : 0);
-  let baseHeight = 0;
-  for (let i = 0; i < lineHeightsArr.length; i++) {
-    baseHeight += lineHeightsArr[i];
-  }
-  baseHeight = Math.max(baseHeight, lineHeightsArr[0] + strokeWidth);
-  const height = baseHeight + (style.dropShadow ? style.dropShadow.distance : 0);
-  const baseLineHeight = style.lineHeight || baseFontProps.fontSize;
-  return {
-    width,
-    height,
-    lines,
-    lineWidths,
-    lineHeight: baseLineHeight + style.leading,
-    maxLineWidth,
-    fontProperties: baseFontProps,
-    runsByLine: wrappedRunsByLine,
-    lineAscents,
-    lineDescents,
-    lineHeights: lineHeightsArr,
-    hasDropShadow
-  };
-}
-function wordWrapTaggedLines(runsByLine, style, context, measureTextFn, canBreakCharsFn, wordWrapSplitFn) {
-  const { letterSpacing, whiteSpace, wordWrapWidth, breakWords } = style;
-  const shouldCollapseSpaces = collapseSpaces(whiteSpace);
-  const adjustedWrapWidth = wordWrapWidth + letterSpacing;
-  const tokenWidthCache = {};
-  let lastFont = "";
-  const measureTokenWidth = (token, tokenStyle) => {
-    const cacheKey = `${token}|${tokenStyle.styleKey}`;
-    let width = tokenWidthCache[cacheKey];
-    if (width === void 0) {
-      const font = tokenStyle._fontString;
-      if (font !== lastFont) {
-        context.font = font;
-        lastFont = font;
-      }
-      width = measureTextFn(token, tokenStyle.letterSpacing, context) + tokenStyle.letterSpacing;
-      tokenWidthCache[cacheKey] = width;
+  ensureCharacters(chars) {
+    const charList = CanvasTextMetrics/* CanvasTextMetrics */.P.graphemeSegmenter(chars).filter((char) => !this._currentChars.includes(char)).filter((char, index, self) => self.indexOf(char) === index);
+    if (!charList.length) return;
+    this._currentChars = [...this._currentChars, ...charList];
+    let pageData;
+    if (this._currentPageIndex === -1) {
+      pageData = this._nextPage();
+    } else {
+      pageData = this.pages[this._currentPageIndex];
     }
-    return width;
-  };
-  const result = [];
-  for (const lineRuns of runsByLine) {
-    const styledTokens = tokenizeTaggedRuns(lineRuns);
-    const resultStartLength = result.length;
-    const getWordGroupWidth = (startIndex) => {
-      let totalWidth = 0;
-      let j = startIndex;
-      do {
-        const { token: groupToken, style: groupStyle } = styledTokens[j];
-        totalWidth += measureTokenWidth(groupToken, groupStyle);
-        j++;
-      } while (j < styledTokens.length && styledTokens[j].continuesFromPrevious);
-      return totalWidth;
-    };
-    const getWordGroupTokens = (startIndex) => {
-      const tokens = [];
-      let j = startIndex;
-      do {
-        tokens.push({ token: styledTokens[j].token, style: styledTokens[j].style });
-        j++;
-      } while (j < styledTokens.length && styledTokens[j].continuesFromPrevious);
-      return tokens;
-    };
-    let currentLineRuns = [];
-    let currentWidth = 0;
-    let canPrependSpaces = !shouldCollapseSpaces;
-    let buildingRun = null;
-    const flushBuildingRun = () => {
-      if (buildingRun && buildingRun.text.length > 0) {
-        currentLineRuns.push(buildingRun);
+    let { canvas, context } = pageData.canvasAndContext;
+    let textureSource = pageData.texture.source;
+    const style = this._style;
+    let currentX = this._currentX;
+    let currentY = this._currentY;
+    let currentMaxCharHeight = this._currentMaxCharHeight;
+    const fontScale = this.baseRenderedFontSize / this.baseMeasurementFontSize;
+    const extraPadding = (style.dropShadow?.distance ?? 0) + (style._stroke?.width ?? 0);
+    const padding = this._padding + extraPadding;
+    let skipTexture = false;
+    const maxTextureWidth = canvas.width / this.resolution;
+    const maxTextureHeight = canvas.height / this.resolution;
+    for (let i = 0; i < charList.length; i++) {
+      const char = charList[i];
+      const metrics = CanvasTextMetrics/* CanvasTextMetrics */.P.measureText(char, style, canvas, false);
+      metrics.lineHeight = metrics.height;
+      const width = metrics.width * fontScale;
+      const textureGlyphWidth = Math.ceil((style.fontStyle === "italic" ? 2 : 1) * width);
+      const height = metrics.height * fontScale;
+      const paddedWidth = textureGlyphWidth + padding * 2;
+      const paddedHeight = height + padding * 2;
+      skipTexture = false;
+      if (char !== "\n" && char !== "\r" && char !== "	" && char !== " ") {
+        skipTexture = true;
+        currentMaxCharHeight = Math.ceil(Math.max(paddedHeight, currentMaxCharHeight));
       }
-      buildingRun = null;
-    };
-    const startNewLine = () => {
-      flushBuildingRun();
-      if (currentLineRuns.length > 0) {
-        const lastRun = currentLineRuns[currentLineRuns.length - 1];
-        lastRun.text = trimRight(lastRun.text);
-        if (lastRun.text.length === 0) {
-          currentLineRuns.pop();
+      if (currentX + paddedWidth > maxTextureWidth) {
+        currentY += currentMaxCharHeight;
+        currentMaxCharHeight = paddedHeight;
+        currentX = 0;
+        if (currentY + currentMaxCharHeight > maxTextureHeight) {
+          textureSource.update();
+          const pageData2 = this._nextPage();
+          canvas = pageData2.canvasAndContext.canvas;
+          context = pageData2.canvasAndContext.context;
+          textureSource = pageData2.texture.source;
+          currentX = 0;
+          currentY = 0;
+          currentMaxCharHeight = 0;
         }
       }
-      result.push(currentLineRuns);
-      currentLineRuns = [];
-      currentWidth = 0;
-      canPrependSpaces = false;
+      const xAdvance = context.measureText(char).width / fontScale;
+      this.chars[char] = {
+        id: char.codePointAt(0),
+        xOffset: -(padding / fontScale),
+        yOffset: -(padding / fontScale),
+        xAdvance,
+        kerning: {}
+      };
+      if (skipTexture) {
+        this._drawGlyph(
+          context,
+          metrics,
+          currentX + padding,
+          currentY + padding,
+          fontScale,
+          style
+        );
+        const px = textureSource.width * fontScale;
+        const py = textureSource.height * fontScale;
+        const frame = new Rectangle/* Rectangle */.M(
+          currentX / px * textureSource.width,
+          currentY / py * textureSource.height,
+          paddedWidth / px * textureSource.width,
+          paddedHeight / py * textureSource.height
+        );
+        this.chars[char].texture = new Texture/* Texture */.g({
+          source: textureSource,
+          frame
+        });
+        currentX += Math.ceil(paddedWidth);
+      }
+    }
+    textureSource.update();
+    this._currentX = currentX;
+    this._currentY = currentY;
+    this._currentMaxCharHeight = currentMaxCharHeight;
+    if (!this._skipKerning) this._applyKerning(charList, context, fontScale);
+  }
+  /**
+   * @deprecated since 8.0.0
+   * The map of base page textures (i.e., sheets of glyphs).
+   */
+  get pageTextures() {
+    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "BitmapFont.pageTextures is deprecated, please use BitmapFont.pages instead.");
+    return this.pages;
+  }
+  _applyKerning(newChars, context, fontScale) {
+    const measureCache = this._measureCache;
+    for (let i = 0; i < newChars.length; i++) {
+      const first = newChars[i];
+      for (let j = 0; j < this._currentChars.length; j++) {
+        const second = this._currentChars[j];
+        let c1 = measureCache[first];
+        if (!c1) c1 = measureCache[first] = context.measureText(first).width;
+        let c2 = measureCache[second];
+        if (!c2) c2 = measureCache[second] = context.measureText(second).width;
+        let total = context.measureText(first + second).width;
+        let amount = total - (c1 + c2);
+        if (amount && this.chars[first]) {
+          this.chars[first].kerning[second] = amount / fontScale;
+        }
+        total = context.measureText(first + second).width;
+        amount = total - (c1 + c2);
+        if (amount && this.chars[second]) {
+          this.chars[second].kerning[first] = amount / fontScale;
+        }
+      }
+    }
+  }
+  _nextPage() {
+    this._currentPageIndex++;
+    const textureResolution = this.resolution;
+    const canvasAndContext = CanvasPool/* CanvasPool */.N.getOptimalCanvasAndContext(
+      this._textureSize,
+      this._textureSize,
+      textureResolution
+    );
+    this._setupContext(canvasAndContext.context, this._style, textureResolution);
+    const resolution = textureResolution * (this.baseRenderedFontSize / this.baseMeasurementFontSize);
+    const texture = new Texture/* Texture */.g({
+      source: new ImageSource/* ImageSource */.b({
+        resource: canvasAndContext.canvas,
+        resolution,
+        alphaMode: "premultiply-alpha-on-upload",
+        autoGenerateMipmaps: this._mipmap
+      })
+    });
+    if (this._textureStyle) {
+      texture.source.style = this._textureStyle;
+    }
+    const pageData = {
+      canvasAndContext,
+      texture
     };
-    for (let i = 0; i < styledTokens.length; i++) {
-      const { token, style: tokenStyle, continuesFromPrevious } = styledTokens[i];
-      const tokenWidth = measureTokenWidth(token, tokenStyle);
-      if (shouldCollapseSpaces) {
-        const currIsSpace = isBreakingSpace(token);
-        const lastChar = buildingRun?.text[buildingRun.text.length - 1] ?? currentLineRuns[currentLineRuns.length - 1]?.text.slice(-1) ?? "";
-        const lastIsSpace = lastChar ? isBreakingSpace(lastChar) : false;
-        if (currIsSpace && lastIsSpace) {
+    this.pages[this._currentPageIndex] = pageData;
+    return pageData;
+  }
+  // canvas style!
+  _setupContext(context, style, resolution) {
+    style.fontSize = this.baseRenderedFontSize;
+    context.scale(resolution, resolution);
+    context.font = (0,fontStringFromTextStyle/* fontStringFromTextStyle */.Z)(style);
+    style.fontSize = this.baseMeasurementFontSize;
+    context.textBaseline = style.textBaseline;
+    const stroke = style._stroke;
+    const strokeThickness = stroke?.width ?? 0;
+    if (stroke) {
+      context.lineWidth = strokeThickness;
+      context.lineJoin = stroke.join;
+      context.miterLimit = stroke.miterLimit;
+      context.strokeStyle = (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(stroke, context);
+    }
+    if (style._fill) {
+      context.fillStyle = (0,getCanvasFillStyle/* getCanvasFillStyle */.r)(style._fill, context);
+    }
+    if (style.dropShadow) {
+      const shadowOptions = style.dropShadow;
+      const rgb = Color/* Color */.Q.shared.setValue(shadowOptions.color).toArray();
+      const dropShadowBlur = shadowOptions.blur * resolution;
+      const dropShadowDistance = shadowOptions.distance * resolution;
+      context.shadowColor = `rgba(${rgb[0] * 255},${rgb[1] * 255},${rgb[2] * 255},${shadowOptions.alpha})`;
+      context.shadowBlur = dropShadowBlur;
+      context.shadowOffsetX = Math.cos(shadowOptions.angle) * dropShadowDistance;
+      context.shadowOffsetY = Math.sin(shadowOptions.angle) * dropShadowDistance;
+    } else {
+      context.shadowColor = "black";
+      context.shadowBlur = 0;
+      context.shadowOffsetX = 0;
+      context.shadowOffsetY = 0;
+    }
+  }
+  _drawGlyph(context, metrics, x, y, fontScale, style) {
+    const char = metrics.text;
+    const fontProperties = metrics.fontProperties;
+    const stroke = style._stroke;
+    const strokeThickness = (stroke?.width ?? 0) * fontScale;
+    const tx = x + strokeThickness / 2;
+    const ty = y - strokeThickness / 2;
+    const descent = fontProperties.descent * fontScale;
+    const lineHeight = metrics.lineHeight * fontScale;
+    let removeShadow = false;
+    if (style.stroke && strokeThickness) {
+      removeShadow = true;
+      context.strokeText(char, tx, ty + lineHeight - descent);
+    }
+    const { shadowBlur, shadowOffsetX, shadowOffsetY } = context;
+    if (style._fill) {
+      if (removeShadow) {
+        context.shadowBlur = 0;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+      }
+      context.fillText(char, tx, ty + lineHeight - descent);
+    }
+    if (removeShadow) {
+      context.shadowBlur = shadowBlur;
+      context.shadowOffsetX = shadowOffsetX;
+      context.shadowOffsetY = shadowOffsetY;
+    }
+  }
+  destroy() {
+    super.destroy();
+    for (let i = 0; i < this.pages.length; i++) {
+      const { canvasAndContext, texture } = this.pages[i];
+      CanvasPool/* CanvasPool */.N.returnCanvasAndContext(canvasAndContext);
+      texture.destroy(true);
+    }
+    this.pages = null;
+  }
+};
+_DynamicBitmapFont.defaultOptions = {
+  textureSize: 512,
+  style: new TextStyle/* TextStyle */.x(),
+  mipmap: true
+};
+let DynamicBitmapFont = _DynamicBitmapFont;
+
+
+//# sourceMappingURL=DynamicBitmapFont.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/textTokenization.mjs
+var textTokenization = __webpack_require__(3713);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/getBitmapTextLayout.mjs
+
+
+"use strict";
+function getBitmapTextLayout(chars, style, font, trimEnd) {
+  const layoutData = {
+    width: 0,
+    height: 0,
+    offsetY: 0,
+    scale: style.fontSize / font.baseMeasurementFontSize,
+    lines: [{
+      width: 0,
+      charPositions: [],
+      spaceWidth: 0,
+      spacesIndex: [],
+      chars: []
+    }]
+  };
+  layoutData.offsetY = font.baseLineOffset;
+  let currentLine = layoutData.lines[0];
+  let previousChar = null;
+  let firstWord = true;
+  const currentWord = {
+    spaceWord: false,
+    width: 0,
+    start: 0,
+    index: 0,
+    // use index to not modify the array as we use it a lot!
+    positions: [],
+    chars: []
+  };
+  const scale = font.baseMeasurementFontSize / style.fontSize;
+  const adjustedLetterSpacing = style.letterSpacing * scale;
+  const adjustedWordWrapWidth = style.wordWrapWidth * scale;
+  const adjustedLineHeight = style.lineHeight ? style.lineHeight * scale : font.lineHeight;
+  const breakWords = style.wordWrap && style.breakWords;
+  const shouldCollapseSpaces = (0,textTokenization/* collapseSpaces */.j3)(style.whiteSpace);
+  const shouldCollapseNewlines = (0,textTokenization/* collapseNewlines */.fo)(style.whiteSpace);
+  if (shouldCollapseSpaces || shouldCollapseNewlines) {
+    const processed = [];
+    let prevWasBreakingSpace = shouldCollapseSpaces;
+    for (let c = 0; c < chars.length; c++) {
+      let char = chars[c];
+      if (char === "\r" || char === "\n") {
+        if (shouldCollapseNewlines) {
+          if (char === "\r" && chars[c + 1] === "\n") c++;
+          char = " ";
+        } else {
+          if (shouldCollapseSpaces) prevWasBreakingSpace = true;
+          processed.push(char);
           continue;
         }
       }
-      const startsWordGroup = !continuesFromPrevious;
-      const wordGroupWidth = startsWordGroup ? getWordGroupWidth(i) : tokenWidth;
-      if (wordGroupWidth > adjustedWrapWidth && startsWordGroup) {
-        if (currentWidth > 0) {
-          startNewLine();
-        }
-        if (breakWords) {
-          const wordGroupTokens = getWordGroupTokens(i);
-          for (let g = 0; g < wordGroupTokens.length; g++) {
-            const groupToken = wordGroupTokens[g].token;
-            const groupStyle = wordGroupTokens[g].style;
-            const charGroups = getCharacterGroups(
-              groupToken,
-              breakWords,
-              wordWrapSplitFn,
-              canBreakCharsFn
-            );
-            for (const char of charGroups) {
-              const charWidth = measureTokenWidth(char, groupStyle);
-              if (charWidth + currentWidth > adjustedWrapWidth) {
-                startNewLine();
-              }
-              if (!buildingRun || buildingRun.style !== groupStyle) {
-                flushBuildingRun();
-                buildingRun = { text: char, style: groupStyle };
-              } else {
-                buildingRun.text += char;
-              }
-              currentWidth += charWidth;
-            }
-          }
-          i += wordGroupTokens.length - 1;
+      if ((0,textTokenization/* isBreakingSpace */.U2)(char)) {
+        if (shouldCollapseSpaces && (0,textTokenization/* isCollapsibleSpace */.jE)(char)) {
+          if (prevWasBreakingSpace) continue;
+          prevWasBreakingSpace = true;
+          processed.push(" ");
         } else {
-          const wordGroupTokens = getWordGroupTokens(i);
-          flushBuildingRun();
-          result.push(wordGroupTokens.map((t) => ({ text: t.token, style: t.style })));
-          canPrependSpaces = false;
-          i += wordGroupTokens.length - 1;
+          prevWasBreakingSpace = false;
+          processed.push(char);
         }
-      } else if (wordGroupWidth + currentWidth > adjustedWrapWidth && startsWordGroup) {
-        if (isBreakingSpace(token)) {
-          canPrependSpaces = false;
-          continue;
-        }
-        startNewLine();
-        buildingRun = { text: token, style: tokenStyle };
-        currentWidth = tokenWidth;
-      } else if (continuesFromPrevious && !breakWords) {
-        if (!buildingRun || buildingRun.style !== tokenStyle) {
-          flushBuildingRun();
-          buildingRun = { text: token, style: tokenStyle };
-        } else {
-          buildingRun.text += token;
-        }
-        currentWidth += tokenWidth;
       } else {
-        const isSpace = isBreakingSpace(token);
-        if (currentWidth === 0 && isSpace && !canPrependSpaces) {
-          continue;
-        }
-        if (!buildingRun || buildingRun.style !== tokenStyle) {
-          flushBuildingRun();
-          buildingRun = { text: token, style: tokenStyle };
-        } else {
-          buildingRun.text += token;
-        }
-        currentWidth += tokenWidth;
+        prevWasBreakingSpace = false;
+        processed.push(char);
       }
     }
-    flushBuildingRun();
-    if (currentLineRuns.length > 0) {
-      const lastRun = currentLineRuns[currentLineRuns.length - 1];
-      lastRun.text = trimRight(lastRun.text);
-      if (lastRun.text.length === 0) {
-        currentLineRuns.pop();
+    chars = processed;
+  }
+  const nextWord = (word) => {
+    const start = currentLine.width;
+    for (let j = 0; j < currentWord.index; j++) {
+      const position = word.positions[j];
+      currentLine.chars.push(word.chars[j]);
+      currentLine.charPositions.push(position + start);
+    }
+    currentLine.width += word.width;
+    if (currentWord.index > 0 || !shouldCollapseSpaces) {
+      firstWord = false;
+    }
+    currentWord.width = 0;
+    currentWord.index = 0;
+    currentWord.chars.length = 0;
+  };
+  const nextLine = () => {
+    let index = currentLine.chars.length - 1;
+    if (trimEnd) {
+      let lastChar = currentLine.chars[index];
+      while ((0,textTokenization/* isCollapsibleSpace */.jE)(lastChar)) {
+        currentLine.width -= font.chars[lastChar].xAdvance;
+        currentLine.spacesIndex.pop();
+        lastChar = currentLine.chars[--index];
       }
     }
-    if (currentLineRuns.length > 0 || result.length === resultStartLength) {
-      result.push(currentLineRuns);
+    layoutData.width = Math.max(layoutData.width, currentLine.width);
+    currentLine = {
+      width: 0,
+      charPositions: [],
+      chars: [],
+      spaceWidth: 0,
+      spacesIndex: []
+    };
+    firstWord = true;
+    layoutData.lines.push(currentLine);
+    layoutData.height += adjustedLineHeight;
+  };
+  const checkIsOverflow = (lineWidth) => lineWidth - adjustedLetterSpacing > adjustedWordWrapWidth;
+  for (let i = 0; i < chars.length + 1; i++) {
+    let char;
+    const isEnd = i === chars.length;
+    if (!isEnd) {
+      char = chars[i];
     }
+    const charData = font.chars[char];
+    const isSpace = /(?:\s)/.test(char);
+    const isWordBreak = isSpace || char === "\r" || char === "\n" || isEnd;
+    if (isWordBreak) {
+      const addWordToNextLine = !firstWord && style.wordWrap && checkIsOverflow(currentLine.width + currentWord.width);
+      if (addWordToNextLine) {
+        nextLine();
+        nextWord(currentWord);
+        if (!isEnd) {
+          currentLine.charPositions.push(0);
+        }
+      } else {
+        currentWord.start = currentLine.width;
+        nextWord(currentWord);
+        if (!isEnd) {
+          currentLine.charPositions.push(0);
+        }
+      }
+      if (char === "\r" || char === "\n") {
+        nextLine();
+      } else if (!isEnd && charData) {
+        const spaceWidth = charData.xAdvance + (charData.kerning?.[previousChar] || 0) + adjustedLetterSpacing;
+        currentLine.width += spaceWidth;
+        currentLine.spaceWidth = spaceWidth;
+        currentLine.spacesIndex.push(currentLine.charPositions.length);
+        currentLine.chars.push(char);
+      }
+    } else if (charData) {
+      const kerning = charData.kerning?.[previousChar] || 0;
+      const nextCharWidth = charData.xAdvance + kerning + adjustedLetterSpacing;
+      const wordExceedsWrapWidth = breakWords && checkIsOverflow(currentWord.width + nextCharWidth);
+      if (wordExceedsWrapWidth) {
+        if (!firstWord) {
+          nextLine();
+        }
+        nextWord(currentWord);
+        nextLine();
+      }
+      currentWord.positions[currentWord.index++] = currentWord.width + kerning;
+      currentWord.chars.push(char);
+      currentWord.width += nextCharWidth;
+      if ((0,textTokenization/* isBreakAfterChar */.yp)(char)) {
+        const addWordToNextLine = !firstWord && style.wordWrap && checkIsOverflow(currentLine.width + currentWord.width);
+        if (addWordToNextLine) {
+          nextLine();
+        }
+        nextWord(currentWord);
+      }
+    }
+    previousChar = char;
+  }
+  nextLine();
+  if (style.align === "center") {
+    alignCenter(layoutData);
+  } else if (style.align === "right") {
+    alignRight(layoutData);
+  } else if (style.align === "justify") {
+    alignJustify(layoutData);
+  }
+  return layoutData;
+}
+function alignCenter(measurementData) {
+  for (let i = 0; i < measurementData.lines.length; i++) {
+    const line = measurementData.lines[i];
+    const offset = measurementData.width / 2 - line.width / 2;
+    for (let j = 0; j < line.charPositions.length; j++) {
+      line.charPositions[j] += offset;
+    }
+  }
+}
+function alignRight(measurementData) {
+  for (let i = 0; i < measurementData.lines.length; i++) {
+    const line = measurementData.lines[i];
+    const offset = measurementData.width - line.width;
+    for (let j = 0; j < line.charPositions.length; j++) {
+      line.charPositions[j] += offset;
+    }
+  }
+}
+function alignJustify(measurementData) {
+  const width = measurementData.width;
+  for (let i = 0; i < measurementData.lines.length - 2; i++) {
+    const line = measurementData.lines[i];
+    let indy = 0;
+    let spaceIndex = line.spacesIndex[indy++];
+    let offset = 0;
+    const totalSpaces = line.spacesIndex.length;
+    const newSpaceWidth = (width - line.width) / totalSpaces;
+    const spaceWidth = newSpaceWidth;
+    for (let j = 0; j < line.charPositions.length; j++) {
+      if (j === spaceIndex) {
+        spaceIndex = line.spacesIndex[indy++];
+        offset += spaceWidth;
+      }
+      line.charPositions[j] += offset;
+    }
+  }
+}
+
+
+//# sourceMappingURL=getBitmapTextLayout.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/resolveCharacters.mjs
+
+function resolveCharacters(chars) {
+  if (chars === "") {
+    return [];
+  }
+  if (typeof chars === "string") {
+    chars = [chars];
+  }
+  const result = [];
+  for (let i = 0, j = chars.length; i < j; i++) {
+    const item = chars[i];
+    if (Array.isArray(item)) {
+      if (item.length !== 2) {
+        throw new Error(`[BitmapFont]: Invalid character range length, expecting 2 got ${item.length}.`);
+      }
+      if (item[0].length === 0 || item[1].length === 0) {
+        throw new Error("[BitmapFont]: Invalid character delimiter.");
+      }
+      const startCode = item[0].charCodeAt(0);
+      const endCode = item[1].charCodeAt(0);
+      if (endCode < startCode) {
+        throw new Error("[BitmapFont]: Invalid character range.");
+      }
+      for (let i2 = startCode, j2 = endCode; i2 <= j2; i2++) {
+        result.push(String.fromCharCode(i2));
+      }
+    } else {
+      result.push(...Array.from(item));
+    }
+  }
+  if (result.length === 0) {
+    throw new Error("[BitmapFont]: Empty set when resolving characters.");
   }
   return result;
 }
-function tokenizeTaggedRuns(runs) {
-  const styledTokens = [];
-  let lastTokenWasWord = false;
-  for (const run of runs) {
-    const tokens = tokenize(run.text);
-    let isFirstTokenInRun = true;
-    for (const token of tokens) {
-      const isSpace = isBreakingSpace(token) || isNewline(token);
-      const continuesFromPrevious = isFirstTokenInRun && lastTokenWasWord && !isSpace;
-      styledTokens.push({ token, style: run.style, continuesFromPrevious });
-      lastTokenWasWord = !isSpace;
-      isFirstTokenInRun = false;
-    }
-  }
-  return styledTokens;
-}
 
 
-//# sourceMappingURL=measureTaggedText.mjs.map
+//# sourceMappingURL=resolveCharacters.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/wordWrap.mjs
-
-
-"use strict";
-const contextSettings = {
-  // TextMetrics requires getImageData readback for measuring fonts.
-  willReadFrequently: true
-};
-function getFromCache(key, letterSpacing, cache, context, measureTextFn) {
-  let width = cache[key];
-  if (typeof width !== "number") {
-    width = measureTextFn(key, letterSpacing, context) + letterSpacing;
-    cache[key] = width;
-  }
-  return width;
-}
-function wordWrap(text, style, canvas, measureTextFn, canBreakWordsFn, canBreakCharsFn, wordWrapSplitFn) {
-  const context = canvas.getContext("2d", contextSettings);
-  context.font = style._fontString;
-  let width = 0;
-  let line = "";
-  const linesArray = [];
-  const cache = /* @__PURE__ */ Object.create(null);
-  const { letterSpacing, whiteSpace } = style;
-  const shouldCollapseSpaces = collapseSpaces(whiteSpace);
-  const shouldCollapseNewlines = collapseNewlines(whiteSpace);
-  let canPrependSpaces = !shouldCollapseSpaces;
-  const wordWrapWidth = style.wordWrapWidth + letterSpacing;
-  const tokens = tokenize(text);
-  for (let i = 0; i < tokens.length; i++) {
-    let token = tokens[i];
-    if (isNewline(token)) {
-      if (!shouldCollapseNewlines) {
-        linesArray.push(trimRight(line));
-        canPrependSpaces = !shouldCollapseSpaces;
-        line = "";
-        width = 0;
-        continue;
-      }
-      token = " ";
-    }
-    if (shouldCollapseSpaces) {
-      const currIsBreakingSpace = isBreakingSpace(token);
-      const lastIsBreakingSpace = isBreakingSpace(line[line.length - 1]);
-      if (currIsBreakingSpace && lastIsBreakingSpace) {
-        continue;
-      }
-    }
-    const tokenWidth = getFromCache(token, letterSpacing, cache, context, measureTextFn);
-    if (tokenWidth > wordWrapWidth) {
-      if (line !== "") {
-        linesArray.push(trimRight(line));
-        line = "";
-        width = 0;
-      }
-      if (canBreakWordsFn(token, style.breakWords)) {
-        const charGroups = getCharacterGroups(token, style.breakWords, wordWrapSplitFn, canBreakCharsFn);
-        for (const char of charGroups) {
-          const characterWidth = getFromCache(char, letterSpacing, cache, context, measureTextFn);
-          if (characterWidth + width > wordWrapWidth) {
-            linesArray.push(trimRight(line));
-            canPrependSpaces = false;
-            line = "";
-            width = 0;
-          }
-          line += char;
-          width += characterWidth;
-        }
-      } else {
-        if (line.length > 0) {
-          linesArray.push(trimRight(line));
-          line = "";
-          width = 0;
-        }
-        linesArray.push(trimRight(token));
-        canPrependSpaces = false;
-        line = "";
-        width = 0;
-      }
-    } else {
-      if (tokenWidth + width > wordWrapWidth) {
-        canPrependSpaces = false;
-        linesArray.push(trimRight(line));
-        line = "";
-        width = 0;
-      }
-      if (line.length > 0 || !isBreakingSpace(token) || canPrependSpaces) {
-        line += token;
-        width += tokenWidth;
-      }
-    }
-  }
-  const trimmedLine = trimRight(line);
-  if (trimmedLine.length > 0) {
-    linesArray.push(trimmedLine);
-  }
-  return linesArray.join("\n");
-}
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFontManager.mjs
 
 
-//# sourceMappingURL=wordWrap.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs
 
 
 
@@ -50901,475 +51649,333 @@ function wordWrap(text, style, canvas, measureTextFn, canBreakWordsFn, canBreakC
 
 
 "use strict";
-const CanvasTextMetrics_contextSettings = {
-  // TextMetrics requires getImageData readback for measuring fonts.
-  willReadFrequently: true
-};
-const _CanvasTextMetrics = class _CanvasTextMetrics {
-  /**
-   * Checking that we can use modern canvas 2D API.
-   *
-   * Note: This is an unstable API, Chrome < 94 use `textLetterSpacing`, later versions use `letterSpacing`.
-   * @see CanvasTextMetrics.experimentalLetterSpacing
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/ICanvasRenderingContext2D/letterSpacing
-   * @see https://developer.chrome.com/origintrials/#/view_trial/3585991203293757441
-   */
-  static get experimentalLetterSpacingSupported() {
-    let result = _CanvasTextMetrics._experimentalLetterSpacingSupported;
-    if (result === void 0) {
-      const proto = adapter/* DOMAdapter */.e.get().getCanvasRenderingContext2D().prototype;
-      result = _CanvasTextMetrics._experimentalLetterSpacingSupported = "letterSpacing" in proto || "textLetterSpacing" in proto;
-    }
-    return result;
-  }
-  /**
-   * @param text - the text that was measured
-   * @param style - the style that was measured
-   * @param width - the measured width of the text
-   * @param height - the measured height of the text
-   * @param lines - an array of the lines of text broken by new lines and wrapping if specified in style
-   * @param lineWidths - an array of the line widths for each line matched to `lines`
-   * @param lineHeight - the measured line height for this style
-   * @param maxLineWidth - the maximum line width for all measured lines
-   * @param fontProperties - the font properties object from TextMetrics.measureFont
-   * @param taggedData - optional object containing tagged text specific data
-   * @param taggedData.runsByLine - per-line style runs for tagged text
-   * @param taggedData.lineAscents - per-line ascent values for tagged text
-   * @param taggedData.lineDescents - per-line descent values for tagged text
-   * @param taggedData.lineHeights - per-line height values for tagged text
-   * @param taggedData.hasDropShadow - whether any run has a drop shadow
-   */
-  constructor(text, style, width, height, lines, lineWidths, lineHeight, maxLineWidth, fontProperties, taggedData) {
-    this.text = text;
-    this.style = style;
-    this.width = width;
-    this.height = height;
-    this.lines = lines;
-    this.lineWidths = lineWidths;
-    this.lineHeight = lineHeight;
-    this.maxLineWidth = maxLineWidth;
-    this.fontProperties = fontProperties;
-    if (taggedData) {
-      this.runsByLine = taggedData.runsByLine;
-      this.lineAscents = taggedData.lineAscents;
-      this.lineDescents = taggedData.lineDescents;
-      this.lineHeights = taggedData.lineHeights;
-      this.hasDropShadow = taggedData.hasDropShadow;
-    }
-  }
-  /**
-   * Measures the supplied string of text and returns a Rectangle.
-   * @param text - The text to measure.
-   * @param style - The text style to use for measuring
-   * @param canvas - optional specification of the canvas to use for measuring.
-   * @param wordWrap
-   * @returns Measured width and height of the text.
-   */
-  static measureText(text = " ", style, canvas = _CanvasTextMetrics._canvas, wordWrap2 = style.wordWrap) {
-    const textKey = `${text}-${style.styleKey}-wordWrap-${wordWrap2}`;
-    if (_CanvasTextMetrics._measurementCache.has(textKey)) {
-      return _CanvasTextMetrics._measurementCache.get(textKey);
-    }
-    const isTagged = hasTagStyles(style) && hasTagMarkup(text);
-    if (isTagged) {
-      const result = measureTaggedText(
-        text,
-        style,
-        wordWrap2,
-        _CanvasTextMetrics._context,
-        _CanvasTextMetrics._measureText,
-        _CanvasTextMetrics._measureTextAdvance,
-        _CanvasTextMetrics.measureFont,
-        _CanvasTextMetrics.canBreakChars,
-        _CanvasTextMetrics.wordWrapSplit
-      );
-      const measurements2 = new _CanvasTextMetrics(
-        text,
-        style,
-        result.width,
-        result.height,
-        result.lines,
-        result.lineWidths,
-        result.lineHeight,
-        result.maxLineWidth,
-        result.fontProperties,
-        {
-          runsByLine: result.runsByLine,
-          lineAscents: result.lineAscents,
-          lineDescents: result.lineDescents,
-          lineHeights: result.lineHeights,
-          hasDropShadow: result.hasDropShadow
-        }
-      );
-      _CanvasTextMetrics._measurementCache.set(textKey, measurements2);
-      return measurements2;
-    }
-    const font = style._fontString;
-    const fontProperties = _CanvasTextMetrics.measureFont(font);
-    if (fontProperties.fontSize === 0) {
-      fontProperties.fontSize = style.fontSize;
-      fontProperties.ascent = style.fontSize;
-      fontProperties.descent = 0;
-    }
-    const context = _CanvasTextMetrics._context;
-    context.font = font;
-    const outputText = wordWrap2 ? _CanvasTextMetrics._wordWrap(text, style, canvas) : text;
-    const lines = outputText.split(NEWLINE_MATCH_REGEX);
-    const lineWidths = new Array(lines.length);
-    let maxLineWidth = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const lineWidth = _CanvasTextMetrics._measureText(lines[i], style.letterSpacing, context);
-      lineWidths[i] = lineWidth;
-      maxLineWidth = Math.max(maxLineWidth, lineWidth);
-    }
-    const strokeWidth = style._stroke?.width ?? 0;
-    const lineHeight = style.lineHeight || fontProperties.fontSize;
-    const width = _CanvasTextMetrics._adjustWidthForStyle(maxLineWidth, style);
-    const baseHeight = Math.max(lineHeight, fontProperties.fontSize + strokeWidth) + (lines.length - 1) * (lineHeight + style.leading);
-    const height = _CanvasTextMetrics._adjustHeightForStyle(baseHeight, style);
-    const measurements = new _CanvasTextMetrics(
-      text,
-      style,
-      width,
-      height,
-      lines,
-      lineWidths,
-      lineHeight + style.leading,
-      maxLineWidth,
-      fontProperties
-    );
-    _CanvasTextMetrics._measurementCache.set(textKey, measurements);
-    return measurements;
-  }
-  /**
-   * Adjusts the measured width to account for stroke and drop shadow.
-   * @param baseWidth - The base content width
-   * @param style - The text style
-   * @returns The adjusted width
-   */
-  static _adjustWidthForStyle(baseWidth, style) {
-    const strokeWidth = style._stroke?.width || 0;
-    let width = baseWidth + strokeWidth;
-    if (style.dropShadow) {
-      width += style.dropShadow.distance;
-    }
-    return width;
-  }
-  /**
-   * Adjusts the measured height to account for drop shadow.
-   * @param baseHeight - The base content height
-   * @param style - The text style
-   * @returns The adjusted height
-   */
-  static _adjustHeightForStyle(baseHeight, style) {
-    let height = baseHeight;
-    if (style.dropShadow) {
-      height += style.dropShadow.distance;
-    }
-    return height;
-  }
-  /**
-   * Measures the rendered width of a string, accounting for letter spacing and using the provided context.
-   * Returns the larger of the advance width and the bounding box width.
-   * @param text - The text to measure
-   * @param letterSpacing - Letter spacing in pixels
-   * @param context - Canvas 2D context
-   * @returns The measured width of the text with spacing
-   * @internal
-   */
-  static _measureText(text, letterSpacing, context) {
-    const { metricWidth, metrics, letterSpacingVal } = _CanvasTextMetrics._measureTextCore(text, letterSpacing, context);
-    const actualBoundingBoxLeft = -(metrics.actualBoundingBoxLeft ?? 0);
-    const actualBoundingBoxRight = metrics.actualBoundingBoxRight ?? 0;
-    let boundsWidth = actualBoundingBoxRight - actualBoundingBoxLeft;
-    if (metrics.width > 0) {
-      boundsWidth += letterSpacingVal;
-    }
-    return Math.max(metricWidth, boundsWidth);
-  }
-  /**
-   * Measures advance width only (no bounding box). Advance widths are additive,
-   * making this suitable for word wrap line-fitting where per-token widths must sum correctly.
-   * @param text - The text to measure
-   * @param letterSpacing - Letter spacing in pixels
-   * @param context - Canvas 2D context
-   * @returns The advance width of the text
-   * @internal
-   */
-  static _measureTextAdvance(text, letterSpacing, context) {
-    return _CanvasTextMetrics._measureTextCore(text, letterSpacing, context).metricWidth;
-  }
-  /**
-   * Shared measurement core: sets up letter spacing on the context, calls
-   * context.measureText, and adjusts the advance width for letter spacing.
-   * @param text
-   * @param letterSpacing
-   * @param context
-   * @internal
-   */
-  static _measureTextCore(text, letterSpacing, context) {
-    let useExperimentalLetterSpacing = false;
-    if (_CanvasTextMetrics.experimentalLetterSpacingSupported) {
-      if (_CanvasTextMetrics.experimentalLetterSpacing) {
-        context.letterSpacing = `${letterSpacing}px`;
-        context.textLetterSpacing = `${letterSpacing}px`;
-        useExperimentalLetterSpacing = true;
-      } else {
-        context.letterSpacing = "0px";
-        context.textLetterSpacing = "0px";
-      }
-    }
-    const metrics = context.measureText(text);
-    let metricWidth = metrics.width;
-    let letterSpacingVal = 0;
-    if (metricWidth > 0) {
-      if (useExperimentalLetterSpacing) {
-        letterSpacingVal = -letterSpacing;
-      } else {
-        letterSpacingVal = (_CanvasTextMetrics.graphemeSegmenter(text).length - 1) * letterSpacing;
-      }
-      metricWidth += letterSpacingVal;
-    }
-    return { metricWidth, metrics, letterSpacingVal };
-  }
-  /**
-   * Applies newlines to a string to have it optimally fit into the horizontal
-   * bounds set by the Text object's wordWrapWidth property.
-   * @param text - String to apply word wrapping to
-   * @param style - the style to use when wrapping
-   * @param canvas - optional specification of the canvas to use for measuring.
-   * @returns New string with new lines applied where required
-   */
-  static _wordWrap(text, style, canvas = _CanvasTextMetrics._canvas) {
-    return wordWrap(
-      text,
-      style,
-      canvas,
-      _CanvasTextMetrics._measureTextAdvance,
-      _CanvasTextMetrics.canBreakWords,
-      _CanvasTextMetrics.canBreakChars,
-      _CanvasTextMetrics.wordWrapSplit
-    );
-  }
-  /**
-   * Determines if char is a breaking whitespace.
-   *
-   * It allows one to determine whether char should be a breaking whitespace
-   * For example certain characters in CJK langs or numbers.
-   * It must return a boolean.
-   * @param char - The character
-   * @param [_nextChar] - The next character
-   * @returns True if whitespace, False otherwise.
-   */
-  static isBreakingSpace(char, _nextChar) {
-    return isBreakingSpace(char, _nextChar);
-  }
-  /**
-   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
-   *
-   * It allows one to customise which words should break
-   * Examples are if the token is CJK or numbers.
-   * It must return a boolean.
-   * @param _token - The token
-   * @param breakWords - The style attr break words
-   * @returns Whether to break word or not
-   */
-  static canBreakWords(_token, breakWords) {
-    return breakWords;
-  }
-  /**
-   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
-   *
-   * It allows one to determine whether a pair of characters
-   * should be broken by newlines
-   * For example certain characters in CJK langs or numbers.
-   * It must return a boolean.
-   * @param _char - The character
-   * @param _nextChar - The next character
-   * @param _token - The token/word the characters are from
-   * @param _index - The index in the token of the char
-   * @param _breakWords - The style attr break words
-   * @returns whether to break word or not
-   */
-  static canBreakChars(_char, _nextChar, _token, _index, _breakWords) {
-    return true;
-  }
-  /**
-   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
-   *
-   * It is called when a token (usually a word) has to be split into separate pieces
-   * in order to determine the point to break a word.
-   * It must return an array of characters.
-   * @param token - The token to split
-   * @returns The characters of the token
-   * @see CanvasTextMetrics.graphemeSegmenter
-   */
-  static wordWrapSplit(token) {
-    return _CanvasTextMetrics.graphemeSegmenter(token);
-  }
-  /**
-   * Calculates the ascent, descent and fontSize of a given font-style
-   * @param font - String representing the style of the font
-   * @returns Font properties object
-   */
-  static measureFont(font) {
-    if (_CanvasTextMetrics._fonts[font]) {
-      return _CanvasTextMetrics._fonts[font];
-    }
-    const context = _CanvasTextMetrics._context;
-    context.font = font;
-    const metrics = context.measureText(_CanvasTextMetrics.METRICS_STRING + _CanvasTextMetrics.BASELINE_SYMBOL);
-    const ascent = metrics.actualBoundingBoxAscent ?? 0;
-    const descent = metrics.actualBoundingBoxDescent ?? 0;
-    const properties = {
-      ascent,
-      descent,
-      fontSize: ascent + descent
+let fontCount = 0;
+class BitmapFontManagerClass {
+  constructor() {
+    /**
+     * This character set includes all the letters in the alphabet (both lower- and upper- case).
+     * @type {string[][]}
+     * @example
+     * BitmapFont.from('ExampleFont', style, { chars: BitmapFont.ALPHA })
+     */
+    this.ALPHA = [["a", "z"], ["A", "Z"], " "];
+    /**
+     * This character set includes all decimal digits (from 0 to 9).
+     * @type {string[][]}
+     * @example
+     * BitmapFont.from('ExampleFont', style, { chars: BitmapFont.NUMERIC })
+     */
+    this.NUMERIC = [["0", "9"]];
+    /**
+     * This character set is the union of `BitmapFont.ALPHA` and `BitmapFont.NUMERIC`.
+     * @type {string[][]}
+     */
+    this.ALPHANUMERIC = [["a", "z"], ["A", "Z"], ["0", "9"], " "];
+    /**
+     * This character set consists of all the ASCII table.
+     * @type {string[][]}
+     * @see http://www.asciitable.com/
+     */
+    this.ASCII = [[" ", "~"]];
+    /** Default options for installing a new BitmapFont. */
+    this.defaultOptions = {
+      chars: this.ALPHANUMERIC,
+      resolution: 1,
+      padding: 4,
+      skipKerning: false,
+      textureStyle: null
     };
-    _CanvasTextMetrics._fonts[font] = properties;
-    return properties;
+    /** Cache for measured text layouts to avoid recalculating them multiple times. */
+    this.measureCache = (0,tiny_lru/* lru */.g)(1e3);
   }
   /**
-   * Clear font metrics in metrics cache.
-   * @param {string} [font] - font name. If font name not set then clear cache for all fonts.
+   * Get a font for the specified text and style.
+   * @param text - The text to get the font for
+   * @param style - The style to use
    */
-  static clearMetrics(font = "") {
+  getFont(text, style) {
+    let fontFamilyKey = `${style.fontFamily}-bitmap`;
+    let overrideFill = true;
+    if (Cache/* Cache */.l.has(fontFamilyKey)) {
+      const dynamicFont2 = Cache/* Cache */.l.get(fontFamilyKey);
+      dynamicFont2.ensureCharacters?.(text);
+      return dynamicFont2;
+    }
+    if (style._fill.fill && !style._stroke) {
+      fontFamilyKey += style._fill.fill.styleKey;
+      overrideFill = false;
+    } else if (style._stroke || style.dropShadow) {
+      fontFamilyKey = `${style.styleKey}-bitmap`;
+      overrideFill = false;
+    }
+    fontFamilyKey += `-${style.fontStyle}`;
+    fontFamilyKey += `-${style.fontVariant}`;
+    fontFamilyKey += `-${style.fontWeight}`;
+    if (!Cache/* Cache */.l.has(fontFamilyKey)) {
+      const styleCopy = Object.create(style);
+      styleCopy["_lineHeight"] = 0;
+      const fnt = new DynamicBitmapFont({
+        style: styleCopy,
+        overrideFill,
+        overrideSize: true,
+        ...this.defaultOptions
+      });
+      fontCount++;
+      if (fontCount > 50) {
+        (0,warn/* warn */.R)("BitmapText", `You have dynamically created ${fontCount} bitmap fonts, this can be inefficient. Try pre installing your font styles using \`BitmapFont.install({name:"style1", style})\``);
+      }
+      fnt.once("destroy", () => {
+        fontCount--;
+        Cache/* Cache */.l.remove(fontFamilyKey);
+      });
+      Cache/* Cache */.l.set(
+        fontFamilyKey,
+        fnt
+      );
+    }
+    const dynamicFont = Cache/* Cache */.l.get(fontFamilyKey);
+    dynamicFont.ensureCharacters?.(text);
+    return dynamicFont;
+  }
+  /**
+   * Get the layout of a text for the specified style.
+   * @param text - The text to get the layout for
+   * @param style - The style to use
+   * @param trimEnd - Whether to ignore whitespaces at the end of each line
+   */
+  getLayout(text, style, trimEnd = true) {
+    const bitmapFont = this.getFont(text, style);
+    const id = `${text}-${style.styleKey}-${trimEnd}`;
+    if (this.measureCache.has(id)) {
+      return this.measureCache.get(id);
+    }
+    const segments = CanvasTextMetrics/* CanvasTextMetrics */.P.graphemeSegmenter(text);
+    const layoutData = getBitmapTextLayout(segments, style, bitmapFont, trimEnd);
+    this.measureCache.set(id, layoutData);
+    return layoutData;
+  }
+  /**
+   * Measure the text using the specified style.
+   * @param text - The text to measure
+   * @param style - The style to use
+   * @param trimEnd - Whether to ignore whitespaces at the end of each line
+   */
+  measureText(text, style, trimEnd = true) {
+    return this.getLayout(text, style, trimEnd);
+  }
+  // eslint-disable-next-line max-len
+  install(...args) {
+    let options = args[0];
+    if (typeof options === "string") {
+      options = {
+        name: options,
+        style: args[1],
+        chars: args[2]?.chars,
+        resolution: args[2]?.resolution,
+        padding: args[2]?.padding,
+        skipKerning: args[2]?.skipKerning
+      };
+      (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "BitmapFontManager.install(name, style, options) is deprecated, use BitmapFontManager.install({name, style, ...options})");
+    }
+    const name = options?.name;
+    if (!name) {
+      throw new Error("[BitmapFontManager] Property `name` is required.");
+    }
+    options = { ...this.defaultOptions, ...options };
+    const textStyle = options.style;
+    const style = textStyle instanceof TextStyle/* TextStyle */.x ? textStyle : new TextStyle/* TextStyle */.x(textStyle);
+    const overrideFill = options.dynamicFill ?? this._canUseTintForStyle(style);
+    const font = new DynamicBitmapFont({
+      style,
+      overrideFill,
+      skipKerning: options.skipKerning,
+      padding: options.padding,
+      resolution: options.resolution,
+      overrideSize: false,
+      textureStyle: options.textureStyle
+    });
+    const flatChars = resolveCharacters(options.chars);
+    font.ensureCharacters(flatChars.join(""));
+    Cache/* Cache */.l.set(`${name}-bitmap`, font);
+    font.once("destroy", () => Cache/* Cache */.l.remove(`${name}-bitmap`));
+    return font;
+  }
+  /**
+   * Uninstalls a bitmap font from the cache.
+   * @param {string} name - The name of the bitmap font to uninstall.
+   */
+  uninstall(name) {
+    const cacheKey = `${name}-bitmap`;
+    const font = Cache/* Cache */.l.get(cacheKey);
     if (font) {
-      delete _CanvasTextMetrics._fonts[font];
-    } else {
-      _CanvasTextMetrics._fonts = {};
+      font.destroy();
     }
   }
   /**
-   * Cached canvas element for measuring text
-   * TODO: this should be private, but isn't because of backward compat, will fix later.
-   * @ignore
+   * Determines if a style can use tinting instead of baking colors into the bitmap.
+   * Tinting is more efficient as it allows reusing the same bitmap with different colors.
+   * @param style - The text style to evaluate
+   * @returns true if the style can use tinting, false if colors must be baked in
+   * @private
    */
-  static get _canvas() {
-    if (!_CanvasTextMetrics.__canvas) {
-      let canvas;
-      try {
-        const c = new OffscreenCanvas(0, 0);
-        const context = c.getContext("2d", CanvasTextMetrics_contextSettings);
-        if (context?.measureText) {
-          _CanvasTextMetrics.__canvas = c;
-          return c;
-        }
-        canvas = adapter/* DOMAdapter */.e.get().createCanvas();
-      } catch (_cx) {
-        canvas = adapter/* DOMAdapter */.e.get().createCanvas();
-      }
-      canvas.width = canvas.height = 10;
-      _CanvasTextMetrics.__canvas = canvas;
-    }
-    return _CanvasTextMetrics.__canvas;
+  _canUseTintForStyle(style) {
+    return !style._stroke && (!style.dropShadow || style.dropShadow.color === 0) && !style._fill.fill && style._fill.color === 16777215;
   }
-  /**
-   * TODO: this should be private, but isn't because of backward compat, will fix later.
-   * @ignore
-   */
-  static get _context() {
-    if (!_CanvasTextMetrics.__context) {
-      _CanvasTextMetrics.__context = _CanvasTextMetrics._canvas.getContext("2d", CanvasTextMetrics_contextSettings);
-    }
-    return _CanvasTextMetrics.__context;
-  }
-};
-/**
- * String used for calculate font metrics.
- * These characters are all tall to help calculate the height required for text.
- */
-_CanvasTextMetrics.METRICS_STRING = "|\xC9q\xC5";
-/** Baseline symbol for calculate font metrics. */
-_CanvasTextMetrics.BASELINE_SYMBOL = "M";
-/** Baseline multiplier for calculate font metrics. */
-_CanvasTextMetrics.BASELINE_MULTIPLIER = 1.4;
-/** Height multiplier for setting height of canvas to calculate font metrics. */
-_CanvasTextMetrics.HEIGHT_MULTIPLIER = 2;
-/**
- * A Unicode "character", or "grapheme cluster", can be composed of multiple Unicode code points,
- * such as letters with diacritical marks (e.g. `'\u0065\u0301'`, letter e with acute)
- * or emojis with modifiers (e.g. `'\uD83E\uDDD1\u200D\uD83D\uDCBB'`, technologist).
- * The new `Intl.Segmenter` API in ES2022 can split the string into grapheme clusters correctly. If it is not available,
- * PixiJS will fallback to use the iterator of String, which can only spilt the string into code points.
- * If you want to get full functionality in environments that don't support `Intl.Segmenter` (such as Firefox),
- * you can use other libraries such as [grapheme-splitter]{@link https://www.npmjs.com/package/grapheme-splitter}
- * or [graphemer]{@link https://www.npmjs.com/package/graphemer} to create a polyfill. Since these libraries can be
- * relatively large in size to handle various Unicode grapheme clusters properly, PixiJS won't use them directly.
- */
-_CanvasTextMetrics.graphemeSegmenter = (() => {
-  if (typeof Intl?.Segmenter === "function") {
-    const segmenter = new Intl.Segmenter();
-    return (s) => {
-      const segments = segmenter.segment(s);
-      const result = [];
-      let i = 0;
-      for (const segment of segments) {
-        result[i++] = segment.segment;
-      }
-      return result;
+}
+const BitmapFontManager = new BitmapFontManagerClass();
+
+
+//# sourceMappingURL=BitmapFontManager.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFont.mjs
+
+
+
+
+
+
+"use strict";
+class BitmapFont extends AbstractBitmapFont {
+  constructor(options, url) {
+    super();
+    const { textures, data } = options;
+    Object.keys(data.pages).forEach((key) => {
+      const pageData = data.pages[parseInt(key, 10)];
+      const texture = textures[pageData.id];
+      this.pages.push({ texture });
+    });
+    Object.keys(data.chars).forEach((key) => {
+      const charData = data.chars[key];
+      const {
+        frame: textureFrame,
+        source: textureSource,
+        rotate: textureRotate
+      } = textures[charData.page];
+      const frame = groupD8/* groupD8 */.E.transformRectCoords(
+        charData,
+        textureFrame,
+        textureRotate,
+        new Rectangle/* Rectangle */.M()
+      );
+      const texture = new Texture/* Texture */.g({
+        frame,
+        orig: new Rectangle/* Rectangle */.M(0, 0, charData.width, charData.height),
+        source: textureSource,
+        rotate: textureRotate
+      });
+      this.chars[key] = {
+        id: key.codePointAt(0),
+        xOffset: charData.xOffset,
+        yOffset: charData.yOffset,
+        xAdvance: charData.xAdvance,
+        kerning: charData.kerning ?? {},
+        texture
+      };
+    });
+    this.baseRenderedFontSize = data.fontSize;
+    this.baseMeasurementFontSize = data.fontSize;
+    this.fontMetrics = {
+      ascent: 0,
+      descent: 0,
+      fontSize: data.fontSize
     };
+    this.baseLineOffset = data.baseLineOffset;
+    this.lineHeight = data.lineHeight;
+    this.fontFamily = data.fontFamily;
+    this.distanceField = data.distanceField ?? {
+      type: "none",
+      range: 0
+    };
+    this.url = url;
   }
-  return (s) => [...s];
-})();
-/**
- * New rendering behavior for letter-spacing which uses Chrome's new native API. This will
- * lead to more accurate letter-spacing results because it does not try to manually draw
- * each character. However, this Chrome API is experimental and may not serve all cases yet.
- * @see CanvasTextMetrics.experimentalLetterSpacingSupported
- */
-_CanvasTextMetrics.experimentalLetterSpacing = false;
-/** Cache of {@link TextMetrics.FontMetrics} objects. */
-_CanvasTextMetrics._fonts = {};
-/** Cache for measured text metrics */
-_CanvasTextMetrics._measurementCache = lru(1e3);
-let CanvasTextMetrics = _CanvasTextMetrics;
-
-
-//# sourceMappingURL=CanvasTextMetrics.mjs.map
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/color/Color.mjs + 2 modules
-var Color = __webpack_require__(1640);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/utils/data/uid.mjs
-var uid = __webpack_require__(5150);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillGradient.mjs
-var FillGradient = __webpack_require__(193);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/fill/FillPattern.mjs
-var FillPattern = __webpack_require__(1549);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/GraphicsContext.mjs + 20 modules
-var GraphicsContext = __webpack_require__(9469);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/graphics/shared/utils/convertFillInputToFillStyle.mjs
-var convertFillInputToFillStyle = __webpack_require__(59);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/fontStringFromTextStyle.mjs
-
-const genericFontFamilies = [
-  "serif",
-  "sans-serif",
-  "monospace",
-  "cursive",
-  "fantasy",
-  "system-ui"
-];
-function fontStringFromTextStyle(style) {
-  const fontSizeString = typeof style.fontSize === "number" ? `${style.fontSize}px` : style.fontSize;
-  let fontFamilies = style.fontFamily;
-  if (!Array.isArray(style.fontFamily)) {
-    fontFamilies = style.fontFamily.split(",");
-  }
-  for (let i = fontFamilies.length - 1; i >= 0; i--) {
-    let fontFamily = fontFamilies[i].trim();
-    if (!/([\"\'])[^\'\"]+\1/.test(fontFamily) && !genericFontFamilies.includes(fontFamily)) {
-      fontFamily = `"${fontFamily}"`;
+  /** Destroys the BitmapFont object. */
+  destroy() {
+    super.destroy();
+    for (let i = 0; i < this.pages.length; i++) {
+      const { texture } = this.pages[i];
+      texture.destroy(true);
     }
-    fontFamilies[i] = fontFamily;
+    this.pages = null;
   }
-  return `${style.fontStyle} ${style.fontVariant} ${style.fontWeight} ${fontSizeString} ${fontFamilies.join(",")}`;
+  /**
+   * Generates and installs a bitmap font with the specified options.
+   * The font will be cached and available for use in BitmapText objects.
+   * @param options - Setup options for font generation
+   * @returns Installed font instance
+   * @example
+   * ```ts
+   * // Install a basic font
+   * BitmapFont.install({
+   *     name: 'Title',
+   *     style: {
+   *         fontFamily: 'Arial',
+   *         fontSize: 32,
+   *         fill: '#ffffff'
+   *     }
+   * });
+   *
+   * // Install with advanced options
+   * BitmapFont.install({
+   *     name: 'Custom',
+   *     style: {
+   *         fontFamily: 'Arial',
+   *         fontSize: 24,
+   *         fill: '#00ff00',
+   *         stroke: { color: '#000000', width: 2 }
+   *     },
+   *     chars: [['a', 'z'], ['A', 'Z'], ['0', '9']],
+   *     resolution: 2,
+   *     padding: 4,
+   *     textureStyle: {
+   *         scaleMode: 'nearest'
+   *     }
+   * });
+   * ```
+   */
+  static install(options) {
+    BitmapFontManager.install(options);
+  }
+  /**
+   * Uninstalls a bitmap font from the cache.
+   * This frees up memory and resources associated with the font.
+   * @param name - The name of the bitmap font to uninstall
+   * @example
+   * ```ts
+   * // Remove a font when it's no longer needed
+   * BitmapFont.uninstall('MyCustomFont');
+   *
+   * // Clear multiple fonts
+   * ['Title', 'Heading', 'Body'].forEach(BitmapFont.uninstall);
+   * ```
+   */
+  static uninstall(name) {
+    BitmapFontManager.uninstall(name);
+  }
 }
 
 
-//# sourceMappingURL=fontStringFromTextStyle.mjs.map
+//# sourceMappingURL=BitmapFont.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/TextStyle.mjs
+
+/***/ },
+
+/***/ 7632
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   x: () => (/* binding */ TextStyle)
+/* harmony export */ });
+/* harmony import */ var eventemitter3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2998);
+/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1640);
+/* harmony import */ var _utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5150);
+/* harmony import */ var _utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7927);
+/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2555);
+/* harmony import */ var _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(193);
+/* harmony import */ var _graphics_shared_fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(1549);
+/* harmony import */ var _graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9469);
+/* harmony import */ var _graphics_shared_utils_convertFillInputToFillStyle_mjs__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(59);
+/* harmony import */ var _canvas_utils_fontStringFromTextStyle_mjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(1831);
 
 
 
@@ -51382,7 +51988,7 @@ function fontStringFromTextStyle(style) {
 
 
 "use strict";
-const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
+const _TextStyle = class _TextStyle extends eventemitter3__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
   constructor(style = {}) {
     super();
     /**
@@ -51390,7 +51996,7 @@ const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
      * This is used to track instances and ensure uniqueness.
      * @internal
      */
-    this.uid = (0,uid/* uid */.L)("textStyle");
+    this.uid = (0,_utils_data_uid_mjs__WEBPACK_IMPORTED_MODULE_2__/* .uid */ .L)("textStyle");
     /**
      * Internal tick counter used to track updates and changes.
      * This is incremented whenever the style is modified, allowing for efficient change detection.
@@ -51654,16 +52260,16 @@ const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
     if (value === this._originalFill) return;
     this._originalFill = value;
     if (this._isFillStyle(value)) {
-      this._originalFill = this._createProxy({ ...GraphicsContext/* GraphicsContext */.T.defaultFillStyle, ...value }, () => {
-        this._fill = (0,convertFillInputToFillStyle/* toFillStyle */.w)(
+      this._originalFill = this._createProxy({ ..._graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultFillStyle, ...value }, () => {
+        this._fill = (0,_graphics_shared_utils_convertFillInputToFillStyle_mjs__WEBPACK_IMPORTED_MODULE_8__/* .toFillStyle */ .w)(
           { ...this._originalFill },
-          GraphicsContext/* GraphicsContext */.T.defaultFillStyle
+          _graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultFillStyle
         );
       });
     }
-    this._fill = (0,convertFillInputToFillStyle/* toFillStyle */.w)(
+    this._fill = (0,_graphics_shared_utils_convertFillInputToFillStyle_mjs__WEBPACK_IMPORTED_MODULE_8__/* .toFillStyle */ .w)(
       value === 0 ? "black" : value,
-      GraphicsContext/* GraphicsContext */.T.defaultFillStyle
+      _graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultFillStyle
     );
     this.update();
   }
@@ -51675,14 +52281,14 @@ const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
     if (value === this._originalStroke) return;
     this._originalStroke = value;
     if (this._isFillStyle(value)) {
-      this._originalStroke = this._createProxy({ ...GraphicsContext/* GraphicsContext */.T.defaultStrokeStyle, ...value }, () => {
-        this._stroke = (0,convertFillInputToFillStyle/* toStrokeStyle */.T)(
+      this._originalStroke = this._createProxy({ ..._graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultStrokeStyle, ...value }, () => {
+        this._stroke = (0,_graphics_shared_utils_convertFillInputToFillStyle_mjs__WEBPACK_IMPORTED_MODULE_8__/* .toStrokeStyle */ .T)(
           { ...this._originalStroke },
-          GraphicsContext/* GraphicsContext */.T.defaultStrokeStyle
+          _graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultStrokeStyle
         );
       });
     }
-    this._stroke = (0,convertFillInputToFillStyle/* toStrokeStyle */.T)(value, GraphicsContext/* GraphicsContext */.T.defaultStrokeStyle);
+    this._stroke = (0,_graphics_shared_utils_convertFillInputToFillStyle_mjs__WEBPACK_IMPORTED_MODULE_8__/* .toStrokeStyle */ .T)(value, _graphics_shared_GraphicsContext_mjs__WEBPACK_IMPORTED_MODULE_7__/* .GraphicsContext */ .T.defaultStrokeStyle);
     this.update();
   }
   /**
@@ -51753,7 +52359,7 @@ const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
    */
   get _fontString() {
     if (this._cachedFontString === null) {
-      this._cachedFontString = fontStringFromTextStyle(this);
+      this._cachedFontString = (0,_canvas_utils_fontStringFromTextStyle_mjs__WEBPACK_IMPORTED_MODULE_9__/* .fontStringFromTextStyle */ .Z)(this);
     }
     return this._cachedFontString;
   }
@@ -51864,7 +52470,7 @@ const _TextStyle = class _TextStyle extends eventemitter3/* default */.A {
     });
   }
   _isFillStyle(value) {
-    return (value ?? null) !== null && !(Color/* Color */.Q.isColorLike(value) || value instanceof FillGradient/* FillGradient */._ || value instanceof FillPattern/* FillPattern */.m);
+    return (value ?? null) !== null && !(_color_Color_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Color */ .Q.isColorLike(value) || value instanceof _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_5__/* .FillGradient */ ._ || value instanceof _graphics_shared_fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_6__/* .FillPattern */ .m);
   }
 };
 /**
@@ -51931,12 +52537,12 @@ function convertV7Tov8Style(style) {
     };
   }
   if (oldStyle.strokeThickness !== void 0) {
-    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "strokeThickness is now a part of stroke");
+    (0,_utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__/* .deprecation */ .t6)(_utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__/* .v8_0_0 */ .lj, "strokeThickness is now a part of stroke");
     const color = oldStyle.stroke;
     let obj = {};
-    if (Color/* Color */.Q.isColorLike(color)) {
+    if (_color_Color_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Color */ .Q.isColorLike(color)) {
       obj.color = color;
-    } else if (color instanceof FillGradient/* FillGradient */._ || color instanceof FillPattern/* FillPattern */.m) {
+    } else if (color instanceof _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_5__/* .FillGradient */ ._ || color instanceof _graphics_shared_fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_6__/* .FillPattern */ .m) {
       obj.fill = color;
     } else if (Object.hasOwnProperty.call(color, "color") || Object.hasOwnProperty.call(color, "fill")) {
       obj = color;
@@ -51949,20 +52555,20 @@ function convertV7Tov8Style(style) {
     };
   }
   if (Array.isArray(oldStyle.fillGradientStops)) {
-    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "gradient fill is now a fill pattern: `new FillGradient(...)`");
+    (0,_utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__/* .deprecation */ .t6)(_utils_logging_deprecation_mjs__WEBPACK_IMPORTED_MODULE_3__/* .v8_0_0 */ .lj, "gradient fill is now a fill pattern: `new FillGradient(...)`");
     if (!Array.isArray(oldStyle.fill) || oldStyle.fill.length === 0) {
       throw new Error("Invalid fill value. Expected an array of colors for gradient fill.");
     }
     if (oldStyle.fill.length !== oldStyle.fillGradientStops.length) {
-      (0,warn/* warn */.R)("The number of fill colors must match the number of fill gradient stops.");
+      (0,_utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_4__/* .warn */ .R)("The number of fill colors must match the number of fill gradient stops.");
     }
-    const gradientFill = new FillGradient/* FillGradient */._({
+    const gradientFill = new _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_5__/* .FillGradient */ ._({
       start: { x: 0, y: 0 },
       end: { x: 0, y: 1 },
       textureSpace: "local"
     });
     const fillGradientStops = oldStyle.fillGradientStops.slice();
-    const fills = oldStyle.fill.map((color) => Color/* Color */.Q.shared.setValue(color).toNumber());
+    const fills = oldStyle.fill.map((color) => _color_Color_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Color */ .Q.shared.setValue(color).toNumber());
     fillGradientStops.forEach((stop, index) => {
       gradientFill.addColorStop(stop, fills[index]);
     });
@@ -51975,15 +52581,1015 @@ function convertV7Tov8Style(style) {
 
 //# sourceMappingURL=TextStyle.mjs.map
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/CanvasPool.mjs
-var CanvasPool = __webpack_require__(1281);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
-var ImageSource = __webpack_require__(1950);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/rendering/renderers/shared/texture/TextureStyle.mjs
-var TextureStyle = __webpack_require__(7187);
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/maths/matrix/Matrix.mjs
-var Matrix = __webpack_require__(6512);
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
+
+/***/ },
+
+/***/ 5346
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  P: () => (/* binding */ CanvasTextMetrics)
+});
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/tiny-lru@11.4.7/node_modules/tiny-lru/dist/tiny-lru.js
+var tiny_lru = __webpack_require__(992);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/environment/adapter.mjs + 1 modules
+var adapter = __webpack_require__(5886);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/parseTaggedText.mjs
+
+function hasTagStyles(style) {
+  return !!style.tagStyles && Object.keys(style.tagStyles).length > 0;
+}
+function hasTagMarkup(text) {
+  return text.includes("<");
+}
+function createMergedStyle(baseStyle, overrides) {
+  return baseStyle.clone().assign(overrides);
+}
+function parseTaggedText(text, style) {
+  const runs = [];
+  const tagStyles = style.tagStyles;
+  if (!hasTagStyles(style) || !hasTagMarkup(text)) {
+    runs.push({ text, style });
+    return runs;
+  }
+  const styleStack = [style];
+  const tagStack = [];
+  let currentText = "";
+  let i = 0;
+  while (i < text.length) {
+    const char = text[i];
+    if (char === "<") {
+      const closeIndex = text.indexOf(">", i);
+      if (closeIndex === -1) {
+        currentText += char;
+        i++;
+        continue;
+      }
+      const nextOpenIndex = text.indexOf("<", i + 1);
+      if (nextOpenIndex !== -1 && nextOpenIndex < closeIndex) {
+        currentText += char;
+        i++;
+        continue;
+      }
+      const tagContent = text.slice(i + 1, closeIndex);
+      if (tagContent.startsWith("/")) {
+        const closingTagName = tagContent.slice(1).trim();
+        if (tagStack.length > 0 && tagStack[tagStack.length - 1] === closingTagName) {
+          if (currentText.length > 0) {
+            runs.push({
+              text: currentText,
+              style: styleStack[styleStack.length - 1]
+            });
+            currentText = "";
+          }
+          styleStack.pop();
+          tagStack.pop();
+          i = closeIndex + 1;
+          continue;
+        } else {
+          currentText += text.slice(i, closeIndex + 1);
+          i = closeIndex + 1;
+          continue;
+        }
+      } else {
+        const tagName = tagContent.trim();
+        if (tagStyles[tagName]) {
+          if (currentText.length > 0) {
+            runs.push({
+              text: currentText,
+              style: styleStack[styleStack.length - 1]
+            });
+            currentText = "";
+          }
+          const currentStyle = styleStack[styleStack.length - 1];
+          const mergedStyle = createMergedStyle(currentStyle, tagStyles[tagName]);
+          styleStack.push(mergedStyle);
+          tagStack.push(tagName);
+          i = closeIndex + 1;
+          continue;
+        } else {
+          currentText += text.slice(i, closeIndex + 1);
+          i = closeIndex + 1;
+          continue;
+        }
+      }
+    } else {
+      currentText += char;
+      i++;
+    }
+  }
+  if (currentText.length > 0) {
+    runs.push({
+      text: currentText,
+      style: styleStack[styleStack.length - 1]
+    });
+  }
+  return runs;
+}
+function getPlainText(text, style) {
+  if (!hasTagStyles(style) || !hasTagMarkup(text)) {
+    return text;
+  }
+  const runs = parseTaggedText(text, style);
+  return runs.map((run) => run.text).join("");
+}
+
+
+//# sourceMappingURL=parseTaggedText.mjs.map
+
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/textTokenization.mjs
+var textTokenization = __webpack_require__(3713);
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/measureTaggedText.mjs
+
+
+
+"use strict";
+const NEWLINE_TO_SPACE_REGEX = /\r\n|\r|\n/g;
+function measureTaggedText(text, style, wordWrap, context, measureTextFn, wrapMeasureTextFn, measureFontFn, canBreakCharsFn, wordWrapSplitFn) {
+  const runs = parseTaggedText(text, style);
+  const shouldCollapseNewlines = (0,textTokenization/* collapseNewlines */.fo)(style.whiteSpace);
+  if (shouldCollapseNewlines) {
+    for (let i = 0; i < runs.length; i++) {
+      const run = runs[i];
+      runs[i] = { text: run.text.replace(NEWLINE_TO_SPACE_REGEX, " "), style: run.style };
+    }
+  }
+  const runsByLine = [];
+  let currentLineRuns = [];
+  for (const run of runs) {
+    const parts = run.text.split(textTokenization/* NEWLINE_SPLIT_REGEX */.kl);
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part === "\r\n" || part === "\r" || part === "\n") {
+        runsByLine.push(currentLineRuns);
+        currentLineRuns = [];
+      } else if (part.length > 0) {
+        currentLineRuns.push({ text: part, style: run.style });
+      }
+    }
+  }
+  if (currentLineRuns.length > 0 || runsByLine.length === 0) {
+    runsByLine.push(currentLineRuns);
+  }
+  const wrappedRunsByLine = wordWrap ? wordWrapTaggedLines(
+    runsByLine,
+    style,
+    context,
+    wrapMeasureTextFn,
+    canBreakCharsFn,
+    wordWrapSplitFn
+  ) : runsByLine;
+  const lineWidths = [];
+  const lineAscents = [];
+  const lineDescents = [];
+  const lineHeightsArr = [];
+  const lines = [];
+  let maxLineWidth = 0;
+  const baseFont = style._fontString;
+  const baseFontProps = measureFontFn(baseFont);
+  if (baseFontProps.fontSize === 0) {
+    baseFontProps.fontSize = style.fontSize;
+    baseFontProps.ascent = style.fontSize;
+  }
+  let lastFont = "";
+  let hasDropShadow = !!style.dropShadow;
+  let maxRunStrokeWidth = style._stroke?.width || 0;
+  for (const lineRuns of wrappedRunsByLine) {
+    let lineWidth = 0;
+    let lineAscent = baseFontProps.ascent;
+    let lineDescent = baseFontProps.descent;
+    let lineText = "";
+    for (const run of lineRuns) {
+      const runFont = run.style._fontString;
+      const runFontProps = measureFontFn(runFont);
+      if (runFont !== lastFont) {
+        context.font = runFont;
+        lastFont = runFont;
+      }
+      const runWidth = measureTextFn(run.text, run.style.letterSpacing, context);
+      lineWidth += runWidth;
+      lineAscent = Math.max(lineAscent, runFontProps.ascent);
+      lineDescent = Math.max(lineDescent, runFontProps.descent);
+      lineText += run.text;
+      const runStrokeWidth = run.style._stroke?.width || 0;
+      if (runStrokeWidth > maxRunStrokeWidth) maxRunStrokeWidth = runStrokeWidth;
+      if (!hasDropShadow && run.style.dropShadow) {
+        hasDropShadow = true;
+      }
+    }
+    if (lineRuns.length === 0) {
+      lineAscent = baseFontProps.ascent;
+      lineDescent = baseFontProps.descent;
+    }
+    lineWidths.push(lineWidth);
+    lineAscents.push(lineAscent);
+    lineDescents.push(lineDescent);
+    lines.push(lineText);
+    const computedLineHeight = style.lineHeight || lineAscent + lineDescent;
+    lineHeightsArr.push(computedLineHeight + style.leading);
+    maxLineWidth = Math.max(maxLineWidth, lineWidth);
+  }
+  const strokeWidth = maxRunStrokeWidth;
+  const width = maxLineWidth + strokeWidth + (style.dropShadow ? style.dropShadow.distance : 0);
+  let baseHeight = 0;
+  for (let i = 0; i < lineHeightsArr.length; i++) {
+    baseHeight += lineHeightsArr[i];
+  }
+  baseHeight = Math.max(baseHeight, lineHeightsArr[0] + strokeWidth);
+  const height = baseHeight + (style.dropShadow ? style.dropShadow.distance : 0);
+  const baseLineHeight = style.lineHeight || baseFontProps.fontSize;
+  return {
+    width,
+    height,
+    lines,
+    lineWidths,
+    lineHeight: baseLineHeight + style.leading,
+    maxLineWidth,
+    fontProperties: baseFontProps,
+    runsByLine: wrappedRunsByLine,
+    lineAscents,
+    lineDescents,
+    lineHeights: lineHeightsArr,
+    hasDropShadow
+  };
+}
+function wordWrapTaggedLines(runsByLine, style, context, measureTextFn, canBreakCharsFn, wordWrapSplitFn) {
+  const { letterSpacing, whiteSpace, wordWrapWidth, breakWords } = style;
+  const shouldCollapseSpaces = (0,textTokenization/* collapseSpaces */.j3)(whiteSpace);
+  const adjustedWrapWidth = wordWrapWidth + letterSpacing;
+  const tokenWidthCache = {};
+  let lastFont = "";
+  const measureTokenWidth = (token, tokenStyle) => {
+    const cacheKey = `${token}|${tokenStyle.styleKey}`;
+    let width = tokenWidthCache[cacheKey];
+    if (width === void 0) {
+      const font = tokenStyle._fontString;
+      if (font !== lastFont) {
+        context.font = font;
+        lastFont = font;
+      }
+      width = measureTextFn(token, tokenStyle.letterSpacing, context) + tokenStyle.letterSpacing;
+      tokenWidthCache[cacheKey] = width;
+    }
+    return width;
+  };
+  const result = [];
+  for (const lineRuns of runsByLine) {
+    const styledTokens = tokenizeTaggedRuns(lineRuns);
+    const resultStartLength = result.length;
+    const getWordGroupWidth = (startIndex) => {
+      let totalWidth = 0;
+      let j = startIndex;
+      do {
+        const { token: groupToken, style: groupStyle } = styledTokens[j];
+        totalWidth += measureTokenWidth(groupToken, groupStyle);
+        j++;
+      } while (j < styledTokens.length && styledTokens[j].continuesFromPrevious);
+      return totalWidth;
+    };
+    const getWordGroupTokens = (startIndex) => {
+      const tokens = [];
+      let j = startIndex;
+      do {
+        tokens.push({ token: styledTokens[j].token, style: styledTokens[j].style });
+        j++;
+      } while (j < styledTokens.length && styledTokens[j].continuesFromPrevious);
+      return tokens;
+    };
+    let currentLineRuns = [];
+    let currentWidth = 0;
+    let canPrependSpaces = !shouldCollapseSpaces;
+    let buildingRun = null;
+    const flushBuildingRun = () => {
+      if (buildingRun && buildingRun.text.length > 0) {
+        currentLineRuns.push(buildingRun);
+      }
+      buildingRun = null;
+    };
+    const startNewLine = () => {
+      flushBuildingRun();
+      if (currentLineRuns.length > 0) {
+        const lastRun = currentLineRuns[currentLineRuns.length - 1];
+        lastRun.text = (0,textTokenization/* trimRight */.$T)(lastRun.text);
+        if (lastRun.text.length === 0) {
+          currentLineRuns.pop();
+        }
+      }
+      result.push(currentLineRuns);
+      currentLineRuns = [];
+      currentWidth = 0;
+      canPrependSpaces = false;
+    };
+    for (let i = 0; i < styledTokens.length; i++) {
+      const { token, style: tokenStyle, continuesFromPrevious } = styledTokens[i];
+      const tokenWidth = measureTokenWidth(token, tokenStyle);
+      if (shouldCollapseSpaces) {
+        const currIsSpace = (0,textTokenization/* isBreakingSpace */.U2)(token);
+        const lastChar = buildingRun?.text[buildingRun.text.length - 1] ?? currentLineRuns[currentLineRuns.length - 1]?.text.slice(-1) ?? "";
+        const lastIsSpace = lastChar ? (0,textTokenization/* isBreakingSpace */.U2)(lastChar) : false;
+        if (currIsSpace && lastIsSpace) {
+          continue;
+        }
+      }
+      const startsWordGroup = !continuesFromPrevious;
+      const wordGroupWidth = startsWordGroup ? getWordGroupWidth(i) : tokenWidth;
+      if (wordGroupWidth > adjustedWrapWidth && startsWordGroup) {
+        if (currentWidth > 0) {
+          startNewLine();
+        }
+        if (breakWords) {
+          const wordGroupTokens = getWordGroupTokens(i);
+          for (let g = 0; g < wordGroupTokens.length; g++) {
+            const groupToken = wordGroupTokens[g].token;
+            const groupStyle = wordGroupTokens[g].style;
+            const charGroups = (0,textTokenization/* getCharacterGroups */.O3)(
+              groupToken,
+              breakWords,
+              wordWrapSplitFn,
+              canBreakCharsFn
+            );
+            for (const char of charGroups) {
+              const charWidth = measureTokenWidth(char, groupStyle);
+              if (charWidth + currentWidth > adjustedWrapWidth) {
+                startNewLine();
+              }
+              if (!buildingRun || buildingRun.style !== groupStyle) {
+                flushBuildingRun();
+                buildingRun = { text: char, style: groupStyle };
+              } else {
+                buildingRun.text += char;
+              }
+              currentWidth += charWidth;
+            }
+          }
+          i += wordGroupTokens.length - 1;
+        } else {
+          const wordGroupTokens = getWordGroupTokens(i);
+          flushBuildingRun();
+          result.push(wordGroupTokens.map((t) => ({ text: t.token, style: t.style })));
+          canPrependSpaces = false;
+          i += wordGroupTokens.length - 1;
+        }
+      } else if (wordGroupWidth + currentWidth > adjustedWrapWidth && startsWordGroup) {
+        if ((0,textTokenization/* isBreakingSpace */.U2)(token)) {
+          canPrependSpaces = false;
+          continue;
+        }
+        startNewLine();
+        buildingRun = { text: token, style: tokenStyle };
+        currentWidth = tokenWidth;
+      } else if (continuesFromPrevious && !breakWords) {
+        if (!buildingRun || buildingRun.style !== tokenStyle) {
+          flushBuildingRun();
+          buildingRun = { text: token, style: tokenStyle };
+        } else {
+          buildingRun.text += token;
+        }
+        currentWidth += tokenWidth;
+      } else {
+        const isSpace = (0,textTokenization/* isBreakingSpace */.U2)(token);
+        if (currentWidth === 0 && isSpace && !canPrependSpaces) {
+          continue;
+        }
+        if (!buildingRun || buildingRun.style !== tokenStyle) {
+          flushBuildingRun();
+          buildingRun = { text: token, style: tokenStyle };
+        } else {
+          buildingRun.text += token;
+        }
+        currentWidth += tokenWidth;
+      }
+    }
+    flushBuildingRun();
+    if (currentLineRuns.length > 0) {
+      const lastRun = currentLineRuns[currentLineRuns.length - 1];
+      lastRun.text = (0,textTokenization/* trimRight */.$T)(lastRun.text);
+      if (lastRun.text.length === 0) {
+        currentLineRuns.pop();
+      }
+    }
+    if (currentLineRuns.length > 0 || result.length === resultStartLength) {
+      result.push(currentLineRuns);
+    }
+  }
+  return result;
+}
+function tokenizeTaggedRuns(runs) {
+  const styledTokens = [];
+  let lastTokenWasWord = false;
+  for (const run of runs) {
+    const tokens = (0,textTokenization/* tokenize */.qw)(run.text);
+    let isFirstTokenInRun = true;
+    for (const token of tokens) {
+      const isSpace = (0,textTokenization/* isBreakingSpace */.U2)(token) || (0,textTokenization/* isNewline */.Z9)(token);
+      const continuesFromPrevious = isFirstTokenInRun && lastTokenWasWord && !isSpace;
+      styledTokens.push({ token, style: run.style, continuesFromPrevious });
+      lastTokenWasWord = !isSpace;
+      isFirstTokenInRun = false;
+    }
+  }
+  return styledTokens;
+}
+
+
+//# sourceMappingURL=measureTaggedText.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/utils/wordWrap.mjs
+
+
+"use strict";
+const contextSettings = {
+  // TextMetrics requires getImageData readback for measuring fonts.
+  willReadFrequently: true
+};
+function getFromCache(key, letterSpacing, cache, context, measureTextFn) {
+  let width = cache[key];
+  if (typeof width !== "number") {
+    width = measureTextFn(key, letterSpacing, context) + letterSpacing;
+    cache[key] = width;
+  }
+  return width;
+}
+function wordWrap(text, style, canvas, measureTextFn, canBreakWordsFn, canBreakCharsFn, wordWrapSplitFn) {
+  const context = canvas.getContext("2d", contextSettings);
+  context.font = style._fontString;
+  let width = 0;
+  let line = "";
+  const linesArray = [];
+  const cache = /* @__PURE__ */ Object.create(null);
+  const { letterSpacing, whiteSpace } = style;
+  const shouldCollapseSpaces = (0,textTokenization/* collapseSpaces */.j3)(whiteSpace);
+  const shouldCollapseNewlines = (0,textTokenization/* collapseNewlines */.fo)(whiteSpace);
+  let canPrependSpaces = !shouldCollapseSpaces;
+  const wordWrapWidth = style.wordWrapWidth + letterSpacing;
+  const tokens = (0,textTokenization/* tokenize */.qw)(text);
+  for (let i = 0; i < tokens.length; i++) {
+    let token = tokens[i];
+    if ((0,textTokenization/* isNewline */.Z9)(token)) {
+      if (!shouldCollapseNewlines) {
+        linesArray.push((0,textTokenization/* trimRight */.$T)(line));
+        canPrependSpaces = !shouldCollapseSpaces;
+        line = "";
+        width = 0;
+        continue;
+      }
+      token = " ";
+    }
+    if (shouldCollapseSpaces) {
+      const currIsBreakingSpace = (0,textTokenization/* isBreakingSpace */.U2)(token);
+      const lastIsBreakingSpace = (0,textTokenization/* isBreakingSpace */.U2)(line[line.length - 1]);
+      if (currIsBreakingSpace && lastIsBreakingSpace) {
+        continue;
+      }
+    }
+    const tokenWidth = getFromCache(token, letterSpacing, cache, context, measureTextFn);
+    if (tokenWidth > wordWrapWidth) {
+      if (line !== "") {
+        linesArray.push((0,textTokenization/* trimRight */.$T)(line));
+        line = "";
+        width = 0;
+      }
+      if (canBreakWordsFn(token, style.breakWords)) {
+        const charGroups = (0,textTokenization/* getCharacterGroups */.O3)(token, style.breakWords, wordWrapSplitFn, canBreakCharsFn);
+        for (const char of charGroups) {
+          const characterWidth = getFromCache(char, letterSpacing, cache, context, measureTextFn);
+          if (characterWidth + width > wordWrapWidth) {
+            linesArray.push((0,textTokenization/* trimRight */.$T)(line));
+            canPrependSpaces = false;
+            line = "";
+            width = 0;
+          }
+          line += char;
+          width += characterWidth;
+        }
+      } else {
+        if (line.length > 0) {
+          linesArray.push((0,textTokenization/* trimRight */.$T)(line));
+          line = "";
+          width = 0;
+        }
+        linesArray.push((0,textTokenization/* trimRight */.$T)(token));
+        canPrependSpaces = false;
+        line = "";
+        width = 0;
+      }
+    } else {
+      if (tokenWidth + width > wordWrapWidth) {
+        canPrependSpaces = false;
+        linesArray.push((0,textTokenization/* trimRight */.$T)(line));
+        line = "";
+        width = 0;
+      }
+      if (line.length > 0 || !(0,textTokenization/* isBreakingSpace */.U2)(token) || canPrependSpaces) {
+        line += token;
+        width += tokenWidth;
+      }
+    }
+  }
+  const trimmedLine = (0,textTokenization/* trimRight */.$T)(line);
+  if (trimmedLine.length > 0) {
+    linesArray.push(trimmedLine);
+  }
+  return linesArray.join("\n");
+}
+
+
+//# sourceMappingURL=wordWrap.mjs.map
+
+;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextMetrics.mjs
+
+
+
+
+
+
+
+"use strict";
+const CanvasTextMetrics_contextSettings = {
+  // TextMetrics requires getImageData readback for measuring fonts.
+  willReadFrequently: true
+};
+const _CanvasTextMetrics = class _CanvasTextMetrics {
+  /**
+   * Checking that we can use modern canvas 2D API.
+   *
+   * Note: This is an unstable API, Chrome < 94 use `textLetterSpacing`, later versions use `letterSpacing`.
+   * @see CanvasTextMetrics.experimentalLetterSpacing
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/ICanvasRenderingContext2D/letterSpacing
+   * @see https://developer.chrome.com/origintrials/#/view_trial/3585991203293757441
+   */
+  static get experimentalLetterSpacingSupported() {
+    let result = _CanvasTextMetrics._experimentalLetterSpacingSupported;
+    if (result === void 0) {
+      const proto = adapter/* DOMAdapter */.e.get().getCanvasRenderingContext2D().prototype;
+      result = _CanvasTextMetrics._experimentalLetterSpacingSupported = "letterSpacing" in proto || "textLetterSpacing" in proto;
+    }
+    return result;
+  }
+  /**
+   * @param text - the text that was measured
+   * @param style - the style that was measured
+   * @param width - the measured width of the text
+   * @param height - the measured height of the text
+   * @param lines - an array of the lines of text broken by new lines and wrapping if specified in style
+   * @param lineWidths - an array of the line widths for each line matched to `lines`
+   * @param lineHeight - the measured line height for this style
+   * @param maxLineWidth - the maximum line width for all measured lines
+   * @param fontProperties - the font properties object from TextMetrics.measureFont
+   * @param taggedData - optional object containing tagged text specific data
+   * @param taggedData.runsByLine - per-line style runs for tagged text
+   * @param taggedData.lineAscents - per-line ascent values for tagged text
+   * @param taggedData.lineDescents - per-line descent values for tagged text
+   * @param taggedData.lineHeights - per-line height values for tagged text
+   * @param taggedData.hasDropShadow - whether any run has a drop shadow
+   */
+  constructor(text, style, width, height, lines, lineWidths, lineHeight, maxLineWidth, fontProperties, taggedData) {
+    this.text = text;
+    this.style = style;
+    this.width = width;
+    this.height = height;
+    this.lines = lines;
+    this.lineWidths = lineWidths;
+    this.lineHeight = lineHeight;
+    this.maxLineWidth = maxLineWidth;
+    this.fontProperties = fontProperties;
+    if (taggedData) {
+      this.runsByLine = taggedData.runsByLine;
+      this.lineAscents = taggedData.lineAscents;
+      this.lineDescents = taggedData.lineDescents;
+      this.lineHeights = taggedData.lineHeights;
+      this.hasDropShadow = taggedData.hasDropShadow;
+    }
+  }
+  /**
+   * Measures the supplied string of text and returns a Rectangle.
+   * @param text - The text to measure.
+   * @param style - The text style to use for measuring
+   * @param canvas - optional specification of the canvas to use for measuring.
+   * @param wordWrap
+   * @returns Measured width and height of the text.
+   */
+  static measureText(text = " ", style, canvas = _CanvasTextMetrics._canvas, wordWrap2 = style.wordWrap) {
+    const textKey = `${text}-${style.styleKey}-wordWrap-${wordWrap2}`;
+    if (_CanvasTextMetrics._measurementCache.has(textKey)) {
+      return _CanvasTextMetrics._measurementCache.get(textKey);
+    }
+    const isTagged = hasTagStyles(style) && hasTagMarkup(text);
+    if (isTagged) {
+      const result = measureTaggedText(
+        text,
+        style,
+        wordWrap2,
+        _CanvasTextMetrics._context,
+        _CanvasTextMetrics._measureText,
+        _CanvasTextMetrics._measureTextAdvance,
+        _CanvasTextMetrics.measureFont,
+        _CanvasTextMetrics.canBreakChars,
+        _CanvasTextMetrics.wordWrapSplit
+      );
+      const measurements2 = new _CanvasTextMetrics(
+        text,
+        style,
+        result.width,
+        result.height,
+        result.lines,
+        result.lineWidths,
+        result.lineHeight,
+        result.maxLineWidth,
+        result.fontProperties,
+        {
+          runsByLine: result.runsByLine,
+          lineAscents: result.lineAscents,
+          lineDescents: result.lineDescents,
+          lineHeights: result.lineHeights,
+          hasDropShadow: result.hasDropShadow
+        }
+      );
+      _CanvasTextMetrics._measurementCache.set(textKey, measurements2);
+      return measurements2;
+    }
+    const font = style._fontString;
+    const fontProperties = _CanvasTextMetrics.measureFont(font);
+    if (fontProperties.fontSize === 0) {
+      fontProperties.fontSize = style.fontSize;
+      fontProperties.ascent = style.fontSize;
+      fontProperties.descent = 0;
+    }
+    const context = _CanvasTextMetrics._context;
+    context.font = font;
+    const outputText = wordWrap2 ? _CanvasTextMetrics._wordWrap(text, style, canvas) : text;
+    const lines = outputText.split(textTokenization/* NEWLINE_MATCH_REGEX */.j7);
+    const lineWidths = new Array(lines.length);
+    let maxLineWidth = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const lineWidth = _CanvasTextMetrics._measureText(lines[i], style.letterSpacing, context);
+      lineWidths[i] = lineWidth;
+      maxLineWidth = Math.max(maxLineWidth, lineWidth);
+    }
+    const strokeWidth = style._stroke?.width ?? 0;
+    const lineHeight = style.lineHeight || fontProperties.fontSize;
+    const width = _CanvasTextMetrics._adjustWidthForStyle(maxLineWidth, style);
+    const baseHeight = Math.max(lineHeight, fontProperties.fontSize + strokeWidth) + (lines.length - 1) * (lineHeight + style.leading);
+    const height = _CanvasTextMetrics._adjustHeightForStyle(baseHeight, style);
+    const measurements = new _CanvasTextMetrics(
+      text,
+      style,
+      width,
+      height,
+      lines,
+      lineWidths,
+      lineHeight + style.leading,
+      maxLineWidth,
+      fontProperties
+    );
+    _CanvasTextMetrics._measurementCache.set(textKey, measurements);
+    return measurements;
+  }
+  /**
+   * Adjusts the measured width to account for stroke and drop shadow.
+   * @param baseWidth - The base content width
+   * @param style - The text style
+   * @returns The adjusted width
+   */
+  static _adjustWidthForStyle(baseWidth, style) {
+    const strokeWidth = style._stroke?.width || 0;
+    let width = baseWidth + strokeWidth;
+    if (style.dropShadow) {
+      width += style.dropShadow.distance;
+    }
+    return width;
+  }
+  /**
+   * Adjusts the measured height to account for drop shadow.
+   * @param baseHeight - The base content height
+   * @param style - The text style
+   * @returns The adjusted height
+   */
+  static _adjustHeightForStyle(baseHeight, style) {
+    let height = baseHeight;
+    if (style.dropShadow) {
+      height += style.dropShadow.distance;
+    }
+    return height;
+  }
+  /**
+   * Measures the rendered width of a string, accounting for letter spacing and using the provided context.
+   * Returns the larger of the advance width and the bounding box width.
+   * @param text - The text to measure
+   * @param letterSpacing - Letter spacing in pixels
+   * @param context - Canvas 2D context
+   * @returns The measured width of the text with spacing
+   * @internal
+   */
+  static _measureText(text, letterSpacing, context) {
+    const { metricWidth, metrics, letterSpacingVal } = _CanvasTextMetrics._measureTextCore(text, letterSpacing, context);
+    const actualBoundingBoxLeft = -(metrics.actualBoundingBoxLeft ?? 0);
+    const actualBoundingBoxRight = metrics.actualBoundingBoxRight ?? 0;
+    let boundsWidth = actualBoundingBoxRight - actualBoundingBoxLeft;
+    if (metrics.width > 0) {
+      boundsWidth += letterSpacingVal;
+    }
+    return Math.max(metricWidth, boundsWidth);
+  }
+  /**
+   * Measures advance width only (no bounding box). Advance widths are additive,
+   * making this suitable for word wrap line-fitting where per-token widths must sum correctly.
+   * @param text - The text to measure
+   * @param letterSpacing - Letter spacing in pixels
+   * @param context - Canvas 2D context
+   * @returns The advance width of the text
+   * @internal
+   */
+  static _measureTextAdvance(text, letterSpacing, context) {
+    return _CanvasTextMetrics._measureTextCore(text, letterSpacing, context).metricWidth;
+  }
+  /**
+   * Shared measurement core: sets up letter spacing on the context, calls
+   * context.measureText, and adjusts the advance width for letter spacing.
+   * @param text
+   * @param letterSpacing
+   * @param context
+   * @internal
+   */
+  static _measureTextCore(text, letterSpacing, context) {
+    let useExperimentalLetterSpacing = false;
+    if (_CanvasTextMetrics.experimentalLetterSpacingSupported) {
+      if (_CanvasTextMetrics.experimentalLetterSpacing) {
+        context.letterSpacing = `${letterSpacing}px`;
+        context.textLetterSpacing = `${letterSpacing}px`;
+        useExperimentalLetterSpacing = true;
+      } else {
+        context.letterSpacing = "0px";
+        context.textLetterSpacing = "0px";
+      }
+    }
+    const metrics = context.measureText(text);
+    let metricWidth = metrics.width;
+    let letterSpacingVal = 0;
+    if (metricWidth > 0) {
+      if (useExperimentalLetterSpacing) {
+        letterSpacingVal = -letterSpacing;
+      } else {
+        letterSpacingVal = (_CanvasTextMetrics.graphemeSegmenter(text).length - 1) * letterSpacing;
+      }
+      metricWidth += letterSpacingVal;
+    }
+    return { metricWidth, metrics, letterSpacingVal };
+  }
+  /**
+   * Applies newlines to a string to have it optimally fit into the horizontal
+   * bounds set by the Text object's wordWrapWidth property.
+   * @param text - String to apply word wrapping to
+   * @param style - the style to use when wrapping
+   * @param canvas - optional specification of the canvas to use for measuring.
+   * @returns New string with new lines applied where required
+   */
+  static _wordWrap(text, style, canvas = _CanvasTextMetrics._canvas) {
+    return wordWrap(
+      text,
+      style,
+      canvas,
+      _CanvasTextMetrics._measureTextAdvance,
+      _CanvasTextMetrics.canBreakWords,
+      _CanvasTextMetrics.canBreakChars,
+      _CanvasTextMetrics.wordWrapSplit
+    );
+  }
+  /**
+   * Determines if char is a breaking whitespace.
+   *
+   * It allows one to determine whether char should be a breaking whitespace
+   * For example certain characters in CJK langs or numbers.
+   * It must return a boolean.
+   * @param char - The character
+   * @param [_nextChar] - The next character
+   * @returns True if whitespace, False otherwise.
+   */
+  static isBreakingSpace(char, _nextChar) {
+    return (0,textTokenization/* isBreakingSpace */.U2)(char, _nextChar);
+  }
+  /**
+   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
+   *
+   * It allows one to customise which words should break
+   * Examples are if the token is CJK or numbers.
+   * It must return a boolean.
+   * @param _token - The token
+   * @param breakWords - The style attr break words
+   * @returns Whether to break word or not
+   */
+  static canBreakWords(_token, breakWords) {
+    return breakWords;
+  }
+  /**
+   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
+   *
+   * It allows one to determine whether a pair of characters
+   * should be broken by newlines
+   * For example certain characters in CJK langs or numbers.
+   * It must return a boolean.
+   * @param _char - The character
+   * @param _nextChar - The next character
+   * @param _token - The token/word the characters are from
+   * @param _index - The index in the token of the char
+   * @param _breakWords - The style attr break words
+   * @returns whether to break word or not
+   */
+  static canBreakChars(_char, _nextChar, _token, _index, _breakWords) {
+    return true;
+  }
+  /**
+   * Overridable helper method used internally by TextMetrics, exposed to allow customizing the class's behavior.
+   *
+   * It is called when a token (usually a word) has to be split into separate pieces
+   * in order to determine the point to break a word.
+   * It must return an array of characters.
+   * @param token - The token to split
+   * @returns The characters of the token
+   * @see CanvasTextMetrics.graphemeSegmenter
+   */
+  static wordWrapSplit(token) {
+    return _CanvasTextMetrics.graphemeSegmenter(token);
+  }
+  /**
+   * Calculates the ascent, descent and fontSize of a given font-style
+   * @param font - String representing the style of the font
+   * @returns Font properties object
+   */
+  static measureFont(font) {
+    if (_CanvasTextMetrics._fonts[font]) {
+      return _CanvasTextMetrics._fonts[font];
+    }
+    const context = _CanvasTextMetrics._context;
+    context.font = font;
+    const metrics = context.measureText(_CanvasTextMetrics.METRICS_STRING + _CanvasTextMetrics.BASELINE_SYMBOL);
+    const ascent = metrics.actualBoundingBoxAscent ?? 0;
+    const descent = metrics.actualBoundingBoxDescent ?? 0;
+    const properties = {
+      ascent,
+      descent,
+      fontSize: ascent + descent
+    };
+    _CanvasTextMetrics._fonts[font] = properties;
+    return properties;
+  }
+  /**
+   * Clear font metrics in metrics cache.
+   * @param {string} [font] - font name. If font name not set then clear cache for all fonts.
+   */
+  static clearMetrics(font = "") {
+    if (font) {
+      delete _CanvasTextMetrics._fonts[font];
+    } else {
+      _CanvasTextMetrics._fonts = {};
+    }
+  }
+  /**
+   * Cached canvas element for measuring text
+   * TODO: this should be private, but isn't because of backward compat, will fix later.
+   * @ignore
+   */
+  static get _canvas() {
+    if (!_CanvasTextMetrics.__canvas) {
+      let canvas;
+      try {
+        const c = new OffscreenCanvas(0, 0);
+        const context = c.getContext("2d", CanvasTextMetrics_contextSettings);
+        if (context?.measureText) {
+          _CanvasTextMetrics.__canvas = c;
+          return c;
+        }
+        canvas = adapter/* DOMAdapter */.e.get().createCanvas();
+      } catch (_cx) {
+        canvas = adapter/* DOMAdapter */.e.get().createCanvas();
+      }
+      canvas.width = canvas.height = 10;
+      _CanvasTextMetrics.__canvas = canvas;
+    }
+    return _CanvasTextMetrics.__canvas;
+  }
+  /**
+   * TODO: this should be private, but isn't because of backward compat, will fix later.
+   * @ignore
+   */
+  static get _context() {
+    if (!_CanvasTextMetrics.__context) {
+      _CanvasTextMetrics.__context = _CanvasTextMetrics._canvas.getContext("2d", CanvasTextMetrics_contextSettings);
+    }
+    return _CanvasTextMetrics.__context;
+  }
+};
+/**
+ * String used for calculate font metrics.
+ * These characters are all tall to help calculate the height required for text.
+ */
+_CanvasTextMetrics.METRICS_STRING = "|\xC9q\xC5";
+/** Baseline symbol for calculate font metrics. */
+_CanvasTextMetrics.BASELINE_SYMBOL = "M";
+/** Baseline multiplier for calculate font metrics. */
+_CanvasTextMetrics.BASELINE_MULTIPLIER = 1.4;
+/** Height multiplier for setting height of canvas to calculate font metrics. */
+_CanvasTextMetrics.HEIGHT_MULTIPLIER = 2;
+/**
+ * A Unicode "character", or "grapheme cluster", can be composed of multiple Unicode code points,
+ * such as letters with diacritical marks (e.g. `'\u0065\u0301'`, letter e with acute)
+ * or emojis with modifiers (e.g. `'\uD83E\uDDD1\u200D\uD83D\uDCBB'`, technologist).
+ * The new `Intl.Segmenter` API in ES2022 can split the string into grapheme clusters correctly. If it is not available,
+ * PixiJS will fallback to use the iterator of String, which can only spilt the string into code points.
+ * If you want to get full functionality in environments that don't support `Intl.Segmenter` (such as Firefox),
+ * you can use other libraries such as [grapheme-splitter]{@link https://www.npmjs.com/package/grapheme-splitter}
+ * or [graphemer]{@link https://www.npmjs.com/package/graphemer} to create a polyfill. Since these libraries can be
+ * relatively large in size to handle various Unicode grapheme clusters properly, PixiJS won't use them directly.
+ */
+_CanvasTextMetrics.graphemeSegmenter = (() => {
+  if (typeof Intl?.Segmenter === "function") {
+    const segmenter = new Intl.Segmenter();
+    return (s) => {
+      const segments = segmenter.segment(s);
+      const result = [];
+      let i = 0;
+      for (const segment of segments) {
+        result[i++] = segment.segment;
+      }
+      return result;
+    };
+  }
+  return (s) => [...s];
+})();
+/**
+ * New rendering behavior for letter-spacing which uses Chrome's new native API. This will
+ * lead to more accurate letter-spacing results because it does not try to manually draw
+ * each character. However, this Chrome API is experimental and may not serve all cases yet.
+ * @see CanvasTextMetrics.experimentalLetterSpacingSupported
+ */
+_CanvasTextMetrics.experimentalLetterSpacing = false;
+/** Cache of {@link TextMetrics.FontMetrics} objects. */
+_CanvasTextMetrics._fonts = {};
+/** Cache for measured text metrics */
+_CanvasTextMetrics._measurementCache = (0,tiny_lru/* lru */.g)(1e3);
+let CanvasTextMetrics = _CanvasTextMetrics;
+
+
+//# sourceMappingURL=CanvasTextMetrics.mjs.map
+
+
+/***/ },
+
+/***/ 1831
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ fontStringFromTextStyle)
+/* harmony export */ });
+
+const genericFontFamilies = [
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui"
+];
+function fontStringFromTextStyle(style) {
+  const fontSizeString = typeof style.fontSize === "number" ? `${style.fontSize}px` : style.fontSize;
+  let fontFamilies = style.fontFamily;
+  if (!Array.isArray(style.fontFamily)) {
+    fontFamilies = style.fontFamily.split(",");
+  }
+  for (let i = fontFamilies.length - 1; i >= 0; i--) {
+    let fontFamily = fontFamilies[i].trim();
+    if (!/([\"\'])[^\'\"]+\1/.test(fontFamily) && !genericFontFamilies.includes(fontFamily)) {
+      fontFamily = `"${fontFamily}"`;
+    }
+    fontFamilies[i] = fontFamily;
+  }
+  return `${style.fontStyle} ${style.fontVariant} ${style.fontWeight} ${fontSizeString} ${fontFamilies.join(",")}`;
+}
+
+
+//# sourceMappingURL=fontStringFromTextStyle.mjs.map
+
+
+/***/ },
+
+/***/ 2039
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   r: () => (/* binding */ getCanvasFillStyle)
+/* harmony export */ });
+/* harmony import */ var _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1640);
+/* harmony import */ var _maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6512);
+/* harmony import */ var _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4540);
+/* harmony import */ var _utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2555);
+/* harmony import */ var _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(193);
+/* harmony import */ var _graphics_shared_fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(1549);
 
 
 
@@ -51994,25 +53600,25 @@ var Matrix = __webpack_require__(6512);
 "use strict";
 const PRECISION = 1e5;
 function getCanvasFillStyle(fillStyle, context, textMetrics, padding = 0, offsetX = 0, offsetY = 0) {
-  if (fillStyle.texture === Texture/* Texture */.g.WHITE && !fillStyle.fill) {
-    return Color/* Color */.Q.shared.setValue(fillStyle.color).setAlpha(fillStyle.alpha ?? 1).toHexa();
+  if (fillStyle.texture === _rendering_renderers_shared_texture_Texture_mjs__WEBPACK_IMPORTED_MODULE_2__/* .Texture */ .g.WHITE && !fillStyle.fill) {
+    return _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(fillStyle.color).setAlpha(fillStyle.alpha ?? 1).toHexa();
   } else if (!fillStyle.fill) {
     const pattern = context.createPattern(fillStyle.texture.source.resource, "repeat");
-    const tempMatrix = fillStyle.matrix.copyTo(Matrix/* Matrix */.u.shared);
+    const tempMatrix = fillStyle.matrix.copyTo(_maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Matrix */ .u.shared);
     tempMatrix.scale(fillStyle.texture.source.pixelWidth, fillStyle.texture.source.pixelHeight);
     pattern.setTransform(tempMatrix);
     return pattern;
-  } else if (fillStyle.fill instanceof FillPattern/* FillPattern */.m) {
+  } else if (fillStyle.fill instanceof _graphics_shared_fill_FillPattern_mjs__WEBPACK_IMPORTED_MODULE_5__/* .FillPattern */ .m) {
     const fillPattern = fillStyle.fill;
     const pattern = context.createPattern(fillPattern.texture.source.resource, "repeat");
-    const tempMatrix = fillPattern.transform.copyTo(Matrix/* Matrix */.u.shared);
+    const tempMatrix = fillPattern.transform.copyTo(_maths_matrix_Matrix_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Matrix */ .u.shared);
     tempMatrix.scale(
       fillPattern.texture.source.pixelWidth,
       fillPattern.texture.source.pixelHeight
     );
     pattern.setTransform(tempMatrix);
     return pattern;
-  } else if (fillStyle.fill instanceof FillGradient/* FillGradient */._) {
+  } else if (fillStyle.fill instanceof _graphics_shared_fill_FillGradient_mjs__WEBPACK_IMPORTED_MODULE_4__/* .FillGradient */ ._) {
     const fillGradient = fillStyle.fill;
     const isLinear = fillGradient.type === "linear";
     const isLocal = fillGradient.textureSpace === "local";
@@ -52054,899 +53660,247 @@ function getCanvasFillStyle(fillStyle, context, textMetrics, padding = 0, offset
           gradient.addColorStop(
             // fix to 5 decimal places to avoid floating point precision issues
             Math.floor(globalStop * PRECISION) / PRECISION,
-            Color/* Color */.Q.shared.setValue(stop.color).toHex()
+            _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(stop.color).toHex()
           );
         });
       }
     } else {
       fillGradient.colorStops.forEach((stop) => {
-        gradient.addColorStop(stop.offset, Color/* Color */.Q.shared.setValue(stop.color).toHex());
+        gradient.addColorStop(stop.offset, _color_Color_mjs__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Q.shared.setValue(stop.color).toHex());
       });
     }
     return gradient;
   }
-  (0,warn/* warn */.R)("FillStyle not recognised", fillStyle);
+  (0,_utils_logging_warn_mjs__WEBPACK_IMPORTED_MODULE_3__/* .warn */ .R)("FillStyle not recognised", fillStyle);
   return "red";
 }
 
 
 //# sourceMappingURL=getCanvasFillStyle.mjs.map
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/DynamicBitmapFont.mjs
 
+/***/ },
 
-
-
-
-
-
-
-
-
-
-
+/***/ 3713
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-const _DynamicBitmapFont = class _DynamicBitmapFont extends AbstractBitmapFont {
-  /**
-   * @param options - The options for the dynamic bitmap font.
-   */
-  constructor(options) {
-    super();
-    /**
-     * this is a resolution modifier for the font size..
-     * texture resolution will also be used to scale texture according to its font size also
-     */
-    this.resolution = 1;
-    /** The pages of the font. */
-    this.pages = [];
-    this._padding = 0;
-    this._measureCache = /* @__PURE__ */ Object.create(null);
-    this._currentChars = [];
-    this._currentX = 0;
-    this._currentY = 0;
-    this._currentMaxCharHeight = 0;
-    this._currentPageIndex = -1;
-    this._skipKerning = false;
-    const dynamicOptions = { ..._DynamicBitmapFont.defaultOptions, ...options };
-    this._textureSize = dynamicOptions.textureSize;
-    this._mipmap = dynamicOptions.mipmap;
-    const style = dynamicOptions.style.clone();
-    if (dynamicOptions.overrideFill) {
-      style._fill.color = 16777215;
-      style._fill.alpha = 1;
-      style._fill.texture = Texture/* Texture */.g.WHITE;
-      style._fill.fill = null;
-    }
-    this.applyFillAsTint = dynamicOptions.overrideFill;
-    const requestedFontSize = style.fontSize;
-    style.fontSize = this.baseMeasurementFontSize;
-    const font = fontStringFromTextStyle(style);
-    if (dynamicOptions.overrideSize) {
-      if (style._stroke) {
-        style._stroke.width *= this.baseRenderedFontSize / requestedFontSize;
-      }
-      if (style.dropShadow) {
-        style.dropShadow.blur *= this.baseRenderedFontSize / requestedFontSize;
-        style.dropShadow.distance *= this.baseRenderedFontSize / requestedFontSize;
-      }
-    } else {
-      style.fontSize = this.baseRenderedFontSize = requestedFontSize;
-    }
-    this._style = style;
-    this._skipKerning = dynamicOptions.skipKerning ?? false;
-    this.resolution = dynamicOptions.resolution ?? 1;
-    this._padding = dynamicOptions.padding ?? 4;
-    if (dynamicOptions.textureStyle) {
-      this._textureStyle = dynamicOptions.textureStyle instanceof TextureStyle/* TextureStyle */.n ? dynamicOptions.textureStyle : new TextureStyle/* TextureStyle */.n(dynamicOptions.textureStyle);
-    }
-    this.fontMetrics = CanvasTextMetrics.measureFont(font);
-    this.lineHeight = style.lineHeight || this.fontMetrics.fontSize || style.fontSize;
-  }
-  ensureCharacters(chars) {
-    const charList = CanvasTextMetrics.graphemeSegmenter(chars).filter((char) => !this._currentChars.includes(char)).filter((char, index, self) => self.indexOf(char) === index);
-    if (!charList.length) return;
-    this._currentChars = [...this._currentChars, ...charList];
-    let pageData;
-    if (this._currentPageIndex === -1) {
-      pageData = this._nextPage();
-    } else {
-      pageData = this.pages[this._currentPageIndex];
-    }
-    let { canvas, context } = pageData.canvasAndContext;
-    let textureSource = pageData.texture.source;
-    const style = this._style;
-    let currentX = this._currentX;
-    let currentY = this._currentY;
-    let currentMaxCharHeight = this._currentMaxCharHeight;
-    const fontScale = this.baseRenderedFontSize / this.baseMeasurementFontSize;
-    const extraPadding = (style.dropShadow?.distance ?? 0) + (style._stroke?.width ?? 0);
-    const padding = this._padding + extraPadding;
-    let skipTexture = false;
-    const maxTextureWidth = canvas.width / this.resolution;
-    const maxTextureHeight = canvas.height / this.resolution;
-    for (let i = 0; i < charList.length; i++) {
-      const char = charList[i];
-      const metrics = CanvasTextMetrics.measureText(char, style, canvas, false);
-      metrics.lineHeight = metrics.height;
-      const width = metrics.width * fontScale;
-      const textureGlyphWidth = Math.ceil((style.fontStyle === "italic" ? 2 : 1) * width);
-      const height = metrics.height * fontScale;
-      const paddedWidth = textureGlyphWidth + padding * 2;
-      const paddedHeight = height + padding * 2;
-      skipTexture = false;
-      if (char !== "\n" && char !== "\r" && char !== "	" && char !== " ") {
-        skipTexture = true;
-        currentMaxCharHeight = Math.ceil(Math.max(paddedHeight, currentMaxCharHeight));
-      }
-      if (currentX + paddedWidth > maxTextureWidth) {
-        currentY += currentMaxCharHeight;
-        currentMaxCharHeight = paddedHeight;
-        currentX = 0;
-        if (currentY + currentMaxCharHeight > maxTextureHeight) {
-          textureSource.update();
-          const pageData2 = this._nextPage();
-          canvas = pageData2.canvasAndContext.canvas;
-          context = pageData2.canvasAndContext.context;
-          textureSource = pageData2.texture.source;
-          currentX = 0;
-          currentY = 0;
-          currentMaxCharHeight = 0;
-        }
-      }
-      const xAdvance = context.measureText(char).width / fontScale;
-      this.chars[char] = {
-        id: char.codePointAt(0),
-        xOffset: -(padding / fontScale),
-        yOffset: -(padding / fontScale),
-        xAdvance,
-        kerning: {}
-      };
-      if (skipTexture) {
-        this._drawGlyph(
-          context,
-          metrics,
-          currentX + padding,
-          currentY + padding,
-          fontScale,
-          style
-        );
-        const px = textureSource.width * fontScale;
-        const py = textureSource.height * fontScale;
-        const frame = new Rectangle/* Rectangle */.M(
-          currentX / px * textureSource.width,
-          currentY / py * textureSource.height,
-          paddedWidth / px * textureSource.width,
-          paddedHeight / py * textureSource.height
-        );
-        this.chars[char].texture = new Texture/* Texture */.g({
-          source: textureSource,
-          frame
-        });
-        currentX += Math.ceil(paddedWidth);
-      }
-    }
-    textureSource.update();
-    this._currentX = currentX;
-    this._currentY = currentY;
-    this._currentMaxCharHeight = currentMaxCharHeight;
-    if (!this._skipKerning) this._applyKerning(charList, context, fontScale);
-  }
-  /**
-   * @deprecated since 8.0.0
-   * The map of base page textures (i.e., sheets of glyphs).
-   */
-  get pageTextures() {
-    (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "BitmapFont.pageTextures is deprecated, please use BitmapFont.pages instead.");
-    return this.pages;
-  }
-  _applyKerning(newChars, context, fontScale) {
-    const measureCache = this._measureCache;
-    for (let i = 0; i < newChars.length; i++) {
-      const first = newChars[i];
-      for (let j = 0; j < this._currentChars.length; j++) {
-        const second = this._currentChars[j];
-        let c1 = measureCache[first];
-        if (!c1) c1 = measureCache[first] = context.measureText(first).width;
-        let c2 = measureCache[second];
-        if (!c2) c2 = measureCache[second] = context.measureText(second).width;
-        let total = context.measureText(first + second).width;
-        let amount = total - (c1 + c2);
-        if (amount && this.chars[first]) {
-          this.chars[first].kerning[second] = amount / fontScale;
-        }
-        total = context.measureText(first + second).width;
-        amount = total - (c1 + c2);
-        if (amount && this.chars[second]) {
-          this.chars[second].kerning[first] = amount / fontScale;
-        }
-      }
-    }
-  }
-  _nextPage() {
-    this._currentPageIndex++;
-    const textureResolution = this.resolution;
-    const canvasAndContext = CanvasPool/* CanvasPool */.N.getOptimalCanvasAndContext(
-      this._textureSize,
-      this._textureSize,
-      textureResolution
-    );
-    this._setupContext(canvasAndContext.context, this._style, textureResolution);
-    const resolution = textureResolution * (this.baseRenderedFontSize / this.baseMeasurementFontSize);
-    const texture = new Texture/* Texture */.g({
-      source: new ImageSource/* ImageSource */.b({
-        resource: canvasAndContext.canvas,
-        resolution,
-        alphaMode: "premultiply-alpha-on-upload",
-        autoGenerateMipmaps: this._mipmap
-      })
-    });
-    if (this._textureStyle) {
-      texture.source.style = this._textureStyle;
-    }
-    const pageData = {
-      canvasAndContext,
-      texture
-    };
-    this.pages[this._currentPageIndex] = pageData;
-    return pageData;
-  }
-  // canvas style!
-  _setupContext(context, style, resolution) {
-    style.fontSize = this.baseRenderedFontSize;
-    context.scale(resolution, resolution);
-    context.font = fontStringFromTextStyle(style);
-    style.fontSize = this.baseMeasurementFontSize;
-    context.textBaseline = style.textBaseline;
-    const stroke = style._stroke;
-    const strokeThickness = stroke?.width ?? 0;
-    if (stroke) {
-      context.lineWidth = strokeThickness;
-      context.lineJoin = stroke.join;
-      context.miterLimit = stroke.miterLimit;
-      context.strokeStyle = getCanvasFillStyle(stroke, context);
-    }
-    if (style._fill) {
-      context.fillStyle = getCanvasFillStyle(style._fill, context);
-    }
-    if (style.dropShadow) {
-      const shadowOptions = style.dropShadow;
-      const rgb = Color/* Color */.Q.shared.setValue(shadowOptions.color).toArray();
-      const dropShadowBlur = shadowOptions.blur * resolution;
-      const dropShadowDistance = shadowOptions.distance * resolution;
-      context.shadowColor = `rgba(${rgb[0] * 255},${rgb[1] * 255},${rgb[2] * 255},${shadowOptions.alpha})`;
-      context.shadowBlur = dropShadowBlur;
-      context.shadowOffsetX = Math.cos(shadowOptions.angle) * dropShadowDistance;
-      context.shadowOffsetY = Math.sin(shadowOptions.angle) * dropShadowDistance;
-    } else {
-      context.shadowColor = "black";
-      context.shadowBlur = 0;
-      context.shadowOffsetX = 0;
-      context.shadowOffsetY = 0;
-    }
-  }
-  _drawGlyph(context, metrics, x, y, fontScale, style) {
-    const char = metrics.text;
-    const fontProperties = metrics.fontProperties;
-    const stroke = style._stroke;
-    const strokeThickness = (stroke?.width ?? 0) * fontScale;
-    const tx = x + strokeThickness / 2;
-    const ty = y - strokeThickness / 2;
-    const descent = fontProperties.descent * fontScale;
-    const lineHeight = metrics.lineHeight * fontScale;
-    let removeShadow = false;
-    if (style.stroke && strokeThickness) {
-      removeShadow = true;
-      context.strokeText(char, tx, ty + lineHeight - descent);
-    }
-    const { shadowBlur, shadowOffsetX, shadowOffsetY } = context;
-    if (style._fill) {
-      if (removeShadow) {
-        context.shadowBlur = 0;
-        context.shadowOffsetX = 0;
-        context.shadowOffsetY = 0;
-      }
-      context.fillText(char, tx, ty + lineHeight - descent);
-    }
-    if (removeShadow) {
-      context.shadowBlur = shadowBlur;
-      context.shadowOffsetX = shadowOffsetX;
-      context.shadowOffsetY = shadowOffsetY;
-    }
-  }
-  destroy() {
-    super.destroy();
-    for (let i = 0; i < this.pages.length; i++) {
-      const { canvasAndContext, texture } = this.pages[i];
-      CanvasPool/* CanvasPool */.N.returnCanvasAndContext(canvasAndContext);
-      texture.destroy(true);
-    }
-    this.pages = null;
-  }
-};
-_DynamicBitmapFont.defaultOptions = {
-  textureSize: 512,
-  style: new TextStyle(),
-  mipmap: true
-};
-let DynamicBitmapFont = _DynamicBitmapFont;
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   $T: () => (/* binding */ trimRight),
+/* harmony export */   O3: () => (/* binding */ getCharacterGroups),
+/* harmony export */   U2: () => (/* binding */ isBreakingSpace),
+/* harmony export */   Z9: () => (/* binding */ isNewline),
+/* harmony export */   fo: () => (/* binding */ collapseNewlines),
+/* harmony export */   j3: () => (/* binding */ collapseSpaces),
+/* harmony export */   j7: () => (/* binding */ NEWLINE_MATCH_REGEX),
+/* harmony export */   jE: () => (/* binding */ isCollapsibleSpace),
+/* harmony export */   kl: () => (/* binding */ NEWLINE_SPLIT_REGEX),
+/* harmony export */   qw: () => (/* binding */ tokenize),
+/* harmony export */   yp: () => (/* binding */ isBreakAfterChar)
+/* harmony export */ });
+/* unused harmony exports BREAKING_SPACES, BREAKING_SPACES_SET, BREAK_AFTER_CHARS, BREAK_AFTER_CHARS_SET, COLLAPSIBLE_SPACES, COLLAPSIBLE_SPACES_SET, NEWLINES, NEWLINES_SET */
 
-
-//# sourceMappingURL=DynamicBitmapFont.mjs.map
-
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/getBitmapTextLayout.mjs
-
-
-"use strict";
-function getBitmapTextLayout(chars, style, font, trimEnd) {
-  const layoutData = {
-    width: 0,
-    height: 0,
-    offsetY: 0,
-    scale: style.fontSize / font.baseMeasurementFontSize,
-    lines: [{
-      width: 0,
-      charPositions: [],
-      spaceWidth: 0,
-      spacesIndex: [],
-      chars: []
-    }]
-  };
-  layoutData.offsetY = font.baseLineOffset;
-  let currentLine = layoutData.lines[0];
-  let previousChar = null;
-  let firstWord = true;
-  const currentWord = {
-    spaceWord: false,
-    width: 0,
-    start: 0,
-    index: 0,
-    // use index to not modify the array as we use it a lot!
-    positions: [],
-    chars: []
-  };
-  const scale = font.baseMeasurementFontSize / style.fontSize;
-  const adjustedLetterSpacing = style.letterSpacing * scale;
-  const adjustedWordWrapWidth = style.wordWrapWidth * scale;
-  const adjustedLineHeight = style.lineHeight ? style.lineHeight * scale : font.lineHeight;
-  const breakWords = style.wordWrap && style.breakWords;
-  const shouldCollapseSpaces = collapseSpaces(style.whiteSpace);
-  const shouldCollapseNewlines = collapseNewlines(style.whiteSpace);
-  if (shouldCollapseSpaces || shouldCollapseNewlines) {
-    const processed = [];
-    let prevWasBreakingSpace = shouldCollapseSpaces;
-    for (let c = 0; c < chars.length; c++) {
-      let char = chars[c];
-      if (char === "\r" || char === "\n") {
-        if (shouldCollapseNewlines) {
-          if (char === "\r" && chars[c + 1] === "\n") c++;
-          char = " ";
-        } else {
-          if (shouldCollapseSpaces) prevWasBreakingSpace = true;
-          processed.push(char);
-          continue;
-        }
+const NEWLINES = [
+  10,
+  // line feed
+  13
+  // carriage return
+];
+const NEWLINES_SET = new Set(NEWLINES);
+const BREAKING_SPACES = [
+  9,
+  // character tabulation
+  32,
+  // space
+  8192,
+  // en quad
+  8193,
+  // em quad
+  8194,
+  // en space
+  8195,
+  // em space
+  8196,
+  // three-per-em space
+  8197,
+  // four-per-em space
+  8198,
+  // six-per-em space
+  8200,
+  // punctuation space
+  8201,
+  // thin space
+  8202,
+  // hair space
+  8287,
+  // medium mathematical space
+  12288
+  // ideographic space
+];
+const BREAKING_SPACES_SET = new Set(BREAKING_SPACES);
+const COLLAPSIBLE_SPACES = [
+  9,
+  // character tabulation (tab)
+  32
+  // space
+];
+const COLLAPSIBLE_SPACES_SET = new Set(COLLAPSIBLE_SPACES);
+const BREAK_AFTER_CHARS = [
+  45,
+  // hyphen-minus
+  8208,
+  // unicode hyphen
+  8211,
+  // en-dash
+  8212,
+  // em-dash
+  173
+  // soft hyphen
+];
+const BREAK_AFTER_CHARS_SET = new Set(BREAK_AFTER_CHARS);
+const NEWLINE_SPLIT_REGEX = /(\r\n|\r|\n)/;
+const NEWLINE_MATCH_REGEX = /(?:\r\n|\r|\n)/;
+function isNewline(char) {
+  if (typeof char !== "string") {
+    return false;
+  }
+  return NEWLINES_SET.has(char.charCodeAt(0));
+}
+function isBreakingSpace(char, _nextChar) {
+  if (typeof char !== "string") {
+    return false;
+  }
+  return BREAKING_SPACES_SET.has(char.charCodeAt(0));
+}
+function isCollapsibleSpace(char) {
+  if (typeof char !== "string") {
+    return false;
+  }
+  return COLLAPSIBLE_SPACES_SET.has(char.charCodeAt(0));
+}
+function isBreakAfterChar(char) {
+  if (typeof char !== "string") {
+    return false;
+  }
+  return BREAK_AFTER_CHARS_SET.has(char.charCodeAt(0));
+}
+function collapseSpaces(whiteSpace) {
+  return whiteSpace === "normal" || whiteSpace === "pre-line";
+}
+function collapseNewlines(whiteSpace) {
+  return whiteSpace === "normal";
+}
+function trimRight(text) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  let i = text.length - 1;
+  while (i >= 0 && isBreakingSpace(text[i])) {
+    i--;
+  }
+  return i < text.length - 1 ? text.slice(0, i + 1) : text;
+}
+function tokenize(text) {
+  const tokens = [];
+  const tokenChars = [];
+  if (typeof text !== "string") {
+    return tokens;
+  }
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    if (isBreakingSpace(char, nextChar) || isNewline(char)) {
+      if (tokenChars.length > 0) {
+        tokens.push(tokenChars.join(""));
+        tokenChars.length = 0;
       }
-      if (isBreakingSpace(char)) {
-        if (shouldCollapseSpaces && isCollapsibleSpace(char)) {
-          if (prevWasBreakingSpace) continue;
-          prevWasBreakingSpace = true;
-          processed.push(" ");
-        } else {
-          prevWasBreakingSpace = false;
-          processed.push(char);
-        }
+      if (char === "\r" && nextChar === "\n") {
+        tokens.push("\r\n");
+        i++;
       } else {
-        prevWasBreakingSpace = false;
-        processed.push(char);
+        tokens.push(char);
       }
+      continue;
     }
-    chars = processed;
+    tokenChars.push(char);
+    if (isBreakAfterChar(char) && nextChar && !isBreakingSpace(nextChar) && !isNewline(nextChar)) {
+      tokens.push(tokenChars.join(""));
+      tokenChars.length = 0;
+    }
   }
-  const nextWord = (word) => {
-    const start = currentLine.width;
-    for (let j = 0; j < currentWord.index; j++) {
-      const position = word.positions[j];
-      currentLine.chars.push(word.chars[j]);
-      currentLine.charPositions.push(position + start);
-    }
-    currentLine.width += word.width;
-    if (currentWord.index > 0 || !shouldCollapseSpaces) {
-      firstWord = false;
-    }
-    currentWord.width = 0;
-    currentWord.index = 0;
-    currentWord.chars.length = 0;
-  };
-  const nextLine = () => {
-    let index = currentLine.chars.length - 1;
-    if (trimEnd) {
-      let lastChar = currentLine.chars[index];
-      while (isCollapsibleSpace(lastChar)) {
-        currentLine.width -= font.chars[lastChar].xAdvance;
-        currentLine.spacesIndex.pop();
-        lastChar = currentLine.chars[--index];
-      }
-    }
-    layoutData.width = Math.max(layoutData.width, currentLine.width);
-    currentLine = {
-      width: 0,
-      charPositions: [],
-      chars: [],
-      spaceWidth: 0,
-      spacesIndex: []
-    };
-    firstWord = true;
-    layoutData.lines.push(currentLine);
-    layoutData.height += adjustedLineHeight;
-  };
-  const checkIsOverflow = (lineWidth) => lineWidth - adjustedLetterSpacing > adjustedWordWrapWidth;
-  for (let i = 0; i < chars.length + 1; i++) {
-    let char;
-    const isEnd = i === chars.length;
-    if (!isEnd) {
-      char = chars[i];
-    }
-    const charData = font.chars[char];
-    const isSpace = /(?:\s)/.test(char);
-    const isWordBreak = isSpace || char === "\r" || char === "\n" || isEnd;
-    if (isWordBreak) {
-      const addWordToNextLine = !firstWord && style.wordWrap && checkIsOverflow(currentLine.width + currentWord.width);
-      if (addWordToNextLine) {
-        nextLine();
-        nextWord(currentWord);
-        if (!isEnd) {
-          currentLine.charPositions.push(0);
-        }
+  if (tokenChars.length > 0) {
+    tokens.push(tokenChars.join(""));
+  }
+  return tokens;
+}
+function getCharacterGroups(token, breakWords, splitFn, canBreakCharsFn) {
+  const characters = splitFn(token);
+  const groups = [];
+  for (let j = 0; j < characters.length; j++) {
+    let char = characters[j];
+    let lastChar = char;
+    let k = 1;
+    while (characters[j + k]) {
+      const nextChar = characters[j + k];
+      if (!canBreakCharsFn(lastChar, nextChar, token, j, breakWords)) {
+        char += nextChar;
+        lastChar = nextChar;
+        k++;
       } else {
-        currentWord.start = currentLine.width;
-        nextWord(currentWord);
-        if (!isEnd) {
-          currentLine.charPositions.push(0);
-        }
-      }
-      if (char === "\r" || char === "\n") {
-        nextLine();
-      } else if (!isEnd && charData) {
-        const spaceWidth = charData.xAdvance + (charData.kerning?.[previousChar] || 0) + adjustedLetterSpacing;
-        currentLine.width += spaceWidth;
-        currentLine.spaceWidth = spaceWidth;
-        currentLine.spacesIndex.push(currentLine.charPositions.length);
-        currentLine.chars.push(char);
-      }
-    } else if (charData) {
-      const kerning = charData.kerning?.[previousChar] || 0;
-      const nextCharWidth = charData.xAdvance + kerning + adjustedLetterSpacing;
-      const wordExceedsWrapWidth = breakWords && checkIsOverflow(currentWord.width + nextCharWidth);
-      if (wordExceedsWrapWidth) {
-        if (!firstWord) {
-          nextLine();
-        }
-        nextWord(currentWord);
-        nextLine();
-      }
-      currentWord.positions[currentWord.index++] = currentWord.width + kerning;
-      currentWord.chars.push(char);
-      currentWord.width += nextCharWidth;
-      if (isBreakAfterChar(char)) {
-        const addWordToNextLine = !firstWord && style.wordWrap && checkIsOverflow(currentLine.width + currentWord.width);
-        if (addWordToNextLine) {
-          nextLine();
-        }
-        nextWord(currentWord);
+        break;
       }
     }
-    previousChar = char;
+    j += k - 1;
+    groups.push(char);
   }
-  nextLine();
-  if (style.align === "center") {
-    alignCenter(layoutData);
-  } else if (style.align === "right") {
-    alignRight(layoutData);
-  } else if (style.align === "justify") {
-    alignJustify(layoutData);
-  }
-  return layoutData;
-}
-function alignCenter(measurementData) {
-  for (let i = 0; i < measurementData.lines.length; i++) {
-    const line = measurementData.lines[i];
-    const offset = measurementData.width / 2 - line.width / 2;
-    for (let j = 0; j < line.charPositions.length; j++) {
-      line.charPositions[j] += offset;
-    }
-  }
-}
-function alignRight(measurementData) {
-  for (let i = 0; i < measurementData.lines.length; i++) {
-    const line = measurementData.lines[i];
-    const offset = measurementData.width - line.width;
-    for (let j = 0; j < line.charPositions.length; j++) {
-      line.charPositions[j] += offset;
-    }
-  }
-}
-function alignJustify(measurementData) {
-  const width = measurementData.width;
-  for (let i = 0; i < measurementData.lines.length - 2; i++) {
-    const line = measurementData.lines[i];
-    let indy = 0;
-    let spaceIndex = line.spacesIndex[indy++];
-    let offset = 0;
-    const totalSpaces = line.spacesIndex.length;
-    const newSpaceWidth = (width - line.width) / totalSpaces;
-    const spaceWidth = newSpaceWidth;
-    for (let j = 0; j < line.charPositions.length; j++) {
-      if (j === spaceIndex) {
-        spaceIndex = line.spacesIndex[indy++];
-        offset += spaceWidth;
-      }
-      line.charPositions[j] += offset;
-    }
-  }
+  return groups;
 }
 
 
-//# sourceMappingURL=getBitmapTextLayout.mjs.map
-
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/utils/resolveCharacters.mjs
-
-function resolveCharacters(chars) {
-  if (chars === "") {
-    return [];
-  }
-  if (typeof chars === "string") {
-    chars = [chars];
-  }
-  const result = [];
-  for (let i = 0, j = chars.length; i < j; i++) {
-    const item = chars[i];
-    if (Array.isArray(item)) {
-      if (item.length !== 2) {
-        throw new Error(`[BitmapFont]: Invalid character range length, expecting 2 got ${item.length}.`);
-      }
-      if (item[0].length === 0 || item[1].length === 0) {
-        throw new Error("[BitmapFont]: Invalid character delimiter.");
-      }
-      const startCode = item[0].charCodeAt(0);
-      const endCode = item[1].charCodeAt(0);
-      if (endCode < startCode) {
-        throw new Error("[BitmapFont]: Invalid character range.");
-      }
-      for (let i2 = startCode, j2 = endCode; i2 <= j2; i2++) {
-        result.push(String.fromCharCode(i2));
-      }
-    } else {
-      result.push(...Array.from(item));
-    }
-  }
-  if (result.length === 0) {
-    throw new Error("[BitmapFont]: Empty set when resolving characters.");
-  }
-  return result;
-}
+//# sourceMappingURL=textTokenization.mjs.map
 
 
-//# sourceMappingURL=resolveCharacters.mjs.map
+/***/ },
 
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFontManager.mjs
+/***/ 6609
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
-
-
-
-
-
-
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   M: () => (/* binding */ getPo2TextureFromSource)
+/* harmony export */ });
+/* harmony import */ var _rendering_renderers_shared_texture_TexturePool_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7118);
+/* harmony import */ var _container_bounds_Bounds_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1985);
 
 
 
 "use strict";
-let fontCount = 0;
-class BitmapFontManagerClass {
-  constructor() {
-    /**
-     * This character set includes all the letters in the alphabet (both lower- and upper- case).
-     * @type {string[][]}
-     * @example
-     * BitmapFont.from('ExampleFont', style, { chars: BitmapFont.ALPHA })
-     */
-    this.ALPHA = [["a", "z"], ["A", "Z"], " "];
-    /**
-     * This character set includes all decimal digits (from 0 to 9).
-     * @type {string[][]}
-     * @example
-     * BitmapFont.from('ExampleFont', style, { chars: BitmapFont.NUMERIC })
-     */
-    this.NUMERIC = [["0", "9"]];
-    /**
-     * This character set is the union of `BitmapFont.ALPHA` and `BitmapFont.NUMERIC`.
-     * @type {string[][]}
-     */
-    this.ALPHANUMERIC = [["a", "z"], ["A", "Z"], ["0", "9"], " "];
-    /**
-     * This character set consists of all the ASCII table.
-     * @type {string[][]}
-     * @see http://www.asciitable.com/
-     */
-    this.ASCII = [[" ", "~"]];
-    /** Default options for installing a new BitmapFont. */
-    this.defaultOptions = {
-      chars: this.ALPHANUMERIC,
-      resolution: 1,
-      padding: 4,
-      skipKerning: false,
-      textureStyle: null
-    };
-    /** Cache for measured text layouts to avoid recalculating them multiple times. */
-    this.measureCache = lru(1e3);
-  }
-  /**
-   * Get a font for the specified text and style.
-   * @param text - The text to get the font for
-   * @param style - The style to use
-   */
-  getFont(text, style) {
-    let fontFamilyKey = `${style.fontFamily}-bitmap`;
-    let overrideFill = true;
-    if (Cache/* Cache */.l.has(fontFamilyKey)) {
-      const dynamicFont2 = Cache/* Cache */.l.get(fontFamilyKey);
-      dynamicFont2.ensureCharacters?.(text);
-      return dynamicFont2;
-    }
-    if (style._fill.fill && !style._stroke) {
-      fontFamilyKey += style._fill.fill.styleKey;
-      overrideFill = false;
-    } else if (style._stroke || style.dropShadow) {
-      fontFamilyKey = `${style.styleKey}-bitmap`;
-      overrideFill = false;
-    }
-    fontFamilyKey += `-${style.fontStyle}`;
-    fontFamilyKey += `-${style.fontVariant}`;
-    fontFamilyKey += `-${style.fontWeight}`;
-    if (!Cache/* Cache */.l.has(fontFamilyKey)) {
-      const styleCopy = Object.create(style);
-      styleCopy["_lineHeight"] = 0;
-      const fnt = new DynamicBitmapFont({
-        style: styleCopy,
-        overrideFill,
-        overrideSize: true,
-        ...this.defaultOptions
-      });
-      fontCount++;
-      if (fontCount > 50) {
-        (0,warn/* warn */.R)("BitmapText", `You have dynamically created ${fontCount} bitmap fonts, this can be inefficient. Try pre installing your font styles using \`BitmapFont.install({name:"style1", style})\``);
-      }
-      fnt.once("destroy", () => {
-        fontCount--;
-        Cache/* Cache */.l.remove(fontFamilyKey);
-      });
-      Cache/* Cache */.l.set(
-        fontFamilyKey,
-        fnt
-      );
-    }
-    const dynamicFont = Cache/* Cache */.l.get(fontFamilyKey);
-    dynamicFont.ensureCharacters?.(text);
-    return dynamicFont;
-  }
-  /**
-   * Get the layout of a text for the specified style.
-   * @param text - The text to get the layout for
-   * @param style - The style to use
-   * @param trimEnd - Whether to ignore whitespaces at the end of each line
-   */
-  getLayout(text, style, trimEnd = true) {
-    const bitmapFont = this.getFont(text, style);
-    const id = `${text}-${style.styleKey}-${trimEnd}`;
-    if (this.measureCache.has(id)) {
-      return this.measureCache.get(id);
-    }
-    const segments = CanvasTextMetrics.graphemeSegmenter(text);
-    const layoutData = getBitmapTextLayout(segments, style, bitmapFont, trimEnd);
-    this.measureCache.set(id, layoutData);
-    return layoutData;
-  }
-  /**
-   * Measure the text using the specified style.
-   * @param text - The text to measure
-   * @param style - The style to use
-   * @param trimEnd - Whether to ignore whitespaces at the end of each line
-   */
-  measureText(text, style, trimEnd = true) {
-    return this.getLayout(text, style, trimEnd);
-  }
-  // eslint-disable-next-line max-len
-  install(...args) {
-    let options = args[0];
-    if (typeof options === "string") {
-      options = {
-        name: options,
-        style: args[1],
-        chars: args[2]?.chars,
-        resolution: args[2]?.resolution,
-        padding: args[2]?.padding,
-        skipKerning: args[2]?.skipKerning
-      };
-      (0,deprecation/* deprecation */.t6)(deprecation/* v8_0_0 */.lj, "BitmapFontManager.install(name, style, options) is deprecated, use BitmapFontManager.install({name, style, ...options})");
-    }
-    const name = options?.name;
-    if (!name) {
-      throw new Error("[BitmapFontManager] Property `name` is required.");
-    }
-    options = { ...this.defaultOptions, ...options };
-    const textStyle = options.style;
-    const style = textStyle instanceof TextStyle ? textStyle : new TextStyle(textStyle);
-    const overrideFill = options.dynamicFill ?? this._canUseTintForStyle(style);
-    const font = new DynamicBitmapFont({
-      style,
-      overrideFill,
-      skipKerning: options.skipKerning,
-      padding: options.padding,
-      resolution: options.resolution,
-      overrideSize: false,
-      textureStyle: options.textureStyle
-    });
-    const flatChars = resolveCharacters(options.chars);
-    font.ensureCharacters(flatChars.join(""));
-    Cache/* Cache */.l.set(`${name}-bitmap`, font);
-    font.once("destroy", () => Cache/* Cache */.l.remove(`${name}-bitmap`));
-    return font;
-  }
-  /**
-   * Uninstalls a bitmap font from the cache.
-   * @param {string} name - The name of the bitmap font to uninstall.
-   */
-  uninstall(name) {
-    const cacheKey = `${name}-bitmap`;
-    const font = Cache/* Cache */.l.get(cacheKey);
-    if (font) {
-      font.destroy();
-    }
-  }
-  /**
-   * Determines if a style can use tinting instead of baking colors into the bitmap.
-   * Tinting is more efficient as it allows reusing the same bitmap with different colors.
-   * @param style - The text style to evaluate
-   * @returns true if the style can use tinting, false if colors must be baked in
-   * @private
-   */
-  _canUseTintForStyle(style) {
-    return !style._stroke && (!style.dropShadow || style.dropShadow.color === 0) && !style._fill.fill && style._fill.color === 16777215;
-  }
-}
-const BitmapFontManager = new BitmapFontManagerClass();
-
-
-//# sourceMappingURL=BitmapFontManager.mjs.map
-
-;// ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/scene/text-bitmap/BitmapFont.mjs
-
-
-
-
-
-
-"use strict";
-class BitmapFont extends AbstractBitmapFont {
-  constructor(options, url) {
-    super();
-    const { textures, data } = options;
-    Object.keys(data.pages).forEach((key) => {
-      const pageData = data.pages[parseInt(key, 10)];
-      const texture = textures[pageData.id];
-      this.pages.push({ texture });
-    });
-    Object.keys(data.chars).forEach((key) => {
-      const charData = data.chars[key];
-      const {
-        frame: textureFrame,
-        source: textureSource,
-        rotate: textureRotate
-      } = textures[charData.page];
-      const frame = groupD8/* groupD8 */.E.transformRectCoords(
-        charData,
-        textureFrame,
-        textureRotate,
-        new Rectangle/* Rectangle */.M()
-      );
-      const texture = new Texture/* Texture */.g({
-        frame,
-        orig: new Rectangle/* Rectangle */.M(0, 0, charData.width, charData.height),
-        source: textureSource,
-        rotate: textureRotate
-      });
-      this.chars[key] = {
-        id: key.codePointAt(0),
-        xOffset: charData.xOffset,
-        yOffset: charData.yOffset,
-        xAdvance: charData.xAdvance,
-        kerning: charData.kerning ?? {},
-        texture
-      };
-    });
-    this.baseRenderedFontSize = data.fontSize;
-    this.baseMeasurementFontSize = data.fontSize;
-    this.fontMetrics = {
-      ascent: 0,
-      descent: 0,
-      fontSize: data.fontSize
-    };
-    this.baseLineOffset = data.baseLineOffset;
-    this.lineHeight = data.lineHeight;
-    this.fontFamily = data.fontFamily;
-    this.distanceField = data.distanceField ?? {
-      type: "none",
-      range: 0
-    };
-    this.url = url;
-  }
-  /** Destroys the BitmapFont object. */
-  destroy() {
-    super.destroy();
-    for (let i = 0; i < this.pages.length; i++) {
-      const { texture } = this.pages[i];
-      texture.destroy(true);
-    }
-    this.pages = null;
-  }
-  /**
-   * Generates and installs a bitmap font with the specified options.
-   * The font will be cached and available for use in BitmapText objects.
-   * @param options - Setup options for font generation
-   * @returns Installed font instance
-   * @example
-   * ```ts
-   * // Install a basic font
-   * BitmapFont.install({
-   *     name: 'Title',
-   *     style: {
-   *         fontFamily: 'Arial',
-   *         fontSize: 32,
-   *         fill: '#ffffff'
-   *     }
-   * });
-   *
-   * // Install with advanced options
-   * BitmapFont.install({
-   *     name: 'Custom',
-   *     style: {
-   *         fontFamily: 'Arial',
-   *         fontSize: 24,
-   *         fill: '#00ff00',
-   *         stroke: { color: '#000000', width: 2 }
-   *     },
-   *     chars: [['a', 'z'], ['A', 'Z'], ['0', '9']],
-   *     resolution: 2,
-   *     padding: 4,
-   *     textureStyle: {
-   *         scaleMode: 'nearest'
-   *     }
-   * });
-   * ```
-   */
-  static install(options) {
-    BitmapFontManager.install(options);
-  }
-  /**
-   * Uninstalls a bitmap font from the cache.
-   * This frees up memory and resources associated with the font.
-   * @param name - The name of the bitmap font to uninstall
-   * @example
-   * ```ts
-   * // Remove a font when it's no longer needed
-   * BitmapFont.uninstall('MyCustomFont');
-   *
-   * // Clear multiple fonts
-   * ['Title', 'Heading', 'Body'].forEach(BitmapFont.uninstall);
-   * ```
-   */
-  static uninstall(name) {
-    BitmapFontManager.uninstall(name);
-  }
+const tempBounds = new _container_bounds_Bounds_mjs__WEBPACK_IMPORTED_MODULE_1__/* .Bounds */ .c();
+function getPo2TextureFromSource(image, width, height, resolution, autoGenerateMipmaps = false) {
+  const bounds = tempBounds;
+  bounds.minX = 0;
+  bounds.minY = 0;
+  bounds.maxX = image.width / resolution | 0;
+  bounds.maxY = image.height / resolution | 0;
+  const texture = _rendering_renderers_shared_texture_TexturePool_mjs__WEBPACK_IMPORTED_MODULE_0__/* .TexturePool */ .W.getOptimalTexture(
+    bounds.width,
+    bounds.height,
+    resolution,
+    false,
+    autoGenerateMipmaps
+  );
+  texture.source.uploadMethodId = "image";
+  texture.source.resource = image;
+  texture.source.alphaMode = "premultiply-alpha-on-upload";
+  texture.frame.width = width / resolution;
+  texture.frame.height = height / resolution;
+  texture.source.emit("update", texture.source);
+  texture.updateUvs();
+  return texture;
 }
 
 
-//# sourceMappingURL=BitmapFont.mjs.map
+//# sourceMappingURL=getPo2TextureFromSource.mjs.map
 
 
 /***/ },
@@ -54476,6 +55430,38 @@ function resetUids() {
 
 /***/ },
 
+/***/ 5385
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   y: () => (/* binding */ updateQuadBounds)
+/* harmony export */ });
+
+function updateQuadBounds(bounds, anchor, texture) {
+  const { width, height } = texture.orig;
+  const trim = texture.trim;
+  if (trim) {
+    const sourceWidth = trim.width;
+    const sourceHeight = trim.height;
+    bounds.minX = trim.x - anchor._x * width;
+    bounds.maxX = bounds.minX + sourceWidth;
+    bounds.minY = trim.y - anchor._y * height;
+    bounds.maxY = bounds.minY + sourceHeight;
+  } else {
+    bounds.minX = -anchor._x * width;
+    bounds.maxX = bounds.minX + width;
+    bounds.minY = -anchor._y * height;
+    bounds.maxY = bounds.minY + height;
+  }
+}
+
+
+//# sourceMappingURL=updateQuadBounds.mjs.map
+
+
+/***/ },
+
 /***/ 7398
 (__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
 
@@ -55449,6 +56435,510 @@ GlobalResourceRegistry/* GlobalResourceRegistry */.L.register(BigPool);
 
 //# sourceMappingURL=PoolGroup.mjs.map
 
+
+/***/ },
+
+/***/ 992
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   g: () => (/* binding */ lru)
+/* harmony export */ });
+/* unused harmony export LRU */
+/**
+ * tiny-lru
+ *
+ * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
+ * @license BSD-3-Clause
+ * @version 11.4.7
+ */
+/**
+ * A high-performance Least Recently Used (LRU) cache implementation with optional TTL support.
+ * Items are automatically evicted when the cache reaches its maximum size,
+ * removing the least recently used items first. All core operations (get, set, delete) are O(1).
+ *
+ * @class LRU
+ * @example
+ * // Create a cache with max 100 items
+ * const cache = new LRU(100);
+ * cache.set('key1', 'value1');
+ * console.log(cache.get('key1')); // 'value1'
+ *
+ * @example
+ * // Create a cache with TTL
+ * const cache = new LRU(100, 5000); // 5 second TTL
+ * cache.set('key1', 'value1');
+ * // After 5 seconds, key1 will be expired
+ */
+class LRU {
+	/**
+	 * Creates a new LRU cache instance.
+	 * Note: Constructor does not validate parameters. Use lru() factory function for parameter validation.
+	 *
+	 * @constructor
+	 * @param {number} [max=0] - Maximum number of items to store. 0 means unlimited.
+	 * @param {number} [ttl=0] - Time to live in milliseconds. 0 means no expiration.
+	 * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
+	 * @example
+	 * const cache = new LRU(1000, 60000, true); // 1000 items, 1 minute TTL, reset on access
+	 * @see {@link lru} For parameter validation
+	 * @since 1.0.0
+	 */
+	constructor (max = 0, ttl = 0, resetTtl = false) {
+		this.first = null;
+		this.items = Object.create(null);
+		this.last = null;
+		this.max = max;
+		this.resetTtl = resetTtl;
+		this.size = 0;
+		this.ttl = ttl;
+	}
+
+	/**
+	 * Removes all items from the cache.
+	 *
+	 * @method clear
+	 * @memberof LRU
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.clear();
+	 * console.log(cache.size); // 0
+	 * @since 1.0.0
+	 */
+	clear () {
+		this.first = null;
+		this.items = Object.create(null);
+		this.last = null;
+		this.size = 0;
+
+		return this;
+	}
+
+	/**
+	 * Removes an item from the cache by key.
+	 *
+	 * @method delete
+	 * @memberof LRU
+	 * @param {string} key - The key of the item to delete.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * cache.delete('key1');
+	 * console.log(cache.has('key1')); // false
+	 * @see {@link LRU#has}
+	 * @see {@link LRU#clear}
+	 * @since 1.0.0
+	 */
+	delete (key) {
+		if (this.has(key)) {
+			const item = this.items[key];
+
+			delete this.items[key];
+			this.size--;
+
+			if (item.prev !== null) {
+				item.prev.next = item.next;
+			}
+
+			if (item.next !== null) {
+				item.next.prev = item.prev;
+			}
+
+			if (this.first === item) {
+				this.first = item.next;
+			}
+
+			if (this.last === item) {
+				this.last = item.prev;
+			}
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns an array of [key, value] pairs for the specified keys.
+	 * Order follows LRU order (least to most recently used).
+	 *
+	 * @method entries
+	 * @memberof LRU
+	 * @param {string[]} [keys=this.keys()] - Array of keys to get entries for. Defaults to all keys.
+	 * @returns {Array<Array<*>>} Array of [key, value] pairs in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * console.log(cache.entries()); // [['a', 1], ['b', 2]]
+	 * console.log(cache.entries(['a'])); // [['a', 1]]
+	 * @see {@link LRU#keys}
+	 * @see {@link LRU#values}
+	 * @since 11.1.0
+	 */
+	entries (keys = this.keys()) {
+		const result = new Array(keys.length);
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+			result[i] = [key, this.get(key)];
+		}
+
+		return result;
+	}
+
+	/**
+	 * Removes the least recently used item from the cache.
+	 *
+	 * @method evict
+	 * @memberof LRU
+	 * @param {boolean} [bypass=false] - Whether to force eviction even when cache is empty.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('old', 'value').set('new', 'value');
+	 * cache.evict(); // Removes 'old' item
+	 * @see {@link LRU#setWithEvicted}
+	 * @since 1.0.0
+	 */
+	evict (bypass = false) {
+		if (bypass || this.size > 0) {
+			const item = this.first;
+
+			delete this.items[item.key];
+
+			if (--this.size === 0) {
+				this.first = null;
+				this.last = null;
+			} else {
+				this.first = item.next;
+				this.first.prev = null;
+			}
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns the expiration timestamp for a given key.
+	 *
+	 * @method expiresAt
+	 * @memberof LRU
+	 * @param {string} key - The key to check expiration for.
+	 * @returns {number|undefined} The expiration timestamp in milliseconds, or undefined if key doesn't exist.
+	 * @example
+	 * const cache = new LRU(100, 5000); // 5 second TTL
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.expiresAt('key1')); // timestamp 5 seconds from now
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#has}
+	 * @since 1.0.0
+	 */
+	expiresAt (key) {
+		let result;
+
+		if (this.has(key)) {
+			result = this.items[key].expiry;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Retrieves a value from the cache by key. Updates the item's position to most recently used.
+	 *
+	 * @method get
+	 * @memberof LRU
+	 * @param {string} key - The key to retrieve.
+	 * @returns {*} The value associated with the key, or undefined if not found or expired.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.get('key1')); // 'value1'
+	 * console.log(cache.get('nonexistent')); // undefined
+	 * @see {@link LRU#set}
+	 * @see {@link LRU#has}
+	 * @since 1.0.0
+	 */
+	get (key) {
+		const item = this.items[key];
+
+		if (item !== undefined) {
+			// Check TTL only if enabled to avoid unnecessary Date.now() calls
+			if (this.ttl > 0) {
+				if (item.expiry <= Date.now()) {
+					this.delete(key);
+
+					return undefined;
+				}
+			}
+
+			// Fast LRU update without full set() overhead
+			this.moveToEnd(item);
+
+			return item.value;
+		}
+
+		return undefined;
+	}
+
+	/**
+	 * Checks if a key exists in the cache.
+	 *
+	 * @method has
+	 * @memberof LRU
+	 * @param {string} key - The key to check for.
+	 * @returns {boolean} True if the key exists, false otherwise.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.has('key1')); // true
+	 * console.log(cache.has('nonexistent')); // false
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#delete}
+	 * @since 9.0.0
+	 */
+	has (key) {
+		return key in this.items;
+	}
+
+	/**
+	 * Efficiently moves an item to the end of the LRU list (most recently used position).
+	 * This is an internal optimization method that avoids the overhead of the full set() operation
+	 * when only LRU position needs to be updated.
+	 *
+	 * @method moveToEnd
+	 * @memberof LRU
+	 * @param {Object} item - The cache item with prev/next pointers to reposition.
+	 * @private
+	 * @since 11.3.5
+	 */
+	moveToEnd (item) {
+		// If already at the end, nothing to do
+		if (this.last === item) {
+			return;
+		}
+
+		// Remove item from current position in the list
+		if (item.prev !== null) {
+			item.prev.next = item.next;
+		}
+
+		if (item.next !== null) {
+			item.next.prev = item.prev;
+		}
+
+		// Update first pointer if this was the first item
+		if (this.first === item) {
+			this.first = item.next;
+		}
+
+		// Add item to the end
+		item.prev = this.last;
+		item.next = null;
+
+		if (this.last !== null) {
+			this.last.next = item;
+		}
+
+		this.last = item;
+
+		// Handle edge case: if this was the only item, it's also first
+		if (this.first === null) {
+			this.first = item;
+		}
+	}
+
+	/**
+	 * Returns an array of all keys in the cache, ordered from least to most recently used.
+	 *
+	 * @method keys
+	 * @memberof LRU
+	 * @returns {string[]} Array of keys in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * cache.get('a'); // Move 'a' to most recent
+	 * console.log(cache.keys()); // ['b', 'a']
+	 * @see {@link LRU#values}
+	 * @see {@link LRU#entries}
+	 * @since 9.0.0
+	 */
+	keys () {
+		const result = new Array(this.size);
+		let x = this.first;
+		let i = 0;
+
+		while (x !== null) {
+			result[i++] = x.key;
+			x = x.next;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Sets a value in the cache and returns any evicted item.
+	 *
+	 * @method setWithEvicted
+	 * @memberof LRU
+	 * @param {string} key - The key to set.
+	 * @param {*} value - The value to store.
+	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
+	 * @returns {Object|null} The evicted item (if any) with shape {key, value, expiry, prev, next}, or null.
+	 * @example
+	 * const cache = new LRU(2);
+	 * cache.set('a', 1).set('b', 2);
+	 * const evicted = cache.setWithEvicted('c', 3); // evicted = {key: 'a', value: 1, ...}
+	 * @see {@link LRU#set}
+	 * @see {@link LRU#evict}
+	 * @since 11.3.0
+	 */
+	setWithEvicted (key, value, resetTtl = this.resetTtl) {
+		let evicted = null;
+
+		if (this.has(key)) {
+			this.set(key, value, true, resetTtl);
+		} else {
+			if (this.max > 0 && this.size === this.max) {
+				evicted = {...this.first};
+				this.evict(true);
+			}
+
+			let item = this.items[key] = {
+				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
+				key: key,
+				prev: this.last,
+				next: null,
+				value
+			};
+
+			if (++this.size === 1) {
+				this.first = item;
+			} else {
+				this.last.next = item;
+			}
+
+			this.last = item;
+		}
+
+		return evicted;
+	}
+
+	/**
+	 * Sets a value in the cache. Updates the item's position to most recently used.
+	 *
+	 * @method set
+	 * @memberof LRU
+	 * @param {string} key - The key to set.
+	 * @param {*} value - The value to store.
+	 * @param {boolean} [bypass=false] - Internal parameter for setWithEvicted method.
+	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('key1', 'value1')
+	 *      .set('key2', 'value2')
+	 *      .set('key3', 'value3');
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#setWithEvicted}
+	 * @since 1.0.0
+	 */
+	set (key, value, bypass = false, resetTtl = this.resetTtl) {
+		let item = this.items[key];
+
+		if (bypass || item !== undefined) {
+			// Existing item: update value and position
+			item.value = value;
+
+			if (bypass === false && resetTtl) {
+				item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+			}
+
+			// Always move to end, but the bypass parameter affects TTL reset behavior
+			this.moveToEnd(item);
+		} else {
+			// New item: check for eviction and create
+			if (this.max > 0 && this.size === this.max) {
+				this.evict(true);
+			}
+
+			item = this.items[key] = {
+				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
+				key: key,
+				prev: this.last,
+				next: null,
+				value
+			};
+
+			if (++this.size === 1) {
+				this.first = item;
+			} else {
+				this.last.next = item;
+			}
+
+			this.last = item;
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns an array of all values in the cache for the specified keys.
+	 * Order follows LRU order (least to most recently used).
+	 *
+	 * @method values
+	 * @memberof LRU
+	 * @param {string[]} [keys=this.keys()] - Array of keys to get values for. Defaults to all keys.
+	 * @returns {Array<*>} Array of values corresponding to the keys in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * console.log(cache.values()); // [1, 2]
+	 * console.log(cache.values(['a'])); // [1]
+	 * @see {@link LRU#keys}
+	 * @see {@link LRU#entries}
+	 * @since 11.1.0
+	 */
+	values (keys = this.keys()) {
+		const result = new Array(keys.length);
+		for (let i = 0; i < keys.length; i++) {
+			result[i] = this.get(keys[i]);
+		}
+
+		return result;
+	}
+}
+
+/**
+ * Factory function to create a new LRU cache instance with parameter validation.
+ *
+ * @function lru
+ * @param {number} [max=1000] - Maximum number of items to store. Must be >= 0. Use 0 for unlimited size.
+ * @param {number} [ttl=0] - Time to live in milliseconds. Must be >= 0. Use 0 for no expiration.
+ * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
+ * @returns {LRU} A new LRU cache instance.
+ * @throws {TypeError} When parameters are invalid (negative numbers or wrong types).
+ * @example
+ * // Create cache with factory function
+ * const cache = lru(100, 5000, true);
+ * cache.set('key', 'value');
+ *
+ * @example
+ * // Error handling
+ * try {
+ *   const cache = lru(-1); // Invalid max
+ * } catch (error) {
+ *   console.error(error.message); // "Invalid max value"
+ * }
+ * @see {@link LRU}
+ * @since 1.0.0
+ */
+function lru (max = 1000, ttl = 0, resetTtl = false) {
+	if (isNaN(max) || max < 0) {
+		throw new TypeError("Invalid max value");
+	}
+
+	if (isNaN(ttl) || ttl < 0) {
+		throw new TypeError("Invalid ttl value");
+	}
+
+	if (typeof resetTtl !== "boolean") {
+		throw new TypeError("Invalid resetTtl value");
+	}
+
+	return new LRU(max, ttl, resetTtl);
+}
 
 /***/ }
 

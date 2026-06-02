@@ -54,8 +54,7 @@
       "SmallWall": {
         "icon": "042_50705",
         "images": {
-          "final": "001_280",
-          "color": "001_230"
+          "final": "000_532"
         }
       },
       "House": {
@@ -174,6 +173,20 @@
       }
     },
     "3": {
+      "GuardTower": {
+        "icon": "025_50705",
+        "images": {
+          "final": "000_594",
+          "color": "000_237"
+        }
+      },
+      "BallistaTower": {
+        "icon": "027_50705",
+        "images": {
+          "final": "000_609",
+          "color": "000_237"
+        }
+      },
       "Granary": {
         "icon": "012_50705",
         "images": {

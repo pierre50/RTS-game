@@ -1,12 +1,12 @@
 "use strict";
 (self["webpackChunkdawn_of_empires"] = self["webpackChunkdawn_of_empires"] || []).push([[792],{
 
-/***/ 6340
+/***/ 731
 (__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) {
 
 
-// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 54 modules
-var lib = __webpack_require__(9014);
+// EXTERNAL MODULE: ./node_modules/.pnpm/pixi.js@8.18.1/node_modules/pixi.js/lib/index.mjs + 65 modules
+var lib = __webpack_require__(2133);
 // EXTERNAL MODULE: ./node_modules/.pnpm/style-loader@4.0.0_webpack@5.107.2/node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js
 var injectStylesIntoStyleTag = __webpack_require__(4368);
 var injectStylesIntoStyleTag_default = /*#__PURE__*/__webpack_require__.n(injectStylesIntoStyleTag);
@@ -89,8 +89,6 @@ var TRANSLATIONS = {
     aiDifficulty: 'Difficulté IA',
     startingResourcesLabel: 'Ressources de départ',
     mapResourcesLabel: 'Ressources sur la carte',
-    devMode: 'Mode dev (instant build)',
-    revealAll: 'Tout révéler',
     revealTerrain: 'Révéler le terrain',
     removePlayer: 'Retirer ce joueur',
     colorSwatch: 'Couleur : {color} (cliquer pour changer)',
@@ -112,7 +110,8 @@ var TRANSLATIONS = {
     quit: 'Quitter',
     cancel: 'Annuler',
     pause: 'Pause',
-    victory: 'Victoire',
+    victory: 'VOUS ÊTES VICTORIEUX',
+    defeat: 'VOUS AVEZ ÉTÉ DÉFAITS',
     wood: 'bois',
     food: 'nourriture',
     stone: 'pierre',
@@ -190,8 +189,6 @@ var TRANSLATIONS = {
     aiDifficulty: 'AI Difficulty',
     startingResourcesLabel: 'Starting Resources',
     mapResourcesLabel: 'Map Resources',
-    devMode: 'Dev mode (instant build)',
-    revealAll: 'Reveal everything',
     revealTerrain: 'Reveal terrain',
     removePlayer: 'Remove player',
     colorSwatch: 'Color: {color} (click to change)',
@@ -213,7 +210,8 @@ var TRANSLATIONS = {
     quit: 'Quit',
     cancel: 'Cancel',
     pause: 'Pause',
-    victory: 'Victory',
+    victory: 'YOU ARE VICTORIOUS',
+    defeat: 'YOU HAVE BEEN DEFEATED',
     wood: 'wood',
     food: 'food',
     stone: 'stone',
@@ -3001,7 +2999,7 @@ var BuildingLifecycle = /*#__PURE__*/function () {
   }, {
     key: "die",
     value: function die() {
-      var _building$context$che, _building$context2;
+      var _building$context$che, _building$context2, _building$context$che2, _building$context3;
       var building = this.building;
       if (building.isDead) return;
       var _building$context = building.context,
@@ -3019,6 +3017,9 @@ var BuildingLifecycle = /*#__PURE__*/function () {
       var index = building.owner.buildings.indexOf(building);
       if (index >= 0) {
         building.owner.buildings.splice(index, 1);
+        if (building.owner.units.length === 0 && building.owner.buildings.length === 0) {
+          menu.updatePlayerStats();
+        }
       }
       for (var i = 0; i < players.length; i++) {
         if (players[i].type === PLAYER_TYPES.ai) {
@@ -3057,6 +3058,7 @@ var BuildingLifecycle = /*#__PURE__*/function () {
       }, RUBBLE_TIME);
       canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner);
       (_building$context$che = (_building$context2 = building.context).checkVictory) === null || _building$context$che === void 0 || _building$context$che.call(_building$context2);
+      (_building$context$che2 = (_building$context3 = building.context).checkDefeat) === null || _building$context$che2 === void 0 || _building$context$che2.call(_building$context3);
     }
   }, {
     key: "clear",
@@ -3188,7 +3190,7 @@ var BuildingProduction = /*#__PURE__*/function () {
                 if (still === 0) menu.toggleButtonCancel(type, false);
                 building.updateInterfaceLoading();
               }
-            } else if (building.loading >= 100 || map.devMode) {
+            } else if (building.loading >= 100 || map.instantMode) {
               building.stopInterval();
               building.placeUnit(type, extra);
               building.loading = null;
@@ -3291,7 +3293,7 @@ var BuildingProduction = /*#__PURE__*/function () {
           var _building$technology = building.technology,
             config = _building$technology.config,
             type = _building$technology.type;
-          if (building.loading >= 100 || map.devMode) {
+          if (building.loading >= 100 || map.instantMode) {
             building.stopInterval();
             building.loading = null;
             building.technology = null;
@@ -3574,7 +3576,7 @@ var Building = /*#__PURE__*/function (_Instance) {
         var assets = getBuildingAsset(_this.type, _this.owner, lib/* Assets */.sP);
         _this.buildingInterface.renderInfo(element, assets);
       },
-      menu: _this.owner.isPlayed || map.devMode ? [].concat(building_toConsumableArray(units), building_toConsumableArray(technologies)) : []
+      menu: _this.owner.isPlayed || map.instantMode ? [].concat(building_toConsumableArray(units), building_toConsumableArray(technologies)) : []
     };
 
     // Set solid zone
@@ -4227,7 +4229,7 @@ var UnitLifecycle = /*#__PURE__*/function () {
   }, {
     key: "die",
     value: function die() {
-      var _unit$context$checkVi, _unit$context2;
+      var _unit$context$checkVi, _unit$context2, _unit$context$checkDe, _unit$context3;
       var unit = this.unit;
       if (unit.isDead) {
         return;
@@ -4259,6 +4261,9 @@ var UnitLifecycle = /*#__PURE__*/function () {
         var index = unit.owner.units.indexOf(unit);
         if (index >= 0) {
           unit.owner.units.splice(index, 1);
+          if (unit.owner.units.length === 0 && unit.owner.buildings.length === 0) {
+            menu.updatePlayerStats();
+          }
         }
         if (unit.owner.selectedUnit === unit) {
           menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.hitPoints + '/' + unit.totalHitPoints);
@@ -4267,6 +4272,7 @@ var UnitLifecycle = /*#__PURE__*/function () {
       this.death();
       canUpdateMinimap(unit, player) && menu.updatePlayerMiniMapEvt(unit.owner);
       (_unit$context$checkVi = (_unit$context2 = unit.context).checkVictory) === null || _unit$context$checkVi === void 0 || _unit$context$checkVi.call(_unit$context2);
+      (_unit$context$checkDe = (_unit$context3 = unit.context).checkDefeat) === null || _unit$context$checkDe === void 0 || _unit$context$checkDe.call(_unit$context3);
     }
   }, {
     key: "clear",
@@ -5677,11 +5683,11 @@ var Player = /*#__PURE__*/function () {
     });
     this.team = this.team == null || this.team === '' ? null : Number(this.team);
     if (!Number.isFinite(this.team)) this.team = null;
-    this.population_max = this.population_max || (map.devMode ? POPULATION_MAX : 0);
+    this.population_max = this.population_max || (map.instantMode ? POPULATION_MAX : 0);
     this.colorHex = getHexColor(this.color);
     this.config = player_objectSpread({}, lib/* Assets */.sP.cache.get('config'));
     this.techs = player_objectSpread({}, lib/* Assets */.sP.cache.get('technology'));
-    this.hasBuilt = this.hasBuilt || (map.devMode ? Object.keys(this.config.buildings).map(function (key) {
+    this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(function (key) {
       return key;
     }) : []);
     var cloneGrid = [];
@@ -5842,7 +5848,7 @@ var Player = /*#__PURE__*/function () {
           i: i,
           j: j,
           type: type,
-          isBuilt: map.devMode
+          isBuilt: map.instantMode
         });
         payCost(this, config.cost);
         this.isPlayed && menu.updateTopbar();
@@ -7074,8 +7080,9 @@ var AI = /*#__PURE__*/function (_Player) {
       var _this3 = this;
       var _this$context = this.context,
         map = _this$context.map,
-        paused = _this$context.paused;
-      if (paused) return 0;
+        paused = _this$context.paused,
+        aiPaused = _this$context.aiPaused;
+      if (paused || aiPaused) return 0;
       var actions = 0;
       var maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier);
       var maxVillagersOnConstruction = 2 + this.age * 2;
@@ -8227,7 +8234,13 @@ var CellFog = /*#__PURE__*/function () {
     key: "_setRemoveChildren",
     value: function _setRemoveChildren(instance) {
       var cell = this.cell;
-      var controls = cell.context.controls;
+      var _cell$context2 = cell.context,
+        controls = _cell$context2.controls,
+        map = _cell$context2.map;
+      if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
+        instance.visible = false;
+        return;
+      }
       if (controls.instanceInCamera(instance)) {
         instance.visible = true;
       }
@@ -8600,6 +8613,10 @@ var Cell = /*#__PURE__*/function (_Container) {
       var _this$context = this.context,
         map = _this$context.map,
         player = _this$context.player;
+      if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
+        instance.visible = false;
+        return;
+      }
       var isInPlayerSight = playerCanSeeInstance(instance, player);
       instance.visible = map.revealEverything || ((_instance$owner = instance.owner) === null || _instance$owner === void 0 ? void 0 : _instance$owner.isPlayed) || isInPlayerSight || instance.family === FAMILY_TYPES.resource || !map.revealTerrain && !instance.owner;
     }
@@ -8793,6 +8810,7 @@ var MapGeneration = /*#__PURE__*/function () {
       }));
       this.map.formatCellsWaterBorder();
       this.map.clampReliefAroundWater();
+      this.map.enforceReliefStepContinuity();
       this.map.formatCellsRelief();
       this.map.formatCellsDesert();
       if (!this.map.revealEverything) {
@@ -8896,10 +8914,16 @@ var MapGeneration = /*#__PURE__*/function () {
           this.map.positionsCount = 4;
           break;
         case 200:
-          this.map.positionsCount = 6;
+          this.map.positionsCount = 5;
           break;
         case 220:
-          this.map.positionsCount = 8;
+          this.map.positionsCount = 5;
+          break;
+        case 384:
+          this.map.positionsCount = 5;
+          break;
+        case 512:
+          this.map.positionsCount = 5;
           break;
         default:
           this.map.positionsCount = 2;
@@ -8917,8 +8941,6 @@ var MapGeneration = /*#__PURE__*/function () {
         this.map.generateMap(positionsCountOverride, repeat + 1);
         return;
       }
-      this.map.generateResourcesAroundPlayers(this.map.playersPos);
-      this.map.generateNeutralResourceGroups(this.map.playersPos);
     }
   }, {
     key: "stylishMap",
@@ -8927,9 +8949,12 @@ var MapGeneration = /*#__PURE__*/function () {
         menu = _this$map$context2.menu,
         player = _this$map$context2.player;
       this.map.gaia = new Gaia(this.map.context);
-      this.map.generateAnimalsAroundPlayers(this.map.playersPos);
       this.map.generateMapRelief();
       this.map.formatCellsRelief();
+      this.map.placePlayers();
+      this.map.generateResourcesAroundPlayers(this.map.playersPos);
+      this.map.generateNeutralResourceGroups(this.map.playersPos);
+      this.map.generateAnimalsAroundPlayers(this.map.playersPos);
       this.map.generateSets();
       this.map._initFogChunks();
       if (!this.map.revealEverything) {
@@ -9182,7 +9207,10 @@ var MapGeneration = /*#__PURE__*/function () {
             continue;
           }
           if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-            if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
+            var hasWaterNeighbour = getCellsAroundPoint(i, j, this.map.grid, 2, function (neighbour) {
+              return neighbour.category === 'Water' || neighbour.waterBorder;
+            }).length > 0;
+            if (cell.category !== 'Water' && !hasWaterNeighbour && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
               var randomSpritesheet = randomRange(292, 301).toString();
               var spritesheet = lib/* Assets */.sP.cache.get(randomSpritesheet);
               var texture = spritesheet.textures['000_' + randomSpritesheet + '.png'];
@@ -9195,7 +9223,7 @@ var MapGeneration = /*#__PURE__*/function () {
               floor.updateAnchor = true;
               cell.addChild(floor);
             }
-            if (Math.random() < this.map.chanceOfSets) {
+            if (!hasWaterNeighbour && Math.random() < this.map.chanceOfSets) {
               if (cell.category !== 'Water') {
                 var type = maths_randomItem(['tree', 'rock', 'animal']);
                 switch (type) {
@@ -9226,13 +9254,14 @@ var MapGeneration = /*#__PURE__*/function () {
                       break;
                     }
                 }
-              } else {
-                this.map.resources.add(this.map.addChild(new Resource({
-                  i: i,
-                  j: j,
-                  type: RESOURCE_TYPES.salmon
-                }, this.map.context)));
               }
+            }
+            if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
+              this.map.resources.add(this.map.addChild(new Resource({
+                i: i,
+                j: j,
+                type: RESOURCE_TYPES.salmon
+              }, this.map.context)));
             }
           }
         }
@@ -9750,7 +9779,7 @@ var MapTerrain = /*#__PURE__*/function () {
         for (var _i = 0; _i <= this.map.size; _i++) {
           for (var _j = 0; _j <= this.map.size; _j++) {
             var cell = this.map.grid[_i][_j];
-            if (cell.category === 'Water' || cell.has || cell.waterBorder || this.map.isInPlayerStartFlatZone(_i, _j)) continue;
+            if (cell.category === 'Water' || cell.has || cell.waterBorder) continue;
             var maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[_i * n + _j]);
             var actual = Math.min(targetLevel, maxAllowed);
             if (reliefH[_i * n + _j] > threshold && actual > cell.z) {
@@ -9782,14 +9811,7 @@ var MapTerrain = /*#__PURE__*/function () {
       }
       this.map.flattenPlayerStartZones();
       this.map.clampReliefAroundWater(dist);
-    }
-  }, {
-    key: "isInPlayerStartFlatZone",
-    value: function isInPlayerStartFlatZone(i, j) {
-      var radius = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4;
-      return this.map.playersPos.some(function (pos) {
-        return Math.abs(pos.i - i) <= radius && Math.abs(pos.j - j) <= radius;
-      });
+      this.map.enforceReliefStepContinuity(dist);
     }
   }, {
     key: "flattenPlayerStartZones",
@@ -9799,21 +9821,38 @@ var MapTerrain = /*#__PURE__*/function () {
         _step;
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _Object$entries$sort$, _Object$entries$sort$2;
           var pos = _step.value;
-          var cells = grid_getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius);
+          var cells = grid_getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius).filter(function (cell) {
+            return cell.category !== 'Water' && !cell.waterBorder;
+          });
+          var zCounts = {};
           var _iterator2 = MapTerrain_createForOfIteratorHelper(cells),
             _step2;
           try {
             for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
               var cell = _step2.value;
-              if (cell.category !== 'Water' && !cell.waterBorder && cell.z !== 0) {
-                this.map.setCellReliefLevelDirect(cell, 0);
-              }
+              zCounts[cell.z] = (zCounts[cell.z] || 0) + 1;
             }
           } catch (err) {
             _iterator2.e(err);
           } finally {
             _iterator2.f();
+          }
+          var targetZ = Number((_Object$entries$sort$ = (_Object$entries$sort$2 = Object.entries(zCounts).sort(function (a, b) {
+            return b[1] - a[1];
+          })[0]) === null || _Object$entries$sort$2 === void 0 ? void 0 : _Object$entries$sort$2[0]) !== null && _Object$entries$sort$ !== void 0 ? _Object$entries$sort$ : 0);
+          var _iterator3 = MapTerrain_createForOfIteratorHelper(cells),
+            _step3;
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var _cell = _step3.value;
+              if (_cell.z !== targetZ) this.map.setCellReliefLevelDirect(_cell, targetZ);
+            }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
           }
         }
       } catch (err) {
@@ -9885,16 +9924,49 @@ var MapTerrain = /*#__PURE__*/function () {
       }
     }
   }, {
+    key: "enforceReliefStepContinuity",
+    value: function enforceReliefStepContinuity() {
+      var dist = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.map.getReliefCoastDistances();
+      var n = this.map.size + 1;
+      var changed = true;
+      var guard = 0;
+      while (changed && guard++ < this.map.size) {
+        changed = false;
+        for (var i = 0; i <= this.map.size; i++) {
+          for (var j = 0; j <= this.map.size; j++) {
+            var cell = this.map.grid[i][j];
+            for (var _i5 = 0, _arr2 = [(_this$map$grid = this.map.grid[i + 1]) === null || _this$map$grid === void 0 ? void 0 : _this$map$grid[j], (_this$map$grid$i = this.map.grid[i]) === null || _this$map$grid$i === void 0 ? void 0 : _this$map$grid$i[j + 1]]; _i5 < _arr2.length; _i5++) {
+              var _this$map$grid, _this$map$grid$i;
+              var neighbor = _arr2[_i5];
+              if (!neighbor) continue;
+              if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder) continue;
+              var high = cell.z >= neighbor.z ? cell : neighbor;
+              var low = high === cell ? neighbor : cell;
+              if (high.z - low.z <= 1) continue;
+              var targetLowLevel = high.z - 1;
+              var lowMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[low.i * n + low.j]);
+              if (!low.has && targetLowLevel <= lowMaxAllowed) {
+                this.map.setCellReliefLevelDirect(low, targetLowLevel);
+              } else {
+                this.map.setCellReliefLevelDirect(high, low.z + 1);
+              }
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+  }, {
     key: "formatCellsRelief",
     value: function formatCellsRelief() {
       for (var i = 0; i <= this.map.size; i++) {
         for (var j = 0; j <= this.map.size; j++) {
-          var _this$map$grid$j$z, _this$map$grid, _this$map$grid$j$z2, _this$map$grid2, _this$map$grid$i$z, _this$map$grid$i, _this$map$grid$i$z2, _this$map$grid$i2;
+          var _this$map$grid$j$z, _this$map$grid2, _this$map$grid$j$z2, _this$map$grid3, _this$map$grid$i$z, _this$map$grid$i2, _this$map$grid$i$z2, _this$map$grid$i3;
           var cell = this.map.grid[i][j];
-          var _n = (_this$map$grid$j$z = (_this$map$grid = this.map.grid[i - 1]) === null || _this$map$grid === void 0 || (_this$map$grid = _this$map$grid[j]) === null || _this$map$grid === void 0 ? void 0 : _this$map$grid.z) !== null && _this$map$grid$j$z !== void 0 ? _this$map$grid$j$z : cell.z;
-          var _s = (_this$map$grid$j$z2 = (_this$map$grid2 = this.map.grid[i + 1]) === null || _this$map$grid2 === void 0 || (_this$map$grid2 = _this$map$grid2[j]) === null || _this$map$grid2 === void 0 ? void 0 : _this$map$grid2.z) !== null && _this$map$grid$j$z2 !== void 0 ? _this$map$grid$j$z2 : cell.z;
-          var _w = (_this$map$grid$i$z = (_this$map$grid$i = this.map.grid[i]) === null || _this$map$grid$i === void 0 || (_this$map$grid$i = _this$map$grid$i[j - 1]) === null || _this$map$grid$i === void 0 ? void 0 : _this$map$grid$i.z) !== null && _this$map$grid$i$z !== void 0 ? _this$map$grid$i$z : cell.z;
-          var _e = (_this$map$grid$i$z2 = (_this$map$grid$i2 = this.map.grid[i]) === null || _this$map$grid$i2 === void 0 || (_this$map$grid$i2 = _this$map$grid$i2[j + 1]) === null || _this$map$grid$i2 === void 0 ? void 0 : _this$map$grid$i2.z) !== null && _this$map$grid$i$z2 !== void 0 ? _this$map$grid$i$z2 : cell.z;
+          var _n = (_this$map$grid$j$z = (_this$map$grid2 = this.map.grid[i - 1]) === null || _this$map$grid2 === void 0 || (_this$map$grid2 = _this$map$grid2[j]) === null || _this$map$grid2 === void 0 ? void 0 : _this$map$grid2.z) !== null && _this$map$grid$j$z !== void 0 ? _this$map$grid$j$z : cell.z;
+          var _s = (_this$map$grid$j$z2 = (_this$map$grid3 = this.map.grid[i + 1]) === null || _this$map$grid3 === void 0 || (_this$map$grid3 = _this$map$grid3[j]) === null || _this$map$grid3 === void 0 ? void 0 : _this$map$grid3.z) !== null && _this$map$grid$j$z2 !== void 0 ? _this$map$grid$j$z2 : cell.z;
+          var _w = (_this$map$grid$i$z = (_this$map$grid$i2 = this.map.grid[i]) === null || _this$map$grid$i2 === void 0 || (_this$map$grid$i2 = _this$map$grid$i2[j - 1]) === null || _this$map$grid$i2 === void 0 ? void 0 : _this$map$grid$i2.z) !== null && _this$map$grid$i$z !== void 0 ? _this$map$grid$i$z : cell.z;
+          var _e = (_this$map$grid$i$z2 = (_this$map$grid$i3 = this.map.grid[i]) === null || _this$map$grid$i3 === void 0 || (_this$map$grid$i3 = _this$map$grid$i3[j + 1]) === null || _this$map$grid$i3 === void 0 ? void 0 : _this$map$grid$i3.z) !== null && _this$map$grid$i$z2 !== void 0 ? _this$map$grid$i$z2 : cell.z;
           if ((cell.category === 'Water' || cell.waterBorder) && (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z)) {
             console.log("[relief] SKIPPED waterBorder at [".concat(i, ",").concat(j, "] z=").concat(cell.z, " N=").concat(_n, " S=").concat(_s, " W=").concat(_w, " E=").concat(_e));
           }
@@ -9928,11 +10000,11 @@ var MapTerrain = /*#__PURE__*/function () {
           } else if (this.map.grid[i][j - 1] && this.map.grid[i][j - 1].z - cell.z >= 1 && this.map.grid[i][j + 1] && this.map.grid[i][j + 1].z - cell.z >= 1) {
             cell.setReliefBorder('018', CELL_DEPTH / 2);
           } else {
-            var _this$map$grid$z, _this$map$grid3, _this$map$grid$z2, _this$map$grid4, _this$map$grid$z3, _this$map$grid5, _this$map$grid$z4, _this$map$grid6;
-            var _nw = (_this$map$grid$z = (_this$map$grid3 = this.map.grid[i - 1]) === null || _this$map$grid3 === void 0 || (_this$map$grid3 = _this$map$grid3[j - 1]) === null || _this$map$grid3 === void 0 ? void 0 : _this$map$grid3.z) !== null && _this$map$grid$z !== void 0 ? _this$map$grid$z : cell.z;
-            var _ne = (_this$map$grid$z2 = (_this$map$grid4 = this.map.grid[i - 1]) === null || _this$map$grid4 === void 0 || (_this$map$grid4 = _this$map$grid4[j + 1]) === null || _this$map$grid4 === void 0 ? void 0 : _this$map$grid4.z) !== null && _this$map$grid$z2 !== void 0 ? _this$map$grid$z2 : cell.z;
-            var _sw = (_this$map$grid$z3 = (_this$map$grid5 = this.map.grid[i + 1]) === null || _this$map$grid5 === void 0 || (_this$map$grid5 = _this$map$grid5[j - 1]) === null || _this$map$grid5 === void 0 ? void 0 : _this$map$grid5.z) !== null && _this$map$grid$z3 !== void 0 ? _this$map$grid$z3 : cell.z;
-            var _se = (_this$map$grid$z4 = (_this$map$grid6 = this.map.grid[i + 1]) === null || _this$map$grid6 === void 0 || (_this$map$grid6 = _this$map$grid6[j + 1]) === null || _this$map$grid6 === void 0 ? void 0 : _this$map$grid6.z) !== null && _this$map$grid$z4 !== void 0 ? _this$map$grid$z4 : cell.z;
+            var _this$map$grid$z, _this$map$grid4, _this$map$grid$z2, _this$map$grid5, _this$map$grid$z3, _this$map$grid6, _this$map$grid$z4, _this$map$grid7;
+            var _nw = (_this$map$grid$z = (_this$map$grid4 = this.map.grid[i - 1]) === null || _this$map$grid4 === void 0 || (_this$map$grid4 = _this$map$grid4[j - 1]) === null || _this$map$grid4 === void 0 ? void 0 : _this$map$grid4.z) !== null && _this$map$grid$z !== void 0 ? _this$map$grid$z : cell.z;
+            var _ne = (_this$map$grid$z2 = (_this$map$grid5 = this.map.grid[i - 1]) === null || _this$map$grid5 === void 0 || (_this$map$grid5 = _this$map$grid5[j + 1]) === null || _this$map$grid5 === void 0 ? void 0 : _this$map$grid5.z) !== null && _this$map$grid$z2 !== void 0 ? _this$map$grid$z2 : cell.z;
+            var _sw = (_this$map$grid$z3 = (_this$map$grid6 = this.map.grid[i + 1]) === null || _this$map$grid6 === void 0 || (_this$map$grid6 = _this$map$grid6[j - 1]) === null || _this$map$grid6 === void 0 ? void 0 : _this$map$grid6.z) !== null && _this$map$grid$z3 !== void 0 ? _this$map$grid$z3 : cell.z;
+            var _se = (_this$map$grid$z4 = (_this$map$grid7 = this.map.grid[i + 1]) === null || _this$map$grid7 === void 0 || (_this$map$grid7 = _this$map$grid7[j + 1]) === null || _this$map$grid7 === void 0 ? void 0 : _this$map$grid7.z) !== null && _this$map$grid$z4 !== void 0 ? _this$map$grid$z4 : cell.z;
             if (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z || _nw > cell.z || _ne > cell.z || _sw > cell.z || _se > cell.z) {
               console.log("[relief] UNHANDLED at [".concat(i, ",").concat(j, "] z=").concat(cell.z, " N=").concat(_n, " S=").concat(_s, " W=").concat(_w, " E=").concat(_e, " NW=").concat(_nw, " NE=").concat(_ne, " SW=").concat(_sw, " SE=").concat(_se));
             }
@@ -9945,34 +10017,34 @@ var MapTerrain = /*#__PURE__*/function () {
     value: function formatCellsWaterBorder() {
       for (var i = 0; i <= this.map.size; i++) {
         for (var j = 0; j <= this.map.size; j++) {
-          var _this$map$grid7, _this$map$grid8, _this$map$grid$i3, _this$map$grid$i4, _this$map$grid9, _this$map$grid0, _this$map$grid1, _this$map$grid10;
+          var _this$map$grid8, _this$map$grid9, _this$map$grid$i4, _this$map$grid$i5, _this$map$grid0, _this$map$grid1, _this$map$grid10, _this$map$grid11;
           var cell = this.map.grid[i][j];
           if (cell.type === 'Water') continue;
-          var n = ((_this$map$grid7 = this.map.grid[i - 1]) === null || _this$map$grid7 === void 0 || (_this$map$grid7 = _this$map$grid7[j]) === null || _this$map$grid7 === void 0 ? void 0 : _this$map$grid7.type) === 'Water';
-          var s = ((_this$map$grid8 = this.map.grid[i + 1]) === null || _this$map$grid8 === void 0 || (_this$map$grid8 = _this$map$grid8[j]) === null || _this$map$grid8 === void 0 ? void 0 : _this$map$grid8.type) === 'Water';
-          var w = ((_this$map$grid$i3 = this.map.grid[i]) === null || _this$map$grid$i3 === void 0 || (_this$map$grid$i3 = _this$map$grid$i3[j - 1]) === null || _this$map$grid$i3 === void 0 ? void 0 : _this$map$grid$i3.type) === 'Water';
-          var e = ((_this$map$grid$i4 = this.map.grid[i]) === null || _this$map$grid$i4 === void 0 || (_this$map$grid$i4 = _this$map$grid$i4[j + 1]) === null || _this$map$grid$i4 === void 0 ? void 0 : _this$map$grid$i4.type) === 'Water';
-          var nw = ((_this$map$grid9 = this.map.grid[i - 1]) === null || _this$map$grid9 === void 0 || (_this$map$grid9 = _this$map$grid9[j - 1]) === null || _this$map$grid9 === void 0 ? void 0 : _this$map$grid9.type) === 'Water';
-          var sw = ((_this$map$grid0 = this.map.grid[i + 1]) === null || _this$map$grid0 === void 0 || (_this$map$grid0 = _this$map$grid0[j - 1]) === null || _this$map$grid0 === void 0 ? void 0 : _this$map$grid0.type) === 'Water';
-          var ne = ((_this$map$grid1 = this.map.grid[i - 1]) === null || _this$map$grid1 === void 0 || (_this$map$grid1 = _this$map$grid1[j + 1]) === null || _this$map$grid1 === void 0 ? void 0 : _this$map$grid1.type) === 'Water';
-          var se = ((_this$map$grid10 = this.map.grid[i + 1]) === null || _this$map$grid10 === void 0 || (_this$map$grid10 = _this$map$grid10[j + 1]) === null || _this$map$grid10 === void 0 ? void 0 : _this$map$grid10.type) === 'Water';
+          var n = ((_this$map$grid8 = this.map.grid[i - 1]) === null || _this$map$grid8 === void 0 || (_this$map$grid8 = _this$map$grid8[j]) === null || _this$map$grid8 === void 0 ? void 0 : _this$map$grid8.type) === 'Water';
+          var s = ((_this$map$grid9 = this.map.grid[i + 1]) === null || _this$map$grid9 === void 0 || (_this$map$grid9 = _this$map$grid9[j]) === null || _this$map$grid9 === void 0 ? void 0 : _this$map$grid9.type) === 'Water';
+          var w = ((_this$map$grid$i4 = this.map.grid[i]) === null || _this$map$grid$i4 === void 0 || (_this$map$grid$i4 = _this$map$grid$i4[j - 1]) === null || _this$map$grid$i4 === void 0 ? void 0 : _this$map$grid$i4.type) === 'Water';
+          var e = ((_this$map$grid$i5 = this.map.grid[i]) === null || _this$map$grid$i5 === void 0 || (_this$map$grid$i5 = _this$map$grid$i5[j + 1]) === null || _this$map$grid$i5 === void 0 ? void 0 : _this$map$grid$i5.type) === 'Water';
+          var nw = ((_this$map$grid0 = this.map.grid[i - 1]) === null || _this$map$grid0 === void 0 || (_this$map$grid0 = _this$map$grid0[j - 1]) === null || _this$map$grid0 === void 0 ? void 0 : _this$map$grid0.type) === 'Water';
+          var sw = ((_this$map$grid1 = this.map.grid[i + 1]) === null || _this$map$grid1 === void 0 || (_this$map$grid1 = _this$map$grid1[j - 1]) === null || _this$map$grid1 === void 0 ? void 0 : _this$map$grid1.type) === 'Water';
+          var ne = ((_this$map$grid10 = this.map.grid[i - 1]) === null || _this$map$grid10 === void 0 || (_this$map$grid10 = _this$map$grid10[j + 1]) === null || _this$map$grid10 === void 0 ? void 0 : _this$map$grid10.type) === 'Water';
+          var se = ((_this$map$grid11 = this.map.grid[i + 1]) === null || _this$map$grid11 === void 0 || (_this$map$grid11 = _this$map$grid11[j + 1]) === null || _this$map$grid11 === void 0 ? void 0 : _this$map$grid11.type) === 'Water';
           if (w && n) cell.setWaterBorder('20000', '001');else if (e && s) cell.setWaterBorder('20000', '002');else if (w && s) cell.setWaterBorder('20000', '003');else if (e && n) cell.setWaterBorder('20000', '000');else if (n) cell.setWaterBorder('20000', '008');else if (s) cell.setWaterBorder('20000', '009');else if (w) cell.setWaterBorder('20000', '011');else if (e) cell.setWaterBorder('20000', '010');else if (nw) cell.setWaterBorder('20000', '005');else if (sw) cell.setWaterBorder('20000', '007');else if (ne) cell.setWaterBorder('20000', '004');else if (se) cell.setWaterBorder('20000', '006');
         }
       }
-      for (var _i5 = 0; _i5 <= this.map.size; _i5++) {
+      for (var _i6 = 0; _i6 <= this.map.size; _i6++) {
         for (var _j4 = 0; _j4 <= this.map.size; _j4++) {
-          var _this$map$grid11, _this$map$grid12, _this$map$grid$_i, _this$map$grid$_i2;
-          var _cell = this.map.grid[_i5][_j4];
-          if (!_cell.waterBorder) continue;
+          var _this$map$grid12, _this$map$grid13, _this$map$grid$_i, _this$map$grid$_i2;
+          var _cell2 = this.map.grid[_i6][_j4];
+          if (!_cell2.waterBorder) continue;
           var overlay = function overlay(neighbor, direction) {
             if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
               neighbor.setDesertBorder(direction);
             }
           };
-          overlay((_this$map$grid11 = this.map.grid[_i5 - 1]) === null || _this$map$grid11 === void 0 ? void 0 : _this$map$grid11[_j4], 'east');
-          overlay((_this$map$grid12 = this.map.grid[_i5 + 1]) === null || _this$map$grid12 === void 0 ? void 0 : _this$map$grid12[_j4], 'west');
-          overlay((_this$map$grid$_i = this.map.grid[_i5]) === null || _this$map$grid$_i === void 0 ? void 0 : _this$map$grid$_i[_j4 - 1], 'south');
-          overlay((_this$map$grid$_i2 = this.map.grid[_i5]) === null || _this$map$grid$_i2 === void 0 ? void 0 : _this$map$grid$_i2[_j4 + 1], 'north');
+          overlay((_this$map$grid12 = this.map.grid[_i6 - 1]) === null || _this$map$grid12 === void 0 ? void 0 : _this$map$grid12[_j4], 'east');
+          overlay((_this$map$grid13 = this.map.grid[_i6 + 1]) === null || _this$map$grid13 === void 0 ? void 0 : _this$map$grid13[_j4], 'west');
+          overlay((_this$map$grid$_i = this.map.grid[_i6]) === null || _this$map$grid$_i === void 0 ? void 0 : _this$map$grid$_i[_j4 - 1], 'south');
+          overlay((_this$map$grid$_i2 = this.map.grid[_i6]) === null || _this$map$grid$_i2 === void 0 ? void 0 : _this$map$grid$_i2[_j4 + 1], 'north');
         }
       }
     }
@@ -9984,18 +10056,15 @@ var MapTerrain = /*#__PURE__*/function () {
           var cell = this.map.grid[i][j];
           var typeToFormat = ['Grass', 'Jungle'];
           if (cell.type === 'Desert') {
-            if (this.map.grid[i - 1] && this.map.grid[i - 1][j] && typeToFormat.includes(this.map.grid[i - 1][j].type)) {
-              this.map.grid[i - 1][j].setDesertBorder('east');
-            }
-            if (this.map.grid[i + 1] && this.map.grid[i + 1][j] && typeToFormat.includes(this.map.grid[i + 1][j].type)) {
-              this.map.grid[i + 1][j].setDesertBorder('west');
-            }
-            if (this.map.grid[i][j - 1] && typeToFormat.includes(this.map.grid[i][j - 1].type)) {
-              this.map.grid[i][j - 1].setDesertBorder('south');
-            }
-            if (this.map.grid[i][j + 1] && typeToFormat.includes(this.map.grid[i][j + 1].type)) {
-              this.map.grid[i][j + 1].setDesertBorder('north');
-            }
+            var _this$map$grid14, _this$map$grid15, _this$map$grid$i6, _this$map$grid$i7;
+            var n = (_this$map$grid14 = this.map.grid[i - 1]) === null || _this$map$grid14 === void 0 ? void 0 : _this$map$grid14[j];
+            var s = (_this$map$grid15 = this.map.grid[i + 1]) === null || _this$map$grid15 === void 0 ? void 0 : _this$map$grid15[j];
+            var w = (_this$map$grid$i6 = this.map.grid[i]) === null || _this$map$grid$i6 === void 0 ? void 0 : _this$map$grid$i6[j - 1];
+            var e = (_this$map$grid$i7 = this.map.grid[i]) === null || _this$map$grid$i7 === void 0 ? void 0 : _this$map$grid$i7[j + 1];
+            if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder('east');
+            if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder('west');
+            if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder('south');
+            if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder('north');
           }
         }
       }
@@ -10004,13 +10073,13 @@ var MapTerrain = /*#__PURE__*/function () {
 }();
 ;// ./app/classes/map/MapFog.js
 function MapFog_typeof(o) { "@babel/helpers - typeof"; return MapFog_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MapFog_typeof(o); }
-function MapFog_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MapFog_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function MapFog_slicedToArray(r, e) { return MapFog_arrayWithHoles(r) || MapFog_iterableToArrayLimit(r, e) || MapFog_unsupportedIterableToArray(r, e) || MapFog_nonIterableRest(); }
 function MapFog_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function MapFog_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapFog_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapFog_arrayLikeToArray(r, a) : void 0; } }
-function MapFog_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function MapFog_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function MapFog_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function MapFog_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MapFog_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function MapFog_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MapFog_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MapFog_arrayLikeToArray(r, a) : void 0; } }
+function MapFog_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function MapFog_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function MapFog_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, MapFog_toPropertyKey(o.key), o); } }
 function MapFog_createClass(e, r, t) { return r && MapFog_defineProperties(e.prototype, r), t && MapFog_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -10091,12 +10160,121 @@ var MapFog = /*#__PURE__*/function () {
           }
         }
       }
+      this._createWaterAnimation();
+    }
+  }, {
+    key: "_createWaterAnimation",
+    value: function _createWaterAnimation() {
+      var _this = this;
+      var spritesheet = lib/* Assets */.sP.cache.get('15002');
+      if (!spritesheet) return;
+      var frames = ['000', '001', '002', '003'].map(function (i) {
+        return spritesheet.textures["".concat(i, "_15002.png")];
+      }).filter(Boolean);
+      if (!frames.length) return;
+      var PHASES = frames.length;
+
+      // Destroy previous water layers if re-baking (e.g. load from save)
+      if (this.map._waterLayers) {
+        this.map.context.app.ticker.remove(this.map._waterAnimTicker);
+        var _iterator = MapFog_createForOfIteratorHelper(this.map._waterLayers),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var layer = _step.value;
+            var _iterator2 = MapFog_createForOfIteratorHelper(layer.sprites),
+              _step2;
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var sprite = _step2.value;
+                sprite.destroy();
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+        this.map._waterLayers = null;
+      }
+
+      // One sprite per water cell — no mask, no camera drift, PixiJS batches same-texture sprites
+      this.map._waterLayers = Array.from({
+        length: PHASES
+      }, function (_, p) {
+        return {
+          sprites: [],
+          phase: p,
+          frameMs: 900 + (p * 97 + 43) % 300,
+          elapsed: 0
+        };
+      });
+      for (var p = 0; p < PHASES; p++) {
+        this.map._waterLayers[p].elapsed = p / PHASES * this.map._waterLayers[p].frameMs;
+      }
+      for (var i = 0; i <= this.map.size; i++) {
+        for (var j = 0; j <= this.map.size; j++) {
+          var cell = this.map.grid[i][j];
+          if (cell.category !== 'Water') continue;
+          var _layer = this.map._waterLayers[(cell.i + cell.j) % PHASES];
+          var _sprite = new lib/* Sprite */.kxk(frames[_layer.phase]);
+          _sprite.x = cell.x;
+          _sprite.y = cell.y;
+          _sprite.anchor.set(0.5, 0.5);
+          _sprite.zIndex = -0.5;
+          _sprite.eventMode = 'none';
+          _sprite.cullable = true;
+          this.map.addChild(_sprite);
+          _layer.sprites.push(_sprite);
+        }
+      }
+      this.map._waterAnimTicker = function (ticker) {
+        if (_this.map.context.map !== _this.map) {
+          _this.map.context.app.ticker.remove(_this.map._waterAnimTicker);
+          return;
+        }
+        var _iterator3 = MapFog_createForOfIteratorHelper(_this.map._waterLayers),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var _layer2 = _step3.value;
+            _layer2.elapsed += ticker.elapsedMS;
+            if (_layer2.elapsed >= _layer2.frameMs) {
+              _layer2.elapsed -= _layer2.frameMs;
+              _layer2.phase = (_layer2.phase + 1) % frames.length;
+              var tex = frames[_layer2.phase];
+              var _iterator4 = MapFog_createForOfIteratorHelper(_layer2.sprites),
+                _step4;
+              try {
+                for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+                  var _sprite2 = _step4.value;
+                  _sprite2.texture = tex;
+                }
+              } catch (err) {
+                _iterator4.e(err);
+              } finally {
+                _iterator4.f();
+              }
+            }
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+      };
+      this.map.context.app.ticker.add(this.map._waterAnimTicker);
     }
   }, {
     key: "_initFogChunks",
     value: function _initFogChunks() {
       var _this$map$context$app2,
-        _this = this;
+        _this2 = this;
       this.map._fogQueue = new globalThis.Map();
       this.map._fogInitComplete = false;
       this.map._fogChunks = [];
@@ -10216,11 +10394,11 @@ var MapFog = /*#__PURE__*/function () {
         }
       }
       this.map._fogTickerCb = function () {
-        if (_this.map.context.map !== _this.map) {
-          _this.map.context.app.ticker.remove(_this.map._fogTickerCb);
+        if (_this2.map.context.map !== _this2.map) {
+          _this2.map.context.app.ticker.remove(_this2.map._fogTickerCb);
           return;
         }
-        _this.map._flushFogQueue();
+        _this2.map._flushFogQueue();
       };
       this.map.context.app.ticker.add(this.map._fogTickerCb);
     }
@@ -10364,14 +10542,14 @@ var MapFog = /*#__PURE__*/function () {
   }, {
     key: "_clipFogErasePolygonBySide",
     value: function _clipFogErasePolygonBySide(points, from, to, cell, inset) {
-      var _this2 = this;
+      var _this3 = this;
       var clipped = [];
       var isInside = function isInside(point) {
-        return _this2.map._signedDistanceToFogSide(point, from, to, cell) >= inset;
+        return _this3.map._signedDistanceToFogSide(point, from, to, cell) >= inset;
       };
       var intersection = function intersection(a, b) {
-        var da = _this2.map._signedDistanceToFogSide(a, from, to, cell) - inset;
-        var db = _this2.map._signedDistanceToFogSide(b, from, to, cell) - inset;
+        var da = _this3.map._signedDistanceToFogSide(a, from, to, cell) - inset;
+        var db = _this3.map._signedDistanceToFogSide(b, from, to, cell) - inset;
         var t = da / (da - db);
         return {
           x: a.x + (b.x - a.x) * t,
@@ -10397,20 +10575,20 @@ var MapFog = /*#__PURE__*/function () {
     value: function _drawFogEraseCellShape(graphics, cell) {
       var inset = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
       var points = this.map._getFogCellPoints(cell);
-      var _iterator = MapFog_createForOfIteratorHelper(this.map._getFogCellOpenSides(cell)),
-        _step;
+      var _iterator5 = MapFog_createForOfIteratorHelper(this.map._getFogCellOpenSides(cell)),
+        _step5;
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var _step$value = _step.value,
-            from = _step$value.from,
-            to = _step$value.to;
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _step5$value = _step5.value,
+            from = _step5$value.from,
+            to = _step5$value.to;
           points = this.map._clipFogErasePolygonBySide(points, from, to, cell, inset);
           if (points.length < 3) return;
         }
       } catch (err) {
-        _iterator.e(err);
+        _iterator5.e(err);
       } finally {
-        _iterator.f();
+        _iterator5.f();
       }
       graphics.poly(points.flatMap(function (point) {
         return [point.x, point.y];
@@ -10484,18 +10662,18 @@ var MapFog = /*#__PURE__*/function () {
     key: "_flushFogQueue",
     value: function _flushFogQueue() {
       var _this$map$context$app3,
-        _this3 = this;
+        _this4 = this;
       if (!this.map._fogQueue || this.map._fogQueue.size === 0) return;
       var renderer = (_this$map$context$app3 = this.map.context.app) === null || _this$map$context$app3 === void 0 ? void 0 : _this$map$context$app3.renderer;
       if (!renderer) return;
       var chunkUpdates = new globalThis.Map();
       var addChunkUpdate = function addChunkUpdate(cell, state) {
-        var chunks = _this3.map._getFogChunksForCell(cell);
-        var _iterator2 = MapFog_createForOfIteratorHelper(chunks),
-          _step2;
+        var chunks = _this4.map._getFogChunksForCell(cell);
+        var _iterator6 = MapFog_createForOfIteratorHelper(chunks),
+          _step6;
         try {
-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var chunk = _step2.value;
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var chunk = _step6.value;
             if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, []);
             chunkUpdates.get(chunk).push({
               cell: cell,
@@ -10503,48 +10681,48 @@ var MapFog = /*#__PURE__*/function () {
             });
           }
         } catch (err) {
-          _iterator2.e(err);
+          _iterator6.e(err);
         } finally {
-          _iterator2.f();
+          _iterator6.f();
         }
       };
-      var _iterator3 = MapFog_createForOfIteratorHelper(this.map._fogQueue),
-        _step3;
+      var _iterator7 = MapFog_createForOfIteratorHelper(this.map._fogQueue),
+        _step7;
       try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var _step3$value = MapFog_slicedToArray(_step3.value, 2),
-            cell = _step3$value[0],
-            state = _step3$value[1];
+        for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+          var _step7$value = MapFog_slicedToArray(_step7.value, 2),
+            cell = _step7$value[0],
+            state = _step7$value[1];
           addChunkUpdate(cell, state);
           if (state === 'clear') {
-            var _iterator6 = MapFog_createForOfIteratorHelper(this.map._getFogEraseRefreshCells(cell)),
-              _step6;
+            var _iterator0 = MapFog_createForOfIteratorHelper(this.map._getFogEraseRefreshCells(cell)),
+              _step0;
             try {
-              for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-                var refreshCell = _step6.value;
+              for (_iterator0.s(); !(_step0 = _iterator0.n()).done;) {
+                var refreshCell = _step0.value;
                 if (refreshCell === cell) continue;
                 addChunkUpdate(refreshCell, 'refreshFogErase');
               }
             } catch (err) {
-              _iterator6.e(err);
+              _iterator0.e(err);
             } finally {
-              _iterator6.f();
+              _iterator0.f();
             }
           }
         }
       } catch (err) {
-        _iterator3.e(err);
+        _iterator7.e(err);
       } finally {
-        _iterator3.f();
+        _iterator7.f();
       }
       this.map._fogQueue.clear();
-      var _iterator4 = MapFog_createForOfIteratorHelper(chunkUpdates),
-        _step4;
+      var _iterator8 = MapFog_createForOfIteratorHelper(chunkUpdates),
+        _step8;
       try {
-        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-          var _step4$value = MapFog_slicedToArray(_step4.value, 2),
-            chunk = _step4$value[0],
-            updates = _step4$value[1];
+        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+          var _step8$value = MapFog_slicedToArray(_step8.value, 2),
+            chunk = _step8$value[0],
+            updates = _step8$value[1];
           var transform = new lib/* Matrix */.uqu().translate(-chunk.minX, -chunk.minY);
           var darknessDraw = new lib/* Graphics */.A1g();
           var darknessErase = new lib/* Graphics */.A1g();
@@ -10553,13 +10731,13 @@ var MapFog = /*#__PURE__*/function () {
           var hasDarknessErase = false;
           var hasFogErase = false;
           var needsFogRestore = false;
-          var _iterator7 = MapFog_createForOfIteratorHelper(updates),
-            _step7;
+          var _iterator1 = MapFog_createForOfIteratorHelper(updates),
+            _step1;
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _step7$value = _step7.value,
-                _cell = _step7$value.cell,
-                _state = _step7$value.state;
+            for (_iterator1.s(); !(_step1 = _iterator1.n()).done;) {
+              var _step1$value = _step1.value,
+                _cell = _step1$value.cell,
+                _state = _step1$value.state;
               if (_state === 'clear') {
                 this.map._drawFogCellShape(darknessErase, _cell);
                 this.map._drawFogEraseCellShape(fogErase, _cell);
@@ -10578,9 +10756,9 @@ var MapFog = /*#__PURE__*/function () {
               }
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator1.e(err);
           } finally {
-            _iterator7.f();
+            _iterator1.f();
           }
           if (hasDarknessDraw) {
             darknessDraw.fill({
@@ -10641,21 +10819,21 @@ var MapFog = /*#__PURE__*/function () {
           fogErase.destroy();
         }
       } catch (err) {
-        _iterator4.e(err);
+        _iterator8.e(err);
       } finally {
-        _iterator4.f();
+        _iterator8.f();
       }
-      var _iterator5 = MapFog_createForOfIteratorHelper(this.map._fogChunks),
-        _step5;
+      var _iterator9 = MapFog_createForOfIteratorHelper(this.map._fogChunks),
+        _step9;
       try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var _chunk = _step5.value;
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var _chunk = _step9.value;
           this.map._redrawFogEdgesInChunk(renderer, _chunk);
         }
       } catch (err) {
-        _iterator5.e(err);
+        _iterator9.e(err);
       } finally {
-        _iterator5.f();
+        _iterator9.f();
       }
     }
   }]);
@@ -10695,7 +10873,7 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.sortableChildren = true;
     _this.allTechnologies = false;
     _this.noAI = false;
-    _this.devMode = false;
+    _this.instantMode = false;
     _this.difficulty = 'medium';
     _this.startingResources = {
       wood: 200,
@@ -10706,6 +10884,13 @@ var map_Map = /*#__PURE__*/function (_Container) {
     _this.resourceDensity = 'moderate';
     _this.revealEverything = false;
     _this.revealTerrain = false;
+    _this.showResources = true;
+    _this.debugSolidVisible = false;
+    _this.debugPathVisible = false;
+    _this.debugVisionVisible = false;
+    _this.debugGridVisible = false;
+    _this.debugCoordsVisible = false;
+    _this.debugPerfVisible = false;
     _this.x = 0;
     _this.y = 0;
     _this.startingUnits = 3;
@@ -10881,11 +11066,6 @@ var map_Map = /*#__PURE__*/function (_Container) {
       return this.mapTerrain.generateMapRelief();
     }
   }, {
-    key: "isInPlayerStartFlatZone",
-    value: function isInPlayerStartFlatZone(i, j, radius) {
-      return this.mapTerrain.isInPlayerStartFlatZone(i, j, radius);
-    }
-  }, {
     key: "flattenPlayerStartZones",
     value: function flattenPlayerStartZones(radius) {
       return this.mapTerrain.flattenPlayerStartZones(radius);
@@ -10909,6 +11089,11 @@ var map_Map = /*#__PURE__*/function (_Container) {
     key: "clampReliefAroundWater",
     value: function clampReliefAroundWater(dist) {
       return this.mapTerrain.clampReliefAroundWater(dist);
+    }
+  }, {
+    key: "enforceReliefStepContinuity",
+    value: function enforceReliefStepContinuity(dist) {
+      return this.mapTerrain.enforceReliefStepContinuity(dist);
     }
   }, {
     key: "formatCellsRelief",
@@ -11123,6 +11308,8 @@ var MinimapManager = /*#__PURE__*/function () {
     key: "updateResourceMiniMap",
     value: function updateResourceMiniMap(resource) {
       var menu = this.menu;
+      var map = menu.context.map;
+      if (!map.showResources) return;
       var context = menu.resourcesMinimap.getContext('2d');
       var _this$getMinimapParam4 = this.getMinimapParams(),
         factor = _this$getMinimapParam4.factor,
@@ -11144,6 +11331,7 @@ var MinimapManager = /*#__PURE__*/function () {
         translate = _this$getMinimapParam5.translate;
       var squareSize = 4;
       context.clearRect(-translate, 0, canvas.width, canvas.height);
+      if (!map.showResources) return;
       map.resources.forEach(function (resource) {
         var _player$views;
         var cell = player === null || player === void 0 || (_player$views = player.views) === null || _player$views === void 0 || (_player$views = _player$views[resource.i]) === null || _player$views === void 0 ? void 0 : _player$views[resource.j];
@@ -11540,6 +11728,76 @@ var BottombarManager = /*#__PURE__*/function () {
     }
   }]);
 }();
+;// ./app/ui/PlayerStatsManager.js
+function PlayerStatsManager_typeof(o) { "@babel/helpers - typeof"; return PlayerStatsManager_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, PlayerStatsManager_typeof(o); }
+function PlayerStatsManager_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function PlayerStatsManager_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, PlayerStatsManager_toPropertyKey(o.key), o); } }
+function PlayerStatsManager_createClass(e, r, t) { return r && PlayerStatsManager_defineProperties(e.prototype, r), t && PlayerStatsManager_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function PlayerStatsManager_toPropertyKey(t) { var i = PlayerStatsManager_toPrimitive(t, "string"); return "symbol" == PlayerStatsManager_typeof(i) ? i : i + ""; }
+function PlayerStatsManager_toPrimitive(t, r) { if ("object" != PlayerStatsManager_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != PlayerStatsManager_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var PlayerStatsManager = /*#__PURE__*/function () {
+  function PlayerStatsManager(menu) {
+    var _this = this;
+    PlayerStatsManager_classCallCheck(this, PlayerStatsManager);
+    this.menu = menu;
+    this._open = false;
+    this.btn = document.createElement('button');
+    this.btn.className = 'player-stats-btn';
+    this.btn.textContent = 'S';
+    this.btn.addEventListener('pointerdown', function (evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      _this._toggle();
+    });
+    menu.bottombar.appendChild(this.btn);
+    this.el = document.createElement('div');
+    this.el.className = 'player-stats';
+    this.el.style.display = 'none';
+    document.body.appendChild(this.el);
+  }
+  return PlayerStatsManager_createClass(PlayerStatsManager, [{
+    key: "_toggle",
+    value: function _toggle() {
+      this._open = !this._open;
+      if (this._open) {
+        this._render();
+        this.el.style.display = '';
+      } else {
+        this.el.style.display = 'none';
+      }
+    }
+  }, {
+    key: "_render",
+    value: function _render() {
+      var _this2 = this;
+      var _this$menu$context = this.menu.context,
+        players = _this$menu$context.players,
+        me = _this$menu$context.player;
+      this.el.innerHTML = '';
+      players.forEach(function (p) {
+        var dead = p.units.length === 0 && p.buildings.length === 0;
+        var isMe = p === me;
+        var label = isMe ? 'You' : p.color.charAt(0).toUpperCase() + p.color.slice(1);
+        var span = document.createElement('span');
+        span.className = 'player-stats-name' + (dead ? ' player-stats-name--dead' : '');
+        span.style.color = p.colorHex;
+        span.textContent = "".concat(label, ": ").concat(p.units.length, "/").concat(p.buildings.length);
+        _this2.el.appendChild(span);
+      });
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      if (this._open) this._render();
+    }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.btn.remove();
+      this.el.remove();
+    }
+  }]);
+}();
 ;// ./app/classes/menu.js
 function menu_typeof(o) { "@babel/helpers - typeof"; return menu_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, menu_typeof(o); }
 function menu_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
@@ -11547,6 +11805,7 @@ function menu_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var 
 function menu_createClass(e, r, t) { return r && menu_defineProperties(e.prototype, r), t && menu_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function menu_toPropertyKey(t) { var i = menu_toPrimitive(t, "string"); return "symbol" == menu_typeof(i) ? i : i + ""; }
 function menu_toPrimitive(t, r) { if ("object" != menu_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != menu_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
 
 
 
@@ -11727,6 +11986,7 @@ var Menu = /*#__PURE__*/function () {
     IS_MOBILE && document.body.prepend(this.toggle);
     this.minimapManager = new MinimapManager(this);
     this.bottombarManager = new BottombarManager(this);
+    this.playerStatsManager = new PlayerStatsManager(this);
 
     // Expose throttled minimap updaters as top-level properties for external callers
     this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap;
@@ -11739,6 +11999,7 @@ var Menu = /*#__PURE__*/function () {
   return menu_createClass(Menu, [{
     key: "destroy",
     value: function destroy() {
+      this.playerStatsManager.destroy();
       this.bottombar.remove();
       this.topbar.remove();
     }
@@ -11835,6 +12096,13 @@ var Menu = /*#__PURE__*/function () {
     key: "updateCameraMiniMapEvt",
     value: function updateCameraMiniMapEvt() {
       return this.minimapManager.updateCameraMiniMapEvt();
+    }
+
+    // PlayerStats delegate
+  }, {
+    key: "updatePlayerStats",
+    value: function updatePlayerStats() {
+      return this.playerStatsManager.update();
     }
 
     // Bottombar delegates
@@ -12449,16 +12717,6 @@ var Controls = /*#__PURE__*/function (_Container) {
     _this.mouseDrag = false;
     _this.minimapRectangle = new lib/* Graphics */.A1g();
     _this.addChild(_this.minimapRectangle);
-    _this.fpsVisible = false;
-    _this.fpsEl = document.createElement('div');
-    _this.fpsEl.style.cssText = 'position:fixed;right:10px;z-index:9999;color:#fff;font:bold 14px monospace;' + 'background:rgba(0,0,0,0.65);padding:2px 8px;border-radius:3px;display:none;pointer-events:none;';
-    document.body.appendChild(_this.fpsEl);
-    _this._fpsTicker = function () {
-      if (_this.fpsVisible) {
-        _this.fpsEl.textContent = "FPS: ".concat(Math.round(context.app.ticker.FPS));
-      }
-    };
-    context.app.ticker.add(_this._fpsTicker);
     _this.buildingPlacer = new BuildingPlacer(_this);
     _this.selectionManager = new SelectionManager(_this);
     _this._onDocMouseMove = function (evt) {
@@ -12508,8 +12766,6 @@ var Controls = /*#__PURE__*/function (_Container) {
     key: "destroy",
     value: function destroy() {
       var gamebox = this.context.gamebox;
-      this.context.app.ticker.remove(this._fpsTicker);
-      this.fpsEl.remove();
       document.removeEventListener('mousemove', this._onDocMouseMove);
       document.removeEventListener('mouseout', this._onDocMouseOut);
       document.removeEventListener('keydown', this._onKeyDown);
@@ -12532,11 +12788,6 @@ var Controls = /*#__PURE__*/function (_Container) {
     value: function onKeyDown(evt) {
       var _this2 = this;
       if (this.context.devConsoleOpen) return;
-      if (evt.key === 'f' || evt.key === 'F') {
-        this.fpsVisible = !this.fpsVisible;
-        this.fpsEl.style.display = this.fpsVisible ? 'block' : 'none';
-        return;
-      }
       if (evt.key === 'Delete' || evt.keyCode === 8) {
         var player = this.context.player;
         for (var i = 0; i < player.selectedUnits.length; i++) {
@@ -12774,8 +13025,6 @@ var Controls = /*#__PURE__*/function (_Container) {
       var _this$context2 = this.context,
         player = _this$context2.player,
         map = _this$context2.map;
-      var topbar = document.getElementById('topbar');
-      this.fpsEl.style.top = (topbar ? topbar.clientHeight + 5 : 50) + 'px';
       if (player !== null && player !== void 0 && (_player$buildings = player.buildings) !== null && _player$buildings !== void 0 && _player$buildings.length) {
         this.setCamera(player.buildings[0].x, player.buildings[0].y);
       } else if (player !== null && player !== void 0 && (_player$units = player.units) !== null && _player$units !== void 0 && _player$units.length) {
@@ -12814,6 +13063,7 @@ var ActionScheduler = /*#__PURE__*/function () {
     this._tasks = new Map();
     this._nextId = 1;
     this._toRemove = [];
+    this.timeScale = 1;
     app.ticker.add(function (ticker) {
       return _this._tick(ticker.deltaMS);
     });
@@ -12856,6 +13106,7 @@ var ActionScheduler = /*#__PURE__*/function () {
     key: "_tick",
     value: function _tick(deltaMS) {
       if (this._getPaused()) return;
+      var scaledDeltaMS = deltaMS * this.timeScale;
       this._toRemove.length = 0;
       var _iterator = ActionScheduler_createForOfIteratorHelper(this._tasks),
         _step;
@@ -12864,7 +13115,7 @@ var ActionScheduler = /*#__PURE__*/function () {
           var _step$value = ActionScheduler_slicedToArray(_step.value, 2),
             id = _step$value[0],
             task = _step$value[1];
-          task.elapsed += deltaMS;
+          task.elapsed += scaledDeltaMS;
           if (task.elapsed >= task.interval) {
             task.elapsed -= task.interval;
             task.callback();
@@ -13008,7 +13259,7 @@ function serializeGame(context) {
   return {
     camera: cameraData(context.controls.camera),
     config: {
-      devMode: context.map.devMode,
+      instantMode: context.map.instantMode,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,
@@ -13119,19 +13370,32 @@ var DevCommandRegistry = /*#__PURE__*/function () {
 }();
 ;// ./app/dev-console/DevCommandActions.js
 function DevCommandActions_typeof(o) { "@babel/helpers - typeof"; return DevCommandActions_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, DevCommandActions_typeof(o); }
-function DevCommandActions_toConsumableArray(r) { return DevCommandActions_arrayWithoutHoles(r) || DevCommandActions_iterableToArray(r) || DevCommandActions_unsupportedIterableToArray(r) || DevCommandActions_nonIterableSpread(); }
-function DevCommandActions_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function DevCommandActions_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return DevCommandActions_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? DevCommandActions_arrayLikeToArray(r, a) : void 0; } }
-function DevCommandActions_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function DevCommandActions_arrayWithoutHoles(r) { if (Array.isArray(r)) return DevCommandActions_arrayLikeToArray(r); }
-function DevCommandActions_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function DevCommandActions_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function DevCommandActions_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? DevCommandActions_ownKeys(Object(t), !0).forEach(function (r) { DevCommandActions_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : DevCommandActions_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function DevCommandActions_defineProperty(e, r, t) { return (r = DevCommandActions_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function DevCommandActions_toPropertyKey(t) { var i = DevCommandActions_toPrimitive(t, "string"); return "symbol" == DevCommandActions_typeof(i) ? i : i + ""; }
 function DevCommandActions_toPrimitive(t, r) { if ("object" != DevCommandActions_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != DevCommandActions_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function DevCommandActions_toConsumableArray(r) { return DevCommandActions_arrayWithoutHoles(r) || DevCommandActions_iterableToArray(r) || DevCommandActions_unsupportedIterableToArray(r) || DevCommandActions_nonIterableSpread(); }
+function DevCommandActions_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function DevCommandActions_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function DevCommandActions_arrayWithoutHoles(r) { if (Array.isArray(r)) return DevCommandActions_arrayLikeToArray(r); }
+function DevCommandActions_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = DevCommandActions_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function DevCommandActions_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return DevCommandActions_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? DevCommandActions_arrayLikeToArray(r, a) : void 0; } }
+function DevCommandActions_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+
+
 
 var RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'];
+var DEBUG_SOLID_LAYER = 'debugSolidLayer';
+var DEBUG_PATH_LAYER = 'debugPathLayer';
+var DEBUG_VISION_LAYER = 'debugVisionLayer';
+var DEBUG_GRID_LAYER = 'debugGridLayer';
+var DEBUG_COORDS_LAYER = 'debugCoordsLayer';
+var DEBUG_OVERLAY_Z = 1e9 + 100;
+var DEBUG_CELL_REFRESH_MS = 180;
+function normalizeToggle(value, currently) {
+  return value === 'on' ? true : value === 'off' ? false : !currently;
+}
 function normalize(value) {
   return String(value || '').toLowerCase();
 }
@@ -13171,6 +13435,278 @@ function getSpawnCell(context) {
     }
   }
   return null;
+}
+function getDebugLayer(map, label, zIndex) {
+  var _map$getChildByLabel;
+  var layer = (_map$getChildByLabel = map.getChildByLabel) === null || _map$getChildByLabel === void 0 ? void 0 : _map$getChildByLabel.call(map, label);
+  if (!layer) {
+    layer = new lib/* Graphics */.A1g();
+    layer.label = label;
+    layer.eventMode = 'none';
+    layer.zIndex = zIndex;
+    map.addChild(layer);
+  }
+  return layer;
+}
+function getDebugContainer(map, label, zIndex) {
+  var _map$getChildByLabel2;
+  var layer = (_map$getChildByLabel2 = map.getChildByLabel) === null || _map$getChildByLabel2 === void 0 ? void 0 : _map$getChildByLabel2.call(map, label);
+  if (!layer) {
+    layer = new lib/* Container */.mcf();
+    layer.label = label;
+    layer.eventMode = 'none';
+    layer.zIndex = zIndex;
+    map.addChild(layer);
+  }
+  return layer;
+}
+function getCameraCells(context) {
+  var _controls$cameraContr, _map$grid$Math$floor;
+  var controls = context.controls,
+    map = context.map;
+  var cells = controls === null || controls === void 0 || (_controls$cameraContr = controls.cameraController) === null || _controls$cameraContr === void 0 ? void 0 : _controls$cameraContr.visibleCells;
+  if (cells !== null && cells !== void 0 && cells.size) return cells;
+  return new Set([(_map$grid$Math$floor = map.grid[Math.floor(map.size / 2)]) === null || _map$grid$Math$floor === void 0 ? void 0 : _map$grid$Math$floor[Math.floor(map.size / 2)]].filter(Boolean));
+}
+function drawCellDiamond(graphics, cell, color) {
+  var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0.28;
+  graphics.poly([cell.x - CELL_WIDTH / 2, cell.y, cell.x, cell.y - CELL_HEIGHT / 2, cell.x + CELL_WIDTH / 2, cell.y, cell.x, cell.y + CELL_HEIGHT / 2]);
+  graphics.fill({
+    color: color,
+    alpha: alpha
+  });
+}
+function drawCellStroke(graphics, cell, color) {
+  var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0.95;
+  var width = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 1;
+  graphics.poly([cell.x - CELL_WIDTH / 2, cell.y, cell.x, cell.y - CELL_HEIGHT / 2, cell.x + CELL_WIDTH / 2, cell.y, cell.x, cell.y + CELL_HEIGHT / 2]);
+  graphics.closePath();
+  graphics.stroke({
+    color: color,
+    alpha: alpha,
+    width: width
+  });
+}
+function getSolidDebugColor(cell) {
+  var _cell$has, _cell$has2, _cell$has3, _cell$has4;
+  if (((_cell$has = cell.has) === null || _cell$has === void 0 ? void 0 : _cell$has.family) === FAMILY_TYPES.resource) return 0x33d17a;
+  if (((_cell$has2 = cell.has) === null || _cell$has2 === void 0 ? void 0 : _cell$has2.family) === FAMILY_TYPES.building) return 0xffb000;
+  if (((_cell$has3 = cell.has) === null || _cell$has3 === void 0 ? void 0 : _cell$has3.family) === FAMILY_TYPES.unit) return 0xff4d4d;
+  if (((_cell$has4 = cell.has) === null || _cell$has4 === void 0 ? void 0 : _cell$has4.family) === FAMILY_TYPES.animal) return 0xba7cff;
+  if (cell.category === 'Water') return 0x35a7ff;
+  if (cell.border) return 0xffffff;
+  if (cell.inclined) return 0x8f8f8f;
+  return 0xff4d4d;
+}
+function drawSolidDebug(context) {
+  var map = context.map;
+  var layer = getDebugLayer(map, DEBUG_SOLID_LAYER, DEBUG_OVERLAY_Z + 1);
+  layer.clear();
+  var _iterator = DevCommandActions_createForOfIteratorHelper(getCameraCells(context)),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var cell = _step.value;
+      if (!cell || !cell.solid && !cell.border && !cell.inclined) continue;
+      drawCellDiamond(layer, cell, getSolidDebugColor(cell));
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+}
+function drawPathDebug(context) {
+  var map = context.map,
+    players = context.players;
+  var layer = getDebugLayer(map, DEBUG_PATH_LAYER, DEBUG_OVERLAY_Z + 2);
+  layer.clear();
+  var allUnits = players.flatMap(function (p) {
+    return p.units;
+  }).filter(function (u) {
+    var _u$path;
+    return (_u$path = u.path) === null || _u$path === void 0 ? void 0 : _u$path.length;
+  });
+  allUnits.forEach(function (unit, index) {
+    var _unit$path;
+    if (!((_unit$path = unit.path) !== null && _unit$path !== void 0 && _unit$path.length)) return;
+    var color = index % 2 ? 0x35a7ff : 0xfff04a;
+    var cells = DevCommandActions_toConsumableArray(unit.path).reverse();
+    layer.moveTo(unit.x, unit.y);
+    cells.forEach(function (cell) {
+      layer.lineTo(cell.x, cell.y);
+    });
+    layer.stroke({
+      color: color,
+      alpha: 0.95,
+      width: 3
+    });
+    cells.forEach(function (cell) {
+      return drawCellDiamond(layer, cell, color, 0.18);
+    });
+  });
+}
+function stopDebugTicker(context, tickerName) {
+  var app = context.app,
+    map = context.map;
+  var ticker = map[tickerName];
+  if (ticker) {
+    app.ticker.remove(ticker);
+    map[tickerName] = null;
+  }
+}
+function removeDebugLayer(context, layerLabel, tickerName) {
+  var _map$getChildByLabel3;
+  var map = context.map;
+  stopDebugTicker(context, tickerName);
+  var layer = (_map$getChildByLabel3 = map.getChildByLabel) === null || _map$getChildByLabel3 === void 0 ? void 0 : _map$getChildByLabel3.call(map, layerLabel);
+  if (layer) {
+    map.removeChild(layer);
+    layer.destroy();
+  }
+}
+function drawGridDebug(context) {
+  var map = context.map;
+  var layer = getDebugLayer(map, DEBUG_GRID_LAYER, DEBUG_OVERLAY_Z + 3);
+  layer.clear();
+  var _iterator2 = DevCommandActions_createForOfIteratorHelper(getCameraCells(context)),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var cell = _step2.value;
+      if (!cell) continue;
+      drawCellStroke(layer, cell, 0xffffff, 0.55, 1);
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+}
+function drawCoordsDebug(context) {
+  var map = context.map;
+  var layer = getDebugContainer(map, DEBUG_COORDS_LAYER, DEBUG_OVERLAY_Z + 4);
+  layer.removeChildren().forEach(function (child) {
+    return child.destroy();
+  });
+  var _iterator3 = DevCommandActions_createForOfIteratorHelper(getCameraCells(context)),
+    _step3;
+  try {
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var cell = _step3.value;
+      if (!cell) continue;
+      var text = new lib/* Text */.EYj({
+        text: "".concat(cell.i, ",").concat(cell.j, "\nz").concat(cell.z),
+        style: {
+          fontFamily: 'monospace',
+          fontSize: 10,
+          fontWeight: '700',
+          fill: 0xffff66,
+          stroke: {
+            color: 0x000000,
+            width: 3
+          },
+          align: 'center'
+        }
+      });
+      text.anchor.set(0.5, 0.5);
+      text.x = cell.x;
+      text.y = cell.y - 7;
+      text.eventMode = 'none';
+      layer.addChild(text);
+    }
+  } catch (err) {
+    _iterator3.e(err);
+  } finally {
+    _iterator3.f();
+  }
+}
+function drawVisionDebug(context) {
+  var map = context.map,
+    player = context.player;
+  var layer = getDebugLayer(map, DEBUG_VISION_LAYER, DEBUG_OVERLAY_Z);
+  layer.clear();
+  var _iterator4 = DevCommandActions_createForOfIteratorHelper(getCameraCells(context)),
+    _step4;
+  try {
+    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+      var _player$views$cell$i, _view$viewBy;
+      var cell = _step4.value;
+      var view = (_player$views$cell$i = player.views[cell.i]) === null || _player$views$cell$i === void 0 ? void 0 : _player$views$cell$i[cell.j];
+      if (!cell || !view) continue;
+      if ((_view$viewBy = view.viewBy) !== null && _view$viewBy !== void 0 && _view$viewBy.size) {
+        drawCellDiamond(layer, cell, 0x54ff7a, 0.38);
+      } else if (view.viewed) {
+        drawCellDiamond(layer, cell, 0x5da9ff, 0.24);
+      }
+    }
+  } catch (err) {
+    _iterator4.e(err);
+  } finally {
+    _iterator4.f();
+  }
+}
+function addDebugTicker(context, tickerName, draw) {
+  var app = context.app,
+    map = context.map;
+  stopDebugTicker(context, tickerName);
+  var elapsed = 0;
+  map[tickerName] = function (ticker) {
+    elapsed += ticker.elapsedMS;
+    if (elapsed < DEBUG_CELL_REFRESH_MS) return;
+    elapsed = 0;
+    draw(context);
+  };
+  app.ticker.add(map[tickerName]);
+}
+function ensurePerfOverlay(context) {
+  var _map$gaia, _context$scheduler$_t, _context$scheduler, _context$scheduler$ti, _context$scheduler2;
+  var overlay = document.getElementById('debug-perf');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'debug-perf';
+    document.body.appendChild(overlay);
+  }
+  var app = context.app,
+    map = context.map,
+    players = context.players;
+  var units = players.reduce(function (sum, player) {
+    return sum + player.units.length;
+  }, 0) + (((_map$gaia = map.gaia) === null || _map$gaia === void 0 ? void 0 : _map$gaia.units.length) || 0);
+  var buildings = players.reduce(function (sum, player) {
+    return sum + player.buildings.length;
+  }, 0);
+  var schedulerTasks = (_context$scheduler$_t = (_context$scheduler = context.scheduler) === null || _context$scheduler === void 0 || (_context$scheduler = _context$scheduler._tasks) === null || _context$scheduler === void 0 ? void 0 : _context$scheduler.size) !== null && _context$scheduler$_t !== void 0 ? _context$scheduler$_t : 0;
+  overlay.textContent = ["FPS ".concat(Math.round(app.ticker.FPS)), "Units ".concat(units), "Buildings ".concat(buildings), "Resources ".concat(map.resources.size), "Tasks ".concat(schedulerTasks), "Speed ".concat((_context$scheduler$ti = (_context$scheduler2 = context.scheduler) === null || _context$scheduler2 === void 0 ? void 0 : _context$scheduler2.timeScale) !== null && _context$scheduler$ti !== void 0 ? _context$scheduler$ti : 1, "x"), "AI ".concat(context.aiPaused ? 'paused' : 'running')].join('\n');
+}
+function getInstancesByCategory(context, category, typeName) {
+  var map = context.map,
+    player = context.player,
+    players = context.players;
+  var wantedType = normalize(typeName);
+  var matchesType = function matchesType(instance) {
+    return !wantedType || normalize(instance.type) === wantedType;
+  };
+  switch (category) {
+    case 'unit':
+    case 'units':
+      return player.units.filter(matchesType);
+    case 'building':
+    case 'buildings':
+      return player.buildings.filter(matchesType);
+    case 'resource':
+    case 'resources':
+      return DevCommandActions_toConsumableArray(map.resources).filter(matchesType);
+    case 'enemy':
+    case 'enemies':
+      return players.filter(function (p) {
+        return player.isEnemy(p);
+      }).flatMap(function (p) {
+        return [].concat(DevCommandActions_toConsumableArray(p.units), DevCommandActions_toConsumableArray(p.buildings));
+      }).filter(matchesType);
+    default:
+      return null;
+  }
 }
 function addResources(player, resourceName, amount) {
   if (resourceName === 'all') {
@@ -13384,7 +13920,7 @@ function toggleFog(context, value) {
     menu = context.menu,
     players = context.players;
   var currently = (_map$fogLayer$visible = (_map$fogLayer = map.fogLayer) === null || _map$fogLayer === void 0 ? void 0 : _map$fogLayer.visible) !== null && _map$fogLayer$visible !== void 0 ? _map$fogLayer$visible : !map.revealEverything;
-  var showFog = value === 'on' ? true : value === 'off' ? false : !currently;
+  var showFog = normalizeToggle(value, currently);
   map.revealEverything = !showFog;
   if (map.fogLayer) map.fogLayer.visible = showFog;
   if (!showFog) menu.revealTerrainMinimap();
@@ -13397,13 +13933,252 @@ function toggleFog(context, value) {
     message: "Fog of war: ".concat(showFog ? 'on' : 'off')
   };
 }
+function toggleResourcesVisibility(context, value) {
+  var _map$showResources;
+  var map = context.map,
+    menu = context.menu;
+  var currently = (_map$showResources = map.showResources) !== null && _map$showResources !== void 0 ? _map$showResources : true;
+  var showResources = normalizeToggle(value, currently);
+  map.showResources = showResources;
+  map.resources.forEach(function (resource) {
+    var _map$grid$resource$i;
+    var cell = (_map$grid$resource$i = map.grid[resource.i]) === null || _map$grid$resource$i === void 0 ? void 0 : _map$grid$resource$i[resource.j];
+    if (showResources) {
+      cell === null || cell === void 0 || cell.updateVisible();
+    } else {
+      resource.visible = false;
+    }
+  });
+  menu.updateResourcesMiniMapEvt();
+  return {
+    ok: true,
+    message: "Resources: ".concat(showResources ? 'on' : 'off')
+  };
+}
+function toggleSolidDebug(context, value) {
+  var map = context.map;
+  var showSolid = normalizeToggle(value, Boolean(map.debugSolidVisible));
+  map.debugSolidVisible = showSolid;
+  if (!showSolid) {
+    removeDebugLayer(context, DEBUG_SOLID_LAYER, '_debugSolidTicker');
+    return {
+      ok: true,
+      message: 'Solid debug: off'
+    };
+  }
+  drawSolidDebug(context);
+  addDebugTicker(context, '_debugSolidTicker', drawSolidDebug);
+  return {
+    ok: true,
+    message: 'Solid debug: on'
+  };
+}
+function togglePathDebug(context, value) {
+  var app = context.app,
+    map = context.map;
+  var showPath = normalizeToggle(value, Boolean(map.debugPathVisible));
+  map.debugPathVisible = showPath;
+  if (!showPath) {
+    removeDebugLayer(context, DEBUG_PATH_LAYER, '_debugPathTicker');
+    return {
+      ok: true,
+      message: 'Path debug: off'
+    };
+  }
+  drawPathDebug(context);
+  stopDebugTicker(context, '_debugPathTicker');
+  map._debugPathTicker = function () {
+    return drawPathDebug(context);
+  };
+  app.ticker.add(map._debugPathTicker);
+  return {
+    ok: true,
+    message: 'Path debug: on'
+  };
+}
+function toggleVisionDebug(context, value) {
+  var map = context.map;
+  var showVision = normalizeToggle(value, Boolean(map.debugVisionVisible));
+  map.debugVisionVisible = showVision;
+  if (!showVision) {
+    removeDebugLayer(context, DEBUG_VISION_LAYER, '_debugVisionTicker');
+    return {
+      ok: true,
+      message: 'Vision debug: off'
+    };
+  }
+  drawVisionDebug(context);
+  addDebugTicker(context, '_debugVisionTicker', drawVisionDebug);
+  return {
+    ok: true,
+    message: 'Vision debug: on'
+  };
+}
+function toggleGridDebug(context, value) {
+  var map = context.map;
+  var showGrid = normalizeToggle(value, Boolean(map.debugGridVisible));
+  map.debugGridVisible = showGrid;
+  if (showGrid) {
+    drawGridDebug(context);
+    addDebugTicker(context, '_debugGridTicker', drawGridDebug);
+  } else {
+    removeDebugLayer(context, DEBUG_GRID_LAYER, '_debugGridTicker');
+  }
+  return {
+    ok: true,
+    message: "Grid debug: ".concat(showGrid ? 'on' : 'off')
+  };
+}
+function toggleCoordsDebug(context, value) {
+  var map = context.map;
+  var showCoords = normalizeToggle(value, Boolean(map.debugCoordsVisible));
+  map.debugCoordsVisible = showCoords;
+  if (showCoords) {
+    drawCoordsDebug(context);
+    addDebugTicker(context, '_debugCoordsTicker', drawCoordsDebug);
+  } else {
+    removeDebugLayer(context, DEBUG_COORDS_LAYER, '_debugCoordsTicker');
+  }
+  return {
+    ok: true,
+    message: "Coords debug: ".concat(showCoords ? 'on' : 'off')
+  };
+}
+function togglePerfDebug(context, value) {
+  var app = context.app,
+    map = context.map;
+  var showPerf = normalizeToggle(value, Boolean(map.debugPerfVisible));
+  map.debugPerfVisible = showPerf;
+  if (!showPerf) {
+    var _document$getElementB;
+    stopDebugTicker(context, '_debugPerfTicker');
+    (_document$getElementB = document.getElementById('debug-perf')) === null || _document$getElementB === void 0 || _document$getElementB.remove();
+    return {
+      ok: true,
+      message: 'Perf debug: off'
+    };
+  }
+  ensurePerfOverlay(context);
+  stopDebugTicker(context, '_debugPerfTicker');
+  map._debugPerfTicker = function () {
+    return ensurePerfOverlay(context);
+  };
+  app.ticker.add(map._debugPerfTicker);
+  return {
+    ok: true,
+    message: 'Perf debug: on'
+  };
+}
+function toggleAiDebug(context, value) {
+  var pauseAI = value === 'pause' ? true : value === 'resume' ? false : !context.aiPaused;
+  context.aiPaused = pauseAI;
+  return {
+    ok: true,
+    message: "AI: ".concat(pauseAI ? 'paused' : 'running')
+  };
+}
+function setGameSpeed(context) {
+  var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+  var speed = Number(value);
+  if (!Number.isFinite(speed) || speed <= 0 || speed > 8) {
+    return {
+      ok: false,
+      message: 'Usage: speed <0.25|0.5|1|2|4|8>'
+    };
+  }
+  context.scheduler.timeScale = speed;
+  return {
+    ok: true,
+    message: "Speed: ".concat(speed, "x")
+  };
+}
+function toggleTerrainReveal(context, value) {
+  var map = context.map,
+    menu = context.menu;
+  var revealTerrain = normalizeToggle(value, Boolean(map.revealTerrain));
+  map.revealTerrain = revealTerrain;
+  if (revealTerrain) {
+    menu.revealTerrainMinimap();
+  } else {
+    menu.updateResourcesMiniMapEvt();
+  }
+  return {
+    ok: true,
+    message: "Reveal terrain: ".concat(revealTerrain ? 'on' : 'off')
+  };
+}
+function highlightInstances(context, category) {
+  var typeName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+  if (!category) return {
+    ok: false,
+    message: 'Usage: highlight <units|buildings|resources|enemies> [type]'
+  };
+  var instances = getInstancesByCategory(context, normalize(category), typeName);
+  if (!instances) return {
+    ok: false,
+    message: 'Usage: highlight <units|buildings|resources|enemies> [type]'
+  };
+  instances.forEach(function (instance) {
+    return drawInstanceBlinkingSelection(instance);
+  });
+  return {
+    ok: true,
+    message: "Highlighted ".concat(instances.length, " ").concat(category).concat(typeName ? " ".concat(typeName) : '')
+  };
+}
+function killResources(context) {
+  var typeName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
+  var map = context.map,
+    menu = context.menu;
+  var wantedType = normalize(typeName);
+  var resources = DevCommandActions_toConsumableArray(map.resources).filter(function (resource) {
+    return wantedType === 'all' || normalize(resource.type) === wantedType;
+  });
+  resources.forEach(function (resource) {
+    return resource.die(true);
+  });
+  menu.updateResourcesMiniMapEvt();
+  return {
+    ok: true,
+    message: "Killed ".concat(resources.length, " resources").concat(typeName !== 'all' ? " ".concat(typeName) : '')
+  };
+}
+function toggleInstantMode(context, value) {
+  var map = context.map;
+  var enabled = normalizeToggle(value, map.instantMode);
+  map.instantMode = enabled;
+  return {
+    ok: true,
+    message: "Instant build/train/tech: ".concat(enabled ? 'on' : 'off')
+  };
+}
+function setPopMax(context, value) {
+  var player = context.player,
+    menu = context.menu;
+  var amount = value != null ? parseInt(value) : POPULATION_MAX;
+  if (!Number.isFinite(amount) || amount < 0) return {
+    ok: false,
+    message: 'Usage: popmax [amount]'
+  };
+  player.population_max = amount;
+  menu.updateTopbar();
+  return {
+    ok: true,
+    message: "Population max: ".concat(amount)
+  };
+}
 ;// ./app/dev-console/createDevCommands.js
+function createDevCommands_toConsumableArray(r) { return createDevCommands_arrayWithoutHoles(r) || createDevCommands_iterableToArray(r) || createDevCommands_unsupportedIterableToArray(r) || createDevCommands_nonIterableSpread(); }
+function createDevCommands_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function createDevCommands_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function createDevCommands_arrayWithoutHoles(r) { if (Array.isArray(r)) return createDevCommands_arrayLikeToArray(r); }
 function createDevCommands_slicedToArray(r, e) { return createDevCommands_arrayWithHoles(r) || createDevCommands_iterableToArrayLimit(r, e) || createDevCommands_unsupportedIterableToArray(r, e) || createDevCommands_nonIterableRest(); }
 function createDevCommands_nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function createDevCommands_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return createDevCommands_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? createDevCommands_arrayLikeToArray(r, a) : void 0; } }
 function createDevCommands_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function createDevCommands_iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function createDevCommands_arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+
 
 
 var createDevCommands_RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold'];
@@ -13621,16 +14396,204 @@ function createDevCommands() {
     }
   });
   registry.register({
-    name: 'fog',
-    usage: 'fog [on|off]',
-    describe: 'Toggle fog of war',
+    name: 'instant',
+    usage: 'instant [on|off]',
+    describe: 'Toggle instant build/train/tech',
     complete: function complete() {
       return ['on', 'off'];
     },
     run: function run(_ref22, context) {
       var _ref23 = createDevCommands_slicedToArray(_ref22, 1),
         value = _ref23[0];
+      return toggleInstantMode(context, value);
+    }
+  });
+  registry.register({
+    name: 'popmax',
+    usage: 'popmax [amount]',
+    describe: "Set player max population (default: ".concat(POPULATION_MAX, ")"),
+    complete: function complete() {
+      return [String(POPULATION_MAX)];
+    },
+    run: function run(_ref24, context) {
+      var _ref25 = createDevCommands_slicedToArray(_ref24, 1),
+        value = _ref25[0];
+      return setPopMax(context, value);
+    }
+  });
+  registry.register({
+    name: 'fog',
+    usage: 'fog [on|off]',
+    describe: 'Toggle fog of war',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref26, context) {
+      var _ref27 = createDevCommands_slicedToArray(_ref26, 1),
+        value = _ref27[0];
       return toggleFog(context, value);
+    }
+  });
+  registry.register({
+    name: 'resources-visible',
+    aliases: ['resvis'],
+    usage: 'resources-visible [on|off]',
+    describe: 'Toggle map resources visibility',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref28, context) {
+      var _ref29 = createDevCommands_slicedToArray(_ref28, 1),
+        value = _ref29[0];
+      return toggleResourcesVisibility(context, value);
+    }
+  });
+  registry.register({
+    name: 'solid',
+    usage: 'solid [on|off]',
+    describe: 'Toggle solid-cell debug overlay',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref30, context) {
+      var _ref31 = createDevCommands_slicedToArray(_ref30, 1),
+        value = _ref31[0];
+      return toggleSolidDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'path',
+    usage: 'path [on|off]',
+    describe: 'Toggle unit path debug overlay',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref32, context) {
+      var _ref33 = createDevCommands_slicedToArray(_ref32, 1),
+        value = _ref33[0];
+      return togglePathDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'vision',
+    usage: 'vision [on|off]',
+    describe: 'Toggle visible/viewed cells debug overlay',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref34, context) {
+      var _ref35 = createDevCommands_slicedToArray(_ref34, 1),
+        value = _ref35[0];
+      return toggleVisionDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'grid',
+    usage: 'grid [on|off]',
+    describe: 'Toggle cell grid debug overlay',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref36, context) {
+      var _ref37 = createDevCommands_slicedToArray(_ref36, 1),
+        value = _ref37[0];
+      return toggleGridDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'coords',
+    usage: 'coords [on|off]',
+    describe: 'Toggle cell coordinate labels',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref38, context) {
+      var _ref39 = createDevCommands_slicedToArray(_ref38, 1),
+        value = _ref39[0];
+      return toggleCoordsDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'perf',
+    usage: 'perf [on|off]',
+    describe: 'Toggle performance debug overlay',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref40, context) {
+      var _ref41 = createDevCommands_slicedToArray(_ref40, 1),
+        value = _ref41[0];
+      return togglePerfDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'ai',
+    usage: 'ai [pause|resume]',
+    describe: 'Pause or resume AI decisions',
+    complete: function complete() {
+      return ['pause', 'resume'];
+    },
+    run: function run(_ref42, context) {
+      var _ref43 = createDevCommands_slicedToArray(_ref42, 1),
+        value = _ref43[0];
+      return toggleAiDebug(context, value);
+    }
+  });
+  registry.register({
+    name: 'speed',
+    usage: 'speed <0.25|0.5|1|2|4|8>',
+    describe: 'Set simulation speed',
+    complete: function complete() {
+      return ['0.25', '0.5', '1', '2', '4', '8'];
+    },
+    run: function run(_ref44, context) {
+      var _ref45 = createDevCommands_slicedToArray(_ref44, 1),
+        value = _ref45[0];
+      return setGameSpeed(context, value);
+    }
+  });
+  registry.register({
+    name: 'terrain',
+    usage: 'terrain [on|off]',
+    describe: 'Toggle terrain reveal debug mode',
+    complete: function complete() {
+      return ['on', 'off'];
+    },
+    run: function run(_ref46, context) {
+      var _ref47 = createDevCommands_slicedToArray(_ref46, 1),
+        value = _ref47[0];
+      return toggleTerrainReveal(context, value);
+    }
+  });
+  registry.register({
+    name: 'highlight',
+    usage: 'highlight <units|buildings|resources|enemies> [type]',
+    describe: 'Blink matching instances',
+    complete: function complete() {
+      return ['units', 'buildings', 'resources', 'enemies'];
+    },
+    run: function run(_ref48, context) {
+      var _ref49 = createDevCommands_slicedToArray(_ref48, 2),
+        category = _ref49[0],
+        type = _ref49[1];
+      return highlightInstances(context, category, type);
+    }
+  });
+  registry.register({
+    name: 'kill-resources',
+    aliases: ['killres'],
+    usage: 'kill-resources [type|all]',
+    describe: 'Remove resources from the map',
+    complete: function complete(_args, _ref50) {
+      var map = _ref50.map;
+      return ['all'].concat(createDevCommands_toConsumableArray(new Set(createDevCommands_toConsumableArray(map.resources).map(function (resource) {
+        return resource.type;
+      }))));
+    },
+    run: function run(_ref51, context) {
+      var _ref52 = createDevCommands_slicedToArray(_ref51, 1),
+        type = _ref52[0];
+      return killResources(context, type);
     }
   });
   return registry;
@@ -13860,6 +14823,7 @@ var Game = /*#__PURE__*/function (_Container) {
       devConsoleOpen: false,
       paused: false,
       victory: false,
+      defeat: false,
       scheduler: null,
       save: function save() {
         return _this.save();
@@ -13871,13 +14835,16 @@ var Game = /*#__PURE__*/function (_Container) {
         return _this.togglePause(true);
       },
       resume: function resume() {
-        if (!_this.context.victory) _this.togglePause(false);
+        if (!_this.context.victory && !_this.context.defeat) _this.togglePause(false);
       },
       quit: function quit() {
         return _this.quit();
       },
       checkVictory: function checkVictory() {
         return _this.checkVictory();
+      },
+      checkDefeat: function checkDefeat() {
+        return _this.checkDefeat();
       }
     };
     _this.context.scheduler = new ActionScheduler(app, function () {
@@ -13895,7 +14862,7 @@ var Game = /*#__PURE__*/function (_Container) {
       context.map = new map_Map(context);
       if (config.size) context.map.size = config.size;
       if (config.mapType) context.map.mapType = config.mapType;
-      if (config.devMode) context.map.devMode = true;
+      if (config.instantMode) context.map.instantMode = true;
       if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything;
       if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain;
       if (config.startingResources) context.map.startingResources = config.startingResources;
@@ -13909,7 +14876,6 @@ var Game = /*#__PURE__*/function (_Container) {
       context.players = context.map.generatePlayers(config.players || null);
       context.player = context.players[0];
       context.menu.init();
-      context.map.placePlayers();
       context.map.stylishMap();
       context.controls.init();
       this.addChild(context.map);
@@ -13924,7 +14890,7 @@ var Game = /*#__PURE__*/function (_Container) {
       this._onKeydown = function (evt) {
         if (_this2.context.devConsoleOpen) return;
         if (evt.key === 'p') {
-          if (_this2.context.victory) return;
+          if (_this2.context.victory || _this2.context.defeat) return;
           _this2.context.paused ? _this2.context.resume() : _this2.context.pause();
         }
       };
@@ -13972,9 +14938,10 @@ var Game = /*#__PURE__*/function (_Container) {
   }, {
     key: "load",
     value: function load(json) {
-      var _document$getElementB, _document$getElementB2, _this$context$devCons;
+      var _document$getElementB, _document$getElementB2, _document$getElementB3, _this$context$devCons;
       (_document$getElementB = document.getElementById('pause')) === null || _document$getElementB === void 0 || _document$getElementB.remove();
       (_document$getElementB2 = document.getElementById('victory')) === null || _document$getElementB2 === void 0 || _document$getElementB2.remove();
+      (_document$getElementB3 = document.getElementById('defeat')) === null || _document$getElementB3 === void 0 || _document$getElementB3.remove();
       this._removeWindowListeners();
       this.context.controls.destroy();
       (_this$context$devCons = this.context.devConsole) === null || _this$context$devCons === void 0 || _this$context$devCons.destroy();
@@ -13988,12 +14955,13 @@ var Game = /*#__PURE__*/function (_Container) {
         devConsole: null,
         devConsoleOpen: false,
         paused: false,
-        victory: false
+        victory: false,
+        defeat: false
       });
       var context = this.context;
       context.map = new map_Map(context);
       if (json.config) {
-        if (json.config.devMode) context.map.devMode = true;
+        if (json.config.instantMode) context.map.instantMode = true;
         if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything;
         if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain;
         if (json.config.startingResources) context.map.startingResources = json.config.startingResources;
@@ -14011,9 +14979,10 @@ var Game = /*#__PURE__*/function (_Container) {
   }, {
     key: "quit",
     value: function quit() {
-      var _document$getElementB3, _document$getElementB4, _this$context$devCons2;
-      (_document$getElementB3 = document.getElementById('pause')) === null || _document$getElementB3 === void 0 || _document$getElementB3.remove();
-      (_document$getElementB4 = document.getElementById('victory')) === null || _document$getElementB4 === void 0 || _document$getElementB4.remove();
+      var _document$getElementB4, _document$getElementB5, _document$getElementB6, _this$context$devCons2;
+      (_document$getElementB4 = document.getElementById('pause')) === null || _document$getElementB4 === void 0 || _document$getElementB4.remove();
+      (_document$getElementB5 = document.getElementById('victory')) === null || _document$getElementB5 === void 0 || _document$getElementB5.remove();
+      (_document$getElementB6 = document.getElementById('defeat')) === null || _document$getElementB6 === void 0 || _document$getElementB6.remove();
       this._removeWindowListeners();
       this.context.controls.destroy();
       (_this$context$devCons2 = this.context.devConsole) === null || _this$context$devCons2 === void 0 || _this$context$devCons2.destroy();
@@ -14038,29 +15007,49 @@ var Game = /*#__PURE__*/function (_Container) {
       });
       var div = document.createElement('div');
       div.id = 'victory';
+      div.className = 'game-overlay';
       div.innerText = t('victory');
+      document.body.appendChild(div);
+    }
+  }, {
+    key: "checkDefeat",
+    value: function checkDefeat() {
+      var player = this.context.player;
+      if (this.context.defeat || this.context.victory || !player) return;
+      var hasUnits = player.units.length > 0;
+      var hasBuildings = player.buildings.length > 0;
+      if (hasUnits || hasBuildings) return;
+      this.context.defeat = true;
+      this.togglePause(true, {
+        silent: true
+      });
+      var div = document.createElement('div');
+      div.id = 'defeat';
+      div.className = 'game-overlay';
+      div.innerText = t('defeat');
       document.body.appendChild(div);
     }
   }, {
     key: "togglePause",
     value: function togglePause(pause) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      if (this.context.victory && !pause) return;
+      if ((this.context.victory || this.context.defeat) && !pause) return;
       var _this$context = this.context,
         map = _this$context.map,
         players = _this$context.players;
       if (pause) {
-        var _document$getElementB5;
-        (_document$getElementB5 = document.getElementById('pause')) === null || _document$getElementB5 === void 0 || _document$getElementB5.remove();
-        if (!options.silent) {
+        var _document$getElementB7;
+        (_document$getElementB7 = document.getElementById('pause')) === null || _document$getElementB7 === void 0 || _document$getElementB7.remove();
+        if (!options.silent && !this.context.victory && !this.context.defeat) {
           var div = document.createElement('div');
           div.id = 'pause';
+          div.className = 'game-overlay';
           div.innerText = t('pause');
           document.body.appendChild(div);
         }
       } else {
-        var _document$getElementB6;
-        (_document$getElementB6 = document.getElementById('pause')) === null || _document$getElementB6 === void 0 || _document$getElementB6.remove();
+        var _document$getElementB8;
+        (_document$getElementB8 = document.getElementById('pause')) === null || _document$getElementB8 === void 0 || _document$getElementB8.remove();
       }
       for (var i = 0; i < map.gaia.units.length; i++) {
         pause ? map.gaia.units[i].pause() : map.gaia.units[i].resume();
@@ -14156,7 +15145,7 @@ var LoaderScreen = /*#__PURE__*/function (_Container) {
                         lib/* Assets */.sP.addBundle('graphics', graphics.reduce(function (acc, g) {
                           return Loader_objectSpread(Loader_objectSpread({}, acc), {}, Loader_defineProperty({}, g, "assets/graphics/".concat(g, "/texture.json")));
                         }, {}));
-                        sounds = ['5002', '5003', '5005', '5006', '5008', '5009', '5010', '5011', '5012', '5022', '5027', '5036', '5044', '5048', '5054', '5055', '5056', '5057', '5058', '5059', '5060', '5061', '5062', '5063', '5064', '5070', '5075', '5076', '5085', '5096', '5107', '5108', '5118', '5123', '5125', '5126', '5128', '5129', '5132', '5133', '5138', '5139', '5140', '5159', '5142', '5144', '5164', '5166', '5169', '5176', '5178', '5180', '5186', '5196', '5201', '5216', '5217', '5239'];
+                        sounds = ['5002', '5003', '5005', '5006', '5008', '5009', '5010', '5011', '5012', '5022', '5027', '5036', '5044', '5048', '5054', '5055', '5056', '5057', '5058', '5059', '5060', '5061', '5062', '5063', '5064', '5070', '5075', '5076', '5085', '5096', '5107', '5108', '5118', '5123', '5125', '5126', '5128', '5129', '5132', '5133', '5138', '5139', '5140', '5159', '5142', '5144', '5164', '5166', '5169', '5176', '5178', '5180', '5186', '5190', '5191', '5192', '5193', '5196', '5201', '5216', '5217', '5239'];
                         lib/* Assets */.sP.addBundle('sounds', sounds.reduce(function (acc, g) {
                           return Loader_objectSpread(Loader_objectSpread({}, acc), {}, Loader_defineProperty({}, g, "assets/sounds/".concat(g, ".wav")));
                         }, {}));
@@ -14452,6 +15441,8 @@ var RESOURCES_MAP = {
     gold: 100
   }
 };
+var MAX_BOTS = 4;
+var MAX_PLAYERS = MAX_BOTS + 1;
 var MAP_SIZES = [{
   label: 'Tiny  (120×120)',
   value: 120,
@@ -14467,11 +15458,19 @@ var MAP_SIZES = [{
 }, {
   label: 'Normal (200×200)',
   value: 200,
-  maxPlayers: 6
+  maxPlayers: 5
 }, {
   label: 'Large  (220×220)',
   value: 220,
-  maxPlayers: 8
+  maxPlayers: 5
+}, {
+  label: 'Giant  (384×384)',
+  value: 384,
+  maxPlayers: 5
+}, {
+  label: 'Extra Giant (512×512)',
+  value: 512,
+  maxPlayers: 5
 }];
 var MAP_TYPES = [{
   label: function label() {
@@ -14536,7 +15535,7 @@ var MapConfig = /*#__PURE__*/function () {
       difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
-      devMode: false,
+      instantMode: false,
       startingResources: RESOURCES_MAP.standard,
       resourceDensity: 'moderate'
     };
@@ -14593,7 +15592,7 @@ var MapConfig = /*#__PURE__*/function () {
         var sizeEntry = MAP_SIZES.find(function (s) {
           return s.value === parseInt(val);
         });
-        _this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2;
+        _this.maxPlayers = Math.min(sizeEntry ? sizeEntry.maxPlayers : 2, MAX_PLAYERS);
         _this._clampPlayers();
         _this._refreshPlayerCountSelect();
         _this._refreshPlayerTable();
@@ -14610,20 +15609,12 @@ var MapConfig = /*#__PURE__*/function () {
       settingsForm.appendChild(this._createSelect(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', function (val) {
         _this.config.resourceDensity = val;
       }));
-      settingsForm.appendChild(this._createCheckbox(t('devMode'), false, function (val) {
-        _this.config.devMode = val;
-      }));
-      settingsForm.appendChild(this._createCheckbox(t('revealAll'), false, function (val) {
-        _this.config.revealEverything = val;
-      }));
       settingsForm.appendChild(this._createCheckbox(t('revealTerrain'), false, function (val) {
         _this.config.revealTerrain = val;
       }));
       rightCol.appendChild(settingsForm);
       layout.appendChild(leftCol);
       layout.appendChild(rightCol);
-      var divider2 = document.createElement('div');
-      divider2.className = 'menu-divider';
       var buttons = document.createElement('div');
       buttons.className = 'menu-buttons menu-buttons--row';
       var btnBack = document.createElement('button');
@@ -14647,7 +15638,6 @@ var MapConfig = /*#__PURE__*/function () {
       panel.appendChild(title);
       panel.appendChild(divider);
       panel.appendChild(layout);
-      panel.appendChild(divider2);
       panel.appendChild(buttons);
       this.el.appendChild(panel);
       this._refreshPlayerTable();
@@ -14695,6 +15685,9 @@ var MapConfig = /*#__PURE__*/function () {
     key: "_addBot",
     value: function _addBot() {
       if (this.players.length >= this.maxPlayers) return;
+      if (this.players.filter(function (p) {
+        return !p.isHuman;
+      }).length >= MAX_BOTS) return;
       var color = this._firstAvailableColor();
       var botNum = this.players.filter(function (p) {
         return !p.isHuman;
@@ -14710,7 +15703,7 @@ var MapConfig = /*#__PURE__*/function () {
   }, {
     key: "_setPlayerCount",
     value: function _setPlayerCount(count) {
-      var playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers));
+      var playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers, MAX_PLAYERS));
       while (this.players.length < playerCount) {
         this._addBot();
       }
@@ -15079,8 +16072,8 @@ button,
   background-color: transparent;
   color: var(--main-accent-color);
 }
-button:hover,
-.input-file:hover {
+button:active,
+.input-file:active {
   border-style: inset;
 }
 .input-file {
@@ -15113,7 +16106,7 @@ button:hover,
   flex: 1;
 }
 
-#pause {
+.game-overlay {
   position: absolute;
   z-index: 1000;
   font-size: 50px;
@@ -15121,25 +16114,8 @@ button:hover,
   left: 50%;
   transform: translate(-50%, -50%);
   margin-top: -66px;
-}
-
-#victory {
-  position: absolute;
-  z-index: 1000;
-  top: 42%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--main-accent-bright);
-  font-size: 82px;
-  font-weight: bold;
-  line-height: 1;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 8px;
-  text-shadow:
-    0 2px 0 #2b1605,
-    0 0 14px black,
-    0 0 28px black;
+  color: white;
+  text-shadow: 1px 1px 0 black;
 }
 
 .bar {
@@ -15165,13 +16141,13 @@ img {
 .topbar {
   position: absolute;
   top: 0;
-  padding: 5px 10px;
   display: grid;
   font-weight: bold;
   grid-template-columns: 33% 33% 33%;
   width: calc(100% - 20px);
   align-items: center;
   justify-content: center;
+  width: 100%;
   border-bottom: var(--border-btn);
 }
 
@@ -15183,7 +16159,7 @@ img {
   grid-template-columns: 120px auto 242px;
   width: calc(100% - 10px);
   grid-gap: 5px;
-  padding: 5px;
+  padding: 2px 4px;
   border-top:  var(--border-btn);
 }
 
@@ -15289,17 +16265,19 @@ img {
   border: var(--border-btn);
   border-radius: var(--main-border-radius);
   padding: 1px 10px;
+  margin-right: -5px;
   color: var(--main-accent-color);
   background: var(--main-background-color);
   font-size: 12px;
+  position: relative;
+  margin-bottom: -2px;
 }
-.topbar-options-menu:hover {
+.topbar-options-menu:active {
   border-style: inset;
 }
 
 .resource {
   display: flex;
-  gap: 2px;
   align-items: center;
 }
 
@@ -15308,9 +16286,9 @@ img {
 }
 
 .resource-content {
-  object-fit: none;
-  height: 15px;
-  width: 24px;
+  object-fit: cover;
+  height: 13px;
+  width: 22px;
   border: var(--border-slot);
 }
 
@@ -15405,12 +16383,6 @@ img {
 }
 
 .modal-content {
-  background: var(--main-background-color);
-  border: var(--border-panel);
-  box-shadow:
-    0 0 0 1px var(--main-shadow-dark),
-    0 0 30px rgba(0, 0, 0, 0.9);
-  border-radius: var(--main-border-radius-lg);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -15515,16 +16487,17 @@ div.menu-title {
   width: 320px;
   padding: 12px 26px;
   font-size: 18px;
-  color: #efdec7;
+  color: var(--main-background-color);
+  border-color: var(--main-background-color);
   text-shadow: 1px 1px 0 black;
   background: rgba(0, 0, 0, 0.45);
 }
 
-.menu-btn:hover {
+.menu-btn:active {
   border-style: inset;
 }
 
-.menu-panel--home .menu-btn:hover {
+.menu-panel--home .menu-btn:active {
   background: rgba(0, 0, 0, 0.6);
 }
 
@@ -15533,7 +16506,7 @@ div.menu-title {
 }
 
 .menu-panel--home .menu-btn.secondary {
-  color: #efdec7;
+  color: var(--main-background-color);
 }
 
 .menu-copyright {
@@ -15608,11 +16581,11 @@ div.menu-title {
   min-width: 180px;
 }
 
-.config-row select:hover,
+.config-row select:active,
 .config-row select:focus,
-.player-civ select:hover,
+.player-civ select:active,
 .player-civ select:focus,
-.team-cycle:hover,
+.team-cycle:active,
 .team-cycle:focus {
   outline: none;
   border-style: inset;
@@ -15749,7 +16722,7 @@ div.menu-title {
     inset -2px -2px 0 rgba(0, 0, 0, 0.35);
 }
 
-.color-swatch:hover {
+.color-swatch:active {
   border-style: inset;
   box-shadow:
     inset 2px 2px 0 rgba(0, 0, 0, 0.35),
@@ -15784,6 +16757,22 @@ div.menu-title {
   inset: 0;
   z-index: 1200;
   background: rgba(0, 0, 0, 0.42);
+}
+
+#debug-perf {
+  position: fixed;
+  top: 34px;
+  right: 10px;
+  z-index: 9999;
+  padding: 5px 8px;
+  color: white;
+  font: bold 13px monospace;
+  line-height: 1.25;
+  white-space: pre;
+  text-shadow: none;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.72);
+  border-radius: 3px;
 }
 
 .dev-console-panel {
@@ -15853,7 +16842,56 @@ div.menu-title {
   background-color: var(--main-accent-hover);
   border-color: #efdec7;
 }
-`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #8b6914;\n  --main-background-color: #e4c99b;\n  --main-control-color: #d8b878;\n  --main-border-radius: 0px;\n  --main-border-radius-lg: 0px;\n\n  --border-ui:    1px solid  #efdec7;\n  --border-btn:   2px outset #efdec7;\n  --border-slot:  2px inset  #efdec7;\n  --border-panel: 4px double #efdec7;\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);\n  --main-text-color: #1a0e00;\n  --main-text-muted: #6b5220;\n  --main-accent-color: #3d2000;\n  --main-accent-bright: #1a0e00;\n  --main-accent-hover: #c9a572;\n\n  --danger-color: #cc1100;\n\n  --msg-color: #ff5050;\n  --msg-bg: #0a0602;\n  --msg-border: #9a2020;\n  --msg-padding: 6px 18px;\n  --msg-font-size: 13px;\n  --msg-border-radius: var(--main-border-radius);\n}\n\n@font-face {\n  font-family: 'VT323';\n  src: url('../public/assets/fonts/VT323-Regular.ttf') format('truetype');\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px white;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n  -moz-osx-font-smoothing: none;\n  font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: var(--border-ui);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  color: var(--main-accent-color);\n}\nbutton:hover,\n.input-file:hover {\n  border-style: inset;\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n  color:white;\n  text-shadow:none;\n}\n\n#game {\n  flex: 1;\n}\n\n#pause {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n}\n\n#victory {\n  position: absolute;\n  z-index: 1000;\n  top: 42%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  color: var(--main-accent-bright);\n  font-size: 82px;\n  font-weight: bold;\n  line-height: 1;\n  text-align: center;\n  text-transform: uppercase;\n  letter-spacing: 8px;\n  text-shadow:\n    0 2px 0 #2b1605,\n    0 0 14px black,\n    0 0 28px black;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.bottombar-menu-box .img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #080604;\n  cursor: pointer;\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  padding: 5px 10px;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n  border-bottom: var(--border-btn);\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 5px;\n  border-top:  var(--border-btn);\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #00000040;\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n  text-shadow: none;\n  color: white;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 1px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  filter:\n    drop-shadow(-2px 0 0 #9B9081)\n    drop-shadow(0 -2px 0 #9B9081)\n    drop-shadow(2px 0 0 #efdec7)\n    drop-shadow(0 2px 0 #efdec7);\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  padding: 1px 10px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  font-size: 12px;\n}\n.topbar-options-menu:hover {\n  border-style: inset;\n}\n\n.resource {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: none;\n  height: 15px;\n  width: 24px;\n  border: var(--border-slot);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: var(--msg-color);\n  background: var(--msg-bg);\n  padding: var(--msg-padding);\n  font-size: var(--msg-font-size);\n  border: 1px solid var(--msg-border);\n  border-radius: var(--msg-border-radius);\n  box-shadow: var(--main-box-shadow);\n  letter-spacing: 0.03em;\n  animation: msg-fade 3s ease forwards;\n}\n\n@keyframes msg-fade {\n  0% {\n    opacity: 0;\n    transform: translateY(6px);\n  }\n  15% {\n    opacity: 1;\n    transform: translateY(0);\n  }\n  75% {\n    opacity: 1;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 30px rgba(0, 0, 0, 0.9);\n  border-radius: var(--main-border-radius-lg);\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-background-color);\n  background-size: cover;\n  background-repeat: no-repeat;\n  background-position: center;\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n}\n\n.menu-panel--home {\n  background: transparent;\n  border: 0;\n  gap: 24px;\n  padding-top: 0;\n}\n\nimg.menu-title {\n  display: block;\n  width: min(420px, 74vw);\n  height: auto;\n  margin: 0;\n}\n\n.menu-panel--home img.menu-title {\n  width: min(620px, 88vw);\n}\n\ndiv.menu-title {\n  font-size: 16px;\n  font-weight: bold;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  margin: 0;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-panel--home .menu-divider {\n  display: none;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box;\n  width: 250px;\n  padding: 8px 20px;\n  font-size: 14px;\n  font-weight: bold;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n}\n\n.menu-panel--home .menu-btn {\n  width: 320px;\n  padding: 12px 26px;\n  font-size: 18px;\n  color: #efdec7;\n  text-shadow: 1px 1px 0 black;\n  background: rgba(0, 0, 0, 0.45);\n}\n\n.menu-btn:hover {\n  border-style: inset;\n}\n\n.menu-panel--home .menu-btn:hover {\n  background: rgba(0, 0, 0, 0.6);\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted);\n}\n\n.menu-panel--home .menu-btn.secondary {\n  color: #efdec7;\n}\n\n.menu-copyright {\n  position: absolute;\n  bottom: 16px;\n  left: 50%;\n  transform: translateX(-50%);\n  color: white;\n  font-size: 12px;\n  text-shadow: 1px 1px 0 black;\n  white-space: nowrap;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 300px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.config-row select,\n.player-civ select,\n.team-cycle {\n  box-sizing: border-box;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  font-size: 11px;\n  font-weight: bold;\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(255, 255, 255, 0.45),\n    inset -1px -1px 0 rgba(61, 32, 0, 0.35);\n}\n\n.config-row select,\n.player-civ select {\n  appearance: none;\n  background-image:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),\n    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);\n  background-position:\n    0 0,\n    calc(100% - 12px) 50%,\n    calc(100% - 7px) 50%;\n  background-size:\n    auto,\n    5px 5px,\n    5px 5px;\n  background-repeat: no-repeat;\n  padding: 5px 22px 5px 8px;\n}\n\n.config-row select {\n  min-width: 180px;\n}\n\n.config-row select:hover,\n.config-row select:focus,\n.player-civ select:hover,\n.player-civ select:focus,\n.team-cycle:hover,\n.team-cycle:focus {\n  outline: none;\n  border-style: inset;\n  background-color: var(--main-accent-hover);\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  appearance: none;\n  display: grid;\n  place-items: center;\n  width: 18px;\n  height: 18px;\n  margin: 0;\n  background: var(--main-control-color);\n  border: var(--border-slot);\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.config-row input[type='checkbox']::before {\n  content: '';\n  width: 8px;\n  height: 8px;\n  background: var(--main-accent-color);\n  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);\n  transform: scale(0);\n}\n\n.config-row input[type='checkbox']:checked::before {\n  transform: scale(1);\n}\n\n.config-row input[type='checkbox']:hover,\n.config-row input[type='checkbox']:focus {\n  outline: none;\n  background: var(--main-accent-hover);\n}\n\n/* ============================================================\n   LOBBY — tableau AOE style\n   ============================================================ */\n\n.lobby-panel {\n  padding: 36px 48px;\n  min-width: 0;\n}\n\n.lobby-layout {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 40px;\n  width: min(82vw, 840px);\n  align-items: start;\n}\n\n.lobby-col {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n/* Player table */\n.player-table {\n  overflow: hidden;\n}\n\n.player-table-header {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  text-transform: uppercase;\n  padding: 5px 10px;\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.player-row {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  padding: 5px 10px;\n  align-items: center;\n}\n\n.player-row--odd {\n  background: rgba(61, 32, 0, 0.06);\n}\n\n.player-name {\n  font-size: 11px;\n  color: var(--main-text-color);\n}\n\n.player-name.human {\n  color: var(--main-accent-color);\n}\n\n.player-civ select {\n  padding-top: 3px;\n  padding-bottom: 3px;\n  width: 100%;\n}\n\n.team-cycle {\n  width: 100%;\n  height: 22px;\n  padding: 0;\n  line-height: 20px;\n  text-align: center;\n}\n\n.player-color-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.color-swatch {\n  width: 22px;\n  height: 22px;\n  box-sizing: border-box;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  cursor: pointer;\n  flex-shrink: 0;\n  box-shadow:\n    inset 2px 2px 0 rgba(255, 255, 255, 0.35),\n    inset -2px -2px 0 rgba(0, 0, 0, 0.35);\n}\n\n.color-swatch:hover {\n  border-style: inset;\n  box-shadow:\n    inset 2px 2px 0 rgba(0, 0, 0, 0.35),\n    inset -2px -2px 0 rgba(255, 255, 255, 0.25);\n}\n\n.player-count-row {\n  margin-top: 4px;\n}\n\n.player-count-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.lobby-settings-form {\n  width: 100%;\n}\n\n.lobby-settings-form .config-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.menu-buttons--row {\n  flex-direction: row;\n  gap: 16px;\n}\n\n#dev-console {\n  position: absolute;\n  inset: 0;\n  z-index: 1200;\n  background: rgba(0, 0, 0, 0.42);\n}\n\n.dev-console-panel {\n  position: absolute;\n  right: 14px;\n  bottom: 138px;\n  width: min(420px, calc(100vw - 28px));\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin: 0;\n  padding: 8px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 18px rgba(0, 0, 0, 0.75);\n}\n\n.dev-console-log {\n  min-height: 22px;\n  max-width: 100%;\n  box-sizing: border-box;\n  padding: 4px 7px;\n  overflow: hidden;\n  text-shadow: 1px 1px white;\n  color: var(--main-text-muted);\n  font-size: 11px;\n  font-weight: bold;\n  line-height: 14px;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  background: rgba(61, 32, 0, 0.08);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n}\n\n.dev-console-log[data-status='ok'] {\n  color: var(--main-accent-color);\n}\n\n.dev-console-log[data-status='error'] {\n  color: var(--danger-color);\n}\n\n.dev-console-input {\n  width: 100%;\n  height: 30px;\n  box-sizing: border-box;\n  padding: 5px 8px;\n  color: var(--main-accent-color);\n  font-size: 12px;\n  font-weight: bold;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  outline: none;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.dev-console-input:focus {\n  background-color: var(--main-accent-hover);\n  border-color: #efdec7;\n}\n"],"sourceRoot":""}]);
+
+/* ============================================================
+   PLAYER STATS
+   ============================================================ */
+
+.player-stats-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10;
+  border: var(--border-btn);
+  background: var(--main-background-color);
+  color: var(--main-accent-color);
+  cursor: pointer;
+}
+
+.player-stats-btn:active {
+  border-style: inset;
+}
+
+.player-stats {
+  position: fixed;
+  bottom: 134px;
+  right: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 6px;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.player-stats-name {
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 black;
+  white-space: nowrap;
+}
+
+.player-stats-name--dead {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+`, "",{"version":3,"sources":["webpack://./app/styles.css"],"names":[],"mappings":"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","sourcesContent":[":root {\n  --main-primary-color: #8b6914;\n  --main-background-color: #e4c99b;\n  --main-control-color: #d8b878;\n  --main-border-radius: 0px;\n  --main-border-radius-lg: 0px;\n\n  --border-ui:    1px solid  #efdec7;\n  --border-btn:   2px outset #efdec7;\n  --border-slot:  2px inset  #efdec7;\n  --border-panel: 4px double #efdec7;\n  --main-shadow-dark: #1e1508;\n  --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);\n  --main-text-color: #1a0e00;\n  --main-text-muted: #6b5220;\n  --main-accent-color: #3d2000;\n  --main-accent-bright: #1a0e00;\n  --main-accent-hover: #c9a572;\n\n  --danger-color: #cc1100;\n\n  --msg-color: #ff5050;\n  --msg-bg: #0a0602;\n  --msg-border: #9a2020;\n  --msg-padding: 6px 18px;\n  --msg-font-size: 13px;\n  --msg-border-radius: var(--main-border-radius);\n}\n\n@font-face {\n  font-family: 'VT323';\n  src: url('../public/assets/fonts/VT323-Regular.ttf') format('truetype');\n}\n\nhtml,\nbody,\ninput,\ntextarea,\nselect,\nbutton {\n  border-color: var(--main-primary-color);\n  color: var(--main-text-color);\n  font-size: 12px;\n  text-shadow: 1px 1px white;\n  font-family: sans-serif;\n  -webkit-font-smoothing: none;\n  -moz-osx-font-smoothing: none;\n  font-smoothing: none;\n}\n\nbody {\n  height: 100vh;\n  overflow: hidden;\n  margin: 0;\n  -webkit-user-select: none;\n  user-select: none;\n  background-color: black;\n}\n\nbutton,\n.input-file {\n  border: var(--border-ui);\n  padding: 6px 15px;\n  border-radius: var(--main-border-radius);\n  position: relative;\n  cursor: pointer;\n  text-align: center;\n  background-color: transparent;\n  color: var(--main-accent-color);\n}\nbutton:active,\n.input-file:active {\n  border-style: inset;\n}\n.input-file {\n  width: calc(100% - 32px);\n}\n.input-file > input {\n  width: 200px;\n  cursor: pointer;\n  height: 100%;\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 99;\n  /*Opacity settings for all browsers*/\n  opacity: 0;\n  -moz-opacity: 0;\n  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);\n}\n\n.loading {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 100%;\n  color:white;\n  text-shadow:none;\n}\n\n#game {\n  flex: 1;\n}\n\n.game-overlay {\n  position: absolute;\n  z-index: 1000;\n  font-size: 50px;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  margin-top: -66px;\n  color: white;\n  text-shadow: 1px 1px 0 black;\n}\n\n.bar {\n  background: var(--main-background-color);\n  width: 100%;\n}\n\nimg {\n  -webkit-user-drag: none;\n  user-drag: none;\n}\n\n.bottombar-menu-box .img {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #080604;\n  cursor: pointer;\n}\n\n.topbar {\n  position: absolute;\n  top: 0;\n  display: grid;\n  font-weight: bold;\n  grid-template-columns: 33% 33% 33%;\n  width: calc(100% - 20px);\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  border-bottom: var(--border-btn);\n}\n\n.bottombar {\n  position: absolute;\n  bottom: 0;\n  display: grid;\n  height: 122px;\n  grid-template-columns: 120px auto 242px;\n  width: calc(100% - 10px);\n  grid-gap: 5px;\n  padding: 2px 4px;\n  border-top:  var(--border-btn);\n}\n\n.bottombar-info {\n  position: relative;\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  background: #00000040;\n  overflow: hidden;\n  display: flex;\n  flex-direction: column;\n  padding: 2px;\n  gap: 1px;\n  text-shadow: none;\n  color: white;\n}\n\n.bottombar-info #icon {\n  object-fit: none;\n  height: 45px;\n  width: 45px;\n}\n\n.bottombar-info #infos {\n  position: absolute;\n  left: 45%;\n  top: 30px;\n  display: flex;\n  align-items: center;\n  flex-direction: column;\n}\n\n.bottombar-info #info {\n  display: flex;\n  align-items: center;\n  gap: 5px;\n}\n\n.bottombar-menu {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 1px;\n  padding: 5px 0;\n  overflow: auto;\n  max-width: 500px;\n}\n\n.bottombar-menu-column {\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n}\n\n.bottombar-menu-box {\n  position: relative;\n  display: flex;\n}\n\n.bottombar-map-wrap {\n  position: relative;\n  filter:\n    drop-shadow(-2px 0 0 #9B9081)\n    drop-shadow(0 -2px 0 #9B9081)\n    drop-shadow(2px 0 0 #efdec7)\n    drop-shadow(0 2px 0 #efdec7);\n}\n\n.bottombar-map {\n  width: 100%;\n  height: 100%;\n  background: black;\n  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);\n}\n\n.bottombar-map canvas {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.topbar-age {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.topbar-resources {\n  display: flex;\n  gap: 10px;\n}\n\n.topbar-options {\n  display: flex;\n  align-items: center;\n  justify-content: end;\n}\n\n.topbar-options-menu {\n  width: fit-content;\n  cursor: pointer;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  padding: 1px 10px;\n  margin-right: -5px;\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n  font-size: 12px;\n  position: relative;\n  margin-bottom: -2px;\n}\n.topbar-options-menu:active {\n  border-style: inset;\n}\n\n.resource {\n  display: flex;\n  align-items: center;\n}\n\n.resource > div {\n  width: 40px;\n}\n\n.resource-content {\n  object-fit: cover;\n  height: 13px;\n  width: 22px;\n  border: var(--border-slot);\n}\n\n.message {\n  z-index: 1000;\n  position: fixed;\n  width: 100%;\n  text-align: center;\n}\n\n.message-content {\n  color: var(--msg-color);\n  background: var(--msg-bg);\n  padding: var(--msg-padding);\n  font-size: var(--msg-font-size);\n  border: 1px solid var(--msg-border);\n  border-radius: var(--msg-border-radius);\n  box-shadow: var(--main-box-shadow);\n  letter-spacing: 0.03em;\n  animation: msg-fade 3s ease forwards;\n}\n\n@keyframes msg-fade {\n  0% {\n    opacity: 0;\n    transform: translateY(6px);\n  }\n  15% {\n    opacity: 1;\n    transform: translateY(0);\n  }\n  75% {\n    opacity: 1;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n\n.resource-quantity {\n  position: absolute;\n  top: 20px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.unit-loading {\n  position: absolute;\n  top: 52px;\n  left: 45%;\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  gap: 5px;\n}\n\n.building-loading,\n#population {\n  position: absolute;\n  left: 40%;\n  top: 32px;\n  display: flex;\n  align-items: center;\n}\n\n.toggle {\n  position: fixed;\n  bottom: -119px;\n  right: 0;\n  transform: rotate(64deg);\n  height: 192px;\n  width: 100px;\n  border-top-left-radius: 3px;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 10;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.modal {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100vw;\n  height: 100vh;\n  background: rgba(0, 0, 0, 0.5);\n  z-index: 1001;\n}\n\n.modal-content {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n}\n\n.modal-menu {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n  padding: 24px 32px;\n}\n\n\n/* ============================================================\n   MAIN MENU / MAP CONFIG\n   ============================================================ */\n\n#main-menu,\n#map-config {\n  position: fixed;\n  inset: 0;\n  z-index: 2000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--main-background-color);\n  background-size: cover;\n  background-repeat: no-repeat;\n  background-position: center;\n}\n\n.menu-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 18px;\n  padding: 44px 64px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n}\n\n.menu-panel--home {\n  background: transparent;\n  border: 0;\n  gap: 24px;\n  padding-top: 0;\n}\n\nimg.menu-title {\n  display: block;\n  width: min(420px, 74vw);\n  height: auto;\n  margin: 0;\n}\n\n.menu-panel--home img.menu-title {\n  width: min(620px, 88vw);\n}\n\ndiv.menu-title {\n  font-size: 16px;\n  font-weight: bold;\n  text-transform: uppercase;\n  color: var(--main-accent-color);\n  margin: 0;\n}\n\n.menu-divider {\n  width: 220px;\n  height: 1px;\n  background: linear-gradient(to right, transparent, var(--main-primary-color), transparent);\n  margin: 2px 0;\n}\n\n.menu-panel--home .menu-divider {\n  display: none;\n}\n\n.menu-buttons {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: center;\n}\n\n.menu-btn {\n  box-sizing: border-box;\n  width: 250px;\n  padding: 8px 20px;\n  font-size: 14px;\n  font-weight: bold;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  background: var(--main-background-color);\n}\n\n.menu-panel--home .menu-btn {\n  width: 320px;\n  padding: 12px 26px;\n  font-size: 18px;\n  color: var(--main-background-color);\n  border-color: var(--main-background-color);\n  text-shadow: 1px 1px 0 black;\n  background: rgba(0, 0, 0, 0.45);\n}\n\n.menu-btn:active {\n  border-style: inset;\n}\n\n.menu-panel--home .menu-btn:active {\n  background: rgba(0, 0, 0, 0.6);\n}\n\n.menu-btn.secondary {\n  color: var(--main-text-muted);\n}\n\n.menu-panel--home .menu-btn.secondary {\n  color: var(--main-background-color);\n}\n\n.menu-copyright {\n  position: absolute;\n  bottom: 16px;\n  left: 50%;\n  transform: translateX(-50%);\n  color: white;\n  font-size: 12px;\n  text-shadow: 1px 1px 0 black;\n  white-space: nowrap;\n}\n\n/* Config form rows */\n.config-form {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  width: 300px;\n}\n\n.config-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n\n.config-row label {\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.config-row select,\n.player-civ select,\n.team-cycle {\n  box-sizing: border-box;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  color: var(--main-accent-color);\n  font-size: 11px;\n  font-weight: bold;\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(255, 255, 255, 0.45),\n    inset -1px -1px 0 rgba(61, 32, 0, 0.35);\n}\n\n.config-row select,\n.player-civ select {\n  appearance: none;\n  background-image:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),\n    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);\n  background-position:\n    0 0,\n    calc(100% - 12px) 50%,\n    calc(100% - 7px) 50%;\n  background-size:\n    auto,\n    5px 5px,\n    5px 5px;\n  background-repeat: no-repeat;\n  padding: 5px 22px 5px 8px;\n}\n\n.config-row select {\n  min-width: 180px;\n}\n\n.config-row select:active,\n.config-row select:focus,\n.player-civ select:active,\n.player-civ select:focus,\n.team-cycle:active,\n.team-cycle:focus {\n  outline: none;\n  border-style: inset;\n  background-color: var(--main-accent-hover);\n}\n\n.config-row--checkbox {\n  cursor: pointer;\n}\n\n.config-row input[type='checkbox'] {\n  appearance: none;\n  display: grid;\n  place-items: center;\n  width: 18px;\n  height: 18px;\n  margin: 0;\n  background: var(--main-control-color);\n  border: var(--border-slot);\n  cursor: pointer;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.config-row input[type='checkbox']::before {\n  content: '';\n  width: 8px;\n  height: 8px;\n  background: var(--main-accent-color);\n  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);\n  transform: scale(0);\n}\n\n.config-row input[type='checkbox']:checked::before {\n  transform: scale(1);\n}\n\n.config-row input[type='checkbox']:hover,\n.config-row input[type='checkbox']:focus {\n  outline: none;\n  background: var(--main-accent-hover);\n}\n\n/* ============================================================\n   LOBBY — tableau AOE style\n   ============================================================ */\n\n.lobby-panel {\n  padding: 36px 48px;\n  min-width: 0;\n}\n\n.lobby-layout {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 40px;\n  width: min(82vw, 840px);\n  align-items: start;\n}\n\n.lobby-col {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n\n/* Player table */\n.player-table {\n  overflow: hidden;\n}\n\n.player-table-header {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  text-transform: uppercase;\n  padding: 5px 10px;\n  font-size: 11px;\n  font-weight: bold;\n}\n\n.player-row {\n  display: grid;\n  grid-template-columns: 1fr 100px 48px 48px;\n  gap: 8px;\n  padding: 5px 10px;\n  align-items: center;\n}\n\n.player-row--odd {\n  background: rgba(61, 32, 0, 0.06);\n}\n\n.player-name {\n  font-size: 11px;\n  color: var(--main-text-color);\n}\n\n.player-name.human {\n  color: var(--main-accent-color);\n}\n\n.player-civ select {\n  padding-top: 3px;\n  padding-bottom: 3px;\n  width: 100%;\n}\n\n.team-cycle {\n  width: 100%;\n  height: 22px;\n  padding: 0;\n  line-height: 20px;\n  text-align: center;\n}\n\n.player-color-cell {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.color-swatch {\n  width: 22px;\n  height: 22px;\n  box-sizing: border-box;\n  border: var(--border-btn);\n  border-radius: var(--main-border-radius);\n  cursor: pointer;\n  flex-shrink: 0;\n  box-shadow:\n    inset 2px 2px 0 rgba(255, 255, 255, 0.35),\n    inset -2px -2px 0 rgba(0, 0, 0, 0.35);\n}\n\n.color-swatch:active {\n  border-style: inset;\n  box-shadow:\n    inset 2px 2px 0 rgba(0, 0, 0, 0.35),\n    inset -2px -2px 0 rgba(255, 255, 255, 0.25);\n}\n\n.player-count-row {\n  margin-top: 4px;\n}\n\n.player-count-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.lobby-settings-form {\n  width: 100%;\n}\n\n.lobby-settings-form .config-row select {\n  min-width: 0;\n  flex: 1;\n}\n\n.menu-buttons--row {\n  flex-direction: row;\n  gap: 16px;\n}\n\n#dev-console {\n  position: absolute;\n  inset: 0;\n  z-index: 1200;\n  background: rgba(0, 0, 0, 0.42);\n}\n\n#debug-perf {\n  position: fixed;\n  top: 34px;\n  right: 10px;\n  z-index: 9999;\n  padding: 5px 8px;\n  color: white;\n  font: bold 13px monospace;\n  line-height: 1.25;\n  white-space: pre;\n  text-shadow: none;\n  pointer-events: none;\n  background: rgba(0, 0, 0, 0.72);\n  border-radius: 3px;\n}\n\n.dev-console-panel {\n  position: absolute;\n  right: 14px;\n  bottom: 138px;\n  width: min(420px, calc(100vw - 28px));\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin: 0;\n  padding: 8px;\n  background: var(--main-background-color);\n  border: var(--border-panel);\n  border-radius: var(--main-border-radius-lg);\n  box-shadow:\n    0 0 0 1px var(--main-shadow-dark),\n    0 0 18px rgba(0, 0, 0, 0.75);\n}\n\n.dev-console-log {\n  min-height: 22px;\n  max-width: 100%;\n  box-sizing: border-box;\n  padding: 4px 7px;\n  overflow: hidden;\n  text-shadow: 1px 1px white;\n  color: var(--main-text-muted);\n  font-size: 11px;\n  font-weight: bold;\n  line-height: 14px;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  background: rgba(61, 32, 0, 0.08);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n}\n\n.dev-console-log[data-status='ok'] {\n  color: var(--main-accent-color);\n}\n\n.dev-console-log[data-status='error'] {\n  color: var(--danger-color);\n}\n\n.dev-console-input {\n  width: 100%;\n  height: 30px;\n  box-sizing: border-box;\n  padding: 5px 8px;\n  color: var(--main-accent-color);\n  font-size: 12px;\n  font-weight: bold;\n  background:\n    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),\n    var(--main-control-color);\n  border: var(--border-slot);\n  border-radius: var(--main-border-radius);\n  outline: none;\n  box-shadow:\n    inset 1px 1px 0 rgba(61, 32, 0, 0.35),\n    inset -1px -1px 0 rgba(255, 255, 255, 0.3);\n}\n\n.dev-console-input:focus {\n  background-color: var(--main-accent-hover);\n  border-color: #efdec7;\n}\n\n/* ============================================================\n   PLAYER STATS\n   ============================================================ */\n\n.player-stats-btn {\n  position: absolute;\n  top: 5px;\n  right: 5px;\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  font-size: 16px;\n  font-weight: bold;\n  z-index: 10;\n  border: var(--border-btn);\n  background: var(--main-background-color);\n  color: var(--main-accent-color);\n  cursor: pointer;\n}\n\n.player-stats-btn:active {\n  border-style: inset;\n}\n\n.player-stats {\n  position: fixed;\n  bottom: 134px;\n  right: 5px;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-end;\n  gap: 2px;\n  padding: 4px 6px;\n  pointer-events: none;\n  background: rgba(0, 0, 0, 0.25);\n}\n\n.player-stats-name {\n  font-size: 11px;\n  font-weight: bold;\n  text-shadow: 1px 1px 0 black;\n  white-space: nowrap;\n}\n\n.player-stats-name--dead {\n  text-decoration: line-through;\n  opacity: 0.45;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -15870,7 +16908,7 @@ module.exports = __webpack_require__.p + "2bc43ad8eb2f60b39f27.ttf";
 },
 /******/ __webpack_require__ => { // webpackRuntimeModules
 /******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(6340)));
+/******/ __webpack_require__.O(0, [96], () => (__webpack_exec__(731)));
 /******/ var __webpack_exports__ = __webpack_require__.O();
 /******/ }
 ]);
