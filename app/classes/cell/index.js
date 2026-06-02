@@ -1,5 +1,5 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { randomItem, cartesianToIsometric, instanceIsInPlayerSight } from '../../lib'
+import { randomItem, cartesianToIsometric, playerCanSeeInstance } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
 import { CellTerrain } from './CellTerrain'
@@ -70,7 +70,7 @@ export class Cell extends Container {
 
   _updateChild(instance) {
     const { map, player } = this.context
-    const isInPlayerSight = instanceIsInPlayerSight(instance, player)
+    const isInPlayerSight = playerCanSeeInstance(instance, player)
     instance.visible =
       map.revealEverything ||
       instance.owner?.isPlayed ||

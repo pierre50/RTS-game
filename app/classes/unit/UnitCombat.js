@@ -149,7 +149,7 @@ export class UnitCombat {
             return
           }
           if (unit.sounds && unit.sounds.hit) {
-            unit.context.controls.instanceInCamera(unit) &&
+            unit.context.controls.instanceIsAudible(unit) &&
               sound.play(Array.isArray(unit.sounds.hit) ? randomItem(unit.sounds.hit) : unit.sounds.hit)
           }
           if (unit.dest.hitPoints > 0) {

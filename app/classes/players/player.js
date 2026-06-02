@@ -9,6 +9,7 @@ import {
   getActionCondition,
   canUpdateMinimap,
   isValidCondition,
+  canPlaceBuildingAt,
 } from '../../lib'
 import { sound } from '@pixi/sound'
 import { Building } from '../building'
@@ -39,6 +40,8 @@ export class Player {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
+    this.team = this.team == null || this.team === '' ? null : Number(this.team)
+    if (!Number.isFinite(this.team)) this.team = null
 
     this.population_max = this.population_max || (map.devMode ? POPULATION_MAX : 0)
 
@@ -144,6 +147,22 @@ export class Player {
     return others
   }
 
+  isAlliedWith(player) {
+    return !!player && player.label !== this.label && this.team !== null && this.team === player.team
+  }
+
+  isEnemy(player) {
+    return !!player && player.label !== this.label && !this.isAlliedWith(player)
+  }
+
+  enemyPlayers() {
+    return this.otherPlayers().filter(player => this.isEnemy(player))
+  }
+
+  visiblePlayers() {
+    return [this, ...this.otherPlayers().filter(player => this.isAlliedWith(player))]
+  }
+
   updateConfig(operations) {
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
@@ -166,7 +185,8 @@ export class Player {
     const config = this.config.buildings[type]
     if (
       canAfford(this, config.cost) &&
-      (!config.conditions || config.conditions.every(condition => isValidCondition(condition, this)))
+      (!config.conditions || config.conditions.every(condition => isValidCondition(condition, this))) &&
+      canPlaceBuildingAt(map.grid, i, j, config)
     ) {
       this.spawnBuilding({ i, j, type, isBuilt: map.devMode })
       payCost(this, config.cost)

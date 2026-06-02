@@ -47,7 +47,7 @@ export class UnitLifecycle {
 
     unit.sounds &&
       unit.sounds.die &&
-      unit.context.controls.instanceInCamera(unit) &&
+      unit.context.controls.instanceIsAudible(unit) &&
       sound.play(Array.isArray(unit.sounds.die) ? randomItem(unit.sounds.die) : unit.sounds.die)
 
     unit.stopInterval()
@@ -83,6 +83,7 @@ export class UnitLifecycle {
     }
     this.death()
     canUpdateMinimap(unit, player) && menu.updatePlayerMiniMapEvt(unit.owner)
+    unit.context.checkVictory?.()
   }
 
   clear() {

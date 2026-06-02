@@ -1,5 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, WORK_TYPES } from '../constants'
-import { getClosestInstance, getValuePercentage } from '../lib'
+import { getClosestInstance, getInstanceClosestFreeCellPath, getValuePercentage } from '../lib'
 
 export class AIEconomy {
   constructor(ai) {
@@ -160,7 +160,14 @@ export class AIEconomy {
     for (const building of notBuiltBuildings) {
       if (builderVillagers.length >= maxVillagersOnConstruction) break
       if (availableVillagers.length === 0) break
-      const villager = getClosestInstance(building, availableVillagers)
+      const villager = [...availableVillagers]
+        .sort(
+          (a, b) =>
+            Math.abs(a.i - building.i) +
+            Math.abs(a.j - building.j) -
+            (Math.abs(b.i - building.i) + Math.abs(b.j - building.j))
+        )
+        .find(candidate => getInstanceClosestFreeCellPath(candidate, building, candidate.context.map).length)
       if (villager) {
         if (debug) console.log('Villager sent to build:', building)
         villager.sendToBuilding(building)

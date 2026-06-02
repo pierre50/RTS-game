@@ -104,6 +104,8 @@ export default class Controls extends Container {
   }
 
   onKeyDown(evt) {
+    if (this.context.devConsoleOpen) return
+
     if (evt.key === 'f' || evt.key === 'F') {
       this.fpsVisible = !this.fpsVisible
       this.fpsEl.style.display = this.fpsVisible ? 'block' : 'none'
@@ -147,6 +149,11 @@ export default class Controls extends Container {
   }
 
   onKeyUp(evt) {
+    if (this.context.devConsoleOpen) {
+      this.stopKeyboardMove()
+      return
+    }
+
     if (!evt.repeat && this.keysPressed[evt.key]) {
       delete this.keysPressed[evt.key]
       this.keyPressedCount--
@@ -196,6 +203,8 @@ export default class Controls extends Container {
   }
 
   onMouseDown(evt) {
+    if (this.context.devConsoleOpen) return
+
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
     if (!this.isMouseInApp(evt)) return
@@ -206,6 +215,8 @@ export default class Controls extends Container {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
+    if (this.context.devConsoleOpen) return
+
     if (this.mouseBuilding) {
       this.buildingPlacer.handleMouseMove()
       return
@@ -214,6 +225,8 @@ export default class Controls extends Container {
   }
 
   onMouseUp(evt) {
+    if (this.context.devConsoleOpen) return
+
     const {
       context: { map, player },
     } = this
@@ -250,6 +263,16 @@ export default class Controls extends Container {
     return this.selectionManager.sendUnits(cell)
   }
 
+  getCellUnderCursor() {
+    const {
+      context: { map },
+    } = this
+    const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
+    const i = Math.min(Math.max(pos[0], 0), map.size)
+    const j = Math.min(Math.max(pos[1], 0), map.size)
+    return map.grid[i]?.[j] || null
+  }
+
   isMouseInApp(evt) {
     return evt.target && (!evt.target.tagName || evt.target.closest('#game'))
   }
@@ -274,8 +297,28 @@ export default class Controls extends Container {
     this.cameraController.stopMouseMove()
   }
 
+  stopKeyboardMove() {
+    this.keysPressed = {}
+    this.keyPressedCount = 0
+    clearInterval(this.keyInterval)
+    this.keyInterval = null
+    this.keySpeed = 0
+  }
+
   instanceInCamera(instance) {
     return this.cameraController.instanceInCamera(instance)
+  }
+
+  instanceIsAudible(instance) {
+    const {
+      context: { map },
+    } = this
+
+    if (!this.instanceInCamera(instance)) return false
+    if (map.revealEverything) return true
+    if (instance.owner?.isPlayed || instance.owner?.owner?.isPlayed) return true
+
+    return Boolean(instance.visible || instance.owner?.visible || instance.target?.visible)
   }
 
   getCellOnCamera(callback) {

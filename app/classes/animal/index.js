@@ -14,7 +14,7 @@ import {
   randomItem,
   instancesDistance,
   drawInstanceBlinkingSelection,
-  instanceIsInPlayerSight,
+  playerCanSeeInstance,
   getActionCondition,
   setUnitTexture,
   updateInstanceVisibility,
@@ -137,7 +137,7 @@ export class Animal extends Instance {
           player.selectedBuilding.attackAction(this)
           drawDestinationRectangle = true
         }
-      } else if ((instanceIsInPlayerSight(this, player) || map.revealEverything) && this.quantity > 0) {
+      } else if ((playerCanSeeInstance(this, player) || map.revealEverything) && this.quantity > 0) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)

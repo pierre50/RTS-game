@@ -118,7 +118,7 @@ export class AnimalCombat {
             }
             animal.sounds &&
               animal.sounds.hit &&
-              animal.context.controls.instanceInCamera(animal) &&
+              animal.context.controls.instanceIsAudible(animal) &&
               sound.play(animal.sounds.hit)
             if (animal.dest.hitPoints > 0) {
               animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest)

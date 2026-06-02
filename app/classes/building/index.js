@@ -18,7 +18,7 @@ import {
   getPlainCellsAroundPoint,
   getPercentage,
   drawInstanceBlinkingSelection,
-  instanceIsInPlayerSight,
+  playerCanSeeInstance,
   getActionCondition,
   getBuildingAsset,
   getBuildingTextureNameWithSize,
@@ -104,8 +104,18 @@ export class Building extends Instance {
       }
       cell.has = this
       cell.solid = true
-      this.owner.views[cell.i][cell.j].viewBy.add(this)
-      if (this.owner.isPlayed && !map.revealEverything) {
+      const visiblePlayers = this.owner.visiblePlayers ? this.owner.visiblePlayers() : [this.owner]
+      for (const viewer of visiblePlayers) {
+        const viewerCell = viewer.views[cell.i][cell.j]
+        viewerCell.viewBy.add(this)
+        if (!viewerCell.viewed) {
+          viewer.cellViewed++
+          viewerCell.onViewed?.()
+          viewerCell.viewed = true
+        }
+      }
+      cell.viewBy = new Set([...this.context.player.views[cell.i][cell.j].viewBy])
+      if (this.context.player.views[cell.i][cell.j].viewBy.has(this) && !map.revealEverything) {
         cell.removeFog()
       }
     })
@@ -191,16 +201,26 @@ export class Building extends Instance {
             this.owner.selectedBuilding = this
           }
         } else if (player.selectedUnits.length) {
-          drawInstanceBlinkingSelection(this)
+          let hasSentAttacker = false
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
+            if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack)) continue
+            hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(this)
             } else {
               playerUnit.sendTo(this, ACTION_TYPES.attack)
             }
           }
-        } else if (instanceIsInPlayerSight(this, player) || map.revealEverything) {
+          if (hasSentAttacker) {
+            drawInstanceBlinkingSelection(this)
+          } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
+            player.unselectAll()
+            this.select()
+            menu.setBottombar(this)
+            player.selectedOther = this
+          }
+        } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -279,7 +299,7 @@ export class Building extends Instance {
     } else if (percentage >= 100) {
       this.finalTexture()
       if (!this.isBuilt) {
-        if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceInCamera(this)) {
+        if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceIsAudible(this)) {
           sound.play(this.sounds.create)
         }
         this.onBuilt()

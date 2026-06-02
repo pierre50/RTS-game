@@ -2,6 +2,8 @@ const TRANSLATIONS = {
   fr: {
     newGame: 'Nouvelle Partie',
     loadGame: 'Charger une Partie',
+    settings: 'Paramètres',
+    language: 'Langue',
     configuration: 'Configuration',
     players: 'Joueurs',
     addOpponent: '+ Ajouter un adversaire',
@@ -12,6 +14,7 @@ const TRANSLATIONS = {
     you: 'Vous',
     colName: 'Nom',
     colCiv: 'Civilisation',
+    colTeam: 'Équipe',
     colColor: 'Couleur',
     mapSizeLabel: 'Taille de carte',
     mapTypeLabel: 'Type de carte',
@@ -21,11 +24,13 @@ const TRANSLATIONS = {
     mapTypeIlot: 'Îlots',
     aiDifficulty: 'Difficulté IA',
     startingResourcesLabel: 'Ressources de départ',
+    mapResourcesLabel: 'Ressources sur la carte',
     devMode: 'Mode dev (instant build)',
     revealAll: 'Tout révéler',
     revealTerrain: 'Révéler le terrain',
     removePlayer: 'Retirer ce joueur',
     colorSwatch: 'Couleur : {color} (cliquer pour changer)',
+    teamInput: '- = aucune alliance. Même numéro 1-9 = alliés.',
     diffEasy: 'Facile  — IA lente, pop réduite',
     diffMedium: 'Moyen   — IA standard',
     diffHard: 'Difficile — IA rapide, pop accrue',
@@ -33,6 +38,9 @@ const TRANSLATIONS = {
     resStandard: 'Standard — 200 / 200 / 150 / 0',
     resHigh: 'Élevé    — 500 / 500 / 300 / 0',
     resVeryHigh: 'Très élevé — 1000 / 1000 / 750 / 100',
+    mapResourcesLow: 'Faible',
+    mapResourcesModerate: 'Modéré',
+    mapResourcesHigh: 'Beaucoup',
     civGreek: 'Grecque',
     menuBtn: 'Menu',
     save: 'Sauvegarder',
@@ -40,6 +48,7 @@ const TRANSLATIONS = {
     quit: 'Quitter',
     cancel: 'Annuler',
     pause: 'Pause',
+    victory: 'Victoire',
     wood: 'bois',
     food: 'nourriture',
     stone: 'pierre',
@@ -93,6 +102,8 @@ const TRANSLATIONS = {
   en: {
     newGame: 'New Game',
     loadGame: 'Load Game',
+    settings: 'Settings',
+    language: 'Language',
     configuration: 'Configuration',
     players: 'Players',
     addOpponent: '+ Add opponent',
@@ -103,6 +114,7 @@ const TRANSLATIONS = {
     you: 'You',
     colName: 'Name',
     colCiv: 'Civilization',
+    colTeam: 'Team',
     colColor: 'Color',
     mapSizeLabel: 'Map size',
     mapTypeLabel: 'Map type',
@@ -112,11 +124,13 @@ const TRANSLATIONS = {
     mapTypeIlot: 'Islands',
     aiDifficulty: 'AI Difficulty',
     startingResourcesLabel: 'Starting Resources',
+    mapResourcesLabel: 'Map Resources',
     devMode: 'Dev mode (instant build)',
     revealAll: 'Reveal everything',
     revealTerrain: 'Reveal terrain',
     removePlayer: 'Remove player',
     colorSwatch: 'Color: {color} (click to change)',
+    teamInput: '- = no alliance. Same number 1-9 = allies.',
     diffEasy: 'Easy   — Slow AI, reduced pop',
     diffMedium: 'Medium — Standard AI',
     diffHard: 'Hard   — Fast AI, increased pop',
@@ -124,6 +138,9 @@ const TRANSLATIONS = {
     resStandard: 'Standard — 200 / 200 / 150 / 0',
     resHigh: 'High     — 500 / 500 / 300 / 0',
     resVeryHigh: 'Very High — 1000 / 1000 / 750 / 100',
+    mapResourcesLow: 'Low',
+    mapResourcesModerate: 'Moderate',
+    mapResourcesHigh: 'High',
     civGreek: 'Greek',
     menuBtn: 'Menu',
     save: 'Save',
@@ -131,6 +148,7 @@ const TRANSLATIONS = {
     quit: 'Quit',
     cancel: 'Cancel',
     pause: 'Pause',
+    victory: 'Victory',
     wood: 'wood',
     food: 'food',
     stone: 'stone',
@@ -183,7 +201,17 @@ const TRANSLATIONS = {
   },
 }
 
-let currentLang = localStorage.getItem('lang') || 'fr'
+export const LANG_STORAGE_KEY = 'lang'
+export const SUPPORTED_LANGS = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+]
+
+function normalizeLang(lang) {
+  return SUPPORTED_LANGS.some(({ code }) => code === lang) ? lang : 'fr'
+}
+
+let currentLang = normalizeLang(localStorage.getItem(LANG_STORAGE_KEY))
 
 export function t(key, vars) {
   let str = TRANSLATIONS[currentLang][key] ?? TRANSLATIONS.en[key] ?? key
@@ -196,8 +224,8 @@ export function t(key, vars) {
 }
 
 export function setLang(lang) {
-  currentLang = lang
-  localStorage.setItem('lang', lang)
+  currentLang = normalizeLang(lang)
+  localStorage.setItem(LANG_STORAGE_KEY, currentLang)
 }
 
 export function getLang() {

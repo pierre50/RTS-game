@@ -15,6 +15,24 @@ import { BUCKET_SIZE, BUILDING_TYPES, CELL_DEPTH, CELL_WIDTH, CELL_HEIGHT, FAMIL
 import { Cell } from './cell'
 import { _DW, _DH, getFogPatternTexture } from './cell/CellFog'
 
+const RESOURCE_DENSITY_PROFILES = {
+  low: {
+    neutralGroups: { berrybush: 2, stone: 2, gold: 2, tree: 4 },
+    minNeutralDistance: 28,
+    playerSafeDistance: 34,
+  },
+  moderate: {
+    neutralGroups: { berrybush: 4, stone: 4, gold: 4, tree: 7 },
+    minNeutralDistance: 24,
+    playerSafeDistance: 30,
+  },
+  high: {
+    neutralGroups: { berrybush: 7, stone: 6, gold: 6, tree: 11 },
+    minNeutralDistance: 20,
+    playerSafeDistance: 26,
+  },
+}
+
 /**
  * 
  *  Map size	      Tiny	      Small	    Medium	    Normal	    Large	
@@ -45,6 +63,7 @@ export default class Map extends Container {
     this.devMode = false
     this.difficulty = 'medium'
     this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0 }
+    this.resourceDensity = 'moderate'
     this.revealEverything = false
     this.revealTerrain = false
 
@@ -109,6 +128,22 @@ export default class Map extends Container {
     this.removeChildren()
     this.size = map.length - 1
 
+    this.context.players = players.map(player => {
+      const p = new classMap[player.type](
+        {
+          ...player,
+          corpses: [],
+          buildings: [],
+          units: [],
+        },
+        this.context
+      )
+      if (player.isPlayed) {
+        this.context.player = p
+      }
+      return p
+    })
+
     this._initFogChunks()
 
     this.gaia = new Gaia(this.context)
@@ -145,21 +180,6 @@ export default class Map extends Container {
       }
     }
 
-    this.context.players = players.map(player => {
-      const p = new classMap[player.type](
-        {
-          ...player,
-          corpses: [],
-          buildings: [],
-          units: [],
-        },
-        this.context
-      )
-      if (player.isPlayed) {
-        this.context.player = p
-      }
-      return p
-    })
     controls.setCamera(camera.x, camera.y, true)
     menu.init()
     menu.updateResourcesMiniMap()
@@ -268,6 +288,7 @@ export default class Map extends Container {
     }
 
     this.generateResourcesAroundPlayers(this.playersPos)
+    this.generateNeutralResourceGroups(this.playersPos)
   }
 
   stylishMap() {
@@ -328,15 +349,16 @@ export default class Map extends Container {
       if (posI && posJ) {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
+        const team = playersConfig?.[i]?.team ?? null
         if (!i) {
           players.push(
             new Human(
-              { i: posI, j: posJ, age: 0, civ, color, isPlayed: true },
+              { i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true },
               context
             )
           )
         } else if (!this.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, difficulty: this.difficulty }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty: this.difficulty }, context))
         }
       }
     }
@@ -619,6 +641,57 @@ export default class Map extends Container {
     }
   }
 
+  generateNeutralResourceGroups(playersPos) {
+    const profile = RESOURCE_DENSITY_PROFILES[this.resourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
+    const placedCenters = []
+    const sizeScale = Math.max(1, Math.round((this.size / 120) ** 2))
+    const groupEntries = [
+      [RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2],
+      [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2],
+      [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2],
+      [RESOURCE_TYPES.tree, profile.neutralGroups.tree, 14, 4],
+    ]
+
+    for (const [type, baseCount, quantity, radius] of groupEntries) {
+      const targetCount = baseCount * sizeScale
+      for (let i = 0; i < targetCount; i++) {
+        const center = this.findNeutralResourceCenter(
+          playersPos,
+          placedCenters,
+          profile.playerSafeDistance,
+          profile.minNeutralDistance
+        )
+        if (!center) break
+        if (this.placeResourceGroupAt(center, type, quantity, radius)) {
+          placedCenters.push(center)
+        }
+      }
+    }
+  }
+
+  findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {
+    const border = 10
+    const playerSafeDistanceSq = playerSafeDistance ** 2
+    const minNeutralDistanceSq = minNeutralDistance ** 2
+
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const i = randomRange(border, this.size - border)
+      const j = randomRange(border, this.size - border)
+      const cell = this.grid[i]?.[j]
+      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
+
+      const tooCloseToPlayer = playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
+      if (tooCloseToPlayer) continue
+
+      const tooCloseToGroup = placedCenters.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < minNeutralDistanceSq)
+      if (tooCloseToGroup) continue
+
+      return { i, j }
+    }
+
+    return null
+  }
+
   generateTerrain(gridSize = 120, mapType = 'plain') {
     // Seeded 2D value noise — each map generation gets a unique seed
     const seed = Math.random() * 9999
@@ -875,7 +948,7 @@ export default class Map extends Container {
       for (let i = 0; i <= this.size; i++) {
         for (let j = 0; j <= this.size; j++) {
           const cell = this.grid[i][j]
-          if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
+          if (cell.category === 'Water' || cell.has || cell.waterBorder || this.isInPlayerStartFlatZone(i, j)) continue
           const maxAllowed = this.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
           const actual = Math.min(targetLevel, maxAllowed)
           if (reliefH[i * n + j] > threshold && actual > cell.z) {
@@ -905,7 +978,23 @@ export default class Map extends Container {
         this.grid[i][j].fillReliefCellsAroundCell()
       }
     }
+    this.flattenPlayerStartZones()
     this.clampReliefAroundWater(dist)
+  }
+
+  isInPlayerStartFlatZone(i, j, radius = 4) {
+    return this.playersPos.some(pos => Math.abs(pos.i - i) <= radius && Math.abs(pos.j - j) <= radius)
+  }
+
+  flattenPlayerStartZones(radius = 4) {
+    for (const pos of this.playersPos) {
+      const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.grid, radius)
+      for (const cell of cells) {
+        if (cell.category !== 'Water' && !cell.waterBorder && cell.z !== 0) {
+          this.setCellReliefLevelDirect(cell, 0)
+        }
+      }
+    }
   }
 
   getReliefCoastDistances() {
@@ -1188,6 +1277,16 @@ export default class Map extends Container {
   }
 
   placeResourceGroup(player, instance, quantity, range) {
+    // Radial placement: random angle + random distance in [range[0], range[1]]
+    const angle = Math.random() * 2 * Math.PI
+    const dist = range[0] + Math.random() * (range[1] - range[0])
+    const centerI = Math.round(player.i + Math.cos(angle) * dist)
+    const centerJ = Math.round(player.j + Math.sin(angle) * dist)
+
+    return this.placeResourceGroupAt({ i: centerI, j: centerJ }, instance, quantity)
+  }
+
+  placeResourceGroupAt(center, instance, quantity, clusterRadius = 2) {
     const { context, grid } = this
 
     function getValidCells(ci, cj, radius) {
@@ -1212,16 +1311,10 @@ export default class Map extends Container {
       return cells
     }
 
-    // Radial placement: random angle + random distance in [range[0], range[1]]
-    const angle = Math.random() * 2 * Math.PI
-    const dist = range[0] + Math.random() * (range[1] - range[0])
-    const centerI = Math.round(player.i + Math.cos(angle) * dist)
-    const centerJ = Math.round(player.j + Math.sin(angle) * dist)
-
-    // Radius 2 → 5×5 tight cluster (AoE1 style), fallback to 3 if not enough cells
-    let validCells = getValidCells(centerI, centerJ, 2)
-    if (validCells.length < quantity) validCells = getValidCells(centerI, centerJ, 3)
-    if (validCells.length < quantity) return
+    // Tight AoE-style cluster, with one-cell fallback if the chosen center is cramped.
+    let validCells = getValidCells(center.i, center.j, clusterRadius)
+    if (validCells.length < quantity) validCells = getValidCells(center.i, center.j, clusterRadius + 1)
+    if (validCells.length < quantity) return false
 
     const cellsToPlace = []
     for (let i = 0; i < quantity; i++) {
@@ -1233,6 +1326,7 @@ export default class Map extends Container {
     for (const cell of cellsToPlace) {
       this.resources.add(this.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
+    return true
   }
 
   // Bake all terrain cells into RenderTexture chunks and remove them from the live scene graph.

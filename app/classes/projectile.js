@@ -32,7 +32,7 @@ export class Projectile extends Container {
     }
     const { x: targetX, y: targetY } = targetPoint
 
-    this.context.controls.instanceInCamera(this) &&
+    this.context.controls.instanceIsAudible(this) &&
       this.sounds.start &&
       sound.play(Array.isArray(this.sounds.start) ? randomItem(this.sounds.start) : this.sounds.start)
 

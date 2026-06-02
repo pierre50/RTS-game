@@ -8,6 +8,7 @@ export class AIMilitary {
   }
 
   sendToAttack(soldiers, target, debug = false) {
+    if (target?.owner && !this.ai.isEnemy(target.owner)) return
     if (debug) console.log('Sending soldiers to attack:', target)
     soldiers.forEach(c => {
       c.assault = true
@@ -52,9 +53,15 @@ export class AIMilitary {
 
   getBestEnemyTarget() {
     const { foundedEnemyBuildings } = this.ai
+    const enemyPlayers = this.ai.enemyPlayers()
     return (
-      [...foundedEnemyBuildings].find(b => b.type === BUILDING_TYPES.townCenter) ||
-      foundedEnemyBuildings.values().next().value
+      [...foundedEnemyBuildings].find(b => b.type === BUILDING_TYPES.townCenter && this.ai.isEnemy(b.owner)) ||
+      [...foundedEnemyBuildings].find(b => this.ai.isEnemy(b.owner)) ||
+      enemyPlayers
+        .flatMap(player => player.buildings)
+        .find(b => b.type === BUILDING_TYPES.townCenter && b.hitPoints > 0 && !b.isDead) ||
+      enemyPlayers.flatMap(player => player.buildings).find(b => b.hitPoints > 0 && !b.isDead) ||
+      enemyPlayers[0]
     )
   }
 
@@ -67,7 +74,7 @@ export class AIMilitary {
     const availableMilitary = [...waitingMilitary]
 
     if (ai.foundedEnemyUnits.size > 0 && availableMilitary.length > 0) {
-      const enemyUnit = [...ai.foundedEnemyUnits].find(u => u.hitPoints > 0)
+      const enemyUnit = [...ai.foundedEnemyUnits].find(u => u.hitPoints > 0 && ai.isEnemy(u.owner))
       if (enemyUnit) {
         if (debug) console.log('Enemy units spotted! Defending...')
         this.sendToAttack(availableMilitary.splice(0), enemyUnit, debug)
@@ -79,8 +86,8 @@ export class AIMilitary {
     const raidSize = difficultyConfig.raidSize
     if (raidThreshold > 0 && ai.phase === 'military_build' && availableMilitary.length >= raidThreshold) {
       const raidTarget =
-        [...ai.foundedEnemyUnits].find(u => u.hitPoints > 0 && u.type === UNIT_TYPES.villager) ||
-        ai.foundedEnemyBuildings.values().next().value
+        [...ai.foundedEnemyUnits].find(u => u.hitPoints > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner)) ||
+        this.getBestEnemyTarget()
       if (raidTarget) {
         if (debug) console.log(`Early raid! Sending ${raidSize} soldiers to harass.`)
         this.sendToAttack(availableMilitary.splice(0, raidSize), raidTarget, debug)

@@ -30,8 +30,8 @@ function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
   return result
 }
 
-function updateAIKnowledge(globalCell, cell, instance) {
-  const { owner } = instance
+function updateAIKnowledge(globalCell, cell, viewer) {
+  const owner = viewer
 
   if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
     cell.has = globalCell.has
@@ -49,11 +49,11 @@ function updateAIKnowledge(globalCell, cell, instance) {
       owner.foundedAnimals.add(has)
     }
 
-    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && has.owner.label !== owner.label) {
+    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyBuildings.add(has)
     }
 
-    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && has.owner && has.owner.label !== owner.label) {
+    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyUnits.add(has)
     }
   }
@@ -81,10 +81,14 @@ export function updateVisibility(instance) {
 
   for (let cell of prevVisible) {
     if (!newVisible.has(cell)) {
-      const playerCell = player.views[cell.i][cell.j]
+      const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
       const globalCell = map.grid[cell.i][cell.j]
-      globalCell.viewBy.delete(instance)
-      cell.viewBy.delete(instance)
+      for (const viewer of visiblePlayers) {
+        const viewerCell = viewer.views[cell.i][cell.j]
+        viewerCell.viewBy.delete(instance)
+      }
+      const playerCell = player.views[cell.i][cell.j]
+      globalCell.viewBy = new Set([...playerCell.viewBy])
 
       if (!playerCell.viewBy.size && !map.revealEverything) {
         globalCell.setFog()
@@ -95,20 +99,25 @@ export function updateVisibility(instance) {
   for (let cell of newVisible) {
     if (!prevVisible.has(cell)) {
       const globalCell = map.grid[cell.i][cell.j]
+      const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
 
-      globalCell.updateVisible()
-      globalCell.viewBy.add(instance)
-      cell.viewBy.add(instance)
-      if (!cell.viewed) {
-        owner.cellViewed++
-        cell.onViewed?.()
-        cell.viewed = true
+      for (const viewer of visiblePlayers) {
+        const viewerCell = viewer.views[cell.i][cell.j]
+        viewerCell.viewBy.add(instance)
+        if (!viewerCell.viewed) {
+          viewer.cellViewed++
+          viewerCell.onViewed?.()
+          viewerCell.viewed = true
+        }
+        if (viewer.type === PLAYER_TYPES.ai) {
+          updateAIKnowledge(globalCell, viewerCell, viewer)
+        }
       }
+      globalCell.viewBy = new Set([...player.views[cell.i][cell.j].viewBy])
+      globalCell.updateVisible()
 
-      if (!map.revealEverything && owner.isPlayed) {
+      if (!map.revealEverything && player.views[cell.i][cell.j].viewBy.has(instance)) {
         globalCell.removeFog()
-      } else if (owner.type === PLAYER_TYPES.ai) {
-        updateAIKnowledge(globalCell, cell, instance)
       }
 
       if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {

@@ -132,7 +132,7 @@ export class CellTerrain {
     }
     const grid = cell.parent.grid
     getCellsAroundPoint(cell.i, cell.j, grid, level - cpt, neighbor => {
-      if (neighbor.z < cpt) {
+      if (neighbor.z < cpt && !neighbor.has) {
         neighbor.y -= (cpt - neighbor.z) * CELL_DEPTH
         neighbor.z = cpt
         neighbor.fillReliefCellsAroundCell()

@@ -1,5 +1,5 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import { isometricToCartesian, getPlainCellsAroundPoint, changeSpriteColor, getTexture } from '../lib'
+import { isometricToCartesian, canPlaceBuildingAt, changeSpriteColor, getTexture } from '../lib'
 import { COLOR_WHITE, COLOR_RED, LABEL_TYPES } from '../constants'
 
 export class BuildingPlacer {
@@ -9,7 +9,9 @@ export class BuildingPlacer {
 
   handleMouseMove() {
     const { controls } = this
-    const { context: { map, app } } = controls
+    const {
+      context: { map, app },
+    } = controls
     const pos = isometricToCartesian(
       controls.mouse.x - map.x,
       controls.mouse.y >= app.screen.height ? app.screen.height - map.y : controls.mouse.y - map.y
@@ -21,25 +23,7 @@ export class BuildingPlacer {
     const cell = map.grid[i][j]
     controls.mouseBuilding.x = cell.x - controls.camera.x
     controls.mouseBuilding.y = cell.y - controls.camera.y
-    let isFree = true
-
-    const dist = controls.mouseBuilding.size === 3 ? 1 : 0
-    if (controls.mouseBuilding.buildOnWater) {
-      let waterBorderedCells = 0
-      let waterCells = 0
-      getPlainCellsAroundPoint(i, j, map.grid, dist, c => {
-        if (c.inclined || c.solid || !c.visible) { isFree = false; return }
-        if (c.waterBorder) waterBorderedCells++
-        else if (c.category === 'Water') waterCells++
-      })
-      if (waterBorderedCells < 2 && waterCells < 4) isFree = false
-    } else {
-      getPlainCellsAroundPoint(i, j, map.grid, dist, c => {
-        if (c.category === 'Water' || c.solid || c.inclined || c.border || !c.visible) {
-          isFree = false
-        }
-      })
-    }
+    const isFree = canPlaceBuildingAt(map.grid, i, j, controls.mouseBuilding, { requireVisible: true })
 
     const sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
     const color = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.color)
@@ -51,7 +35,9 @@ export class BuildingPlacer {
 
   handleMouseUp(cell) {
     const { controls } = this
-    const { context: { menu, player } } = controls
+    const {
+      context: { menu, player },
+    } = controls
     if (cell.inclined || cell.border) return
     if (controls.mouseBuilding.isFree) {
       if (player.buyBuilding(cell.i, cell.j, controls.mouseBuilding.type)) {
@@ -65,7 +51,9 @@ export class BuildingPlacer {
 
   setMouseBuilding(building) {
     const { controls } = this
-    const { context: { player } } = controls
+    const {
+      context: { player },
+    } = controls
     controls.mouseBuilding = new Container()
     const sprite = Sprite.from(getTexture(building.images.final, Assets))
     sprite.label = LABEL_TYPES.sprite

@@ -1,4 +1,4 @@
-import { throttle, canvasDrawDiamond, canvasDrawRectangle, canvasDrawStrokeRectangle, instanceIsInPlayerSight } from '../lib'
+import { throttle, canvasDrawDiamond, canvasDrawRectangle, canvasDrawStrokeRectangle, playerCanSeeInstance } from '../lib'
 import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../constants'
 
 export class MinimapManager {
@@ -160,7 +160,7 @@ export class MinimapManager {
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
-    const isVisible = instance => map.revealEverything || owner.isPlayed || instanceIsInPlayerSight(instance, player)
+    const isVisible = instance => map.revealEverything || playerCanSeeInstance(instance, player)
 
     owner.buildings.forEach(building => {
       if (!isVisible(building)) return

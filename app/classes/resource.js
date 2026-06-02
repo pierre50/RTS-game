@@ -2,7 +2,7 @@ import { sound } from '@pixi/sound'
 import { Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
-  instanceIsInPlayerSight,
+  playerCanSeeInstance,
   randomItem,
   randomRange,
   drawInstanceBlinkingSelection,
@@ -91,7 +91,7 @@ export class Resource extends Instance {
         const {
           context: { player, menu },
         } = this
-        if (!player.selectedUnits.length && (instanceIsInPlayerSight(this, player) || map.revealEverything)) {
+        if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)

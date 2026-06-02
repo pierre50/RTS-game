@@ -37,7 +37,7 @@ export class BuildingCombat {
 
   isAttacked(instance) {
     const building = this.building
-    if (building.isDead) return
+    if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     if (
       building.range &&
       getActionCondition(building, instance, ACTION_TYPES.attack) &&

@@ -61,6 +61,7 @@ export class UnitCommands {
     unit.handleChangeDest()
     unit.stopInterval()
     if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return
+    if (action === ACTION_TYPES.attack && !getActionCondition(unit, target, ACTION_TYPES.attack)) return
     if (unit.isUnitAtDest(action, target)) {
       unit.setDest(target)
       unit.action = action
@@ -121,6 +122,7 @@ export class UnitCommands {
   }
 
   sendToAttack(target) {
+    if (!getActionCondition(this.unit, target, ACTION_TYPES.attack)) return
     return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
   }
 

@@ -1,5 +1,27 @@
 import { filterObject } from '../lib'
 
+function cameraData(camera) {
+  return {
+    x: camera?.x ?? 0,
+    y: camera?.y ?? 0,
+  }
+}
+
+function pathData(path = []) {
+  return path.map(({ i, j }) => ({ i, j }))
+}
+
+function destinationData(dest) {
+  if (!dest) return dest
+  return {
+    i: dest.i,
+    j: dest.j,
+    x: dest.x,
+    y: dest.y,
+    label: dest.label,
+  }
+}
+
 function resourceData(resource) {
   return {
     ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
@@ -36,6 +58,8 @@ function animalData(animal) {
     loop: animal.sprite?.loop,
     dest: animal.dest && [animal.dest.i, animal.dest.j, animal.dest?.label],
     previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, animal.previousDest?.label],
+    path: pathData(animal.path),
+    realDest: destinationData(animal.realDest),
   }
 }
 
@@ -68,6 +92,8 @@ function unitData(unit) {
     loop: unit.sprite?.loop,
     dest: unit.dest && [unit.dest.i, unit.dest.j, unit.dest?.label],
     previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, unit.previousDest?.label],
+    path: pathData(unit.path),
+    realDest: destinationData(unit.realDest),
   }
 }
 
@@ -103,6 +129,7 @@ function playerData(player) {
       'gold',
       'civ',
       'color',
+      'team',
       'population',
       'population_max',
       'technologies',
@@ -136,12 +163,13 @@ function cellData(cell) {
 
 export function serializeGame(context) {
   return {
-    camera: context.controls.camera,
+    camera: cameraData(context.controls.camera),
     config: {
       devMode: context.map.devMode,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,
+      resourceDensity: context.map.resourceDensity,
     },
     players: context.players.map(p => playerData(p)),
     resources: [...context.map.resources].map(r => resourceData(r)),

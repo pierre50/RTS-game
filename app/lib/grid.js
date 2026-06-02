@@ -357,6 +357,51 @@ export function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callbac
 }
 
 /**
+ * Check whether a building can be placed on the requested grid footprint.
+ *
+ * Land buildings must stay fully on walkable land. Water buildings such as
+ * docks need a mixed shore/water footprint matching the placement preview.
+ *
+ * @param {object[][]} grid
+ * @param {number} i
+ * @param {number} j
+ * @param {object} building
+ * @param {object} [options]
+ * @param {boolean} [options.requireVisible=false]
+ * @returns {boolean}
+ */
+export function canPlaceBuildingAt(grid, i, j, building, { requireVisible = false } = {}) {
+  const dist = building.size === 3 ? 1 : 0
+  const cells = getPlainCellsAroundPoint(i, j, grid, dist)
+  const expectedCells = dist === 0 ? 1 : (dist * 2 + 1) ** 2
+
+  if (cells.length !== expectedCells) return false
+
+  if (building.buildOnWater) {
+    let waterBorderedCells = 0
+    let waterCells = 0
+    for (const cell of cells) {
+      if (cell.inclined || cell.solid || (requireVisible && !cell.visible)) return false
+      if (cell.waterBorder) waterBorderedCells++
+      else if (cell.category === 'Water') waterCells++
+    }
+    return waterBorderedCells >= 2 || waterCells >= 4
+  }
+
+  const groundLevel = cells[0].z
+  return cells.every(
+    cell =>
+      cell.category !== 'Water' &&
+      !cell.waterBorder &&
+      !cell.solid &&
+      !cell.inclined &&
+      !cell.border &&
+      cell.z === groundLevel &&
+      (!requireVisible || cell.visible)
+  )
+}
+
+/**
  * Get the coordinates around a point within a Manhattan distance (safe for irregular grids)
  * @param {number} startX
  * @param {number} startY

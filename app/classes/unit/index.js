@@ -16,7 +16,7 @@ import {
   randomRange,
   changeSpriteColor,
   drawInstanceBlinkingSelection,
-  instanceIsInPlayerSight,
+  playerCanSeeInstance,
   getActionCondition,
   randomItem,
   throttle,
@@ -115,7 +115,7 @@ export class Unit extends Instance {
       }
     }
 
-    if (this.owner.isPlayed && map.ready && this.context.controls.instanceInCamera(this)) {
+    if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible(this)) {
       sound.play((this.sounds && this.sounds.create) || 5144)
     }
 
@@ -240,7 +240,7 @@ export class Unit extends Instance {
         }
         if (hasSentAttacker) {
           drawInstanceBlinkingSelection(this)
-        } else if ((player.selectedOther !== this && instanceIsInPlayerSight(this, player)) || map.revealEverything) {
+        } else if ((player.selectedOther !== this && playerCanSeeInstance(this, player)) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -354,7 +354,7 @@ export class Unit extends Instance {
   }
 
   isAttacked(instance) {
-    if (!instance || this.dest === instance || this.isDead) {
+    if (!instance || this.dest === instance || this.isDead || !this.getActionCondition(instance, ACTION_TYPES.attack)) {
       return
     }
     if (this.handleIsAttacked?.(instance, this)) return

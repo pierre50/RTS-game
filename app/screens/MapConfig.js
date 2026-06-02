@@ -14,6 +14,12 @@ const STARTING_RESOURCES = [
   { label: () => t('resVeryHigh'),  value: 'very_high' },
 ]
 
+const MAP_RESOURCE_DENSITIES = [
+  { label: () => t('mapResourcesLow'),      value: 'low' },
+  { label: () => t('mapResourcesModerate'), value: 'moderate' },
+  { label: () => t('mapResourcesHigh'),     value: 'high' },
+]
+
 const RESOURCES_MAP = {
   low: { wood: 100, food: 150, stone: 50, gold: 0 },
   standard: { wood: 200, food: 200, stone: 150, gold: 0 },
@@ -64,12 +70,13 @@ export default class MapConfig {
       revealTerrain: false,
       devMode: false,
       startingResources: RESOURCES_MAP.standard,
+      resourceDensity: 'moderate',
     }
 
     this.maxPlayers = 2
     this.players = [
-      { name: t('you'), color: 'blue', civ: 'Greek', isHuman: true },
-      { name: t('computer') + ' 1', color: 'red', civ: 'Greek', isHuman: false },
+      { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
+      { name: t('computer') + ' 1', color: 'red', civ: 'Greek', team: null, isHuman: false },
     ]
 
     this.el = document.createElement('div')
@@ -159,6 +166,12 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
+      this._createSelect(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', val => {
+        this.config.resourceDensity = val
+      })
+    )
+
+    settingsForm.appendChild(
       this._createCheckbox(t('devMode'), false, val => {
         this.config.devMode = val
       })
@@ -244,7 +257,7 @@ export default class MapConfig {
     if (this.players.length >= this.maxPlayers) return
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(p => !p.isHuman).length + 1
-    this.players.push({ name: t('computer') + ' ' + botNum, color, civ: 'Greek', isHuman: false })
+    this.players.push({ name: t('computer') + ' ' + botNum, color, civ: 'Greek', team: null, isHuman: false })
     this._refreshPlayerTable()
   }
 
@@ -262,13 +275,19 @@ export default class MapConfig {
     this._refreshPlayerTable()
   }
 
+  _cycleTeam(playerIndex) {
+    const current = this.players[playerIndex].team
+    this.players[playerIndex].team = current === null || current >= 9 ? (current === null ? 1 : null) : current + 1
+    this._refreshPlayerTable()
+  }
+
   _refreshPlayerTable() {
     this.playerTableEl.innerHTML = ''
 
     // Header row
     const header = document.createElement('div')
     header.className = 'player-table-header'
-    ;[t('colName'), t('colCiv'), t('colColor'), ''].forEach(text => {
+    ;[t('colName'), t('colCiv'), t('colTeam'), t('colColor'), ''].forEach(text => {
       const cell = document.createElement('div')
       cell.textContent = text
       header.appendChild(cell)
@@ -300,6 +319,19 @@ export default class MapConfig {
       civSelect.onchange = e => { this.players[i].civ = e.target.value }
       civCell.appendChild(civSelect)
       row.appendChild(civCell)
+
+      // Team button: "-" means no alliance, equal numbers are allied
+      const teamCell = document.createElement('div')
+      teamCell.className = 'player-team'
+      const teamBtn = document.createElement('button')
+      teamBtn.className = 'team-cycle'
+      teamBtn.type = 'button'
+      teamBtn.textContent = player.team ?? '-'
+      teamBtn.title = t('teamInput')
+      teamBtn.onmousedown = playClickSound
+      teamBtn.onclick = () => this._cycleTeam(i)
+      teamCell.appendChild(teamBtn)
+      row.appendChild(teamCell)
 
       // Color swatch
       const colorCell = document.createElement('div')

@@ -71,6 +71,7 @@ export class BuildingLifecycle {
     })
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
+    building.context.checkVictory?.()
   }
 
   clear() {

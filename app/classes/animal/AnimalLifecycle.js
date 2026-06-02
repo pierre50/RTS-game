@@ -10,7 +10,7 @@ export class AnimalLifecycle {
   die() {
     const animal = this.animal
     if (animal.isDead) return
-    if (animal.sounds && animal.context.controls.instanceInCamera(animal)) {
+    if (animal.sounds && animal.context.controls.instanceIsAudible(animal)) {
       animal.sounds.die && sound.play(animal.sounds.die)
       animal.sounds.fall && sound.play(animal.sounds.fall)
     }

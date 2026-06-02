@@ -1,6 +1,6 @@
 import { Sprite, Texture } from 'pixi.js'
 import { Assets } from 'pixi.js'
-import { getBuildingAsset, getTexture, changeSpriteColorDirectly, instanceIsInPlayerSight } from '../../lib'
+import { getBuildingAsset, getTexture, changeSpriteColorDirectly, playerCanSeeInstance } from '../../lib'
 import { COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 
 let _fogTexture = null
@@ -117,7 +117,7 @@ export class CellFog {
   setFogChildren(instance, init) {
     const { cell } = this
     const { player, map } = cell.context
-    if (!instanceIsInPlayerSight(instance, player)) {
+    if (!playerCanSeeInstance(instance, player)) {
       if (instance.owner && !instance.owner.isPlayed) {
         if (!init && instance.family === FAMILY_TYPES.building) {
           if (!map.revealTerrain) {
@@ -164,7 +164,7 @@ export class CellFog {
       cell._hasFog = true
       const { map } = cell.context
       if (map._fogQueue) {
-        const viewed = cell.context.player.views[cell.i]?.[cell.j]?.viewed ?? false
+        const viewed = cell.context.player?.views?.[cell.i]?.[cell.j]?.viewed ?? false
         const isViewed = viewed || map.revealTerrain
         // During init, chunks are already solid black — only queue if cell was viewed
         // (needs dotted pattern) or if init is already complete (re-fogging during gameplay)

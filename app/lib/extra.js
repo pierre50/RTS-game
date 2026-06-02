@@ -315,7 +315,12 @@ export const updateObject = (target, operation) => {
 
 export const canUpdateMinimap = (instance, player) => {
   if (instance.context?.map?.revealEverything) return true
-  return instance.owner.isPlayed || (player.label !== instance.owner.label && instanceIsInPlayerSight(instance, player))
+  return playerCanSeeInstance(instance, player)
+}
+
+export const playerCanSeeInstance = (instance, player) => {
+  if (!instance || !player) return false
+  return instance.owner?.label === player.label || instanceIsInPlayerSight(instance, player)
 }
 
 /**
@@ -440,7 +445,7 @@ export const getActionCondition = (source, target, action, props) => {
       !target.isDead,
     attack: () =>
       target &&
-      target.owner?.label !== source.owner.label &&
+      source.owner?.isEnemy(target.owner) &&
       [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) &&
       target.hitPoints > 0 &&
       !target.isDead,

@@ -81,7 +81,7 @@ export class UnitActions {
         unit.loading++
         unit.loadingType = loadingType
         unit.updateInterfaceLoading()
-        if (soundId) unit.context.controls.instanceInCamera(unit) && sound.play(soundId)
+        if (soundId) unit.context.controls.instanceIsAudible(unit) && sound.play(soundId)
         if (updateTexture) unit.dest.updateTexture()
         unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
         if (unit.dest.selected && (!checkOwner || unit.owner.isPlayed)) {
@@ -173,7 +173,7 @@ export class UnitActions {
             unit.loading++
             unit.loadingType = LOADING_TYPES.wheat
             unit.updateInterfaceLoading()
-            unit.context.controls.instanceInCamera(unit) && sound.play('5178')
+            unit.context.controls.instanceIsAudible(unit) && sound.play('5178')
             unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
             if (unit.dest.selected) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity)
@@ -212,7 +212,7 @@ export class UnitActions {
               unit.sendToDelivery()
               return
             }
-            unit.context.controls.instanceInCamera(unit) && sound.play('5048')
+            unit.context.controls.instanceIsAudible(unit) && sound.play('5048')
             if (unit.dest.hitPoints > 0) {
               unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0)
               if (unit.dest.selected) {
@@ -274,7 +274,7 @@ export class UnitActions {
               return
             }
             if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
-              unit.context.controls.instanceInCamera(unit) && sound.play('5107')
+              unit.context.controls.instanceIsAudible(unit) && sound.play('5107')
               unit.dest.hitPoints = Math.min(
                 Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime),
                 unit.dest.totalHitPoints
@@ -342,7 +342,7 @@ export class UnitActions {
         this.startGathering(LOADING_TYPES.fish, null, { checkOwner: true })
         if (unit.category !== 'Boat') {
           onSpriteLoopAtFrame(unit.sprite, 6, () => {
-            unit.context.controls.instanceInCamera(unit) && sound.play('5125')
+            unit.context.controls.instanceIsAudible(unit) && sound.play('5125')
           })
         }
         break

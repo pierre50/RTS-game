@@ -79,10 +79,10 @@ export class AI extends Player {
       if (r.quantity <= 0 || r.isDead) this.foundedFish.delete(r)
     }
     for (const b of this.foundedEnemyBuildings) {
-      if (b.isDead || b.isDestroyed) this.foundedEnemyBuildings.delete(b)
+      if (b.isDead || b.isDestroyed || !this.isEnemy(b.owner)) this.foundedEnemyBuildings.delete(b)
     }
     for (const u of this.foundedEnemyUnits) {
-      if (u.isDead || u.isDestroyed || u.hitPoints <= 0) this.foundedEnemyUnits.delete(u)
+      if (u.isDead || u.isDestroyed || u.hitPoints <= 0 || !this.isEnemy(u.owner)) this.foundedEnemyUnits.delete(u)
     }
   }
 
@@ -238,8 +238,8 @@ export class AI extends Player {
     // Remove depleted resources and destroyed enemies from tracked sets
     this.cleanupSets()
 
-    // Cache otherPlayers once — used in multiple building placement filters below
-    const otherPlayers = this.otherPlayers()
+    // Cache enemy players once — used in multiple building placement filters below
+    const otherPlayers = this.enemyPlayers()
 
     actions += this.economy.handleVillagerActions({
       villagers,

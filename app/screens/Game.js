@@ -6,6 +6,7 @@ import Controls from '../classes/controls'
 import { debounce } from '../lib'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { serializeGame } from '../serialization/SaveSerializer'
+import { DevConsole } from '../dev-console/DevConsole'
 
 /**
  * Main Display Object
@@ -26,13 +27,19 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
+      devConsole: null,
+      devConsoleOpen: false,
       paused: false,
+      victory: false,
       scheduler: null,
       save: () => this.save(),
       load: evt => this.load(evt),
       pause: () => this.togglePause(true),
-      resume: () => this.togglePause(false),
+      resume: () => {
+        if (!this.context.victory) this.togglePause(false)
+      },
       quit: () => this.quit(),
+      checkVictory: () => this.checkVictory(),
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     this.start()
@@ -49,10 +56,12 @@ export default class Game extends Container {
     if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
     if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
     if (config.startingResources) context.map.startingResources = config.startingResources
+    if (config.resourceDensity) context.map.resourceDensity = config.resourceDensity
     if (config.difficulty) context.map.difficulty = config.difficulty
 
     context.controls = new Controls(context)
     context.menu = new Menu(context)
+    context.devConsole = new DevConsole(context)
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
     context.map.generateMap(posCount)
@@ -68,11 +77,14 @@ export default class Game extends Container {
     this.addChild(context.controls)
 
     this._attachWindowListeners()
+    this.checkVictory()
   }
 
   _attachWindowListeners() {
     this._onKeydown = evt => {
+      if (this.context.devConsoleOpen) return
       if (evt.key === 'p') {
+        if (this.context.victory) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
     }
@@ -116,8 +128,10 @@ export default class Game extends Container {
 
   load(json) {
     document.getElementById('pause')?.remove()
+    document.getElementById('victory')?.remove()
     this._removeWindowListeners()
     this.context.controls.destroy()
+    this.context.devConsole?.destroy()
     this.context.menu.destroy()
     this.removeChildren()
     this.context = {
@@ -126,7 +140,10 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
+      devConsole: null,
+      devConsoleOpen: false,
       paused: false,
+      victory: false,
     }
     const { context } = this
 
@@ -137,10 +154,12 @@ export default class Game extends Container {
       if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything
       if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain
       if (json.config.startingResources) context.map.startingResources = json.config.startingResources
+      if (json.config.resourceDensity) context.map.resourceDensity = json.config.resourceDensity
     }
 
     context.controls = new Controls(context)
     context.menu = new Menu(context)
+    context.devConsole = new DevConsole(context)
 
     context.map.generateFromJSON(json)
 
@@ -148,24 +167,49 @@ export default class Game extends Container {
     this.addChild(context.controls)
 
     this._attachWindowListeners()
+    this.checkVictory()
   }
 
   quit() {
     document.getElementById('pause')?.remove()
+    document.getElementById('victory')?.remove()
     this._removeWindowListeners()
     this.context.controls.destroy()
+    this.context.devConsole?.destroy()
     this.context.menu.destroy()
     this.removeChildren()
     if (this.onQuit) this.onQuit()
   }
 
-  togglePause(pause) {
+  checkVictory() {
+    const { player } = this.context
+    if (this.context.victory || !player) return
+
+    const enemies = player.enemyPlayers()
+    if (!enemies.length) return
+
+    const hasLivingEnemies = enemies.some(enemy => enemy.units.length > 0 || enemy.buildings.length > 0)
+    if (hasLivingEnemies) return
+
+    this.context.victory = true
+    this.togglePause(true, { silent: true })
+    const div = document.createElement('div')
+    div.id = 'victory'
+    div.innerText = t('victory')
+    document.body.appendChild(div)
+  }
+
+  togglePause(pause, options = {}) {
+    if (this.context.victory && !pause) return
     const { map, players } = this.context
     if (pause) {
-      const div = document.createElement('div')
-      div.id = 'pause'
-      div.innerText = t('pause')
-      document.body.appendChild(div)
+      document.getElementById('pause')?.remove()
+      if (!options.silent) {
+        const div = document.createElement('div')
+        div.id = 'pause'
+        div.innerText = t('pause')
+        document.body.appendChild(div)
+      }
     } else {
       document.getElementById('pause')?.remove()
     }
