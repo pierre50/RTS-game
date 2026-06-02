@@ -15,13 +15,13 @@ export class AnimalInterface {
     appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints)
 
     const quantityDiv = document.createElement('div')
-    quantityDiv.id = MENU_INFO_IDS.quantity
+    quantityDiv.classList.add(MENU_INFO_IDS.quantity)
     quantityDiv.className = 'resource-quantity'
     const smallIconImg = document.createElement('img')
     smallIconImg.src = menu.icons['food']
     smallIconImg.className = 'resource-quantity-icon'
     const textDiv = document.createElement('div')
-    textDiv.id = MENU_INFO_IDS.quantityText
+    textDiv.classList.add(MENU_INFO_IDS.quantityText)
     textDiv.textContent = animal.quantity
     quantityDiv.appendChild(smallIconImg)
     quantityDiv.appendChild(textDiv)

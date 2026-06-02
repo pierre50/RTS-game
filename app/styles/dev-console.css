@@ -1,0 +1,84 @@
+#dev-console {
+  position: absolute;
+  inset: 0;
+  z-index: 1200;
+  background: var(--surface-dark-soft);
+}
+
+#debug-perf {
+  position: fixed;
+  top: 34px;
+  right: 10px;
+  z-index: 9999;
+  padding: 5px 8px;
+  color: white;
+  font: bold 13px monospace;
+  line-height: 1.25;
+  white-space: pre;
+  text-shadow: var(--text-shadow-none);
+  pointer-events: none;
+  background: var(--surface-dark-heavy);
+  border-radius: 3px;
+}
+
+.dev-console-panel {
+  position: absolute;
+  right: 14px;
+  bottom: 138px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  width: min(420px, calc(100vw - 28px));
+  margin: 0;
+  padding: var(--ui-gap-8);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%),
+    var(--main-primary-color);
+  border: var(--panel-border);
+  border-radius: var(--main-border-radius-lg);
+  animation: dev-console-panel-enter var(--ui-transition-panel) both;
+}
+
+@keyframes dev-console-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dev-console-log {
+  max-width: 100%;
+  min-height: 22px;
+  padding: 4px 7px;
+  overflow: visible;
+  box-sizing: border-box;
+  word-break: break-word;
+  white-space: pre-line;
+  color: #f2dfbb;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 14px;
+  text-shadow: var(--text-shadow-none);
+  background: var(--surface-dark-strong);
+  border: var(--border-slot);
+  border-radius: var(--main-border-radius);
+}
+
+.dev-console-log[data-status='ok'] {
+  color: var(--dev-console-ok-color);
+}
+
+.dev-console-log[data-status='error'] {
+  color: var(--dev-console-error-color);
+}
+
+.dev-console-input {
+  width: 100%;
+  height: 30px;
+  font-size: 12px;
+}

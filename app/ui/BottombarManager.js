@@ -13,14 +13,14 @@ export class BottombarManager {
   resetInfo() {
     const { menu } = this
     menu.bottombarInfo.textContent = ''
-    menu.bottombarInfo.style.background = null
+    menu.bottombarInfo.classList.remove('active')
     menu._infoCache = null
   }
 
   generateInfo(selection) {
     const { menu } = this
     this.resetInfo()
-    menu.bottombarInfo.style.background = 'black'
+    menu.bottombarInfo.classList.add('active')
     if (typeof selection.interface.info === 'function') {
       selection.interface.info(menu.bottombarInfo)
     }
@@ -31,7 +31,7 @@ export class BottombarManager {
     if (!menu._infoCache) menu._infoCache = new Map()
     let targetElement = menu._infoCache.get(target)
     if (!targetElement) {
-      targetElement = menu.bottombarInfo.querySelector(`[id=${target}]`)
+      targetElement = menu.bottombarInfo.querySelector(`.${target}`)
       if (!targetElement) return
       menu._infoCache.set(target, targetElement)
     }
@@ -42,7 +42,7 @@ export class BottombarManager {
     const { menu } = this
     const targetElement = menu.bottombarMenu.querySelector(`[id=${target}]`)
     if (!targetElement) return
-    const contentElement = targetElement.querySelector('[id=content]')
+    const contentElement = targetElement.querySelector('.content')
     if (!contentElement) return
     return typeof action !== 'function' ? (contentElement.textContent = action) : action(contentElement)
   }
@@ -51,7 +51,7 @@ export class BottombarManager {
     const { menu } = this
     const element = menu.bottombarMenu.querySelector(`[id=${target}-cancel]`)
     if (!element) return
-    element.style.display = value ? 'block' : 'none'
+    element.classList.toggle('hidden', !value)
   }
 
   updateBottombar() {
@@ -176,7 +176,7 @@ export class BottombarManager {
         cancel.className = 'img'
         cancel.src = 'assets/interface/50721/003_50721.png'
         if (!selection.queue.some(q => q === type)) {
-          cancel.style.display = 'none'
+          cancel.classList.add('hidden')
         }
         cancel.addEventListener('pointerup', () => {
           sound.play('5036')
@@ -209,10 +209,8 @@ export class BottombarManager {
         })
         const queue = selection.queue.filter(q => q === type).length
         const counter = document.createElement('div')
-        counter.id = 'content'
+        counter.classList.add('content')
         counter.textContent = queue || ''
-        counter.style.padding = '1px'
-        counter.style.position = 'absolute'
         div.appendChild(img)
         div.appendChild(cancel)
         element.appendChild(div)

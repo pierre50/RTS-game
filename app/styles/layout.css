@@ -1,0 +1,78 @@
+#game {
+  flex: 1;
+}
+
+.hidden {
+  display: none;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: white;
+  text-shadow: var(--text-shadow-none);
+}
+
+.game-overlay {
+  z-index: 1000;
+  font-size: 50px;
+  margin-top: -196px;
+  color: white;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
+.game-overlay,
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.modal-content {
+  animation: modal-panel-enter var(--ui-transition-panel) both;
+}
+
+.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--surface-dark-medium);
+  z-index: 1001;
+}
+
+@keyframes modal-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 10px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.bar {
+  width: 100%;
+  background: var(--ui-bar-bg);
+}
+
+.toggle {
+  position: fixed;
+  right: 0;
+  bottom: -119px;
+  width: 100px;
+  height: 192px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(64deg);
+  border-top-left-radius: 3px;
+  background: var(--surface-dark-medium);
+}

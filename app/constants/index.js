@@ -51,7 +51,7 @@ export const UNIT_TYPES = {
 }
 
 export const MENU_INFO_IDS = {
-  loading: 'loading',
+  loading: 'info-loading',
   hitPoints: 'hit-points',
   population: 'population',
   populationText: 'population-text',

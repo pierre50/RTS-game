@@ -20,11 +20,11 @@ export class BuildingInterface {
   getPopulationElement() {
     const building = this.building
     const populationDiv = document.createElement('div')
-    populationDiv.id = MENU_INFO_IDS.population
+    populationDiv.classList.add(MENU_INFO_IDS.population)
 
     const populationIcon = document.createElement('img')
     const populationSpan = document.createElement('span')
-    populationSpan.id = MENU_INFO_IDS.populationText
+    populationSpan.classList.add(MENU_INFO_IDS.populationText)
     populationSpan.textContent =
       building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
 
@@ -54,14 +54,14 @@ export class BuildingInterface {
     const building = this.building
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'building-loading'
-    loadingDiv.id = MENU_INFO_IDS.loading
+    loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
     if (building.loading && building.owner.isPlayed) {
       const iconImg = document.createElement('img')
       iconImg.className = 'building-loading-icon'
       iconImg.src = getIconPath('009_50731')
       const textDiv = document.createElement('div')
-      textDiv.id = MENU_INFO_IDS.loadingText
+      textDiv.classList.add(MENU_INFO_IDS.loadingText)
       textDiv.textContent = building.loading + '%'
       loadingDiv.appendChild(iconImg)
       loadingDiv.appendChild(textDiv)
@@ -78,13 +78,13 @@ export class BuildingInterface {
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       const quantityDiv = document.createElement('div')
-      quantityDiv.id = MENU_INFO_IDS.quantity
+      quantityDiv.classList.add(MENU_INFO_IDS.quantity)
       quantityDiv.className = 'resource-quantity'
       const smallIconImg = document.createElement('img')
       smallIconImg.src = menu.icons['food']
       smallIconImg.className = 'resource-quantity-icon'
       const textDiv = document.createElement('div')
-      textDiv.id = MENU_INFO_IDS.quantityText
+      textDiv.classList.add(MENU_INFO_IDS.quantityText)
       textDiv.textContent = building.quantity
       quantityDiv.appendChild(smallIconImg)
       quantityDiv.appendChild(textDiv)

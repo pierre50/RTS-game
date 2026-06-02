@@ -4,7 +4,7 @@ export class PlayerStatsManager {
     this._open = false
 
     this.btn = document.createElement('button')
-    this.btn.className = 'player-stats-btn'
+    this.btn.className = 'player-stats-btn btn-ui'
     this.btn.textContent = 'S'
     this.btn.addEventListener('pointerdown', evt => {
       evt.preventDefault()
@@ -15,7 +15,6 @@ export class PlayerStatsManager {
 
     this.el = document.createElement('div')
     this.el.className = 'player-stats'
-    this.el.style.display = 'none'
     document.body.appendChild(this.el)
   }
 
@@ -23,9 +22,9 @@ export class PlayerStatsManager {
     this._open = !this._open
     if (this._open) {
       this._render()
-      this.el.style.display = ''
+      this.el.classList.add('player-stats--open')
     } else {
-      this.el.style.display = 'none'
+      this.el.classList.remove('player-stats--open')
     }
   }
 

@@ -22,7 +22,7 @@ export class UnitInterface {
           iconImg.className = 'unit-loading-icon'
           iconImg.src = iconSrc
           const textDiv = document.createElement('div')
-          textDiv.id = MENU_INFO_IDS.loadingText
+          textDiv.classList.add(MENU_INFO_IDS.loadingText)
           textDiv.textContent = unit.loading
           element.appendChild(iconImg)
           element.appendChild(textDiv)
@@ -42,14 +42,14 @@ export class UnitInterface {
     } = unit
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'unit-loading'
-    loadingDiv.id = MENU_INFO_IDS.loading
+    loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
     if (unit.loading) {
       const iconImg = document.createElement('img')
       iconImg.className = 'unit-loading-icon'
       iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
       const textDiv = document.createElement('div')
-      textDiv.id = MENU_INFO_IDS.loadingText
+      textDiv.classList.add(MENU_INFO_IDS.loadingText)
       textDiv.textContent = unit.loading
       loadingDiv.appendChild(iconImg)
       loadingDiv.appendChild(textDiv)
@@ -63,7 +63,7 @@ export class UnitInterface {
     appendBaseEntityInfo(element, t(unit.owner.civ), typeText, getIconPath(data.icon), unit.hitPoints, unit.totalHitPoints)
 
     const infosDiv = document.createElement('div')
-    infosDiv.id = 'infos'
+    infosDiv.classList.add('infos')
 
     const infos = [
       ['meleeAttack', '007_50731'],
@@ -76,12 +76,12 @@ export class UnitInterface {
       const info = infos[i]
       if (data[info[0]]) {
         const infoDiv = document.createElement('div')
-        infoDiv.id = 'info'
+        infoDiv.classList.add('info')
 
         const attackImg = document.createElement('img')
         attackImg.src = getIconPath(info[1])
         const attackDiv = document.createElement('div')
-        attackDiv.id = info[0]
+        attackDiv.classList.add(info[0])
         attackDiv.textContent = data[info[0]]
         infoDiv.appendChild(attackImg)
         infoDiv.appendChild(attackDiv)

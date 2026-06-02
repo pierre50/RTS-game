@@ -14,25 +14,25 @@ export class ResourceInterface {
     } = resource
 
     const typeDiv = document.createElement('div')
-    typeDiv.id = MENU_INFO_IDS.type
+    typeDiv.classList.add(MENU_INFO_IDS.type)
     typeDiv.textContent = t(resource.type)
     element.appendChild(typeDiv)
 
     const iconImg = document.createElement('img')
-    iconImg.id = MENU_INFO_IDS.icon
+    iconImg.classList.add(MENU_INFO_IDS.icon)
     iconImg.src = getIconPath(data.icon)
     element.appendChild(iconImg)
 
     if (resource.hitPoints) {
       const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints
+      hitPointsDiv.classList.add(MENU_INFO_IDS.hitPoints)
       hitPointsDiv.textContent = resource.hitPoints + '/' + resource.totalHitPoints
       element.appendChild(hitPointsDiv)
     }
 
     if (resource.quantity) {
       const quantityDiv = document.createElement('div')
-      quantityDiv.id = MENU_INFO_IDS.quantity
+      quantityDiv.classList.add(MENU_INFO_IDS.quantity)
       quantityDiv.className = 'resource-quantity'
 
       let iconToUse
@@ -56,7 +56,7 @@ export class ResourceInterface {
       smallIconImg.src = iconToUse
       smallIconImg.className = 'resource-quantity-icon'
       const textDiv = document.createElement('div')
-      textDiv.id = MENU_INFO_IDS.quantityText
+      textDiv.classList.add(MENU_INFO_IDS.quantityText)
       textDiv.textContent = resource.quantity
       quantityDiv.appendChild(smallIconImg)
       quantityDiv.appendChild(textDiv)

@@ -86,7 +86,6 @@ export default class MapConfig {
 
     this.el = document.createElement('div')
     this.el.id = 'map-config'
-    this.el.style.backgroundImage = "url('/assets/background/bg2.png')"
 
     this._buildUI()
     document.body.appendChild(this.el)
@@ -172,16 +171,16 @@ export default class MapConfig {
     layout.appendChild(rightCol)
 
     const buttons = document.createElement('div')
-    buttons.className = 'menu-buttons menu-buttons--row'
+    buttons.className = 'button-group button-group--row'
 
     const btnBack = document.createElement('button')
-    btnBack.className = 'menu-btn secondary'
+    btnBack.className = 'btn-dark secondary'
     btnBack.textContent = t('back')
     btnBack.onmousedown = playClickSound
     btnBack.onclick = this.onBack
 
     const btnPlay = document.createElement('button')
-    btnPlay.className = 'menu-btn'
+    btnPlay.className = 'btn-dark'
     btnPlay.textContent = t('startGame')
     btnPlay.onmousedown = playClickSound
     btnPlay.onclick = () => this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) })

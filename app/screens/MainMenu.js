@@ -8,7 +8,6 @@ export default class MainMenu {
 
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
-    this.el.style.backgroundImage = "url('/assets/background/bg1.png')"
 
     this._showMain()
     document.body.appendChild(this.el)
@@ -48,10 +47,10 @@ export default class MainMenu {
     const panel = this._createPanel()
     panel.classList.add('menu-panel--home')
     const buttons = document.createElement('div')
-    buttons.className = 'menu-buttons'
+    buttons.className = 'button-group'
 
     const btnStart = document.createElement('button')
-    btnStart.className = 'menu-btn'
+    btnStart.className = 'btn-dark'
     btnStart.textContent = t('newGame')
     btnStart.onmousedown = playClickSound
     btnStart.onclick = this.onStart
@@ -59,7 +58,7 @@ export default class MainMenu {
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = '.json'
-    fileInput.style.display = 'none'
+    fileInput.classList.add('hidden')
     fileInput.onchange = evt => {
       const file = evt.target.files[0]
       if (!file) return
@@ -69,13 +68,13 @@ export default class MainMenu {
     }
 
     const btnLoad = document.createElement('button')
-    btnLoad.className = 'menu-btn secondary'
+    btnLoad.className = 'btn-dark secondary'
     btnLoad.textContent = t('loadGame')
     btnLoad.onmousedown = playClickSound
     btnLoad.onclick = () => fileInput.click()
 
     const btnSettings = document.createElement('button')
-    btnSettings.className = 'menu-btn secondary'
+    btnSettings.className = 'btn-dark secondary'
     btnSettings.textContent = t('settings')
     btnSettings.onmousedown = playClickSound
     btnSettings.onclick = () => this._showSettings()
@@ -124,10 +123,10 @@ export default class MainMenu {
     form.appendChild(row)
 
     const buttons = document.createElement('div')
-    buttons.className = 'menu-buttons'
+    buttons.className = 'button-group'
 
     const btnBack = document.createElement('button')
-    btnBack.className = 'menu-btn secondary'
+    btnBack.className = 'btn-dark secondary'
     btnBack.textContent = t('back')
     btnBack.onmousedown = playClickSound
     btnBack.onclick = () => this._showMain()

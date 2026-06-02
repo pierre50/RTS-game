@@ -1,0 +1,357 @@
+#main-menu,
+#map-config {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top, rgba(90, 66, 42, 0.18), transparent 42%),
+    linear-gradient(180deg, #221912 0%, #18130e 100%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.menu-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-18);
+  padding: 44px 64px;
+  background: var(--main-primary-color);
+  border: var(--panel-border);
+  border-radius: var(--main-border-radius-lg);
+  animation: menu-panel-enter var(--ui-transition-panel) both;
+}
+
+.menu-panel--home {
+  gap: var(--ui-gap-24);
+  padding-top: 0;
+  background: transparent;
+  border: 0;
+}
+
+@keyframes menu-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+img.menu-title {
+  display: block;
+  width: min(420px, 74vw);
+  height: auto;
+  margin: 0;
+}
+
+.menu-panel--home img.menu-title {
+  width: min(620px, 88vw);
+  animation: menu-title-breathe 4.8s ease-in-out infinite;
+}
+
+@keyframes menu-title-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.012);
+  }
+}
+
+div.menu-title {
+  margin: 0;
+  color: var(--main-accent-color);
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.menu-divider {
+  width: 220px;
+  height: 1px;
+  margin: 2px 0;
+  background: linear-gradient(to right, transparent, var(--main-detail-color), transparent);
+}
+
+.menu-panel--home .menu-divider {
+  display: none;
+}
+
+.button-group,
+.modal-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-8);
+}
+
+.button-group .btn-dark,
+.modal-menu .btn-dark {
+  width: var(--ui-button-width);
+}
+
+.menu-panel--home .button-group .btn-dark {
+  width: var(--ui-button-width-home);
+  padding: 12px 26px;
+  font-size: 18px;
+}
+
+.menu-panel--home .button-group .btn-dark:active {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.button-group .btn-dark.secondary,
+.modal-menu .btn-dark.secondary {
+  color: var(--main-primary-color);
+}
+
+.modal-menu {
+  padding: 24px 32px;
+}
+
+.menu-copyright {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 12px;
+  text-shadow: var(--text-shadow-dark-ui);
+  white-space: nowrap;
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-10);
+  width: 300px;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-12);
+}
+
+.config-row label {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.config-row select,
+.player-civ select,
+.team-cycle {
+  box-sizing: border-box;
+  background-color: var(--form-surface-color);
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  color: var(--main-accent-color);
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.config-row select,
+.player-civ select,
+.team-cycle {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset -1px -1px 0 rgba(61, 32, 0, 0.35);
+}
+
+.config-row select,
+.player-civ select {
+  appearance: none;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
+    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),
+    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);
+  background-position:
+    0 0,
+    calc(100% - 12px) 50%,
+    calc(100% - 7px) 50%;
+  background-size:
+    auto,
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding: 5px 22px 5px 8px;
+}
+
+.config-row select {
+  min-width: 180px;
+}
+
+.config-row select:active,
+.config-row select:focus,
+.player-civ select:active,
+.player-civ select:focus,
+.team-cycle:active,
+.team-cycle:focus {
+  outline: none;
+  border-style: inset;
+  background-color: var(--main-accent-hover);
+}
+
+.config-row--checkbox {
+  cursor: pointer;
+}
+
+.config-row input[type='checkbox'] {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  background: var(--form-surface-color);
+  border: var(--border-slot);
+  box-shadow:
+    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.config-row input[type='checkbox']::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  transform: scale(0);
+  background: var(--main-accent-color);
+  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.config-row input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+
+.config-row input[type='checkbox']:hover,
+.config-row input[type='checkbox']:focus {
+  outline: none;
+  background: var(--main-accent-hover);
+}
+
+.lobby-panel {
+  min-width: 0;
+  padding: 36px 48px;
+}
+
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--ui-gap-40);
+  width: min(82vw, 840px);
+}
+
+.lobby-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+
+.player-table {
+  overflow: hidden;
+}
+
+.player-table-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 48px 48px;
+  gap: var(--ui-gap-8);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.player-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 48px 48px;
+  gap: var(--ui-gap-8);
+  padding: 5px 10px;
+  align-items: center;
+}
+
+.player-row--odd {
+  background: rgba(61, 32, 0, 0.06);
+}
+
+.player-name {
+  color: var(--main-text-color);
+  font-size: 11px;
+}
+
+.player-name.human {
+  color: var(--main-accent-color);
+}
+
+.player-civ select {
+  width: 100%;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.team-cycle {
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  line-height: 20px;
+  text-align: center;
+}
+
+.player-color-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.35),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.color-swatch:active {
+  border-style: inset;
+  box-shadow:
+    inset 2px 2px 0 rgba(0, 0, 0, 0.35),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.25);
+}
+
+.player-count-row {
+  margin-top: 4px;
+}
+
+.player-count-row select,
+.lobby-settings-form .config-row select {
+  min-width: 0;
+  flex: 1;
+}
+
+.lobby-settings-form {
+  width: 100%;
+}
+
+.button-group--row {
+  flex-direction: row;
+  gap: var(--ui-gap-16);
+}

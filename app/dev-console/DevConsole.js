@@ -35,11 +35,10 @@ export class DevConsole {
 
     this.log = document.createElement('div')
     this.log.className = 'dev-console-log'
-    this.log.style.whiteSpace = 'pre-line'
     this.log.textContent = 'Type help'
 
     this.input = document.createElement('input')
-    this.input.className = 'dev-console-input'
+    this.input.className = 'ui-input dev-console-input'
     this.input.type = 'text'
     this.input.spellcheck = false
     this.input.autocomplete = 'off'

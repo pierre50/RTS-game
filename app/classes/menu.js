@@ -39,7 +39,7 @@ export default class Menu {
     const options = document.createElement('div')
     options.className = 'topbar-options'
     const menu = document.createElement('div')
-    menu.className = 'topbar-options-menu'
+    menu.className = 'topbar-options-menu btn-ui'
     menu.innerText = t('menuBtn')
     menu.addEventListener('pointerdown', () => {
       playClickSound()
@@ -48,7 +48,7 @@ export default class Menu {
       content.className = 'modal-menu'
       const modal = new Modal(content)
       const save = document.createElement('button')
-      save.className = 'menu-btn'
+      save.className = 'btn-dark'
       save.innerText = t('save')
       save.addEventListener('pointerdown', () => {
         playClickSound()
@@ -69,12 +69,12 @@ export default class Menu {
         }
         reader.readAsText(evt.target.files[0])
       })
-      load.className = 'input-file menu-btn'
+      load.className = 'input-file btn-dark'
       load.innerText = t('load')
       load.addEventListener('pointerdown', playClickSound)
       load.appendChild(input)
       const quit = document.createElement('button')
-      quit.className = 'menu-btn secondary'
+      quit.className = 'btn-dark secondary'
       quit.innerText = t('quit')
       quit.addEventListener('pointerdown', () => {
         playClickSound()
@@ -82,7 +82,7 @@ export default class Menu {
         this.context.quit()
       })
       const cancel = document.createElement('button')
-      cancel.className = 'menu-btn secondary'
+      cancel.className = 'btn-dark secondary'
       cancel.innerText = t('cancel')
       cancel.addEventListener('pointerdown', () => {
         playClickSound()
@@ -156,7 +156,7 @@ export default class Menu {
     this.playersMinimap = []
     this.resourcesMinimap = document.createElement('canvas')
     this.cameraMinimap = document.createElement('canvas')
-    this.cameraMinimap.style.zIndex = 1
+    this.cameraMinimap.classList.add('minimap-camera')
 
     this.bottombarMap.appendChild(this.terrainMinimap)
     this.bottombarMap.appendChild(this.resourcesMinimap)
@@ -174,10 +174,10 @@ export default class Menu {
       evt.preventDefault()
       if (this.toggled) {
         this.toggle.innerText = 'x'
-        this.bottombar.style.display = 'grid'
+        this.bottombar.classList.remove('hidden')
         this.toggled = false
       } else {
-        this.bottombar.style.display = 'none'
+        this.bottombar.classList.add('hidden')
         this.toggle.innerText = 'o'
         this.toggled = true
       }
@@ -203,6 +203,7 @@ export default class Menu {
     this.playerStatsManager.destroy()
     this.bottombar.remove()
     this.topbar.remove()
+    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
   }
 
   init() {
@@ -238,6 +239,12 @@ export default class Menu {
       const val = Math.min((player && player[prop]) || 0, 99999)
       this[prop].textContent = prop === 'age' ? ageLabels[val] : val
     })
+    this.updateAgeTheme(player?.age || 0)
+  }
+
+  updateAgeTheme(age = 0) {
+    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
+    document.body.classList.add(`ui-age-${Math.max(0, Math.min(age, 3))}`)
   }
 
   showMessage(message) {
@@ -251,7 +258,7 @@ export default class Menu {
     box.id = 'msg'
     box.className = 'message'
     Object.assign(box.style, {
-      bottom: this.bottombar.clientHeight + 5 + 'px',
+      bottom: this.bottombar.clientHeight + 18 + 'px',
     })
     const msg = document.createElement('span')
     msg.textContent = message
