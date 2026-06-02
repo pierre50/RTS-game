@@ -84,6 +84,7 @@ export class UnitLifecycle {
     this.death()
     canUpdateMinimap(unit, player) && menu.updatePlayerMiniMapEvt(unit.owner)
     unit.context.checkVictory?.()
+    unit.context.checkDefeat?.()
   }
 
   clear() {

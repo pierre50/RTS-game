@@ -1,5 +1,30 @@
 import { DevCommandRegistry } from './DevCommandRegistry'
-import { addResources, applyTechnology, healAll, killEntities, setAge, setCiv, spawnBuilding, spawnUnits, toggleFog } from './DevCommandActions'
+import { POPULATION_MAX } from '../constants'
+import {
+  addResources,
+  applyTechnology,
+  healAll,
+  highlightInstances,
+  killResources,
+  killEntities,
+  toggleInstantMode,
+  setGameSpeed,
+  setPopMax,
+  setAge,
+  setCiv,
+  spawnBuilding,
+  spawnUnits,
+  toggleAiDebug,
+  toggleFog,
+  toggleCoordsDebug,
+  toggleGridDebug,
+  togglePathDebug,
+  togglePerfDebug,
+  toggleResourcesVisibility,
+  toggleSolidDebug,
+  toggleTerrainReveal,
+  toggleVisionDebug,
+} from './DevCommandActions'
 
 const RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold']
 
@@ -133,11 +158,125 @@ export function createDevCommands() {
   })
 
   registry.register({
+    name: 'instant',
+    usage: 'instant [on|off]',
+    describe: 'Toggle instant build/train/tech',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleInstantMode(context, value),
+  })
+
+  registry.register({
+    name: 'popmax',
+    usage: 'popmax [amount]',
+    describe: `Set player max population (default: ${POPULATION_MAX})`,
+    complete: () => [String(POPULATION_MAX)],
+    run: ([value], context) => setPopMax(context, value),
+  })
+
+  registry.register({
     name: 'fog',
     usage: 'fog [on|off]',
     describe: 'Toggle fog of war',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleFog(context, value),
+  })
+
+  registry.register({
+    name: 'resources-visible',
+    aliases: ['resvis'],
+    usage: 'resources-visible [on|off]',
+    describe: 'Toggle map resources visibility',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleResourcesVisibility(context, value),
+  })
+
+  registry.register({
+    name: 'solid',
+    usage: 'solid [on|off]',
+    describe: 'Toggle solid-cell debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleSolidDebug(context, value),
+  })
+
+  registry.register({
+    name: 'path',
+    usage: 'path [on|off]',
+    describe: 'Toggle unit path debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => togglePathDebug(context, value),
+  })
+
+  registry.register({
+    name: 'vision',
+    usage: 'vision [on|off]',
+    describe: 'Toggle visible/viewed cells debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleVisionDebug(context, value),
+  })
+
+  registry.register({
+    name: 'grid',
+    usage: 'grid [on|off]',
+    describe: 'Toggle cell grid debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleGridDebug(context, value),
+  })
+
+  registry.register({
+    name: 'coords',
+    usage: 'coords [on|off]',
+    describe: 'Toggle cell coordinate labels',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleCoordsDebug(context, value),
+  })
+
+  registry.register({
+    name: 'perf',
+    usage: 'perf [on|off]',
+    describe: 'Toggle performance debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => togglePerfDebug(context, value),
+  })
+
+  registry.register({
+    name: 'ai',
+    usage: 'ai [pause|resume]',
+    describe: 'Pause or resume AI decisions',
+    complete: () => ['pause', 'resume'],
+    run: ([value], context) => toggleAiDebug(context, value),
+  })
+
+  registry.register({
+    name: 'speed',
+    usage: 'speed <0.25|0.5|1|2|4|8>',
+    describe: 'Set simulation speed',
+    complete: () => ['0.25', '0.5', '1', '2', '4', '8'],
+    run: ([value], context) => setGameSpeed(context, value),
+  })
+
+  registry.register({
+    name: 'terrain',
+    usage: 'terrain [on|off]',
+    describe: 'Toggle terrain reveal debug mode',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleTerrainReveal(context, value),
+  })
+
+  registry.register({
+    name: 'highlight',
+    usage: 'highlight <units|buildings|resources|enemies> [type]',
+    describe: 'Blink matching instances',
+    complete: () => ['units', 'buildings', 'resources', 'enemies'],
+    run: ([category, type], context) => highlightInstances(context, category, type),
+  })
+
+  registry.register({
+    name: 'kill-resources',
+    aliases: ['killres'],
+    usage: 'kill-resources [type|all]',
+    describe: 'Remove resources from the map',
+    complete: (_args, { map }) => ['all', ...new Set([...map.resources].map(resource => resource.type))],
+    run: ([type], context) => killResources(context, type),
   })
 
   return registry

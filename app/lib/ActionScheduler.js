@@ -4,6 +4,7 @@ export class ActionScheduler {
     this._tasks = new Map()
     this._nextId = 1
     this._toRemove = []
+    this.timeScale = 1
     app.ticker.add(ticker => this._tick(ticker.deltaMS))
   }
 
@@ -30,9 +31,10 @@ export class ActionScheduler {
 
   _tick(deltaMS) {
     if (this._getPaused()) return
+    const scaledDeltaMS = deltaMS * this.timeScale
     this._toRemove.length = 0
     for (const [id, task] of this._tasks) {
-      task.elapsed += deltaMS
+      task.elapsed += scaledDeltaMS
       if (task.elapsed >= task.interval) {
         task.elapsed -= task.interval
         task.callback()

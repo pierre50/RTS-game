@@ -27,12 +27,17 @@ const RESOURCES_MAP = {
   very_high: { wood: 1000, food: 1000, stone: 750, gold: 100 },
 }
 
+const MAX_BOTS = 4
+const MAX_PLAYERS = MAX_BOTS + 1
+
 const MAP_SIZES = [
   { label: 'Tiny  (120×120)', value: 120, maxPlayers: 2 },
   { label: 'Small (144×144)', value: 144, maxPlayers: 3 },
   { label: 'Medium (168×168)', value: 168, maxPlayers: 4 },
-  { label: 'Normal (200×200)', value: 200, maxPlayers: 6 },
-  { label: 'Large  (220×220)', value: 220, maxPlayers: 8 },
+  { label: 'Normal (200×200)', value: 200, maxPlayers: 5 },
+  { label: 'Large  (220×220)', value: 220, maxPlayers: 5 },
+  { label: 'Giant  (384×384)', value: 384, maxPlayers: 5 },
+  { label: 'Extra Giant (512×512)', value: 512, maxPlayers: 5 },
 ]
 
 const MAP_TYPES = [
@@ -68,7 +73,7 @@ export default class MapConfig {
       difficulty: 'medium',
       revealEverything: false,
       revealTerrain: false,
-      devMode: false,
+      instantMode: false,
       startingResources: RESOURCES_MAP.standard,
       resourceDensity: 'moderate',
     }
@@ -124,7 +129,7 @@ export default class MapConfig {
       this._createSelect(t('mapSizeLabel'), MAP_SIZES, 120, val => {
         this.config.size = parseInt(val)
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
-        this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
+        this.maxPlayers = Math.min(sizeEntry ? sizeEntry.maxPlayers : 2, MAX_PLAYERS)
         this._clampPlayers()
         this._refreshPlayerCountSelect()
         this._refreshPlayerTable()
@@ -156,18 +161,6 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
-      this._createCheckbox(t('devMode'), false, val => {
-        this.config.devMode = val
-      })
-    )
-
-    settingsForm.appendChild(
-      this._createCheckbox(t('revealAll'), false, val => {
-        this.config.revealEverything = val
-      })
-    )
-
-    settingsForm.appendChild(
       this._createCheckbox(t('revealTerrain'), false, val => {
         this.config.revealTerrain = val
       })
@@ -177,9 +170,6 @@ export default class MapConfig {
 
     layout.appendChild(leftCol)
     layout.appendChild(rightCol)
-
-    const divider2 = document.createElement('div')
-    divider2.className = 'menu-divider'
 
     const buttons = document.createElement('div')
     buttons.className = 'menu-buttons menu-buttons--row'
@@ -202,7 +192,6 @@ export default class MapConfig {
     panel.appendChild(title)
     panel.appendChild(divider)
     panel.appendChild(layout)
-    panel.appendChild(divider2)
     panel.appendChild(buttons)
 
     this.el.appendChild(panel)
@@ -240,13 +229,14 @@ export default class MapConfig {
 
   _addBot() {
     if (this.players.length >= this.maxPlayers) return
+    if (this.players.filter(p => !p.isHuman).length >= MAX_BOTS) return
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(p => !p.isHuman).length + 1
     this.players.push({ name: t('computer') + ' ' + botNum, color, civ: 'Greek', team: null, isHuman: false })
   }
 
   _setPlayerCount(count) {
-    const playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers))
+    const playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers, MAX_PLAYERS))
 
     while (this.players.length < playerCount) {
       this._addBot()

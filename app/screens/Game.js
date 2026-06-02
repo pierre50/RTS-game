@@ -31,15 +31,17 @@ export default class Game extends Container {
       devConsoleOpen: false,
       paused: false,
       victory: false,
+      defeat: false,
       scheduler: null,
       save: () => this.save(),
       load: evt => this.load(evt),
       pause: () => this.togglePause(true),
       resume: () => {
-        if (!this.context.victory) this.togglePause(false)
+        if (!this.context.victory && !this.context.defeat) this.togglePause(false)
       },
       quit: () => this.quit(),
       checkVictory: () => this.checkVictory(),
+      checkDefeat: () => this.checkDefeat(),
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     this.start()
@@ -52,7 +54,7 @@ export default class Game extends Container {
 
     if (config.size) context.map.size = config.size
     if (config.mapType) context.map.mapType = config.mapType
-    if (config.devMode) context.map.devMode = true
+    if (config.instantMode) context.map.instantMode = true
     if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
     if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
     if (config.startingResources) context.map.startingResources = config.startingResources
@@ -84,7 +86,7 @@ export default class Game extends Container {
     this._onKeydown = evt => {
       if (this.context.devConsoleOpen) return
       if (evt.key === 'p') {
-        if (this.context.victory) return
+        if (this.context.victory || this.context.defeat) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
     }
@@ -129,6 +131,7 @@ export default class Game extends Container {
   load(json) {
     document.getElementById('pause')?.remove()
     document.getElementById('victory')?.remove()
+    document.getElementById('defeat')?.remove()
     this._removeWindowListeners()
     this.context.controls.destroy()
     this.context.devConsole?.destroy()
@@ -144,13 +147,14 @@ export default class Game extends Container {
       devConsoleOpen: false,
       paused: false,
       victory: false,
+      defeat: false,
     }
     const { context } = this
 
     context.map = new Map(context)
 
     if (json.config) {
-      if (json.config.devMode) context.map.devMode = true
+      if (json.config.instantMode) context.map.instantMode = true
       if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything
       if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain
       if (json.config.startingResources) context.map.startingResources = json.config.startingResources
@@ -173,6 +177,7 @@ export default class Game extends Container {
   quit() {
     document.getElementById('pause')?.remove()
     document.getElementById('victory')?.remove()
+    document.getElementById('defeat')?.remove()
     this._removeWindowListeners()
     this.context.controls.destroy()
     this.context.devConsole?.destroy()
@@ -195,18 +200,37 @@ export default class Game extends Container {
     this.togglePause(true, { silent: true })
     const div = document.createElement('div')
     div.id = 'victory'
+    div.className = 'game-overlay'
     div.innerText = t('victory')
     document.body.appendChild(div)
   }
 
+  checkDefeat() {
+    const { player } = this.context
+    if (this.context.defeat || this.context.victory || !player) return
+
+    const hasUnits = player.units.length > 0
+    const hasBuildings = player.buildings.length > 0
+    if (hasUnits || hasBuildings) return
+
+    this.context.defeat = true
+    this.togglePause(true, { silent: true })
+    const div = document.createElement('div')
+    div.id = 'defeat'
+    div.className = 'game-overlay'
+    div.innerText = t('defeat')
+    document.body.appendChild(div)
+  }
+
   togglePause(pause, options = {}) {
-    if (this.context.victory && !pause) return
+    if ((this.context.victory || this.context.defeat) && !pause) return
     const { map, players } = this.context
     if (pause) {
       document.getElementById('pause')?.remove()
-      if (!options.silent) {
+      if (!options.silent && !this.context.victory && !this.context.defeat) {
         const div = document.createElement('div')
         div.id = 'pause'
+        div.className = 'game-overlay'
         div.innerText = t('pause')
         document.body.appendChild(div)
       }

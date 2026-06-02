@@ -39,19 +39,6 @@ export default class Controls extends Container {
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
-    this.fpsVisible = false
-    this.fpsEl = document.createElement('div')
-    this.fpsEl.style.cssText =
-      'position:fixed;right:10px;z-index:9999;color:#fff;font:bold 14px monospace;' +
-      'background:rgba(0,0,0,0.65);padding:2px 8px;border-radius:3px;display:none;pointer-events:none;'
-    document.body.appendChild(this.fpsEl)
-    this._fpsTicker = () => {
-      if (this.fpsVisible) {
-        this.fpsEl.textContent = `FPS: ${Math.round(context.app.ticker.FPS)}`
-      }
-    }
-    context.app.ticker.add(this._fpsTicker)
-
     this.buildingPlacer = new BuildingPlacer(this)
     this.selectionManager = new SelectionManager(this)
 
@@ -83,9 +70,6 @@ export default class Controls extends Container {
       context: { gamebox },
     } = this
 
-    this.context.app.ticker.remove(this._fpsTicker)
-    this.fpsEl.remove()
-
     document.removeEventListener('mousemove', this._onDocMouseMove)
     document.removeEventListener('mouseout', this._onDocMouseOut)
     document.removeEventListener('keydown', this._onKeyDown)
@@ -105,12 +89,6 @@ export default class Controls extends Container {
 
   onKeyDown(evt) {
     if (this.context.devConsoleOpen) return
-
-    if (evt.key === 'f' || evt.key === 'F') {
-      this.fpsVisible = !this.fpsVisible
-      this.fpsEl.style.display = this.fpsVisible ? 'block' : 'none'
-      return
-    }
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -333,9 +311,6 @@ export default class Controls extends Container {
     const {
       context: { player, map },
     } = this
-
-    const topbar = document.getElementById('topbar')
-    this.fpsEl.style.top = (topbar ? topbar.clientHeight + 5 : 50) + 'px'
 
     if (player?.buildings?.length) {
       this.setCamera(player.buildings[0].x, player.buildings[0].y)

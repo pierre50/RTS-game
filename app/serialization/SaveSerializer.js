@@ -165,7 +165,7 @@ export function serializeGame(context) {
   return {
     camera: cameraData(context.controls.camera),
     config: {
-      devMode: context.map.devMode,
+      instantMode: context.map.instantMode,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,

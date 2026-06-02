@@ -106,7 +106,7 @@ export class BuildingProduction {
               if (still === 0) menu.toggleButtonCancel(type, false)
               building.updateInterfaceLoading()
             }
-          } else if (building.loading >= 100 || map.devMode) {
+          } else if (building.loading >= 100 || map.instantMode) {
             building.stopInterval()
             building.placeUnit(type, extra)
             building.loading = null
@@ -203,7 +203,7 @@ export class BuildingProduction {
       }
       building.startInterval(() => {
         const { config, type } = building.technology
-        if (building.loading >= 100 || map.devMode) {
+        if (building.loading >= 100 || map.instantMode) {
           building.stopInterval()
           building.loading = null
           building.technology = null

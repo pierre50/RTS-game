@@ -79,6 +79,7 @@ export class MapTerrain {
     }
     this.map.flattenPlayerStartZones()
     this.map.clampReliefAroundWater(dist)
+    this.map.enforceReliefStepContinuity(dist)
   }
 
   isInPlayerStartFlatZone(i, j, radius = 4) {
@@ -147,6 +148,39 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
         if (cell.z > maxAllowed) this.map.setCellReliefLevelDirect(cell, maxAllowed)
+      }
+    }
+  }
+
+  enforceReliefStepContinuity(dist = this.map.getReliefCoastDistances()) {
+    const n = this.map.size + 1
+    let changed = true
+    let guard = 0
+
+    while (changed && guard++ < this.map.size) {
+      changed = false
+
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          for (const neighbor of [this.map.grid[i + 1]?.[j], this.map.grid[i]?.[j + 1]]) {
+            if (!neighbor) continue
+            if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder) continue
+
+            const high = cell.z >= neighbor.z ? cell : neighbor
+            const low = high === cell ? neighbor : cell
+            if (high.z - low.z <= 1) continue
+
+            const targetLowLevel = high.z - 1
+            const lowMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[low.i * n + low.j])
+            if (!low.has && targetLowLevel <= lowMaxAllowed) {
+              this.map.setCellReliefLevelDirect(low, targetLowLevel)
+            } else {
+              this.map.setCellReliefLevelDirect(high, low.z + 1)
+            }
+            changed = true
+          }
+        }
       }
     }
   }

@@ -58,6 +58,7 @@ export class MapGeneration {
 
     this.map.formatCellsWaterBorder()
     this.map.clampReliefAroundWater()
+    this.map.enforceReliefStepContinuity()
     this.map.formatCellsRelief()
     this.map.formatCellsDesert()
 
@@ -143,8 +144,10 @@ export class MapGeneration {
       case 120: this.map.positionsCount = 2; break
       case 144: this.map.positionsCount = 3; break
       case 168: this.map.positionsCount = 4; break
-      case 200: this.map.positionsCount = 6; break
-      case 220: this.map.positionsCount = 8; break
+      case 200: this.map.positionsCount = 5; break
+      case 220: this.map.positionsCount = 5; break
+      case 384: this.map.positionsCount = 5; break
+      case 512: this.map.positionsCount = 5; break
       default: this.map.positionsCount = 2
     }
 
@@ -164,8 +167,6 @@ export class MapGeneration {
       return
     }
 
-    this.map.generateResourcesAroundPlayers(this.map.playersPos)
-    this.map.generateNeutralResourceGroups(this.map.playersPos)
   }
 
   stylishMap() {
@@ -174,9 +175,11 @@ export class MapGeneration {
     } = this.map
 
     this.map.gaia = new Gaia(this.map.context)
-    this.map.generateAnimalsAroundPlayers(this.map.playersPos)
     this.map.generateMapRelief()
     this.map.formatCellsRelief()
+    this.map.generateResourcesAroundPlayers(this.map.playersPos)
+    this.map.generateNeutralResourceGroups(this.map.playersPos)
+    this.map.generateAnimalsAroundPlayers(this.map.playersPos)
     this.map.generateSets()
     this.map._initFogChunks()
 
@@ -403,7 +406,8 @@ export class MapGeneration {
           continue
         }
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          if (cell.category !== 'Water' && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
+          const hasWaterNeighbour = getCellsAroundPoint(i, j, this.map.grid, 2, neighbour => neighbour.category === 'Water').length > 0
+          if (cell.category !== 'Water' && !hasWaterNeighbour && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
@@ -416,7 +420,7 @@ export class MapGeneration {
             floor.updateAnchor = true
             cell.addChild(floor)
           }
-          if (Math.random() < this.map.chanceOfSets) {
+          if (!hasWaterNeighbour && Math.random() < this.map.chanceOfSets) {
             if (cell.category !== 'Water') {
               const type = randomItem(['tree', 'rock', 'animal'])
               switch (type) {

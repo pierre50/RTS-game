@@ -133,7 +133,12 @@ export class CellFog {
 
   _setRemoveChildren(instance) {
     const { cell } = this
-    const { controls } = cell.context
+    const { controls, map } = cell.context
+    if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
+      instance.visible = false
+      return
+    }
+
     if (controls.instanceInCamera(instance)) {
       instance.visible = true
     }

@@ -70,6 +70,11 @@ export class Cell extends Container {
 
   _updateChild(instance) {
     const { map, player } = this.context
+    if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
+      instance.visible = false
+      return
+    }
+
     const isInPlayerSight = playerCanSeeInstance(instance, player)
     instance.visible =
       map.revealEverything ||

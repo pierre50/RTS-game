@@ -25,12 +25,19 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.noAI = false
 
-    this.devMode = false
+    this.instantMode = false
     this.difficulty = 'medium'
     this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0 }
     this.resourceDensity = 'moderate'
     this.revealEverything = false
     this.revealTerrain = false
+    this.showResources = true
+    this.debugSolidVisible = false
+    this.debugPathVisible = false
+    this.debugVisionVisible = false
+    this.debugGridVisible = false
+    this.debugCoordsVisible = false
+    this.debugPerfVisible = false
 
     this.x = 0
     this.y = 0
@@ -186,6 +193,10 @@ export default class Map extends Container {
 
   clampReliefAroundWater(dist) {
     return this.mapTerrain.clampReliefAroundWater(dist)
+  }
+
+  enforceReliefStepContinuity(dist) {
+    return this.mapTerrain.enforceReliefStepContinuity(dist)
   }
 
   formatCellsRelief() {

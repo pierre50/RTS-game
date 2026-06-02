@@ -102,7 +102,7 @@ button:hover,
   flex: 1;
 }
 
-#pause {
+.game-overlay {
   position: absolute;
   z-index: 1000;
   font-size: 50px;
@@ -110,25 +110,8 @@ button:hover,
   left: 50%;
   transform: translate(-50%, -50%);
   margin-top: -66px;
-}
-
-#victory {
-  position: absolute;
-  z-index: 1000;
-  top: 42%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--main-accent-bright);
-  font-size: 82px;
-  font-weight: bold;
-  line-height: 1;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 8px;
-  text-shadow:
-    0 2px 0 #2b1605,
-    0 0 14px black,
-    0 0 28px black;
+  color: white;
+  text-shadow: 1px 1px 0 black;
 }
 
 .bar {
@@ -504,7 +487,8 @@ div.menu-title {
   width: 320px;
   padding: 12px 26px;
   font-size: 18px;
-  color: #efdec7;
+  color: var(--main-background-color);
+  border-color: var(--main-background-color);
   text-shadow: 1px 1px 0 black;
   background: rgba(0, 0, 0, 0.45);
 }
@@ -522,7 +506,7 @@ div.menu-title {
 }
 
 .menu-panel--home .menu-btn.secondary {
-  color: #efdec7;
+  color: var(--main-background-color);
 }
 
 .menu-copyright {
@@ -773,6 +757,22 @@ div.menu-title {
   inset: 0;
   z-index: 1200;
   background: rgba(0, 0, 0, 0.42);
+}
+
+#debug-perf {
+  position: fixed;
+  top: 34px;
+  right: 10px;
+  z-index: 9999;
+  padding: 5px 8px;
+  color: white;
+  font: bold 13px monospace;
+  line-height: 1.25;
+  white-space: pre;
+  text-shadow: none;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.72);
+  border-radius: 3px;
 }
 
 .dev-console-panel {

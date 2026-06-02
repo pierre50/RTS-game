@@ -138,8 +138,8 @@ export class AI extends Player {
   }
 
   step() {
-    const { map, paused } = this.context
-    if (paused) return 0
+    const { map, paused, aiPaused } = this.context
+    if (paused || aiPaused) return 0
 
     let actions = 0
 

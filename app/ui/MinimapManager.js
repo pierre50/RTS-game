@@ -94,6 +94,9 @@ export class MinimapManager {
 
   updateResourceMiniMap(resource) {
     const { menu } = this
+    const { map } = menu.context
+    if (!map.showResources) return
+
     const context = menu.resourcesMinimap.getContext('2d')
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 4
@@ -116,6 +119,8 @@ export class MinimapManager {
     const squareSize = 4
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
+    if (!map.showResources) return
+
     map.resources.forEach(resource => {
       const cell = player?.views?.[resource.i]?.[resource.j]
       if (resource.color && (cell?.viewed || map.revealEverything)) {

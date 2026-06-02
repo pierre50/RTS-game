@@ -84,7 +84,7 @@ export class Building extends Instance {
         const assets = getBuildingAsset(this.type, this.owner, Assets)
         this.buildingInterface.renderInfo(element, assets)
       },
-      menu: this.owner.isPlayed || map.devMode ? [...units, ...technologies] : [],
+      menu: this.owner.isPlayed || map.instantMode ? [...units, ...technologies] : [],
     }
 
     // Set solid zone
