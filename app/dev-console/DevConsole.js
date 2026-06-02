@@ -35,6 +35,7 @@ export class DevConsole {
 
     this.log = document.createElement('div')
     this.log.className = 'dev-console-log'
+    this.log.style.whiteSpace = 'pre-line'
     this.log.textContent = 'Type help'
 
     this.input = document.createElement('input')
@@ -124,13 +125,20 @@ export class DevConsole {
   }
 
   autocomplete() {
-    const value = this.input.value.trim()
-    if (!value || value.includes(' ')) return
-    const matches = this.commands.names().filter(name => name.startsWith(value))
+    const raw = this.input.value
+    if (!raw.trim()) return
+
+    const context = { ...this.context, commands: this.commands }
+    const matches = this.commands.complete(raw, context)
+    if (!matches.length) return
+
     if (matches.length === 1) {
-      this.input.value = `${matches[0]} `
-    } else if (matches.length > 1) {
-      this.log.textContent = matches.join(', ')
+      const endsWithSpace = /\s$/.test(raw)
+      const tokens = raw.trim().split(/\s+/)
+      const base = endsWithSpace ? tokens : tokens.slice(0, -1)
+      this.input.value = `${[...base, matches[0]].join(' ')} `
+    } else {
+      this.log.textContent = matches.join('  ')
       this.log.dataset.status = 'ok'
     }
   }

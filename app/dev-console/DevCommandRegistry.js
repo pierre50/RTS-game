@@ -13,8 +13,32 @@ export class DevCommandRegistry {
     return this.commands.get(name) || this.commands.get(this.aliases.get(name))
   }
 
+  all() {
+    return [...this.commands.values()]
+  }
+
   names() {
     return [...new Set([...this.commands.keys(), ...this.aliases.keys()])].sort()
+  }
+
+  complete(input, context) {
+    const endsWithSpace = /\s$/.test(input)
+    const parts = input.trim().split(/\s+/).filter(Boolean)
+
+    if (!parts.length || (parts.length === 1 && !endsWithSpace)) {
+      const prefix = parts[0] || ''
+      return this.names().filter(name => name.startsWith(prefix))
+    }
+
+    const [cmdName, ...argParts] = parts
+    const command = this.get(cmdName)
+    if (!command?.complete) return []
+
+    const prefix = endsWithSpace ? '' : argParts[argParts.length - 1] || ''
+    const confirmedArgs = endsWithSpace ? argParts : argParts.slice(0, -1)
+
+    const suggestions = command.complete(confirmedArgs, context)
+    return suggestions.filter(s => s.toLowerCase().startsWith(prefix.toLowerCase()))
   }
 
   execute(input, context) {

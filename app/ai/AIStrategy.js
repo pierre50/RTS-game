@@ -201,6 +201,10 @@ export class AIStrategy {
       ai.phase = 'military_build'
       return 'military_build'
     }
+    if (ai.phase === 'military_build' && villagersCount < Math.floor(difficultyConfig.econToMilVillagers * 0.6)) {
+      ai.phase = 'economy'
+      return 'economy'
+    }
     if (ai.phase === 'military_build' && militaryCount >= difficultyConfig.attackThreshold) {
       ai.phase = 'attack'
       return 'attack'

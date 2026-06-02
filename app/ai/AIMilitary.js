@@ -77,7 +77,8 @@ export class AIMilitary {
       const enemyUnit = [...ai.foundedEnemyUnits].find(u => u.hitPoints > 0 && ai.isEnemy(u.owner))
       if (enemyUnit) {
         if (debug) console.log('Enemy units spotted! Defending...')
-        this.sendToAttack(availableMilitary.splice(0), enemyUnit, debug)
+        const responseCount = Math.max(1, Math.ceil(availableMilitary.length / 2))
+        this.sendToAttack(availableMilitary.splice(0, responseCount), enemyUnit, debug)
         actions++
       }
     }

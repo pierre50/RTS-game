@@ -115,7 +115,7 @@ export class AI extends Player {
     }
     if (type === UNIT_TYPES.villager) {
       options.handleIsAttacked = (attacker, unit) => {
-        if (attacker.family !== FAMILY_TYPES.animal) {
+        if (attacker.family !== FAMILY_TYPES.animal || attacker.meleeAttack) {
           unit.runaway(attacker)
           return true
         }

@@ -1,14 +1,12 @@
 import { sound } from '@pixi/sound'
-import { t } from '../../lib/lang'
-import { Assets, Sprite, AnimatedSprite, Graphics, Container } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
+import { Polygon } from 'pixi.js'
 import {
   ACCELERATOR,
   ACTION_TYPES,
   BUILDING_TYPES,
   FAMILY_TYPES,
   LABEL_TYPES,
-  MENU_INFO_IDS,
-  POPULATION_MAX,
   UNIT_TYPES,
 } from '../../constants'
 import {
@@ -16,17 +14,14 @@ import {
   randomItem,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
-  getPercentage,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   getActionCondition,
   getBuildingAsset,
   getBuildingTextureNameWithSize,
   canUpdateMinimap,
-  changeSpriteColorDirectly,
   updateInstanceVisibility,
 } from '../../lib'
-import { Polygon } from 'pixi.js'
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { BuildingProduction } from './BuildingProduction'
@@ -137,7 +132,6 @@ export class Building extends Instance {
         let hasSentOther = false
         controls.mouse.prevent = true
         if (this.owner.isPlayed) {
-          // Send Villager to build the building
           if (!this.isBuilt) {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
@@ -164,7 +158,6 @@ export class Building extends Instance {
               return
             }
           } else if (player.selectedUnits) {
-            // Send Villager to give loading of resources
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               const accept =
@@ -279,185 +272,8 @@ export class Building extends Instance {
     return this.buildingCombat.isAttacked(instance)
   }
 
-  updateTexture() {
-    const {
-      context: { menu },
-    } = this
-    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
-    const buildSpritesheetId = this.sprite.texture.label.split('_')[1].split('.')[0]
-    const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
-
-    if (percentage >= 25 && percentage < 50) {
-      const textureName = `001_${buildSpritesheetId}.png`
-      this.sprite.texture = buildSpritesheet.textures[textureName]
-    } else if (percentage >= 50 && percentage < 75) {
-      const textureName = `002_${buildSpritesheetId}.png`
-      this.sprite.texture = buildSpritesheet.textures[textureName]
-    } else if (percentage >= 75 && percentage < 99) {
-      const textureName = `003_${buildSpritesheetId}.png`
-      this.sprite.texture = buildSpritesheet.textures[textureName]
-    } else if (percentage >= 100) {
-      this.finalTexture()
-      if (!this.isBuilt) {
-        if (this.owner.isPlayed && this.sounds && this.sounds.create && this.context.controls.instanceIsAudible(this)) {
-          sound.play(this.sounds.create)
-        }
-        this.onBuilt()
-      }
-      this.isBuilt = true
-      if (!this.owner.hasBuilt.includes(this.type)) {
-        this.owner.hasBuilt.push(this.type)
-      }
-      if (this.owner.isPlayed && this.selected) {
-        menu.setBottombar(this)
-      }
-      updateInstanceVisibility(this)
-    }
-  }
-
-  onBuilt() {
-    const {
-      context: { menu },
-    } = this
-    if (this.increasePopulation) {
-      // Increase player population and continue all unit creation that was paused
-      this.owner.population_max += this.increasePopulation
-      // Update bottombar with population_max if house selected
-      if (this.owner.isPlayed && this.owner.selectedBuilding && this.owner.selectedBuilding.displayPopulation) {
-        menu.updateInfo(
-          MENU_INFO_IDS.populationText,
-          this.owner.population + '/' + Math.min(POPULATION_MAX, this.owner.population_max)
-        )
-      }
-    }
-    if (this.owner.isPlayed && this.selected) {
-      menu.setBottombar(this)
-    }
-  }
-
-  finalTexture() {
-    const assets = getBuildingAsset(this.type, this.owner, Assets)
-
-    const texture = getTexture(assets.images.final, Assets)
-    this.sprite.texture = texture
-    this.sprite.hitArea = texture.hitArea
-      ? new Polygon(texture.hitArea)
-      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
-    this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
-
-    const color = this.getChildByLabel(LABEL_TYPES.color)
-    if (color) {
-      color.destroy()
-    }
-
-    if (assets.images.color) {
-      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.label = LABEL_TYPES.color
-      changeSpriteColorDirectly(spriteColor, this.owner.color)
-      this.addChild(spriteColor)
-    } else {
-      changeSpriteColorDirectly(this.sprite, this.owner.color)
-    }
-
-    if (this.type === BUILDING_TYPES.house) {
-      if (this.owner.age === 0) {
-        const spritesheetFire = Assets.cache.get('347')
-        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-        spriteFire.label = LABEL_TYPES.deco
-        spriteFire.allowMove = false
-        spriteFire.allowClick = false
-        spriteFire.eventMode = 'none'
-        spriteFire.roundPixels = true
-        spriteFire.x = 10
-        spriteFire.y = 5
-        spriteFire.play()
-        spriteFire.animationSpeed = 0.2 * ACCELERATOR
-        this.addChild(spriteFire)
-      } else {
-        const fire = this.getChildByLabel(LABEL_TYPES.deco)
-        if (fire) {
-          fire.destroy()
-        }
-      }
-    }
-  }
-
   detect(instance) {
     return this.buildingCombat.detect(instance)
-  }
-
-  updateHitPoints(action) {
-    if (this.hitPoints > this.totalHitPoints) {
-      this.hitPoints = this.totalHitPoints
-    }
-    const percentage = getPercentage(this.hitPoints, this.totalHitPoints)
-
-    if (this.hitPoints <= 0) {
-      this.die()
-    }
-    if (action === ACTION_TYPES.build && !this.isBuilt) {
-      this.updateTexture()
-    } else if ((action === ACTION_TYPES.attack && this.isBuilt) || (action === ACTION_TYPES.build && this.isBuilt)) {
-      if (percentage > 0 && percentage < 25) {
-        this.generateFire('450')
-      } else if (percentage >= 25 && percentage < 50) {
-        this.generateFire('452')
-      } else if (percentage >= 50 && percentage < 75) {
-        this.generateFire('347')
-      } else if (percentage >= 75) {
-        const fire = this.getChildByLabel(LABEL_TYPES.fire)
-        if (fire) {
-          this.removeChild(fire)
-        }
-      }
-    }
-  }
-
-  generateFire(spriteId) {
-    const fire = this.getChildByLabel(LABEL_TYPES.fire)
-    const spritesheetFire = Assets.cache.get(spriteId)
-    if (fire) {
-      for (let i = 0; i < fire.children.length; i++) {
-        fire.children[i].textures = spritesheetFire.animations['fire']
-        fire.children[i].play()
-      }
-    } else {
-      const newFire = new Container()
-      newFire.label = LABEL_TYPES.fire
-      newFire.allowMove = false
-      newFire.allowClick = false
-      newFire.eventMode = 'none'
-      let poses = [[0, 0]]
-      if (this.size === 3) {
-        poses = [
-          [0, -32],
-          [-64, 0],
-          [0, 32],
-          [64, 0],
-        ]
-      }
-      for (let i = 0; i < poses.length; i++) {
-        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
-        spriteFire.allowMove = false
-        spriteFire.allowClick = false
-        spriteFire.eventMode = 'none'
-        spriteFire.roundPixels = true
-        spriteFire.x = poses[i][0]
-        spriteFire.y = poses[i][1]
-        spriteFire.play()
-        spriteFire.animationSpeed = 0.2 * ACCELERATOR
-        newFire.addChild(spriteFire)
-      }
-      this.addChild(newFire)
-    }
-  }
-
-  die() {
-    return this.buildingLifecycle.die()
-  }
-
-  clear() {
-    return this.buildingLifecycle.clear()
   }
 
   select() {
@@ -476,20 +292,50 @@ export class Building extends Instance {
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
+  // BuildingLifecycle
+  updateTexture() {
+    return this.buildingLifecycle.updateTexture()
+  }
+
+  finalTexture() {
+    return this.buildingLifecycle.finalTexture()
+  }
+
+  generateFire(spriteId) {
+    return this.buildingLifecycle.generateFire(spriteId)
+  }
+
+  onBuilt() {
+    return this.buildingLifecycle.onBuilt()
+  }
+
+  updateHitPoints(action) {
+    return this.buildingLifecycle.updateHitPoints(action)
+  }
+
+  pause() {
+    return this.buildingLifecycle.pause()
+  }
+
+  resume() {
+    return this.buildingLifecycle.resume()
+  }
+
+  die() {
+    return this.buildingLifecycle.die()
+  }
+
+  clear() {
+    return this.buildingLifecycle.clear()
+  }
+
+  // BuildingProduction
   placeUnit(type) {
     return this.buildingProduction.placeUnit(type)
   }
 
   buyUnit(type, alreadyPaid = false, force = false, extra) {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
-  }
-
-  updateInterfaceLoading() {
-    this.buildingInterface.updateLoading()
-  }
-
-  getLoadingElement() {
-    return this.buildingInterface.getLoadingElement()
   }
 
   cancelTechnology() {
@@ -504,21 +350,16 @@ export class Building extends Instance {
     return this.buildingProduction.buyTechnology(type, alreadyPaid, force)
   }
 
+  // BuildingInterface
+  updateInterfaceLoading() {
+    this.buildingInterface.updateLoading()
+  }
+
+  getLoadingElement() {
+    return this.buildingInterface.getLoadingElement()
+  }
+
   setDefaultInterface(element, data) {
     this.buildingInterface.setDefaultInterface(element, data)
-  }
-
-  pause() {
-    const fire = this.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach(s => s.stop())
-    const deco = this.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof deco.stop === 'function') deco.stop()
-  }
-
-  resume() {
-    const fire = this.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach(s => s.play())
-    const deco = this.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof deco.play === 'function') deco.play()
   }
 }

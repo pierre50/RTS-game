@@ -18,22 +18,22 @@ export default class MainMenu {
     this.el.innerHTML = ''
   }
 
-  _createPanel(subtitleKey) {
+  _createPanel(subtitleKey, { logo = true } = {}) {
     const panel = document.createElement('div')
     panel.className = 'menu-panel'
 
-    const title = document.createElement('img')
-    title.className = 'menu-title'
-    title.src = '/assets/logo.png'
-    title.alt = 'Dawn of Empires'
+    if (logo) {
+      const title = document.createElement('img')
+      title.className = 'menu-title'
+      title.src = '/assets/logo.png'
+      title.alt = 'Dawn of Empires'
+      panel.appendChild(title)
 
-    panel.appendChild(title)
-
-    if (subtitleKey) {
-      const subtitle = document.createElement('div')
-      subtitle.className = 'menu-subtitle'
-      subtitle.textContent = t(subtitleKey)
-      panel.appendChild(subtitle)
+    } else {
+      const title = document.createElement('div')
+      title.className = 'menu-title'
+      title.textContent = t(subtitleKey)
+      panel.appendChild(title)
     }
 
     const divider = document.createElement('div')
@@ -46,6 +46,7 @@ export default class MainMenu {
   _showMain() {
     this._clear()
     const panel = this._createPanel()
+    panel.classList.add('menu-panel--home')
     const buttons = document.createElement('div')
     buttons.className = 'menu-buttons'
 
@@ -84,15 +85,20 @@ export default class MainMenu {
     buttons.appendChild(btnSettings)
     buttons.appendChild(fileInput)
 
+    const copyright = document.createElement('div')
+    copyright.className = 'menu-copyright'
+    copyright.textContent = '© 2026 Dawn of Empires'
+
     panel.appendChild(buttons)
     this.el.appendChild(panel)
+    this.el.appendChild(copyright)
   }
 
   _showSettings() {
     this._clear()
-    const panel = this._createPanel('settings')
+    const panel = this._createPanel('settings', { logo: false })
     const form = document.createElement('div')
-    form.className = 'settings-form'
+    form.className = 'config-form'
 
     const row = document.createElement('div')
     row.className = 'config-row'

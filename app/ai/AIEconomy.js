@@ -1,5 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, WORK_TYPES } from '../constants'
-import { getClosestInstance, getInstanceClosestFreeCellPath, getValuePercentage } from '../lib'
+import { getClosestInstance, getInstanceClosestFreeCellPath, getValuePercentage, instancesDistance } from '../lib'
 
 export class AIEconomy {
   constructor(ai) {
@@ -80,11 +80,27 @@ export class AIEconomy {
     return toAssign
   }
 
+  isSafeToHunt(animal) {
+    const { ai } = this
+    if (animal.meleeAttack) return false
+    const dangerRadius = 15
+    for (const b of ai.foundedEnemyBuildings) {
+      if (instancesDistance(animal, b) < dangerRadius) return false
+    }
+    for (const u of ai.foundedEnemyUnits) {
+      if (instancesDistance(animal, u) < dangerRadius) return false
+    }
+    return true
+  }
+
   discoverDeadAnimals(map) {
     const { ai } = this
     for (const animal of map.gaia.units) {
       if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
-        ai.foundedDeadAnimals.add(animal)
+        const viewerCell = ai.views?.[animal.i]?.[animal.j]
+        if (viewerCell?.viewBy.size > 0) {
+          ai.foundedDeadAnimals.add(animal)
+        }
       }
     }
   }
@@ -119,11 +135,12 @@ export class AIEconomy {
     foodWorkersAssigned += berriesAssigned
     actions += berriesAssigned
 
-    if (ai.foundedAnimals.size > 0) {
+    const safeAnimals = new Set([...ai.foundedAnimals].filter(a => this.isSafeToHunt(a)))
+    if (safeAnimals.size > 0) {
       const maxHunters = Math.min(2, availableVillagers.length)
       for (let i = 0; i < maxHunters; i++) {
         if (foodWorkersAssigned >= maxVillagersOnFood) break
-        const animal = getClosestInstance(availableVillagers[0], ai.foundedAnimals)
+        const animal = getClosestInstance(availableVillagers[0], safeAnimals)
         if (!animal) break
         availableVillagers.shift().sendToHunt(animal)
         foodWorkersAssigned++
@@ -156,9 +173,10 @@ export class AIEconomy {
   assignBuilders(availableVillagers, notBuiltBuildings, builderVillagers, maxVillagersOnConstruction, debug = false) {
     let actions = 0
     if (!notBuiltBuildings.length) return actions
+    let currentBuilders = builderVillagers.length
 
     for (const building of notBuiltBuildings) {
-      if (builderVillagers.length >= maxVillagersOnConstruction) break
+      if (currentBuilders >= maxVillagersOnConstruction) break
       if (availableVillagers.length === 0) break
       const villager = [...availableVillagers]
         .sort(
@@ -172,6 +190,7 @@ export class AIEconomy {
         if (debug) console.log('Villager sent to build:', building)
         villager.sendToBuilding(building)
         availableVillagers.splice(availableVillagers.indexOf(villager), 1)
+        currentBuilders++
         actions++
       }
     }
@@ -193,6 +212,13 @@ export class AIEconomy {
     let actions = 0
 
     this.discoverDeadAnimals(map)
+    actions += this.assignBuilders(
+      availableVillagers,
+      notBuiltBuildings,
+      workerSnapshot.builderVillagers,
+      maxVillagersOnConstruction,
+      debug
+    )
     actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
     actions += this.assignVillagersToResource(
       availableVillagers,
@@ -220,13 +246,6 @@ export class AIEconomy {
       (villager, gold) => {
         villager.sendToGold(gold)
       }
-    )
-    actions += this.assignBuilders(
-      availableVillagers,
-      notBuiltBuildings,
-      workerSnapshot.builderVillagers,
-      maxVillagersOnConstruction,
-      debug
     )
 
     return actions

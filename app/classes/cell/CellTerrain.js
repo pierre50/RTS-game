@@ -46,9 +46,22 @@ export class CellTerrain {
   setReliefBorder(index, elevation = 0) {
     const { cell } = this
     const { sprite } = cell
-    const resourceName = sprite.texture.label.split('_')[1].split('.')[0]
+    const label = sprite.texture.label
+    if (!label || !label.includes('_')) {
+      console.log(`[relief] BAD LABEL at [${cell.i},${cell.j}]: "${label}"`)
+      return
+    }
+    const resourceName = label.split('_')[1].split('.')[0]
     const spritesheet = Assets.cache.get(resourceName)
+    if (!spritesheet) {
+      console.log(`[relief] NO SPRITESHEET "${resourceName}" at [${cell.i},${cell.j}]`)
+      return
+    }
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
+    if (!texture) {
+      console.log(`[relief] MISSING TEXTURE "${index}_${resourceName}.png" at [${cell.i},${cell.j}]`)
+      return
+    }
     if (elevation) {
       cell.y -= elevation
     }

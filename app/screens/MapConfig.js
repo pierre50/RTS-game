@@ -95,10 +95,6 @@ export default class MapConfig {
     title.className = 'menu-title'
     title.textContent = t('newGame')
 
-    const subtitle = document.createElement('div')
-    subtitle.className = 'menu-subtitle'
-    subtitle.textContent = t('configuration')
-
     const divider = document.createElement('div')
     divider.className = 'menu-divider'
 
@@ -109,30 +105,17 @@ export default class MapConfig {
     const leftCol = document.createElement('div')
     leftCol.className = 'lobby-col'
 
-    const leftTitle = document.createElement('div')
-    leftTitle.className = 'lobby-section-title'
-    leftTitle.textContent = t('players')
-
     this.playerTableEl = document.createElement('div')
     this.playerTableEl.className = 'player-table'
 
-    this.addBotBtn = document.createElement('button')
-    this.addBotBtn.className = 'menu-btn lobby-add-btn'
-    this.addBotBtn.textContent = t('addOpponent')
-    this.addBotBtn.onmousedown = playClickSound
-    this.addBotBtn.onclick = () => this._addBot()
+    this.playerCountRow = this._createPlayerCountSelect()
 
-    leftCol.appendChild(leftTitle)
+    leftCol.appendChild(this.playerCountRow)
     leftCol.appendChild(this.playerTableEl)
-    leftCol.appendChild(this.addBotBtn)
 
     // ── Right column: settings ──
     const rightCol = document.createElement('div')
     rightCol.className = 'lobby-col'
-
-    const rightTitle = document.createElement('div')
-    rightTitle.className = 'lobby-section-title'
-    rightTitle.textContent = t('mapSettings')
 
     const settingsForm = document.createElement('div')
     settingsForm.className = 'config-form lobby-settings-form'
@@ -143,6 +126,7 @@ export default class MapConfig {
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
         this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
         this._clampPlayers()
+        this._refreshPlayerCountSelect()
         this._refreshPlayerTable()
       })
     )
@@ -189,7 +173,6 @@ export default class MapConfig {
       })
     )
 
-    rightCol.appendChild(rightTitle)
     rightCol.appendChild(settingsForm)
 
     layout.appendChild(leftCol)
@@ -217,7 +200,6 @@ export default class MapConfig {
     buttons.appendChild(btnPlay)
 
     panel.appendChild(title)
-    panel.appendChild(subtitle)
     panel.appendChild(divider)
     panel.appendChild(layout)
     panel.appendChild(divider2)
@@ -251,6 +233,9 @@ export default class MapConfig {
     while (this.players.length > this.maxPlayers) {
       this.players.pop()
     }
+    while (this.players.length < 2) {
+      this._addBot()
+    }
   }
 
   _addBot() {
@@ -258,15 +243,27 @@ export default class MapConfig {
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(p => !p.isHuman).length + 1
     this.players.push({ name: t('computer') + ' ' + botNum, color, civ: 'Greek', team: null, isHuman: false })
-    this._refreshPlayerTable()
   }
 
-  _removePlayer(index) {
-    this.players.splice(index, 1)
+  _setPlayerCount(count) {
+    const playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers))
+
+    while (this.players.length < playerCount) {
+      this._addBot()
+    }
+
+    while (this.players.length > playerCount) {
+      const lastBotIndex = this.players.map(p => p.isHuman).lastIndexOf(false)
+      if (lastBotIndex === -1) break
+      this.players.splice(lastBotIndex, 1)
+    }
+
     let botNum = 1
     this.players.forEach(p => {
       if (!p.isHuman) p.name = t('computer') + ' ' + botNum++
     })
+
+    this._refreshPlayerCountSelect()
     this._refreshPlayerTable()
   }
 
@@ -287,7 +284,7 @@ export default class MapConfig {
     // Header row
     const header = document.createElement('div')
     header.className = 'player-table-header'
-    ;[t('colName'), t('colCiv'), t('colTeam'), t('colColor'), ''].forEach(text => {
+    ;[t('colName'), t('colCiv'), t('colTeam'), t('colColor')].forEach(text => {
       const cell = document.createElement('div')
       cell.textContent = text
       header.appendChild(cell)
@@ -346,24 +343,39 @@ export default class MapConfig {
       colorCell.appendChild(swatch)
       row.appendChild(colorCell)
 
-      // Remove button (bots only)
-      const actionCell = document.createElement('div')
-      actionCell.className = 'player-action-cell'
-      if (!player.isHuman) {
-        const removeBtn = document.createElement('button')
-        removeBtn.className = 'player-remove'
-        removeBtn.textContent = '×'
-        removeBtn.title = t('removePlayer')
-        removeBtn.onmousedown = playClickSound
-        removeBtn.onclick = () => this._removePlayer(i)
-        actionCell.appendChild(removeBtn)
-      }
-      row.appendChild(actionCell)
-
       this.playerTableEl.appendChild(row)
     })
+  }
 
-    this.addBotBtn.disabled = this.players.length >= this.maxPlayers
+  _createPlayerCountSelect() {
+    const row = document.createElement('div')
+    row.className = 'config-row player-count-row'
+
+    const lbl = document.createElement('label')
+    lbl.textContent = t('playerCount')
+
+    this.playerCountSelect = document.createElement('select')
+    this.playerCountSelect.onmousedown = playClickSound
+    this.playerCountSelect.onchange = e => this._setPlayerCount(e.target.value)
+
+    row.appendChild(lbl)
+    row.appendChild(this.playerCountSelect)
+    this._refreshPlayerCountSelect()
+
+    return row
+  }
+
+  _refreshPlayerCountSelect() {
+    if (!this.playerCountSelect) return
+
+    this.playerCountSelect.innerHTML = ''
+    for (let count = 2; count <= this.maxPlayers; count++) {
+      const option = document.createElement('option')
+      option.value = count
+      option.textContent = count
+      if (count === this.players.length) option.selected = true
+      this.playerCountSelect.appendChild(option)
+    }
   }
 
   _createSelect(label, options, defaultValue, onChange) {

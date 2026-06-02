@@ -1,6 +1,7 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import { appendBaseEntityInfo } from './BaseEntityInterface'
 
 export class UnitInterface {
   constructor(unit) {
@@ -58,25 +59,8 @@ export class UnitInterface {
 
   setDefaultInterface(element, data) {
     const unit = this.unit
-    const civDiv = document.createElement('div')
-    civDiv.id = MENU_INFO_IDS.civ
-    civDiv.textContent = t(unit.owner.civ)
-    element.appendChild(civDiv)
-
-    const typeDiv = document.createElement('div')
-    typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    element.appendChild(typeDiv)
-
-    const iconImg = document.createElement('img')
-    iconImg.id = MENU_INFO_IDS.icon
-    iconImg.src = getIconPath(data.icon)
-    element.appendChild(iconImg)
-
-    const hitPointsDiv = document.createElement('div')
-    hitPointsDiv.id = MENU_INFO_IDS.hitPoints
-    hitPointsDiv.textContent = unit.hitPoints + '/' + unit.totalHitPoints
-    element.appendChild(hitPointsDiv)
+    const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
+    appendBaseEntityInfo(element, t(unit.owner.civ), typeText, getIconPath(data.icon), unit.hitPoints, unit.totalHitPoints)
 
     const infosDiv = document.createElement('div')
     infosDiv.id = 'infos'

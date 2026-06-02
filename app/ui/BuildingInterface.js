@@ -1,6 +1,7 @@
 import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import { appendBaseEntityInfo } from './BaseEntityInterface'
 
 export class BuildingInterface {
   constructor(building) {
@@ -70,45 +71,24 @@ export class BuildingInterface {
 
   setDefaultInterface(element, data) {
     const building = this.building
-    const {
-      context: { menu },
-    } = building
+    const { context: { menu } } = building
+    const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
-    const civDiv = document.createElement('div')
-    civDiv.id = MENU_INFO_IDS.civ
-    civDiv.textContent = t(building.owner.civ)
-    element.appendChild(civDiv)
+    appendBaseEntityInfo(element, t(building.owner.civ), t(building.type), getIconPath(data.icon), hitPoints, building.totalHitPoints)
 
-    const typeDiv = document.createElement('div')
-    typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = t(building.type)
-    element.appendChild(typeDiv)
-
-    const iconImg = document.createElement('img')
-    iconImg.id = MENU_INFO_IDS.icon
-    iconImg.src = getIconPath(data.icon)
-    element.appendChild(iconImg)
-
-    if (building.owner && building.owner.isPlayed) {
-      const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.id = MENU_INFO_IDS.hitPoints
-      hitPointsDiv.textContent = building.hitPoints + '/' + building.totalHitPoints
-      element.appendChild(hitPointsDiv)
-
-      if (building.isBuilt && building.quantity) {
-        const quantityDiv = document.createElement('div')
-        quantityDiv.id = MENU_INFO_IDS.quantity
-        quantityDiv.className = 'resource-quantity'
-        const smallIconImg = document.createElement('img')
-        smallIconImg.src = menu.icons['food']
-        smallIconImg.className = 'resource-quantity-icon'
-        const textDiv = document.createElement('div')
-        textDiv.id = MENU_INFO_IDS.quantityText
-        textDiv.textContent = building.quantity
-        quantityDiv.appendChild(smallIconImg)
-        quantityDiv.appendChild(textDiv)
-        element.appendChild(quantityDiv)
-      }
+    if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
+      const quantityDiv = document.createElement('div')
+      quantityDiv.id = MENU_INFO_IDS.quantity
+      quantityDiv.className = 'resource-quantity'
+      const smallIconImg = document.createElement('img')
+      smallIconImg.src = menu.icons['food']
+      smallIconImg.className = 'resource-quantity-icon'
+      const textDiv = document.createElement('div')
+      textDiv.id = MENU_INFO_IDS.quantityText
+      textDiv.textContent = building.quantity
+      quantityDiv.appendChild(smallIconImg)
+      quantityDiv.appendChild(textDiv)
+      element.appendChild(quantityDiv)
     }
   }
 }

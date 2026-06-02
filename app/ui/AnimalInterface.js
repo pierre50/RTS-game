@@ -1,6 +1,7 @@
 import { MENU_INFO_IDS } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import { appendBaseEntityInfo } from './BaseEntityInterface'
 
 export class AnimalInterface {
   constructor(animal) {
@@ -9,29 +10,9 @@ export class AnimalInterface {
 
   setDefaultInterface(element, data) {
     const animal = this.animal
-    const {
-      context: { menu },
-    } = animal
+    const { context: { menu } } = animal
 
-    const civDiv = document.createElement('div')
-    civDiv.id = MENU_INFO_IDS.civ
-    civDiv.textContent = ''
-    element.appendChild(civDiv)
-
-    const typeDiv = document.createElement('div')
-    typeDiv.id = MENU_INFO_IDS.type
-    typeDiv.textContent = t(animal.type)
-    element.appendChild(typeDiv)
-
-    const iconImg = document.createElement('img')
-    iconImg.id = MENU_INFO_IDS.icon
-    iconImg.src = getIconPath(data.icon)
-    element.appendChild(iconImg)
-
-    const hitPointsDiv = document.createElement('div')
-    hitPointsDiv.id = MENU_INFO_IDS.hitPoints
-    hitPointsDiv.textContent = animal.hitPoints + '/' + animal.totalHitPoints
-    element.appendChild(hitPointsDiv)
+    appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints)
 
     const quantityDiv = document.createElement('div')
     quantityDiv.id = MENU_INFO_IDS.quantity

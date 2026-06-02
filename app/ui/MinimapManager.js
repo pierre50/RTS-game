@@ -24,11 +24,25 @@ export class MinimapManager {
 
   initMiniMap() {
     const { menu } = this
-    const { translate } = this.getMinimapParams()
+    const { map } = menu.context
+    const { factor, translate } = this.getMinimapParams()
+
     for (const canvas of [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]) {
       canvas.getContext('2d').translate(translate, 0)
     }
-    const { map } = menu.context
+
+    const N = map.size
+    const canvasW = menu.terrainMinimap.width
+    const canvasH = menu.terrainMinimap.height
+    const centerX = 2 * translate
+    const halfW = (N * CELL_WIDTH) / 2 / factor
+    const halfH = (N * CELL_HEIGHT) / 2 / factor
+
+    const px = v => `${((v / canvasW) * 100).toFixed(2)}%`
+    const py = v => `${((v / canvasH) * 100).toFixed(2)}%`
+
+    menu.bottombarMap.style.clipPath = `polygon(${px(centerX)} 0%, ${px(centerX + halfW)} ${py(halfH)}, ${px(centerX)} ${py(halfH * 2)}, ${px(centerX - halfW)} ${py(halfH)})`
+
     if (map.revealEverything || map.revealTerrain) {
       this.revealTerrainMinimap()
     }

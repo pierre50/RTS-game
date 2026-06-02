@@ -13,7 +13,7 @@ export class BottombarManager {
   resetInfo() {
     const { menu } = this
     menu.bottombarInfo.textContent = ''
-    menu.bottombarInfo.style.background = 'transparent'
+    menu.bottombarInfo.style.background = null
     menu._infoCache = null
   }
 

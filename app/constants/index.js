@@ -37,6 +37,17 @@ export const UNIT_TYPES = {
   villager: 'Villager',
   priest: 'Priest',
   clubman: 'Clubman',
+  axeman: 'Axeman',
+  shortSwordsman: 'ShortSwordsman',
+  broadSwordsman: 'BroadSwordsman',
+  longSwordsman: 'LongSwordsman',
+  hoplite: 'Hoplite',
+  bowman: 'Bowman',
+  improvedBowman: 'ImprovedBowman',
+  compositeBowman: 'CompositeBowman',
+  chariotArcher: 'ChariotArcher',
+  scout: 'Scout',
+  fishingBoat: 'FishingBoat',
 }
 
 export const MENU_INFO_IDS = {

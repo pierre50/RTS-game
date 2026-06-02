@@ -151,3 +151,50 @@ export function setCiv(context, value) {
   context.menu.updateBottombar()
   return { ok: true, message: `Civilization set to ${civ}` }
 }
+
+export function killEntities(context, target = 'enemies') {
+  const { player } = context
+
+  if (target === 'enemies') {
+    const enemies = player.enemyPlayers()
+    let count = 0
+    enemies.forEach(enemy => {
+      count += enemy.units.length + enemy.buildings.length
+      ;[...enemy.units].forEach(u => u.die())
+      ;[...enemy.buildings].forEach(b => b.die())
+    })
+    if (!count) return { ok: false, message: 'No enemies found' }
+    return { ok: true, message: `Killed ${count} enemy entities` }
+  }
+
+  if (target === 'all') {
+    const count = player.units.length + player.buildings.length
+    ;[...player.units].forEach(u => u.die())
+    ;[...player.buildings].forEach(b => b.die())
+    return { ok: true, message: `Killed ${count} of your entities` }
+  }
+
+  return { ok: false, message: 'Usage: kill [enemies|all]' }
+}
+
+export function healAll(context) {
+  const { player } = context
+  ;[...player.units].forEach(u => { u.hitPoints = u.totalHitPoints })
+  ;[...player.buildings].forEach(b => { b.hitPoints = b.totalHitPoints })
+  const count = player.units.length + player.buildings.length
+  return { ok: true, message: `Healed ${count} entities to full HP` }
+}
+
+export function toggleFog(context, value) {
+  const { map, menu, players } = context
+  const currently = map.fogLayer?.visible ?? !map.revealEverything
+  const showFog = value === 'on' ? true : value === 'off' ? false : !currently
+  map.revealEverything = !showFog
+  if (map.fogLayer) map.fogLayer.visible = showFog
+
+  if (!showFog) menu.revealTerrainMinimap()
+  menu.updateResourcesMiniMapEvt()
+  players.forEach(p => menu.updatePlayerMiniMapEvt(p))
+
+  return { ok: true, message: `Fog of war: ${showFog ? 'on' : 'off'}` }
+}
