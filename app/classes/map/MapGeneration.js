@@ -177,6 +177,7 @@ export class MapGeneration {
     this.map.gaia = new Gaia(this.map.context)
     this.map.generateMapRelief()
     this.map.formatCellsRelief()
+    this.map.placePlayers()
     this.map.generateResourcesAroundPlayers(this.map.playersPos)
     this.map.generateNeutralResourceGroups(this.map.playersPos)
     this.map.generateAnimalsAroundPlayers(this.map.playersPos)
@@ -406,7 +407,7 @@ export class MapGeneration {
           continue
         }
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          const hasWaterNeighbour = getCellsAroundPoint(i, j, this.map.grid, 2, neighbour => neighbour.category === 'Water').length > 0
+          const hasWaterNeighbour = getCellsAroundPoint(i, j, this.map.grid, 2, neighbour => neighbour.category === 'Water' || neighbour.waterBorder).length > 0
           if (cell.category !== 'Water' && !hasWaterNeighbour && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
@@ -445,9 +446,10 @@ export class MapGeneration {
                   break
                 }
               }
-            } else {
-              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.map.context)))
             }
+          }
+          if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
+            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.map.context)))
           }
         }
       }

@@ -49,7 +49,7 @@ export class MapTerrain {
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
-          if (cell.category === 'Water' || cell.has || cell.waterBorder || this.map.isInPlayerStartFlatZone(i, j)) continue
+          if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
           const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
           const actual = Math.min(targetLevel, maxAllowed)
           if (reliefH[i * n + j] > threshold && actual > cell.z) {
@@ -82,17 +82,15 @@ export class MapTerrain {
     this.map.enforceReliefStepContinuity(dist)
   }
 
-  isInPlayerStartFlatZone(i, j, radius = 4) {
-    return this.map.playersPos.some(pos => Math.abs(pos.i - i) <= radius && Math.abs(pos.j - j) <= radius)
-  }
-
   flattenPlayerStartZones(radius = 4) {
     for (const pos of this.map.playersPos) {
       const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius)
+        .filter(cell => cell.category !== 'Water' && !cell.waterBorder)
+      const zCounts = {}
+      for (const cell of cells) zCounts[cell.z] = (zCounts[cell.z] || 0) + 1
+      const targetZ = Number(Object.entries(zCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0)
       for (const cell of cells) {
-        if (cell.category !== 'Water' && !cell.waterBorder && cell.z !== 0) {
-          this.map.setCellReliefLevelDirect(cell, 0)
-        }
+        if (cell.z !== targetZ) this.map.setCellReliefLevelDirect(cell, targetZ)
       }
     }
   }
@@ -371,18 +369,14 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         const typeToFormat = ['Grass', 'Jungle']
         if (cell.type === 'Desert') {
-          if (this.map.grid[i - 1] && this.map.grid[i - 1][j] && typeToFormat.includes(this.map.grid[i - 1][j].type)) {
-            this.map.grid[i - 1][j].setDesertBorder('east')
-          }
-          if (this.map.grid[i + 1] && this.map.grid[i + 1][j] && typeToFormat.includes(this.map.grid[i + 1][j].type)) {
-            this.map.grid[i + 1][j].setDesertBorder('west')
-          }
-          if (this.map.grid[i][j - 1] && typeToFormat.includes(this.map.grid[i][j - 1].type)) {
-            this.map.grid[i][j - 1].setDesertBorder('south')
-          }
-          if (this.map.grid[i][j + 1] && typeToFormat.includes(this.map.grid[i][j + 1].type)) {
-            this.map.grid[i][j + 1].setDesertBorder('north')
-          }
+          const n = this.map.grid[i - 1]?.[j]
+          const s = this.map.grid[i + 1]?.[j]
+          const w = this.map.grid[i]?.[j - 1]
+          const e = this.map.grid[i]?.[j + 1]
+          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder('east')
+          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder('west')
+          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder('south')
+          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder('north')
         }
       }
     }

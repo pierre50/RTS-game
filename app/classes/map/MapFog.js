@@ -1,4 +1,4 @@
-import { Container, Sprite, RenderTexture, Matrix, Graphics, TilingSprite } from 'pixi.js'
+import { Container, Sprite, RenderTexture, Matrix, Graphics, TilingSprite, Assets } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../../constants'
 import { _DW, _DH, getFogPatternTexture } from '../cell/CellFog'
 import { cartesianToIsometric } from '../../lib'
@@ -64,6 +64,76 @@ export class MapFog {
         }
       }
     }
+
+    this._createWaterAnimation()
+  }
+
+  _createWaterAnimation() {
+    const spritesheet = Assets.cache.get('15002')
+    if (!spritesheet) return
+
+    const frames = ['000', '001', '002', '003']
+      .map(i => spritesheet.textures[`${i}_15002.png`])
+      .filter(Boolean)
+    if (!frames.length) return
+
+    const PHASES = frames.length
+
+    // Destroy previous water layers if re-baking (e.g. load from save)
+    if (this.map._waterLayers) {
+      this.map.context.app.ticker.remove(this.map._waterAnimTicker)
+      for (const layer of this.map._waterLayers) {
+        for (const sprite of layer.sprites) sprite.destroy()
+      }
+      this.map._waterLayers = null
+    }
+
+    // One sprite per water cell — no mask, no camera drift, PixiJS batches same-texture sprites
+    this.map._waterLayers = Array.from({ length: PHASES }, (_, p) => ({
+      sprites: [],
+      phase: p,
+      frameMs: 900 + (p * 97 + 43) % 300,
+      elapsed: 0,
+    }))
+    for (let p = 0; p < PHASES; p++) {
+      this.map._waterLayers[p].elapsed = (p / PHASES) * this.map._waterLayers[p].frameMs
+    }
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.category !== 'Water') continue
+        const layer = this.map._waterLayers[(cell.i + cell.j) % PHASES]
+
+        const sprite = new Sprite(frames[layer.phase])
+        sprite.x = cell.x
+        sprite.y = cell.y
+        sprite.anchor.set(0.5, 0.5)
+        sprite.zIndex = -0.5
+        sprite.eventMode = 'none'
+        sprite.cullable = true
+
+        this.map.addChild(sprite)
+        layer.sprites.push(sprite)
+      }
+    }
+
+    this.map._waterAnimTicker = ticker => {
+      if (this.map.context.map !== this.map) {
+        this.map.context.app.ticker.remove(this.map._waterAnimTicker)
+        return
+      }
+      for (const layer of this.map._waterLayers) {
+        layer.elapsed += ticker.elapsedMS
+        if (layer.elapsed >= layer.frameMs) {
+          layer.elapsed -= layer.frameMs
+          layer.phase = (layer.phase + 1) % frames.length
+          const tex = frames[layer.phase]
+          for (const sprite of layer.sprites) sprite.texture = tex
+        }
+      }
+    }
+    this.map.context.app.ticker.add(this.map._waterAnimTicker)
   }
 
   _initFogChunks() {

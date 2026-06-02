@@ -825,6 +825,53 @@
       "target": "SentryTower"
     }
   },
+  "ResearchGuardTower": {
+    "icon": "013_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchSentryTower"
+      }
+    ],
+    "researchTime": 50,
+    "cost": {
+      "food": 150,
+      "stone": 75
+    },
+    "action": {
+      "type": "upgradeBuilding",
+      "source": "SentryTower",
+      "target": "GuardTower"
+    }
+  },
+  "ResearchBallistaTower": {
+    "icon": "015_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 200,
+      "stone": 100
+    },
+    "action": {
+      "type": "upgradeBuilding",
+      "source": "GuardTower",
+      "target": "BallistaTower"
+    }
+  },
   "BattleAxe": {
     "icon": "045_50729",
     "key": "technologies",
@@ -968,6 +1015,610 @@
       "type": "upgradeUnit",
       "source": "ImprovedBowman",
       "target": "CompositeBowman"
+    }
+  },
+  "Legion": {
+    "icon": "050_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "LongSword"
+      }
+    ],
+    "researchTime": 150,
+    "cost": {
+      "food": 200,
+      "gold": 100
+    },
+    "action": {
+      "type": "upgradeUnit",
+      "source": "LongSwordsman",
+      "target": "Legion"
+    }
+  },
+  "Phalanx": {
+    "icon": "053_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 120,
+      "gold": 50
+    },
+    "action": {
+      "type": "upgradeUnit",
+      "source": "Hoplite",
+      "target": "Phalanx"
+    }
+  },
+  "Centurion": {
+    "icon": "054_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Phalanx"
+      }
+    ],
+    "researchTime": 150,
+    "cost": {
+      "food": 200,
+      "gold": 100
+    },
+    "action": {
+      "type": "upgradeUnit",
+      "source": "Phalanx",
+      "target": "Centurion"
+    }
+  },
+  "HeavyHorseArcher": {
+    "icon": "055_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 125,
+    "cost": {
+      "food": 150,
+      "gold": 75
+    },
+    "action": {
+      "type": "upgradeUnit",
+      "source": "HorseArcher",
+      "target": "HeavyHorseArcher"
+    }
+  },
+  "ArmoredElephant": {
+    "icon": "057_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 125,
+    "cost": {
+      "food": 200,
+      "gold": 100
+    },
+    "action": {
+      "type": "upgradeUnit",
+      "source": "WarElephant",
+      "target": "ArmoredElephant"
+    }
+  },
+  "Artisanship": {
+    "icon": "077_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Woodworking"
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 150,
+      "wood": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "gatheringRate.woodcutter",
+          "op": "*",
+          "value": "1.2",
+          "type": "Villager"
+        },
+        {
+          "key": "loadingMax.wood",
+          "op": "+",
+          "value": "2",
+          "type": "Villager"
+        },
+        {
+          "key": "pierceAttack",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher",
+            "ScoutShip",
+            "WarGalley",
+            "Trireme",
+            "WatchTower",
+            "SentryTower",
+            "GuardTower",
+            "BallistaTower"
+          ]
+        }
+      ]
+    }
+  },
+  "Craftsmanship": {
+    "icon": "078_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Artisanship"
+      }
+    ],
+    "researchTime": 90,
+    "cost": {
+      "food": 200,
+      "wood": 150
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "gatheringRate.woodcutter",
+          "op": "*",
+          "value": "1.2",
+          "type": "Villager"
+        },
+        {
+          "key": "loadingMax.wood",
+          "op": "+",
+          "value": "2",
+          "type": "Villager"
+        },
+        {
+          "key": "pierceAttack",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher",
+            "ScoutShip",
+            "WarGalley",
+            "Trireme",
+            "WatchTower",
+            "SentryTower",
+            "GuardTower",
+            "BallistaTower"
+          ]
+        }
+      ]
+    }
+  },
+  "Plow": {
+    "icon": "091_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Domestication"
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 100,
+      "wood": 75
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "quantityMax",
+          "op": "+",
+          "value": "75",
+          "type": "Farm"
+        }
+      ]
+    }
+  },
+  "Irrigation": {
+    "icon": "092_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Plow"
+      }
+    ],
+    "researchTime": 100,
+    "cost": {
+      "food": 150,
+      "wood": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "quantityMax",
+          "op": "+",
+          "value": "100",
+          "type": "Farm"
+        }
+      ]
+    }
+  },
+  "Nobility": {
+    "icon": "030_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 175,
+      "gold": 50
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "totalHitPoints",
+          "op": "+",
+          "value": "25",
+          "type": [
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "CamelRider"
+          ]
+        }
+      ]
+    }
+  },
+  "Aristocracy": {
+    "icon": "031_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 175,
+      "gold": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "speed",
+          "op": "+",
+          "value": "0.25",
+          "type": [
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "CamelRider"
+          ]
+        }
+      ]
+    }
+  },
+  "Ballistics": {
+    "icon": "056_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 200,
+      "gold": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "rateOfFire",
+          "op": "*",
+          "value": "0.9",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher"
+          ]
+        }
+      ]
+    }
+  },
+  "Alchemy": {
+    "icon": "035_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 100,
+    "cost": {
+      "food": 250,
+      "gold": 200
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "pierceAttack",
+          "op": "+",
+          "value": "1",
+          "type": [
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher",
+            "ScoutShip",
+            "WarGalley",
+            "Trireme",
+            "WatchTower",
+            "SentryTower",
+            "GuardTower",
+            "BallistaTower"
+          ]
+        }
+      ]
+    }
+  },
+  "TowerShield": {
+    "icon": "059_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "IronShield"
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 250,
+      "gold": 200
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "pierceArmor",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion"
+          ]
+        }
+      ]
+    }
+  },
+  "Writing": {
+    "icon": "060_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      }
+    ],
+    "researchTime": 75,
+    "cost": {
+      "food": 200,
+      "gold": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "sight",
+          "op": "+",
+          "value": "2",
+          "type": [
+            "Villager",
+            "Clubman",
+            "Axeman",
+            "ShortSwordsman",
+            "BroadSwordsman",
+            "LongSwordsman",
+            "Legion",
+            "Hoplite",
+            "Phalanx",
+            "Centurion",
+            "Scout",
+            "Chariot",
+            "ScytheChariot",
+            "Cavalry",
+            "HeavyCavalry",
+            "Cataphract",
+            "CamelRider",
+            "Bowman",
+            "ImprovedBowman",
+            "CompositeBowman",
+            "ChariotArcher",
+            "HorseArcher",
+            "HeavyHorseArcher",
+            "ElephantArcher",
+            "Priest"
+          ]
+        }
+      ]
+    }
+  },
+  "Architecture": {
+    "icon": "061_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 100,
+    "cost": {
+      "food": 175,
+      "stone": 75
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "totalHitPoints",
+          "op": "+",
+          "value": "75",
+          "type": [
+            "WatchTower",
+            "SentryTower",
+            "GuardTower",
+            "BallistaTower"
+          ]
+        }
+      ]
+    }
+  },
+  "Coinage": {
+    "icon": "062_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      }
+    ],
+    "researchTime": 100,
+    "cost": {
+      "food": 150,
+      "gold": 100
+    },
+    "action": {
+      "type": "improve",
+      "operations": [
+        {
+          "key": "gatheringRate.goldminer",
+          "op": "*",
+          "value": "1.25",
+          "type": "Villager"
+        },
+        {
+          "key": "loadingMax.gold",
+          "op": "+",
+          "value": "2",
+          "type": "Villager"
+        }
+      ]
     }
   }
 }

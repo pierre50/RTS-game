@@ -23,7 +23,7 @@
         "wood": 125
       },
       "units": ["Clubman", "Axeman", "ShortSwordsman", "BroadSwordsman", "LongSwordsman"],
-      "technologies": ["BattleAxe", "ShortSword", "BroadSword", "LongSword"],
+      "technologies": ["BattleAxe", "ShortSword", "BroadSword", "LongSword", "Legion"],
       "sounds": {
         "create": 5022
       }
@@ -37,7 +37,7 @@
         "wood": 120
       },
       "accept": ["berry", "wheat"],
-      "technologies": ["ResearchWatchTower", "ResearchSentryTower", "ResearchSmallWall"],
+      "technologies": ["ResearchWatchTower", "ResearchSentryTower", "ResearchSmallWall", "ResearchGuardTower", "ResearchBallistaTower"],
       "sounds": {
         "create": 5096
       }
@@ -65,7 +65,8 @@
         "ChainmailArchers",
         "LeatherArmorCavalry",
         "ScaleArmorCavalry",
-        "ChainmailCavalry"
+        "ChainmailCavalry",
+        "TowerShield"
       ],
       "sounds": {
         "create": 5186
@@ -106,7 +107,7 @@
         }
       ],
       "units": ["Bowman", "ImprovedBowman", "CompositeBowman", "ChariotArcher"],
-      "technologies": ["ImprovedBow", "CompositeBow"],
+      "technologies": ["ImprovedBow", "CompositeBow", "HeavyHorseArcher"],
       "sounds": {
         "create": 5008
       }
@@ -132,6 +133,7 @@
         }
       ],
       "units": ["Scout"],
+      "technologies": ["ArmoredElephant"],
       "sounds": {
         "create": 5123
       }
@@ -263,7 +265,7 @@
           "value": "Granary"
         }
       ],
-      "technologies": ["Woodworking", "StoneMining", "GoldMining", "Domestication"],
+      "technologies": ["Woodworking", "Artisanship", "Craftsmanship", "StoneMining", "GoldMining", "Domestication", "Plow", "Irrigation", "Coinage"],
       "sounds": {
         "create": 5142
       }
@@ -313,6 +315,7 @@
           "value": "Market"
         }
       ],
+      "technologies": ["Ballistics", "Alchemy", "Writing", "Architecture", "Nobility", "Aristocracy"],
       "sounds": {
         "create": 5129
       }
@@ -386,8 +389,65 @@
         }
       ],
       "units": ["Hoplite"],
+      "technologies": ["Phalanx", "Centurion"],
       "sounds": {
         "create": 5002
+      }
+    },
+    "GuardTower": {
+      "size": 2,
+      "sight": 10,
+      "totalHitPoints": 260,
+      "constructionTime": 60,
+      "range": 8,
+      "projectile": "Arrow",
+      "pierceAttack": 9,
+      "rateOfFire": 1.5,
+      "cost": {
+        "stone": 150
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 3
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchGuardTower"
+        }
+      ],
+      "sounds": {
+        "create": 5201
+      }
+    },
+    "BallistaTower": {
+      "size": 2,
+      "sight": 11,
+      "totalHitPoints": 350,
+      "constructionTime": 60,
+      "range": 9,
+      "projectile": "Arrow",
+      "pierceAttack": 12,
+      "rateOfFire": 2.0,
+      "cost": {
+        "stone": 200
+      },
+      "conditions": [
+        {
+          "key": "age",
+          "op": ">=",
+          "value": 3
+        },
+        {
+          "key": "technologies",
+          "op": "includes",
+          "value": "ResearchBallistaTower"
+        }
+      ],
+      "sounds": {
+        "create": 5201
       }
     }
   },
@@ -660,6 +720,10 @@
         "actionSheet": "205",
         "dyingSheet": "311",
         "corpseSheet": "370"
+      },
+      "sounds": {
+        "hit": [5190, 5191, 5192, 5193],
+        "die": [5060, 5061, 5062, 5063, 5064]
       }
     },
     "ShortSwordsman": {
@@ -695,6 +759,10 @@
         "actionSheet": "206",
         "dyingSheet": "312",
         "corpseSheet": "371"
+      },
+      "sounds": {
+        "hit": [5190, 5191, 5192, 5193],
+        "die": [5060, 5061, 5062, 5063, 5064]
       }
     },
     "BroadSwordsman": {
@@ -730,6 +798,10 @@
         "actionSheet": "220",
         "dyingSheet": "334",
         "corpseSheet": "395"
+      },
+      "sounds": {
+        "hit": [5190, 5191, 5192, 5193],
+        "die": [5060, 5061, 5062, 5063, 5064]
       }
     },
     "LongSwordsman": {
@@ -760,6 +832,10 @@
         "actionSheet": "219",
         "dyingSheet": "333",
         "corpseSheet": "394"
+      },
+      "sounds": {
+        "hit": [5190, 5191, 5192, 5193],
+        "die": [5060, 5061, 5062, 5063, 5064]
       }
     },
     "ImprovedBowman": {

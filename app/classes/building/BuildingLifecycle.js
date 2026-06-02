@@ -216,6 +216,9 @@ export class BuildingLifecycle {
     const index = building.owner.buildings.indexOf(building)
     if (index >= 0) {
       building.owner.buildings.splice(index, 1)
+      if (building.owner.units.length === 0 && building.owner.buildings.length === 0) {
+        menu.updatePlayerStats()
+      }
     }
 
     for (let i = 0; i < players.length; i++) {

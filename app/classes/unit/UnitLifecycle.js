@@ -76,6 +76,9 @@ export class UnitLifecycle {
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {
         unit.owner.units.splice(index, 1)
+        if (unit.owner.units.length === 0 && unit.owner.buildings.length === 0) {
+          menu.updatePlayerStats()
+        }
       }
       if (unit.owner.selectedUnit === unit) {
         menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.hitPoints + '/' + unit.totalHitPoints)

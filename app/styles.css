@@ -68,8 +68,8 @@ button,
   background-color: transparent;
   color: var(--main-accent-color);
 }
-button:hover,
-.input-file:hover {
+button:active,
+.input-file:active {
   border-style: inset;
 }
 .input-file {
@@ -137,13 +137,13 @@ img {
 .topbar {
   position: absolute;
   top: 0;
-  padding: 5px 10px;
   display: grid;
   font-weight: bold;
   grid-template-columns: 33% 33% 33%;
   width: calc(100% - 20px);
   align-items: center;
   justify-content: center;
+  width: 100%;
   border-bottom: var(--border-btn);
 }
 
@@ -155,7 +155,7 @@ img {
   grid-template-columns: 120px auto 242px;
   width: calc(100% - 10px);
   grid-gap: 5px;
-  padding: 5px;
+  padding: 2px 4px;
   border-top:  var(--border-btn);
 }
 
@@ -261,17 +261,19 @@ img {
   border: var(--border-btn);
   border-radius: var(--main-border-radius);
   padding: 1px 10px;
+  margin-right: -5px;
   color: var(--main-accent-color);
   background: var(--main-background-color);
   font-size: 12px;
+  position: relative;
+  margin-bottom: -2px;
 }
-.topbar-options-menu:hover {
+.topbar-options-menu:active {
   border-style: inset;
 }
 
 .resource {
   display: flex;
-  gap: 2px;
   align-items: center;
 }
 
@@ -280,9 +282,9 @@ img {
 }
 
 .resource-content {
-  object-fit: none;
-  height: 15px;
-  width: 24px;
+  object-fit: cover;
+  height: 13px;
+  width: 22px;
   border: var(--border-slot);
 }
 
@@ -377,12 +379,6 @@ img {
 }
 
 .modal-content {
-  background: var(--main-background-color);
-  border: var(--border-panel);
-  box-shadow:
-    0 0 0 1px var(--main-shadow-dark),
-    0 0 30px rgba(0, 0, 0, 0.9);
-  border-radius: var(--main-border-radius-lg);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -493,11 +489,11 @@ div.menu-title {
   background: rgba(0, 0, 0, 0.45);
 }
 
-.menu-btn:hover {
+.menu-btn:active {
   border-style: inset;
 }
 
-.menu-panel--home .menu-btn:hover {
+.menu-panel--home .menu-btn:active {
   background: rgba(0, 0, 0, 0.6);
 }
 
@@ -581,11 +577,11 @@ div.menu-title {
   min-width: 180px;
 }
 
-.config-row select:hover,
+.config-row select:active,
 .config-row select:focus,
-.player-civ select:hover,
+.player-civ select:active,
 .player-civ select:focus,
-.team-cycle:hover,
+.team-cycle:active,
 .team-cycle:focus {
   outline: none;
   border-style: inset;
@@ -722,7 +718,7 @@ div.menu-title {
     inset -2px -2px 0 rgba(0, 0, 0, 0.35);
 }
 
-.color-swatch:hover {
+.color-swatch:active {
   border-style: inset;
   box-shadow:
     inset 2px 2px 0 rgba(0, 0, 0, 0.35),
@@ -841,4 +837,53 @@ div.menu-title {
 .dev-console-input:focus {
   background-color: var(--main-accent-hover);
   border-color: #efdec7;
+}
+
+/* ============================================================
+   PLAYER STATS
+   ============================================================ */
+
+.player-stats-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10;
+  border: var(--border-btn);
+  background: var(--main-background-color);
+  color: var(--main-accent-color);
+  cursor: pointer;
+}
+
+.player-stats-btn:active {
+  border-style: inset;
+}
+
+.player-stats {
+  position: fixed;
+  bottom: 134px;
+  right: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 6px;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.player-stats-name {
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 black;
+  white-space: nowrap;
+}
+
+.player-stats-name--dead {
+  text-decoration: line-through;
+  opacity: 0.45;
 }

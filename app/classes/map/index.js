@@ -171,10 +171,6 @@ export default class Map extends Container {
     return this.mapTerrain.generateMapRelief()
   }
 
-  isInPlayerStartFlatZone(i, j, radius) {
-    return this.mapTerrain.isInPlayerStartFlatZone(i, j, radius)
-  }
-
   flattenPlayerStartZones(radius) {
     return this.mapTerrain.flattenPlayerStartZones(radius)
   }

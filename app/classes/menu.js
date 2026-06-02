@@ -4,6 +4,7 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { MinimapManager } from '../ui/MinimapManager'
 import { BottombarManager } from '../ui/BottombarManager'
+import { PlayerStatsManager } from '../ui/PlayerStatsManager'
 
 export default class Menu {
   constructor(context) {
@@ -186,6 +187,7 @@ export default class Menu {
 
     this.minimapManager = new MinimapManager(this)
     this.bottombarManager = new BottombarManager(this)
+    this.playerStatsManager = new PlayerStatsManager(this)
 
     // Expose throttled minimap updaters as top-level properties for external callers
     this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap
@@ -198,6 +200,7 @@ export default class Menu {
   }
 
   destroy() {
+    this.playerStatsManager.destroy()
     this.bottombar.remove()
     this.topbar.remove()
   }
@@ -269,6 +272,9 @@ export default class Menu {
   updatePlayerMiniMapEvt(owner) { return this.minimapManager.updatePlayerMiniMapEvt(owner) }
   updateResourcesMiniMapEvt() { return this.minimapManager.updateResourcesMiniMapEvt() }
   updateCameraMiniMapEvt() { return this.minimapManager.updateCameraMiniMapEvt() }
+
+  // PlayerStats delegate
+  updatePlayerStats() { return this.playerStatsManager.update() }
 
   // Bottombar delegates
   resetInfo() { return this.bottombarManager.resetInfo() }
