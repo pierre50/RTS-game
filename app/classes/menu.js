@@ -76,7 +76,7 @@ export default class Menu {
     this.topbarView.updateAgeTheme(age)
   }
 
-  showMessage(message) {
+  showMessage(message, type = 'error') {
     const {
       context: { gamebox },
     } = this
@@ -86,12 +86,9 @@ export default class Menu {
     const box = document.createElement('div')
     box.id = 'msg'
     box.className = 'message'
-    Object.assign(box.style, {
-      bottom: this.bottombar.clientHeight + 18 + 'px',
-    })
     const msg = document.createElement('span')
     msg.textContent = message
-    msg.className = 'message-content'
+    msg.className = `message-content message-content--${type}`
 
     box.appendChild(msg)
     gamebox.appendChild(box)
@@ -101,28 +98,68 @@ export default class Menu {
   }
 
   // Minimap delegates
-  getMinimapFactor() { return this.minimapManager.getMinimapFactor() }
-  revealTerrainMinimap() { return this.minimapManager.revealTerrainMinimap() }
-  updateTerrainMiniMap(i, j) { return this.minimapManager.updateTerrainMiniMap(i, j) }
-  updateResourceMiniMap(resource) { return this.minimapManager.updateResourceMiniMap(resource) }
-  updatePlayerMiniMapEvt(owner) { return this.minimapManager.updatePlayerMiniMapEvt(owner) }
-  updateResourcesMiniMapEvt() { return this.minimapManager.updateResourcesMiniMapEvt() }
-  updateCameraMiniMapEvt() { return this.minimapManager.updateCameraMiniMapEvt() }
+  getMinimapFactor() {
+    return this.minimapManager.getMinimapFactor()
+  }
+  revealTerrainMinimap() {
+    return this.minimapManager.revealTerrainMinimap()
+  }
+  updateTerrainMiniMap(i, j) {
+    return this.minimapManager.updateTerrainMiniMap(i, j)
+  }
+  updateResourceMiniMap(resource) {
+    return this.minimapManager.updateResourceMiniMap(resource)
+  }
+  updatePlayerMiniMapEvt(owner) {
+    return this.minimapManager.updatePlayerMiniMapEvt(owner)
+  }
+  updateResourcesMiniMapEvt() {
+    return this.minimapManager.updateResourcesMiniMapEvt()
+  }
+  updateCameraMiniMapEvt() {
+    return this.minimapManager.updateCameraMiniMapEvt()
+  }
 
   // PlayerStats delegate
-  updatePlayerStats() { return this.playerStatsManager.update() }
+  updatePlayerStats() {
+    return this.playerStatsManager.update()
+  }
 
   // Bottombar delegates
-  resetInfo() { return this.bottombarManager.resetInfo() }
-  generateInfo(selection) { return this.bottombarManager.generateInfo(selection) }
-  updateInfo(target, action) { return this.bottombarManager.updateInfo(target, action) }
-  updateButtonContent(target, action) { return this.bottombarManager.updateButtonContent(target, action) }
-  toggleButtonCancel(target, value) { return this.bottombarManager.toggleButtonCancel(target, value) }
-  updateBottombar() { return this.bottombarManager.updateBottombar() }
-  setBottombar(selection) { return this.bottombarManager.setBottombar(selection) }
-  getMessage(cost) { return this.bottombarManager.getMessage(cost) }
-  getUnitButton(type) { return this.bottombarManager.getUnitButton(type) }
-  getBuildingButton(type) { return this.bottombarManager.getBuildingButton(type) }
-  getTechnologyButton(type) { return this.bottombarManager.getTechnologyButton(type) }
-  handleHotkey(key) { return this.bottombarManager.handleHotkey(key) }
+  resetInfo() {
+    return this.bottombarManager.resetInfo()
+  }
+  generateInfo(selection) {
+    return this.bottombarManager.generateInfo(selection)
+  }
+  updateInfo(target, action) {
+    return this.bottombarManager.updateInfo(target, action)
+  }
+  updateButtonContent(target, action) {
+    return this.bottombarManager.updateButtonContent(target, action)
+  }
+  toggleButtonCancel(target, value) {
+    return this.bottombarManager.toggleButtonCancel(target, value)
+  }
+  updateBottombar() {
+    return this.bottombarManager.updateBottombar()
+  }
+  setBottombar(selection) {
+    return this.bottombarManager.setBottombar(selection)
+  }
+  getMessage(cost) {
+    return this.bottombarManager.getMessage(cost)
+  }
+  getUnitButton(type) {
+    return this.bottombarManager.getUnitButton(type)
+  }
+  getBuildingButton(type) {
+    return this.bottombarManager.getBuildingButton(type)
+  }
+  getTechnologyButton(type) {
+    return this.bottombarManager.getTechnologyButton(type)
+  }
+  handleHotkey(key) {
+    return this.bottombarManager.handleHotkey(key)
+  }
 }

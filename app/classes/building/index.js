@@ -1,13 +1,7 @@
 import { sound } from '@pixi/sound'
 import { Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import {
-  ACTION_TYPES,
-  BUILDING_TYPES,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  UNIT_TYPES,
-} from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, UNIT_TYPES } from '../../constants'
 import {
   getTexture,
   randomItem,
@@ -277,7 +271,9 @@ export class Building extends Instance {
 
   select() {
     if (this.selected) return
-    const { context: { menu, player } } = this
+    const {
+      context: { menu, player },
+    } = this
     if (this.owner.isPlayed && this.sounds?.create) sound.play(this.sounds.create)
     super.select()
     if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
@@ -287,7 +283,9 @@ export class Building extends Instance {
   unselect() {
     if (!this.selected) return
     super.unselect()
-    const { context: { menu, player } } = this
+    const {
+      context: { menu, player },
+    } = this
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 

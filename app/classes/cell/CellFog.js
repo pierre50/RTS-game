@@ -11,12 +11,7 @@ export const _DW = 64
 export const _DH = 32
 
 function _insideDiamond(px, py) {
-  return (
-    px + 2 * py >= 32 &&
-    px - 2 * py <= 32 &&
-    px - 2 * py >= -32 &&
-    px + 2 * py <= 96
-  )
+  return px + 2 * py >= 32 && px - 2 * py <= 32 && px - 2 * py >= -32 && px + 2 * py <= 96
 }
 
 export function getFogTexture() {

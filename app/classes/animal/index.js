@@ -1,12 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Assets, AnimatedSprite } from 'pixi.js'
-import {
-  ACTION_TYPES,
-  FAMILY_TYPES,
-  SHEET_TYPES,
-  LABEL_TYPES,
-  UNIT_TYPES,
-} from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, UNIT_TYPES } from '../../constants'
 import {
   getInstanceZIndex,
   randomRange,
@@ -163,7 +157,6 @@ export class Animal extends Instance {
     })
   }
 
-
   stop() {
     if (this.currentCell.has && this.currentCell.has.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
@@ -180,33 +173,67 @@ export class Animal extends Instance {
     this.setTextures(SHEET_TYPES.standing)
   }
 
-
-
   setDefaultInterface(element, data) {
     return this.animalInterface.setDefaultInterface(element, data)
   }
 
   // AnimalLifecycle
-  die() { return this.animalLifecycle.die() }
-  death() { return this.animalLifecycle.death() }
-  decompose() { return this.animalLifecycle.decompose() }
-  updateTexture() { return this.animalLifecycle.updateTexture() }
-  clear() { return this.animalLifecycle.clear() }
+  die() {
+    return this.animalLifecycle.die()
+  }
+  death() {
+    return this.animalLifecycle.death()
+  }
+  decompose() {
+    return this.animalLifecycle.decompose()
+  }
+  updateTexture() {
+    return this.animalLifecycle.updateTexture()
+  }
+  clear() {
+    return this.animalLifecycle.clear()
+  }
 
   // AnimalMovement
-  hasPath() { return this.animalMovement.hasPath() }
-  setDest(dest) { return this.animalMovement.setDest(dest) }
-  setPath(path) { return this.animalMovement.setPath(path) }
-  isAnimalAtDest(action, dest) { return this.animalMovement.isAnimalAtDest(action, dest) }
-  destHasMoved() { return this.animalMovement.destHasMoved() }
-  sendTo(dest, action) { return this.animalMovement.sendTo(dest, action) }
-  moveToPath() { return this.animalMovement.moveToPath() }
+  hasPath() {
+    return this.animalMovement.hasPath()
+  }
+  setDest(dest) {
+    return this.animalMovement.setDest(dest)
+  }
+  setPath(path) {
+    return this.animalMovement.setPath(path)
+  }
+  isAnimalAtDest(action, dest) {
+    return this.animalMovement.isAnimalAtDest(action, dest)
+  }
+  destHasMoved() {
+    return this.animalMovement.destHasMoved()
+  }
+  sendTo(dest, action) {
+    return this.animalMovement.sendTo(dest, action)
+  }
+  moveToPath() {
+    return this.animalMovement.moveToPath()
+  }
 
   // AnimalCombat
-  getReaction(instance) { return this.animalCombat.getReaction(instance) }
-  detect(instance) { return this.animalCombat.detect(instance) }
-  isAttacked(instance) { return this.animalCombat.isAttacked(instance) }
-  affectNewDest() { return this.animalCombat.affectNewDest() }
-  runaway(instance) { return this.animalCombat.runaway(instance) }
-  getAction(name) { return this.animalCombat.getAction(name) }
+  getReaction(instance) {
+    return this.animalCombat.getReaction(instance)
+  }
+  detect(instance) {
+    return this.animalCombat.detect(instance)
+  }
+  isAttacked(instance) {
+    return this.animalCombat.isAttacked(instance)
+  }
+  affectNewDest() {
+    return this.animalCombat.affectNewDest()
+  }
+  runaway(instance) {
+    return this.animalCombat.runaway(instance)
+  }
+  getAction(name) {
+    return this.animalCombat.getAction(name)
+  }
 }

@@ -28,7 +28,9 @@ export class BuildingLifecycle {
 
   updateTexture() {
     const building = this.building
-    const { context: { menu } } = building
+    const {
+      context: { menu },
+    } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
     const buildSpritesheetId = building.sprite.texture.label.split('_')[1].split('.')[0]
     const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
@@ -42,7 +44,11 @@ export class BuildingLifecycle {
     } else if (percentage >= 100) {
       building.finalTexture()
       if (!building.isBuilt) {
-        if (building.owner.isPlayed && building.sounds?.create && building.context.controls.instanceIsAudible(building)) {
+        if (
+          building.owner.isPlayed &&
+          building.sounds?.create &&
+          building.context.controls.instanceIsAudible(building)
+        ) {
           sound.play(building.sounds.create)
         }
         building.onBuilt()
@@ -143,7 +149,9 @@ export class BuildingLifecycle {
 
   onBuilt() {
     const building = this.building
-    const { context: { menu } } = building
+    const {
+      context: { menu },
+    } = building
     if (building.increasePopulation) {
       building.owner.population_max += building.increasePopulation
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
@@ -170,7 +178,10 @@ export class BuildingLifecycle {
     }
     if (action === ACTION_TYPES.build && !building.isBuilt) {
       building.updateTexture()
-    } else if ((action === ACTION_TYPES.attack && building.isBuilt) || (action === ACTION_TYPES.build && building.isBuilt)) {
+    } else if (
+      (action === ACTION_TYPES.attack && building.isBuilt) ||
+      (action === ACTION_TYPES.build && building.isBuilt)
+    ) {
       if (percentage > 0 && percentage < 25) {
         building.generateFire('450')
       } else if (percentage >= 25 && percentage < 50) {
@@ -203,7 +214,9 @@ export class BuildingLifecycle {
   die() {
     const building = this.building
     if (building.isDead) return
-    const { context: { map, player, players, menu } } = building
+    const {
+      context: { map, player, players, menu },
+    } = building
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.isDead = true
@@ -264,7 +277,9 @@ export class BuildingLifecycle {
     const building = this.building
     if (building.isDestroyed) return
     clearTimeout(building.visibilityTimeout)
-    const { context: { map } } = building
+    const {
+      context: { map },
+    } = building
     const dist = building.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, cell => {
       cell.corpses.delete(building)

@@ -53,7 +53,14 @@ export class UnitInterface {
   setDefaultInterface(element, data) {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    appendBaseEntityInfo(element, t(unit.owner.civ), typeText, getIconPath(data.icon), unit.hitPoints, unit.totalHitPoints)
+    appendBaseEntityInfo(
+      element,
+      t(unit.owner.civ),
+      typeText,
+      getIconPath(data.icon),
+      unit.hitPoints,
+      unit.totalHitPoints
+    )
 
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')

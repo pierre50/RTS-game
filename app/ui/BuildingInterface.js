@@ -24,7 +24,8 @@ export class BuildingInterface {
     populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
     const populationSpan = document.createElement('span')
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent = building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+    populationSpan.textContent =
+      building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
     populationDiv.appendChild(populationSpan)
     return populationDiv
   }
@@ -60,10 +61,19 @@ export class BuildingInterface {
 
   setDefaultInterface(element, data) {
     const building = this.building
-    const { context: { menu } } = building
+    const {
+      context: { menu },
+    } = building
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
-    appendBaseEntityInfo(element, t(building.owner.civ), t(building.type), getIconPath(data.icon), hitPoints, building.totalHitPoints)
+    appendBaseEntityInfo(
+      element,
+      t(building.owner.civ),
+      t(building.type),
+      getIconPath(data.icon),
+      hitPoints,
+      building.totalHitPoints
+    )
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons['food'], building.quantity)

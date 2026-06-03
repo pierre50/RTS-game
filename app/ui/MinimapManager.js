@@ -1,4 +1,10 @@
-import { throttle, canvasDrawDiamond, canvasDrawRectangle, canvasDrawStrokeRectangle, playerCanSeeInstance } from '../lib'
+import {
+  throttle,
+  canvasDrawDiamond,
+  canvasDrawRectangle,
+  canvasDrawStrokeRectangle,
+  playerCanSeeInstance,
+} from '../lib'
 import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../constants'
 
 export class MinimapManager {
@@ -13,7 +19,7 @@ export class MinimapManager {
 
   getMinimapFactor() {
     const { map } = this.menu.context
-    return (CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2) / 234 * 2
+    return ((CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2) / 234) * 2
   }
 
   getMinimapParams() {
@@ -185,12 +191,26 @@ export class MinimapManager {
       if (!isVisible(building)) return
       const { x, y, size, selected } = building
       const finalSize = squareSize + size
-      canvasDrawRectangle(context, x / factor - finalSize / 2 + translate, y / factor - finalSize / 2, finalSize, finalSize, selected ? 'white' : color)
+      canvasDrawRectangle(
+        context,
+        x / factor - finalSize / 2 + translate,
+        y / factor - finalSize / 2,
+        finalSize,
+        finalSize,
+        selected ? 'white' : color
+      )
     })
     owner.units.forEach(unit => {
       if (!isVisible(unit)) return
       const { x, y, selected } = unit
-      canvasDrawRectangle(context, x / factor - squareSize / 2 + translate, y / factor - squareSize / 2, squareSize, squareSize, selected ? 'white' : color)
+      canvasDrawRectangle(
+        context,
+        x / factor - squareSize / 2 + translate,
+        y / factor - squareSize / 2,
+        squareSize,
+        squareSize,
+        selected ? 'white' : color
+      )
     })
   }
 }

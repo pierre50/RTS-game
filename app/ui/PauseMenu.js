@@ -1,7 +1,7 @@
 import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
-import { parseSaveJSON } from '../serialization/SaveValidator'
+import { openSaveListModal } from './saveListModal'
 
 export class PauseMenu {
   constructor(menu) {
@@ -23,31 +23,51 @@ export class PauseMenu {
 
     const content = document.createElement('div')
     content.className = 'modal-menu'
-    const modal = new Modal(content)
+
+    const modal = new Modal({
+      title: t('menuBtn'),
+      content,
+      onClose: () => menu.context.resume(),
+    })
 
     content.appendChild(
-      this.createActionButton(t('save'), 'btn-dark', () => {
-        menu.context.save()
-        modal.close()
-        menu.context.resume()
+      this._btn(t('save'), 'btn-dark', () => {
+        try {
+          menu.context.save()
+          modal.close()
+          menu.context.resume()
+          menu.showMessage(t('saveSuccess'), 'success')
+        } catch (e) {
+          menu.showMessage(e.message === 'MAX_SAVES_REACHED' ? t('maxSavesReached') : t('storageFull'), 'warning')
+        }
       })
     )
-    content.appendChild(this.createLoadControl(modal))
+
     content.appendChild(
-      this.createActionButton(t('quit'), 'btn-dark secondary', () => {
+      this._btn(t('loadGame'), 'btn-dark secondary', () => {
+        modal.close()
+        this._openSaveList()
+      })
+    )
+
+    content.appendChild(
+      this._btn(t('quit'), 'btn-dark secondary', () => {
         modal.close()
         menu.context.quit()
       })
     )
-    content.appendChild(
-      this.createActionButton(t('cancel'), 'btn-dark secondary', () => {
-        modal.close()
-        menu.context.resume()
-      })
-    )
   }
 
-  createActionButton(label, className, onClick) {
+  _openSaveList() {
+    const { menu } = this
+    openSaveListModal({
+      onLoad: saveData => menu.context.load(saveData),
+      onError: msg => menu.showMessage(msg, 'error'),
+      onClose: () => menu.context.resume(),
+    })
+  }
+
+  _btn(label, className, onClick) {
     const button = document.createElement('button')
     button.className = className
     button.innerText = label
@@ -56,36 +76,5 @@ export class PauseMenu {
       onClick()
     })
     return button
-  }
-
-  createLoadControl(modal) {
-    const { menu } = this
-    const load = document.createElement('div')
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'application/JSON'
-    input.addEventListener('change', evt => {
-      const file = evt.target.files?.[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = ({ target: { result } }) => {
-        try {
-          menu.context.load(parseSaveJSON(result))
-          modal.close()
-          menu.context.resume()
-        } catch (error) {
-          menu.showMessage(t('invalidSaveFile'))
-          console.error(error)
-        } finally {
-          input.value = ''
-        }
-      }
-      reader.readAsText(file)
-    })
-    load.className = 'input-file btn-dark'
-    load.innerText = t('load')
-    load.addEventListener('pointerdown', playClickSound)
-    load.appendChild(input)
-    return load
   }
 }

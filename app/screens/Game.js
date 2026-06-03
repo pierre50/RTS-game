@@ -5,8 +5,8 @@ import Menu from '../classes/menu'
 import Controls from '../classes/controls'
 import { debounce } from '../lib'
 import { ActionScheduler } from '../lib/ActionScheduler'
-import { serializeGame } from '../serialization/SaveSerializer'
 import { validateSaveData } from '../serialization/SaveValidator'
+import { save as saveToStorage } from '../serialization/SaveStorage'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 
@@ -52,7 +52,25 @@ export default class Game extends Container {
   }
 
   start() {
+    this._acquireWakeLock()
     this._bootFromConfig(this.config)
+  }
+
+  async _acquireWakeLock() {
+    if (!navigator.wakeLock) return
+    try {
+      this._wakeLock = await navigator.wakeLock.request('screen')
+      document.addEventListener(
+        'visibilitychange',
+        (this._onVisibilityChange = async () => {
+          if (this._wakeLock && document.visibilityState === 'visible') {
+            this._wakeLock = await navigator.wakeLock.request('screen').catch(() => null)
+          }
+        })
+      )
+    } catch {
+      // silently ignored — wake lock is a hint, not a requirement
+    }
   }
 
   _attachWindowListeners() {
@@ -169,28 +187,7 @@ export default class Game extends Container {
   }
 
   save() {
-    const data = serializeGame(this.context)
-
-    const workerBlob = new Blob(['self.onmessage=({data})=>self.postMessage(JSON.stringify(data))'], {
-      type: 'application/javascript',
-    })
-    const workerUrl = URL.createObjectURL(workerBlob)
-    const worker = new Worker(workerUrl)
-    URL.revokeObjectURL(workerUrl)
-
-    worker.onmessage = ({ data: json }) => {
-      worker.terminate()
-      const blobUrl = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-      const a = document.createElement('a')
-      a.href = blobUrl
-      a.download = `save_${new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.json`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(blobUrl)
-    }
-
-    worker.postMessage(data)
+    return saveToStorage(this.context)
   }
 
   load(json) {
@@ -205,6 +202,8 @@ export default class Game extends Container {
   }
 
   destroy(options) {
+    this._wakeLock?.release()
+    document.removeEventListener('visibilitychange', this._onVisibilityChange)
     this._destroyRuntime()
     this.context.scheduler?.destroy()
     this.context.scheduler = null

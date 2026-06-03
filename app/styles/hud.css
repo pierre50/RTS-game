@@ -157,11 +157,8 @@
 
 .bottombar-map-wrap {
   position: relative;
-  filter:
-    drop-shadow(-2px 0 0 var(--ui-map-shadow-dark))
-    drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
-    drop-shadow(2px 0 0 var(--ui-map-shadow-light))
-    drop-shadow(0 2px 0 var(--ui-map-shadow-light));
+  filter: drop-shadow(-2px 0 0 var(--ui-map-shadow-dark)) drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
+    drop-shadow(2px 0 0 var(--ui-map-shadow-light)) drop-shadow(0 2px 0 var(--ui-map-shadow-light));
 }
 
 .bottombar-map {
@@ -202,39 +199,55 @@
 
 .message {
   position: fixed;
-  width: 100%;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1000;
-  text-align: center;
   pointer-events: none;
 }
 
 .message-content {
   display: inline-block;
   padding: var(--msg-padding);
-  color: var(--msg-color);
   font-size: var(--msg-font-size);
   font-weight: bold;
   text-shadow: var(--text-shadow-dark-ui);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%),
-    var(--msg-bg);
-  border: 2px outset var(--msg-border);
   border-radius: var(--msg-border-radius);
+  border-width: 2px;
+  border-style: outset;
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.12),
     inset -1px -1px 0 rgba(0, 0, 0, 0.35);
   animation: msg-fade 3s ease forwards;
 }
 
+.message-content--success {
+  color: #4cde7a;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #021008;
+  border-color: #1a6e3c;
+}
+
+.message-content--warning {
+  color: #ffb340;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #080601;
+  border-color: #8a5a0a;
+}
+
+.message-content--error {
+  color: #ff5050;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #0a0602;
+  border-color: #9a2020;
+}
+
 @keyframes msg-fade {
   0% {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateX(12px);
   }
 
   15% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
   75% {

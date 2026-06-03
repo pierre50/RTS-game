@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@pixi/sound": "^6.0.1",
+    "lz-string": "^1.5.0",
     "pixi-filters": "^6.1.5",
     "pixi.js": "^8.18.1"
   },

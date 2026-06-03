@@ -1,6 +1,7 @@
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
+import { playClickSound } from './uiSound'
 
 export function setUnitTexture(sheet, instance) {
   const animationSpeed = {
@@ -66,35 +67,65 @@ export function filterObject(obj, keys) {
   }, {})
 }
 
-export var Modal = function (content) {
-  if (!(content instanceof HTMLElement)) {
-    throw new Error('Content must be an HTML element.')
+export class Modal {
+  constructor({ title, content, onClose } = {}) {
+    this._id = uuidv4()
+    this._onClose = onClose
+    this._build(title, content)
   }
 
-  const id = uuidv4()
+  _build(title, content) {
+    const backdrop = document.createElement('div')
+    backdrop.id = this._id
+    backdrop.className = 'modal'
+    backdrop.addEventListener('pointerdown', e => {
+      if (e.target === backdrop) {
+        this._removeEl()
+        if (this._onClose) this._onClose()
+      }
+    })
 
-  this.open = () => {
-    const modal = document.createElement('div')
-    modal.id = id
-    modal.className = 'modal'
+    const panel = document.createElement('div')
+    panel.className = 'modal-panel'
 
-    const modalContent = document.createElement('div')
-    modalContent.className = 'modal-content'
-    modalContent.appendChild(content)
+    const header = document.createElement('div')
+    header.className = 'modal-header'
 
-    modal.appendChild(modalContent)
-    document.body.appendChild(modal)
-    return modal
-  }
-
-  this.close = () => {
-    const modal = document.getElementById(id)
-    if (modal) {
-      modal.remove()
+    if (title) {
+      const titleEl = document.createElement('div')
+      titleEl.className = 'modal-title'
+      titleEl.textContent = title
+      header.appendChild(titleEl)
     }
+
+    const closeBtn = document.createElement('button')
+    closeBtn.className = 'modal-close btn-dark secondary'
+    closeBtn.textContent = '✕'
+    closeBtn.addEventListener('pointerdown', playClickSound)
+    closeBtn.addEventListener('click', () => {
+      this._removeEl()
+      if (this._onClose) this._onClose()
+    })
+    header.appendChild(closeBtn)
+
+    const divider = document.createElement('div')
+    divider.className = 'menu-divider'
+
+    panel.appendChild(header)
+    panel.appendChild(divider)
+    if (content) panel.appendChild(content)
+
+    backdrop.appendChild(panel)
+    document.body.appendChild(backdrop)
   }
 
-  this.open()
+  _removeEl() {
+    document.getElementById(this._id)?.remove()
+  }
+
+  close() {
+    this._removeEl()
+  }
 }
 
 export var CustomTimeout = function (callback, delay) {

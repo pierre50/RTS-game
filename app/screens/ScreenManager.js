@@ -36,10 +36,8 @@ export class ScreenManager {
   }
 
   showMapConfig() {
-    this.destroyCurrentMenuScreen()
-    this.currentMenuScreen = new MapConfig({
+    new MapConfig({
       onPlay: config => this.startGame(config),
-      onBack: () => this.showMainMenu(),
     })
   }
 

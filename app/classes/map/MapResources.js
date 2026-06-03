@@ -1,9 +1,5 @@
 import { Resource } from '../resource'
-import {
-  randomRange,
-  randomItem,
-  getPlainCellsAroundPoint,
-} from '../../lib'
+import { randomRange, randomItem, getPlainCellsAroundPoint } from '../../lib'
 import { RESOURCE_TYPES } from '../../constants'
 
 const RESOURCE_DENSITY_PROFILES = {
@@ -45,7 +41,7 @@ export class MapResources {
     let forestCells = []
     const pathCells = new Set()
 
-    const rangeFactor = this.map.mapType === 'lac' ? 0.55 : 0.40
+    const rangeFactor = this.map.mapType === 'lac' ? 0.55 : 0.4
     const forestRange = Math.max(30, Math.floor(this.map.size * rangeFactor))
 
     function distSq(x1, y1, x2, y2) {
@@ -176,8 +172,10 @@ export class MapResources {
       const ni = playerI + offsetX
       const nj = playerJ + offsetY
       if (
-        ni >= 0 && ni < gridWidth &&
-        nj >= 0 && nj < gridHeight &&
+        ni >= 0 &&
+        ni < gridWidth &&
+        nj >= 0 &&
+        nj < gridHeight &&
         distSq(ni, nj, playerI, playerJ) >= safeDistanceSq
       ) {
         const randOffsetX = Math.random() > 0.5 ? 1 : -1

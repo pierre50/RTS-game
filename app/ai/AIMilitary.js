@@ -104,9 +104,7 @@ export class AIMilitary {
 
   getBestEnemyTarget(units = []) {
     const armyCenter = this.getArmyCenter(units)
-    const candidates = this.ai
-      .getEnemyMemories({ freshWithin: 45000 })
-      .filter(memory => memory.instance?.hitPoints > 0)
+    const candidates = this.ai.getEnemyMemories({ freshWithin: 45000 }).filter(memory => memory.instance?.hitPoints > 0)
 
     if (candidates.length) {
       return candidates
@@ -179,9 +177,10 @@ export class AIMilitary {
     const raidSize = difficultyConfig.raidSize
     if (raidThreshold > 0 && ai.phase === 'military_build' && availableMilitary.length >= raidThreshold) {
       const raidTarget =
-        ai.getFreshEnemyInstances({ family: FAMILY_TYPES.unit, freshWithin: 25000 }).find(
-          u => u.hitPoints > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner)
-        ) || this.getBestEnemyTarget(availableMilitary)
+        ai
+          .getFreshEnemyInstances({ family: FAMILY_TYPES.unit, freshWithin: 25000 })
+          .find(u => u.hitPoints > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner)) ||
+        this.getBestEnemyTarget(availableMilitary)
       if (raidTarget) {
         if (debug) console.log(`Early raid! Sending ${raidSize} soldiers to harass.`)
         this.sendToAttack(availableMilitary.splice(0, raidSize), raidTarget, debug)

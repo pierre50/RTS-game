@@ -291,7 +291,15 @@ export class AIStrategy {
     let actions = 0
     const reserve = this.getEconomicDemand()
 
-    actions += this.buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager, undefined, reserve, debug)
+    actions += this.buyUnits(
+      villagers.length,
+      maxVillagers,
+      towncenters,
+      UNIT_TYPES.villager,
+      undefined,
+      reserve,
+      debug
+    )
     actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
     actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, reserve, debug)

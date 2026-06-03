@@ -1,23 +1,24 @@
 import { playClickSound } from '../lib/uiSound'
+import { Modal } from '../lib'
 import { t } from '../lib/lang'
 
 const DIFFICULTIES = [
-  { label: () => t('diffEasy'),   value: 'easy' },
+  { label: () => t('diffEasy'), value: 'easy' },
   { label: () => t('diffMedium'), value: 'medium' },
-  { label: () => t('diffHard'),   value: 'hard' },
+  { label: () => t('diffHard'), value: 'hard' },
 ]
 
 const STARTING_RESOURCES = [
-  { label: () => t('resLow'),       value: 'low' },
-  { label: () => t('resStandard'),  value: 'standard' },
-  { label: () => t('resHigh'),      value: 'high' },
-  { label: () => t('resVeryHigh'),  value: 'very_high' },
+  { label: () => t('resLow'), value: 'low' },
+  { label: () => t('resStandard'), value: 'standard' },
+  { label: () => t('resHigh'), value: 'high' },
+  { label: () => t('resVeryHigh'), value: 'very_high' },
 ]
 
 const MAP_RESOURCE_DENSITIES = [
-  { label: () => t('mapResourcesLow'),      value: 'low' },
+  { label: () => t('mapResourcesLow'), value: 'low' },
   { label: () => t('mapResourcesModerate'), value: 'moderate' },
-  { label: () => t('mapResourcesHigh'),     value: 'high' },
+  { label: () => t('mapResourcesHigh'), value: 'high' },
 ]
 
 const RESOURCES_MAP = {
@@ -41,31 +42,28 @@ const MAP_SIZES = [
 ]
 
 const MAP_TYPES = [
-  { label: () => t('mapTypePlain'),     value: 'plain' },
+  { label: () => t('mapTypePlain'), value: 'plain' },
   { label: () => t('mapTypeContinent'), value: 'continent' },
-  { label: () => t('mapTypeLac'),       value: 'lac' },
-  { label: () => t('mapTypeIlot'),      value: 'ilot' },
+  { label: () => t('mapTypeLac'), value: 'lac' },
+  { label: () => t('mapTypeIlot'), value: 'ilot' },
 ]
 
-const CIVS = [
-  { label: () => t('civGreek'), value: 'Greek' },
-]
+const CIVS = [{ label: () => t('civGreek'), value: 'Greek' }]
 
 const PLAYER_COLORS = [
-  { name: 'blue',   hex: '#3f5f9f' },
-  { name: 'red',    hex: '#e30b00' },
+  { name: 'blue', hex: '#3f5f9f' },
+  { name: 'red', hex: '#e30b00' },
   { name: 'yellow', hex: '#c3a31b' },
-  { name: 'brown',  hex: '#8b5b37' },
+  { name: 'brown', hex: '#8b5b37' },
   { name: 'orange', hex: '#ef6307' },
-  { name: 'green',  hex: '#4b6b2b' },
-  { name: 'grey',   hex: '#8f8f8f' },
-  { name: 'cyan',   hex: '#00837b' },
+  { name: 'green', hex: '#4b6b2b' },
+  { name: 'grey', hex: '#8f8f8f' },
+  { name: 'cyan', hex: '#00837b' },
 ]
 
 export default class MapConfig {
-  constructor({ onPlay, onBack }) {
+  constructor({ onPlay }) {
     this.onPlay = onPlay
-    this.onBack = onBack
 
     this.config = {
       size: 120,
@@ -84,11 +82,10 @@ export default class MapConfig {
       { name: t('computer') + ' 1', color: 'red', civ: 'Greek', team: null, isHuman: false },
     ]
 
-    this.el = document.createElement('div')
-    this.el.id = 'map-config'
-
-    this._buildUI()
-    document.body.appendChild(this.el)
+    this._modal = new Modal({
+      title: t('newGame'),
+      content: this._buildContent(),
+    })
   }
 
   _createButton(label, onClick, className = 'btn-dark') {
@@ -100,16 +97,8 @@ export default class MapConfig {
     return button
   }
 
-  _buildUI() {
-    const panel = document.createElement('div')
-    panel.className = 'menu-panel lobby-panel'
-
-    const title = document.createElement('div')
-    title.className = 'menu-title'
-    title.textContent = t('newGame')
-
-    const divider = document.createElement('div')
-    divider.className = 'menu-divider'
+  _buildContent() {
+    const content = document.createElement('div')
 
     const layout = document.createElement('div')
     layout.className = 'lobby-layout'
@@ -181,19 +170,18 @@ export default class MapConfig {
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group button-group--row'
-
-    buttons.appendChild(this._createButton(t('back'), this.onBack, 'btn-dark secondary'))
     buttons.appendChild(
-      this._createButton(t('startGame'), () => this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) }))
+      this._createButton(t('startGame'), () => {
+        this._modal.close()
+        this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) })
+      })
     )
 
-    panel.appendChild(title)
-    panel.appendChild(divider)
-    panel.appendChild(layout)
-    panel.appendChild(buttons)
+    content.appendChild(layout)
+    content.appendChild(buttons)
 
-    this.el.appendChild(panel)
     this._refreshPlayerTable()
+    return content
   }
 
   _usedColors() {
@@ -269,7 +257,6 @@ export default class MapConfig {
   _refreshPlayerTable() {
     this.playerTableEl.innerHTML = ''
 
-    // Header row
     const header = document.createElement('div')
     header.className = 'player-table-header'
     ;[t('colName'), t('colCiv'), t('colTeam'), t('colColor')].forEach(text => {
@@ -279,18 +266,15 @@ export default class MapConfig {
     })
     this.playerTableEl.appendChild(header)
 
-    // Player rows
     this.players.forEach((player, i) => {
       const row = document.createElement('div')
       row.className = 'player-row' + (i % 2 === 0 ? ' player-row--odd' : '')
 
-      // Name
       const nameCell = document.createElement('div')
       nameCell.className = 'player-name' + (player.isHuman ? ' human' : '')
       nameCell.textContent = player.name
       row.appendChild(nameCell)
 
-      // Civilization select
       const civCell = document.createElement('div')
       civCell.className = 'player-civ'
       const civSelect = document.createElement('select')
@@ -301,11 +285,12 @@ export default class MapConfig {
         if (civ.value === player.civ) opt.selected = true
         civSelect.appendChild(opt)
       })
-      civSelect.onchange = e => { this.players[i].civ = e.target.value }
+      civSelect.onchange = e => {
+        this.players[i].civ = e.target.value
+      }
       civCell.appendChild(civSelect)
       row.appendChild(civCell)
 
-      // Team button: "-" means no alliance, equal numbers are allied
       const teamCell = document.createElement('div')
       teamCell.className = 'player-team'
       const teamBtn = document.createElement('button')
@@ -318,7 +303,6 @@ export default class MapConfig {
       teamCell.appendChild(teamBtn)
       row.appendChild(teamCell)
 
-      // Color swatch
       const colorCell = document.createElement('div')
       colorCell.className = 'player-color-cell'
       const colorData = PLAYER_COLORS.find(c => c.name === player.color)
@@ -406,6 +390,6 @@ export default class MapConfig {
   }
 
   destroy() {
-    this.el.remove()
+    this._modal.close()
   }
 }

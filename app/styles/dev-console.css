@@ -31,9 +31,7 @@
   width: min(420px, calc(100vw - 28px));
   margin: 0;
   padding: var(--ui-gap-8);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%),
-    var(--main-primary-color);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%), var(--main-primary-color);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
   animation: dev-console-panel-enter var(--ui-transition-panel) both;

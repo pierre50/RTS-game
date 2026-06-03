@@ -29,11 +29,11 @@ export function getAmount(value, fallback = 1) {
   return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
 }
 
-export function getSpawnCell(context, buildingConfig = null) {
+export function getSpawnCell(context, { buildingConfig = null, cellCondition = null } = {}) {
   const { map, controls } = context
   const cursorCell = controls.getCellUnderCursor()
   if (!cursorCell) return null
-  if (!buildingConfig && !cursorCell.solid && !cursorCell.has) return cursorCell
+  if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
   if (buildingConfig && canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig)) return cursorCell
 
   const maxRadius = 8
@@ -45,7 +45,7 @@ export function getSpawnCell(context, buildingConfig = null) {
         if (!cell) continue
         if (buildingConfig) {
           if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig)) return cell
-        } else if (!cell.solid && !cell.has) {
+        } else if (!cellCondition || cellCondition(cell)) {
           return cell
         }
       }
@@ -169,13 +169,7 @@ export function cleanupDebugArtifacts(context) {
 
   tickerNames.forEach(tickerName => stopDebugTicker(context, tickerName))
 
-  const layerLabels = [
-    DEBUG_SOLID_LAYER,
-    DEBUG_PATH_LAYER,
-    DEBUG_VISION_LAYER,
-    DEBUG_GRID_LAYER,
-    DEBUG_COORDS_LAYER,
-  ]
+  const layerLabels = [DEBUG_SOLID_LAYER, DEBUG_PATH_LAYER, DEBUG_VISION_LAYER, DEBUG_GRID_LAYER, DEBUG_COORDS_LAYER]
 
   layerLabels.forEach(label => {
     const layer = context.map?.getChildByLabel?.(label)

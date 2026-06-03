@@ -125,7 +125,7 @@ export class BuildingProduction {
             if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
               building.loading += 1
             } else if (building.owner.isPlayed && !hasShowedMessage) {
-              menu.showMessage(t('needHouses'))
+              menu.showMessage(t('needHouses'), 'warning')
               hasShowedMessage = true
             }
             if (building.selected && building.owner.isPlayed) {

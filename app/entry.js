@@ -2,7 +2,6 @@ import { Application } from 'pixi.js'
 import './styles.css'
 import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
-
 ;(async () => {
   const app = new Application()
 

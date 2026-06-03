@@ -24,10 +24,7 @@ export class MapGeneration {
     this.map.size = map.length - 1
 
     this.map.context.players = players.map(player => {
-      const p = new classMap[player.type](
-        { ...player, corpses: [], buildings: [], units: [] },
-        this.map.context
-      )
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -44,11 +41,16 @@ export class MapGeneration {
           this.map.grid[i] = []
         }
         const cell = line[j]
-        const newCell = new Cell({ i, j, z: cell.z, type: cell.type, fogSprites: cell.fogSprites }, this.map.context)
+        const newCell = new Cell(
+          { i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] },
+          this.map.context
+        )
         this.map.addChild(newCell)
         this.map.grid[i][j] = newCell
       }
     }
+    this.map._indexFogChunkCells()
+
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         this.map.grid[i][j].fillWaterCellsAroundCell()
@@ -141,14 +143,29 @@ export class MapGeneration {
     this.map.generateCells()
 
     switch (this.map.size) {
-      case 120: this.map.positionsCount = 2; break
-      case 144: this.map.positionsCount = 3; break
-      case 168: this.map.positionsCount = 4; break
-      case 200: this.map.positionsCount = 5; break
-      case 220: this.map.positionsCount = 5; break
-      case 384: this.map.positionsCount = 5; break
-      case 512: this.map.positionsCount = 5; break
-      default: this.map.positionsCount = 2
+      case 120:
+        this.map.positionsCount = 2
+        break
+      case 144:
+        this.map.positionsCount = 3
+        break
+      case 168:
+        this.map.positionsCount = 4
+        break
+      case 200:
+        this.map.positionsCount = 5
+        break
+      case 220:
+        this.map.positionsCount = 5
+        break
+      case 384:
+        this.map.positionsCount = 5
+        break
+      case 512:
+        this.map.positionsCount = 5
+        break
+      default:
+        this.map.positionsCount = 2
     }
 
     if (positionsCountOverride !== null) {
@@ -166,7 +183,6 @@ export class MapGeneration {
       this.map.generateMap(positionsCountOverride, repeat + 1)
       return
     }
-
   }
 
   stylishMap() {
@@ -228,12 +244,7 @@ export class MapGeneration {
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
         const team = playersConfig?.[i]?.team ?? null
         if (!i) {
-          players.push(
-            new Human(
-              { i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true },
-              context
-            )
-          )
+          players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context))
         } else if (!this.map.noAI) {
           players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty: this.map.difficulty }, context))
         }
@@ -303,17 +314,25 @@ export class MapGeneration {
     }
 
     function noise(x, y) {
-      const xi = Math.floor(x), yi = Math.floor(y)
-      const xf = x - xi, yf = y - yi
+      const xi = Math.floor(x),
+        yi = Math.floor(y)
+      const xf = x - xi,
+        yf = y - yi
       const smooth = t => t * t * (3 - 2 * t)
-      const u = smooth(xf), v = smooth(yf)
-      const a = hash(xi, yi), b = hash(xi + 1, yi)
-      const c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1)
+      const u = smooth(xf),
+        v = smooth(yf)
+      const a = hash(xi, yi),
+        b = hash(xi + 1, yi)
+      const c = hash(xi, yi + 1),
+        d = hash(xi + 1, yi + 1)
       return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v
     }
 
     function fbm(x, y, octaves = 5) {
-      let val = 0, amp = 0.5, freq = 1, sum = 0
+      let val = 0,
+        amp = 0.5,
+        freq = 1,
+        sum = 0
       for (let o = 0; o < octaves; o++) {
         val += noise(x * freq, y * freq) * amp
         sum += amp
@@ -335,16 +354,16 @@ export class MapGeneration {
     }
 
     const height = new Float32Array(gridSize * gridSize)
-    const biome  = new Float32Array(gridSize * gridSize)
+    const biome = new Float32Array(gridSize * gridSize)
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         height[i * gridSize + j] = fbm(i * scale, j * scale)
-        biome[i * gridSize + j]  = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4)
+        biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4)
       }
     }
 
-    const thresholds = { plain: 0.30, continent: 0.40, lac: 0.42, ilot: 0.52 }
-    const waterThreshold = thresholds[mapType] ?? 0.30
+    const thresholds = { plain: 0.3, continent: 0.4, lac: 0.42, ilot: 0.52 }
+    const waterThreshold = thresholds[mapType] ?? 0.3
 
     const terrainMap = []
     for (let i = 0; i < gridSize; i++) {
@@ -356,9 +375,9 @@ export class MapGeneration {
         if (mapType === 'continent') {
           h += (fo - 0.5) * 0.75
         } else if (mapType === 'lac') {
-          h -= (fo - 0.3) * 0.50
+          h -= (fo - 0.3) * 0.5
         } else if (mapType === 'ilot') {
-          h += (fo - 0.5) * 0.20
+          h += (fo - 0.5) * 0.2
         }
 
         terrainMap[i][j] = h < waterThreshold ? 2 : 0
@@ -380,10 +399,10 @@ export class MapGeneration {
     }
 
     const biomeThresholds = {
-      plain:     { lo: 0.38, hi: 0.65 },
+      plain: { lo: 0.38, hi: 0.65 },
       continent: { lo: 0.33, hi: 0.67 },
-      lac:       { lo: 0.32, hi: 0.68 },
-      ilot:      { lo: 0.27, hi: 0.60 },
+      lac: { lo: 0.32, hi: 0.68 },
+      ilot: { lo: 0.27, hi: 0.6 },
     }
     const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
 
@@ -391,7 +410,7 @@ export class MapGeneration {
       for (let j = 0; j < gridSize; j++) {
         if (terrainMap[i][j] === 2) continue
         const b = biome[i * gridSize + j]
-        if (b < bt.lo)      terrainMap[i][j] = 1
+        if (b < bt.lo) terrainMap[i][j] = 1
         else if (b > bt.hi) terrainMap[i][j] = 3
       }
     }
@@ -407,8 +426,23 @@ export class MapGeneration {
           continue
         }
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          const hasWaterNeighbour = getCellsAroundPoint(i, j, this.map.grid, 2, neighbour => neighbour.category === 'Water' || neighbour.waterBorder).length > 0
-          if (cell.category !== 'Water' && !hasWaterNeighbour && Math.random() < 0.03 && i > 1 && j > 1 && i < this.map.size && j < this.map.size) {
+          const hasWaterNeighbour =
+            getCellsAroundPoint(
+              i,
+              j,
+              this.map.grid,
+              2,
+              neighbour => neighbour.category === 'Water' || neighbour.waterBorder
+            ).length > 0
+          if (
+            cell.category !== 'Water' &&
+            !hasWaterNeighbour &&
+            Math.random() < 0.03 &&
+            i > 1 &&
+            j > 1 &&
+            i < this.map.size &&
+            j < this.map.size
+          ) {
             const randomSpritesheet = randomRange(292, 301).toString()
             const spritesheet = Assets.cache.get(randomSpritesheet)
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
@@ -449,7 +483,9 @@ export class MapGeneration {
             }
           }
           if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
-            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.map.context)))
+            this.map.resources.add(
+              this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.map.context))
+            )
           }
         }
       }
@@ -463,10 +499,10 @@ export class MapGeneration {
     const startAngle = Math.random() * 2 * Math.PI
     const searchHalf = Math.max(8, Math.floor(this.map.size * 0.07))
     const border = 12
-    const radiiFactors = [0.38, 0.30, 0.44, 0.22, 0.46, 0.15]
+    const radiiFactors = [0.38, 0.3, 0.44, 0.22, 0.46, 0.15]
 
     for (let i = 0; i < N; i++) {
-      const angle = startAngle + (2 * Math.PI / N) * i
+      const angle = startAngle + ((2 * Math.PI) / N) * i
       let found = null
 
       for (const frac of radiiFactors) {

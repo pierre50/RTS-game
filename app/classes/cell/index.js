@@ -106,19 +106,45 @@ export class Cell extends Container {
   }
 
   // Fog delegates
-  setFog(init) { return this.cellFog.setFog(init) }
-  removeFog() { return this.cellFog.removeFog() }
-  addFogBuilding(textureSheet, colorSheet, colorName) { return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName) }
-  removeFogBuilding(instance) { return this.cellFog.removeFogBuilding(instance) }
-  setFogChildren(instance, init) { return this.cellFog.setFogChildren(instance, init) }
-  _updateEdgeDither() { return this.cellFog._updateEdgeDither() }
+  setFog(init) {
+    return this.cellFog.setFog(init)
+  }
+  removeFog() {
+    return this.cellFog.removeFog()
+  }
+  addFogBuilding(textureSheet, colorSheet, colorName) {
+    return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName)
+  }
+  removeFogBuilding(instance) {
+    return this.cellFog.removeFogBuilding(instance)
+  }
+  setFogChildren(instance, init) {
+    return this.cellFog.setFogChildren(instance, init)
+  }
+  _updateEdgeDither() {
+    return this.cellFog._updateEdgeDither()
+  }
 
   // Terrain delegates
-  setDesertBorder(direction) { return this.cellTerrain.setDesertBorder(direction) }
-  setWaterBorder(resourceName, index) { return this.cellTerrain.setWaterBorder(resourceName, index) }
-  setReliefBorder(index, elevation) { return this.cellTerrain.setReliefBorder(index, elevation) }
-  setWater() { return this.cellTerrain.setWater() }
-  fillWaterCellsAroundCell() { return this.cellTerrain.fillWaterCellsAroundCell() }
-  fillReliefCellsAroundCell() { return this.cellTerrain.fillReliefCellsAroundCell() }
-  setCellLevel(level, cpt) { return this.cellTerrain.setCellLevel(level, cpt) }
+  setDesertBorder(direction) {
+    return this.cellTerrain.setDesertBorder(direction)
+  }
+  setWaterBorder(resourceName, index) {
+    return this.cellTerrain.setWaterBorder(resourceName, index)
+  }
+  setReliefBorder(index, elevation) {
+    return this.cellTerrain.setReliefBorder(index, elevation)
+  }
+  setWater() {
+    return this.cellTerrain.setWater()
+  }
+  fillWaterCellsAroundCell() {
+    return this.cellTerrain.fillWaterCellsAroundCell()
+  }
+  fillReliefCellsAroundCell() {
+    return this.cellTerrain.fillReliefCellsAroundCell()
+  }
+  setCellLevel(level, cpt) {
+    return this.cellTerrain.setCellLevel(level, cpt)
+  }
 }

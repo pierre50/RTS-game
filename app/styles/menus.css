@@ -1,5 +1,4 @@
-#main-menu,
-#map-config {
+#main-menu {
   position: fixed;
   inset: 0;
   z-index: 2000;
@@ -116,7 +115,7 @@ div.menu-title {
 }
 
 .modal-menu {
-  padding: 24px 32px;
+  padding: 0;
 }
 
 .menu-copyright {
@@ -354,4 +353,43 @@ div.menu-title {
 .button-group--row {
   flex-direction: row;
   gap: var(--ui-gap-16);
+}
+
+.save-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  width: 360px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.save-list-empty {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--main-accent-color);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.save-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-8);
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(139, 105, 20, 0.25);
+}
+
+.save-list-name {
+  flex: 1;
+  font-weight: bold;
+  color: var(--main-accent-color);
+  font-size: 12px;
+}
+
+.save-list-row .btn-dark {
+  width: auto;
+  padding: 4px 12px;
+  font-size: 11px;
 }

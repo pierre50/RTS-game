@@ -36,5 +36,6 @@ export function appendBaseEntityInfo(element, civText, typeText, iconSrc, hitPoi
   element.appendChild(createInfoText(MENU_INFO_IDS.type, typeText))
   element.appendChild(createInfoImage(MENU_INFO_IDS.icon, iconSrc))
 
-  if (hitPoints !== undefined) element.appendChild(createInfoText(MENU_INFO_IDS.hitPoints, hitPoints + '/' + totalHitPoints))
+  if (hitPoints !== undefined)
+    element.appendChild(createInfoText(MENU_INFO_IDS.hitPoints, hitPoints + '/' + totalHitPoints))
 }

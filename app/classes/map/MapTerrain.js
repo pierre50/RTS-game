@@ -14,19 +14,29 @@ export class MapTerrain {
       return n - Math.floor(n)
     }
     function noise(x, y) {
-      const xi = Math.floor(x), yi = Math.floor(y)
-      const xf = x - xi, yf = y - yi
+      const xi = Math.floor(x),
+        yi = Math.floor(y)
+      const xf = x - xi,
+        yf = y - yi
       const s = t => t * t * (3 - 2 * t)
-      const u = s(xf), v = s(yf)
-      const a = hash(xi, yi), b = hash(xi + 1, yi)
-      const c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1)
+      const u = s(xf),
+        v = s(yf)
+      const a = hash(xi, yi),
+        b = hash(xi + 1, yi)
+      const c = hash(xi, yi + 1),
+        d = hash(xi + 1, yi + 1)
       return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v
     }
     function fbm(x, y) {
-      let val = 0, amp = 0.5, freq = 1, sum = 0
+      let val = 0,
+        amp = 0.5,
+        freq = 1,
+        sum = 0
       for (let o = 0; o < 4; o++) {
         val += noise(x * freq, y * freq) * amp
-        sum += amp; amp *= 0.5; freq *= 2
+        sum += amp
+        amp *= 0.5
+        freq *= 2
       }
       return val / sum
     }
@@ -66,7 +76,9 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         if (cell.z === 1) {
           let cpt = 0
-          getCellsAroundPoint(i, j, this.map.grid, 1, c => { if (c.z > 0) cpt++ })
+          getCellsAroundPoint(i, j, this.map.grid, 1, c => {
+            if (c.z > 0) cpt++
+          })
           if (cpt < 3) this.map.setCellReliefLevelDirect(cell, 0)
         }
       }
@@ -84,8 +96,9 @@ export class MapTerrain {
 
   flattenPlayerStartZones(radius = 4) {
     for (const pos of this.map.playersPos) {
-      const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius)
-        .filter(cell => cell.category !== 'Water' && !cell.waterBorder)
+      const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius).filter(
+        cell => cell.category !== 'Water' && !cell.waterBorder
+      )
       const zCounts = {}
       for (const cell of cells) zCounts[cell.z] = (zCounts[cell.z] || 0) + 1
       const targetZ = Number(Object.entries(zCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0)
@@ -112,10 +125,17 @@ export class MapTerrain {
 
     for (let qi = 0; qi < queue.length; qi++) {
       const idx = queue[qi]
-      const ci = Math.floor(idx / n), cj = idx % n
+      const ci = Math.floor(idx / n),
+        cj = idx % n
       const d = dist[idx]
-      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-        const ni = ci + di, nj = cj + dj
+      for (const [di, dj] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const ni = ci + di,
+          nj = cj + dj
         if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
         const nidx = ni * n + nj
         if (dist[nidx] > d + 1) {
@@ -163,7 +183,8 @@ export class MapTerrain {
           const cell = this.map.grid[i][j]
           for (const neighbor of [this.map.grid[i + 1]?.[j], this.map.grid[i]?.[j + 1]]) {
             if (!neighbor) continue
-            if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder) continue
+            if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder)
+              continue
 
             const high = cell.z >= neighbor.z ? cell : neighbor
             const low = high === cell ? neighbor : cell
@@ -191,7 +212,10 @@ export class MapTerrain {
         const _s = this.map.grid[i + 1]?.[j]?.z ?? cell.z
         const _w = this.map.grid[i]?.[j - 1]?.z ?? cell.z
         const _e = this.map.grid[i]?.[j + 1]?.z ?? cell.z
-        if ((cell.category === 'Water' || cell.waterBorder) && (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z)) {
+        if (
+          (cell.category === 'Water' || cell.waterBorder) &&
+          (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z)
+        ) {
           console.log(`[relief] SKIPPED waterBorder at [${i},${j}] z=${cell.z} N=${_n} S=${_s} W=${_w} E=${_e}`)
         }
         if (cell.category === 'Water' || cell.waterBorder) continue
@@ -306,8 +330,19 @@ export class MapTerrain {
           const _ne = this.map.grid[i - 1]?.[j + 1]?.z ?? cell.z
           const _sw = this.map.grid[i + 1]?.[j - 1]?.z ?? cell.z
           const _se = this.map.grid[i + 1]?.[j + 1]?.z ?? cell.z
-          if (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z || _nw > cell.z || _ne > cell.z || _sw > cell.z || _se > cell.z) {
-            console.log(`[relief] UNHANDLED at [${i},${j}] z=${cell.z} N=${_n} S=${_s} W=${_w} E=${_e} NW=${_nw} NE=${_ne} SW=${_sw} SE=${_se}`)
+          if (
+            _n > cell.z ||
+            _s > cell.z ||
+            _w > cell.z ||
+            _e > cell.z ||
+            _nw > cell.z ||
+            _ne > cell.z ||
+            _sw > cell.z ||
+            _se > cell.z
+          ) {
+            console.log(
+              `[relief] UNHANDLED at [${i},${j}] z=${cell.z} N=${_n} S=${_s} W=${_w} E=${_e} NW=${_nw} NE=${_ne} SW=${_sw} SE=${_se}`
+            )
           }
         }
       }
@@ -320,27 +355,27 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         if (cell.type === 'Water') continue
 
-        const n  = this.map.grid[i - 1]?.[j]?.type === 'Water'
-        const s  = this.map.grid[i + 1]?.[j]?.type === 'Water'
-        const w  = this.map.grid[i]?.[j - 1]?.type === 'Water'
-        const e  = this.map.grid[i]?.[j + 1]?.type === 'Water'
+        const n = this.map.grid[i - 1]?.[j]?.type === 'Water'
+        const s = this.map.grid[i + 1]?.[j]?.type === 'Water'
+        const w = this.map.grid[i]?.[j - 1]?.type === 'Water'
+        const e = this.map.grid[i]?.[j + 1]?.type === 'Water'
         const nw = this.map.grid[i - 1]?.[j - 1]?.type === 'Water'
         const sw = this.map.grid[i + 1]?.[j - 1]?.type === 'Water'
         const ne = this.map.grid[i - 1]?.[j + 1]?.type === 'Water'
         const se = this.map.grid[i + 1]?.[j + 1]?.type === 'Water'
 
-        if      (w && n) cell.setWaterBorder('20000', '001')
+        if (w && n) cell.setWaterBorder('20000', '001')
         else if (e && s) cell.setWaterBorder('20000', '002')
         else if (w && s) cell.setWaterBorder('20000', '003')
         else if (e && n) cell.setWaterBorder('20000', '000')
-        else if (n)      cell.setWaterBorder('20000', '008')
-        else if (s)      cell.setWaterBorder('20000', '009')
-        else if (w)      cell.setWaterBorder('20000', '011')
-        else if (e)      cell.setWaterBorder('20000', '010')
-        else if (nw)     cell.setWaterBorder('20000', '005')
-        else if (sw)     cell.setWaterBorder('20000', '007')
-        else if (ne)     cell.setWaterBorder('20000', '004')
-        else if (se)     cell.setWaterBorder('20000', '006')
+        else if (n) cell.setWaterBorder('20000', '008')
+        else if (s) cell.setWaterBorder('20000', '009')
+        else if (w) cell.setWaterBorder('20000', '011')
+        else if (e) cell.setWaterBorder('20000', '010')
+        else if (nw) cell.setWaterBorder('20000', '005')
+        else if (sw) cell.setWaterBorder('20000', '007')
+        else if (ne) cell.setWaterBorder('20000', '004')
+        else if (se) cell.setWaterBorder('20000', '006')
       }
     }
 

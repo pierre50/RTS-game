@@ -10,7 +10,9 @@ export class SelectionManager {
 
   handleMouseMove() {
     const { controls } = this
-    const { context: { player, app } } = controls
+    const {
+      context: { player, app },
+    } = controls
 
     if (
       !controls.mouseRectangle &&
@@ -48,7 +50,9 @@ export class SelectionManager {
 
   handleMouseUp() {
     const { controls } = this
-    const { context: { menu, player } } = controls
+    const {
+      context: { menu, player },
+    } = controls
 
     let selectVillager
     let countSelect = 0
@@ -92,7 +96,9 @@ export class SelectionManager {
     pointer.allowClick = false
     pointer.eventMode = 'auto'
     pointer.roundPixels = true
-    pointer.onComplete = () => { pointer.destroy() }
+    pointer.onComplete = () => {
+      pointer.destroy()
+    }
     pointer.play()
     controls.addChild(pointer)
     this.sendUnits(cell)
@@ -100,7 +106,9 @@ export class SelectionManager {
 
   sendUnits(cell) {
     const { controls } = this
-    const { context: { player, map } } = controls
+    const {
+      context: { player, map },
+    } = controls
     const { minX, minY, maxX, maxY } = this.getSelectionGridBounds(player.selectedUnits)
     const centerX = minX + Math.round((maxX - minX) / 2)
     const centerY = minY + Math.round((maxY - minY) / 2)

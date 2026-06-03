@@ -88,8 +88,10 @@ export default class Map extends Container {
 
   updateInstanceBucket(instance, oldI, oldJ) {
     if (!this.instanceBuckets) return
-    const oldBi = Math.floor(oldI / BUCKET_SIZE), oldBj = Math.floor(oldJ / BUCKET_SIZE)
-    const newBi = Math.floor(instance.i / BUCKET_SIZE), newBj = Math.floor(instance.j / BUCKET_SIZE)
+    const oldBi = Math.floor(oldI / BUCKET_SIZE),
+      oldBj = Math.floor(oldJ / BUCKET_SIZE)
+    const newBi = Math.floor(instance.i / BUCKET_SIZE),
+      newBj = Math.floor(instance.j / BUCKET_SIZE)
     if (oldBi !== newBi || oldBj !== newBj) {
       this.instanceBuckets[oldBi]?.[oldBj]?.delete(instance)
       this.instanceBuckets[newBi]?.[newBj]?.add(instance)
@@ -134,8 +136,24 @@ export default class Map extends Container {
   }
 
   // MapResources
-  generateForestAroundPlayer(player, treeCount, clusterCount, minClusterRadius, maxClusterRadius, safeDistance, clearingProbability) {
-    return this.mapResources.generateForestAroundPlayer(player, treeCount, clusterCount, minClusterRadius, maxClusterRadius, safeDistance, clearingProbability)
+  generateForestAroundPlayer(
+    player,
+    treeCount,
+    clusterCount,
+    minClusterRadius,
+    maxClusterRadius,
+    safeDistance,
+    clearingProbability
+  ) {
+    return this.mapResources.generateForestAroundPlayer(
+      player,
+      treeCount,
+      clusterCount,
+      minClusterRadius,
+      maxClusterRadius,
+      safeDistance,
+      clearingProbability
+    )
   }
 
   placeAnimalHerd(player, quantity, range) {
@@ -155,7 +173,12 @@ export default class Map extends Container {
   }
 
   findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {
-    return this.mapResources.findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance)
+    return this.mapResources.findNeutralResourceCenter(
+      playersPos,
+      placedCenters,
+      playerSafeDistance,
+      minNeutralDistance
+    )
   }
 
   placeResourceGroup(player, instance, quantity, range) {
@@ -214,6 +237,10 @@ export default class Map extends Container {
 
   _initFogChunks() {
     return this.mapFog._initFogChunks()
+  }
+
+  _indexFogChunkCells() {
+    return this.mapFog._indexFogChunkCells()
   }
 
   _createFogPatternSprite(x, y, width, height) {

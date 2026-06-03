@@ -55,7 +55,7 @@ export class Projectile extends Container {
           !this.target.isDead &&
           !this.target.isDestroyed &&
           pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
-          average(this.target.width, this.target.height)
+            average(this.target.width, this.target.height)
         ) {
           this.onHit(this.target)
         }

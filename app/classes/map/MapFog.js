@@ -72,9 +72,7 @@ export class MapFog {
     const spritesheet = Assets.cache.get('15002')
     if (!spritesheet) return
 
-    const frames = ['000', '001', '002', '003']
-      .map(i => spritesheet.textures[`${i}_15002.png`])
-      .filter(Boolean)
+    const frames = ['000', '001', '002', '003'].map(i => spritesheet.textures[`${i}_15002.png`]).filter(Boolean)
     if (!frames.length) return
 
     const PHASES = frames.length
@@ -92,7 +90,7 @@ export class MapFog {
     this.map._waterLayers = Array.from({ length: PHASES }, (_, p) => ({
       sprites: [],
       phase: p,
-      frameMs: 900 + (p * 97 + 43) % 300,
+      frameMs: 900 + ((p * 97 + 43) % 300),
       elapsed: 0,
     }))
     for (let p = 0; p < PHASES; p++) {
@@ -192,7 +190,12 @@ export class MapFog {
         if (!this.map.revealTerrain) {
           const blackG = new Graphics()
           blackG.rect(cMinX, cMinY, cW, cH).fill({ color: 0x000000 })
-          renderer.render({ container: blackG, target: darknessRt, transform: new Matrix().translate(-cMinX, -cMinY), clear: false })
+          renderer.render({
+            container: blackG,
+            target: darknessRt,
+            transform: new Matrix().translate(-cMinX, -cMinY),
+            clear: false,
+          })
           blackG.destroy()
         }
 
@@ -304,11 +307,12 @@ export class MapFog {
   _getFogChunksForCell(cell) {
     if (cell._fogChunks) return cell._fogChunks
     const bounds = this.map._getFogCellBounds(cell)
-    cell._fogChunks = this.map._fogChunks.filter(chunk =>
-      bounds.maxX >= chunk.minX &&
-      bounds.minX <= chunk.minX + chunk.w &&
-      bounds.maxY >= chunk.minY &&
-      bounds.minY <= chunk.minY + chunk.h
+    cell._fogChunks = this.map._fogChunks.filter(
+      chunk =>
+        bounds.maxX >= chunk.minX &&
+        bounds.minX <= chunk.minX + chunk.w &&
+        bounds.maxY >= chunk.minY &&
+        bounds.minY <= chunk.minY + chunk.h
     )
     return cell._fogChunks
   }
@@ -342,7 +346,7 @@ export class MapFog {
     const [cx, cy] = this.map._getFogCellCenter(cell)
     const pointCross = edgeX * (point.y - from.y) - edgeY * (point.x - from.x)
     const cellCross = edgeX * (cy - from.y) - edgeY * (cx - from.x)
-    return pointCross * Math.sign(cellCross || 1) / len
+    return (pointCross * Math.sign(cellCross || 1)) / len
   }
 
   _clipFogErasePolygonBySide(points, from, to, cell, inset) {
@@ -428,6 +432,8 @@ export class MapFog {
     for (const chunk of this.map._fogChunks) {
       chunk.cells = []
     }
+
+    if (!this.map.grid.length || !this.map.grid[0]) return
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {

@@ -100,7 +100,6 @@ export class BottombarManager {
       box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : btn.icon))
     }
 
-
     if (!btn.onCreate) {
       if (btn.children) {
         box.addEventListener('pointerup', () => {
@@ -204,7 +203,9 @@ export class BottombarManager {
 
   setBottombar(selection = null) {
     const { menu } = this
-    const { context: { controls, player } } = menu
+    const {
+      context: { controls, player },
+    } = menu
 
     this.resetInfo()
     menu.bottombarMenu.textContent = ''
@@ -226,7 +227,9 @@ export class BottombarManager {
 
   getUnitButton(type) {
     const { menu } = this
-    const { context: { player } } = menu
+    const {
+      context: { player },
+    } = menu
     const unit = player.config.units[type]
     return {
       id: type,
@@ -235,13 +238,13 @@ export class BottombarManager {
       onClick: selection => {
         if (canAfford(player, unit.cost)) {
           if (player.population >= player.population_max) {
-            menu.showMessage(t('needHouses'))
+            menu.showMessage(t('needHouses'), 'warning')
             return
           }
           this.toggleButtonCancel(type, true)
           selection.buyUnit(type)
         } else {
-          menu.showMessage(this.getMessage(unit.cost))
+          menu.showMessage(this.getMessage(unit.cost), 'warning')
         }
       },
       onCreate: (selection, element) => {
@@ -271,12 +274,12 @@ export class BottombarManager {
           this.playUiClick()
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.population_max) {
-              menu.showMessage(t('needHouses'))
+              menu.showMessage(t('needHouses'), 'warning')
             }
             this.toggleButtonCancel(type, true)
             selection.buyUnit(type)
           } else {
-            menu.showMessage(this.getMessage(unit.cost))
+            menu.showMessage(this.getMessage(unit.cost), 'warning')
           }
         })
         const queue = selection.queue.filter(q => q === type).length
@@ -293,7 +296,9 @@ export class BottombarManager {
 
   getBuildingButton(type) {
     const { menu } = this
-    const { context: { controls, player } } = menu
+    const {
+      context: { controls, player },
+    } = menu
     const config = player.config.buildings[type]
     return {
       id: type,
@@ -308,7 +313,7 @@ export class BottombarManager {
         if (canAfford(player, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })
         } else {
-          menu.showMessage(this.getMessage(config.cost))
+          menu.showMessage(this.getMessage(config.cost), 'warning')
         }
       },
     }
@@ -316,7 +321,9 @@ export class BottombarManager {
 
   getTechnologyButton(type) {
     const { menu } = this
-    const { context: { controls, player } } = menu
+    const {
+      context: { controls, player },
+    } = menu
     const config = player.techs[type]
     return {
       icon: getIconPath(config.icon),
@@ -330,7 +337,7 @@ export class BottombarManager {
         if (canAfford(player, config.cost)) {
           selection.buyTechnology(type)
         } else {
-          menu.showMessage(this.getMessage(config.cost))
+          menu.showMessage(this.getMessage(config.cost), 'warning')
         }
       },
     }

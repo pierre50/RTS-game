@@ -29,14 +29,16 @@ function validateArray(value, label) {
 
 function validateCell(cell, i, j) {
   if (!isObject(cell)) fail(`Invalid save file: cell ${i},${j} is invalid.`)
-  if (!isFiniteNumber(cell.z)) fail(`Invalid save file: cell ${i},${j} has an invalid height.`)
+  if (cell.z != null && !isFiniteNumber(cell.z)) fail(`Invalid save file: cell ${i},${j} has an invalid height.`)
   if (typeof cell.type !== 'string' || !cell.type) fail(`Invalid save file: cell ${i},${j} has an invalid type.`)
   validateArray(cell.fogSprites ?? [], `cell ${i},${j} fogSprites`)
 }
 
 function validateViewCell(cell, i, j) {
   if (!isObject(cell)) fail(`Invalid save file: view cell ${i},${j} is invalid.`)
-  if (typeof cell.viewed !== 'boolean') fail(`Invalid save file: view cell ${i},${j} has an invalid viewed flag.`)
+  if (cell.viewed != null && typeof cell.viewed !== 'boolean') {
+    fail(`Invalid save file: view cell ${i},${j} has an invalid viewed flag.`)
+  }
   validateArray(cell.viewBy ?? [], `view cell ${i},${j} viewBy`)
 }
 

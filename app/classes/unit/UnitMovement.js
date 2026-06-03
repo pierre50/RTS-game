@@ -54,7 +54,13 @@ export class UnitMovement {
           return
         }
       } else if (!allowWaterCellCategory && dest.category === 'Water') {
-        const cell = getFreeCellAroundPoint(dest.i, dest.j, 1, map.grid, cell => cell.category !== 'Water' && !cell.solid)
+        const cell = getFreeCellAroundPoint(
+          dest.i,
+          dest.j,
+          1,
+          map.grid,
+          cell => cell.category !== 'Water' && !cell.solid
+        )
         unit.sendToEvt(cell)
         return
       }
@@ -228,6 +234,10 @@ export class UnitMovement {
     let bestScore = -Infinity
 
     for (let r = 1; r <= 50; r++) {
+      // Max possible score at this ring is 27 - r (9 unseen neighbors × 3 - r).
+      // If our current best already beats that, no further ring can improve it.
+      if (bestCell && bestScore >= 27 - r) break
+
       for (let dx = -r; dx <= r; dx++) {
         const x = unit.i + dx
         const row = grid[x]

@@ -59,12 +59,8 @@
   --ui-hover-brightness: 1.05;
   --ui-press-offset: 1px;
   --ui-hover-scale: 1.02;
-  --ui-button-shadow-raised:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.22),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.28);
-  --ui-button-shadow-pressed:
-    inset 1px 1px 0 rgba(0, 0, 0, 0.28),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.16);
+  --ui-button-shadow-raised: inset 1px 1px 0 rgba(255, 255, 255, 0.22), inset -1px -1px 0 rgba(0, 0, 0, 0.28);
+  --ui-button-shadow-pressed: inset 1px 1px 0 rgba(0, 0, 0, 0.28), inset -1px -1px 0 rgba(255, 255, 255, 0.16);
 
   --ui-bar-bg: #d9bf8f;
   --ui-bar-border: 2px outset #f1dfb9;

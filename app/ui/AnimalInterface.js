@@ -10,7 +10,9 @@ export class AnimalInterface {
 
   setDefaultInterface(element, data) {
     const animal = this.animal
-    const { context: { menu } } = animal
+    const {
+      context: { menu },
+    } = animal
 
     appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints)
 

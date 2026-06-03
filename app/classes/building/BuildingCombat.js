@@ -13,7 +13,10 @@ export class BuildingCombat {
       context: { map },
     } = building
     building.startAttackInterval(() => {
-      if (getActionCondition(building, target, ACTION_TYPES.attack) && instancesDistance(building, target) <= building.range) {
+      if (
+        getActionCondition(building, target, ACTION_TYPES.attack) &&
+        instancesDistance(building, target) <= building.range
+      ) {
         const projectile = new Projectile({ owner: building, type: building.projectile, target }, building.context)
         map.addChild(projectile)
       } else {

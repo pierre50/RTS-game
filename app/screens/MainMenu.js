@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
 import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
-import { parseSaveJSON } from '../serialization/SaveValidator'
+import { Modal } from '../lib'
+import { openSaveListModal } from '../ui/saveListModal'
 
 export default class MainMenu {
   constructor({ onStart, onLoad }) {
@@ -14,11 +15,7 @@ export default class MainMenu {
     document.body.appendChild(this.el)
   }
 
-  _clear() {
-    this.el.innerHTML = ''
-  }
-
-  _createButton(label, onClick, className = 'btn-dark') {
+  _btn(label, onClick, className = 'btn-dark') {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
@@ -27,78 +24,40 @@ export default class MainMenu {
     return button
   }
 
-  _createPanel(subtitleKey, { logo = true } = {}) {
+  _showMain() {
+    this.el.innerHTML = ''
+
     const panel = document.createElement('div')
-    panel.className = 'menu-panel'
+    panel.className = 'menu-panel menu-panel--home'
 
-    if (logo) {
-      const title = document.createElement('img')
-      title.className = 'menu-title'
-      title.src = 'assets/logo.png'
-      title.alt = 'Dawn of Empires'
-      panel.appendChild(title)
-
-    } else {
-      const title = document.createElement('div')
-      title.className = 'menu-title'
-      title.textContent = t(subtitleKey)
-      panel.appendChild(title)
-    }
+    const logo = document.createElement('img')
+    logo.className = 'menu-title'
+    logo.src = 'assets/logo.png'
+    logo.alt = 'Dawn of Empires'
+    panel.appendChild(logo)
 
     const divider = document.createElement('div')
     divider.className = 'menu-divider'
     panel.appendChild(divider)
 
-    return panel
-  }
-
-  _showMain() {
-    this._clear()
-    const panel = this._createPanel()
-    panel.classList.add('menu-panel--home')
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
-
-    const fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.accept = '.json'
-    fileInput.classList.add('hidden')
-    fileInput.onchange = evt => {
-      const file = evt.target.files?.[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = e => {
-        try {
-          this.onLoad(parseSaveJSON(e.target.result))
-        } catch (error) {
-          alert(t('invalidSaveFile'))
-          console.error(error)
-        } finally {
-          fileInput.value = ''
-        }
-      }
-      reader.readAsText(file)
-    }
-
-    buttons.appendChild(this._createButton(t('newGame'), this.onStart))
-    buttons.appendChild(this._createButton(t('loadGame'), () => fileInput.click(), 'btn-dark secondary'))
-    buttons.appendChild(this._createButton(t('settings'), () => this._showSettings(), 'btn-dark secondary'))
-    buttons.appendChild(fileInput)
+    buttons.appendChild(this._btn(t('newGame'), this.onStart))
+    buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList(), 'btn-dark secondary'))
+    buttons.appendChild(this._btn(t('settings'), () => this._openSettings(), 'btn-dark secondary'))
+    panel.appendChild(buttons)
 
     const copyright = document.createElement('div')
     copyright.className = 'menu-copyright'
     copyright.textContent = '© 2026 Dawn of Empires'
 
-    panel.appendChild(buttons)
     this.el.appendChild(panel)
     this.el.appendChild(copyright)
   }
 
-  _showSettings() {
-    this._clear()
-    const panel = this._createPanel('settings', { logo: false })
-    const form = document.createElement('div')
-    form.className = 'config-form'
+  _openSettings() {
+    const content = document.createElement('div')
+    content.className = 'config-form'
 
     const row = document.createElement('div')
     row.className = 'config-row'
@@ -116,20 +75,20 @@ export default class MainMenu {
     select.value = getLang()
     select.onchange = evt => {
       setLang(evt.target.value)
-      this._showSettings()
+      this._showMain()
     }
 
     row.appendChild(label)
     row.appendChild(select)
-    form.appendChild(row)
+    content.appendChild(row)
 
-    const buttons = document.createElement('div')
-    buttons.className = 'button-group'
+    new Modal({ title: t('settings'), content })
+  }
 
-    buttons.appendChild(this._createButton(t('back'), () => this._showMain(), 'btn-dark secondary'))
-    panel.appendChild(form)
-    panel.appendChild(buttons)
-    this.el.appendChild(panel)
+  _openSaveList() {
+    openSaveListModal({
+      onLoad: saveData => this.onLoad(saveData),
+    })
   }
 
   destroy() {

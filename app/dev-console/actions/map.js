@@ -1,9 +1,5 @@
 import { drawInstanceBlinkingSelection } from '../../lib'
-import {
-  getInstancesByCategory,
-  normalize,
-  normalizeToggle,
-} from './shared'
+import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
 
 export function toggleFog(context, value) {
   const { map, menu, players } = context

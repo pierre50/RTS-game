@@ -141,24 +141,33 @@ function playerData(player) {
     units: player.units.map(u => unitData(u)),
     corpses: player.corpses.map(c => unitData(c)),
     views: player.views.map(view =>
-      view.map(cell => ({
-        ...filterObject(cell, ['i', 'j', 'viewed']),
-        viewBy: [...(cell.viewBy || [])].map(unit => unit.label),
-      }))
+      view.map(cell => {
+        const viewBy = [...(cell.viewBy || [])].map(unit => unit.label)
+        const out = {}
+        if (cell.viewed) out.viewed = true
+        if (viewBy.length > 0) out.viewBy = viewBy
+        return out
+      })
     ),
   }
 }
 
 function cellData(cell) {
-  return {
-    ...filterObject(cell, ['z', 'type', 'viewed', 'solid', 'visible', 'category', 'inclined', 'border', 'waterBorder']),
-    has: cell.has?.label,
-    fogSprites: cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
+  const data = { type: cell.type }
+  if (cell.z !== 0) data.z = cell.z
+  if (cell.viewed) data.viewed = true
+  if (cell.inclined) data.inclined = true
+  if (cell.border) data.border = true
+  if (cell.waterBorder) data.waterBorder = true
+  if (cell.has) data.has = cell.has.label
+  if (cell.fogSprites.length > 0) {
+    data.fogSprites = cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
       textureSheet,
       colorSheet,
       colorName,
-    })),
+    }))
   }
+  return data
 }
 
 export function serializeGame(context) {

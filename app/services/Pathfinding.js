@@ -59,14 +59,9 @@ function heapPop(heapData) {
   return top
 }
 
-function createPathSearchState() {
-  return {
-    stamp: ++pathStamp,
-    heapData: [],
-    openSet: new Set(),
-    closedSet: new Set(),
-  }
-}
+const _heapData = []
+const _openSet = new Set()
+const _closedSet = new Set()
 
 export function findInstancePath(instance, x, y, map) {
   const maxZone = 10
@@ -77,11 +72,14 @@ export function findInstancePath(instance, x, y, map) {
   const minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
   const maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
 
-  const search = createPathSearchState()
+  const stamp = ++pathStamp
+  _heapData.length = 0
+  _openSet.clear()
+  _closedSet.clear()
 
   function initCell(cell) {
-    if (cell._ps !== search.stamp) {
-      cell._ps = search.stamp
+    if (cell._ps !== stamp) {
+      cell._ps = stamp
       cell._g = Infinity
       cell._h = 0
       cell._f = Infinity
@@ -102,14 +100,14 @@ export function findInstancePath(instance, x, y, map) {
   startCell._g = 0
   startCell._h = instancesDistance(startCell, endCell)
   startCell._f = startCell._h
-  heapPush(search.heapData, startCell._f, startCell)
-  search.openSet.add(startCell)
+  heapPush(_heapData, startCell._f, startCell)
+  _openSet.add(startCell)
 
   let path = []
 
-  while (search.heapData.length > 0) {
-    const [pushedF, current] = heapPop(search.heapData)
-    if (pushedF !== current._f || search.closedSet.has(current)) continue
+  while (_heapData.length > 0) {
+    const [pushedF, current] = heapPop(_heapData)
+    if (pushedF !== current._f || _closedSet.has(current)) continue
 
     if (current === endCell) {
       path = [endCell]
@@ -121,8 +119,8 @@ export function findInstancePath(instance, x, y, map) {
       break
     }
 
-    search.openSet.delete(current)
-    search.closedSet.add(current)
+    _openSet.delete(current)
+    _closedSet.add(current)
 
     getNeighbourCells(current.i, current.j, map.grid, 1, neighbour => {
       if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return
@@ -130,20 +128,20 @@ export function findInstancePath(instance, x, y, map) {
       const validDiag =
         !cellIsDiag(current, neighbour) ||
         (isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]))
-      if (!search.closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+      if (!_closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
         const tempG = current._g + instancesDistance(neighbour, current)
-        if (!search.openSet.has(neighbour)) {
+        if (!_openSet.has(neighbour)) {
           neighbour._g = tempG
           neighbour._h = instancesDistance(neighbour, endCell)
           neighbour._f = neighbour._g + neighbour._h
           neighbour._prev = current
-          search.openSet.add(neighbour)
-          heapPush(search.heapData, neighbour._f, neighbour)
+          _openSet.add(neighbour)
+          heapPush(_heapData, neighbour._f, neighbour)
         } else if (tempG < neighbour._g) {
           neighbour._g = tempG
           neighbour._f = neighbour._g + neighbour._h
           neighbour._prev = current
-          heapPush(search.heapData, neighbour._f, neighbour)
+          heapPush(_heapData, neighbour._f, neighbour)
         }
       }
     })

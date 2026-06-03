@@ -251,7 +251,6 @@ export class Unit extends Instance {
 
     changeSpriteColor(this.sprite, this.owner.color)
 
-
     this.visibilityTimeout = setTimeout(() => {
       if (!this.isDestroyed) updateInstanceVisibility(this)
     })
@@ -260,14 +259,18 @@ export class Unit extends Instance {
   select() {
     if (this.selected) return
     super.select()
-    const { context: { menu, player } } = this
+    const {
+      context: { menu, player },
+    } = this
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   unselect() {
     if (!this.selected) return
     super.unselect()
-    const { context: { menu, player } } = this
+    const {
+      context: { menu, player },
+    } = this
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
@@ -311,7 +314,6 @@ export class Unit extends Instance {
   sendToEvt(dest, action) {
     return this.unitMovement.sendToEvt(dest, action)
   }
-
 
   goBackToPrevious() {
     return this.unitActions.goBackToPrevious()
@@ -397,8 +399,6 @@ export class Unit extends Instance {
     this.interval = this.context.scheduler.add(callback, time)
   }
 
-
-
   explore() {
     return this.unitMovement.explore()
   }
@@ -422,7 +422,6 @@ export class Unit extends Instance {
   clear() {
     return this.unitLifecycle.clear()
   }
-
 
   updateInterfaceLoading() {
     this.unitInterface.updateLoading()
