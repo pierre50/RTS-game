@@ -10,6 +10,7 @@ import {
   playerCanSeeInstance,
   getActionCondition,
   setUnitTexture,
+  bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
 } from '../../lib'
 import { AnimalInterface } from '../../ui/AnimalInterface'
@@ -78,6 +79,7 @@ export class Animal extends Instance {
     this.allowMove = false
     this.eventMode = 'static'
     this.sprite = new AnimatedSprite(this.standingSheet.animations['south'])
+    bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'

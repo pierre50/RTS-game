@@ -1,5 +1,6 @@
 import { POPULATION_MAX } from '../../constants'
 import { capitalizeFirstLetter } from '../../lib'
+import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/settings'
 import { RESOURCE_NAMES, findKey } from './shared'
 
 export function addResources(player, resourceName, amount) {
@@ -117,8 +118,8 @@ export function healAll(context) {
 
 export function setGameSpeed(context, value = 1) {
   const speed = Number(value)
-  if (!Number.isFinite(speed) || speed <= 0 || speed > 8) {
-    return { ok: false, message: 'Usage: speed <0.25|0.5|1|2|4|8>' }
+  if (!Number.isFinite(speed) || !isGameSpeedPreset(speed)) {
+    return { ok: false, message: `Usage: ${GAME_SPEED_USAGE}` }
   }
   context.app.ticker.speed = speed
   return { ok: true, message: `Speed: ${speed}x` }

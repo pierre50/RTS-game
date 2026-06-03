@@ -19,6 +19,7 @@ import {
   getPlainCellsAroundPoint,
   getTexture,
   updateInstanceVisibility,
+  bindAnimatedSpriteToTicker,
 } from '../../lib'
 
 export class BuildingLifecycle {
@@ -90,6 +91,7 @@ export class BuildingLifecycle {
       if (building.owner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
         const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.label = LABEL_TYPES.deco
         spriteFire.allowMove = false
         spriteFire.allowClick = false
@@ -133,6 +135,7 @@ export class BuildingLifecycle {
       }
       for (let i = 0; i < poses.length; i++) {
         const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.allowMove = false
         spriteFire.allowClick = false
         spriteFire.eventMode = 'none'

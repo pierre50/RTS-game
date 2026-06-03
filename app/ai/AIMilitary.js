@@ -1,5 +1,6 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint } from '../lib'
+import { BASE_TARGET_VALUE_BY_TYPE } from './config'
 
 export class AIMilitary {
   constructor(ai, strategy) {
@@ -78,26 +79,12 @@ export class AIMilitary {
     const target = memory.instance
     if (!target || target.isDead || target.isDestroyed) return -Infinity
 
-    const baseValueByType = {
-      [UNIT_TYPES.villager]: 10,
-      [BUILDING_TYPES.townCenter]: 14,
-      [BUILDING_TYPES.archeryRange]: 9,
-      [BUILDING_TYPES.barracks]: 8,
-      [BUILDING_TYPES.stable]: 8,
-      [BUILDING_TYPES.academy]: 8,
-      [BUILDING_TYPES.market]: 7,
-      [BUILDING_TYPES.granary]: 6,
-      [BUILDING_TYPES.storagePit]: 6,
-      [BUILDING_TYPES.watchTower]: 4,
-      [BUILDING_TYPES.sentryTower]: 5,
-    }
-
     const travelCost = armyCenter ? (Math.abs(target.i - armyCenter.i) + Math.abs(target.j - armyCenter.j)) / 4 : 0
     const freshnessPenalty = memory.visible ? 0 : Math.min(6, (this.ai.getNow() - memory.lastSeenAt) / 4000)
     const localThreat = this.estimateLocalThreat(target)
     const hpRatio = target.totalHitPoints ? target.hitPoints / target.totalHitPoints : 1
     const finishBonus = 1 - hpRatio
-    const baseValue = baseValueByType[target.type] || (target.family === FAMILY_TYPES.building ? 6 : 5)
+    const baseValue = BASE_TARGET_VALUE_BY_TYPE[target.type] || (target.family === FAMILY_TYPES.building ? 6 : 5)
 
     return baseValue + finishBonus * 3 - travelCost - localThreat - freshnessPenalty
   }

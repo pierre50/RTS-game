@@ -1,6 +1,6 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import { sound } from '@pixi/sound'
-import { pointsDistance, pointInRectangle, randomItem } from '../lib'
+import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, randomItem } from '../lib'
 import { COLOR_WHITE, MAX_SELECT_UNITS, UNIT_TYPES } from '../constants'
 
 export class SelectionManager {
@@ -87,6 +87,7 @@ export class SelectionManager {
     const { controls } = this
     const pointerSheet = Assets.cache.get('50405')
     const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
+    bindAnimatedSpriteToTicker(pointer, controls.context.app)
     pointer.animationSpeed = 0.2
     pointer.loop = false
     pointer.anchor.set(0.5, 0.5)

@@ -31,11 +31,29 @@ export default class MainMenu {
     const panel = document.createElement('div')
     panel.className = 'menu-panel menu-panel--home'
 
+    const logoShell = document.createElement('div')
+    logoShell.className = 'menu-title-shell'
+
     const logo = document.createElement('img')
     logo.className = 'menu-title'
     logo.src = 'assets/logo.png'
     logo.alt = 'Dawn of Empires'
-    panel.appendChild(logo)
+    logo.decoding = 'async'
+    logo.fetchPriority = 'high'
+    logoShell.appendChild(logo)
+    panel.appendChild(logoShell)
+
+    const revealLogo = () => {
+      requestAnimationFrame(() => {
+        logoShell.classList.add('is-loaded')
+      })
+    }
+
+    if (logo.complete) {
+      revealLogo()
+    } else {
+      logo.addEventListener('load', revealLogo, { once: true })
+    }
 
     const divider = document.createElement('div')
     divider.className = 'menu-divider'

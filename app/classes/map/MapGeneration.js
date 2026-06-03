@@ -17,6 +17,22 @@ export class MapGeneration {
     this.map = map
   }
 
+  isInPlayerStartSafeZone(i, j, radius = 20) {
+    const safeDistanceSq = radius ** 2
+    return this.map.playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < safeDistanceSq)
+  }
+
+  pickAmbientAnimalType(i, j) {
+    const animals = Assets.cache.get('config').animals
+    const dangerousAnimalTypes = new Set(['Lion', 'Crocodile'])
+    const safeZoneRadius = 20
+    const availableTypes = Object.keys(animals).filter(type => {
+      return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
+    })
+
+    return randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
+  }
+
   generateFromJSON({ map, players, camera, resources, animals }) {
     const classMap = { Human, AI }
     const { menu, controls } = this.map.context
@@ -474,8 +490,7 @@ export class MapGeneration {
                   break
                 }
                 case 'animal': {
-                  const animals = Assets.cache.get('config').animals
-                  const animalType = randomItem(Object.keys(animals))
+                  const animalType = this.pickAmbientAnimalType(i, j)
                   this.map.gaia.createAnimal({ i, j, type: animalType })
                   break
                 }

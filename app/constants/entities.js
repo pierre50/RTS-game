@@ -15,6 +15,7 @@ export const BUILDING_TYPES = {
   granary: 'Granary',
   barracks: 'Barracks',
   market: 'Market',
+  governmentCenter: 'GovernmentCenter',
   archeryRange: 'ArcheryRange',
   stable: 'Stable',
   academy: 'Academy',

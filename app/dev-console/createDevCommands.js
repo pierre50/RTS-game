@@ -1,5 +1,6 @@
 import { DevCommandRegistry } from './DevCommandRegistry'
 import { POPULATION_MAX } from '../constants'
+import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
   applyTechnology,
@@ -248,9 +249,9 @@ export function createDevCommands() {
 
   registry.register({
     name: 'speed',
-    usage: 'speed <0.25|0.5|1|2|4|8>',
+    usage: GAME_SPEED_USAGE,
     describe: 'Set simulation speed',
-    complete: () => ['0.25', '0.5', '1', '2', '4', '8'],
+    complete: () => SPEED_VALUES,
     run: ([value], context) => setGameSpeed(context, value),
   })
 

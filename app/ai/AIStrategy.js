@@ -1,150 +1,35 @@
 import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { AIMilitary } from './AIMilitary'
-
-const DIFFICULTIES = {
-  easy: {
-    stepDelayBase: 6000,
-    popCapMultiplier: 0.7,
-    attackThreshold: 8,
-    defenderRatio: 0.5,
-    econToMilVillagers: 16,
-    raidThreshold: 0,
-    raidSize: 0,
-  },
-  medium: {
-    stepDelayBase: 4000,
-    popCapMultiplier: 1.0,
-    attackThreshold: 5,
-    defenderRatio: 0.3,
-    econToMilVillagers: 12,
-    raidThreshold: 0,
-    raidSize: 0,
-  },
-  hard: {
-    stepDelayBase: 2500,
-    popCapMultiplier: 1.3,
-    attackThreshold: 3,
-    defenderRatio: 0.2,
-    econToMilVillagers: 8,
-    raidThreshold: 4,
-    raidSize: 3,
-  },
-}
-
-const NEXT_AGE = {
-  1: 'ToolAge',
-  2: 'BronzeAge',
-  3: 'IronAge',
-}
-
-const MAX_VILLAGER_PER_AGE = {
-  0: 16,
-  1: 24,
-  2: 40,
-  3: 50,
-}
-
-const VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
-  0: {
-    wood: 40,
-    food: 60,
-    gold: 0,
-    stone: 0,
-  },
-  1: {
-    wood: 45,
-    food: 45,
-    gold: 10,
-    stone: 0,
-  },
-  2: {
-    wood: 35,
-    food: 35,
-    gold: 20,
-    stone: 10,
-  },
-  3: {
-    wood: 30,
-    food: 30,
-    gold: 25,
-    stone: 15,
-  },
-}
-
-const MAX_BUILDING_BY_AGE = {
-  0: {
-    StoragePit: 1,
-    Granary: 1,
-    Barracks: 1,
-    Market: 1,
-  },
-  1: {
-    StoragePit: 2,
-    Granary: 2,
-    Farm: 4,
-    Barracks: 1,
-    Market: 1,
-    ArcheryRange: 1,
-    Stable: 1,
-    WatchTower: 2,
-  },
-  2: {
-    StoragePit: 3,
-    Granary: 3,
-    Farm: 6,
-    Barracks: 2,
-    Market: 1,
-    ArcheryRange: 1,
-    Stable: 1,
-    Academy: 1,
-    WatchTower: 3,
-    SentryTower: 2,
-  },
-  3: {
-    StoragePit: 4,
-    Granary: 4,
-    Farm: 10,
-    Barracks: 2,
-    Market: 1,
-    ArcheryRange: 2,
-    Stable: 1,
-    Academy: 1,
-    WatchTower: 3,
-    SentryTower: 3,
-  },
-}
-
-const TECH_PRIORITY_BY_BUILDING = {
-  [BUILDING_TYPES.barracks]: ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword'],
-  [BUILDING_TYPES.archeryRange]: ['ImprovedBow', 'CompositeBow'],
-  [BUILDING_TYPES.storagePit]: [
-    'Toolworking',
-    'LeatherArmorInfantry',
-    'Metalworking',
-    'ScaleArmorInfantry',
-    'Metallurgy',
-    'ChainmailInfantry',
-    'BronzeShield',
-    'IronShield',
-  ],
-  [BUILDING_TYPES.market]: ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication'],
-  [BUILDING_TYPES.granary]: ['ResearchWatchTower', 'ResearchSentryTower'],
-}
+import {
+  AGE_UP_BUFFERS,
+  AGE_UP_COSTS,
+  AI_DIFFICULTIES,
+  MAX_ARCHER_BY_AGE,
+  MAX_BUILDING_BY_AGE,
+  MAX_CAVALRY_BY_AGE,
+  MAX_HOPLITE_BY_AGE,
+  MAX_INFANTRY_BY_AGE,
+  MAX_VILLAGER_PER_AGE,
+  NEXT_AGE,
+  TECH_PRIORITY_BY_BUILDING,
+  VILLAGE_TARGET_PERCENTAGE_BY_AGE,
+} from './config'
+import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
 
 export class AIStrategy {
   constructor(ai, difficulty = 'medium') {
     this.ai = ai
     this.difficulty = difficulty
-    this.difficultyConfig = DIFFICULTIES[difficulty] || DIFFICULTIES.medium
+    this.difficultyConfig = AI_DIFFICULTIES[difficulty] || AI_DIFFICULTIES.medium
     this.nextAge = NEXT_AGE
     this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
     this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE
     this.maxBuildingByAge = MAX_BUILDING_BY_AGE
-    this.maxInfantryByAge = { 0: 8, 1: 8, 2: 10, 3: 12 }
-    this.maxArcherByAge = { 0: 0, 1: 4, 2: 6, 3: 8 }
-    this.maxCavalryByAge = { 0: 0, 1: 3, 2: 4, 3: 5 }
-    this.maxHopliteByAge = { 0: 0, 1: 0, 2: 2, 3: 4 }
+    this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
+    this.maxArcherByAge = MAX_ARCHER_BY_AGE
+    this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
+    this.maxHopliteByAge = MAX_HOPLITE_BY_AGE
     this.techPriorityByBuilding = TECH_PRIORITY_BY_BUILDING
     this.military = new AIMilitary(ai, this)
   }
@@ -180,19 +65,11 @@ export class AIStrategy {
   }
 
   getBestInfantryUnit() {
-    const { technologies } = this.ai
-    if (technologies.includes('LongSword')) return 'LongSwordsman'
-    if (technologies.includes('BroadSword')) return 'BroadSwordsman'
-    if (technologies.includes('ShortSword')) return 'ShortSwordsman'
-    if (technologies.includes('BattleAxe')) return 'Axeman'
-    return 'Clubman'
+    return getBestUnitFromTechs(this.ai.technologies, INFANTRY_TECH_UPGRADES, 'Clubman')
   }
 
   getBestArcherUnit() {
-    const { technologies } = this.ai
-    if (technologies.includes('CompositeBow')) return 'CompositeBowman'
-    if (technologies.includes('ImprovedBow')) return 'ImprovedBowman'
-    return 'Bowman'
+    return getBestUnitFromTechs(this.ai.technologies, ARCHER_TECH_UPGRADES, 'Bowman')
   }
 
   updatePhase(villagersCount, militaryCount) {
@@ -224,8 +101,7 @@ export class AIStrategy {
     const { ai } = this
     const demand = { food: 0, wood: 0, gold: 0, stone: 0 }
     const nextAgeKey = ai.age + 1
-    const ageUpCosts = { 1: { food: 500 }, 2: { food: 800 }, 3: { food: 1000, gold: 800 } }
-    const nextAgeCost = ageUpCosts[nextAgeKey]
+    const nextAgeCost = AGE_UP_COSTS[nextAgeKey]
     if (nextAgeCost) {
       const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
       const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
@@ -336,6 +212,7 @@ export class AIStrategy {
       granarys,
       storagepits,
       markets,
+      governmentCenters,
       archeryRanges,
       stables,
       academies,
@@ -351,6 +228,7 @@ export class AIStrategy {
       [BUILDING_TYPES.granary]: granarys,
       [BUILDING_TYPES.storagePit]: storagepits,
       [BUILDING_TYPES.market]: markets,
+      [BUILDING_TYPES.governmentCenter]: governmentCenters,
       [BUILDING_TYPES.archeryRange]: archeryRanges,
       [BUILDING_TYPES.stable]: stables,
       [BUILDING_TYPES.academy]: academies,
@@ -382,6 +260,27 @@ export class AIStrategy {
     if (
       buy(markets.length === 0, BUILDING_TYPES.market, () =>
         getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+      )
+    )
+      actions++
+
+    if (
+      buy(ai.age >= 2 && markets.some(m => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
+        getPositionInGridAroundInstance(towncenters[0], map.grid, [8, 22], 1, false, isEnemyFacing(towncenters[0]))
+      )
+    )
+      actions++
+
+    if (
+      buy(
+        ai.age >= 2 &&
+          towncenters.length < 2 &&
+          governmentCenters.some(gc => gc.isBuilt) &&
+          ai.population_max >= 24 &&
+          ai.population >= 16,
+        BUILDING_TYPES.townCenter,
+        () =>
+          getPositionInGridAroundInstance(towncenters[0], map.grid, [14, 30], 2, false, isEnemyFacing(towncenters[0]))
       )
     )
       actions++
@@ -463,12 +362,10 @@ export class AIStrategy {
     const { maxVillagers, towncenters, barracks, archeryRanges, storagepits, markets, granarys } = snapshot
     let actions = 0
 
-    const ageUpCosts = { 1: { food: 500 }, 2: { food: 800 }, 3: { food: 1000, gold: 800 } }
-    const ageUpBuffers = { 1: { food: 200 }, 2: { food: 200 }, 3: { food: 200, gold: 200 } }
     const nextAgeKey = ai.age + 1
     if (ai.nextAge[nextAgeKey]) {
-      const cost = ageUpCosts[nextAgeKey] || {}
-      const buffer = ageUpBuffers[nextAgeKey] || {}
+      const cost = AGE_UP_COSTS[nextAgeKey] || {}
+      const buffer = AGE_UP_BUFFERS[nextAgeKey] || {}
       const popReady = ai.population >= Math.floor(maxVillagers * 0.8)
       const resReady = Object.entries(cost).every(([res, amount]) => ai[res] >= amount + (buffer[res] || 0))
       if (popReady && resReady) {

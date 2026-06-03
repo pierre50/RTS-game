@@ -55,6 +55,31 @@ export function setUnitTexture(sheet, instance) {
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 
+export function bindAnimatedSpriteToTicker(sprite, app) {
+  if (!sprite || !app?.ticker || sprite._usesAppTicker) {
+    return sprite
+  }
+
+  sprite.autoUpdate = false
+
+  const tick = deltaTime => {
+    if (!sprite.destroyed) {
+      sprite.update(deltaTime)
+    }
+  }
+
+  const originalDestroy = sprite.destroy.bind(sprite)
+  sprite.destroy = (...args) => {
+    app.ticker.remove(tick)
+    sprite._usesAppTicker = false
+    return originalDestroy(...args)
+  }
+
+  sprite._usesAppTicker = true
+  app.ticker.add(tick)
+  return sprite
+}
+
 export function filterObject(obj, keys) {
   if (typeof obj !== 'object' || obj === null) {
     throw new Error('Expected an object to filter.')

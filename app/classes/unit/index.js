@@ -22,6 +22,7 @@ import {
   canUpdateMinimap,
   getWorkWithLoadingType,
   setUnitTexture,
+  bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
 } from '../../lib'
 import { Instance } from '../Instance'
@@ -142,6 +143,7 @@ export class Unit extends Instance {
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
     this.sprite = new AnimatedSprite(this[SHEET_TYPES.standing].animations['south'])
+    bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
@@ -359,6 +361,7 @@ export class Unit extends Instance {
     if (!instance || this.dest === instance || this.isDead || !this.getActionCondition(instance, ACTION_TYPES.attack)) {
       return
     }
+    this.owner.reportThreat?.(this, instance)
     if (this.handleIsAttacked?.(instance, this)) return
     const currentDest = this.dest
     if (this.type === UNIT_TYPES.villager) {

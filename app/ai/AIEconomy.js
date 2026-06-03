@@ -189,6 +189,7 @@ export class AIEconomy {
     const PATH_CANDIDATE_LIMIT = 6
 
     for (const building of notBuiltBuildings) {
+      if (this.ai.isBuildingThreatened(building)) continue
       if (currentBuilders >= maxVillagersOnConstruction) break
       if (availableVillagers.length === 0) break
       const villager = [...availableVillagers]

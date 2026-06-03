@@ -48,10 +48,23 @@ export class ActionScheduler {
     this._toRemove.length = 0
     for (const [id, task] of this._tasks) {
       task.elapsed += deltaMS
-      if (task.elapsed >= task.interval) {
+      if (task.oneShot) {
+        if (task.elapsed >= task.interval) {
+          task.elapsed -= task.interval
+          task.callback()
+          this._toRemove.push(id)
+        }
+        continue
+      }
+
+      while (task.elapsed >= task.interval) {
         task.elapsed -= task.interval
         task.callback()
-        if (task.oneShot) this._toRemove.push(id)
+
+        // The callback may remove or replace this task, so stop safely.
+        if (!this._tasks.has(id) || this._tasks.get(id) !== task) {
+          break
+        }
       }
     }
     for (const id of this._toRemove) this._tasks.delete(id)
