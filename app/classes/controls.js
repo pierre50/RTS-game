@@ -285,6 +285,10 @@ export default class Controls extends Container {
   }
 
   moveCameraWithMouse(evt) {
+    if (evt.target?.closest('button, .topbar-options-menu')) {
+      this.cameraController.stopMouseMove()
+      return
+    }
     this.cameraController.moveWithMouse(evt)
   }
 

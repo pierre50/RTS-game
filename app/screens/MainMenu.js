@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
-import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
+import { t } from '../lib/lang'
 import { Modal } from '../lib'
+import { buildSettingsContent } from '../ui/settingsPanel'
 import { openSaveListModal } from '../ui/saveListModal'
 
 export default class MainMenu {
@@ -56,32 +57,9 @@ export default class MainMenu {
   }
 
   _openSettings() {
-    const content = document.createElement('div')
-    content.className = 'config-form'
-
-    const row = document.createElement('div')
-    row.className = 'config-row'
-
-    const label = document.createElement('label')
-    label.textContent = t('language')
-
-    const select = document.createElement('select')
-    SUPPORTED_LANGS.forEach(({ code, label }) => {
-      const option = document.createElement('option')
-      option.value = code
-      option.textContent = label
-      select.appendChild(option)
+    const content = buildSettingsContent({
+      onLangChange: () => this._showMain(),
     })
-    select.value = getLang()
-    select.onchange = evt => {
-      setLang(evt.target.value)
-      this._showMain()
-    }
-
-    row.appendChild(label)
-    row.appendChild(select)
-    content.appendChild(row)
-
     new Modal({ title: t('settings'), content })
   }
 

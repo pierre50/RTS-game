@@ -9,6 +9,7 @@ import { validateSaveData } from '../serialization/SaveValidator'
 import { save as saveToStorage } from '../serialization/SaveStorage'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
+import { getGameSpeed } from '../lib/settings'
 
 /**
  * Main Display Object
@@ -53,6 +54,7 @@ export default class Game extends Container {
 
   start() {
     this._acquireWakeLock()
+    this.context.app.ticker.speed = getGameSpeed()
     this._bootFromConfig(this.config)
   }
 
@@ -193,6 +195,7 @@ export default class Game extends Container {
   load(json) {
     validateSaveData(json)
     this._destroyRuntime()
+    this.context.app.ticker.speed = getGameSpeed()
     this._bootFromSave(json)
   }
 

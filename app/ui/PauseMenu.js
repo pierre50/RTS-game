@@ -1,6 +1,7 @@
 import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
+import { buildSettingsContent } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
 
 export class PauseMenu {
@@ -51,11 +52,33 @@ export class PauseMenu {
     )
 
     content.appendChild(
+      this._btn(t('settings'), 'btn-dark secondary', () => {
+        modal.close()
+        this._openSettings()
+      })
+    )
+
+    content.appendChild(
       this._btn(t('quit'), 'btn-dark secondary', () => {
         modal.close()
         menu.context.quit()
       })
     )
+  }
+
+  _openSettings() {
+    const { menu } = this
+    const content = buildSettingsContent({
+      onSpeedChange: v => {
+        menu.context.app.ticker.speed = v
+      },
+    })
+
+    new Modal({
+      title: t('settings'),
+      content,
+      onClose: () => menu.context.resume(),
+    })
   }
 
   _openSaveList() {
