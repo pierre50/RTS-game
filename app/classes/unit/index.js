@@ -1,7 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import {
-  ACCELERATOR,
   STEP_TIME,
   MAX_SELECT_UNITS,
   WORK_TYPES,
@@ -131,6 +130,7 @@ export class Unit extends Instance {
         this.showBuildings && this.owner.isPlayed
           ? [
               {
+                id: 'build',
                 icon: 'assets/interface/50721/002_50721.png',
                 children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key)),
               },

@@ -1,7 +1,6 @@
 import { sound } from '@pixi/sound'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import {
-  ACCELERATOR,
   ACTION_TYPES,
   FAMILY_TYPES,
   SHEET_TYPES,

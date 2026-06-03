@@ -31,7 +31,12 @@ export class PlayerStatsManager {
   _render() {
     const { players, player: me } = this.menu.context
     this.el.innerHTML = ''
-    players.forEach(p => {
+    const sorted = [...players].sort((a, b) => {
+      const scoreA = a.units.length + a.buildings.length
+      const scoreB = b.units.length + b.buildings.length
+      return scoreB - scoreA
+    })
+    sorted.forEach((p, rank) => {
       const dead = p.units.length === 0 && p.buildings.length === 0
       const isMe = p === me
       const label = isMe ? 'You' : p.color.charAt(0).toUpperCase() + p.color.slice(1)
@@ -39,7 +44,7 @@ export class PlayerStatsManager {
       const span = document.createElement('span')
       span.className = 'player-stats-name' + (dead ? ' player-stats-name--dead' : '')
       span.style.color = p.colorHex
-      span.textContent = `${label}: ${p.units.length}/${p.buildings.length}`
+      span.textContent = `${rank + 1}. ${label}: ${p.units.length}/${p.buildings.length}`
 
       this.el.appendChild(span)
     })

@@ -50,8 +50,8 @@
     "babel-loader": "^10.1.1",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.4",
-    "electron": "^38.8.6",
-    "electron-builder": "^26.8.1",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.14.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
@@ -67,6 +67,14 @@
     "webpack": "^5.107.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": ">=7.5.8",
+      "serialize-javascript": ">=7.0.3",
+      "uuid": ">=11.1.1",
+      "electron-builder-squirrel-windows": "26.14.0"
+    }
   },
   "engines": {
     "node": ">=20.0.0"

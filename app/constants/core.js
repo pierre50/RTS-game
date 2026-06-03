@@ -2,7 +2,6 @@ export const CELL_WIDTH = 64
 export const CELL_HEIGHT = 32
 export const CELL_DEPTH = 16
 
-export const ACCELERATOR = 1.5
 export const STEP_TIME = 20
 export const BUCKET_SIZE = 8
 

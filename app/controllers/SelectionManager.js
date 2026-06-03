@@ -1,7 +1,7 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import { sound } from '@pixi/sound'
 import { pointsDistance, pointInRectangle, randomItem } from '../lib'
-import { COLOR_WHITE, MAX_SELECT_UNITS, ACCELERATOR, UNIT_TYPES } from '../constants'
+import { COLOR_WHITE, MAX_SELECT_UNITS, UNIT_TYPES } from '../constants'
 
 export class SelectionManager {
   constructor(controls) {
@@ -83,7 +83,7 @@ export class SelectionManager {
     const { controls } = this
     const pointerSheet = Assets.cache.get('50405')
     const pointer = new AnimatedSprite(pointerSheet.animations['animation'])
-    pointer.animationSpeed = 0.2 * ACCELERATOR
+    pointer.animationSpeed = 0.2
     pointer.loop = false
     pointer.anchor.set(0.5, 0.5)
     pointer.x = controls.mouse.x

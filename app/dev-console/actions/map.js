@@ -12,7 +12,13 @@ export function toggleFog(context, value) {
   map.revealEverything = !showFog
   if (map.fogLayer) map.fogLayer.visible = showFog
 
-  if (!showFog) menu.revealTerrainMinimap()
+  if (!showFog) {
+    menu.revealTerrainMinimap()
+    map.resources.forEach(resource => {
+      const cell = map.grid[resource.i]?.[resource.j]
+      cell?.updateVisible()
+    })
+  }
   menu.updateResourcesMiniMapEvt()
   players.forEach(p => menu.updatePlayerMiniMapEvt(p))
 

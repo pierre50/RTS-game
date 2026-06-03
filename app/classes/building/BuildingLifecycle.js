@@ -2,7 +2,6 @@ import { sound } from '@pixi/sound'
 import { Assets, Sprite, AnimatedSprite, Container } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
-  ACCELERATOR,
   ACTION_TYPES,
   BUILDING_TYPES,
   LABEL_TYPES,
@@ -93,7 +92,7 @@ export class BuildingLifecycle {
         spriteFire.x = 10
         spriteFire.y = 5
         spriteFire.play()
-        spriteFire.animationSpeed = 0.2 * ACCELERATOR
+        spriteFire.animationSpeed = 0.2
         building.addChild(spriteFire)
       } else {
         const fire = building.getChildByLabel(LABEL_TYPES.deco)
@@ -135,7 +134,7 @@ export class BuildingLifecycle {
         spriteFire.x = poses[i][0]
         spriteFire.y = poses[i][1]
         spriteFire.play()
-        spriteFire.animationSpeed = 0.2 * ACCELERATOR
+        spriteFire.animationSpeed = 0.2
         newFire.addChild(spriteFire)
       }
       building.addChild(newFire)

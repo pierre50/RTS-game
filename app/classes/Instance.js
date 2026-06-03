@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { ACCELERATOR, COLOR_WHITE, LABEL_TYPES } from '../constants'
+import { COLOR_WHITE, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 
 export class Instance extends Container {
@@ -74,6 +74,6 @@ export class Instance extends Container {
   }
 
   setTextures(sheet) {
-    setUnitTexture(sheet, this, ACCELERATOR)
+    setUnitTexture(sheet, this)
   }
 }

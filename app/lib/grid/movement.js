@@ -1,4 +1,3 @@
-import { ACCELERATOR } from '../../constants'
 import { findInstancePath } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint } from './cells'
@@ -13,8 +12,8 @@ export function moveTowardPoint(instance, x, y, speed) {
 
   const tX = x - instance.x
   const tY = y - instance.y
-  const velX = (tX / dist) * (speed * ACCELERATOR)
-  const velY = (tY / dist) * (speed * ACCELERATOR)
+  const velX = (tX / dist) * speed
+  const velY = (tY / dist) * speed
 
   instance.degree = getInstanceDegree(instance, x, y)
   instance.x += velX

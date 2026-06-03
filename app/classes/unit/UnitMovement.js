@@ -67,7 +67,12 @@ export class UnitMovement {
       unit.action = action
       unit.setPath(path)
     } else {
-      unit.stop()
+      unit.action = action
+      if (action === ACTION_TYPES.delivery) {
+        unit.stop()
+      } else {
+        unit.affectNewDest()
+      }
     }
   }
 
@@ -156,7 +161,7 @@ export class UnitMovement {
         return
       }
       if (!unit.path.length) {
-        unit.stop()
+        unit.affectNewDest()
       }
     } else {
       const {

@@ -2,7 +2,6 @@ import { sound } from '@pixi/sound'
 import { Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
-  ACCELERATOR,
   ACTION_TYPES,
   BUILDING_TYPES,
   FAMILY_TYPES,
@@ -240,7 +239,7 @@ export class Building extends Instance {
 
   startInterval(callback, time) {
     this.stopInterval()
-    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 10 / ACCELERATOR)
+    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100)
   }
 
   stopInterval() {
@@ -265,7 +264,7 @@ export class Building extends Instance {
 
   startTimeout(cb, time) {
     this.stopTimeout()
-    this.timeoutId = this.context.scheduler.addOneShot(cb, (time * 1000) / ACCELERATOR)
+    this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000)
   }
 
   isAttacked(instance) {

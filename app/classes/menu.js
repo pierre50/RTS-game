@@ -124,4 +124,5 @@ export default class Menu {
   getUnitButton(type) { return this.bottombarManager.getUnitButton(type) }
   getBuildingButton(type) { return this.bottombarManager.getBuildingButton(type) }
   getTechnologyButton(type) { return this.bottombarManager.getTechnologyButton(type) }
+  handleHotkey(key) { return this.bottombarManager.handleHotkey(key) }
 }

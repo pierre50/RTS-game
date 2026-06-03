@@ -1,5 +1,5 @@
 import { sound } from '@pixi/sound'
-import { ACCELERATOR, CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, randomItem, updateInstanceVisibility } from '../../lib'
 
 export class UnitLifecycle {
@@ -13,7 +13,9 @@ export class UnitLifecycle {
       context: { map },
     } = unit
     unit.setTextures(SHEET_TYPES.corpse)
-    unit.sprite.animationSpeed = (1 / (CORPSE_TIME * 1000)) * ACCELERATOR
+    unit.sprite.loop = false
+    unit.sprite.animationSpeed = unit.sprite.textures.length / (CORPSE_TIME * 60)
+    unit.sprite.onComplete = () => unit.clear()
     if (map.grid[unit.i][unit.j].has === unit) {
       map.grid[unit.i][unit.j].has = null
       map.grid[unit.i][unit.j].corpses.add(unit)

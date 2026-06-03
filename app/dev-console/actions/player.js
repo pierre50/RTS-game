@@ -120,7 +120,7 @@ export function setGameSpeed(context, value = 1) {
   if (!Number.isFinite(speed) || speed <= 0 || speed > 8) {
     return { ok: false, message: 'Usage: speed <0.25|0.5|1|2|4|8>' }
   }
-  context.scheduler.timeScale = speed
+  context.app.ticker.speed = speed
   return { ok: true, message: `Speed: ${speed}x` }
 }
 

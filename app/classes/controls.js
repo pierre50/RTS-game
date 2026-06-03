@@ -109,15 +109,18 @@ export default class Controls extends Container {
       return
     }
 
-    if (!ARROW_KEYS.has(evt.key)) return
-
-    if (!evt.repeat) {
-      this.keysPressed[evt.key] = true
-      this.keyPressedCount++
-      if (this.keyPressedCount === 1) {
-        this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
+    if (ARROW_KEYS.has(evt.key)) {
+      if (!evt.repeat) {
+        this.keysPressed[evt.key] = true
+        this.keyPressedCount++
+        if (this.keyPressedCount === 1) {
+          this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
+        }
       }
+      return
     }
+
+    this.context.menu?.handleHotkey(evt.key.toLowerCase())
   }
 
   onKeyUp(evt) {

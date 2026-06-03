@@ -1,13 +1,28 @@
 import { Assets } from 'pixi.js'
 import { sound } from '@pixi/sound'
 import { getIconPath, canAfford, refundCost, isValidCondition, getBuildingAsset } from '../lib'
-import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { FAMILY_TYPES } from '../constants'
 
 export class BottombarManager {
   constructor(menu) {
     this.menu = menu
+    this.activeHotkeys = new Map()
+  }
+
+  assignHotkey(id, usedKeys) {
+    for (const ch of id.toLowerCase()) {
+      if (/[a-z]/.test(ch) && !usedKeys.has(ch)) {
+        usedKeys.add(ch)
+        return ch
+      }
+    }
+    return null
+  }
+
+  handleHotkey(key) {
+    const action = this.activeHotkeys.get(key)
+    if (action) action()
   }
 
   resetInfo() {
@@ -15,6 +30,7 @@ export class BottombarManager {
     menu.bottombarInfo.textContent = ''
     menu.bottombarInfo.classList.remove('active')
     menu._infoCache = null
+    this.activeHotkeys.clear()
   }
 
   generateInfo(selection) {
@@ -76,7 +92,7 @@ export class BottombarManager {
     return img
   }
 
-  createMenuButton(selection, btn, index, onNavigate) {
+  createMenuButton(selection, btn, index, hotkey, onNavigate) {
     const box = this.createMenuBox(btn.id || `btn-${index}`)
     if (typeof btn.onCreate === 'function') {
       btn.onCreate(selection, box)
@@ -84,16 +100,19 @@ export class BottombarManager {
       box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : btn.icon))
     }
 
-    if (btn.children) {
-      box.addEventListener('pointerup', () => {
-        this.playUiClick()
-        onNavigate(btn.children)
-      })
-    } else if (typeof btn.onClick === 'function') {
-      box.addEventListener('pointerup', evt => {
-        this.playUiClick()
-        btn.onClick(selection, evt)
-      })
+
+    if (!btn.onCreate) {
+      if (btn.children) {
+        box.addEventListener('pointerup', () => {
+          this.playUiClick()
+          onNavigate(btn.children)
+        })
+      } else if (typeof btn.onClick === 'function') {
+        box.addEventListener('pointerup', evt => {
+          this.playUiClick()
+          btn.onClick(selection, evt)
+        })
+      }
     }
 
     return box
@@ -123,16 +142,33 @@ export class BottombarManager {
   }
 
   renderMenuLevel(selection, element, items, parent) {
+    this.activeHotkeys.clear()
+    const usedKeys = new Set()
+
     items
       .filter(btn => !btn.hide || !btn.hide())
       .forEach((btn, index) => {
-        element.appendChild(
-          this.createMenuButton(selection, btn, index, children => {
-            element.textContent = ''
-            this.clearMenuSelection()
-            this.renderMenuLevel(selection, element, children, items)
-          })
-        )
+        const hotkey = this.assignHotkey(btn.id || '', usedKeys)
+        const onNavigate = children => {
+          element.textContent = ''
+          this.clearMenuSelection()
+          this.renderMenuLevel(selection, element, children, items)
+        }
+        element.appendChild(this.createMenuButton(selection, btn, index, hotkey, onNavigate))
+
+        if (hotkey) {
+          if (btn.children) {
+            this.activeHotkeys.set(hotkey, () => {
+              this.playUiClick()
+              onNavigate(btn.children)
+            })
+          } else if (typeof btn.onClick === 'function') {
+            this.activeHotkeys.set(hotkey, () => {
+              this.playUiClick()
+              btn.onClick(selection, null)
+            })
+          }
+        }
       })
 
     if (parent || selection.selected) {
@@ -196,6 +232,18 @@ export class BottombarManager {
       id: type,
       icon: () => getIconPath(unit.icon),
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
+      onClick: selection => {
+        if (canAfford(player, unit.cost)) {
+          if (player.population >= player.population_max) {
+            menu.showMessage(t('needHouses'))
+            return
+          }
+          this.toggleButtonCancel(type, true)
+          selection.buyUnit(type)
+        } else {
+          menu.showMessage(this.getMessage(unit.cost))
+        }
+      },
       onCreate: (selection, element) => {
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'

@@ -141,7 +141,7 @@ export class UnitCommands {
   }
 
   sendToBuilding(target) {
-    return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build)
+    return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build, true)
   }
 
   sendToFarm(target) {

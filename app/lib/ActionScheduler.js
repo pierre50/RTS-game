@@ -44,11 +44,10 @@ export class ActionScheduler {
 
   _tick(deltaMS) {
     if (this._getPaused()) return
-    const scaledDeltaMS = deltaMS * this.timeScale
-    this.elapsedMs += scaledDeltaMS
+    this.elapsedMs += deltaMS
     this._toRemove.length = 0
     for (const [id, task] of this._tasks) {
-      task.elapsed += scaledDeltaMS
+      task.elapsed += deltaMS
       if (task.elapsed >= task.interval) {
         task.elapsed -= task.interval
         task.callback()

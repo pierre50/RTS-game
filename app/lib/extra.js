@@ -2,7 +2,7 @@ import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 
-export function setUnitTexture(sheet, instance, ACCELERATOR) {
+export function setUnitTexture(sheet, instance) {
   const animationSpeed = {
     standingSheet: 0.15,
     corpseSheet: 0,
@@ -50,7 +50,7 @@ export function setUnitTexture(sheet, instance, ACCELERATOR) {
       instance.sprite.scale.x = 1
       instance.sprite.textures = instance[sheet].animations[direction]
   }
-  instance.sprite.animationSpeed = (instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3) * ACCELERATOR
+  instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 

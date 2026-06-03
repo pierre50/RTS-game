@@ -35,9 +35,9 @@ export class BuildingInterface {
       context: { menu },
     } = building
     if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
-      if (building.loading === 10) {
+      if (building.loading === 1) {
         menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = this.getLoadingElement().innerHTML))
-      } else if (building.loading > 10) {
+      } else if (building.loading > 1) {
         menu.updateInfo(MENU_INFO_IDS.loadingText, building.loading + '%')
       } else {
         menu.updateInfo(MENU_INFO_IDS.loading, element => (element.innerHTML = ''))

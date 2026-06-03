@@ -123,7 +123,7 @@ export class BuildingProduction {
             }
           } else if (building.loading < 100) {
             if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
-              building.loading += 10
+              building.loading += 1
             } else if (building.owner.isPlayed && !hasShowedMessage) {
               menu.showMessage(t('needHouses'))
               hasShowedMessage = true
@@ -231,7 +231,9 @@ export class BuildingProduction {
                 }
                 break
               case 'improve':
-                building.owner.updateConfig(config.action.operations)
+                building.owner.updateConfig(
+                  config.action.operations.map(operation => ({ ...operation, value: Number(operation.value) }))
+                )
                 break
             }
           }
@@ -242,7 +244,7 @@ export class BuildingProduction {
             menu.updateTopbar()
           }
         } else if (building.loading < 100) {
-          building.loading += 10
+          building.loading += 1
           if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
             building.updateInterfaceLoading()
           }
