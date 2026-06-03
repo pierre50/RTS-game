@@ -54,6 +54,110 @@ export class BottombarManager {
     element.classList.toggle('hidden', !value)
   }
 
+  playUiClick() {
+    sound.play('5036')
+  }
+
+  clearMenuSelection() {
+    this.menu.context.controls.removeMouseBuilding()
+  }
+
+  createMenuBox(id) {
+    const box = document.createElement('div')
+    box.className = 'bottombar-menu-box'
+    box.id = id
+    return box
+  }
+
+  createMenuIcon(src) {
+    const img = document.createElement('img')
+    img.src = src
+    img.className = 'img'
+    return img
+  }
+
+  createMenuButton(selection, btn, index, onNavigate) {
+    const box = this.createMenuBox(btn.id || `btn-${index}`)
+    if (typeof btn.onCreate === 'function') {
+      btn.onCreate(selection, box)
+    } else {
+      box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : btn.icon))
+    }
+
+    if (btn.children) {
+      box.addEventListener('pointerup', () => {
+        this.playUiClick()
+        onNavigate(btn.children)
+      })
+    } else if (typeof btn.onClick === 'function') {
+      box.addEventListener('pointerup', evt => {
+        this.playUiClick()
+        btn.onClick(selection, evt)
+      })
+    }
+
+    return box
+  }
+
+  renderBackButton(selection, element, parent) {
+    const { player } = this.menu.context
+    const back = this.createMenuBox('interfaceBackBtn')
+    back.appendChild(this.createMenuIcon('assets/interface/50721/010_50721.png'))
+
+    if (parent) {
+      back.addEventListener('pointerup', () => {
+        this.playUiClick()
+        element.textContent = ''
+        this.clearMenuSelection()
+        this.renderMenuLevel(selection, element, parent)
+      })
+    } else {
+      back.addEventListener('pointerup', () => {
+        this.playUiClick()
+        this.clearMenuSelection()
+        player.unselectAll()
+      })
+    }
+
+    element.appendChild(back)
+  }
+
+  renderMenuLevel(selection, element, items, parent) {
+    items
+      .filter(btn => !btn.hide || !btn.hide())
+      .forEach((btn, index) => {
+        element.appendChild(
+          this.createMenuButton(selection, btn, index, children => {
+            element.textContent = ''
+            this.clearMenuSelection()
+            this.renderMenuLevel(selection, element, children, items)
+          })
+        )
+      })
+
+    if (parent || selection.selected) {
+      this.renderBackButton(selection, element, parent)
+    }
+  }
+
+  getSelectionMenuItems(selection) {
+    if (!selection?.interface) return []
+    if (selection.family !== FAMILY_TYPES.building) return selection.interface.menu || []
+    if (!selection.isBuilt) return []
+    if (selection.technology) {
+      return [
+        {
+          icon: 'assets/interface/50721/003_50721.png',
+          id: `${selection.technology}-cancel`,
+          onClick: sel => {
+            sel.cancelTechnology()
+          },
+        },
+      ]
+    }
+    return selection.interface.menu || []
+  }
+
   updateBottombar() {
     const { menu } = this
     const { player } = menu.context
@@ -74,83 +178,7 @@ export class BottombarManager {
     }
     if (selection && selection.interface) {
       this.generateInfo(selection)
-      if (selection.family === FAMILY_TYPES.building) {
-        if (!selection.isBuilt) {
-          setMenuRecurs(selection, menu.bottombarMenu, [])
-        } else if (selection.technology) {
-          setMenuRecurs(selection, menu.bottombarMenu, [
-            {
-              icon: 'assets/interface/50721/003_50721.png',
-              id: `${selection.technology}-cancel`,
-              onClick: sel => {
-                sound.play('5036')
-                sel.cancelTechnology()
-              },
-            },
-          ])
-        } else {
-          setMenuRecurs(selection, menu.bottombarMenu, selection.interface.menu || [])
-        }
-      } else {
-        setMenuRecurs(selection, menu.bottombarMenu, selection.interface.menu || [])
-      }
-    }
-
-    function setMenuRecurs(sel, element, items, parent) {
-      items
-        .filter(btn => !btn.hide || !btn.hide())
-        .forEach((btn, index) => {
-          const box = document.createElement('div')
-          box.className = 'bottombar-menu-box'
-          box.id = btn.id || `btn-${index}`
-          if (typeof btn.onCreate === 'function') {
-            btn.onCreate(sel, box)
-          } else {
-            const img = document.createElement('img')
-            img.src = typeof btn.icon === 'function' ? btn.icon() : btn.icon
-            img.className = 'img'
-            box.appendChild(img)
-          }
-
-          if (btn.children) {
-            box.addEventListener('pointerup', () => {
-              sound.play('5036')
-              element.textContent = ''
-              controls.removeMouseBuilding()
-              setMenuRecurs(sel, element, btn.children, items)
-            })
-          } else if (typeof btn.onClick === 'function') {
-            box.addEventListener('pointerup', evt => {
-              sound.play('5036')
-              btn.onClick(sel, evt)
-            })
-          }
-          element.appendChild(box)
-        })
-      if (parent || sel.selected) {
-        const back = document.createElement('div')
-        back.className = 'bottombar-menu-box'
-        const img = document.createElement('img')
-        img.className = 'img'
-        back.id = 'interfaceBackBtn'
-        img.src = 'assets/interface/50721/010_50721.png'
-        if (parent) {
-          back.addEventListener('pointerup', () => {
-            sound.play('5036')
-            element.textContent = ''
-            controls.removeMouseBuilding()
-            setMenuRecurs(sel, element, parent)
-          })
-        } else {
-          back.addEventListener('pointerup', () => {
-            sound.play('5036')
-            controls.removeMouseBuilding()
-            player.unselectAll()
-          })
-        }
-        back.appendChild(img)
-        element.appendChild(back)
-      }
+      this.renderMenuLevel(selection, menu.bottombarMenu, this.getSelectionMenuItems(selection))
     }
   }
 
@@ -171,15 +199,13 @@ export class BottombarManager {
       onCreate: (selection, element) => {
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'
-        const cancel = document.createElement('img')
+        const cancel = this.createMenuIcon('assets/interface/50721/003_50721.png')
         cancel.id = `${type}-cancel`
-        cancel.className = 'img'
-        cancel.src = 'assets/interface/50721/003_50721.png'
         if (!selection.queue.some(q => q === type)) {
           cancel.classList.add('hidden')
         }
         cancel.addEventListener('pointerup', () => {
-          sound.play('5036')
+          this.playUiClick()
           for (let i = 0; i < selection.queue.length; i++) {
             if (selection.queue[i] === type) {
               refundCost(player, unit.cost)
@@ -192,11 +218,9 @@ export class BottombarManager {
             this.toggleButtonCancel(type, false)
           }
         })
-        const img = document.createElement('img')
-        img.src = getIconPath(unit.icon)
-        img.className = 'img'
+        const img = this.createMenuIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
-          sound.play('5036')
+          this.playUiClick()
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.population_max) {
               menu.showMessage(t('needHouses'))

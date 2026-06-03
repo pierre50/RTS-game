@@ -223,7 +223,7 @@ export class MapGeneration {
     for (let i = 0; i < this.map.positionsCount; i++) {
       const posI = this.map.playersPos[poses[i]]?.i
       const posJ = this.map.playersPos[poses[i]]?.j
-      if (posI && posJ) {
+      if (posI != null && posJ != null) {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
         const team = playersConfig?.[i]?.team ?? null

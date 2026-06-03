@@ -225,9 +225,12 @@ export class MapFog {
           minY: cMinY,
           w: cW,
           h: cH,
+          cells: [],
         })
       }
     }
+
+    this._indexFogChunkCells()
 
     this.map._fogTickerCb = () => {
       if (this.map.context.map !== this.map) {
@@ -299,13 +302,15 @@ export class MapFog {
   }
 
   _getFogChunksForCell(cell) {
+    if (cell._fogChunks) return cell._fogChunks
     const bounds = this.map._getFogCellBounds(cell)
-    return this.map._fogChunks.filter(chunk =>
+    cell._fogChunks = this.map._fogChunks.filter(chunk =>
       bounds.maxX >= chunk.minX &&
       bounds.minX <= chunk.minX + chunk.w &&
       bounds.maxY >= chunk.minY &&
       bounds.minY <= chunk.minY + chunk.h
     )
+    return cell._fogChunks
   }
 
   _drawFogCellShape(graphics, cell) {
@@ -413,20 +418,24 @@ export class MapFog {
   }
 
   _drawVisibleCellsInChunk(graphics, chunk) {
-    const maxX = chunk.minX + chunk.w
-    const maxY = chunk.minY + chunk.h
+    for (const cell of chunk.cells) {
+      if (cell._hasFog) continue
+      this.map._drawFogEraseCellShape(graphics, cell)
+    }
+  }
+
+  _indexFogChunkCells() {
+    for (const chunk of this.map._fogChunks) {
+      chunk.cells = []
+    }
+
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (cell._hasFog) continue
-        const bounds = this.map._getFogCellBounds(cell)
-        if (
-          bounds.maxX >= chunk.minX &&
-          bounds.minX <= maxX &&
-          bounds.maxY >= chunk.minY &&
-          bounds.minY <= maxY
-        ) {
-          this.map._drawFogEraseCellShape(graphics, cell)
+        cell._fogChunks = null
+        const chunks = this.map._getFogChunksForCell(cell)
+        for (const chunk of chunks) {
+          chunk.cells.push(cell)
         }
       }
     }
@@ -520,7 +529,7 @@ export class MapFog {
       fogErase.destroy()
     }
 
-    for (const chunk of this.map._fogChunks) {
+    for (const chunk of chunkUpdates.keys()) {
       this.map._redrawFogEdgesInChunk(renderer, chunk)
     }
   }

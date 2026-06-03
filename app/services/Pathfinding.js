@@ -2,10 +2,6 @@ import { cellIsDiag, instancesDistance } from '../lib/maths'
 
 let pathStamp = 0
 
-const heapData = []
-const openSet = new Set()
-const closedSet = new Set()
-
 function getNeighbourCells(startX, startY, grid, dist, callback) {
   const result = []
   const startCell = grid[startX]?.[startY]
@@ -32,7 +28,7 @@ function getNeighbourCells(startX, startY, grid, dist, callback) {
   return result
 }
 
-function heapPush(f, node) {
+function heapPush(heapData, f, node) {
   heapData.push([f, node])
   let i = heapData.length - 1
   while (i > 0) {
@@ -43,7 +39,7 @@ function heapPush(f, node) {
   }
 }
 
-function heapPop() {
+function heapPop(heapData) {
   const top = heapData[0]
   const last = heapData.pop()
   if (heapData.length > 0) {
@@ -63,6 +59,15 @@ function heapPop() {
   return top
 }
 
+function createPathSearchState() {
+  return {
+    stamp: ++pathStamp,
+    heapData: [],
+    openSet: new Set(),
+    closedSet: new Set(),
+  }
+}
+
 export function findInstancePath(instance, x, y, map) {
   const maxZone = 10
   const end = map.grid[x][y]
@@ -72,11 +77,11 @@ export function findInstancePath(instance, x, y, map) {
   const minY = Math.max(Math.min(start.j, end.j) - maxZone, 0)
   const maxY = Math.min(Math.max(start.j, end.j) + maxZone, map.size)
 
-  const stamp = ++pathStamp
+  const search = createPathSearchState()
 
   function initCell(cell) {
-    if (cell._ps !== stamp) {
-      cell._ps = stamp
+    if (cell._ps !== search.stamp) {
+      cell._ps = search.stamp
       cell._g = Infinity
       cell._h = 0
       cell._f = Infinity
@@ -94,21 +99,17 @@ export function findInstancePath(instance, x, y, map) {
   const startCell = initCell(start)
   const endCell = initCell(end)
 
-  heapData.length = 0
-  openSet.clear()
-  closedSet.clear()
-
   startCell._g = 0
   startCell._h = instancesDistance(startCell, endCell)
   startCell._f = startCell._h
-  heapPush(startCell._f, startCell)
-  openSet.add(startCell)
+  heapPush(search.heapData, startCell._f, startCell)
+  search.openSet.add(startCell)
 
   let path = []
 
-  while (heapData.length > 0) {
-    const [pushedF, current] = heapPop()
-    if (pushedF !== current._f || closedSet.has(current)) continue
+  while (search.heapData.length > 0) {
+    const [pushedF, current] = heapPop(search.heapData)
+    if (pushedF !== current._f || search.closedSet.has(current)) continue
 
     if (current === endCell) {
       path = [endCell]
@@ -120,8 +121,8 @@ export function findInstancePath(instance, x, y, map) {
       break
     }
 
-    openSet.delete(current)
-    closedSet.add(current)
+    search.openSet.delete(current)
+    search.closedSet.add(current)
 
     getNeighbourCells(current.i, current.j, map.grid, 1, neighbour => {
       if (neighbour.i < minX || neighbour.i > maxX || neighbour.j < minY || neighbour.j > maxY) return
@@ -129,20 +130,20 @@ export function findInstancePath(instance, x, y, map) {
       const validDiag =
         !cellIsDiag(current, neighbour) ||
         (isCellReachable(map.grid[current.i][neighbour.j]) && isCellReachable(map.grid[neighbour.i][current.j]))
-      if (!closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
+      if (!search.closedSet.has(neighbour) && isCellReachable(neighbour) && validDiag) {
         const tempG = current._g + instancesDistance(neighbour, current)
-        if (!openSet.has(neighbour)) {
+        if (!search.openSet.has(neighbour)) {
           neighbour._g = tempG
           neighbour._h = instancesDistance(neighbour, endCell)
           neighbour._f = neighbour._g + neighbour._h
           neighbour._prev = current
-          openSet.add(neighbour)
-          heapPush(neighbour._f, neighbour)
+          search.openSet.add(neighbour)
+          heapPush(search.heapData, neighbour._f, neighbour)
         } else if (tempG < neighbour._g) {
           neighbour._g = tempG
           neighbour._f = neighbour._g + neighbour._h
           neighbour._prev = current
-          heapPush(neighbour._f, neighbour)
+          heapPush(search.heapData, neighbour._f, neighbour)
         }
       }
     })

@@ -219,6 +219,9 @@ export class UnitMovement {
     } = unit
     const { grid } = map
     const views = unit.owner.views
+    let bestCell = null
+    let bestScore = -Infinity
+
     for (let r = 1; r <= 50; r++) {
       for (let dx = -r; dx <= r; dx++) {
         const x = unit.i + dx
@@ -228,11 +231,24 @@ export class UnitMovement {
         for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
           const cell = row[unit.j + dy]
           if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
-            unit.sendTo(views[cell.i][cell.j])
-            return
+            let unseenNeighbors = 0
+            for (let ni = cell.i - 1; ni <= cell.i + 1; ni++) {
+              for (let nj = cell.j - 1; nj <= cell.j + 1; nj++) {
+                const neighbor = grid[ni]?.[nj]
+                if (neighbor && !views[ni][nj].viewed && !neighbor.solid) unseenNeighbors++
+              }
+            }
+            const score = unseenNeighbors * 3 - r
+            if (score > bestScore) {
+              bestScore = score
+              bestCell = cell
+            }
           }
         }
       }
+    }
+    if (bestCell) {
+      unit.sendTo(views[bestCell.i][bestCell.j])
     }
   }
 

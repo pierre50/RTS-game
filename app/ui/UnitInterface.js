@@ -1,7 +1,7 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import { appendBaseEntityInfo } from './BaseEntityInterface'
+import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
 export class UnitInterface {
   constructor(unit) {
@@ -18,14 +18,8 @@ export class UnitInterface {
         const iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
         menu.updateInfo(MENU_INFO_IDS.loading, element => {
           element.replaceChildren()
-          const iconImg = document.createElement('img')
-          iconImg.className = 'unit-loading-icon'
-          iconImg.src = iconSrc
-          const textDiv = document.createElement('div')
-          textDiv.classList.add(MENU_INFO_IDS.loadingText)
-          textDiv.textContent = unit.loading
-          element.appendChild(iconImg)
-          element.appendChild(textDiv)
+          element.appendChild(createInfoImage('unit-loading-icon', iconSrc))
+          element.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))
         })
       } else if (unit.loading > 1) {
         menu.updateInfo(MENU_INFO_IDS.loadingText, unit.loading)
@@ -45,14 +39,13 @@ export class UnitInterface {
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
     if (unit.loading) {
-      const iconImg = document.createElement('img')
-      iconImg.className = 'unit-loading-icon'
-      iconImg.src = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
-      const textDiv = document.createElement('div')
-      textDiv.classList.add(MENU_INFO_IDS.loadingText)
-      textDiv.textContent = unit.loading
-      loadingDiv.appendChild(iconImg)
-      loadingDiv.appendChild(textDiv)
+      loadingDiv.appendChild(
+        createInfoImage(
+          'unit-loading-icon',
+          menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
+        )
+      )
+      loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))
     }
     return loadingDiv
   }
@@ -78,13 +71,8 @@ export class UnitInterface {
         const infoDiv = document.createElement('div')
         infoDiv.classList.add('info')
 
-        const attackImg = document.createElement('img')
-        attackImg.src = getIconPath(info[1])
-        const attackDiv = document.createElement('div')
-        attackDiv.classList.add(info[0])
-        attackDiv.textContent = data[info[0]]
-        infoDiv.appendChild(attackImg)
-        infoDiv.appendChild(attackDiv)
+        infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
+        infoDiv.appendChild(createInfoText(info[0], data[info[0]]))
         infosDiv.appendChild(infoDiv)
       }
     }

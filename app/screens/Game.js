@@ -6,7 +6,9 @@ import Controls from '../classes/controls'
 import { debounce } from '../lib'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { serializeGame } from '../serialization/SaveSerializer'
+import { validateSaveData } from '../serialization/SaveValidator'
 import { DevConsole } from '../dev-console/DevConsole'
+import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 
 /**
  * Main Display Object
@@ -15,7 +17,7 @@ import { DevConsole } from '../dev-console/DevConsole'
  */
 
 export default class Game extends Container {
-  constructor(app, gamebox, config = {}, onQuit = null) {
+  constructor(app, gamebox, config = null, onQuit = null) {
     super()
     this.config = config
     this.onQuit = onQuit
@@ -44,41 +46,13 @@ export default class Game extends Container {
       checkDefeat: () => this.checkDefeat(),
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
-    this.start()
+    if (config !== null) {
+      this.start()
+    }
   }
 
   start() {
-    const { context, config } = this
-
-    context.map = new Map(context)
-
-    if (config.size) context.map.size = config.size
-    if (config.mapType) context.map.mapType = config.mapType
-    if (config.instantMode) context.map.instantMode = true
-    if (config.revealEverything !== undefined) context.map.revealEverything = config.revealEverything
-    if (config.revealTerrain !== undefined) context.map.revealTerrain = config.revealTerrain
-    if (config.startingResources) context.map.startingResources = config.startingResources
-    if (config.resourceDensity) context.map.resourceDensity = config.resourceDensity
-    if (config.difficulty) context.map.difficulty = config.difficulty
-
-    context.controls = new Controls(context)
-    context.menu = new Menu(context)
-    context.devConsole = new DevConsole(context)
-
-    const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
-    context.map.generateMap(posCount)
-
-    context.players = context.map.generatePlayers(config.players || null)
-    context.player = context.players[0]
-    context.menu.init()
-    context.map.stylishMap()
-    context.controls.init()
-
-    this.addChild(context.map)
-    this.addChild(context.controls)
-
-    this._attachWindowListeners()
-    this.checkVictory()
+    this._bootFromConfig(this.config)
   }
 
   _attachWindowListeners() {
@@ -102,6 +76,98 @@ export default class Game extends Container {
     window.removeEventListener('resize', this._onResize)
   }
 
+  _applyMapConfig(map, config = {}) {
+    if (config.size) map.size = config.size
+    if (config.mapType) map.mapType = config.mapType
+    if (config.instantMode) map.instantMode = true
+    if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
+    if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
+    if (config.startingResources) map.startingResources = config.startingResources
+    if (config.resourceDensity) map.resourceDensity = config.resourceDensity
+    if (config.difficulty) map.difficulty = config.difficulty
+  }
+
+  _resetOverlayDom() {
+    document.getElementById('pause')?.remove()
+    document.getElementById('victory')?.remove()
+    document.getElementById('defeat')?.remove()
+  }
+
+  _resetRuntimeState() {
+    this.context = {
+      ...this.context,
+      player: null,
+      players: [],
+      map: null,
+      controls: null,
+      devConsole: null,
+      devConsoleOpen: false,
+      paused: false,
+      victory: false,
+      defeat: false,
+    }
+  }
+
+  _createRuntime() {
+    const { context } = this
+    context.map = new Map(context)
+  }
+
+  _createUiRuntime() {
+    const { context } = this
+    context.controls = new Controls(context)
+    context.menu = new Menu(context)
+    context.devConsole = new DevConsole(context)
+  }
+
+  _mountRuntime() {
+    this.addChild(this.context.map)
+    this.addChild(this.context.controls)
+    this._attachWindowListeners()
+  }
+
+  _destroyRuntime() {
+    this._resetOverlayDom()
+    this._removeWindowListeners()
+    if (this.context.map) {
+      cleanupDebugArtifacts(this.context)
+    }
+    this.context.scheduler?.clear()
+    this.context.controls?.destroy({ children: true })
+    this.context.devConsole?.destroy()
+    this.context.menu?.destroy()
+    this.context.map?.destroy({ children: true })
+    this.removeChildren()
+    this._resetRuntimeState()
+  }
+
+  _bootFromConfig(config) {
+    this._createRuntime()
+    this._applyMapConfig(this.context.map, config)
+    this._createUiRuntime()
+
+    const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
+    this.context.map.generateMap(posCount)
+    this.context.players = this.context.map.generatePlayers(config.players || null)
+    this.context.player = this.context.players[0]
+    this.context.menu.init()
+    this.context.map.stylishMap()
+    this.context.controls.init()
+
+    this._mountRuntime()
+    this.checkVictory()
+  }
+
+  _bootFromSave(json) {
+    this._createRuntime()
+    this.context.map.size = Math.max(0, (json.map?.length || 1) - 1)
+    this._applyMapConfig(this.context.map, json.config)
+    this._createUiRuntime()
+    this.context.map.generateFromJSON(json)
+    this._mountRuntime()
+    this.checkVictory()
+  }
+
   save() {
     const data = serializeGame(this.context)
 
@@ -117,7 +183,7 @@ export default class Game extends Container {
       const blobUrl = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
       const a = document.createElement('a')
       a.href = blobUrl
-      a.download = `save_${new Date().toLocaleString('en-GB', { timeZone: 'UTC' })}.json`
+      a.download = `save_${new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.json`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -128,61 +194,21 @@ export default class Game extends Container {
   }
 
   load(json) {
-    document.getElementById('pause')?.remove()
-    document.getElementById('victory')?.remove()
-    document.getElementById('defeat')?.remove()
-    this._removeWindowListeners()
-    this.context.controls.destroy()
-    this.context.devConsole?.destroy()
-    this.context.menu.destroy()
-    this.removeChildren()
-    this.context = {
-      ...this.context,
-      player: null,
-      players: [],
-      map: null,
-      controls: null,
-      devConsole: null,
-      devConsoleOpen: false,
-      paused: false,
-      victory: false,
-      defeat: false,
-    }
-    const { context } = this
-
-    context.map = new Map(context)
-
-    if (json.config) {
-      if (json.config.instantMode) context.map.instantMode = true
-      if (json.config.revealEverything !== undefined) context.map.revealEverything = json.config.revealEverything
-      if (json.config.revealTerrain !== undefined) context.map.revealTerrain = json.config.revealTerrain
-      if (json.config.startingResources) context.map.startingResources = json.config.startingResources
-      if (json.config.resourceDensity) context.map.resourceDensity = json.config.resourceDensity
-    }
-
-    context.controls = new Controls(context)
-    context.menu = new Menu(context)
-    context.devConsole = new DevConsole(context)
-
-    context.map.generateFromJSON(json)
-
-    this.addChild(context.map)
-    this.addChild(context.controls)
-
-    this._attachWindowListeners()
-    this.checkVictory()
+    validateSaveData(json)
+    this._destroyRuntime()
+    this._bootFromSave(json)
   }
 
   quit() {
-    document.getElementById('pause')?.remove()
-    document.getElementById('victory')?.remove()
-    document.getElementById('defeat')?.remove()
-    this._removeWindowListeners()
-    this.context.controls.destroy()
-    this.context.devConsole?.destroy()
-    this.context.menu.destroy()
-    this.removeChildren()
+    this._destroyRuntime()
     if (this.onQuit) this.onQuit()
+  }
+
+  destroy(options) {
+    this._destroyRuntime()
+    this.context.scheduler?.destroy()
+    this.context.scheduler = null
+    super.destroy(options)
   }
 
   checkVictory() {

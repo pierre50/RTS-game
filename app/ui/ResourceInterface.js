@@ -1,6 +1,7 @@
 import { MENU_INFO_IDS, RESOURCE_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import { appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
 export class ResourceInterface {
   constructor(resource) {
@@ -13,28 +14,14 @@ export class ResourceInterface {
       context: { menu },
     } = resource
 
-    const typeDiv = document.createElement('div')
-    typeDiv.classList.add(MENU_INFO_IDS.type)
-    typeDiv.textContent = t(resource.type)
-    element.appendChild(typeDiv)
-
-    const iconImg = document.createElement('img')
-    iconImg.classList.add(MENU_INFO_IDS.icon)
-    iconImg.src = getIconPath(data.icon)
-    element.appendChild(iconImg)
+    element.appendChild(createInfoText(MENU_INFO_IDS.type, t(resource.type)))
+    element.appendChild(createInfoImage(MENU_INFO_IDS.icon, getIconPath(data.icon)))
 
     if (resource.hitPoints) {
-      const hitPointsDiv = document.createElement('div')
-      hitPointsDiv.classList.add(MENU_INFO_IDS.hitPoints)
-      hitPointsDiv.textContent = resource.hitPoints + '/' + resource.totalHitPoints
-      element.appendChild(hitPointsDiv)
+      element.appendChild(createInfoText(MENU_INFO_IDS.hitPoints, resource.hitPoints + '/' + resource.totalHitPoints))
     }
 
     if (resource.quantity) {
-      const quantityDiv = document.createElement('div')
-      quantityDiv.classList.add(MENU_INFO_IDS.quantity)
-      quantityDiv.className = 'resource-quantity'
-
       let iconToUse
       switch (resource.type) {
         case RESOURCE_TYPES.tree:
@@ -52,15 +39,7 @@ export class ResourceInterface {
           break
       }
 
-      const smallIconImg = document.createElement('img')
-      smallIconImg.src = iconToUse
-      smallIconImg.className = 'resource-quantity-icon'
-      const textDiv = document.createElement('div')
-      textDiv.classList.add(MENU_INFO_IDS.quantityText)
-      textDiv.textContent = resource.quantity
-      quantityDiv.appendChild(smallIconImg)
-      quantityDiv.appendChild(textDiv)
-      element.appendChild(quantityDiv)
+      appendQuantityInfo(element, iconToUse, resource.quantity)
     }
   }
 }

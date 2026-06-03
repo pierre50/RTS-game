@@ -1,9 +1,7 @@
 import { Application } from 'pixi.js'
 import './styles.css'
-import Game from './screens/Game'
 import Loader from './screens/Loader'
-import MainMenu from './screens/MainMenu'
-import MapConfig from './screens/MapConfig'
+import { ScreenManager } from './screens/ScreenManager'
 
 ;(async () => {
   const app = new Application()
@@ -31,53 +29,6 @@ import MapConfig from './screens/MapConfig'
   await loader.start()
   app.stage.removeChild(loader)
 
-  let currentGame = null
-
-  const quitGame = () => {
-    if (currentGame) {
-      app.stage.removeChild(currentGame)
-      currentGame.destroy()
-      currentGame = null
-    }
-    showMainMenu()
-  }
-
-  const startGame = config => {
-    currentGame = new Game(app, gamebox, config, quitGame)
-    app.stage.addChild(currentGame)
-  }
-
-  const loadGame = json => {
-    currentGame = new Game(app, gamebox, {}, quitGame)
-    app.stage.addChild(currentGame)
-    currentGame.load(json)
-  }
-
-  const showMapConfig = () => {
-    const mapConfig = new MapConfig(
-      config => {
-        mapConfig.destroy()
-        startGame(config)
-      },
-      () => {
-        mapConfig.destroy()
-        showMainMenu()
-      }
-    )
-  }
-
-  const showMainMenu = () => {
-    const mainMenu = new MainMenu(
-      () => {
-        mainMenu.destroy()
-        showMapConfig()
-      },
-      json => {
-        mainMenu.destroy()
-        loadGame(json)
-      }
-    )
-  }
-
-  showMainMenu()
+  const screenManager = new ScreenManager(app, gamebox)
+  screenManager.start()
 })()

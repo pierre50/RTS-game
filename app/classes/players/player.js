@@ -3,6 +3,7 @@ import {
   canAfford,
   drawInstanceBlinkingSelection,
   payCost,
+  randomItem,
   uuidv4,
   getHexColor,
   updateObject,

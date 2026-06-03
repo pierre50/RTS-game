@@ -9,15 +9,16 @@
     "url": "git+https://github.com/pierre50/RTS-game.git"
   },
   "scripts": {
-    "compile": "pnpm build && electron-builder",
-    "start": "webpack serve",
+    "clean": "rimraf build",
+    "dev": "webpack serve --mode development",
+    "start": "pnpm dev",
+    "build": "pnpm clean && webpack --mode production",
+    "build:dev": "pnpm clean && webpack --mode development",
+    "dist": "pnpm build && electron-builder",
+    "compile": "pnpm dist",
     "deploy": "pnpm build && gh-pages -d build",
-    "webpack": "webpack --mode development",
-    "build": "webpack --mode production",
-    "format": "find app -name '*.js' | xargs -I{} ./node_modules/.bin/prettier --write --single-quote {}",
-    "prewebpack": "pnpm clean",
+    "format": "prettier --write \"app/**/*.{js,css}\" \"*.{js,json}\"",
     "precommit": "lint-staged",
-    "clean": "rm -rf ./build && mkdir ./build",
     "lint": "eslint ./app/**/*.js"
   },
   "build": {

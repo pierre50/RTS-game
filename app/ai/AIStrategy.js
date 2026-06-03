@@ -220,13 +220,46 @@ export class AIStrategy {
     return this.military.handleActions(options)
   }
 
-  buyUnits(currentCount, maxCount, buildingList, unitType, extra, debug = false) {
+  getEconomicDemand() {
+    const { ai } = this
+    const demand = { food: 0, wood: 0, gold: 0, stone: 0 }
+    const nextAgeKey = ai.age + 1
+    const ageUpCosts = { 1: { food: 500 }, 2: { food: 800 }, 3: { food: 1000, gold: 800 } }
+    const nextAgeCost = ageUpCosts[nextAgeKey]
+    if (nextAgeCost) {
+      const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+      const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
+      for (const [resource, amount] of Object.entries(nextAgeCost)) {
+        demand[resource] += shouldReserveAgeUp ? amount : Math.max(0, amount - ai[resource])
+      }
+    }
+
+    if (ai.population + 2 > ai.population_max) {
+      demand.wood += ai.config.buildings[BUILDING_TYPES.house]?.cost?.wood || 0
+    }
+    if (ai.phase !== 'economy' && !ai.buildings.some(building => building.type === BUILDING_TYPES.barracks)) {
+      demand.wood += ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0
+    }
+    if (!ai.buildings.some(building => building.type === BUILDING_TYPES.market)) {
+      demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
+    }
+
+    return demand
+  }
+
+  canSpendWithReserve(cost, reserve = {}) {
+    const { ai } = this
+    return Object.entries(cost || {}).every(([resource, amount]) => ai[resource] - amount >= (reserve[resource] || 0))
+  }
+
+  buyUnits(currentCount, maxCount, buildingList, unitType, extra, reserve = {}, debug = false) {
     const unitsNeeded = maxCount - currentCount
     let unitsBought = 0
     if (unitsNeeded <= 0) return 0
+    const unitCost = this.ai.config.units[unitType]?.cost || {}
     for (const building of buildingList) {
       if (unitsBought >= unitsNeeded) break
-      if (building && building.buyUnit(unitType, false, false, extra)) {
+      if (building && this.canSpendWithReserve(unitCost, reserve) && building.buyUnit(unitType, false, false, extra)) {
         unitsBought++
         if (debug) console.log(`Buying ${unitType} from ${building.type}, Total Bought: ${unitsBought}`)
       }
@@ -256,11 +289,13 @@ export class AIStrategy {
     } = snapshot
 
     let actions = 0
-    actions += this.buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager, undefined, debug)
-    actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, debug)
-    actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, debug)
-    actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, debug)
-    actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, debug)
+    const reserve = this.getEconomicDemand()
+
+    actions += this.buyUnits(villagers.length, maxVillagers, towncenters, UNIT_TYPES.villager, undefined, reserve, debug)
+    actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
+    actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
+    actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, reserve, debug)
+    actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
     return actions
   }
 

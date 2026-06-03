@@ -1,4 +1,4 @@
-import { ACTION_TYPES, BUILDING_TYPES, WORK_TYPES } from '../constants'
+import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, getInstanceClosestFreeCellPath, getValuePercentage, instancesDistance } from '../lib'
 
 export class AIEconomy {
@@ -33,8 +33,11 @@ export class AIEconomy {
 
   getResourceTargets(villagersCount) {
     const { ai } = this
-    const woodBoost = ai.wood < 50 ? 15 : 0
-    const foodBoost = ai.food < 50 ? 15 : 0
+    const demand = ai.strategy.getEconomicDemand()
+    const woodBoost = (ai.wood < 50 ? 15 : 0) + (demand.wood > 0 ? 10 : 0)
+    const foodBoost = (ai.food < 50 ? 15 : 0) + (demand.food > 0 ? 10 : 0)
+    const goldBoost = demand.gold > 0 ? 10 : 0
+    const stoneBoost = demand.stone > 0 ? 10 : 0
     return {
       maxVillagersOnFood: getValuePercentage(
         villagersCount,
@@ -44,15 +47,24 @@ export class AIEconomy {
         villagersCount,
         ai.villageTargetPercentageByAge[ai.age]['wood'] + woodBoost
       ),
-      maxVillagersOnGold: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['gold']),
-      maxVillagersOnStone: getValuePercentage(villagersCount, ai.villageTargetPercentageByAge[ai.age]['stone']),
+      maxVillagersOnGold: getValuePercentage(
+        villagersCount,
+        ai.villageTargetPercentageByAge[ai.age]['gold'] + goldBoost
+      ),
+      maxVillagersOnStone: getValuePercentage(
+        villagersCount,
+        ai.villageTargetPercentageByAge[ai.age]['stone'] + stoneBoost
+      ),
     }
   }
 
   updateScout(inactifVillagers) {
     const { ai } = this
     if (!ai.scout || ai.scout.isDead || ai.scout.hitPoints <= 0) {
-      ai.scout = inactifVillagers[inactifVillagers.length - 1] || null
+      ai.scout =
+        ai.units.find(unit => unit.type === UNIT_TYPES.scout && !unit.isDead && unit.hitPoints > 0) ||
+        inactifVillagers[inactifVillagers.length - 1] ||
+        null
     }
     if (ai.scout && ai.scout.inactif) {
       ai.scout.explore()
@@ -174,6 +186,7 @@ export class AIEconomy {
     let actions = 0
     if (!notBuiltBuildings.length) return actions
     let currentBuilders = builderVillagers.length
+    const PATH_CANDIDATE_LIMIT = 6
 
     for (const building of notBuiltBuildings) {
       if (currentBuilders >= maxVillagersOnConstruction) break
@@ -185,6 +198,7 @@ export class AIEconomy {
             Math.abs(a.j - building.j) -
             (Math.abs(b.i - building.i) + Math.abs(b.j - building.j))
         )
+        .slice(0, PATH_CANDIDATE_LIMIT)
         .find(candidate => getInstanceClosestFreeCellPath(candidate, building, candidate.context.map).length)
       if (villager) {
         if (debug) console.log('Villager sent to build:', building)
@@ -208,7 +222,9 @@ export class AIEconomy {
       )
 
     this.updateScout(workerSnapshot.inactifVillagers)
-    const availableVillagers = workerSnapshot.inactifVillagers.filter(v => v !== this.ai.scout)
+    const availableVillagers = workerSnapshot.inactifVillagers
+      .filter(v => v !== this.ai.scout)
+      .sort((a, b) => b.hitPoints - a.hitPoints)
     let actions = 0
 
     this.discoverDeadAnimals(map)

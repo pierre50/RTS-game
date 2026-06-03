@@ -19,6 +19,8 @@ export class AI extends Player {
     this.foundedFish = new Set()
     this.foundedEnemyBuildings = new Set()
     this.foundedEnemyUnits = new Set()
+    this.enemyUnitMemory = new Map()
+    this.enemyBuildingMemory = new Map()
     this.difficulty = props.difficulty || 'medium'
     this.strategy = new AIStrategy(this, this.difficulty)
     this.economy = new AIEconomy(this)
@@ -31,6 +33,68 @@ export class AI extends Player {
     this.selectedOther = null
     this.scout = null
     this.phase = 'economy' // economy | military_build | attack
+  }
+
+  getNow() {
+    return this.context.scheduler?.elapsedMs || 0
+  }
+
+  rememberEnemy(enemy) {
+    if (!enemy?.label || !this.isEnemy(enemy.owner)) return
+    const memoryMap = enemy.family === FAMILY_TYPES.building ? this.enemyBuildingMemory : this.enemyUnitMemory
+    const visible = Boolean(this.views?.[enemy.i]?.[enemy.j]?.viewBy?.size)
+    memoryMap.set(enemy.label, {
+      instance: enemy,
+      label: enemy.label,
+      ownerLabel: enemy.owner?.label,
+      family: enemy.family,
+      type: enemy.type,
+      i: enemy.i,
+      j: enemy.j,
+      hitPoints: enemy.hitPoints,
+      totalHitPoints: enemy.totalHitPoints,
+      lastSeenAt: this.getNow(),
+      visible,
+    })
+  }
+
+  _refreshEnemyMemory(memoryMap) {
+    const now = this.getNow()
+    for (const [label, memory] of memoryMap) {
+      const enemy = memory.instance
+      if (!enemy || enemy.isDead || enemy.isDestroyed || enemy.hitPoints <= 0 || !this.isEnemy(enemy.owner)) {
+        memoryMap.delete(label)
+        continue
+      }
+      const visible = Boolean(this.views?.[enemy.i]?.[enemy.j]?.viewBy?.size)
+      if (visible) {
+        memory.i = enemy.i
+        memory.j = enemy.j
+        memory.hitPoints = enemy.hitPoints
+        memory.totalHitPoints = enemy.totalHitPoints
+        memory.lastSeenAt = now
+      } else if (now - memory.lastSeenAt > 90000) {
+        memoryMap.delete(label)
+        continue
+      }
+      memory.visible = visible
+    }
+  }
+
+  getEnemyMemories({ family = null, freshWithin = Infinity, visibleOnly = false } = {}) {
+    const now = this.getNow()
+    const sources = []
+    if (!family || family === FAMILY_TYPES.unit) sources.push(...this.enemyUnitMemory.values())
+    if (!family || family === FAMILY_TYPES.building) sources.push(...this.enemyBuildingMemory.values())
+    return sources.filter(memory => {
+      if (!memory?.instance) return false
+      if (visibleOnly && !memory.visible) return false
+      return now - memory.lastSeenAt <= freshWithin
+    })
+  }
+
+  getFreshEnemyInstances(options = {}) {
+    return this.getEnemyMemories(options).map(memory => memory.instance)
   }
 
   _scheduleStep() {
@@ -53,6 +117,38 @@ export class AI extends Player {
 
   buildingsByTypes(types) {
     return this.buildings.filter(b => types.includes(b.type))
+  }
+
+  getStrategySnapshot(state) {
+    return {
+      map: state.map,
+      otherPlayers: this.enemyPlayers(),
+      villagers: state.villagers,
+      maxVillagers: state.maxVillagers,
+      towncenters: this.buildingsByTypes([BUILDING_TYPES.townCenter]),
+      infantry: state.infantry,
+      maxInfantry: state.maxInfantry,
+      barracks: this.buildingsByTypes([BUILDING_TYPES.barracks]),
+      infantryUnit: state.infantryUnit,
+      archers: state.archers,
+      maxArcher: state.maxArcher,
+      archeryRanges: this.buildingsByTypes([BUILDING_TYPES.archeryRange]),
+      archerUnit: state.archerUnit,
+      cavalry: state.cavalry,
+      maxCavalry: state.maxCavalry,
+      stables: this.buildingsByTypes([BUILDING_TYPES.stable]),
+      hoplites: state.hoplites,
+      maxHoplite: state.maxHoplite,
+      academies: this.buildingsByTypes([BUILDING_TYPES.academy]),
+      houses: this.buildingsByTypes([BUILDING_TYPES.house]),
+      farms: this.buildingsByTypes([BUILDING_TYPES.farm]),
+      granarys: this.buildingsByTypes([BUILDING_TYPES.granary]),
+      storagepits: this.buildingsByTypes([BUILDING_TYPES.storagePit]),
+      markets: this.buildingsByTypes([BUILDING_TYPES.market]),
+      watchTowers: this.buildingsByTypes([BUILDING_TYPES.watchTower]),
+      sentryTowers: this.buildingsByTypes([BUILDING_TYPES.sentryTower]),
+      notBuiltHouses: state.notBuiltHouses,
+    }
   }
 
   // Remove depleted resources and destroyed buildings from tracked Sets
@@ -84,6 +180,8 @@ export class AI extends Player {
     for (const u of this.foundedEnemyUnits) {
       if (u.isDead || u.isDestroyed || u.hitPoints <= 0 || !this.isEnemy(u.owner)) this.foundedEnemyUnits.delete(u)
     }
+    this._refreshEnemyMemory(this.enemyBuildingMemory)
+    this._refreshEnemyMemory(this.enemyUnitMemory)
   }
 
   getUnitExtraOptions(type) {
@@ -115,6 +213,8 @@ export class AI extends Player {
     }
     if (type === UNIT_TYPES.villager) {
       options.handleIsAttacked = (attacker, unit) => {
+        const currentDest = unit.dest
+
         if (attacker.family !== FAMILY_TYPES.animal) {
           unit.runaway(attacker)
           return true
@@ -127,6 +227,9 @@ export class AI extends Player {
 
           if (shouldRunAway) {
             unit.runaway(attacker)
+          } else {
+            unit.sendToHunt(attacker)
+            unit.previousDest = currentDest
           }
           return true
         }
@@ -249,9 +352,6 @@ export class AI extends Player {
     // Remove depleted resources and destroyed enemies from tracked sets
     this.cleanupSets()
 
-    // Cache enemy players once — used in multiple building placement filters below
-    const otherPlayers = this.enemyPlayers()
-
     actions += this.economy.handleVillagerActions({
       villagers,
       map,
@@ -268,35 +368,22 @@ export class AI extends Player {
       debug: DEBUG,
     })
 
-    const strategySnapshot = {
+    const strategySnapshot = this.getStrategySnapshot({
       map,
-      otherPlayers,
       villagers,
       maxVillagers,
-      towncenters,
       infantry,
       maxInfantry,
-      barracks,
       infantryUnit,
       archers,
       maxArcher,
-      archeryRanges,
       archerUnit,
       cavalry,
       maxCavalry,
-      stables,
       hoplites,
       maxHoplite,
-      academies,
-      houses,
-      farms,
-      granarys,
-      storagepits,
-      markets,
-      watchTowers,
-      sentryTowers,
       notBuiltHouses,
-    }
+    })
 
     actions += this.strategy.handleProductionActions(strategySnapshot, DEBUG)
     actions += this.strategy.handleBuildingActions(strategySnapshot, DEBUG)

@@ -1,8 +1,9 @@
 import { playClickSound } from '../lib/uiSound'
 import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
+import { parseSaveJSON } from '../serialization/SaveValidator'
 
 export default class MainMenu {
-  constructor(onStart, onLoad) {
+  constructor({ onStart, onLoad }) {
     this.onStart = onStart
     this.onLoad = onLoad
 
@@ -15,6 +16,15 @@ export default class MainMenu {
 
   _clear() {
     this.el.innerHTML = ''
+  }
+
+  _createButton(label, onClick, className = 'btn-dark') {
+    const button = document.createElement('button')
+    button.className = className
+    button.textContent = label
+    button.onmousedown = playClickSound
+    button.onclick = onClick
+    return button
   }
 
   _createPanel(subtitleKey, { logo = true } = {}) {
@@ -49,39 +59,30 @@ export default class MainMenu {
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
 
-    const btnStart = document.createElement('button')
-    btnStart.className = 'btn-dark'
-    btnStart.textContent = t('newGame')
-    btnStart.onmousedown = playClickSound
-    btnStart.onclick = this.onStart
-
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = '.json'
     fileInput.classList.add('hidden')
     fileInput.onchange = evt => {
-      const file = evt.target.files[0]
+      const file = evt.target.files?.[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = e => this.onLoad(JSON.parse(e.target.result))
+      reader.onload = e => {
+        try {
+          this.onLoad(parseSaveJSON(e.target.result))
+        } catch (error) {
+          alert(t('invalidSaveFile'))
+          console.error(error)
+        } finally {
+          fileInput.value = ''
+        }
+      }
       reader.readAsText(file)
     }
 
-    const btnLoad = document.createElement('button')
-    btnLoad.className = 'btn-dark secondary'
-    btnLoad.textContent = t('loadGame')
-    btnLoad.onmousedown = playClickSound
-    btnLoad.onclick = () => fileInput.click()
-
-    const btnSettings = document.createElement('button')
-    btnSettings.className = 'btn-dark secondary'
-    btnSettings.textContent = t('settings')
-    btnSettings.onmousedown = playClickSound
-    btnSettings.onclick = () => this._showSettings()
-
-    buttons.appendChild(btnStart)
-    buttons.appendChild(btnLoad)
-    buttons.appendChild(btnSettings)
+    buttons.appendChild(this._createButton(t('newGame'), this.onStart))
+    buttons.appendChild(this._createButton(t('loadGame'), () => fileInput.click(), 'btn-dark secondary'))
+    buttons.appendChild(this._createButton(t('settings'), () => this._showSettings(), 'btn-dark secondary'))
     buttons.appendChild(fileInput)
 
     const copyright = document.createElement('div')
@@ -125,13 +126,7 @@ export default class MainMenu {
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
 
-    const btnBack = document.createElement('button')
-    btnBack.className = 'btn-dark secondary'
-    btnBack.textContent = t('back')
-    btnBack.onmousedown = playClickSound
-    btnBack.onclick = () => this._showMain()
-
-    buttons.appendChild(btnBack)
+    buttons.appendChild(this._createButton(t('back'), () => this._showMain(), 'btn-dark secondary'))
     panel.appendChild(form)
     panel.appendChild(buttons)
     this.el.appendChild(panel)

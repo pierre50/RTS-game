@@ -63,7 +63,7 @@ const PLAYER_COLORS = [
 ]
 
 export default class MapConfig {
-  constructor(onPlay, onBack) {
+  constructor({ onPlay, onBack }) {
     this.onPlay = onPlay
     this.onBack = onBack
 
@@ -89,6 +89,15 @@ export default class MapConfig {
 
     this._buildUI()
     document.body.appendChild(this.el)
+  }
+
+  _createButton(label, onClick, className = 'btn-dark') {
+    const button = document.createElement('button')
+    button.className = className
+    button.textContent = label
+    button.onmousedown = playClickSound
+    button.onclick = onClick
+    return button
   }
 
   _buildUI() {
@@ -173,20 +182,10 @@ export default class MapConfig {
     const buttons = document.createElement('div')
     buttons.className = 'button-group button-group--row'
 
-    const btnBack = document.createElement('button')
-    btnBack.className = 'btn-dark secondary'
-    btnBack.textContent = t('back')
-    btnBack.onmousedown = playClickSound
-    btnBack.onclick = this.onBack
-
-    const btnPlay = document.createElement('button')
-    btnPlay.className = 'btn-dark'
-    btnPlay.textContent = t('startGame')
-    btnPlay.onmousedown = playClickSound
-    btnPlay.onclick = () => this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) })
-
-    buttons.appendChild(btnBack)
-    buttons.appendChild(btnPlay)
+    buttons.appendChild(this._createButton(t('back'), this.onBack, 'btn-dark secondary'))
+    buttons.appendChild(
+      this._createButton(t('startGame'), () => this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) }))
+    )
 
     panel.appendChild(title)
     panel.appendChild(divider)

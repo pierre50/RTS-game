@@ -5,6 +5,9 @@ import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
+const KEYBOARD_CAMERA_INITIAL_SPEED = 7
+const KEYBOARD_CAMERA_MAX_SPEED = 14
+const KEYBOARD_CAMERA_ACCELERATION = 0.24
 
 export default class Controls extends Container {
   constructor(context) {
@@ -28,7 +31,6 @@ export default class Controls extends Container {
     this.mouseHoldTimeout
     this.keysPressed = {}
     this.keyPressedCount = 0
-    this.keyInterval
     this.keySpeed = 0
     this.eventMode = 'auto'
     this.allowMove = false
@@ -52,6 +54,7 @@ export default class Controls extends Container {
     this._onMouseMove = evt => this.onMouseMove(evt)
     this._onMouseDown = evt => this.onMouseDown(evt)
     this._onMouseUp = evt => this.onMouseUp(evt)
+    this._onTick = ticker => this.onTick(ticker)
 
     document.addEventListener('mousemove', this._onDocMouseMove)
     document.addEventListener('mouseout', this._onDocMouseOut)
@@ -63,9 +66,10 @@ export default class Controls extends Container {
     gamebox.addEventListener('mousemove', this._onMouseMove)
     gamebox.addEventListener('mousedown', this._onMouseDown)
     gamebox.addEventListener('mouseup', this._onMouseUp)
+    context.app.ticker.add(this._onTick)
   }
 
-  destroy() {
+  destroy(options) {
     const {
       context: { gamebox },
     } = this
@@ -80,7 +84,9 @@ export default class Controls extends Container {
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
     gamebox.removeEventListener('mouseup', this._onMouseUp)
+    this.context.app.ticker.remove(this._onTick)
     this.stopMouseCameraMove()
+    super.destroy(options)
   }
 
   get camera() {
@@ -94,8 +100,8 @@ export default class Controls extends Container {
       const {
         context: { player },
       } = this
-      for (let i = 0; i < player.selectedUnits.length; i++) {
-        player.selectedUnits[i].die()
+      for (const unit of [...player.selectedUnits]) {
+        unit.die()
       }
       if (player.selectedBuilding) {
         player.selectedBuilding.die()
@@ -103,26 +109,14 @@ export default class Controls extends Container {
       return
     }
 
-    const handleMoveCamera = () => {
-      if (!this.keyInterval) {
-        this.keyInterval = setInterval(() => {
-          const double = this.keyPressedCount > 1
-          if (this.keySpeed < 4) {
-            this.keySpeed += 0.2
-          }
-          if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double)
-          if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double)
-          if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double)
-          if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double)
-        }, 1)
-      }
-    }
+    if (!ARROW_KEYS.has(evt.key)) return
+
     if (!evt.repeat) {
       this.keysPressed[evt.key] = true
       this.keyPressedCount++
-    }
-    if (ARROW_KEYS.has(evt.key)) {
-      handleMoveCamera()
+      if (this.keyPressedCount === 1) {
+        this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
+      }
     }
   }
 
@@ -132,15 +126,35 @@ export default class Controls extends Container {
       return
     }
 
+    if (!ARROW_KEYS.has(evt.key)) return
+
     if (!evt.repeat && this.keysPressed[evt.key]) {
       delete this.keysPressed[evt.key]
       this.keyPressedCount--
     }
     if (this.keyPressedCount <= 0) {
       this.keyPressedCount = 0
-      clearInterval(this.keyInterval)
-      this.keyInterval = null
       this.keySpeed = 0
+    }
+  }
+
+  onTick(ticker) {
+    if (this.context.devConsoleOpen) return
+
+    this.cameraController.updateMouseMove()
+
+    if (this.keyPressedCount > 0) {
+      const double = this.keyPressedCount > 1
+      if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
+        this.keySpeed = Math.min(
+          KEYBOARD_CAMERA_MAX_SPEED,
+          this.keySpeed + ticker.deltaTime * KEYBOARD_CAMERA_ACCELERATION
+        )
+      }
+      if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double)
+      if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double)
+      if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double)
+      if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double)
     }
   }
 
@@ -278,8 +292,6 @@ export default class Controls extends Container {
   stopKeyboardMove() {
     this.keysPressed = {}
     this.keyPressedCount = 0
-    clearInterval(this.keyInterval)
-    this.keyInterval = null
     this.keySpeed = 0
   }
 

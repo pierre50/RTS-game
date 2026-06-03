@@ -52,7 +52,7 @@ export class UnitLifecycle {
 
     unit.stopInterval()
     clearTimeout(unit.visibilityTimeout)
-    if (unit.selected && player.selectedOther === unit) {
+    if (unit.selected && unit.owner?.isPlayed) {
       player.unselectUnit(unit)
     }
     if (unit.dest && unit.dest.isUsedBy === unit) {

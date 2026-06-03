@@ -1,106 +1,14 @@
-import { getIconPath, isometricToCartesian, Modal } from '../lib'
-import { LONG_CLICK_DURATION, IS_MOBILE } from '../constants'
-import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { MinimapManager } from '../ui/MinimapManager'
 import { BottombarManager } from '../ui/BottombarManager'
 import { PlayerStatsManager } from '../ui/PlayerStatsManager'
+import { TopbarView } from '../ui/TopbarView'
+import { PauseMenu } from '../ui/PauseMenu'
+import { MinimapInputController } from '../ui/MinimapInputController'
 
 export default class Menu {
   constructor(context) {
     this.context = context
-    this.topbar = document.createElement('div')
-    this.topbar.id = 'topbar'
-    this.topbar.className = 'topbar bar'
-    this.icons = {
-      wood: getIconPath('000_50732'),
-      food: getIconPath('002_50732'),
-      stone: getIconPath('001_50732'),
-      gold: getIconPath('003_50732'),
-    }
-    this.infoIcons = {
-      wood: getIconPath('000_50731'),
-      stone: getIconPath('001_50731'),
-      food: getIconPath('002_50731'),
-      gold: getIconPath('003_50731'),
-    }
-
-    this.longClick = false
-    this.mouseHoldTimeout
-
-    this.resources = document.createElement('div')
-    this.resources.className = 'topbar-resources'
-    ;['wood', 'food', 'stone', 'gold'].forEach(res => {
-      this.setResourceBox(res)
-    })
-
-    this.age = document.createElement('div')
-    this.age.className = 'topbar-age'
-    const options = document.createElement('div')
-    options.className = 'topbar-options'
-    const menu = document.createElement('div')
-    menu.className = 'topbar-options-menu btn-ui'
-    menu.innerText = t('menuBtn')
-    menu.addEventListener('pointerdown', () => {
-      playClickSound()
-      this.context.pause()
-      const content = document.createElement('div')
-      content.className = 'modal-menu'
-      const modal = new Modal(content)
-      const save = document.createElement('button')
-      save.className = 'btn-dark'
-      save.innerText = t('save')
-      save.addEventListener('pointerdown', () => {
-        playClickSound()
-        this.context.save()
-        modal.close()
-        this.context.resume()
-      })
-      const load = document.createElement('div')
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = 'application/JSON'
-      input.addEventListener('change', evt => {
-        const reader = new FileReader()
-        reader.onload = ({ target: { result } }) => {
-          this.context.load(JSON.parse(result))
-          modal.close()
-          this.context.resume()
-        }
-        reader.readAsText(evt.target.files[0])
-      })
-      load.className = 'input-file btn-dark'
-      load.innerText = t('load')
-      load.addEventListener('pointerdown', playClickSound)
-      load.appendChild(input)
-      const quit = document.createElement('button')
-      quit.className = 'btn-dark secondary'
-      quit.innerText = t('quit')
-      quit.addEventListener('pointerdown', () => {
-        playClickSound()
-        modal.close()
-        this.context.quit()
-      })
-      const cancel = document.createElement('button')
-      cancel.className = 'btn-dark secondary'
-      cancel.innerText = t('cancel')
-      cancel.addEventListener('pointerdown', () => {
-        playClickSound()
-        modal.close()
-        this.context.resume()
-      })
-      content.appendChild(save)
-      content.appendChild(load)
-      content.appendChild(quit)
-      content.appendChild(cancel)
-    })
-    options.appendChild(menu)
-
-    this.topbar.appendChild(this.resources)
-    this.topbar.appendChild(this.age)
-    this.topbar.appendChild(options)
-    document.body.prepend(this.topbar)
-
     this.bottombar = document.createElement('div')
     this.bottombar.className = 'bottombar bar'
     this.bottombarInfo = document.createElement('div')
@@ -111,45 +19,6 @@ export default class Menu {
     bottombarMapWrap.className = 'bottombar-map-wrap'
     this.bottombarMap = document.createElement('div')
     this.bottombarMap.className = 'bottombar-map'
-    this.bottombarMap.addEventListener('pointerdown', evt => {
-      const {
-        context: { controls },
-      } = this
-      this.mouseHoldTimeout = setTimeout(() => {
-        this.longClick = true
-        const minimapFactor = this.minimapManager.getMinimapFactor()
-        const rect = evt.target.getBoundingClientRect()
-        const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
-        const y = (evt.clientY - rect.top - 3) * minimapFactor
-        controls.setCamera(x, y)
-      }, LONG_CLICK_DURATION)
-    })
-    this.bottombarMap.addEventListener('pointerup', evt => {
-      const {
-        context: { player, controls, map },
-      } = this
-      clearTimeout(this.mouseHoldTimeout)
-      if (controls.mouseBuilding || controls.mouseRectangle || this.longClick) {
-        this.longClick = false
-        return
-      }
-      this.longClick = false
-      const minimapFactor = this.minimapManager.getMinimapFactor()
-      const rect = evt.target.getBoundingClientRect()
-      const x = (evt.clientX - rect.left - rect.width / 2) * minimapFactor
-      const y = (evt.clientY - rect.top - 3) * minimapFactor
-
-      if (player?.selectedUnits?.length) {
-        const pos = isometricToCartesian(x, y)
-        const i = Math.min(Math.max(pos[0], 0), map.size)
-        const j = Math.min(Math.max(pos[1], 0), map.size)
-        if (map.grid[i] && map.grid[i][j]) {
-          controls.sendUnits(map.grid[i][j])
-        }
-      } else {
-        controls.setCamera(x, y)
-      }
-    })
     bottombarMapWrap.appendChild(this.bottombarMap)
 
     this.terrainMinimap = document.createElement('canvas')
@@ -166,28 +35,16 @@ export default class Menu {
     this.bottombar.appendChild(bottombarMapWrap)
     document.body.appendChild(this.bottombar)
 
-    this.toggled = false
-    this.toggle = document.createElement('div')
-    this.toggle.className = 'toggle'
-    this.toggle.innerText = 'x'
-    this.toggle.addEventListener('pointerdown', evt => {
-      evt.preventDefault()
-      if (this.toggled) {
-        this.toggle.innerText = 'x'
-        this.bottombar.classList.remove('hidden')
-        this.toggled = false
-      } else {
-        this.bottombar.classList.add('hidden')
-        this.toggle.innerText = 'o'
-        this.toggled = true
-      }
-      evt.stopPropagation()
-    })
-    IS_MOBILE && document.body.prepend(this.toggle)
-
     this.minimapManager = new MinimapManager(this)
     this.bottombarManager = new BottombarManager(this)
     this.playerStatsManager = new PlayerStatsManager(this)
+    this.pauseMenu = new PauseMenu(this)
+    this.topbarView = new TopbarView(this)
+    this.minimapInputController = new MinimapInputController(this)
+    this.toggled = false
+
+    this.topbarView.build()
+    this.minimapInputController.bind()
 
     // Expose throttled minimap updaters as top-level properties for external callers
     this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap
@@ -200,10 +57,10 @@ export default class Menu {
   }
 
   destroy() {
+    this.minimapInputController.destroy()
     this.playerStatsManager.destroy()
     this.bottombar.remove()
-    this.topbar.remove()
-    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
+    this.topbarView.destroy()
   }
 
   init() {
@@ -211,40 +68,12 @@ export default class Menu {
     this.updateTopbar()
   }
 
-  setResourceBox(name) {
-    const box = document.createElement('div')
-    box.className = 'resource'
-
-    const img = document.createElement('img')
-    img.className = 'resource-content'
-    img.src = this.icons[name]
-
-    this[name] = document.createElement('div')
-    box.appendChild(img)
-    box.appendChild(this[name])
-    this.resources.appendChild(box)
-  }
-
   updateTopbar() {
-    const {
-      context: { player },
-    } = this
-    const ageLabels = {
-      0: t('stoneAge'),
-      1: t('toolAge'),
-      2: t('bronzeAge'),
-      3: t('ironAge'),
-    }
-    ;['wood', 'food', 'stone', 'gold', 'age'].forEach(prop => {
-      const val = Math.min((player && player[prop]) || 0, 99999)
-      this[prop].textContent = prop === 'age' ? ageLabels[val] : val
-    })
-    this.updateAgeTheme(player?.age || 0)
+    this.topbarView.update()
   }
 
   updateAgeTheme(age = 0) {
-    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
-    document.body.classList.add(`ui-age-${Math.max(0, Math.min(age, 3))}`)
+    this.topbarView.updateAgeTheme(age)
   }
 
   showMessage(message) {

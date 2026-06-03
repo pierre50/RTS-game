@@ -1,11 +1,14 @@
 export class ActionScheduler {
   constructor(app, getPaused) {
+    this._app = app
     this._getPaused = getPaused
     this._tasks = new Map()
     this._nextId = 1
     this._toRemove = []
     this.timeScale = 1
-    app.ticker.add(ticker => this._tick(ticker.deltaMS))
+    this.elapsedMs = 0
+    this._onTick = ticker => this._tick(ticker.deltaMS)
+    app.ticker.add(this._onTick)
   }
 
   add(callback, intervalMs) {
@@ -29,9 +32,20 @@ export class ActionScheduler {
     if (task) task.interval = intervalMs
   }
 
+  clear() {
+    this._tasks.clear()
+    this._toRemove.length = 0
+  }
+
+  destroy() {
+    this.clear()
+    this._app.ticker.remove(this._onTick)
+  }
+
   _tick(deltaMS) {
     if (this._getPaused()) return
     const scaledDeltaMS = deltaMS * this.timeScale
+    this.elapsedMs += scaledDeltaMS
     this._toRemove.length = 0
     for (const [id, task] of this._tasks) {
       task.elapsed += scaledDeltaMS

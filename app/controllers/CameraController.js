@@ -9,8 +9,33 @@ export class CameraController {
       y: 0,
     }
     this.visibleCells = new Set()
-    this.moveInterval = null
+    this.mouseMoveState = null
     this._rafPending = false
+  }
+
+  getCameraDiamondBounds() {
+    const { map } = this.context
+    return {
+      A: { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y },
+      B: {
+        x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
+        y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+      },
+      D: {
+        x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
+        y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+      },
+      C: { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y },
+    }
+  }
+
+  scheduleVisibleCellsUpdate() {
+    if (this._rafPending) return
+    this._rafPending = true
+    requestAnimationFrame(() => {
+      this._rafPending = false
+      this.updateVisibleCells()
+    })
   }
 
   move(dir, moveSpeed, isSpeedDivided) {
@@ -28,16 +53,7 @@ export class CameraController {
 
     const dividedSpeed = isSpeedDivided ? 1.5 : 1
     const speed = (moveSpeed || 20) / dividedSpeed
-    const A = { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y }
-    const B = {
-      x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
-      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
-    }
-    const D = {
-      x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
-      y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
-    }
-    const C = { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y }
+    const { A, B, C, D } = this.getCameraDiamondBounds()
     const cameraCenter = {
       x: app.screen.width / 2,
       y: app.screen.height / 2,
@@ -88,17 +104,10 @@ export class CameraController {
 
     menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
-    if (!this._rafPending) {
-      this._rafPending = true
-      requestAnimationFrame(() => {
-        this._rafPending = false
-        this.updateVisibleCells()
-      })
-    }
+    this.scheduleVisibleCellsUpdate()
   }
 
   moveWithMouse(evt) {
-    this.stopMouseMove()
     const dir = []
     const mouse = {
       x: evt.pageX,
@@ -133,18 +142,18 @@ export class CameraController {
     ) {
       dir.push('down')
     }
-    if (dir.length) {
-      this.moveInterval = setInterval(() => {
-        dir.forEach(prop => {
-          this.move(prop, calcs[prop])
-        })
-      }, 20)
-    }
+    this.mouseMoveState = dir.length ? { dir, calcs } : null
   }
 
   stopMouseMove() {
-    clearInterval(this.moveInterval)
-    this.moveInterval = null
+    this.mouseMoveState = null
+  }
+
+  updateMouseMove() {
+    if (!this.mouseMoveState) return
+    this.mouseMoveState.dir.forEach(dir => {
+      this.move(dir, this.mouseMoveState.calcs[dir])
+    })
   }
 
   instanceInCamera(instance) {

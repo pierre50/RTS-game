@@ -15,6 +15,9 @@ export class Human extends Player {
       context: { menu },
     } = this
     const index = this.selectedUnits.indexOf(unit)
+    if (index < 0) {
+      return
+    }
     this.selectedUnits.splice(index, 1)
 
     if (!this.selectedUnits.length) {
@@ -28,7 +31,7 @@ export class Human extends Player {
     if (this.selectedUnit === unit) {
       for (let i = 0; i < this.selectedUnits.length; i++) {
         if (this.selectedUnits[i].type === UNIT_TYPES.villager) {
-          nextVillager = this.selectedUnits[i].type
+          nextVillager = this.selectedUnits[i]
           break
         }
       }

@@ -1,7 +1,7 @@
 import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import { appendBaseEntityInfo } from './BaseEntityInterface'
+import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
 export class BuildingInterface {
   constructor(building) {
@@ -21,15 +21,10 @@ export class BuildingInterface {
     const building = this.building
     const populationDiv = document.createElement('div')
     populationDiv.classList.add(MENU_INFO_IDS.population)
-
-    const populationIcon = document.createElement('img')
+    populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
     const populationSpan = document.createElement('span')
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent =
-      building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
-
-    populationIcon.src = getIconPath('004_50731')
-    populationDiv.appendChild(populationIcon)
+    populationSpan.textContent = building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
     populationDiv.appendChild(populationSpan)
     return populationDiv
   }
@@ -57,14 +52,8 @@ export class BuildingInterface {
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
     if (building.loading && building.owner.isPlayed) {
-      const iconImg = document.createElement('img')
-      iconImg.className = 'building-loading-icon'
-      iconImg.src = getIconPath('009_50731')
-      const textDiv = document.createElement('div')
-      textDiv.classList.add(MENU_INFO_IDS.loadingText)
-      textDiv.textContent = building.loading + '%'
-      loadingDiv.appendChild(iconImg)
-      loadingDiv.appendChild(textDiv)
+      loadingDiv.appendChild(createInfoImage('building-loading-icon', getIconPath('009_50731')))
+      loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, building.loading + '%'))
     }
     return loadingDiv
   }
@@ -77,18 +66,7 @@ export class BuildingInterface {
     appendBaseEntityInfo(element, t(building.owner.civ), t(building.type), getIconPath(data.icon), hitPoints, building.totalHitPoints)
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
-      const quantityDiv = document.createElement('div')
-      quantityDiv.classList.add(MENU_INFO_IDS.quantity)
-      quantityDiv.className = 'resource-quantity'
-      const smallIconImg = document.createElement('img')
-      smallIconImg.src = menu.icons['food']
-      smallIconImg.className = 'resource-quantity-icon'
-      const textDiv = document.createElement('div')
-      textDiv.classList.add(MENU_INFO_IDS.quantityText)
-      textDiv.textContent = building.quantity
-      quantityDiv.appendChild(smallIconImg)
-      quantityDiv.appendChild(textDiv)
-      element.appendChild(quantityDiv)
+      appendQuantityInfo(element, menu.icons['food'], building.quantity)
     }
   }
 }

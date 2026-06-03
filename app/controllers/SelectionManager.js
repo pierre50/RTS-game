@@ -53,20 +53,10 @@ export class SelectionManager {
     let selectVillager
     let countSelect = 0
     player.unselectAll()
+    const rectangle = controls.mouseRectangle
     for (let i = 0; i < player.units.length; i++) {
       const unit = player.units[i]
-      if (
-        player.selectedUnits.length < MAX_SELECT_UNITS &&
-        pointInRectangle(
-          unit.x - controls.camera.x,
-          unit.y - controls.camera.y,
-          controls.mouseRectangle.x,
-          controls.mouseRectangle.y,
-          controls.mouseRectangle.width,
-          controls.mouseRectangle.height,
-          true
-        )
-      ) {
+      if (player.selectedUnits.length < MAX_SELECT_UNITS && this.isUnitInsideSelection(unit, rectangle)) {
         unit.select()
         countSelect++
         if (unit.type === UNIT_TYPES.villager) selectVillager = unit
@@ -111,14 +101,7 @@ export class SelectionManager {
   sendUnits(cell) {
     const { controls } = this
     const { context: { player, map } } = controls
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (let k = 0; k < player.selectedUnits.length; k++) {
-      const { i, j } = player.selectedUnits[k]
-      if (i < minX) minX = i
-      if (j < minY) minY = j
-      if (i > maxX) maxX = i
-      if (j > maxY) maxY = j
-    }
+    const { minX, minY, maxX, maxY } = this.getSelectionGridBounds(player.selectedUnits)
     const centerX = minX + Math.round((maxX - minX) / 2)
     const centerY = minY + Math.round((maxY - minY) / 2)
     let hasSentVillager = false
@@ -140,5 +123,34 @@ export class SelectionManager {
     } else if (hasSentVillager) {
       sound.play('5006')
     }
+  }
+
+  isUnitInsideSelection(unit, rectangle) {
+    return pointInRectangle(
+      unit.x - this.controls.camera.x,
+      unit.y - this.controls.camera.y,
+      rectangle.x,
+      rectangle.y,
+      rectangle.width,
+      rectangle.height,
+      true
+    )
+  }
+
+  getSelectionGridBounds(units) {
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+
+    for (let i = 0; i < units.length; i++) {
+      const unit = units[i]
+      if (unit.i < minX) minX = unit.i
+      if (unit.j < minY) minY = unit.j
+      if (unit.i > maxX) maxX = unit.i
+      if (unit.j > maxY) maxY = unit.j
+    }
+
+    return { minX, minY, maxX, maxY }
   }
 }

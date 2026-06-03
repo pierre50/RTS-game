@@ -51,10 +51,12 @@ function updateAIKnowledge(globalCell, cell, viewer) {
 
     if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyBuildings.add(has)
+      owner.rememberEnemy?.(has)
     }
 
     if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyUnits.add(has)
+      owner.rememberEnemy?.(has)
     }
   }
 }
