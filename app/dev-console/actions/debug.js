@@ -1,4 +1,6 @@
 import { Text } from 'pixi.js'
+import { PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES } from '../../constants'
+import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
@@ -222,4 +224,58 @@ export function toggleAiDebug(context, value) {
   const pauseAI = value === 'pause' ? true : value === 'resume' ? false : !context.aiPaused
   context.aiPaused = pauseAI
   return { ok: true, message: `AI: ${pauseAI ? 'paused' : 'running'}` }
+}
+
+export function aiInfo(context, targetIndex) {
+  const aiPlayers = context.players.filter(p => p.type === PLAYER_TYPES.ai)
+  if (!aiPlayers.length) return { ok: false, message: 'No AI players on the map' }
+
+  const index = targetIndex !== undefined ? parseInt(targetIndex, 10) : null
+  const targets = index !== null && !isNaN(index) ? [aiPlayers[index]].filter(Boolean) : aiPlayers
+
+  if (!targets.length) return { ok: false, message: `No AI player at index ${index}` }
+
+  const lines = []
+  for (const ai of targets) {
+    const idx = aiPlayers.indexOf(ai)
+    const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
+    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(ai.units.filter(u => isAliveUnit(u)))
+    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
+    const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
+    const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
+
+    const towncenters = ai.buildingsByTypes([BUILDING_TYPES.townCenter])
+    const barracks = ai.buildingsByTypes([BUILDING_TYPES.barracks])
+    const archeryRanges = ai.buildingsByTypes([BUILDING_TYPES.archeryRange])
+    const stables = ai.buildingsByTypes([BUILDING_TYPES.stable])
+    const houses = ai.buildingsByTypes([BUILDING_TYPES.house])
+    const farms = ai.buildingsByTypes([BUILDING_TYPES.farm])
+    const storagepits = ai.buildingsByTypes([BUILDING_TYPES.storagePit])
+    const granarys = ai.buildingsByTypes([BUILDING_TYPES.granary])
+
+    const threats = ai.getActiveThreats()
+    const enemyUnits = ai.enemyUnitMemory.size
+    const enemyBuildings = ai.enemyBuildingMemory.size
+
+    const maxVil = Math.floor(ai.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+    const maxInf = ai.maxInfantryByAge[ai.age]
+    const maxArc = ai.maxArcherByAge[ai.age]
+    const maxCav = ai.maxCavalryByAge[ai.age]
+
+    const cooldownLeft = Math.max(0, Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000))
+
+    lines.push(`── AI [${idx}] ${ai.label} (${ai.difficulty}) ──`)
+    lines.push(`  Phase: ${ai.phase}  |  Age: ${ai.age}  |  Pop: ${ai.population}/${ai.population_max}`)
+    lines.push(`  Resources  W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold}`)
+    lines.push(`  Villagers  ${villagers.length}/${maxVil}`)
+    lines.push(`  Military   inf:${infantry.length}/${maxInf}  arc:${archers.length}/${maxArc}  cav:${cavalry.length}/${maxCav}  hop:${hoplites.length}`)
+    lines.push(`  Power      ${militaryPower} / desired ${desiredPower}  (threshold: ${ai.difficultyConfig.attackThreshold})`)
+    lines.push(`  Attack cd  ${cooldownLeft > 0 ? cooldownLeft + 's' : 'ready'}`)
+    lines.push(`  Buildings  TC:${towncenters.length}  bx:${barracks.length}  ar:${archeryRanges.length}  st:${stables.length}  ho:${houses.length}  fa:${farms.length}  sp:${storagepits.length}  gr:${granarys.length}`)
+    lines.push(`  Enemy mem  units:${enemyUnits}  buildings:${enemyBuildings}`)
+    lines.push(`  Threats    ${threats.length}${threats.length ? ': ' + threats.map(t => t.target.type).join(', ') : ''}`)
+    lines.push(`  Step delay ${ai.stepDelay}ms`)
+  }
+
+  return { ok: true, message: lines.join('\n') }
 }

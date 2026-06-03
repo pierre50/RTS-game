@@ -1,4 +1,5 @@
 export {
+  aiInfo,
   toggleAiDebug,
   toggleCoordsDebug,
   toggleGridDebug,

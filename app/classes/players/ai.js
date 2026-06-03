@@ -41,6 +41,7 @@ export class AI extends Player {
     this.scout = null
     this.phase = 'economy' // economy | military_build | attack
     this.threatenedTargets = new Map()
+    this.lastAttackWaveAt = -Infinity
   }
 
   getNow() {
@@ -175,14 +176,17 @@ export class AI extends Player {
   getActiveThreats() {
     this.cleanupThreats()
     return [...this.threatenedTargets.values()]
+      .filter(threat => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
       .map(threat => {
         const hostiles = this.getVisibleHostilesNear(threat.target)
         return { ...threat, hostiles }
       })
       .filter(threat => threat.target && threat.hostiles.length > 0)
       .sort((a, b) => {
-        const aCritical = a.target.type === BUILDING_TYPES.townCenter ? 2 : a.target.family === FAMILY_TYPES.building ? 1 : 0
-        const bCritical = b.target.type === BUILDING_TYPES.townCenter ? 2 : b.target.family === FAMILY_TYPES.building ? 1 : 0
+        const aCritical =
+          a.target.type === BUILDING_TYPES.townCenter ? 2 : a.target.family === FAMILY_TYPES.building ? 1 : 0
+        const bCritical =
+          b.target.type === BUILDING_TYPES.townCenter ? 2 : b.target.family === FAMILY_TYPES.building ? 1 : 0
         if (bCritical !== aCritical) return bCritical - aCritical
         return b.hostiles.length - a.hostiles.length
       })
@@ -197,10 +201,13 @@ export class AI extends Player {
     const assignedVillagers = new Set()
 
     for (const threat of threats) {
+      if (!threat.target) continue
+
       const primaryHostile = threat.hostiles[0]
       if (!primaryHostile) continue
 
-      const isCriticalBuilding = threat.target.family === FAMILY_TYPES.building && threat.target.type === BUILDING_TYPES.townCenter
+      const isCriticalBuilding =
+        threat.target.family === FAMILY_TYPES.building && threat.target.type === BUILDING_TYPES.townCenter
       const hostileUnits = threat.hostiles.filter(hostile => hostile.family === FAMILY_TYPES.unit)
       const hostileVillagers = hostileUnits.filter(hostile => hostile.type === UNIT_TYPES.villager)
       const hostileMilitary = hostileUnits.filter(hostile => hostile.type !== UNIT_TYPES.villager)
@@ -218,7 +225,9 @@ export class AI extends Player {
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
-      const targetMilitaryCount = nonAnimalThreat ? Math.max(1, hostileUnits.length) : Math.min(2, hostileAnimals.length)
+      const targetMilitaryCount = nonAnimalThreat
+        ? Math.max(1, hostileUnits.length)
+        : Math.min(2, hostileAnimals.length)
       const chosenMilitary = nearbyMilitary.slice(0, targetMilitaryCount)
       for (const soldier of chosenMilitary) {
         assignedMilitary.add(soldier.label)
@@ -244,12 +253,16 @@ export class AI extends Player {
 
       if (!lethalThreat) {
         if (hostileAnimals.length > 0) {
-          villagerDefenseCount = hostileAnimals.length === 1 ? 1 : Math.min(isCriticalBuilding ? 4 : 3, hostileAnimals.length)
+          villagerDefenseCount =
+            hostileAnimals.length === 1 ? 1 : Math.min(isCriticalBuilding ? 4 : 3, hostileAnimals.length)
         }
         if (hostileVillagers.length > 0) {
           const criticalBonus = isCriticalBuilding ? 2 : 0
           const maxDefense = isCriticalBuilding ? 8 : 6
-          villagerDefenseCount = Math.max(villagerDefenseCount, Math.min(maxDefense, hostileVillagers.length + criticalBonus))
+          villagerDefenseCount = Math.max(
+            villagerDefenseCount,
+            Math.min(maxDefense, hostileVillagers.length + criticalBonus)
+          )
         }
       }
 
@@ -461,7 +474,6 @@ export class AI extends Player {
     let actions = 0
 
     const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier)
-    const maxVillagersOnConstruction = 2 + this.age * 2
     const maxInfantry = this.maxInfantryByAge[this.age]
     const maxArcher = this.maxArcherByAge[this.age]
     const maxCavalry = this.maxCavalryByAge[this.age]
@@ -480,14 +492,15 @@ export class AI extends Player {
     const villagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
     const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(this.units)
     const military = [...infantry, ...archers, ...cavalry, ...hoplites]
+    const militaryPower = this.strategy.military.getGroupCombatPower(military)
 
     if (DEBUG)
       console.log(
-        `Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Hoplites: ${hoplites.length}/${maxHoplite}`
+        `Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Hoplites: ${hoplites.length}/${maxHoplite}, Power: ${Math.round(militaryPower)}`
       )
 
     const previousPhase = this.phase
-    this.strategy.updatePhase(villagers.length, military.length)
+    this.strategy.updatePhase(villagers.length, military.length, militaryPower)
     if (DEBUG && previousPhase !== this.phase) console.log(`Phase: ${previousPhase} → ${this.phase}`)
     if (DEBUG) console.log(`Phase: ${this.phase}`)
 
@@ -551,21 +564,17 @@ export class AI extends Player {
       debug: DEBUG,
     })
 
-    const refreshedInactifMilitary = military.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
-    const refreshedWaitingMilitary = military.filter(
-      c =>
-        c.inactif &&
-        c.action !== ACTION_TYPES.attack &&
-        !c.assault &&
-        c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO
-    )
+    // Re-filter from the already-small arrays rather than scanning all military again
+    const refreshedInactifMilitary = inactifMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)
+    const refreshedWaitingMilitary = waitingMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)
 
     actions += this.economy.handleVillagerActions({
       villagers,
       map,
       farms,
       notBuiltBuildings,
-      maxVillagersOnConstruction,
+      storagepits,
+      towncenters,
       debug: DEBUG,
     })
 

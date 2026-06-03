@@ -761,7 +761,7 @@
       "type": "improve",
       "operations": [
         {
-          "key": "quantityMax",
+          "key": "totalQuantity",
           "op": "+",
           "value": "75",
           "type": "Farm"
@@ -1274,7 +1274,7 @@
       "type": "improve",
       "operations": [
         {
-          "key": "quantityMax",
+          "key": "totalQuantity",
           "op": "+",
           "value": "75",
           "type": "Farm"
@@ -1306,7 +1306,7 @@
       "type": "improve",
       "operations": [
         {
-          "key": "quantityMax",
+          "key": "totalQuantity",
           "op": "+",
           "value": "100",
           "type": "Farm"

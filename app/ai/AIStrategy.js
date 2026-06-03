@@ -72,8 +72,10 @@ export class AIStrategy {
     return getBestUnitFromTechs(this.ai.technologies, ARCHER_TECH_UPGRADES, 'Bowman')
   }
 
-  updatePhase(villagersCount, militaryCount) {
+  updatePhase(villagersCount, militaryCount, militaryPower = 0) {
     const { ai, difficultyConfig } = this
+    const attackPowerThreshold = this.military.getDesiredAttackPower()
+    const fallbackPowerThreshold = attackPowerThreshold * 0.4
     if (ai.phase === 'economy' && villagersCount >= difficultyConfig.econToMilVillagers) {
       ai.phase = 'military_build'
       return 'military_build'
@@ -82,11 +84,18 @@ export class AIStrategy {
       ai.phase = 'economy'
       return 'economy'
     }
-    if (ai.phase === 'military_build' && militaryCount >= difficultyConfig.attackThreshold) {
+    if (
+      ai.phase === 'military_build' &&
+      militaryCount >= Math.max(2, Math.ceil(difficultyConfig.attackThreshold * 0.5)) &&
+      militaryPower >= attackPowerThreshold
+    ) {
       ai.phase = 'attack'
       return 'attack'
     }
-    if (ai.phase === 'attack' && militaryCount < Math.ceil(difficultyConfig.attackThreshold * 0.4)) {
+    if (
+      ai.phase === 'attack' &&
+      (militaryCount < Math.ceil(difficultyConfig.attackThreshold * 0.4) || militaryPower < fallbackPowerThreshold)
+    ) {
       ai.phase = 'military_build'
       return 'military_build'
     }

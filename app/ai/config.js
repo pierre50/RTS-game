@@ -9,6 +9,7 @@ export const AI_DIFFICULTIES = {
     econToMilVillagers: 16,
     raidThreshold: 0,
     raidSize: 0,
+    attackCooldownMs: 35000,
   },
   medium: {
     stepDelayBase: 4000,
@@ -18,6 +19,7 @@ export const AI_DIFFICULTIES = {
     econToMilVillagers: 12,
     raidThreshold: 0,
     raidSize: 0,
+    attackCooldownMs: 24000,
   },
   hard: {
     stepDelayBase: 2500,
@@ -27,6 +29,7 @@ export const AI_DIFFICULTIES = {
     econToMilVillagers: 8,
     raidThreshold: 4,
     raidSize: 3,
+    attackCooldownMs: 16000,
   },
 }
 

@@ -268,22 +268,27 @@ export const updateObject = (target, operation) => {
     obj[keys[keys.length - 1]] = value
   }
 
-  const keys = operation.key.split('.')
+  const resolvedKey =
+    operation.key === 'quantityMax' && target.quantityMax === undefined && target.totalQuantity !== undefined
+      ? 'totalQuantity'
+      : operation.key
+
+  const keys = resolvedKey.split('.')
   let result = target
 
   for (const key of keys) {
     if (result[key] === undefined) {
-      throw new Error(`Key not found: ${operation.key}`)
+      throw new Error(`Key not found: ${resolvedKey}`)
     }
     result = result[key]
   }
 
   switch (operation.op) {
     case '*':
-      setToValue(target, result * Number(operation.value), operation.key)
+      setToValue(target, result * Number(operation.value), resolvedKey)
       break
     case '+':
-      setToValue(target, result + Number(operation.value), operation.key)
+      setToValue(target, result + Number(operation.value), resolvedKey)
       break
     default:
       throw new Error(`Invalid operation: ${operation.op}`)

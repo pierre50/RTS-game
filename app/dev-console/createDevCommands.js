@@ -3,6 +3,7 @@ import { POPULATION_MAX } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
+  aiInfo,
   applyTechnology,
   healAll,
   highlightInstances,
@@ -245,6 +246,14 @@ export function createDevCommands() {
     describe: 'Pause or resume AI decisions',
     complete: () => ['pause', 'resume'],
     run: ([value], context) => toggleAiDebug(context, value),
+  })
+
+  registry.register({
+    name: 'ai-info',
+    aliases: ['aii'],
+    usage: 'ai-info [index]',
+    describe: 'Show debug info for all AI players (or one by index)',
+    run: ([index], context) => aiInfo(context, index),
   })
 
   registry.register({

@@ -230,14 +230,9 @@ export class UnitMovement {
     } = unit
     const { grid } = map
     const views = unit.owner.views
-    let bestCell = null
-    let bestScore = -Infinity
+    const candidates = []
 
     for (let r = 1; r <= 50; r++) {
-      // Max possible score at this ring is 27 - r (9 unseen neighbors × 3 - r).
-      // If our current best already beats that, no further ring can improve it.
-      if (bestCell && bestScore >= 27 - r) break
-
       for (let dx = -r; dx <= r; dx++) {
         const x = unit.i + dx
         const row = grid[x]
@@ -254,17 +249,24 @@ export class UnitMovement {
               }
             }
             const score = unseenNeighbors * 3 - r
-            if (score > bestScore) {
-              bestScore = score
-              bestCell = cell
-            }
+            candidates.push({ cell, score, dist: r })
           }
         }
       }
     }
-    if (bestCell) {
-      unit.sendTo(views[bestCell.i][bestCell.j])
+
+    candidates.sort((a, b) => b.score - a.score || a.dist - b.dist)
+
+    for (const { cell } of candidates.slice(0, 12)) {
+      const path = getInstancePath(unit, cell.i, cell.j, map)
+      if (path.length) {
+        unit.sendTo(views[cell.i][cell.j])
+        return true
+      }
     }
+
+    unit.stop()
+    return false
   }
 
   runaway(instance) {

@@ -29,6 +29,27 @@ const HEX_COLOR_MAP = {
 const recoloredTextureCache = new Map()
 const colorFilterCache = new Map()
 
+function getDirectColorTextureKey(sprite) {
+  if (sprite._baseColorTextureKey) return sprite._baseColorTextureKey
+
+  const { texture } = sprite
+  const frame = texture.frame
+  const textureKey =
+    texture.label ||
+    texture.textureCacheIds?.[0] ||
+    texture.source?.label ||
+    [
+      texture.source?.uid ?? 'unknown-source',
+      frame.x,
+      frame.y,
+      frame.width,
+      frame.height,
+    ].join('_')
+
+  sprite._baseColorTextureKey = textureKey
+  return textureKey
+}
+
 export function getHexColor(name) {
   return HEX_COLOR_MAP[name] || '#ffffff'
 }
@@ -40,7 +61,7 @@ export function changeSpriteColorDirectly(sprite, color) {
   if (!targetColors) throw new Error('Invalid color selected.')
 
   const frame = sprite.texture.frame
-  const cacheKey = `${sprite.texture.textureCacheIds?.[0] ?? `${frame.x}_${frame.y}`}_${color}`
+  const cacheKey = `${getDirectColorTextureKey(sprite)}_${color}`
 
   if (recoloredTextureCache.has(cacheKey)) {
     sprite.texture = recoloredTextureCache.get(cacheKey)
