@@ -115,8 +115,19 @@ export class AI extends Player {
     }
     if (type === UNIT_TYPES.villager) {
       options.handleIsAttacked = (attacker, unit) => {
-        if (attacker.family !== FAMILY_TYPES.animal || attacker.meleeAttack) {
+        if (attacker.family !== FAMILY_TYPES.animal) {
           unit.runaway(attacker)
+          return true
+        }
+
+        if (attacker.meleeAttack) {
+          const unitHpRatio = unit.hitPoints / unit.totalHitPoints
+          const attackerHpRatio = attacker.hitPoints / attacker.totalHitPoints
+          const shouldRunAway = unitHpRatio <= 0.3 && attackerHpRatio > 0.4
+
+          if (shouldRunAway) {
+            unit.runaway(attacker)
+          }
           return true
         }
         return false

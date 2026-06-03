@@ -1,6 +1,6 @@
 import { Container, Graphics, Text } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, POPULATION_MAX } from '../constants'
-import { capitalizeFirstLetter, canPlaceBuildingAt, drawInstanceBlinkingSelection } from '../lib'
+import { capitalizeFirstLetter, canPlaceBuildingAt, drawInstanceBlinkingSelection, isValidCondition } from '../lib'
 
 const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold']
 const DEBUG_SOLID_LAYER = 'debugSolidLayer'
@@ -327,8 +327,13 @@ export function spawnBuilding(context, typeName) {
   const { player, menu } = context
   const type = findKey(player.config.buildings, typeName)
   if (!type) return { ok: false, message: `Unknown building: ${typeName}` }
+  const config = player.config.buildings[type]
 
-  const cell = getSpawnCell(context, player.config.buildings[type])
+  if (config.conditions?.some(condition => !isValidCondition(condition, player))) {
+    return { ok: false, message: `Cannot spawn ${type} with current age/tech requirements` }
+  }
+
+  const cell = getSpawnCell(context, config)
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }
 
   const building = player.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
@@ -428,8 +433,12 @@ export function killEntities(context, target = 'enemies') {
 
 export function healAll(context) {
   const { player } = context
-  ;[...player.units].forEach(u => { u.hitPoints = u.totalHitPoints })
-  ;[...player.buildings].forEach(b => { b.hitPoints = b.totalHitPoints })
+  ;[...player.units].forEach(u => {
+    u.hitPoints = u.totalHitPoints
+  })
+  ;[...player.buildings].forEach(b => {
+    b.hitPoints = b.totalHitPoints
+  })
   const count = player.units.length + player.buildings.length
   return { ok: true, message: `Healed ${count} entities to full HP` }
 }
@@ -604,7 +613,9 @@ export function highlightInstances(context, category, typeName = '') {
 export function killResources(context, typeName = 'all') {
   const { map, menu } = context
   const wantedType = normalize(typeName)
-  const resources = [...map.resources].filter(resource => wantedType === 'all' || normalize(resource.type) === wantedType)
+  const resources = [...map.resources].filter(
+    resource => wantedType === 'all' || normalize(resource.type) === wantedType
+  )
   resources.forEach(resource => resource.die(true))
   menu.updateResourcesMiniMapEvt()
   return { ok: true, message: `Killed ${resources.length} resources${typeName !== 'all' ? ` ${typeName}` : ''}` }

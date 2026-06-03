@@ -24,7 +24,7 @@ export default class MainMenu {
     if (logo) {
       const title = document.createElement('img')
       title.className = 'menu-title'
-      title.src = '/assets/logo.png'
+      title.src = 'assets/logo.png'
       title.alt = 'Dawn of Empires'
       panel.appendChild(title)
 

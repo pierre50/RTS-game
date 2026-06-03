@@ -42,6 +42,8 @@ export function getBuildingAsset(type, owner, assets) {
   } else if (path[0]?.[type]) {
     return path[0][type]
   }
+
+  throw new Error(`Missing building asset for ${owner.civ} ${type} at age ${owner.age}`)
 }
 
 /**
