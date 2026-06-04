@@ -20,14 +20,14 @@
         "h": 26
       },
       "anchor": {
-        "x": 0.5,
-        "y": 0.5
+        "x": 0.4722222222222222,
+        "y": 0.7307692307692307
       }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.5",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {

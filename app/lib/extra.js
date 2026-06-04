@@ -3,6 +3,40 @@ import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
 
+const DIRECTIONS = {
+  south: 0,
+  southwest: 1,
+  west: 2,
+  northwest: 3,
+  north: 4,
+}
+
+export function getAnimationFrames(textures, direction) {
+  const names = Object.keys(textures).sort((a, b) => {
+    const na = parseInt(a.split('_')[0], 10)
+    const nb = parseInt(b.split('_')[0], 10)
+    return na - nb
+  })
+
+  // Pas de direction => toutes les frames
+  if (!direction) {
+    return names.map(name => textures[name])
+  }
+
+  const framesPerDirection = names.length / 5
+
+  const directionIndex = DIRECTIONS[direction]
+
+  if (directionIndex === undefined) {
+    throw new Error(`Unknown direction: ${direction}`)
+  }
+
+  const start = directionIndex * framesPerDirection
+  const end = start + framesPerDirection
+
+  return names.slice(start, end).map(name => textures[name])
+}
+
 export function setUnitTexture(sheet, instance) {
   const animationSpeed = {
     standingSheet: 0.15,
@@ -37,19 +71,19 @@ export function setUnitTexture(sheet, instance) {
   switch (direction) {
     case 'southeast':
       instance.sprite.scale.x = -1
-      instance.sprite.textures = instance[sheet].animations['southwest']
+      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'southwest')
       break
     case 'northeast':
       instance.sprite.scale.x = -1
-      instance.sprite.textures = instance[sheet].animations['northwest']
+      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'northwest')
       break
     case 'east':
       instance.sprite.scale.x = -1
-      instance.sprite.textures = instance[sheet].animations['west']
+      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'west')
       break
     default:
       instance.sprite.scale.x = 1
-      instance.sprite.textures = instance[sheet].animations[direction]
+      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction)
   }
   instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()

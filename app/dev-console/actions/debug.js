@@ -262,18 +262,29 @@ export function aiInfo(context, targetIndex) {
     const maxArc = ai.maxArcherByAge[ai.age]
     const maxCav = ai.maxCavalryByAge[ai.age]
 
-    const cooldownLeft = Math.max(0, Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000))
+    const cooldownLeft = Math.max(
+      0,
+      Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000)
+    )
 
     lines.push(`── AI [${idx}] ${ai.label} (${ai.difficulty}) ──`)
     lines.push(`  Phase: ${ai.phase}  |  Age: ${ai.age}  |  Pop: ${ai.population}/${ai.population_max}`)
     lines.push(`  Resources  W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold}`)
     lines.push(`  Villagers  ${villagers.length}/${maxVil}`)
-    lines.push(`  Military   inf:${infantry.length}/${maxInf}  arc:${archers.length}/${maxArc}  cav:${cavalry.length}/${maxCav}  hop:${hoplites.length}`)
-    lines.push(`  Power      ${militaryPower} / desired ${desiredPower}  (threshold: ${ai.difficultyConfig.attackThreshold})`)
+    lines.push(
+      `  Military   inf:${infantry.length}/${maxInf}  arc:${archers.length}/${maxArc}  cav:${cavalry.length}/${maxCav}  hop:${hoplites.length}`
+    )
+    lines.push(
+      `  Power      ${militaryPower} / desired ${desiredPower}  (threshold: ${ai.difficultyConfig.attackThreshold})`
+    )
     lines.push(`  Attack cd  ${cooldownLeft > 0 ? cooldownLeft + 's' : 'ready'}`)
-    lines.push(`  Buildings  TC:${towncenters.length}  bx:${barracks.length}  ar:${archeryRanges.length}  st:${stables.length}  ho:${houses.length}  fa:${farms.length}  sp:${storagepits.length}  gr:${granarys.length}`)
+    lines.push(
+      `  Buildings  TC:${towncenters.length}  bx:${barracks.length}  ar:${archeryRanges.length}  st:${stables.length}  ho:${houses.length}  fa:${farms.length}  sp:${storagepits.length}  gr:${granarys.length}`
+    )
     lines.push(`  Enemy mem  units:${enemyUnits}  buildings:${enemyBuildings}`)
-    lines.push(`  Threats    ${threats.length}${threats.length ? ': ' + threats.map(t => t.target.type).join(', ') : ''}`)
+    lines.push(
+      `  Threats    ${threats.length}${threats.length ? ': ' + threats.map(t => t.target.type).join(', ') : ''}`
+    )
     lines.push(`  Step delay ${ai.stepDelay}ms`)
   }
 

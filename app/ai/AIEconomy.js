@@ -49,7 +49,12 @@ export class AIEconomy {
 
     const totalWeight = weights.food + weights.wood + weights.gold + weights.stone
     if (totalWeight === 0 || villagersCount === 0) {
-      return { maxVillagersOnFood: villagersCount, maxVillagersOnWood: 0, maxVillagersOnGold: 0, maxVillagersOnStone: 0 }
+      return {
+        maxVillagersOnFood: villagersCount,
+        maxVillagersOnWood: 0,
+        maxVillagersOnGold: 0,
+        maxVillagersOnStone: 0,
+      }
     }
 
     // Floor-allocate non-food resources first; food absorbs the remainder so every villager has a slot
@@ -96,14 +101,23 @@ export class AIEconomy {
 
     const deficit =
       Math.max(0, targets.maxVillagersOnWood - ai.foundedTrees.size * 2) +
-      Math.max(0, targets.maxVillagersOnFood * 0.6 - (ai.foundedBerrybushs.size * 2 + aliveAnimals * 3 + ai.foundedFish.size * 2)) +
+      Math.max(
+        0,
+        targets.maxVillagersOnFood * 0.6 - (ai.foundedBerrybushs.size * 2 + aliveAnimals * 3 + ai.foundedFish.size * 2)
+      ) +
       Math.max(0, targets.maxVillagersOnGold - ai.foundedGolds.size * 3) +
       Math.max(0, targets.maxVillagersOnStone - ai.foundedStones.size * 3)
 
     return Math.min(3, Math.ceil(deficit / 4))
   }
 
-  assignVillagersToResource(availableVillagers, villagersOnResource, resourceList, maxVillagersForResource, actionCallback) {
+  assignVillagersToResource(
+    availableVillagers,
+    villagersOnResource,
+    resourceList,
+    maxVillagersForResource,
+    actionCallback
+  ) {
     for (let i = maxVillagersForResource; i < villagersOnResource.length; i++) {
       const villager = villagersOnResource[i]
       villager.stop()
@@ -127,11 +141,15 @@ export class AIEconomy {
     let assigned = 0
     for (let i = 0; i < toAssign; i++) {
       const villager = availableVillagers.shift()
-      let best = null, bestScore = Infinity
+      let best = null,
+        bestScore = Infinity
       for (const resource of resourceList) {
         const dist = Math.abs(villager.i - resource.i) + Math.abs(villager.j - resource.j)
         const score = dist + (nodeLoad.get(resource) || 0) * 8
-        if (score < bestScore) { bestScore = score; best = resource }
+        if (score < bestScore) {
+          bestScore = score
+          best = resource
+        }
       }
       if (!best) continue
       nodeLoad.set(best, (nodeLoad.get(best) || 0) + 1)
@@ -168,7 +186,7 @@ export class AIEconomy {
       }
     }
 
-    const LARGE_HP = 20         // threshold for group hunt (elephant = 45 HP)
+    const LARGE_HP = 20 // threshold for group hunt (elephant = 45 HP)
     const DAMAGE_PER_HUNTER = 4 // spear damage per throw
 
     let actions = 0
@@ -380,9 +398,24 @@ export class AIEconomy {
 
     // Assign wood/stone/gold in order of worst coverage ratio (most understaffed first)
     const gatheringResources = [
-      { workers: workerSnapshot.villagersOnWood,  set: this.ai.foundedTrees, max: targets.maxVillagersOnWood,  cb: (v, r) => v.sendToTree(r) },
-      { workers: workerSnapshot.villagersOnStone, set: viableStones,          max: targets.maxVillagersOnStone, cb: (v, r) => v.sendToStone(r) },
-      { workers: workerSnapshot.villagersOnGold,  set: viableGolds,           max: targets.maxVillagersOnGold,  cb: (v, r) => v.sendToGold(r) },
+      {
+        workers: workerSnapshot.villagersOnWood,
+        set: this.ai.foundedTrees,
+        max: targets.maxVillagersOnWood,
+        cb: (v, r) => v.sendToTree(r),
+      },
+      {
+        workers: workerSnapshot.villagersOnStone,
+        set: viableStones,
+        max: targets.maxVillagersOnStone,
+        cb: (v, r) => v.sendToStone(r),
+      },
+      {
+        workers: workerSnapshot.villagersOnGold,
+        set: viableGolds,
+        max: targets.maxVillagersOnGold,
+        cb: (v, r) => v.sendToGold(r),
+      },
     ].sort((a, b) => {
       const ra = a.max > 0 ? a.workers.length / a.max : 1
       const rb = b.max > 0 ? b.workers.length / b.max : 1
@@ -400,7 +433,10 @@ export class AIEconomy {
         // Take from the end (lowest HP — least critical for defence)
         const count = Math.min(need, availableVillagers.length)
         const explorers = availableVillagers.splice(availableVillagers.length - count, count)
-        for (const v of explorers) { v.explore(); actions++ }
+        for (const v of explorers) {
+          v.explore()
+          actions++
+        }
       }
     }
 
@@ -408,7 +444,10 @@ export class AIEconomy {
     if (availableVillagers.length > 0 && this.ai.foundedTrees.size > 0) {
       for (const villager of [...availableVillagers]) {
         const tree = getClosestInstance(villager, this.ai.foundedTrees)
-        if (tree) { villager.sendToTree(tree); actions++ }
+        if (tree) {
+          villager.sendToTree(tree)
+          actions++
+        }
       }
     }
 

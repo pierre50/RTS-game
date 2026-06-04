@@ -24,6 +24,7 @@ import {
   setUnitTexture,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
+  getAnimationFrames,
 } from '../../lib'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
@@ -142,7 +143,7 @@ export class Unit extends Instance {
     this.allowMove = false
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
-    this.sprite = new AnimatedSprite(this[SHEET_TYPES.standing].animations['south'])
+    this.sprite = new AnimatedSprite(getAnimationFrames(this[SHEET_TYPES.standing].textures, 'south'))
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false

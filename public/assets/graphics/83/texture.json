@@ -1,8 +1,32 @@
 {
   "frames": {
-    "001_83.png": {
+    "000_83.png": {
       "frame": {
         "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.45714285714285713,
+        "y": 0.5
+      }
+    },
+    "001_83.png": {
+      "frame": {
+        "x": 71,
         "y": 0,
         "w": 78,
         "h": 86
@@ -23,40 +47,16 @@
         "x": 0.46153846153846156,
         "y": 0.6395348837209303
       }
-    },
-    "000_83.png": {
-      "frame": {
-        "x": 0,
-        "y": 86,
-        "w": 70,
-        "h": 62
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 62
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 62
-      },
-      "anchor": {
-        "x": 0.45714285714285713,
-        "y": 0.5
-      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.5",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 78,
-      "h": 148
+      "w": 149,
+      "h": 86
     },
     "scale": 1
   }

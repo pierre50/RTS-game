@@ -22,13 +22,12 @@
       "anchor": {
         "x": 0.489010989010989,
         "y": 0.624
-      },
-      "hitArea": [4, 42, 90, 1, 78, -12, 78, -36, 63, -47, 36, -58, 5, -76, -33, -56, -78, -39, -76, -13, -86, 4]
+      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.5",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {

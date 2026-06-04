@@ -20,6 +20,7 @@ import {
   getTexture,
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
+  getAnimationFrames,
 } from '../../lib'
 
 export class BuildingLifecycle {
@@ -90,7 +91,7 @@ export class BuildingLifecycle {
     if (building.type === BUILDING_TYPES.house) {
       if (building.owner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
-        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures))
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.label = LABEL_TYPES.deco
         spriteFire.allowMove = false
@@ -115,7 +116,7 @@ export class BuildingLifecycle {
     const spritesheetFire = Assets.cache.get(spriteId)
     if (fire) {
       for (let i = 0; i < fire.children.length; i++) {
-        fire.children[i].textures = spritesheetFire.animations['fire']
+        fire.children[i].textures = getAnimationFrames(spritesheetFire.textures)
         fire.children[i].play()
       }
     } else {
@@ -134,7 +135,7 @@ export class BuildingLifecycle {
         ]
       }
       for (let i = 0; i < poses.length; i++) {
-        const spriteFire = new AnimatedSprite(spritesheetFire.animations['fire'])
+        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures))
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.allowMove = false
         spriteFire.allowClick = false

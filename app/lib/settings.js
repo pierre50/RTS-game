@@ -11,11 +11,7 @@ export const SPEED_PRESETS = [
   { key: 'speedNormal', value: 1.5 },
   { key: 'speedFast', value: 2 },
 ]
-export const DEV_SPEED_PRESETS = [
-  ...SPEED_PRESETS,
-  { key: '4x', value: 4 },
-  { key: '8x', value: 8 },
-]
+export const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]
 export const SPEED_VALUES = DEV_SPEED_PRESETS.map(({ value }) => String(value))
 export const GAME_SPEED_USAGE = `speed <${SPEED_VALUES.join('|')}>`
 

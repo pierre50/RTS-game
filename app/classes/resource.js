@@ -8,6 +8,7 @@ import {
   drawInstanceBlinkingSelection,
   getActionCondition,
   bindAnimatedSpriteToTicker,
+  getAnimationFrames,
 } from '../lib'
 import {
   TYPE_ACTION,
@@ -66,7 +67,7 @@ export class Resource extends Instance {
     }
     if (this.isAnimated) {
       const spritesheetJump = Assets.cache.get(this.assets)
-      this.sprite = new AnimatedSprite(spritesheetJump.animations.jump)
+      this.sprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures))
       bindAnimatedSpriteToTicker(this.sprite, this.context.app)
       this.sprite.play()
       this.sprite.animationSpeed = 0.2

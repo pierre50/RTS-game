@@ -1,0 +1,231 @@
+{
+  "frames": {
+    "000_715.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 45,
+        "h": 71
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 45,
+        "h": 71
+      },
+      "sourceSize": {
+        "w": 45,
+        "h": 71
+      },
+      "anchor": {
+        "x": 0.5111111111111111,
+        "y": 0.5492957746478874
+      }
+    },
+    "001_715.png": {
+      "frame": {
+        "x": 46,
+        "y": 0,
+        "w": 69,
+        "h": 69
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 69
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 69
+      },
+      "anchor": {
+        "x": 0.5217391304347826,
+        "y": 0.5507246376811594
+      }
+    },
+    "002_715.png": {
+      "frame": {
+        "x": 116,
+        "y": 0,
+        "w": 94,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5106382978723404,
+        "y": 0.578125
+      }
+    },
+    "003_715.png": {
+      "frame": {
+        "x": 211,
+        "y": 0,
+        "w": 106,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 106,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 106,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5188679245283019,
+        "y": 0.6111111111111112
+      }
+    },
+    "004_715.png": {
+      "frame": {
+        "x": 318,
+        "y": 0,
+        "w": 108,
+        "h": 45
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 108,
+        "h": 45
+      },
+      "sourceSize": {
+        "w": 108,
+        "h": 45
+      },
+      "anchor": {
+        "x": 0.5185185185185185,
+        "y": 0.6666666666666666
+      }
+    },
+    "005_715.png": {
+      "frame": {
+        "x": 427,
+        "y": 0,
+        "w": 106,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 106,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 106,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5094339622641509,
+        "y": 0.58
+      }
+    },
+    "006_715.png": {
+      "frame": {
+        "x": 534,
+        "y": 0,
+        "w": 91,
+        "h": 60
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 91,
+        "h": 60
+      },
+      "sourceSize": {
+        "w": 91,
+        "h": 60
+      },
+      "anchor": {
+        "x": 0.5054945054945055,
+        "y": 0.5333333333333333
+      }
+    },
+    "007_715.png": {
+      "frame": {
+        "x": 626,
+        "y": 0,
+        "w": 69,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 63
+      },
+      "anchor": {
+        "x": 0.5072463768115942,
+        "y": 0.5238095238095238
+      }
+    },
+    "008_715.png": {
+      "frame": {
+        "x": 696,
+        "y": 0,
+        "w": 46,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 46,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 46,
+        "h": 63
+      },
+      "anchor": {
+        "x": 0.5217391304347826,
+        "y": 0.5238095238095238
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 742,
+      "h": 71
+    },
+    "scale": 1
+  }
+}

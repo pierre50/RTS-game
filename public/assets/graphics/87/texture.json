@@ -26,7 +26,7 @@
     },
     "001_87.png": {
       "frame": {
-        "x": 167,
+        "x": 168,
         "y": 0,
         "w": 103,
         "h": 86
@@ -50,12 +50,12 @@
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 270,
+      "w": 271,
       "h": 86
     },
     "scale": 1

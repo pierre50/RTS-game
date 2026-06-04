@@ -1,0 +1,255 @@
+{
+  "frames": {
+    "000_461.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 13,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.46153846153846156,
+        "y": 0.5
+      }
+    },
+    "001_461.png": {
+      "frame": {
+        "x": 14,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "002_461.png": {
+      "frame": {
+        "x": 29,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "003_461.png": {
+      "frame": {
+        "x": 44,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "004_461.png": {
+      "frame": {
+        "x": 59,
+        "y": 0,
+        "w": 14,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 13
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.46153846153846156
+      }
+    },
+    "005_461.png": {
+      "frame": {
+        "x": 74,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "006_461.png": {
+      "frame": {
+        "x": 89,
+        "y": 0,
+        "w": 12,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 12,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "007_461.png": {
+      "frame": {
+        "x": 102,
+        "y": 0,
+        "w": 12,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 12,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "008_461.png": {
+      "frame": {
+        "x": 115,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 13,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.46153846153846156,
+        "y": 0.5
+      }
+    },
+    "009_461.png": {
+      "frame": {
+        "x": 129,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 13,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.46153846153846156,
+        "y": 0.5
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 142,
+      "h": 14
+    },
+    "scale": 1
+  }
+}
