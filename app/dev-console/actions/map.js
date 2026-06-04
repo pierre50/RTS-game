@@ -1,6 +1,22 @@
 import { drawInstanceBlinkingSelection } from '../../lib'
 import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
 
+function refreshAnimalsAndCameraVisibility(context) {
+  const { map, player, controls } = context
+
+  map.gaia?.units.forEach(animal => {
+    const cell = map.grid[animal.i]?.[animal.j]
+    if (!map.revealEverything && !player.views[animal.i]?.[animal.j]?.viewed) {
+      animal.visible = false
+      return
+    }
+    cell?.updateVisible()
+  })
+
+  controls?.cameraController?.visibleCells.clear()
+  controls?.updateVisibleCells()
+}
+
 export function toggleFog(context, value) {
   const { map, menu, players } = context
   const currently = map.fogLayer?.visible ?? !map.revealEverything
@@ -15,6 +31,9 @@ export function toggleFog(context, value) {
       cell?.updateVisible()
     })
   }
+
+  refreshAnimalsAndCameraVisibility(context)
+
   menu.updateResourcesMiniMapEvt()
   players.forEach(p => menu.updatePlayerMiniMapEvt(p))
 
