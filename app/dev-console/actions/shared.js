@@ -165,6 +165,7 @@ export function cleanupDebugArtifacts(context) {
     '_debugGridTicker',
     '_debugCoordsTicker',
     '_debugPerfTicker',
+    '_debugAiInfoTicker',
   ]
 
   tickerNames.forEach(tickerName => stopDebugTicker(context, tickerName))
@@ -180,6 +181,7 @@ export function cleanupDebugArtifacts(context) {
   })
 
   document.getElementById('debug-perf')?.remove()
+  document.getElementById('debug-ai-info')?.remove()
 }
 
 export function getInstancesByCategory(context, category, typeName) {

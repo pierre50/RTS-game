@@ -1,0 +1,103 @@
+{
+  "Gazelle": {
+    "totalHitPoints": 8,
+    "sight": 2,
+    "speed": 1.2,
+    "strategy": "runaway",
+    "icon": "037_50730",
+    "totalQuantity": 150,
+    "assets": {
+      "standingSheet": "479",
+      "walkingSheet": "478",
+      "runningSheet": "480",
+      "dyingSheet": "331",
+      "corpseSheet": "392"
+    },
+    "sounds": {
+      "fall": 5003
+    }
+  },
+  "Elephant": {
+    "totalHitPoints": 45,
+    "sight": 4,
+    "speed": 1,
+    "meleeAttack": 10,
+    "icon": "033_50730",
+    "rateOfFire": 1,
+    "totalQuantity": 300,
+    "assets": {
+      "actionSheet": "215",
+      "standingSheet": "428",
+      "walkingSheet": "667",
+      "dyingSheet": "324",
+      "corpseSheet": "386"
+    },
+    "sounds": {
+      "die": 5216,
+      "fall": 5239,
+      "hit": 5070
+    }
+  },
+  "Crocodile": {
+    "totalHitPoints": 20,
+    "sight": 5,
+    "speed": 0.5,
+    "meleeAttack": 4,
+    "strategy": "attack",
+    "icon": "041_50730",
+    "rateOfFire": 2,
+    "totalQuantity": 100,
+    "assets": {
+      "actionSheet": "217",
+      "standingSheet": "433",
+      "walkingSheet": "673",
+      "dyingSheet": "330",
+      "corpseSheet": "391"
+    },
+    "sounds": {
+      "fall": 5239
+    }
+  },
+  "Alligator": {
+    "totalHitPoints": 20,
+    "sight": 5,
+    "speed": 0.5,
+    "meleeAttack": 4,
+    "strategy": "attack",
+    "icon": "041_50730",
+    "rateOfFire": 2,
+    "totalQuantity": 100,
+    "assets": {
+      "actionSheet": "217",
+      "standingSheet": "433",
+      "walkingSheet": "673",
+      "dyingSheet": "330",
+      "corpseSheet": "391"
+    },
+    "sounds": {
+      "fall": 5239
+    }
+  },
+  "Lion": {
+    "totalHitPoints": 20,
+    "sight": 4,
+    "speed": 1.1,
+    "meleeAttack": 2,
+    "strategy": "attack",
+    "rateOfFire": 1,
+    "icon": "040_50730",
+    "totalQuantity": 100,
+    "assets": {
+      "actionSheet": "222",
+      "standingSheet": "497",
+      "walkingSheet": "680",
+      "dyingSheet": "336",
+      "corpseSheet": "397"
+    },
+    "sounds": {
+      "fall": 5003,
+      "hit": 5132,
+      "die": 5133
+    }
+  }
+}

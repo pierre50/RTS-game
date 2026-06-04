@@ -3,6 +3,7 @@ import { sound } from '@pixi/sound'
 import { getIconPath, canAfford, refundCost, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
 import { FAMILY_TYPES } from '../constants'
+import { syncHitPointsInfo } from './BaseEntityInterface'
 
 export class BottombarManager {
   constructor(menu) {
@@ -51,7 +52,14 @@ export class BottombarManager {
       if (!targetElement) return
       menu._infoCache.set(target, targetElement)
     }
-    return typeof action !== 'function' ? (targetElement.textContent = action) : action(targetElement)
+    if (typeof action !== 'function') {
+      if (target === 'hit-points') {
+        return syncHitPointsInfo(targetElement, action)
+      }
+      targetElement.textContent = action
+      return action
+    }
+    return action(targetElement)
   }
 
   updateButtonContent(target, action) {
@@ -294,23 +302,24 @@ export class BottombarManager {
     }
   }
 
-  getBuildingButton(type) {
+  getBuildingButton(type, ownerOverride = null) {
     const { menu } = this
     const {
       context: { controls, player },
     } = menu
-    const config = player.config.buildings[type]
+    const owner = ownerOverride || player
+    const config = owner.config.buildings[type]
     return {
       id: type,
       icon: () => {
-        const assets = getBuildingAsset(type, player, Assets)
+        const assets = getBuildingAsset(type, owner, Assets)
         return getIconPath(assets.icon)
       },
-      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, owner)),
       onClick: () => {
-        const assets = getBuildingAsset(type, player, Assets)
+        const assets = getBuildingAsset(type, owner, Assets)
         controls.removeMouseBuilding()
-        if (canAfford(player, config.cost)) {
+        if (canAfford(owner, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })
         } else {
           menu.showMessage(this.getMessage(config.cost), 'warning')

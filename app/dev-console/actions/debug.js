@@ -1,5 +1,5 @@
 import { Text } from 'pixi.js'
-import { PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES } from '../../constants'
+import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import {
   DEBUG_COORDS_LAYER,
@@ -103,13 +103,18 @@ function drawVisionDebug(context) {
   }
 }
 
-function ensurePerfOverlay(context) {
-  let overlay = document.getElementById('debug-perf')
+function ensureDebugOverlay(id) {
+  let overlay = document.getElementById(id)
   if (!overlay) {
     overlay = document.createElement('div')
-    overlay.id = 'debug-perf'
+    overlay.id = id
     document.body.appendChild(overlay)
   }
+  return overlay
+}
+
+function ensurePerfOverlay(context) {
+  const overlay = ensureDebugOverlay('debug-perf')
   const { app, map, players } = context
   const units = players.reduce((sum, player) => sum + player.units.length, 0) + (map.gaia?.units.length || 0)
   const buildings = players.reduce((sum, player) => sum + player.buildings.length, 0)
@@ -123,6 +128,79 @@ function ensurePerfOverlay(context) {
     `Speed ${context.scheduler?.timeScale ?? 1}x`,
     `AI ${context.aiPaused ? 'paused' : 'running'}`,
   ].join('\n')
+}
+
+function getAiDebugLines(aiPlayers, targetIndex = null) {
+  const targets = targetIndex !== null ? [aiPlayers[targetIndex]].filter(Boolean) : aiPlayers
+  if (!targets.length) return null
+
+  const lines = []
+
+  for (const ai of targets) {
+    const idx = aiPlayers.indexOf(ai)
+    const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
+    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(ai.units.filter(u => isAliveUnit(u)))
+    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
+    const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
+    const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
+    const threats = ai.getActiveThreats()
+    const enemyUnits = ai.enemyUnitMemory.size
+    const enemyBuildings = ai.enemyBuildingMemory.size
+    const maxVil = Math.floor(ai.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+    const maxInf = ai.maxInfantryByAge[ai.age]
+    const maxArc = ai.maxArcherByAge[ai.age]
+    const maxCav = ai.maxCavalryByAge[ai.age]
+    const maxHop = ai.maxHopliteByAge[ai.age]
+    const cooldownLeft = Math.max(
+      0,
+      Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000)
+    )
+    const workerSnapshot = ai.economy.getWorkerSnapshot(villagers)
+    const workerTargets = ai.economy.getResourceTargets(villagers.length)
+    const demand = ai.strategy.getEconomicDemand()
+    const builders = villagers.filter(v => !v.isDead && v.hitPoints > 0 && v.action === ACTION_TYPES.build).length
+    const scoutLabel = ai.scout && !ai.scout.isDead ? `${ai.scout.type}#${ai.scout.name || ai.scout.label}` : 'none'
+    const scoutStatus =
+      ai.scout && !ai.scout.isDead ? (ai.scout.inactif ? 'idle' : ai.scout.dest ? 'moving' : 'active') : 'none'
+
+    lines.push(`AI [${idx}] ${ai.label} (${ai.difficulty})`)
+    lines.push(`Phase ${ai.phase} | Age ${ai.age} | Pop ${ai.population}/${ai.population_max} | Step ${ai.stepDelay}ms`)
+    lines.push(`Res W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold} | Demand W:${demand.wood} F:${demand.food} S:${demand.stone} G:${demand.gold}`)
+    lines.push(
+      `Eco vil ${villagers.length}/${maxVil} | food ${workerSnapshot.villagersOnFood.length}/${workerTargets.maxVillagersOnFood} | wood ${workerSnapshot.villagersOnWood.length}/${workerTargets.maxVillagersOnWood} | gold ${workerSnapshot.villagersOnGold.length}/${workerTargets.maxVillagersOnGold} | stone ${workerSnapshot.villagersOnStone.length}/${workerTargets.maxVillagersOnStone}`
+    )
+    lines.push(
+      `Jobs idle ${workerSnapshot.inactifVillagers.length} | builders ${builders} | hunters ${workerSnapshot.villagersHunting.length} | scout ${scoutLabel} (${scoutStatus})`
+    )
+    lines.push(
+      `Army inf ${infantry.length}/${maxInf} | arc ${archers.length}/${maxArc} | cav ${cavalry.length}/${maxCav} | hop ${hoplites.length}/${maxHop}`
+    )
+    lines.push(
+      `Power ${militaryPower}/${desiredPower} | Attack ${cooldownLeft > 0 ? `${cooldownLeft}s` : 'ready'} | Threshold ${ai.difficultyConfig.attackThreshold}`
+    )
+    lines.push(
+      `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees.size} berries:${ai.foundedBerrybushs.size} hunt:${ai.foundedAnimals.size} fish:${ai.foundedFish.size} gold:${ai.foundedGolds.size} stone:${ai.foundedStones.size}`
+    )
+    lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map(t => t.target.type).join(', ')}` : ''}`)
+    lines.push('')
+  }
+
+  lines.pop()
+  return lines
+}
+
+function ensureAiInfoOverlay(context) {
+  const overlay = ensureDebugOverlay('debug-ai-info')
+  const aiPlayers = context.players.filter(p => p.type === PLAYER_TYPES.ai)
+
+  if (!aiPlayers.length) {
+    overlay.textContent = 'No AI players on the map'
+    return
+  }
+
+  const targetIndex = Number.isInteger(context.debugAiInfoTargetIndex) ? context.debugAiInfoTargetIndex : null
+  const lines = getAiDebugLines(aiPlayers, targetIndex)
+  overlay.textContent = lines?.join('\n') || `No AI player at index ${targetIndex}`
 }
 
 export function toggleSolidDebug(context, value) {
@@ -226,67 +304,45 @@ export function toggleAiDebug(context, value) {
   return { ok: true, message: `AI: ${pauseAI ? 'paused' : 'running'}` }
 }
 
-export function aiInfo(context, targetIndex) {
+export function aiInfo(context, value) {
   const aiPlayers = context.players.filter(p => p.type === PLAYER_TYPES.ai)
   if (!aiPlayers.length) return { ok: false, message: 'No AI players on the map' }
 
-  const index = targetIndex !== undefined ? parseInt(targetIndex, 10) : null
-  const targets = index !== null && !isNaN(index) ? [aiPlayers[index]].filter(Boolean) : aiPlayers
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
+  const explicitOff = normalized === 'off'
+  const explicitOn = normalized === 'on'
+  const parsedIndex = value !== undefined && !explicitOn && !explicitOff ? parseInt(value, 10) : null
 
-  if (!targets.length) return { ok: false, message: `No AI player at index ${index}` }
-
-  const lines = []
-  for (const ai of targets) {
-    const idx = aiPlayers.indexOf(ai)
-    const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(ai.units.filter(u => isAliveUnit(u)))
-    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
-    const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
-    const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
-
-    const towncenters = ai.buildingsByTypes([BUILDING_TYPES.townCenter])
-    const barracks = ai.buildingsByTypes([BUILDING_TYPES.barracks])
-    const archeryRanges = ai.buildingsByTypes([BUILDING_TYPES.archeryRange])
-    const stables = ai.buildingsByTypes([BUILDING_TYPES.stable])
-    const houses = ai.buildingsByTypes([BUILDING_TYPES.house])
-    const farms = ai.buildingsByTypes([BUILDING_TYPES.farm])
-    const storagepits = ai.buildingsByTypes([BUILDING_TYPES.storagePit])
-    const granarys = ai.buildingsByTypes([BUILDING_TYPES.granary])
-
-    const threats = ai.getActiveThreats()
-    const enemyUnits = ai.enemyUnitMemory.size
-    const enemyBuildings = ai.enemyBuildingMemory.size
-
-    const maxVil = Math.floor(ai.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
-    const maxInf = ai.maxInfantryByAge[ai.age]
-    const maxArc = ai.maxArcherByAge[ai.age]
-    const maxCav = ai.maxCavalryByAge[ai.age]
-
-    const cooldownLeft = Math.max(
-      0,
-      Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000)
-    )
-
-    lines.push(`── AI [${idx}] ${ai.label} (${ai.difficulty}) ──`)
-    lines.push(`  Phase: ${ai.phase}  |  Age: ${ai.age}  |  Pop: ${ai.population}/${ai.population_max}`)
-    lines.push(`  Resources  W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold}`)
-    lines.push(`  Villagers  ${villagers.length}/${maxVil}`)
-    lines.push(
-      `  Military   inf:${infantry.length}/${maxInf}  arc:${archers.length}/${maxArc}  cav:${cavalry.length}/${maxCav}  hop:${hoplites.length}`
-    )
-    lines.push(
-      `  Power      ${militaryPower} / desired ${desiredPower}  (threshold: ${ai.difficultyConfig.attackThreshold})`
-    )
-    lines.push(`  Attack cd  ${cooldownLeft > 0 ? cooldownLeft + 's' : 'ready'}`)
-    lines.push(
-      `  Buildings  TC:${towncenters.length}  bx:${barracks.length}  ar:${archeryRanges.length}  st:${stables.length}  ho:${houses.length}  fa:${farms.length}  sp:${storagepits.length}  gr:${granarys.length}`
-    )
-    lines.push(`  Enemy mem  units:${enemyUnits}  buildings:${enemyBuildings}`)
-    lines.push(
-      `  Threats    ${threats.length}${threats.length ? ': ' + threats.map(t => t.target.type).join(', ') : ''}`
-    )
-    lines.push(`  Step delay ${ai.stepDelay}ms`)
+  if (parsedIndex !== null && isNaN(parsedIndex)) {
+    return { ok: false, message: `Invalid AI index "${value}"` }
   }
 
-  return { ok: true, message: lines.join('\n') }
+  if (parsedIndex !== null && !aiPlayers[parsedIndex]) {
+    return { ok: false, message: `No AI player at index ${parsedIndex}` }
+  }
+
+  const isVisible = Boolean(context.map.debugAiInfoVisible)
+  const sameTarget =
+    (parsedIndex === null && !Number.isInteger(context.debugAiInfoTargetIndex)) || context.debugAiInfoTargetIndex === parsedIndex
+  const showOverlay = explicitOff ? false : explicitOn || parsedIndex !== null ? true : !isVisible || !sameTarget
+
+  context.map.debugAiInfoVisible = showOverlay
+
+  if (!showOverlay) {
+    context.debugAiInfoTargetIndex = null
+    stopDebugTicker(context, '_debugAiInfoTicker')
+    document.getElementById('debug-ai-info')?.remove()
+    return { ok: true, message: 'AI info: off' }
+  }
+
+  context.debugAiInfoTargetIndex = parsedIndex
+  ensureAiInfoOverlay(context)
+  stopDebugTicker(context, '_debugAiInfoTicker')
+  context.map._debugAiInfoTicker = () => ensureAiInfoOverlay(context)
+  context.app.ticker.add(context.map._debugAiInfoTicker)
+
+  return {
+    ok: true,
+    message: `AI info: on${parsedIndex !== null ? ` (AI ${parsedIndex})` : ' (all AI)'}`,
+  }
 }

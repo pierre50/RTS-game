@@ -134,7 +134,7 @@ export class Unit extends Instance {
               {
                 id: 'build',
                 icon: 'assets/interface/50721/002_50721.png',
-                children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key)),
+                children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key, this.owner)),
               },
             ]
           : [],
@@ -359,10 +359,16 @@ export class Unit extends Instance {
   }
 
   isAttacked(instance) {
-    if (!instance || this.dest === instance || this.isDead || !this.getActionCondition(instance, ACTION_TYPES.attack)) {
+    if (!instance || this.isDead) {
       return
     }
     this.owner.reportThreat?.(this, instance)
+    if (!this.getActionCondition(instance, ACTION_TYPES.attack)) {
+      return
+    }
+    if (this.dest === instance) {
+      return
+    }
     if (this.handleIsAttacked?.(instance, this)) return
     const currentDest = this.dest
     if (this.type === UNIT_TYPES.villager) {

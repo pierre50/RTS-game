@@ -5,10 +5,10 @@
   background: var(--surface-dark-soft);
 }
 
-#debug-perf {
+.debug-overlay,
+#debug-perf,
+#debug-ai-info {
   position: fixed;
-  top: 34px;
-  right: 10px;
   z-index: 9999;
   padding: 5px 8px;
   color: white;
@@ -19,6 +19,24 @@
   pointer-events: none;
   background: var(--surface-dark-heavy);
   border-radius: 3px;
+}
+
+#debug-perf {
+  top: 34px;
+  right: 10px;
+}
+
+#debug-ai-info {
+  top: 34px;
+  left: 10px;
+  max-width: min(520px, calc(100vw - 20px));
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  background: rgba(15, 18, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  white-space: pre-wrap;
 }
 
 .dev-console-panel {

@@ -16,6 +16,8 @@ import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { createPlayerData } from '../../config/playerConfig'
+import { playUiSound } from '../../lib/uiSound'
 
 export class Player {
   constructor(options, context) {
@@ -38,6 +40,7 @@ export class Player {
     this.technologies = []
     this.cellViewed = 0
     this.age = 0
+    this.lastUnderAttackAlertAt = 0
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
@@ -47,8 +50,9 @@ export class Player {
     this.population_max = this.population_max || (map.instantMode ? POPULATION_MAX : 0)
 
     this.colorHex = getHexColor(this.color)
-    this.config = { ...Assets.cache.get('config') }
-    this.techs = { ...Assets.cache.get('technology') }
+    const { config, techs } = createPlayerData(Assets.cache.get('config'), Assets.cache.get('technology'), this.civ)
+    this.config = config
+    this.techs = techs
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     const cloneGrid = []
     for (let i = 0; i <= map.size; i++) {
@@ -75,6 +79,21 @@ export class Player {
       }
     }
     this.views = cloneGrid
+  }
+
+  reportThreat(target, attacker) {
+    if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
+    if (!this.isPlayed || this.type !== PLAYER_TYPES.human) return
+
+    const isWindowFocused = document.visibilityState === 'visible' && document.hasFocus()
+    const isTargetInCamera = this.context.controls?.instanceInCamera(target) ?? true
+    if (isWindowFocused && isTargetInCamera) return
+
+    const now = Date.now()
+    if (now - this.lastUnderAttackAlertAt < 5000) return
+
+    this.lastUnderAttackAlertAt = now
+    playUiSound('5014')
   }
 
   spawnBuilding(options) {

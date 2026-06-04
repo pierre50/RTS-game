@@ -1,0 +1,524 @@
+{
+  "House": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 75,
+    "constructionTime": 20,
+    "displayPopulation": true,
+    "increasePopulation": 4,
+    "cost": {
+      "wood": 30
+    },
+    "sounds": {
+      "create": 5126
+    }
+  },
+  "Barracks": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 30,
+    "cost": {
+      "wood": 125
+    },
+    "units": [
+      "Clubman",
+      "Axeman",
+      "ShortSwordsman",
+      "BroadSwordsman",
+      "LongSwordsman"
+    ],
+    "technologies": [
+      "BattleAxe",
+      "ShortSword",
+      "BroadSword",
+      "LongSword",
+      "Legion"
+    ],
+    "sounds": {
+      "create": 5022
+    }
+  },
+  "Granary": {
+    "size": 3,
+    "sight": 4,
+    "totalHitPoints": 350,
+    "constructionTime": 30,
+    "cost": {
+      "wood": 120
+    },
+    "accept": [
+      "berry",
+      "wheat"
+    ],
+    "technologies": [
+      "ResearchWatchTower",
+      "ResearchSentryTower",
+      "ResearchSmallWall",
+      "ResearchGuardTower",
+      "ResearchBallistaTower"
+    ],
+    "sounds": {
+      "create": 5096
+    }
+  },
+  "StoragePit": {
+    "size": 3,
+    "sight": 4,
+    "totalHitPoints": 350,
+    "constructionTime": 30,
+    "cost": {
+      "wood": 120
+    },
+    "accept": [
+      "wood",
+      "stone",
+      "gold",
+      "meat",
+      "fish"
+    ],
+    "technologies": [
+      "Toolworking",
+      "Metalworking",
+      "Metallurgy",
+      "BronzeShield",
+      "IronShield",
+      "LeatherArmorInfantry",
+      "ScaleArmorInfantry",
+      "ChainmailInfantry",
+      "LeatherArmorArchers",
+      "ScaleArmorArchers",
+      "ChainmailArchers",
+      "LeatherArmorCavalry",
+      "ScaleArmorCavalry",
+      "ChainmailCavalry",
+      "TowerShield"
+    ],
+    "sounds": {
+      "create": 5186
+    }
+  },
+  "Dock": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 50,
+    "buildOnWater": true,
+    "units": [
+      "FishingBoat"
+    ],
+    "cost": {
+      "wood": 100
+    },
+    "sounds": {
+      "create": 5027
+    }
+  },
+  "ArcheryRange": {
+    "size": 3,
+    "sight": 4,
+    "totalHitPoints": 350,
+    "constructionTime": 40,
+    "cost": {
+      "wood": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Barracks"
+      }
+    ],
+    "units": [
+      "Bowman",
+      "ImprovedBowman",
+      "CompositeBowman",
+      "ChariotArcher"
+    ],
+    "technologies": [
+      "ImprovedBow",
+      "CompositeBow",
+      "HeavyHorseArcher"
+    ],
+    "sounds": {
+      "create": 5008
+    }
+  },
+  "Stable": {
+    "size": 3,
+    "sight": 4,
+    "totalHitPoints": 350,
+    "constructionTime": 40,
+    "cost": {
+      "wood": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Barracks"
+      }
+    ],
+    "units": [
+      "Scout"
+    ],
+    "technologies": [
+      "ArmoredElephant"
+    ],
+    "sounds": {
+      "create": 5123
+    }
+  },
+  "Farm": {
+    "size": 3,
+    "sight": 3,
+    "totalHitPoints": 50,
+    "constructionTime": 30,
+    "totalQuantity": 250,
+    "cost": {
+      "wood": 75
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Market"
+      }
+    ],
+    "sounds": {
+      "create": 5176
+    }
+  },
+  "WatchTower": {
+    "size": 2,
+    "sight": 8,
+    "totalHitPoints": 100,
+    "constructionTime": 80,
+    "range": 5,
+    "projectile": "Arrow",
+    "pierceAttack": 3,
+    "rateOfFire": 1.5,
+    "cost": {
+      "stone": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchWatchTower"
+      },
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "ResearchSentryTower"
+      }
+    ],
+    "sounds": {
+      "create": 5201
+    }
+  },
+  "SentryTower": {
+    "size": 2,
+    "sight": 9,
+    "totalHitPoints": 150,
+    "constructionTime": 80,
+    "range": 6,
+    "projectile": "Arrow",
+    "pierceAttack": 4,
+    "rateOfFire": 1.5,
+    "cost": {
+      "stone": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchSentryTower"
+      }
+    ],
+    "sounds": {
+      "create": 5201
+    }
+  },
+  "SmallWall": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 200,
+    "constructionTime": 8,
+    "cost": {
+      "stone": 5
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchSmallWall"
+      }
+    ]
+  },
+  "Market": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 40,
+    "cost": {
+      "wood": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Granary"
+      }
+    ],
+    "technologies": [
+      "Woodworking",
+      "Artisanship",
+      "Craftsmanship",
+      "StoneMining",
+      "GoldMining",
+      "Domestication",
+      "Plow",
+      "Irrigation",
+      "Coinage"
+    ],
+    "sounds": {
+      "create": 5142
+    }
+  },
+  "Temple": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 60,
+    "cost": {
+      "wood": 200
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Market"
+      }
+    ],
+    "units": [
+      "Priest"
+    ],
+    "sounds": {
+      "create": 5196
+    }
+  },
+  "GovernmentCenter": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 60,
+    "cost": {
+      "wood": 175
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Market"
+      }
+    ],
+    "technologies": [
+      "Ballistics",
+      "Alchemy",
+      "Writing",
+      "Architecture",
+      "Nobility",
+      "Aristocracy"
+    ],
+    "sounds": {
+      "create": 5129
+    }
+  },
+  "TownCenter": {
+    "size": 3,
+    "sight": 7,
+    "totalHitPoints": 600,
+    "constructionTime": 60,
+    "increasePopulation": 4,
+    "cost": {
+      "wood": 200
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "GovernmentCenter"
+      }
+    ],
+    "units": [
+      "Villager"
+    ],
+    "technologies": [
+      "ToolAge",
+      "BronzeAge",
+      "IronAge"
+    ],
+    "sounds": {
+      "create": 5044
+    }
+  },
+  "SiegeWorkshop": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 60,
+    "cost": {
+      "wood": 200
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "ArcheryRange"
+      }
+    ]
+  },
+  "Academy": {
+    "size": 3,
+    "sight": 5,
+    "totalHitPoints": 350,
+    "constructionTime": 60,
+    "cost": {
+      "wood": 200
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "hasBuilt",
+        "op": "includes",
+        "value": "Stable"
+      }
+    ],
+    "units": [
+      "Hoplite"
+    ],
+    "technologies": [
+      "Phalanx",
+      "Centurion"
+    ],
+    "sounds": {
+      "create": 5002
+    }
+  },
+  "GuardTower": {
+    "size": 2,
+    "sight": 10,
+    "totalHitPoints": 200,
+    "constructionTime": 80,
+    "range": 7,
+    "projectile": "Arrow",
+    "pierceAttack": 6,
+    "rateOfFire": 1.5,
+    "cost": {
+      "stone": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchGuardTower"
+      }
+    ],
+    "sounds": {
+      "create": 5201
+    }
+  },
+  "BallistaTower": {
+    "size": 2,
+    "sight": 11,
+    "totalHitPoints": 200,
+    "constructionTime": 80,
+    "range": 7,
+    "projectile": "Arrow",
+    "pierceAttack": 20,
+    "rateOfFire": 3,
+    "cost": {
+      "stone": 150
+    },
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchBallistaTower"
+      }
+    ],
+    "sounds": {
+      "create": 5201
+    }
+  }
+}

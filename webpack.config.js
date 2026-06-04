@@ -40,7 +40,10 @@ module.exports = (_env, argv = {}) => {
         template: env.htmlTemplate,
       }),
       new CopyWebpackPlugin({
-        patterns: [{ from: env.staticAssetsDir, to: 'assets' }],
+        patterns: [
+          { from: env.staticAssetsDir, to: 'assets' },
+          { from: env.faviconFile, to: 'favicon.ico' },
+        ],
       }),
     ],
     optimization: {

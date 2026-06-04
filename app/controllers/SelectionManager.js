@@ -127,11 +127,25 @@ export class SelectionManager {
         player.selectedUnits[u].sendTo(cell)
       }
     }
+    const selectedMoveSound = this.getSelectionMoveSound(player.selectedUnits)
+    if (selectedMoveSound) {
+      sound.play(Array.isArray(selectedMoveSound) ? randomItem(selectedMoveSound) : selectedMoveSound)
+      return
+    }
     if (hasSentSoldier) {
       sound.play(randomItem(['5075', '5076', '5128', '5164']))
     } else if (hasSentVillager) {
       sound.play('5006')
     }
+  }
+
+  getSelectionMoveSound(units) {
+    if (!units.length) return null
+    if (!units.every(unit => unit.sounds?.move != null)) return null
+    const moveSound = units[0].sounds.move
+    const normalizedMoveSound = JSON.stringify(moveSound)
+    if (!units.every(unit => JSON.stringify(unit.sounds.move) === normalizedMoveSound)) return null
+    return moveSound
   }
 
   isUnitInsideSelection(unit, rectangle) {

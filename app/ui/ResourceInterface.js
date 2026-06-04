@@ -1,7 +1,7 @@
 import { MENU_INFO_IDS, RESOURCE_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import { appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+import { appendQuantityInfo, createHitPointsInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
 export class ResourceInterface {
   constructor(resource) {
@@ -18,7 +18,7 @@ export class ResourceInterface {
     element.appendChild(createInfoImage(MENU_INFO_IDS.icon, getIconPath(data.icon)))
 
     if (resource.hitPoints) {
-      element.appendChild(createInfoText(MENU_INFO_IDS.hitPoints, resource.hitPoints + '/' + resource.totalHitPoints))
+      element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, resource.hitPoints, resource.totalHitPoints))
     }
 
     if (resource.quantity) {
@@ -37,6 +37,10 @@ export class ResourceInterface {
         case RESOURCE_TYPES.gold:
           iconToUse = menu.infoIcons['gold']
           break
+      }
+
+      if (resource.category === 'Fish') {
+        iconToUse = menu.infoIcons['food']
       }
 
       appendQuantityInfo(element, iconToUse, resource.quantity)

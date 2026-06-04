@@ -3,15 +3,28 @@ import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
 
-const DIRECTIONS = {
-  south: 0,
-  southwest: 1,
-  west: 2,
-  northwest: 3,
-  north: 4,
+const FIVE_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north']
+const EIGHT_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north', 'northeast', 'east', 'southeast']
+
+function getSheetDirectionOrder(textures, directionCount) {
+  const frameCount = Object.keys(textures).length
+
+  if (directionCount === 8) {
+    return EIGHT_DIRECTION_ORDER
+  }
+  if (directionCount === 5) {
+    return FIVE_DIRECTION_ORDER
+  }
+  if (frameCount % 5 === 0) {
+    return FIVE_DIRECTION_ORDER
+  }
+  if (frameCount % 8 === 0) {
+    return EIGHT_DIRECTION_ORDER
+  }
+  return null
 }
 
-export function getAnimationFrames(textures, direction) {
+export function getAnimationFrames(textures, direction, directionCount = null) {
   const names = Object.keys(textures).sort((a, b) => {
     const na = parseInt(a.split('_')[0], 10)
     const nb = parseInt(b.split('_')[0], 10)
@@ -23,11 +36,14 @@ export function getAnimationFrames(textures, direction) {
     return names.map(name => textures[name])
   }
 
-  const framesPerDirection = names.length / 5
+  const directionOrder = getSheetDirectionOrder(textures, directionCount)
+  if (!directionOrder) {
+    return names.map(name => textures[name])
+  }
+  const framesPerDirection = names.length / directionOrder.length
+  const directionIndex = directionOrder.indexOf(direction)
 
-  const directionIndex = DIRECTIONS[direction]
-
-  if (directionIndex === undefined) {
+  if (directionIndex < 0) {
     throw new Error(`Unknown direction: ${direction}`)
   }
 
@@ -68,22 +84,30 @@ export function setUnitTexture(sheet, instance) {
   const goto = instance.currentSheet === sheet && instance.sprite.currentFrame
   instance.currentSheet = sheet
   const direction = degreeToDirection(instance.degree)
-  switch (direction) {
-    case 'southeast':
-      instance.sprite.scale.x = -1
-      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'southwest')
-      break
-    case 'northeast':
-      instance.sprite.scale.x = -1
-      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'northwest')
-      break
-    case 'east':
-      instance.sprite.scale.x = -1
-      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'west')
-      break
-    default:
-      instance.sprite.scale.x = 1
-      instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction)
+  const directionCount = instance.sheetDirectionCounts?.[sheet] ?? null
+  const directionOrder = getSheetDirectionOrder(instance[sheet].textures, directionCount)
+
+  if (directionOrder?.length === 8) {
+    instance.sprite.scale.x = 1
+    instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount)
+  } else {
+    switch (direction) {
+      case 'southeast':
+        instance.sprite.scale.x = -1
+        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'southwest', directionCount)
+        break
+      case 'northeast':
+        instance.sprite.scale.x = -1
+        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'northwest', directionCount)
+        break
+      case 'east':
+        instance.sprite.scale.x = -1
+        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'west', directionCount)
+        break
+      default:
+        instance.sprite.scale.x = 1
+        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount)
+    }
   }
   instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()

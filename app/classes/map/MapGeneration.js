@@ -24,13 +24,22 @@ export class MapGeneration {
 
   pickAmbientAnimalType(i, j) {
     const animals = Assets.cache.get('config').animals
-    const dangerousAnimalTypes = new Set(['Lion', 'Crocodile'])
+    const dangerousAnimalTypes = new Set(['Lion', 'Crocodile', 'Alligator'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
     })
 
     return randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
+  }
+
+  pickFishResourceType() {
+    const resources = Assets.cache.get('config').resources
+    const fishTypes = Object.entries(resources)
+      .filter(([, definition]) => definition.category === 'Fish')
+      .map(([type]) => type)
+
+    return randomItem(fishTypes.length ? fishTypes : [RESOURCE_TYPES.salmon])
   }
 
   generateFromJSON({ map, players, camera, resources, animals }) {
@@ -498,8 +507,9 @@ export class MapGeneration {
             }
           }
           if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
+            const fishType = this.pickFishResourceType()
             this.map.resources.add(
-              this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.salmon }, this.map.context))
+              this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context))
             )
           }
         }

@@ -6,15 +6,14 @@ import { getVolume, setVolume, getGameSpeed, setGameSpeed, SPEED_PRESETS } from 
  * @param {object} opts
  * @param {Function} [opts.onLangChange] - called after language changes (e.g. to re-render menu)
  * @param {Function} [opts.onSpeedChange] - called with new speed value for live in-game updates
- * @param {Array<{ key: string, value: number }>} [opts.speedPresets] - speed options to display in the UI
  */
-export function buildSettingsContent({ onLangChange, onSpeedChange, speedPresets = SPEED_PRESETS } = {}) {
+export function buildSettingsContent({ onLangChange, onSpeedChange } = {}) {
   const content = document.createElement('div')
   content.className = 'config-form'
 
   content.appendChild(_langRow(onLangChange))
   content.appendChild(_volumeRow())
-  content.appendChild(_speedRow(onSpeedChange, speedPresets))
+  content.appendChild(_speedRow(onSpeedChange))
 
   return content
 }
@@ -60,21 +59,17 @@ function _volumeRow() {
   return row
 }
 
-function _speedRow(onSpeedChange, speedPresets) {
+function _speedRow(onSpeedChange) {
   const row = _row('gameSpeed')
   const select = document.createElement('select')
-  const currentSpeed = getGameSpeed()
-  const presets = speedPresets.some(({ value }) => value === currentSpeed)
-    ? speedPresets
-    : [...speedPresets, { key: `${currentSpeed}x`, value: currentSpeed }]
 
-  presets.forEach(({ key, value }) => {
+  SPEED_PRESETS.forEach(({ key, value }) => {
     const option = document.createElement('option')
     option.value = String(value)
     option.textContent = t(key)
     select.appendChild(option)
   })
-  select.value = String(currentSpeed)
+  select.value = String(getGameSpeed())
   select.addEventListener('change', evt => {
     const v = parseFloat(evt.target.value)
     setGameSpeed(v)

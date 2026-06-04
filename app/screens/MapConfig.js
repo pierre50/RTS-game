@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
+import { CIVILIZATIONS } from '../config/civilizations'
 
 const DIFFICULTIES = [
   { label: () => t('diffEasy'), value: 'easy' },
@@ -48,7 +49,7 @@ const MAP_TYPES = [
   { label: () => t('mapTypeIlot'), value: 'ilot' },
 ]
 
-const CIVS = [{ label: () => t('civGreek'), value: 'Greek' }]
+const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
 
 const PLAYER_COLORS = [
   { name: 'blue', hex: '#3f5f9f' },

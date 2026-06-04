@@ -122,6 +122,9 @@ export class UnitCombat {
       }
       onSpriteLoopAtFrame(unit.sprite, 6, () => {
         if (!unit.getActionCondition(unit.dest) || !unit.realDest) return
+        if (unit.sounds?.attack && unit.context.controls.instanceIsAudible(unit)) {
+          sound.play(Array.isArray(unit.sounds.attack) ? randomItem(unit.sounds.attack) : unit.sounds.attack)
+        }
         const projectile = new Projectile(
           {
             owner: unit,

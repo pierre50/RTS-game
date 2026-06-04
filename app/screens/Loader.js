@@ -29,6 +29,15 @@ export default class LoaderScreen extends Container {
       await Assets.loadBundle(bundle)
     }
 
+    Assets.cache.set('config', {
+      buildings: Assets.cache.get('buildingsData'),
+      units: Assets.cache.get('unitsData'),
+      resources: Assets.cache.get('resourcesData'),
+      animals: Assets.cache.get('animalsData'),
+      projectiles: Assets.cache.get('projectilesData'),
+      cells: Assets.cache.get('cellsData'),
+    })
+
     this.loadingDiv.remove()
   }
 }

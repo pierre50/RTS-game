@@ -187,6 +187,7 @@ export class AIEconomy {
     }
 
     const LARGE_HP = 20 // threshold for group hunt (elephant = 45 HP)
+    const MIN_ELEPHANT_HUNTERS = 5
     const DAMAGE_PER_HUNTER = 4 // spear damage per throw
 
     let actions = 0
@@ -201,10 +202,16 @@ export class AIEconomy {
     for (const animal of large) {
       if (totalHunters >= maxTotalHunters || availableVillagers.length === 0) break
       const current = huntersByAnimal.get(animal) || 0
+      const isElephant = animal.type === 'Elephant'
+      const maxAssignable = Math.min(maxTotalHunters - totalHunters, availableVillagers.length)
+
+      // Don't start or reinforce an elephant hunt unless we can field a full group of 5 at once.
+      if (isElephant && current < MIN_ELEPHANT_HUNTERS && current + maxAssignable < MIN_ELEPHANT_HUNTERS) continue
+
       // How many hunters needed to kill this animal within ~3 attack rounds
       const needed = Math.max(0, Math.ceil(animal.hitPoints / DAMAGE_PER_HUNTER) - current)
       if (needed === 0) continue
-      const toSend = Math.min(needed, maxTotalHunters - totalHunters, availableVillagers.length)
+      const toSend = Math.min(needed, maxAssignable)
       for (let i = 0; i < toSend; i++) {
         availableVillagers.shift().sendToHunt(animal)
         huntersByAnimal.set(animal, (huntersByAnimal.get(animal) || 0) + 1)

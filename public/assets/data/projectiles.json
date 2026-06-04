@@ -1,0 +1,21 @@
+{
+  "Spear": {
+    "size": 10,
+    "speed": 8,
+    "sounds": {
+      "start": 5125
+    }
+  },
+  "Arrow": {
+    "size": 3,
+    "speed": 14,
+    "sounds": {
+      "start": [
+        5009,
+        5010,
+        5011,
+        5012
+      ]
+    }
+  }
+}

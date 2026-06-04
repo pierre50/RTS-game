@@ -1,7 +1,6 @@
 import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
-import { DEV_SPEED_PRESETS } from '../lib/settings'
 import { buildSettingsContent } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
 
@@ -70,7 +69,6 @@ export class PauseMenu {
   _openSettings() {
     const { menu } = this
     const content = buildSettingsContent({
-      speedPresets: DEV_SPEED_PRESETS,
       onSpeedChange: v => {
         menu.context.app.ticker.speed = v
       },

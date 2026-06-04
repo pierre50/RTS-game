@@ -26,7 +26,7 @@ let _volume = (() => {
 
 let _gameSpeed = (() => {
   const stored = parseFloat(localStorage.getItem(SPEED_KEY))
-  return isGameSpeedPreset(stored) ? stored : DEFAULT_SPEED
+  return isVisibleGameSpeedPreset(stored) ? stored : DEFAULT_SPEED
 })()
 
 sound.volumeAll = _volume
@@ -47,10 +47,14 @@ export function getGameSpeed() {
 
 export function setGameSpeed(v) {
   const speed = Number(v)
-  if (!isGameSpeedPreset(speed)) return false
+  if (!isVisibleGameSpeedPreset(speed)) return false
   _gameSpeed = speed
   localStorage.setItem(SPEED_KEY, speed)
   return true
+}
+
+export function isVisibleGameSpeedPreset(v) {
+  return SPEED_PRESETS.some(p => p.value === Number(v))
 }
 
 export function isGameSpeedPreset(v) {

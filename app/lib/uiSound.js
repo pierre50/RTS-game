@@ -1,9 +1,21 @@
 import { getVolume } from './settings'
 
-const _audio = new Audio('assets/sounds/5035.wav')
+const _audioCache = new Map()
+
+function getAudio(soundId) {
+  if (!_audioCache.has(soundId)) {
+    _audioCache.set(soundId, new Audio(`assets/sounds/${soundId}.wav`))
+  }
+  return _audioCache.get(soundId)
+}
 
 export function playClickSound() {
-  _audio.currentTime = 0
-  _audio.volume = getVolume()
-  _audio.play().catch(() => {})
+  playUiSound('5035')
+}
+
+export function playUiSound(soundId) {
+  const audio = getAudio(soundId)
+  audio.currentTime = 0
+  audio.volume = getVolume()
+  audio.play().catch(() => {})
 }
