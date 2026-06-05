@@ -1,0 +1,39 @@
+{
+  "frames": {
+    "000_702.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 69
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 69
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 69
+      },
+      "anchor": {
+        "x": 0.576271186440678,
+        "y": 0.5362318840579711
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 59,
+      "h": 69
+    },
+    "scale": 1
+  }
+}

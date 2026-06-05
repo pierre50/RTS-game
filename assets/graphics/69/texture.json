@@ -1,33 +1,9 @@
 {
   "frames": {
-    "002_69.png": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 61
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 61
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 61
-      },
-      "anchor": {
-        "x": 0.49230769230769234,
-        "y": 0.7704918032786885
-      }
-    },
     "000_69.png": {
       "frame": {
         "x": 0,
-        "y": 61,
+        "y": 0,
         "w": 41,
         "h": 47
       },
@@ -50,8 +26,8 @@
     },
     "001_69.png": {
       "frame": {
-        "x": 0,
-        "y": 108,
+        "x": 42,
+        "y": 0,
         "w": 41,
         "h": 47
       },
@@ -71,16 +47,40 @@
         "x": 0.5365853658536586,
         "y": 0.8085106382978723
       }
+    },
+    "002_69.png": {
+      "frame": {
+        "x": 84,
+        "y": 0,
+        "w": 65,
+        "h": 61
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 61
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 61
+      },
+      "anchor": {
+        "x": 0.49230769230769234,
+        "y": 0.7704918032786885
+      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 65,
-      "h": 155
+      "w": 149,
+      "h": 61
     },
     "scale": 1
   }

@@ -26,7 +26,7 @@
     },
     "001_258.png": {
       "frame": {
-        "x": 114,
+        "x": 115,
         "y": 0,
         "w": 114,
         "h": 64
@@ -50,7 +50,7 @@
     },
     "002_258.png": {
       "frame": {
-        "x": 228,
+        "x": 230,
         "y": 0,
         "w": 114,
         "h": 64
@@ -74,7 +74,7 @@
     },
     "003_258.png": {
       "frame": {
-        "x": 342,
+        "x": 345,
         "y": 0,
         "w": 114,
         "h": 63
@@ -98,12 +98,12 @@
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 456,
+      "w": 459,
       "h": 64
     },
     "scale": 1

@@ -1,0 +1,87 @@
+{
+  "frames": {
+    "000_100.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 8
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 8
+      },
+      "sourceSize": {
+        "w": 15,
+        "h": 8
+      },
+      "anchor": {
+        "x": 2.066666666666667,
+        "y": -0.125
+      }
+    },
+    "001_100.png": {
+      "frame": {
+        "x": 16,
+        "y": 0,
+        "w": 41,
+        "h": 22
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 41,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 41,
+        "h": 22
+      },
+      "anchor": {
+        "x": 0.7560975609756098,
+        "y": 0.5909090909090909
+      }
+    },
+    "002_100.png": {
+      "frame": {
+        "x": 58,
+        "y": 0,
+        "w": 40,
+        "h": 22
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 22
+      },
+      "anchor": {
+        "x": 1.05,
+        "y": 0.36363636363636365
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 98,
+      "h": 22
+    },
+    "scale": 1
+  }
+}

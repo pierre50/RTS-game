@@ -26,8 +26,8 @@
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
@@ -35,12 +35,5 @@
       "h": 110
     },
     "scale": 1
-  },
-  "animations": {
-    "south": ["000_60.png"],
-    "southwest": ["001_60.png"],
-    "west": ["002_60.png"],
-    "northwest": ["003_60.png"],
-    "north": ["004_60.png"]
   }
 }

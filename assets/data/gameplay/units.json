@@ -1,0 +1,779 @@
+{
+  "Villager": {
+    "category": "Civilian",
+    "totalHitPoints": 25,
+    "sight": 4,
+    "speed": 1.1,
+    "rateOfFire": 1.5,
+    "trainingTime": 20,
+    "icon": "000_50730",
+    "meleeAttack": 3,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 1,
+    "cost": {
+      "food": 50
+    },
+    "showBuildings": true,
+    "showLoading": true,
+    "loadingMax": {
+      "wheat": 10,
+      "wood": 10,
+      "berry": 10,
+      "stone": 10,
+      "gold": 10,
+      "meat": 10,
+      "fish": 10
+    },
+    "allAssets": {
+      "default": {
+        "standingSheet": "418",
+        "walkingSheet": "657",
+        "dyingSheet": "314",
+        "corpseSheet": "373"
+      },
+      "attacker": {
+        "actionSheet": "224",
+        "standingSheet": "418",
+        "dyingSheet": "314",
+        "walkingSheet": "657",
+        "corpseSheet": "373"
+      },
+      "hunter": {
+        "actionSheet": "624",
+        "harvestSheet": "626",
+        "standingSheet": "435",
+        "walkingSheet": "676",
+        "dyingSheet": "332",
+        "corpseSheet": "389",
+        "loadedSheet": "272"
+      },
+      "fisher": {
+        "actionSheet": "631",
+        "standingSheet": "431",
+        "walkingSheet": "676",
+        "dyingSheet": "332",
+        "corpseSheet": "389",
+        "loadedSheet": "271"
+      },
+      "farmer": {
+        "actionSheet": "630",
+        "standingSheet": "430",
+        "walkingSheet": "670",
+        "dyingSheet": "326",
+        "corpseSheet": "388",
+        "loadedSheet": "672"
+      },
+      "forager": {
+        "actionSheet": "632",
+        "standingSheet": "432",
+        "walkingSheet": "672",
+        "dyingSheet": "328",
+        "corpseSheet": "390",
+        "loadedSheet": "672"
+      },
+      "stoneminer": {
+        "actionSheet": "633",
+        "standingSheet": "441",
+        "walkingSheet": "683",
+        "dyingSheet": "315",
+        "corpseSheet": "400",
+        "loadedSheet": "274"
+      },
+      "goldminer": {
+        "actionSheet": "633",
+        "standingSheet": "441",
+        "walkingSheet": "683",
+        "dyingSheet": "315",
+        "corpseSheet": "400",
+        "loadedSheet": "281"
+      },
+      "woodcutter": {
+        "actionSheet": "625",
+        "standingSheet": "440",
+        "walkingSheet": "682",
+        "dyingSheet": "315",
+        "corpseSheet": "399",
+        "loadedSheet": "273"
+      },
+      "builder": {
+        "actionSheet": "628",
+        "standingSheet": "419",
+        "walkingSheet": "658",
+        "dyingSheet": "315",
+        "corpseSheet": "374"
+      }
+    },
+    "gatheringRate": {
+      "forager": 0.45,
+      "hunter": 0.4725,
+      "fisher": 0.6,
+      "farmer": 0.45,
+      "woodcutter": 0.55,
+      "stoneminer": 0.5175,
+      "goldminer": 0.5175
+    },
+    "sounds": {
+      "create": 5166,
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ],
+      "command": 5006,
+      "buildCommand": 5118,
+      "huntCommand": 5005,
+      "work": {
+        "gatherFood": 5178,
+        "chopWood": 5048,
+        "forageBerry": 5085,
+        "mineStone": 5159,
+        "mineGold": 5159,
+        "build": 5107,
+        "throwSpear": 5125
+      }
+    }
+  },
+  "Clubman": {
+    "category": "Infantry",
+    "totalHitPoints": 40,
+    "sight": 4,
+    "speed": 1.2,
+    "rateOfFire": 1.5,
+    "trainingTime": 27,
+    "icon": "002_50730",
+    "meleeAttack": 3,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 50
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "BattleAxe"
+      }
+    ],
+    "assets": {
+      "standingSheet": "425",
+      "walkingSheet": "664",
+      "actionSheet": "212",
+      "dyingSheet": "321",
+      "corpseSheet": "380"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "Scout": {
+    "category": "Cavalery",
+    "totalHitPoints": 60,
+    "sight": 7,
+    "speed": 2,
+    "rateOfFire": 0.9,
+    "trainingTime": 30,
+    "icon": "031_50730",
+    "meleeAttack": 3,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 100
+    },
+    "assets": {
+      "standingSheet": "445",
+      "walkingSheet": "651",
+      "actionSheet": "227",
+      "dyingSheet": "343",
+      "corpseSheet": "403"
+    },
+    "sounds": {
+      "command": [
+        5120,
+        5121,
+        5122,
+        5123
+      ],
+      "die": 5108,
+      "move": 5092,
+      "hit": [
+        5138,
+        5139,
+        5140
+      ]
+    }
+  },
+  "Bowman": {
+    "category": "Archer",
+    "totalHitPoints": 35,
+    "sight": 7,
+    "speed": 1.2,
+    "rateOfFire": 1.4,
+    "trainingTime": 30,
+    "icon": "006_50730",
+    "pierceAttack": 3,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 5,
+    "projectile": "Arrow",
+    "cost": {
+      "food": 40,
+      "wood": 20
+    },
+    "assets": {
+      "standingSheet": "413",
+      "walkingSheet": "652",
+      "actionSheet": "203",
+      "dyingSheet": "308",
+      "corpseSheet": "367"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
+    }
+  },
+  "Priest": {
+    "category": "Civilian",
+    "totalHitPoints": 25,
+    "sight": 12,
+    "speed": 0.8,
+    "trainingTime": 50,
+    "icon": "001_50730",
+    "healing": 1,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 10,
+    "cost": {
+      "gold": 125
+    },
+    "assets": {
+      "standingSheet": "443",
+      "walkingSheet": "685",
+      "actionSheet": "634",
+      "dyingSheet": "341",
+      "corpseSheet": "402"
+    },
+    "sounds": {
+      "create": 5165,
+      "command": [
+        5050,
+        5051,
+        5109
+      ],
+      "move": [
+        5050,
+        5051,
+        5109
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
+    }
+  },
+  "Axeman": {
+    "category": "Infantry",
+    "totalHitPoints": 50,
+    "sight": 4,
+    "speed": 1.2,
+    "rateOfFire": 1.5,
+    "trainingTime": 27,
+    "icon": "003_50730",
+    "meleeAttack": 5,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 50
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "ShortSword"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BattleAxe"
+      }
+    ],
+    "assets": {
+      "standingSheet": "415",
+      "walkingSheet": "654",
+      "actionSheet": "205",
+      "dyingSheet": "311",
+      "corpseSheet": "370"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "ShortSwordsman": {
+    "category": "Infantry",
+    "totalHitPoints": 60,
+    "sight": 4,
+    "speed": 1.2,
+    "rateOfFire": 1.5,
+    "trainingTime": 27,
+    "icon": "004_50730",
+    "meleeAttack": 7,
+    "meleeArmor": 1,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 35,
+      "gold": 15
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "BroadSword"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ShortSword"
+      }
+    ],
+    "assets": {
+      "standingSheet": "416",
+      "walkingSheet": "655",
+      "actionSheet": "206",
+      "dyingSheet": "312",
+      "corpseSheet": "371"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "BroadSwordsman": {
+    "category": "Infantry",
+    "totalHitPoints": 70,
+    "sight": 4,
+    "speed": 1.2,
+    "rateOfFire": 1.5,
+    "trainingTime": 27,
+    "icon": "005_50730",
+    "meleeAttack": 9,
+    "meleeArmor": 1,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 35,
+      "gold": 15
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "LongSword"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BroadSword"
+      }
+    ],
+    "assets": {
+      "standingSheet": "437",
+      "walkingSheet": "678",
+      "actionSheet": "220",
+      "dyingSheet": "334",
+      "corpseSheet": "395"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "LongSwordsman": {
+    "category": "Infantry",
+    "totalHitPoints": 80,
+    "sight": 4,
+    "speed": 1.2,
+    "rateOfFire": 1.5,
+    "trainingTime": 27,
+    "icon": "027_50730",
+    "meleeAttack": 11,
+    "meleeArmor": 2,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 35,
+      "gold": 15
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "LongSword"
+      }
+    ],
+    "assets": {
+      "standingSheet": "436",
+      "walkingSheet": "677",
+      "actionSheet": "219",
+      "dyingSheet": "333",
+      "corpseSheet": "394"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "ImprovedBowman": {
+    "category": "Archer",
+    "totalHitPoints": 40,
+    "sight": 8,
+    "speed": 1.2,
+    "rateOfFire": 1.4,
+    "trainingTime": 30,
+    "icon": "007_50730",
+    "pierceAttack": 4,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 6,
+    "projectile": "Arrow",
+    "cost": {
+      "food": 40,
+      "gold": 20
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "notincludes",
+        "value": "CompositeBow"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ImprovedBow"
+      }
+    ],
+    "assets": {
+      "standingSheet": "414",
+      "walkingSheet": "653",
+      "actionSheet": "204",
+      "dyingSheet": "309",
+      "corpseSheet": "368"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
+    }
+  },
+  "Hoplite": {
+    "category": "Infantry",
+    "totalHitPoints": 120,
+    "sight": 4,
+    "speed": 0.9,
+    "rateOfFire": 1.5,
+    "trainingTime": 36,
+    "icon": "016_50730",
+    "meleeAttack": 17,
+    "meleeArmor": 5,
+    "pierceArmor": 0,
+    "cost": {
+      "food": 60,
+      "gold": 40
+    },
+    "assets": {
+      "standingSheet": "442",
+      "walkingSheet": "684",
+      "actionSheet": "225",
+      "dyingSheet": "340",
+      "corpseSheet": "401"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
+    }
+  },
+  "CompositeBowman": {
+    "category": "Archer",
+    "totalHitPoints": 45,
+    "sight": 9,
+    "speed": 1.2,
+    "rateOfFire": 1.4,
+    "trainingTime": 30,
+    "icon": "008_50730",
+    "pierceAttack": 5,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 7,
+    "projectile": "Arrow",
+    "cost": {
+      "food": 40,
+      "gold": 20
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "CompositeBow"
+      }
+    ],
+    "assets": {
+      "standingSheet": "439",
+      "walkingSheet": "681",
+      "actionSheet": "223",
+      "dyingSheet": "337",
+      "corpseSheet": "398"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
+    }
+  },
+  "ChariotArcher": {
+    "category": "Archer",
+    "totalHitPoints": 70,
+    "sight": 9,
+    "speed": 2,
+    "rateOfFire": 1.5,
+    "trainingTime": 40,
+    "icon": "028_50730",
+    "pierceAttack": 4,
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "range": 7,
+    "projectile": "Arrow",
+    "cost": {
+      "food": 70,
+      "wood": 40
+    },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Wheel"
+      }
+    ],
+    "assets": {
+      "standingSheet": "412",
+      "walkingSheet": "650",
+      "actionSheet": "202",
+      "dyingSheet": "310",
+      "corpseSheet": "369"
+    },
+    "sounds": {
+      "command": [
+        5120,
+        5121,
+        5122,
+        5123
+      ],
+      "move": 5092,
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": 5108
+    }
+  },
+  "FishingBoat": {
+    "category": "Boat",
+    "totalHitPoints": 45,
+    "sight": 6,
+    "speed": 1.45,
+    "trainingTime": 20,
+    "showLoading": true,
+    "icon": "018_50730",
+    "meleeArmor": 0,
+    "pierceArmor": 0,
+    "cost": {
+      "wood": 50
+    },
+    "loadingMax": {
+      "fish": 10
+    },
+    "gatheringRate": {
+      "fisher": 0.4
+    },
+    "assets": {
+      "standingSheet": "473",
+      "walkingSheet": "473",
+      "actionSheet": "473",
+      "dyingSheet": "473",
+      "corpseSheet": "473"
+    },
+    "sounds": {
+      "create": 5030,
+      "command": 5027,
+      "move": 5027,
+      "work": {
+        "fishing": [
+          5182,
+          5183,
+          5184
+        ]
+      }
+    }
+  }
+}

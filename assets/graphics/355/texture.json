@@ -23,16 +23,160 @@
         "x": 0.4875,
         "y": 0.49056603773584906
       }
+    },
+    "001_355.png": {
+      "frame": {
+        "x": 81,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "002_355.png": {
+      "frame": {
+        "x": 722,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "003_355.png": {
+      "frame": {
+        "x": 1363,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "004_355.png": {
+      "frame": {
+        "x": 0,
+        "y": 481,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "005_355.png": {
+      "frame": {
+        "x": 641,
+        "y": 481,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "006_355.png": {
+      "frame": {
+        "x": 1282,
+        "y": 481,
+        "w": 640,
+        "h": 480
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 480
+      },
+      "sourceSize": {
+        "w": 640,
+        "h": 480
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 80,
-      "h": 53
+      "w": 2003,
+      "h": 961
     },
     "scale": 1
   }

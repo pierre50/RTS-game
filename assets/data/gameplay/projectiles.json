@@ -1,0 +1,22 @@
+{
+  "Spear": {
+    "size": 10,
+    "speed": 8,
+    "sounds": {
+      "launch": 5125
+    }
+  },
+  "Arrow": {
+    "size": 3,
+    "speed": 14,
+    "sounds": {
+      "launch": [
+        5009,
+        5010,
+        5011,
+        5012
+      ],
+      "impact": 5028
+    }
+  }
+}

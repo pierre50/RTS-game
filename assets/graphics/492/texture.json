@@ -4,36 +4,35 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 61,
-        "h": 62
+        "w": 65,
+        "h": 69
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 61,
-        "h": 62
+        "w": 65,
+        "h": 69
       },
       "sourceSize": {
-        "w": 61,
-        "h": 62
+        "w": 65,
+        "h": 69
       },
       "anchor": {
-        "x": 0.49344262295081966,
-        "y": 0.9516129032258065
-      },
-      "hitArea": [0, 1, -8, -4, -11, -15, -29, -24, -29, -35, -17, -53, 1, -58, 19, -50, 30, -24, 25, -14, 10, -7]
+        "x": 0.36923076923076925,
+        "y": 0.855072463768116
+      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.5",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 61,
-      "h": 62
+      "w": 65,
+      "h": 69
     },
     "scale": 1
   }

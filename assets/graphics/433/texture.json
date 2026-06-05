@@ -1,32 +1,32 @@
 {
   "frames": {
-    "002_433.png": {
+    "000_433.png": {
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 61,
-        "h": 14
+        "w": 14,
+        "h": 29
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 61,
-        "h": 14
+        "w": 14,
+        "h": 29
       },
       "sourceSize": {
-        "w": 61,
-        "h": 14
+        "w": 14,
+        "h": 29
       },
       "anchor": {
-        "x": 0.3442622950819672,
-        "y": 0.6428571428571429
+        "x": 0.5,
+        "y": 0.6206896551724138
       }
     },
     "001_433.png": {
       "frame": {
-        "x": 61,
+        "x": 15,
         "y": 0,
         "w": 44,
         "h": 21
@@ -48,10 +48,34 @@
         "y": 0.6190476190476191
       }
     },
+    "002_433.png": {
+      "frame": {
+        "x": 60,
+        "y": 0,
+        "w": 61,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 61,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 61,
+        "h": 14
+      },
+      "anchor": {
+        "x": 0.3442622950819672,
+        "y": 0.6428571428571429
+      }
+    },
     "003_433.png": {
       "frame": {
-        "x": 0,
-        "y": 14,
+        "x": 122,
+        "y": 0,
         "w": 43,
         "h": 29
       },
@@ -74,8 +98,8 @@
     },
     "004_433.png": {
       "frame": {
-        "x": 43,
-        "y": 14,
+        "x": 166,
+        "y": 0,
         "w": 14,
         "h": 37
       },
@@ -95,48 +119,17 @@
         "x": 0.5,
         "y": 0.40540540540540543
       }
-    },
-    "000_433.png": {
-      "frame": {
-        "x": 0,
-        "y": 43,
-        "w": 14,
-        "h": 29
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 14,
-        "h": 29
-      },
-      "sourceSize": {
-        "w": 14,
-        "h": 29
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.6206896551724138
-      }
     }
   },
   "meta": {
-    "app": "http://free-tex-packer.com",
-    "version": "0.6.7",
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 105,
-      "h": 72
+      "w": 180,
+      "h": 37
     },
     "scale": 1
-  },
-  "animations": {
-    "south": ["000_433.png"],
-    "southwest": ["001_433.png"],
-    "west": ["002_433.png"],
-    "northwest": ["003_433.png"],
-    "north": ["004_433.png"]
   }
 }
