@@ -116,8 +116,7 @@
   overflow: hidden;
   border: 1px solid #2f120d;
   border-radius: 3px;
-  background:
-    linear-gradient(180deg, #8b2e1d 0%, #6d1d14 100%);
+  background: linear-gradient(180deg, #8b2e1d 0%, #6d1d14 100%);
   box-shadow:
     inset 1px 1px 0 rgba(255, 208, 196, 0.25),
     inset -1px -1px 0 rgba(46, 10, 7, 0.65);
@@ -128,18 +127,13 @@
   position: absolute;
   inset: 1px;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.08) 0 2px,
-    rgba(0, 0, 0, 0.06) 2px 4px
-  );
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 2px, rgba(0, 0, 0, 0.06) 2px 4px);
 }
 
 .bottombar-info .hit-points-fill {
   height: 100%;
   border-radius: 2px;
-  background:
-    linear-gradient(180deg, #66de62 0%, #2f9e37 100%);
+  background: linear-gradient(180deg, #66de62 0%, #2f9e37 100%);
   box-shadow:
     inset 1px 1px 0 rgba(225, 255, 201, 0.35),
     inset -1px -1px 0 rgba(15, 69, 25, 0.5);

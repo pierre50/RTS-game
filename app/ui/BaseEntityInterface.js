@@ -39,9 +39,7 @@ export function syncHitPointsInfo(element, value, totalHitPoints) {
   element.textContent = `${safeCurrent}/${safeMax}`
 
   const fill =
-    element.closest('.hit-points-display')?.querySelector('.hit-points-fill') ||
-    element._hitPointsFill ||
-    null
+    element.closest('.hit-points-display')?.querySelector('.hit-points-fill') || element._hitPointsFill || null
   if (fill) {
     fill.style.width = `${Math.round(ratio * 100)}%`
   }

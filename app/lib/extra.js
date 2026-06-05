@@ -135,7 +135,12 @@ export function setUnitTexture(sheet, instance) {
 
   if (directionOrder?.length === 8) {
     instance.sprite.scale.x = 1
-    instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount, directionOrderOverride)
+    instance.sprite.textures = getAnimationFrames(
+      instance[sheet].textures,
+      direction,
+      directionCount,
+      directionOrderOverride
+    )
   } else {
     switch (direction) {
       case 'southeast':

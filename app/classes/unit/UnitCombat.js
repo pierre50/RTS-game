@@ -167,11 +167,7 @@ export class UnitCombat {
         map.addChild(projectile)
       }
       this.performRangedAttackCycle(launchProjectile)
-      unit.startInterval(
-        () => this.performRangedAttackCycle(launchProjectile),
-        unit.rateOfFire * 1000,
-        false
-      )
+      unit.startInterval(() => this.performRangedAttackCycle(launchProjectile), unit.rateOfFire * 1000, false)
     } else {
       unit.sprite.loop = true
       unit.sprite.onComplete = null

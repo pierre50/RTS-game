@@ -483,7 +483,22 @@ export class MapGeneration {
                 floorSpritesheets = ['275', '276', '277', '278', '303', '304', '305', '306', '307']
                 break
               case 'Jungle':
-                floorSpritesheets = ['275', '276', '277', '278', '292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+                floorSpritesheets = [
+                  '275',
+                  '276',
+                  '277',
+                  '278',
+                  '292',
+                  '293',
+                  '294',
+                  '295',
+                  '296',
+                  '297',
+                  '298',
+                  '299',
+                  '300',
+                  '301',
+                ]
                 break
               default:
                 floorSpritesheets = ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
@@ -535,9 +550,7 @@ export class MapGeneration {
           }
           if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
             const fishType = this.pickFishResourceType(i, j)
-            this.map.resources.add(
-              this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context))
-            )
+            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
           }
         }
       }

@@ -253,7 +253,11 @@ export function createDevCommands() {
     aliases: ['aii'],
     usage: 'ai-info [on|off|index]',
     describe: 'Toggle a live AI debug overlay for all AI players or one by index',
-    complete: (_args, context) => ['on', 'off', ...context.players.filter(p => p.type === 'ai').map((_, index) => `${index}`)],
+    complete: (_args, context) => [
+      'on',
+      'off',
+      ...context.players.filter(p => p.type === 'ai').map((_, index) => `${index}`),
+    ],
     run: ([value], context) => aiInfo(context, value),
   })
 

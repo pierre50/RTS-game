@@ -120,7 +120,7 @@
   },
   "Whale": {
     "category": "Fish",
-    "totalQuantity": 250,
+    "totalQuantity": 300,
     "icon": "034_50730",
     "allowAction": [
       "Villager",

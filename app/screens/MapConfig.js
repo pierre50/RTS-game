@@ -174,9 +174,7 @@ export default class MapConfig {
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group button-group--row'
-    buttons.appendChild(
-      this._createButton(t('startGame'), () => this._startGame())
-    )
+    buttons.appendChild(this._createButton(t('startGame'), () => this._startGame()))
 
     content.appendChild(layout)
     content.appendChild(buttons)

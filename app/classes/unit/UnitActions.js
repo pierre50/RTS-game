@@ -11,7 +11,13 @@ import {
   TYPE_ACTION,
   UNIT_TYPES,
 } from '../../constants'
-import { degreeToDirection, getInstanceDegree, onSpriteLoopAtFrame, playSoundCue, playerCanSeeInstance } from '../../lib'
+import {
+  degreeToDirection,
+  getInstanceDegree,
+  onSpriteLoopAtFrame,
+  playSoundCue,
+  playerCanSeeInstance,
+} from '../../lib'
 import { Projectile } from '../projectile'
 
 export class UnitActions {
@@ -376,11 +382,10 @@ export class UnitActions {
         }
         break
       case ACTION_TYPES.takemeat:
-        this.startGathering(
-          LOADING_TYPES.meat,
-          this.getWorkSound('takeMeat', null),
-          { checkOwner: true, updateTexture: true }
-        )
+        this.startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', null), {
+          checkOwner: true,
+          updateTexture: true,
+        })
         break
       case ACTION_TYPES.fishing:
         this.startGathering(LOADING_TYPES.fish, this.getWorkSound('fishing'), { checkOwner: true })

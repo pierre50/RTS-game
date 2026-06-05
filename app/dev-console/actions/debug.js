@@ -165,7 +165,9 @@ function getAiDebugLines(aiPlayers, targetIndex = null) {
 
     lines.push(`AI [${idx}] ${ai.label} (${ai.difficulty})`)
     lines.push(`Phase ${ai.phase} | Age ${ai.age} | Pop ${ai.population}/${ai.population_max} | Step ${ai.stepDelay}ms`)
-    lines.push(`Res W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold} | Demand W:${demand.wood} F:${demand.food} S:${demand.stone} G:${demand.gold}`)
+    lines.push(
+      `Res W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold} | Demand W:${demand.wood} F:${demand.food} S:${demand.stone} G:${demand.gold}`
+    )
     lines.push(
       `Eco vil ${villagers.length}/${maxVil} | food ${workerSnapshot.villagersOnFood.length}/${workerTargets.maxVillagersOnFood} | wood ${workerSnapshot.villagersOnWood.length}/${workerTargets.maxVillagersOnWood} | gold ${workerSnapshot.villagersOnGold.length}/${workerTargets.maxVillagersOnGold} | stone ${workerSnapshot.villagersOnStone.length}/${workerTargets.maxVillagersOnStone}`
     )
@@ -323,7 +325,8 @@ export function aiInfo(context, value) {
 
   const isVisible = Boolean(context.map.debugAiInfoVisible)
   const sameTarget =
-    (parsedIndex === null && !Number.isInteger(context.debugAiInfoTargetIndex)) || context.debugAiInfoTargetIndex === parsedIndex
+    (parsedIndex === null && !Number.isInteger(context.debugAiInfoTargetIndex)) ||
+    context.debugAiInfoTargetIndex === parsedIndex
   const showOverlay = explicitOff ? false : explicitOn || parsedIndex !== null ? true : !isVisible || !sameTarget
 
   context.map.debugAiInfoVisible = showOverlay
