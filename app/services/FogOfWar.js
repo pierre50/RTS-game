@@ -61,6 +61,29 @@ function updateAIKnowledge(globalCell, cell, viewer) {
   }
 }
 
+export function rehydrateAIKnowledge(viewer, map) {
+  if (viewer.type !== PLAYER_TYPES.ai) return
+
+  for (let i = 0; i < map.grid.length; i++) {
+    const row = map.grid[i]
+    if (!row) continue
+
+    for (let j = 0; j < row.length; j++) {
+      const globalCell = row[j]
+      const viewerCell = viewer.views?.[i]?.[j]
+      if (!globalCell || !viewerCell?.viewed) continue
+
+      updateAIKnowledge(globalCell, viewerCell, viewer)
+
+      for (const corpse of globalCell.corpses || []) {
+        if (corpse.family === FAMILY_TYPES.animal && corpse.isDead && !corpse.isDestroyed && corpse.quantity > 0) {
+          viewer.foundedDeadAnimals?.add(corpse)
+        }
+      }
+    }
+  }
+}
+
 export function updateVisibility(instance) {
   const { i: cx, j: cy, sight, owner, context, isDead } = instance
   const map = context.map

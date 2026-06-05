@@ -1,6 +1,7 @@
 import Game from './Game'
 import MainMenu from './MainMenu'
 import MapConfig from './MapConfig'
+import { OrientationGuard } from '../ui/OrientationGuard'
 
 export class ScreenManager {
   constructor(app, gamebox) {
@@ -8,6 +9,11 @@ export class ScreenManager {
     this.gamebox = gamebox
     this.currentMenuScreen = null
     this.currentGame = null
+    this.orientationGuard = new OrientationGuard({
+      onChange: blocked => {
+        this.currentGame?.setOrientationBlocked(blocked)
+      },
+    })
   }
 
   start() {
@@ -46,6 +52,7 @@ export class ScreenManager {
     this.destroyCurrentGame()
     this.currentGame = new Game(this.app, this.gamebox, config, () => this.handleQuitGame())
     this.app.stage.addChild(this.currentGame)
+    this.currentGame.setOrientationBlocked(this.orientationGuard.blocked)
   }
 
   loadGame(save) {
@@ -53,6 +60,7 @@ export class ScreenManager {
     this.destroyCurrentGame()
     this.currentGame = new Game(this.app, this.gamebox, null, () => this.handleQuitGame())
     this.app.stage.addChild(this.currentGame)
+    this.currentGame.setOrientationBlocked(this.orientationGuard.blocked)
     this.currentGame.load(save)
   }
 

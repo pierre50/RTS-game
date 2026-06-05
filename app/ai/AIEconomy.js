@@ -67,13 +67,15 @@ export class AIEconomy {
 
     const woodBoost = (ai.wood < 50 ? 15 : 0) + (demand.wood > 0 ? 10 : 0)
     const foodBoost = (ai.food < 50 ? 15 : 0) + (demand.food > 0 ? 10 : 0)
+    const shouldProspectGold = ai.foundedGolds.size > 0 || demand.gold > 0
+    const shouldProspectStone = ai.foundedStones.size > 0 || demand.stone > 0
 
     const weights = {
       food: base.food + foodBoost,
       wood: base.wood + woodBoost,
-      // Don't allocate slots to resources that aren't on this map
-      gold: ai.foundedGolds.size > 0 ? base.gold + (demand.gold > 0 ? 10 : 0) : 0,
-      stone: ai.foundedStones.size > 0 ? base.stone + (demand.stone > 0 ? 10 : 0) : 0,
+      // Allow unmet demand to trigger prospecting for undiscovered ore nodes.
+      gold: shouldProspectGold ? base.gold + (demand.gold > 0 ? 10 : 0) : 0,
+      stone: shouldProspectStone ? base.stone + (demand.stone > 0 ? 10 : 0) : 0,
     }
 
     const totalWeight = weights.food + weights.wood + weights.gold + weights.stone

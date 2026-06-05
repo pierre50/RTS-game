@@ -22,8 +22,8 @@ export default class MainMenu {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
-    button.onmousedown = playClickSound
-    button.onclick = onClick
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', onClick)
     return button
   }
 

@@ -106,6 +106,12 @@ export class AIStrategy {
     return this.military.handleActions(options)
   }
 
+  isTechnologyInProgress(technologyType, buildingList = []) {
+    return buildingList.some(
+      building => building && !building.isDead && !building.isDestroyed && building.technology?.type === technologyType
+    )
+  }
+
   getTrainingLoad(buildings = []) {
     return buildings.reduce((total, building) => {
       if (!building || building.isDead || building.isDestroyed) return total
@@ -338,6 +344,9 @@ export class AIStrategy {
       notBuiltHouses,
     } = snapshot
 
+    const anchor = towncenters[0] || ai.getHomeAnchor()
+    if (!anchor) return 0
+
     const buildingsByType = {
       [BUILDING_TYPES.townCenter]: towncenters,
       [BUILDING_TYPES.house]: houses,
@@ -364,28 +373,28 @@ export class AIStrategy {
 
     if (
       buy(ai.population + 2 > ai.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 10], 0)
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0)
       )
     )
       actions++
 
     if (
       buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(markets.length === 0, BUILDING_TYPES.market, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(ai.age >= 2 && markets.some(m => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [8, 22], 1, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -396,24 +405,24 @@ export class AIStrategy {
           towncenters.length < 2 &&
           governmentCenters.some(gc => gc.isBuilt) &&
           ai.population_max >= 24 &&
-          ai.population >= 16,
+        ai.population >= 16,
         BUILDING_TYPES.townCenter,
         () =>
-          getPositionInGridAroundInstance(towncenters[0], map.grid, [14, 30], 2, false, isEnemyFacing(towncenters[0]))
+          getPositionInGridAroundInstance(anchor, map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -423,7 +432,7 @@ export class AIStrategy {
         stables.some(s => s.isBuilt),
         BUILDING_TYPES.academy,
         () =>
-          getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
+          getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -450,14 +459,14 @@ export class AIStrategy {
 
     if (
       buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(ai.technologies.includes('ResearchSentryTower'), BUILDING_TYPES.sentryTower, () =>
-        getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 15], 2, false, isEnemyFacing(towncenters[0]))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -466,14 +475,13 @@ export class AIStrategy {
   }
 
   buyTechnology(buildingList, technologyType, debug = false) {
-    let bought = 0
     for (const building of buildingList) {
       if (building && building.buyTechnology(technologyType)) {
         if (debug) console.log(`Buying ${technologyType} from ${building.type}`)
-        bought++
+        return 1
       }
     }
-    return bought
+    return 0
   }
 
   handleTechnologyActions(snapshot, debug = false) {
@@ -487,7 +495,7 @@ export class AIStrategy {
       const buffer = AGE_UP_BUFFERS[nextAgeKey] || {}
       const popReady = ai.population >= Math.floor(maxVillagers * 0.8)
       const resReady = Object.entries(cost).every(([res, amount]) => ai[res] >= amount + (buffer[res] || 0))
-      if (popReady && resReady) {
+      if (popReady && resReady && !this.isTechnologyInProgress(ai.nextAge[nextAgeKey], towncenters)) {
         actions += this.buyTechnology(towncenters, ai.nextAge[nextAgeKey], debug)
       }
     }
@@ -505,6 +513,7 @@ export class AIStrategy {
       for (const tech of techList) {
         if (ai.technologies.includes(tech)) continue
         if (!this.canResearchTech(tech)) continue
+        if (this.isTechnologyInProgress(tech, buildings)) continue
         const bought = this.buyTechnology(buildings, tech, debug)
         if (bought) {
           actions += bought

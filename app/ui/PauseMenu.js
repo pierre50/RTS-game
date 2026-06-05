@@ -10,7 +10,8 @@ export class PauseMenu {
   }
 
   createOpenButton() {
-    const button = document.createElement('div')
+    const button = document.createElement('button')
+    button.type = 'button'
     button.className = 'topbar-options-menu btn-ui'
     button.innerText = t('menuBtn')
     button.addEventListener('pointerdown', () => this.open())

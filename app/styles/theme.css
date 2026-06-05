@@ -134,6 +134,7 @@ button {
 
 body {
   height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   margin: 0;
   -webkit-user-select: none;
@@ -150,6 +151,14 @@ button,
   position: relative;
   cursor: pointer;
   text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button,
+select,
+input:not([type='checkbox']) {
+  min-height: 44px;
 }
 
 .ui-input {
@@ -176,6 +185,7 @@ button,
 .btn-dark {
   padding: 8px 20px;
   font-size: 14px;
+  line-height: 1.2;
   font-weight: bold;
   border: var(--border-btn);
   border-color: var(--main-primary-color);
@@ -192,8 +202,10 @@ button,
 
 .btn-ui {
   width: fit-content;
-  padding: 1px 10px;
+  min-height: 36px;
+  padding: 6px 12px;
   font-size: 12px;
+  line-height: 1.2;
   font-weight: bold;
   border: var(--ui-bar-border);
   text-shadow: var(--ui-text-shadow);
@@ -209,10 +221,12 @@ button,
     box-shadow var(--ui-transition-fast);
 }
 
-.btn-dark:hover,
-.btn-ui:hover {
-  filter: brightness(var(--ui-hover-brightness));
-  transform: scale(var(--ui-hover-scale));
+@media (hover: hover) and (pointer: fine) {
+  .btn-dark:hover,
+  .btn-ui:hover {
+    filter: brightness(var(--ui-hover-brightness));
+    transform: scale(var(--ui-hover-scale));
+  }
 }
 
 .btn-dark:active,
@@ -246,4 +260,43 @@ button,
 img {
   -webkit-user-drag: none;
   user-drag: none;
+}
+
+.save-list-name,
+.modal-title {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(61, 32, 0, 0.85);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --ui-button-width: min(100%, 320px);
+    --ui-button-width-home: min(100%, 320px);
+    --ui-slot-size: 52px;
+  }
+
+  html,
+  body,
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 14px;
+  }
+
+  .btn-dark {
+    font-size: 16px;
+  }
+
+  .btn-ui {
+    min-height: 44px;
+    font-size: 14px;
+  }
 }

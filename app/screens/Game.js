@@ -23,6 +23,7 @@ export default class Game extends Container {
   constructor(app, gamebox, config = null, onQuit = null) {
     super()
     this._pausedByVisibility = false
+    this._pausedByOrientation = false
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -121,8 +122,25 @@ export default class Game extends Container {
 
   _handleDocumentVisible() {
     if (!this._pausedByVisibility) return
+    if (this._pausedByOrientation) return
     this._pausedByVisibility = false
     if (!this.context.victory && !this.context.defeat) {
+      this.togglePause(false, { silent: true })
+    }
+  }
+
+  setOrientationBlocked(blocked) {
+    if (blocked) {
+      if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+        this._pausedByOrientation = true
+        this.togglePause(true, { silent: true })
+      }
+      return
+    }
+
+    if (!this._pausedByOrientation) return
+    this._pausedByOrientation = false
+    if (!this._pausedByVisibility && !this.context.victory && !this.context.defeat) {
       this.togglePause(false, { silent: true })
     }
   }
@@ -148,6 +166,7 @@ export default class Game extends Container {
 
   _resetRuntimeState() {
     this._pausedByVisibility = false
+    this._pausedByOrientation = false
     this.context = {
       ...this.context,
       player: null,

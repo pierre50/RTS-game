@@ -191,6 +191,52 @@ export class AIMilitary {
     return Math.max(this.strategy.difficultyConfig.attackThreshold, 3 + this.ai.age)
   }
 
+  getHomeDefenseReserve(units = []) {
+    const baseReserve = Math.max(1, Math.ceil(units.length * this.strategy.difficultyConfig.defenderRatio))
+    const townCenters = this.ai.buildings.filter(
+      building => building.type === BUILDING_TYPES.townCenter && !building.isDead && !building.isDestroyed
+    ).length
+    return Math.min(units.length, Math.max(baseReserve, townCenters > 1 ? 3 : 2))
+  }
+
+  splitAttackForce(units = [], minAttackForce = 0) {
+    if (units.length < minAttackForce) {
+      return { defenders: units.slice(), attackers: [] }
+    }
+
+    const defendersToKeep = this.getHomeDefenseReserve(units)
+    const attackers = units.slice(defendersToKeep)
+
+    if (attackers.length < minAttackForce) {
+      return { defenders: units.slice(), attackers: [] }
+    }
+
+    return {
+      defenders: units.slice(0, defendersToKeep),
+      attackers,
+    }
+  }
+
+  hasActiveAssault() {
+    return this.ai.units.some(
+      unit =>
+        unit &&
+        unit.assault &&
+        unit.type !== UNIT_TYPES.villager &&
+        !unit.isDead &&
+        !unit.isDestroyed &&
+        unit.hitPoints > 0 &&
+        unit.action === ACTION_TYPES.attack
+    )
+  }
+
+  canCommitToTarget(force, target, desiredPowerRatio = 0.65, defenseRatio = 1.1) {
+    if (!target || force.length === 0) return false
+    const forcePower = this.getGroupCombatPower(force)
+    const targetDefensePower = this.estimateTargetDefensePower(target)
+    return forcePower >= Math.max(this.getDesiredAttackPower() * desiredPowerRatio, targetDefensePower * defenseRatio)
+  }
+
   getDefenseResponsePower(threat) {
     const hostilePower = this.getCombatPower(threat)
     return hostilePower > 0 ? hostilePower * 1.2 : 0
@@ -276,18 +322,15 @@ export class AIMilitary {
       availablePower >= this.getDesiredAttackPower() &&
       ai.getNow() - (ai.lastAttackWaveAt || 0) >= difficultyConfig.attackCooldownMs
     ) {
-      const defenderCount = Math.max(2, Math.floor(availableMilitary.length * difficultyConfig.defenderRatio))
-      const attackers = availableMilitary.slice(defenderCount)
+      const { attackers } = this.splitAttackForce(availableMilitary, minAttackForce)
       if (attackers.length >= minAttackers) {
         const target = this.getBestEnemyTarget(attackers)
-        const attackPower = this.getGroupCombatPower(attackers)
-        const targetDefensePower = this.estimateTargetDefensePower(target)
         if (debug)
           console.log(
-            `Launching attack wave! ${attackers.length} attackers, ${defenderCount} defenders, power=${Math.round(attackPower)} vs ${Math.round(targetDefensePower)}. Target:`,
+            `Launching attack wave! ${attackers.length} attackers, ${availableMilitary.length - attackers.length} defenders held home. Target:`,
             target
           )
-        if (target && attackPower >= Math.max(this.getDesiredAttackPower() * 0.65, targetDefensePower * 1.15)) {
+        if (this.canCommitToTarget(attackers, target, 0.65, 1.15)) {
           this.sendToAttack(attackers, target, debug)
           ai.lastAttackWaveAt = ai.getNow()
           actions++
@@ -297,24 +340,34 @@ export class AIMilitary {
 
     const regroupCooldownMs = Math.max(8000, Math.round(difficultyConfig.attackCooldownMs * 0.75))
     if (
-      inactifMilitary.length >= minAttackForce &&
+      inactifMilitary.length >= minAttackers &&
       ai.phase === 'attack' &&
       ai.getEnemyMemories({ family: FAMILY_TYPES.building, freshWithin: 45000 }).length &&
       ai.getNow() - (ai.lastAttackWaveAt || 0) >= regroupCooldownMs
     ) {
       const target = this.getBestEnemyTarget(inactifMilitary)
-      const idleAssaultPower = this.getGroupCombatPower(inactifMilitary)
-      const targetDefensePower = this.estimateTargetDefensePower(target)
-      if (target && idleAssaultPower >= Math.max(this.getDesiredAttackPower() * 0.65, targetDefensePower * 1.1)) {
-        if (debug) console.log('Redirecting assault soldiers to:', target)
+      const reinforcingActiveAssault = this.hasActiveAssault()
+      const canRejoinAttack = reinforcingActiveAssault
+        ? this.canCommitToTarget(inactifMilitary, target, 0.45, 0.9)
+        : this.canCommitToTarget(inactifMilitary, target, 0.65, 1.1)
+
+      if (canRejoinAttack) {
+        if (debug)
+          console.log(
+            reinforcingActiveAssault ? 'Sending reinforcements to assault:' : 'Redirecting assault soldiers to:',
+            target
+          )
         this.sendToAttack(inactifMilitary, target, debug)
         ai.lastAttackWaveAt = ai.getNow()
         actions++
-      } else {
+      } else if (!reinforcingActiveAssault) {
         this.releaseIdleAssault(inactifMilitary)
       }
     } else if (inactifMilitary.length) {
-      this.releaseIdleAssault(inactifMilitary)
+      const reinforcingActiveAssault = ai.phase === 'attack' && this.hasActiveAssault()
+      if (!reinforcingActiveAssault) {
+        this.releaseIdleAssault(inactifMilitary)
+      }
     }
 
     return actions

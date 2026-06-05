@@ -8,8 +8,9 @@ import {
   getCellsAroundPoint,
   getZoneInGridWithCondition,
   updateInstanceVisibility,
+  rehydrateAIKnowledge,
 } from '../../lib'
-import { BUILDING_TYPES, LABEL_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { Cell } from '../cell'
 
 export class MapGeneration {
@@ -143,9 +144,46 @@ export class MapGeneration {
       }
     }
 
+    function restoreBuildingAssignments(player, savedBuildings, context) {
+      for (let index = 0; index < player.buildings.length; index++) {
+        const building = player.buildings[index]
+        const savedBuilding = savedBuildings[index]
+        if (!building || !savedBuilding?.isUsedBy) continue
+        const user = getDest(savedBuilding.isUsedBy, context)
+        if (user && !user.isDead && !user.isDestroyed) {
+          building.isUsedBy = user
+        }
+      }
+    }
+
+    function restoreAIState(player, savedPlayer, context) {
+      if (player.type !== PLAYER_TYPES.ai || !savedPlayer?.aiState) return
+
+      if (Number.isFinite(savedPlayer.aiState.lastAttackWaveAt)) {
+        player.lastAttackWaveAt = savedPlayer.aiState.lastAttackWaveAt
+      }
+
+      player.threatenedTargets.clear()
+      for (const threat of savedPlayer.aiState.threatenedTargets || []) {
+        const target = getDest(threat.target, context)
+        if (!target || target.isDead || target.isDestroyed) continue
+
+        const attacker = getDest(threat.attacker, context)
+        player.threatenedTargets.set(target.label, {
+          target,
+          attacker: attacker || null,
+          attackerFamily: attacker?.family || threat.attackerFamily || null,
+          attackerType: attacker?.type || threat.attackerType || null,
+          lastSeenAt: Number.isFinite(threat.lastSeenAt) ? threat.lastSeenAt : 0,
+          count: Number.isFinite(threat.count) ? threat.count : 0,
+        })
+      }
+    }
+
     this.map.gaia.units.forEach(animal => processUnit(animal, this.map))
 
-    this.map.context.players.forEach(player => {
+    this.map.context.players.forEach((player, index) => {
+      const savedPlayer = players[index]
       for (let i = 0; i <= this.map.size; i++) {
         const line = player.views[i]
         for (let j = 0; j <= this.map.size; j++) {
@@ -163,6 +201,9 @@ export class MapGeneration {
           }
         }
       }
+      restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
+      rehydrateAIKnowledge(player, this.map)
+      restoreAIState(player, savedPlayer, this.map)
       player.units.forEach(unit => processUnit(unit, this.map))
     })
 

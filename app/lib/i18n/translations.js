@@ -161,6 +161,8 @@ export const TRANSLATIONS = {
     speedSlow: 'Lent',
     speedNormal: 'Normal',
     speedFast: 'Rapide',
+    rotateDeviceTitle: 'Veuillez tourner votre appareil',
+    rotateDeviceBody: 'Ce jeu est pensé pour le mode paysage sur mobile.',
   },
   en: {
     newGame: 'New Game',
@@ -324,5 +326,7 @@ export const TRANSLATIONS = {
     speedSlow: 'Slow',
     speedNormal: 'Normal',
     speedFast: 'Fast',
+    rotateDeviceTitle: 'Please rotate your device',
+    rotateDeviceBody: 'This game is designed for landscape mode on mobile.',
   },
 }

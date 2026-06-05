@@ -1,5 +1,10 @@
 #game {
   flex: 1;
+  touch-action: none;
+}
+
+#game canvas {
+  touch-action: none;
 }
 
 .hidden {
@@ -33,11 +38,14 @@
 .modal {
   position: fixed;
   inset: 0;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   background: var(--surface-dark-medium);
   z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
 }
 
 .modal-panel {
@@ -51,6 +59,9 @@
   border-radius: var(--main-border-radius-lg);
   animation: modal-panel-enter var(--ui-transition-panel) both;
   min-width: 280px;
+  width: min(100%, 960px);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: auto;
 }
 
 .modal-header {
@@ -68,7 +79,8 @@
 }
 
 .modal-close {
-  padding: 2px 8px;
+  min-width: 44px;
+  padding: 8px;
   font-size: 12px;
   line-height: 1.4;
   flex-shrink: 0;
@@ -93,15 +105,101 @@
 
 .toggle {
   position: fixed;
-  right: 0;
-  bottom: -119px;
-  width: 100px;
-  height: 192px;
-  z-index: 10;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  width: 52px;
+  height: 52px;
+  z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(64deg);
-  border-top-left-radius: 3px;
+  padding: 0;
+  font-size: 20px;
+  color: var(--main-primary-color);
+  border: var(--border-btn);
+  border-color: var(--main-primary-color);
+  border-radius: 999px;
+  transform: none;
   background: var(--surface-dark-medium);
+}
+
+.orientation-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(255, 219, 167, 0.12), transparent 36%),
+    rgba(8, 6, 4, 0.94);
+}
+
+.orientation-guard.hidden {
+  display: none;
+}
+
+.orientation-guard-panel {
+  width: min(100%, 360px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--main-primary-color);
+  background: rgba(0, 0, 0, 0.42);
+  border: var(--panel-border);
+  box-shadow: var(--main-box-shadow);
+}
+
+.orientation-guard-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  line-height: 1;
+  border: var(--border-btn);
+  border-color: var(--main-primary-color);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.orientation-guard-title {
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
+.orientation-guard-body {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #f8e9cb;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
+@media (max-width: 640px) {
+  .modal {
+    align-items: stretch;
+  }
+
+  .modal-panel {
+    min-width: 0;
+    width: 100%;
+    max-height: none;
+    margin: auto 0;
+    padding: 18px 16px;
+  }
+
+  .modal-header {
+    align-items: flex-start;
+  }
+
+  .modal-title {
+    font-size: 16px;
+  }
 }

@@ -1,9 +1,10 @@
 import { Container, Graphics } from 'pixi.js'
-import { isometricToCartesian } from '../lib'
+import { isometricToCartesian, pointsDistance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
 import { getCameraZoom } from '../lib/settings'
+import { IS_MOBILE, TOUCH_DRAG_THRESHOLD, TOUCH_SELECTION_HOLD_DURATION } from '../constants'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -39,6 +40,8 @@ export default class Controls extends Container {
     this.mouseRectangle
     this.mouseTouch
     this.mouseDrag = false
+    this.touchInteraction = null
+    this.touchSelectionTimeout = null
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
@@ -86,6 +89,7 @@ export default class Controls extends Container {
     gamebox.removeEventListener('mousedown', this._onMouseDown)
     gamebox.removeEventListener('mouseup', this._onMouseUp)
     this.context.app.ticker.remove(this._onTick)
+    clearTimeout(this.touchSelectionTimeout)
     this.stopMouseCameraMove()
     super.destroy(options)
   }
@@ -200,9 +204,43 @@ export default class Controls extends Container {
   onTouchStart(evt) {
     const touch = evt.touches[0]
     if (evt.touches.length === 2) {
+      clearTimeout(this.touchSelectionTimeout)
+      this.touchInteraction = null
+      this.pointerStart = null
+      this.mouseDrag = false
       this.mouseTouch = { x: touch.pageX, y: touch.pageY }
     } else {
-      this.onMouseDown(touch)
+      this.mouse.x = touch.pageX
+      this.mouse.y = touch.pageY
+      if (!this.isMouseInApp(touch)) return
+
+      this.mouseDrag = false
+      this.touchInteraction = {
+        startX: touch.pageX,
+        startY: touch.pageY,
+        lastX: touch.pageX,
+        lastY: touch.pageY,
+        selectionArmed: false,
+        moved: false,
+      }
+
+      if (this.mouseBuilding) {
+        this.pointerStart = null
+        this.buildingPlacer.handleMouseMove()
+        return
+      }
+
+      if (!IS_MOBILE) {
+        this.onMouseDown(touch)
+        return
+      }
+
+      clearTimeout(this.touchSelectionTimeout)
+      this.touchSelectionTimeout = setTimeout(() => {
+        if (!this.touchInteraction || this.mouseDrag || this.mouseBuilding) return
+        this.touchInteraction.selectionArmed = true
+        this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
+      }, TOUCH_SELECTION_HOLD_DURATION)
     }
   }
 
@@ -222,15 +260,72 @@ export default class Controls extends Container {
       }
       this.mouseTouch = { x: this.mouse.x, y: this.mouse.y }
     } else {
-      this.onMouseMove(touch)
+      this.mouse.x = touch.pageX
+      this.mouse.y = touch.pageY
+
+      if (this.mouseBuilding) {
+        const hasMoved =
+          this.touchInteraction &&
+          pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
+            TOUCH_DRAG_THRESHOLD
+        if (hasMoved) {
+          this.mouseDrag = true
+          this.touchInteraction.moved = true
+        }
+        this.buildingPlacer.handleMouseMove()
+        return
+      }
+
+      if (!this.touchInteraction) {
+        this.onMouseMove(touch)
+        return
+      }
+
+      const movedEnough =
+        pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
+        TOUCH_DRAG_THRESHOLD
+
+      if (this.touchInteraction.selectionArmed) {
+        this.onMouseMove(touch)
+      } else if (movedEnough) {
+        clearTimeout(this.touchSelectionTimeout)
+        this.touchInteraction.moved = true
+        this.mouseDrag = true
+        const speedX = Math.abs(this.mouse.x - this.touchInteraction.lastX) * 2
+        const speedY = Math.abs(this.mouse.y - this.touchInteraction.lastY) * 2
+        if (this.mouse.x > this.touchInteraction.lastX) this.moveCamera('left', speedX, false)
+        if (this.mouse.y > this.touchInteraction.lastY) this.moveCamera('up', speedY, false)
+        if (this.mouse.y < this.touchInteraction.lastY) this.moveCamera('down', speedY, false)
+        if (this.mouse.x < this.touchInteraction.lastX) this.moveCamera('right', speedX, false)
+      }
+
+      this.touchInteraction.lastX = this.mouse.x
+      this.touchInteraction.lastY = this.mouse.y
     }
   }
 
   onTouchEnd(evt) {
+    clearTimeout(this.touchSelectionTimeout)
     const touch = evt.changedTouches[0]
     if (evt.changedTouches.length === 1) {
-      this.onMouseUp(touch)
+      const selectionArmed = this.touchInteraction?.selectionArmed
+      const moved = this.touchInteraction?.moved
+
+      if (this.mouseBuilding) {
+        if (!moved) {
+          this.onMouseUp(touch)
+        }
+      } else if (selectionArmed) {
+        this.onMouseUp(touch)
+      } else if (!moved) {
+        this.onMouseUp(touch)
+      } else {
+        this.pointerStart = null
+      }
     }
+    this.touchInteraction = null
+    this.mouseTouch = null
+    this.mouseDrag = false
   }
 
   onMouseDown(evt) {

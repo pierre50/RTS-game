@@ -97,7 +97,21 @@ export class BottombarManager {
     const img = document.createElement('img')
     img.src = src
     img.className = 'img'
+    img.alt = ''
     return img
+  }
+
+  makePressable(element, action) {
+    element.setAttribute('role', 'button')
+    element.tabIndex = 0
+    element.addEventListener('pointerup', evt => {
+      action(evt)
+    })
+    element.addEventListener('keydown', evt => {
+      if (evt.key !== 'Enter' && evt.key !== ' ') return
+      evt.preventDefault()
+      action(evt)
+    })
   }
 
   createMenuButton(selection, btn, index, hotkey, onNavigate) {
@@ -110,12 +124,12 @@ export class BottombarManager {
 
     if (!btn.onCreate) {
       if (btn.children) {
-        box.addEventListener('pointerup', () => {
+        this.makePressable(box, () => {
           this.playUiClick()
           onNavigate(btn.children)
         })
       } else if (typeof btn.onClick === 'function') {
-        box.addEventListener('pointerup', evt => {
+        this.makePressable(box, evt => {
           this.playUiClick()
           btn.onClick(selection, evt)
         })
@@ -131,14 +145,14 @@ export class BottombarManager {
     back.appendChild(this.createMenuIcon('assets/interface/50721/010_50721.png'))
 
     if (parent) {
-      back.addEventListener('pointerup', () => {
+      this.makePressable(back, () => {
         this.playUiClick()
         element.textContent = ''
         this.clearMenuSelection()
         this.renderMenuLevel(selection, element, parent)
       })
     } else {
-      back.addEventListener('pointerup', () => {
+      this.makePressable(back, () => {
         this.playUiClick()
         this.clearMenuSelection()
         player.unselectAll()

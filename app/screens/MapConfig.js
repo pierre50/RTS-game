@@ -104,8 +104,8 @@ export default class MapConfig {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
-    button.onmousedown = playClickSound
-    button.onclick = onClick
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', onClick)
     return button
   }
 
@@ -356,20 +356,22 @@ export default class MapConfig {
       teamBtn.type = 'button'
       teamBtn.textContent = player.team ?? '-'
       teamBtn.title = t('teamInput')
-      teamBtn.onmousedown = playClickSound
-      teamBtn.onclick = () => this._cycleTeam(i)
+      teamBtn.addEventListener('pointerdown', playClickSound)
+      teamBtn.addEventListener('click', () => this._cycleTeam(i))
       teamCell.appendChild(teamBtn)
       row.appendChild(teamCell)
 
       const colorCell = document.createElement('div')
       colorCell.className = 'player-color-cell'
       const colorData = PLAYER_COLORS.find(c => c.name === player.color)
-      const swatch = document.createElement('div')
+      const swatch = document.createElement('button')
       swatch.className = 'color-swatch'
+      swatch.type = 'button'
       swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
       swatch.title = t('colorSwatch', { color: player.color })
-      swatch.onmousedown = playClickSound
-      swatch.onclick = () => this._cycleColor(i)
+      swatch.setAttribute('aria-label', t('colorSwatch', { color: player.color }))
+      swatch.addEventListener('pointerdown', playClickSound)
+      swatch.addEventListener('click', () => this._cycleColor(i))
       colorCell.appendChild(swatch)
       row.appendChild(colorCell)
 
@@ -385,8 +387,8 @@ export default class MapConfig {
     lbl.textContent = t('playerCount')
 
     this.playerCountSelect = document.createElement('select')
-    this.playerCountSelect.onmousedown = playClickSound
-    this.playerCountSelect.onchange = e => this._setPlayerCount(e.target.value)
+    this.playerCountSelect.addEventListener('pointerdown', playClickSound)
+    this.playerCountSelect.addEventListener('change', e => this._setPlayerCount(e.target.value))
 
     row.appendChild(lbl)
     row.appendChild(this.playerCountSelect)
@@ -423,7 +425,7 @@ export default class MapConfig {
       if (opt.value === defaultValue) option.selected = true
       select.appendChild(option)
     })
-    select.onchange = e => onChange(e.target.value)
+    select.addEventListener('change', e => onChange(e.target.value))
 
     row.appendChild(lbl)
     row.appendChild(select)
@@ -440,7 +442,7 @@ export default class MapConfig {
     const checkbox = document.createElement('input')
     checkbox.type = 'checkbox'
     checkbox.checked = defaultValue
-    checkbox.onchange = e => onChange(e.target.checked)
+    checkbox.addEventListener('change', e => onChange(e.target.checked))
 
     row.appendChild(lbl)
     row.appendChild(checkbox)

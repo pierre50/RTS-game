@@ -76,6 +76,7 @@ function unitData(unit) {
       'hitPoints',
       'path',
       'work',
+      'previousWork',
       'realDest',
       'degree',
       'action',
@@ -118,7 +119,7 @@ function buildingData(building) {
 }
 
 function playerData(player) {
-  return {
+  const data = {
     ...filterObject(player, [
       'label',
       'age',
@@ -151,6 +152,22 @@ function playerData(player) {
       })
     ),
   }
+
+  if (player.type === 'AI') {
+    data.aiState = {
+      lastAttackWaveAt: player.lastAttackWaveAt ?? null,
+      threatenedTargets: [...(player.threatenedTargets?.values?.() || [])].map(threat => ({
+        target: threat.target?.label || null,
+        attacker: threat.attacker?.label || null,
+        lastSeenAt: threat.lastSeenAt ?? 0,
+        count: threat.count ?? 0,
+        attackerFamily: threat.attackerFamily ?? null,
+        attackerType: threat.attackerType ?? null,
+      })),
+    }
+  }
+
+  return data
 }
 
 function cellData(cell) {
@@ -162,11 +179,19 @@ function cellData(cell) {
   if (cell.waterBorder) data.waterBorder = true
   if (cell.has) data.has = cell.has.label
   if (cell.fogSprites.length > 0) {
-    data.fogSprites = cell.fogSprites.map(({ textureSheet, colorSheet, colorName }) => ({
-      textureSheet,
-      colorSheet,
-      colorName,
-    }))
+    const seenFogSprites = new Set()
+    data.fogSprites = cell.fogSprites
+      .map(({ textureSheet, colorSheet, colorName }) => ({
+        textureSheet,
+        colorSheet,
+        colorName,
+      }))
+      .filter(spriteData => {
+        const key = `${spriteData.textureSheet}|${spriteData.colorSheet || ''}|${spriteData.colorName || ''}`
+        if (seenFogSprites.has(key)) return false
+        seenFogSprites.add(key)
+        return true
+      })
   }
   return data
 }

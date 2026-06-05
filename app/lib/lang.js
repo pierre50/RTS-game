@@ -1,6 +1,7 @@
 import { TRANSLATIONS } from './i18n/translations'
 
 export const LANG_STORAGE_KEY = 'lang'
+export const LANG_CHANGE_EVENT = 'doe:langchange'
 export const SUPPORTED_LANGS = [
   { code: 'fr', label: 'Français' },
   { code: 'en', label: 'English' },
@@ -25,6 +26,7 @@ export function t(key, vars) {
 export function setLang(lang) {
   currentLang = normalizeLang(lang)
   localStorage.setItem(LANG_STORAGE_KEY, currentLang)
+  window.dispatchEvent(new CustomEvent(LANG_CHANGE_EVENT, { detail: { lang: currentLang } }))
 }
 
 export function getLang() {
