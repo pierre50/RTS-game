@@ -3,6 +3,7 @@ import { isometricToCartesian } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
+import { getCameraZoom } from '../lib/settings'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -91,6 +92,41 @@ export default class Controls extends Container {
 
   get camera() {
     return this.cameraController.camera
+  }
+
+  getViewportMetrics() {
+    const {
+      context: { app },
+    } = this
+    const zoom = getCameraZoom()
+    const offsetX = (app.screen.width * (1 - zoom)) / 2
+    const offsetY = (app.screen.height * (1 - zoom)) / 2
+
+    return {
+      zoom,
+      offsetX,
+      offsetY,
+      visibleLeft: this.camera.x - offsetX / zoom,
+      visibleTop: this.camera.y - offsetY / zoom,
+      visibleWidth: app.screen.width / zoom,
+      visibleHeight: app.screen.height / zoom,
+    }
+  }
+
+  screenToLocal(x, y) {
+    const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    return {
+      x: (x - offsetX) / zoom,
+      y: (y - offsetY) / zoom,
+    }
+  }
+
+  localToScreen(x, y) {
+    const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    return {
+      x: offsetX + x * zoom,
+      y: offsetY + y * zoom,
+    }
   }
 
   onKeyDown(evt) {
@@ -239,7 +275,8 @@ export default class Controls extends Container {
     }
 
     if (this.isMouseInApp(evt)) {
-      const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
+      const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
+      const pos = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
       const i = Math.min(Math.max(pos[0], 0), map.size)
       const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
@@ -262,7 +299,8 @@ export default class Controls extends Container {
     const {
       context: { map },
     } = this
-    const pos = isometricToCartesian(this.mouse.x - map.x, this.mouse.y - map.y)
+    const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
+    const pos = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
     const i = Math.min(Math.max(pos[0], 0), map.size)
     const j = Math.min(Math.max(pos[1], 0), map.size)
     return map.grid[i]?.[j] || null

@@ -17,6 +17,11 @@ export class MapGeneration {
     this.map = map
   }
 
+  isFarEnoughFromCoast(i, j, minDistance = 6) {
+    const coastCells = getCellsAroundPoint(i, j, this.map.grid, minDistance, cell => cell.category !== 'Water')
+    return coastCells.length === 0
+  }
+
   isInPlayerStartSafeZone(i, j, radius = 20) {
     const safeDistanceSq = radius ** 2
     return this.map.playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < safeDistanceSq)
@@ -33,13 +38,17 @@ export class MapGeneration {
     return randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
   }
 
-  pickFishResourceType() {
+  pickFishResourceType(i, j) {
     const resources = Assets.cache.get('config').resources
     const fishTypes = Object.entries(resources)
       .filter(([, definition]) => definition.category === 'Fish')
       .map(([type]) => type)
+    const whaleSafeDistance = 6
+    const availableTypes = this.isFarEnoughFromCoast(i, j, whaleSafeDistance)
+      ? fishTypes
+      : fishTypes.filter(type => type !== 'Whale')
 
-    return randomItem(fishTypes.length ? fishTypes : [RESOURCE_TYPES.salmon])
+    return randomItem(availableTypes.length ? availableTypes : [RESOURCE_TYPES.salmon])
   }
 
   generateFromJSON({ map, players, camera, resources, animals }) {
@@ -468,9 +477,27 @@ export class MapGeneration {
             i < this.map.size &&
             j < this.map.size
           ) {
-            const randomSpritesheet = randomRange(292, 301).toString()
+            let floorSpritesheets = []
+            switch (cell.type) {
+              case 'Desert':
+                floorSpritesheets = ['275', '276', '277', '278', '303', '304', '305', '306', '307']
+                break
+              case 'Jungle':
+                floorSpritesheets = ['275', '276', '277', '278', '292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+                break
+              default:
+                floorSpritesheets = ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+                break
+            }
+            const randomSpritesheet = randomItem(floorSpritesheets)
             const spritesheet = Assets.cache.get(randomSpritesheet)
+            if (!spritesheet) {
+              continue
+            }
             const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
+            if (!texture) {
+              continue
+            }
             const floor = Sprite.from(texture)
             floor.label = LABEL_TYPES.floor
             floor.roundPixels = true
@@ -507,7 +534,7 @@ export class MapGeneration {
             }
           }
           if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
-            const fishType = this.pickFishResourceType()
+            const fishType = this.pickFishResourceType(i, j)
             this.map.resources.add(
               this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context))
             )

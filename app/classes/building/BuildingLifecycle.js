@@ -1,4 +1,3 @@
-import { sound } from '@pixi/sound'
 import { Assets, Sprite, AnimatedSprite, Container } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
@@ -9,6 +8,7 @@ import {
   PLAYER_TYPES,
   POPULATION_MAX,
   RUBBLE_TIME,
+  SOUND_CUES,
 } from '../../constants'
 import {
   canUpdateMinimap,
@@ -21,6 +21,9 @@ import {
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
+  isPlayerEliminated,
+  playAudibleSoundCue,
+  playSoundCue,
 } from '../../lib'
 
 export class BuildingLifecycle {
@@ -51,7 +54,7 @@ export class BuildingLifecycle {
           building.sounds?.create &&
           building.context.controls.instanceIsAudible(building)
         ) {
-          sound.play(building.sounds.create)
+          playSoundCue(building.sounds.create)
         }
         building.onBuilt()
       }
@@ -187,16 +190,27 @@ export class BuildingLifecycle {
       (action === ACTION_TYPES.build && building.isBuilt)
     ) {
       if (percentage > 0 && percentage < 25) {
+        this.playBurningSound()
         building.generateFire('450')
       } else if (percentage >= 25 && percentage < 50) {
+        this.playBurningSound()
         building.generateFire('452')
       } else if (percentage >= 50 && percentage < 75) {
+        this.playBurningSound()
         building.generateFire('347')
       } else if (percentage >= 75) {
         const fire = building.getChildByLabel(LABEL_TYPES.fire)
         if (fire) building.removeChild(fire)
+        building.hasActiveBurningSound = false
       }
     }
+  }
+
+  playBurningSound() {
+    const building = this.building
+    if (building.hasActiveBurningSound || !building.context.controls.instanceIsAudible(building)) return
+    building.hasActiveBurningSound = true
+    playSoundCue(building.sounds?.burning ?? SOUND_CUES.building.burning)
   }
 
   pause() {
@@ -224,7 +238,11 @@ export class BuildingLifecycle {
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.isDead = true
+    building.hasActiveBurningSound = false
     map.removeFromInstanceBucket(building)
+    if (building.context.controls.instanceIsAudible(building)) {
+      playAudibleSoundCue(building, building.sounds?.collapse ?? SOUND_CUES.building.collapse)
+    }
     if (building.selected && player) {
       player.unselectAll()
     }
@@ -232,7 +250,7 @@ export class BuildingLifecycle {
     const index = building.owner.buildings.indexOf(building)
     if (index >= 0) {
       building.owner.buildings.splice(index, 1)
-      if (building.owner.units.length === 0 && building.owner.buildings.length === 0) {
+      if (isPlayerEliminated(building.owner)) {
         menu.updatePlayerStats()
       }
     }

@@ -1,6 +1,5 @@
-import { sound } from '@pixi/sound'
 import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
-import { getPercentage, updateInstanceVisibility } from '../../lib'
+import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 
 export class AnimalLifecycle {
   constructor(animal) {
@@ -11,8 +10,8 @@ export class AnimalLifecycle {
     const animal = this.animal
     if (animal.isDead) return
     if (animal.sounds && animal.context.controls.instanceIsAudible(animal)) {
-      animal.sounds.die && sound.play(animal.sounds.die)
-      animal.sounds.fall && sound.play(animal.sounds.fall)
+      playAudibleSoundCue(animal, animal.sounds.die)
+      playAudibleSoundCue(animal, animal.sounds.fall)
     }
     updateInstanceVisibility(animal)
     animal.owner.population--

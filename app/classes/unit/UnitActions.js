@@ -1,4 +1,3 @@
-import { sound } from '@pixi/sound'
 import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
@@ -8,10 +7,11 @@ import {
   LOADING_TYPES,
   MENU_INFO_IDS,
   SHEET_TYPES,
+  SOUND_CUES,
   TYPE_ACTION,
   UNIT_TYPES,
 } from '../../constants'
-import { degreeToDirection, getInstanceDegree, onSpriteLoopAtFrame } from '../../lib'
+import { degreeToDirection, getInstanceDegree, onSpriteLoopAtFrame, playSoundCue, playerCanSeeInstance } from '../../lib'
 import { Projectile } from '../projectile'
 
 export class UnitActions {
@@ -19,18 +19,51 @@ export class UnitActions {
     this.unit = unit
   }
 
+  restorePreviousWork() {
+    const unit = this.unit
+    if (!unit.previousWork || unit.work === unit.previousWork) return
+    unit.work = unit.previousWork
+    unit.previousWork = null
+  }
+
+  clearInvalidPreviousTask() {
+    const unit = this.unit
+    if (!unit.previousDest) return false
+
+    const type = unit.previousDest.category || unit.previousDest.type
+    const action = TYPE_ACTION[type]
+    if (!action || !unit.getActionCondition(unit.previousDest, action)) {
+      unit.previousDest = null
+      return true
+    }
+    return false
+  }
+
+  playSound(soundId) {
+    const unit = this.unit
+    if (!soundId || !unit.context.controls.instanceIsAudible(unit)) return
+    playSoundCue(soundId)
+  }
+
+  getWorkSound(key, fallback = null) {
+    return this.unit.sounds?.work?.[key] ?? fallback
+  }
+
   goBackToPrevious() {
     const unit = this.unit
     const {
       context: { map },
     } = unit
+    this.clearInvalidPreviousTask()
     if (!unit.previousDest) {
+      this.restorePreviousWork()
       unit.stop()
       return
     }
     const dest = unit.previousDest
     const type = dest.category || dest.type
     unit.previousDest = null
+    this.restorePreviousWork()
     if (dest.family === FAMILY_TYPES.animal) {
       if (unit.getActionCondition(dest, ACTION_TYPES.takemeat)) {
         unit.sendToTakeMeat(dest, true)
@@ -81,7 +114,7 @@ export class UnitActions {
         unit.loading++
         unit.loadingType = loadingType
         unit.updateInterfaceLoading()
-        if (soundId) unit.context.controls.instanceIsAudible(unit) && sound.play(soundId)
+        this.playSound(soundId)
         if (updateTexture) unit.dest.updateTexture()
         unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
         if (unit.dest.selected && (!checkOwner || unit.owner.isPlayed)) {
@@ -142,6 +175,7 @@ export class UnitActions {
           unit.standingSheet = Assets.cache.get(unit.allAssets[unit.work].standingSheet)
           unit.walkingSheet = Assets.cache.get(unit.allAssets[unit.work].walkingSheet)
         }
+        unit.setTextures(SHEET_TYPES.standing)
         if (unit.previousDest) {
           unit.goBackToPrevious()
         } else {
@@ -173,7 +207,7 @@ export class UnitActions {
             unit.loading++
             unit.loadingType = LOADING_TYPES.wheat
             unit.updateInterfaceLoading()
-            unit.context.controls.instanceIsAudible(unit) && sound.play('5178')
+            this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
             unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
             if (unit.dest.selected) {
               menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity)
@@ -212,7 +246,7 @@ export class UnitActions {
               unit.sendToDelivery()
               return
             }
-            unit.context.controls.instanceIsAudible(unit) && sound.play('5048')
+            this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
             if (unit.dest.hitPoints > 0) {
               unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0)
               if (unit.dest.selected) {
@@ -250,13 +284,17 @@ export class UnitActions {
         )
         break
       case ACTION_TYPES.forageberry:
-        this.startGathering(LOADING_TYPES.berry, '5085', { dieOnEmpty: true })
+        this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
+          dieOnEmpty: true,
+        })
         break
       case ACTION_TYPES.minestone:
-        this.startGathering(LOADING_TYPES.stone, '5159', { dieOnEmpty: true })
+        this.startGathering(LOADING_TYPES.stone, this.getWorkSound('mineStone', SOUND_CUES.villager.mineOre), {
+          dieOnEmpty: true,
+        })
         break
       case ACTION_TYPES.minegold:
-        this.startGathering(LOADING_TYPES.gold, '5159')
+        this.startGathering(LOADING_TYPES.gold, this.getWorkSound('mineGold', SOUND_CUES.villager.mineOre))
         break
       case ACTION_TYPES.build:
         if (!unit.getActionCondition(unit.dest)) {
@@ -269,12 +307,13 @@ export class UnitActions {
             if (!unit.getActionCondition(unit.dest)) {
               if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
                 unit.sendToFarm(unit.dest)
+                return
               }
               unit.affectNewDest()
               return
             }
             if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
-              unit.context.controls.instanceIsAudible(unit) && sound.play('5107')
+              this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
               unit.dest.hitPoints = Math.min(
                 Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime),
                 unit.dest.totalHitPoints
@@ -289,6 +328,7 @@ export class UnitActions {
                 unit.dest.isBuilt = true
                 if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
                   unit.sendToFarm(unit.dest)
+                  return
                 }
               }
               unit.affectNewDest()
@@ -336,13 +376,17 @@ export class UnitActions {
         }
         break
       case ACTION_TYPES.takemeat:
-        this.startGathering(LOADING_TYPES.meat, '5178', { checkOwner: true, updateTexture: true })
+        this.startGathering(
+          LOADING_TYPES.meat,
+          this.getWorkSound('takeMeat', null),
+          { checkOwner: true, updateTexture: true }
+        )
         break
       case ACTION_TYPES.fishing:
-        this.startGathering(LOADING_TYPES.fish, null, { checkOwner: true })
+        this.startGathering(LOADING_TYPES.fish, this.getWorkSound('fishing'), { checkOwner: true })
         if (unit.category !== 'Boat') {
           onSpriteLoopAtFrame(unit.sprite, 6, () => {
-            unit.context.controls.instanceIsAudible(unit) && sound.play('5125')
+            this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
           })
         }
         break
@@ -367,7 +411,11 @@ export class UnitActions {
             return
           }
           if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.stop()
+            if (unit.context.map.revealEverything || playerCanSeeInstance(unit.dest, unit.owner)) {
+              unit.sendTo(unit.dest, ACTION_TYPES.hunt)
+            } else {
+              unit.stop()
+            }
             return
           }
           if (unit.destHasMoved()) {

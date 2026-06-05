@@ -1,7 +1,6 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
-import { sound } from '@pixi/sound'
-import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, randomItem, getAnimationFrames } from '../lib'
-import { COLOR_WHITE, MAX_SELECT_UNITS, UNIT_TYPES } from '../constants'
+import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, getAnimationFrames, playSoundCue } from '../lib'
+import { COLOR_WHITE, MAX_SELECT_UNITS, SOUND_CUES, UNIT_TYPES } from '../constants'
 
 export class SelectionManager {
   constructor(controls) {
@@ -91,8 +90,9 @@ export class SelectionManager {
     pointer.animationSpeed = 0.2
     pointer.loop = false
     pointer.anchor.set(0.5, 0.5)
-    pointer.x = controls.mouse.x
-    pointer.y = controls.mouse.y
+    const pointerPos = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
+    pointer.x = pointerPos.x
+    pointer.y = pointerPos.y
     pointer.allowMove = false
     pointer.allowClick = false
     pointer.eventMode = 'auto'
@@ -127,31 +127,33 @@ export class SelectionManager {
         player.selectedUnits[u].sendTo(cell)
       }
     }
-    const selectedMoveSound = this.getSelectionMoveSound(player.selectedUnits)
-    if (selectedMoveSound) {
-      sound.play(Array.isArray(selectedMoveSound) ? randomItem(selectedMoveSound) : selectedMoveSound)
+    const selectedCommandSound = this.getSelectionCommandSound(player.selectedUnits)
+    if (selectedCommandSound) {
+      playSoundCue(selectedCommandSound)
       return
     }
     if (hasSentSoldier) {
-      sound.play(randomItem(['5075', '5076', '5128', '5164']))
+      playSoundCue(SOUND_CUES.unit.militaryCommand)
     } else if (hasSentVillager) {
-      sound.play('5006')
+      playSoundCue(player.selectedUnits.find(unit => unit.type === UNIT_TYPES.villager)?.sounds?.command)
     }
   }
 
-  getSelectionMoveSound(units) {
+  getSelectionCommandSound(units) {
     if (!units.length) return null
-    if (!units.every(unit => unit.sounds?.move != null)) return null
-    const moveSound = units[0].sounds.move
-    const normalizedMoveSound = JSON.stringify(moveSound)
-    if (!units.every(unit => JSON.stringify(unit.sounds.move) === normalizedMoveSound)) return null
-    return moveSound
+    const getCommandSound = unit => unit.sounds?.command ?? null
+    if (!units.every(unit => getCommandSound(unit) != null)) return null
+    const commandSound = getCommandSound(units[0])
+    const normalizedCommandSound = JSON.stringify(commandSound)
+    if (!units.every(unit => JSON.stringify(getCommandSound(unit)) === normalizedCommandSound)) return null
+    return commandSound
   }
 
   isUnitInsideSelection(unit, rectangle) {
+    const screenPosition = this.controls.localToScreen(unit.x - this.controls.camera.x, unit.y - this.controls.camera.y)
     return pointInRectangle(
-      unit.x - this.controls.camera.x,
-      unit.y - this.controls.camera.y,
+      screenPosition.x,
+      screenPosition.y,
       rectangle.x,
       rectangle.y,
       rectangle.width,

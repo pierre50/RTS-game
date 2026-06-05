@@ -1,3 +1,4 @@
+import { EAST_FIRST_EIGHT_DIRECTION_ORDER } from '../lib/extra'
 import { getCivilizationDefinition } from './civilizations'
 
 function deepClone(value) {
@@ -11,21 +12,21 @@ const MELEE_SOUNDS = {
 
 const HUMAN_HIT_SOUNDS = [5138, 5139, 5140]
 const STONE_START_SOUND = null
-const BOLT_START_SOUND = 5125
+const FISHING_SOUNDS = [5182, 5183, 5184]
 
 const EXTRA_UNIT_DEFINITIONS = {
   Trooper: {
     category: 'Archer',
-    totalHitPoints: 80,
-    sight: 9,
-    speed: 1.5,
-    rateOfFire: 0.5,
+    totalHitPoints: 100,
+    sight: 15,
+    speed: 2,
+    rateOfFire: 9,
     trainingTime: 20,
     icon: '006_50730',
-    pierceAttack: 12,
-    meleeArmor: 0,
-    pierceArmor: 1,
-    range: 8,
+    pierceAttack: 600,
+    meleeArmor: 10,
+    pierceArmor: 0,
+    range: 88,
     projectile: 'Bullet',
     cost: {
       food: 0,
@@ -34,17 +35,80 @@ const EXTRA_UNIT_DEFINITIONS = {
       standingSheet: 8,
       walkingSheet: 8,
       actionSheet: 8,
+      dyingSheet: 8,
+      corpseSheet: 8,
     },
-    assets: {
-      standingSheet: '607',
-      walkingSheet: '603',
-      actionSheet: '606',
-      dyingSheet: '308',
-      corpseSheet: '367',
+    sheetDirectionOrders: {
+      standingSheet: EAST_FIRST_EIGHT_DIRECTION_ORDER,
+      walkingSheet: EAST_FIRST_EIGHT_DIRECTION_ORDER,
+      actionSheet: EAST_FIRST_EIGHT_DIRECTION_ORDER,
+      dyingSheet: EAST_FIRST_EIGHT_DIRECTION_ORDER,
+      corpseSheet: EAST_FIRST_EIGHT_DIRECTION_ORDER,
+    },
+    allAssets: {
+      default: {
+        standingSheet: '607',
+        walkingSheet: '603',
+        actionSheet: '604',
+        dyingSheet: '606',
+        corpseSheet: '605',
+      },
+      attacker: {
+        standingSheet: '607',
+        walkingSheet: '603',
+        actionSheet: '604',
+        dyingSheet: '606',
+        corpseSheet: '605',
+      },
     },
     sounds: {
       hit: [5009, 5010],
       die: [5055, 5056, 5057],
+    },
+  },
+  Supercar: {
+    category: 'Cavalery',
+    totalHitPoints: 500,
+    sight: 17,
+    speed: 8,
+    rateOfFire: 3,
+    trainingTime: 20,
+    icon: '028_50730',
+    pierceAttack: 300,
+    meleeArmor: 10,
+    pierceArmor: 0,
+    range: 15,
+    projectile: 'SupercarMissile',
+    cost: {
+      food: 0,
+    },
+    sheetDirectionCounts: {
+      standingSheet: 9,
+      walkingSheet: 9,
+      actionSheet: 9,
+    },
+    allAssets: {
+      default: {
+        standingSheet: '715',
+        walkingSheet: '713',
+        actionSheet: '715',
+        dyingSheet: '322',
+        corpseSheet: '381',
+      },
+      attacker: {
+        standingSheet: '715',
+        walkingSheet: '713',
+        actionSheet: '715',
+        dyingSheet: '322',
+        corpseSheet: '381',
+      },
+    },
+    sounds: {
+      create: 5240,
+      command: 5240,
+      move: 5240,
+      hit: [5009, 5010],
+      die: 5108,
     },
   },
   Legion: {
@@ -186,6 +250,12 @@ const EXTRA_UNIT_DEFINITIONS = {
       dyingSheet: '318',
       corpseSheet: '377',
     },
+    sounds: {
+      command: [5120, 5121, 5122, 5123],
+      move: 5092,
+      hit: HUMAN_HIT_SOUNDS,
+      die: 5108,
+    },
   },
   HeavyHorseArcher: {
     category: 'Archer',
@@ -217,6 +287,12 @@ const EXTRA_UNIT_DEFINITIONS = {
       actionSheet: '209',
       dyingSheet: '318',
       corpseSheet: '377',
+    },
+    sounds: {
+      command: [5120, 5121, 5122, 5123],
+      move: 5092,
+      hit: HUMAN_HIT_SOUNDS,
+      die: 5108,
     },
   },
   Chariot: {
@@ -254,6 +330,8 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '381',
     },
     sounds: {
+      command: [5120, 5121, 5122, 5123],
+      move: 5092,
       die: 5108,
       hit: HUMAN_HIT_SOUNDS,
     },
@@ -293,6 +371,8 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '379',
     },
     sounds: {
+      command: [5120, 5121, 5122, 5123],
+      move: 5092,
       die: 5108,
       hit: HUMAN_HIT_SOUNDS,
     },
@@ -332,6 +412,8 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '378',
     },
     sounds: {
+      command: [5120, 5121, 5122, 5123],
+      move: 5092,
       die: 5108,
       hit: HUMAN_HIT_SOUNDS,
     },
@@ -373,7 +455,9 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '385',
     },
     sounds: {
-      die: 5216,
+      command: [5071, 5072],
+      move: 5216,
+      die: 5239,
       hit: 5070,
     },
   },
@@ -417,7 +501,9 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '387',
     },
     sounds: {
-      die: 5216,
+      command: [5071, 5072],
+      move: 5216,
+      die: 5239,
       hit: 5070,
     },
   },
@@ -451,7 +537,9 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '387',
     },
     sounds: {
-      die: 5216,
+      command: [5071, 5072],
+      move: 5216,
+      die: 5239,
       hit: 5070,
     },
   },
@@ -487,7 +575,9 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '376',
     },
     sounds: {
-      move: 5013,
+      create: 5041,
+      command: 5043,
+      move: 5043,
       die: 5016,
       attack: [5038, 5039, 5040],
     },
@@ -524,6 +614,8 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '375',
     },
     sounds: {
+      create: 5041,
+      command: 5043,
       move: 5043,
       die: 5016,
       attack: [5038, 5039, 5040],
@@ -561,9 +653,10 @@ const EXTRA_UNIT_DEFINITIONS = {
       corpseSheet: '372',
     },
     sounds: {
-      move: 5013,
+      create: 5017,
+      command: 5043,
+      move: 5043,
       die: 5042,
-      attack: [5018, 5019, 5020, 5021],
     },
   },
   FishingShip: {
@@ -599,6 +692,14 @@ const EXTRA_UNIT_DEFINITIONS = {
       dyingSheet: '474',
       corpseSheet: '474',
     },
+    sounds: {
+      create: 5030,
+      command: 5027,
+      move: 5027,
+      work: {
+        fishing: FISHING_SOUNDS,
+      },
+    },
   },
   ScoutShip: {
     category: 'Boat',
@@ -629,6 +730,13 @@ const EXTRA_UNIT_DEFINITIONS = {
       actionSheet: '692',
       dyingSheet: '692',
       corpseSheet: '692',
+    },
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      hit: HUMAN_HIT_SOUNDS,
+      die: 5113,
     },
   },
   WarGalley: {
@@ -661,6 +769,13 @@ const EXTRA_UNIT_DEFINITIONS = {
       dyingSheet: '691',
       corpseSheet: '691',
     },
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      hit: HUMAN_HIT_SOUNDS,
+      die: 5177,
+    },
   },
   Trireme: {
     category: 'Boat',
@@ -691,6 +806,13 @@ const EXTRA_UNIT_DEFINITIONS = {
       actionSheet: '693',
       dyingSheet: '693',
       corpseSheet: '693',
+    },
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      hit: HUMAN_HIT_SOUNDS,
+      die: 5181,
     },
   },
 }
@@ -751,27 +873,70 @@ const EXTRA_PROJECTILES = {
     assets: '360',
     isAnimated: true,
     animationSpeed: 0.35,
+    trajectory: {
+      kind: 'arc',
+      minArcHeight: 26,
+      arcHeightFactor: 0.35,
+      maxArcHeight: 90,
+    },
     sounds: {
-      start: STONE_START_SOUND,
+      launch: STONE_START_SOUND,
+      impact: 5070,
     },
   },
   Bolt: {
     size: 12,
     speed: 12,
-    assets: '242',
-    directionalFrames: 8,
-    directionalFrameOrder: ['east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'north', 'northeast'],
+    graphicShape: 'bolt',
     sounds: {
-      start: BOLT_START_SOUND,
+      launch: [5018, 5019, 5020, 5021, 5052],
+      impact: 5028,
     },
   },
   Bullet: {
-    size: 2,
-    speed: 24,
+    size: 9,
+    speed: 3,
+    graphicShape: 'bullet',
+    spawnOffsetY: -10,
+    impactEffect: {
+      assets: '496',
+      animationSpeed: 0.22,
+      scale: 0.65,
+    },
     sounds: {
-      start: [5009, 5010],
+      launch: [5009, 5010],
+      impact: 5028,
     },
   },
+  SupercarMissile: {
+    size: 18,
+    speed: 2,
+    graphicShape: 'missile',
+    spawnOffsetY: -10,
+    impactEffect: {
+      assets: '496',
+      animationSpeed: 0.22,
+      scale: 1,
+    },
+    sounds: {
+      launch: [5009, 5010],
+      impact: 5028,
+    },
+  },
+}
+
+function normalizeUnitSounds(unit) {
+  const sounds = { ...(unit.sounds || {}) }
+
+  if (sounds.command == null && sounds.move != null) {
+    sounds.command = sounds.move
+  }
+  if (sounds.move == null && sounds.command != null) {
+    sounds.move = sounds.command
+  }
+
+  unit.sounds = sounds
+  return unit
 }
 
 export function createPlayerData(baseConfig, baseTechs, civ) {
@@ -789,6 +954,10 @@ export function createPlayerData(baseConfig, baseTechs, civ) {
       ...config.units[unitName],
       ...override,
     }
+  }
+
+  for (const unit of Object.values(config.units)) {
+    normalizeUnitSounds(unit)
   }
 
   for (const [buildingName, override] of Object.entries(BUILDING_OVERRIDES)) {

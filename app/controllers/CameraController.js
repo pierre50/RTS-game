@@ -1,5 +1,6 @@
 import { isometricToCartesian, pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
+import { getCameraZoom } from '../lib/settings'
 
 export class CameraController {
   constructor(context) {
@@ -36,6 +37,25 @@ export class CameraController {
       this._rafPending = false
       this.updateVisibleCells()
     })
+  }
+
+  getViewportRect() {
+    const {
+      context: { app },
+    } = this
+    const zoom = getCameraZoom()
+    const offsetX = (app.screen.width * (1 - zoom)) / 2
+    const offsetY = (app.screen.height * (1 - zoom)) / 2
+
+    return {
+      zoom,
+      offsetX,
+      offsetY,
+      visibleLeft: this.camera.x - offsetX / zoom,
+      visibleTop: this.camera.y - offsetY / zoom,
+      visibleWidth: app.screen.width / zoom,
+      visibleHeight: app.screen.height / zoom,
+    }
   }
 
   move(dir, moveSpeed, isSpeedDivided) {
@@ -157,25 +177,24 @@ export class CameraController {
   }
 
   instanceInCamera(instance) {
-    const {
-      context: { app },
-    } = this
-    return pointInRectangle(instance.x, instance.y, this.camera.x, this.camera.y, app.screen.width, app.screen.height)
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
+    return pointInRectangle(instance.x, instance.y, visibleLeft, visibleTop, visibleWidth, visibleHeight)
   }
 
   getCellOnCamera(callback) {
     const {
-      context: { map, app },
+      context: { map },
     } = this
 
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
     const cameraFloor = {
-      x: Math.floor(this.camera.x),
-      y: Math.floor(this.camera.y),
+      x: Math.floor(visibleLeft),
+      y: Math.floor(visibleTop),
     }
     const margin = CELL_WIDTH
 
-    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + app.screen.width + margin; i += CELL_WIDTH / 2) {
-      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + app.screen.height + margin; j += CELL_HEIGHT / 2) {
+    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + visibleWidth + margin; i += CELL_WIDTH / 2) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + visibleHeight + margin; j += CELL_HEIGHT / 2) {
         const [cartesianX, cartesianY] = isometricToCartesian(i, j)
         const x = Math.min(Math.max(cartesianX, 0), map.size - 1)
         const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
@@ -188,14 +207,15 @@ export class CameraController {
   }
 
   updateVisibleCells() {
-    const { map, app } = this.context
+    const { map } = this.context
     const newVisible = new Set()
     const margin = CELL_WIDTH
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
 
-    const startX = Math.floor(this.camera.x - margin)
-    const endX = Math.floor(this.camera.x + app.screen.width + margin)
-    const startY = Math.floor(this.camera.y - margin)
-    const endY = Math.floor(this.camera.y + app.screen.height + margin)
+    const startX = Math.floor(visibleLeft - margin)
+    const endX = Math.floor(visibleLeft + visibleWidth + margin)
+    const startY = Math.floor(visibleTop - margin)
+    const endY = Math.floor(visibleTop + visibleHeight + margin)
 
     for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
       for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {

@@ -1,9 +1,9 @@
 import { Assets } from 'pixi.js'
-import { sound } from '@pixi/sound'
 import { getIconPath, canAfford, refundCost, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
-import { FAMILY_TYPES } from '../constants'
+import { FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { syncHitPointsInfo } from './BaseEntityInterface'
+import { playUiSound } from '../lib/uiSound'
 
 export class BottombarManager {
   constructor(menu) {
@@ -79,7 +79,7 @@ export class BottombarManager {
   }
 
   playUiClick() {
-    sound.play('5036')
+    playUiSound(SOUND_CUES.ui.menuClick)
   }
 
   clearMenuSelection() {

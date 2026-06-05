@@ -1,4 +1,3 @@
-import { sound } from '@pixi/sound'
 import { Assets } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, MENU_INFO_IDS, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
@@ -8,14 +7,61 @@ import {
   getHitPointsWithDamage,
   getInstanceDegree,
   instanceContactInstance,
-  onSpriteLoopAtFrame,
-  randomItem,
+  playAudibleSoundCue,
 } from '../../lib'
 import { Projectile } from '../projectile'
 
 export class UnitCombat {
   constructor(unit) {
     this.unit = unit
+  }
+
+  setStandingPose() {
+    const unit = this.unit
+    unit.sprite.loop = true
+    unit.sprite.onComplete = null
+    unit.setTextures(SHEET_TYPES.standing)
+  }
+
+  playSingleAttackAnimation(onFire) {
+    const unit = this.unit
+
+    unit.actionLocked = true
+    unit.sprite.loop = false
+    unit.sprite.onComplete = () => {
+      unit.sprite.onComplete = null
+      unit.actionLocked = false
+      const hadPendingOrder = unit.flushPendingOrder()
+      if (hadPendingOrder) {
+        unit.sprite.loop = true
+        return
+      }
+      if (!unit.isDead && unit.action === ACTION_TYPES.attack) {
+        this.setStandingPose()
+      } else {
+        unit.sprite.loop = true
+      }
+    }
+    unit.setTextures(SHEET_TYPES.action)
+    onFire()
+  }
+
+  performRangedAttackCycle(launchProjectile) {
+    const unit = this.unit
+
+    if (!unit.getActionCondition(unit.dest)) {
+      if (unit.dest && unit.dest.hitPoints <= 0) {
+        unit.dest.die()
+      }
+      unit.affectNewDest()
+      return
+    }
+    this.syncMovingTargetDirection()
+    if (!unit.isUnitAtDest(unit.action, unit.dest)) {
+      unit.sendTo(unit.dest, ACTION_TYPES.attack)
+      return
+    }
+    this.playSingleAttackAnimation(() => launchProjectile())
   }
 
   detect(instance) {
@@ -104,27 +150,11 @@ export class UnitCombat {
       unit.affectNewDest()
       return
     }
-    unit.setTextures(SHEET_TYPES.action)
     if (unit.range && unit.type !== UNIT_TYPES.villager) {
-      unit.sprite.onLoop = () => {
-        if (!unit.getActionCondition(unit.dest)) {
-          if (unit.dest && unit.dest.hitPoints <= 0) {
-            unit.dest.die()
-          }
-          unit.affectNewDest()
-          return
-        }
-        if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-          unit.stop()
-          return
-        }
-        this.syncMovingTargetDirection()
-      }
-      onSpriteLoopAtFrame(unit.sprite, 6, () => {
+      this.setStandingPose()
+      const launchProjectile = () => {
         if (!unit.getActionCondition(unit.dest) || !unit.realDest) return
-        if (unit.sounds?.attack && unit.context.controls.instanceIsAudible(unit)) {
-          sound.play(Array.isArray(unit.sounds.attack) ? randomItem(unit.sounds.attack) : unit.sounds.attack)
-        }
+        playAudibleSoundCue(unit, unit.sounds?.attack)
         const projectile = new Projectile(
           {
             owner: unit,
@@ -135,8 +165,17 @@ export class UnitCombat {
           unit.context
         )
         map.addChild(projectile)
-      })
+      }
+      this.performRangedAttackCycle(launchProjectile)
+      unit.startInterval(
+        () => this.performRangedAttackCycle(launchProjectile),
+        unit.rateOfFire * 1000,
+        false
+      )
     } else {
+      unit.sprite.loop = true
+      unit.sprite.onComplete = null
+      unit.setTextures(SHEET_TYPES.action)
       unit.startInterval(
         () => {
           if (!unit.getActionCondition(unit.dest)) {
@@ -152,8 +191,7 @@ export class UnitCombat {
             return
           }
           if (unit.sounds && unit.sounds.hit) {
-            unit.context.controls.instanceIsAudible(unit) &&
-              sound.play(Array.isArray(unit.sounds.hit) ? randomItem(unit.sounds.hit) : unit.sounds.hit)
+            playAudibleSoundCue(unit, unit.sounds.hit)
           }
           if (unit.dest.hitPoints > 0) {
             unit.dest.hitPoints = getHitPointsWithDamage(unit, unit.dest)

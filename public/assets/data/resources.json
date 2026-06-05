@@ -71,7 +71,10 @@
       "FishingBoat"
     ],
     "isAnimated": true,
-    "assets": "594"
+    "assets": "594",
+    "sounds": {
+      "command": [5182, 5183, 5184]
+    }
   },
   "Fish": {
     "category": "Fish",
@@ -82,7 +85,10 @@
       "FishingBoat"
     ],
     "isAnimated": true,
-    "assets": "594"
+    "assets": "594",
+    "sounds": {
+      "command": [5182, 5183, 5184]
+    }
   },
   "RiverFish": {
     "category": "Fish",
@@ -93,7 +99,10 @@
       "FishingBoat"
     ],
     "isAnimated": true,
-    "assets": "594"
+    "assets": "594",
+    "sounds": {
+      "command": [5182, 5183, 5184]
+    }
   },
   "ShoreFish": {
     "category": "Fish",
@@ -104,6 +113,23 @@
       "FishingBoat"
     ],
     "isAnimated": true,
-    "assets": "594"
+    "assets": "594",
+    "sounds": {
+      "command": [5182, 5183, 5184]
+    }
+  },
+  "Whale": {
+    "category": "Fish",
+    "totalQuantity": 250,
+    "icon": "034_50730",
+    "allowAction": [
+      "Villager",
+      "FishingBoat"
+    ],
+    "isAnimated": true,
+    "assets": "689",
+    "sounds": {
+      "command": [5210, 5211]
+    }
   }
 }

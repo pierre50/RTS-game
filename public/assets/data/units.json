@@ -127,16 +127,18 @@
         5058,
         5059
       ],
-      "forageberry": 5217,
-      "hunt": 5005,
-      "farm": 5118,
-      "build": 5118,
-      "attack": 5118,
-      "chopwood": 5180,
-      "minestone": 5075,
-      "minegold": 5075,
-      "fishing": 5054,
-      "move": 5006
+      "command": 5006,
+      "buildCommand": 5118,
+      "huntCommand": 5005,
+      "work": {
+        "gatherFood": 5178,
+        "chopWood": 5048,
+        "forageBerry": 5085,
+        "mineStone": 5159,
+        "mineGold": 5159,
+        "build": 5107,
+        "throwSpear": 5125
+      }
     }
   },
   "Clubman": {
@@ -168,6 +170,12 @@
       "corpseSheet": "380"
     },
     "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
       "hit": [
         5138,
         5139,
@@ -204,7 +212,14 @@
       "corpseSheet": "403"
     },
     "sounds": {
+      "command": [
+        5120,
+        5121,
+        5122,
+        5123
+      ],
       "die": 5108,
+      "move": 5092,
       "hit": [
         5138,
         5139,
@@ -235,6 +250,26 @@
       "actionSheet": "203",
       "dyingSheet": "308",
       "corpseSheet": "367"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
     }
   },
   "Priest": {
@@ -257,6 +292,31 @@
       "actionSheet": "634",
       "dyingSheet": "341",
       "corpseSheet": "402"
+    },
+    "sounds": {
+      "create": 5165,
+      "command": [
+        5050,
+        5051,
+        5109
+      ],
+      "move": [
+        5050,
+        5051,
+        5109
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
     }
   },
   "Axeman": {
@@ -293,6 +353,12 @@
       "corpseSheet": "370"
     },
     "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
       "hit": [
         5190,
         5191,
@@ -343,6 +409,12 @@
       "corpseSheet": "371"
     },
     "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
       "hit": [
         5190,
         5191,
@@ -393,6 +465,12 @@
       "corpseSheet": "395"
     },
     "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
       "hit": [
         5190,
         5191,
@@ -438,6 +516,12 @@
       "corpseSheet": "394"
     },
     "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
       "hit": [
         5190,
         5191,
@@ -488,6 +572,26 @@
       "actionSheet": "204",
       "dyingSheet": "309",
       "corpseSheet": "368"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
     }
   },
   "Hoplite": {
@@ -511,6 +615,27 @@
       "actionSheet": "225",
       "dyingSheet": "340",
       "corpseSheet": "401"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5190,
+        5191,
+        5192,
+        5193
+      ],
+      "die": [
+        5060,
+        5061,
+        5062,
+        5063,
+        5064
+      ]
     }
   },
   "CompositeBowman": {
@@ -543,6 +668,26 @@
       "actionSheet": "223",
       "dyingSheet": "337",
       "corpseSheet": "398"
+    },
+    "sounds": {
+      "command": [
+        5075,
+        5076,
+        5128,
+        5164
+      ],
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": [
+        5055,
+        5056,
+        5057,
+        5058,
+        5059
+      ]
     }
   },
   "ChariotArcher": {
@@ -575,6 +720,21 @@
       "actionSheet": "202",
       "dyingSheet": "310",
       "corpseSheet": "369"
+    },
+    "sounds": {
+      "command": [
+        5120,
+        5121,
+        5122,
+        5123
+      ],
+      "move": 5092,
+      "hit": [
+        5138,
+        5139,
+        5140
+      ],
+      "die": 5108
     }
   },
   "FishingBoat": {
@@ -602,6 +762,18 @@
       "actionSheet": "473",
       "dyingSheet": "473",
       "corpseSheet": "473"
+    },
+    "sounds": {
+      "create": 5030,
+      "command": 5027,
+      "move": 5027,
+      "work": {
+        "fishing": [
+          5182,
+          5183,
+          5184
+        ]
+      }
     }
   }
 }

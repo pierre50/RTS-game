@@ -144,18 +144,19 @@ export class MinimapManager {
 
   updateCameraMiniMapEvt() {
     const { menu } = this
-    const { app, controls } = menu.context
+    const { controls } = menu.context
     const canvas = menu.cameraMinimap
     const context = canvas.getContext('2d')
     const { factor, translate } = this.getMinimapParams()
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = controls.getViewportMetrics()
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
     canvasDrawStrokeRectangle(
       context,
-      controls.camera.x / factor + translate,
-      controls.camera.y / factor,
-      app.screen.width / factor,
-      app.screen.height / factor,
+      visibleLeft / factor + translate,
+      visibleTop / factor,
+      visibleWidth / factor,
+      visibleHeight / factor,
       'white'
     )
   }

@@ -206,6 +206,10 @@ export default class Map extends Container {
     return this.mapTerrain.getMaxReliefLevelFromCoastDistance(distance)
   }
 
+  getMinReliefLevelFromCoastDistance(distance) {
+    return this.mapTerrain.getMinReliefLevelFromCoastDistance(distance)
+  }
+
   setCellReliefLevelDirect(cell, level) {
     return this.mapTerrain.setCellReliefLevelDirect(cell, level)
   }

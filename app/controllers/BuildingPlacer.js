@@ -10,11 +10,13 @@ export class BuildingPlacer {
   handleMouseMove() {
     const { controls } = this
     const {
-      context: { map, app },
+      context: { map },
     } = controls
+    const pointer = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
+    const { visibleHeight } = controls.getViewportMetrics()
     const pos = isometricToCartesian(
-      controls.mouse.x - map.x,
-      controls.mouse.y >= app.screen.height ? app.screen.height - map.y : controls.mouse.y - map.y
+      pointer.x - map.x,
+      pointer.y >= visibleHeight ? visibleHeight - map.y : pointer.y - map.y
     )
     const i = Math.min(Math.max(pos[0], 0), map.size)
     const j = Math.min(Math.max(pos[1], 0), map.size)
@@ -61,8 +63,9 @@ export class BuildingPlacer {
     Object.keys(building).forEach(prop => {
       controls.mouseBuilding[prop] = building[prop]
     })
-    controls.mouseBuilding.x = controls.mouse.x
-    controls.mouseBuilding.y = controls.mouse.y
+    const pointer = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
+    controls.mouseBuilding.x = pointer.x
+    controls.mouseBuilding.y = pointer.y
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     if (building.images.color) {
       const color = Sprite.from(getTexture(building.images.color, Assets))

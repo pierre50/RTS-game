@@ -8,12 +8,14 @@ export default class MainMenu {
   constructor({ onStart, onLoad }) {
     this.onStart = onStart
     this.onLoad = onLoad
+    this._onKeyDown = this._handleKeyDown.bind(this)
 
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
 
     this._showMain()
     document.body.appendChild(this.el)
+    document.addEventListener('keydown', this._onKeyDown)
   }
 
   _btn(label, onClick, className = 'btn-dark') {
@@ -74,6 +76,14 @@ export default class MainMenu {
     this.el.appendChild(copyright)
   }
 
+  _handleKeyDown(evt) {
+    if (evt.key !== 'Enter' || evt.repeat) return
+    if (document.querySelector('.modal')) return
+
+    evt.preventDefault()
+    this.onStart()
+  }
+
   _openSettings() {
     const content = buildSettingsContent({
       onLangChange: () => this._showMain(),
@@ -88,6 +98,7 @@ export default class MainMenu {
   }
 
   destroy() {
+    document.removeEventListener('keydown', this._onKeyDown)
     this.el.remove()
   }
 }

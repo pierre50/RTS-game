@@ -1,4 +1,3 @@
-import { sound } from '@pixi/sound'
 import { ACTION_TYPES, FAMILY_TYPES, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import {
   findInstancesInSight,
@@ -8,6 +7,7 @@ import {
   getInstanceDegree,
   instanceContactInstance,
   pointsDistance,
+  playAudibleSoundCue,
 } from '../../lib'
 
 export class AnimalCombat {
@@ -119,7 +119,7 @@ export class AnimalCombat {
             animal.sounds &&
               animal.sounds.hit &&
               animal.context.controls.instanceIsAudible(animal) &&
-              sound.play(animal.sounds.hit)
+              playAudibleSoundCue(animal, animal.sounds.hit)
             if (animal.dest.hitPoints > 0) {
               animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest)
               if (

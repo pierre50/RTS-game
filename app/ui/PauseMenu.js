@@ -72,6 +72,11 @@ export class PauseMenu {
       onSpeedChange: v => {
         menu.context.app.ticker.speed = v
       },
+      onZoomChange: () => {
+        menu.context.applyZoom()
+        menu.context.controls?.updateVisibleCells()
+        menu.updateCameraMiniMap()
+      },
     })
 
     new Modal({

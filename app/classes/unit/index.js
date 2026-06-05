@@ -1,4 +1,3 @@
-import { sound } from '@pixi/sound'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import {
   STEP_TIME,
@@ -8,6 +7,7 @@ import {
   FAMILY_TYPES,
   SHEET_TYPES,
   LABEL_TYPES,
+  SOUND_CUES,
   UNIT_TYPES,
 } from '../../constants'
 import {
@@ -25,6 +25,8 @@ import {
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
+  playSoundCue,
+  playSelectionSound,
 } from '../../lib'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
@@ -61,10 +63,13 @@ export class Unit extends Instance {
     this.dest = null
     this.realDest = null
     this.previousDest = null
+    this.previousWork = null
     this.path = []
     this.degree = randomRange(1, 360)
     this.currentFrame = randomRange(0, 4)
     this.action = null
+    this.actionLocked = false
+    this.pendingOrder = null
     this.loading = 0
     this.loadingType = null
     this.currentSheet = SHEET_TYPES.standing
@@ -117,7 +122,7 @@ export class Unit extends Instance {
     }
 
     if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible(this)) {
-      sound.play((this.sounds && this.sounds.create) || 5144)
+      playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
     }
 
     this.interface = {
@@ -248,6 +253,7 @@ export class Unit extends Instance {
           this.select()
           menu.setBottombar(this)
           player.selectedOther = this
+          playSelectionSound(this)
         }
       }
     })
@@ -306,6 +312,32 @@ export class Unit extends Instance {
     this.inactif = false
     this.path = path
     this.startInterval(() => this.step(), STEP_TIME)
+  }
+
+  queueOrder(orderOrDest, action = null) {
+    if (typeof orderOrDest === 'function') {
+      this.pendingOrder = { execute: orderOrDest }
+      return true
+    }
+
+    const dest = orderOrDest
+    if (!dest || dest.isDestroyed) return false
+    this.pendingOrder = { dest, action }
+    return true
+  }
+
+  flushPendingOrder() {
+    if (!this.pendingOrder || this.isDead) return false
+    const pendingOrder = this.pendingOrder
+    this.pendingOrder = null
+    if (typeof pendingOrder.execute === 'function') {
+      pendingOrder.execute()
+      return true
+    }
+    const { dest, action } = pendingOrder
+    if (!dest || dest.isDestroyed) return false
+    this.sendToEvt(dest, action)
+    return true
   }
 
   handleChangeDest() {
@@ -389,6 +421,8 @@ export class Unit extends Instance {
       return
     }
     this.handleChangeDest()
+    this.actionLocked = false
+    this.pendingOrder = null
     this.inactif = true
     this.action = null
     this.dest = null

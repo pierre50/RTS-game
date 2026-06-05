@@ -1,5 +1,13 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, BUILDING_TYPES, MENU_INFO_IDS, SHEET_TYPES, WORK_FOOD_TYPES, WORK_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  MENU_INFO_IDS,
+  SHEET_TYPES,
+  UNIT_TYPES,
+  WORK_FOOD_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import {
   getActionCondition,
   getClosestInstance,
@@ -21,11 +29,38 @@ export class UnitCommands {
     this.unit = unit
   }
 
+  isRedundantOrder(target, work, action) {
+    const unit = this.unit
+    if (!target || unit.dest?.label !== target.label) return false
+    if (unit.work !== work || unit.action !== action) return false
+    return unit.path.length > 0 || unit.isUnitAtDest(action, target)
+  }
+
   commonSendTo(target, work, action, keepPrevious, immediate = false) {
     const unit = this.unit
     const {
       context: { menu },
     } = unit
+    if (!target || target.isDestroyed || unit.isDead) return false
+    if (action && !getActionCondition(unit, target, action)) return false
+    if (unit.actionLocked) return unit.queueOrder(target, action)
+    if (this.isRedundantOrder(target, work, action)) return false
+
+    const shouldRememberPreviousTask =
+      keepPrevious &&
+      unit.type === UNIT_TYPES.villager &&
+      unit.work !== WORK_TYPES.builder &&
+      unit.action !== ACTION_TYPES.build &&
+      unit.dest &&
+      !unit.previousDest
+
+    if (shouldRememberPreviousTask) {
+      unit.previousDest = unit.dest
+      unit.previousWork = unit.work
+    } else if (!keepPrevious) {
+      unit.previousWork = null
+    }
+
     const workFromLoading = getWorkWithLoadingType(unit.loadingType)
     if (
       work !== WORK_TYPES.builder &&
@@ -48,9 +83,20 @@ export class UnitCommands {
           unit.corpseSheet = Assets.cache.get(unit.allAssets[work][SHEET_TYPES.corpse])
         }
       }
+      // If the unit is already moving when AI/job assignment changes its role,
+      // refresh the walking animation immediately so the sprite matches the new work.
+      if (unit.path.length) {
+        unit.setTextures(SHEET_TYPES.walking)
+      }
     }
     unit.previousDest = keepPrevious ? unit.previousDest : null
-    return immediate ? unit.sendToEvt(target, action) : unit.sendTo(target, action)
+
+    // AI job switches must bypass the public command throttle, otherwise the villager
+    // can change work/action while still keeping the old destination.
+    if (immediate || !unit.owner.isPlayed) {
+      return unit.sendToEvt(target, action)
+    }
+    return unit.sendTo(target, action)
   }
 
   sendToWithCell(target, arrivalCell, action) {
@@ -58,6 +104,9 @@ export class UnitCommands {
     const {
       context: { map },
     } = unit
+    if (unit.actionLocked) {
+      return unit.queueOrder(() => this.sendToWithCell(target, arrivalCell, action))
+    }
     unit.handleChangeDest()
     unit.stopInterval()
     if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return

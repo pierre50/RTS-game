@@ -1,3 +1,5 @@
+import { canPlayerStillAct, isPlayerEliminated } from '../lib'
+
 export class PlayerStatsManager {
   constructor(menu) {
     this.menu = menu
@@ -35,12 +37,15 @@ export class PlayerStatsManager {
   _getRenderData() {
     const { players, player: me } = this.menu.context
     const sorted = [...players].sort((a, b) => {
+      const activeDiff = Number(canPlayerStillAct(b)) - Number(canPlayerStillAct(a))
+      if (activeDiff !== 0) return activeDiff
+
       const scoreA = a.units.length + a.buildings.length
       const scoreB = b.units.length + b.buildings.length
       return scoreB - scoreA
     })
     return sorted.map((p, rank) => {
-      const dead = p.units.length === 0 && p.buildings.length === 0
+      const dead = isPlayerEliminated(p)
       const isMe = p === me
       const label = isMe ? 'You' : p.color.charAt(0).toUpperCase() + p.color.slice(1)
       return {

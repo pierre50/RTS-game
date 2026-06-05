@@ -1,10 +1,8 @@
-import { sound } from '@pixi/sound'
 import { Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import {
   getTexture,
-  randomItem,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
   drawInstanceBlinkingSelection,
@@ -14,6 +12,8 @@ import {
   getBuildingTextureNameWithSize,
   canUpdateMinimap,
   updateInstanceVisibility,
+  playSoundCue,
+  playSelectionSound,
 } from '../../lib'
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
@@ -142,12 +142,11 @@ export class Building extends Instance {
               drawInstanceBlinkingSelection(this)
             }
             if (hasSentOther) {
-              const voice = randomItem(['5075', '5076', '5128', '5164'])
-              sound.play(voice)
+              playSoundCue(SOUND_CUES.unit.militaryCommand)
               return
             } else if (hasSentVillager) {
-              const voice = Assets.cache.get('config').units.Villager.sounds.build
-              sound.play(voice)
+              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
+              playSoundCue(voice)
               return
             }
           } else if (player.selectedUnits) {
@@ -175,8 +174,8 @@ export class Building extends Instance {
             }
             if (hasSentVillager) {
               drawInstanceBlinkingSelection(this)
-              const voice = Assets.cache.get('config').units.Villager.sounds.build
-              sound.play(voice)
+              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
+              playSoundCue(voice)
               return
             }
           }
@@ -205,12 +204,14 @@ export class Building extends Instance {
             this.select()
             menu.setBottombar(this)
             player.selectedOther = this
+            playSelectionSound(this)
           }
         } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
           player.selectedOther = this
+          playSelectionSound(this)
         }
       })
 
@@ -274,7 +275,7 @@ export class Building extends Instance {
     const {
       context: { menu, player },
     } = this
-    if (this.owner.isPlayed && this.sounds?.create) sound.play(this.sounds.create)
+    if (this.owner.isPlayed && this.sounds?.create) playSoundCue(this.sounds.create)
     super.select()
     if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)

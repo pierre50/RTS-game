@@ -202,6 +202,40 @@ export function pointsDistance(x1, y1, x2, y2) {
 }
 
 /**
+ * Resolve the peak height of an arc trajectory from a travel distance.
+ * @param {number} distance
+ * @param {object} trajectory
+ * @returns {number}
+ */
+export function getArcHeightForDistance(distance, trajectory = {}) {
+  const safeDistance = Number.isFinite(distance) ? distance : 0
+  const minHeight = Number.isFinite(trajectory.minArcHeight)
+    ? trajectory.minArcHeight
+    : Number.isFinite(trajectory.arcHeight)
+      ? trajectory.arcHeight
+      : 0
+  const factor = Number.isFinite(trajectory.arcHeightFactor) ? trajectory.arcHeightFactor : 0
+  const maxHeight = Number.isFinite(trajectory.maxArcHeight) ? trajectory.maxArcHeight : Infinity
+
+  return Math.min(maxHeight, minHeight + safeDistance * factor)
+}
+
+/**
+ * Return the current vertical offset of a parabolic arc for a normalized progress.
+ * @param {number} progress
+ * @param {number} arcHeight
+ * @returns {number}
+ */
+export function getArcProgressOffset(progress, arcHeight) {
+  if (!Number.isFinite(progress) || !Number.isFinite(arcHeight) || arcHeight <= 0) {
+    return 0
+  }
+
+  const clampedProgress = Math.max(0, Math.min(1, progress))
+  return 4 * arcHeight * clampedProgress * (1 - clampedProgress)
+}
+
+/**
  * Check if point is in a rectangle or not
  * @param {number} x
  * @param {number} y

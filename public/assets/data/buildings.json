@@ -10,7 +10,9 @@
       "wood": 30
     },
     "sounds": {
-      "create": 5126
+      "create": 5126,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Barracks": {
@@ -36,7 +38,9 @@
       "Legion"
     ],
     "sounds": {
-      "create": 5022
+      "create": 5022,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Granary": {
@@ -59,7 +63,9 @@
       "ResearchBallistaTower"
     ],
     "sounds": {
-      "create": 5096
+      "create": 5096,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "StoragePit": {
@@ -95,7 +101,9 @@
       "TowerShield"
     ],
     "sounds": {
-      "create": 5186
+      "create": 5186,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Dock": {
@@ -111,7 +119,9 @@
       "wood": 100
     },
     "sounds": {
-      "create": 5027
+      "create": 5027,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "ArcheryRange": {
@@ -146,7 +156,9 @@
       "HeavyHorseArcher"
     ],
     "sounds": {
-      "create": 5008
+      "create": 5008,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Stable": {
@@ -176,7 +188,9 @@
       "ArmoredElephant"
     ],
     "sounds": {
-      "create": 5123
+      "create": 5123,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Farm": {
@@ -201,7 +215,9 @@
       }
     ],
     "sounds": {
-      "create": 5176
+      "create": 5176,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "WatchTower": {
@@ -234,7 +250,9 @@
       }
     ],
     "sounds": {
-      "create": 5201
+      "create": 5201,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "SentryTower": {
@@ -262,7 +280,9 @@
       }
     ],
     "sounds": {
-      "create": 5201
+      "create": 5201,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "SmallWall": {
@@ -284,7 +304,12 @@
         "op": "includes",
         "value": "ResearchSmallWall"
       }
-    ]
+    ],
+    "sounds": {
+      "create": 5207,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
+    }
   },
   "Market": {
     "size": 3,
@@ -318,7 +343,9 @@
       "Coinage"
     ],
     "sounds": {
-      "create": 5142
+      "create": 5142,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "Temple": {
@@ -345,7 +372,9 @@
       "Priest"
     ],
     "sounds": {
-      "create": 5196
+      "create": 5196,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "GovernmentCenter": {
@@ -377,7 +406,9 @@
       "Aristocracy"
     ],
     "sounds": {
-      "create": 5129
+      "create": 5129,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "TownCenter": {
@@ -410,7 +441,9 @@
       "IronAge"
     ],
     "sounds": {
-      "create": 5044
+      "create": 5044,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "SiegeWorkshop": {
@@ -432,7 +465,12 @@
         "op": "includes",
         "value": "ArcheryRange"
       }
-    ]
+    ],
+    "sounds": {
+      "create": 5074,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
+    }
   },
   "Academy": {
     "size": 3,
@@ -462,7 +500,9 @@
       "Centurion"
     ],
     "sounds": {
-      "create": 5002
+      "create": 5002,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "GuardTower": {
@@ -490,7 +530,9 @@
       }
     ],
     "sounds": {
-      "create": 5201
+      "create": 5201,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   },
   "BallistaTower": {
@@ -518,7 +560,9 @@
       }
     ],
     "sounds": {
-      "create": 5201
+      "create": 5201,
+      "burning": [5000, 5081, 5082],
+      "collapse": [5077, 5078, 5079]
     }
   }
 }

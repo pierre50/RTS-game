@@ -1,14 +1,15 @@
-import { sound } from '@pixi/sound'
 import { Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
   playerCanSeeInstance,
-  randomItem,
   randomRange,
+  randomItem,
   drawInstanceBlinkingSelection,
   getActionCondition,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
+  playSoundCue,
+  playSelectionSound,
 } from '../lib'
 import {
   TYPE_ACTION,
@@ -18,6 +19,7 @@ import {
   PLAYER_TYPES,
   LABEL_TYPES,
   RESOURCE_TYPES,
+  SOUND_CUES,
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
@@ -99,6 +101,7 @@ export class Resource extends Instance {
           this.select()
           menu.setBottombar(this)
           player.selectedOther = this
+          playSelectionSound(this)
         }
       })
       this.sprite.on('pointerup', evt => {
@@ -128,11 +131,9 @@ export class Resource extends Instance {
           drawInstanceBlinkingSelection(this)
         }
         if (hasOther) {
-          const voice = randomItem(['5075', '5076', '5128', '5164'])
-          voice && sound.play(voice)
+          playSoundCue(SOUND_CUES.unit.militaryCommand)
         } else if (hasVillager) {
-          const voice = Assets.cache.get('config').units.Villager.sounds[action]
-          voice && sound.play(voice)
+          playSoundCue(this.sounds?.command ?? Assets.cache.get('config').units.Villager.sounds.command)
         }
       })
 

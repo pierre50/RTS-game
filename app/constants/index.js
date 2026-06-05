@@ -1,5 +1,6 @@
 export * from './core'
 export * from './entities'
+export * from './sounds'
 export * from './ui'
 
 export const SHEET_TYPES = {

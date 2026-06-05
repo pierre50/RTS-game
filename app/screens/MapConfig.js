@@ -65,6 +65,7 @@ const PLAYER_COLORS = [
 export default class MapConfig {
   constructor({ onPlay }) {
     this.onPlay = onPlay
+    this._onKeyDown = this._handleKeyDown.bind(this)
 
     this.config = {
       size: 120,
@@ -87,6 +88,8 @@ export default class MapConfig {
       title: t('newGame'),
       content: this._buildContent(),
     })
+
+    document.addEventListener('keydown', this._onKeyDown)
   }
 
   _createButton(label, onClick, className = 'btn-dark') {
@@ -172,10 +175,7 @@ export default class MapConfig {
     const buttons = document.createElement('div')
     buttons.className = 'button-group button-group--row'
     buttons.appendChild(
-      this._createButton(t('startGame'), () => {
-        this._modal.close()
-        this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) })
-      })
+      this._createButton(t('startGame'), () => this._startGame())
     )
 
     content.appendChild(layout)
@@ -183,6 +183,19 @@ export default class MapConfig {
 
     this._refreshPlayerTable()
     return content
+  }
+
+  _startGame() {
+    this.destroy()
+    this.onPlay({ ...this.config, players: this.players.map(p => ({ ...p })) })
+  }
+
+  _handleKeyDown(evt) {
+    if (evt.key !== 'Enter' || evt.repeat) return
+    if (!document.getElementById(this._modal?._id)) return
+
+    evt.preventDefault()
+    this._startGame()
   }
 
   _usedColors() {
@@ -391,6 +404,7 @@ export default class MapConfig {
   }
 
   destroy() {
+    document.removeEventListener('keydown', this._onKeyDown)
     this._modal.close()
   }
 }

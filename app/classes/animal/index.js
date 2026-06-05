@@ -1,10 +1,8 @@
-import { sound } from '@pixi/sound'
 import { Assets, AnimatedSprite } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import {
   getInstanceZIndex,
   randomRange,
-  randomItem,
   instancesDistance,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -13,6 +11,8 @@ import {
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
+  playSoundCue,
+  playSelectionSound,
 } from '../../lib'
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
@@ -138,14 +138,14 @@ export class Animal extends Instance {
         this.select()
         menu.setBottombar(this)
         player.selectedOther = this
+        playSelectionSound(this)
       }
 
       if (hasSentOther) {
-        const voice = randomItem(['5075', '5076', '5128', '5164'])
-        sound.play(voice)
+        playSoundCue(SOUND_CUES.unit.militaryCommand)
       } else if (hasSentVillager) {
-        const voice = Assets.cache.get('config').units.Villager.sounds.hunt
-        sound.play(voice)
+        const voice = Assets.cache.get('config').units.Villager.sounds.huntCommand
+        playSoundCue(voice)
       }
       if (drawDestinationRectangle) {
         drawInstanceBlinkingSelection(this)

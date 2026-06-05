@@ -323,6 +323,30 @@ export class AIEconomy {
     }
   }
 
+  isValidBuildAssignment(villager) {
+    return (
+      villager &&
+      !villager.isDead &&
+      villager.action === ACTION_TYPES.build &&
+      villager.work === WORK_TYPES.builder &&
+      villager.dest?.family === FAMILY_TYPES.building &&
+      villager.getActionCondition(villager.dest, ACTION_TYPES.build)
+    )
+  }
+
+  recoverInvalidBuilder(villager) {
+    if (!villager || villager.isDead || this.isValidBuildAssignment(villager)) return false
+    if (villager.work !== WORK_TYPES.builder && villager.action !== ACTION_TYPES.build) return false
+
+    if (villager.previousDest || villager.previousWork) {
+      villager.goBackToPrevious()
+    } else {
+      villager.stop()
+      villager.work = null
+    }
+    return true
+  }
+
   // Builders borrow from their current job — no global cap, per-building limit by type.
   // Returns the Set of villagers sent to build this step (to exclude from resource pool).
   assignBuilders(villagers, notBuiltBuildings, debug = false) {
@@ -332,9 +356,11 @@ export class AIEconomy {
     // Count who is already actively building each site
     const buildingLoad = new Map()
     for (const v of villagers) {
-      if (!v.inactif && v.work === WORK_TYPES.builder && v.dest?.label) {
+      if (this.isValidBuildAssignment(v)) {
         buildingLoad.set(v.dest.label, (buildingLoad.get(v.dest.label) || 0) + 1)
         assigned.add(v)
+      } else {
+        this.recoverInvalidBuilder(v)
       }
     }
 

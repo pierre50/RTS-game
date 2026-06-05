@@ -54,6 +54,7 @@ export class MapTerrain {
     }
 
     const levelThresholds = [0, 0.66, 0.78, 0.86]
+    const depressionThresholds = [1, 0.34, 0.22, 0.14]
     for (let targetLevel = 3; targetLevel >= 1; targetLevel--) {
       const threshold = levelThresholds[targetLevel]
       for (let i = 0; i <= this.map.size; i++) {
@@ -69,6 +70,21 @@ export class MapTerrain {
       }
     }
 
+    for (let targetDepth = 3; targetDepth >= 1; targetDepth--) {
+      const threshold = depressionThresholds[targetDepth]
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          if (cell.category === 'Water' || cell.has || cell.waterBorder || cell.z > 0) continue
+          const minAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[i * n + j])
+          const actual = Math.max(-targetDepth, minAllowed)
+          if (reliefH[i * n + j] < threshold && actual < cell.z) {
+            this.map.setCellReliefLevelDirect(cell, actual)
+          }
+        }
+      }
+    }
+
     this.map.clampReliefAroundWater(dist)
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -78,6 +94,12 @@ export class MapTerrain {
           let cpt = 0
           getCellsAroundPoint(i, j, this.map.grid, 1, c => {
             if (c.z > 0) cpt++
+          })
+          if (cpt < 3) this.map.setCellReliefLevelDirect(cell, 0)
+        } else if (cell.z === -1) {
+          let cpt = 0
+          getCellsAroundPoint(i, j, this.map.grid, 1, c => {
+            if (c.z < 0) cpt++
           })
           if (cpt < 3) this.map.setCellReliefLevelDirect(cell, 0)
         }
@@ -152,6 +174,10 @@ export class MapTerrain {
     return Math.max(0, distance - 3)
   }
 
+  getMinReliefLevelFromCoastDistance(distance) {
+    return -this.map.getMaxReliefLevelFromCoastDistance(distance)
+  }
+
   setCellReliefLevelDirect(cell, level) {
     const delta = level - cell.z
     if (delta === 0) return
@@ -165,7 +191,9 @@ export class MapTerrain {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
+        const minAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[i * n + j])
         if (cell.z > maxAllowed) this.map.setCellReliefLevelDirect(cell, maxAllowed)
+        if (cell.z < minAllowed) this.map.setCellReliefLevelDirect(cell, minAllowed)
       }
     }
   }
@@ -192,10 +220,14 @@ export class MapTerrain {
 
             const targetLowLevel = high.z - 1
             const lowMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[low.i * n + low.j])
-            if (!low.has && targetLowLevel <= lowMaxAllowed) {
+            const lowMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[low.i * n + low.j])
+            if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
               this.map.setCellReliefLevelDirect(low, targetLowLevel)
             } else {
-              this.map.setCellReliefLevelDirect(high, low.z + 1)
+              const highMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[high.i * n + high.j])
+              const highMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[high.i * n + high.j])
+              const targetHighLevel = Math.max(highMinAllowed, Math.min(highMaxAllowed, low.z + 1))
+              this.map.setCellReliefLevelDirect(high, targetHighLevel)
             }
             changed = true
           }

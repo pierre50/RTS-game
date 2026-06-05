@@ -1,6 +1,5 @@
-import { sound } from '@pixi/sound'
 import { CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import { canUpdateMinimap, randomItem, updateInstanceVisibility } from '../../lib'
+import { canUpdateMinimap, isPlayerEliminated, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 
 export class UnitLifecycle {
   constructor(unit) {
@@ -47,10 +46,7 @@ export class UnitLifecycle {
       context: { player, menu },
     } = unit
 
-    unit.sounds &&
-      unit.sounds.die &&
-      unit.context.controls.instanceIsAudible(unit) &&
-      sound.play(Array.isArray(unit.sounds.die) ? randomItem(unit.sounds.die) : unit.sounds.die)
+    playAudibleSoundCue(unit, unit.sounds?.die)
 
     unit.stopInterval()
     clearTimeout(unit.visibilityTimeout)
@@ -78,7 +74,7 @@ export class UnitLifecycle {
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {
         unit.owner.units.splice(index, 1)
-        if (unit.owner.units.length === 0 && unit.owner.buildings.length === 0) {
+        if (isPlayerEliminated(unit.owner)) {
           menu.updatePlayerStats()
         }
       }

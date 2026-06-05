@@ -1,17 +1,28 @@
 import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
-import { getVolume, setVolume, getGameSpeed, setGameSpeed, SPEED_PRESETS } from '../lib/settings'
+import {
+  getVolume,
+  setVolume,
+  getGameSpeed,
+  setGameSpeed,
+  getCameraZoom,
+  setCameraZoom,
+  SPEED_PRESETS,
+  CAMERA_ZOOM_PRESETS,
+} from '../lib/settings'
 
 /**
  * Builds the settings modal content element.
  * @param {object} opts
  * @param {Function} [opts.onLangChange] - called after language changes (e.g. to re-render menu)
  * @param {Function} [opts.onSpeedChange] - called with new speed value for live in-game updates
+ * @param {Function} [opts.onZoomChange] - called with new zoom value for live in-game updates
  */
-export function buildSettingsContent({ onLangChange, onSpeedChange } = {}) {
+export function buildSettingsContent({ onLangChange, onSpeedChange, onZoomChange } = {}) {
   const content = document.createElement('div')
   content.className = 'config-form'
 
   content.appendChild(_langRow(onLangChange))
+  content.appendChild(_zoomRow(onZoomChange))
   content.appendChild(_volumeRow())
   content.appendChild(_speedRow(onSpeedChange))
 
@@ -56,6 +67,27 @@ function _volumeRow() {
   slider.className = 'settings-volume-slider'
   slider.addEventListener('input', evt => setVolume(parseFloat(evt.target.value)))
   row.appendChild(slider)
+  return row
+}
+
+function _zoomRow(onZoomChange) {
+  const row = _row('cameraZoom')
+  const select = document.createElement('select')
+
+  CAMERA_ZOOM_PRESETS.forEach(({ key, value }) => {
+    const option = document.createElement('option')
+    option.value = String(value)
+    option.textContent = t(key)
+    select.appendChild(option)
+  })
+
+  select.value = String(getCameraZoom())
+  select.addEventListener('change', evt => {
+    const v = parseFloat(evt.target.value)
+    setCameraZoom(v)
+    if (onZoomChange) onZoomChange(v)
+  })
+  row.appendChild(select)
   return row
 }
 

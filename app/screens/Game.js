@@ -1,15 +1,17 @@
 import { Container } from 'pixi.js'
+import { sound } from '@pixi/sound'
 import { t } from '../lib/lang'
 import Map from '../classes/map'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
-import { debounce } from '../lib'
+import { canPlayerStillAct, debounce, isPlayerEliminated } from '../lib'
 import { ActionScheduler } from '../lib/ActionScheduler'
+import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
 import { save as saveToStorage } from '../serialization/SaveStorage'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
-import { getGameSpeed } from '../lib/settings'
+import { getCameraZoom, getGameSpeed } from '../lib/settings'
 
 /**
  * Main Display Object
@@ -20,6 +22,7 @@ import { getGameSpeed } from '../lib/settings'
 export default class Game extends Container {
   constructor(app, gamebox, config = null, onQuit = null) {
     super()
+    this._pausedByVisibility = false
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -45,6 +48,7 @@ export default class Game extends Container {
       quit: () => this.quit(),
       checkVictory: () => this.checkVictory(),
       checkDefeat: () => this.checkDefeat(),
+      applyZoom: () => this.applyZoom(),
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     if (config !== null) {
@@ -84,16 +88,43 @@ export default class Game extends Container {
       }
     }
     this._onResize = debounce(() => {
+      this.applyZoom()
       if (this.context.controls) this.context.controls.updateVisibleCells()
       if (this.context.menu) this.context.menu.updateCameraMiniMap()
     }, 100)
+    this._onDocumentVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        this._handleDocumentHidden()
+        return
+      }
+      this._handleDocumentVisible()
+    }
     window.addEventListener('keydown', this._onKeydown)
     window.addEventListener('resize', this._onResize)
+    document.addEventListener('visibilitychange', this._onDocumentVisibilityChange)
   }
 
   _removeWindowListeners() {
     window.removeEventListener('keydown', this._onKeydown)
     window.removeEventListener('resize', this._onResize)
+    document.removeEventListener('visibilitychange', this._onDocumentVisibilityChange)
+  }
+
+  _handleDocumentHidden() {
+    if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+      this._pausedByVisibility = true
+      this.togglePause(true, { silent: true })
+    }
+    sound.stopAll()
+    stopAllUiSounds()
+  }
+
+  _handleDocumentVisible() {
+    if (!this._pausedByVisibility) return
+    this._pausedByVisibility = false
+    if (!this.context.victory && !this.context.defeat) {
+      this.togglePause(false, { silent: true })
+    }
   }
 
   _applyMapConfig(map, config = {}) {
@@ -114,6 +145,7 @@ export default class Game extends Container {
   }
 
   _resetRuntimeState() {
+    this._pausedByVisibility = false
     this.context = {
       ...this.context,
       player: null,
@@ -143,6 +175,7 @@ export default class Game extends Container {
   _mountRuntime() {
     this.addChild(this.context.map)
     this.addChild(this.context.controls)
+    this.applyZoom()
     this._attachWindowListeners()
   }
 
@@ -199,6 +232,15 @@ export default class Game extends Container {
     this._bootFromSave(json)
   }
 
+  applyZoom() {
+    const zoom = getCameraZoom()
+    this.scale.set(zoom)
+    this.position.set(
+      (this.context.app.screen.width * (1 - zoom)) / 2,
+      (this.context.app.screen.height * (1 - zoom)) / 2
+    )
+  }
+
   quit() {
     this._destroyRuntime()
     if (this.onQuit) this.onQuit()
@@ -220,7 +262,7 @@ export default class Game extends Container {
     const enemies = player.enemyPlayers()
     if (!enemies.length) return
 
-    const hasLivingEnemies = enemies.some(enemy => enemy.units.length > 0 || enemy.buildings.length > 0)
+    const hasLivingEnemies = enemies.some(enemy => canPlayerStillAct(enemy))
     if (hasLivingEnemies) return
 
     this.context.victory = true
@@ -236,9 +278,7 @@ export default class Game extends Container {
     const { player } = this.context
     if (this.context.defeat || this.context.victory || !player) return
 
-    const hasUnits = player.units.length > 0
-    const hasBuildings = player.buildings.length > 0
-    if (hasUnits || hasBuildings) return
+    if (!isPlayerEliminated(player)) return
 
     this.context.defeat = true
     this.togglePause(true, { silent: true })

@@ -3,7 +3,6 @@ import {
   canAfford,
   drawInstanceBlinkingSelection,
   payCost,
-  randomItem,
   uuidv4,
   getHexColor,
   updateObject,
@@ -11,11 +10,11 @@ import {
   canUpdateMinimap,
   isValidCondition,
   canPlaceBuildingAt,
+  playSoundCue,
 } from '../../lib'
-import { sound } from '@pixi/sound'
 import { Building } from '../building'
 import { Unit } from '../unit'
-import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { playUiSound } from '../../lib/uiSound'
 
@@ -93,7 +92,7 @@ export class Player {
     if (now - this.lastUnderAttackAlertAt < 5000) return
 
     this.lastUnderAttackAlertAt = now
-    playUiSound('5014')
+    playUiSound(SOUND_CUES.ui.underAttack)
   }
 
   spawnBuilding(options) {
@@ -118,12 +117,11 @@ export class Player {
         drawInstanceBlinkingSelection(building)
       }
       if (hasSentOther) {
-        const voice = randomItem(['5075', '5076', '5128', '5164'])
-        sound.play(voice)
+        playSoundCue(SOUND_CUES.unit.militaryCommand)
         return
       } else if (hasSentVillager) {
-        const voice = this.config.units.Villager.sounds.build
-        sound.play(voice)
+        const voice = this.config.units.Villager.sounds.buildCommand
+        playSoundCue(voice)
         return
       }
     }
@@ -135,8 +133,15 @@ export class Player {
     const {
       context: { players, menu },
     } = this
+    const refreshSelection = selection => {
+      if (!selection?.interface) return false
+      if (selection.owner?.label !== this.label) return false
+      menu.setBottombar(selection)
+      return true
+    }
+
     if (this.isPlayed) {
-      sound.play('5169')
+      playSoundCue(SOUND_CUES.player.ageAdvance)
     }
     for (let i = 0; i < this.buildings.length; i++) {
       const building = this.buildings[i]
@@ -147,13 +152,9 @@ export class Player {
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
       if (player.type === PLAYER_TYPES.human) {
-        if (player.selectedUnit && player.selectedUnit.owner.label === this.label) {
-          menu.setBottombar(player.selectedUnit)
-        } else if (player.selectedBuilding && player.selectedBuilding.owner.label === this.label) {
-          menu.setBottombar(player.selectedBuilding)
-        } else if (player.selectedOther && player.selectedOther.owner.label === this.label) {
-          menu.setBottombar(player.selectedOther)
-        }
+        refreshSelection(player.selectedUnit) ||
+          refreshSelection(player.selectedBuilding) ||
+          refreshSelection(player.selectedOther)
       }
     }
   }

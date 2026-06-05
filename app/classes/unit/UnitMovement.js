@@ -25,6 +25,17 @@ export class UnitMovement {
     const {
       context: { map },
     } = unit
+    if (unit.actionLocked) {
+      return unit.queueOrder(dest, action)
+    }
+    if (
+      dest &&
+      unit.dest?.label === dest.label &&
+      unit.action === action &&
+      (unit.path.length > 0 || unit.isUnitAtDest(action, dest))
+    ) {
+      return
+    }
     unit.handleChangeDest()
     unit.stopInterval()
     let path = []
@@ -89,10 +100,12 @@ export class UnitMovement {
       unit.affectNewDest()
       return false
     }
+    const effectiveRange =
+      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
     if (
       (unit.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) &&
-      unit.range &&
-      instancesDistance(unit, dest) <= unit.range
+      effectiveRange &&
+      instancesDistance(unit, dest) <= effectiveRange
     ) {
       return true
     }
@@ -187,6 +200,21 @@ export class UnitMovement {
   affectNewDest() {
     const unit = this.unit
     unit.stopInterval()
+    const lostBuildTarget =
+      unit.work === WORK_TYPES.builder &&
+      unit.action === ACTION_TYPES.build &&
+      (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.build))
+
+    if (lostBuildTarget) {
+      if (unit.previousDest || unit.previousWork) {
+        unit.goBackToPrevious()
+      } else {
+        unit.stop()
+        unit.work = null
+      }
+      return
+    }
+
     if (unit.previousDest && unit.action !== ACTION_TYPES.delivery) {
       unit.goBackToPrevious()
       return
@@ -215,7 +243,9 @@ export class UnitMovement {
     }
     if (!handleSuccess) {
       const notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer]
-      if (unit.loading && !notDeliveryWork.includes(unit.work)) {
+      if (unit.loading && unit.work === WORK_TYPES.builder && unit.previousWork) {
+        unit.goBackToPrevious()
+      } else if (unit.loading && !notDeliveryWork.includes(unit.work)) {
         unit.sendToDelivery()
       } else {
         unit.stop()

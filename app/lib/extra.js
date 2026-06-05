@@ -5,10 +5,23 @@ import { playClickSound } from './uiSound'
 
 const FIVE_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north']
 const EIGHT_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north', 'northeast', 'east', 'southeast']
+const EAST_FIRST_EIGHT_DIRECTION_ORDER = [
+  'east',
+  'southeast',
+  'south',
+  'southwest',
+  'west',
+  'northwest',
+  'north',
+  'northeast',
+]
 
-function getSheetDirectionOrder(textures, directionCount) {
+function getSheetDirectionOrder(textures, directionCount, explicitOrder = null) {
   const frameCount = Object.keys(textures).length
 
+  if (explicitOrder?.length) {
+    return explicitOrder
+  }
   if (directionCount === 8) {
     return EIGHT_DIRECTION_ORDER
   }
@@ -24,7 +37,7 @@ function getSheetDirectionOrder(textures, directionCount) {
   return null
 }
 
-export function getAnimationFrames(textures, direction, directionCount = null) {
+export function getAnimationFrames(textures, direction, directionCount = null, directionOrderOverride = null) {
   const names = Object.keys(textures).sort((a, b) => {
     const na = parseInt(a.split('_')[0], 10)
     const nb = parseInt(b.split('_')[0], 10)
@@ -36,7 +49,7 @@ export function getAnimationFrames(textures, direction, directionCount = null) {
     return names.map(name => textures[name])
   }
 
-  const directionOrder = getSheetDirectionOrder(textures, directionCount)
+  const directionOrder = getSheetDirectionOrder(textures, directionCount, directionOrderOverride)
   if (!directionOrder) {
     return names.map(name => textures[name])
   }
@@ -51,6 +64,21 @@ export function getAnimationFrames(textures, direction, directionCount = null) {
   const end = start + framesPerDirection
 
   return names.slice(start, end).map(name => textures[name])
+}
+
+export function getMirroredHalfArcFrameIndex(degree, frameCount) {
+  const normalizedDegree = ((degree % 360) + 360) % 360
+  const mirrored = normalizedDegree > 90 && normalizedDegree < 270
+  const halfArcDegree = mirrored
+    ? 270 - normalizedDegree
+    : normalizedDegree >= 270
+      ? normalizedDegree - 270
+      : normalizedDegree + 90
+  const maxIndex = Math.max(frameCount - 1, 0)
+  const step = maxIndex > 0 ? 180 / maxIndex : 180
+  const frameIndex = Math.max(0, Math.min(maxIndex, Math.round(halfArcDegree / step)))
+
+  return { frameIndex, mirrored }
 }
 
 export function setUnitTexture(sheet, instance) {
@@ -85,33 +113,73 @@ export function setUnitTexture(sheet, instance) {
   instance.currentSheet = sheet
   const direction = degreeToDirection(instance.degree)
   const directionCount = instance.sheetDirectionCounts?.[sheet] ?? null
-  const directionOrder = getSheetDirectionOrder(instance[sheet].textures, directionCount)
+  const directionOrderOverride = instance.sheetDirectionOrders?.[sheet] ?? null
+  if (directionCount === 9) {
+    const names = Object.keys(instance[sheet].textures).sort((a, b) => {
+      const na = parseInt(a.split('_')[0], 10)
+      const nb = parseInt(b.split('_')[0], 10)
+      return na - nb
+    })
+    const framesPerDirection = Math.floor(names.length / directionCount)
+    const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(instance.degree, directionCount)
+    const start = frameIndex * framesPerDirection
+    const end = start + framesPerDirection
+
+    instance.sprite.scale.x = mirrored ? -1 : 1
+    instance.sprite.textures = names.slice(start, end).map(name => instance[sheet].textures[name])
+    instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
+    goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
+    return
+  }
+  const directionOrder = getSheetDirectionOrder(instance[sheet].textures, directionCount, directionOrderOverride)
 
   if (directionOrder?.length === 8) {
     instance.sprite.scale.x = 1
-    instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount)
+    instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount, directionOrderOverride)
   } else {
     switch (direction) {
       case 'southeast':
         instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'southwest', directionCount)
+        instance.sprite.textures = getAnimationFrames(
+          instance[sheet].textures,
+          'southwest',
+          directionCount,
+          directionOrderOverride
+        )
         break
       case 'northeast':
         instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'northwest', directionCount)
+        instance.sprite.textures = getAnimationFrames(
+          instance[sheet].textures,
+          'northwest',
+          directionCount,
+          directionOrderOverride
+        )
         break
       case 'east':
         instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, 'west', directionCount)
+        instance.sprite.textures = getAnimationFrames(
+          instance[sheet].textures,
+          'west',
+          directionCount,
+          directionOrderOverride
+        )
         break
       default:
         instance.sprite.scale.x = 1
-        instance.sprite.textures = getAnimationFrames(instance[sheet].textures, direction, directionCount)
+        instance.sprite.textures = getAnimationFrames(
+          instance[sheet].textures,
+          direction,
+          directionCount,
+          directionOrderOverride
+        )
     }
   }
   instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
+
+export { EAST_FIRST_EIGHT_DIRECTION_ORDER }
 
 export function bindAnimatedSpriteToTicker(sprite, app) {
   if (!sprite || !app?.ticker || sprite._usesAppTicker) {

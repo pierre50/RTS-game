@@ -6,6 +6,7 @@ import {
   instancesDistance,
   canAfford,
   findInstancesInSight,
+  isPlayerEliminated,
 } from '../../lib'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
@@ -548,8 +549,8 @@ export class AI extends Player {
     if (DEBUG) console.log(`Inactif Military: ${inactifMilitary.length}, Waiting Military: ${waitingMilitary.length}`)
 
     // Player losing condition
-    if (!this.buildings.length && !this.units.length) {
-      if (DEBUG) console.log('Player has no buildings and units. Dying...')
+    if (isPlayerEliminated(this)) {
+      if (DEBUG) console.log('Player can no longer act. Dying...')
       this.die()
       return 0
     }
