@@ -331,10 +331,11 @@ export class MapGeneration {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
         const team = playersConfig?.[i]?.team ?? null
+        const difficulty = playersConfig?.[i]?.difficulty ?? this.map.difficulty
         if (!i) {
           players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context))
         } else if (!this.map.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty: this.map.difficulty }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty }, context))
         }
       }
     }

@@ -106,6 +106,55 @@ export class AIStrategy {
     return this.military.handleActions(options)
   }
 
+  getTrainingLoad(buildings = []) {
+    return buildings.reduce((total, building) => {
+      if (!building || building.isDead || building.isDestroyed) return total
+      return total + building.queue.length + (building.loading !== null ? 1 : 0)
+    }, 0)
+  }
+
+  getDesiredBarracksCount(snapshot = null) {
+    const { ai, difficultyConfig } = this
+    const barracks = snapshot?.barracks || ai.buildings.filter(building => building.type === BUILDING_TYPES.barracks)
+    const archeryRanges =
+      snapshot?.archeryRanges || ai.buildings.filter(building => building.type === BUILDING_TYPES.archeryRange)
+    const stables = snapshot?.stables || ai.buildings.filter(building => building.type === BUILDING_TYPES.stable)
+    const academies = snapshot?.academies || ai.buildings.filter(building => building.type === BUILDING_TYPES.academy)
+    const builtBarracks = barracks.filter(building => building.isBuilt && !building.isDead && !building.isDestroyed)
+    const totalMilitary =
+      (snapshot?.infantry?.length || 0) +
+      (snapshot?.archers?.length || 0) +
+      (snapshot?.cavalry?.length || 0) +
+      (snapshot?.hoplites?.length || 0)
+    const militaryProductionBuildings =
+      archeryRanges.filter(building => building.isBuilt && !building.isDead && !building.isDestroyed).length +
+      stables.filter(building => building.isBuilt && !building.isDead && !building.isDestroyed).length +
+      academies.filter(building => building.isBuilt && !building.isDead && !building.isDestroyed).length
+
+    let desired = ai.phase !== 'economy' ? 1 : 0
+
+    if (
+      ai.age >= 2 &&
+      ai.phase !== 'economy' &&
+      (totalMilitary >= Math.max(8, difficultyConfig.attackThreshold * 2) ||
+        this.getTrainingLoad(builtBarracks) >= Math.max(2, builtBarracks.length * 2))
+    ) {
+      desired = 2
+    }
+
+    if (
+      ai.age >= 3 &&
+      ai.phase === 'attack' &&
+      totalMilitary >= Math.max(12, difficultyConfig.attackThreshold * 3) &&
+      this.getTrainingLoad(builtBarracks) >= Math.max(3, builtBarracks.length * 2) &&
+      militaryProductionBuildings >= 2
+    ) {
+      desired = 3
+    }
+
+    return desired
+  }
+
   getEconomicDemand() {
     const { ai } = this
     const demand = { food: 0, wood: 0, gold: 0, stone: 0 }
@@ -122,8 +171,12 @@ export class AIStrategy {
     if (ai.population + 2 > ai.population_max) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.house]?.cost?.wood || 0
     }
-    if (ai.phase !== 'economy' && !ai.buildings.some(building => building.type === BUILDING_TYPES.barracks)) {
-      demand.wood += ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0
+    const currentBarracks = ai.buildings.filter(
+      building => building.type === BUILDING_TYPES.barracks && !building.isDead && !building.isDestroyed
+    ).length
+    const desiredBarracks = this.getDesiredBarracksCount()
+    if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
+      demand.wood += (ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0) * (desiredBarracks - currentBarracks)
     }
     if (!ai.buildings.some(building => building.type === BUILDING_TYPES.market)) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
@@ -192,6 +245,31 @@ export class AIStrategy {
     return actions
   }
 
+  getViableBerryBushCount() {
+    const { ai } = this
+    const dropSites = ai.buildings
+      .filter(
+        building =>
+          [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary].includes(building.type) &&
+          building.isBuilt &&
+          !building.isDead &&
+          !building.isDestroyed
+      )
+    const homeAnchor = ai.getHomeAnchor()
+    const MAX_BERRY_DROP_DIST = 14
+    const MAX_BERRY_HOME_DIST = 30
+
+    return [...ai.foundedBerrybushs].filter(bush => {
+      if (!bush || bush.isDead || bush.quantity <= 0) return false
+      if (dropSites.length > 0) {
+        const nearDropSite = dropSites.some(site => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST)
+        if (!nearDropSite) return false
+      }
+      if (!homeAnchor) return true
+      return Math.abs(bush.i - homeAnchor.i) + Math.abs(bush.j - homeAnchor.j) <= MAX_BERRY_HOME_DIST
+    }).length
+  }
+
   shouldBuyFarm(snapshot) {
     const { ai } = this
     const { villagers, farms } = snapshot
@@ -213,7 +291,7 @@ export class AIStrategy {
     const aliveAnimals = [...ai.foundedAnimals].filter(animal => !animal.isDead).length
     const deadAnimals = [...ai.foundedDeadAnimals].filter(animal => !animal.isDestroyed && animal.quantity > 0).length
     const naturalFoodCapacity =
-      ai.foundedBerrybushs.size * 2 + aliveAnimals * 2 + deadAnimals + Math.min(ai.foundedFish.size, 3) * 2
+      this.getViableBerryBushCount() * 2 + aliveAnimals * 2 + deadAnimals + Math.min(ai.foundedFish.size, 3) * 2
     const naturalFoodUnderPressure =
       villagersOnFood > naturalFoodCapacity || naturalFoodCapacity < Math.max(4, Math.ceil(villagers.length * 0.35))
     const foodDemand = this.getEconomicDemand().food > 0 || ai.food < 80
@@ -261,6 +339,7 @@ export class AIStrategy {
     } = snapshot
 
     const buildingsByType = {
+      [BUILDING_TYPES.townCenter]: towncenters,
       [BUILDING_TYPES.house]: houses,
       [BUILDING_TYPES.farm]: farms,
       [BUILDING_TYPES.barracks]: barracks,
@@ -281,6 +360,7 @@ export class AIStrategy {
       this.buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, debug)
 
     let actions = 0
+    const desiredBarracks = this.getDesiredBarracksCount(snapshot)
 
     if (
       buy(ai.population + 2 > ai.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
@@ -290,7 +370,7 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(ai.phase !== 'economy', BUILDING_TYPES.barracks, () =>
+      buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
         getPositionInGridAroundInstance(towncenters[0], map.grid, [6, 20], 1, false, isEnemyFacing(towncenters[0]))
       )
     )

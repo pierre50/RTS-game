@@ -115,7 +115,7 @@ export const MAX_BUILDING_BY_AGE = {
     StoragePit: 4,
     Granary: 4,
     Farm: 10,
-    Barracks: 2,
+    Barracks: 3,
     Market: 1,
     GovernmentCenter: 1,
     TownCenter: 2,

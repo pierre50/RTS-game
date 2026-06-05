@@ -7,6 +7,35 @@ export class AIEconomy {
     this._exploredAll = false
   }
 
+  getStorageDropSites(extraBuildings = []) {
+    const { ai } = this
+    return [...ai.buildingsByTypes([BUILDING_TYPES.townCenter, BUILDING_TYPES.granary]), ...extraBuildings].filter(
+      building => building && building.isBuilt && !building.isDead && !building.isDestroyed
+    )
+  }
+
+  getViableBerryBushes(dropSites = []) {
+    const { ai } = this
+    const effectiveDropSites = dropSites.length > 0 ? dropSites : this.getStorageDropSites()
+    const homeAnchor = ai.getHomeAnchor()
+    const MAX_BERRY_DROP_DIST = 14
+    const MAX_BERRY_HOME_DIST = 30
+
+    return new Set(
+      [...ai.foundedBerrybushs].filter(bush => {
+        if (!bush || bush.isDead || bush.quantity <= 0 || !this.isLocationSafe(bush)) return false
+
+        const nearDropSite =
+          effectiveDropSites.length === 0 ||
+          effectiveDropSites.some(site => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST)
+        if (!nearDropSite) return false
+
+        if (!homeAnchor) return true
+        return Math.abs(bush.i - homeAnchor.i) + Math.abs(bush.j - homeAnchor.j) <= MAX_BERRY_HOME_DIST
+      })
+    )
+  }
+
   getWorkerSnapshot(villagers) {
     const byWork = works => villagers.filter(v => !v.inactif && works.includes(v.work))
     const inactifVillagers = villagers.filter(v => v.inactif && v.action !== ACTION_TYPES.attack)
@@ -244,10 +273,12 @@ export class AIEconomy {
     const { maxVillagersOnFood } = targets
     let actions = 0
     let foodWorkersAssigned = villagersOnFood.length
+    const berryDropSites = this.getStorageDropSites()
+    const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
 
     // Reserve farm slots only once berries are already being gathered — prevents starving berries in early game
     const farmReserve =
-      emptyFarms.length > 0 && villagersForaging.length > 0
+      emptyFarms.length > 0 && (villagersForaging.length > 0 || viableBerryBushes.size === 0)
         ? Math.min(emptyFarms.length, Math.ceil(maxVillagersOnFood * 0.3))
         : 0
     const naturalFoodCap = maxVillagersOnFood - farmReserve
@@ -268,7 +299,7 @@ export class AIEconomy {
     const berriesAssigned = this.assignVillagersToResource(
       availableVillagers,
       villagersForaging,
-      ai.foundedBerrybushs,
+      viableBerryBushes,
       naturalFoodCap,
       (villager, bush) => villager.sendToBerrybush(bush)
     )

@@ -77,7 +77,6 @@ export default class MapConfig {
     this.config = {
       size: 120,
       mapType: 'plain',
-      difficulty: 'medium',
       startingAge: 0,
       allTechnologies: false,
       revealEverything: false,
@@ -90,7 +89,7 @@ export default class MapConfig {
     this.maxPlayers = 2
     this.players = [
       { name: t('you'), color: 'blue', civ: this._randomCiv(), team: null, isHuman: true },
-      { name: t('computer') + ' 1', color: 'red', civ: this._randomCiv(), team: null, isHuman: false },
+      { name: t('computer') + ' 1', color: 'red', civ: this._randomCiv(), team: null, isHuman: false, difficulty: 'medium' },
     ]
 
     this._modal = new Modal({
@@ -149,12 +148,6 @@ export default class MapConfig {
     settingsForm.appendChild(
       this._createSelect(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
         this.config.mapType = val
-      })
-    )
-
-    settingsForm.appendChild(
-      this._createSelect(t('aiDifficulty'), DIFFICULTIES, 'medium', val => {
-        this.config.difficulty = val
       })
     )
 
@@ -256,7 +249,14 @@ export default class MapConfig {
     if (this.players.filter(p => !p.isHuman).length >= MAX_BOTS) return
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(p => !p.isHuman).length + 1
-    this.players.push({ name: t('computer') + ' ' + botNum, color, civ: this._randomCiv(), team: null, isHuman: false })
+    this.players.push({
+      name: t('computer') + ' ' + botNum,
+      color,
+      civ: this._randomCiv(),
+      team: null,
+      isHuman: false,
+      difficulty: 'medium',
+    })
   }
 
   _setPlayerCount(count) {
@@ -297,7 +297,7 @@ export default class MapConfig {
 
     const header = document.createElement('div')
     header.className = 'player-table-header'
-    ;[t('colName'), t('colCiv'), t('colTeam'), t('colColor')].forEach(text => {
+    ;[t('colName'), t('colCiv'), t('colDifficulty'), t('colTeam'), t('colColor')].forEach(text => {
       const cell = document.createElement('div')
       cell.textContent = text
       header.appendChild(cell)
@@ -328,6 +328,26 @@ export default class MapConfig {
       }
       civCell.appendChild(civSelect)
       row.appendChild(civCell)
+
+      const difficultyCell = document.createElement('div')
+      difficultyCell.className = 'player-difficulty'
+      if (player.isHuman) {
+        difficultyCell.textContent = '-'
+      } else {
+        const difficultySelect = document.createElement('select')
+        DIFFICULTIES.forEach(difficulty => {
+          const opt = document.createElement('option')
+          opt.value = difficulty.value
+          opt.textContent = typeof difficulty.label === 'function' ? difficulty.label() : difficulty.label
+          if (difficulty.value === (player.difficulty || 'medium')) opt.selected = true
+          difficultySelect.appendChild(opt)
+        })
+        difficultySelect.onchange = e => {
+          this.players[i].difficulty = e.target.value
+        }
+        difficultyCell.appendChild(difficultySelect)
+      }
+      row.appendChild(difficultyCell)
 
       const teamCell = document.createElement('div')
       teamCell.className = 'player-team'

@@ -129,6 +129,7 @@ function playerData(player) {
       'gold',
       'civ',
       'color',
+      'difficulty',
       'team',
       'population',
       'population_max',

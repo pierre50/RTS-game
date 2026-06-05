@@ -487,8 +487,10 @@ export class AI extends Player {
   }
 
   hasNotReachBuildingLimit(buildingType, buildings) {
+    const currentBuildings = buildings || []
     return (
-      !this.maxBuildingByAge[this.age][buildingType] || buildings.length < this.maxBuildingByAge[this.age][buildingType]
+      !this.maxBuildingByAge[this.age][buildingType] ||
+      currentBuildings.length < this.maxBuildingByAge[this.age][buildingType]
     )
   }
 

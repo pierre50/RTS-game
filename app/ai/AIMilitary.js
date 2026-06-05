@@ -295,19 +295,23 @@ export class AIMilitary {
       }
     }
 
+    const regroupCooldownMs = Math.max(8000, Math.round(difficultyConfig.attackCooldownMs * 0.75))
     if (
-      inactifMilitary.length >= minAttackers &&
+      inactifMilitary.length >= minAttackForce &&
       ai.phase === 'attack' &&
-      ai.getEnemyMemories({ family: FAMILY_TYPES.building, freshWithin: 45000 }).length
+      ai.getEnemyMemories({ family: FAMILY_TYPES.building, freshWithin: 45000 }).length &&
+      ai.getNow() - (ai.lastAttackWaveAt || 0) >= regroupCooldownMs
     ) {
       const target = this.getBestEnemyTarget(inactifMilitary)
       const idleAssaultPower = this.getGroupCombatPower(inactifMilitary)
       const targetDefensePower = this.estimateTargetDefensePower(target)
-      if (target && idleAssaultPower >= targetDefensePower) {
+      if (target && idleAssaultPower >= Math.max(this.getDesiredAttackPower() * 0.65, targetDefensePower * 1.1)) {
         if (debug) console.log('Redirecting assault soldiers to:', target)
         this.sendToAttack(inactifMilitary, target, debug)
         ai.lastAttackWaveAt = ai.getNow()
         actions++
+      } else {
+        this.releaseIdleAssault(inactifMilitary)
       }
     } else if (inactifMilitary.length) {
       this.releaseIdleAssault(inactifMilitary)
