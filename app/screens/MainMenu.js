@@ -81,6 +81,7 @@ export default class MainMenu {
     if (document.querySelector('.modal')) return
 
     evt.preventDefault()
+    playClickSound()
     this.onStart()
   }
 

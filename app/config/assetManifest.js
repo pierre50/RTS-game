@@ -14,17 +14,17 @@ function toSoundBundle(ids) {
 
 export const ASSET_BUNDLES = {
   config: {
-    buildingsData: 'assets/data/buildings.json',
-    unitsData: 'assets/data/units.json',
-    resourcesData: 'assets/data/resources.json',
-    animalsData: 'assets/data/animals.json',
-    projectilesData: 'assets/data/projectiles.json',
-    cellsData: 'assets/data/cells.json',
-    greek: 'assets/greek.json',
-    egyptian: 'assets/egyptian.json',
-    asian: 'assets/asian.json',
-    babylonian: 'assets/babylonian.json',
-    technology: 'assets/technology.json',
+    buildingsData: 'assets/data/gameplay/buildings.json',
+    unitsData: 'assets/data/gameplay/units.json',
+    resourcesData: 'assets/data/gameplay/resources.json',
+    animalsData: 'assets/data/gameplay/animals.json',
+    projectilesData: 'assets/data/gameplay/projectiles.json',
+    cellsData: 'assets/data/gameplay/cells.json',
+    greek: 'assets/data/civilizations/greek.json',
+    egyptian: 'assets/data/civilizations/egyptian.json',
+    asian: 'assets/data/civilizations/asian.json',
+    babylonian: 'assets/data/civilizations/babylonian.json',
+    technology: 'assets/data/technologies/technologies.json',
   },
   interface: {
     50405: 'assets/interface/50405/texture.json',

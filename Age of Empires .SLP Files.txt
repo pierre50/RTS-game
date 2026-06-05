@@ -1,736 +1,1850 @@
-000 - 	 Green clump of trees
-001 - 	 Brown clump of trees
-002 - 	 Four large plumes of fire
-003 - 	 Four small plumes of fire
-004 - 	 Four small plumes of fire
-005 - 	 Brown clump of trees
-008 - 	 Tree (brown fruits)
-009 - 	 Tree (red fruits)
-010 - 	 Bones 1
-011 - 	 Bones 2
-012 - 	 Bones 3
-013 - 	 (?) Small green clump
+Age of Empires DRS File List
+ 
+ 
+BORDERS.DRS
+ 
+BOR20000 - <36>  Water-Desert borders
+BOR20001 - <36>  Desert-Grass borders
+BOR20002 - <68>  Desert-BLANK borders
+BOR20003 - <36>  Desert-Grass mixes (with numbers at tail-end frames!!)
+BOR20004 - <36>  light Water-light Desert borders
+BOR20006 - <52>  Water-BLANK borders
+<16>  Desert-BLANK borders
+ 
 
+GRAPHICS.DRS
+ 
+GRA00000 - <01>  Green clump of trees               
+GRA00001 - <01>  Brown clump of trees
+GRA00002 - <20>  Four large fire sequence
+GRA00003 - <20>  Four medium fire sequence
+GRA00004 - <20>  Four small fire sequence
+GRA00005 - <01>  Brown clump of trees
+GRA00008 - <01>  Tree (brown fruits)
+GRA00009 - <01>  Tree (red fruits)                                   
+GRA00010 - <01>  Bones 1
+GRA00011 - <01>  Bones 2
+GRA00012 - <01>  Bones 3
+GRA00013 - <01>  Small bush clump
+ 
 
-015 - 	Dock 			(Level 2 of 3 -  Egyptian) 
-016 - 	Academy 		(Level 1 of 1 -  Egyptian)
-017 - 	Barracks 		(Level 2 of 3 -  Egyptian)
-018 - 	Town Center 		(Level 3 of 4 -  Egyptian)
-019 - 	Siege Workshop 		(Level 1 of 1 -  Egyptian)
-020 - 	Granary 		(Level 1 of 2 -  Egyptian)
-021 - 	House 			(Level 2 of 4 -  Egyptian)
-022 - 	Government Center	(Level 1 of 2 -  Egyptian)
-023 - 	Wall/Fortification	(Level 3 of 3 -  Egyptian)
-024 - 	Market	 		(Level 2 of 3 -  Egyptian)
-025 - 	Wall/Fortification	(Level 2 of 3 -  Egyptian)
-026 - 	Storage Pit		(Level 2 of 3 -  Egyptian)
-027 - 	Archery Range 		(Level 1 of 2 -  Egyptian)
-028 - 	Stable		 	(Level 2 of 2 -  Egyptian)
-029 - 	Temple	 		(Level 1 of 2 -  Egyptian)
-030 - 	Wonder			(Level 1 of 1 -  Egyptian, UNUSED?)
-031 - 	Tower			(Level 3 of 3 -  Egyptian)
-032 - 	House			(Level ? of 3 -     ?    , UNUSED?)
-033 - 	Wonder		 	(Level 1 of 1 -  Egyptian)
+GRA00015 - <01>  Dock                    (Level 2 of 3 -  Egyptian)
+<01>  Dock                    (Level 3 of 3 -  Egyptian)  
+GRA00016 - <01>  Academy                 (Level 1 of 1 -  Egyptian)
+GRA00017 - <01>  Barracks                (Level 2 of 3 -  Egyptian)
+<01>  Barracks                (Level 2 of 3 -  Egyptian)
+GRA00018 - <01>  Town Center             (Level 3 of 4 -  Egyptian)
+<01>  Town Center             (Level ? of 4 -  Egyptian)
+<01>  Town Center             (Level 4 of 4 -  Egyptian)
+GRA00019 - <01>  Siege Workshop          (Level 1 of 1 -  Egyptian)
+GRA00020 - <01>  Granary                 (Level 1 of 2 -  Egyptian)
+<01>  Granary                 (Level 2 of 2 -  Egyptian)
+GRA00021 - <01>  House                   (Level 2 of 4 -  Egyptian)
+<01>  House                   (Level 3 of 4 -  Egyptian)
+<01>  House                   (Level 4 of 4 -  Egyptian)
+GRA00022 - <01>  Government Center       (Level 1 of 2 -  Egyptian)
+<01>  Government Center       (Level 1 of 2 -  Egyptian)
+GRA00023 - <01>  Wall/Fort. (NE/SW)      (Level 3 of 3 -  Egyptian)
+<01>  Wall/Fort. (NW/SE)      (Level 3 of 3 -  Egyptian)
+<01>  Wall/Fort. (Corner)     (Level 3 of 3 -  Egyptian)
+GRA00024 - <01>  Market                 (Level 2 of 3 -  Egyptian)
+<01>  Market                 (Level 3 of 3 -  Egyptian)
+GRA00025 - <01>  Wall/Fort. (NE/SW)      (Level 2 of 3 -  Egyptian)
+<01>  Wall/Fort. (NW/SE)      (Level 2 of 3 -  Egyptian)
+<01>  Wall/Fort. (Corner)     (Level 2 of 3 -  Egyptian)
+GRA00026 - <01>  Storage Pit             (Level 2 of 3 -  Egyptian)
+<01>  Storage Pit             (Level 3 of 3 -  Egyptian)
+GRA00027 - <01>  Archery Range           (Level 1 of 2 -  Egyptian)
+<01>  Archery Range           (Level 2 of 2 -  Egyptian)
+GRA00028 - <01>  Stable                 (Level 2 of 2 -  Egyptian)
+GRA00029 - <01>  Temple                 (Level 1 of 2 -  Egyptian)
+<01>  Temple                 (Level 2 of 2 -  Egyptian)
+GRA00030 - <01>  Wonder                  (Level ? of 1 -  Egyptian)
+GRA00031 - <01>  Tower                   (Level 3 of 3 -  Egyptian)
+GRA00032 - <01>  House                   (Level ? of 4 -  Egyptian)
+GRA00033 - <01>  Wonder                 (Level 1 of 1 -  Egyptian)
+ 
+GRA00034 -  <01>  [L] Academy             (Level 1 of 1 -  Egyptian)
+GRA00035 - <01>  [L] Barracks            (Level 2 of 3 -  Egyptian)
+<01>  [L] Barracks            (Level 2 of 3 -  Egyptian)
+GRA00036 - <01>  [L] Town Center         (Level 3 of 4 -  Egyptian)
+<01>  [L] Town Center         (Level ? of 4 -  Egyptian)
+<01>  [L] Town Center         (Level 4 of 4 -  Egyptian)
+GRA00037 - <01>  [L] Dock                (Level 2 of 3 -  Egyptian)
+<01>  [L] Dock                (Level 3 of 3 -  Egyptian)
+GRA00038 - <01>  [L] Siege Workshop      (Level 1 of 1 -  Egyptian)
+GRA00039 - <01>  [L] Granary             (Level 1 of 2 -  Egyptian)
+<01>  [L] Granary             (Level 2 of 2 -  Egyptian)
+GRA00040 - <01>  [L] House               (Level 2 of 4 -  Egyptian)
+<01>  [L] House               (Level 3 of 4 -  Egyptian)
+<01>  [L] House               (Level 4 of 4 -  Egyptian)
 
-034 - 	(?) livery
-035 - 	(?) livery
-036 - 	(?) livery
-037 - 	(?) livery
-038 - 	(?) livery
-039 - 	(?) livery
-040 - 	(?) livery
-041 - 	(?) livery
-042 - 	(?) livery
-043 - 	(?) livery
-044 - 	(?) livery
-045 - 	(?) livery
-046 - 	(?) livery
-047 - 	(?) livery
-048 - 	(?) livery
-050 - 	(?) livery
-051 - 	(?) livery
+GRA00041 - <01>  [L] Government Center   (Level 1 of 2 -  Egyptian)
+<01>  [L] Government Center   (Level 1 of 2 -  Egyptian)
+GRA00042 - <01>  [L] Wall/Fort. (NE/SW)  (Level 3 of 3 -  Egyptian)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 3 of 3 -  Egyptian)
+<01>  [L] Wall/Fort. (Corner) (Level 3 of 3 -  Egyptian)
+GRA00043 - <01>  [L] Market             (Level 2 of 3 -  Egyptian)
+<01>  [L] Market             (Level 3 of 3 -  Egyptian)
+GRA00044 - <01>  [L] Wall/Fort. (NE/SW)  (Level 2 of 3 -  Egyptian)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 2 of 3 -  Egyptian)
+<01>  [L] Wall/Fort. (Corner) (Level 2 of 3 -  Egyptian)
+GRA00045 - <01>  [L] Storage Pit         (Level 2 of 3 -  Egyptian)
+<01>  [L] Storage Pit         (Level 3 of 3 -  Egyptian)
+GRA00046 - <01>  [L] Archery Range       (Level 1 of 2 -  Egyptian)
+<01>  [L] Archery Range       (Level 2 of 2 -  Egyptian)
+GRA00047 - <01>  [L] Stable             (Level 2 of 2 -  Egyptian)
+GRA00048 - <01>  [L] Temple             (Level 1 of 2 -  Egyptian)
+<01>  [L] Temple             (Level 2 of 2 -  Egyptian)
+GRA00050 - <01>  [L] Tower               (Level 3 of 3 -  Egyptian)
+GRA00051 - <01>  [L] House               (Level ? of 3 -  Egyptian)    
+ 
+GRA00052 - <01>  *d* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Egyptian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Egyptian)
+<01>  *d* Wall/Fort. (Corner) (Level 3 of 3 -  Egyptian)
+GRA00053 - <01>  *D* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Egyptian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Egyptian)
+<01>  *D* Wall/Fort. (Corner) (Level 3 of 3 -  Egyptian)
+GRA00054 - <01>  *d* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Egyptian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Egyptian)
+<01>  *d* Wall/Fort. (Corner) (Level 2 of 3 -  Egyptian)
+GRA00055 - <01>  *D* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Egyptian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Egyptian)
+<01>  *D* Wall/Fort. (Corner) (Level 2 of 3 -  Egyptian)
+GRA00056 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 3 of 3 -  Egyptian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 3 of 3 -  Egyptian)
+<01>  /S/ Wall/Fort. (Corner) (Level 3 of 3 -  Egyptian)
+GRA00057 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 2 of 3 -  Egyptian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 2 of 3 -  Egyptian)
+<01>  /S/ Wall/Fort. (Corner) (Level 2 of 3 -  Egyptian)
+ 
 
-052 - 	Razed Wall/Fortifica'tn (Level ? of 3 -     ?    ) 
-053 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -     ?    )
-054 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -     ?    )
-055 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -     ?    )
-056 - 	(?) Small shadow
-057 - 	(?) Large shadow
+GRA00059 - <01>  Dock                    (Level 2 of 3 -  Greek)
+<01>  Dock                    (Level 3 of 3 -  Greek)  
+GRA00060 - <01>  Academy                 (Level 1 of 1 -  Greek)
+GRA00061 - <01>  Barracks                (Level 2 of 3 -  Greek)
+<01>  Barracks                (Level 2 of 3 -  Greek)
+GRA00062 - <01>  Town Center             (Level 3 of 4 -  Greek)
+<01>  Town Center             (Level ? of 4 -  Greek)
+<01>  Town Center             (Level 4 of 4 -  Greek)
+GRA00063 - <01>  Siege Workshop          (Level 1 of 1 -  Greek)
+GRA00064 - <01>  Granary                 (Level 1 of 2 -  Greek)
+<01>  Granary                 (Level 2 of 2 -  Greek)
+GRA00065 - <01>  House                   (Level 2 of 4 -  Greek)
+<01>  House                   (Level 3 of 4 -  Greek)
+<01>  House                   (Level 4 of 4 -  Greek)
+GRA00066 - <01>  Government Center       (Level 1 of 2 -  Greek)
+<01>  Government Center       (Level 1 of 2 -  Greek)
+GRA00067 - <01>  Wall/Fort. (NE/SW)      (Level 3 of 3 -  Greek)
+<01>  Wall/Fort. (NW/SE)      (Level 3 of 3 -  Greek)
+<01>  Wall/Fort. (Corner)     (Level 3 of 3 -  Greek)
+GRA00068 - <01>  Market                 (Level 2 of 3 -  Greek)
+<01>  Market                 (Level 3 of 3 -  Greek)
+GRA00069 - <01>  Wall/Fort. (NE/SW)      (Level 2 of 3 -  Greek)
+<01>  Wall/Fort. (NW/SE)      (Level 2 of 3 -  Greek)
+<01>  Wall/Fort. (Corner)     (Level 2 of 3 -  Greek)
+GRA00070 - <01>  Storage Pit             (Level 2 of 3 -  Greek)
+<01>  Storage Pit             (Level 3 of 3 -  Greek)
+GRA00071 - <01>  Archery Range           (Level 1 of 2 -  Greek)
+<01>  Archery Range           (Level 2 of 2 -  Greek)
+GRA00072 - <01>  Stable                 (Level 2 of 2 -  Greek)
+GRA00073 - <01>  Temple                 (Level 1 of 2 -  Greek)
+<01>  Temple                 (Level 2 of 2 -  Greek)
+GRA00075 - <01>  Tower                   (Level 3 of 3 -  Greek)
+GRA00076 - <01>  House                   (Level ? of 4 -  Greek)
+GRA00077 - <01>  Wonder                 (Level 1 of 1 -  Greek)
+ 
+GRA00078 - <01>  [L] Academy             (Level 1 of 1 -  Greek)
+GRA00079 - <01>  [L] Barracks            (Level 2 of 3 -  Greek)
+<01>  [L] Barracks            (Level 2 of 3 -  Greek)
+GRA00080 - <01>  [L] Town Center         (Level 3 of 4 -  Greek)
+<01>  [L] Town Center         (Level ? of 4 -  Greek)
+<01>  [L] Town Center         (Level 4 of 4 -  Greek)
+GRA00081 - <01>  [L] Dock                (Level 2 of 3 -  Greek)
+<01>  [L] Dock                (Level 3 of 3 -  Greek)
+GRA00082 - <01>  [L] Siege Workshop      (Level 1 of 1 -  Greek)
+GRA00083 - <01>  [L] Granary             (Level 1 of 2 -  Greek)
+<01>  [L] Granary             (Level 2 of 2 -  Greek)
+GRA00084 - <01>  [L] House               (Level 2 of 4 -  Greek)
+<01>  [L] House               (Level 3 of 4 -  Greek)
+<01>  [L] House               (Level 4 of 4 -  Greek)
 
+GRA00085 - <01>  [L] Government Center   (Level 1 of 2 -  Greek)
+<01>  [L] Government Center   (Level 1 of 2 -  Greek)
+GRA00086 - <01>  [L] Wall/Fort. (NE/SW)  (Level 3 of 3 -  Greek)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 3 of 3 -  Greek)
+<01>  [L] Wall/Fort. (Corner) (Level 3 of 3 -  Greek)
+GRA00087 - <01>  [L] Market             (Level 2 of 3 -  Greek)
+<01>  [L] Market             (Level 3 of 3 -  Greek)
+GRA00088 - <01>  [L] Wall/Fort. (NE/SW)  (Level 2 of 3 -  Greek)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 2 of 3 -  Greek)
+<01>  [L] Wall/Fort. (Corner) (Level 2 of 3 -  Greek)
+GRA00089 - <01>  [L] Storage Pit         (Level 2 of 3 -  Greek)
+<01>  [L] Storage Pit         (Level 3 of 3 -  Greek)
+GRA00090 - <01>  [L] Archery Range       (Level 1 of 2 -  Greek)
+<01>  [L] Archery Range       (Level 2 of 2 -  Greek)
+GRA00091 - <01>  [L] Stable             (Level 2 of 2 -  Greek)
+GRA00092 - <01>  [L] Temple             (Level 1 of 2 -  Greek)
+<01>  [L] Temple             (Level 2 of 2 -  Greek)
+GRA00094 - <01>  [L] Tower               (Level 3 of 3 -  Greek)
+GRA00095 - <01>  [L] House               (Level ? of 3 -  Greek)
+ 
+GRA00096 - <01>  *d* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Greek)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Greek)
+<01>  *d* Wall/Fort. (Corner) (Level 3 of 3 -  Greek)
+GRA00097 - <01>  *D* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Greek)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Greek)
+<01>  *D* Wall/Fort. (Corner) (Level 3 of 3 -  Greek)
+GRA00098 - <01>  *d* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Greek)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Greek)
+<01>  *d* Wall/Fort. (Corner) (Level 2 of 3 -  Greek)
+GRA00099 - <01>  *D* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Greek)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Greek)
+<01>  *D* Wall/Fort. (Corner) (Level 2 of 3 -  Greek)
+GRA00100 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 3 of 3 -  Greek)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 3 of 3 -  Greek)
+<01>  /S/ Wall/Fort. (Corner) (Level 3 of 3 -  Greek)
+GRA00101 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 2 of 3 -  Greek)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 2 of 3 -  Greek)
+<01>  /S/ Wall/Fort. (Corner) (Level 2 of 3 -  Greek)
+ 
 
-059 - 	Dock			(Level 2 of 3 -  Greek)
-060 - 	Academy			(Level 1 of 1 -  Greek)
-061 - 	Barracks 		(Level 2 of 3 -  Greek)
-062 - 	Town Center 		(Level 3 of 4 -  Greek)
-063 - 	Siege Workshop 		(Level 1 of 1 -  Greek)
-064 - 	Granary 		(Level 1 of 2 -  Greek)
-065 - 	House 			(Level 2 of 4 -  Greek)
-066 - 	Government Center	(Level 1 of 2 -  Greek)
-067 - 	Wall/Fortification	(Level 3 of 3 -  Greek)
-068 - 	Market			(Level 2 of 3 -  Greek)
-069 - 	Wall/Fortification	(Level 2 of 3 -  Greek)
-070 - 	Storage Pit 		(Level 2 of 3 -  Greek)
-071 - 	Archery Range 		(Level 1 of 2 -  Greek)
-072 - 	Stable	 		(Level 2 of 2 -  Greek)
-073 - 	Temple	 		(Level 1 of 2 -  Greek)
-075 - 	Tower			(Level 3 of 3 -  Greek)
-076 - 	House			(Level ? of 3 -    ?  , UNUSED?)
-077 - 	Wonder			(Level 3 of 3 -  Greek)
+GRA00103 - <01>  Dock                    (Level 2 of 3 -  Asian)
+<01>  Dock                    (Level 3 of 3 -  Asian)  
+GRA00104 - <01>  Academy                 (Level 1 of 1 -  Asian)
+GRA00105 - <01>  Barracks                (Level 2 of 3 -  Asian)
+<01>  Barracks                (Level 2 of 3 -  Asian)
+GRA00106 - <01>  Town Center             (Level 3 of 4 -  Asian)
+<01>  Town Center             (Level ? of 4 -  Asian) (= above)
+<01>  Town Center             (Level 4 of 4 -  Asian)
+GRA00107 - <01>  Siege Workshop          (Level 1 of 1 -  Asian)
+GRA00108 - <01>  Granary                 (Level 1 of 2 -  Asian)
+<01>  Granary                 (Level 2 of 2 -  Asian)
+GRA00109 - <01>  House                   (Level 2 of 4 -  Asian)
+<01>  House                   (Level 3 of 4 -  Asian)
+<01>  House                   (Level 4 of 4 -  Asian)
+GRA00110 - <01>  Government Center       (Level 1 of 2 -  Asian)
+<01>  Government Center       (Level 1 of 2 -  Asian)
+GRA00111 - <01>  Wall/Fort. (NE/SW)      (Level 3 of 3 -  Asian)
+<01>  Wall/Fort. (NW/SE)      (Level 3 of 3 -  Asian)
+<01>  Wall/Fort. (Corner)     (Level 3 of 3 -  Asian)
+GRA00112 - <01>  Market                 (Level 2 of 3 -  Asian)
+<01>  Market                 (Level 3 of 3 -  Asian)
+GRA00113 - <01>  Wall/Fort. (NE/SW)      (Level 2 of 3 -  Asian)
+<01>  Wall/Fort. (NW/SE)      (Level 2 of 3 -  Asian)
+<01>  Wall/Fort. (Corner)     (Level 2 of 3 -  Asian)
+GRA00114 - <01>  Storage Pit             (Level 2 of 3 -  Asian)
+<01>  Storage Pit             (Level 3 of 3 -  Asian)
+GRA00115 - <01>  Archery Range           (Level 1 of 2 -  Asian)
+<01>  Archery Range           (Level 2 of 2 -  Asian)
+GRA00116 - <01>  Stable                 (Level 2 of 2 -  Asian)
+GRA00117 - <01>  Temple                 (Level 1 of 2 -  Asian)
+<01>  Temple                 (Level 2 of 2 -  Asian)
+GRA00119 - <01>  Tower                   (Level 3 of 3 -  Asian)
+GRA00120 - <01>  House                   (Level ? of 4 -  Asian)
+GRA00121 - <01>  Wonder                 (Level 1 of 1 -  Asian)
+ 
+GRA00122 - <01>  [L] Academy             (Level 1 of 1 -  Asian)
+GRA00123 - <01>  [L] Barracks            (Level 2 of 3 -  Asian)
+<01>  [L] Barracks            (Level 2 of 3 -  Asian)
+GRA00124 - <01>  [L] Town Center         (Level 3 of 4 -  Asian)
+<01>  [L] Town Center         (Level ? of 4 -  Asian) (= above)
+<01>  [L] Town Center         (Level 4 of 4 -  Asian)
+GRA00125 - <01>  [L] Dock                (Level 2 of 3 -  Asian)
+<01>  [L] Dock                (Level 3 of 3 -  Asian)
+GRA00126 - <01>  [L] Siege Workshop      (Level 1 of 1 -  Asian)
+GRA00127 - <01>  [L] Granary             (Level 1 of 2 -  Asian)
+<01>  [L] Granary             (Level 2 of 2 -  Asian)
+GRA00128 - <01>  [L] House               (Level 2 of 4 -  Asian)
+<01>  [L] House               (Level 3 of 4 -  Asian)
+<01>  [L] House               (Level 4 of 4 -  Asian)
 
-078 - 	(?) livery
-079 - 	(?) livery
-080 - 	(?) livery
-081 - 	(?) livery
-082 - 	(?) livery
-083 - 	(?) livery
-084 - 	(?) livery
-085 - 	(?) livery
-086 - 	(?) livery
-087 - 	(?) livery
-088 - 	(?) livery
-089 - 	(?) livery
-090 - 	(?) livery
-091 - 	(?) livery
-092 - 	(?) livery
-094 - 	(?) livery
-095 - 	(?) livery
+GRA00129 - <01>  [L] Government Center   (Level 1 of 2 -  Asian)
+<01>  [L] Government Center   (Level 1 of 2 -  Asian)
+GRA00131 - <01>  [L] Market             (Level 2 of 3 -  Asian)
+<01>  [L] Market             (Level 3 of 3 -  Asian)
+GRA00133 - <01>  [L] Storage Pit         (Level 2 of 3 -  Asian)
+<01>  [L] Storage Pit         (Level 3 of 3 -  Asian)
+GRA00134 - <01>  [L] Archery Range       (Level 1 of 2 -  Asian)
+<01>  [L] Archery Range       (Level 2 of 2 -  Asian)
+GRA00135 - <01>  [L] Stable             (Level 2 of 2 -  Asian)
+GRA00136 - <01>  [L] Temple             (Level 1 of 2 -  Asian)
+<01>  [L] Temple             (Level 2 of 2 -  Asian)
+GRA00138 - <01>  [L] Tower               (Level 3 of 3 -  Asian)
+GRA00139 - <01>  [L] House               (Level ? of 3 -  Asian)
+ 
+GRA00140 - <01>  *d* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Asian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Asian)
+<01>  *d* Wall/Fort. (Corner) (Level 3 of 3 -  Asian)
+GRA00141 - <01>  *D* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Asian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Asian)
+<01>  *D* Wall/Fort. (Corner) (Level 3 of 3 -  Asian)
+GRA00142 - <01>  *d* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Asian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Asian)
+<01>  *d* Wall/Fort. (Corner) (Level 2 of 3 -  Asian)
+GRA00143 - <01>  *D* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Asian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Asian)
+<01>  *D* Wall/Fort. (Corner) (Level 2 of 3 -  Asian)
+GRA00144 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 3 of 3 -  Asian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 3 of 3 -  Asian)
+<01>  /S/ Wall/Fort. (Corner) (Level 3 of 3 -  Asian)
+GRA00145 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 2 of 3 -  Asian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 2 of 3 -  Asian)
+<01>  /S/ Wall/Fort. (Corner) (Level 2 of 3 -  Asian)
+ 
 
-096 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-097 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-098 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-099 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-100 - 	(?) Small shadow
-101 - 	(?) Large shadow
+GRA00149 - <01>  Tree – Pine       (01)
+GRA00150 - <01>  Tree – Pine       (02)
+GRA00151 - <01>  Tree – Pine       (03)
+GRA00152 - <01>  Tree – Pine       (04)
+GRA00153 - <01>  1´1 building plot (rubble pile)
+GRA00154 - <01>  2´2 building plot (rubble pile)
+GRA00155 - <01>  3´3 building plot (rubble pile)
+GRA00156 - <01>  Tiny black debris wreck
+GRA00157 - <01>  Tree (round)
+ 
 
+GRA00159 - <01>  Dock                    (Level 2 of 3 -  Babylonian)
+<01>  Dock                    (Level 3 of 3 -  Babylonian)  
+GRA00160 - <01>  Academy                 (Level 1 of 1 -  Babylonian)
+GRA00161 - <01>  Barracks                (Level 2 of 3 -  Babylonian)
+<01>  Barracks                (Level 2 of 3 -  Babylonian)
+GRA00162 - <01>  Town Center             (Level 3 of 4 -  Babylonian)
+<01>  Town Center             (Level ? of 4 -  Babylonian)
+<01>  Town Center             (Level 4 of 4 -  Babylonian)
+GRA00163 - <01>  Siege Workshop          (Level 1 of 1 -  Babylonian)
+GRA00164 - <01>  Granary                 (Level 1 of 2 -  Babylonian)
+<01>  Granary                 (Level 2 of 2 -  Babylonian)
+GRA00165 - <01>  House                   (Level 2 of 4 -  Babylonian)
+<01>  House                   (Level 3 of 4 -  Babylonian)
+<01>  House                   (Level 4 of 4 -  Babylonian)
+GRA00166 - <01>  Government Center       (Level 1 of 2 -  Babylonian)
+<01>  Government Center       (Level 1 of 2 -  Babylonian)
+GRA00167 - <01>  Wall/Fort. (NE/SW)      (Level 3 of 3 -  Babylonian)
+<01>  Wall/Fort. (NW/SE)      (Level 3 of 3 -  Babylonian)
+<01>  Wall/Fort. (Corner)     (Level 3 of 3 -  Babylonian)
+GRA00168 - <01>  Market                 (Level 2 of 3 -  Babylonian)
+<01>  Market                 (Level 3 of 3 -  Babylonian)
+GRA00169 - <01>  Wall/Fort. (NE/SW)      (Level 2 of 3 -  Babylonian)
+<01>  Wall/Fort. (NW/SE)      (Level 2 of 3 -  Babylonian)
+<01>  Wall/Fort. (Corner)     (Level 2 of 3 -  Babylonian)
+GRA00170 - <01>  Storage Pit             (Level 2 of 3 -  Babylonian)
+<01>  Storage Pit             (Level 3 of 3 -  Babylonian)
+GRA00171 - <01>  Archery Range           (Level 1 of 2 -  Babylonian)
+<01>  Archery Range           (Level 2 of 2 -  Babylonian)
+GRA00172 - <01>  Stable                 (Level 2 of 2 -  Babylonian)
+GRA00173 - <01>  Temple                 (Level 1 of 2 -  Babylonian)
+<01>  Temple                 (Level 2 of 2 -  Babylonian)
+GRA00175 - <01>  Tower                   (Level 3 of 3 -  Babylonian)
+GRA00176 - <01>  House                   (Level ? of 4 -  Babylonian)
+GRA00177 - <01>  Wonder                 (Level 1 of 1 -  Babylonian)
+ 
+GRA00178 - <01>  [L] Academy             (Level 1 of 1 -  Babylonian)
+GRA00179 - <01>  [L] Barracks            (Level 2 of 3 -  Babylonian)
+<01>  [L] Barracks            (Level 2 of 3 -  Babylonian)
+GRA00180 - <01>  [L] Town Center         (Level 3 of 4 -  Babylonian)
+<01>  [L] Town Center         (Level ? of 4 -  Babylonian)
+<01>  [L] Town Center         (Level 4 of 4 -  Babylonian)
+GRA00181 - <01>  [L] Dock                (Level 2 of 3 -  Babylonian)
+<01>  [L] Dock                (Level 3 of 3 -  Babylonian)
+GRA00182 - <01>  [L] Siege Workshop      (Level 1 of 1 -  Babylonian)
+GRA00183 - <01>  [L] Granary             (Level 1 of 2 -  Babylonian)
+<01>  [L] Granary             (Level 2 of 2 -  Babylonian)
+GRA00184 - <01>  [L] House               (Level 2 of 4 -  Babylonian)
+<01>  [L] House               (Level 3 of 4 -  Babylonian)
+<01>  [L] House               (Level 4 of 4 -  Babylonian)
 
-103 - 	Dock			(Level 2 of 3 -  Asian)
-104 - 	Academy			(Level 1 of 1 -  Asian)
-105 - 	Barracks 		(Level 2 of 3 -  Asian)
-106 - 	Town Center 		(Level 3 of 4 -  Asian)
-107 - 	Siege Workshop 		(Level 1 of 1 -  Asian)
-108 - 	Granary 		(Level 1 of 2 -  Asian)
-109 - 	House 			(Level 2 of 4 -  Asian)
-110 - 	Government Center	(Level 1 of 2 -  Asian)
-111 - 	Wall/Fortification	(Level 3 of 3 -  Asian)
-112 - 	Market			(Level 2 of 3 -  Asian)
-113 - 	Wall/Fortification	(Level 2 of 3 -  Asian)
-114 - 	Storage Pit 		(Level 2 of 3 -  Asian)
-115 - 	Archery Range 		(Level 1 of 2 -  Asian)
-116 - 	Stable	 		(Level 2 of 2 -  Asian)
-117 - 	Temple	 		(Level 1 of 2 -  Asian)
-119 - 	Tower			(Level 3 of 3 -  Asian)
-120 - 	House			(Level ? of 3 -    ?  , UNUSED?)
-121 - 	Wonder			(Level 3 of 3 -  Asian)
+GRA00185 - <01>  [L] Government Center   (Level 1 of 2 -  Babylonian)
+<01>  [L] Government Center   (Level 1 of 2 -  Babylonian)
+GRA00186 - <01>  [L] Wall/Fort. (NE/SW)  (Level 3 of 3 -  Babylonian)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 3 of 3 -  Babylonian)
+<01>  [L] Wall/Fort. (Corner) (Level 3 of 3 -  Babylonian)
+GRA00187 - <01>  [L] Market             (Level 2 of 3 -  Babylonian)
+<01>  [L] Market             (Level 3 of 3 -  Babylonian)
+GRA00188 - <01>  [L] Wall/Fort. (NE/SW)  (Level 2 of 3 -  Babylonian)
+<01>  [L] Wall/Fort. (NW/SE)  (Level 2 of 3 -  Babylonian)
+<01>  [L] Wall/Fort. (Corner) (Level 2 of 3 -  Babylonian)
+<03>  [L] Wall/Fort. (Corner) (Level ? of 3 -  Babylonian)
+GRA00189 - <01>  [L] Storage Pit         (Level 2 of 3 -  Babylonian)
+<01>  [L] Storage Pit         (Level 3 of 3 -  Babylonian)
+GRA00190 - <01>  [L] Archery Range       (Level 1 of 2 -  Babylonian)
+<01>  [L] Archery Range       (Level 2 of 2 -  Babylonian)
+GRA00191 - <01>  [L] Stable             (Level 2 of 2 -  Babylonian)
+GRA00192 - <01>  [L] Temple             (Level 1 of 2 -  Babylonian)
+<01>  [L] Temple             (Level 2 of 2 -  Babylonian)
+GRA00194 - <01>  [L] Tower               (Level 3 of 3 -  Babylonian)
+GRA00195 - <01>  [L] House               (Level ? of 3 -  Babylonian)
+ 
+GRA00196 - <01>  *d* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Babylonian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Babylonian)
+<01>  *d* Wall/Fort. (Corner) (Level 3 of 3 -  Babylonian)
+GRA00197 - <01>  *D* Wall/Fort. (NE/SW)  (Level 3 of 3 -  Babylonian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 3 of 3 -  Babylonian)
+<01>  *D* Wall/Fort. (Corner) (Level 3 of 3 -  Babylonian)
+GRA00198 - <01>  *d* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Babylonian)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Babylonian)
+<01>  *d* Wall/Fort. (Corner) (Level 2 of 3 -  Babylonian)
+GRA00199 - <01>  *D* Wall/Fort. (NE/SW)  (Level 2 of 3 -  Babylonian)
+<01>  *D* Wall/Fort. (NW/SE)  (Level 2 of 3 -  Babylonian)
+<01>  *D* Wall/Fort. (Corner) (Level 2 of 3 -  Babylonian)
+GRA00200 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 3 of 3 -  Babylonian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 3 of 3 -  Babylonian)
+<01>  /S/ Wall/Fort. (Corner) (Level 3 of 3 -  Babylonian)
+GRA00201 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 2 of 3 -  Babylonian)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 2 of 3 -  Babylonian)
+<01>  /S/ Wall/Fort. (Corner) (Level 2 of 3 -  Babylonian)
+ 
 
-122 - 	(?) livery
-123 - 	(?) livery
-124 - 	(?) livery
-125 - 	(?) livery
-126 - 	(?) livery
-127 - 	(?) livery
-128 - 	(?) livery
-129 - 	(?) livery
-131 - 	(?) livery
-133 - 	(?) livery
-134 - 	(?) livery
-135 - 	(?) livery
-136 - 	(?) livery
-138 - 	(?) livery
-139 - 	(?) livery
+GRA00202 - <13>  Chariot Archer          (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00203 - <10>  Bowman                  (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00204 - <10>  Improved Bowman         (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00205 - <15>  Axeman                  (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00206 - <15>  Short Swordsman         (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00207 - <25>  Ballista + Helepolis    (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00208 - <08>  Catapult + Heavy Catapult           (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00209 - <10>  Horse Archer + Heavy Horse Archer   (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00210 - <13>  Heavy Cavalry + Cataphract          (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00211 - <13>  Cavalry                 (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00212 - <15>  Clubman                 (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00213 - <14>  Chariot                 (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00214 - <10>  Elephant Archer         (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00215 - <10>  Elephant                (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00216 - <10>  War Elephant            (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00217 - <15>  Alligator               (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00218 - <01>  House                   (Level 1 of 4 -  ALL)
+GRA00219 - <15>  Long Swordsman + Legion (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00220 -  <15>  Broad Swordsman         (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00221 - <15>  Phalanx + Centurion     (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00222 -  <10>  Lion                    (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00223 -  <10>  Composite Bowman        (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00224 -  <15>  Boneman Villager        (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00225 - <15>  Hoplite                 (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00226 -  <15>  Hero Jason              (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00227 - <09>  Scout                   (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00228 - <10>  War Elephant (w/o rider)(Action sequence)
+[05 sets -  S (+45°) through 180°]
 
-140 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-141 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-142 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-143 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-144 - 	(?) Small shadow
-145 - 	(?) Small shadow
+GRA00229 -  <01>  [L] Barracks            (Level 1 of 3 -  ALL)
+GRA00230 - <01>  [L] Town Center         (Level 1 of 4 -  ALL)
+<01>  [L] Town Center         (Level ? of 4 -  ALL) (= above)
+<01>  [L] Town Center         (Level 2 of 4 -  ALL)
+GRA00231 - <01>  [L] Dock                (Level 1 of 3 -  ALL)
+GRA00232 - <01>  [L] Farm                (Level 1 of 1 -  ALL)
+GRA00233 - <01>  [L] House               (Level 1 of 4 -  ALL)
+GRA00234 - <01>  [L] Market              (Level 1 of 3 -  ALL)
+GRA00235 - <01>  [L] Storage Pit         (Level 1 of 3 -  ALL)
+GRA00236 - <01>  [L] Tower               (Level 2 of 3 -  ALL)
+GRA00237 - <01>  [L] Tower               (Level 1 of 3 -  ALL)
+ 
+GRA00238 - <01>  *d* Wall/Fort. (NE/SW)  (Level 1 of 3 -  ALL)
+<01>  *d* Wall/Fort. (NW/SE)  (Level 1 of 3 -  ALL)
+<01>  *d* Wall/Fort. (Corner) (Level 1 of 3 -  ALL)
+GRA00239 – <01>  Farm (depleted)         (Level 1 of 1 -  ALL)
+GRA00240 –  <01>  Berry bush
+GRA00241 - <01>  /S/ Berry Bush
+GRA00242 - <01>  Ballista + Trireme bolt (Heading)
+[08 sets -  E (+45°) through 360°]
+GRA00243 - <01>  Arrow                   (Heading)
+[37 sets -  S (+05°) through 180°]
+GRA00244 -  <01>  Artifact + War Chest    (Heading)
+[08 sets -  E (+45°) through 360°]
+GRA00245 -  <01>  {$} Artifact + War Chest      (Heading)
+[08 sets -  E (+45°) through 360°]
+GRA00246 – <01>  {$} Discovery
+GRA00247 – <01>  {$} Discovery
+GRA00248 - <01>  Ruins
+GRA00249 - <01>  {$} Ruins
+GRA00250 - <01>  Temple ruins
+GRA00252 - <03>  Arrow (fiery)           (Heading)
+[08 sets -  E (+45°) through 360°]
+GRA00253 – <01>  Fruit tree
+GRA00254 – <01>  Barracks               (Level 1 of 3 -  ALL)
+GRA00255 – <01>  Fruit tree  (= image 253)
+GRA00256 - <01>  1´1 building plot (unconstructed)
+GRA00257 - <01>  Small wood & stone pile
+GRA00258 - <01>  2´2 building plot (unconstructed)
+GRA00259 – <01>  Medium wood & stone pile
+GRA00260 – <01>  Large wood & stone pile
+GRA00261 - <01>  3´3 building plot (unconstructed)
+GRA00262 - <05>  Small shipwreck sinking
+GRA00263 - <06>  Medium shipwreck sinking      
+GRA00264 - <10>  Large shipwreck sinking       
+GRA00265 -  <03>  Ballista + Trireme bolt (fiery)     (Heading)
+[05 sets -  S (+45°) through 180°]
+GRA00266 – <01>  Wood splinters
+GRA00267 - <20>  Impact fallout
+GRA00268 - <01>  Bridge (NW/SE)
+GRA00269 - <01>  Bridge (NE/SW)
+ 
 
+GRA00270 -  <15>  ?-carrying Villager     (Moving sequence)
+[08 sets -  E (+45°) through 360°]
+GRA00271 -  <15>  Fish-carrying Villager  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00272 -  <15>  Meat-carrying Villager  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00273 -  <15>  Wood-carrying Villager  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00274 -  <15>  Stone-carrying Villager (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00275 - <01>  Cactus 1
+GRA00276 - <01>  Cactus 2
+GRA00277 – <01>  Cactus 3
+GRA00278 – <01>  Cactus 4  
+ 
+GRA00280 - <01>  Town Center             (Level 1 of 4 -  ALL)
+<01>  Town Center             (Level ? of 4 -  ALL) (= above)
+<01>  Town Center             (Level 2 of 4 -  ALL)
+GRA00281 -  <15>  Gold-carrying Villager  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
 
-149 - 	Tree (green pine)
-150 - 	Tree (deep green pine)
-151 - 	Tree (deep green pine)
-152 - 	Tree (brown pine))
-153 - 	Small debris wreck	(?)
-154 - 	Large debris wreck	(?)
-155 - 	Large debris wreck	(?)
-156 - 	Tiny black debris wreck	(?)
-157 - 	Tree (round)
+GRA00282 - <01>  Rocky face
+GRA00283 - <01>  (BLANK)
+<05>  Various rocky faces
+<09>  (BLANK)
+<05>  Various rocky faces
+<04>  (BLANK)
+<01>  Rocky face
+GRA00284 - <07>  (BLANK)
+<02>  Various rocky edges
+<13>  (BLANK)
+<02>  Various rocky edges
+<01>  (BLANK)
+GRA00285 - <10>  (BLANK)
+<02>  Various rocky faces
+<13>  (BLANK)
+<02>  Various rocky faces
+<01>  (BLANK)
+GRA00286 - <12>  (BLANK)
+<01>  Rocky face
+<12>  (BLANK)
+GRA00287 - <06>  (BLANK)
+<01>  Rocky edge
+<18>  (BLANK)
+GRA00288 - <06>  (BLANK)
+<01>  Rocky face
+<18>  (BLANK)
+GRA00289 - <01>  Rocky edge
+<24>  (BLANK)
+GRA00290 - <13>  (BLANK)
+<01>  Rocky surface
+<11>  (BLANK) 
+GRA00291 - <09>  (BLANK)
+<01>  Rocky surface
+<15>  (BLANK)
+GRA00290 - <13>  (BLANK)
+<01>  Cliff surface
+<11>  (BLANK)
+ 
+GRA00292 - <01>  Grass Clump 1
+GRA00293 - <01>  Grass Clump 2
+GRA00294 –  <01>  Grass Clump 3
+GRA00295 - <01>  Grass Clump 4
+GRA00296 – <01>  Grass Clump 5
+GRA00297 –  <01>  Grass Clump 6
+GRA00298 - <01>  Grass Clump
+GRA00299 - <01>  Grass Clump
+GRA00300 - <01>  Grass Clump
+GRA00301 - <01>  Grass Clump
+GRA00302 – <01>  4´4 building plot (unconstructed)
+GRA00303 – <01>  Terrain crack 1
+GRA00304 - <01>  Terrain crack 2
+GRA00305 - <01>  Terrain crack 3
+GRA00306 - <01>  Terrain crack 4
+GRA00307 - <01>  Terrain crack 5
+ 
 
+GRA00308 -  <10>  Bowman                  (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00309 -  <10>  Improved Bowman         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00310 -  <14>  Chariot Archer          (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00311 - <10>  Axeman                  (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00312 - <10>  Short Swordsman         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00313 - <04>  Ballista + Helepolis    (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00314 - <10>  Villager                (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00315 - <10>  Builder Villager        (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00316 - <04>  Catapult + Heavy Catapult           (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00317 - <04>  Stone Thrower           (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00318 - <13>  Horse Archer + Heavy Horse Archer   (Dying sequence)  
+[05 sets -  S (+45°) through 180°]
+GRA00319 - <13>  Heavy Cavalry + Cataphract          (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00320 - <10>  Cavalry                 (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00321 - <10>  Clubman                 (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00322 - <15>  Chariot                 (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00323 - <15>  Elephant Archer         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00324 - <12>  Elephant                (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00325 - <15>  War Elephant            (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00326 - <10>  Farmer Villager         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00327 - <10>  Hunter Villager         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00328 - <10>  Forager Villager        (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00330 - <13>  Alligator               (Dying sequence)  
+[05 sets -  S (+45°) through 180°]
+GRA00331 - <10>  Gazelle                 (Dying sequence)
+[05 sets -  S (+45°) through 180°]
 
-159 - 	Dock			(Level 2 of 3 -  Babylonian)
-160 - 	Academy			(Level 1 of 1 -  Babylonian)
-161 - 	Barracks 		(Level 2 of 3 -  Babylonian)
-162 - 	Town Center 		(Level 3 of 4 -  Babylonian)
-163 - 	Siege Workshop 		(Level 1 of 1 -  Babylonian)
-164 - 	Granary 		(Level 1 of 2 -  Babylonian)
-165 - 	House 			(Level 2 of 4 -  Babylonian)
-166 - 	Government Center	(Level 1 of 2 -  Babylonian)
-167 - 	Wall/Fortification	(Level 3 of 3 -  Babylonian)
-168 - 	Market			(Level 2 of 3 -  Babylonian)
-169 - 	Wall/Fortification	(Level 2 of 3 -  Babylonian)
-170 - 	Storage Pit 		(Level 2 of 3 -  Babylonian)
-171 - 	Archery Range 		(Level 1 of 2 -  Babylonian)
-172 - 	Stable	 		(Level 2 of 2 -  Babylonian)
-173 - 	Temple	 		(Level 1 of 2 -  Babylonian)
-175 - 	Tower			(Level 3 of 3 -  Babylonian)
-176 - 	House			(Level ? of 3 -      ?     , UNUSED?)
-177 - 	Wonder			(Level 3 of 3 -  Babylonian)
+GRA00332 - <10>  Fisherman Villager      (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00333 - <10>  Long Swordsman + Legion (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00334 - <10>  Broad Swordsman         (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00335 - <10>  Phalanx + Centurion     (Dying sequence)  
+[05 sets -  S (+45°) through 180°]
+GRA00336 - <10>  Lion                    (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00337 - <10>  Composite Bowman        (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00338 - <10>  Woodcutter Villager     (Dying sequence)  
+[05 sets -  S (+45°) through 180°]
+GRA00339 - <10>  Miner Villager          (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00340 - <10>  Hoplite                 (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00341 - <10>  Priest                  (Dying sequence)  
+[05 sets -  S (+45°) through 180°]
+GRA00342 - <10>  Hero Jason              (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00343 - <18>  Scout                   (Dying sequence)
+[05 sets -  S (+45°) through 180°]
+ 
 
-178 - 	(?) livery
-179 - 	(?) livery
-180 - 	(?) livery
-181 - 	(?) livery
-182 - 	(?) livery
-183 - 	(?) livery
-184 - 	(?) livery
-185 - 	(?) livery
-186 - 	(?) livery
-187 - 	(?) livery
-188 - 	(?) livery
-189 - 	(?) livery
-190 - 	(?) livery
-191 - 	(?) livery
-192 - 	(?) livery
-194 - 	(?) livery
-195 - 	(?) livery
+GRA00044 - <01>  Dead Tree
+GRA00345 – <01>  Jolly Roger
+GRA00346 – <01>  Wooden Stag
+GRA00347 - <20>  Small fire sequence
+GRA00348 - <01>  Small shadow
+GRA00349 - <01>  Small shadow
+GRA00350 - <01>  Large shadow
+GRA00351 – <01>  Huge shadow
+GRA00352 – <01>  Huge shadow
+GRA00353 - <01>  Huge shadow
+GRA00354 - <01>  Huge shadow
+ 
+GRA00355 – <01>  Dock                    (Level 1 of 3 -  ALL)
+<06>  (BLANK)
+GRA00356 - <04>  Dock building plot      (construction sequence) 
+GRA00357 – <03>  Dock building plot      (construction sequence)
+GRA00358 – <01>  Dock building plot (rubble pile)    
+GRA00360 - <03>  Catapult + Heavy Catapult + Catapult Trireme stone
+ 
+GRA00361 - <01>  Dirt path 1
+GRA00362 - <01>  Dirt path 2
+GRA00363 - <01>  Dirt path 3
+GRA00364 – <01>  Dirt path 4
+GRA00365 – <01>  Dirt path 5
+GRA00366 - <01>  Dirt path 6
+ 
 
-196 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-197 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-198 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-199 - 	Razed Wall/Fortifica'tn	(Level ? of 3 -    ?  )
-200 - 	(?) Small shadow
-201 - 	(?) Small shadow
+GRA00367 -  <06>  Bowman                  (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00368 -  <06>  Improved Bowman         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00369 -  <06>  Chariot Archer          (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00370 - <06>  Axeman                  (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00371 - <06>  Short Swordsman         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00372 - <03>  Ballista + Helepolis    (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00373 - <06>  Villager                (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00374 - <06>  Builder Villager        (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00375 - <03>  Catapult + Heavy Catapult           (Decaying sequence)     
+[05 sets -  S (+45°) through 180°]
+GRA00376 - <03>  Stone Thrower           (Decaying sequence)     
+[05 sets -  S (+45°) through 180°]
+GRA00377 - <06>  Horse Archer + Heavy Horse Archer   (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00378 - <06>  Heavy Cavalry + Cataphract          (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00379 - <06>  Cavalry                 (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00380 - <06>  Clubman                 (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00381 - <06>  Chariot                 (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00382 - <01>  Desert Patch 1
+GRA00383 – <01>  Desert Patch 2
+GRA00384 – <01>  Desert Patch 3    
+ 
+GRA00385 - <06>  Elephant Archer         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00386 - <04>  Elephant                (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00387 - <06>  War Elephant            (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00388 - <06>  Farmer Villager         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00389 - <06>  Hunter Villager         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00390 - <06>  Forager Villager        (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00391 - <04>  Alligator               (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00392 - <04>  Gazelle                 (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
 
+GRA00393 - <06>  Fisherman Villager      (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00394 - <06>  Long Swordsman + Legion (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00395 - <06>  Broad Swordsman         (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00396 - <06>  Phalanx + Centurion     (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00397 - <04>  Lion                    (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00398 - <06>  Composite Bowman        (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00399 - <06>  Woodcutter Villager     (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00400 - <06>  Miner Villager          (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00401 - <06>  Hoplite                 (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00402 - <06>  Priest                  (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00403 - <06>  Scout                   (Decaying sequence)
+[05 sets -  S (+45°) through 180°]
+ 
 
-202 - 	Chariot Archer		(facing S)
-203 - 	Bowman			(facing S)
-204 - 	Improved Bowman		(facing S)
-205 - 	Axeman			(facing S)
-206 - 	Short Swordsman		(facing S)
-207 - 	Ballista + Helepolis	(facing S)	
-208 - 	Catapult + Heavy Catapult		(facing S)
-209 - 	Horse Archer + Heavy Horse Archer	(facing S)
-210 - 	Heavy Cavalry + Cataphract		(facing S)
-211 - 	Cavalry			(facing S)
-212 - 	Clubman			(facing S)
-213 - 	Chariot			(facing S)
-214 - 	Elephant Archer		(facing S)
-215 - 	Elephant 		(facing S, Gaia)
-216 - 	War Elephant		(facing S)
-217 - 	Alligator 		(facing S, Gaia)
-218 - 	House 			(Level 1 of 4)
-219 - 	Long Swordsman + Legion	(facing S)
-220 - 	Broad Swordsman		(facing S)
-221 - 	Phalanx + Centurion	(facing S)
-222 - 	Lion			(facing S, Gaia)
-223 - 	Composite Bowman	(facing S)
-224 - 	Villager - 'boneman'	(facing S)
-225 - 	Hoplite			(facing S)
-226 - 	Hero Jason		(facing S)
-227 - 	Scout			(facing S)
-228 - 	War Elephant w/o rider 	(facing S, ?)
+GRA00404 - <12>  Bird - Eagle            (Flying sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00405 - <12>  /S/ Bird - Eagle        (Flying sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00406 - <01>  Bird - Eagle            (Heading)
+[09 sets -  S (+22.5°) through 180°]
+GRA00407 - <01>  /S/ Bird - Eagle        (Heading)
+[09 sets -  S (+22.5°) through 180°]
+ 
+GRA00409 – <10>  Small explosion sequence
+GRA00410 - <10>  Large explosion sequence
+ 
 
-229 - 	(?) livery
-230 - 	(?) livery
-231 - 	(?) livery
-232 - 	(?) livery
-233 - 	(?) livery
-234 - 	(?) livery
-235 - 	(?) livery
-236 - 	(?) livery
-237 - 	(?) livery
+GRA00412 - <13>  Chariot Archer          (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00413 -  <05>  Bowman                  (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00414 -  <05>  Improved Bowman         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00415 - <08>  Axeman                  (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00416 - <08>  Short Swordsman         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00417 - <01>  Ballista + Helepolis    (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00418 - <06>  Villager                (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00419 - <06>  Builder Villager        (Guarding sequence)     
+[05 sets -  S (+45°) through 180°]
+GRA00420 - <01>  Catapult + Heavy Catapult           (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00421 - <01>  Stone Thrower           (Guarding sequence)     
+[05 sets -  S (+45°) through 180°]
+GRA00422 - <08>  Horse Archer + Heavy Horse Archer   (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00423 - <13>  Heavy Cavalry + Cataphract          (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00424 - <13>  Cavalry                 (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00425 - <06>  Clubman                 (Guarding sequence)     
+[05 sets -  S (+45°) through 180°]
+GRA00426 - <13>  Chariot                 (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00427 - <10>  Elephant Archer         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00428 - <10>  Elephant                (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00429 - <10>  War Elephant            (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00430 - <10>  Farmer Villager         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00431 - <06>  Hunter Villager         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00432 - <10>  Forager Villager        (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00433 - <01>  Alligator               (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00434 - <02>  Goat                    (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
 
+GRA00435 - <06>  Fisherman Villager      (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00436 - <08>  Long Swordsman + Legion (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00437 - <04>  Broad Swordsman         (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00438 - <07>  Phalanx + Centurion     (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00439 - <05>  Composite Bowman        (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00440 - <06>  Woodcutter Villager     (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00441 - <06>  Miner Villager          (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00442 - <05>  Hoplite                 (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00443 - <10>  Priest                  (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00444 - <04>  Hero Jason              (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00445 - <09>  Scout                   (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00446 - <09>  War Elephant (w/o rider)(Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+ 
 
-238 - 	Razed Wall/Fortifica'tn	(Level 1 of 3)
-239 - 	Razed Farm
-240 - 	Berry bush		(Gaia)
-241 - 	(?) Small shadow
-242 - 	Trireme + Ballista bolt
-243 - 	(?) Razed rod - vertical
-244 - 	Artifact + War Chest	(Gaia -  controlled)
-245 - 	Artifact + War Chest	(Gaia -  uncontrolled)
-246 - 	Discovery		(Gaia)
-247 - 	Discovery		(Gaia, UNUSED?)
-248 - 	Ruins		 	(Gaia -  controlled)
-249 - 	Ruins			(Gaia -  uncontrolled)
-250 - 	Temple (ruined)		(Level ? of 2, UNUSED?)
-252 - 	(?) 'Match - horizontal'
-253 - 	(?) 'Fruit tree'	(UNUSED?)
-254 - 	Barracks	 	(Level 1 of 3)
-255 - 	(?) 'Fruit tree'	(UNUSED?)
-256 - 	Unbuilt 1-square plot
-257 - 	(?) Small wood+stone pile
-258 - 	Unbuilt 4-square plot
-259 - 	(?) Medium wood+stone pile
-260 - 	(?) Large wood+stone pile
-261 - 	Unbuilt 9-square plot
-262 - 	(?) Small shipwreck
-263 - 	(?) Medium shipwreck		
-264 - 	(?) Large shipwreck		
-265 - 	(?) Small shadow
-266 - 	(?) Small shadow
-267 - 	(?) Small shadow
-268 - 	Bridge 			(NWSE)
-269 - 	Bridge 			(NESW)
-270 - 	Villager - carrying ?		(facing S)
-271 - 	Villager - carrying fish	(facing S)
-272 - 	Villager - carrying meat	(facing S)
-273 - 	Villager - carrying wood	(facing S)
-274 - 	Villager - carrying stone	(facing S)
+GRA00447 - <01>  Farm                    (Level 1 of 1 -  ALL)
+GRA00448 -  <01>  Small stone wall (NE/SW)
+<01>  Small stone wall (NW/SE)
+<01>  Small stone wall (NE>SE)
+<01>  Small stone wall (NW>NE)
+<01>  Small stone wall (SE>SW)
+<01>  Small stone wall (SW>NW)
+GRA00449 -  <01>  Small wooden fence (NE/SW)
+<01>  Small wooden fence (NW/SE)
+<01>  Small wooden fence (NE>SE)
+<01>  Small wooden fence (NW>NE)
+<01>  Small wooden fence (SE>SW)
+<01>  Small wooden fence (SW>NW)
+GRA00450 - <20>  Huge fire sequence
+GRA00451 - <20>  Large fire sequence
+GRA00452 - <20>  Small fire sequence
+GRA00453 - <20>  Small fire sequence
+GRA00454 -  <20>  Tiny fire sequence
+GRA00455 -  <20>  Tiny fire sequence
+GRA00456 - <20>  Huge fire sequence
+GRA00457 - <20>  Large fire sequence
+GRA00458 - <30>  Fish - Salmon           (Leaping sequence)
+                  Fish – Tuna             (Leaping sequence)
+GRA00459 - <06>  Single Pole Flag (NE/SW)      (Waving sequence)
+<06>  Single Pole Flag (NW/SE)      (Waving sequence)
+GRA00460 - <10>  Double Pole Flag (NE/SW)      (Waving sequence)
+<10>  Double Pole Flag (NW/SE)      (Waving sequence)
+GRA00461 -  <10>  Catapult + Heavy Catapult stone (fiery) 
+GRA00463 - <01>  Tree – Palm
+GRA00464 - <01>  Tree – Palm
+GRA00465 - <01>  Tree – Palm
+GRA00466 - <01>  Tree – Palm
+GRA00467 -  <01>  /S/ Bush
+GRA00468 -  <01>  Tree – Pine
+GRA00469 - <01>  Tree – Spruce
+GRA00470 - <01>  Tree – Pine
+GRA00471 - <01>  Tree – Pine
+GRA00472 - <01>  /S/ Bush (= image 467)
+ 
+GRA00473 - <01>  Fishing Boat            (Guarding sequence)
+Fishing Boat           (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00474 - <01>  Fishing Ship            (Guarding sequence)
+Fishing Ship           (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00475 - <10>  Horse                   (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00477 - <06>  Wings                   (Guarding sequence)
+[08 sets -  S (+45°) through 360°]
+GRA00478 - <10>  Gazelle                 (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00479 - <10>  Gazelle                 (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00480 - <01>  Gazelle                 (Running sequence)
+[05 sets -  S (+45°) through 180°]
 
-275 - 	Cactus #?
-276 - 	Cactus #?
-277 - 	Cactus #?
-278 - 	Leafy plant #?
-280 - 	Town Center 		(Level 1 of 4)
-281 - 	Villager - carrying gold	(facing S)
-282 - 	Cliff face #?
-283 - 	(?)	(BLANK)
-284 -	(?)	(BLANK)
-285 - 	(?)	(BLANK)
-286 - 	(?)	(BLANK)
-287 - 	(?)	(BLANK)
-288 - 	(?)	(BLANK)
-289 - 	Cliff face #?
-290 - 	(?)	(BLANK)
-291 - 	(?)	(BLANK)
-292 - 	Glass Clump	#?
-293 - 	Glass Clump	#?
-294 -	Glass Clump	#?
-295 - 	Glass Clump	#?
-296 - 	Glass Clump	#?
-297 -	Glass Clump	#?
-298 - 	Glass Clump	#?
-299 - 	Glass Clump	#?
-300 - 	Cactus #?
-301 - 	Cactus #?
-302 - 	Unbuilt 16-square plot	(for Wonder)
-303 - 	Terrain crack #?
-304 - 	Terrain crack #?
-305 - 	Terrain crack #?
-306 - 	Terrain crack #?
-307 - 	Terrain crack #?
+GRA00481 -  <07>  Various Gold Mines
+GRA00483 - <01>  Grass path 1
+GRA00484 - <01>  Grass path 2
+GRA00485 - <01>  Grass path 3
+GRA00486 - <01>  Grass path 4
+GRA00487 -  <01>  Grass path 5
+GRA00488 -  <01>  Grass path 6
+GRA00489 - <04>  1´1 building plot             (Construction sequence)
+GRA00490 - <01>  1´1 building plot (debris)
+GRA00491 - <20>  Smoke sequence
+GRA00492 - <01>  Tree – Oak
+GRA00493 -  <01>  Tree
+GRA00494 -  <01>  Dead Tree
+GRA00495 - <01>  Tree – Oak
+GRA00496 - <13>  Nuke explosion sequence
+ 
+GRA00497 - <10>  Lion                    (Guarding sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00498 - <01>  Log (NW/SE)
+GRA00499 -  <01>  Log (NE/SW)
+GRA00500 -  <01>  Market                  (Level 1 of 3 -  ALL)
+GRA00501 - <01>  Nuke missile            (Heading)
+[36 sets -  W (+10°) through 360°]
+ 
+GRA00502 – <01>  Fruit tree (= image 253)
+GRA00503 - <01>  Tree – Oak        (01)
+GRA00504 - <01>  Tree – Oak
+GRA00505 -  <01>  Tree
+GRA00506 -  <01>  Tree – Oak        (02)
+GRA00507 - <01>  Tree – Oak        (03)
+GRA00508 - <01>  Tree – Oak        (04)
+GRA00509 - <01>  Tree – Oak
+GRA00510 - <01>  Tree – Ash        (01)
+GRA00511 -  <01>  Tree – Beech      (01)
+<01>  Trade Ship             (Heading – SW)
+<01>  Trade Ship             (Heading – W )
+<01>  Trade Ship             (Heading – NW)
+<01>  Trade Ship             (Heading – N)
+GRA00512 -  <01>  Tree – Palm       (03)
+GRA00513 - <01>  Tree – Palm       (05)
+GRA00514 - <01>  Tree – Palm       (02)        
+GRA00515 - <01>  Tree – Palm       (01)
+GRA00516 - <01>  Tree – Palm       (04)
+ 
+GRA00518 - <10>  Bird – Hawk             (Flying sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00519 - <10>  /S/ Bird – Hawk         (Flying sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00520 - <01>  /S/ Bird - Hawk         (Heading)
+[09 sets -  S (+22.5°) through 180°]
+GRA00521 - <01>  Bird - Hawk             (Heading)
+[09 sets -  S (+22.5°) through 180°]
+ 
 
+GRA00522 - <01>  Tree – Pine 1
+GRA00523 - <01>  Tree – Spruce
+GRA00524 -  <01>  Tree – Pine 2
+GRA00525 -  <01>  Tree – Pine 3
+GRA00526 - <01>  Tree – Pine 4
+ 
+GRA00527 -  <01>  Storage Pit             (Level 1 of 3 -  ALL)
+GRA00528 - <12>  Lion                    (Running sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00529 - <01>  White brick rubble pile
+GRA00530 -  <20>  Various blue stone surfaces
+ 
+GRA00531 -  <01>  Rock 1
+GRA00532 - <01>  Rock 2
+GRA00533 -  <01>  Rock 3
+GRA00534 -  <01>  Rock 4
+GRA00535 - <01>  Rock 5
+GRA00536 -  <01>  Rock 6
+GRA00537 -  <01>  Rock 7
+GRA00538 - <01>  Rock 8
+GRA00539 -  <01>  Rock 8 (Rock 9?)
+GRA00540 - <01>  Rock 10
+GRA00541 - <01>  Rock 11
+GRA00542 -  <01>  Rock 12
+GRA00543 -  <01>  Rock 13
+GRA00544 - <01>  Rock 14
+GRA00545 -  <01>  Rock 15
+GRA00546 - <01>  Rock 16
+GRA00547 - <01>  Rock 17
+GRA00548 -  <01>  Rock 18
+GRA00549 -  <01>  Rock 19
+GRA00550 - <01>  Rock 20
+GRA00551 -  <01>  Rock 21
+GRA00552 - <01>  Rock 22
+ 
+GRA00553 - <01>  Rock
+GRA00554 -  <01>  Rock
+GRA00555 -  <01>  Rock
+GRA00556 -  <01>  Rock
+GRA00557 -  <01>  Rock
+GRA00558 - <01>  Rock
+ 
+GRA00559 – <01>  Fruit tree (= image 253) 
+ 
 
-308 - 	Bowman			(nodding ?)
-309 - 	Improved Bowman		(nodding ?)
-310 - 	Chariot Archer		(nodding ?)
-311 - 	Axeman			(nodding ?)
-312 - 	Short Swordsman		(nodding ?)
-313 - 	Ballista + Helepolis 	(nodding ?)
-314 - 	Villager		(nodding ?)
-315 - 	Villager - builder	(nodding ?)
-316 - 	Catapult + Heavy Catapult		(nodding ?)
-317 - 	Stone Thrower		(nodding ?)
-318 - 	Horse Archer + Heavy Horse Archer	(nodding ?)
-319 - 	Heavy Cavalry + Cataphract	 	(nodding ?)
-320 - 	Cavalry			(nodding ?)
-321 - 	Clubman			(nodding ?)
-322 - 	Chariot			(nodding ?)
-323 - 	Elephant Archer 	(nodding ?)
-324 - 	Elephant		(nodding ?, Gaia)
-325 - 	War Elephant	 	(nodding ?)
-326 - 	Villager - farmer	(nodding ?)
-327 - 	Villager - hunter	(nodding ?)
-328 - 	Villager - forager	(nodding ?)
-330 - 	Alligator		(nodding ?, Gaia)
-331 - 	Gazelle			(nodding ?, Gaia)
-332 - 	Villager - fisherman 	(nodding ?)
-333 - 	Long Swordsman + Legion	(nodding ?)
-334 - 	Broad Swordsman		(nodding ?)
-335 - 	Phalanx + Centurion	(nodding ?)
-336 - 	Lion			(nodding ?, Gaia)
-337 - 	Composite Bowman	(nodding ?)
-338 - 	Villager - warrior 	(nodding ?)
-339 - 	Villager - miner	(nodding ?)
-340 - 	Hoplite			(nodding ?)
-341 - 	Priest			(nodding ?)
-342 - 	Hero Jason		(nodding ?)
-343 - 	Scout			(nodding ?)
+GRA00560 - <01>  /S/ Tree
+GRA00561 -  <01>  /S/ Tree
+GRA00562 -  <01>  /S/ Tree
+GRA00563 - <01>  /S/ Tree
+GRA00564 -  <01>  /S/ Tree
+GRA00565 - <01>  /S/ Tree
+GRA00566 - <01>  /S/ Tree
+GRA00567 -  <01>  /S/ Tree
+GRA00568 -  <01>  /S/ Tree
+GRA00569 - <01>  /S/ Tree
+GRA00570 -  <01>  /S/ Tree
+GRA00571 - <01>  /S/ Tree
+GRA00572 - <01>  /S/ Tree
+GRA00573 - <01>  /S/ Tree
+GRA00574 -  <01>  /S/ Tree
+GRA00575 - <01>  /S/ Tree
+GRA00576 -  <01>  /S/ Tree
+GRA00577 -  <01>  /S/ Tree
+GRA00578 - <01>  /S/ Tree
+GRA00579 -  <01>  /S/ Tree
+GRA00580 -  <01>  /S/ Tree
+GRA00581 - <01>  /S/ Tree
+GRA00582 -  <01>  /S/ Tree
+ 
+GRA00583 - <09>  Scout Ship + War Galley sail                (Waving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00584 - <09>  Trireme + Catapult Trireme + Juggernaut sail (Waving sequence)
+[09 sets -  S (+22.5°) through 180°]
+ 
+GRA00586 -  <01>  /S/ Terrain
+GRA00587 -  <01>  /S/ Terrain
+GRA00588 - <01>  /S/ Terrain
+GRA00589 -  <01>  /S/ Terrain
+GRA00590 - <01>  /S/ Terrain
+GRA00591 - <01>  /S/ Terrain
+GRA00592 -  <01>  /S/ Terrain
+ 
+GRA00593 -  <01>  Tower                   (Level 2 of 3 -  ALL)
+GRA00594 - <15>  Fish - Shore            (Leaping sequence)
+[07 sets -  S (+30°) through 180°]
+GRA00596 -  <07>  Various Shallows
+GRA00597 - <01>  /S/ Trees
+            <01>  /S/ Trees
+GRA00598 - <06>  [L] Wall/Fort. (NE/SW)  (Level 1 of 3 -  ALL)
+<06>  [L] Wall/Fort. (NW/SE)  (Level 1 of 3 -  ALL)
+<06>  [L] Wall/Fort. (Corner) (Level 1 of 3 -  ALL)
+GRA00599 - <01>  Wall/Fort. (NE/SW)      (Level 1 of 3 -  ALL)
+<01>  Wall/Fort. (NW/SE)      (Level 1 of 3 -  ALL)
+<01>  Wall/Fort. (Corner)     (Level 1 of 3 -  ALL)
+GRA00600 -  <08>  Small smoke sequence
+GRA00601 - <20>  Splash sequence
+GRA00602 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 1 of 3 -  ALL)
+<01>  /S/ Wall/Fort. (NW/SE)  (Level 1 of 3 -  ALL)
+<01>  /S/ Wall/Fort. (Corner) (Level 1 of 3 -  ALL)
+ 
 
-344 - 	Dead small tree	 	(UNUSED?)
-345 - 	(?) 'Jolly Roger'	(UNUSED?)
-346 - 	(?) 'Wooden Deer'	(UNUSED?)
-347 - 	(?) 'Dwarf'		(UNUSED?)
+GRA00603 -  <10>  Nuke Trooper            (Moving sequence)
+[08 sets -  E (+45°) through 360°]
+GRA00604 -  <02>  Nuke Trooper            (Action sequence)
+[08 sets -  E (+45°) through 360°]
+GRA00605 - <01>  Nuke Trooper            (Decaying sequence)
+[08 sets -  E (+45°) through 360°]
+GRA00606 -  <09>  Nuke Trooper            (Dying sequence)
+[08 sets -  E (+45°) through 360°]
+GRA00607 - <01>  Nuke Trooper            (Guarding sequence)
+                  [08 sets -  E (+45°) through 360°]
+GRA00608 - <01>  Hunter Villager spear
+[32 sets -  E (+11.25°) through 360°]
+GRA00609 -  <01>  Stable                  (Level 1 of 2 -  ALL)
+ 
+GRA00610 -  <01>  Stone 1
+GRA00611 - <01>  Stone 2
+GRA00612 -  <01>  Stone 3
+GRA00613 - <01>  Stone 4
+GRA00614 - <01>  Stone 5
+GRA00615 -  <01>  Stone 6
+GRA00616 -  <01>  Stone path 1
+GRA00617 - <01>  Stone path 2
+GRA00618 -  <01>  Stone path 3
+GRA00619 - <01>  Stone path 4
+GRA00620 - <01>  Stone path 5
+GRA00621 -  <01>  Stone path 6
+ 
+GRA00622 -  <07>  Various Stone Mines 
+GRA00623 - <04>  Various Tree Stumps     (depleted Trees)
+ 
+GRA00624 -  <23>  Hunter Villager         (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00625 - <11>  Woodcutter Villager     (Action sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00626 - <12>  Hunter Villager         (Harvesting sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00627 -  <15>  Woodcutter Villager     (Harvesting sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00628 -  <16>  Builder Villager        (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00629 - <08>  Stone Thrower           (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00630 -  <29>  Villager – farmer       (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00631 - <16>  Fisherman Villager      (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00632 - <27>  Forager Villager        (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00633 -  <13>  Miner Villager          (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+GRA00634 -  <10>  Priest                  (Action sequence)
+                  [05 sets -  S (+45°) through 180°]
+ 
 
+GRA00636 - <05>  Various fallen trees (for harvesting wood)
+GRA00637 -  <02>  Fallen tree (for harvesting wood)
+GRA00638 - <02>  Fallen pine tree
+ 
+GRA00639 - <01>  Trade Boat              (Guarding sequence)
+Trade Boat             (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00640 -  <01>  Merchant Ship           (Guarding sequence)
+Merchant Ship          (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00641 -  <01>  Tree
+GRA00642 - <01>  /S/ Tree
+GRA00643 -  <01>  Bare pine tree
+GRA00644 - <01>  /S/ Bare pine tree
+GRA00645 - <01>  Pine tree   
+GRA00646 -  <01>  /S/ Pine tree
+ 
+GRA00647 -  <01>  Light Transport         (Guarding sequence)
+Light Transport        (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00648 - <01>  Heavy Transport         (Guarding sequence)
+Heavy Transport        (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
+GRA00649 -  <01>  Volcano erupting
+ 
 
-348 - 	(?) Small shadow
-349 - 	(?) Small shadow
-350 - 	(?) Large shadow
-351 - 	(?) Huge shadow
-352 - 	(?) Huge shadow
-353 - 	(?) Huge shadow
-354 - 	(?) Huge shadow
-355 - 	Dock			(Level 1 of 3)
-356 - 	Unbuilt Dock plot
-357 - 	Unbuilt Dock plot	(=356 ?)
-358 - 	(?) Razed Dock			
-360 - 	Catapult Ball
-361 - 	Dirt path #?
-362 - 	Dirt path #?
-363 - 	Dirt path #?
-364 - 	Dirt path #?
-365 - 	Dirt path #?
-366 - 	Dirt path #?
+GRA00650 - <10>  Chariot Archer          (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00651 - <10>  Scout                   (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00652 -  <10>  Bowman                  (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00653 -  <10>  Improved Bowman         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00654 - <15>  Axeman                  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00655 -  <10>  Short Swordsman         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00656 - <04>  Ballista + Helepolis    (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00657 - <15>  Villager                (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00658 -  <15>  Builder Villager        (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00659 -  <04>  Catapult + Heavy Catapult           (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00660 - <04>  Stone Thrower           (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00661 -  <10>  Horse Archer + Heavy Horse Archer   (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00662 - <10>  Heavy Cavalry + Cataphract          (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00663 - <10>  Cavalry                 (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00664 -  <15>  Clubman                 (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00665 -  <10>  Chariot                 (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00666 - <08>  Elephant Archer         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00667 -  <08>  Elephant                (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00668 - <08>  Decorated Elephant      (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00669 - <08>  War Elephant            (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00670 -  <15>  Farmer Villager         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00671 -  <15>  Hunter Villager         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00672 - <15>  Forager Villager        (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00673 -  <10>  Alligator               (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00674 - <08>  Goat                    (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00675 - <15>  Farmer Villager hat     (Moving sequence)
+[05 sets -  S (+45°) through 180°]
 
+GRA00676 -  <15>  Fisherman Villager      (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00677 -  <10>  Long Swordsman + Legion (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00678 - <10>  Broad Swordsman         (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00679 -  <10>  Phalanx + Centurion     (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00680 - <12>  Lion                    (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00681 - <10>  Composite Bowman        (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00682 -  <15>  Woodcutter Villager     (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00683 -  <15>  Villager - miner        (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00684 - <10>  Hoplite                 (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00685 -  <15>  Priest                  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00686 - <15>  Hero Jason              (Moving sequence) 
+[05 sets -  S (+45°) through 180°]
+GRA00687 - <10>  War Elephant (w/o rider)(Moving sequence)
+[05 sets -  S (+45°) through 180°]
+ 
 
-367 - 	Bowman			(dead!)
-368 - 	Improved Bowman		(dead!)
-369 - 	Chariot Archer		(dead!)
-370 - 	Axeman			(dead!)
-371 - 	Short Swordsman		(dead!)
-372 - 	Ballista + Helepolis	(dead!)
-373 - 	Villager		(dead!)
-374 - 	Villager - builder	(dead!)
-375 - 	Catapult + Heavy Catapult		(dead!)
-376 - 	Stone Thrower		(dead!)
-377 - 	Horse Archer + Heavy Horse Archer	(dead!)
-378 - 	Heavy Cavalry + Cataphract		(dead!)
-379 - 	Cavalry			(dead!)
-380 - 	Clubman			(dead!)
-381 - 	Chariot			(dead!)
+GRA00688 -  <01>  Tower                   (Level 1 of 3 -  ALL)
+GRA00689 -  <34>  Whale                   (Leaping sequence)
+GRA00690 – <01>  Fruit tree (= image 253)
+GRA00691 -  <01>  War Galley              (Guarding sequence)
+War Galley             (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00692 - <01>  Scout Ship              (Guarding sequence)
+Scout Ship             (Moving sequence)
+GRA00693 - <01>  Trireme + Catapult Trireme + Juggernaut  (Guarding sequence)
+Trireme + Catapult Trireme + Juggernaut (Moving sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00694 -  <01>  [L] Trireme             (Guarding sequence)
+[L] Trireme            (Moving sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00695 -  <01>  [L] Catapult Trireme + Juggernaut        (Guarding sequence)
+[L] Catapult Trireme + Juggernaut        (Moving sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00696 - <10>  Horse                  (Moving sequence)
+[05 sets -  S (+45°) through 180°]
+GRA00697 -  <01>  Fishing Ship net
+[05 sets -  S (+45°) through 180°]
+GRA00698 - <01>  White brick rubble pile (= image 529)
+GRA00699 - <01>  Terrain crack #?
+GRA00700 -  <01>  Fishing Boat net
+[05 sets -  S (+45°) through 180°]
+GRA00701 – <01>  Nuke missile warhead
+[180 sets - S (+2°) through 360°]
+GRA00702 -  <01>  Cliff waterfall
+GRA00704 - <15>  Jihad Villager          (Action sequence)
+[05 sets -  S (+45°) through 180°]  
+GRA00705 - <09>  ‘Jack Be Nimble’ flying objects
+[05 sets -  S (+45°) through 180°]
+GRA00706 -  <09>  /S/ ‘Jack Be Nimble’ flying objects
+[05 sets -  S (+45°) through 180°]
+GRA00707 -  <01>  Cool SpaceJet
+[36 sets -  E (+10°) through 360°]
+GRA00709 - <01>  /S/ Ballista + Trireme bolt   (Heading)
+[08 sets -  E (+45°) through 360°]
+GRA00710 - <01>  /S/ Arrow                     (Heading)
+[37 sets -  S (+05°) through 180°]
+GRA00711 - <03>  /S/ Catapult + Heavy Catapult + Catapult Trireme stone
+[08 sets -  S (+05°) through 180°]
+GRA00712 -  <08>  /S/ Small smoke sequence
+GRA00713 -  <04>  Winsett’s_Z             (Moving sequence)
+[09 sets -  S (+22.5°) through 180°]
+GRA00714 -  <01>  Winsett’s_Z missile
+[19 sets -  S (+10°) through 180°]
+GRA00715 -  <01>  Winsett’s_Z             (Guarding sequence)
+[09 sets -  S (+22.5°) through 180°]
+ 
 
-382 - 	Desert Patch #?
-383 - 	Desert Patch #?
-384 - 	Desert Patch #?
+INTERFAC.DRS
+ 
+INT50500 -  <01>  Palette 0   (default)
+INT50501 -  <01>  Palette 1   (for 50100-50105)
+INT50502 -  <01>  Palette 2   (for 50107-50111, 50601)
+INT50503 -  <01>  Palette 3   (for 50113-50117, 50602)
+INT50504 -  <01>  Palette 4   (for 50119-50123, 50603)
+INT50505 -  <01>  Palette 5   (for 50131-50135)
+INT50506 -  <01>  Palette 6   (for 50137-50141)
+INT50507 -  <01>  Palette 7   (for 50143-50147)
+INT50508 -  <01>  Palette 8   (for 50149-50153)
+INT50509 -  <01>  Palette 9   (for 50609-50612)
+INT50519 -  <01>  Palette 19 (for 50154 to 50406)
+ 
+INT50154 -  <01>  Credit screen 1 (Filming warriors running) 
+INT50155 -  <01>  Credit screen 2 (Actors resting outside studio)
+INT50156 -  <01>  Credit screen 3 (Filming archers)
+INT50157 -  <01>  Credit screen 4 (Filming cavalry)
+INT50158 -  <01>  Credit screen 5 (Editing studio)
+INT50159 -  <01>  Credit screen 6 (Filming warriors fighting)
+INT50160 -  <01>  Credit screen 7 (Filming archer line)
+INT50202 -  <01>  Mottled background
+INT50204 -  <01>  Smooth background
+INT50406 -  <01>  Patent (P) symbol 
+ 
+INT50100 -  <01>  [1] Main Title screen              (640´480 resolution)
+INT50103 -  <01>  [1] Main Title screen               (800´600 resolution)
+INT50105 -  <01>  [1] Main Title screen               (1024´768 resolution)
+INT50107 -  <01>  [2] Single Player screens          (640´480 resolution)
+INT50109 -  <01>  [2] Single Player screens           (1024´768 resolution)
+INT50111 -  <01>  [2] Single Player screens           (800´600 resolution)
+INT50113 -  <01>  [3] Multiplayer screens             (800´600 resolution)
+INT50115 -  <01>  [3] Multiplayer screens             (640´480 resolution)
+INT50117 -  <01>  [3] Multiplayer screens             (1024´768 resolution)
+INT50119 -  <01>  [4] Scenario Builder menu screens   (640´480 resolution)
+INT50121 -  <01>  [4] Scenario Builder menu screens   (800´600 resolution)
+INT50123 -  <01>  [4] Scenario Builder menu screens   (1024´768 resolution)
+INT50125 -  <01>  [0] Scenario Builder edit screens   (640´480 resolution)
+INT50127 -  <01>  [0] Scenario Builder edit screens   (800´600 resolution)
+INT50129 -  <01>  [0] Scenario Builder edit screens   (1024´768 resolution)
+INT50131 -  <01>  [5] Achievements Summ. win screen   (640´480 resolution)
+INT50133 -  <01>  [5] Achievements Summ. win screen   (800´600 resolution)
+INT50135 -  <01>  [5] Achievements Summ. win screen   (1024´768 resolution)
+INT50137 -  <01>  [6] Achievements Summ. lose screen  (640´480 resolution)
+INT50139 -  <01>  [6] Achievements Summ. lose screen (800´600 resolution)
+INT50141 -  <01>  [6] Achievements Summ. lose screen (1024´768 resolution)
+INT50143 -  <01>  [7] Scenario Instructions screen    (640´480 resolution)
+INT50145 -  <01>  [7] Scenario Instructions screen    (800´600 resolution)
+INT50147 -  <01>  [7] Scenario Instructions screen    (1024´768 resolution)
+INT50149 -  <01>  [8] Achievements Summ. info screen (640´480 resolution)
+INT50151 -  <01>  [8] Achievements Summ. info screen (800´600 resolution)
+INT50153 -  <01>  [8] Achievements Summ. info screen (1024´768 resolution)
+ 
+INT50210 -  <01>  Egyptian background
+INT50212 -  <01>  Greek background
+INT50214 -  <01>  Babylonian background
+INT50216 -  <01>  Asian background
+ 
+INT50400 -  <01>  Patent (P) symbol
+INT50403 –  <09>  Digits 1 to 9
+INT50404 –  <07>  Waving flag on three-point post sequence
+INT50405 -  <08>  Move here sequence
+ 
+INT50601 -  <17>  Settings buttons for Single Player screens
+INT50602 -  <17>  Settings buttons for Multiplayer screens
+INT50603 -  <17>  Settings buttons for Scenario Editor menu screens
+INT50604 -  <17>  Settings buttons for Scenario Player edit screens
+INT50605 -  <21>  Settings buttons for Egyptian game screens
+INT50606 -  <21>  Settings buttons for Greek game screens
+INT50607 -  <21>  Settings buttons for Babylonian game screens
+INT50608 -  <21>  Settings buttons for Asian game screens
+INT50609 -  <17>  Settings buttons (deep green)
+INT50610 -  <17>  Settings buttons (beige)
+INT50611 -  <17>  Settings buttons (cream)
+INT50612 -  <17>  Settings buttons (light yellow)
+[01] [02]   Blank
+[03] [04]   Tick
+[05] [06]   Blank
+[07] [08]   Cross 
+[09] [10]   Pop-up
+[11] [14]   Drop-down
+[13] [16]   Blank
+[15] [18]   Drop-down   
+[17]        Query arrow 
+[18]        White tortoise    (50605-50608 only)            
+[19]        Green fireball    (50605-50608 only)      
+[20]        Yellow fireball   (50605-50608 only)
+[21]        Red fireball      (50605-50608 only)            
+ 
+INT50704 -  <50>  Egyptian building icons
+INT50705 -  <50>  Greek building icons 
+INT50706 -  <50>  Babylonian building icons
+INT50707 -  <50>  Asian building icons
+[01]  (Build) Academy         (Level 1 of 1)
+[02]  (Build) Archery Range   (Level 1 of 2)
+[03]  (Build) Archery Range   (Level 2 of 2)
+[04]  (Build) Barracks        (Level 1 of 3)
+[05]  (Build) Barracks        (Level 2 of 3)
+[06]  (Build) Barracks        (Level 3 of 3)
+[07]  (Build) Dock            (Level 1 of 3)
+[08]  (Build) Dock            (Level 2 of 3)
+[09]  (Build) Dock            (Level 3 of 3)
+[10]  (Build) Siege Workshop  (Level 1 of 1)
+[11]  (Build) Farm            (Level 1 of 1)
+[12]  (Build) Granary         (Level 1 of 2)
+[13]  (Build) Granary         (Level 2 of 2)
+[14]  (Build) Tower           (Level 3 of 3)
+[15]  (Build) Tower           (Level 2 of 3)
+[16]  (Build) House           (Level 1 of 4)
+[17]  (Build) House           (Level 2 of 4)
+[18]  (Build) House           (Level 3 of 4)
+[19]  (Build) House           (Level 4 of 4)
+[20]  (Build) Government Center     (Level 1 of 2)
+[21]  (Build) Government Center     (Level 2 of 2)
+[22]  (Build) Market          (Level 1 of 3)
+[23]  (Build) Market          (Level 2 of 3)
+[24]  (Build) Market          (Level 3 of 3)
+[25]  (Build) Stable          (Level 2 of 2)
+[26]  (Build) Stable          (Level 1 of 2)
+[27]  (Build) Tower           (Level 1 of 3)
+[28]  (Build) Wonder          (Level 1 of 1)
+[29]  (Build) Storage Pit     (Level 1 of 3)
+[30]  (Build) Storage Pit     (Level 2 of 3)
+[31]  (Build) Storage Pit     (Level 3 of 3)
+[32]  (Build) Temple          (Level 1 of 2)
+[33]  (Build) Temple          (Level 2 of 2)
+[34]  (Build) Town Center     (Level 1 of 4)
+[35]  (Build) Town Center     (Level ? of 4)  (= above)
+[36]  (Build) Town Center     (Level 2 of 4)
+[37]  (Build) Town Center     (Level 3 of 4)
+[38]  (Build) Town Center     (Level ? of 4)
+[39]  (Build) Town Center     (Level 4 of 4)
+[40]  (BLANK)
+[41]  (BLANK)
+[42]  (Build) House           (Level ? of 4)
+[43]  (Build) Wall/Fort.      (Level 1 of 3)
+[44]  (BLANK)
+[45]  (BLANK)
+[46]  (Build) Wall/Fort.      (Level 2 of 3)
+[47]  (BLANK)
+[48]  (BLANK)
+[49]  (Build) Wall/Fort.      (Level 3 of 3)
+[50]  (Build) Tower           (Level 3 of 3)    (icon)
+ 
+ 
 
-385 - 	Elephant Archer		(dead!)
-386 - 	Elephant		(dead!, Gaia)
-387 - 	War Elephant		(dead!)
-388 - 	Villager - farmer	(dead!)
-389 - 	Villager - hunter	(dead!)
-390 - 	Villager - forager	(dead!)
-391 - 	Alligator		(dead!, Gaia)
-392 - 	Gazelle			(dead!, Gaia)
-393 - 	Villager - fisherman	(dead!)
-394 - 	Long Swordsman + Legion	(dead!)
-395 - 	Broad Swordsman		(dead!)
-396 - 	Phalanx + Centurion	(dead!)
-397 - 	Lion			(dead!, Gaia)
-398 - 	Composite Bowman	(dead!)
-399 - 	Villager - warrior	(dead!)
-400 - 	Villager - miner	(dead!)
-401 - 	Hoplite			(dead!)
-402 - 	Priest			(dead!)
-403 - 	Scout			(dead!)
+INT50713 -  <04>  Egyptian squares
+INT50714 -  <04>  Greek squares
+INT50715 -  <04>  Babylonian squares
+INT50716 -  <04>  Asian squares
+ 
+INT50717 -  <02>  Egyptian tiles
+INT50718 -  <02>  Greek tiles
+INT50719 -  <02>  Babylonian tiles
+INT50720 -  <02>  Asian tiles
+ 
+INT50721 -  <01>  Repair icon
+<01>  Move icon
+<01>  Build icon
+<01>  Stop icon
+<01>  Stand Ground icon
+<01>  Unload icon
+<01>  Surrender icon
+<01>  Group icon
+<01>  Ungroup icon
+<01>  (BLANK)
+<01>  Unselect icon
+<01>  Next icon
+<01>  Attack Ground icon
+<01>  Heal icon
+<01>  Convert icon
+ 
+INT50725 -  <04>  Egyptian buttons
+INT50726 -  <04>  Greek buttons
+INT50727 -  <04>  Babylonian buttons
+INT50728 -  <04>  Asian buttons
+[01]  Next button
+[02]  Next button depressed
+[03]  Unselect button
+[04]  Unselect button depressed
+ 
+INT50729 -  <95>  Technology and upgrade icons
+[01]  (BLANK)
+[02]  Research Banking (?)
+[03]  Research Mapmaking (?)
+[04]  Research Nobility
+[05]  Research Writing
+[06]  Research Engineering
+[07]  Research Counting (?)
+[08]  Research Scouting (?)
+[09]  Research Fanaticism
+[10]  Research Alchemy
+[11]  Research Afterlife
+[12]  Research Metalworking
+[13]  Research Pottery (?)
+[14]  Research Jihad
+[15]  Research Wheel
+[16]  Research Mysticism
+[17]  Research Coinage
+[18]  Research Stone Mining
+[19]  Fish icon
+[20]  Research Bronze Shield
+[21]  Upgrade to Fishing Ship
+[22]  Watch Tower icon
+[23]  Sentry Tower icon
+[24]  Upgrade to Merchant Ship
+[25]  Upgrade to War Galley
+[26]  Upgrade to Heavy Transport
+[27]  Upgrade to Trireme
+[28]  Research Catapult Trireme
+[29]  Research Chain Mail for Cavalry
+[30]  Research Small Wall
+[31]  Research Weaponmaking (?)
+[32]  Upgrade to Medium Wall
+[33]  Research Plow
+[34]  Research Metalworking
+[35]  Research Watch Tower
+[36]  Upgrade to Fortification
+[37]  Research Metallurgy
+[38]  Research Leather Armor for Infantry
+[39]  Research Leather Armor for Archers
+[40]  Research Leather Armor for Cavalry
+[41]  Research Scale Armor for Infantry
+[42]  Research Scale Armor for Archers
+[43]  Research Scale Armor for Cavalry
+[44]  Research Chain Mail for Infantry
+[45]  Research Chain Mail for Archers
+[46]  Upgrade to Battle Axe
+[47]  Research Short Sword
+[48]  Upgrade to Broad Sword
+[49]  Upgrade to Long Sword
+[50]  Upgrade to Sentry Tower
+[51]  Research Archery (?)
+[52]  Research Improved Bow
+[53]  Upgrade to Composite Bow
+[54]  Research Ballistics
+[55]  Research Chariot Archery (?)
+[56]  Research Horse Riding (?)
+[57]  Research Elephant Riding (?)
+[58]  Upgrade to Heavy Cavalry
+[59]  Research Iron Shield
+[60]  Upgrade to Catapult
+[61]  Research Siegecraft
+[62]  Upgrade to Phalanx
+[63]  Research Astrology
+[64]  Research Monotheism
+[65]  Research Polytheism
+[66]  Advance to Tool Age
+[67]  Advance to Bronze Age
+[68]  Advance to Iron Age
+[69]  Advance to Roman Age (?)
+[70]  Research Toolworking
+[71]  Advance to Stone Age (?)
+[72]  Research Aristocracy
+[73]  Research Artisanship
+[74]  Research Craftmanship
+[75]  Research Gold Mining
+[76]  Research Architecture
+[77]  Research Woodworking
+[78]  Upgrade to Guard Tower
+[79]  Research Marksmanship (?)
+[80]  Upgrade to Heavy Horse Archer
+[81]  Upgrade to Legion
+[82]  Upgrade to Centurion
+[83]  Upgrade to Heavy Catapult
+[84]  Upgrade to Juggernaught
+[85]  Upgrade to Helepolis
+[86]  Upgrade to Cataphract
+[87]  Trade wood for gold
+[88]  Trade food for gold
+[89]  Trade stone for gold
+[90]  Upgrade to Ballista Tower
+[91]  Research Domestication
+[92]  Research Irrigation
+[93]  Advance to Tool Age (dim)
+[94]  Advance to Bronze Age (dim)
+[95]  Advance to Iron Age (dim)
+ 
+INT50730 -  <56>  Unit icons
+[01]  <Create> Villager
+[02]  <Train> Priest
+[03] <Train> Clubman
+[04] <Train> Axeman
+[05] <Train> Short Swordsman
+[06] <Train> Broad Swordsman
+[07] <Train> Bowman
+[08] <Train> Improved Bowman
+[09] <Train> Composite Bowman
+[10] <Build> Ballista
+[11] <Train> Chariot
+[12] <Train> Cavalry
+[13] <Train> War Elephant
+[14]  <Train> Heavy Cavalry
+[15]  <Build> Stone Thrower
+[16]  <Build> Catapult
+[17]  <Train> Hoplite
+[18]  <Train> Phalanx
+[19]  <Build> Fishing Boat
+[20]  <Build> Trade Boat
+[21]  <Build> Fishing Ship
+[22]  <Build> Light Transport
+[23]  <Build> Scout Ship
+[24]  <Build> Merchant Ship
+[25]  <Build> War Galley
+[26]  <Build> Heavy Transport
+[27]  <Build> Trireme
+[28]  <Train> Long Swordsman
+[29]  <Train> Chariot Archer
+[30]  <Train> Horse Archer
+[31]  <Build> Catapult Trireme
+[32]  <Train> Scout
+[33]  Horse
+[34]  Elephant
+[35]  Fish
+[36]  Forest
+[37]  Berry Bush
+[38]  Gazelle
+[39]  Stone Mine
+[40]  Gold Mine
+[41]  Lion
+[42]  Alligator
+[43]  Artifact + War Chest
+[44]  Ruins
+[45]  Temple ruins
+[46]  Discovery
+[47]  Discovery
+[48]  <Train> Elephant Archer
+[49]  <Train> Heavy Horse Archer
+[50]  <Train> Legion
+[51]  <Train> Centurion
+[52]  <Build> Heavy Catapult
+[53]  <Build> Juggernaught
+[54]  <Build> Helepolis
+[55]  <Train> Cataphract
+[56]  <Build> Ballista Tower
+ 
+INT50731 -  <11>  Attribute icons
+[01]  Wood cargo + Stone content
+[02]  Stone cargo + Stone content
+[03]  Food cargo + Food content
+[04]  Gold cargo + Gold content
+[05]  House capacity + ship capacity
+[06]  Gold paid 
+[07]  Range of attack
+[08]  Attack strength
+[09]  Armor strength
+[10]  Rejuvenation level 
+[11]  Piercing Armor strength
+ 
+INT50732 -  <11>  Commodity icons
+[01]  Wood
+[02]  Stone
+[03]  Food
+[04]  Gold
+ 
+INT50733 -  <02>  Egyptian bars     (640´480 resolution)
+INT50734 -  <02>  Greek bars        (640´480 resolution)
+INT50735 -  <02>  Babylonian bars   (640´480 resolution)
+INT50736 -  <02>  Asian bars        (640´480 resolution)
+INT50737 -  <02>  Egyptian bars     (800´600 resolution)
+INT50738 -  <02>  Greek bars        (800´600 resolution)
+INT50739 -  <02>  Babylonian bars   (800´600 resolution)
+INT50740 -  <02>  Asian bars        (800´600 resolution)
+INT50741 -  <02>  Egyptian bars     (1024´768 resolution)
+INT50742 -  <02>  Greek bars        (1024´768 resolution)
+INT50743 -  <02>  Babylonian bars   (1024´768 resolution)
+INT50744 -  <02>  Asian bars        (1024´768 resolution)
+[01]  Menu Bar          (top)
+[02]  Information Bar   (bottom)
+ 
 
-404 - 	Bird - Eagle		(facing S, Gaia)
-405 - 	(?) Discovery (Bird - Eagle)			(UNUSED?)
-406 - 	Bird - Eagle		(facing S, Gaia)
-407 - 	(?) Bird - Eagle shadow
-409 - 	(?) Small explosion
-410 - 	(?) Large explosion
+INT50745 -  <26>  Hit points depleting
+INT50746 -  <01>  Civilization flag
+ 
+INT50747 -  <02>  Egyptian tiles
+INT50748 -  <02>  Greek tiles
+INT50749 -  <02>  Babylonian tiles
+INT50750 -  <02>  Asian tiles
+ 
+INT51000 -  <01>  Main pointer
+<01>  Wait pointer
+<01>  Move To pointer
+<01>  Perform pointer
+<01>  Attack pointer
+<01>  Board pointer
+<01>  Query pointer
+ 
+INT51001 -  <01>  (BLANK)
+INT51002 -  <01>  Normal pointer
+INT51003 -  <01>  (BLANK)
+INT51004 -  <01>  Normal pointer
+INT51005 -  <01>  Normal pointer
+INT51007 -  <01>  (BLANK)
+INT51008 -  <01>  (BLANK)
+INT51009 -  <01>  Normal pointer
+INT51010 -  <01>  Normal pointer
+INT52001 -  <01>  (BLANK)
+INT52002 -  <01>  (BLANK)
+ 
+INT50300 -  Select button
+INT50301 -  Select icon
+INT50302 -  Chat bar
+INT50303 -  Invalid Select
+INT50304 -  Tribute
+INT50305 -  Advance to next age
+INT50306 -  Defeated Enemy
+INT50307 -  (defeated) 
+INT50308 -  Wonder started
+INT50309 -  Wonder finished
+INT50310 -  (thundercrash)
+INT50311 -  Enemy Wonder started
+INT50312 -  Enemy Wonder destroyed
+INT50313 -  Priest converting (1)
+INT50314 -  Priest converting (2)
+INT50320 -  Victorious
+INT50321 -  Defeated
+ 
 
+SOUNDS.DRS
+ 
+Class 2 -   Blunt
+Class 3 -   Sword
+Class 4 -   Elephant Butt
+Class 5 -
+ 
+ 
+SOU05000 -  Building burning
+SOU05002 -  Academy completed + selected
+SOU05003 -  Gazelle + Lion killed
+SOU05004 -  ‘Ahfrern’
+SOU05005 -  ‘Isay’
+SOU05006 -  ‘Olmars’
+SOU05007 -  Mining
+SOU05008 -  Archery Range completed + selected
+SOU05009 -  Archer Attack 
+SOU05010 -  Archer Attack
+SOU05011 -  Archer Attack
+SOU05012 -  Archer Attack
+SOU05013 -  Artifact + War Chest moving
+SOU05014 -  Attack Warning
+SOU05016 -  Siege weapon destroyed
+SOU05017 -  Ballista weapon completed + selected
+SOU05018 -  Ballista bolt shot
+SOU05019 -  Ballista bolt shot
+SOU05020 -  Ballista bolt shot
+SOU05021 -  Ballista bolt shot
+SOU05022 -  Barracks completed + selected
+SOU05027 -  Dock completed + selected
+Non-military ship selected 
+SOU05028 -  Target hit
+SOU05029 -  Ship destroyed
+SOU05030 -  Non-military ship completed
+SOU05032 -  Constructing
+SOU05035 -  Button selected
+SOU05036 -  Completed ?
+SOU05037 -  ‘Velaren’
+SOU05038 -  Catapult stone shot
+SOU05039 -  Catapult stone shot
+SOU05040 -  Catapult stone shot
+SOU05041 -  Catapult weapon completed + selected
+SOU05042 -  Catapult weapon destroyed
+SOU05043 -  Siege weapon moving
+SOU05044 -  Town Center completed + selected
+SOU05045 -  Farming
+SOU05048 -  Wood chopping
+SOU05050 -  ‘Ayohoyohoyo’  (Priest)
+SOU05051 -  ‘Wololo’    (Priest)
+SOU05052 -  Ballista bolt shot
+SOU05053 -  ‘Donnahee’
+SOU05054 -  ‘Darwin’
+SOU05055 -  Human unit killed
+SOU05056 -  Human unit killed
+SOU05057 -  Human unit killed
+SOU05058 -  Human unit killed
+SOU05059 -  Human unit killed
+SOU05060 -  Human unit killed
+SOU05061 -  Human unit killed
+SOU05062 -  Human unit killed
+SOU05063 -  Human unit killed
+SOU05064 -  Human unit killed
+SOU05065 -  Horse unit killed
+SOU05070 -  Target hit
+SOU05071 -  Selected    (Elephant units)
+SOU05072 -  Selected    (Elephant units)
+SOU05074 -  Selected    (Siege Workshop)
+SOU05075 -  ‘Eventide’
+SOU05076 -  ‘Arectus’
+SOU05077 -  Building destroyed
+SOU05078 -  Building destroyed
+SOU05079 -  Building destroyed
+SOU05080 -  Farming
+SOU05081 -  Building burning
+SOU05082 -  Building burning
+ 
+SOU05083 -  Small splash
+SOU05084 -  Attack swipe
+SOU05085 -  Berry gathering
+SOU05092 -  Horse moving
+SOU05093 -  Unknown
+SOU05096 -  Granary completed + selected
+SOU05100 -  Sword clash
+SOU05102 -  Human unit killed
+SOU05103 -  Human unit killed
+SOU05104 -  Human unit killed
+SOU05105 -  Attack grunt
+SOU05106 -  Attack grunt
+SOU05107 -  Building
+SOU05108 -  Horse unit die
+SOU05109 -  ‘Hayoyo’    (Priest)
+SOU05111 –  Steel attack
+SOU05112 -  Horse unit attack
+SOU05113 -  Ship sunk
+SOU05116 -  Steel attack
+SOU05118 -  ‘Homis’
+SOU05120 -  Horse
+SOU05121 -  Horse
+SOU05122 -  Horse
+SOU05123 -  Horse
+SOU05125 -  Arrow shot
+SOU05126 -  House completed + selected
+SOU05128 -  ‘Conan’
+SOU05129 -  Government Center completed + selected
+SOU05132 -  Lion attacking
+SOU05133 -  Lion attacking
+SOU05134 -  Lion attacking
+SOU05135 -  Lion attacking
+SOU05138 -  ATTACK – Class 2
+SOU05139 -  ATTACK – Class 2
+SOU05140 -  ATTACK – Class 2
+SOU05142 -  Market completed + selected
+SOU05143 -  ‘Hytay’
+SOU05144 -  Human unit completed
+SOU05148 -  Wonder completed + selected
+SOU05158 -  ‘Ogloma’
+SOU05159 -  Mining
+SOU05162 -  ‘Abadacus’
+SOU05164 -  ‘Werebus’
+SOU05165 -  Priest completed
+SOU05166 -  Villager completed
+SOU05167 -  ‘Readimar’
+SOU05169 -  Next age reached
+SOU05171 -  ‘Brogan’
+SOU05173 -  ‘Rudkit’
+SOU05176 -  Farm completed + selected
+SOU05177 -  Ship sunk
+SOU05178 -  Farming
+SOU05180 -  ‘Somus’
+SOU05181 -  Ship sunk
+SOU05182 -  Fish
+SOU05183 -  Fish
+SOU05184 -  Fish
+SOU05186 -  Storage Pit completed + selected
+SOU05190 -  Sword attack
+SOU05191 -  Swing sword attack 
+SOU05192 -  Tinkle sword attack
+SOU05193 -  Sword attack
+SOU05196 -  Temple completed + selected
+SOU05201 -  Tower completed + selected
+SOU05202 -  Unknown
+SOU05205 -  ‘Yuluk’
+SOU05206 -  ‘Yuri’
+SOU05207 -  Wall/Fortification completed + selected
+SOU05208 -  Military ship completed + selected
+SOU05210 -  Whale
+SOU05211 -  Whale
+SOU05214 -  ? Attack
+SOU05216 -  Elephant unit moving
+SOU05217 -  ‘Sumaga’
+SOU05218 -  Water
+SOU05231 -  ‘Hmmm’
+SOU05239 -  Elephant + Alligator killed
+SOU05240 -  Winsett’s_Z
+ 
 
-412 - 	Chariot Archer		(standing ground)
-413 - 	Bowman			(standing ground)
-414 - 	Improved Bowman		(standing ground)
-415 - 	Axeman			(standing ground)
-416 - 	Short Swordsman		(standing ground)
-417 - 	Ballista + Helepolis	(standing ground)
-418 -	Villager		(standing ground)
-419 -	Villager - builder	(standing ground)
-420 - 	Catapult + Heavy Catapult		(standing ground)
-421 -	Stone Thrower		(standing ground)
-422 - 	Horse Archer + Heavy Horse Archer	(standing ground)
-423 - 	Heavy Cavalry + Cataphract		(standing ground)
-424 - 	Cavalry			(standing ground)
-425 - 	Clubman			(standing ground)
-426 - 	Chariot			(standing ground)
-427 - 	Elephant Archer		(standing ground)
-428 - 	Elephant 		(standing ground, Gaia)
-429 - 	War Elephant		(standing ground)
-430 -	Villager - farmer	(standing ground)
-431 - 	Villager - hunter	(standing ground)
-432 -	Villager - forager	(standing ground)
-433 -	Alligator		(standing ground, Gaia)
-434 -	(?) 'Glowing thing'	(UNUSED?)
-435 -	Villager - fisherman	(standing ground)
-436 - 	Long Swordsman + Legion	(standing ground)
-437 - 	Broad Swordsman		(standing ground)
-438 - 	Phalanx + Centurion	(standing ground)
-439 - 	Composite Bowman	(standing ground)
-440 - 	Villager - warrior	(standing ground)
-441 - 	Villager - miner	(standing ground)
-442 -	Hoplite			(standing ground)
-443 -	Priest			(standing ground)
-444 - 	Hero Jason		(standing ground)
-445 - 	Scout			(standing ground)
-446 - 	War Elephant w/o rider 	(standing ground)
-
-
-447 - 	Farm			(Level 1 of 1)
-448 -	Small stone wall	(UNUSED?)
-449 -	Small wooden fence	(UNUSED?)
-450 - 	Huge plume of fire
-451 - 	Large plume of fire
-452 - 	Small plume of fire
-453 - 	Average plume of fire
-454 -	Tiny plume of fire
-455 -	Tiny plume of fire
-456 - 	Large plume of fire
-457 - 	Average plume of fire
-458 - 	(?)	(BLANK)
-459 - 	Single Pole Flag
-460 -	Double Pole Flag
-461 -	(?) Rock shadow
-463 - 	Tree - Palm	#?
-464 - 	Tree - Palm	#?
-465 - 	Tree - Palm	#?
-466 - 	Tree - Palm	#?
-467 -	(?) Shadow
-468 -	Tree - Pine #?
-469 - 	Tree - Spruce #?
-470 - 	Tree - Pine	#?
-471 - 	Tree - Pine	#?
-472 - 	(?) Shadow
-473 -	Fishing Boat		(standing ground, moving S)
-474 -	Fishing Ship		(standing ground, moving S)
-475 - 	Horse		 	(standing ground, Gaia, UNUSED?)
-477 - 	(?) 'Wings' 		(UNUSED?)
-478 - 	Gazelle		 	(standing ground, Gaia)
-479 - 	Gazelle		 	(feeding ?, Gaia, ?)
-480 -	Gazelle			(nodding ?, Gaia, ?)
-481 -	Gold Mine
-483 - 	Grass path #?
-484 - 	Grass path #?
-485 - 	Grass path #?
-486 - 	Grass path #?
-487 -	Grass path #?
-488 -	Grass path #?
-489 - 	Unbuilt 1-square plot
-490 - 	(?) Debris plot
-491 - 	(?)	(BLANK)
-492 - 	Tree - Oak #?
-493 -	Tree #?
-494 -	Dead Tree #?		(UNUSED?)
-495 - 	Tree - Oak #?
-496 - 	Nuke explosion		
-497 - 	Lion			(standing guard, Gaia)
-498 - 	(?) 'Log'
-499 -	(?) 'Log'
-500 -	Market			(Level 1 of 3)
-501 - 	Nuke missile		
-502 - 	(?) 'Fruit tree'	(UNUSED?)
-
-503 - 	Tree - Oak #?
-504 - 	Tree - Oak #?
-505 -	Tree #?
-506 -	Tree - Oak #?
-507 - 	Tree - Oak #?
-508 - 	Tree - Oak #?
-509 - 	Tree - Oak #?
-510 - 	Tree - Ash #?
-511 -	Tree - Beech #?
-512 -	Tree - Palm #?
-513 - 	Tree - Palm #?
-514 - 	Tree - Palm #?
-515 - 	Tree - Palm #?
-516 - 	Tree - Palm #?
-518 -	(?) Tiny shadow
-519 -	(?) Tiny shadow
-520 - 	(?) Discovery (Bird - Hawk)	(UNUSED?)
-521 -	Bird - Hawk			(facing S, Gaia)
-522 - 	Tree - Pine #?
-523 - 	Tree - Spruce #?
-524 -	Tree - Pine #?
-525 -	Tree - Pine #?
-526 - 	Tree - Pine #?
-527 -	Storage Pit		(Level 1 of 3)
-528 - 	Lion			(standing guard, Gaia)
-529 - 	(?) Stone slab		(Egyptian?, UNUSED?)
-530 -	(?) Stone slab		(Babylonian?, UNUSED?)
-531 -	Rock #?
-532 - 	Rock #?
-533 -	Rock #?
-534 - 	Rock #?
-535 - 	Rock #?
-536 -	Rock #?
-537 -	Rock #?
-538 - 	Rock #?
-539 -	Rock #?
-540 - 	Rock #?
-541 - 	Rock #?
-542 -	Rock #?
-543 -	Rock #?
-544 - 	Rock #?
-545 -	Rock #?
-546 - 	Rock #?
-547 - 	Rock #?
-548 -	Rock #?
-549 -	Rock #?
-550 - 	Rock #?
-551 -	Rock #?
-552 - 	Rock #?
-553 - 	Rock #?
-554 -	Rock #?
-555 -	Rock #?
-556 - 	Rock #?
-557 -	Rock #?
-558 - 	Rock #?			(UNUSED?)
-559 - 	(?) 'Fruit tree'	(UNUSED?)
-
-560 - 	(?) Shadow
-561 -	(?) Shadow
-562 -	(?) Shadow
-563 - 	(?) Shadow
-564 -	(?) Shadow
-565 - 	(?) Shadow
-566 - 	(?) Shadow
-567 -	(?) Shadow
-568 -	(?) Shadow
-569 - 	(?) Shadow
-570 -	(?) Shadow
-571 - 	(?) Shadow
-572 - 	(?) Shadow
-573 -	(?) Shadow
-574 -	(?) Shadow
-575 - 	(?) Shadow
-576 -	(?) Shadow
-577 - 	(?) Shadow
-578 - 	(?) Shadow
-579 -	(?) Shadow
-580 -	(?) Shadow
-581 - 	(?) Shadow
-582 -	(?) Shadow
-
-583 - 	Scout Ship + War Galley sail
-584 - 	(Catapult) Trireme + Juggernaut sail
-
-586 -	(?) Small shadow
-587 -	(?) Small shadow
-588 - 	(?) Small shadow
-589 -	(?) Small shadow
-590 - 	(?) Small shadow
-591 - 	(?) Small shadow
-592 -	(?) Small shadow
-
-593 -	Tower			(Level 2 of 3)
-594 - 	(?)	(BLANK)
-596 -	Shallows #?
-597 - 	(?) Small shadow
-598 -	(?)	(BLANK)
-599 - 	Wall/Fortification	(Level 1 of 3)
-600 -	(?) Tiny shadow
-601 - 	(?)	(BLANK)
-602 - 	(?) Tiny shadow
-
-603 -	Nuke Trooper		(running)
-604 -	Nuke Trooper		(kneeling shooting)
-605 - 	Nuke Trooper		(prone shooting)
-606 -	Nuke Trooper		(standing shooting)
-607 - 	Nuke Trooper		(kneeling shooting)
-608 - 	Villager spear
-609 -	Stable			(Level 1 of 2)
-
-
-610 -	Stone #?
-611 - 	Stone #?
-612 -	Stone #?
-613 - 	Stone #?
-614 - 	Stone #?
-615 -	Stone #?
-616 -	Stone path #?
-617 - 	Stone path #?
-618 -	Stone path #?
-619 - 	Stone path #?
-620 - 	Stone path #?
-621 -	Stone path #?
-
-622 -	Stone mine		(semi-depleted?)
-623 - 	Tree stump #?
-624 -	Villager - fisherman	(aiming)
-625 - 	Villager - miner	(mining)
-626 - 	Villager - builder	(builder)
-627 -	Villager - warrior	(striking)
-628 -	Villager - builder	(building?)
-629 - 	Stone Thrower		(facing S)
-630 -	Villager - farmer	(farming)
-631 - 	Villager - hunter	(aiming)
-632 - 	Villager - forager	(foraging)
-633 -	Villager - miner	(mining?)
-634 -	Priest			(facing S)
-636 - 	Tree			(semi-depleted)
-637 -	Tree			(very depleted)
-638 - 	(?) 'Fallen pine tree'	(UNUSED?)
-639 - 	Trade Boat		(standing ground, moving S)
-640 -	Merchant Ship		(standing ground, moving S)
-
-641 -	(?) Tree #?		(UNUSED?)
-642 - 	(?) Small shadow
-643 -	(?) 'Bare pine tree'	(UNUSED?)
-644 - 	(?) Discovery (fallen bare pine tree)	(UNUSED?)
-645 - 	Tree - Pine #?		
-646 -	(?) Discovery (fallen pine tree)	(UNUSED?)
-
-647 -	Light Transport		(standing ground)
-648 - 	Heavy Transport		(standing ground)
-649 -	(?) 'Volcano erupting'  (UNUSED?)
-
-
-650 - 	Chariot Archer		(moving S)
-651 - 	Scout			(moving S)
-652 -	Bowman			(moving S)
-653 -	Improved Bowman		(moving S)
-654 - 	Axeman			(moving S)
-655 -	Short Swordsman		(moving S)
-656 - 	Ballista + Helepolis	(moving S)	
-657 - 	Villager		(moving S)
-658 -	Villager - builder	(moving S)	
-659 -	Catapult + Heavy Catapult		(moving S)
-660 - 	Stone Thrower		(moving S)
-661 -	Horse Archer + Heavy Horse Archer	(moving S)
-662 - 	Heavy Cavalry + Cataphract		(moving S)	
-663 - 	Cavalry			(moving S)
-664 -	Clubman			(moving S)	
-665 -	Chariot			(moving S)
-666 - 	Elephant Archer		(moving S)
-667 -	Elephant		(moving S, Gaia)
-668 - 	(?) 'Xmas Ornament'	(moving S)	
-669 - 	War Elephant		(moving S)
-670 -	Villager - farmer	(moving S)
-671 -	Villager - hunter	(moving S)
-672 - 	Villager - forager	(moving S)
-673 -	Alligator		(moving S, Gaia)
-674 - 	(?) 'White wolf'	(UNUSED?)	
-675 - 	(?) 'Brown frog'	(UNUSED?)
-676 -	Villager - fisherman	(moving S)
-677 -	Long Swordsman + Legion	(moving S)
-678 - 	Broad Swordsman		(moving S)
-679 -	Phalanx + Centurion	(moving S)
-680 - 	Lion			(moving S, Gaia)	
-681 - 	Composite Bowman	(moving S)
-682 -	Villager - warrior	(moving S)
-683 -	Villager - miner	(moving S)
-684 - 	Hoplite			(moving S)
-685 -	Priest			(moving S)
-686 - 	Hero Jason		(moving S)	
-687 - 	War Elephant w/o rider	(moving S)
-
-
-688 -	Tower			(Level 1 of 3)
-689 -	(?)	(BLANK)
-690 - 	(?) 'Fruit tree'	(UNUSED?)
-691 -	War Galley		(standing ground, moving S)
-692 - 	Scout Ship		(standing ground, moving S)
-693 - 	(Catapult) Trireme + Juggernaut	(standing ground, moving S)
-694 -	Trireme paddles & markings	
-695 -	Catapult Trireme + Juggernaut paddles & markings
-696 - 	Horse			(moving S, Gaia, UNUSED?)
-697 -	Fishing Ship net
-698 - 	(?) Stone slab		(Egyptian?, UNUSED?)
-699 - 	Terrain crack #?
-700 -	Fishing Boat net
-701 - 	(?) Nuke missile warhead
-702 -	Cliff waterfall #?
-704 - 	(?) Villager - Jihad warrior	
-705 - 	(?) 'jack be nimble' flying Villager
-706 -	(?) Discovery ('jack be nimble' flying Villager)	(UNUSED?)
-707 -	(?) 'Cool SpaceJet'	(UNUSED?)
-709 - 	(?) Small shadow
-710 -	(?) Small shadow
-711 - 	(?) Small shadow	
-712 - 	(?) Small shadow
-713 -	Winsett's_Z		(standing ground)
-714 -	(?) Nuke missile
-715 -	Winsett's_Z		(moving S)
+TERRAIN.DRS
+ 
+TER15000 -  <25>  Desert terrain
+TER15001 -  <25>  Grass terrain
+TER15002 -  <20>  Water terrain
+TER15003 -  <20>  Deep Water terrain

@@ -22,6 +22,13 @@ const MAP_RESOURCE_DENSITIES = [
   { label: () => t('mapResourcesHigh'), value: 'high' },
 ]
 
+const STARTING_AGES = [
+  { label: () => t('stoneAge'), value: 0 },
+  { label: () => t('toolAge'), value: 1 },
+  { label: () => t('bronzeAge'), value: 2 },
+  { label: () => t('ironAge'), value: 3 },
+]
+
 const RESOURCES_MAP = {
   low: { wood: 100, food: 150, stone: 50, gold: 0 },
   standard: { wood: 200, food: 200, stone: 150, gold: 0 },
@@ -71,6 +78,8 @@ export default class MapConfig {
       size: 120,
       mapType: 'plain',
       difficulty: 'medium',
+      startingAge: 0,
+      allTechnologies: false,
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
@@ -80,8 +89,8 @@ export default class MapConfig {
 
     this.maxPlayers = 2
     this.players = [
-      { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
-      { name: t('computer') + ' 1', color: 'red', civ: 'Greek', team: null, isHuman: false },
+      { name: t('you'), color: 'blue', civ: this._randomCiv(), team: null, isHuman: true },
+      { name: t('computer') + ' 1', color: 'red', civ: this._randomCiv(), team: null, isHuman: false },
     ]
 
     this._modal = new Modal({
@@ -162,6 +171,18 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
+      this._createSelect(t('startingAgeLabel'), STARTING_AGES, 0, val => {
+        this.config.startingAge = parseInt(val)
+      })
+    )
+
+    settingsForm.appendChild(
+      this._createCheckbox(t('allTechnologiesLabel'), false, val => {
+        this.config.allTechnologies = val
+      })
+    )
+
+    settingsForm.appendChild(
       this._createCheckbox(t('revealTerrain'), false, val => {
         this.config.revealTerrain = val
       })
@@ -193,6 +214,7 @@ export default class MapConfig {
     if (!document.getElementById(this._modal?._id)) return
 
     evt.preventDefault()
+    playClickSound()
     this._startGame()
   }
 
@@ -216,6 +238,10 @@ export default class MapConfig {
     return found ? found.name : PLAYER_COLORS[0].name
   }
 
+  _randomCiv() {
+    return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
+  }
+
   _clampPlayers() {
     while (this.players.length > this.maxPlayers) {
       this.players.pop()
@@ -230,7 +256,7 @@ export default class MapConfig {
     if (this.players.filter(p => !p.isHuman).length >= MAX_BOTS) return
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(p => !p.isHuman).length + 1
-    this.players.push({ name: t('computer') + ' ' + botNum, color, civ: 'Greek', team: null, isHuman: false })
+    this.players.push({ name: t('computer') + ' ' + botNum, color, civ: this._randomCiv(), team: null, isHuman: false })
   }
 
   _setPlayerCount(count) {

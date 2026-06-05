@@ -1,4 +1,4 @@
-import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { AIMilitary } from './AIMilitary'
 import {
@@ -192,6 +192,36 @@ export class AIStrategy {
     return actions
   }
 
+  shouldBuyFarm(snapshot) {
+    const { ai } = this
+    const { villagers, farms } = snapshot
+    const builtFarms = farms.filter(farm => farm.isBuilt && !farm.isDead)
+    const emptyBuiltFarms = builtFarms.filter(farm => !farm.isUsedBy)
+    const occupiedBuiltFarms = builtFarms.length - emptyBuiltFarms.length
+    const pendingFarms = farms.filter(farm => !farm.isBuilt && !farm.isDead).length
+    const villagersOnFood = villagers.filter(
+      villager =>
+        !villager.isDead &&
+        !villager.inactif &&
+        [WORK_TYPES.forager, WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.fisher].includes(villager.work)
+    ).length
+
+    if (villagers.length < 8) return false
+    if (pendingFarms > 0) return false
+    if (emptyBuiltFarms.length >= Math.max(1, Math.ceil(villagers.length / 14))) return false
+
+    const aliveAnimals = [...ai.foundedAnimals].filter(animal => !animal.isDead).length
+    const deadAnimals = [...ai.foundedDeadAnimals].filter(animal => !animal.isDestroyed && animal.quantity > 0).length
+    const naturalFoodCapacity =
+      ai.foundedBerrybushs.size * 2 + aliveAnimals * 2 + deadAnimals + Math.min(ai.foundedFish.size, 3) * 2
+    const naturalFoodUnderPressure =
+      villagersOnFood > naturalFoodCapacity || naturalFoodCapacity < Math.max(4, Math.ceil(villagers.length * 0.35))
+    const foodDemand = this.getEconomicDemand().food > 0 || ai.food < 80
+    const farmsNearlySaturated = builtFarms.length > 0 && occupiedBuiltFarms >= builtFarms.length - 1
+
+    return naturalFoodUnderPressure && (foodDemand || farmsNearlySaturated)
+  }
+
   buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, debug = false) {
     const { ai } = this
     const building = ai.config.buildings[buildingType]
@@ -319,7 +349,7 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(true, BUILDING_TYPES.farm, () => {
+      buy(this.shouldBuyFarm(snapshot), BUILDING_TYPES.farm, () => {
         const buildings = [...granarys, ...towncenters]
         for (const building of buildings) {
           const position = getPositionInGridAroundInstance(

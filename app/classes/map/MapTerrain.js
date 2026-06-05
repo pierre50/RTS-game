@@ -431,10 +431,11 @@ export class MapTerrain {
   }
 
   formatCellsDesert() {
+    const typeToFormat = ['Grass', 'Jungle']
+
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        const typeToFormat = ['Grass', 'Jungle']
         if (cell.type === 'Desert') {
           const n = this.map.grid[i - 1]?.[j]
           const s = this.map.grid[i + 1]?.[j]

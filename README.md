@@ -74,5 +74,6 @@ pnpm clean
 - `app/` : code source du jeu
 - `app/config/assetManifest.js` : manifest des bundles chargés au démarrage
 - `public/assets/` : assets statiques copiés au build
+- `public/assets/data/` : JSON organisés par domaine (`gameplay/`, `civilizations/`, `technologies/`)
 - `webpack.config.js` et `webpack.env.js` : configuration et résolution d’environnement du build
 - `main.js` : point d’entrée Electron

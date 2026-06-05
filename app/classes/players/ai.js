@@ -162,7 +162,13 @@ export class AI extends Player {
       if (!instance || instance === target || instance.isDead || instance.isDestroyed || instance.hitPoints <= 0) {
         return false
       }
-      if (instance.family === FAMILY_TYPES.animal) return true
+      if (instance.family === FAMILY_TYPES.animal) {
+        return (
+          instance.strategy === 'attack' ||
+          instance.action === ACTION_TYPES.attack ||
+          instance.dest?.owner?.label === this.label
+        )
+      }
       return this.isEnemy(instance.owner)
     })
   }
@@ -180,20 +186,137 @@ export class AI extends Player {
       .filter(threat => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
       .map(threat => {
         const hostiles = this.getVisibleHostilesNear(threat.target)
-        return { ...threat, hostiles }
+        const profile = this.getThreatProfile({ ...threat, hostiles })
+        return { ...threat, hostiles, profile }
       })
       .filter(threat => threat.target && threat.hostiles.length > 0)
-      .sort((a, b) => {
-        const aCritical =
-          a.target.type === BUILDING_TYPES.townCenter ? 2 : a.target.family === FAMILY_TYPES.building ? 1 : 0
-        const bCritical =
-          b.target.type === BUILDING_TYPES.townCenter ? 2 : b.target.family === FAMILY_TYPES.building ? 1 : 0
-        if (bCritical !== aCritical) return bCritical - aCritical
-        return b.hostiles.length - a.hostiles.length
-      })
+      .sort((a, b) => b.profile.priority - a.profile.priority)
   }
 
-  handleThreatResponses({ villagers, waitingMilitary, debug = false }) {
+  getHomeAnchor() {
+    const townCenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]).filter(
+      building => !building.isDead && !building.isDestroyed
+    )
+    if (townCenters.length > 0) return townCenters[0]
+
+    const fallbackBuilding = this.buildings.find(building => !building.isDead && !building.isDestroyed)
+    if (fallbackBuilding) return fallbackBuilding
+
+    const fallbackVillager = this.units.find(unit => unit.type === UNIT_TYPES.villager && !unit.isDead)
+    return fallbackVillager || null
+  }
+
+  getThreatProfile(threat) {
+    const military = this.strategy.military
+    const homeAnchor = this.getHomeAnchor()
+    const hostileUnits = threat.hostiles.filter(hostile => hostile.family === FAMILY_TYPES.unit)
+    const hostileMilitary = hostileUnits.filter(hostile => hostile.type !== UNIT_TYPES.villager)
+    const hostileVillagers = hostileUnits.filter(hostile => hostile.type === UNIT_TYPES.villager)
+    const hostileAnimals = threat.hostiles.filter(hostile => hostile.family === FAMILY_TYPES.animal)
+    const hostilePower = military.getGroupCombatPower(threat.hostiles)
+    const targetDistanceToHome = homeAnchor
+      ? Math.abs(threat.target.i - homeAnchor.i) + Math.abs(threat.target.j - homeAnchor.j)
+      : Infinity
+    const targetIsTownCenter = threat.target.type === BUILDING_TYPES.townCenter
+    const targetIsBuilding = threat.target.family === FAMILY_TYPES.building
+    const targetIsVillager = threat.target.type === UNIT_TYPES.villager
+    const homeThreatRadius = this.difficultyConfig.homeThreatRadius || 15
+    const villageCoreRadius = Math.min(homeThreatRadius, this.difficultyConfig.villageCoreRadius || 10)
+    const isNearHome = targetDistanceToHome <= homeThreatRadius
+    const isInVillageCore = targetDistanceToHome <= villageCoreRadius
+    const isRemoteVillagerIncident = targetIsVillager && !isNearHome
+    const isDirectVillageAssault =
+      hostileMilitary.length > 0 && (targetIsTownCenter || targetIsBuilding || isInVillageCore)
+    const isSeriousMilitaryThreat =
+      hostileMilitary.length > 0 &&
+      (isNearHome || hostilePower >= (this.difficultyConfig.assaultRecallThreshold || 16) * 0.85)
+
+    let priority = hostilePower + threat.hostiles.length * 2 + threat.count
+    if (targetIsTownCenter) priority += 16
+    else if (targetIsBuilding) priority += 9
+    else if (targetIsVillager) priority += 2
+
+    if (isNearHome) priority += 10
+    if (isInVillageCore) priority += 7
+    if (hostileMilitary.length > 0) priority += 12 + hostileMilitary.length * 4
+    else if (hostileVillagers.length > 0) priority += 4 + hostileVillagers.length * 2
+    else if (hostileAnimals.length > 0) priority -= 4
+    if (isRemoteVillagerIncident && hostileMilitary.length === 0) priority -= 6
+
+    const shouldRecallAssaultUnits =
+      isDirectVillageAssault ||
+      (isSeriousMilitaryThreat &&
+        hostilePower >= (this.difficultyConfig.assaultRecallThreshold || 16) &&
+        !isRemoteVillagerIncident)
+
+    return {
+      hostileUnits,
+      hostileMilitary,
+      hostileVillagers,
+      hostileAnimals,
+      hostilePower,
+      isNearHome,
+      isInVillageCore,
+      isRemoteVillagerIncident,
+      isDirectVillageAssault,
+      isSeriousMilitaryThreat,
+      targetDistanceToHome,
+      isCriticalBuilding: targetIsTownCenter,
+      isBuilding: targetIsBuilding,
+      shouldRecallAssaultUnits,
+      priority,
+    }
+  }
+
+  getDefensePowerNeed(profile) {
+    if (!profile) return 0
+
+    if (profile.hostileMilitary.length > 0) {
+      const powerRatio = this.difficultyConfig.assaultRecallPowerRatio || 0.85
+      const baseNeed = Math.max(6, profile.hostilePower * powerRatio)
+      if (profile.isDirectVillageAssault) return baseNeed * 1.15
+      if (profile.isRemoteVillagerIncident) return baseNeed * 0.75
+      return profile.isCriticalBuilding ? baseNeed * 1.15 : baseNeed
+    }
+
+    if (profile.hostileVillagers.length > 0) {
+      if (profile.isRemoteVillagerIncident) {
+        return Math.max(2, profile.hostileVillagers.length * 1.5)
+      }
+      return Math.max(3, profile.hostileVillagers.length * 2.5)
+    }
+
+    if (profile.hostileAnimals.length > 0) {
+      if (profile.isRemoteVillagerIncident) {
+        return Math.min(3, Math.max(1, profile.hostileAnimals.length))
+      }
+      return Math.min(5, Math.max(1.5, profile.hostileAnimals.length * 1.25))
+    }
+
+    return 0
+  }
+
+  getRecallableAssaultMilitary(assaultMilitary, assignedMilitary, threat) {
+    const recallMaxRatio = this.difficultyConfig.assaultRecallMaxRatio || 0.5
+    const minAssaultGroup = Math.max(2, Math.ceil(this.difficultyConfig.attackThreshold * 0.6))
+    const availableAssault = assaultMilitary
+      .filter(unit => !assignedMilitary.has(unit.label))
+      .sort(
+        (a, b) =>
+          Math.abs(a.i - threat.target.i) +
+          Math.abs(a.j - threat.target.j) -
+          (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
+      )
+
+    if (availableAssault.length <= minAssaultGroup) return []
+
+    const maxRecallByRatio = Math.max(1, Math.floor(availableAssault.length * recallMaxRatio))
+    const maxRecallKeepingPressure = Math.max(0, availableAssault.length - minAssaultGroup)
+    const maxRecall = Math.min(maxRecallByRatio, maxRecallKeepingPressure)
+    return maxRecall > 0 ? availableAssault.slice(0, maxRecall) : []
+  }
+
+  handleThreatResponses({ villagers, waitingMilitary, assaultMilitary, debug = false }) {
     const threats = this.getActiveThreats()
     if (!threats.length) return 0
 
@@ -207,15 +330,22 @@ export class AI extends Player {
       const primaryHostile = threat.hostiles[0]
       if (!primaryHostile) continue
 
-      const isCriticalBuilding =
-        threat.target.family === FAMILY_TYPES.building && threat.target.type === BUILDING_TYPES.townCenter
-      const hostileUnits = threat.hostiles.filter(hostile => hostile.family === FAMILY_TYPES.unit)
-      const hostileVillagers = hostileUnits.filter(hostile => hostile.type === UNIT_TYPES.villager)
-      const hostileMilitary = hostileUnits.filter(hostile => hostile.type !== UNIT_TYPES.villager)
-      const hostileAnimals = threat.hostiles.filter(hostile => hostile.family === FAMILY_TYPES.animal)
-      const nonAnimalThreat = hostileUnits.length > 0
+      const profile = threat.profile || this.getThreatProfile(threat)
+      const hostileVillagers = profile.hostileVillagers
+      const hostileMilitary = profile.hostileMilitary
+      const hostileAnimals = profile.hostileAnimals
       const lethalThreat = hostileMilitary.length > 0
-      const responseRadius = isCriticalBuilding ? 18 : 10
+      const responseRadius = profile.isCriticalBuilding
+        ? 18
+        : profile.isDirectVillageAssault
+          ? 14
+          : profile.isRemoteVillagerIncident
+            ? hostileAnimals.length > 0
+              ? 4
+              : 6
+            : profile.isNearHome
+              ? 12
+              : 10
 
       const nearbyMilitary = waitingMilitary
         .filter(unit => !assignedMilitary.has(unit.label))
@@ -226,10 +356,25 @@ export class AI extends Player {
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
-      const targetMilitaryCount = nonAnimalThreat
-        ? Math.max(1, hostileUnits.length)
-        : Math.min(2, hostileAnimals.length)
-      const chosenMilitary = nearbyMilitary.slice(0, targetMilitaryCount)
+      const desiredDefensePower = this.getDefensePowerNeed(profile)
+      const chosenMilitary = []
+      let defensePower = 0
+
+      for (const soldier of nearbyMilitary) {
+        chosenMilitary.push(soldier)
+        defensePower += this.strategy.military.getCombatPower(soldier)
+        if (defensePower >= desiredDefensePower) break
+      }
+
+      if (profile.shouldRecallAssaultUnits && defensePower < desiredDefensePower) {
+        const recallCandidates = this.getRecallableAssaultMilitary(assaultMilitary, assignedMilitary, threat)
+        for (const soldier of recallCandidates) {
+          chosenMilitary.push(soldier)
+          defensePower += this.strategy.military.getCombatPower(soldier)
+          if (defensePower >= desiredDefensePower) break
+        }
+      }
+
       for (const soldier of chosenMilitary) {
         assignedMilitary.add(soldier.label)
         soldier.sendTo(primaryHostile, ACTION_TYPES.attack)
@@ -255,11 +400,17 @@ export class AI extends Player {
       if (!lethalThreat) {
         if (hostileAnimals.length > 0) {
           villagerDefenseCount =
-            hostileAnimals.length === 1 ? 1 : Math.min(isCriticalBuilding ? 4 : 3, hostileAnimals.length)
+            hostileAnimals.length === 1
+              ? 1
+              : Math.min(
+                  profile.isCriticalBuilding ? 4 : profile.isRemoteVillagerIncident ? 2 : 3,
+                  hostileAnimals.length
+                )
         }
         if (hostileVillagers.length > 0) {
-          const criticalBonus = isCriticalBuilding ? 2 : 0
-          const maxDefense = isCriticalBuilding ? 8 : 6
+          const criticalBonus = profile.isCriticalBuilding ? 2 : 0
+          const remotePenalty = profile.isRemoteVillagerIncident ? 2 : 0
+          const maxDefense = profile.isCriticalBuilding ? 8 : Math.max(2, 6 - remotePenalty)
           villagerDefenseCount = Math.max(
             villagerDefenseCount,
             Math.min(maxDefense, hostileVillagers.length + criticalBonus)
@@ -281,6 +432,16 @@ export class AI extends Player {
       }
 
       const evacVillagers = buildersOnSite.filter(villager => !assignedVillagers.has(villager.label))
+      const shouldEvacuateNearbyVillagers = lethalThreat && (profile.isNearHome || profile.isDirectVillageAssault)
+      const nearbyWorkersToEvacuate = shouldEvacuateNearbyVillagers
+        ? nearbyVillagers.filter(
+            villager => !assignedVillagers.has(villager.label) && villager.dest?.label !== threat.target.label
+          )
+        : []
+      for (const villager of nearbyWorkersToEvacuate) {
+        assignedVillagers.add(villager.label)
+        villager.runaway(primaryHostile)
+      }
       for (const villager of evacVillagers) {
         assignedVillagers.add(villager.label)
         villager.runaway(primaryHostile)
@@ -292,16 +453,20 @@ export class AI extends Player {
           threat.target.type,
           'hostiles=',
           threat.hostiles.length,
+          'priority=',
+          Math.round(profile.priority),
           'military=',
           chosenMilitary.length,
           'villagers=',
           chosenVillagers.length,
+          'fallback=',
+          nearbyWorkersToEvacuate.length,
           'evac=',
           evacVillagers.length
         )
       }
 
-      if (chosenMilitary.length || chosenVillagers.length || evacVillagers.length) {
+      if (chosenMilitary.length || chosenVillagers.length || nearbyWorkersToEvacuate.length || evacVillagers.length) {
         actions++
       }
     }
@@ -545,8 +710,14 @@ export class AI extends Player {
         !c.assault &&
         c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO
     )
+    const assaultMilitary = military.filter(
+      c => c.assault && c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO && c.action === ACTION_TYPES.attack
+    )
 
-    if (DEBUG) console.log(`Inactif Military: ${inactifMilitary.length}, Waiting Military: ${waitingMilitary.length}`)
+    if (DEBUG)
+      console.log(
+        `Inactif Military: ${inactifMilitary.length}, Waiting Military: ${waitingMilitary.length}, Assault Military: ${assaultMilitary.length}`
+      )
 
     // Player losing condition
     if (isPlayerEliminated(this)) {
@@ -562,6 +733,7 @@ export class AI extends Player {
     actions += this.handleThreatResponses({
       villagers,
       waitingMilitary,
+      assaultMilitary,
       debug: DEBUG,
     })
 

@@ -370,7 +370,7 @@ export class UnitActions {
             }
           }
           if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.sendTo(unit.dest, ACTION_TYPES.heal)
+            unit.sendToEvt(unit.dest, ACTION_TYPES.heal, { forceRepath: true })
             return
           }
           if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
@@ -417,7 +417,7 @@ export class UnitActions {
           }
           if (!unit.isUnitAtDest(unit.action, unit.dest)) {
             if (unit.context.map.revealEverything || playerCanSeeInstance(unit.dest, unit.owner)) {
-              unit.sendTo(unit.dest, ACTION_TYPES.hunt)
+              unit.sendToEvt(unit.dest, ACTION_TYPES.hunt, { forceRepath: true })
             } else {
               unit.stop()
             }

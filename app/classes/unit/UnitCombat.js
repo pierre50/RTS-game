@@ -58,7 +58,7 @@ export class UnitCombat {
     }
     this.syncMovingTargetDirection()
     if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-      unit.sendTo(unit.dest, ACTION_TYPES.attack)
+      unit.sendToEvt(unit.dest, ACTION_TYPES.attack, { forceRepath: true })
       return
     }
     this.playSingleAttackAnimation(() => launchProjectile())
@@ -183,7 +183,7 @@ export class UnitCombat {
           }
           this.syncMovingTargetDirection()
           if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.sendTo(unit.dest, ACTION_TYPES.attack)
+            unit.sendToEvt(unit.dest, ACTION_TYPES.attack, { forceRepath: true })
             return
           }
           if (unit.sounds && unit.sounds.hit) {

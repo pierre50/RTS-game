@@ -10,6 +10,11 @@ export const AI_DIFFICULTIES = {
     raidThreshold: 0,
     raidSize: 0,
     attackCooldownMs: 35000,
+    assaultRecallThreshold: 20,
+    assaultRecallPowerRatio: 0.7,
+    assaultRecallMaxRatio: 0.4,
+    homeThreatRadius: 14,
+    villageCoreRadius: 9,
   },
   medium: {
     stepDelayBase: 4000,
@@ -20,6 +25,11 @@ export const AI_DIFFICULTIES = {
     raidThreshold: 0,
     raidSize: 0,
     attackCooldownMs: 24000,
+    assaultRecallThreshold: 17,
+    assaultRecallPowerRatio: 0.85,
+    assaultRecallMaxRatio: 0.5,
+    homeThreatRadius: 15,
+    villageCoreRadius: 10,
   },
   hard: {
     stepDelayBase: 2500,
@@ -30,6 +40,11 @@ export const AI_DIFFICULTIES = {
     raidThreshold: 4,
     raidSize: 3,
     attackCooldownMs: 16000,
+    assaultRecallThreshold: 15,
+    assaultRecallPowerRatio: 1,
+    assaultRecallMaxRatio: 0.6,
+    homeThreatRadius: 16,
+    villageCoreRadius: 11,
   },
 }
 

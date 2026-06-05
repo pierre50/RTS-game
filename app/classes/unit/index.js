@@ -346,8 +346,8 @@ export class Unit extends Instance {
     }
   }
 
-  sendToEvt(dest, action) {
-    return this.unitMovement.sendToEvt(dest, action)
+  sendToEvt(dest, action, options) {
+    return this.unitMovement.sendToEvt(dest, action, options)
   }
 
   goBackToPrevious() {

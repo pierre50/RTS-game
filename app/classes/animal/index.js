@@ -213,8 +213,8 @@ export class Animal extends Instance {
   destHasMoved() {
     return this.animalMovement.destHasMoved()
   }
-  sendTo(dest, action) {
-    return this.animalMovement.sendTo(dest, action)
+  sendTo(dest, action, options) {
+    return this.animalMovement.sendTo(dest, action, options)
   }
   moveToPath() {
     return this.animalMovement.moveToPath()

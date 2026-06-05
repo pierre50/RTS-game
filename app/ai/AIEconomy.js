@@ -171,7 +171,7 @@ export class AIEconomy {
     return true
   }
 
-  // Group-aware hunting: large animals (elephants, etc.) need several hunters on the same target.
+  // Group-aware hunting for non-elephant prey: large animals need several hunters on the same target.
   // Small animals get 1 hunter each. Returns count of new hunters assigned.
   assignHunters(availableVillagers, villagersHunting, maxTotalHunters) {
     const { ai } = this
@@ -186,8 +186,7 @@ export class AIEconomy {
       }
     }
 
-    const LARGE_HP = 20 // threshold for group hunt (elephant = 45 HP)
-    const MIN_ELEPHANT_HUNTERS = 5
+    const LARGE_HP = 20 // threshold for group hunt
     const DAMAGE_PER_HUNTER = 4 // spear damage per throw
 
     let actions = 0
@@ -196,17 +195,13 @@ export class AIEconomy {
     // Large animals: send a pack — enough hunters to kill before losing too many villagers
     // Prefer animals already being hunted (finish them first) to not waste effort
     const large = safeAnimals
-      .filter(a => a.totalHitPoints >= LARGE_HP)
+      .filter(a => a.totalHitPoints >= LARGE_HP && a.type !== 'Elephant')
       .sort((a, b) => (huntersByAnimal.get(b) || 0) - (huntersByAnimal.get(a) || 0))
 
     for (const animal of large) {
       if (totalHunters >= maxTotalHunters || availableVillagers.length === 0) break
       const current = huntersByAnimal.get(animal) || 0
-      const isElephant = animal.type === 'Elephant'
       const maxAssignable = Math.min(maxTotalHunters - totalHunters, availableVillagers.length)
-
-      // Don't start or reinforce an elephant hunt unless we can field a full group of 5 at once.
-      if (isElephant && current < MIN_ELEPHANT_HUNTERS && current + maxAssignable < MIN_ELEPHANT_HUNTERS) continue
 
       // How many hunters needed to kill this animal within ~3 attack rounds
       const needed = Math.max(0, Math.ceil(animal.hitPoints / DAMAGE_PER_HUNTER) - current)

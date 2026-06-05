@@ -60,7 +60,7 @@ export class AnimalMovement {
     )
   }
 
-  sendTo(dest, action) {
+  sendTo(dest, action, { forceRepath = false } = {}) {
     const animal = this.animal
     const {
       context: { map },
@@ -68,6 +68,15 @@ export class AnimalMovement {
     animal.stopInterval()
     if (!dest) {
       animal.stop()
+      return
+    }
+    if (
+      !forceRepath &&
+      dest &&
+      animal.dest?.label === dest.label &&
+      animal.action === action &&
+      (animal.path.length > 0 || this.isAnimalAtDest(action, dest))
+    ) {
       return
     }
     if (
@@ -119,7 +128,7 @@ export class AnimalMovement {
       return
     }
     if (nextCell.solid && animal.dest) {
-      animal.sendTo(animal.dest, animal.action)
+      animal.sendTo(animal.dest, animal.action, { forceRepath: true })
       return
     }
     if (!animal.sprite.playing) {
@@ -145,7 +154,7 @@ export class AnimalMovement {
       updateInstanceVisibility(animal)
       animal.path.pop()
       if (this.destHasMoved()) {
-        animal.sendTo(animal.dest, animal.action)
+        animal.sendTo(animal.dest, animal.action, { forceRepath: true })
         return
       }
       if (this.isAnimalAtDest(animal.action, animal.dest)) {

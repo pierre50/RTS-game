@@ -47,6 +47,10 @@ export class AnimalCombat {
   affectNewDest() {
     const animal = this.animal
     animal.stopInterval()
+    if (animal.strategy !== 'attack') {
+      animal.stop()
+      return
+    }
     const targets = findInstancesInSight(animal, instance => animal.getActionCondition(instance))
     if (targets.length) {
       const target = getClosestInstanceWithPath(animal, targets)
@@ -113,7 +117,7 @@ export class AnimalCombat {
               animal.setTextures(SHEET_TYPES.action)
             }
             if (!instanceContactInstance(animal, animal.dest)) {
-              animal.sendTo(animal.dest, ACTION_TYPES.attack)
+              animal.sendTo(animal.dest, ACTION_TYPES.attack, { forceRepath: true })
               return
             }
             animal.sounds &&

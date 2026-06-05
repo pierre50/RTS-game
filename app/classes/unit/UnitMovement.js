@@ -20,7 +20,7 @@ export class UnitMovement {
     this.unit = unit
   }
 
-  sendToEvt(dest, action) {
+  sendToEvt(dest, action, { forceRepath = false } = {}) {
     const unit = this.unit
     const {
       context: { map },
@@ -29,6 +29,7 @@ export class UnitMovement {
       return unit.queueOrder(dest, action)
     }
     if (
+      !forceRepath &&
       dest &&
       unit.dest?.label === dest.label &&
       unit.action === action &&
@@ -143,7 +144,7 @@ export class UnitMovement {
       return
     }
     if (nextCell.solid && unit.dest) {
-      unit.sendTo(unit.dest, unit.action)
+      unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })
       return
     }
     if (!unit.sprite.playing) {
@@ -169,7 +170,7 @@ export class UnitMovement {
       updateInstanceVisibility(unit)
       unit.path.pop()
       if (unit.destHasMoved()) {
-        unit.sendTo(unit.dest, unit.action)
+        unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })
         return
       }
       if (unit.isUnitAtDest(unit.action, unit.dest)) {

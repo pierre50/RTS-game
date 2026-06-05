@@ -23,6 +23,7 @@ export default class Map extends Container {
     this.sortableChildren = true
 
     this.allTechnologies = false
+    this.startingAge = 0
     this.noAI = false
 
     this.instantMode = false
