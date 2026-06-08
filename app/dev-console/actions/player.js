@@ -122,6 +122,9 @@ export function setGameSpeed(context, value = 1) {
     return { ok: false, message: `Usage: ${GAME_SPEED_USAGE}` }
   }
   context.app.ticker.speed = speed
+  if (context.scheduler) {
+    context.scheduler.timeScale = speed
+  }
   return { ok: true, message: `Speed: ${speed}x` }
 }
 

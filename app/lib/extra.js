@@ -255,7 +255,7 @@ export class Modal {
     }
 
     const closeBtn = document.createElement('button')
-    closeBtn.className = 'modal-close btn-dark secondary'
+    closeBtn.className = 'modal-close ui-btn'
     closeBtn.textContent = '✕'
     closeBtn.addEventListener('pointerdown', playClickSound)
     closeBtn.addEventListener('click', () => {
@@ -264,11 +264,7 @@ export class Modal {
     })
     header.appendChild(closeBtn)
 
-    const divider = document.createElement('div')
-    divider.className = 'menu-divider'
-
     panel.appendChild(header)
-    panel.appendChild(divider)
     if (content) panel.appendChild(content)
 
     backdrop.appendChild(panel)

@@ -1,28 +1,40 @@
 :root {
   --main-primary-color: #e4c99b;
-  --main-detail-color: #8b6914;
   --form-surface-color: #d8b878;
   --main-border-radius: 0px;
   --main-border-radius-lg: 0px;
 
   --border-btn: 2px outset #efdec7;
   --border-slot: 2px inset #efdec7;
-  --main-shadow-dark: #1e1508;
   --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
   --main-text-color: #1a0e00;
   --main-accent-color: #3d2000;
   --main-accent-hover: #c9a572;
 
-  --danger-color: #cc1100;
   --dev-console-ok-color: #ffe9a8;
   --dev-console-error-color: #ff9a8f;
+  --dev-console-log-color: #f2dfbb;
 
   --msg-color: #ff5050;
   --msg-bg: #0a0602;
   --msg-border: #9a2020;
+  --msg-success-color: #4cde7a;
+  --msg-success-bg: #021008;
+  --msg-success-border: #1a6e3c;
+  --msg-warning-color: #ffb340;
+  --msg-warning-bg: #080601;
+  --msg-warning-border: #8a5a0a;
   --msg-padding: 6px 18px;
-  --msg-font-size: 13px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 18px;
+  --font-size-display: 34px;
+  --font-size-hero: 50px;
+  --msg-font-size: var(--font-size-base);
   --msg-border-radius: var(--main-border-radius);
+
+  --text-color-inverse: #f8e9cb;
+  --text-color-white: #ffffff;
 
   --text-shadow-light-ui: 1px 1px white;
   --text-shadow-dark-ui: 1px 1px 0 black;
@@ -36,6 +48,28 @@
   --surface-dark-solid: #080604;
   --surface-black-soft: #00000040;
   --surface-black-solid: black;
+  --surface-black-strong: rgba(0, 0, 0, 0.6);
+  --surface-black-medium: rgba(0, 0, 0, 0.45);
+  --surface-black-light: rgba(0, 0, 0, 0.42);
+  --surface-white-faint: rgba(255, 255, 255, 0.06);
+
+  --menu-backdrop-start: #221912;
+  --menu-backdrop-end: #18130e;
+  --menu-backdrop-glow: rgba(90, 66, 42, 0.18);
+  --menu-title-shadow: rgba(0, 0, 0, 0.3);
+
+  --orientation-guard-glow: rgba(255, 219, 167, 0.12);
+  --orientation-guard-backdrop: rgba(8, 6, 4, 0.94);
+
+  --status-health-border: #2f120d;
+  --status-health-top: #8b2e1d;
+  --status-health-bottom: #6d1d14;
+  --status-health-highlight: rgba(255, 208, 196, 0.25);
+  --status-health-shadow: rgba(46, 10, 7, 0.65);
+  --status-progress-top: #66de62;
+  --status-progress-bottom: #2f9e37;
+  --status-progress-highlight: rgba(225, 255, 201, 0.35);
+  --status-progress-shadow: rgba(15, 69, 25, 0.5);
 
   --ui-gap-1: 1px;
   --ui-gap-5: 5px;
@@ -53,6 +87,16 @@
   --ui-resource-icon-height: 13px;
   --ui-button-width: 250px;
   --ui-button-width-home: 320px;
+  --ui-button-height: 48px;
+  --ui-button-height-home: 60px;
+  --ui-control-height: 44px;
+  --ui-control-height-compact: 36px;
+  --ui-control-padding-x: 10px;
+  --ui-control-font-size: var(--font-size-sm);
+  --ui-range-thumb-size: 28px;
+  --ui-range-track-height: 12px;
+  --ui-select-arrow-size: 5px;
+  --ui-checkbox-size: 26px;
 
   --ui-transition-fast: 120ms steps(2, end);
   --ui-transition-panel: 180ms ease-out;
@@ -72,9 +116,10 @@
   --ui-plain-text-shadow: var(--text-shadow-light-ui);
   --ui-map-shadow-dark: #9b9081;
   --ui-map-shadow-light: #efdec7;
+  --focus-outline-color: rgba(61, 32, 0, 0.85);
 }
 
-body.ui-age-0 {
+.game-hud.ui-age-0 {
   --ui-bar-bg: #b89169;
   --ui-bar-border: 2px outset #d8b38c;
   --ui-slot-border: 2px inset #d8b38c;
@@ -83,7 +128,7 @@ body.ui-age-0 {
   --ui-map-shadow-light: #d8b38c;
 }
 
-body.ui-age-1 {
+.game-hud.ui-age-1 {
   --ui-bar-bg: #797067;
   --ui-bar-border: 2px outset #b7ada1;
   --ui-slot-border: 2px inset #b7ada1;
@@ -94,7 +139,7 @@ body.ui-age-1 {
   --ui-map-shadow-light: #b7ada1;
 }
 
-body.ui-age-2 {
+.game-hud.ui-age-2 {
   --ui-bar-bg: #b27649;
   --ui-bar-border: 2px outset #d8a06f;
   --ui-slot-border: 2px inset #d8a06f;
@@ -104,7 +149,7 @@ body.ui-age-2 {
   --ui-map-shadow-light: #d8a06f;
 }
 
-body.ui-age-3 {
+.game-hud.ui-age-3 {
   --ui-bar-bg: #ddd5c9;
   --ui-bar-border: 2px outset #f5efe4;
   --ui-slot-border: 2px inset #f5efe4;
@@ -125,7 +170,7 @@ input,
 textarea,
 select,
 button {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-family: sans-serif;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: none;
@@ -155,84 +200,180 @@ button,
   touch-action: manipulation;
 }
 
-button,
-select,
-input:not([type='checkbox']) {
-  min-height: 44px;
-}
-
-.ui-input {
+.ui-input,
+.ui-select {
   box-sizing: border-box;
-  padding: 5px 8px;
+  min-height: var(--ui-control-height);
+  padding: 10px var(--ui-control-padding-x);
+  font-size: var(--ui-control-font-size);
   color: var(--main-accent-color);
   font-weight: bold;
   text-shadow: var(--text-shadow-light-ui);
   background-color: var(--form-surface-color);
   background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
-  border: var(--border-slot);
   border-radius: var(--main-border-radius);
+  outline: none;
+}
+
+.ui-input {
+  border: var(--border-slot);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.45),
     inset -1px -1px 0 rgba(61, 32, 0, 0.35);
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-select:active,
+.ui-range:focus {
   outline: none;
+}
+
+.ui-range {
+  appearance: none;
+  box-sizing: border-box;
+  margin: 0;
+  background-color: var(--form-surface-color);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  border: var(--border-slot);
+  box-shadow:
+    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+  border-radius: var(--main-border-radius);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.ui-range::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--ui-range-thumb-size);
+  height: var(--ui-range-thumb-size);
+  background-color: var(--form-surface-color);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--ui-button-shadow-raised);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-range::-webkit-slider-thumb:hover {
+    filter: brightness(var(--ui-hover-brightness));
+  }
+}
+
+.ui-range::-webkit-slider-thumb:active {
+  border-style: inset;
+  box-shadow: var(--ui-button-shadow-pressed);
+}
+
+.ui-range::-moz-range-track {
+  height: var(--ui-range-track-height);
+  background-color: var(--form-surface-color);
+  border: var(--border-slot);
+  box-shadow:
+    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.ui-range::-moz-range-thumb {
+  appearance: none;
+  width: var(--ui-range-thumb-size);
+  height: var(--ui-range-thumb-size);
+  background-color: var(--form-surface-color);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--ui-button-shadow-raised);
+  cursor: pointer;
 }
 
 .ui-input:focus {
   background-color: var(--main-accent-hover);
   border-color: #efdec7;
+  border-style: outset;
 }
 
-.btn-dark {
-  padding: 8px 20px;
-  font-size: 14px;
-  line-height: 1.2;
+.ui-select:focus,
+.ui-select:active {
+  background-color: var(--main-accent-hover);
+  border-color: #efdec7;
+  border-style: inset;
+}
+
+.ui-select {
+  appearance: none;
+  border: var(--border-btn);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset -1px -1px 0 rgba(61, 32, 0, 0.35);
+  padding-right: calc(var(--ui-control-padding-x) + 20px);
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
+    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),
+    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);
+  background-position:
+    0 0,
+    calc(100% - 12px) 50%,
+    calc(100% - 7px) 50%;
+  background-size:
+    auto,
+    var(--ui-select-arrow-size) var(--ui-select-arrow-size),
+    var(--ui-select-arrow-size) var(--ui-select-arrow-size);
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.home-btn,
+.ui-btn {
   font-weight: bold;
+  box-shadow: var(--ui-button-shadow-raised);
+  transition:
+    filter var(--ui-transition-fast),
+    transform var(--ui-transition-fast),
+    background-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    color var(--ui-transition-panel),
+    border-color var(--ui-transition-panel);
+}
+
+.home-btn {
+  min-height: var(--ui-control-height);
+  padding: 8px 20px;
+  font-size: var(--font-size-base);
+  line-height: 1.2;
   border: var(--border-btn);
   border-color: var(--main-primary-color);
   text-shadow: var(--text-shadow-dark-ui);
   background: rgba(0, 0, 0, 0.45);
   color: var(--main-primary-color);
-  box-shadow: var(--ui-button-shadow-raised);
-  transition:
-    filter var(--ui-transition-fast),
-    transform var(--ui-transition-fast),
-    background-color var(--ui-transition-fast),
-    box-shadow var(--ui-transition-fast);
 }
 
-.btn-ui {
+.ui-btn {
   width: fit-content;
-  min-height: 36px;
+  min-height: var(--ui-control-height-compact);
   padding: 6px 12px;
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: bold;
+  font-size: var(--font-size-base);
+  line-height: 1.1;
   border: var(--ui-bar-border);
   text-shadow: var(--ui-text-shadow);
-  background: var(--ui-bar-bg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 36%),
+    var(--ui-bar-bg);
   color: var(--ui-text-color);
-  box-shadow: var(--ui-button-shadow-raised);
-  transition:
-    filter var(--ui-transition-fast),
-    transform var(--ui-transition-fast),
-    background-color var(--ui-transition-fast),
-    color var(--ui-transition-panel),
-    border-color var(--ui-transition-panel),
-    box-shadow var(--ui-transition-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .btn-dark:hover,
-  .btn-ui:hover {
+  .home-btn:hover {
     filter: brightness(var(--ui-hover-brightness));
     transform: scale(var(--ui-hover-scale));
   }
 }
 
-.btn-dark:active,
-.btn-ui:active,
-.input-file.btn-dark:active,
-.input-file.btn-ui:active {
+.home-btn:active,
+.ui-btn:active,
+.input-file.home-btn:active,
+.input-file.ui-btn:active {
   border-style: inset;
   box-shadow: var(--ui-button-shadow-pressed);
   transform: translateY(var(--ui-press-offset));
@@ -271,32 +412,6 @@ img {
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 2px solid rgba(61, 32, 0, 0.85);
+  outline: 2px solid var(--focus-outline-color);
   outline-offset: 2px;
-}
-
-@media (max-width: 640px) {
-  :root {
-    --ui-button-width: min(100%, 320px);
-    --ui-button-width-home: min(100%, 320px);
-    --ui-slot-size: 52px;
-  }
-
-  html,
-  body,
-  input,
-  textarea,
-  select,
-  button {
-    font-size: 14px;
-  }
-
-  .btn-dark {
-    font-size: 16px;
-  }
-
-  .btn-ui {
-    min-height: 44px;
-    font-size: 14px;
-  }
 }

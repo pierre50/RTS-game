@@ -18,11 +18,11 @@ export class MinimapInputController {
 
     menu.toggle = document.createElement('button')
     menu.toggle.type = 'button'
-    menu.toggle.className = 'toggle'
+    menu.toggle.className = 'toggle ui-btn'
     menu.toggle.setAttribute('aria-label', 'Toggle bottom bar')
     menu.toggle.innerText = 'x'
     menu.toggle.addEventListener('pointerdown', this.onTogglePointerDown)
-    if (IS_MOBILE) document.body.prepend(menu.toggle)
+    if (IS_MOBILE) menu.gameHud.appendChild(menu.toggle)
   }
 
   onPointerDown = evt => {

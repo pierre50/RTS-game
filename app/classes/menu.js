@@ -9,6 +9,8 @@ import { MinimapInputController } from '../ui/MinimapInputController'
 export default class Menu {
   constructor(context) {
     this.context = context
+    this.gameHud = document.createElement('div')
+    this.gameHud.className = 'game-hud'
     this.bottombar = document.createElement('div')
     this.bottombar.className = 'bottombar bar'
     this.bottombarInfo = document.createElement('div')
@@ -33,7 +35,8 @@ export default class Menu {
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
     this.bottombar.appendChild(bottombarMapWrap)
-    document.body.appendChild(this.bottombar)
+    this.gameHud.appendChild(this.bottombar)
+    document.body.appendChild(this.gameHud)
 
     this.minimapManager = new MinimapManager(this)
     this.bottombarManager = new BottombarManager(this)
@@ -59,7 +62,7 @@ export default class Menu {
   destroy() {
     this.minimapInputController.destroy()
     this.playerStatsManager.destroy()
-    this.bottombar.remove()
+    this.gameHud.remove()
     this.topbarView.destroy()
   }
 

@@ -59,7 +59,9 @@ export default class Game extends Container {
 
   start() {
     this._acquireWakeLock()
-    this.context.app.ticker.speed = getGameSpeed()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
     this._bootFromConfig(this.config)
   }
 
@@ -249,7 +251,9 @@ export default class Game extends Container {
   load(json) {
     validateSaveData(json)
     this._destroyRuntime()
-    this.context.app.ticker.speed = getGameSpeed()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
     this._bootFromSave(json)
   }
 

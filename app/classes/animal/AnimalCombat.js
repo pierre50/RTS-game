@@ -55,8 +55,8 @@ export class AnimalCombat {
     if (targets.length) {
       const target = getClosestInstanceWithPath(animal, targets)
       if (target) {
-        if (instanceContactInstance(animal, target)) {
-          animal.degree = getInstanceDegree(animal, target.x, target.y)
+        if (instanceContactInstance(animal, target.instance)) {
+          animal.degree = getInstanceDegree(animal, target.instance.x, target.instance.y)
           animal.getAction(animal.action)
           return
         }

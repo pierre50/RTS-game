@@ -1,6 +1,15 @@
 import { instancesDistance } from '../maths'
 import { getInstanceClosestFreeCellPath } from './movement'
 
+function insertCandidate(candidates, candidate, maxCandidates) {
+  let index = candidates.findIndex(item => candidate.distance < item.distance)
+  if (index === -1) index = candidates.length
+  candidates.splice(index, 0, candidate)
+  if (candidates.length > maxCandidates) {
+    candidates.length = maxCandidates
+  }
+}
+
 export function getClosestInstance(instance, instances) {
   let closestInstance = null
   let closestDistance = Infinity
@@ -18,18 +27,26 @@ export function getClosestInstance(instance, instances) {
 }
 
 export function getClosestInstanceWithPath(instance, instances, maxCandidates = 6) {
-  const sorted = [...instances].sort((a, b) => instancesDistance(instance, a) - instancesDistance(instance, b))
+  const candidates = []
+  for (const target of instances) {
+    insertCandidate(
+      candidates,
+      {
+        instance: target,
+        distance: Math.abs(instance.i - target.i) + Math.abs(instance.j - target.j),
+      },
+      maxCandidates
+    )
+  }
 
   let closest = null
-  let attempts = 0
 
-  for (const target of sorted) {
-    if (closest && instancesDistance(instance, target) >= closest.path.length) break
-    if (attempts++ >= maxCandidates) break
+  for (const candidate of candidates) {
+    if (closest && candidate.distance >= closest.path.length) break
 
-    const path = getInstanceClosestFreeCellPath(instance, target, instance.parent)
+    const path = getInstanceClosestFreeCellPath(instance, candidate.instance, instance.parent)
     if (path.length && (!closest || path.length < closest.path.length)) {
-      closest = { instance: target, path }
+      closest = { instance: candidate.instance, path }
     }
   }
 

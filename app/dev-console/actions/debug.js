@@ -119,13 +119,14 @@ function ensurePerfOverlay(context) {
   const units = players.reduce((sum, player) => sum + player.units.length, 0) + (map.gaia?.units.length || 0)
   const buildings = players.reduce((sum, player) => sum + player.buildings.length, 0)
   const schedulerTasks = context.scheduler?._tasks?.size ?? 0
+  const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
   overlay.textContent = [
     `FPS ${Math.round(app.ticker.FPS)}`,
     `Units ${units}`,
     `Buildings ${buildings}`,
     `Resources ${map.resources.size}`,
     `Tasks ${schedulerTasks}`,
-    `Speed ${context.scheduler?.timeScale ?? 1}x`,
+    `Speed ${speed}x`,
     `AI ${context.aiPaused ? 'paused' : 'running'}`,
   ].join('\n')
 }

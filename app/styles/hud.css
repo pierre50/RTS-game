@@ -36,9 +36,10 @@
 
 .topbar-options-menu {
   position: relative;
-  margin-right: 0;
-  margin-bottom: 0;
-  cursor: pointer;
+  margin-right: -5px;
+  margin-bottom: -2px;
+  padding: 1px 10px;
+  min-height: initial;
 }
 
 .bottombar {
@@ -118,12 +119,12 @@
   width: 45px;
   height: 10px;
   overflow: hidden;
-  border: 1px solid #2f120d;
+  border: 1px solid var(--status-health-border);
   border-radius: 3px;
-  background: linear-gradient(180deg, #8b2e1d 0%, #6d1d14 100%);
+  background: linear-gradient(180deg, var(--status-health-top) 0%, var(--status-health-bottom) 100%);
   box-shadow:
-    inset 1px 1px 0 rgba(255, 208, 196, 0.25),
-    inset -1px -1px 0 rgba(46, 10, 7, 0.65);
+    inset 1px 1px 0 var(--status-health-highlight),
+    inset -1px -1px 0 var(--status-health-shadow);
 }
 
 .bottombar-info .hit-points-bar::before {
@@ -137,10 +138,10 @@
 .bottombar-info .hit-points-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(180deg, #66de62 0%, #2f9e37 100%);
+  background: linear-gradient(180deg, var(--status-progress-top) 0%, var(--status-progress-bottom) 100%);
   box-shadow:
-    inset 1px 1px 0 rgba(225, 255, 201, 0.35),
-    inset -1px -1px 0 rgba(15, 69, 25, 0.5);
+    inset 1px 1px 0 var(--status-progress-highlight),
+    inset -1px -1px 0 var(--status-progress-shadow);
 }
 
 .bottombar-menu {
@@ -273,7 +274,6 @@
   .topbar {
     grid-template-columns: 1fr auto auto;
     gap: var(--ui-gap-8);
-    padding: 6px 8px;
   }
 
   .topbar-resources {
@@ -302,90 +302,22 @@
   }
 }
 
-@media (max-width: 640px) {
-  .topbar {
-    left: 0;
-    right: 0;
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      'resources options'
-      'age age';
-    align-items: start;
-    padding: max(6px, env(safe-area-inset-top)) 8px 6px;
-  }
-
-  .topbar-resources {
-    grid-area: resources;
-  }
-
-  .topbar-options {
-    grid-area: options;
-  }
-
-  .topbar-age {
-    grid-area: age;
-    justify-content: flex-start;
-  }
-
-  .bottombar {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    grid-template-columns: minmax(0, 1fr) 132px;
-    grid-template-areas:
-      'info map'
-      'menu map';
-    width: 100%;
-    min-height: 0;
-    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
-  }
-
-  .bottombar-info {
-    grid-area: info;
-    min-height: 64px;
-  }
-
-  .bottombar-menu {
-    grid-area: menu;
-    min-height: 112px;
-    max-height: 34vh;
-    padding-right: 4px;
-  }
-
-  .bottombar-map-wrap {
-    grid-area: map;
-    min-height: 196px;
-  }
-
-  .message {
-    top: auto;
-    bottom: calc(140px + env(safe-area-inset-bottom));
-    width: calc(100% - 24px);
-  }
-
-  .message-content {
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-  }
-}
-
 .message-content--success {
-  color: #4cde7a;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #021008;
-  border-color: #1a6e3c;
+  color: var(--msg-success-color);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-success-bg);
+  border-color: var(--msg-success-border);
 }
 
 .message-content--warning {
-  color: #ffb340;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #080601;
-  border-color: #8a5a0a;
+  color: var(--msg-warning-color);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-warning-bg);
+  border-color: var(--msg-warning-border);
 }
 
 .message-content--error {
-  color: #ff5050;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), #0a0602;
-  border-color: #9a2020;
+  color: var(--msg-color);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-bg);
+  border-color: var(--msg-border);
 }
 
 @keyframes msg-fade {
@@ -443,8 +375,9 @@
   right: 5px;
   width: 32px;
   height: 32px;
+  min-height: initial;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--font-size-lg);
   z-index: 12;
 }
 
@@ -480,7 +413,7 @@
 }
 
 .player-stats-name {
-  font-size: 11px;
+  font-size: var(--font-size-sm);
   font-weight: bold;
   text-shadow: var(--text-shadow-dark-ui);
   white-space: nowrap;

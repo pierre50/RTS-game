@@ -1,15 +1,21 @@
 import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
 
 function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
-  const result = []
+  const result = callback ? null : []
 
   if (dist === 0) {
     const row = grid[startX]
     if (row) {
       const cell = row[startY]
-      if (cell && (!callback || callback(cell))) result.push(cell)
+      if (cell) {
+        if (callback) {
+          callback(cell)
+        } else {
+          result.push(cell)
+        }
+      }
     }
-    return result
+    return result || []
   }
 
   const minX = Math.max(startX - dist, 0)
@@ -23,11 +29,35 @@ function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
 
     for (let j = minY; j <= maxY; j++) {
       const cell = row[j]
-      if (cell && (!callback || callback(cell))) result.push(cell)
+      if (!cell) continue
+      if (callback) {
+        callback(cell)
+      } else {
+        result.push(cell)
+      }
     }
   }
 
-  return result
+  return result || []
+}
+
+function syncVisibleSet(target, source) {
+  if (target === source) return
+  if (target.size === source.size) {
+    let identical = true
+    for (const item of source) {
+      if (!target.has(item)) {
+        identical = false
+        break
+      }
+    }
+    if (identical) return
+  }
+
+  target.clear()
+  for (const item of source) {
+    target.add(item)
+  }
 }
 
 function updateAIKnowledge(globalCell, cell, viewer) {
@@ -89,6 +119,7 @@ export function updateVisibility(instance) {
   const map = context.map
   const player = context.player
   const sightSq = sight * sight
+  const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
 
   const prevVisible = instance.visibleCells ?? new Set()
   const newVisible = instance._visibleScratch ?? new Set()
@@ -106,14 +137,13 @@ export function updateVisibility(instance) {
 
   for (let cell of prevVisible) {
     if (!newVisible.has(cell)) {
-      const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
       const globalCell = map.grid[cell.i][cell.j]
+      const playerCell = player.views[cell.i][cell.j]
       for (const viewer of visiblePlayers) {
         const viewerCell = viewer.views[cell.i][cell.j]
         viewerCell.viewBy.delete(instance)
       }
-      const playerCell = player.views[cell.i][cell.j]
-      globalCell.viewBy = new Set([...playerCell.viewBy])
+      syncVisibleSet(globalCell.viewBy, playerCell.viewBy)
 
       if (!playerCell.viewBy.size && !map.revealEverything) {
         globalCell.setFog()
@@ -124,7 +154,7 @@ export function updateVisibility(instance) {
   for (let cell of newVisible) {
     if (!prevVisible.has(cell)) {
       const globalCell = map.grid[cell.i][cell.j]
-      const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
+      const playerCell = player.views[cell.i][cell.j]
 
       for (const viewer of visiblePlayers) {
         const viewerCell = viewer.views[cell.i][cell.j]
@@ -138,10 +168,10 @@ export function updateVisibility(instance) {
           updateAIKnowledge(globalCell, viewerCell, viewer)
         }
       }
-      globalCell.viewBy = new Set([...player.views[cell.i][cell.j].viewBy])
+      syncVisibleSet(globalCell.viewBy, playerCell.viewBy)
       globalCell.updateVisible()
 
-      if (!map.revealEverything && player.views[cell.i][cell.j].viewBy.has(instance)) {
+      if (!map.revealEverything && playerCell.viewBy.has(instance)) {
         globalCell.removeFog()
       }
 

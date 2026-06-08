@@ -18,7 +18,7 @@ export default class MainMenu {
     document.addEventListener('keydown', this._onKeyDown)
   }
 
-  _btn(label, onClick, className = 'btn-dark') {
+  _btn(label, onClick, className = 'home-btn') {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
@@ -57,15 +57,11 @@ export default class MainMenu {
       logo.addEventListener('load', revealLogo, { once: true })
     }
 
-    const divider = document.createElement('div')
-    divider.className = 'menu-divider'
-    panel.appendChild(divider)
-
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
     buttons.appendChild(this._btn(t('newGame'), this.onStart))
-    buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList(), 'btn-dark secondary'))
-    buttons.appendChild(this._btn(t('settings'), () => this._openSettings(), 'btn-dark secondary'))
+    buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList()))
+    buttons.appendChild(this._btn(t('settings'), () => this._openSettings()))
     panel.appendChild(buttons)
 
     const copyright = document.createElement('div')

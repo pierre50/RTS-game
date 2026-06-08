@@ -38,7 +38,7 @@ export class TopbarView {
     menu.topbar.appendChild(menu.resources)
     menu.topbar.appendChild(menu.age)
     menu.topbar.appendChild(options)
-    document.body.prepend(menu.topbar)
+    menu.gameHud.prepend(menu.topbar)
   }
 
   setResourceBox(name) {
@@ -77,12 +77,11 @@ export class TopbarView {
   }
 
   updateAgeTheme(age = 0) {
-    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
-    document.body.classList.add(`ui-age-${Math.max(0, Math.min(age, 3))}`)
+    this.menu.gameHud.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
+    this.menu.gameHud.classList.add(`ui-age-${Math.max(0, Math.min(age, 3))}`)
   }
 
   destroy() {
     this.menu.topbar?.remove()
-    document.body.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
   }
 }

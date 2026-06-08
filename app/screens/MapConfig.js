@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
+import { buildSelectRow, buildCheckboxRow } from '../ui/formUtils'
 import { CIVILIZATIONS } from '../config/civilizations'
 
 const DIFFICULTIES = [
@@ -40,13 +41,9 @@ const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
 
 const MAP_SIZES = [
-  { label: 'Tiny  (120×120)', value: 120, maxPlayers: 2 },
-  { label: 'Small (144×144)', value: 144, maxPlayers: 3 },
-  { label: 'Medium (168×168)', value: 168, maxPlayers: 4 },
-  { label: 'Normal (200×200)', value: 200, maxPlayers: 5 },
-  { label: 'Large  (220×220)', value: 220, maxPlayers: 5 },
-  { label: 'Giant  (384×384)', value: 384, maxPlayers: 5 },
-  { label: 'Extra Giant (512×512)', value: 512, maxPlayers: 5 },
+  { label: 'Small  (144×144)', value: 144, maxPlayers: 3 },
+  { label: 'Medium (256×256)', value: 256, maxPlayers: 4 },
+  { label: 'Large  (512×512)', value: 512, maxPlayers: 4 },
 ]
 
 const MAP_TYPES = [
@@ -75,7 +72,7 @@ export default class MapConfig {
     this._onKeyDown = this._handleKeyDown.bind(this)
 
     this.config = {
-      size: 120,
+      size: 256,
       mapType: 'plain',
       startingAge: 0,
       allTechnologies: false,
@@ -100,7 +97,7 @@ export default class MapConfig {
     document.addEventListener('keydown', this._onKeyDown)
   }
 
-  _createButton(label, onClick, className = 'btn-dark') {
+  _createButton(label, onClick, className = 'ui-btn') {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
@@ -135,7 +132,7 @@ export default class MapConfig {
     settingsForm.className = 'config-form lobby-settings-form'
 
     settingsForm.appendChild(
-      this._createSelect(t('mapSizeLabel'), MAP_SIZES, 120, val => {
+      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 256, val => {
         this.config.size = parseInt(val)
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
         this.maxPlayers = Math.min(sizeEntry ? sizeEntry.maxPlayers : 2, MAX_PLAYERS)
@@ -146,37 +143,37 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
-      this._createSelect(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
+      buildSelectRow(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
         this.config.mapType = val
       })
     )
 
     settingsForm.appendChild(
-      this._createSelect(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', val => {
+      buildSelectRow(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', val => {
         this.config.startingResources = RESOURCES_MAP[val]
       })
     )
 
     settingsForm.appendChild(
-      this._createSelect(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', val => {
+      buildSelectRow(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', val => {
         this.config.resourceDensity = val
       })
     )
 
     settingsForm.appendChild(
-      this._createSelect(t('startingAgeLabel'), STARTING_AGES, 0, val => {
+      buildSelectRow(t('startingAgeLabel'), STARTING_AGES, 0, val => {
         this.config.startingAge = parseInt(val)
       })
     )
 
     settingsForm.appendChild(
-      this._createCheckbox(t('allTechnologiesLabel'), false, val => {
+      buildCheckboxRow(t('allTechnologiesLabel'), false, val => {
         this.config.allTechnologies = val
       })
     )
 
     settingsForm.appendChild(
-      this._createCheckbox(t('revealTerrain'), false, val => {
+      buildCheckboxRow(t('revealTerrain'), false, val => {
         this.config.revealTerrain = val
       })
     )
@@ -316,6 +313,7 @@ export default class MapConfig {
       const civCell = document.createElement('div')
       civCell.className = 'player-civ'
       const civSelect = document.createElement('select')
+      civSelect.className = 'ui-select'
       CIVS.forEach(civ => {
         const opt = document.createElement('option')
         opt.value = civ.value
@@ -335,6 +333,7 @@ export default class MapConfig {
         difficultyCell.textContent = '-'
       } else {
         const difficultySelect = document.createElement('select')
+        difficultySelect.className = 'ui-select'
         DIFFICULTIES.forEach(difficulty => {
           const opt = document.createElement('option')
           opt.value = difficulty.value
@@ -352,7 +351,7 @@ export default class MapConfig {
       const teamCell = document.createElement('div')
       teamCell.className = 'player-team'
       const teamBtn = document.createElement('button')
-      teamBtn.className = 'team-cycle'
+      teamBtn.className = 'team-cycle ui-btn'
       teamBtn.type = 'button'
       teamBtn.textContent = player.team ?? '-'
       teamBtn.title = t('teamInput')
@@ -365,7 +364,7 @@ export default class MapConfig {
       colorCell.className = 'player-color-cell'
       const colorData = PLAYER_COLORS.find(c => c.name === player.color)
       const swatch = document.createElement('button')
-      swatch.className = 'color-swatch'
+      swatch.className = 'color-swatch ui-btn'
       swatch.type = 'button'
       swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
       swatch.title = t('colorSwatch', { color: player.color })
@@ -387,6 +386,7 @@ export default class MapConfig {
     lbl.textContent = t('playerCount')
 
     this.playerCountSelect = document.createElement('select')
+    this.playerCountSelect.className = 'ui-select'
     this.playerCountSelect.addEventListener('pointerdown', playClickSound)
     this.playerCountSelect.addEventListener('change', e => this._setPlayerCount(e.target.value))
 
@@ -408,45 +408,6 @@ export default class MapConfig {
       if (count === this.players.length) option.selected = true
       this.playerCountSelect.appendChild(option)
     }
-  }
-
-  _createSelect(label, options, defaultValue, onChange) {
-    const row = document.createElement('div')
-    row.className = 'config-row'
-
-    const lbl = document.createElement('label')
-    lbl.textContent = label
-
-    const select = document.createElement('select')
-    options.forEach(opt => {
-      const option = document.createElement('option')
-      option.value = opt.value
-      option.textContent = typeof opt.label === 'function' ? opt.label() : opt.label
-      if (opt.value === defaultValue) option.selected = true
-      select.appendChild(option)
-    })
-    select.addEventListener('change', e => onChange(e.target.value))
-
-    row.appendChild(lbl)
-    row.appendChild(select)
-    return row
-  }
-
-  _createCheckbox(label, defaultValue, onChange) {
-    const row = document.createElement('div')
-    row.className = 'config-row config-row--checkbox'
-
-    const lbl = document.createElement('label')
-    lbl.textContent = label
-
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.checked = defaultValue
-    checkbox.addEventListener('change', e => onChange(e.target.checked))
-
-    row.appendChild(lbl)
-    row.appendChild(checkbox)
-    return row
   }
 
   destroy() {

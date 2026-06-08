@@ -231,8 +231,8 @@ export class UnitMovement {
       if (targets.length) {
         const target = getClosestInstanceWithPath(unit, targets)
         if (target) {
-          if (instanceContactInstance(unit, target)) {
-            unit.degree = getInstanceDegree(unit, target.x, target.y)
+          if (instanceContactInstance(unit, target.instance)) {
+            unit.degree = getInstanceDegree(unit, target.instance.x, target.instance.y)
             unit.getAction(unit.action)
             return
           }

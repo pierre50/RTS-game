@@ -4,7 +4,7 @@ import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
 import { getCameraZoom } from '../lib/settings'
-import { IS_MOBILE, TOUCH_DRAG_THRESHOLD, TOUCH_SELECTION_HOLD_DURATION } from '../constants'
+import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -41,7 +41,6 @@ export default class Controls extends Container {
     this.mouseTouch
     this.mouseDrag = false
     this.touchInteraction = null
-    this.touchSelectionTimeout = null
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
@@ -89,7 +88,6 @@ export default class Controls extends Container {
     gamebox.removeEventListener('mousedown', this._onMouseDown)
     gamebox.removeEventListener('mouseup', this._onMouseUp)
     this.context.app.ticker.remove(this._onTick)
-    clearTimeout(this.touchSelectionTimeout)
     this.stopMouseCameraMove()
     super.destroy(options)
   }
@@ -204,9 +202,14 @@ export default class Controls extends Container {
   onTouchStart(evt) {
     const touch = evt.touches[0]
     if (evt.touches.length === 2) {
-      clearTimeout(this.touchSelectionTimeout)
-      this.touchInteraction = null
-      this.pointerStart = null
+      if (this.mouseRectangle) {
+        this.selectionManager.handleMouseUp()
+      } else {
+        this.pointerStart = null
+      }
+      this.touchInteraction = {
+        mode: 'pan',
+      }
       this.mouseDrag = false
       this.mouseTouch = { x: touch.pageX, y: touch.pageY }
     } else {
@@ -216,11 +219,11 @@ export default class Controls extends Container {
 
       this.mouseDrag = false
       this.touchInteraction = {
+        mode: this.mouseBuilding || !IS_MOBILE ? 'tap' : 'select',
         startX: touch.pageX,
         startY: touch.pageY,
         lastX: touch.pageX,
         lastY: touch.pageY,
-        selectionArmed: false,
         moved: false,
       }
 
@@ -234,13 +237,7 @@ export default class Controls extends Container {
         this.onMouseDown(touch)
         return
       }
-
-      clearTimeout(this.touchSelectionTimeout)
-      this.touchSelectionTimeout = setTimeout(() => {
-        if (!this.touchInteraction || this.mouseDrag || this.mouseBuilding) return
-        this.touchInteraction.selectionArmed = true
-        this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
-      }, TOUCH_SELECTION_HOLD_DURATION)
+      this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
     }
   }
 
@@ -285,10 +282,12 @@ export default class Controls extends Container {
         pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
         TOUCH_DRAG_THRESHOLD
 
-      if (this.touchInteraction.selectionArmed) {
+      if (this.touchInteraction.mode === 'select') {
+        if (movedEnough) {
+          this.touchInteraction.moved = true
+        }
         this.onMouseMove(touch)
       } else if (movedEnough) {
-        clearTimeout(this.touchSelectionTimeout)
         this.touchInteraction.moved = true
         this.mouseDrag = true
         const speedX = Math.abs(this.mouse.x - this.touchInteraction.lastX) * 2
@@ -305,18 +304,19 @@ export default class Controls extends Container {
   }
 
   onTouchEnd(evt) {
-    clearTimeout(this.touchSelectionTimeout)
     const touch = evt.changedTouches[0]
     if (evt.changedTouches.length === 1) {
-      const selectionArmed = this.touchInteraction?.selectionArmed
+      const mode = this.touchInteraction?.mode
       const moved = this.touchInteraction?.moved
 
       if (this.mouseBuilding) {
         if (!moved) {
           this.onMouseUp(touch)
         }
-      } else if (selectionArmed) {
+      } else if (mode === 'select') {
         this.onMouseUp(touch)
+      } else if (mode === 'pan') {
+        this.pointerStart = null
       } else if (!moved) {
         this.onMouseUp(touch)
       } else {

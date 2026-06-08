@@ -5,6 +5,7 @@ export class AIEconomy {
   constructor(ai) {
     this.ai = ai
     this._exploredAll = false
+    this._unexploredScanIndex = 0
   }
 
   getStorageDropSites(extraBuildings = []) {
@@ -106,14 +107,26 @@ export class AIEconomy {
     if (this._exploredAll) return false
     const { views } = this.ai
     if (!views) return false
-    for (let i = 0; i < views.length; i++) {
-      const row = views[i]
-      if (!row) continue
-      for (let j = 0; j < row.length; j++) {
-        if (row[j] && !row[j].viewed) return true
+    const rows = views.length
+    const cols = views[0]?.length || 0
+    const total = rows * cols
+
+    if (total === 0) return false
+
+    for (let offset = 0; offset < total; offset++) {
+      const index = (this._unexploredScanIndex + offset) % total
+      const i = Math.floor(index / cols)
+      const j = index % cols
+      const cell = views[i]?.[j]
+
+      if (cell && !cell.viewed) {
+        this._unexploredScanIndex = index
+        return true
       }
     }
+
     this._exploredAll = true
+    this._unexploredScanIndex = 0
     return false
   }
 

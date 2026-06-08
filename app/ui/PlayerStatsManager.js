@@ -4,11 +4,13 @@ export class PlayerStatsManager {
   constructor(menu) {
     this.menu = menu
     this._open = false
+    this._renderEveryMs = 250
+    this._renderCooldownMs = 0
     this._renderSignature = null
-    this._tickRender = () => this.update()
+    this._tickRender = ticker => this.update(ticker?.elapsedMS || 0)
 
     this.btn = document.createElement('button')
-    this.btn.className = 'player-stats-btn btn-ui'
+    this.btn.className = 'player-stats-btn ui-btn'
     this.btn.textContent = 'S'
     this.btn.addEventListener('pointerdown', evt => {
       evt.preventDefault()
@@ -56,9 +58,15 @@ export class PlayerStatsManager {
     })
   }
 
+  _getSignature(rows) {
+    return rows
+      .map(({ dead, colorHex, text }) => `${dead ? 1 : 0}|${colorHex}|${text}`)
+      .join('\n')
+  }
+
   _render() {
     const rows = this._getRenderData()
-    const nextSignature = JSON.stringify(rows)
+    const nextSignature = this._getSignature(rows)
 
     if (nextSignature === this._renderSignature) {
       return
@@ -77,8 +85,14 @@ export class PlayerStatsManager {
     })
   }
 
-  update() {
-    if (this._open) this._render()
+  update(elapsedMs = 0) {
+    if (!this._open) return
+
+    this._renderCooldownMs -= elapsedMs
+    if (this._renderCooldownMs > 0) return
+
+    this._renderCooldownMs = this._renderEveryMs
+    this._render()
   }
 
   destroy() {

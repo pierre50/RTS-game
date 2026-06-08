@@ -12,7 +12,7 @@ export class PauseMenu {
   createOpenButton() {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'topbar-options-menu btn-ui'
+    button.className = 'topbar-options-menu ui-btn'
     button.innerText = t('menuBtn')
     button.addEventListener('pointerdown', () => this.open())
     return button
@@ -33,7 +33,7 @@ export class PauseMenu {
     })
 
     content.appendChild(
-      this._btn(t('save'), 'btn-dark', () => {
+      this._btn(t('save'), () => {
         try {
           menu.context.save()
           modal.close()
@@ -46,21 +46,21 @@ export class PauseMenu {
     )
 
     content.appendChild(
-      this._btn(t('loadGame'), 'btn-dark secondary', () => {
+      this._btn(t('loadGame'), () => {
         modal.close()
         this._openSaveList()
       })
     )
 
     content.appendChild(
-      this._btn(t('settings'), 'btn-dark secondary', () => {
+      this._btn(t('settings'), () => {
         modal.close()
         this._openSettings()
       })
     )
 
     content.appendChild(
-      this._btn(t('quit'), 'btn-dark secondary', () => {
+      this._btn(t('quit'), () => {
         modal.close()
         menu.context.quit()
       })
@@ -72,6 +72,9 @@ export class PauseMenu {
     const content = buildSettingsContent({
       onSpeedChange: v => {
         menu.context.app.ticker.speed = v
+        if (menu.context.scheduler) {
+          menu.context.scheduler.timeScale = v
+        }
       },
       onZoomChange: () => {
         menu.context.applyZoom()
@@ -96,9 +99,9 @@ export class PauseMenu {
     })
   }
 
-  _btn(label, className, onClick) {
+  _btn(label, onClick) {
     const button = document.createElement('button')
-    button.className = className
+    button.className = 'ui-btn'
     button.innerText = label
     button.addEventListener('pointerdown', () => {
       playClickSound()

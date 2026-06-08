@@ -6,8 +6,8 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at top, rgba(90, 66, 42, 0.18), transparent 42%),
-    linear-gradient(180deg, #221912 0%, #18130e 100%);
+    radial-gradient(circle at top, var(--menu-backdrop-glow), transparent 42%),
+    linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -59,27 +59,11 @@ img.menu-title {
   aspect-ratio: 1672 / 941;
 }
 
-.menu-title-shell::before {
-  content: '';
-  position: absolute;
-  inset: 10% 12%;
-  border-radius: 24px;
-  background: radial-gradient(
-    circle at center,
-    rgba(245, 214, 150, 0.2),
-    rgba(245, 214, 150, 0.02) 68%,
-    transparent 100%
-  );
-  opacity: 0.7;
-  animation: menu-title-placeholder 1.1s ease-in-out infinite alternate;
-  transition: opacity 240ms ease;
-}
-
 .menu-panel--home img.menu-title {
   width: 100%;
   opacity: 0;
   transform: translateY(8px) scale(0.985);
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 10px 18px var(--menu-title-shadow));
   transition:
     opacity 360ms ease,
     transform 420ms ease;
@@ -121,20 +105,9 @@ img.menu-title {
 div.menu-title {
   margin: 0;
   color: var(--main-accent-color);
-  font-size: 16px;
+  font-size: var(--font-size-lg);
   font-weight: bold;
   text-transform: uppercase;
-}
-
-.menu-divider {
-  width: 220px;
-  height: 1px;
-  margin: 2px 0;
-  background: linear-gradient(to right, transparent, var(--main-detail-color), transparent);
-}
-
-.menu-panel--home .menu-divider {
-  display: none;
 }
 
 .button-group,
@@ -145,24 +118,16 @@ div.menu-title {
   gap: var(--ui-gap-8);
 }
 
-.button-group .btn-dark,
-.modal-menu .btn-dark {
+.button-group .ui-btn,
+.modal-menu .ui-btn {
   width: var(--ui-button-width);
+  min-height: var(--ui-button-height);
 }
 
-.menu-panel--home .button-group .btn-dark {
+.menu-panel--home .button-group .home-btn {
   width: var(--ui-button-width-home);
-  padding: 12px 26px;
-  font-size: 18px;
-}
-
-.menu-panel--home .button-group .btn-dark:active {
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.button-group .btn-dark.secondary,
-.modal-menu .btn-dark.secondary {
-  color: var(--main-primary-color);
+  height: var(--ui-button-height-home);
+  font-size: var(--font-size-lg);
 }
 
 .modal-menu {
@@ -174,8 +139,8 @@ div.menu-title {
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  color: white;
-  font-size: 12px;
+  color: var(--text-color-white);
+  font-size: var(--font-size-sm);
   text-shadow: var(--text-shadow-dark-ui);
   white-space: nowrap;
 }
@@ -196,90 +161,24 @@ div.menu-title {
 }
 
 .config-row label {
-  font-size: 11px;
+  font-size: var(--font-size-base);
   font-weight: bold;
 }
 
-.config-row select,
-.player-civ select,
-.player-difficulty select,
-.team-cycle {
-  box-sizing: border-box;
-  background-color: var(--form-surface-color);
-  border: var(--border-btn);
-  border-radius: var(--main-border-radius);
-  color: var(--main-accent-color);
-  font-size: 11px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.config-row select,
-.player-civ select,
-.player-difficulty select,
-.team-cycle {
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
-    inset -1px -1px 0 rgba(61, 32, 0, 0.35);
-}
-
-.config-row select,
-.player-civ select,
-.player-difficulty select {
-  appearance: none;
-  background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%),
-    linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),
-    linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);
-  background-position:
-    0 0,
-    calc(100% - 12px) 50%,
-    calc(100% - 7px) 50%;
-  background-size:
-    auto,
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-  min-height: 44px;
-  padding: 10px 30px 10px 10px;
-}
-
-.config-row select,
-.config-row input[type='range'] {
+.config-row .ui-select,
+.config-row .ui-range {
   width: 160px;
   flex-shrink: 0;
 }
 
-.config-row input[type='checkbox'] {
-  min-height: 18px;
-  flex-shrink: 0;
-}
-
-.config-row select:active,
-.config-row select:focus,
-.player-civ select:active,
-.player-civ select:focus,
-.player-difficulty select:active,
-.player-difficulty select:focus,
-.team-cycle:active,
-.team-cycle:focus {
-  outline: none;
-  border-style: inset;
-  background-color: var(--main-accent-hover);
-}
-
-.config-row--checkbox {
-  cursor: pointer;
-}
-
-.config-row input[type='checkbox'] {
+.ui-checkbox {
   appearance: none;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: var(--ui-checkbox-size);
+  height: var(--ui-checkbox-size);
   margin: 0;
+  flex-shrink: 0;
   cursor: pointer;
   background: var(--form-surface-color);
   border: var(--border-slot);
@@ -288,83 +187,23 @@ div.menu-title {
     inset -1px -1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.config-row input[type='checkbox']::before {
+.ui-checkbox::before {
   content: '';
-  width: 8px;
-  height: 8px;
+  width: calc(var(--ui-checkbox-size) - 10px);
+  height: calc(var(--ui-checkbox-size) - 10px);
   transform: scale(0);
   background: var(--main-accent-color);
   box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
 }
 
-.config-row input[type='checkbox']:checked::before {
+.ui-checkbox:checked::before {
   transform: scale(1);
 }
 
-.config-row input[type='checkbox']:hover,
-.config-row input[type='checkbox']:focus {
+.ui-checkbox:hover,
+.ui-checkbox:focus {
   outline: none;
   background: var(--main-accent-hover);
-}
-
-.settings-volume-slider {
-  appearance: none;
-  box-sizing: border-box;
-  width: 160px;
-  height: 12px;
-  margin: 0;
-  background-color: var(--form-surface-color);
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
-  border: var(--border-slot);
-  box-shadow:
-    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
-  border-radius: var(--main-border-radius);
-  cursor: pointer;
-  outline: none;
-  vertical-align: middle;
-}
-
-.settings-volume-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background-color: var(--form-surface-color);
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
-  border: var(--border-btn);
-  border-radius: var(--main-border-radius);
-  box-shadow: var(--ui-button-shadow-raised);
-  cursor: pointer;
-}
-
-.settings-volume-slider::-webkit-slider-thumb:hover {
-  filter: brightness(var(--ui-hover-brightness));
-}
-
-.settings-volume-slider::-webkit-slider-thumb:active {
-  border-style: inset;
-  box-shadow: var(--ui-button-shadow-pressed);
-}
-
-.settings-volume-slider::-moz-range-track {
-  height: 12px;
-  background-color: var(--form-surface-color);
-  border: var(--border-slot);
-  box-shadow:
-    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.settings-volume-slider::-moz-range-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background-color: var(--form-surface-color);
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
-  border: var(--border-btn);
-  border-radius: var(--main-border-radius);
-  box-shadow: var(--ui-button-shadow-raised);
-  cursor: pointer;
 }
 
 .lobby-panel {
@@ -396,7 +235,7 @@ div.menu-title {
   grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
   gap: var(--ui-gap-8);
   padding: 5px 10px;
-  font-size: 11px;
+  font-size: var(--font-size-sm);
   font-weight: bold;
   text-transform: uppercase;
 }
@@ -415,39 +254,44 @@ div.menu-title {
 
 .player-name {
   color: var(--main-text-color);
-  font-size: 11px;
+  font-size: var(--font-size-sm);
 }
 
 .player-name.human {
   color: var(--main-accent-color);
 }
 
-.player-civ select {
+.player-civ .ui-select {
   width: 100%;
-  min-height: 40px;
-  padding-top: 8px;
-  padding-bottom: 8px;
 }
 
 .player-difficulty {
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--font-size-sm);
   color: var(--main-text-color);
 }
 
-.player-difficulty select {
+.player-difficulty .ui-select {
   width: 100%;
-  min-height: 40px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+}
+
+.team-cycle,
+.color-swatch {
+  min-width: var(--ui-control-height);
+  min-height: var(--ui-control-height);
+}
+
+.color-swatch {
+  background-image: none;
 }
 
 .team-cycle {
   width: 100%;
-  min-height: 40px;
-  padding: 0 4px;
-  line-height: 1.1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--ui-control-padding-x);
+  font-size: var(--ui-control-font-size);
 }
 
 .player-color-cell {
@@ -456,31 +300,16 @@ div.menu-title {
   justify-content: center;
 }
 
-.color-swatch {
-  width: 40px;
-  height: 40px;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  cursor: pointer;
-  border: var(--border-btn);
-  border-radius: var(--main-border-radius);
-  box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.35),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
-}
-
-.color-swatch:active {
-  border-style: inset;
-  box-shadow:
-    inset 2px 2px 0 rgba(0, 0, 0, 0.35),
-    inset -2px -2px 0 rgba(255, 255, 255, 0.25);
+.team-cycle:active,
+.team-cycle:focus {
+  background-color: var(--main-accent-hover);
 }
 
 .player-count-row {
   margin-top: 4px;
 }
 
-.player-count-row select {
+.player-count-row .ui-select {
   width: 160px;
 }
 
@@ -499,7 +328,7 @@ div.menu-title {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-6);
-  width: min(100%, 420px);
+  width: 100%;
   max-height: min(60vh, 420px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -526,51 +355,64 @@ div.menu-title {
   flex: 1;
   font-weight: bold;
   color: var(--main-accent-color);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
-.save-list-row .btn-dark {
+.save-list-row .ui-btn {
   width: auto;
   min-width: 44px;
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: var(--font-size-sm);
+}
+
+.save-list-export-btn {
+  opacity: 0.72;
+}
+
+.save-list-export-btn:hover {
+  opacity: 1;
+}
+
+.save-list-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-gap-8);
+  padding-top: var(--ui-gap-10);
+  border-top: 1px solid rgba(139, 105, 20, 0.22);
+}
+
+.save-list-import-btn {
+  width: 100%;
+  min-height: var(--ui-button-height);
+  padding: 8px 14px;
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+}
+
+.save-list-import-btn:hover {
+  opacity: 1;
+}
+
+.save-list-import-status {
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  opacity: 0.8;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.save-list-import-status--ok {
+  color: var(--main-accent-color);
+  opacity: 1;
+}
+
+.save-list-import-status--err {
+  color: #c0392b;
+  opacity: 1;
 }
 
 @media (max-width: 900px) {
-  .menu-panel {
-    padding: 28px 24px;
-  }
-
-  .menu-copyright {
-    position: static;
-    transform: none;
-    margin-top: 20px;
-    text-align: center;
-    white-space: normal;
-  }
-
-  .lobby-layout {
-    grid-template-columns: 1fr;
-    gap: var(--ui-gap-18);
-    width: min(100%, 720px);
-  }
-
-  .player-table-header,
-  .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(112px, 1fr) 56px 56px;
-    min-width: 460px;
-  }
-
-  .button-group--row {
-    justify-content: stretch;
-  }
-
-  .button-group--row .btn-dark {
-    width: 100%;
-  }
-}
-
-@media (max-width: 640px) {
   #main-menu {
     padding: 16px;
     align-items: stretch;
@@ -599,15 +441,39 @@ div.menu-title {
     margin-bottom: auto;
   }
 
+  .menu-copyright {
+    position: static;
+    transform: none;
+    margin-top: 20px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .lobby-layout {
+    grid-template-columns: 1fr;
+    gap: var(--ui-gap-18);
+    width: min(100%, 720px);
+  }
+
+  .player-table-header,
+  .player-row {
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(112px, 1fr) 56px 56px;
+    min-width: 460px;
+  }
+
   .button-group,
   .modal-menu,
   .button-group--row {
     width: 100%;
   }
 
-  .button-group .btn-dark,
-  .modal-menu .btn-dark,
-  .menu-panel--home .button-group .btn-dark {
+  .button-group--row {
+    justify-content: stretch;
+  }
+
+  .button-group .ui-btn,
+  .modal-menu .ui-btn,
+  .menu-panel--home .button-group .home-btn {
     width: 100%;
   }
 
@@ -615,9 +481,9 @@ div.menu-title {
     gap: 10px;
   }
 
-  .menu-panel--home .button-group .btn-dark {
+  .menu-panel--home .button-group .home-btn {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: var(--font-size-lg);
   }
 
   .config-form,
@@ -630,11 +496,11 @@ div.menu-title {
   }
 
   .config-row label {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 
-  .config-row select,
-  .config-row input[type='range'] {
+  .config-row .ui-select,
+  .config-row .ui-range {
     width: 100%;
   }
 
@@ -674,13 +540,13 @@ div.menu-title {
     max-height: min(28dvh, 220px);
   }
 
-  .menu-panel--home .button-group .btn-dark {
-    font-size: 15px;
+  .menu-panel--home .button-group .home-btn {
+    font-size: var(--font-size-base);
   }
 
   .menu-copyright {
     margin-top: 12px;
-    font-size: 11px;
+    font-size: var(--font-size-sm);
   }
 }
 
@@ -711,10 +577,10 @@ div.menu-title {
     margin: 0 auto;
   }
 
-  .menu-panel--home .button-group .btn-dark {
+  .menu-panel--home .button-group .home-btn {
     width: 100%;
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: var(--font-size-lg);
   }
 
   .menu-copyright {
@@ -751,9 +617,9 @@ div.menu-title {
     align-self: center;
   }
 
-  .menu-panel--home .button-group .btn-dark {
+  .menu-panel--home .button-group .home-btn {
     padding: 9px 18px;
-    font-size: 15px;
+    font-size: var(--font-size-base);
   }
 
   .menu-copyright {
@@ -767,21 +633,4 @@ div.menu-title {
     text-align: right;
   }
 
-  .settings-volume-slider {
-    height: 14px;
-  }
-
-  .settings-volume-slider::-webkit-slider-thumb {
-    width: 24px;
-    height: 24px;
-  }
-
-  .settings-volume-slider::-moz-range-track {
-    height: 14px;
-  }
-
-  .settings-volume-slider::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-  }
 }

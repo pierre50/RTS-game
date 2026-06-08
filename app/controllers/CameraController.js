@@ -78,6 +78,8 @@ export class CameraController {
       x: app.screen.width / 2,
       y: app.screen.height / 2,
     }
+    const prevX = this.camera.x
+    const prevY = this.camera.y
 
     if (dir === 'left') {
       if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
@@ -121,6 +123,8 @@ export class CameraController {
         this.camera.y += speed
       }
     }
+
+    if (this.camera.x === prevX && this.camera.y === prevY) return
 
     menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
@@ -208,7 +212,8 @@ export class CameraController {
 
   updateVisibleCells() {
     const { map } = this.context
-    const newVisible = new Set()
+    const newVisible = this._nextVisibleCells ?? new Set()
+    newVisible.clear()
     const margin = CELL_WIDTH
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
 
@@ -242,6 +247,7 @@ export class CameraController {
       }
     }
 
+    this._nextVisibleCells = this.visibleCells
     this.visibleCells = newVisible
   }
 

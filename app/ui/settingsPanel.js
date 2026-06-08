@@ -1,3 +1,4 @@
+import { buildSelectRow, buildRangeRow } from './formUtils'
 import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
 import {
   getVolume,
@@ -21,92 +22,47 @@ export function buildSettingsContent({ onLangChange, onSpeedChange, onZoomChange
   const content = document.createElement('div')
   content.className = 'config-form'
 
-  content.appendChild(_langRow(onLangChange))
-  content.appendChild(_zoomRow(onZoomChange))
-  content.appendChild(_volumeRow())
-  content.appendChild(_speedRow(onSpeedChange))
+  content.appendChild(
+    buildSelectRow(
+      t('language'),
+      SUPPORTED_LANGS.map(({ code, label }) => ({ value: code, label })),
+      getLang(),
+      val => {
+        setLang(val)
+        if (onLangChange) onLangChange()
+      }
+    )
+  )
+
+  content.appendChild(
+    buildSelectRow(
+      t('cameraZoom'),
+      CAMERA_ZOOM_PRESETS.map(({ key, value }) => ({ value, label: t(key) })),
+      getCameraZoom(),
+      val => {
+        const v = parseFloat(val)
+        setCameraZoom(v)
+        if (onZoomChange) onZoomChange(v)
+      }
+    )
+  )
+
+  content.appendChild(
+    buildRangeRow(t('sfxVolume'), { min: 0, max: 1, step: 0.05, value: getVolume() }, setVolume)
+  )
+
+  content.appendChild(
+    buildSelectRow(
+      t('gameSpeed'),
+      SPEED_PRESETS.map(({ key, value }) => ({ value, label: t(key) })),
+      getGameSpeed(),
+      val => {
+        const v = parseFloat(val)
+        setGameSpeed(v)
+        if (onSpeedChange) onSpeedChange(v)
+      }
+    )
+  )
 
   return content
-}
-
-function _row(labelKey) {
-  const row = document.createElement('div')
-  row.className = 'config-row'
-  const label = document.createElement('label')
-  label.textContent = t(labelKey)
-  row.appendChild(label)
-  return row
-}
-
-function _langRow(onLangChange) {
-  const row = _row('language')
-  const select = document.createElement('select')
-  SUPPORTED_LANGS.forEach(({ code, label }) => {
-    const option = document.createElement('option')
-    option.value = code
-    option.textContent = label
-    select.appendChild(option)
-  })
-  select.value = getLang()
-  select.addEventListener('change', evt => {
-    setLang(evt.target.value)
-    if (onLangChange) onLangChange()
-  })
-  row.appendChild(select)
-  return row
-}
-
-function _volumeRow() {
-  const row = _row('sfxVolume')
-  const slider = document.createElement('input')
-  slider.type = 'range'
-  slider.min = '0'
-  slider.max = '1'
-  slider.step = '0.05'
-  slider.value = String(getVolume())
-  slider.className = 'settings-volume-slider'
-  slider.addEventListener('input', evt => setVolume(parseFloat(evt.target.value)))
-  row.appendChild(slider)
-  return row
-}
-
-function _zoomRow(onZoomChange) {
-  const row = _row('cameraZoom')
-  const select = document.createElement('select')
-
-  CAMERA_ZOOM_PRESETS.forEach(({ key, value }) => {
-    const option = document.createElement('option')
-    option.value = String(value)
-    option.textContent = t(key)
-    select.appendChild(option)
-  })
-
-  select.value = String(getCameraZoom())
-  select.addEventListener('change', evt => {
-    const v = parseFloat(evt.target.value)
-    setCameraZoom(v)
-    if (onZoomChange) onZoomChange(v)
-  })
-  row.appendChild(select)
-  return row
-}
-
-function _speedRow(onSpeedChange) {
-  const row = _row('gameSpeed')
-  const select = document.createElement('select')
-
-  SPEED_PRESETS.forEach(({ key, value }) => {
-    const option = document.createElement('option')
-    option.value = String(value)
-    option.textContent = t(key)
-    select.appendChild(option)
-  })
-  select.value = String(getGameSpeed())
-  select.addEventListener('change', evt => {
-    const v = parseFloat(evt.target.value)
-    setGameSpeed(v)
-    if (onSpeedChange) onSpeedChange(v)
-  })
-  row.appendChild(select)
-  return row
 }

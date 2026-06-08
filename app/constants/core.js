@@ -9,7 +9,6 @@ export const IS_MOBILE =
   window.matchMedia('(pointer: coarse)').matches || (window.innerWidth <= 800 && window.innerHeight <= 600)
 export const LONG_CLICK_DURATION = IS_MOBILE ? 280 : 200
 export const TOUCH_DRAG_THRESHOLD = 12
-export const TOUCH_SELECTION_HOLD_DURATION = 260
 export const MINIMAP_DRAG_THRESHOLD = 8
 
 export const CORPSE_TIME = 120

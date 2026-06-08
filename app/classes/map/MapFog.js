@@ -3,6 +3,13 @@ import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../../constants'
 import { _DW, _DH, getFogPatternTexture } from '../cell/CellFog'
 import { cartesianToIsometric } from '../../lib'
 
+const FOG_UPDATE_PRIORITY = {
+  fog: 0,
+  refreshFogErase: 1,
+  fogViewed: 2,
+  clear: 3,
+}
+
 export class MapFog {
   constructor(map) {
     this.map = map
@@ -158,6 +165,8 @@ export class MapFog {
     const chunkH = totalH / chunksY
 
     this.map._fogBounds = { minX, minY, chunksX, chunksY, chunkW, chunkH, totalW, totalH }
+    this.map._fogScratchEmptyContainer = new Container()
+    this.map._fogScratchEraseContainer = new Container()
 
     this.map.fogLayer = new Container()
     this.map.fogLayer.eventMode = 'none'
@@ -228,6 +237,7 @@ export class MapFog {
           minY: cMinY,
           w: cW,
           h: cH,
+          transform: new Matrix().translate(-cMinX, -cMinY),
           cells: [],
         })
       }
@@ -416,9 +426,7 @@ export class MapFog {
   }
 
   _redrawFogEdgesInChunk(renderer, chunk) {
-    const emptyC = new Container()
-    renderer.render({ container: emptyC, target: chunk.edgeRt, clear: true })
-    emptyC.destroy()
+    renderer.render({ container: this.map._fogScratchEmptyContainer, target: chunk.edgeRt, clear: true })
   }
 
   _drawVisibleCellsInChunk(graphics, chunk) {
@@ -456,8 +464,18 @@ export class MapFog {
     const addChunkUpdate = (cell, state) => {
       const chunks = this.map._getFogChunksForCell(cell)
       for (const chunk of chunks) {
-        if (!chunkUpdates.has(chunk)) chunkUpdates.set(chunk, [])
-        chunkUpdates.get(chunk).push({ cell, state })
+        let updates = chunkUpdates.get(chunk)
+        if (!updates) {
+          updates = new globalThis.Map()
+          chunkUpdates.set(chunk, updates)
+        }
+        const previousState = updates.get(cell)
+        if (
+          previousState === undefined ||
+          FOG_UPDATE_PRIORITY[state] > FOG_UPDATE_PRIORITY[previousState]
+        ) {
+          updates.set(cell, state)
+        }
       }
     }
 
@@ -472,8 +490,9 @@ export class MapFog {
     }
     this.map._fogQueue.clear()
 
+    const eraseContainer = this.map._fogScratchEraseContainer
+
     for (const [chunk, updates] of chunkUpdates) {
-      const transform = new Matrix().translate(-chunk.minX, -chunk.minY)
       const darknessDraw = new Graphics()
       const darknessErase = new Graphics()
       const fogErase = new Graphics()
@@ -482,7 +501,7 @@ export class MapFog {
       let hasFogErase = false
       let needsFogRestore = false
 
-      for (const { cell, state } of updates) {
+      for (const [cell, state] of updates) {
         if (state === 'clear') {
           this.map._drawFogCellShape(darknessErase, cell)
           this.map._drawFogEraseCellShape(fogErase, cell)
@@ -503,16 +522,20 @@ export class MapFog {
 
       if (hasDarknessDraw) {
         darknessDraw.fill({ color: 0x000000 })
-        renderer.render({ container: darknessDraw, target: chunk.darknessRt, transform, clear: false })
+        renderer.render({ container: darknessDraw, target: chunk.darknessRt, transform: chunk.transform, clear: false })
       }
       if (hasDarknessErase) {
         darknessErase.blendMode = 'erase'
         darknessErase.fill({ color: 0xffffff })
-        const eraseContainer = new Container()
-        eraseContainer.addChild(darknessErase)
-        renderer.render({ container: eraseContainer, target: chunk.darknessRt, transform, clear: false })
         eraseContainer.removeChildren()
-        eraseContainer.destroy()
+        eraseContainer.addChild(darknessErase)
+        renderer.render({
+          container: eraseContainer,
+          target: chunk.darknessRt,
+          transform: chunk.transform,
+          clear: false,
+        })
+        eraseContainer.removeChildren()
       }
       if (needsFogRestore) {
         const pattern = this.map._createFogPatternSprite(chunk.minX, chunk.minY, chunk.w, chunk.h)
@@ -524,11 +547,15 @@ export class MapFog {
       if (hasFogErase) {
         fogErase.blendMode = 'erase'
         fogErase.fill({ color: 0xffffff })
-        const eraseContainer = new Container()
-        eraseContainer.addChild(fogErase)
-        renderer.render({ container: eraseContainer, target: chunk.fogRt, transform, clear: false })
         eraseContainer.removeChildren()
-        eraseContainer.destroy()
+        eraseContainer.addChild(fogErase)
+        renderer.render({
+          container: eraseContainer,
+          target: chunk.fogRt,
+          transform: chunk.transform,
+          clear: false,
+        })
+        eraseContainer.removeChildren()
       }
       darknessDraw.destroy()
       darknessErase.destroy()
