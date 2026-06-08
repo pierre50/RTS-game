@@ -4,6 +4,7 @@ import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
   aiInfo,
+  applyAllTechnologies,
   applyTechnology,
   healAll,
   highlightInstances,
@@ -115,11 +116,12 @@ export function createDevCommands() {
   registry.register({
     name: 'tech',
     aliases: ['technology'],
-    usage: 'tech <technology>',
-    describe: 'Unlock a technology',
-    complete: (_args, { player }) => Object.keys(player?.techs || {}),
+    usage: 'tech <technology|all>',
+    describe: 'Unlock a technology, or all technologies at once',
+    complete: (_args, { player }) => ['all', ...Object.keys(player?.techs || {})],
     run: ([type], context) => {
-      if (!type) return { ok: false, message: 'Usage: tech <technology>' }
+      if (!type) return { ok: false, message: 'Usage: tech <technology|all>' }
+      if (type === 'all') return applyAllTechnologies(context)
       return applyTechnology(context, type)
     },
   })

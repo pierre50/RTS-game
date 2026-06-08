@@ -191,13 +191,15 @@ export class UnitCombat {
           }
           if (unit.dest.hitPoints > 0) {
             unit.dest.hitPoints = getHitPointsWithDamage(unit, unit.dest)
-            if (
-              unit.dest.selected &&
-              (player.selectedUnit === unit.dest ||
+            if (unit.dest.selected) {
+              unit.dest.drawHealthBar()
+              if (
+                player.selectedUnit === unit.dest ||
                 player.selectedBuilding === unit.dest ||
-                player.selectedOther === unit.dest)
-            ) {
-              menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+                player.selectedOther === unit.dest
+              ) {
+                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+              }
             }
             unit.dest.isAttacked(unit)
             if (unit.dest.hitPoints <= 0) {

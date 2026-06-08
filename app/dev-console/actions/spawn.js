@@ -1,4 +1,3 @@
-import { isValidCondition } from '../../lib'
 import { findKey, getAmount, getSpawnCell } from './shared'
 
 function canSpawnUnitOnCell(cell, unitConfig) {
@@ -34,10 +33,6 @@ export function spawnBuilding(context, typeName) {
   const type = findKey(player.config.buildings, typeName)
   if (!type) return { ok: false, message: `Unknown building: ${typeName}` }
   const config = player.config.buildings[type]
-
-  if (config.conditions?.some(condition => !isValidCondition(condition, player))) {
-    return { ok: false, message: `Cannot spawn ${type} with current age/tech requirements` }
-  }
 
   const cell = getSpawnCell(context, { buildingConfig: config })
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }

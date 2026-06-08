@@ -126,12 +126,11 @@ export class AnimalCombat {
               playAudibleSoundCue(animal, animal.sounds.hit)
             if (animal.dest.hitPoints > 0) {
               animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest)
-              if (
-                animal.dest.selected &&
-                player &&
-                (player.selectedUnit === animal.dest || player.selectedBuilding === animal.dest)
-              ) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, animal.dest.hitPoints + '/' + animal.dest.totalHitPoints)
+              if (animal.dest.selected) {
+                animal.dest.drawHealthBar()
+                if (player && (player.selectedUnit === animal.dest || player.selectedBuilding === animal.dest)) {
+                  menu.updateInfo(MENU_INFO_IDS.hitPoints, animal.dest.hitPoints + '/' + animal.dest.totalHitPoints)
+                }
               }
               animal.dest.isAttacked(animal)
             }

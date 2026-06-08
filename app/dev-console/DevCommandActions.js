@@ -19,6 +19,7 @@ export {
 
 export {
   addResources,
+  applyAllTechnologies,
   applyTechnology,
   healAll,
   killEntities,

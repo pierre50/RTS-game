@@ -17,6 +17,17 @@ export function addResources(player, resourceName, amount) {
   return `Added ${amount} ${resourceName}`
 }
 
+export function applyAllTechnologies(context) {
+  const { player } = context
+  const keys = Object.keys(player?.techs || {})
+  let count = 0
+  for (const key of keys) {
+    const result = applyTechnology(context, key)
+    if (result.ok && result.message !== `${key} already unlocked`) count++
+  }
+  return { ok: true, message: `Unlocked ${count} technologies` }
+}
+
 export function applyTechnology(context, typeName) {
   const { player, menu } = context
   const type = findKey(player.techs, typeName)

@@ -1,4 +1,4 @@
-import { AnimatedSprite, Assets, Container, Graphics, Sprite } from 'pixi.js'
+import { AnimatedSprite, Assets, Container, Graphics } from 'pixi.js'
 import {
   degreesToRadians,
   getHitPointsWithDamage,
@@ -263,9 +263,41 @@ export class Projectile extends Container {
       const sprite = new AnimatedSprite(textures)
       bindAnimatedSpriteToTicker(sprite, this.context.app)
       sprite.updateAnchor = true
-      applyTextureAnchor(sprite, textures[0])
-      sprite.animationSpeed = this.animationSpeed ?? 0.3
-      sprite.play()
+
+      if (this.directionalFrames) {
+        if (typeof this.directionalFrames === 'number' && this.directionalFrames > 8 && !this.directionalFrameOrder) {
+          if (this.fullCircleStartDegree != null) {
+            const normalizedDeg = ((degree - this.fullCircleStartDegree) % 360 + 360) % 360
+            const degPerFrame = 360 / textures.length
+            const frameIndex = Math.round(normalizedDeg / degPerFrame) % textures.length
+            applyTextureAnchor(sprite, textures[frameIndex])
+            sprite.gotoAndStop(frameIndex)
+          } else {
+            const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(degree, textures.length)
+            const clampedIndex = Math.min(frameIndex, textures.length - 1)
+            applyTextureAnchor(sprite, textures[clampedIndex])
+            sprite.gotoAndStop(clampedIndex)
+            const scale = this.scale ?? 1
+            sprite.scale.set(mirrored ? scale : -scale, scale)
+          }
+        } else {
+          const direction = degreeToDirection(degree)
+          const frameIndex = Math.min(getDirectionalFrameIndex(this, direction), textures.length - 1)
+          applyTextureAnchor(sprite, textures[frameIndex])
+          sprite.gotoAndStop(frameIndex)
+        }
+      } else if (this.rotateSprite) {
+        const frameIndex = this.staticFrame ?? 0
+        const baseAngle = this.spriteBaseAngle ?? 180
+        applyTextureAnchor(sprite, textures[frameIndex])
+        sprite.gotoAndStop(frameIndex)
+        sprite.rotation = degreesToRadians(degree - baseAngle)
+      } else {
+        applyTextureAnchor(sprite, textures[0])
+        sprite.animationSpeed = this.animationSpeed ?? 0.3
+        sprite.play()
+      }
+
       debugProjectile('animated-sprite', {
         type: this.type,
         assets: this.assets,
@@ -286,8 +318,12 @@ export class Projectile extends Container {
         const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(degree, frameCount)
         textureName = textureNames[Math.min(frameIndex, textureNames.length - 1)]
         const texture = spritesheet.textures[textureName]
-        const sprite = new Sprite(texture)
+        const sprite = new AnimatedSprite([texture])
+        bindAnimatedSpriteToTicker(sprite, this.context.app)
+        sprite.updateAnchor = true
         applyTextureAnchor(sprite, texture)
+        sprite.animationSpeed = 0
+        sprite.play()
         const scale = this.scale ?? 1
         sprite.scale.set(mirrored ? -scale : scale, scale)
         debugProjectile('mirrored-frame', {
@@ -321,8 +357,12 @@ export class Projectile extends Container {
       })
     }
     const texture = spritesheet.textures[textureName]
-    const sprite = new Sprite(texture)
+    const sprite = new AnimatedSprite([texture])
+    bindAnimatedSpriteToTicker(sprite, this.context.app)
+    sprite.updateAnchor = true
     applyTextureAnchor(sprite, texture)
+    sprite.animationSpeed = 0
+    sprite.play()
     if (this.scale) {
       sprite.scale.set(this.scale)
     }
@@ -398,10 +438,15 @@ export class Projectile extends Container {
     const {
       context: { menu, player },
     } = this
-    playAudibleSoundCue(this, this.sounds?.impact)
+    if (instance.family === FAMILY_TYPES.building) {
+      playAudibleSoundCue(this, this.sounds?.impact)
+    }
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
-    if (instance.selected && player.selectedOther === instance) {
-      menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
+    if (instance.selected) {
+      instance.drawHealthBar()
+      if (player.selectedOther === instance) {
+        menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
+      }
     }
     if (instance.hitPoints <= 0) {
       instance.die()

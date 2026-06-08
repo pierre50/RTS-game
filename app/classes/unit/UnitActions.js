@@ -256,6 +256,7 @@ export class UnitActions {
             if (unit.dest.hitPoints > 0) {
               unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0)
               if (unit.dest.selected) {
+                unit.dest.drawHealthBar()
                 menu.updateInfo(
                   MENU_INFO_IDS.hitPoints,
                   unit.dest.hitPoints > 0 ? unit.dest.hitPoints + '/' + unit.dest.totalHitPoints : ''
@@ -324,8 +325,11 @@ export class UnitActions {
                 Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime),
                 unit.dest.totalHitPoints
               )
-              if (unit.dest.selected && unit.owner.isPlayed) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+              if (unit.dest.selected) {
+                unit.dest.drawHealthBar()
+                if (unit.owner.isPlayed) {
+                  menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+                }
               }
               unit.dest.updateHitPoints(unit.action)
             } else {
