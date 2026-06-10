@@ -30,13 +30,13 @@ export const ASSET_BUNDLES = {
     50405: 'assets/interface/50405/texture.json',
   },
   terrain: {
-    15000: 'assets/terrain/15000/texture.json',
-    15001: 'assets/terrain/15001/texture.json',
-    15002: 'assets/terrain/15002/texture.json',
+    15000: { src: 'assets/terrain/15000/texture.json', data: { textureOptions: { scaleMode: 'nearest' } } },
+    15001: { src: 'assets/terrain/15001/texture.json', data: { textureOptions: { scaleMode: 'nearest' } } },
+    15002: { src: 'assets/terrain/15002/texture.json', data: { textureOptions: { scaleMode: 'nearest' } } },
   },
   border: {
-    20000: 'assets/border/20000/texture.json',
-    20002: 'assets/border/20002/texture.json',
+    20000: { src: 'assets/border/20000/texture.json', data: { textureOptions: { scaleMode: 'nearest' } } },
+    20002: { src: 'assets/border/20002/texture.json', data: { textureOptions: { scaleMode: 'nearest' } } },
   },
   graphics: toTextureBundle('assets/graphics', [
     '60',

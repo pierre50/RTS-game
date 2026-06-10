@@ -35,6 +35,7 @@ export class UnitActions {
   clearInvalidPreviousTask() {
     const unit = this.unit
     if (!unit.previousDest) return false
+    if (unit.previousDest.family === FAMILY_TYPES.animal) return false
 
     const type = unit.previousDest.category || unit.previousDest.type
     const action = TYPE_ACTION[type]

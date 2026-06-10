@@ -58,6 +58,7 @@ export class MapFog {
         sprite.zIndex = -1
         sprite.eventMode = 'none'
         sprite.label = 'terrainChunk'
+        sprite.roundPixels = true
         this.map.addChild(sprite)
       }
     }

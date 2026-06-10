@@ -223,6 +223,37 @@ export class BottombarManager {
     }
   }
 
+  preloadIcons(player) {
+    const preload = src => {
+      new Image().src = src
+    }
+    preload('assets/interface/50721/010_50721.png')
+    preload('assets/interface/50721/003_50721.png')
+    preload('assets/interface/50721/002_50721.png')
+    ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
+      preload(getIconPath(icon))
+    )
+    Object.values(player.config.units).forEach(unit => {
+      if (unit.icon) preload(getIconPath(unit.icon))
+    })
+    Object.values(player.techs).forEach(config => {
+      if (config.icon) preload(getIconPath(config.icon))
+    })
+    Object.keys(player.config.buildings).forEach(type => {
+      try {
+        const asset = getBuildingAsset(type, player, Assets)
+        if (asset?.icon) preload(getIconPath(asset.icon))
+      } catch {}
+    })
+    const gameConfig = Assets.cache.get('config')
+    Object.values(gameConfig.resources || {}).forEach(res => {
+      if (res.icon) preload(getIconPath(res.icon))
+    })
+    Object.values(gameConfig.animals || {}).forEach(animal => {
+      if (animal.icon) preload(getIconPath(animal.icon))
+    })
+  }
+
   setBottombar(selection = null) {
     const { menu } = this
     const {

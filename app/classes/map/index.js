@@ -62,8 +62,8 @@ export default class Map extends Container {
   }
 
   setCoordinate(x, y) {
-    this.x = x
-    this.y = y
+    this.x = Math.round(x)
+    this.y = Math.round(y)
   }
 
   _ensureBuckets() {

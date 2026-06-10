@@ -69,6 +69,7 @@ export default class Menu {
   init() {
     this.minimapManager.initMiniMap()
     this.updateTopbar()
+    this.bottombarManager.preloadIcons(this.context.player)
   }
 
   updateTopbar() {
