@@ -5,9 +5,10 @@ import { buildSettingsContent } from '../ui/settingsPanel'
 import { openSaveListModal } from '../ui/saveListModal'
 
 export default class MainMenu {
-  constructor({ onStart, onLoad }) {
+  constructor({ onStart, onLoad, onMapEditor }) {
     this.onStart = onStart
     this.onLoad = onLoad
+    this.onMapEditor = onMapEditor
     this._onKeyDown = this._handleKeyDown.bind(this)
 
     this.el = document.createElement('div')
@@ -60,6 +61,7 @@ export default class MainMenu {
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
     buttons.appendChild(this._btn(t('newGame'), this.onStart))
+    buttons.appendChild(this._btn(t('mapEditor'), this.onMapEditor))
     buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList()))
     buttons.appendChild(this._btn(t('settings'), () => this._openSettings()))
     panel.appendChild(buttons)

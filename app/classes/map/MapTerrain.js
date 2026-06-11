@@ -218,15 +218,25 @@ export class MapTerrain {
             const low = high === cell ? neighbor : cell
             if (high.z - low.z <= 1) continue
 
-            const targetLowLevel = high.z - 1
             const lowMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[low.i * n + low.j])
             const lowMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[low.i * n + low.j])
-            if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
+            const highMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[high.i * n + high.j])
+            const highMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[high.i * n + high.j])
+            const targetLowLevel = high.z - 1
+            const targetHighLevel = Math.max(highMinAllowed, Math.min(highMaxAllowed, low.z + 1))
+            const preserveDepression = low.z < 0
+
+            if (preserveDepression) {
+              if (!high.has && targetHighLevel >= highMinAllowed && targetHighLevel <= highMaxAllowed) {
+                this.map.setCellReliefLevelDirect(high, targetHighLevel)
+              } else if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
+                this.map.setCellReliefLevelDirect(low, targetLowLevel)
+              } else {
+                this.map.setCellReliefLevelDirect(high, targetHighLevel)
+              }
+            } else if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
               this.map.setCellReliefLevelDirect(low, targetLowLevel)
             } else {
-              const highMaxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[high.i * n + high.j])
-              const highMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[high.i * n + high.j])
-              const targetHighLevel = Math.max(highMinAllowed, Math.min(highMaxAllowed, low.z + 1))
               this.map.setCellReliefLevelDirect(high, targetHighLevel)
             }
             changed = true
@@ -240,142 +250,76 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        const _n = this.map.grid[i - 1]?.[j]?.z ?? cell.z
-        const _s = this.map.grid[i + 1]?.[j]?.z ?? cell.z
-        const _w = this.map.grid[i]?.[j - 1]?.z ?? cell.z
-        const _e = this.map.grid[i]?.[j + 1]?.z ?? cell.z
-        if (
-          (cell.category === 'Water' || cell.waterBorder) &&
-          (_n > cell.z || _s > cell.z || _w > cell.z || _e > cell.z)
-        ) {
-          console.log(`[relief] SKIPPED waterBorder at [${i},${j}] z=${cell.z} N=${_n} S=${_s} W=${_w} E=${_e}`)
+        const nz = this.map.grid[i - 1]?.[j]?.z ?? cell.z
+        const sz = this.map.grid[i + 1]?.[j]?.z ?? cell.z
+        const wz = this.map.grid[i]?.[j - 1]?.z ?? cell.z
+        const ez = this.map.grid[i]?.[j + 1]?.z ?? cell.z
+
+        if ((cell.category === 'Water' || cell.waterBorder) && (nz > cell.z || sz > cell.z || wz > cell.z || ez > cell.z)) {
+          console.log(`[relief] SKIPPED waterBorder at [${i},${j}] z=${cell.z} N=${nz} S=${sz} W=${wz} E=${ez}`)
         }
         if (cell.category === 'Water' || cell.waterBorder) continue
-        if (
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j].z - cell.z >= 1 &&
-          (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) &&
-          (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) &&
-          (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z)
-        ) {
+
+        const nwz = this.map.grid[i - 1]?.[j - 1]?.z ?? cell.z
+        const nez = this.map.grid[i - 1]?.[j + 1]?.z ?? cell.z
+        const swz = this.map.grid[i + 1]?.[j - 1]?.z ?? cell.z
+        const sez = this.map.grid[i + 1]?.[j + 1]?.z ?? cell.z
+
+        const n = nz > cell.z
+        const s = sz > cell.z
+        const w = wz > cell.z
+        const e = ez > cell.z
+        const nw = nwz > cell.z
+        const ne = nez > cell.z
+        const sw = swz > cell.z
+        const se = sez > cell.z
+
+        // Cardinal singles
+        if (n && !s && !w && !e) {
           cell.setReliefBorder('014', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j].z - cell.z >= 1 &&
-          (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z) &&
-          (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) &&
-          (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z)
-        ) {
+        } else if (s && !n && !w && !e) {
           cell.setReliefBorder('015', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j - 1] &&
-          this.map.grid[i][j - 1].z - cell.z >= 1 &&
-          (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) &&
-          (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) &&
-          (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)
-        ) {
+        } else if (w && !n && !s && !e) {
           cell.setReliefBorder('016', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j + 1] &&
-          this.map.grid[i][j + 1].z - cell.z >= 1 &&
-          (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z) &&
-          (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) &&
-          (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)
-        ) {
+        } else if (e && !n && !s && !w) {
           cell.setReliefBorder('013', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j - 1] &&
-          this.map.grid[i - 1][j - 1].z - cell.z >= 1 &&
-          (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) &&
-          (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)
-        ) {
+        // Diagonal singles — only fire when adjacent cardinals are not higher
+        } else if (nw && !n && !w) {
           cell.setReliefBorder('010', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j - 1] &&
-          this.map.grid[i + 1][j - 1].z - cell.z >= 1 &&
-          (!this.map.grid[i][j - 1] || this.map.grid[i][j - 1].z <= cell.z) &&
-          (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z)
-        ) {
+        } else if (sw && !s && !w) {
           cell.setReliefBorder('012')
-        } else if (
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j + 1] &&
-          this.map.grid[i - 1][j + 1].z - cell.z >= 1 &&
-          (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) &&
-          (!this.map.grid[i - 1] || this.map.grid[i - 1][j].z <= cell.z)
-        ) {
+        } else if (ne && !n && !e) {
           cell.setReliefBorder('011')
-        } else if (
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j + 1] &&
-          this.map.grid[i + 1][j + 1].z - cell.z >= 1 &&
-          (!this.map.grid[i][j + 1] || this.map.grid[i][j + 1].z <= cell.z) &&
-          (!this.map.grid[i + 1] || this.map.grid[i + 1][j].z <= cell.z)
-        ) {
+        } else if (se && !s && !e) {
           cell.setReliefBorder('009', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j - 1] &&
-          this.map.grid[i][j - 1].z - cell.z >= 1 &&
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j].z - cell.z >= 1
-        ) {
+        // Cardinal pairs (exact) — guards on opposite directions fix the z=2 corner bug
+        } else if (w && n && !s && !e) {
           cell.setReliefBorder('022', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j + 1] &&
-          this.map.grid[i][j + 1].z - cell.z >= 1 &&
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j].z - cell.z >= 1
-        ) {
+        } else if (e && s && !n && !w) {
           cell.setReliefBorder('021', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j - 1] &&
-          this.map.grid[i][j - 1].z - cell.z >= 1 &&
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j].z - cell.z >= 1
-        ) {
+        } else if (w && s && !n && !e) {
           cell.setReliefBorder('023', CELL_DEPTH)
-        } else if (
-          this.map.grid[i][j + 1] &&
-          this.map.grid[i][j + 1].z - cell.z >= 1 &&
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j].z - cell.z >= 1
-        ) {
+        } else if (e && n && !s && !w) {
           cell.setReliefBorder('024', CELL_DEPTH)
-        } else if (
-          this.map.grid[i - 1] &&
-          this.map.grid[i - 1][j].z - cell.z >= 1 &&
-          this.map.grid[i + 1] &&
-          this.map.grid[i + 1][j].z - cell.z >= 1
-        ) {
+        } else if (n && s && !w && !e) {
           cell.setReliefBorder('017', CELL_DEPTH / 2)
-        } else if (
-          this.map.grid[i][j - 1] &&
-          this.map.grid[i][j - 1].z - cell.z >= 1 &&
-          this.map.grid[i][j + 1] &&
-          this.map.grid[i][j + 1].z - cell.z >= 1
-        ) {
+        } else if (w && e && !n && !s) {
           cell.setReliefBorder('018', CELL_DEPTH / 2)
-        } else {
-          const _nw = this.map.grid[i - 1]?.[j - 1]?.z ?? cell.z
-          const _ne = this.map.grid[i - 1]?.[j + 1]?.z ?? cell.z
-          const _sw = this.map.grid[i + 1]?.[j - 1]?.z ?? cell.z
-          const _se = this.map.grid[i + 1]?.[j + 1]?.z ?? cell.z
-          if (
-            _n > cell.z ||
-            _s > cell.z ||
-            _w > cell.z ||
-            _e > cell.z ||
-            _nw > cell.z ||
-            _ne > cell.z ||
-            _sw > cell.z ||
-            _se > cell.z
-          ) {
-            console.log(
-              `[relief] UNHANDLED at [${i},${j}] z=${cell.z} N=${_n} S=${_s} W=${_w} E=${_e} NW=${_nw} NE=${_ne} SW=${_sw} SE=${_se}`
-            )
-          }
+        // 3+ cardinals higher — approximate with the most visually dominant pair
+        } else if (n && w) {
+          cell.setReliefBorder('022', CELL_DEPTH / 2)
+        } else if (s && e) {
+          cell.setReliefBorder('021', CELL_DEPTH / 2)
+        } else if (w && s) {
+          cell.setReliefBorder('023', CELL_DEPTH)
+        } else if (e && n) {
+          cell.setReliefBorder('024', CELL_DEPTH)
+        } else if (n || s) {
+          cell.setReliefBorder('017', CELL_DEPTH / 2)
+        } else if (w || e) {
+          cell.setReliefBorder('018', CELL_DEPTH / 2)
+        } else if (nw || ne || sw || se) {
+          console.log(`[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nwz} NE=${nez} SW=${swz} SE=${sez}`)
         }
       }
     }

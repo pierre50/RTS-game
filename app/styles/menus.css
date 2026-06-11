@@ -166,6 +166,7 @@ div.menu-title {
 }
 
 .config-row .ui-select,
+.config-row .ui-input,
 .config-row .ui-range {
   width: 160px;
   flex-shrink: 0;
@@ -500,6 +501,7 @@ div.menu-title {
   }
 
   .config-row .ui-select,
+  .config-row .ui-input,
   .config-row .ui-range {
     width: 100%;
   }

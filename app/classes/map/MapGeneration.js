@@ -408,7 +408,7 @@ export class MapGeneration {
   generateCells() {
     const z = 0
     this.map.grid = []
-    const terrain = this.map.generateTerrain(this.map.size ? this.map.size + 1 : 121, this.map.mapType || 'plain')
+    const terrain = this.map.generateTerrain(this.map.size ? this.map.size + 1 : 121, this.map.mapType || 'plain', this.map.seed)
     this.map.size = terrain.length - 1
 
     const terrainMap = {
@@ -437,8 +437,9 @@ export class MapGeneration {
     this.map.formatCellsWaterBorder()
   }
 
-  generateTerrain(gridSize = 120, mapType = 'plain') {
-    const seed = Math.random() * 9999
+  generateTerrain(gridSize = 120, mapType = 'plain', seed) {
+    if (seed == null) seed = Math.random() * 9999
+    this.map.seed = seed
 
     function hash(x, y) {
       const n = Math.sin(x * 127.1 + y * 311.7 + seed * 3.7) * 43758.5453

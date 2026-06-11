@@ -363,6 +363,12 @@ button,
   color: var(--ui-text-color);
 }
 
+.ui-btn.is-active {
+  filter: brightness(1.08);
+  box-shadow: var(--ui-button-shadow-pressed);
+  border-style: inset;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .home-btn:hover {
     filter: brightness(var(--ui-hover-brightness));

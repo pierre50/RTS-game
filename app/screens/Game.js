@@ -46,6 +46,7 @@ export default class Game extends Container {
       resume: () => {
         if (!this.context.victory && !this.context.defeat) this.togglePause(false)
       },
+      restart: () => this.restart(),
       quit: () => this.quit(),
       checkVictory: () => this.checkVictory(),
       checkDefeat: () => this.checkDefeat(),
@@ -220,6 +221,10 @@ export default class Game extends Container {
   _bootFromConfig(config) {
     this._createRuntime()
     this._applyMapConfig(this.context.map, config)
+    if (this._restartSeed != null) {
+      this.context.map.seed = this._restartSeed
+      this._restartSeed = null
+    }
     this._createUiRuntime()
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
@@ -264,6 +269,15 @@ export default class Game extends Container {
       (this.context.app.screen.width * (1 - zoom)) / 2,
       (this.context.app.screen.height * (1 - zoom)) / 2
     )
+  }
+
+  restart() {
+    this._restartSeed = this.context.map?.seed
+    this._destroyRuntime()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
+    this._bootFromConfig(this.config)
   }
 
   quit() {

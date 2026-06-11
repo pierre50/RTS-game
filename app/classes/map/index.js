@@ -124,8 +124,8 @@ export default class Map extends Container {
     return this.mapGeneration.generateCells()
   }
 
-  generateTerrain(gridSize = 120, mapType = 'plain') {
-    return this.mapGeneration.generateTerrain(gridSize, mapType)
+  generateTerrain(gridSize = 120, mapType = 'plain', seed) {
+    return this.mapGeneration.generateTerrain(gridSize, mapType, seed)
   }
 
   generateSets() {

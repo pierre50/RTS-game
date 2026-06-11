@@ -221,4 +221,40 @@ export class Resource extends Instance {
   setDefaultInterface(element, data) {
     return this.resourceInterface.setDefaultInterface(element, data)
   }
+
+  refreshTextureForTerrain() {
+    if (this.isAnimated || this.type !== RESOURCE_TYPES.tree) return
+
+    const {
+      context: { map },
+    } = this
+    const cell = map.grid[this.i]?.[this.j]
+    const terrainAssets = this.assets?.[cell?.type]
+    if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
+
+    const textureName = terrainAssets[(this.i * 31 + this.j * 17) % terrainAssets.length]
+    const resourceName = textureName.split('_')[1]
+    const textureFile = textureName + '.png'
+    const spritesheet = Assets.cache.get(resourceName)
+    const texture = spritesheet?.textures?.[textureFile]
+    if (!texture) return
+
+    this.textureName = textureName
+    this.sprite.texture = texture
+    this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+  }
+
+  syncWithCell() {
+    const {
+      context: { map },
+    } = this
+    const cell = map.grid[this.i]?.[this.j]
+    if (!cell) return
+    this.x = cell.x
+    this.y = cell.y
+    this.z = cell.z
+    this.zIndex = getInstanceZIndex(this)
+    this.visible = true
+    this.refreshTextureForTerrain()
+  }
 }

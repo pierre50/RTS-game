@@ -1,5 +1,12 @@
 import { Assets, Sprite } from 'pixi.js'
-import { randomRange, instancesDistance, getCellsAroundPoint, getInstanceZIndex, formatNumber } from '../../lib'
+import {
+  randomRange,
+  instancesDistance,
+  getCellsAroundPoint,
+  getInstanceZIndex,
+  formatNumber,
+  cartesianToIsometric,
+} from '../../lib'
 import { CELL_DEPTH, LABEL_TYPES } from '../../constants'
 
 // Border 20002 exposes dedicated slope variants. Some relief tiles intentionally reuse the same
@@ -41,6 +48,58 @@ export class CellTerrain {
     this.cell = cell
   }
 
+  _getBaseTexture(type = this.cell.type) {
+    const config = Assets.cache.get('config')
+    const definition = config?.cells?.[type]
+    const assets = definition?.assets || []
+    if (!assets.length) return null
+    const textureName = assets[(this.cell.i * 31 + this.cell.j * 17) % assets.length]
+    const resourceName = textureName.split('_')[1]
+    const spritesheet = Assets.cache.get(resourceName)
+    return spritesheet?.textures?.[textureName + '.png'] || null
+  }
+
+  resetTerrainAppearance() {
+    const { cell } = this
+    const [x, y] = cartesianToIsometric(cell.i, cell.j)
+
+    for (let index = cell.children.length - 1; index >= 0; index--) {
+      const child = cell.children[index]
+      if (child !== cell.sprite) {
+        cell.removeChild(child)
+        child.destroy?.()
+      }
+    }
+
+    const texture = this._getBaseTexture()
+    if (texture) {
+      cell.sprite.texture = texture
+      cell.sprite.anchor.set(
+        Math.floor(texture.width / 2) / texture.width,
+        Math.floor(texture.height / 2) / texture.height
+      )
+    }
+
+    cell.x = x
+    cell.y = y - cell.z * CELL_DEPTH
+    cell.inclined = false
+    cell.border = false
+    cell.waterBorder = false
+  }
+
+  setTerrainType(type) {
+    const { cell } = this
+    const config = Assets.cache.get('config')
+    const definition = config?.cells?.[type]
+    if (!definition) return
+
+    cell.type = type
+    Object.keys(definition).forEach(prop => {
+      cell[prop] = definition[prop]
+    })
+    this.resetTerrainAppearance()
+  }
+
   setDesertBorder(direction) {
     const { cell } = this
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
@@ -63,7 +122,10 @@ export class CellTerrain {
     }
     const sprite = new Sprite(texture)
     sprite.direction = direction
-    sprite.anchor.set(0.5, 0.5)
+    sprite.anchor.set(
+      Math.floor(texture.width / 2) / texture.width,
+      Math.floor(texture.height / 2) / texture.height
+    )
     sprite.type = 'border'
     cell.addChild(sprite)
   }
@@ -108,8 +170,11 @@ export class CellTerrain {
       cell.has.zIndex = getInstanceZIndex(cell.has)
     }
     sprite.label = LABEL_TYPES.sprite
-    sprite.anchor.set(0.5, 0.5)
     sprite.texture = texture
+    sprite.anchor.set(
+      Math.floor(texture.width / 2) / texture.width,
+      Math.floor(texture.height / 2) / texture.height
+    )
   }
 
   setWater() {

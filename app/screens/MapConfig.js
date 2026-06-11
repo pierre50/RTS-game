@@ -3,6 +3,7 @@ import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow, buildCheckboxRow } from '../ui/formUtils'
 import { CIVILIZATIONS } from '../config/civilizations'
+import { MAP_SIZES } from '../config/mapSizes'
 
 const DIFFICULTIES = [
   { label: () => t('diffEasy'), value: 'easy' },
@@ -39,12 +40,6 @@ const RESOURCES_MAP = {
 
 const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
-
-const MAP_SIZES = [
-  { label: 'Small  (144×144)', value: 144, maxPlayers: 3 },
-  { label: 'Medium (256×256)', value: 256, maxPlayers: 4 },
-  { label: 'Large  (512×512)', value: 512, maxPlayers: 4 },
-]
 
 const MAP_TYPES = [
   { label: () => t('mapTypePlain'), value: 'plain' },

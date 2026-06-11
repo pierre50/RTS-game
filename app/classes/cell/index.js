@@ -42,6 +42,9 @@ export class Cell extends Container {
 
     this.x = pos[0]
     this.y = pos[1] - this.z * CELL_DEPTH
+    // Terrain tiles need an isometric draw order so taller relief variants are not hidden
+    // behind neighboring cells that happened to be added later to the map container.
+    this.zIndex = this.i + this.j
 
     const textureName = randomItem(this.assets)
     const resourceName = textureName.split('_')[1]
@@ -50,7 +53,10 @@ export class Cell extends Container {
     const texture = spritesheet.textures[textureFile]
     this.sprite = new Sprite(texture)
     this.sprite.label = LABEL_TYPES.sprite
-    this.sprite.anchor.set(0.5, 0.5)
+    this.sprite.anchor.set(
+      Math.floor(texture.width / 2) / texture.width,
+      Math.floor(texture.height / 2) / texture.height
+    )
     this.sprite.roundPixels = true
     this.sprite.allowMove = false
     this.sprite.eventMode = 'none'
@@ -128,6 +134,12 @@ export class Cell extends Container {
   // Terrain delegates
   setDesertBorder(direction) {
     return this.cellTerrain.setDesertBorder(direction)
+  }
+  resetTerrainAppearance() {
+    return this.cellTerrain.resetTerrainAppearance()
+  }
+  setTerrainType(type) {
+    return this.cellTerrain.setTerrainType(type)
   }
   setWaterBorder(resourceName, index) {
     return this.cellTerrain.setWaterBorder(resourceName, index)

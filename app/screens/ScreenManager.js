@@ -1,4 +1,6 @@
 import Game from './Game'
+import MapEditor from './MapEditor'
+import MapEditorConfig from './MapEditorConfig'
 import MainMenu from './MainMenu'
 import MapConfig from './MapConfig'
 import { OrientationGuard } from '../ui/OrientationGuard'
@@ -8,10 +10,10 @@ export class ScreenManager {
     this.app = app
     this.gamebox = gamebox
     this.currentMenuScreen = null
-    this.currentGame = null
+    this.currentRuntime = null
     this.orientationGuard = new OrientationGuard({
       onChange: blocked => {
-        this.currentGame?.setOrientationBlocked(blocked)
+        this.currentRuntime?.setOrientationBlocked(blocked)
       },
     })
   }
@@ -26,17 +28,18 @@ export class ScreenManager {
     this.currentMenuScreen = null
   }
 
-  destroyCurrentGame() {
-    if (!this.currentGame) return
-    this.app.stage.removeChild(this.currentGame)
-    this.currentGame.destroy()
-    this.currentGame = null
+  destroyCurrentRuntime() {
+    if (!this.currentRuntime) return
+    this.app.stage.removeChild(this.currentRuntime)
+    this.currentRuntime.destroy()
+    this.currentRuntime = null
   }
 
   showMainMenu() {
     this.destroyCurrentMenuScreen()
     this.currentMenuScreen = new MainMenu({
       onStart: () => this.showMapConfig(),
+      onMapEditor: () => this.showMapEditorConfig(),
       onLoad: save => this.loadGame(save),
     })
   }
@@ -47,25 +50,39 @@ export class ScreenManager {
     })
   }
 
+  showMapEditorConfig() {
+    new MapEditorConfig({
+      onCreate: config => this.showMapEditor(config),
+    })
+  }
+
   startGame(config) {
     this.destroyCurrentMenuScreen()
-    this.destroyCurrentGame()
-    this.currentGame = new Game(this.app, this.gamebox, config, () => this.handleQuitGame())
-    this.app.stage.addChild(this.currentGame)
-    this.currentGame.setOrientationBlocked(this.orientationGuard.blocked)
+    this.destroyCurrentRuntime()
+    this.currentRuntime = new Game(this.app, this.gamebox, config, () => this.handleQuitRuntime())
+    this.app.stage.addChild(this.currentRuntime)
+    this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
+  }
+
+  showMapEditor(config) {
+    this.destroyCurrentMenuScreen()
+    this.destroyCurrentRuntime()
+    this.currentRuntime = new MapEditor(this.app, this.gamebox, config, () => this.handleQuitRuntime())
+    this.app.stage.addChild(this.currentRuntime)
+    this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
   }
 
   loadGame(save) {
     this.destroyCurrentMenuScreen()
-    this.destroyCurrentGame()
-    this.currentGame = new Game(this.app, this.gamebox, null, () => this.handleQuitGame())
-    this.app.stage.addChild(this.currentGame)
-    this.currentGame.setOrientationBlocked(this.orientationGuard.blocked)
-    this.currentGame.load(save)
+    this.destroyCurrentRuntime()
+    this.currentRuntime = new Game(this.app, this.gamebox, null, () => this.handleQuitRuntime())
+    this.app.stage.addChild(this.currentRuntime)
+    this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
+    this.currentRuntime.load(save)
   }
 
-  handleQuitGame() {
-    this.destroyCurrentGame()
+  handleQuitRuntime() {
+    this.destroyCurrentRuntime()
     this.showMainMenu()
   }
 }
