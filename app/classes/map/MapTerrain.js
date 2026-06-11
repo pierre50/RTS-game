@@ -209,7 +209,14 @@ export class MapTerrain {
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
-          for (const neighbor of [this.map.grid[i + 1]?.[j], this.map.grid[i]?.[j + 1]]) {
+          const neighbors = [
+            this.map.grid[i]?.[j + 1],
+            this.map.grid[i + 1]?.[j - 1],
+            this.map.grid[i + 1]?.[j],
+            this.map.grid[i + 1]?.[j + 1],
+          ]
+
+          for (const neighbor of neighbors) {
             if (!neighbor) continue
             if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder)
               continue
@@ -243,6 +250,87 @@ export class MapTerrain {
           }
         }
       }
+    }
+
+    const getHigherNeighbors = cell => {
+      const { i, j, z } = cell
+      const isHigher = neighbor => Boolean(neighbor && neighbor.z > z)
+
+      return {
+        n: isHigher(this.map.grid[i - 1]?.[j]),
+        ne: isHigher(this.map.grid[i - 1]?.[j + 1]),
+        e: isHigher(this.map.grid[i]?.[j + 1]),
+        se: isHigher(this.map.grid[i + 1]?.[j + 1]),
+        s: isHigher(this.map.grid[i + 1]?.[j]),
+        sw: isHigher(this.map.grid[i + 1]?.[j - 1]),
+        w: isHigher(this.map.grid[i]?.[j - 1]),
+        nw: isHigher(this.map.grid[i - 1]?.[j - 1]),
+      }
+    }
+
+    const raiseUnsupportedTransitions = isUnsupported => {
+      const adjustments = []
+
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          if (cell.category === 'Water' || cell.waterBorder) continue
+
+          const higher = getHigherNeighbors(cell)
+          if (!isUnsupported(higher)) continue
+
+          const higherLevels = [
+            this.map.grid[i - 1]?.[j],
+            this.map.grid[i - 1]?.[j + 1],
+            this.map.grid[i]?.[j + 1],
+            this.map.grid[i + 1]?.[j + 1],
+            this.map.grid[i + 1]?.[j],
+            this.map.grid[i + 1]?.[j - 1],
+            this.map.grid[i]?.[j - 1],
+            this.map.grid[i - 1]?.[j - 1],
+          ]
+            .filter(neighbor => neighbor && neighbor.z > cell.z)
+            .map(neighbor => neighbor.z)
+
+          if (!higherLevels.length) continue
+          const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
+          const targetLevel = Math.min(Math.min(...higherLevels), maxAllowed)
+          if (targetLevel > cell.z) adjustments.push([cell, targetLevel])
+        }
+      }
+
+      for (const [cell, targetLevel] of adjustments) {
+        this.map.setCellReliefLevelDirect(cell, targetLevel)
+      }
+
+      return adjustments.length > 0
+    }
+
+    const hasOppositeHighSides = ({ n, e, s, w }) => (n && s) || (e && w)
+    const hasDisconnectedHighNeighbors = ({ n, ne, e, se, s, sw, w, nw }) => {
+      const cardinalCount = Number(n) + Number(e) + Number(s) + Number(w)
+      const diagonalCount = Number(ne) + Number(se) + Number(sw) + Number(nw)
+
+      if (cardinalCount === 0) return diagonalCount > 1
+      if (cardinalCount !== 1) return false
+      if (n) return sw || se
+      if (e) return nw || sw
+      if (s) return nw || ne
+      return ne || se
+    }
+
+    // Each pass can expose another unsupported mask next to the adjusted cells.
+    // Resolve all of them now instead of waiting for the next editor refresh.
+    let transitionsChanged = true
+    let transitionGuard = 0
+    while (transitionsChanged && transitionGuard++ < this.map.size) {
+      transitionsChanged = false
+
+      // The atlas has no valid tile for a low cell squeezed between opposite high sides.
+      transitionsChanged = raiseUnsupportedTransitions(hasOppositeHighSides) || transitionsChanged
+
+      // A single high side can only connect to the two diagonals touching that side.
+      transitionsChanged = raiseUnsupportedTransitions(hasDisconnectedHighNeighbors) || transitionsChanged
     }
   }
 

@@ -242,8 +242,8 @@ export class CellTerrain {
   setCellLevel(level, cpt = 1) {
     const { cell } = this
     if (level === 0) {
-      cell.y += CELL_DEPTH
       cell.z = level
+      cell.y += CELL_DEPTH
       return
     }
     const grid = cell.parent.grid
