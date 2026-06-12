@@ -57,6 +57,7 @@ export class MapGeneration {
     const { menu, controls } = this.map.context
     this.map.removeChildren()
     this.map.size = map.length - 1
+    this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map(player => {
       const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
@@ -86,19 +87,11 @@ export class MapGeneration {
     }
     this.map._indexFogChunkCells()
 
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        this.map.grid[i][j].fillWaterCellsAroundCell()
-      }
-    }
+    this.map.fillWaterGaps()
+    this.map.normalizeWaterTopology()
     this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource, this.map.context))))
 
-    this.map.formatCellsWaterBorder()
-    this.map.clampReliefAroundWater()
-    this.map.enforceReliefStepContinuity()
-    this.map.formatCellsRelief()
-    this.map.formatCellsWaterBorderOverlays()
-    this.map.formatCellsDesert()
+    this.map.rebuildTerrainAppearance()
 
     if (!this.map.revealEverything) {
       for (let i = 0; i <= this.map.size; i++) {
@@ -262,24 +255,36 @@ export class MapGeneration {
     }
   }
 
-  stylishMap() {
+  async stylishMap({ onProgress = async () => {} } = {}) {
     const {
       context: { menu, player },
     } = this.map
 
+    const timings = this.map.generationTimings || {}
+    const measure = (name, callback) => {
+      const startedAt = performance.now()
+      const result = callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    }
+
     this.map.gaia = new Gaia(this.map.context)
-    this.map.generateMapRelief()
-    this.map.formatCellsRelief()
-    this.map.formatCellsWaterBorderOverlays()
-    this.map.formatCellsDesert()
-    this.map.placePlayers()
-    this.map.generateResourcesAroundPlayers(this.map.playersPos)
-    this.map.generateNeutralResourceGroups(this.map.playersPos)
-    this.map.generateAnimalsAroundPlayers(this.map.playersPos)
-    this.map.generateSets()
-    this.map._initFogChunks()
+    await onProgress('generatingRelief', 0.28)
+    measure('relief', () => this.map.generateMapRelief())
+    measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
+    await onProgress('generatingPlayers', 0.48)
+    measure('playerPlacement', () => this.map.placePlayers())
+    await onProgress('generatingResources', 0.58)
+    measure('playerResources', () => this.map.generateResourcesAroundPlayers(this.map.playersPos))
+    measure('neutralResources', () => this.map.generateNeutralResourceGroups(this.map.playersPos))
+    measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
+    await onProgress('generatingDecorations', 0.74)
+    measure('decorations', () => this.map.generateSets())
+    await onProgress('generatingFog', 0.86)
+    measure('fogInit', () => this.map._initFogChunks())
 
     if (!this.map.revealEverything) {
+      const fogCellsStartedAt = performance.now()
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           this.map.grid[i][j].setFog()
@@ -287,18 +292,24 @@ export class MapGeneration {
       }
       for (let i = 0; i < player.buildings.length; i++) {
         const building = player.buildings[i]
+        building.visibleCells = new Set()
         updateInstanceVisibility(building)
       }
       for (let i = 0; i < player.units.length; i++) {
         const unit = player.units[i]
+        unit.visibleCells = new Set()
         updateInstanceVisibility(unit)
       }
+      timings.fogCells = performance.now() - fogCellsStartedAt
     }
 
     this.map._fogInitComplete = true
     this.map._flushFogQueue()
+    await onProgress('finalizingWorld', 0.93)
     this.map.bakeTerrainToChunks()
     this.map.ready = true
+    this.map.generationTimings = timings
+    console.table(Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`])))
     menu.updateResourcesMiniMap()
   }
 
@@ -410,6 +421,7 @@ export class MapGeneration {
   generateCells() {
     const z = 0
     this.map.grid = []
+    this.map.invalidateReliefCoastDistances()
     const terrain = this.map.generateTerrain(this.map.size ? this.map.size + 1 : 121, this.map.mapType || 'plain', this.map.seed)
     this.map.size = terrain.length - 1
 
@@ -430,12 +442,8 @@ export class MapGeneration {
       }
     }
 
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        this.map.grid[i][j].fillWaterCellsAroundCell()
-      }
-    }
-
+    this.map.fillWaterGaps()
+    this.map.normalizeWaterTopology()
     this.map.formatCellsWaterBorder()
   }
 
@@ -753,21 +761,33 @@ export class MapGeneration {
   }
 
   generateSets() {
+    const hasSolidNeighbor = (i, j) => {
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          if (Math.abs(di) + Math.abs(dj) > 1) continue
+          if (this.map.grid[i + di]?.[j + dj]?.solid) return true
+        }
+      }
+      return false
+    }
+
+    const hasWaterNeighbor = (i, j) => {
+      for (let di = -2; di <= 2; di++) {
+        const maxDj = 2 - Math.abs(di)
+        for (let dj = -maxDj; dj <= maxDj; dj++) {
+          const neighbor = this.map.grid[i + di]?.[j + dj]
+          if (neighbor?.category === 'Water' || neighbor?.waterBorder) return true
+        }
+      }
+      return false
+    }
+
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (getCellsAroundPoint(i, j, this.map.grid, 1, neighbour => neighbour.solid).length > 0) {
-          continue
-        }
+        if (hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          const hasWaterNeighbour =
-            getCellsAroundPoint(
-              i,
-              j,
-              this.map.grid,
-              2,
-              neighbour => neighbour.category === 'Water' || neighbour.waterBorder
-            ).length > 0
+          const hasWaterNeighbour = hasWaterNeighbor(i, j)
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
@@ -820,6 +840,7 @@ export class MapGeneration {
             floor.eventMode = 'none'
             floor.allowClick = false
             floor.updateAnchor = true
+            floor.zIndex = 1
             cell.addChild(floor)
           }
           if (!hasWaterNeighbour && Math.random() < this.map.chanceOfSets) {
@@ -837,6 +858,7 @@ export class MapGeneration {
                   rock.eventMode = 'none'
                   rock.allowClick = false
                   rock.updateAnchor = true
+                  rock.zIndex = 2
                   cell.addChild(rock)
                   break
                 }

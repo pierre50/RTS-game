@@ -10,7 +10,7 @@ export class PlayerStatsManager {
     this._tickRender = ticker => this.update(ticker?.elapsedMS || 0)
 
     this.btn = document.createElement('button')
-    this.btn.className = 'player-stats-btn ui-btn'
+    this.btn.className = 'player-stats-btn hud-icon-btn ui-btn'
     this.btn.textContent = 'S'
     this.btn.addEventListener('pointerdown', evt => {
       evt.preventDefault()

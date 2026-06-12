@@ -70,8 +70,10 @@ export class Building extends Instance {
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
-    const units = (this.units || []).map(key => context.menu.getUnitButton(key))
-    const technologies = (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
+    const units = context.editor ? [] : (this.units || []).map(key => context.menu.getUnitButton(key))
+    const technologies = context.editor
+      ? []
+      : (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
     this.interface = {
       info: element => {
         const assets = getBuildingAsset(this.type, this.owner, Assets)
@@ -116,8 +118,9 @@ export class Building extends Instance {
 
       this.sprite.on('pointertap', evt => {
         const {
-          context: { controls, player, menu },
+          context: { controls, player, menu, editor },
         } = this
+        if (editor?.handleEntityInteraction(this)) return
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }

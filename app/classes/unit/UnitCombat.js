@@ -66,6 +66,7 @@ export class UnitCombat {
 
   detect(instance) {
     const unit = this.unit
+    if (unit.context.editor) return
     if (
       unit.work === WORK_TYPES.attacker &&
       instance &&

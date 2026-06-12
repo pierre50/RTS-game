@@ -7,7 +7,7 @@ import {
   formatNumber,
   cartesianToIsometric,
 } from '../../lib'
-import { CELL_DEPTH, LABEL_TYPES } from '../../constants'
+import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 
 // Border 20002 exposes dedicated slope variants. Some relief tiles intentionally reuse the same
 // silhouette (009/017, 010/018, 011/019, 012/020) but still have duplicated border frames in the atlas.
@@ -65,7 +65,8 @@ export class CellTerrain {
 
     for (let index = cell.children.length - 1; index >= 0; index--) {
       const child = cell.children[index]
-      if (child !== cell.sprite) {
+      const isTerrainDecoration = child.label === LABEL_TYPES.floor || child.label === LABEL_TYPES.set
+      if (child !== cell.sprite && !isTerrainDecoration) {
         cell.removeChild(child)
         child.destroy?.()
       }
@@ -93,10 +94,14 @@ export class CellTerrain {
     const definition = config?.cells?.[type]
     if (!definition) return
 
+    const previousType = cell.type
     cell.type = type
     Object.keys(definition).forEach(prop => {
       cell[prop] = definition[prop]
     })
+    if ((previousType === 'Water') !== (type === 'Water')) {
+      cell.parent?.invalidateReliefCoastDistances?.()
+    }
     this.resetTerrainAppearance()
   }
 
@@ -127,6 +132,7 @@ export class CellTerrain {
       Math.floor(texture.height / 2) / texture.height
     )
     sprite.type = 'border'
+    sprite.zIndex = 10
     cell.addChild(sprite)
   }
 
@@ -146,6 +152,7 @@ export class CellTerrain {
   setReliefBorder(index, elevation = 0) {
     const { cell } = this
     const { sprite } = cell
+    const baseTexture = sprite.texture
     const label = sprite.texture.label
     if (!label || !label.includes('_')) {
       console.log(`[relief] BAD LABEL at [${cell.i},${cell.j}]: "${label}"`)
@@ -162,6 +169,21 @@ export class CellTerrain {
       console.log(`[relief] MISSING TEXTURE "${index}_${resourceName}.png" at [${cell.i},${cell.j}]`)
       return
     }
+
+    // Relief frames are intentionally transparent. Keep the original flat tile
+    // inside the cell so fog baking and container sorting can never expose the scene.
+    const underlay = new Sprite(baseTexture)
+    underlay.type = 'reliefUnderlay'
+    underlay.y = elevation
+    underlay.zIndex = -1
+    underlay.roundPixels = true
+    underlay.eventMode = 'none'
+    underlay.anchor.set(
+      Math.floor(baseTexture.width / 2) / baseTexture.width,
+      Math.floor(baseTexture.height / 2) / baseTexture.height
+    )
+    cell.addChild(underlay)
+
     if (elevation) {
       cell.y -= elevation
     }
@@ -172,7 +194,7 @@ export class CellTerrain {
     sprite.label = LABEL_TYPES.sprite
     sprite.texture = texture
     sprite.anchor.set(
-      Math.floor(texture.width / 2) / texture.width,
+      CELL_WIDTH / 2 / texture.width,
       Math.floor(texture.height / 2) / texture.height
     )
   }
@@ -185,6 +207,7 @@ export class CellTerrain {
     cell.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
     cell.type = 'Water'
     cell.category = 'Water'
+    cell.parent?.invalidateReliefCoastDistances?.()
   }
 
   fillWaterCellsAroundCell() {

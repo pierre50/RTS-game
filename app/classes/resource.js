@@ -94,8 +94,9 @@ export class Resource extends Instance {
 
       this.sprite.on('pointertap', () => {
         const {
-          context: { player, menu },
+          context: { player, menu, editor },
         } = this
+        if (editor?.handleEntityInteraction(this)) return
         if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
@@ -106,8 +107,9 @@ export class Resource extends Instance {
       })
       this.sprite.on('pointerup', evt => {
         const {
-          context: { player, controls },
+          context: { player, controls, editor },
         } = this
+        if (editor?.handleEntityInteraction(this)) return
         const action = TYPE_ACTION[this.category || this.type]
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return

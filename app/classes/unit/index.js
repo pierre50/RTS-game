@@ -134,7 +134,7 @@ export class Unit extends Instance {
         }
       },
       menu:
-        this.showBuildings && this.owner.isPlayed
+        this.showBuildings && this.owner.isPlayed && !this.context.editor
           ? [
               {
                 id: 'build',
@@ -172,8 +172,9 @@ export class Unit extends Instance {
 
     this.on('pointerdown', evt => {
       const {
-        context: { controls, player },
+        context: { controls, player, editor },
       } = this
+      if (editor) return
       if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
@@ -198,8 +199,9 @@ export class Unit extends Instance {
     })
     this.on('pointerup', evt => {
       const {
-        context: { controls, player, menu },
+        context: { controls, player, menu, editor },
       } = this
+      if (editor?.handleEntityInteraction(this)) return
       if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
@@ -391,6 +393,9 @@ export class Unit extends Instance {
   }
 
   isAttacked(instance) {
+    if (this.context.editor) {
+      return
+    }
     if (!instance || this.isDead) {
       return
     }

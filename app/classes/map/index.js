@@ -108,8 +108,8 @@ export default class Map extends Container {
     return this.mapGeneration.generateMap(positionsCountOverride, repeat)
   }
 
-  stylishMap() {
-    return this.mapGeneration.stylishMap()
+  stylishMap(options) {
+    return this.mapGeneration.stylishMap(options)
   }
 
   generatePlayers(playersConfig = null) {
@@ -203,6 +203,10 @@ export default class Map extends Container {
     return this.mapTerrain.getReliefCoastDistances()
   }
 
+  invalidateReliefCoastDistances() {
+    return this.mapTerrain.invalidateReliefCoastDistances()
+  }
+
   getMaxReliefLevelFromCoastDistance(distance) {
     return this.mapTerrain.getMaxReliefLevelFromCoastDistance(distance)
   }
@@ -219,6 +223,14 @@ export default class Map extends Container {
     return this.mapTerrain.flattenWaterComponents(seeds, level)
   }
 
+  fillWaterGaps(level) {
+    return this.mapTerrain.fillWaterGaps(level)
+  }
+
+  normalizeWaterTopology(level, seeds) {
+    return this.mapTerrain.normalizeWaterTopology(level, seeds)
+  }
+
   clampReliefAroundWaterLevels() {
     return this.mapTerrain.clampReliefAroundWaterLevels()
   }
@@ -227,8 +239,8 @@ export default class Map extends Container {
     return this.mapTerrain.clampReliefAroundWater(dist)
   }
 
-  enforceReliefStepContinuity(dist, protectedCells) {
-    return this.mapTerrain.enforceReliefStepContinuity(dist, protectedCells)
+  enforceReliefStepContinuity(dist, protectedCells, levelBounds) {
+    return this.mapTerrain.enforceReliefStepContinuity(dist, protectedCells, levelBounds)
   }
 
   rebuildTerrainBackfill() {
@@ -245,6 +257,10 @@ export default class Map extends Container {
 
   formatCellsWaterBorderOverlays() {
     return this.mapTerrain.formatCellsWaterBorderOverlays()
+  }
+
+  rebuildTerrainAppearance(protectedReliefCells) {
+    return this.mapTerrain.rebuildTerrainAppearance(protectedReliefCells)
   }
 
   formatCellsDesert() {

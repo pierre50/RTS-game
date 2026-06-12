@@ -32,7 +32,7 @@ export default class MainMenu {
     this.el.innerHTML = ''
 
     const panel = document.createElement('div')
-    panel.className = 'menu-panel menu-panel--home'
+    panel.className = 'menu-panel menu-panel--home ui-panel-enter'
 
     const logoShell = document.createElement('div')
     logoShell.className = 'menu-title-shell'

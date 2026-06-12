@@ -30,7 +30,7 @@ export class DevConsole {
     this.root.id = 'dev-console'
 
     const panel = document.createElement('form')
-    panel.className = 'dev-console-panel'
+    panel.className = 'dev-console-panel ui-panel-enter'
     panel.addEventListener('submit', this._onSubmit)
 
     this.log = document.createElement('div')

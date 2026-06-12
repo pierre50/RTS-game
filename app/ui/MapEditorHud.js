@@ -1,8 +1,10 @@
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
+import { getIconPath } from '../lib'
 import { MinimapManager } from './MinimapManager'
 import { MinimapInputController } from './MinimapInputController'
 import { MapEditorMenu } from './MapEditorMenu'
+import { MapEditorPlayersModal } from './MapEditorPlayersModal'
 
 const TOOLS = [
   { id: 'map', label: 'editorMap' },
@@ -26,6 +28,7 @@ export class MapEditorHud {
     this.onQuit = onQuit
     this.onChange = onChange
     this.toolButtons = new Map()
+    this.modeButtons = new Map()
     this.detailButtons = new Map()
     this.brushSizeButtons = new Map()
     this.editorMenu = new MapEditorMenu(this)
@@ -39,11 +42,31 @@ export class MapEditorHud {
 
     this.resources = document.createElement('div')
     this.resources.className = 'topbar-resources map-editor-titlebar'
-    this.resources.textContent = context.editorConfig?.name || t('editorTitle')
+    this.icons = {
+      wood: getIconPath('000_50732'),
+      food: getIconPath('002_50732'),
+      stone: getIconPath('001_50732'),
+      gold: getIconPath('003_50732'),
+    }
+    this.infoIcons = {
+      wood: getIconPath('000_50731'),
+      stone: getIconPath('001_50731'),
+      food: getIconPath('002_50731'),
+      gold: getIconPath('003_50731'),
+    }
 
     this.age = document.createElement('div')
     this.age.className = 'topbar-age map-editor-status'
     this.age.textContent = t('editorStatusIdle')
+
+    const terrainButton = this._createTopbarModeButton(t('editorTerrain'), () => this._setMode('terrain'))
+    const playersButton = this._createTopbarModeButton(t('players'), () => this._openPlayersModal())
+    const unitsButton = this._createTopbarModeButton(t('editorUnits'), () => this._setMode('units'))
+    this.modeButtons.set('terrain', terrainButton)
+    this.modeButtons.set('units', unitsButton)
+    this.resources.appendChild(terrainButton)
+    this.resources.appendChild(playersButton)
+    this.resources.appendChild(unitsButton)
 
     const options = document.createElement('div')
     options.className = 'topbar-options'
@@ -88,8 +111,12 @@ export class MapEditorHud {
     document.body.appendChild(this.gameHud)
 
     this.minimapManager = new MinimapManager(this)
+    this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap
+    this.updateResourcesMiniMap = this.minimapManager.updateResourcesMiniMap
+    this.updateCameraMiniMap = this.minimapManager.updateCameraMiniMap
     this.minimapInputController = new MinimapInputController(this)
     this.minimapInputController.bind()
+    this.selection = null
 
     this._renderToolMenu()
     this.sync()
@@ -123,6 +150,40 @@ export class MapEditorHud {
     return button
   }
 
+  _createTopbarModeButton(label, onClick) {
+    const button = this._btn(label, onClick, 'ui-btn')
+    button.type = 'button'
+    return button
+  }
+
+  _createIconActionBox(iconPath, onClick, label) {
+    const box = document.createElement('div')
+    box.className = 'bottombar-menu-box'
+    box.setAttribute('role', 'button')
+    box.tabIndex = 0
+    box.setAttribute('aria-label', label)
+    box.title = label
+
+    const icon = document.createElement('img')
+    icon.src = iconPath
+    icon.alt = ''
+    icon.className = 'img'
+    box.appendChild(icon)
+
+    box.addEventListener('pointerdown', playClickSound)
+    box.addEventListener('pointerup', evt => {
+      evt.preventDefault()
+      onClick(evt)
+    })
+    box.addEventListener('keydown', evt => {
+      if (evt.key !== 'Enter' && evt.key !== ' ') return
+      evt.preventDefault()
+      onClick(evt)
+    })
+
+    return box
+  }
+
   _clearElement(element) {
     while (element.firstChild) {
       element.removeChild(element.firstChild)
@@ -130,6 +191,7 @@ export class MapEditorHud {
   }
 
   _renderToolMenu() {
+    this.selection = null
     this.bottombarMenu.textContent = ''
 
     const controlsPanel = document.createElement('div')
@@ -185,10 +247,139 @@ export class MapEditorHud {
     this.bottombarMenu.appendChild(controlsPanel)
   }
 
+  _renderUnitsMenu() {
+    this.bottombarMenu.textContent = ''
+
+    const controlsPanel = document.createElement('div')
+    controlsPanel.className = 'map-editor-panel map-editor-controls-panel'
+    const columns = document.createElement('div')
+    columns.className = 'map-editor-columns'
+
+    const owners = this.context.editor.getPlacementOwners()
+    const activeOwner =
+      owners.find(owner => owner.label === this.state.placementOwnerLabel) || owners[0] || null
+    if (activeOwner && activeOwner.label !== this.state.placementOwnerLabel) {
+      this.state.placementOwnerLabel = activeOwner.label
+    }
+
+    const playerWrap = document.createElement('div')
+    playerWrap.className = 'map-editor-field map-editor-column'
+    playerWrap.appendChild(this._sectionTitle(t('editorPlayer')))
+    const playerList = document.createElement('div')
+    playerList.className = 'map-editor-vertical-list map-editor-scroll-list'
+    owners.forEach(owner => {
+      const label = owner.name || (owner === this.context.map.gaia ? t('gaia') : t('players'))
+      const button = this._createListButton(label, () => {
+        this.context.editor.setPlacementSelection(owner.label, null, null)
+      })
+      button.classList.toggle('is-active', owner.label === activeOwner?.label)
+      playerList.appendChild(button)
+    })
+    playerWrap.appendChild(playerList)
+    columns.appendChild(playerWrap)
+
+    const buildingsWrap = document.createElement('div')
+    buildingsWrap.className = 'map-editor-field map-editor-column'
+    buildingsWrap.appendChild(this._sectionTitle(t('editorBuildings')))
+    const buildingsList = document.createElement('div')
+    buildingsList.className = 'map-editor-vertical-list map-editor-scroll-list'
+    if (activeOwner && activeOwner !== this.context.map.gaia) {
+      Object.keys(activeOwner.config?.buildings || {}).forEach(type => {
+        const button = this._createListButton(t(type), () => {
+          this.context.editor.setPlacementSelection(activeOwner.label, type, 'building')
+        })
+        const isActive =
+          this.state.placementOwnerLabel === activeOwner.label &&
+          this.state.placementKind === 'building' &&
+          this.state.placementType === type
+        button.classList.toggle('is-active', isActive)
+        buildingsList.appendChild(button)
+      })
+    }
+    buildingsWrap.appendChild(buildingsList)
+    columns.appendChild(buildingsWrap)
+
+    const unitsWrap = document.createElement('div')
+    unitsWrap.className = 'map-editor-field map-editor-column'
+    unitsWrap.appendChild(this._sectionTitle(activeOwner === this.context.map.gaia ? t('editorAnimals') : t('editorUnits')))
+    const unitsList = document.createElement('div')
+    unitsList.className = 'map-editor-vertical-list map-editor-scroll-list'
+    const unitSource =
+      activeOwner === this.context.map.gaia ? activeOwner?.config?.animals || {} : activeOwner?.config?.units || {}
+    Object.keys(unitSource).forEach(type => {
+      const kind = activeOwner === this.context.map.gaia ? 'animal' : 'unit'
+      const button = this._createListButton(t(type), () => {
+        this.context.editor.setPlacementSelection(activeOwner.label, type, kind)
+      })
+      const isActive =
+        this.state.placementOwnerLabel === activeOwner?.label &&
+        this.state.placementKind === kind &&
+        this.state.placementType === type
+      button.classList.toggle('is-active', isActive)
+      unitsList.appendChild(button)
+    })
+    unitsWrap.appendChild(unitsList)
+    columns.appendChild(unitsWrap)
+
+    controlsPanel.appendChild(columns)
+    this.bottombarMenu.appendChild(controlsPanel)
+
+    if (!this.selection) {
+      const placement = this.context.editor.getPlacementSelection()
+      this._renderInfoLines([
+        t('editorMode') + ': ' + t('editorUnits'),
+        placement ? t('editorPlaceHint') : t('editorSelectHint'),
+      ])
+      return
+    }
+
+    const actionRow = document.createElement('div')
+    actionRow.className = 'map-editor-button-grid'
+    const deselectButton = this._createListButton(t('editorDeselect'), () => {
+      this.context.player?.unselectAll()
+      this.setBottombar()
+    })
+    const deleteButton = this._createListButton(t('editorDelete'), () => {
+      this.context.editor.removeEntity(this.selection)
+    })
+    actionRow.appendChild(deselectButton)
+    actionRow.appendChild(deleteButton)
+    this.bottombarMenu.appendChild(actionRow)
+  }
+
   _setTool(tool) {
     this.state.brushType = tool
     this.sync()
     this.onChange()
+  }
+
+  _setMode(mode) {
+    this.state.mode = mode
+    this.context.player?.unselectAll?.()
+    if (mode === 'terrain') {
+      this._renderToolMenu()
+    } else {
+      this._renderUnitsMenu()
+    }
+    this.sync()
+    this.onChange()
+  }
+
+  _openPlayersModal() {
+    const maxPlayers = this._getMaxPlayersForCurrentSize()
+    new MapEditorPlayersModal({
+      size: this.context.map.size,
+      players: this.context.editorConfig.players,
+      maxPlayers,
+      onSave: players => this.context.editor.updatePlayersConfig(players),
+    })
+  }
+
+  _getMaxPlayersForCurrentSize() {
+    const size = this.context.map.size
+    if (size <= 16) return 2
+    if (size <= 144) return 3
+    return 4
   }
 
   _renderInfoLines(lines) {
@@ -202,12 +393,22 @@ export class MapEditorHud {
   }
 
   sync() {
+    this.modeButtons.forEach((button, mode) => {
+      button.classList.toggle('is-active', mode === this.state.mode)
+    })
+    if (this.state.mode === 'units') {
+      this._renderUnitsMenu()
+      return
+    }
     this.toolButtons.forEach((button, tool) => {
       button.classList.toggle('is-active', tool === this.state.brushType)
     })
 
+    const isTerrainMode = this.state.mode === 'terrain'
     const isMapBrush = this.state.brushType === 'map'
+    this.bottombarMenu.classList.toggle('is-hidden', !isTerrainMode && !this.selection)
     this.detailLabel.textContent = isMapBrush ? t('editorTerrain') : t('editorElevation')
+    if (!isTerrainMode) return
     this._clearElement(this.detailList)
     this.detailButtons.clear()
 
@@ -235,17 +436,54 @@ export class MapEditorHud {
       button.classList.toggle('is-active', size === this.state.brushSize)
     })
 
-    this._renderInfoLines([
-      t('editorBrushType') +
-        ': ' +
-        t(TOOLS.find(tool => tool.id === this.state.brushType)?.label || 'editorMap'),
-      (isMapBrush ? t('editorTerrain') : t('editorElevation')) +
-        ': ' +
-        (isMapBrush ? t(this.state.mapPaint) : this.state.elevationLevel),
-      t('editorBrushSize') +
-        ': ' +
-        t(BRUSH_SIZES.find(size => size.value === this.state.brushSize)?.label || 'editorBrushSizeTiny'),
-    ])
+    if (!this.selection) {
+      this._renderInfoLines([
+        t('editorBrushType') +
+          ': ' +
+          t(TOOLS.find(tool => tool.id === this.state.brushType)?.label || 'editorMap'),
+        (isMapBrush ? t('editorTerrain') : t('editorElevation')) +
+          ': ' +
+          (isMapBrush ? t(this.state.mapPaint) : this.state.elevationLevel),
+        t('editorBrushSize') +
+          ': ' +
+          t(BRUSH_SIZES.find(size => size.value === this.state.brushSize)?.label || 'editorBrushSizeTiny'),
+      ])
+    }
+  }
+
+  setBottombar(selection = null) {
+    this.selection = selection
+    this.bottombarMenu.textContent = ''
+    this.bottombarInfo.textContent = ''
+
+    if (!selection?.interface?.info) {
+      if (this.state.mode === 'terrain') {
+        this._renderToolMenu()
+      }
+      this.sync()
+      return
+    }
+
+    selection.interface.info(this.bottombarInfo)
+    const wrapper = document.createElement('div')
+    wrapper.className = 'map-editor-panel map-editor-controls-panel'
+    const actionRow = document.createElement('div')
+    actionRow.className = 'bottombar-menu'
+    actionRow.appendChild(
+      this._createIconActionBox(getIconPath('003_50721'), () => this.context.editor.removeEntity(this.selection), t('editorDelete'))
+    )
+    actionRow.appendChild(
+      this._createIconActionBox(
+        getIconPath('010_50721'),
+        () => {
+          this.context.player?.unselectAll()
+          this.setBottombar()
+        },
+        t('editorDeselect')
+      )
+    )
+    wrapper.appendChild(actionRow)
+    this.bottombarMenu.appendChild(wrapper)
   }
 
   updateStatus(cell) {
@@ -275,6 +513,10 @@ export class MapEditorHud {
 
   updateResourceMiniMap(resource) {
     return this.minimapManager.updateResourceMiniMap(resource)
+  }
+
+  updatePlayerMiniMapEvt(owner) {
+    return this.minimapManager.updatePlayerMiniMapEvt(owner)
   }
 
   updateResourcesMiniMap() {

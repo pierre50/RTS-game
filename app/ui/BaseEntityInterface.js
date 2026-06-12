@@ -50,10 +50,10 @@ export function createHitPointsInfo(className, hitPoints, totalHitPoints) {
   wrapper.className = 'hit-points-display'
 
   const bar = document.createElement('div')
-  bar.className = 'hit-points-bar'
+  bar.className = 'hit-points-bar ui-progress'
 
   const fill = document.createElement('div')
-  fill.className = 'hit-points-fill'
+  fill.className = 'hit-points-fill ui-progress__fill'
   bar.appendChild(fill)
 
   const text = createInfoText(className, '')

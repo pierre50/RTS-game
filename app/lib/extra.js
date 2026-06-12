@@ -242,7 +242,7 @@ export class Modal {
     })
 
     const panel = document.createElement('div')
-    panel.className = 'modal-panel'
+    panel.className = 'modal-panel ui-panel-enter'
 
     const header = document.createElement('div')
     header.className = 'modal-header'

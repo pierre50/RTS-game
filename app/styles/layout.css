@@ -20,6 +20,73 @@
   text-shadow: var(--text-shadow-none);
 }
 
+.modal.game-loading {
+  --game-loading-progress: 0%;
+
+  z-index: 4500;
+  background: var(--menu-backdrop);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: wait;
+}
+
+.game-loading__panel {
+  width: min(520px, 100%);
+  min-width: 0;
+  padding: 32px 36px;
+  overflow: visible;
+}
+
+.game-loading__header {
+  justify-content: center;
+}
+
+.game-loading__title.modal-title {
+  color: var(--main-accent-color);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.game-loading__status {
+  min-height: 20px;
+  color: var(--main-text-color);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  text-align: center;
+}
+
+.game-loading__track {
+  height: 22px;
+  padding: 3px;
+}
+
+.game-loading__progress {
+  width: var(--game-loading-progress);
+  transition: width var(--ui-transition-progress);
+}
+
+.game-loading__percent {
+  color: var(--main-accent-color);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .modal.game-loading {
+    align-items: center;
+  }
+
+  .game-loading .game-loading__panel {
+    width: min(520px, 100%);
+    margin: 0;
+    padding: 24px 20px;
+  }
+}
+
 .game-overlay {
   position: absolute;
   top: 50%;
@@ -54,7 +121,6 @@
   background: var(--main-primary-color);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
-  animation: modal-panel-enter var(--ui-transition-panel) both;
   min-width: 280px;
   max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: auto;
@@ -83,18 +149,6 @@
   flex-shrink: 0;
 }
 
-@keyframes modal-panel-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .bar {
   width: 100%;
   background: var(--ui-bar-bg);
@@ -105,13 +159,6 @@
   right: max(8px, env(safe-area-inset-right));
   bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  width: 52px;
-  height: 52px;
-  font-size: var(--font-size-lg);
 }
 
 .orientation-guard {
@@ -123,8 +170,7 @@
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top, var(--orientation-guard-glow), transparent 36%),
-    var(--orientation-guard-backdrop);
+    radial-gradient(circle at top, var(--orientation-guard-glow), transparent 36%), var(--orientation-guard-backdrop);
 }
 
 .orientation-guard.hidden {

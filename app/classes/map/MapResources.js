@@ -1,6 +1,23 @@
 import { Resource } from '../resource'
-import { randomRange, randomItem, getPlainCellsAroundPoint } from '../../lib'
+import { randomRange, randomItem } from '../../lib'
 import { RESOURCE_TYPES } from '../../constants'
+
+const SPACED_RESOURCE_TYPES = new Set([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone])
+
+function hasSpacedResourceAround(grid, i, j, radius = 3) {
+  const minI = Math.max(0, i - radius)
+  const maxI = Math.min(grid.length - 1, i + radius)
+
+  for (let ni = minI; ni <= maxI; ni++) {
+    const row = grid[ni]
+    const minJ = Math.max(0, j - radius)
+    const maxJ = Math.min(row.length - 1, j + radius)
+    for (let nj = minJ; nj <= maxJ; nj++) {
+      if (SPACED_RESOURCE_TYPES.has(row[nj]?.has?.type)) return true
+    }
+  }
+  return false
+}
 
 const RESOURCE_DENSITY_PROFILES = {
   low: {
@@ -206,13 +223,7 @@ export class MapResources {
         !grid[cell.i][cell.j].solid &&
         !grid[cell.i][cell.j].inclined
       ) {
-        let isFree = true
-        getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, cell => {
-          if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(cell.has?.type)) {
-            isFree = false
-          }
-        })
-        isFree &&
+        !hasSpacedResourceAround(grid, cell.i, cell.j) &&
           this.map.resources.add(
             this.map.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.map.context))
           )
@@ -341,13 +352,14 @@ export class MapResources {
           const newJ = cj + dy
           if (!grid[newI]?.[newJ]) continue
           const cell = grid[newI][newJ]
-          let isFree = true
-          getPlainCellsAroundPoint(cell.i, cell.j, grid, 3, c => {
-            if ([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone].includes(c.has?.type)) {
-              isFree = false
-            }
-          })
-          if (isFree && !cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
+          if (
+            !hasSpacedResourceAround(grid, cell.i, cell.j) &&
+            !cell.solid &&
+            cell.category !== 'Water' &&
+            !cell.has &&
+            !cell.border &&
+            !cell.inclined
+          ) {
             cells.push({ i: newI, j: newJ })
           }
         }

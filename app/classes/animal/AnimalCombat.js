@@ -26,6 +26,7 @@ export class AnimalCombat {
 
   detect(instance) {
     const animal = this.animal
+    if (animal.context.editor) return
     if (
       animal.strategy &&
       instance &&
@@ -40,6 +41,7 @@ export class AnimalCombat {
 
   isAttacked(instance) {
     const animal = this.animal
+    if (animal.context.editor) return
     if (!instance || animal.dest || animal.isDead) return
     this.getReaction(instance)
   }

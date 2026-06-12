@@ -18,9 +18,9 @@ export class MinimapInputController {
 
     menu.toggle = document.createElement('button')
     menu.toggle.type = 'button'
-    menu.toggle.className = 'toggle ui-btn'
+    menu.toggle.className = 'toggle hud-icon-btn ui-btn'
     menu.toggle.setAttribute('aria-label', 'Toggle bottom bar')
-    menu.toggle.innerText = 'x'
+    this.updateToggleIcon()
     menu.toggle.addEventListener('pointerdown', this.onTogglePointerDown)
     if (IS_MOBILE) menu.gameHud.appendChild(menu.toggle)
   }
@@ -112,9 +112,13 @@ export class MinimapInputController {
     evt.preventDefault()
     const { menu } = this
     menu.toggled = !menu.toggled
-    menu.toggle.innerText = menu.toggled ? 'o' : 'x'
+    this.updateToggleIcon()
     menu.bottombar.classList.toggle('hidden', menu.toggled)
     evt.stopPropagation()
+  }
+
+  updateToggleIcon() {
+    this.menu.toggle.textContent = 'M'
   }
 
   getMinimapPointer(evt) {

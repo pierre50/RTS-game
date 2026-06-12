@@ -45,6 +45,7 @@ export class Cell extends Container {
     // Terrain tiles need an isometric draw order so taller relief variants are not hidden
     // behind neighboring cells that happened to be added later to the map container.
     this.zIndex = this.i + this.j
+    this.sortableChildren = true
 
     const textureName = randomItem(this.assets)
     const resourceName = textureName.split('_')[1]
@@ -52,6 +53,7 @@ export class Cell extends Container {
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[textureFile]
     this.sprite = new Sprite(texture)
+    this.sprite.zIndex = 0
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.anchor.set(
       Math.floor(texture.width / 2) / texture.width,

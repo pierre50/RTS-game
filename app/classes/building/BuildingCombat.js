@@ -27,6 +27,7 @@ export class BuildingCombat {
 
   detect(instance) {
     const building = this.building
+    if (building.context.editor) return
     if (
       building.range &&
       instance.family !== FAMILY_TYPES.animal &&
@@ -40,6 +41,7 @@ export class BuildingCombat {
 
   isAttacked(instance) {
     const building = this.building
+    if (building.context.editor) return
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)
     if (

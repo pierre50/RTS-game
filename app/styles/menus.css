@@ -1,13 +1,31 @@
 #main-menu {
+  --menu-page-padding: 0;
+  --menu-page-align: center;
+  --menu-page-overflow: visible;
+  --menu-panel-width: min(100%, 960px);
+  --menu-panel-max-width: calc(100vw - 32px);
+  --menu-panel-min-height: auto;
+  --menu-panel-padding: 44px 64px;
+  --menu-home-gap: var(--ui-gap-24);
+  --menu-home-padding: 0 64px 44px;
+  --menu-logo-width: min(620px, 88vw);
+  --menu-logo-max-height: none;
+  --menu-logo-margin: 0;
+  --menu-buttons-width: auto;
+  --menu-buttons-gap: var(--ui-gap-8);
+  --menu-buttons-margin: 0;
+  --menu-home-button-padding: 8px 20px;
+  --menu-home-button-font-size: var(--font-size-lg);
+
   position: fixed;
   inset: 0;
   z-index: 2000;
   display: flex;
-  align-items: center;
+  align-items: var(--menu-page-align);
   justify-content: center;
-  background:
-    radial-gradient(circle at top, var(--menu-backdrop-glow), transparent 42%),
-    linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
+  padding: var(--menu-page-padding);
+  overflow-y: var(--menu-page-overflow);
+  background: var(--menu-backdrop);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -18,32 +36,20 @@
   flex-direction: column;
   align-items: center;
   gap: var(--ui-gap-18);
-  padding: 44px 64px;
-  width: min(100%, 960px);
-  max-width: calc(100vw - 32px);
+  width: var(--menu-panel-width);
+  max-width: var(--menu-panel-max-width);
+  min-height: var(--menu-panel-min-height);
+  padding: var(--menu-panel-padding);
   background: var(--main-primary-color);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
-  animation: menu-panel-enter var(--ui-transition-panel) both;
 }
 
 .menu-panel--home {
-  gap: var(--ui-gap-24);
-  padding-top: 0;
+  gap: var(--menu-home-gap);
+  padding: var(--menu-home-padding);
   background: transparent;
   border: 0;
-}
-
-@keyframes menu-panel-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 img.menu-title {
@@ -55,7 +61,9 @@ img.menu-title {
 
 .menu-title-shell {
   position: relative;
-  width: min(620px, 88vw);
+  width: var(--menu-logo-width);
+  max-height: var(--menu-logo-max-height);
+  margin: var(--menu-logo-margin);
   aspect-ratio: 1672 / 941;
 }
 
@@ -67,10 +75,6 @@ img.menu-title {
   transition:
     opacity 360ms ease,
     transform 420ms ease;
-}
-
-.menu-title-shell.is-loaded::before {
-  opacity: 0;
 }
 
 .menu-title-shell.is-loaded img.menu-title {
@@ -90,18 +94,6 @@ img.menu-title {
   }
 }
 
-@keyframes menu-title-placeholder {
-  from {
-    opacity: 0.35;
-    transform: scale(0.985);
-  }
-
-  to {
-    opacity: 0.85;
-    transform: scale(1.015);
-  }
-}
-
 div.menu-title {
   margin: 0;
   color: var(--main-accent-color);
@@ -118,6 +110,12 @@ div.menu-title {
   gap: var(--ui-gap-8);
 }
 
+.menu-panel--home .button-group {
+  width: var(--menu-buttons-width);
+  gap: var(--menu-buttons-gap);
+  margin: var(--menu-buttons-margin);
+}
+
 .button-group .ui-btn,
 .modal-menu .ui-btn {
   width: var(--ui-button-width);
@@ -127,7 +125,8 @@ div.menu-title {
 .menu-panel--home .button-group .home-btn {
   width: var(--ui-button-width-home);
   height: var(--ui-button-height-home);
-  font-size: var(--font-size-lg);
+  padding: var(--menu-home-button-padding);
+  font-size: var(--menu-home-button-font-size);
 }
 
 .modal-menu {
@@ -172,41 +171,6 @@ div.menu-title {
   flex-shrink: 0;
 }
 
-.ui-checkbox {
-  appearance: none;
-  display: grid;
-  place-items: center;
-  width: var(--ui-checkbox-size);
-  height: var(--ui-checkbox-size);
-  margin: 0;
-  flex-shrink: 0;
-  cursor: pointer;
-  background: var(--form-surface-color);
-  border: var(--border-slot);
-  box-shadow:
-    inset 1px 1px 0 rgba(61, 32, 0, 0.35),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.ui-checkbox::before {
-  content: '';
-  width: calc(var(--ui-checkbox-size) - 10px);
-  height: calc(var(--ui-checkbox-size) - 10px);
-  transform: scale(0);
-  background: var(--main-accent-color);
-  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.ui-checkbox:checked::before {
-  transform: scale(1);
-}
-
-.ui-checkbox:hover,
-.ui-checkbox:focus {
-  outline: none;
-  background: var(--main-accent-hover);
-}
-
 .lobby-panel {
   min-width: 0;
   padding: 36px 48px;
@@ -221,20 +185,43 @@ div.menu-title {
   max-width: 100%;
 }
 
+.lobby-layout--wide {
+  width: min(96vw, 1180px);
+}
+
+.map-editor-players-modal .lobby-layout {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 0;
+  width: min(96vw, 1180px);
+  max-width: 100%;
+}
+
+.map-editor-players-modal .lobby-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .lobby-col {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-8);
+  min-width: 0;
 }
 
 .player-table {
+  width: 100%;
+  min-width: 0;
   overflow-x: auto;
 }
 
 .player-table-header {
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
   gap: var(--ui-gap-8);
+  width: 100%;
   padding: 5px 10px;
   font-size: var(--font-size-sm);
   font-weight: bold;
@@ -242,15 +229,17 @@ div.menu-title {
 }
 
 .player-row {
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
   gap: var(--ui-gap-8);
+  width: 100%;
   padding: 5px 10px;
   align-items: center;
 }
 
 .player-row--odd {
-  background: rgba(61, 32, 0, 0.06);
+  background: var(--surface-row-subtle);
 }
 
 .player-name {
@@ -348,8 +337,8 @@ div.menu-title {
   align-items: center;
   gap: var(--ui-gap-8);
   padding: 7px 10px;
-  background: rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(139, 105, 20, 0.25);
+  background: var(--surface-row-dark);
+  border: 1px solid var(--border-row-subtle);
 }
 
 .save-list-name {
@@ -380,7 +369,7 @@ div.menu-title {
   align-items: stretch;
   gap: var(--ui-gap-8);
   padding-top: var(--ui-gap-10);
-  border-top: 1px solid rgba(139, 105, 20, 0.22);
+  border-top: 1px solid var(--border-divider-subtle);
 }
 
 .save-list-import-btn {
@@ -409,37 +398,35 @@ div.menu-title {
 }
 
 .save-list-import-status--err {
-  color: #c0392b;
+  color: var(--text-color-danger);
   opacity: 1;
 }
 
 @media (max-width: 900px) {
   #main-menu {
-    padding: 16px;
-    align-items: stretch;
-    overflow-y: auto;
+    --menu-page-padding: 16px;
+    --menu-page-align: stretch;
+    --menu-page-overflow: auto;
+    --menu-panel-width: 100%;
+    --menu-panel-max-width: none;
+    --menu-panel-min-height: calc(100dvh - 32px);
+    --menu-panel-padding: 24px 16px;
+    --menu-home-gap: 18px;
+    --menu-home-padding: 12px 16px 20px;
+    --menu-logo-width: min(100%, 420px);
+    --menu-logo-max-height: min(34dvh, 280px);
+    --menu-logo-margin: auto 0;
+    --menu-buttons-width: 100%;
+    --menu-buttons-gap: 10px;
+    --menu-home-button-padding: 10px 20px;
   }
 
   .menu-panel {
     justify-content: center;
-    width: 100%;
-    max-width: none;
-    min-height: calc(100dvh - 32px);
-    padding: 24px 16px;
   }
 
   .menu-panel--home {
     justify-content: space-between;
-    gap: 18px;
-    padding-top: 12px;
-    padding-bottom: 20px;
-  }
-
-  .menu-title-shell {
-    width: min(100%, 420px);
-    max-height: min(34dvh, 280px);
-    margin-top: auto;
-    margin-bottom: auto;
   }
 
   .menu-copyright {
@@ -476,15 +463,6 @@ div.menu-title {
   .modal-menu .ui-btn,
   .menu-panel--home .button-group .home-btn {
     width: 100%;
-  }
-
-  .menu-panel--home .button-group {
-    gap: 10px;
-  }
-
-  .menu-panel--home .button-group .home-btn {
-    padding: 10px 20px;
-    font-size: var(--font-size-lg);
   }
 
   .config-form,
@@ -525,25 +503,13 @@ div.menu-title {
 
 @media (max-width: 420px) {
   #main-menu {
-    padding: 12px;
-  }
-
-  .menu-panel {
-    min-height: calc(100dvh - 24px);
-    padding: 18px 12px;
-  }
-
-  .menu-panel--home {
-    gap: 14px;
-  }
-
-  .menu-title-shell {
-    width: min(100%, 360px);
-    max-height: min(28dvh, 220px);
-  }
-
-  .menu-panel--home .button-group .home-btn {
-    font-size: var(--font-size-base);
+    --menu-page-padding: 12px;
+    --menu-panel-min-height: calc(100dvh - 24px);
+    --menu-panel-padding: 18px 12px;
+    --menu-home-gap: 14px;
+    --menu-logo-width: min(100%, 360px);
+    --menu-logo-max-height: min(28dvh, 220px);
+    --menu-home-button-font-size: var(--font-size-base);
   }
 
   .menu-copyright {
@@ -554,35 +520,29 @@ div.menu-title {
 
 @media (max-height: 760px) {
   #main-menu {
-    align-items: flex-start;
-    overflow-y: auto;
-    padding: 16px;
+    --menu-page-padding: 16px;
+    --menu-page-align: flex-start;
+    --menu-page-overflow: auto;
+    --menu-panel-min-height: auto;
+    --menu-home-gap: 16px;
+    --menu-home-padding: 12px 16px 20px;
+    --menu-logo-width: min(100%, 560px);
+    --menu-logo-max-height: min(34vh, 220px);
+    --menu-logo-margin: 0 auto;
+    --menu-buttons-width: min(100%, 420px);
+    --menu-buttons-gap: 10px;
+    --menu-buttons-margin: 0 auto;
+    --menu-home-button-padding: 10px 20px;
+    --menu-home-button-font-size: var(--font-size-lg);
   }
 
   .menu-panel--home {
     width: 100%;
-    min-height: auto;
     justify-content: flex-start;
-    gap: 16px;
-    padding: 12px 16px 20px;
-  }
-
-  .menu-title-shell {
-    width: min(100%, 560px);
-    max-height: min(34vh, 220px);
-    margin: 0 auto;
-  }
-
-  .menu-panel--home .button-group {
-    width: min(100%, 420px);
-    gap: 10px;
-    margin: 0 auto;
   }
 
   .menu-panel--home .button-group .home-btn {
     width: 100%;
-    padding: 10px 20px;
-    font-size: var(--font-size-lg);
   }
 
   .menu-copyright {
@@ -596,32 +556,29 @@ div.menu-title {
 }
 
 @media (max-width: 900px) and (max-height: 520px) {
+  #main-menu {
+    --menu-home-padding: 12px 16px;
+    --menu-logo-width: min(100%, 500px);
+    --menu-logo-max-height: min(36vh, 220px);
+    --menu-logo-margin: auto 0;
+    --menu-buttons-width: min(100%, 320px);
+    --menu-buttons-margin: auto 0 auto auto;
+    --menu-home-button-padding: 9px 18px;
+    --menu-home-button-font-size: var(--font-size-base);
+  }
+
   .menu-panel--home {
     display: grid;
     grid-template-columns: minmax(280px, 1.2fr) minmax(240px, 0.8fr);
     align-items: center;
     column-gap: 24px;
     row-gap: 0;
-    padding: 12px 16px;
+    padding: var(--menu-home-padding);
   }
 
-  .menu-title-shell {
-    width: min(100%, 500px);
-    max-height: min(36vh, 220px);
-    margin: auto 0;
-    align-self: center;
-  }
-
+  .menu-title-shell,
   .menu-panel--home .button-group {
-    width: min(100%, 320px);
-    gap: 10px;
-    margin: auto 0 auto auto;
     align-self: center;
-  }
-
-  .menu-panel--home .button-group .home-btn {
-    padding: 9px 18px;
-    font-size: var(--font-size-base);
   }
 
   .menu-copyright {
@@ -634,5 +591,4 @@ div.menu-title {
     transform: none;
     text-align: right;
   }
-
 }

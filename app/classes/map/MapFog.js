@@ -36,6 +36,11 @@ export class MapFog {
 
     const terrainContainer = new Container()
     terrainContainer.sortableChildren = true
+    const backfillContainer = new Container()
+    backfillContainer.label = 'terrainBackfillBake'
+    backfillContainer.zIndex = -2
+    backfillContainer.sortableChildren = true
+    terrainContainer.addChild(backfillContainer)
     const backfillSprites = []
     for (const source of this.map.terrainBackfill?.children || []) {
       const sprite = new Sprite(source.texture)
@@ -44,7 +49,7 @@ export class MapFog {
       sprite.roundPixels = source.roundPixels
       sprite.zIndex = source.zIndex
       sprite.eventMode = 'none'
-      terrainContainer.addChild(sprite)
+      backfillContainer.addChild(sprite)
       backfillSprites.push(sprite)
     }
     for (let i = 0; i <= this.map.size; i++) {
@@ -76,6 +81,7 @@ export class MapFog {
     }
 
     for (const sprite of backfillSprites) sprite.destroy()
+    backfillContainer.destroy()
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
 
     const { player } = this.map.context

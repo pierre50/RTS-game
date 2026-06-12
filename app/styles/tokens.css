@@ -1,0 +1,151 @@
+:root {
+  --main-primary-color: #e4c99b;
+  --form-surface-color: #d8b878;
+  --main-border-radius: 0px;
+  --main-border-radius-lg: 0px;
+  --main-text-color: #1a0e00;
+  --main-accent-color: #3d2000;
+  --main-accent-hover: #c9a572;
+
+  --border-light-color: #efdec7;
+  --border-btn: 2px outset var(--border-light-color);
+  --border-slot: 2px inset var(--border-light-color);
+  --panel-border: 4px double #f1dfb9;
+  --main-box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+
+  --dev-console-ok-color: #ffe9a8;
+  --dev-console-error-color: #ff9a8f;
+  --dev-console-log-color: #f2dfbb;
+
+  --msg-color: #ff5050;
+  --msg-bg: #0a0602;
+  --msg-border: #9a2020;
+  --msg-success-color: #4cde7a;
+  --msg-success-bg: #021008;
+  --msg-success-border: #1a6e3c;
+  --msg-warning-color: #ffb340;
+  --msg-warning-bg: #080601;
+  --msg-warning-border: #8a5a0a;
+  --msg-padding: 6px 18px;
+  --msg-font-size: var(--font-size-base);
+  --msg-border-radius: var(--main-border-radius);
+  --msg-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%);
+  --msg-inset-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.12), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 18px;
+  --font-size-display: 34px;
+  --font-size-hero: 50px;
+
+  --text-color-inverse: #f8e9cb;
+  --text-color-white: #ffffff;
+  --text-color-danger: #c0392b;
+  --text-shadow-light-ui: 1px 1px white;
+  --text-shadow-dark-ui: 1px 1px 0 black;
+  --text-shadow-none: none;
+  --checkbox-check-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
+
+  --surface-dark-weak: rgba(0, 0, 0, 0.25);
+  --surface-dark-soft: rgba(0, 0, 0, 0.42);
+  --surface-dark-medium: rgba(0, 0, 0, 0.5);
+  --surface-dark-strong: rgba(0, 0, 0, 0.55);
+  --surface-dark-heavy: rgba(0, 0, 0, 0.72);
+  --surface-dark-solid: #080604;
+  --surface-black-soft: #00000040;
+  --surface-black-solid: black;
+  --surface-black-light: rgba(0, 0, 0, 0.42);
+  --surface-white-faint: rgba(255, 255, 255, 0.06);
+  --surface-row-subtle: rgba(61, 32, 0, 0.06);
+  --surface-row-dark: rgba(0, 0, 0, 0.08);
+  --border-row-subtle: rgba(139, 105, 20, 0.25);
+  --border-divider-subtle: rgba(139, 105, 20, 0.22);
+
+  --menu-backdrop-start: #221912;
+  --menu-backdrop-end: #18130e;
+  --menu-backdrop-glow: rgba(90, 66, 42, 0.18);
+  --menu-backdrop:
+    radial-gradient(circle at top, var(--menu-backdrop-glow), transparent 42%),
+    linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
+  --menu-title-shadow: rgba(0, 0, 0, 0.3);
+  --home-button-bg: rgba(0, 0, 0, 0.45);
+
+  --orientation-guard-glow: rgba(255, 219, 167, 0.12);
+  --orientation-guard-backdrop: rgba(8, 6, 4, 0.94);
+
+  --status-health-border: #2f120d;
+  --status-health-top: #8b2e1d;
+  --status-health-bottom: #6d1d14;
+  --status-health-highlight: rgba(255, 208, 196, 0.25);
+  --status-health-shadow: rgba(46, 10, 7, 0.65);
+  --status-progress-top: #66de62;
+  --status-progress-bottom: #2f9e37;
+  --status-progress-highlight: rgba(225, 255, 201, 0.35);
+  --status-progress-shadow: rgba(15, 69, 25, 0.5);
+  --status-health-background: linear-gradient(180deg, var(--status-health-top) 0%, var(--status-health-bottom) 100%);
+  --status-progress-background: linear-gradient(
+    180deg,
+    var(--status-progress-top) 0%,
+    var(--status-progress-bottom) 100%
+  );
+  --status-health-inset-shadow:
+    inset 1px 1px 0 var(--status-health-highlight), inset -1px -1px 0 var(--status-health-shadow);
+  --status-progress-inset-shadow:
+    inset 1px 1px 0 var(--status-progress-highlight), inset -1px -1px 0 var(--status-progress-shadow);
+
+  --ui-gap-1: 1px;
+  --ui-gap-5: 5px;
+  --ui-gap-6: 6px;
+  --ui-gap-8: 8px;
+  --ui-gap-10: 10px;
+  --ui-gap-12: 12px;
+  --ui-gap-16: 16px;
+  --ui-gap-18: 18px;
+  --ui-gap-24: 24px;
+  --ui-gap-40: 40px;
+
+  --ui-slot-size: 45px;
+  --ui-resource-icon-width: 22px;
+  --ui-resource-icon-height: 13px;
+  --ui-button-width: 250px;
+  --ui-button-width-home: 320px;
+  --ui-button-height: 48px;
+  --ui-button-height-home: 60px;
+  --ui-control-height: 44px;
+  --ui-control-height-compact: 36px;
+  --ui-control-padding-x: 10px;
+  --ui-control-font-size: var(--font-size-sm);
+  --ui-range-thumb-size: 28px;
+  --ui-range-track-height: 12px;
+  --ui-select-arrow-size: 5px;
+  --ui-checkbox-size: 26px;
+
+  --ui-transition-fast: 120ms steps(2, end);
+  --ui-transition-panel: 180ms ease-out;
+  --ui-transition-progress: 180ms ease-out;
+  --ui-hover-brightness: 1.05;
+  --ui-press-offset: 1px;
+  --ui-hover-scale: 1.02;
+  --ui-control-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  --ui-panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%);
+  --ui-button-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 36%);
+  --ui-inset-shadow: inset 1px 1px 0 rgba(61, 32, 0, 0.35), inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+  --ui-outset-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45), inset -1px -1px 0 rgba(61, 32, 0, 0.35);
+  --ui-button-shadow-raised: inset 1px 1px 0 rgba(255, 255, 255, 0.22), inset -1px -1px 0 rgba(0, 0, 0, 0.28);
+  --ui-button-shadow-pressed: inset 1px 1px 0 rgba(0, 0, 0, 0.28), inset -1px -1px 0 rgba(255, 255, 255, 0.16);
+  --ui-scrollbar-active-shadow: inset 1px 1px 0 var(--surface-dark-strong), inset -1px -1px 0 rgba(255, 255, 255, 0.2);
+
+  --ui-bar-bg: #d9bf8f;
+  --ui-bar-border: 2px outset #f1dfb9;
+  --ui-slot-border: 2px inset #f1dfb9;
+  --ui-text-color: #3d2000;
+  --ui-text-shadow: var(--text-shadow-light-ui);
+  --ui-plain-text-shadow: var(--text-shadow-light-ui);
+  --ui-map-shadow-dark: #9b9081;
+  --ui-map-shadow-light: #efdec7;
+  --focus-outline-color: rgba(61, 32, 0, 0.85);
+
+  --debug-overlay-bg: rgba(15, 18, 24, 0.9);
+  --debug-overlay-border: rgba(255, 255, 255, 0.14);
+  --debug-overlay-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}

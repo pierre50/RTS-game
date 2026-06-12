@@ -118,6 +118,7 @@ export function updateVisibility(instance) {
   const { i: cx, j: cy, sight, owner, context, isDead } = instance
   const map = context.map
   const player = context.player
+  if (!owner?.views || !player?.views || !map?.grid) return
   const sightSq = sight * sight
   const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
 
@@ -175,7 +176,7 @@ export function updateVisibility(instance) {
         globalCell.removeFog()
       }
 
-      if (globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
+      if (!instance.context.editor && globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
         if (distSq <= globalCell.has.sight ** 2) {
           globalCell.has.detect(instance)

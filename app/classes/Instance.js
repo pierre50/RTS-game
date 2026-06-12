@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
+import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 
 export class Instance extends Container {
@@ -68,6 +68,8 @@ export class Instance extends Container {
     const existing = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (existing) this.removeChild(existing)
     if (!this.totalHitPoints) return
+    if (this.family !== FAMILY_TYPES.unit && this.family !== FAMILY_TYPES.building) return
+    if (!this.owner?.isPlayed) return
     const barWidth = 26
     const barHeight = 5
     const x = -barWidth / 2

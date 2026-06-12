@@ -12,6 +12,7 @@ import { save as saveToStorage } from '../serialization/SaveStorage'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { getCameraZoom, getGameSpeed } from '../lib/settings'
+import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 
 /**
  * Main Display Object
@@ -54,16 +55,37 @@ export default class Game extends Container {
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     if (config !== null) {
-      this.start()
+      this.start().catch(error => {
+        this._loadingScreen?.destroy()
+        console.error('Unable to start game', error)
+        this.quit()
+      })
     }
   }
 
-  start() {
+  async start() {
     this._acquireWakeLock()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
     this.context.scheduler.timeScale = speed
-    this._bootFromConfig(this.config)
+    this._loadingScreen = new GameLoadingScreen()
+    this._loadingScreen.update('generatingTerrain', 0.02)
+    await this._yieldToBrowser()
+    try {
+      await this._bootFromConfig(this.config)
+    } finally {
+      this._loadingScreen?.destroy()
+      this._loadingScreen = null
+    }
+  }
+
+  _yieldToBrowser() {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  async _updateLoading(messageKey, progress) {
+    this._loadingScreen?.update(messageKey, progress)
+    await this._yieldToBrowser()
   }
 
   async _acquireWakeLock() {
@@ -204,6 +226,8 @@ export default class Game extends Container {
   }
 
   _destroyRuntime() {
+    this._loadingScreen?.destroy()
+    this._loadingScreen = null
     this._resetOverlayDom()
     this._removeWindowListeners()
     if (this.context.map) {
@@ -218,7 +242,7 @@ export default class Game extends Container {
     this._resetRuntimeState()
   }
 
-  _bootFromConfig(config) {
+  async _bootFromConfig(config) {
     this._createRuntime()
     this._applyMapConfig(this.context.map, config)
     if (this._restartSeed != null) {
@@ -228,11 +252,19 @@ export default class Game extends Container {
     this._createUiRuntime()
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
+    const mapGenerationStartedAt = performance.now()
     this.context.map.generateMap(posCount)
+    this.context.map.generationTimings = {
+      terrainAndSpawns: performance.now() - mapGenerationStartedAt,
+    }
+    await this._updateLoading('generatingPlayers', 0.2)
     this.context.players = this.context.map.generatePlayers(config.players || null)
     this.context.player = this.context.players[0]
     this.context.menu.init()
-    this.context.map.stylishMap()
+    await this.context.map.stylishMap({
+      onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),
+    })
+    await this._updateLoading('finalizingWorld', 0.96)
     this.context.controls.init()
 
     this._mountRuntime()
@@ -271,13 +303,21 @@ export default class Game extends Container {
     )
   }
 
-  restart() {
+  async restart() {
     this._restartSeed = this.context.map?.seed
     this._destroyRuntime()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
     this.context.scheduler.timeScale = speed
-    this._bootFromConfig(this.config)
+    this._loadingScreen = new GameLoadingScreen()
+    this._loadingScreen.update('generatingTerrain', 0.02)
+    await this._yieldToBrowser()
+    try {
+      await this._bootFromConfig(this.config)
+    } finally {
+      this._loadingScreen?.destroy()
+      this._loadingScreen = null
+    }
   }
 
   quit() {

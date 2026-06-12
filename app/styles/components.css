@@ -1,0 +1,16 @@
+.ui-panel-enter {
+  animation: ui-panel-enter var(--ui-transition-panel) both;
+}
+
+.ui-progress {
+  overflow: hidden;
+  background: var(--form-surface-color);
+  border: var(--border-slot);
+  box-shadow: var(--ui-inset-shadow);
+}
+
+.ui-progress__fill {
+  height: 100%;
+  background: var(--status-progress-background);
+  box-shadow: var(--status-progress-inset-shadow);
+}

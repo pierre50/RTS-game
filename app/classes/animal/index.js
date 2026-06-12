@@ -96,8 +96,9 @@ export class Animal extends Instance {
 
     this.on('pointerup', evt => {
       const {
-        context: { controls, player, menu },
+        context: { controls, player, menu, editor },
       } = this
+      if (editor?.handleEntityInteraction(this)) return
       if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }

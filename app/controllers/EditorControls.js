@@ -13,6 +13,12 @@ export class EditorControls extends Container {
     super()
     this.context = context
     this.cameraController = new CameraController(context)
+    this.mouse = { prevent: false }
+    this.mouseBuilding = null
+    this.mouseRectangle = false
+    this.clicked = false
+    this.doubleClicked = false
+    this.double = null
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
@@ -112,6 +118,22 @@ export class EditorControls extends Container {
     this.cameraController.stopMouseMove()
   }
 
+  instanceInCamera(instance) {
+    return this.cameraController.instanceInCamera(instance)
+  }
+
+  instanceIsAudible(instance) {
+    const {
+      context: { map },
+    } = this
+
+    if (!this.instanceInCamera(instance)) return false
+    if (map.revealEverything) return true
+    if (instance.owner?.isPlayed || instance.owner?.owner?.isPlayed) return true
+
+    return Boolean(instance.visible || instance.owner?.visible || instance.target?.visible)
+  }
+
   moveCamera(dir, speed, isSpeedDivided) {
     this.cameraController.move(dir, speed, isSpeedDivided)
     this._refreshHover()
@@ -165,7 +187,7 @@ export class EditorControls extends Container {
     const cell = this.getCellFromPointer(evt)
     this.hoveredCell = cell
     this.context.hud.updateStatus(cell)
-    if (!this.pointerDown || !cell) return
+    if (!this.pointerDown || !cell || !this.context.editor.canPaintTerrain()) return
     this.paint(cell)
   }
 
@@ -173,6 +195,15 @@ export class EditorControls extends Container {
     if (evt.button !== 0) return
     const cell = this.getCellFromPointer(evt)
     if (!cell) return
+    if (this.context.editor.canSelectEntities()) {
+      if (!cell.has) {
+        this.context.editor.handleUnitsModeMapClick(cell)
+      }
+      return
+    }
+    if (!this.context.editor.canPaintTerrain()) return
+    if (cell.has) return
+    this.context.player?.unselectAll?.()
     this.pointerDown = true
     this.paint(cell)
   }
@@ -180,6 +211,7 @@ export class EditorControls extends Container {
   onMouseUp() {
     this.pointerDown = false
     this.lastPaintSignature = null
+    this.mouse.prevent = false
   }
 
   paint(cell) {
@@ -194,5 +226,23 @@ export class EditorControls extends Container {
   _refreshHover() {
     if (!this.hoveredCell) return
     this.context.hud.updateStatus(this.hoveredCell)
+  }
+
+  removeMouseBuilding() {
+    this.mouseBuilding = null
+  }
+
+  setMouseBuilding(building) {
+    this.mouseBuilding = building
+  }
+
+  getCellOnCamera(callback) {
+    if (typeof callback !== 'function') return
+    for (let i = 0; i <= this.context.map.size; i++) {
+      for (let j = 0; j <= this.context.map.size; j++) {
+        const cell = this.context.map.grid[i]?.[j]
+        if (cell) callback(cell)
+      }
+    }
   }
 }

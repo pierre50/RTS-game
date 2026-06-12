@@ -3,12 +3,9 @@ import { t } from '../lib/lang'
 import { playClickSound } from '../lib/uiSound'
 import { buildSelectRow } from '../ui/formUtils'
 import { MAP_EDITOR_SIZES } from '../config/mapSizes'
+import { MAP_TYPES } from '../config/mapTypes'
 
-const BASE_TERRAINS = [
-  { label: () => t('Grass'), value: 'Grass' },
-  { label: () => t('Jungle'), value: 'Jungle' },
-  { label: () => t('Desert'), value: 'Desert' },
-]
+const MAP_PATTERNS = [{ label: () => t('editorMapPatternBlank'), value: 'blank' }, ...MAP_TYPES]
 
 export default class MapEditorConfig {
   constructor({ onCreate }) {
@@ -17,7 +14,11 @@ export default class MapEditorConfig {
     this.config = {
       name: t('editorDefaultMapName'),
       size: MAP_EDITOR_SIZES[0].value,
-      baseTerrain: 'Grass',
+      mapType: 'blank',
+      players: [
+        { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
+        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', team: null, isHuman: false, difficulty: 'medium' },
+      ],
     }
 
     this._modal = new Modal({
@@ -33,24 +34,6 @@ export default class MapEditorConfig {
     const form = document.createElement('div')
     form.className = 'config-form'
 
-    const nameRow = document.createElement('div')
-    nameRow.className = 'config-row'
-
-    const nameLabel = document.createElement('label')
-    nameLabel.textContent = t('mapNameLabel')
-    nameRow.appendChild(nameLabel)
-
-    this.nameInput = document.createElement('input')
-    this.nameInput.type = 'text'
-    this.nameInput.className = 'ui-input'
-    this.nameInput.value = this.config.name
-    this.nameInput.maxLength = 40
-    this.nameInput.addEventListener('input', evt => {
-      this.config.name = evt.target.value
-    })
-    nameRow.appendChild(this.nameInput)
-    form.appendChild(nameRow)
-
     form.appendChild(
       buildSelectRow(t('mapSizeLabel'), MAP_EDITOR_SIZES, this.config.size, value => {
         this.config.size = parseInt(value)
@@ -58,8 +41,8 @@ export default class MapEditorConfig {
     )
 
     form.appendChild(
-      buildSelectRow(t('editorBaseTerrainLabel'), BASE_TERRAINS, this.config.baseTerrain, value => {
-        this.config.baseTerrain = value
+      buildSelectRow(t('editorMapPatternLabel'), MAP_PATTERNS, this.config.mapType, value => {
+        this.config.mapType = value
       })
     )
 
@@ -89,12 +72,8 @@ export default class MapEditorConfig {
   }
 
   _submit() {
-    const name = (this.nameInput?.value || '').trim()
     this.destroy()
-    this.onCreate({
-      ...this.config,
-      name: name || t('editorDefaultMapName'),
-    })
+    this.onCreate({ ...this.config })
   }
 
   destroy() {

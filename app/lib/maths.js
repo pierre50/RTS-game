@@ -1,4 +1,4 @@
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES } from '../constants'
 
 const HALF_CELL_WIDTH = CELL_WIDTH / 2
 const HALF_CELL_HEIGHT = CELL_HEIGHT / 2
@@ -143,7 +143,8 @@ export function instancesDistance(a, b, useCartesian = true) {
  */
 export function getInstanceZIndex(instance) {
   const pos = isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH)
-  return pos[0] + pos[1]
+  const footprintOffset = instance.family === FAMILY_TYPES.building && instance.size === 3 ? 2 : 0
+  return pos[0] + pos[1] + footprintOffset
 }
 
 /**

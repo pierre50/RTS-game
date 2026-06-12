@@ -121,27 +121,12 @@
   overflow: hidden;
   border: 1px solid var(--status-health-border);
   border-radius: 3px;
-  background: linear-gradient(180deg, var(--status-health-top) 0%, var(--status-health-bottom) 100%);
-  box-shadow:
-    inset 1px 1px 0 var(--status-health-highlight),
-    inset -1px -1px 0 var(--status-health-shadow);
-}
-
-.bottombar-info .hit-points-bar::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  pointer-events: none;
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 2px, rgba(0, 0, 0, 0.06) 2px 4px);
+  background: var(--status-health-background);
+  box-shadow: var(--status-health-inset-shadow);
 }
 
 .bottombar-info .hit-points-fill {
-  height: 100%;
   border-radius: 2px;
-  background: linear-gradient(180deg, var(--status-progress-top) 0%, var(--status-progress-bottom) 100%);
-  box-shadow:
-    inset 1px 1px 0 var(--status-progress-highlight),
-    inset -1px -1px 0 var(--status-progress-shadow);
 }
 
 .bottombar-menu {
@@ -264,9 +249,7 @@
   border-radius: var(--msg-border-radius);
   border-width: 2px;
   border-style: outset;
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: var(--msg-inset-shadow);
   animation: msg-fade 3s ease forwards;
 }
 
@@ -331,7 +314,7 @@
 
 .map-editor-columns {
   display: grid;
-  grid-template-columns: minmax(120px, 0.9fr) minmax(180px, 1.5fr) minmax(140px, 1fr);
+  grid-template-columns: minmax(120px, 0.95fr) minmax(180px, 1.5fr) minmax(180px, 1.5fr);
   gap: var(--ui-gap-8);
   align-items: start;
 }
@@ -437,19 +420,19 @@
 
 .message-content--success {
   color: var(--msg-success-color);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-success-bg);
+  background: var(--msg-sheen), var(--msg-success-bg);
   border-color: var(--msg-success-border);
 }
 
 .message-content--warning {
   color: var(--msg-warning-color);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-warning-bg);
+  background: var(--msg-sheen), var(--msg-warning-bg);
   border-color: var(--msg-warning-border);
 }
 
 .message-content--error {
   color: var(--msg-color);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%), var(--msg-bg);
+  background: var(--msg-sheen), var(--msg-bg);
   border-color: var(--msg-border);
 }
 
@@ -502,15 +485,24 @@
   align-items: center;
 }
 
-.player-stats-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
+.hud-icon-btn {
   width: 32px;
   height: 32px;
   min-height: initial;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
   font-size: var(--font-size-lg);
+  line-height: 1;
+  text-align: center;
+}
+
+.player-stats-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
   z-index: 12;
 }
 
