@@ -309,7 +309,9 @@ export class MapGeneration {
     this.map.bakeTerrainToChunks()
     this.map.ready = true
     this.map.generationTimings = timings
-    console.table(Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`])))
+    console.table(
+      Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`]))
+    )
     menu.updateResourcesMiniMap()
   }
 
@@ -422,7 +424,11 @@ export class MapGeneration {
     const z = 0
     this.map.grid = []
     this.map.invalidateReliefCoastDistances()
-    const terrain = this.map.generateTerrain(this.map.size ? this.map.size + 1 : 121, this.map.mapType || 'plain', this.map.seed)
+    const terrain = this.map.generateTerrain(
+      this.map.size ? this.map.size + 1 : 121,
+      this.map.mapType || 'plain',
+      this.map.seed
+    )
     this.map.size = terrain.length - 1
 
     const terrainMap = {

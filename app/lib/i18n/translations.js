@@ -86,7 +86,7 @@ export const TRANSLATIONS = {
     storageFull: 'Stockage plein. Supprimez une sauvegarde.',
     corruptSave: 'Sauvegarde corrompue.',
     exportSave: 'Exporter (.rts)',
-    exportError: 'Échec de l\'export.',
+    exportError: "Échec de l'export.",
     importSave: 'Importer une sauvegarde (.rts)',
     importSuccess: 'Sauvegarde « {name} » importée.',
     importError: 'Fichier .rts invalide ou corrompu.',

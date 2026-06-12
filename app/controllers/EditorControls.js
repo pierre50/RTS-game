@@ -94,7 +94,9 @@ export class EditorControls extends Container {
 
   isMouseInApp(evt) {
     const rect = this.context.gamebox.getBoundingClientRect()
-    return evt.clientX >= rect.left && evt.clientX <= rect.right && evt.clientY >= rect.top && evt.clientY <= rect.bottom
+    return (
+      evt.clientX >= rect.left && evt.clientX <= rect.right && evt.clientY >= rect.top && evt.clientY <= rect.bottom
+    )
   }
 
   getCellFromPointer(evt) {
@@ -175,7 +177,10 @@ export class EditorControls extends Container {
 
     const double = this.keyPressedCount > 1
     if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-      this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + ticker.deltaTime * KEYBOARD_CAMERA_ACCELERATION)
+      this.keySpeed = Math.min(
+        KEYBOARD_CAMERA_MAX_SPEED,
+        this.keySpeed + ticker.deltaTime * KEYBOARD_CAMERA_ACCELERATION
+      )
     }
     if (this.keysPressed.ArrowLeft) this.moveCamera('left', this.keySpeed, double)
     if (this.keysPressed.ArrowUp) this.moveCamera('up', this.keySpeed, double)

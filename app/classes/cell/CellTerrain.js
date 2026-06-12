@@ -127,10 +127,7 @@ export class CellTerrain {
     }
     const sprite = new Sprite(texture)
     sprite.direction = direction
-    sprite.anchor.set(
-      Math.floor(texture.width / 2) / texture.width,
-      Math.floor(texture.height / 2) / texture.height
-    )
+    sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
     sprite.type = 'border'
     sprite.zIndex = 10
     cell.addChild(sprite)
@@ -193,10 +190,7 @@ export class CellTerrain {
     }
     sprite.label = LABEL_TYPES.sprite
     sprite.texture = texture
-    sprite.anchor.set(
-      CELL_WIDTH / 2 / texture.width,
-      Math.floor(texture.height / 2) / texture.height
-    )
+    sprite.anchor.set(CELL_WIDTH / 2 / texture.width, Math.floor(texture.height / 2) / texture.height)
   }
 
   setWater() {

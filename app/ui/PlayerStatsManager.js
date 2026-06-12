@@ -59,9 +59,7 @@ export class PlayerStatsManager {
   }
 
   _getSignature(rows) {
-    return rows
-      .map(({ dead, colorHex, text }) => `${dead ? 1 : 0}|${colorHex}|${text}`)
-      .join('\n')
+    return rows.map(({ dead, colorHex, text }) => `${dead ? 1 : 0}|${colorHex}|${text}`).join('\n')
   }
 
   _render() {

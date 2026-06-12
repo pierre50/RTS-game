@@ -112,9 +112,11 @@ export function openSaveListModal({ onLoad, onError, onClose }) {
       importStatus.classList.add('save-list-import-status--ok')
     } catch (err) {
       const msgKey =
-        err.message === 'MAX_SAVES_REACHED' ? 'maxSavesReached'
-        : err.message === 'STORAGE_FULL' ? 'storageFull'
-        : 'importError'
+        err.message === 'MAX_SAVES_REACHED'
+          ? 'maxSavesReached'
+          : err.message === 'STORAGE_FULL'
+            ? 'storageFull'
+            : 'importError'
       importStatus.textContent = t(msgKey)
       importStatus.classList.add('save-list-import-status--err')
     } finally {

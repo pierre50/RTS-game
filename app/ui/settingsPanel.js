@@ -47,9 +47,7 @@ export function buildSettingsContent({ onLangChange, onSpeedChange, onZoomChange
     )
   )
 
-  content.appendChild(
-    buildRangeRow(t('sfxVolume'), { min: 0, max: 1, step: 0.05, value: getVolume() }, setVolume)
-  )
+  content.appendChild(buildRangeRow(t('sfxVolume'), { min: 0, max: 1, step: 0.05, value: getVolume() }, setVolume))
 
   content.appendChild(
     buildSelectRow(

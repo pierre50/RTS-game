@@ -267,7 +267,7 @@ export class Projectile extends Container {
       if (this.directionalFrames) {
         if (typeof this.directionalFrames === 'number' && this.directionalFrames > 8 && !this.directionalFrameOrder) {
           if (this.fullCircleStartDegree != null) {
-            const normalizedDeg = ((degree - this.fullCircleStartDegree) % 360 + 360) % 360
+            const normalizedDeg = (((degree - this.fullCircleStartDegree) % 360) + 360) % 360
             const degPerFrame = 360 / textures.length
             const frameIndex = Math.round(normalizedDeg / degPerFrame) % textures.length
             applyTextureAnchor(sprite, textures[frameIndex])

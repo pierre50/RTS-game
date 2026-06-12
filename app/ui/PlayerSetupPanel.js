@@ -46,7 +46,14 @@ export class PlayerSetupPanel {
   _createDefaultPlayers() {
     return [
       { name: t('you'), color: 'blue', civ: this._randomCiv(), team: null, isHuman: true },
-      { name: t('computer') + ' 1', color: 'red', civ: this._randomCiv(), team: null, isHuman: false, difficulty: 'medium' },
+      {
+        name: t('computer') + ' 1',
+        color: 'red',
+        civ: this._randomCiv(),
+        team: null,
+        isHuman: false,
+        difficulty: 'medium',
+      },
     ]
   }
 

@@ -182,7 +182,8 @@ export class AIStrategy {
     ).length
     const desiredBarracks = this.getDesiredBarracksCount()
     if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
-      demand.wood += (ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0) * (desiredBarracks - currentBarracks)
+      demand.wood +=
+        (ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0) * (desiredBarracks - currentBarracks)
     }
     if (!ai.buildings.some(building => building.type === BUILDING_TYPES.market)) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
@@ -253,14 +254,13 @@ export class AIStrategy {
 
   getViableBerryBushCount() {
     const { ai } = this
-    const dropSites = ai.buildings
-      .filter(
-        building =>
-          [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary].includes(building.type) &&
-          building.isBuilt &&
-          !building.isDead &&
-          !building.isDestroyed
-      )
+    const dropSites = ai.buildings.filter(
+      building =>
+        [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary].includes(building.type) &&
+        building.isBuilt &&
+        !building.isDead &&
+        !building.isDestroyed
+    )
     const homeAnchor = ai.getHomeAnchor()
     const MAX_BERRY_DROP_DIST = 14
     const MAX_BERRY_HOME_DIST = 30
@@ -268,7 +268,9 @@ export class AIStrategy {
     return [...ai.foundedBerrybushs].filter(bush => {
       if (!bush || bush.isDead || bush.quantity <= 0) return false
       if (dropSites.length > 0) {
-        const nearDropSite = dropSites.some(site => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST)
+        const nearDropSite = dropSites.some(
+          site => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST
+        )
         if (!nearDropSite) return false
       }
       if (!homeAnchor) return true
@@ -405,10 +407,9 @@ export class AIStrategy {
           towncenters.length < 2 &&
           governmentCenters.some(gc => gc.isBuilt) &&
           ai.population_max >= 24 &&
-        ai.population >= 16,
+          ai.population >= 16,
         BUILDING_TYPES.townCenter,
-        () =>
-          getPositionInGridAroundInstance(anchor, map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
+        () => getPositionInGridAroundInstance(anchor, map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -431,8 +432,7 @@ export class AIStrategy {
       buy(
         stables.some(s => s.isBuilt),
         BUILDING_TYPES.academy,
-        () =>
-          getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++

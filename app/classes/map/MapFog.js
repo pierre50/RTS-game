@@ -492,10 +492,7 @@ export class MapFog {
           chunkUpdates.set(chunk, updates)
         }
         const previousState = updates.get(cell)
-        if (
-          previousState === undefined ||
-          FOG_UPDATE_PRIORITY[state] > FOG_UPDATE_PRIORITY[previousState]
-        ) {
+        if (previousState === undefined || FOG_UPDATE_PRIORITY[state] > FOG_UPDATE_PRIORITY[previousState]) {
           updates.set(cell, state)
         }
       }

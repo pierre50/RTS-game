@@ -176,7 +176,12 @@ export function updateVisibility(instance) {
         globalCell.removeFog()
       }
 
-      if (!instance.context.editor && globalCell.has && globalCell.has.sight && typeof globalCell.has.detect === 'function') {
+      if (
+        !instance.context.editor &&
+        globalCell.has &&
+        globalCell.has.sight &&
+        typeof globalCell.has.detect === 'function'
+      ) {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
         if (distSq <= globalCell.has.sight ** 2) {
           globalCell.has.detect(instance)

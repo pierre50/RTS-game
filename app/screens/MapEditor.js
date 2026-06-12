@@ -162,9 +162,10 @@ export default class MapEditor extends Container {
         color: config.color || 'blue',
         team: config.team ?? null,
       }
-      const player = index === 0 || config.isHuman
-        ? new Human({ ...baseOptions, isPlayed: index === 0 }, this.context)
-        : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, this.context)
+      const player =
+        index === 0 || config.isHuman
+          ? new Human({ ...baseOptions, isPlayed: index === 0 }, this.context)
+          : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, this.context)
       players.push(player)
     })
 
@@ -283,13 +284,55 @@ export default class MapEditor extends Container {
     }
 
     const patterns = [
-      { center: [4, 4], level: -2, offsets: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]] },
-      { center: [4, 12], level: 0, offsets: [[0, 0], [1, 0], [0, -1], [1, -1]] },
-      { center: [11, 4], level: 3, offsets: [[0, 0], [0, 1], [1, 0]] },
-      { center: [11, 11], level: 1, offsets: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] },
+      {
+        center: [4, 4],
+        level: -2,
+        offsets: [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ],
+      },
+      {
+        center: [4, 12],
+        level: 0,
+        offsets: [
+          [0, 0],
+          [1, 0],
+          [0, -1],
+          [1, -1],
+        ],
+      },
+      {
+        center: [11, 4],
+        level: 3,
+        offsets: [
+          [0, 0],
+          [0, 1],
+          [1, 0],
+        ],
+      },
+      {
+        center: [11, 11],
+        level: 1,
+        offsets: [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+          [1, 1],
+        ],
+      },
     ]
 
-    for (const { center: [ci, cj], level, offsets } of patterns) {
+    for (const {
+      center: [ci, cj],
+      level,
+      offsets,
+    } of patterns) {
       for (let i = Math.max(0, ci - 4); i <= Math.min(map.size, ci + 4); i++) {
         for (let j = Math.max(0, cj - 4); j <= Math.min(map.size, cj + 4); j++) {
           const distance = Math.max(Math.abs(i - ci), Math.abs(j - cj))
@@ -485,7 +528,8 @@ export default class MapEditor extends Container {
     }
 
     if (instance.family === FAMILY_TYPES.animal || instance.family === FAMILY_TYPES.unit) {
-      const ownerList = instance.isDead || instance.currentSheet === 'corpseSheet' ? instance.owner?.corpses : instance.owner?.units
+      const ownerList =
+        instance.isDead || instance.currentSheet === 'corpseSheet' ? instance.owner?.corpses : instance.owner?.units
       const index = ownerList?.indexOf(instance) ?? -1
       if (index >= 0) ownerList.splice(index, 1)
     }

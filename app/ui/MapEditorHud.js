@@ -256,8 +256,7 @@ export class MapEditorHud {
     columns.className = 'map-editor-columns'
 
     const owners = this.context.editor.getPlacementOwners()
-    const activeOwner =
-      owners.find(owner => owner.label === this.state.placementOwnerLabel) || owners[0] || null
+    const activeOwner = owners.find(owner => owner.label === this.state.placementOwnerLabel) || owners[0] || null
     if (activeOwner && activeOwner.label !== this.state.placementOwnerLabel) {
       this.state.placementOwnerLabel = activeOwner.label
     }
@@ -301,7 +300,9 @@ export class MapEditorHud {
 
     const unitsWrap = document.createElement('div')
     unitsWrap.className = 'map-editor-field map-editor-column'
-    unitsWrap.appendChild(this._sectionTitle(activeOwner === this.context.map.gaia ? t('editorAnimals') : t('editorUnits')))
+    unitsWrap.appendChild(
+      this._sectionTitle(activeOwner === this.context.map.gaia ? t('editorAnimals') : t('editorUnits'))
+    )
     const unitsList = document.createElement('div')
     unitsList.className = 'map-editor-vertical-list map-editor-scroll-list'
     const unitSource =
@@ -438,9 +439,7 @@ export class MapEditorHud {
 
     if (!this.selection) {
       this._renderInfoLines([
-        t('editorBrushType') +
-          ': ' +
-          t(TOOLS.find(tool => tool.id === this.state.brushType)?.label || 'editorMap'),
+        t('editorBrushType') + ': ' + t(TOOLS.find(tool => tool.id === this.state.brushType)?.label || 'editorMap'),
         (isMapBrush ? t('editorTerrain') : t('editorElevation')) +
           ': ' +
           (isMapBrush ? t(this.state.mapPaint) : this.state.elevationLevel),
@@ -470,7 +469,11 @@ export class MapEditorHud {
     const actionRow = document.createElement('div')
     actionRow.className = 'bottombar-menu'
     actionRow.appendChild(
-      this._createIconActionBox(getIconPath('003_50721'), () => this.context.editor.removeEntity(this.selection), t('editorDelete'))
+      this._createIconActionBox(
+        getIconPath('003_50721'),
+        () => this.context.editor.removeEntity(this.selection),
+        t('editorDelete')
+      )
     )
     actionRow.appendChild(
       this._createIconActionBox(

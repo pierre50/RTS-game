@@ -96,12 +96,20 @@ export function importSaveFile(file) {
 
         const raw = LZString.decompressFromBase64(parsed.data)
         if (!raw) throw new Error('SAVE_CORRUPT')
-        try { JSON.parse(raw) } catch { throw new Error('SAVE_CORRUPT') }
+        try {
+          JSON.parse(raw)
+        } catch {
+          throw new Error('SAVE_CORRUPT')
+        }
 
         const index = getIndex()
         if (index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
         const key = `rts_save_${Date.now()}`
-        try { localStorage.setItem(key, parsed.data) } catch { throw new Error('STORAGE_FULL') }
+        try {
+          localStorage.setItem(key, parsed.data)
+        } catch {
+          throw new Error('STORAGE_FULL')
+        }
 
         const name = typeof parsed.name === 'string' && parsed.name ? parsed.name : formatSaveName()
         const date = typeof parsed.date === 'number' ? parsed.date : Date.now()
