@@ -421,3 +421,51 @@ input:focus-visible {
   outline: 2px solid var(--focus-outline-color);
   outline-offset: 2px;
 }
+
+/* --- STYLE DE LA BARRE DE DÉFILEMENT (SCROLLBAR) --- */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+/* La piste : effet "enfoncé" (inset) simulé */
+::-webkit-scrollbar-track {
+  background-color: var(--surface-dark-heavy);
+  border: 1px solid #1a0e00; /* Une fine bordure sombre pour délimiter */
+  /* Ombre interne pour simuler le creux */
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.5); 
+}
+
+/* Le curseur : effet "surélevé" (outset) simulé */
+::-webkit-scrollbar-thumb {
+  background-color: var(--form-surface-color);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+  border: 1px solid var(--form-surface-color); /* On remplace le outset par un solid */
+  
+  /* L'ASTUCE : On crée le relief nous-mêmes avec des ombres blanches et noires nettes */
+  box-shadow: 
+    inset 1px 1px 0 #ffffff,                  /* Bord supérieur/gauche clair */
+    inset -1px -1px 0 rgba(0, 0, 0, 0.4),     /* Bord inférieur/droit sombre */
+    var(--main-box-shadow);                   /* Ton ombre globale si besoin */
+}
+
+/* Effet de survol */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar-thumb:hover {
+    filter: brightness(var(--ui-hover-brightness));
+    background-color: var(--main-accent-hover);
+  }
+}
+
+/* Le curseur quand on clique dessus : effet "enfoncé" (pressed) */
+::-webkit-scrollbar-thumb:active {
+  /* On inverse les lumières pour donner l'effet de creux */
+  box-shadow: 
+    inset 1px 1px 0 rgba(0, 0, 0, 0.6),       /* Haut/Gauche devient sombre */
+    inset -1px -1px 0 rgba(255, 255, 255, 0.2); /* Bas/Droit devient clair */
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--surface-dark-solid);
+}

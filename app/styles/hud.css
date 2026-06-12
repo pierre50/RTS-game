@@ -279,6 +279,11 @@
   pointer-events: auto;
 }
 
+.map-editor-hud .bottombar {
+  height: 122px;
+  min-height: 122px;
+}
+
 .map-editor-titlebar {
   align-items: center;
   font-weight: bold;
@@ -289,7 +294,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
   padding: 0 12px;
   text-align: center;
 }
@@ -308,6 +312,8 @@
 .map-editor-menu {
   max-width: none;
   align-content: stretch;
+  height: 100%;
+  overflow: hidden;
 }
 
 .map-editor-panel {
@@ -315,14 +321,49 @@
   flex-direction: column;
   gap: var(--ui-gap-8);
   min-width: 0;
-  padding: 6px;
-  border: var(--ui-slot-border);
-  background: var(--surface-black-soft);
+  height: 100%;
+  overflow: hidden;
+}
+
+.map-editor-controls-panel {
+  width: 100%;
+}
+
+.map-editor-columns {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(180px, 1.5fr) minmax(140px, 1fr);
+  gap: var(--ui-gap-8);
+  align-items: start;
 }
 
 .map-editor-section-title {
   font-weight: bold;
   text-transform: uppercase;
+}
+
+.map-editor-column {
+  min-width: 0;
+  height: 100%;
+}
+
+.map-editor-vertical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.map-editor-scroll-list {
+  min-height: 0;
+  overflow-y: scroll;
+  padding-right: 2px;
+  height: 92px;
+}
+
+.map-editor-list-btn {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 32px;
+  text-align: left;
 }
 
 .map-editor-button-grid {
@@ -341,9 +382,17 @@
   gap: var(--ui-gap-6);
 }
 
-.map-editor-select {
-  width: 100%;
-  max-width: 140px;
+.map-editor-controls-row {
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.map-editor-field {
+  display: flex;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  min-height: 0;
 }
 
 @media (max-width: 900px) {
@@ -378,6 +427,10 @@
   }
 
   .map-editor-hud .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .map-editor-columns {
     grid-template-columns: 1fr;
   }
 }

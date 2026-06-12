@@ -35,6 +35,18 @@ export class MapFog {
     }
 
     const terrainContainer = new Container()
+    terrainContainer.sortableChildren = true
+    const backfillSprites = []
+    for (const source of this.map.terrainBackfill?.children || []) {
+      const sprite = new Sprite(source.texture)
+      sprite.position.copyFrom(source.position)
+      sprite.anchor.copyFrom(source.anchor)
+      sprite.roundPixels = source.roundPixels
+      sprite.zIndex = source.zIndex
+      sprite.eventMode = 'none'
+      terrainContainer.addChild(sprite)
+      backfillSprites.push(sprite)
+    }
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         terrainContainer.addChild(this.map.grid[i][j])
@@ -62,6 +74,9 @@ export class MapFog {
         this.map.addChild(sprite)
       }
     }
+
+    for (const sprite of backfillSprites) sprite.destroy()
+    if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
 
     const { player } = this.map.context
     for (let i = 0; i <= this.map.size; i++) {

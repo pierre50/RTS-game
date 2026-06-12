@@ -1,4 +1,5 @@
-import { getCellsAroundPoint, getPlainCellsAroundPoint } from '../../lib'
+import { Assets, Container, Sprite } from 'pixi.js'
+import { cartesianToIsometric, getCellsAroundPoint, getPlainCellsAroundPoint } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 
 export class MapTerrain {
@@ -185,6 +186,144 @@ export class MapTerrain {
     cell.z = level
   }
 
+  flattenWaterComponents(seeds, level) {
+    const visited = new Set()
+    const queue = [...seeds]
+
+    for (let index = 0; index < queue.length; index++) {
+      const cell = queue[index]
+      if (!cell || visited.has(cell) || cell.category !== 'Water') continue
+      visited.add(cell)
+      this.map.setCellReliefLevelDirect(cell, level)
+
+      for (const [di, dj] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const neighbor = this.map.grid[cell.i + di]?.[cell.j + dj]
+        if (neighbor?.category === 'Water' && !visited.has(neighbor)) queue.push(neighbor)
+      }
+    }
+  }
+
+  clampReliefAroundWaterLevels() {
+    const n = this.map.size + 1
+    const dist = new Int16Array(n * n).fill(9999)
+    const waterLevel = new Int16Array(n * n)
+    const queue = []
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.category !== 'Water') continue
+        const index = i * n + j
+        dist[index] = 0
+        waterLevel[index] = cell.z
+        queue.push(index)
+      }
+    }
+
+    for (let qi = 0; qi < queue.length; qi++) {
+      const index = queue[qi]
+      const i = Math.floor(index / n)
+      const j = index % n
+      for (const [di, dj] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const ni = i + di
+        const nj = j + dj
+        if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
+        const neighborIndex = ni * n + nj
+        if (dist[neighborIndex] <= dist[index] + 1) continue
+        dist[neighborIndex] = dist[index] + 1
+        waterLevel[neighborIndex] = waterLevel[index]
+        queue.push(neighborIndex)
+      }
+    }
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const index = i * n + j
+        if (dist[index] === 9999) continue
+        const cell = this.map.grid[i][j]
+        const range = this.map.getMaxReliefLevelFromCoastDistance(dist[index])
+        const minAllowed = waterLevel[index] - range
+        const maxAllowed = waterLevel[index] + range
+        if (cell.z < minAllowed) this.map.setCellReliefLevelDirect(cell, minAllowed)
+        if (cell.z > maxAllowed) this.map.setCellReliefLevelDirect(cell, maxAllowed)
+      }
+    }
+  }
+
+  rebuildTerrainBackfill() {
+    let layer = this.map.terrainBackfill
+    if (!layer) {
+      layer = new Container()
+      layer.label = 'terrainBackfill'
+      layer.eventMode = 'none'
+      layer.zIndex = -2
+      layer.sortableChildren = true
+      this.map.terrainBackfill = layer
+    }
+
+    if (layer.parent !== this.map) this.map.addChild(layer)
+    for (const child of layer.removeChildren()) child.destroy()
+    layer.visible = true
+
+    const config = Assets.cache.get('config')
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        const nearRelief =
+          cell.z !== 0 ||
+          [-1, 0, 1].some(di =>
+            [-1, 0, 1].some(dj => (di !== 0 || dj !== 0) && (this.map.grid[i + di]?.[j + dj]?.z || 0) !== 0)
+          )
+        if (!nearRelief) continue
+
+        const assets = config?.cells?.[cell.type]?.assets || []
+        if (!assets.length) continue
+
+        const textureName = assets[(i * 31 + j * 17) % assets.length]
+        const resourceName = textureName.split('_')[1]
+        const texture = Assets.cache.get(resourceName)?.textures?.[textureName + '.png']
+        if (!texture) continue
+
+        const [x, y] = cartesianToIsometric(i, j)
+        const addBackfillSprite = level => {
+          const sprite = new Sprite(texture)
+          sprite.x = x
+          sprite.y = y - level * CELL_DEPTH
+          sprite.zIndex = i + j + level / 10
+          sprite.anchor.set(
+            Math.floor(texture.width / 2) / texture.width,
+            Math.floor(texture.height / 2) / texture.height
+          )
+          sprite.roundPixels = true
+          sprite.eventMode = 'none'
+          layer.addChild(sprite)
+        }
+
+        addBackfillSprite(0)
+
+        // At the map perimeter there is no neighboring tile behind a relief
+        // sprite. Stack hidden base diamonds through its height to close that edge.
+        const isMapEdge = i === 0 || j === 0 || i === this.map.size || j === this.map.size
+        if (isMapEdge && cell.z !== 0) {
+          const direction = Math.sign(cell.z)
+          for (let level = direction; level !== cell.z + direction; level += direction) {
+            addBackfillSprite(level)
+          }
+        }
+      }
+    }
+  }
+
   clampReliefAroundWater(dist = this.map.getReliefCoastDistances()) {
     const n = this.map.size + 1
     for (let i = 0; i <= this.map.size; i++) {
@@ -198,14 +337,126 @@ export class MapTerrain {
     }
   }
 
-  enforceReliefStepContinuity(dist = this.map.getReliefCoastDistances()) {
+  enforceReliefStepContinuity(dist = this.map.getReliefCoastDistances(), protectedCells = new Set()) {
     const n = this.map.size + 1
-    let changed = true
-    let guard = 0
+    const diagonalDirections = [
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, -1],
+      [0, 1],
+      [1, -1],
+      [1, 0],
+      [1, 1],
+    ]
+    let deepestLevel = 0
 
-    while (changed && guard++ < this.map.size) {
-      changed = false
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        deepestLevel = Math.min(deepestLevel, this.map.grid[i][j].z)
+      }
+    }
 
+    // The slope atlas cannot represent checkerboard-like concave contours.
+    // Close one-cell gaps at each negative depth while preserving the basin outline.
+    for (let level = deepestLevel; level < 0; level++) {
+      const depthMask = new Uint8Array(n * n)
+      const expandedMask = new Uint8Array(n * n)
+
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          if (cell.category !== 'Water' && !cell.waterBorder && cell.z <= level) {
+            depthMask[i * n + j] = 1
+          }
+        }
+      }
+
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const index = i * n + j
+          if (depthMask[index]) {
+            expandedMask[index] = 1
+            continue
+          }
+
+          expandedMask[index] = Number(
+            diagonalDirections.some(([di, dj]) => {
+              const ni = i + di
+              const nj = j + dj
+              return ni >= 0 && ni <= this.map.size && nj >= 0 && nj <= this.map.size && depthMask[ni * n + nj] === 1
+            })
+          )
+        }
+      }
+
+      const adjustments = []
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          if (
+            cell.category === 'Water' ||
+            cell.waterBorder ||
+            cell.has ||
+            protectedCells.has(cell) ||
+            cell.z <= level
+          )
+            continue
+
+          const closesGap = diagonalDirections.every(([di, dj]) => {
+            const ni = i + di
+            const nj = j + dj
+            return ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size || expandedMask[ni * n + nj] === 1
+          })
+          if (expandedMask[i * n + j] && closesGap) adjustments.push(cell)
+        }
+      }
+
+      for (const cell of adjustments) {
+        this.map.setCellReliefLevelDirect(cell, level)
+      }
+    }
+
+    const noDepressionLimit = 32767
+    const depressionUpperBounds = new Int16Array(n * n).fill(noDepressionLimit)
+    const queue = []
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.category === 'Water' || cell.waterBorder || cell.z >= 0) continue
+        depressionUpperBounds[i * n + j] = cell.z
+        queue.push(cell)
+      }
+    }
+
+    for (let index = 0; index < queue.length; index++) {
+      const cell = queue[index]
+      const nextBound = depressionUpperBounds[cell.i * n + cell.j] + 1
+
+      for (const [di, dj] of diagonalDirections) {
+        const neighbor = this.map.grid[cell.i + di]?.[cell.j + dj]
+        if (!neighbor || neighbor.category === 'Water' || neighbor.waterBorder) continue
+        const neighborIndex = neighbor.i * n + neighbor.j
+        if (depressionUpperBounds[neighborIndex] <= nextBound) continue
+        depressionUpperBounds[neighborIndex] = nextBound
+        queue.push(neighbor)
+      }
+    }
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.category === 'Water' || cell.waterBorder) continue
+        const upperBound = depressionUpperBounds[i * n + j]
+        if (!protectedCells.has(cell) && upperBound < cell.z) {
+          this.map.setCellReliefLevelDirect(cell, upperBound)
+        }
+      }
+    }
+
+    const enforceHeightSteps = () => {
+      let changed = false
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
@@ -231,25 +482,31 @@ export class MapTerrain {
             const highMinAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[high.i * n + high.j])
             const targetLowLevel = high.z - 1
             const targetHighLevel = Math.max(highMinAllowed, Math.min(highMaxAllowed, low.z + 1))
-            const preserveDepression = low.z < 0
+            const lowDepressionLimit = depressionUpperBounds[low.i * n + low.j]
+            const boundedTargetLowLevel = Math.min(targetLowLevel, lowDepressionLimit)
+            const highProtected = protectedCells.has(high)
+            const lowProtected = protectedCells.has(low)
 
-            if (preserveDepression) {
-              if (!high.has && targetHighLevel >= highMinAllowed && targetHighLevel <= highMaxAllowed) {
-                this.map.setCellReliefLevelDirect(high, targetHighLevel)
-              } else if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
-                this.map.setCellReliefLevelDirect(low, targetLowLevel)
-              } else {
-                this.map.setCellReliefLevelDirect(high, targetHighLevel)
-              }
-            } else if (!low.has && targetLowLevel >= lowMinAllowed && targetLowLevel <= lowMaxAllowed) {
-              this.map.setCellReliefLevelDirect(low, targetLowLevel)
-            } else {
+            if (highProtected && lowProtected) continue
+
+            if (lowProtected) {
               this.map.setCellReliefLevelDirect(high, targetHighLevel)
+            } else {
+              const target = highProtected ? targetLowLevel : boundedTargetLowLevel
+              if (!low.has && target > low.z && target >= lowMinAllowed && target <= lowMaxAllowed) {
+                this.map.setCellReliefLevelDirect(low, target)
+              } else if (!highProtected) {
+                this.map.setCellReliefLevelDirect(high, targetHighLevel)
+              } else {
+                continue
+              }
             }
             changed = true
           }
         }
       }
+
+      return changed
     }
 
     const getHigherNeighbors = cell => {
@@ -274,7 +531,7 @@ export class MapTerrain {
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
-          if (cell.category === 'Water' || cell.waterBorder) continue
+          if (cell.category === 'Water' || cell.waterBorder || protectedCells.has(cell)) continue
 
           const higher = getHigherNeighbors(cell)
           if (!isUnsupported(higher)) continue
@@ -294,7 +551,8 @@ export class MapTerrain {
 
           if (!higherLevels.length) continue
           const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
-          const targetLevel = Math.min(Math.min(...higherLevels), maxAllowed)
+          const depressionLimit = depressionUpperBounds[i * n + j]
+          const targetLevel = Math.min(Math.min(...higherLevels), maxAllowed, depressionLimit)
           if (targetLevel > cell.z) adjustments.push([cell, targetLevel])
         }
       }
@@ -319,22 +577,25 @@ export class MapTerrain {
       return ne || se
     }
 
-    // Each pass can expose another unsupported mask next to the adjusted cells.
-    // Resolve all of them now instead of waiting for the next editor refresh.
-    let transitionsChanged = true
-    let transitionGuard = 0
-    while (transitionsChanged && transitionGuard++ < this.map.size) {
-      transitionsChanged = false
-
+    // Height and sprite-mask corrections can expose new problems for each other.
+    // Converge both systems now instead of waiting for another editor refresh.
+    let changed = true
+    let guard = 0
+    const maxPasses = Math.max(1, this.map.size * 2)
+    while (changed && guard++ < maxPasses) {
+      changed = enforceHeightSteps()
       // The atlas has no valid tile for a low cell squeezed between opposite high sides.
-      transitionsChanged = raiseUnsupportedTransitions(hasOppositeHighSides) || transitionsChanged
-
+      changed = raiseUnsupportedTransitions(hasOppositeHighSides) || changed
       // A single high side can only connect to the two diagonals touching that side.
-      transitionsChanged = raiseUnsupportedTransitions(hasDisconnectedHighNeighbors) || transitionsChanged
+      changed = raiseUnsupportedTransitions(hasDisconnectedHighNeighbors) || changed
     }
   }
 
   formatCellsRelief() {
+    // Relief sprites contain transparent cut-outs. Keep flat terrain underneath so
+    // unsupported concave combinations never reveal the black scene background.
+    this.rebuildTerrainBackfill()
+
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -411,6 +672,7 @@ export class MapTerrain {
         }
       }
     }
+
   }
 
   formatCellsWaterBorder() {
@@ -427,7 +689,6 @@ export class MapTerrain {
         const sw = this.map.grid[i + 1]?.[j - 1]?.type === 'Water'
         const ne = this.map.grid[i - 1]?.[j + 1]?.type === 'Water'
         const se = this.map.grid[i + 1]?.[j + 1]?.type === 'Water'
-
         if (w && n) cell.setWaterBorder('20000', '001')
         else if (e && s) cell.setWaterBorder('20000', '002')
         else if (w && s) cell.setWaterBorder('20000', '003')
@@ -442,7 +703,9 @@ export class MapTerrain {
         else if (se) cell.setWaterBorder('20000', '006')
       }
     }
+  }
 
+  formatCellsWaterBorderOverlays() {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]

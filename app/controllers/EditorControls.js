@@ -183,8 +183,8 @@ export class EditorControls extends Container {
   }
 
   paint(cell) {
-    const { tool, brushSize, reliefLevel } = this.context.editorState
-    const signature = `${tool}:${brushSize}:${reliefLevel}:${cell.i}:${cell.j}`
+    const { brushType, brushSize, mapPaint, elevationLevel } = this.context.editorState
+    const signature = `${brushType}:${brushSize}:${mapPaint}:${elevationLevel}:${cell.i}:${cell.j}`
     if (signature === this.lastPaintSignature) return
     this.lastPaintSignature = signature
     this.context.editor.applyBrush(cell)

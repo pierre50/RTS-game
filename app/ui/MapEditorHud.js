@@ -5,15 +5,19 @@ import { MinimapInputController } from './MinimapInputController'
 import { MapEditorMenu } from './MapEditorMenu'
 
 const TOOLS = [
-  { id: 'forest', label: 'editorForest' },
-  { id: 'terrain', label: 'editorTerrain' },
-  { id: 'erase', label: 'editorErase' },
-  { id: 'raiseRelief', label: 'editorRaiseRelief' },
+  { id: 'map', label: 'editorMap' },
+  { id: 'elevation', label: 'editorElevation' },
 ]
 
-const BRUSH_SIZES = [1, 2, 4]
+const BRUSH_SIZES = [
+  { value: 1, label: 'editorBrushSizeTiny' },
+  { value: 2, label: 'editorBrushSizeSmall' },
+  { value: 3, label: 'editorBrushSizeMedium' },
+  { value: 4, label: 'editorBrushSizeLarge' },
+  { value: 6, label: 'editorBrushSizeHuge' },
+]
 const RELIEF_LEVELS = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
-const TERRAIN_OPTIONS = ['Grass', 'Water', 'Jungle', 'Desert']
+const MAP_OPTIONS = ['Grass', 'Desert', 'forest', 'Water', 'palmdesert', 'palmjungle']
 
 export class MapEditorHud {
   constructor({ context, state, onQuit, onChange }) {
@@ -22,7 +26,8 @@ export class MapEditorHud {
     this.onQuit = onQuit
     this.onChange = onChange
     this.toolButtons = new Map()
-    this.brushButtons = new Map()
+    this.detailButtons = new Map()
+    this.brushSizeButtons = new Map()
     this.editorMenu = new MapEditorMenu(this)
 
     this.gameHud = document.createElement('div')
@@ -112,81 +117,76 @@ export class MapEditorHud {
     return title
   }
 
+  _createListButton(label, onClick) {
+    const button = this._btn(label, onClick, 'ui-btn map-editor-list-btn')
+    button.type = 'button'
+    return button
+  }
+
+  _clearElement(element) {
+    while (element.firstChild) {
+      element.removeChild(element.firstChild)
+    }
+  }
+
   _renderToolMenu() {
     this.bottombarMenu.textContent = ''
 
-    const toolsPanel = document.createElement('div')
-    toolsPanel.className = 'map-editor-panel'
-    toolsPanel.appendChild(this._sectionTitle(t('editorTools')))
+    const controlsPanel = document.createElement('div')
+    controlsPanel.className = 'map-editor-panel map-editor-controls-panel'
+    const columns = document.createElement('div')
+    columns.className = 'map-editor-columns'
+
+    const brushTypeWrap = document.createElement('div')
+    brushTypeWrap.className = 'map-editor-field map-editor-column map-editor-column-brush-type'
+    brushTypeWrap.appendChild(this._sectionTitle(t('editorBrushType')))
 
     const toolsWrap = document.createElement('div')
-    toolsWrap.className = 'map-editor-button-grid'
+    toolsWrap.className = 'map-editor-vertical-list'
     TOOLS.forEach(tool => {
-      const button = this._btn(t(tool.label), () => this._setTool(tool.id))
+      const button = this._createListButton(t(tool.label), () => this._setTool(tool.id))
       this.toolButtons.set(tool.id, button)
       toolsWrap.appendChild(button)
     })
-    toolsPanel.appendChild(toolsWrap)
+    brushTypeWrap.appendChild(toolsWrap)
+    columns.appendChild(brushTypeWrap)
 
-    const settingsPanel = document.createElement('div')
-    settingsPanel.className = 'map-editor-panel'
-    settingsPanel.appendChild(this._sectionTitle(t('editorBrush')))
+    const detailWrap = document.createElement('div')
+    detailWrap.className = 'map-editor-field map-editor-column map-editor-column-detail'
 
-    const brushWrap = document.createElement('div')
-    brushWrap.className = 'map-editor-inline-group'
+    this.detailLabel = this._sectionTitle(t('editorTerrain'))
+    detailWrap.appendChild(this.detailLabel)
+
+    this.detailList = document.createElement('div')
+    this.detailList.className = 'map-editor-vertical-list map-editor-scroll-list'
+    detailWrap.appendChild(this.detailList)
+    columns.appendChild(detailWrap)
+
+    const brushSizeWrap = document.createElement('div')
+    brushSizeWrap.className = 'map-editor-field map-editor-column map-editor-column-size'
+    brushSizeWrap.appendChild(this._sectionTitle(t('editorBrushSize')))
+
+    this.brushSizeList = document.createElement('div')
+    this.brushSizeList.className = 'map-editor-vertical-list map-editor-scroll-list'
     BRUSH_SIZES.forEach(size => {
-      const button = this._btn(String(size), () => this._setBrushSize(size))
-      this.brushButtons.set(size, button)
-      brushWrap.appendChild(button)
+      const button = this._createListButton(t(size.label), () => {
+        this.state.brushSize = size.value
+        this.onChange()
+        this.sync()
+      })
+      this.brushSizeButtons.set(size.value, button)
+      this.brushSizeList.appendChild(button)
     })
-    settingsPanel.appendChild(brushWrap)
+    brushSizeWrap.appendChild(this.brushSizeList)
+    columns.appendChild(brushSizeWrap)
 
-    settingsPanel.appendChild(this._sectionTitle(t('editorTerrain')))
-    this.terrainSelect = document.createElement('select')
-    this.terrainSelect.className = 'ui-select map-editor-select'
-    TERRAIN_OPTIONS.forEach(type => {
-      const option = document.createElement('option')
-      option.value = type
-      option.textContent = t(type)
-      this.terrainSelect.appendChild(option)
-    })
-    this.terrainSelect.value = this.state.terrainType
-    this.terrainSelect.addEventListener('change', () => {
-      this.state.terrainType = this.terrainSelect.value
-      this.onChange()
-      this.sync()
-    })
-    settingsPanel.appendChild(this.terrainSelect)
+    controlsPanel.appendChild(columns)
 
-    settingsPanel.appendChild(this._sectionTitle(t('editorRelief')))
-    this.reliefSelect = document.createElement('select')
-    this.reliefSelect.className = 'ui-select map-editor-select'
-    RELIEF_LEVELS.forEach(level => {
-      const option = document.createElement('option')
-      option.value = String(level)
-      option.textContent = String(level)
-      this.reliefSelect.appendChild(option)
-    })
-    this.reliefSelect.value = String(this.state.reliefLevel)
-    this.reliefSelect.addEventListener('change', () => {
-      this.state.reliefLevel = Number(this.reliefSelect.value)
-      this.onChange()
-      this.sync()
-    })
-    settingsPanel.appendChild(this.reliefSelect)
-
-    this.bottombarMenu.appendChild(toolsPanel)
-    this.bottombarMenu.appendChild(settingsPanel)
+    this.bottombarMenu.appendChild(controlsPanel)
   }
 
   _setTool(tool) {
-    this.state.tool = tool
-    this.sync()
-    this.onChange()
-  }
-
-  _setBrushSize(size) {
-    this.state.brushSize = size
+    this.state.brushType = tool
     this.sync()
     this.onChange()
   }
@@ -203,18 +203,48 @@ export class MapEditorHud {
 
   sync() {
     this.toolButtons.forEach((button, tool) => {
-      button.classList.toggle('is-active', tool === this.state.tool)
+      button.classList.toggle('is-active', tool === this.state.brushType)
     })
-    this.brushButtons.forEach((button, size) => {
+
+    const isMapBrush = this.state.brushType === 'map'
+    this.detailLabel.textContent = isMapBrush ? t('editorTerrain') : t('editorElevation')
+    this._clearElement(this.detailList)
+    this.detailButtons.clear()
+
+    const options = isMapBrush
+      ? MAP_OPTIONS.map(value => ({ value, label: t(value) }))
+      : RELIEF_LEVELS.map(value => ({ value: String(value), label: String(value) }))
+
+    options.forEach(({ value, label }) => {
+      const button = this._createListButton(label, () => {
+        if (isMapBrush) {
+          this.state.mapPaint = value
+        } else {
+          this.state.elevationLevel = Number(value)
+        }
+        this.onChange()
+        this.sync()
+      })
+      const isActive = isMapBrush ? value === this.state.mapPaint : Number(value) === this.state.elevationLevel
+      button.classList.toggle('is-active', isActive)
+      this.detailButtons.set(String(value), button)
+      this.detailList.appendChild(button)
+    })
+
+    this.brushSizeButtons.forEach((button, size) => {
       button.classList.toggle('is-active', size === this.state.brushSize)
     })
-    this.reliefSelect.value = String(this.state.reliefLevel)
-    this.terrainSelect.value = this.state.terrainType
+
     this._renderInfoLines([
-      t('editorTools') + ': ' + t(TOOLS.find(tool => tool.id === this.state.tool)?.label || 'editorForest'),
-      t('editorBrush') + ': ' + this.state.brushSize,
-      t('editorTerrain') + ': ' + t(this.state.terrainType),
-      t('editorRelief') + ': ' + this.state.reliefLevel,
+      t('editorBrushType') +
+        ': ' +
+        t(TOOLS.find(tool => tool.id === this.state.brushType)?.label || 'editorMap'),
+      (isMapBrush ? t('editorTerrain') : t('editorElevation')) +
+        ': ' +
+        (isMapBrush ? t(this.state.mapPaint) : this.state.elevationLevel),
+      t('editorBrushSize') +
+        ': ' +
+        t(BRUSH_SIZES.find(size => size.value === this.state.brushSize)?.label || 'editorBrushSizeTiny'),
     ])
   }
 

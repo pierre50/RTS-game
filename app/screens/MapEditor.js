@@ -17,10 +17,10 @@ export default class MapEditor extends Container {
     this._orientationBlocked = false
     this._onResize = () => this.applyZoom()
     this.editorState = {
-      tool: 'forest',
+      brushType: 'map',
       brushSize: 1,
-      terrainType: this.config.baseTerrain || 'Grass',
-      reliefLevel: 0,
+      mapPaint: this.config.baseTerrain || 'Grass',
+      elevationLevel: 0,
     }
     this.context = {
       app,
@@ -96,8 +96,40 @@ export default class MapEditor extends Container {
       }
     }
 
+    this._applyMapFixture()
     map.ready = true
     this.refreshTerrainAppearance()
+  }
+
+  _applyMapFixture() {
+    if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return
+    const fixture = new URLSearchParams(window.location.search).get('mapFixture')
+    if (fixture !== 'water-borders') return
+
+    const { map } = this.context
+    const patterns = [
+      { center: [4, 4], level: -2, offsets: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]] },
+      { center: [4, 12], level: 0, offsets: [[0, 0], [1, 0], [0, -1], [1, -1]] },
+      { center: [11, 4], level: 3, offsets: [[0, 0], [0, 1], [1, 0]] },
+      { center: [11, 11], level: 1, offsets: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] },
+    ]
+
+    for (const { center: [ci, cj], level, offsets } of patterns) {
+      for (let i = Math.max(0, ci - 4); i <= Math.min(map.size, ci + 4); i++) {
+        for (let j = Math.max(0, cj - 4); j <= Math.min(map.size, cj + 4); j++) {
+          const distance = Math.max(Math.abs(i - ci), Math.abs(j - cj))
+          const targetLevel = level + Math.sign(-level) * Math.max(0, distance - 2)
+          map.setCellReliefLevelDirect(map.grid[i][j], Math.max(-4, Math.min(4, targetLevel)))
+        }
+      }
+
+      for (const [di, dj] of offsets) {
+        const cell = map.grid[ci + di]?.[cj + dj]
+        if (!cell) continue
+        map.setCellReliefLevelDirect(cell, level)
+        cell.setTerrainType('Water')
+      }
+    }
   }
 
   applyZoom() {
@@ -166,41 +198,95 @@ export default class MapEditor extends Container {
     if (this._orientationBlocked) return
 
     const cells = this.getBrushCells(centerCell)
+    const reliefEdits = new Set()
+    const waterEdit =
+      this.editorState.brushType === 'map' && this._getMapPaintTerrain() === 'Water'
+        ? { level: centerCell.z, seeds: new Set() }
+        : null
     let terrainDirty = false
     let resourceDirty = false
 
     for (const cell of cells) {
-      switch (this.editorState.tool) {
-        case 'forest':
-          resourceDirty = this.placeForest(cell) || resourceDirty
+      switch (this.editorState.brushType) {
+        case 'map':
+          {
+            const result = this.applyMapPaint(cell, waterEdit?.level)
+            if (result.terrainChanged) {
+              if (waterEdit) waterEdit.seeds.add(cell)
+              terrainDirty = true
+            }
+            if (result.resourceChanged) {
+              resourceDirty = true
+            }
+          }
           break
-        case 'erase':
-          resourceDirty = this.eraseEntity(cell) || resourceDirty
-          break
-        case 'terrain':
-          terrainDirty = this.setTerrainType(cell, this.editorState.terrainType) || terrainDirty
-          break
-        case 'raiseRelief':
-          terrainDirty = this.setRelief(cell, this.editorState.reliefLevel) || terrainDirty
+        case 'elevation':
+          if (this.setRelief(cell, this.editorState.elevationLevel)) {
+            reliefEdits.add(cell)
+            terrainDirty = true
+          }
           break
       }
     }
 
     if (terrainDirty) {
-      this.refreshTerrainAppearance()
+      this.refreshTerrainAppearance(reliefEdits, waterEdit)
     } else if (resourceDirty) {
       this.syncResourceSprites()
       this.context.hud?.updateResourcesMiniMap()
     }
   }
 
-  setTerrainType(cell, type) {
-    if (!cell || cell.type === type) return false
+  _getMapPaintTerrain() {
+    switch (this.editorState.mapPaint) {
+      case 'forest':
+        return 'Grass'
+      case 'palmdesert':
+        return 'Desert'
+      case 'palmjungle':
+        return 'Jungle'
+      default:
+        return this.editorState.mapPaint
+    }
+  }
+
+  _mapPaintWantsForest() {
+    return ['forest', 'palmdesert', 'palmjungle'].includes(this.editorState.mapPaint)
+  }
+
+  applyMapPaint(cell, waterLevel = 0) {
+    if (!cell) return { terrainChanged: false, resourceChanged: false }
+
+    const targetTerrain = this._getMapPaintTerrain()
+    const wantsForest = this._mapPaintWantsForest()
+    let terrainChanged = false
+    let resourceChanged = false
+
+    if (this.setTerrainType(cell, targetTerrain, waterLevel)) {
+      terrainChanged = true
+    }
+
+    if (wantsForest) {
+      resourceChanged = this.placeForest(cell) || resourceChanged
+    } else {
+      resourceChanged = this.eraseEntity(cell) || resourceChanged
+    }
+
+    return { terrainChanged, resourceChanged }
+  }
+
+  setTerrainType(cell, type, waterLevel = 0) {
+    if (!cell) return false
+    if (cell.type === type) {
+      if (type !== 'Water' || cell.z === waterLevel) return false
+      this.context.map.setCellReliefLevelDirect(cell, waterLevel)
+      return true
+    }
     if (cell.has && type === 'Water') {
       cell.has.die?.(true)
     }
-    if (type === 'Water' && cell.z !== 0) {
-      this.context.map.setCellReliefLevelDirect(cell, 0)
+    if (type === 'Water' && cell.z !== waterLevel) {
+      this.context.map.setCellReliefLevelDirect(cell, waterLevel)
     }
     cell.setTerrainType(type)
     if (cell.has?.type === RESOURCE_TYPES.tree) {
@@ -243,7 +329,7 @@ export default class MapEditor extends Container {
     return true
   }
 
-  refreshTerrainAppearance() {
+  refreshTerrainAppearance(protectedReliefCells = new Set(), waterEdit = null) {
     const { map } = this.context
 
     for (let i = 0; i <= map.size; i++) {
@@ -258,12 +344,14 @@ export default class MapEditor extends Container {
       }
     }
 
+    if (waterEdit) map.flattenWaterComponents(waterEdit.seeds, waterEdit.level)
     map.formatCellsWaterBorder()
-    const reliefCoastDistances = map.getReliefCoastDistances()
-    map.clampReliefAroundWater(reliefCoastDistances)
-    map.enforceReliefStepContinuity(reliefCoastDistances)
-    map.formatCellsDesert()
+    map.clampReliefAroundWaterLevels()
+    const unrestrictedReliefDistances = new Int16Array((map.size + 1) ** 2).fill(map.size + 4)
+    map.enforceReliefStepContinuity(unrestrictedReliefDistances, protectedReliefCells)
     map.formatCellsRelief()
+    map.formatCellsWaterBorderOverlays()
+    map.formatCellsDesert()
     this.syncResourceSprites()
     this.context.hud?.revealTerrainMinimap()
     this.context.hud?.updateResourcesMiniMap()

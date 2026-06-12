@@ -97,6 +97,7 @@ export class MapGeneration {
     this.map.clampReliefAroundWater()
     this.map.enforceReliefStepContinuity()
     this.map.formatCellsRelief()
+    this.map.formatCellsWaterBorderOverlays()
     this.map.formatCellsDesert()
 
     if (!this.map.revealEverything) {
@@ -269,6 +270,7 @@ export class MapGeneration {
     this.map.gaia = new Gaia(this.map.context)
     this.map.generateMapRelief()
     this.map.formatCellsRelief()
+    this.map.formatCellsWaterBorderOverlays()
     this.map.formatCellsDesert()
     this.map.placePlayers()
     this.map.generateResourcesAroundPlayers(this.map.playersPos)

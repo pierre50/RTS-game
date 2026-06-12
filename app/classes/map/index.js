@@ -215,12 +215,24 @@ export default class Map extends Container {
     return this.mapTerrain.setCellReliefLevelDirect(cell, level)
   }
 
+  flattenWaterComponents(seeds, level) {
+    return this.mapTerrain.flattenWaterComponents(seeds, level)
+  }
+
+  clampReliefAroundWaterLevels() {
+    return this.mapTerrain.clampReliefAroundWaterLevels()
+  }
+
   clampReliefAroundWater(dist) {
     return this.mapTerrain.clampReliefAroundWater(dist)
   }
 
-  enforceReliefStepContinuity(dist) {
-    return this.mapTerrain.enforceReliefStepContinuity(dist)
+  enforceReliefStepContinuity(dist, protectedCells) {
+    return this.mapTerrain.enforceReliefStepContinuity(dist, protectedCells)
+  }
+
+  rebuildTerrainBackfill() {
+    return this.mapTerrain.rebuildTerrainBackfill()
   }
 
   formatCellsRelief() {
@@ -229,6 +241,10 @@ export default class Map extends Container {
 
   formatCellsWaterBorder() {
     return this.mapTerrain.formatCellsWaterBorder()
+  }
+
+  formatCellsWaterBorderOverlays() {
+    return this.mapTerrain.formatCellsWaterBorderOverlays()
   }
 
   formatCellsDesert() {
