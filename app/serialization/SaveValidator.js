@@ -1,7 +1,9 @@
 import { Assets } from 'pixi.js'
-import { PLAYER_TYPES } from '../constants'
+import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
 
 const MAX_MAP_EDGE = 513
+const ANIMAL_ACTIONS = new Set(Object.values(ACTION_TYPES))
+const ANIMAL_SHEETS = new Set(Object.values(SHEET_TYPES))
 
 function fail(message) {
   throw new Error(message)
@@ -48,6 +50,71 @@ function validateEntityPosition(entity, size, label) {
   validateGridPosition(entity.j, size, `${label}.j`)
 }
 
+function validateOptionalFiniteNumber(value, label) {
+  if (value != null && !isFiniteNumber(value)) {
+    fail(`Invalid save file: ${label} must be a finite number.`)
+  }
+}
+
+function validateOptionalBoolean(value, label) {
+  if (value != null && typeof value !== 'boolean') {
+    fail(`Invalid save file: ${label} must be a boolean.`)
+  }
+}
+
+function validateOptionalGridDestination(value, size, label) {
+  if (value == null) return
+
+  if (Array.isArray(value)) {
+    if (value.length < 2 || value.length > 3) {
+      fail(`Invalid save file: ${label} is invalid.`)
+    }
+    validateGridPosition(value[0], size, `${label}.i`)
+    validateGridPosition(value[1], size, `${label}.j`)
+    if (value[2] != null && typeof value[2] !== 'string') {
+      fail(`Invalid save file: ${label}.label is invalid.`)
+    }
+    return
+  }
+
+  if (!isObject(value)) {
+    fail(`Invalid save file: ${label} is invalid.`)
+  }
+  validateGridPosition(value.i, size, `${label}.i`)
+  validateGridPosition(value.j, size, `${label}.j`)
+  validateOptionalFiniteNumber(value.x, `${label}.x`)
+  validateOptionalFiniteNumber(value.y, `${label}.y`)
+  if (value.label != null && typeof value.label !== 'string') {
+    fail(`Invalid save file: ${label}.label is invalid.`)
+  }
+}
+
+function validateAnimalPath(path, size, label) {
+  if (path == null) return
+  validateArray(path, label)
+  if (path.length > size * size) {
+    fail(`Invalid save file: ${label} is too long.`)
+  }
+  path.forEach((cell, index) => {
+    validateEntityPosition(cell, size, `${label} ${index}`)
+  })
+}
+
+function validateAIState(aiState, playerIndex) {
+  if (aiState == null) return
+  if (!isObject(aiState)) fail(`Invalid save file: player ${playerIndex} AI state is invalid.`)
+
+  if (aiState.phase != null && !['economy', 'military_build', 'attack'].includes(aiState.phase)) {
+    fail(`Invalid save file: player ${playerIndex} AI phase is invalid.`)
+  }
+  validateOptionalFiniteNumber(aiState.savedAt, `player ${playerIndex} AI savedAt`)
+  validateOptionalFiniteNumber(aiState.lastAttackWaveAgo, `player ${playerIndex} AI lastAttackWaveAgo`)
+  validateOptionalFiniteNumber(aiState.lastAttackWaveAt, `player ${playerIndex} AI lastAttackWaveAt`)
+  validateArray(aiState.enemyUnits ?? [], `player ${playerIndex} AI enemyUnits`)
+  validateArray(aiState.enemyBuildings ?? [], `player ${playerIndex} AI enemyBuildings`)
+  validateArray(aiState.threatenedTargets ?? [], `player ${playerIndex} AI threatenedTargets`)
+}
+
 function getLoadedConfig() {
   const config = Assets.cache.get('config')
   if (!config) {
@@ -89,6 +156,7 @@ function validatePlayers(players, size, config) {
       fail(`Invalid save file: player ${index} has an invalid isPlayed flag.`)
     }
     if (player.isPlayed) playedPlayers++
+    if (player.type === PLAYER_TYPES.ai) validateAIState(player.aiState, index)
 
     validateArray(player.buildings ?? [], `player ${index} buildings`)
     validateArray(player.units ?? [], `player ${index} units`)
@@ -148,10 +216,40 @@ function validateResources(resources, size, config) {
 function validateAnimals(animals, size, config) {
   validateArray(animals, 'animals')
   animals.forEach((animal, index) => {
-    validateEntityPosition(animal, size, `animal ${index}`)
+    const label = `animal ${index}`
+    validateEntityPosition(animal, size, label)
     if (typeof animal.type !== 'string' || !config.animals?.[animal.type]) {
-      fail(`Invalid save file: animal ${index} has an unsupported type.`)
+      fail(`Invalid save file: ${label} has an unsupported type.`)
     }
+
+    const definition = config.animals[animal.type]
+    validateOptionalFiniteNumber(animal.quantity, `${label}.quantity`)
+    if (animal.quantity != null && (animal.quantity < 0 || animal.quantity > definition.totalQuantity)) {
+      fail(`Invalid save file: ${label}.quantity is out of range.`)
+    }
+    validateOptionalFiniteNumber(animal.hitPoints, `${label}.hitPoints`)
+    if (animal.hitPoints != null && (animal.hitPoints < 0 || animal.hitPoints > definition.totalHitPoints)) {
+      fail(`Invalid save file: ${label}.hitPoints is out of range.`)
+    }
+
+    validateOptionalBoolean(animal.isDead, `${label}.isDead`)
+    validateOptionalBoolean(animal.isDestroyed, `${label}.isDestroyed`)
+    if (animal.isDestroyed === true && animal.isDead !== true) {
+      fail(`Invalid save file: ${label} is destroyed but not dead.`)
+    }
+    if (animal.action != null && (typeof animal.action !== 'string' || !ANIMAL_ACTIONS.has(animal.action))) {
+      fail(`Invalid save file: ${label}.action is invalid.`)
+    }
+    if (
+      animal.currentSheet != null &&
+      (typeof animal.currentSheet !== 'string' || !ANIMAL_SHEETS.has(animal.currentSheet))
+    ) {
+      fail(`Invalid save file: ${label}.currentSheet is invalid.`)
+    }
+    validateAnimalPath(animal.path, size, `${label}.path`)
+    validateOptionalGridDestination(animal.dest, size, `${label}.dest`)
+    validateOptionalGridDestination(animal.previousDest, size, `${label}.previousDest`)
+    validateOptionalGridDestination(animal.realDest, size, `${label}.realDest`)
   })
 }
 
@@ -174,6 +272,10 @@ export function validateSaveData(data) {
   validateResources(data.resources, size, config)
   validateAnimals(data.animals, size, config)
 
+  if (data.runtime != null) {
+    if (!isObject(data.runtime)) fail('Invalid save file: runtime is invalid.')
+    validateOptionalFiniteNumber(data.runtime.elapsedMs, 'runtime elapsedMs')
+  }
   if (data.config != null && !isObject(data.config)) {
     fail('Invalid save file: config is invalid.')
   }

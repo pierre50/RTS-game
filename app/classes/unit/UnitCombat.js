@@ -93,12 +93,12 @@ export class UnitCombat {
             unit.actionSheet = Assets.cache.get(unit.allAssets[unit.work].harvestSheet)
           }
         }
-        if (instanceContactInstance(unit, target)) {
-          unit.degree = getInstanceDegree(unit, target.x, target.y)
+        unit.setDest(target.instance)
+        if (instanceContactInstance(unit, target.instance)) {
+          unit.degree = getInstanceDegree(unit, target.instance.x, target.instance.y)
           unit.getAction(unit.action)
           return true
         }
-        unit.setDest(target.instance)
         unit.setPath(target.path)
         return true
       }
@@ -113,12 +113,12 @@ export class UnitCombat {
             unit.actionSheet = Assets.cache.get(unit.allAssets[unit.work].actionSheet)
           }
         }
-        if (instanceContactInstance(unit, target)) {
-          unit.degree = getInstanceDegree(unit, target.x, target.y)
+        unit.setDest(target.instance)
+        if (instanceContactInstance(unit, target.instance)) {
+          unit.degree = getInstanceDegree(unit, target.instance.x, target.instance.y)
           unit.getAction(unit.action)
           return true
         }
-        unit.setDest(target.instance)
         unit.setPath(target.path)
         return true
       }

@@ -16,8 +16,8 @@ export class Instance extends Container {
 
   startInterval(callback, time, immediate = true) {
     this.stopInterval()
-    if (immediate) callback()
     this.interval = this.context.scheduler.add(callback, time)
+    if (immediate) callback()
   }
 
   stopInterval() {

@@ -60,7 +60,7 @@ function syncVisibleSet(target, source) {
   }
 }
 
-function updateAIKnowledge(globalCell, cell, viewer) {
+function updateAIKnowledge(globalCell, cell, viewer, { staticOnly = false } = {}) {
   const owner = viewer
 
   if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
@@ -75,16 +75,16 @@ function updateAIKnowledge(globalCell, cell, viewer) {
       if (has.category === 'Fish' || has.type === RESOURCE_TYPES.salmon) owner.foundedFish?.add(has)
     }
 
-    if (has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
+    if (!staticOnly && has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
       owner.foundedAnimals.add(has)
     }
 
-    if (has.family === FAMILY_TYPES.building && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
+    if (!staticOnly && has.family === FAMILY_TYPES.building && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyBuildings.add(has)
       owner.rememberEnemy?.(has)
     }
 
-    if (has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
+    if (!staticOnly && has.family === FAMILY_TYPES.unit && has.hitPoints > 0 && owner.isEnemy(has.owner)) {
       owner.foundedEnemyUnits.add(has)
       owner.rememberEnemy?.(has)
     }
@@ -103,11 +103,13 @@ export function rehydrateAIKnowledge(viewer, map) {
       const viewerCell = viewer.views?.[i]?.[j]
       if (!globalCell || !viewerCell?.viewed) continue
 
-      updateAIKnowledge(globalCell, viewerCell, viewer)
+      updateAIKnowledge(globalCell, viewerCell, viewer, { staticOnly: viewerCell.viewBy.size === 0 })
 
-      for (const corpse of globalCell.corpses || []) {
-        if (corpse.family === FAMILY_TYPES.animal && corpse.isDead && !corpse.isDestroyed && corpse.quantity > 0) {
-          viewer.foundedDeadAnimals?.add(corpse)
+      if (viewerCell.viewBy.size > 0) {
+        for (const corpse of globalCell.corpses || []) {
+          if (corpse.family === FAMILY_TYPES.animal && corpse.isDead && !corpse.isDestroyed && corpse.quantity > 0) {
+            viewer.foundedDeadAnimals?.add(corpse)
+          }
         }
       }
     }

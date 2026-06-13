@@ -100,6 +100,6 @@ export class UnitLifecycle {
     }
     map.grid[unit.i][unit.j].corpses.delete(unit)
     map.removeChild(unit)
-    unit.destroy({ child: true, texture: true })
+    unit.destroy({ children: true, texture: false })
   }
 }

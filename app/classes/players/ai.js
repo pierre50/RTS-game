@@ -573,8 +573,10 @@ export class AI extends Player {
           const buildingType =
             target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
           const buildings = me.buildingsByTypes([buildingType])
+          const reserve = me.strategy.getAgeUpReserve()
           if (
             canAfford(me, me.config.buildings[buildingType].cost) &&
+            me.strategy.canSpendWithReserve(me.config.buildings[buildingType].cost, reserve) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
             const closestBuilding = getClosestInstance(target, [

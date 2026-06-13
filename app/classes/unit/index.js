@@ -12,12 +12,10 @@ import {
 } from '../../constants'
 import {
   getInstanceZIndex,
-  randomRange,
   changeSpriteColor,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   getActionCondition,
-  randomItem,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
@@ -65,8 +63,8 @@ export class Unit extends Instance {
     this.previousDest = null
     this.previousWork = null
     this.path = []
-    this.degree = randomRange(1, 360)
-    this.currentFrame = randomRange(0, 4)
+    this.degree = map.randomRange(1, 360)
+    this.currentFrame = map.randomRange(0, 4)
     this.action = null
     this.actionLocked = false
     this.pendingOrder = null
@@ -178,24 +176,25 @@ export class Unit extends Instance {
       if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
-      if (controls.clicked) {
+      if (controls.consumeUnitDoubleClick(this)) {
         if (this.owner.isPlayed) {
+          const selectedUnits = new Set(player.selectedUnits)
           controls.getCellOnCamera(cell => {
             if (
               player.selectedUnits.length < MAX_SELECT_UNITS &&
               cell.has &&
               cell.has.owner &&
               cell.has.owner.label === this.owner.label &&
-              cell.has.type === this.type
+              cell.has.type === this.type &&
+              !selectedUnits.has(cell.has)
             ) {
+              selectedUnits.add(cell.has)
               cell.has.select()
               player.selectedUnits.push(cell.has)
             }
           })
         }
-        controls.doubleClicked = true
       }
-      controls.clicked = false
     })
     this.on('pointerup', evt => {
       const {
@@ -207,11 +206,7 @@ export class Unit extends Instance {
       }
 
       controls.mouse.prevent = true
-      controls.clicked = true
-      controls.double = setTimeout(() => {
-        controls.clicked = false
-        controls.doubleClicked = false
-      }, 600)
+      controls.registerUnitClick(this)
 
       if (this.owner.isPlayed) {
         let hasSentHealer = false
@@ -444,8 +439,8 @@ export class Unit extends Instance {
       return
     }
     this.stopInterval()
-    if (immediate) callback()
     this.interval = this.context.scheduler.add(callback, time)
+    if (immediate) callback()
   }
 
   explore() {

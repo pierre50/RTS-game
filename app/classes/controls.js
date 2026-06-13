@@ -10,6 +10,8 @@ const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
+const MAX_CAMERA_FRAME_SCALE = 3
+const TARGET_FRAME_MS = 1000 / 60
 
 export default class Controls extends Container {
   constructor(context) {
@@ -41,6 +43,10 @@ export default class Controls extends Container {
     this.mouseTouch
     this.mouseDrag = false
     this.touchInteraction = null
+    this.touchPanActive = false
+    this.lastClickedUnit = null
+    this.unitClickTimeout = null
+    this.doubleClicked = false
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
@@ -57,6 +63,8 @@ export default class Controls extends Container {
     this._onMouseMove = evt => this.onMouseMove(evt)
     this._onMouseDown = evt => this.onMouseDown(evt)
     this._onMouseUp = evt => this.onMouseUp(evt)
+    this._onTouchCancel = () => this.cancelActiveInteraction()
+    this._onWindowBlur = () => this.cancelActiveInteraction()
     this._onTick = ticker => this.onTick(ticker)
 
     document.addEventListener('mousemove', this._onDocMouseMove)
@@ -66,9 +74,11 @@ export default class Controls extends Container {
     gamebox.addEventListener('touchstart', this._onTouchStart)
     gamebox.addEventListener('touchend', this._onTouchEnd)
     gamebox.addEventListener('touchmove', this._onTouchMove)
+    gamebox.addEventListener('touchcancel', this._onTouchCancel)
     gamebox.addEventListener('mousemove', this._onMouseMove)
     gamebox.addEventListener('mousedown', this._onMouseDown)
-    gamebox.addEventListener('mouseup', this._onMouseUp)
+    document.addEventListener('mouseup', this._onMouseUp)
+    window.addEventListener('blur', this._onWindowBlur)
     context.app.ticker.add(this._onTick)
   }
 
@@ -84,11 +94,14 @@ export default class Controls extends Container {
     gamebox.removeEventListener('touchstart', this._onTouchStart)
     gamebox.removeEventListener('touchend', this._onTouchEnd)
     gamebox.removeEventListener('touchmove', this._onTouchMove)
+    gamebox.removeEventListener('touchcancel', this._onTouchCancel)
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
-    gamebox.removeEventListener('mouseup', this._onMouseUp)
+    document.removeEventListener('mouseup', this._onMouseUp)
+    window.removeEventListener('blur', this._onWindowBlur)
     this.context.app.ticker.remove(this._onTick)
-    this.stopMouseCameraMove()
+    clearTimeout(this.unitClickTimeout)
+    this.cancelActiveInteraction()
     super.destroy(options)
   }
 
@@ -131,8 +144,18 @@ export default class Controls extends Container {
     }
   }
 
+  isInteractionBlocked() {
+    return Boolean(this.context.devConsoleOpen || this.context.paused || this.context.victory || this.context.defeat)
+  }
+
+  isEditableTarget(target) {
+    if (!target || typeof target.closest !== 'function') return false
+    return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+  }
+
   onKeyDown(evt) {
-    if (this.context.devConsoleOpen) return
+    if (this.isInteractionBlocked() || this.isEditableTarget(evt.target)) return
+    if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -162,7 +185,7 @@ export default class Controls extends Container {
   }
 
   onKeyUp(evt) {
-    if (this.context.devConsoleOpen) {
+    if (this.isInteractionBlocked()) {
       this.stopKeyboardMove()
       return
     }
@@ -180,28 +203,34 @@ export default class Controls extends Container {
   }
 
   onTick(ticker) {
-    if (this.context.devConsoleOpen) return
+    if (this.isInteractionBlocked()) {
+      this.cancelActiveInteraction()
+      return
+    }
 
-    this.cameraController.updateMouseMove()
+    const frameScale = Math.min((ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS, MAX_CAMERA_FRAME_SCALE)
+    this.cameraController.updateMouseMove(frameScale)
 
     if (this.keyPressedCount > 0) {
       const double = this.keyPressedCount > 1
       if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
         this.keySpeed = Math.min(
           KEYBOARD_CAMERA_MAX_SPEED,
-          this.keySpeed + ticker.deltaTime * KEYBOARD_CAMERA_ACCELERATION
+          this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
         )
       }
-      if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double)
-      if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double)
-      if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double)
-      if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double)
+      if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double, frameScale)
+      if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double, frameScale)
+      if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double, frameScale)
+      if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double, frameScale)
     }
   }
 
   onTouchStart(evt) {
+    if (this.isInteractionBlocked()) return
+
     const touch = evt.touches[0]
-    if (evt.touches.length === 2) {
+    if (evt.touches.length >= 2) {
       if (this.mouseRectangle) {
         this.selectionManager.handleMouseUp()
       } else {
@@ -210,6 +239,7 @@ export default class Controls extends Container {
       this.touchInteraction = {
         mode: 'pan',
       }
+      this.touchPanActive = true
       this.mouseDrag = false
       this.mouseTouch = { x: touch.pageX, y: touch.pageY }
     } else {
@@ -242,8 +272,10 @@ export default class Controls extends Container {
   }
 
   onTouchMove(evt) {
+    if (this.isInteractionBlocked()) return
+
     const touch = evt.touches[0]
-    if (evt.touches.length === 2) {
+    if (this.touchPanActive) {
       this.mouse.x = touch.pageX
       this.mouse.y = touch.pageY
 
@@ -256,55 +288,77 @@ export default class Controls extends Container {
         if (this.mouse.x < this.mouseTouch.x) this.moveCamera('right', speedX, false)
       }
       this.mouseTouch = { x: this.mouse.x, y: this.mouse.y }
-    } else {
-      this.mouse.x = touch.pageX
-      this.mouse.y = touch.pageY
-
-      if (this.mouseBuilding) {
-        const hasMoved =
-          this.touchInteraction &&
-          pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
-            TOUCH_DRAG_THRESHOLD
-        if (hasMoved) {
-          this.mouseDrag = true
-          this.touchInteraction.moved = true
-        }
-        this.buildingPlacer.handleMouseMove()
-        return
-      }
-
-      if (!this.touchInteraction) {
-        this.onMouseMove(touch)
-        return
-      }
-
-      const movedEnough =
-        pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
-        TOUCH_DRAG_THRESHOLD
-
-      if (this.touchInteraction.mode === 'select') {
-        if (movedEnough) {
-          this.touchInteraction.moved = true
-        }
-        this.onMouseMove(touch)
-      } else if (movedEnough) {
-        this.touchInteraction.moved = true
-        this.mouseDrag = true
-        const speedX = Math.abs(this.mouse.x - this.touchInteraction.lastX) * 2
-        const speedY = Math.abs(this.mouse.y - this.touchInteraction.lastY) * 2
-        if (this.mouse.x > this.touchInteraction.lastX) this.moveCamera('left', speedX, false)
-        if (this.mouse.y > this.touchInteraction.lastY) this.moveCamera('up', speedY, false)
-        if (this.mouse.y < this.touchInteraction.lastY) this.moveCamera('down', speedY, false)
-        if (this.mouse.x < this.touchInteraction.lastX) this.moveCamera('right', speedX, false)
-      }
-
-      this.touchInteraction.lastX = this.mouse.x
-      this.touchInteraction.lastY = this.mouse.y
+      return
     }
+
+    this.mouse.x = touch.pageX
+    this.mouse.y = touch.pageY
+
+    if (this.mouseBuilding) {
+      const hasMoved =
+        this.touchInteraction &&
+        pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
+          TOUCH_DRAG_THRESHOLD
+      if (hasMoved) {
+        this.mouseDrag = true
+        this.touchInteraction.moved = true
+      }
+      this.buildingPlacer.handleMouseMove()
+      return
+    }
+
+    if (!this.touchInteraction) {
+      this.onMouseMove(touch)
+      return
+    }
+
+    const movedEnough =
+      pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
+      TOUCH_DRAG_THRESHOLD
+
+    if (this.touchInteraction.mode === 'select') {
+      if (movedEnough) {
+        this.touchInteraction.moved = true
+      }
+      this.onMouseMove(touch)
+    } else if (movedEnough) {
+      this.touchInteraction.moved = true
+      this.mouseDrag = true
+      const speedX = Math.abs(this.mouse.x - this.touchInteraction.lastX) * 2
+      const speedY = Math.abs(this.mouse.y - this.touchInteraction.lastY) * 2
+      if (this.mouse.x > this.touchInteraction.lastX) this.moveCamera('left', speedX, false)
+      if (this.mouse.y > this.touchInteraction.lastY) this.moveCamera('up', speedY, false)
+      if (this.mouse.y < this.touchInteraction.lastY) this.moveCamera('down', speedY, false)
+      if (this.mouse.x < this.touchInteraction.lastX) this.moveCamera('right', speedX, false)
+    }
+
+    this.touchInteraction.lastX = this.mouse.x
+    this.touchInteraction.lastY = this.mouse.y
   }
 
   onTouchEnd(evt) {
     const touch = evt.changedTouches[0]
+    if (this.touchPanActive || this.touchInteraction?.mode === 'pan') {
+      this.pointerStart = null
+      this.mouseDrag = true
+      if (evt.touches.length) {
+        const remainingTouch = evt.touches[0]
+        this.mouseTouch = { x: remainingTouch.pageX, y: remainingTouch.pageY }
+        this.touchInteraction = { mode: 'pan', moved: true }
+        return
+      }
+      this.touchPanActive = false
+      this.touchInteraction = null
+      this.mouseTouch = null
+      this.mouseDrag = false
+      return
+    }
+
+    if (this.isInteractionBlocked()) {
+      this.cancelActiveInteraction()
+      return
+    }
+
     if (evt.changedTouches.length === 1) {
       const mode = this.touchInteraction?.mode
       const moved = this.touchInteraction?.moved
@@ -329,7 +383,7 @@ export default class Controls extends Container {
   }
 
   onMouseDown(evt) {
-    if (this.context.devConsoleOpen) return
+    if (this.isInteractionBlocked()) return
 
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
@@ -341,7 +395,7 @@ export default class Controls extends Container {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
-    if (this.context.devConsoleOpen) return
+    if (this.isInteractionBlocked()) return
 
     if (this.mouseBuilding) {
       this.buildingPlacer.handleMouseMove()
@@ -351,14 +405,22 @@ export default class Controls extends Container {
   }
 
   onMouseUp(evt) {
-    if (this.context.devConsoleOpen) return
+    if (this.isInteractionBlocked()) {
+      this.cancelActiveInteraction()
+      return
+    }
 
     const {
       context: { map, player },
     } = this
     this.pointerStart = null
     clearTimeout(this.mouseHoldTimeout)
-    if (!this.isMouseInApp(evt) || this.mouse.prevent || this.mouseDrag) {
+    if (!this.isMouseInApp(evt)) {
+      this.mouse.prevent = false
+      this.cancelMouseRectangle()
+      return
+    }
+    if (this.mouse.prevent || this.mouseDrag) {
       this.mouse.prevent = false
       return
     }
@@ -387,6 +449,7 @@ export default class Controls extends Container {
   }
 
   sendUnits(cell) {
+    if (this.isInteractionBlocked()) return
     return this.selectionManager.sendUnits(cell)
   }
 
@@ -402,7 +465,7 @@ export default class Controls extends Container {
   }
 
   isMouseInApp(evt) {
-    return evt.target && (!evt.target.tagName || evt.target.closest('#game'))
+    return !this.isInteractionBlocked() && evt.target && (!evt.target.tagName || evt.target.closest('#game'))
   }
 
   removeMouseBuilding() {
@@ -413,11 +476,16 @@ export default class Controls extends Container {
     return this.buildingPlacer.setMouseBuilding(building)
   }
 
-  moveCamera(dir, moveSpeed, isSpeedDivided) {
-    this.cameraController.move(dir, moveSpeed, isSpeedDivided)
+  moveCamera(dir, moveSpeed, isSpeedDivided, deltaScale = 1) {
+    if (this.isInteractionBlocked()) return
+    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale)
   }
 
   moveCameraWithMouse(evt) {
+    if (this.isInteractionBlocked()) {
+      this.stopMouseCameraMove()
+      return
+    }
     if (evt.target?.closest('button, .topbar-options-menu')) {
       this.cameraController.stopMouseMove()
       return
@@ -433,6 +501,45 @@ export default class Controls extends Container {
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+  }
+
+  cancelMouseRectangle() {
+    if (!this.mouseRectangle) return
+    this.mouseRectangle.graph.destroy(true)
+    this.mouseRectangle = null
+  }
+
+  cancelActiveInteraction() {
+    this.stopKeyboardMove()
+    this.stopMouseCameraMove()
+    this.cancelMouseRectangle()
+    this.pointerStart = null
+    this.mouseTouch = null
+    this.mouseDrag = false
+    this.touchInteraction = null
+    this.touchPanActive = false
+    this.mouse.prevent = false
+  }
+
+  consumeUnitDoubleClick(unit) {
+    if (this.lastClickedUnit !== unit) return false
+    clearTimeout(this.unitClickTimeout)
+    this.lastClickedUnit = null
+    this.doubleClicked = true
+    setTimeout(() => {
+      this.doubleClicked = false
+    })
+    return true
+  }
+
+  registerUnitClick(unit) {
+    clearTimeout(this.unitClickTimeout)
+    this.lastClickedUnit = unit
+    this.unitClickTimeout = setTimeout(() => {
+      if (this.lastClickedUnit === unit) {
+        this.lastClickedUnit = null
+      }
+    }, 600)
   }
 
   instanceInCamera(instance) {
@@ -474,6 +581,7 @@ export default class Controls extends Container {
   }
 
   setCamera(x, y, direct) {
+    if (this.isInteractionBlocked()) return
     this.cameraController.set(x, y, direct)
   }
 }

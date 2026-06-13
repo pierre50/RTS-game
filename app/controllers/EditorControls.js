@@ -7,6 +7,8 @@ const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
+const MAX_CAMERA_FRAME_SCALE = 3
+const TARGET_FRAME_MS = 1000 / 60
 
 export class EditorControls extends Container {
   constructor(context) {
@@ -136,8 +138,8 @@ export class EditorControls extends Container {
     return Boolean(instance.visible || instance.owner?.visible || instance.target?.visible)
   }
 
-  moveCamera(dir, speed, isSpeedDivided) {
-    this.cameraController.move(dir, speed, isSpeedDivided)
+  moveCamera(dir, speed, isSpeedDivided, deltaScale = 1) {
+    this.cameraController.move(dir, speed, isSpeedDivided, deltaScale)
     this._refreshHover()
   }
 
@@ -172,20 +174,21 @@ export class EditorControls extends Container {
   }
 
   onTick(ticker) {
-    this.cameraController.updateMouseMove()
+    const frameScale = Math.min((ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS, MAX_CAMERA_FRAME_SCALE)
+    this.cameraController.updateMouseMove(frameScale)
     if (this.keyPressedCount <= 0) return
 
     const double = this.keyPressedCount > 1
     if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
       this.keySpeed = Math.min(
         KEYBOARD_CAMERA_MAX_SPEED,
-        this.keySpeed + ticker.deltaTime * KEYBOARD_CAMERA_ACCELERATION
+        this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
       )
     }
-    if (this.keysPressed.ArrowLeft) this.moveCamera('left', this.keySpeed, double)
-    if (this.keysPressed.ArrowUp) this.moveCamera('up', this.keySpeed, double)
-    if (this.keysPressed.ArrowDown) this.moveCamera('down', this.keySpeed, double)
-    if (this.keysPressed.ArrowRight) this.moveCamera('right', this.keySpeed, double)
+    if (this.keysPressed.ArrowLeft) this.moveCamera('left', this.keySpeed, double, frameScale)
+    if (this.keysPressed.ArrowUp) this.moveCamera('up', this.keySpeed, double, frameScale)
+    if (this.keysPressed.ArrowDown) this.moveCamera('down', this.keySpeed, double, frameScale)
+    if (this.keysPressed.ArrowRight) this.moveCamera('right', this.keySpeed, double, frameScale)
   }
 
   onMouseMove(evt) {

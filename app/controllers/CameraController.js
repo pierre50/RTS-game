@@ -58,7 +58,31 @@ export class CameraController {
     }
   }
 
-  move(dir, moveSpeed, isSpeedDivided) {
+  clampWorldPointToMap(x, y) {
+    const { map } = this.context
+    const gridX = (x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2
+    const gridY = (y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2
+    const clampedX = Math.min(Math.max(gridX, 0), map.size)
+    const clampedY = Math.min(Math.max(gridY, 0), map.size)
+    return {
+      x: ((clampedX - clampedY) * CELL_WIDTH) / 2,
+      y: ((clampedX + clampedY) * CELL_HEIGHT) / 2,
+    }
+  }
+
+  clampCameraToMap() {
+    const {
+      context: { app },
+    } = this
+    const center = this.clampWorldPointToMap(
+      this.camera.x + app.screen.width / 2,
+      this.camera.y + app.screen.height / 2
+    )
+    this.camera.x = center.x - app.screen.width / 2
+    this.camera.y = center.y - app.screen.height / 2
+  }
+
+  move(dir, moveSpeed, isSpeedDivided, deltaScale = 1) {
     /**
      *  /A\
      * /   \
@@ -72,7 +96,7 @@ export class CameraController {
     } = this
 
     const dividedSpeed = isSpeedDivided ? 1.5 : 1
-    const speed = (moveSpeed || 20) / dividedSpeed
+    const speed = ((moveSpeed || 20) / dividedSpeed) * deltaScale
     const { A, B, C, D } = this.getCameraDiamondBounds()
     const cameraCenter = {
       x: app.screen.width / 2,
@@ -126,6 +150,7 @@ export class CameraController {
 
     if (this.camera.x === prevX && this.camera.y === prevY) return
 
+    this.clampCameraToMap()
     menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)
     this.scheduleVisibleCellsUpdate()
@@ -173,10 +198,10 @@ export class CameraController {
     this.mouseMoveState = null
   }
 
-  updateMouseMove() {
+  updateMouseMove(deltaScale = 1) {
     if (!this.mouseMoveState) return
     this.mouseMoveState.dir.forEach(dir => {
-      this.move(dir, this.mouseMoveState.calcs[dir])
+      this.move(dir, this.mouseMoveState.calcs[dir], false, deltaScale)
     })
   }
 
@@ -200,8 +225,8 @@ export class CameraController {
     for (let i = cameraFloor.x - margin; i <= cameraFloor.x + visibleWidth + margin; i += CELL_WIDTH / 2) {
       for (let j = cameraFloor.y - margin; j <= cameraFloor.y + visibleHeight + margin; j += CELL_HEIGHT / 2) {
         const [cartesianX, cartesianY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartesianX, 0), map.size - 1)
-        const y = Math.min(Math.max(cartesianY, 0), map.size - 1)
+        const x = Math.min(Math.max(cartesianX, 0), map.size)
+        const y = Math.min(Math.max(cartesianY, 0), map.size)
 
         if (map.grid[x] && map.grid[x][y]) {
           callback(map.grid[x][y])
@@ -225,8 +250,8 @@ export class CameraController {
     for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
       for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
         const [cartX, cartY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartX, 0), map.size - 1)
-        const y = Math.min(Math.max(cartY, 0), map.size - 1)
+        const x = Math.min(Math.max(cartX, 0), map.size)
+        const y = Math.min(Math.max(cartY, 0), map.size)
 
         const cell = map.grid[x]?.[y]
         if (cell) {
@@ -255,9 +280,11 @@ export class CameraController {
     const {
       context: { map, app, menu },
     } = this
+    const requestedCenter = direct ? { x: x + app.screen.width / 2, y: y + app.screen.height / 2 } : { x, y }
+    const center = this.clampWorldPointToMap(requestedCenter.x, requestedCenter.y)
     this.camera = {
-      x: direct ? x : x - app.screen.width / 2,
-      y: direct ? y : y - app.screen.height / 2,
+      x: center.x - app.screen.width / 2,
+      y: center.y - app.screen.height / 2,
     }
     menu && menu.updateCameraMiniMap()
     map.setCoordinate(-this.camera.x, -this.camera.y)

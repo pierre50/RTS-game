@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { getIconPath, canAfford, refundCost, isValidCondition, getBuildingAsset } from '../lib'
+import { getIconPath, canAfford, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
 import { FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { syncHitPointsInfo } from './BaseEntityInterface'
@@ -310,17 +310,7 @@ export class BottombarManager {
         }
         cancel.addEventListener('pointerup', () => {
           this.playUiClick()
-          for (let i = 0; i < selection.queue.length; i++) {
-            if (selection.queue[i] === type) {
-              refundCost(player, unit.cost)
-            }
-          }
-          menu.updateTopbar()
-          selection.queue = selection.queue.filter(q => q !== type)
-          if (selection.queue[0] !== type) {
-            this.updateButtonContent(type, '')
-            this.toggleButtonCancel(type, false)
-          }
+          selection.cancelUnits(type)
         })
         const img = this.createMenuIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
@@ -328,6 +318,7 @@ export class BottombarManager {
           if (canAfford(player, unit.cost)) {
             if (player.population >= player.population_max) {
               menu.showMessage(t('needHouses'), 'warning')
+              return
             }
             this.toggleButtonCancel(type, true)
             selection.buyUnit(type)

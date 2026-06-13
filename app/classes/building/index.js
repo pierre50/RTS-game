@@ -39,6 +39,7 @@ export class Building extends Instance {
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
+    this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
     this.intervalId = null
     this.attackIntervalId = null
@@ -331,12 +332,16 @@ export class Building extends Instance {
   }
 
   // BuildingProduction
-  placeUnit(type) {
-    return this.buildingProduction.placeUnit(type)
+  placeUnit(type, extra) {
+    return this.buildingProduction.placeUnit(type, extra)
   }
 
   buyUnit(type, alreadyPaid = false, force = false, extra) {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
+  }
+
+  cancelUnits(type) {
+    return this.buildingProduction.cancelUnits(type)
   }
 
   cancelTechnology() {

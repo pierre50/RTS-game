@@ -2,6 +2,7 @@ import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
+import { t } from './lang'
 
 const FIVE_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north']
 const EIGHT_DIRECTION_ORDER = ['south', 'southwest', 'west', 'northwest', 'north', 'northeast', 'east', 'southeast']
@@ -227,41 +228,50 @@ export class Modal {
   constructor({ title, content, onClose } = {}) {
     this._id = uuidv4()
     this._onClose = onClose
+    this._previousActiveElement = document.activeElement
+    this._onKeyDown = this._handleKeyDown.bind(this)
     this._build(title, content)
   }
 
   _build(title, content) {
     const backdrop = document.createElement('div')
+    this._backdrop = backdrop
     backdrop.id = this._id
     backdrop.className = 'modal'
     backdrop.addEventListener('pointerdown', e => {
       if (e.target === backdrop) {
-        this._removeEl()
-        if (this._onClose) this._onClose()
+        this._dismiss()
       }
     })
 
     const panel = document.createElement('div')
+    this._panel = panel
     panel.className = 'modal-panel ui-panel-enter'
+    panel.setAttribute('role', 'dialog')
+    panel.setAttribute('aria-modal', 'true')
+    panel.tabIndex = -1
 
     const header = document.createElement('div')
     header.className = 'modal-header'
 
     if (title) {
       const titleEl = document.createElement('div')
+      titleEl.id = `${this._id}-title`
       titleEl.className = 'modal-title'
       titleEl.textContent = title
+      panel.setAttribute('aria-labelledby', titleEl.id)
       header.appendChild(titleEl)
+    } else {
+      panel.setAttribute('aria-label', t('dialog'))
     }
 
     const closeBtn = document.createElement('button')
+    closeBtn.type = 'button'
     closeBtn.className = 'modal-close ui-btn'
     closeBtn.textContent = '✕'
+    closeBtn.setAttribute('aria-label', t('close'))
     closeBtn.addEventListener('pointerdown', playClickSound)
-    closeBtn.addEventListener('click', () => {
-      this._removeEl()
-      if (this._onClose) this._onClose()
-    })
+    closeBtn.addEventListener('click', () => this._dismiss())
     header.appendChild(closeBtn)
 
     panel.appendChild(header)
@@ -269,10 +279,73 @@ export class Modal {
 
     backdrop.appendChild(panel)
     document.body.appendChild(backdrop)
+    document.addEventListener('keydown', this._onKeyDown)
+    requestAnimationFrame(() => {
+      if (!this._backdrop?.isConnected) return
+      this._getFocusableElements()[0]?.focus()
+      if (!this._panel.contains(document.activeElement)) this._panel.focus()
+    })
+  }
+
+  _getFocusableElements() {
+    if (!this._panel) return []
+    return [
+      ...this._panel.querySelectorAll(
+        'button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+      ),
+    ].filter(
+      element =>
+        !element.hidden && element.getAttribute('aria-hidden') !== 'true' && element.getClientRects().length > 0
+    )
+  }
+
+  _isTopmost() {
+    const modals = document.querySelectorAll('.modal')
+    return modals.length > 0 && modals[modals.length - 1] === this._backdrop
+  }
+
+  _handleKeyDown(evt) {
+    if (!this._isTopmost()) return
+
+    if (evt.key === 'Escape') {
+      evt.preventDefault()
+      this._dismiss()
+      return
+    }
+
+    if (evt.key !== 'Tab') return
+    const focusable = this._getFocusableElements()
+    if (!focusable.length) {
+      evt.preventDefault()
+      this._panel.focus()
+      return
+    }
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (evt.shiftKey && (document.activeElement === first || !this._panel.contains(document.activeElement))) {
+      evt.preventDefault()
+      last.focus()
+    } else if (!evt.shiftKey && document.activeElement === last) {
+      evt.preventDefault()
+      first.focus()
+    }
+  }
+
+  _dismiss() {
+    if (!this._backdrop?.isConnected) return
+    this._removeEl()
+    this._onClose?.()
   }
 
   _removeEl() {
-    document.getElementById(this._id)?.remove()
+    if (this._closed) return
+    this._closed = true
+    document.removeEventListener('keydown', this._onKeyDown)
+    this._backdrop?.remove()
+    if (this._previousActiveElement?.isConnected) {
+      this._previousActiveElement.focus()
+    }
   }
 
   close() {
@@ -320,24 +393,58 @@ export function throttle(callback, wait, immediate = false) {
   }
 
   let timeout = null
-  let initialCall = true
+  let pendingArgs = null
+  let pendingThis = null
+
+  const schedule = () => {
+    timeout = setTimeout(() => {
+      if (!pendingArgs) {
+        timeout = null
+        return
+      }
+
+      const args = pendingArgs
+      const context = pendingThis
+      pendingArgs = null
+      pendingThis = null
+      callback.apply(context, args)
+
+      if (immediate || pendingArgs) {
+        schedule()
+      } else {
+        timeout = null
+      }
+    }, wait)
+  }
 
   return function (...args) {
-    const callNow = immediate && initialCall
-
-    const next = () => {
+    if (immediate && !timeout) {
       callback.apply(this, args)
-      timeout = null
+      schedule()
+      return
     }
 
-    if (callNow) {
-      initialCall = false
-      next()
-    }
+    pendingArgs = args
+    pendingThis = this
+    if (!timeout) schedule()
+  }
+}
 
-    if (!timeout) {
-      timeout = setTimeout(next, wait)
+export function throttleByKey(callback, wait, getKey) {
+  if (typeof callback !== 'function' || typeof wait !== 'number' || typeof getKey !== 'function') {
+    throw new Error('Invalid arguments: callback and getKey must be functions and wait must be a number.')
+  }
+
+  const throttledCallbacks = new Map()
+
+  return function (...args) {
+    const key = getKey(...args)
+    let throttled = throttledCallbacks.get(key)
+    if (!throttled) {
+      throttled = throttle(callback, wait)
+      throttledCallbacks.set(key, throttled)
     }
+    throttled.apply(this, args)
   }
 }
 

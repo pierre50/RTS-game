@@ -55,6 +55,7 @@ export default class MapConfig {
     this._modal = new Modal({
       title: t('newGame'),
       content: this._buildContent(),
+      onClose: () => this.destroy(),
     })
 
     document.addEventListener('keydown', this._onKeyDown)
@@ -164,6 +165,8 @@ export default class MapConfig {
   }
 
   destroy() {
+    if (this._destroyed) return
+    this._destroyed = true
     document.removeEventListener('keydown', this._onKeyDown)
     this._modal.close()
   }

@@ -14,14 +14,18 @@ export class PauseMenu {
     button.type = 'button'
     button.className = 'topbar-options-menu ui-btn'
     button.innerText = t('menuBtn')
-    button.addEventListener('pointerdown', () => this.open())
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', () => this.open())
     return button
   }
 
   open() {
     const { menu } = this
-    playClickSound()
-    menu.context.pause()
+    const shouldResume = !menu.context.paused
+    if (shouldResume) menu.context.pause()
+    const resumeIfNeeded = () => {
+      if (shouldResume) menu.context.resume()
+    }
 
     const content = document.createElement('div')
     content.className = 'modal-menu'
@@ -29,7 +33,7 @@ export class PauseMenu {
     const modal = new Modal({
       title: t('menuBtn'),
       content,
-      onClose: () => menu.context.resume(),
+      onClose: resumeIfNeeded,
     })
 
     content.appendChild(
@@ -37,7 +41,7 @@ export class PauseMenu {
         try {
           menu.context.save()
           modal.close()
-          menu.context.resume()
+          resumeIfNeeded()
           menu.showMessage(t('saveSuccess'), 'success')
         } catch (e) {
           menu.showMessage(e.message === 'MAX_SAVES_REACHED' ? t('maxSavesReached') : t('storageFull'), 'warning')
@@ -48,14 +52,14 @@ export class PauseMenu {
     content.appendChild(
       this._btn(t('loadGame'), () => {
         modal.close()
-        this._openSaveList()
+        this._openSaveList(resumeIfNeeded)
       })
     )
 
     content.appendChild(
       this._btn(t('settings'), () => {
         modal.close()
-        this._openSettings()
+        this._openSettings(resumeIfNeeded)
       })
     )
 
@@ -74,7 +78,7 @@ export class PauseMenu {
     )
   }
 
-  _openSettings() {
+  _openSettings(resumeIfNeeded) {
     const { menu } = this
     const content = buildSettingsContent({
       onSpeedChange: v => {
@@ -93,16 +97,16 @@ export class PauseMenu {
     new Modal({
       title: t('settings'),
       content,
-      onClose: () => menu.context.resume(),
+      onClose: resumeIfNeeded,
     })
   }
 
-  _openSaveList() {
+  _openSaveList(resumeIfNeeded) {
     const { menu } = this
     openSaveListModal({
       onLoad: saveData => menu.context.load(saveData),
       onError: msg => menu.showMessage(msg, 'error'),
-      onClose: () => menu.context.resume(),
+      onClose: resumeIfNeeded,
     })
   }
 
@@ -110,10 +114,8 @@ export class PauseMenu {
     const button = document.createElement('button')
     button.className = 'ui-btn'
     button.innerText = label
-    button.addEventListener('pointerdown', () => {
-      playClickSound()
-      onClick()
-    })
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', onClick)
     return button
   }
 }

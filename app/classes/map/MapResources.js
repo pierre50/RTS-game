@@ -1,5 +1,4 @@
 import { Resource } from '../resource'
-import { randomRange, randomItem } from '../../lib'
 import { RESOURCE_TYPES } from '../../constants'
 
 const SPACED_RESOURCE_TYPES = new Set([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone])
@@ -52,6 +51,7 @@ export class MapResources {
     clearingProbability = 0.6
   ) {
     const { grid } = this.map
+    const random = () => this.map.random()
     const { i: playerI, j: playerJ } = player
     const gridWidth = grid.length
     const gridHeight = grid[0].length
@@ -70,7 +70,7 @@ export class MapResources {
       const circleCells = []
       for (let x = -radius; x <= radius; x++) {
         for (let y = -radius; y <= radius; y++) {
-          const noise = Math.random() * edgeNoise - edgeNoise / 2
+          const noise = random() * edgeNoise - edgeNoise / 2
           const effectiveRadius = radius - noise
           if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
             const cellI = centerI + x
@@ -84,7 +84,7 @@ export class MapResources {
               grid[cellI][cellJ].category !== 'Water' &&
               grid[cellI][cellJ].type !== 'Border' &&
               !grid[cellI][cellJ].inclined &&
-              Math.random() < density
+              random() < density
             ) {
               circleCells.push({ i: cellI, j: cellJ })
             }
@@ -97,13 +97,13 @@ export class MapResources {
     for (let cluster = 0; cluster < clusterCount; cluster++) {
       let clusterCenterI, clusterCenterJ
       let tries = 0
-      const clusterRadius = Math.floor(Math.random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius
-      const clusterDensity = Math.random() * 0.5 + 0.5
-      const edgeNoise = Math.random() * 2
+      const clusterRadius = Math.floor(random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius
+      const clusterDensity = random() * 0.5 + 0.5
+      const edgeNoise = random() * 2
 
       do {
-        clusterCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
-        clusterCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
+        clusterCenterI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
+        clusterCenterJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
         tries++
         if (tries > 100) break
       } while (
@@ -129,8 +129,8 @@ export class MapResources {
       let tries = 0
 
       do {
-        soloI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
-        soloJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
+        soloI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
+        soloJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
         tries++
         if (tries > 50) break
       } while (
@@ -150,15 +150,15 @@ export class MapResources {
     }
 
     for (let clearing = 0; clearing < clusterCount; clearing++) {
-      if (Math.random() < clearingProbability) {
+      if (random() < clearingProbability) {
         let clearingCenterI, clearingCenterJ
         let tries = 0
-        const clearingRadius = Math.floor(Math.random() * 8) + 5
-        const edgeNoise = Math.random() * 1.5
+        const clearingRadius = Math.floor(random() * 8) + 5
+        const edgeNoise = random() * 1.5
 
         do {
-          clearingCenterI = playerI + Math.floor(Math.random() * forestRange * 2 - forestRange)
-          clearingCenterJ = playerJ + Math.floor(Math.random() * forestRange * 2 - forestRange)
+          clearingCenterI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
+          clearingCenterJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
           tries++
           if (tries > 100) break
         } while (
@@ -181,7 +181,7 @@ export class MapResources {
     }
 
     const pathLength = 20
-    const pathDirection = Math.random() > 0.5 ? 1 : -1
+    const pathDirection = random() > 0.5 ? 1 : -1
 
     for (let step = 0; step < pathLength; step++) {
       const offsetX = step * pathDirection
@@ -195,8 +195,8 @@ export class MapResources {
         nj < gridHeight &&
         distSq(ni, nj, playerI, playerJ) >= safeDistanceSq
       ) {
-        const randOffsetX = Math.random() > 0.5 ? 1 : -1
-        const randOffsetY = Math.random() > 0.5 ? 1 : -1
+        const randOffsetX = random() > 0.5 ? 1 : -1
+        const randOffsetY = random() > 0.5 ? 1 : -1
         pathCells.add(`${ni + randOffsetX},${nj + randOffsetY}`)
       }
     }
@@ -210,7 +210,7 @@ export class MapResources {
     const cellsToPlace = []
     for (let i = 0; i < treeCount; i++) {
       if (forestCells.length === 0) break
-      const itemIndex = Math.floor(Math.random() * forestCells.length)
+      const itemIndex = Math.floor(random() * forestCells.length)
       const cell = forestCells[itemIndex]
       cellsToPlace.push(cell)
       forestCells.splice(itemIndex, 1)
@@ -233,9 +233,9 @@ export class MapResources {
 
   placeAnimalHerd(player, quantity, range) {
     const { grid } = this.map
-    const randomDistance = randomRange(range[0], range[1])
-    const centerI = player.i + randomItem([-randomDistance, randomDistance])
-    const centerJ = player.j + randomItem([-randomDistance, randomDistance])
+    const randomDistance = this.map.randomRange(range[0], range[1])
+    const centerI = player.i + this.map.randomItem([-randomDistance, randomDistance])
+    const centerJ = player.j + this.map.randomItem([-randomDistance, randomDistance])
 
     const validCells = []
     for (let dx = -3; dx <= 3; dx++) {
@@ -253,7 +253,7 @@ export class MapResources {
 
     const toPlace = Math.min(quantity, validCells.length)
     for (let i = 0; i < toPlace; i++) {
-      const idx = Math.floor(Math.random() * validCells.length)
+      const idx = Math.floor(this.map.random() * validCells.length)
       const cell = validCells.splice(idx, 1)[0]
       this.map.gaia.createAnimal({ i: cell.i, j: cell.j, type: 'Gazelle' })
     }
@@ -315,8 +315,8 @@ export class MapResources {
     const minNeutralDistanceSq = minNeutralDistance ** 2
 
     for (let attempt = 0; attempt < 300; attempt++) {
-      const i = randomRange(border, this.map.size - border)
-      const j = randomRange(border, this.map.size - border)
+      const i = this.map.randomRange(border, this.map.size - border)
+      const j = this.map.randomRange(border, this.map.size - border)
       const cell = this.map.grid[i]?.[j]
       if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
 
@@ -333,8 +333,8 @@ export class MapResources {
   }
 
   placeResourceGroup(player, instance, quantity, range) {
-    const angle = Math.random() * 2 * Math.PI
-    const dist = range[0] + Math.random() * (range[1] - range[0])
+    const angle = this.map.random() * 2 * Math.PI
+    const dist = range[0] + this.map.random() * (range[1] - range[0])
     const centerI = Math.round(player.i + Math.cos(angle) * dist)
     const centerJ = Math.round(player.j + Math.sin(angle) * dist)
 
@@ -374,7 +374,7 @@ export class MapResources {
     const cellsToPlace = []
     for (let i = 0; i < quantity; i++) {
       if (!validCells.length) break
-      const idx = Math.floor(Math.random() * validCells.length)
+      const idx = Math.floor(this.map.random() * validCells.length)
       cellsToPlace.push(validCells.splice(idx, 1)[0])
     }
 

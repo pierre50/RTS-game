@@ -3,7 +3,6 @@ import {
   getInstanceZIndex,
   playerCanSeeInstance,
   randomRange,
-  randomItem,
   drawInstanceBlinkingSelection,
   getActionCondition,
   bindAnimatedSpriteToTicker,
@@ -75,7 +74,7 @@ export class Resource extends Instance {
       this.sprite.animationSpeed = 0.2
     } else {
       this.textureName =
-        this.textureName || randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
+        this.textureName || map.randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
       const resourceName = this.textureName.split('_')[1]
       const textureFile = this.textureName + '.png'
       const spritesheet = Assets.cache.get(resourceName)
@@ -94,9 +93,9 @@ export class Resource extends Instance {
 
       this.sprite.on('pointertap', () => {
         const {
-          context: { player, menu, editor },
+          context: { player, menu, controls, editor },
         } = this
-        if (editor?.handleEntityInteraction(this)) return
+        if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked()) return
         if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
@@ -217,7 +216,7 @@ export class Resource extends Instance {
     }
     map.grid[this.i][this.j].corpses.delete(this)
     map.removeChild(this)
-    this.destroy({ child: true, texture: true })
+    this.destroy({ children: true, texture: false })
   }
 
   setDefaultInterface(element, data) {

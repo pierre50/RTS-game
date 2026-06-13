@@ -1,5 +1,6 @@
 import {
   throttle,
+  throttleByKey,
   canvasDrawDiamond,
   canvasDrawRectangle,
   canvasDrawStrokeRectangle,
@@ -12,7 +13,11 @@ export class MinimapManager {
     this.menu = menu
     this.miniMapAlpha = 1.284
 
-    this.updatePlayerMiniMap = throttle(this.updatePlayerMiniMapEvt.bind(this), 500)
+    this.updatePlayerMiniMap = throttleByKey(
+      this.updatePlayerMiniMapEvt.bind(this),
+      500,
+      owner => owner?.label ?? owner
+    )
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt.bind(this), 500)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt.bind(this), 100)
   }

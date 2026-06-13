@@ -2,7 +2,6 @@ import { Assets, AnimatedSprite } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import {
   getInstanceZIndex,
-  randomRange,
   instancesDistance,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -38,7 +37,7 @@ export class Animal extends Instance {
     this.realDest = null
     this.previousDest = null
     this.path = []
-    this.degree = randomRange(1, 360)
+    this.degree = map.randomRange(1, 360)
     this.action = null
     this.currentFrame = 0
     this.currentSheet = SHEET_TYPES.standing

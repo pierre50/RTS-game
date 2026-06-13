@@ -30,7 +30,8 @@ export class BuildingProduction {
         building.j,
         building.size,
         map.grid,
-        cell => cell.category === 'Water' && !cell.solid
+        cell => cell.category === 'Water' && !cell.solid,
+        items => map.randomItem(items)
       )
     } else {
       spawnCell = getFreeCellAroundPoint(
@@ -38,12 +39,11 @@ export class BuildingProduction {
         building.j,
         building.size,
         map.grid,
-        cell => cell.category !== 'Water' && !cell.solid
+        cell => cell.category !== 'Water' && !cell.solid,
+        items => map.randomItem(items)
       )
     }
-    if (!spawnCell) {
-      return
-    }
+    if (!spawnCell || building.owner.population >= Math.min(POPULATION_MAX, building.owner.population_max)) return false
     building.owner.population++
 
     const unitExtra = extra || (building.owner.getUnitExtraOptions && building.owner.getUnitExtraOptions(type)) || {}
@@ -59,6 +59,7 @@ export class BuildingProduction {
         building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
       )
     }
+    return true
   }
 
   buyUnit(type, alreadyPaid = false, force = false, extra) {
@@ -107,8 +108,8 @@ export class BuildingProduction {
               building.updateInterfaceLoading()
             }
           } else if (building.loading >= 100 || map.instantMode) {
+            if (!building.placeUnit(type, extra)) return
             building.stopInterval()
-            building.placeUnit(type, extra)
             building.loading = null
             building.queue.shift()
             if (building.queue.length) {
@@ -138,19 +139,42 @@ export class BuildingProduction {
     }
   }
 
+  cancelUnits(type) {
+    const building = this.building
+    const unit = building.owner.config.units[type]
+    if (!unit) return false
+
+    const cancelled = building.queue.filter(queuedType => queuedType === type).length
+    if (!cancelled) return false
+
+    for (let index = 0; index < cancelled; index++) {
+      refundCost(building.owner, unit.cost)
+    }
+    building.queue = building.queue.filter(queuedType => queuedType !== type)
+
+    if (building.owner.isPlayed) {
+      const { menu } = building.context
+      menu.updateTopbar()
+      menu.updateButtonContent(type, '')
+      menu.toggleButtonCancel(type, false)
+    }
+    return true
+  }
+
   cancelTechnology() {
     const building = this.building
-    const {
-      context: { player, menu },
-    } = building
+    const { menu } = building.context
+    if (!building.technology) return false
+
     building.stopInterval()
-    refundCost(player, building.technology.cost)
+    refundCost(building.owner, building.technology.config.cost)
     building.technology = null
     building.loading = null
     if (building.owner.isPlayed) {
       menu.updateBottombar()
       menu.updateTopbar()
     }
+    return true
   }
 
   upgrade(type) {

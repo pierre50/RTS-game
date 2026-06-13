@@ -3,6 +3,8 @@ import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../../constants'
 import { _DW, _DH, getFogPatternTexture } from '../cell/CellFog'
 import { cartesianToIsometric } from '../../lib'
 
+const WATER_TEXTURE_UPDATES_PER_TICK = 768
+
 const FOG_UPDATE_PRIORITY = {
   fog: 0,
   refreshFogErase: 1,
@@ -121,6 +123,8 @@ export class MapFog {
       phase: p,
       frameMs: 900 + ((p * 97 + 43) % 300),
       elapsed: 0,
+      pendingTexture: null,
+      updateIndex: 0,
     }))
     for (let p = 0; p < PHASES; p++) {
       this.map._waterLayers[p].elapsed = (p / PHASES) * this.map._waterLayers[p].frameMs
@@ -152,12 +156,28 @@ export class MapFog {
       }
       for (const layer of this.map._waterLayers) {
         layer.elapsed += ticker.elapsedMS
-        if (layer.elapsed >= layer.frameMs) {
-          layer.elapsed -= layer.frameMs
+        if (!layer.pendingTexture && layer.elapsed >= layer.frameMs) {
+          layer.elapsed %= layer.frameMs
           layer.phase = (layer.phase + 1) % frames.length
-          const tex = frames[layer.phase]
-          for (const sprite of layer.sprites) sprite.texture = tex
+          layer.pendingTexture = frames[layer.phase]
+          layer.updateIndex = 0
         }
+      }
+
+      let remainingUpdates = WATER_TEXTURE_UPDATES_PER_TICK
+      for (const layer of this.map._waterLayers) {
+        if (!layer.pendingTexture) continue
+        const start = layer.updateIndex
+        const end = Math.min(layer.updateIndex + remainingUpdates, layer.sprites.length)
+        for (; layer.updateIndex < end; layer.updateIndex++) {
+          layer.sprites[layer.updateIndex].texture = layer.pendingTexture
+        }
+        remainingUpdates -= end - start
+        if (layer.updateIndex >= layer.sprites.length) {
+          layer.pendingTexture = null
+          layer.updateIndex = 0
+        }
+        if (remainingUpdates <= 0) break
       }
     }
     this.map.context.app.ticker.add(this.map._waterAnimTicker)

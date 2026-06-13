@@ -1,6 +1,5 @@
 import { Assets, Sprite } from 'pixi.js'
 import {
-  randomRange,
   instancesDistance,
   getCellsAroundPoint,
   getInstanceZIndex,
@@ -195,7 +194,7 @@ export class CellTerrain {
 
   setWater() {
     const { cell } = this
-    const index = formatNumber(randomRange(0, 3))
+    const index = formatNumber(cell.context.map.randomRange(0, 3))
     const resourceName = '15002'
     const spritesheet = Assets.cache.get(resourceName)
     cell.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']

@@ -159,8 +159,9 @@ export class BuildingLifecycle {
     const {
       context: { menu },
     } = building
-    if (building.increasePopulation) {
+    if (building.increasePopulation && !building.populationCapacityApplied) {
       building.owner.population_max += building.increasePopulation
+      building.populationCapacityApplied = true
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
         menu.updateInfo(
           MENU_INFO_IDS.populationText,
@@ -239,6 +240,16 @@ export class BuildingLifecycle {
     building.stopInterval()
     building.isDead = true
     building.hasActiveBurningSound = false
+    if (building.increasePopulation && building.populationCapacityApplied) {
+      building.owner.population_max = Math.max(0, building.owner.population_max - building.increasePopulation)
+      building.populationCapacityApplied = false
+      if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
+        menu.updateInfo(
+          MENU_INFO_IDS.populationText,
+          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+        )
+      }
+    }
     map.removeFromInstanceBucket(building)
     if (building.context.controls.instanceIsAudible(building)) {
       playAudibleSoundCue(building, building.sounds?.collapse ?? SOUND_CUES.building.collapse)
@@ -307,6 +318,6 @@ export class BuildingLifecycle {
       cell.corpses.delete(building)
     })
     building.isDestroyed = true
-    building.destroy({ child: true, texture: false })
+    building.destroy({ children: true, texture: false })
   }
 }

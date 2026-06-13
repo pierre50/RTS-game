@@ -402,6 +402,21 @@ div.menu-title {
   opacity: 1;
 }
 
+.save-list-confirm-message {
+  max-width: 360px;
+  margin: 0 0 var(--ui-gap-8);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel--home img.menu-title,
+  .menu-title-shell.is-loaded img.menu-title {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
+
 @media (max-width: 900px) {
   #main-menu {
     --menu-page-padding: 16px;

@@ -4,6 +4,7 @@ import { MapGeneration } from './MapGeneration'
 import { MapResources } from './MapResources'
 import { MapTerrain } from './MapTerrain'
 import { MapFog } from './MapFog'
+import { createSeededRandom } from '../../lib/random'
 
 export default class Map extends Container {
   constructor(context) {
@@ -49,6 +50,7 @@ export default class Map extends Container {
     this.gaia = null
     this.resources = new Set()
     this.instanceBuckets = null
+    this._random = Math.random
 
     this.eventMode = 'auto'
     this.allowMove = false
@@ -59,6 +61,22 @@ export default class Map extends Container {
     this.mapResources = new MapResources(this)
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
+  }
+
+  resetRandom(stream = 0) {
+    this._random = createSeededRandom(`${this.seed}:${stream}`)
+  }
+
+  random() {
+    return this._random()
+  }
+
+  randomRange(min, max) {
+    return Math.floor(this.random() * (max - min + 1) + min)
+  }
+
+  randomItem(items = []) {
+    return items[Math.floor(this.random() * items.length)]
   }
 
   setCoordinate(x, y) {

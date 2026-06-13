@@ -154,12 +154,24 @@ function playerData(player) {
   }
 
   if (player.type === 'AI') {
+    const savedAt = player.getNow?.() ?? 0
+    const serializeMemory = memory => ({
+      instance: memory.instance?.label || memory.label || null,
+      lastSeenAgo: Math.max(0, savedAt - (memory.lastSeenAt ?? savedAt)),
+    })
+
     data.aiState = {
-      lastAttackWaveAt: player.lastAttackWaveAt ?? null,
+      phase: player.phase,
+      savedAt,
+      lastAttackWaveAgo: Number.isFinite(player.lastAttackWaveAt)
+        ? Math.max(0, savedAt - player.lastAttackWaveAt)
+        : null,
+      enemyUnits: [...(player.enemyUnitMemory?.values?.() || [])].map(serializeMemory),
+      enemyBuildings: [...(player.enemyBuildingMemory?.values?.() || [])].map(serializeMemory),
       threatenedTargets: [...(player.threatenedTargets?.values?.() || [])].map(threat => ({
         target: threat.target?.label || null,
         attacker: threat.attacker?.label || null,
-        lastSeenAt: threat.lastSeenAt ?? 0,
+        lastSeenAgo: Math.max(0, savedAt - (threat.lastSeenAt ?? savedAt)),
         count: threat.count ?? 0,
         attackerFamily: threat.attackerFamily ?? null,
         attackerType: threat.attackerType ?? null,
@@ -198,8 +210,12 @@ function cellData(cell) {
 
 export function serializeGame(context) {
   return {
+    runtime: {
+      elapsedMs: context.scheduler?.elapsedMs ?? 0,
+    },
     camera: cameraData(context.controls.camera),
     config: {
+      seed: context.map.seed,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
       startingAge: context.map.startingAge,
@@ -211,6 +227,6 @@ export function serializeGame(context) {
     players: context.players.map(p => playerData(p)),
     resources: [...context.map.resources].map(r => resourceData(r)),
     map: context.map.grid.map(line => line.map(cell => cellData(cell))),
-    animals: context.map.gaia.units.map(a => animalData(a)),
+    animals: context.map.gaia.units.filter(animal => !animal.isDestroyed).map(animal => animalData(animal)),
   }
 }

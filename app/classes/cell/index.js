@@ -1,5 +1,5 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { randomItem, cartesianToIsometric, playerCanSeeInstance } from '../../lib'
+import { cartesianToIsometric, playerCanSeeInstance } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
 import { CellTerrain } from './CellTerrain'
@@ -47,7 +47,7 @@ export class Cell extends Container {
     this.zIndex = this.i + this.j
     this.sortableChildren = true
 
-    const textureName = randomItem(this.assets)
+    const textureName = map.randomItem(this.assets)
     const resourceName = textureName.split('_')[1]
     const textureFile = textureName + '.png'
     const spritesheet = Assets.cache.get(resourceName)

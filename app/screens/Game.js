@@ -25,6 +25,7 @@ export default class Game extends Container {
     super()
     this._pausedByVisibility = false
     this._pausedByOrientation = false
+    this._restartSaveData = null
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -108,8 +109,9 @@ export default class Game extends Container {
   _attachWindowListeners() {
     this._onKeydown = evt => {
       if (this.context.devConsoleOpen) return
-      if (evt.key === 'p') {
+      if (evt.key.toLowerCase() === 'p') {
         if (this.context.victory || this.context.defeat) return
+        if (document.querySelector('.modal')) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
     }
@@ -172,6 +174,7 @@ export default class Game extends Container {
 
   _applyMapConfig(map, config = {}) {
     if (config.size) map.size = config.size
+    if (Number.isFinite(config.seed)) map.seed = config.seed
     if (config.mapType) map.mapType = config.mapType
     if (config.instantMode) map.instantMode = true
     if (config.startingAge != null) map.startingAge = Number(config.startingAge)
@@ -287,11 +290,12 @@ export default class Game extends Container {
 
   load(json) {
     validateSaveData(json)
+    this._restartSaveData = structuredClone(json)
     this._destroyRuntime()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
     this.context.scheduler.timeScale = speed
-    this._bootFromSave(json)
+    this._bootFromSave(structuredClone(this._restartSaveData))
   }
 
   applyZoom() {
@@ -304,6 +308,15 @@ export default class Game extends Container {
   }
 
   async restart() {
+    if (this._restartSaveData) {
+      this._destroyRuntime()
+      const speed = getGameSpeed()
+      this.context.app.ticker.speed = speed
+      this.context.scheduler.timeScale = speed
+      this._bootFromSave(structuredClone(this._restartSaveData))
+      return
+    }
+
     this._restartSeed = this.context.map?.seed
     this._destroyRuntime()
     const speed = getGameSpeed()

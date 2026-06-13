@@ -24,6 +24,7 @@ export default class MapEditorConfig {
     this._modal = new Modal({
       title: t('createMap'),
       content: this._buildContent(),
+      onClose: () => this.destroy(),
     })
 
     document.addEventListener('keydown', this._onKeyDown)
@@ -77,6 +78,8 @@ export default class MapEditorConfig {
   }
 
   destroy() {
+    if (this._destroyed) return
+    this._destroyed = true
     document.removeEventListener('keydown', this._onKeyDown)
     this._modal.close()
   }

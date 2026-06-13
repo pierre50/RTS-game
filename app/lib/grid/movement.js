@@ -20,12 +20,12 @@ export function moveTowardPoint(instance, x, y, speed) {
   instance.y += velY
 }
 
-export function getFreeCellAroundPoint(x, y, size, grid, condition) {
+export function getFreeCellAroundPoint(x, y, size, grid, condition, pickRandomItem = randomItem) {
   const maxDistance = 50
 
   for (let distance = size; distance < maxDistance; distance++) {
     const cells = getCellsAroundPoint(x, y, grid, distance, condition)
-    if (cells.length > 0) return randomItem(cells)
+    if (cells.length > 0) return pickRandomItem(cells)
   }
 
   return null

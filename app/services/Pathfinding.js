@@ -15,8 +15,8 @@ function getNeighbourCells(startX, startY, grid, dist, callback) {
     const row = grid[x]
     if (!row) continue
 
-    const dyMax = dist - Math.abs(dx)
-    for (let dy = -dyMax; dy <= dyMax; dy++) {
+    for (let dy = -dist; dy <= dist; dy++) {
+      if (dx === 0 && dy === 0) continue
       const y = startY + dy
       const cell = row[y]
       if (!cell) continue

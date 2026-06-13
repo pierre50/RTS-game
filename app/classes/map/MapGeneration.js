@@ -2,15 +2,13 @@ import { Assets, Sprite } from 'pixi.js'
 import { Resource } from '../resource'
 import { Human, AI, Gaia } from '../players'
 import {
-  randomItem,
-  randomRange,
   colors,
   getCellsAroundPoint,
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   rehydrateAIKnowledge,
 } from '../../lib'
-import { BUILDING_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { Cell } from '../cell'
 
 export class MapGeneration {
@@ -36,7 +34,7 @@ export class MapGeneration {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
     })
 
-    return randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
+    return this.map.randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
   }
 
   pickFishResourceType(i, j) {
@@ -49,13 +47,14 @@ export class MapGeneration {
       ? fishTypes
       : fishTypes.filter(type => type !== 'Whale')
 
-    return randomItem(availableTypes.length ? availableTypes : [RESOURCE_TYPES.salmon])
+    return this.map.randomItem(availableTypes.length ? availableTypes : [RESOURCE_TYPES.salmon])
   }
 
-  generateFromJSON({ map, players, camera, resources, animals }) {
+  generateFromJSON({ map, players, camera, resources, animals, runtime }) {
     const classMap = { Human, AI }
     const { menu, controls } = this.map.context
     this.map.removeChildren()
+    this.map.resetRandom()
     this.map.size = map.length - 1
     this.map.invalidateReliefCoastDistances()
 
@@ -66,6 +65,9 @@ export class MapGeneration {
       }
       return p
     })
+    if (Number.isFinite(runtime?.elapsedMs) && this.map.context.scheduler) {
+      this.map.context.scheduler.elapsedMs = Math.max(0, runtime.elapsedMs)
+    }
 
     this.map._initFogChunks()
     this.map.gaia = new Gaia(this.map.context)
@@ -107,11 +109,11 @@ export class MapGeneration {
 
     this.map.context.players.forEach((player, index) => {
       const { buildings, units, corpses } = players[index]
-      player.buildings = buildings.map(building => player.createBuilding(building))
+      player.buildings = buildings.map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
       player.units = units.map(unit => player.createUnit(unit))
       player.corpses = corpses.map(unit => player.createUnit(unit))
     })
-    animals.forEach(animal => this.map.gaia.createAnimal(animal))
+    animals.filter(animal => !animal.isDestroyed).forEach(animal => this.map.gaia.createAnimal(animal))
 
     function getDest(val, map) {
       if (val) {
@@ -153,22 +155,56 @@ export class MapGeneration {
     function restoreAIState(player, savedPlayer, context) {
       if (player.type !== PLAYER_TYPES.ai || !savedPlayer?.aiState) return
 
-      if (Number.isFinite(savedPlayer.aiState.lastAttackWaveAt)) {
-        player.lastAttackWaveAt = savedPlayer.aiState.lastAttackWaveAt
+      const state = savedPlayer.aiState
+      const now = player.getNow()
+      const validPhases = new Set(['economy', 'military_build', 'attack'])
+      if (validPhases.has(state.phase)) {
+        player.phase = state.phase
       }
 
+      if (Number.isFinite(state.lastAttackWaveAgo)) {
+        player.lastAttackWaveAt = now - Math.max(0, state.lastAttackWaveAgo)
+      } else if (Number.isFinite(state.lastAttackWaveAt) && Number.isFinite(state.savedAt)) {
+        player.lastAttackWaveAt = now - Math.max(0, state.savedAt - state.lastAttackWaveAt)
+      }
+
+      const restoreMemories = (savedMemories, memoryMap) => {
+        memoryMap.clear()
+        for (const savedMemory of savedMemories || []) {
+          if (!savedMemory || typeof savedMemory !== 'object') continue
+          const instance = getDest(savedMemory.instance, context)
+          if (!instance || instance.isDead || instance.isDestroyed || !player.isEnemy(instance.owner)) continue
+
+          player.rememberEnemy(instance)
+          const memory = memoryMap.get(instance.label)
+          if (!memory) continue
+          memory.lastSeenAt = now - Math.max(0, savedMemory.lastSeenAgo || 0)
+          memory.visible = Boolean(player.views?.[instance.i]?.[instance.j]?.viewBy?.size)
+          if (instance.family === FAMILY_TYPES.building) player.foundedEnemyBuildings.add(instance)
+          if (instance.family === FAMILY_TYPES.unit) player.foundedEnemyUnits.add(instance)
+        }
+      }
+      restoreMemories(state.enemyUnits, player.enemyUnitMemory)
+      restoreMemories(state.enemyBuildings, player.enemyBuildingMemory)
+
       player.threatenedTargets.clear()
-      for (const threat of savedPlayer.aiState.threatenedTargets || []) {
+      for (const threat of state.threatenedTargets || []) {
+        if (!threat || typeof threat !== 'object') continue
         const target = getDest(threat.target, context)
         if (!target || target.isDead || target.isDestroyed) continue
 
         const attacker = getDest(threat.attacker, context)
+        const lastSeenAgo = Number.isFinite(threat.lastSeenAgo)
+          ? Math.max(0, threat.lastSeenAgo)
+          : Number.isFinite(state.savedAt) && Number.isFinite(threat.lastSeenAt)
+            ? Math.max(0, state.savedAt - threat.lastSeenAt)
+            : 0
         player.threatenedTargets.set(target.label, {
           target,
           attacker: attacker || null,
           attackerFamily: attacker?.family || threat.attackerFamily || null,
           attackerType: attacker?.type || threat.attackerType || null,
-          lastSeenAt: Number.isFinite(threat.lastSeenAt) ? threat.lastSeenAt : 0,
+          lastSeenAt: now - lastSeenAgo,
           count: Number.isFinite(threat.count) ? threat.count : 0,
         })
       }
@@ -209,6 +245,8 @@ export class MapGeneration {
 
   generateMap(positionsCountOverride = null, repeat = 0) {
     this.map.removeChildren()
+    if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
+    this.map.resetRandom(repeat)
 
     switch (this.map.size) {
       case 120:
@@ -375,7 +413,7 @@ export class MapGeneration {
     const randoms = Array.from(Array(this.map.playersPos.length).keys())
 
     for (let i = 0; i < this.map.playersPos.length; i++) {
-      const pos = randomItem(randoms)
+      const pos = this.map.randomItem(randoms)
       poses.push(pos)
       randoms.splice(randoms.indexOf(pos), 1)
     }
@@ -797,7 +835,7 @@ export class MapGeneration {
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
-            Math.random() < 0.03 &&
+            this.map.random() < 0.03 &&
             i > 1 &&
             j > 1 &&
             i < this.map.size &&
@@ -830,7 +868,7 @@ export class MapGeneration {
                 floorSpritesheets = ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
                 break
             }
-            const randomSpritesheet = randomItem(floorSpritesheets)
+            const randomSpritesheet = this.map.randomItem(floorSpritesheets)
             const spritesheet = Assets.cache.get(randomSpritesheet)
             if (!spritesheet) {
               continue
@@ -849,12 +887,12 @@ export class MapGeneration {
             floor.zIndex = 1
             cell.addChild(floor)
           }
-          if (!hasWaterNeighbour && Math.random() < this.map.chanceOfSets) {
+          if (!hasWaterNeighbour && this.map.random() < this.map.chanceOfSets) {
             if (cell.category !== 'Water') {
-              const type = randomItem(['tree', 'rock', 'animal'])
+              const type = this.map.randomItem(['tree', 'rock', 'animal'])
               switch (type) {
                 case 'rock': {
-                  const randomSpritesheet = randomRange(531, 534).toString()
+                  const randomSpritesheet = this.map.randomRange(531, 534).toString()
                   const spritesheet = Assets.cache.get(randomSpritesheet)
                   const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
                   const rock = Sprite.from(texture)
@@ -869,6 +907,9 @@ export class MapGeneration {
                   break
                 }
                 case 'animal': {
+                  if (cell.solid || cell.has || cell.border || cell.waterBorder || cell.inclined) {
+                    break
+                  }
                   const animalType = this.pickAmbientAnimalType(i, j)
                   this.map.gaia.createAnimal({ i, j, type: animalType })
                   break
@@ -876,7 +917,7 @@ export class MapGeneration {
               }
             }
           }
-          if (cell.category === 'Water' && Math.random() < this.map.chanceOfSets) {
+          if (cell.category === 'Water' && this.map.random() < this.map.chanceOfSets) {
             const fishType = this.pickFishResourceType(i, j)
             this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
           }
@@ -910,7 +951,7 @@ export class MapGeneration {
     const results = []
     const N = this.map.positionsCount
     const center = this.map.size / 2
-    const startAngle = Math.random() * 2 * Math.PI
+    const startAngle = this.map.random() * 2 * Math.PI
     const searchHalf = Math.max(8, Math.floor(this.map.size * 0.07))
     const border = 12
     const radiiFactors = [0.38, 0.3, 0.44, 0.22, 0.46, 0.15]

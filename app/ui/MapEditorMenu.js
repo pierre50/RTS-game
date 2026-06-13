@@ -12,13 +12,12 @@ export class MapEditorMenu {
     button.type = 'button'
     button.className = 'topbar-options-menu ui-btn'
     button.innerText = t('menuBtn')
-    button.addEventListener('pointerdown', () => this.open())
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', () => this.open())
     return button
   }
 
   open() {
-    playClickSound()
-
     const content = document.createElement('div')
     content.className = 'modal-menu'
 
@@ -52,10 +51,8 @@ export class MapEditorMenu {
     const button = document.createElement('button')
     button.className = 'ui-btn'
     button.innerText = label
-    button.addEventListener('pointerdown', () => {
-      playClickSound()
-      onClick()
-    })
+    button.addEventListener('pointerdown', playClickSound)
+    button.addEventListener('click', onClick)
     return button
   }
 }

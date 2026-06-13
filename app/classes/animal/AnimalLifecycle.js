@@ -14,7 +14,7 @@ export class AnimalLifecycle {
       playAudibleSoundCue(animal, animal.sounds.fall)
     }
     updateInstanceVisibility(animal)
-    animal.owner.population--
+    animal.owner.population = Math.max(0, animal.owner.population - 1)
     animal.stopInterval()
     animal.stopTimeout()
     animal.isDead = true
@@ -77,13 +77,25 @@ export class AnimalLifecycle {
 
   clear() {
     const animal = this.animal
+    if (animal.isDestroyed) return
     const {
       context: { map },
     } = animal
     animal.stopTimeout()
+    animal.stopInterval()
     animal.isDestroyed = true
-    map.grid[animal.i][animal.j].corpses.delete(animal)
+    map.removeFromInstanceBucket(animal)
+    const cell = map.grid[animal.i]?.[animal.j]
+    if (cell?.has === animal) {
+      cell.has = null
+      cell.solid = false
+    }
+    cell?.corpses.delete(animal)
+    const index = animal.owner.units.indexOf(animal)
+    if (index >= 0) {
+      animal.owner.units.splice(index, 1)
+    }
     map.removeChild(animal)
-    animal.destroy({ child: true, texture: true })
+    animal.destroy({ children: true, texture: false })
   }
 }

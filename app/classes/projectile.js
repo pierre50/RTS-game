@@ -428,7 +428,7 @@ export class Projectile extends Container {
     sprite.animationSpeed = this.impactEffect.animationSpeed ?? 0.2
     sprite.onComplete = () => {
       sprite.parent?.removeChild(sprite)
-      sprite.destroy({ child: true, texture: false })
+      sprite.destroy({ children: true, texture: false })
     }
     this.context.map.addChild(sprite)
     sprite.play()
@@ -460,6 +460,6 @@ export class Projectile extends Container {
     this.isDead = true
     this.context.scheduler.remove(this.interval)
     this.interval = null
-    this.destroy({ child: true, texture: true })
+    this.destroy({ children: true, texture: false })
   }
 }

@@ -192,6 +192,15 @@ export class AIStrategy {
     return demand
   }
 
+  getAgeUpReserve() {
+    const { ai } = this
+    const nextAgeCost = AGE_UP_COSTS[ai.age + 1]
+    if (!nextAgeCost) return {}
+
+    const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+    return ai.population >= Math.floor(maxVillagers * 0.7) ? nextAgeCost : {}
+  }
+
   canSpendWithReserve(cost, reserve = {}) {
     const { ai } = this
     return Object.entries(cost || {}).every(([resource, amount]) => ai[resource] - amount >= (reserve[resource] || 0))
@@ -308,12 +317,13 @@ export class AIStrategy {
     return naturalFoodUnderPressure && (foodDemand || farmsNearlySaturated)
   }
 
-  buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, debug = false) {
+  buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, reserve = {}, debug = false) {
     const { ai } = this
     const building = ai.config.buildings[buildingType]
     if (
       condition &&
       canAfford(ai, building.cost) &&
+      this.canSpendWithReserve(building.cost, reserve) &&
       ai.hasNotReachBuildingLimit(buildingType, buildingsByType[buildingType])
     ) {
       const pos = positionCallback()
@@ -367,15 +377,26 @@ export class AIStrategy {
 
     const isEnemyFacing = origin => cell =>
       otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
-    const buy = (condition, buildingType, positionCallback) =>
-      this.buyBuildingIfNeeded(condition, buildingType, buildingsByType, positionCallback, debug)
+    const ageUpReserve = this.getAgeUpReserve()
+    const buy = (condition, buildingType, positionCallback, preserveAgeReserve = true) =>
+      this.buyBuildingIfNeeded(
+        condition,
+        buildingType,
+        buildingsByType,
+        positionCallback,
+        preserveAgeReserve ? ageUpReserve : {},
+        debug
+      )
 
     let actions = 0
     const desiredBarracks = this.getDesiredBarracksCount(snapshot)
 
     if (
-      buy(ai.population + 2 > ai.population_max && !notBuiltHouses.length, BUILDING_TYPES.house, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0)
+      buy(
+        ai.population + 2 > ai.population_max && !notBuiltHouses.length,
+        BUILDING_TYPES.house,
+        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0),
+        false
       )
     )
       actions++
@@ -474,7 +495,9 @@ export class AIStrategy {
     return actions
   }
 
-  buyTechnology(buildingList, technologyType, debug = false) {
+  buyTechnology(buildingList, technologyType, reserve = {}, debug = false) {
+    const cost = this.ai.techs[technologyType]?.cost || {}
+    if (!this.canSpendWithReserve(cost, reserve)) return 0
     for (const building of buildingList) {
       if (building && building.buyTechnology(technologyType)) {
         if (debug) console.log(`Buying ${technologyType} from ${building.type}`)
@@ -496,7 +519,7 @@ export class AIStrategy {
       const popReady = ai.population >= Math.floor(maxVillagers * 0.8)
       const resReady = Object.entries(cost).every(([res, amount]) => ai[res] >= amount + (buffer[res] || 0))
       if (popReady && resReady && !this.isTechnologyInProgress(ai.nextAge[nextAgeKey], towncenters)) {
-        actions += this.buyTechnology(towncenters, ai.nextAge[nextAgeKey], debug)
+        actions += this.buyTechnology(towncenters, ai.nextAge[nextAgeKey], {}, debug)
       }
     }
 
@@ -507,6 +530,7 @@ export class AIStrategy {
       [BUILDING_TYPES.market]: markets,
       [BUILDING_TYPES.granary]: granarys,
     }
+    const ageUpReserve = this.getAgeUpReserve()
     for (const [buildingType, techList] of Object.entries(ai.techPriorityByBuilding)) {
       const buildings = buildingListByType[buildingType]
       if (!buildings?.length) continue
@@ -514,7 +538,7 @@ export class AIStrategy {
         if (ai.technologies.includes(tech)) continue
         if (!this.canResearchTech(tech)) continue
         if (this.isTechnologyInProgress(tech, buildings)) continue
-        const bought = this.buyTechnology(buildings, tech, debug)
+        const bought = this.buyTechnology(buildings, tech, ageUpReserve, debug)
         if (bought) {
           actions += bought
           break
