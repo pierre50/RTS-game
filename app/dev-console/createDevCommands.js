@@ -4,6 +4,7 @@ import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
   aiInfo,
+  performanceReport,
   applyAllTechnologies,
   applyTechnology,
   healAll,
@@ -240,6 +241,15 @@ export function createDevCommands() {
     describe: 'Toggle performance debug overlay',
     complete: () => ['on', 'off'],
     run: ([value], context) => togglePerfDebug(context, value),
+  })
+
+  registry.register({
+    name: 'perf-report',
+    aliases: ['perfr'],
+    usage: 'perf-report [reset]',
+    describe: 'Print or reset frame, pathfinding, AI and fog timings',
+    complete: () => ['reset'],
+    run: ([value], context) => performanceReport(context, value),
   })
 
   registry.register({

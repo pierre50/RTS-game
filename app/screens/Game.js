@@ -11,6 +11,7 @@ import { validateSaveData } from '../serialization/SaveValidator'
 import { save as saveToStorage } from '../serialization/SaveStorage'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
+import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import { getCameraZoom, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 
@@ -42,6 +43,7 @@ export default class Game extends Container {
       victory: false,
       defeat: false,
       scheduler: null,
+      performance: null,
       save: () => this.save(),
       load: evt => this.load(evt),
       pause: () => this.togglePause(true),
@@ -55,6 +57,7 @@ export default class Game extends Container {
       applyZoom: () => this.applyZoom(),
     }
     this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
+    this.context.performance = new PerformanceMonitor(app)
     if (config !== null) {
       this.start().catch(error => {
         this._loadingScreen?.destroy()
@@ -237,6 +240,7 @@ export default class Game extends Container {
       cleanupDebugArtifacts(this.context)
     }
     this.context.scheduler?.clear()
+    this.context.performance?.reset()
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy()
@@ -344,6 +348,8 @@ export default class Game extends Container {
     this._destroyRuntime()
     this.context.scheduler?.destroy()
     this.context.scheduler = null
+    this.context.performance?.destroy()
+    this.context.performance = null
     super.destroy(options)
   }
 

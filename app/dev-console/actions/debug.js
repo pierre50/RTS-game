@@ -122,15 +122,41 @@ function ensurePerfOverlay(context) {
   const buildings = players.reduce((sum, player) => sum + player.buildings.length, 0)
   const schedulerTasks = context.scheduler?._tasks?.size ?? 0
   const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
+  const perf = context.performance?.snapshot()
+  const pathfinding = perf?.metrics.pathfinding
+  const aiStep = perf?.metrics.aiStep
+  const fogFlush = perf?.metrics.fogFlush
   overlay.textContent = [
     `FPS ${Math.round(app.ticker.FPS)}`,
+    `Frame avg ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
     `Units ${units}`,
     `Buildings ${buildings}`,
     `Resources ${map.resources.size}`,
     `Tasks ${schedulerTasks}`,
     `Speed ${speed}x`,
     `AI ${context.aiPaused ? 'paused' : 'running'}`,
+    `Path ${pathfinding?.averageMs.toFixed(2) || '0.00'}ms avg | ${pathfinding?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `AI step ${aiStep?.averageMs.toFixed(2) || '0.00'}ms avg | ${aiStep?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Fog ${fogFlush?.averageMs.toFixed(2) || '0.00'}ms avg | ${fogFlush?.maxMs.toFixed(2) || '0.00'}ms max`,
   ].join('\n')
+}
+
+export function performanceReport(context, value) {
+  if (value === 'reset') {
+    context.performance?.reset()
+    return { ok: true, message: 'Performance samples reset' }
+  }
+  const report = context.performance?.snapshot()
+  if (!report) return { ok: false, message: 'Performance monitor unavailable' }
+  const lines = [
+    `Frames ${report.frames.samples} | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms`,
+  ]
+  for (const [name, metric] of Object.entries(report.metrics)) {
+    lines.push(
+      `${name}: ${metric.count} calls | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms`
+    )
+  }
+  return { ok: true, message: lines.join('\n') }
 }
 
 function getAiDebugLines(aiPlayers, targetIndex = null) {

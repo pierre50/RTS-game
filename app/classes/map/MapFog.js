@@ -1,9 +1,22 @@
-import { Container, Sprite, RenderTexture, Matrix, Graphics, TilingSprite, Assets } from 'pixi.js'
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../../constants'
+import {
+  Container,
+  Sprite,
+  RenderTexture,
+  Matrix,
+  Graphics,
+  TilingSprite,
+  Assets,
+  Particle,
+  ParticleContainer,
+  Rectangle,
+} from 'pixi.js'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES } from '../../constants'
 import { _DW, _DH, getFogPatternTexture } from '../cell/CellFog'
+import { RuntimeCell } from '../cell/RuntimeCell'
 import { cartesianToIsometric } from '../../lib'
 
-const WATER_TEXTURE_UPDATES_PER_TICK = 768
+const FOG_CHUNKS_PER_TICK = 4
+const WATER_CHUNK_SIZE = 64
 
 const FOG_UPDATE_PRIORITY = {
   fog: 0,
@@ -20,6 +33,7 @@ export class MapFog {
   bakeTerrainToChunks() {
     const renderer = this.map.context.app?.renderer
     if (!renderer) return
+    const bakeStartedAt = performance.now()
 
     const { minX, minY, maxX, maxY, totalW, totalH } = this.map._getFogMapBounds()
 
@@ -87,14 +101,35 @@ export class MapFog {
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
 
     if (!this.map.context.editor) {
+      const compactStartedAt = performance.now()
+      const replacements = new globalThis.Map()
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
           terrainContainer.removeChild(cell)
           cell.releaseTerrainRenderResources()
+          const runtimeCell = new RuntimeCell(cell)
+          replacements.set(cell, runtimeCell)
+          this.map.grid[i][j] = runtimeCell
+          cell.destroy()
         }
       }
       terrainContainer.destroy()
+      const instances = [
+        ...(this.map.gaia?.units || []),
+        ...this.map.context.players.flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
+        ...this.map.resources,
+      ]
+      const replaceCell = cell => replacements.get(cell) || cell
+      for (const instance of instances) {
+        if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
+        if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest)
+        if (instance.previousDest?.family === FAMILY_TYPES.cell) instance.previousDest = replaceCell(instance.previousDest)
+        if (instance.path?.length) instance.path = instance.path.map(replaceCell)
+      }
+      this.map.context.controls?.cameraController?.visibleCells?.clear()
+      this._indexFogChunkCells()
+      this.map.context.performance?.record('cellCompaction', performance.now() - compactStartedAt)
     }
 
     const { player } = this.map.context
@@ -108,9 +143,11 @@ export class MapFog {
     }
 
     this._createWaterAnimation()
+    this.map.context.performance?.record('terrainBake', performance.now() - bakeStartedAt)
   }
 
   _createWaterAnimation() {
+    const startedAt = performance.now()
     const spritesheet = Assets.cache.get('15002')
     if (!spritesheet) return
 
@@ -123,22 +160,22 @@ export class MapFog {
     if (this.map._waterLayers) {
       this.map.context.app.ticker.remove(this.map._waterAnimTicker)
       for (const layer of this.map._waterLayers) {
-        for (const sprite of layer.sprites) sprite.destroy()
+        for (const chunk of layer.chunks.values()) {
+          chunk.container.destroy({ children: true, texture: false, textureSource: false })
+        }
       }
       this.map._waterLayers = null
     }
 
-    // One sprite per water cell — no mask, no camera drift, PixiJS batches same-texture sprites
     this.map._waterLayers = Array.from({ length: PHASES }, (_, p) => ({
-      sprites: [],
+      chunks: new globalThis.Map(),
       phase: p,
       frameMs: 900 + ((p * 97 + 43) % 300),
       elapsed: 0,
-      pendingTexture: null,
-      updateIndex: 0,
     }))
     for (let p = 0; p < PHASES; p++) {
-      this.map._waterLayers[p].elapsed = (p / PHASES) * this.map._waterLayers[p].frameMs
+      const layer = this.map._waterLayers[p]
+      layer.elapsed = (p / PHASES) * layer.frameMs
     }
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -146,17 +183,50 @@ export class MapFog {
         const cell = this.map.grid[i][j]
         if (cell.category !== 'Water') continue
         const layer = this.map._waterLayers[(cell.i + cell.j) % PHASES]
-
-        const sprite = new Sprite(frames[layer.phase])
-        sprite.x = cell.x
-        sprite.y = cell.y
-        sprite.anchor.set(0.5, 0.5)
-        sprite.zIndex = -0.5
-        sprite.eventMode = 'none'
-        sprite.cullable = true
-
-        this.map.addChild(sprite)
-        layer.sprites.push(sprite)
+        const chunkKey = `${Math.floor(cell.i / WATER_CHUNK_SIZE)}:${Math.floor(cell.j / WATER_CHUNK_SIZE)}`
+        let chunk = layer.chunks.get(chunkKey)
+        if (!chunk) {
+          const container = new ParticleContainer({
+            texture: frames[layer.phase],
+            dynamicProperties: {
+              position: false,
+              rotation: false,
+              vertex: false,
+              uvs: false,
+              color: false,
+            },
+            roundPixels: true,
+          })
+          container.zIndex = -0.5
+          container.eventMode = 'none'
+          container.cullable = true
+          chunk = { container, minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+          layer.chunks.set(chunkKey, chunk)
+          this.map.addChild(container)
+        }
+        chunk.container.addParticle(
+          new Particle({
+            texture: frames[layer.phase],
+            x: cell.x,
+            y: cell.y,
+            anchorX: 0.5,
+            anchorY: 0.5,
+          })
+        )
+        chunk.minX = Math.min(chunk.minX, cell.x - CELL_WIDTH / 2)
+        chunk.minY = Math.min(chunk.minY, cell.y - CELL_HEIGHT / 2)
+        chunk.maxX = Math.max(chunk.maxX, cell.x + CELL_WIDTH / 2)
+        chunk.maxY = Math.max(chunk.maxY, cell.y + CELL_HEIGHT / 2)
+      }
+    }
+    for (const layer of this.map._waterLayers) {
+      for (const chunk of layer.chunks.values()) {
+        chunk.container.boundsArea = new Rectangle(
+          chunk.minX,
+          chunk.minY,
+          chunk.maxX - chunk.minX,
+          chunk.maxY - chunk.minY
+        )
       }
     }
 
@@ -167,35 +237,22 @@ export class MapFog {
       }
       for (const layer of this.map._waterLayers) {
         layer.elapsed += ticker.elapsedMS
-        if (!layer.pendingTexture && layer.elapsed >= layer.frameMs) {
+        if (layer.elapsed >= layer.frameMs) {
           layer.elapsed %= layer.frameMs
           layer.phase = (layer.phase + 1) % frames.length
-          layer.pendingTexture = frames[layer.phase]
-          layer.updateIndex = 0
+          for (const chunk of layer.chunks.values()) {
+            chunk.container.texture = frames[layer.phase]
+          }
         }
-      }
-
-      let remainingUpdates = WATER_TEXTURE_UPDATES_PER_TICK
-      for (const layer of this.map._waterLayers) {
-        if (!layer.pendingTexture) continue
-        const start = layer.updateIndex
-        const end = Math.min(layer.updateIndex + remainingUpdates, layer.sprites.length)
-        for (; layer.updateIndex < end; layer.updateIndex++) {
-          layer.sprites[layer.updateIndex].texture = layer.pendingTexture
-        }
-        remainingUpdates -= end - start
-        if (layer.updateIndex >= layer.sprites.length) {
-          layer.pendingTexture = null
-          layer.updateIndex = 0
-        }
-        if (remainingUpdates <= 0) break
       }
     }
     this.map.context.app.ticker.add(this.map._waterAnimTicker)
+    this.map.context.performance?.record('waterBuild', performance.now() - startedAt)
   }
 
   _initFogChunks() {
     this.map._fogQueue = new globalThis.Map()
+    this.map._pendingFogChunkUpdates = new globalThis.Map()
     this.map._fogInitComplete = false
     this.map._fogChunks = []
 
@@ -509,11 +566,18 @@ export class MapFog {
   }
 
   _flushFogQueue() {
-    if (!this.map._fogQueue || this.map._fogQueue.size === 0) return
+    if (
+      (!this.map._fogQueue || this.map._fogQueue.size === 0) &&
+      (!this.map._pendingFogChunkUpdates || this.map._pendingFogChunkUpdates.size === 0)
+    ) {
+      return
+    }
     const renderer = this.map.context.app?.renderer
     if (!renderer) return
+    const startedAt = performance.now()
 
-    const chunkUpdates = new globalThis.Map()
+    const chunkUpdates = this.map._pendingFogChunkUpdates || new globalThis.Map()
+    this.map._pendingFogChunkUpdates = chunkUpdates
     const addChunkUpdate = (cell, state) => {
       const chunks = this.map._getFogChunksForCell(cell)
       for (const chunk of chunks) {
@@ -529,7 +593,7 @@ export class MapFog {
       }
     }
 
-    for (const [cell, state] of this.map._fogQueue) {
+    for (const [cell, state] of this.map._fogQueue || []) {
       addChunkUpdate(cell, state)
       if (state === 'clear') {
         for (const refreshCell of this.map._getFogEraseRefreshCells(cell)) {
@@ -541,8 +605,11 @@ export class MapFog {
     this.map._fogQueue.clear()
 
     const eraseContainer = this.map._fogScratchEraseContainer
+    const maxChunks = this.map.ready ? FOG_CHUNKS_PER_TICK : Infinity
+    const updatesToProcess = [...chunkUpdates.entries()].slice(0, maxChunks)
 
-    for (const [chunk, updates] of chunkUpdates) {
+    for (const [chunk, updates] of updatesToProcess) {
+      chunkUpdates.delete(chunk)
       const darknessDraw = new Graphics()
       const darknessErase = new Graphics()
       const fogErase = new Graphics()
@@ -612,8 +679,9 @@ export class MapFog {
       fogErase.destroy()
     }
 
-    for (const chunk of chunkUpdates.keys()) {
+    for (const [chunk] of updatesToProcess) {
       this.map._redrawFogEdgesInChunk(renderer, chunk)
     }
+    this.map.context.performance?.record('fogFlush', performance.now() - startedAt)
   }
 }

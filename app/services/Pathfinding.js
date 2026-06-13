@@ -64,6 +64,7 @@ const _openSet = new Set()
 const _closedSet = new Set()
 
 export function findInstancePath(instance, x, y, map) {
+  const startedAt = performance.now()
   const maxZone = 10
   const end = map.grid[x][y]
   const start = map.grid[instance.i][instance.j]
@@ -148,5 +149,6 @@ export function findInstancePath(instance, x, y, map) {
   }
 
   path.pop()
+  map.context.performance?.record('pathfinding', performance.now() - startedAt)
   return [...path]
 }
