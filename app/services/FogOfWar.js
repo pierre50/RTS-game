@@ -1,46 +1,5 @@
 import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
 
-function getPlainCellsAroundPoint(startX, startY, grid, dist = 0, callback) {
-  const result = callback ? null : []
-
-  if (dist === 0) {
-    const row = grid[startX]
-    if (row) {
-      const cell = row[startY]
-      if (cell) {
-        if (callback) {
-          callback(cell)
-        } else {
-          result.push(cell)
-        }
-      }
-    }
-    return result || []
-  }
-
-  const minX = Math.max(startX - dist, 0)
-  const maxX = Math.min(startX + dist, grid.length - 1)
-
-  for (let i = minX; i <= maxX; i++) {
-    const row = grid[i]
-    if (!row) continue
-    const minY = Math.max(startY - dist, 0)
-    const maxY = Math.min(startY + dist, row.length - 1)
-
-    for (let j = minY; j <= maxY; j++) {
-      const cell = row[j]
-      if (!cell) continue
-      if (callback) {
-        callback(cell)
-      } else {
-        result.push(cell)
-      }
-    }
-  }
-
-  return result || []
-}
-
 function syncVisibleSet(target, source) {
   if (target === source) return
   if (target.size === source.size) {
@@ -60,11 +19,12 @@ function syncVisibleSet(target, source) {
   }
 }
 
-function updateAIKnowledge(globalCell, cell, viewer, { staticOnly = false } = {}) {
+function updateAIKnowledge(globalCell, viewer, { staticOnly = false } = {}) {
   const owner = viewer
+  const known = viewer.views.getKnownOccupant(globalCell.i, globalCell.j)
 
-  if (globalCell.has && (!cell.has || cell.has.label !== globalCell.has.label)) {
-    cell.has = globalCell.has
+  if (globalCell.has && (!known || known.label !== globalCell.has.label)) {
+    viewer.views.setKnownOccupant(globalCell.i, globalCell.j, globalCell.has)
     const { has } = globalCell
 
     if (has.quantity > 0) {
@@ -100,12 +60,11 @@ export function rehydrateAIKnowledge(viewer, map) {
 
     for (let j = 0; j < row.length; j++) {
       const globalCell = row[j]
-      const viewerCell = viewer.views?.[i]?.[j]
-      if (!globalCell || !viewerCell?.viewed) continue
+      if (!globalCell || !viewer.views.isViewed(i, j)) continue
 
-      updateAIKnowledge(globalCell, viewerCell, viewer, { staticOnly: viewerCell.viewBy.size === 0 })
+      updateAIKnowledge(globalCell, viewer, { staticOnly: !viewer.views.isVisible(i, j) })
 
-      if (viewerCell.viewBy.size > 0) {
+      if (viewer.views.isVisible(i, j)) {
         for (const corpse of globalCell.corpses || []) {
           if (corpse.family === FAMILY_TYPES.animal && corpse.isDead && !corpse.isDestroyed && corpse.quantity > 0) {
             viewer.foundedDeadAnimals?.add(corpse)
@@ -129,52 +88,54 @@ export function updateVisibility(instance) {
   newVisible.clear()
 
   if (!isDead) {
-    getPlainCellsAroundPoint(cx, cy, owner.views, sight, cell => {
-      const dx = cell.i - cx
-      const dy = cell.j - cy
-      if (dx * dx + dy * dy <= sightSq) {
-        newVisible.add(cell)
+    const minI = Math.max(cx - sight, 0)
+    const maxI = Math.min(cx + sight, owner.views.size)
+    const minJ = Math.max(cy - sight, 0)
+    const maxJ = Math.min(cy + sight, owner.views.size)
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const dx = i - cx
+        const dy = j - cy
+        if (dx * dx + dy * dy <= sightSq) {
+          newVisible.add(owner.views.index(i, j))
+        }
       }
-    })
+    }
   }
 
-  for (let cell of prevVisible) {
-    if (!newVisible.has(cell)) {
-      const globalCell = map.grid[cell.i][cell.j]
-      const playerCell = player.views[cell.i][cell.j]
+  for (const index of prevVisible) {
+    if (!newVisible.has(index)) {
+      const [i, j] = owner.views.coordinates(index)
+      const globalCell = map.grid[i][j]
       for (const viewer of visiblePlayers) {
-        const viewerCell = viewer.views[cell.i][cell.j]
-        viewerCell.viewBy.delete(instance)
+        viewer.views.removeViewer(i, j, instance)
       }
-      syncVisibleSet(globalCell.viewBy, playerCell.viewBy)
+      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
 
-      if (!playerCell.viewBy.size && !map.revealEverything) {
+      if (!player.views.isVisible(i, j) && !map.revealEverything) {
         globalCell.setFog()
       }
     }
   }
 
-  for (let cell of newVisible) {
-    if (!prevVisible.has(cell)) {
-      const globalCell = map.grid[cell.i][cell.j]
-      const playerCell = player.views[cell.i][cell.j]
+  for (const index of newVisible) {
+    if (!prevVisible.has(index)) {
+      const [i, j] = owner.views.coordinates(index)
+      const globalCell = map.grid[i][j]
 
       for (const viewer of visiblePlayers) {
-        const viewerCell = viewer.views[cell.i][cell.j]
-        viewerCell.viewBy.add(instance)
-        if (!viewerCell.viewed) {
+        viewer.views.addViewer(i, j, instance)
+        if (viewer.views.setViewed(i, j)) {
           viewer.cellViewed++
-          viewerCell.onViewed?.()
-          viewerCell.viewed = true
         }
         if (viewer.type === PLAYER_TYPES.ai) {
-          updateAIKnowledge(globalCell, viewerCell, viewer)
+          updateAIKnowledge(globalCell, viewer)
         }
       }
-      syncVisibleSet(globalCell.viewBy, playerCell.viewBy)
+      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
       globalCell.updateVisible()
 
-      if (!map.revealEverything && playerCell.viewBy.has(instance)) {
+      if (!map.revealEverything && player.views.hasViewer(i, j, instance)) {
         globalCell.removeFog()
       }
 

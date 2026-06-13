@@ -86,11 +86,22 @@ export class MapFog {
     backfillContainer.destroy()
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
 
+    if (!this.map.context.editor) {
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          const cell = this.map.grid[i][j]
+          terrainContainer.removeChild(cell)
+          cell.releaseTerrainRenderResources()
+        }
+      }
+      terrainContainer.destroy()
+    }
+
     const { player } = this.map.context
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (player.views[i]?.[j]?.viewed) {
+        if (player.views.isViewed(i, j)) {
           cell.updateVisible()
         }
       }

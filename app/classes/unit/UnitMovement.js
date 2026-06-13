@@ -96,11 +96,7 @@ export class UnitMovement {
 
   isUnitAtDest(action, dest) {
     const unit = this.unit
-    if (!action) return false
-    if (!dest) {
-      unit.affectNewDest()
-      return false
-    }
+    if (!action || !dest) return false
     const effectiveRange =
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
     if (
@@ -231,12 +227,12 @@ export class UnitMovement {
       if (targets.length) {
         const target = getClosestInstanceWithPath(unit, targets)
         if (target) {
+          unit.setDest(target.instance)
           if (instanceContactInstance(unit, target.instance)) {
             unit.degree = getInstanceDegree(unit, target.instance.x, target.instance.y)
             unit.getAction(unit.action)
             return
           }
-          unit.setDest(target.instance)
           unit.setPath(target.path)
           return
         }
@@ -271,12 +267,12 @@ export class UnitMovement {
         const dyMax = r - Math.abs(dx)
         for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
           const cell = row[unit.j + dy]
-          if (cell && !views[cell.i][cell.j].viewed && !cell.solid) {
+          if (cell && !views.isViewed(cell.i, cell.j) && !cell.solid) {
             let unseenNeighbors = 0
             for (let ni = cell.i - 1; ni <= cell.i + 1; ni++) {
               for (let nj = cell.j - 1; nj <= cell.j + 1; nj++) {
                 const neighbor = grid[ni]?.[nj]
-                if (neighbor && !views[ni][nj].viewed && !neighbor.solid) unseenNeighbors++
+                if (neighbor && !views.isViewed(ni, nj) && !neighbor.solid) unseenNeighbors++
               }
             }
             const score = unseenNeighbors * 3 - r
@@ -291,7 +287,7 @@ export class UnitMovement {
     for (const { cell } of candidates.slice(0, 12)) {
       const path = getInstancePath(unit, cell.i, cell.j, map)
       if (path.length) {
-        unit.sendTo(views[cell.i][cell.j])
+        unit.sendTo(cell)
         return true
       }
     }
@@ -314,7 +310,7 @@ export class UnitMovement {
       if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
         const cell = map.grid[ti][tj]
         if (!cell.solid && !cell.border) {
-          unit.sendTo(unit.owner.views[ti][tj])
+          unit.sendTo(cell)
           return
         }
       }

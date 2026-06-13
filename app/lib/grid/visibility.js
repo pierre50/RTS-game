@@ -1,6 +1,5 @@
 import { BUCKET_SIZE } from '../../constants'
 import { updateVisibility } from '../../services/FogOfWar'
-import { getPlainCellsAroundPoint } from './cells'
 
 export function findInstancesInSight(instance, condition) {
   const {
@@ -42,6 +41,10 @@ export function updateInstanceVisibility(instance) {
 export function instanceIsInPlayerSight(instance, player) {
   if (!player?.views) return false
   const dist = instance.size === 3 ? 1 : 0
-  const cells = getPlainCellsAroundPoint(instance.i, instance.j, player.views, dist)
-  return cells.some(cell => cell.viewBy.size > 0)
+  for (let i = instance.i - dist; i <= instance.i + dist; i++) {
+    for (let j = instance.j - dist; j <= instance.j + dist; j++) {
+      if (player.views.isVisible(i, j)) return true
+    }
+  }
+  return false
 }

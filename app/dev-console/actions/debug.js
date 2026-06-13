@@ -93,11 +93,10 @@ function drawVisionDebug(context) {
   layer.clear()
 
   for (const cell of getCameraCells(context)) {
-    const view = player.views[cell.i]?.[cell.j]
-    if (!cell || !view) continue
-    if (view.viewBy?.size) {
+    if (!cell) continue
+    if (player.views.isVisible(cell.i, cell.j)) {
       drawCellDiamond(layer, cell, 0x54ff7a, 0.38)
-    } else if (view.viewed) {
+    } else if (player.views.isViewed(cell.i, cell.j)) {
       drawCellDiamond(layer, cell, 0x5da9ff, 0.24)
     }
   }
@@ -108,7 +107,10 @@ function ensureDebugOverlay(id) {
   if (!overlay) {
     overlay = document.createElement('div')
     overlay.id = id
+    overlay.classList.add('debug-overlay')
     document.body.appendChild(overlay)
+  } else if (!overlay.classList.contains('debug-overlay')) {
+    overlay.classList.add('debug-overlay')
   }
   return overlay
 }

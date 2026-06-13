@@ -96,7 +96,7 @@ export class Cell extends Container {
     const {
       context: { map, player },
     } = this
-    if (!map.revealEverything && !player.views[this.i][this.j].viewed) {
+    if (!map.revealEverything && !player.views.isViewed(this.i, this.j)) {
       return
     }
     this.visible = true
@@ -111,6 +111,15 @@ export class Cell extends Container {
   place(entity) {
     this.has = entity
     this.updateVisible()
+  }
+
+  releaseTerrainRenderResources() {
+    if (this._terrainRenderResourcesReleased) return
+    this._terrainRenderResourcesReleased = true
+    for (const child of this.removeChildren()) {
+      child.destroy?.({ children: true, texture: false, textureSource: false })
+    }
+    this.sprite = null
   }
 
   // Fog delegates

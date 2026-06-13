@@ -133,8 +133,7 @@ export class MinimapManager {
     if (!map.showResources) return
 
     map.resources.forEach(resource => {
-      const cell = player?.views?.[resource.i]?.[resource.j]
-      if (resource.color && (cell?.viewed || map.revealEverything)) {
+      if (resource.color && (player?.views?.isViewed(resource.i, resource.j) || map.revealEverything)) {
         canvasDrawRectangle(
           context,
           resource.x / factor - squareSize / 2 + translate,

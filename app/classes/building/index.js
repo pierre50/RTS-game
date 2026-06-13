@@ -97,16 +97,13 @@ export class Building extends Instance {
       cell.solid = true
       const visiblePlayers = this.owner.visiblePlayers ? this.owner.visiblePlayers() : [this.owner]
       for (const viewer of visiblePlayers) {
-        const viewerCell = viewer.views[cell.i][cell.j]
-        viewerCell.viewBy.add(this)
-        if (!viewerCell.viewed) {
+        viewer.views.addViewer(cell.i, cell.j, this)
+        if (viewer.views.setViewed(cell.i, cell.j)) {
           viewer.cellViewed++
-          viewerCell.onViewed?.()
-          viewerCell.viewed = true
         }
       }
-      cell.viewBy = new Set([...this.context.player.views[cell.i][cell.j].viewBy])
-      if (this.context.player.views[cell.i][cell.j].viewBy.has(this) && !map.revealEverything) {
+      cell.viewBy = new Set(this.context.player.views.getViewers(cell.i, cell.j))
+      if (this.context.player.views.hasViewer(cell.i, cell.j, this) && !map.revealEverything) {
         cell.removeFog()
       }
     })

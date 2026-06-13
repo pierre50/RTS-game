@@ -6,7 +6,7 @@ function refreshAnimalsAndCameraVisibility(context) {
 
   map.gaia?.units.forEach(animal => {
     const cell = map.grid[animal.i]?.[animal.j]
-    if (!map.revealEverything && !player.views[animal.i]?.[animal.j]?.viewed) {
+    if (!map.revealEverything && !player.views.isViewed(animal.i, animal.j)) {
       animal.visible = false
       return
     }

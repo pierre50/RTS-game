@@ -5,9 +5,7 @@
   background: var(--surface-dark-soft);
 }
 
-.debug-overlay,
-#debug-perf,
-#debug-ai-info {
+.debug-overlay {
   position: fixed;
   z-index: 9999;
   padding: 5px 8px;

@@ -17,6 +17,7 @@ import { Unit } from '../unit'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { playUiSound } from '../../lib/uiSound'
+import { VisionGrid } from '../../services/VisionGrid'
 
 export class Player {
   constructor(options, context) {
@@ -53,31 +54,16 @@ export class Player {
     this.config = config
     this.techs = techs
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
-    const cloneGrid = []
-    for (let i = 0; i <= map.size; i++) {
-      for (let j = 0; j <= map.size; j++) {
-        if (cloneGrid[i] == null) {
-          cloneGrid[i] = []
+    this.views = new VisionGrid(
+      map.size,
+      this.views,
+      (i, j) => {
+        if (this.isPlayed && !map.revealEverything) {
+          this.context.menu.updateTerrainMiniMap(i, j)
         }
-        cloneGrid[i][j] = {
-          i,
-          j,
-          viewBy: new Set(this.views?.[i][j].viewBy ?? []),
-          onViewed: () => {
-            const {
-              context: { menu, map },
-            } = this
-            if (this.isPlayed && !map.revealEverything) {
-              menu.updateTerrainMiniMap(i, j)
-            }
-          },
-          viewed:
-            this.views?.[i][j].viewed ??
-            ((this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain) || false),
-        }
-      }
-    }
-    this.views = cloneGrid
+      },
+      this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain
+    )
   }
 
   reportThreat(target, attacker) {

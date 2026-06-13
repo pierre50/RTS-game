@@ -52,7 +52,7 @@ export class AI extends Player {
   rememberEnemy(enemy) {
     if (!enemy?.label || !this.isEnemy(enemy.owner)) return
     const memoryMap = enemy.family === FAMILY_TYPES.building ? this.enemyBuildingMemory : this.enemyUnitMemory
-    const visible = Boolean(this.views?.[enemy.i]?.[enemy.j]?.viewBy?.size)
+    const visible = this.views.isVisible(enemy.i, enemy.j)
     memoryMap.set(enemy.label, {
       instance: enemy,
       label: enemy.label,
@@ -76,7 +76,7 @@ export class AI extends Player {
         memoryMap.delete(label)
         continue
       }
-      const visible = Boolean(this.views?.[enemy.i]?.[enemy.j]?.viewBy?.size)
+      const visible = this.views.isVisible(enemy.i, enemy.j)
       if (visible) {
         memory.i = enemy.i
         memory.j = enemy.j

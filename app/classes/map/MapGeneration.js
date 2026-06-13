@@ -179,7 +179,7 @@ export class MapGeneration {
           const memory = memoryMap.get(instance.label)
           if (!memory) continue
           memory.lastSeenAt = now - Math.max(0, savedMemory.lastSeenAgo || 0)
-          memory.visible = Boolean(player.views?.[instance.i]?.[instance.j]?.viewBy?.size)
+          memory.visible = player.views.isVisible(instance.i, instance.j)
           if (instance.family === FAMILY_TYPES.building) player.foundedEnemyBuildings.add(instance)
           if (instance.family === FAMILY_TYPES.unit) player.foundedEnemyUnits.add(instance)
         }
@@ -214,16 +214,14 @@ export class MapGeneration {
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]
+      player.views.restoreViewers(name => getDest(name, this.map))
       for (let i = 0; i <= this.map.size; i++) {
-        const line = player.views[i]
         for (let j = 0; j <= this.map.size; j++) {
-          const cell = line[j]
-          if (cell.viewed) {
-            cell.onViewed()
+          if (player.views.isViewed(i, j)) {
+            player.views.onViewed?.(i, j)
           }
-          cell.viewBy = new Set([...cell.viewBy].map(name => getDest(name, this.map)).filter(Boolean))
-          if (player.isPlayed && cell.viewed) {
-            if (!cell.viewBy.size) {
+          if (player.isPlayed && player.views.isViewed(i, j)) {
+            if (!player.views.isVisible(i, j)) {
               this.map.grid[i][j].setFog(true)
             } else {
               this.map.grid[i][j].removeFog()

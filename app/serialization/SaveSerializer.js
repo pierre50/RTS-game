@@ -142,15 +142,7 @@ function playerData(player) {
     buildings: player.buildings.map(b => buildingData(b)),
     units: player.units.map(u => unitData(u)),
     corpses: player.corpses.map(c => unitData(c)),
-    views: player.views.map(view =>
-      view.map(cell => {
-        const viewBy = [...(cell.viewBy || [])].map(unit => unit.label)
-        const out = {}
-        if (cell.viewed) out.viewed = true
-        if (viewBy.length > 0) out.viewBy = viewBy
-        return out
-      })
-    ),
+    views: player.views.toJSON(),
   }
 
   if (player.type === 'AI') {

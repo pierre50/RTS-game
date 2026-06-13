@@ -83,11 +83,14 @@ export class AnimalCombat {
           pointsDistance(cell.i, cell.j, instance.i, instance.j) >
             pointsDistance(dest.i, dest.j, instance.i, instance.j))
       ) {
-        dest = animal.owner.views[cell.i][cell.j]
+        dest = cell
       }
     })
     if (dest) {
-      animal.sendTo(dest)
+      animal.isFleeing = true
+      animal.sendTo(dest, null, {
+        movementSheet: animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking,
+      })
     } else {
       animal.stop()
     }

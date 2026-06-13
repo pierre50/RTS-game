@@ -5,6 +5,7 @@ export * from './ui'
 
 export const SHEET_TYPES = {
   walking: 'walkingSheet',
+  running: 'runningSheet',
   action: 'actionSheet',
   standing: 'standingSheet',
   corpse: 'corpseSheet',

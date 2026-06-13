@@ -30,13 +30,14 @@ export class AnimalMovement {
     animal.realDest = { i: dest.i, j: dest.j }
   }
 
-  setPath(path) {
+  setPath(path, sheet = SHEET_TYPES.walking) {
     const animal = this.animal
     if (!path.length) {
       animal.stop()
       return
     }
-    animal.setTextures(SHEET_TYPES.walking)
+    animal.movementSheet = sheet
+    animal.setTextures(sheet)
     animal.inactif = false
     animal.path = path
     animal.startInterval(() => animal.step(), STEP_TIME, true)
@@ -44,11 +45,7 @@ export class AnimalMovement {
 
   isAnimalAtDest(action, dest) {
     const animal = this.animal
-    if (!action) return false
-    if (!dest) {
-      animal.affectNewDest()
-      return false
-    }
+    if (!action || !dest) return false
     return instanceContactInstance(animal, dest)
   }
 
@@ -60,7 +57,7 @@ export class AnimalMovement {
     )
   }
 
-  sendTo(dest, action, { forceRepath = false } = {}) {
+  sendTo(dest, action, { forceRepath = false, movementSheet = SHEET_TYPES.walking } = {}) {
     const animal = this.animal
     const {
       context: { map },
@@ -99,7 +96,7 @@ export class AnimalMovement {
     if (path.length) {
       animal.setDest(dest)
       animal.action = action
-      animal.setPath(path)
+      animal.setPath(path, movementSheet)
     } else {
       animal.stop()
     }
@@ -171,7 +168,7 @@ export class AnimalMovement {
       const oldDeg = animal.degree
       moveTowardPoint(animal, nextCell.x, nextCell.y, animal.speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
-        animal.setTextures(SHEET_TYPES.walking)
+        animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
       }
     }
   }

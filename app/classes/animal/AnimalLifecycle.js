@@ -17,6 +17,7 @@ export class AnimalLifecycle {
     animal.owner.population = Math.max(0, animal.owner.population - 1)
     animal.stopInterval()
     animal.stopTimeout()
+    animal.animalBehavior.stop()
     animal.isDead = true
     animal.zIndex--
     animal.path = []
@@ -83,6 +84,7 @@ export class AnimalLifecycle {
     } = animal
     animal.stopTimeout()
     animal.stopInterval()
+    animal.animalBehavior.stop()
     animal.isDestroyed = true
     map.removeFromInstanceBucket(animal)
     const cell = map.grid[animal.i]?.[animal.j]

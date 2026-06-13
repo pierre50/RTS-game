@@ -166,7 +166,7 @@ export class Unit extends Instance {
     this.sprite.updateAnchor = true
     this.addChild(this.sprite)
 
-    this.sendTo = throttle(this.sendToEvt, this.owner.isPlayed ? 100 : 1000, true)
+    this.sendTo = this.owner.isPlayed ? throttle(this.sendToEvt, 100, true) : this.sendToEvt.bind(this)
 
     this.on('pointerdown', evt => {
       const {

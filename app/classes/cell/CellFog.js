@@ -164,7 +164,7 @@ export class CellFog {
       cell._hasFog = true
       const { map } = cell.context
       if (map._fogQueue) {
-        const viewed = cell.context.player?.views?.[cell.i]?.[cell.j]?.viewed ?? false
+        const viewed = cell.context.player?.views?.isViewed(cell.i, cell.j) ?? false
         const isViewed = viewed || map.revealTerrain
         // During init, chunks are already solid black — only queue if cell was viewed
         // (needs dotted pattern) or if init is already complete (re-fogging during gameplay)

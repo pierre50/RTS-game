@@ -18,6 +18,7 @@ import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
+import { AnimalBehavior } from './AnimalBehavior'
 
 export class Animal extends Instance {
   constructor(options, context) {
@@ -32,6 +33,7 @@ export class Animal extends Instance {
     this.animalLifecycle = new AnimalLifecycle(this)
     this.animalMovement = new AnimalMovement(this)
     this.animalCombat = new AnimalCombat(this)
+    this.animalBehavior = new AnimalBehavior(this)
 
     this.dest = null
     this.realDest = null
@@ -42,12 +44,14 @@ export class Animal extends Instance {
     this.currentFrame = 0
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
+    this.isFleeing = false
     this.x = null
     this.y = null
     this.z = null
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.animals[this.type])
+    this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 
     this.size = 1
     this.visible = false
@@ -157,6 +161,7 @@ export class Animal extends Instance {
 
     setTimeout(() => {
       updateInstanceVisibility(this)
+      this.animalBehavior.start()
     })
   }
 
@@ -166,6 +171,7 @@ export class Animal extends Instance {
       return
     }
     this.inactif = true
+    this.isFleeing = false
     this.action = null
     this.dest = null
     this.realDest = null
@@ -204,8 +210,8 @@ export class Animal extends Instance {
   setDest(dest) {
     return this.animalMovement.setDest(dest)
   }
-  setPath(path) {
-    return this.animalMovement.setPath(path)
+  setPath(path, sheet) {
+    return this.animalMovement.setPath(path, sheet)
   }
   isAnimalAtDest(action, dest) {
     return this.animalMovement.isAnimalAtDest(action, dest)

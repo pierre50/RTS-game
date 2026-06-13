@@ -54,6 +54,8 @@ export class AIEconomy {
       inactifVillagers,
       villagersForaging,
       villagersHunting,
+      villagersFarming,
+      villagersFishing,
       villagersOnFood,
       villagersOnWood,
       villagersOnGold,
@@ -107,19 +109,14 @@ export class AIEconomy {
     if (this._exploredAll) return false
     const { views } = this.ai
     if (!views) return false
-    const rows = views.length
-    const cols = views[0]?.length || 0
-    const total = rows * cols
+    const total = views.length
 
     if (total === 0) return false
 
     for (let offset = 0; offset < total; offset++) {
       const index = (this._unexploredScanIndex + offset) % total
-      const i = Math.floor(index / cols)
-      const j = index % cols
-      const cell = views[i]?.[j]
-
-      if (cell && !cell.viewed) {
+      const [i, j] = views.coordinates(index)
+      if (!views.isViewed(i, j)) {
         this._unexploredScanIndex = index
         return true
       }
@@ -153,6 +150,13 @@ export class AIEconomy {
       Math.max(0, targets.maxVillagersOnStone - ai.foundedStones.size * 3)
 
     return Math.min(3, Math.ceil(deficit / 4))
+  }
+
+  sendVillagerExploring(villager) {
+    villager.work = null
+    villager.previousWork = null
+    villager.previousDest = null
+    return villager.explore()
   }
 
   assignVillagersToResource(
@@ -213,6 +217,93 @@ export class AIEconomy {
       if (instancesDistance(pos, u) < dangerRadius) return false
     }
     return true
+  }
+
+  getFoodDropSites(loadingType) {
+    const { ai } = this
+    const types =
+      loadingType === 'berry' || loadingType === 'wheat'
+        ? [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary]
+        : [BUILDING_TYPES.townCenter, BUILDING_TYPES.storagePit]
+    return ai
+      .buildingsByTypes(types)
+      .filter(building => building && building.isBuilt && !building.isDead && !building.isDestroyed)
+  }
+
+  getNearestDropDistance(source, dropSites) {
+    if (!source || !dropSites.length) return 0
+    return Math.min(...dropSites.map(site => Math.abs(source.i - site.i) + Math.abs(source.j - site.j)))
+  }
+
+  getFoodSourceScore(type, source, dropSites, slot = 0, hunterCount = 1) {
+    const rates = this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}
+    const workByType = {
+      berry: WORK_TYPES.forager,
+      carcass: WORK_TYPES.hunter,
+      fish: WORK_TYPES.fisher,
+      farm: WORK_TYPES.farmer,
+      hunt: WORK_TYPES.hunter,
+    }
+    const fallbackRates = { berry: 0.45, carcass: 0.4725, fish: 0.6, farm: 0.45, hunt: 0.4725 }
+    const rate = rates[workByType[type]] || fallbackRates[type]
+    const quantity = Math.max(0, source.quantity ?? source.totalQuantity ?? 0)
+    const quantityFactor = 0.55 + Math.min(quantity / 150, 1) * 0.45
+    const distance = this.getNearestDropDistance(source, dropSites)
+    const travelPenalty = 1 + distance / (type === 'farm' ? 20 : 14)
+    const saturationPenalty = 1 + slot * (type === 'berry' || type === 'carcass' ? 0.25 : 0.12)
+    const killPenalty = type === 'hunt' ? 1 + (source.hitPoints || 0) / Math.max(4 * hunterCount, 1) / 12 : 1
+    const renewableBonus = type === 'farm' ? 1.08 : 1
+    return (rate * quantityFactor * renewableBonus) / (travelPenalty * saturationPenalty * killPenalty)
+  }
+
+  getFoodWorkerTargets(maxWorkers, sources, currentCounts) {
+    const opportunities = []
+    const retainedSlots = { ...currentCounts }
+    const addSlots = (type, source, count, dropSites, hunterCount = 1) => {
+      for (let slot = 0; slot < count; slot++) {
+        const retentionBonus = retainedSlots[type] > 0 ? 1.08 : 1
+        retainedSlots[type] = Math.max(0, (retainedSlots[type] || 0) - 1)
+        opportunities.push({
+          type,
+          score: this.getFoodSourceScore(type, source, dropSites, slot, hunterCount) * retentionBonus,
+        })
+      }
+    }
+
+    for (const carcass of sources.carcasses) {
+      addSlots('carcass', carcass, Math.min(3, Math.max(1, Math.ceil(carcass.quantity / 75))), sources.meatDrops)
+    }
+    for (const bush of sources.berries) addSlots('berry', bush, 2, sources.plantDrops)
+    for (const farm of sources.farms) addSlots('farm', farm, 1, sources.plantDrops)
+    for (const fish of sources.fish) addSlots('fish', fish, 1, sources.meatDrops)
+    for (const animal of sources.animals) {
+      if (animal.type === 'Elephant') continue
+      const hunters = animal.totalHitPoints >= 20 ? Math.min(4, Math.max(1, Math.ceil(animal.hitPoints / 4))) : 1
+      addSlots('hunt', animal, hunters, sources.meatDrops, hunters)
+    }
+
+    opportunities.sort((a, b) => b.score - a.score)
+    const targets = { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 0 }
+    for (const opportunity of opportunities.slice(0, maxWorkers)) targets[opportunity.type]++
+    return targets
+  }
+
+  releaseExcessFoodWorkers(workers, target, availableVillagers) {
+    let excess = Math.max(0, workers.length - target)
+    if (!excess) return
+    const releasable = workers
+      .filter(villager => !villager.loading && villager.action !== ACTION_TYPES.delivery)
+      .sort((a, b) => {
+        const aDistance = a.dest ? Math.abs(a.i - a.dest.i) + Math.abs(a.j - a.dest.j) : 0
+        const bDistance = b.dest ? Math.abs(b.i - b.dest.i) + Math.abs(b.j - b.dest.j) : 0
+        return bDistance - aDistance
+      })
+    for (const villager of releasable) {
+      if (excess <= 0) break
+      villager.stop()
+      if (!availableVillagers.includes(villager)) availableVillagers.push(villager)
+      excess--
+    }
   }
 
   // Group-aware hunting for non-elephant prey: large animals need several hunters on the same target.
@@ -276,75 +367,119 @@ export class AIEconomy {
     const { ai } = this
     for (const animal of map.gaia.units) {
       if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
-        const viewerCell = ai.views?.[animal.i]?.[animal.j]
-        if (viewerCell?.viewBy.size > 0) ai.foundedDeadAnimals.add(animal)
+        if (ai.views.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal)
       }
     }
   }
 
   assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms) {
     const { ai } = this
-    const { villagersForaging, villagersHunting, villagersOnFood } = workerSnapshot
+    const {
+      villagersForaging = [],
+      villagersHunting = [],
+      villagersFarming = [],
+      villagersFishing = [],
+    } = workerSnapshot
     const { maxVillagersOnFood } = targets
     let actions = 0
-    let foodWorkersAssigned = villagersOnFood.length
     const berryDropSites = this.getStorageDropSites()
     const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
+    const carcassHunters = villagersHunting.filter(
+      villager => villager.action === ACTION_TYPES.takemeat || villager.dest?.isDead
+    )
+    const liveHunters = villagersHunting.filter(
+      villager => villager.action === ACTION_TYPES.hunt && villager.dest && !villager.dest.isDead
+    )
+    const farmCandidates = new Set([
+      ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && farm.quantity > 0),
+      ...villagersFarming.map(villager => villager.dest).filter(farm => farm && !farm.isDead && farm.quantity > 0),
+    ])
+    const sources = {
+      animals: [...ai.foundedAnimals].filter(animal => !animal.isDead && this.isLocationSafe(animal)),
+      berries: [...viableBerryBushes],
+      carcasses: [...ai.foundedDeadAnimals].filter(
+        animal => !animal.isDestroyed && animal.quantity > 0 && this.isLocationSafe(animal)
+      ),
+      farms: [...farmCandidates],
+      fish: [...ai.foundedFish].filter(node => node.quantity > 0 && this.isLocationSafe(node)),
+      meatDrops: this.getFoodDropSites('meat'),
+      plantDrops: this.getFoodDropSites('berry'),
+    }
+    const sourceTargets = this.getFoodWorkerTargets(
+      maxVillagersOnFood,
+      sources,
+      {
+        berry: villagersForaging.length,
+        carcass: carcassHunters.length,
+        farm: villagersFarming.length,
+        fish: villagersFishing.length,
+        hunt: liveHunters.length,
+      }
+    )
 
-    // Reserve farm slots only once berries are already being gathered — prevents starving berries in early game
-    const farmReserve =
-      emptyFarms.length > 0 && (villagersForaging.length > 0 || viableBerryBushes.size === 0)
-        ? Math.min(emptyFarms.length, Math.ceil(maxVillagersOnFood * 0.3))
-        : 0
-    const naturalFoodCap = maxVillagersOnFood - farmReserve
+    this.releaseExcessFoodWorkers(villagersForaging, sourceTargets.berry, availableVillagers)
+    this.releaseExcessFoodWorkers(carcassHunters, sourceTargets.carcass, availableVillagers)
+    this.releaseExcessFoodWorkers(liveHunters, sourceTargets.hunt, availableVillagers)
+    this.releaseExcessFoodWorkers(villagersFishing, sourceTargets.fish, availableVillagers)
+    this.releaseExcessFoodWorkers(villagersFarming, sourceTargets.farm, availableVillagers)
 
-    // 1. Dead animals — free food already on the ground, highest priority
-    if (ai.foundedDeadAnimals.size > 0) {
-      const toAssign = Math.min(Math.max(0, naturalFoodCap - foodWorkersAssigned), availableVillagers.length)
+    const activeForagers = villagersForaging.filter(villager => !villager.inactif)
+    const activeCarcassHunters = carcassHunters.filter(villager => !villager.inactif)
+    const activeLiveHunters = liveHunters.filter(villager => !villager.inactif)
+    const activeFishers = villagersFishing.filter(villager => !villager.inactif)
+    const activeFarmers = villagersFarming.filter(villager => !villager.inactif)
+
+    if (sources.carcasses.length > 0) {
+      const toAssign = Math.min(
+        Math.max(0, sourceTargets.carcass - activeCarcassHunters.length),
+        availableVillagers.length
+      )
       for (let i = 0; i < toAssign; i++) {
-        const animal = getClosestInstance(availableVillagers[0], ai.foundedDeadAnimals)
+        const animal = getClosestInstance(availableVillagers[0], sources.carcasses)
         if (!animal) break
         availableVillagers.shift().sendToTakeMeat(animal)
-        foodWorkersAssigned++
         actions++
       }
     }
 
-    // 2. Berries — stable and efficient
-    const berriesAssigned = this.assignVillagersToResource(
+    actions += this.assignVillagersToResource(
       availableVillagers,
-      villagersForaging,
+      activeForagers,
       viableBerryBushes,
-      naturalFoodCap,
+      sourceTargets.berry,
       (villager, bush) => villager.sendToBerrybush(bush)
     )
-    foodWorkersAssigned += berriesAssigned
-    actions += berriesAssigned
 
-    // 3. Group hunting — large animals get multiple hunters; small animals get one each
-    //    maxTotalHunters = existing hunters + remaining food slots (capped at 6)
-    const maxTotalHunters = Math.min(6, naturalFoodCap - (foodWorkersAssigned - villagersHunting.length))
-    const huntActions = this.assignHunters(availableVillagers, villagersHunting, maxTotalHunters)
-    foodWorkersAssigned += huntActions
-    actions += huntActions
+    actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt)
 
-    // 4. Fishing
-    if (ai.foundedFish.size > 0) {
-      const maxFishers = Math.min(3, availableVillagers.length)
-      for (let i = 0; i < maxFishers; i++) {
-        if (foodWorkersAssigned >= naturalFoodCap) break
-        const fish = getClosestInstance(availableVillagers[0], ai.foundedFish)
+    if (sources.fish.length > 0) {
+      const toAssign = Math.min(Math.max(0, sourceTargets.fish - activeFishers.length), availableVillagers.length)
+      for (let i = 0; i < toAssign; i++) {
+        const fish = getClosestInstance(availableVillagers[0], sources.fish)
         if (!fish) break
         availableVillagers.shift().sendToFish(fish)
-        foodWorkersAssigned++
         actions++
       }
     }
 
-    // 5. Farms — renewable, fills remaining food quota
-    const foodShortfall = Math.max(0, maxVillagersOnFood - foodWorkersAssigned)
-    for (let i = 0; i < emptyFarms.length && i < foodShortfall && availableVillagers.length > 0; i++) {
-      availableVillagers.shift().sendToFarm(emptyFarms[i])
+    const availableFarms = emptyFarms
+      .filter(farm => farm.isBuilt && !farm.isDead && farm.quantity > 0 && !farm.isUsedBy)
+      .sort((a, b) => {
+        const worker = availableVillagers[0]
+        if (!worker) return 0
+        return (
+          Math.abs(worker.i - a.i) +
+          Math.abs(worker.j - a.j) -
+          (Math.abs(worker.i - b.i) + Math.abs(worker.j - b.j))
+        )
+      })
+    const farmsToAssign = Math.min(
+      Math.max(0, sourceTargets.farm - activeFarmers.length),
+      availableFarms.length,
+      availableVillagers.length
+    )
+    for (let i = 0; i < farmsToAssign; i++) {
+      availableVillagers.shift().sendToFarm(availableFarms[i])
       actions++
     }
 
@@ -508,8 +643,7 @@ export class AIEconomy {
         const count = Math.min(need, availableVillagers.length)
         const explorers = availableVillagers.splice(availableVillagers.length - count, count)
         for (const v of explorers) {
-          v.explore()
-          actions++
+          if (this.sendVillagerExploring(v)) actions++
         }
       }
     }
