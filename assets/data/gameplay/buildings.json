@@ -11,8 +11,16 @@
     },
     "sounds": {
       "create": 5126,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Barracks": {
@@ -39,8 +47,16 @@
     ],
     "sounds": {
       "create": 5022,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Granary": {
@@ -59,13 +75,23 @@
       "ResearchWatchTower",
       "ResearchSentryTower",
       "ResearchSmallWall",
+      "UpgradeMediumWall",
+      "UpgradeFortification",
       "ResearchGuardTower",
       "ResearchBallistaTower"
     ],
     "sounds": {
       "create": 5096,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "StoragePit": {
@@ -102,8 +128,16 @@
     ],
     "sounds": {
       "create": 5186,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Dock": {
@@ -120,8 +154,16 @@
     },
     "sounds": {
       "create": 5027,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "ArcheryRange": {
@@ -157,8 +199,16 @@
     ],
     "sounds": {
       "create": 5008,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Stable": {
@@ -189,8 +239,16 @@
     ],
     "sounds": {
       "create": 5123,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Farm": {
@@ -216,8 +274,16 @@
     ],
     "sounds": {
       "create": 5176,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "WatchTower": {
@@ -242,17 +308,20 @@
         "key": "technologies",
         "op": "includes",
         "value": "ResearchWatchTower"
-      },
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "ResearchSentryTower"
       }
     ],
     "sounds": {
       "create": 5201,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "SentryTower": {
@@ -270,19 +339,22 @@
     "conditions": [
       {
         "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchSentryTower"
+        "op": ">",
+        "value": 99
       }
     ],
     "sounds": {
       "create": 5201,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "SmallWall": {
@@ -307,8 +379,16 @@
     ],
     "sounds": {
       "create": 5207,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Market": {
@@ -344,8 +424,16 @@
     ],
     "sounds": {
       "create": 5142,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Temple": {
@@ -373,8 +461,16 @@
     ],
     "sounds": {
       "create": 5196,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "GovernmentCenter": {
@@ -407,8 +503,16 @@
     ],
     "sounds": {
       "create": 5129,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "TownCenter": {
@@ -442,8 +546,16 @@
     ],
     "sounds": {
       "create": 5044,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "SiegeWorkshop": {
@@ -468,8 +580,16 @@
     ],
     "sounds": {
       "create": 5074,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "Academy": {
@@ -501,8 +621,16 @@
     ],
     "sounds": {
       "create": 5002,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "GuardTower": {
@@ -520,19 +648,22 @@
     "conditions": [
       {
         "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchGuardTower"
+        "op": ">",
+        "value": 99
       }
     ],
     "sounds": {
       "create": 5201,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   },
   "BallistaTower": {
@@ -541,7 +672,7 @@
     "totalHitPoints": 200,
     "constructionTime": 80,
     "range": 7,
-    "projectile": "Arrow",
+    "projectile": "Bolt",
     "pierceAttack": 20,
     "rateOfFire": 3,
     "cost": {
@@ -550,19 +681,22 @@
     "conditions": [
       {
         "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchBallistaTower"
+        "op": ">",
+        "value": 99
       }
     ],
     "sounds": {
       "create": 5201,
-      "burning": [5000, 5081, 5082],
-      "collapse": [5077, 5078, 5079]
+      "burning": [
+        5000,
+        5081,
+        5082
+      ],
+      "collapse": [
+        5077,
+        5078,
+        5079
+      ]
     }
   }
 }

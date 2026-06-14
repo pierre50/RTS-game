@@ -1,9 +1,10 @@
 {
   "Gazelle": {
     "totalHitPoints": 8,
-    "sight": 2,
+    "sight": 4,
     "speed": 1.2,
     "strategy": "runaway",
+    "ambientMovement": true,
     "icon": "037_50730",
     "totalQuantity": 150,
     "assets": {
