@@ -187,6 +187,17 @@ export function setUnitTexture(sheet, instance) {
 
 export { EAST_FIRST_EIGHT_DIRECTION_ORDER }
 
+export function displayObjectCanUpdateAnimation(displayObject) {
+  if (!displayObject?.playing || displayObject.destroyed) return false
+  if (displayObject.onLoop || displayObject.onFrameChange || displayObject.onComplete) return true
+  let current = displayObject
+  while (current) {
+    if (current.visible === false || current.renderable === false) return false
+    current = current.parent
+  }
+  return true
+}
+
 export function bindAnimatedSpriteToTicker(sprite, app) {
   if (!sprite || !app?.ticker || sprite._usesAppTicker) {
     return sprite
@@ -195,7 +206,7 @@ export function bindAnimatedSpriteToTicker(sprite, app) {
   sprite.autoUpdate = false
 
   const tick = deltaTime => {
-    if (!sprite.destroyed) {
+    if (displayObjectCanUpdateAnimation(sprite)) {
       sprite.update(deltaTime)
     }
   }

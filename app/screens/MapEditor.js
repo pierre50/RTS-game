@@ -3,11 +3,13 @@ import Map from '../classes/map'
 import { Cell } from '../classes/cell'
 import { Resource } from '../classes/resource'
 import { AI, Gaia, Human } from '../classes/players'
-import { FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
 import { getPlainCellsAroundPoint, randomItem } from '../lib'
 import { getCameraZoom } from '../lib/settings'
 import { canPlaceBuildingAt } from '../lib/grid/placement'
+import { getAdjacentWalls, isWall, updateWallTexture } from '../lib/buildings/walls'
 import { EditorControls } from '../controllers/EditorControls'
+import { WallPlacementController } from '../controllers/WallPlacementController'
 import { MapEditorHud } from '../ui/MapEditorHud'
 
 const DEFAULT_MAP_SIZE = 120
@@ -88,6 +90,14 @@ export default class MapEditor extends Container {
     this.context.menu = this.context.hud
 
     this.context.controls = new EditorControls(this.context)
+    this.wallPlacementController = new WallPlacementController({
+      context: this.context,
+      parent: this.context.map,
+      getPreviewPosition: cell => ({ x: cell.x, y: cell.y }),
+      canUseCell: (cell, owner, allowExistingWall) => this._canWallUseCell(cell, owner, allowExistingWall),
+      onCommit: (path, owner) => this._commitWallPath(path, owner),
+      onChange: () => this.context.hud?.sync(),
+    })
 
     this.addChild(this.context.map)
     this.addChild(this.context.controls)
@@ -157,7 +167,7 @@ export default class MapEditor extends Container {
         name: config.name || `Player ${index + 1}`,
         i: anchor.i,
         j: anchor.j,
-        age: 0,
+        age: Math.max(0, Math.min(Number(config.age) || 0, 3)),
         civ: config.civ || 'Greek',
         color: config.color || 'blue',
         team: config.team ?? null,
@@ -373,6 +383,7 @@ export default class MapEditor extends Container {
         name: player.name,
         color: player.color,
         civ: player.civ,
+        age: Math.max(0, Math.min(Number(player.age) || 0, 3)),
         team: player.team ?? null,
         isHuman,
         difficulty: isHuman ? undefined : player.difficulty || 'medium',
@@ -545,8 +556,11 @@ export default class MapEditor extends Container {
 
   removeEntity(instance) {
     if (!instance || instance.isDestroyed) return false
+    const removedWall = this._isWall(instance)
+    const adjacentWalls = removedWall ? this._getAdjacentWalls(instance.i, instance.j, instance.owner) : []
     this.context.player?.unselectAll?.()
     this._hardRemoveInstance(instance)
+    adjacentWalls.forEach(wall => this._updateWallTexture(wall))
     this.context.hud?.setBottombar()
     this.context.hud?.updateResourcesMiniMap()
     return true
@@ -557,14 +571,88 @@ export default class MapEditor extends Container {
   }
 
   setPlacementSelection(ownerLabel, type, kind) {
+    this.cancelWallDraft()
     this.editorState.placementOwnerLabel = ownerLabel ?? null
     this.editorState.placementType = type ?? null
     this.editorState.placementKind = kind ?? null
+    this.context.controls?.entityPreview?.set(this.getPlacementSelection())
     this.context.hud?.sync()
   }
 
   clearPlacementSelection() {
     this.setPlacementSelection(null, null, null)
+  }
+
+  hasWallDraft() {
+    return Boolean(this.wallPlacementController?.active)
+  }
+
+  isWallPlacementSelected() {
+    const selection = this.getPlacementSelection()
+    return selection?.kind === 'building' && selection.type === BUILDING_TYPES.smallWall
+  }
+
+  _isWall(instance, owner = null) {
+    return instance?.family === FAMILY_TYPES.building && isWall(instance, owner)
+  }
+
+  _canWallUseCell(cell, owner, allowExistingWall = false) {
+    if (!cell || cell.category === 'Water' || cell.waterBorder || cell.inclined || cell.border) return false
+    if (!cell.has && !cell.solid) return true
+    return allowExistingWall && this._isWall(cell.has, owner)
+  }
+
+  handleWallMapClick(cell) {
+    if (!this.canSelectEntities() || !this.isWallPlacementSelected()) return false
+    const selection = this.getPlacementSelection()
+    if (!selection) return true
+    this._selectionSuppressedUntil = Date.now() + PLACEMENT_SELECTION_SUPPRESS_MS
+    this.wallPlacementController.handleClick(cell, selection.owner)
+    return true
+  }
+
+  updateWallDraft(cell) {
+    return this.wallPlacementController?.update(cell) || false
+  }
+
+  _commitWallPath(path, owner) {
+    if (!path.length) return false
+    const affected = new Set()
+
+    path.forEach(cell => {
+      if (this._isWall(cell.has, owner)) {
+        affected.add(cell.has)
+        return
+      }
+      if (!this._canWallUseCell(cell, owner)) return
+      const wall = owner.createBuilding({
+        i: cell.i,
+        j: cell.j,
+        type: BUILDING_TYPES.smallWall,
+        isBuilt: true,
+      })
+      affected.add(wall)
+    })
+
+    for (const wall of affected) {
+      this._getAdjacentWalls(wall.i, wall.j, wall.owner).forEach(neighbour => affected.add(neighbour))
+    }
+    affected.forEach(wall => this._updateWallTexture(wall))
+    this.context.hud?.updateResourcesMiniMap()
+    this.refreshTerrainAppearance()
+    return affected.size > 0
+  }
+
+  _getAdjacentWalls(i, j, owner) {
+    return getAdjacentWalls(this.context.map.grid, i, j, owner)
+  }
+
+  _updateWallTexture(wall) {
+    updateWallTexture(wall)
+  }
+
+  cancelWallDraft() {
+    return this.wallPlacementController?.cancel() || false
   }
 
   getPlacementSelection() {

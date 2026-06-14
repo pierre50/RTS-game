@@ -893,6 +893,23 @@ const EXTRA_PROJECTILES = {
       impact: 5070,
     },
   },
+  FireStone: {
+    size: 10,
+    speed: 10,
+    assets: '461',
+    isAnimated: true,
+    animationSpeed: 0.35,
+    trajectory: {
+      kind: 'arc',
+      minArcHeight: 26,
+      arcHeightFactor: 0.35,
+      maxArcHeight: 90,
+    },
+    sounds: {
+      launch: STONE_START_SOUND,
+      impact: 5070,
+    },
+  },
   Arrow: {
     size: 3,
     speed: 14,
@@ -906,6 +923,19 @@ const EXTRA_PROJECTILES = {
       impact: 5028,
     },
   },
+  FireArrow: {
+    size: 3,
+    speed: 14,
+    assets: '252',
+    isAnimated: true,
+    rotateSprite: true,
+    staticFrame: 1,
+    spriteBaseAngle: 0,
+    sounds: {
+      launch: [5009, 5010, 5011, 5012],
+      impact: 5028,
+    },
+  },
   Bolt: {
     size: 12,
     speed: 12,
@@ -913,6 +943,18 @@ const EXTRA_PROJECTILES = {
     isAnimated: true,
     directionalFrames: 8,
     directionalFrameOrder: ['east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'north', 'northeast'],
+    sounds: {
+      launch: [5018, 5019, 5020, 5021, 5052],
+      impact: 5028,
+    },
+  },
+  FireBolt: {
+    size: 12,
+    speed: 12,
+    assets: '265',
+    isAnimated: true,
+    directionalAnimationFrames: 3,
+    animationSpeed: 0.35,
     sounds: {
       launch: [5018, 5019, 5020, 5021, 5052],
       impact: 5028,

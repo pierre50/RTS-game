@@ -1,6 +1,8 @@
-import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
+import { MENU_INFO_IDS, POPULATION_MAX, BUILDING_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import { getWallIcon } from '../lib/buildings/walls'
+import { getTowerType, isTower } from '../lib/buildings/towers'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
 export class BuildingInterface {
@@ -66,11 +68,13 @@ export class BuildingInterface {
     } = building
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
+    const displayType = isTower(building) ? getTowerType(building.owner) : building.type
+    const icon = building.type === BUILDING_TYPES.smallWall ? getWallIcon(building.owner, data.icon) : data.icon
     appendBaseEntityInfo(
       element,
       t(building.owner.civ),
-      t(building.type),
-      getIconPath(data.icon),
+      t(displayType),
+      getIconPath(icon),
       hitPoints,
       building.totalHitPoints
     )

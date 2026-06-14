@@ -2,6 +2,7 @@ import { Container } from 'pixi.js'
 import { isometricToCartesian } from '../lib'
 import { CameraController } from './CameraController'
 import { getCameraZoom } from '../lib/settings'
+import { EditorEntityPreview } from './EditorEntityPreview'
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -27,6 +28,7 @@ export class EditorControls extends Container {
     this.pointerDown = false
     this.lastPaintSignature = null
     this.hoveredCell = null
+    this.entityPreview = new EditorEntityPreview(this)
 
     this._onDocMouseMove = evt => this.moveCameraWithMouse(evt)
     this._onDocMouseOut = () => this.stopMouseCameraMove()
@@ -153,6 +155,10 @@ export class EditorControls extends Container {
   }
 
   onKeyDown(evt) {
+    if (evt.key === 'Escape' && this.context.editor.cancelWallDraft?.()) {
+      evt.preventDefault()
+      return
+    }
     if (!ARROW_KEYS.has(evt.key) || evt.repeat) return
     this.keysPressed[evt.key] = true
     this.keyPressedCount++
@@ -174,16 +180,16 @@ export class EditorControls extends Container {
   }
 
   onTick(ticker) {
-    const frameScale = Math.min((ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS, MAX_CAMERA_FRAME_SCALE)
+    const frameScale = Math.min(
+      (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
+      MAX_CAMERA_FRAME_SCALE
+    )
     this.cameraController.updateMouseMove(frameScale)
     if (this.keyPressedCount <= 0) return
 
     const double = this.keyPressedCount > 1
     if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-      this.keySpeed = Math.min(
-        KEYBOARD_CAMERA_MAX_SPEED,
-        this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
-      )
+      this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
     }
     if (this.keysPressed.ArrowLeft) this.moveCamera('left', this.keySpeed, double, frameScale)
     if (this.keysPressed.ArrowUp) this.moveCamera('up', this.keySpeed, double, frameScale)
@@ -195,6 +201,8 @@ export class EditorControls extends Container {
     const cell = this.getCellFromPointer(evt)
     this.hoveredCell = cell
     this.context.hud.updateStatus(cell)
+    this.context.editor.updateWallDraft?.(cell)
+    this.entityPreview.update(cell)
     if (!this.pointerDown || !cell || !this.context.editor.canPaintTerrain()) return
     this.paint(cell)
   }
@@ -203,6 +211,7 @@ export class EditorControls extends Container {
     if (evt.button !== 0) return
     const cell = this.getCellFromPointer(evt)
     if (!cell) return
+    if (this.context.editor.handleWallMapClick?.(cell)) return
     if (this.context.editor.canSelectEntities()) {
       if (!cell.has) {
         this.context.editor.handleUnitsModeMapClick(cell)
@@ -234,6 +243,7 @@ export class EditorControls extends Container {
   _refreshHover() {
     if (!this.hoveredCell) return
     this.context.hud.updateStatus(this.hoveredCell)
+    this.entityPreview.update(this.hoveredCell)
   }
 
   removeMouseBuilding() {

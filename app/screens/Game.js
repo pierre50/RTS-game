@@ -14,6 +14,7 @@ import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import { getCameraZoom, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
+import { AmbientBirds } from '../services/AmbientBirds'
 
 /**
  * Main Display Object
@@ -37,6 +38,7 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
+      ambientBirds: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -204,6 +206,7 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
+      ambientBirds: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -227,8 +230,20 @@ export default class Game extends Container {
   _mountRuntime() {
     this.addChild(this.context.map)
     this.addChild(this.context.controls)
+    this.context.ambientBirds = new AmbientBirds(this.context, () => this._getLocalViewportBounds())
+    this.addChild(this.context.ambientBirds)
     this.applyZoom()
     this._attachWindowListeners()
+  }
+
+  _getLocalViewportBounds() {
+    const zoom = this.scale.x || 1
+    return {
+      x: -this.position.x / zoom,
+      y: -this.position.y / zoom,
+      width: this.context.app.screen.width / zoom,
+      height: this.context.app.screen.height / zoom,
+    }
   }
 
   _destroyRuntime() {
@@ -241,6 +256,7 @@ export default class Game extends Container {
     }
     this.context.scheduler?.clear()
     this.context.performance?.reset()
+    this.context.ambientBirds?.destroy({ children: true })
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy()
@@ -260,7 +276,9 @@ export default class Game extends Container {
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
     const mapGenerationStartedAt = performance.now()
-    this.context.map.generateMap(posCount)
+    await this.context.map.generateMapAsync(posCount, 0, {
+      onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),
+    })
     this.context.map.generationTimings = {
       terrainAndSpawns: performance.now() - mapGenerationStartedAt,
     }

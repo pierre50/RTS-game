@@ -33,6 +33,7 @@ import { UnitLifecycle } from './UnitLifecycle'
 import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
+import { t } from '../../lib/lang'
 
 function getActionSheet(work, action, Assets, unit) {
   if (!work) {
@@ -62,6 +63,7 @@ export class Unit extends Instance {
     this.realDest = null
     this.previousDest = null
     this.previousWork = null
+    this.buildQueue = []
     this.path = []
     this.degree = map.randomRange(1, 360)
     this.currentFrame = map.randomRange(0, 4)
@@ -137,6 +139,10 @@ export class Unit extends Instance {
               {
                 id: 'build',
                 icon: 'assets/interface/50721/002_50721.png',
+                tooltip: () => ({
+                  title: t('buildMenu'),
+                  description: t('buildMenuDescription'),
+                }),
                 children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key, this.owner)),
               },
             ]
@@ -475,8 +481,8 @@ export class Unit extends Instance {
     return this.unitInterface.getLoadingElement()
   }
 
-  commonSendTo(target, work, action, keepPrevious, immediate = false) {
-    return this.unitCommands.commonSendTo(target, work, action, keepPrevious, immediate)
+  commonSendTo(target, work, action, keepPrevious, immediate = false, preserveBuildQueue = false) {
+    return this.unitCommands.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue)
   }
 
   // Navigate to arrivalCell but set target as the attack dest.
@@ -506,8 +512,16 @@ export class Unit extends Instance {
     return this.unitCommands.sendToHunt(target)
   }
 
-  sendToBuilding(target) {
-    return this.unitCommands.sendToBuilding(target)
+  sendToBuilding(target, preserveBuildQueue = false) {
+    return this.unitCommands.sendToBuilding(target, preserveBuildQueue)
+  }
+
+  sendToBuildingQueue(targets) {
+    return this.unitCommands.sendToBuildingQueue(targets)
+  }
+
+  continueBuildingQueue() {
+    return this.unitCommands.continueBuildingQueue()
   }
 
   sendToFarm(target) {

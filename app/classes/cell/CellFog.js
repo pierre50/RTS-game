@@ -1,6 +1,12 @@
 import { Sprite, Texture } from 'pixi.js'
 import { Assets } from 'pixi.js'
-import { getBuildingAsset, getTexture, changeSpriteColorDirectly, playerCanSeeInstance } from '../../lib'
+import {
+  getBuildingAsset,
+  getTexture,
+  changeSpriteColorDirectly,
+  playerCanSeeInstance,
+  updateInstanceRenderVisibility,
+} from '../../lib'
 import { COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 
 let _fogTexture = null
@@ -127,16 +133,7 @@ export class CellFog {
   }
 
   _setRemoveChildren(instance) {
-    const { cell } = this
-    const { controls, map } = cell.context
-    if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
-      instance.visible = false
-      return
-    }
-
-    if (controls.instanceInCamera(instance)) {
-      instance.visible = true
-    }
+    updateInstanceRenderVisibility(instance)
     for (let i = 0; i < instance.children.length; i++) {
       if (instance.children[i].tint) {
         instance.children[i].tint = COLOR_WHITE

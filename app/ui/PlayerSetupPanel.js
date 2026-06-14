@@ -8,6 +8,13 @@ const DIFFICULTIES = [
   { label: () => t('diffHard'), value: 'hard' },
 ]
 
+const AGES = [
+  { label: () => t('stoneAge'), value: 0 },
+  { label: () => t('toolAge'), value: 1 },
+  { label: () => t('bronzeAge'), value: 2 },
+  { label: () => t('ironAge'), value: 3 },
+]
+
 const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
 
@@ -25,16 +32,22 @@ const PLAYER_COLORS = [
 ]
 
 export class PlayerSetupPanel {
-  constructor({ players, maxPlayers, onChange = null }) {
+  constructor({ players, maxPlayers, onChange = null, showAge = false }) {
     this.onChange = onChange
+    this.showAge = showAge
     this.maxPlayers = Math.max(2, Math.min(maxPlayers || 2, MAX_PLAYERS))
     this.players = (players?.length ? players : this._createDefaultPlayers()).map(player => ({ ...player }))
+    if (this.showAge) {
+      this.players.forEach(player => {
+        player.age = Math.max(0, Math.min(Number(player.age) || 0, 3))
+      })
+    }
     this._clampPlayers()
 
     this.element = document.createElement('div')
     this.element.className = 'lobby-col'
     this.playerTableEl = document.createElement('div')
-    this.playerTableEl.className = 'player-table'
+    this.playerTableEl.className = `player-table${this.showAge ? ' player-table--with-age' : ''}`
     this.playerCountRow = this._createPlayerCountSelect()
 
     this.element.appendChild(this.playerCountRow)
@@ -123,6 +136,7 @@ export class PlayerSetupPanel {
       team: null,
       isHuman: false,
       difficulty: 'medium',
+      ...(this.showAge ? { age: 0 } : {}),
     })
   }
 
@@ -163,7 +177,10 @@ export class PlayerSetupPanel {
 
     const header = document.createElement('div')
     header.className = 'player-table-header'
-    ;[t('colName'), t('colCiv'), t('colDifficulty'), t('colTeam'), t('colColor')].forEach(text => {
+    const headers = [t('colName'), t('colCiv')]
+    if (this.showAge) headers.push(t('colAge'))
+    headers.push(t('colDifficulty'), t('colTeam'), t('colColor'))
+    headers.forEach(text => {
       const cell = document.createElement('div')
       cell.textContent = text
       header.appendChild(cell)
@@ -196,6 +213,26 @@ export class PlayerSetupPanel {
       }
       civCell.appendChild(civSelect)
       row.appendChild(civCell)
+
+      if (this.showAge) {
+        const ageCell = document.createElement('div')
+        ageCell.className = 'player-age'
+        const ageSelect = document.createElement('select')
+        ageSelect.className = 'ui-select'
+        AGES.forEach(age => {
+          const opt = document.createElement('option')
+          opt.value = age.value
+          opt.textContent = age.label()
+          if (age.value === player.age) opt.selected = true
+          ageSelect.appendChild(opt)
+        })
+        ageSelect.onchange = evt => {
+          this.players[index].age = Number(evt.target.value)
+          this._emitChange()
+        }
+        ageCell.appendChild(ageSelect)
+        row.appendChild(ageCell)
+      }
 
       const difficultyCell = document.createElement('div')
       difficultyCell.className = 'player-difficulty'

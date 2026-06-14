@@ -1,5 +1,17 @@
 import { instancesDistance } from '../maths'
+import { LABEL_TYPES } from '../../constants'
 import { getPlainCellsAroundPoint, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
+
+export function clearCellTerrainSet(cell) {
+  if (!cell) return
+
+  const set = cell.terrainSet || cell.getChildByLabel?.(LABEL_TYPES.set)
+  if (!set) return
+
+  set.parent?.removeChild(set)
+  set.destroy?.()
+  cell.terrainSet = null
+}
 
 function createPlacementZone(instance, maxSpace) {
   return {

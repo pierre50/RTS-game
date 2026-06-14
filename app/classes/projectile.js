@@ -14,6 +14,8 @@ import {
   degreeToDirection,
   getAnimationFrames,
   getMirroredHalfArcFrameIndex,
+  getEffectiveProjectileType,
+  projectileTracksTarget,
   playAudibleSoundCue,
 } from '../lib'
 import { COLOR_ARROW, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
@@ -67,6 +69,33 @@ function applyTextureAnchor(sprite, texture) {
   }
 
   sprite.anchor.set(0.5, 0.5)
+}
+
+function getDirectionalAnimation(projectile, textures, degree) {
+  const framesPerDirection = projectile.directionalAnimationFrames
+  if (!Number.isInteger(framesPerDirection) || framesPerDirection <= 0) {
+    return null
+  }
+
+  const directionCount = Math.floor(textures.length / framesPerDirection)
+  if (directionCount <= 0) return null
+
+  let directionIndex
+  let mirrored = false
+  if (projectile.fullCircleStartDegree != null) {
+    const normalizedDegree = (((degree - projectile.fullCircleStartDegree) % 360) + 360) % 360
+    directionIndex = Math.round(normalizedDegree / (360 / directionCount)) % directionCount
+  } else {
+    const frame = getMirroredHalfArcFrameIndex(degree, directionCount)
+    directionIndex = frame.frameIndex
+    mirrored = frame.mirrored
+  }
+
+  const start = directionIndex * framesPerDirection
+  return {
+    textures: textures.slice(start, start + framesPerDirection),
+    mirrored,
+  }
 }
 
 function debugProjectile(event, payload) {
@@ -132,7 +161,10 @@ export class Projectile extends Container {
     this.family = FAMILY_TYPES.projectile
 
     Object.assign(this, options)
-    Object.assign(this, this.owner.owner.config.projectiles[this.type])
+    const player = this.owner.owner
+    this.type = getEffectiveProjectileType(this.type, player)
+    this.tracksTarget = projectileTracksTarget(this.type, player)
+    Object.assign(this, player.config.projectiles[this.type])
 
     const ownerSpriteHeight = this.owner.sprite?.height ?? 0
     this.x = this.owner.x + (this.spawnOffsetX ?? 0)
@@ -149,7 +181,7 @@ export class Projectile extends Container {
       this.isDead = true
       return
     }
-    const { x: targetX, y: targetY } = targetPoint
+    let { x: targetX, y: targetY } = targetPoint
 
     playAudibleSoundCue(this, this.sounds?.launch)
 
@@ -190,6 +222,12 @@ export class Projectile extends Container {
     this.updateTrajectoryVisual()
 
     this.interval = this.context.scheduler.add(() => {
+      if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
+        targetX = this.target.x
+        targetY = this.target.y
+        this.destinationPoint.x = targetX
+        this.destinationPoint.y = targetY
+      }
       if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
         if (
           this.target &&
@@ -260,11 +298,26 @@ export class Projectile extends Container {
 
     if (this.isAnimated) {
       const textures = textureNames.map(name => spritesheet.textures[name])
-      const sprite = new AnimatedSprite(textures)
+      const directionalAnimation = getDirectionalAnimation(this, textures, degree)
+      const sprite = new AnimatedSprite(directionalAnimation?.textures ?? textures)
       bindAnimatedSpriteToTicker(sprite, this.context.app)
       sprite.updateAnchor = true
 
-      if (this.directionalFrames) {
+      if (directionalAnimation) {
+        const staticFrame = this.staticDirectionalAnimationFrame
+        const frameIndex = Number.isInteger(staticFrame)
+          ? Math.max(0, Math.min(staticFrame, directionalAnimation.textures.length - 1))
+          : 0
+        applyTextureAnchor(sprite, directionalAnimation.textures[frameIndex])
+        const scale = this.scale ?? 1
+        sprite.scale.set(directionalAnimation.mirrored ? -scale : scale, scale)
+        if (Number.isInteger(staticFrame)) {
+          sprite.gotoAndStop(frameIndex)
+        } else {
+          sprite.animationSpeed = this.animationSpeed ?? 0.3
+          sprite.play()
+        }
+      } else if (this.directionalFrames) {
         if (typeof this.directionalFrames === 'number' && this.directionalFrames > 8 && !this.directionalFrameOrder) {
           if (this.fullCircleStartDegree != null) {
             const normalizedDeg = (((degree - this.fullCircleStartDegree) % 360) + 360) % 360
@@ -301,7 +354,7 @@ export class Projectile extends Container {
       debugProjectile('animated-sprite', {
         type: this.type,
         assets: this.assets,
-        frameCount: textures.length,
+        frameCount: sprite.textures.length,
         firstFrame: textureNames[0] ?? null,
         anchorX: sprite.anchor.x,
         anchorY: sprite.anchor.y,

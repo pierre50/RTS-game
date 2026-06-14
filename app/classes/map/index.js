@@ -1,10 +1,11 @@
 import { Container } from 'pixi.js'
-import { BUCKET_SIZE } from '../../constants'
+import { BUCKET_SIZE, CELL_WIDTH } from '../../constants'
 import { MapGeneration } from './MapGeneration'
 import { MapResources } from './MapResources'
 import { MapTerrain } from './MapTerrain'
 import { MapFog } from './MapFog'
 import { createSeededRandom } from '../../lib/random'
+import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
 
 export default class Map extends Container {
   constructor(context) {
@@ -50,6 +51,7 @@ export default class Map extends Container {
     this.gaia = null
     this.resources = new Set()
     this.instanceBuckets = null
+    this.renderChunks = []
     this._random = Math.random
 
     this.eventMode = 'auto'
@@ -82,6 +84,39 @@ export default class Map extends Container {
   setCoordinate(x, y) {
     this.x = Math.round(x)
     this.y = Math.round(y)
+  }
+
+  clearRenderChunks() {
+    this.renderChunks.length = 0
+  }
+
+  registerRenderChunk(displayObjects, bounds) {
+    const chunk = {
+      displayObjects: Array.isArray(displayObjects) ? displayObjects : [displayObjects],
+      bounds,
+      renderable: true,
+    }
+    this.renderChunks.push(chunk)
+    return chunk
+  }
+
+  updateRenderChunks(viewport, margin = CELL_WIDTH * 2) {
+    if (!viewport || !this.renderChunks.length) return
+
+    let visibleCount = 0
+    for (const chunk of this.renderChunks) {
+      const renderable = rectangleIntersectsViewport(chunk.bounds, viewport, margin)
+      if (renderable) visibleCount++
+      if (chunk.renderable === renderable) continue
+
+      chunk.renderable = renderable
+      for (const displayObject of chunk.displayObjects) {
+        if (displayObject && !displayObject.destroyed) {
+          displayObject.renderable = renderable
+        }
+      }
+    }
+    this.visibleRenderChunkCount = visibleCount
   }
 
   _ensureBuckets() {
@@ -126,6 +161,10 @@ export default class Map extends Container {
     return this.mapGeneration.generateMap(positionsCountOverride, repeat)
   }
 
+  generateMapAsync(positionsCountOverride = null, repeat = 0, options) {
+    return this.mapGeneration.generateMapAsync(positionsCountOverride, repeat, options)
+  }
+
   stylishMap(options) {
     return this.mapGeneration.stylishMap(options)
   }
@@ -140,6 +179,10 @@ export default class Map extends Container {
 
   generateCells() {
     return this.mapGeneration.generateCells()
+  }
+
+  generateCellsAsync(options) {
+    return this.mapGeneration.generateCellsAsync(options)
   }
 
   generateTerrain(gridSize = 120, mapType = 'plain', seed) {
@@ -187,8 +230,16 @@ export default class Map extends Container {
     return this.mapResources.generateResourcesAroundPlayers(playersPos)
   }
 
+  generateResourcesAroundPlayersAsync(playersPos) {
+    return this.mapResources.generateResourcesAroundPlayersAsync(playersPos)
+  }
+
   generateNeutralResourceGroups(playersPos) {
     return this.mapResources.generateNeutralResourceGroups(playersPos)
+  }
+
+  generateNeutralResourceGroupsAsync(playersPos) {
+    return this.mapResources.generateNeutralResourceGroupsAsync(playersPos)
   }
 
   findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {

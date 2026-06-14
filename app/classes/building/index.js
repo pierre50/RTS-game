@@ -5,6 +5,7 @@ import {
   getTexture,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
+  clearCellTerrainSet,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   getActionCondition,
@@ -20,6 +21,7 @@ import { BuildingLifecycle } from './BuildingLifecycle'
 import { BuildingProduction } from './BuildingProduction'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
+import { getTowerType, isTower } from '../../lib/buildings/towers'
 
 export class Building extends Instance {
   constructor(options, context) {
@@ -39,6 +41,10 @@ export class Building extends Instance {
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
+    if (isTower(this)) {
+      const effectiveType = getTowerType(this.owner)
+      if (effectiveType !== this.type) Object.assign(this, this.owner.config.buildings[effectiveType])
+    }
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
     this.intervalId = null
@@ -77,7 +83,8 @@ export class Building extends Instance {
       : (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
     this.interface = {
       info: element => {
-        const assets = getBuildingAsset(this.type, this.owner, Assets)
+        const displayType = isTower(this) ? getTowerType(this.owner) : this.type
+        const assets = getBuildingAsset(displayType, this.owner, Assets)
         this.buildingInterface.renderInfo(element, assets)
       },
       menu: this.owner.isPlayed || map.instantMode ? [...units, ...technologies] : [],
@@ -86,10 +93,7 @@ export class Building extends Instance {
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, cell => {
-      const set = cell.getChildByLabel(LABEL_TYPES.set)
-      if (set) {
-        cell.removeChild(set)
-      }
+      clearCellTerrainSet(cell)
       for (const corpse of cell.corpses) {
         typeof corpse.clear === 'function' && corpse.clear()
       }

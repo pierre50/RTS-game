@@ -197,6 +197,21 @@ export class UnitMovement {
   affectNewDest() {
     const unit = this.unit
     unit.stopInterval()
+    const queuedBuildInterrupted =
+      unit.work === WORK_TYPES.builder &&
+      unit.action === ACTION_TYPES.build &&
+      unit.buildQueue?.length
+    if (queuedBuildInterrupted) {
+      if (unit.dest && unit.getActionCondition(unit.dest, ACTION_TYPES.build)) {
+        unit.buildQueue.push(unit.buildQueue.shift())
+      }
+      unit.stop()
+      unit.context.scheduler.addOneShot(() => {
+        if (unit.inactif && unit.buildQueue?.length) unit.continueBuildingQueue()
+      }, 500)
+      return
+    }
+
     const lostBuildTarget =
       unit.work === WORK_TYPES.builder &&
       unit.action === ACTION_TYPES.build &&
@@ -205,10 +220,23 @@ export class UnitMovement {
     if (lostBuildTarget) {
       if (unit.previousDest || unit.previousWork) {
         unit.goBackToPrevious()
-      } else {
-        unit.stop()
-        unit.work = null
+        return
       }
+
+      const targets = findInstancesInSight(unit, instance =>
+        unit.getActionCondition(instance, ACTION_TYPES.build)
+      )
+      if (targets.length) {
+        const target = getClosestInstanceWithPath(unit, targets)
+        if (target) {
+          unit.setDest(target.instance)
+          unit.setPath(target.path)
+          return
+        }
+      }
+
+      unit.stop()
+      unit.work = null
       return
     }
 

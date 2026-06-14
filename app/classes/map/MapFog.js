@@ -10,7 +10,7 @@ import {
   ParticleContainer,
   Rectangle,
 } from 'pixi.js'
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES } from '../../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { _DW, _DH, getFogPatternTexture } from '../cell/CellFog'
 import { RuntimeCell } from '../cell/RuntimeCell'
 import { cartesianToIsometric } from '../../lib'
@@ -58,6 +58,7 @@ export class MapFog {
     backfillContainer.sortableChildren = true
     terrainContainer.addChild(backfillContainer)
     const backfillSprites = []
+    const terrainSets = []
     for (const source of this.map.terrainBackfill?.children || []) {
       const sprite = new Sprite(source.texture)
       sprite.position.copyFrom(source.position)
@@ -70,7 +71,17 @@ export class MapFog {
     }
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
-        terrainContainer.addChild(this.map.grid[i][j])
+        const cell = this.map.grid[i][j]
+        const set = cell.getChildByLabel(LABEL_TYPES.set)
+        if (set) {
+          cell.removeChild(set)
+          set.x += cell.x
+          set.y += cell.y
+          set.zIndex = cell.i + cell.j + 0.1
+          cell.terrainSet = set
+          terrainSets.push(set)
+        }
+        terrainContainer.addChild(cell)
       }
     }
 
@@ -93,12 +104,19 @@ export class MapFog {
         sprite.label = 'terrainChunk'
         sprite.roundPixels = true
         this.map.addChild(sprite)
+        this.map.registerRenderChunk(sprite, {
+          minX: cMinX,
+          minY: cMinY,
+          width: cW,
+          height: cH,
+        })
       }
     }
 
     for (const sprite of backfillSprites) sprite.destroy()
     backfillContainer.destroy()
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
+    terrainSets.forEach(set => this.map.addChild(set))
 
     if (!this.map.context.editor) {
       const compactStartedAt = performance.now()
@@ -227,6 +245,12 @@ export class MapFog {
           chunk.maxX - chunk.minX,
           chunk.maxY - chunk.minY
         )
+        this.map.registerRenderChunk(chunk.container, {
+          minX: chunk.minX,
+          minY: chunk.minY,
+          width: chunk.maxX - chunk.minX,
+          height: chunk.maxY - chunk.minY,
+        })
       }
     }
 
@@ -343,12 +367,19 @@ export class MapFog {
           darknessRt,
           fogRt,
           edgeRt,
+          sprites: [darknessSprite, fogSprite, edgeSprite],
           minX: cMinX,
           minY: cMinY,
           w: cW,
           h: cH,
           transform: new Matrix().translate(-cMinX, -cMinY),
           cells: [],
+        })
+        this.map.registerRenderChunk([darknessSprite, fogSprite, edgeSprite], {
+          minX: cMinX,
+          minY: cMinY,
+          width: cW,
+          height: cH,
         })
       }
     }

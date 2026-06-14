@@ -784,6 +784,54 @@
       "food": 50
     }
   },
+  "UpgradeMediumWall": {
+    "icon": "031_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "ResearchSmallWall"
+      }
+    ],
+    "researchTime": 40,
+    "cost": {
+      "food": 180,
+      "stone": 100
+    },
+    "action": {
+      "type": "refreshWalls"
+    }
+  },
+  "UpgradeFortification": {
+    "icon": "033_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "age",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "UpgradeMediumWall"
+      }
+    ],
+    "researchTime": 60,
+    "cost": {
+      "food": 300,
+      "stone": 200
+    },
+    "action": {
+      "type": "refreshWalls"
+    }
+  },
   "ResearchWatchTower": {
     "icon": "034_50729",
     "key": "technologies",
@@ -820,9 +868,7 @@
       "stone": 50
     },
     "action": {
-      "type": "upgradeBuilding",
-      "source": "WatchTower",
-      "target": "SentryTower"
+      "type": "refreshTowers"
     }
   },
   "ResearchGuardTower": {
@@ -846,9 +892,7 @@
       "stone": 75
     },
     "action": {
-      "type": "upgradeBuilding",
-      "source": "SentryTower",
-      "target": "GuardTower"
+      "type": "refreshTowers"
     }
   },
   "ResearchBallistaTower": {
@@ -859,6 +903,11 @@
         "key": "age",
         "op": ">=",
         "value": 3
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Ballistics"
       }
     ],
     "researchTime": 75,
@@ -867,9 +916,7 @@
       "stone": 100
     },
     "action": {
-      "type": "upgradeBuilding",
-      "source": "GuardTower",
-      "target": "BallistaTower"
+      "type": "refreshTowers"
     }
   },
   "BattleAxe": {
@@ -1350,7 +1397,7 @@
     }
   },
   "Aristocracy": {
-    "icon": "031_50729",
+    "icon": "071_50729",
     "key": "technologies",
     "conditions": [
       {
@@ -1391,32 +1438,13 @@
       {
         "key": "age",
         "op": ">=",
-        "value": 2
+        "value": 3
       }
     ],
-    "researchTime": 75,
+    "researchTime": 60,
     "cost": {
       "food": 200,
-      "gold": 100
-    },
-    "action": {
-      "type": "improve",
-      "operations": [
-        {
-          "key": "rateOfFire",
-          "op": "*",
-          "value": "0.9",
-          "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher"
-          ]
-        }
-      ]
+      "gold": 50
     }
   },
   "Alchemy": {
@@ -1449,6 +1477,9 @@
             "HorseArcher",
             "HeavyHorseArcher",
             "ElephantArcher",
+            "StoneThrower",
+            "Catapult",
+            "Ballista",
             "ScoutShip",
             "WarGalley",
             "Trireme",

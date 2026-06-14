@@ -156,6 +156,10 @@ export default class Controls extends Container {
   onKeyDown(evt) {
     if (this.isInteractionBlocked() || this.isEditableTarget(evt.target)) return
     if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
+    if (evt.key === 'Escape' && this.buildingPlacer.cancelWallDraft()) {
+      evt.preventDefault()
+      return
+    }
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -208,16 +212,16 @@ export default class Controls extends Container {
       return
     }
 
-    const frameScale = Math.min((ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS, MAX_CAMERA_FRAME_SCALE)
+    const frameScale = Math.min(
+      (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
+      MAX_CAMERA_FRAME_SCALE
+    )
     this.cameraController.updateMouseMove(frameScale)
 
     if (this.keyPressedCount > 0) {
       const double = this.keyPressedCount > 1
       if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-        this.keySpeed = Math.min(
-          KEYBOARD_CAMERA_MAX_SPEED,
-          this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
-        )
+        this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
       }
       if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double, frameScale)
       if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double, frameScale)
@@ -438,10 +442,10 @@ export default class Controls extends Container {
       const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
         const cell = map.grid[i][j]
-        if ((cell.solid || cell.has) && cell.visible) return
         if (this.mouseBuilding) {
           this.buildingPlacer.handleMouseUp(cell)
         } else if (player?.selectedUnits.length) {
+          if ((cell.solid || cell.has) && cell.visible) return
           this.selectionManager.handleClick(cell)
         }
       }

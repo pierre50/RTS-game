@@ -1,19 +1,63 @@
 import { Assets, Sprite } from 'pixi.js'
 import { Resource } from '../resource'
 import { Human, AI, Gaia } from '../players'
-import {
-  colors,
-  getCellsAroundPoint,
-  getZoneInGridWithCondition,
-  updateInstanceVisibility,
-  rehydrateAIKnowledge,
-} from '../../lib'
+import { colors, getCellsAroundPoint, getZoneInGridWithCondition, updateInstanceVisibility, rehydrateAIKnowledge } from '../../lib'
 import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { Cell } from '../cell'
-
 export class MapGeneration {
   constructor(map) {
     this.map = map
+  }
+
+  yieldToBrowser() {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  generateTerrainInWorker(gridSize, mapType, seed) {
+    if (typeof Worker === 'undefined') {
+      return Promise.resolve(this.generateTerrain(gridSize, mapType, seed))
+    }
+    const source = this.generateTerrain.toString()
+    const functionSource = source.startsWith('function') ? `(${source})` : `(function ${source})`
+    const workerSource = `
+      const generateTerrain = ${functionSource};
+      self.onmessage = ({ data }) => {
+        try {
+          const scope = { map: { seed: data.seed, positionsCount: data.positionsCount } };
+          const terrain = generateTerrain.call(scope, data.gridSize, data.mapType, data.seed);
+          self.postMessage({ terrain, seed: scope.map.seed });
+        } catch (error) {
+          self.postMessage({ error: error?.stack || error?.message || String(error) });
+        }
+      };
+    `
+    const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }))
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(url)
+      const cleanup = () => {
+        worker.terminate()
+        URL.revokeObjectURL(url)
+      }
+      worker.onmessage = ({ data }) => {
+        cleanup()
+        if (data.error) {
+          reject(new Error(data.error))
+          return
+        }
+        this.map.seed = data.seed
+        resolve(data.terrain)
+      }
+      worker.onerror = error => {
+        cleanup()
+        reject(error)
+      }
+      worker.postMessage({
+        gridSize,
+        mapType,
+        seed,
+        positionsCount: this.map.positionsCount,
+      })
+    })
   }
 
   isFarEnoughFromCoast(i, j, minDistance = 6) {
@@ -54,6 +98,7 @@ export class MapGeneration {
     const classMap = { Human, AI }
     const { menu, controls } = this.map.context
     this.map.removeChildren()
+    this.map.clearRenderChunks()
     this.map.resetRandom()
     this.map.size = map.length - 1
     this.map.invalidateReliefCoastDistances()
@@ -243,6 +288,7 @@ export class MapGeneration {
 
   generateMap(positionsCountOverride = null, repeat = 0) {
     this.map.removeChildren()
+    this.map.clearRenderChunks()
     if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
     this.map.resetRandom(repeat)
 
@@ -291,6 +337,35 @@ export class MapGeneration {
     }
   }
 
+  async generateMapAsync(positionsCountOverride = null, repeat = 0, options = {}) {
+    this.map.removeChildren()
+    this.map.clearRenderChunks()
+    if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
+    this.map.resetRandom(repeat)
+    const positionsBySize = {
+      120: 2,
+      144: 3,
+      168: 4,
+      200: 5,
+      220: 5,
+      384: 5,
+      512: 5,
+    }
+    this.map.positionsCount = positionsCountOverride ?? positionsBySize[this.map.size] ?? 2
+
+    await this.generateCellsAsync(options)
+    this.map.totalCells = (this.map.size + 1) ** 2
+    this.map.playersPos = this.map.findPlayerPlaces()
+
+    if (this.map.playersPos.length < this.map.positionsCount) {
+      if (repeat >= 10) {
+        alert('Error while generating the map')
+        return
+      }
+      return this.generateMapAsync(positionsCountOverride, repeat + 1, options)
+    }
+  }
+
   async stylishMap({ onProgress = async () => {} } = {}) {
     const {
       context: { menu, player },
@@ -303,19 +378,26 @@ export class MapGeneration {
       timings[name] = performance.now() - startedAt
       return result
     }
+    const measureAsync = async (name, callback) => {
+      const startedAt = performance.now()
+      const result = await callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    }
 
     this.map.gaia = new Gaia(this.map.context)
     await onProgress('generatingRelief', 0.28)
     measure('relief', () => this.map.generateMapRelief())
+    await this.yieldToBrowser()
     measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
     await onProgress('generatingPlayers', 0.48)
     measure('playerPlacement', () => this.map.placePlayers())
     await onProgress('generatingResources', 0.58)
-    measure('playerResources', () => this.map.generateResourcesAroundPlayers(this.map.playersPos))
-    measure('neutralResources', () => this.map.generateNeutralResourceGroups(this.map.playersPos))
+    await measureAsync('playerResources', () => this.map.generateResourcesAroundPlayersAsync(this.map.playersPos))
+    await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
     measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
     await onProgress('generatingDecorations', 0.74)
-    measure('decorations', () => this.map.generateSets())
+    await measureAsync('decorations', () => this.generateSetsAsync())
     await onProgress('generatingFog', 0.86)
     measure('fogInit', () => this.map._initFogChunks())
 
@@ -325,6 +407,7 @@ export class MapGeneration {
         for (let j = 0; j <= this.map.size; j++) {
           this.map.grid[i][j].setFog()
         }
+        if (i % 12 === 0) await this.yieldToBrowser()
       }
       for (let i = 0; i < player.buildings.length; i++) {
         const building = player.buildings[i]
@@ -351,56 +434,15 @@ export class MapGeneration {
     menu.updateResourcesMiniMap()
   }
 
-  applyTechnologyToPlayer(player, type) {
-    if (player.technologies.includes(type)) return
-
-    const config = player.techs[type]
-    if (!config) return
-
-    if (Array.isArray(player[config.key])) {
-      player[config.key].push(config.value || type)
-    } else {
-      player[config.key] = config.value || type
-    }
-
-    if (config.action) {
-      switch (config.action.type) {
-        case 'upgradeUnit':
-          player.units.forEach(unit => {
-            if (unit.type === config.action.source) unit.upgrade(config.action.target)
-          })
-          break
-        case 'upgradeBuilding':
-          player.buildings.forEach(building => {
-            if (building.type === config.action.source) building.upgrade(config.action.target)
-          })
-          break
-        case 'improve':
-          player.updateConfig(
-            config.action.operations.map(operation => ({
-              ...operation,
-              value: Number(operation.value),
-            }))
-          )
-          break
-      }
-    }
-  }
-
-  applyStartingBonuses(player) {
-    const startingAge = Math.max(0, Math.min(Number(this.map.startingAge) || 0, 3))
+  applyStartingBonuses(player, configuredAge = null) {
+    const age = configuredAge == null ? this.map.startingAge : configuredAge
+    const startingAge = Math.max(0, Math.min(Number(age) || 0, 3))
     player.age = startingAge
 
     if (!this.map.allTechnologies) return
 
-    const ageTechs = ['ToolAge', 'BronzeAge', 'IronAge']
-    ageTechs.forEach(type => this.applyTechnologyToPlayer(player, type))
-
-    Object.keys(player.techs).forEach(type => {
-      if (!ageTechs.includes(type)) {
-        this.applyTechnologyToPlayer(player, type)
-      }
-    })
+    player.autoTechnologyByAge = true
+    player.applyEligibleTechnologies()
   }
 
   generatePlayers(playersConfig = null) {
@@ -432,7 +474,7 @@ export class MapGeneration {
       }
     }
 
-    players.forEach(player => this.applyStartingBonuses(player))
+    players.forEach((player, index) => this.applyStartingBonuses(player, playersConfig?.[index]?.age))
 
     return players
   }
@@ -486,6 +528,50 @@ export class MapGeneration {
 
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
+    this.map.formatCellsWaterBorder()
+  }
+
+  async generateCellsAsync({ onProgress = async () => {} } = {}) {
+    const z = 0
+    this.map.grid = []
+    this.map.invalidateReliefCoastDistances()
+    const terrainStartedAt = performance.now()
+    const gridSize = this.map.size ? this.map.size + 1 : 121
+    let terrain
+    try {
+      terrain = await this.generateTerrainInWorker(gridSize, this.map.mapType || 'plain', this.map.seed)
+    } catch (error) {
+      console.warn('Terrain worker unavailable, falling back to main thread', error)
+      terrain = this.map.generateTerrain(gridSize, this.map.mapType || 'plain', this.map.seed)
+    }
+    this.map.context.performance?.record('terrainData', performance.now() - terrainStartedAt)
+    this.map.size = terrain.length - 1
+
+    const terrainMap = {
+      0: 'Grass',
+      1: 'Desert',
+      2: 'Water',
+      3: 'Jungle',
+    }
+    const startedAt = performance.now()
+    for (let i = 0; i <= this.map.size; i++) {
+      const row = []
+      this.map.grid[i] = row
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = new Cell({ i, j, z, type: terrainMap[terrain[i][j]] }, this.map.context)
+        this.map.addChild(cell)
+        row[j] = cell
+      }
+      if (i % 8 === 0) {
+        await onProgress('generatingTerrain', 0.03 + (i / this.map.size) * 0.14)
+      }
+    }
+    this.map.context.performance?.record('cellCreation', performance.now() - startedAt)
+
+    this.map.fillWaterGaps()
+    await this.yieldToBrowser()
+    this.map.normalizeWaterTopology()
+    await this.yieldToBrowser()
     this.map.formatCellsWaterBorder()
   }
 
@@ -921,6 +1007,84 @@ export class MapGeneration {
           }
         }
       }
+    }
+  }
+
+  async generateSetsAsync() {
+    const hasSolidNeighbor = (i, j) => {
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          if (Math.abs(di) + Math.abs(dj) <= 1 && this.map.grid[i + di]?.[j + dj]?.solid) return true
+        }
+      }
+      return false
+    }
+    const hasWaterNeighbor = (i, j) => {
+      for (let di = -2; di <= 2; di++) {
+        const maxDj = 2 - Math.abs(di)
+        for (let dj = -maxDj; dj <= maxDj; dj++) {
+          const neighbor = this.map.grid[i + di]?.[j + dj]
+          if (neighbor?.category === 'Water' || neighbor?.waterBorder) return true
+        }
+      }
+      return false
+    }
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
+        const hasWaterNeighbour = hasWaterNeighbor(i, j)
+        if (
+          cell.category !== 'Water' &&
+          !hasWaterNeighbour &&
+          this.map.random() < 0.03 &&
+          i > 1 &&
+          j > 1 &&
+          i < this.map.size &&
+          j < this.map.size
+        ) {
+          const sheets =
+            cell.type === 'Desert'
+              ? ['275', '276', '277', '278', '303', '304', '305', '306', '307']
+              : ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+          const randomSpritesheet = this.map.randomItem(sheets)
+          const texture = Assets.cache.get(randomSpritesheet)?.textures?.[`000_${randomSpritesheet}.png`]
+          if (texture) {
+            const floor = Sprite.from(texture)
+            floor.label = LABEL_TYPES.floor
+            floor.roundPixels = true
+            floor.allowMove = false
+            floor.eventMode = 'none'
+            floor.allowClick = false
+            floor.updateAnchor = true
+            floor.zIndex = 1
+            cell.addChild(floor)
+          }
+        }
+        if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
+          const type = this.map.randomItem(['tree', 'rock', 'animal'])
+          if (type === 'rock') {
+            const sheet = this.map.randomRange(531, 534).toString()
+            const texture = Assets.cache.get(sheet)?.textures?.[`000_${sheet}.png`]
+            if (texture) {
+              const rock = Sprite.from(texture)
+              rock.label = LABEL_TYPES.set
+              rock.roundPixels = true
+              rock.eventMode = 'none'
+              rock.zIndex = 2
+              cell.addChild(rock)
+            }
+          } else if (type === 'animal') {
+            this.map.gaia.createAnimal({ i, j, type: this.pickAmbientAnimalType(i, j) })
+          }
+        }
+        if (cell.category === 'Water' && this.map.random() < this.map.chanceOfSets) {
+          const fishType = this.pickFishResourceType(i, j)
+          this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+        }
+      }
+      if (i % 8 === 0) await this.yieldToBrowser()
     }
   }
 

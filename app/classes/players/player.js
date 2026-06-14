@@ -4,6 +4,7 @@ import {
   drawInstanceBlinkingSelection,
   payCost,
   uuidv4,
+  capitalizeFirstLetter,
   getHexColor,
   updateObject,
   getActionCondition,
@@ -18,6 +19,11 @@ import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES, U
 import { createPlayerData } from '../../config/playerConfig'
 import { playUiSound } from '../../lib/uiSound'
 import { VisionGrid } from '../../services/VisionGrid'
+import { refreshOwnerWalls } from '../../lib/buildings/walls'
+import { updateWallAndNeighbours } from '../../lib/buildings/walls'
+import { refreshOwnerTowers } from '../../lib/buildings/towers'
+
+const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
 export class Player {
   constructor(options, context) {
@@ -115,6 +121,80 @@ export class Player {
     return building
   }
 
+  isTechnologyEligible(type) {
+    if (AGE_TECHNOLOGIES.has(type)) return false
+    if (this.technologies.includes(type)) return false
+
+    const config = this.techs?.[type]
+    if (!config) return false
+
+    return (config.conditions || []).every(condition => isValidCondition(condition, this))
+  }
+
+  unlockTechnology(type) {
+    if (this.technologies.includes(type)) return false
+
+    const config = this.techs?.[type]
+    if (!config) return false
+
+    if (Array.isArray(this[config.key])) {
+      this[config.key].push(config.value || type)
+    } else {
+      this[config.key] = config.value || type
+    }
+
+    if (config.action) {
+      switch (config.action.type) {
+        case 'upgradeUnit':
+          this.units.forEach(unit => {
+            if (unit.type === config.action.source) unit.upgrade(config.action.target)
+          })
+          break
+        case 'upgradeBuilding':
+          this.buildings.forEach(building => {
+            if (building.type === config.action.source) building.upgrade(config.action.target)
+          })
+          break
+        case 'improve':
+          this.updateConfig(
+            config.action.operations.map(operation => ({
+              ...operation,
+              value: Number(operation.value),
+            }))
+          )
+          break
+        case 'refreshWalls':
+          refreshOwnerWalls(this)
+          break
+        case 'refreshTowers':
+          refreshOwnerTowers(this)
+          break
+      }
+    }
+
+    const handler = `on${capitalizeFirstLetter(config.key)}Change`
+    typeof this[handler] === 'function' && this[handler](config.value)
+    return true
+  }
+
+  applyEligibleTechnologies() {
+    const unlocked = []
+    let appliedInPass = true
+
+    while (appliedInPass) {
+      appliedInPass = false
+      for (const type of Object.keys(this.techs || {})) {
+        if (!this.isTechnologyEligible(type)) continue
+        if (this.unlockTechnology(type)) {
+          unlocked.push(type)
+          appliedInPass = true
+        }
+      }
+    }
+
+    return unlocked
+  }
+
   onAgeChange() {
     const {
       context: { players, menu },
@@ -124,6 +204,10 @@ export class Player {
       if (selection.owner?.label !== this.label) return false
       menu.setBottombar(selection)
       return true
+    }
+
+    if (this.autoTechnologyByAge) {
+      this.applyEligibleTechnologies()
     }
 
     if (this.isPlayed) {
@@ -185,6 +269,15 @@ export class Player {
     }
   }
 
+  isBuildingEligible(type) {
+    const config = this.config.buildings[type]
+    if (!config) return false
+
+    return (config.conditions || []).every(
+      condition => (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition, this)
+    )
+  }
+
   buyBuilding(i, j, type) {
     const {
       context: { menu, map },
@@ -192,7 +285,7 @@ export class Player {
     const config = this.config.buildings[type]
     if (
       canAfford(this, config.cost) &&
-      (!config.conditions || config.conditions.every(condition => isValidCondition(condition, this))) &&
+      this.isBuildingEligible(type) &&
       canPlaceBuildingAt(map.grid, i, j, config)
     ) {
       this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })
@@ -214,6 +307,7 @@ export class Player {
     const { context } = this
     const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)
+    updateWallAndNeighbours(building)
     canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return building
   }

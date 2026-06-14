@@ -1,4 +1,4 @@
-import { BUCKET_SIZE } from '../../constants'
+import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { updateVisibility } from '../../services/FogOfWar'
 
 export function findInstancesInSight(instance, condition) {
@@ -36,6 +36,28 @@ export function findInstancesInSight(instance, condition) {
 
 export function updateInstanceVisibility(instance) {
   return updateVisibility(instance)
+}
+
+export function instanceShouldRender(instance) {
+  const { map, player, controls } = instance?.context || {}
+  if (!map || !controls || !instance || instance.isDestroyed) return false
+  if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
+  if (!controls.instanceInCamera(instance)) return false
+
+  return (
+    map.revealEverything ||
+    instance.owner?.isPlayed ||
+    instanceIsInPlayerSight(instance, player) ||
+    instance.family === FAMILY_TYPES.resource ||
+    (!map.revealTerrain && !instance.owner)
+  )
+}
+
+export function updateInstanceRenderVisibility(instance) {
+  if (!instance) return false
+  const visible = instanceShouldRender(instance)
+  instance.visible = visible
+  return visible
 }
 
 export function instanceIsInPlayerSight(instance, player) {

@@ -154,6 +154,42 @@
   touch-action: manipulation;
 }
 
+.bottombar-menu-box:focus-visible {
+  outline: 2px solid var(--focus-outline-color);
+  outline-offset: 2px;
+}
+
+.menu-tooltip {
+  position: fixed;
+  z-index: 10000;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 20px));
+  padding: 8px 10px;
+  pointer-events: none;
+  color: var(--text-color-inverse);
+  text-shadow: var(--text-shadow-dark-ui);
+  background: var(--surface-dark-solid);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--main-box-shadow);
+}
+
+.menu-tooltip-title {
+  color: var(--main-primary-color);
+  font-weight: 700;
+}
+
+.menu-tooltip-description {
+  margin-top: 4px;
+  line-height: 1.25;
+}
+
+.menu-tooltip-meta {
+  margin-top: 6px;
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-sm);
+}
+
 .bottombar-menu-box .content {
   position: absolute;
   padding: 1px;

@@ -238,6 +238,11 @@ div.menu-title {
   align-items: center;
 }
 
+.player-table--with-age .player-table-header,
+.player-table--with-age .player-row {
+  grid-template-columns: minmax(96px, 1fr) 100px 120px 110px 48px 48px;
+}
+
 .player-row--odd {
   background: var(--surface-row-subtle);
 }
@@ -252,6 +257,10 @@ div.menu-title {
 }
 
 .player-civ .ui-select {
+  width: 100%;
+}
+
+.player-age .ui-select {
   width: 100%;
 }
 
@@ -462,6 +471,12 @@ div.menu-title {
   .player-row {
     grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(112px, 1fr) 56px 56px;
     min-width: 460px;
+  }
+
+  .player-table--with-age .player-table-header,
+  .player-table--with-age .player-row {
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(132px, 1fr) minmax(112px, 1fr) 56px 56px;
+    min-width: 600px;
   }
 
   .button-group,

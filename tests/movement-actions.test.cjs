@@ -29,6 +29,7 @@ const constants = {
   },
   FAMILY_TYPES: {
     animal: 'animal',
+    building: 'building',
     unit: 'unit',
   },
   SHEET_TYPES: {
@@ -124,3 +125,53 @@ test('destination checks stay pure when no destination exists', () => {
   assert.equal(redispatched, false)
 })
 
+test('an idle builder picks a nearby unfinished building after completing its current site', () => {
+  const completedBuilding = { label: 'house-1', family: constants.FAMILY_TYPES.building, isBuilt: true }
+  const nearbyBuilding = { label: 'house-2', family: constants.FAMILY_TYPES.building, isBuilt: false }
+  const path = [{ i: 4, j: 5 }]
+  const calls = []
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: (unit, condition) => (condition(nearbyBuilding) ? [nearbyBuilding] : []),
+    getClosestInstanceWithPath: () => ({ instance: nearbyBuilding, path }),
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.build,
+    buildQueue: [],
+    dest: completedBuilding,
+    previousDest: null,
+    previousWork: null,
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.builder,
+    stopInterval: () => {},
+    getActionCondition: target => target === nearbyBuilding,
+    setDest: target => {
+      calls.push(['setDest', target.label])
+      unit.dest = target
+    },
+    setPath: targetPath => calls.push(['setPath', targetPath]),
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitMovement(unit).affectNewDest()
+
+  assert.deepEqual(calls, [
+    ['setDest', 'house-2'],
+    ['setPath', path],
+  ])
+  assert.equal(unit.work, constants.WORK_TYPES.builder)
+})

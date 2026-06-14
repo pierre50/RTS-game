@@ -5,6 +5,7 @@ import { PlayerStatsManager } from '../ui/PlayerStatsManager'
 import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
+import { MenuTooltip } from '../ui/MenuTooltip'
 
 export default class Menu {
   constructor(context) {
@@ -44,6 +45,7 @@ export default class Menu {
     this.pauseMenu = new PauseMenu(this)
     this.topbarView = new TopbarView(this)
     this.minimapInputController = new MinimapInputController(this)
+    this.menuTooltip = new MenuTooltip()
     this.toggled = false
 
     this.topbarView.build()
@@ -60,6 +62,7 @@ export default class Menu {
   }
 
   destroy() {
+    this.menuTooltip.destroy()
     this.minimapInputController.destroy()
     this.playerStatsManager.destroy()
     this.gameHud.remove()

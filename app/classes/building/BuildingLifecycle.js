@@ -14,6 +14,7 @@ import {
   canUpdateMinimap,
   changeSpriteColorDirectly,
   getBuildingAsset,
+  getBuildingTextureNameWithSize,
   getBuildingRubbleTextureNameWithSize,
   getPercentage,
   getPlainCellsAroundPoint,
@@ -25,6 +26,8 @@ import {
   playAudibleSoundCue,
   playSoundCue,
 } from '../../lib'
+import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
+import { getTowerType, isTower } from '../../lib/buildings/towers'
 
 export class BuildingLifecycle {
   constructor(building) {
@@ -37,7 +40,7 @@ export class BuildingLifecycle {
       context: { menu },
     } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
-    const buildSpritesheetId = building.sprite.texture.label.split('_')[1].split('.')[0]
+    const buildSpritesheetId = getBuildingTextureNameWithSize(building.size).split('_')[1]
     const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
 
     if (percentage >= 25 && percentage < 50) {
@@ -47,8 +50,10 @@ export class BuildingLifecycle {
     } else if (percentage >= 75 && percentage < 99) {
       building.sprite.texture = buildSpritesheet.textures[`003_${buildSpritesheetId}.png`]
     } else if (percentage >= 100) {
+      const wasBuilt = building.isBuilt
+      building.isBuilt = true
       building.finalTexture()
-      if (!building.isBuilt) {
+      if (!wasBuilt) {
         if (
           building.owner.isPlayed &&
           building.sounds?.create &&
@@ -58,7 +63,6 @@ export class BuildingLifecycle {
         }
         building.onBuilt()
       }
-      building.isBuilt = true
       if (!building.owner.hasBuilt.includes(building.type)) {
         building.owner.hasBuilt.push(building.type)
       }
@@ -71,7 +75,8 @@ export class BuildingLifecycle {
 
   finalTexture() {
     const building = this.building
-    const assets = getBuildingAsset(building.type, building.owner, Assets)
+    const effectiveType = isTower(building) ? getTowerType(building.owner) : building.type
+    const assets = getBuildingAsset(effectiveType, building.owner, Assets)
     const texture = getTexture(assets.images.final, Assets)
     building.sprite.texture = texture
     building.sprite.hitArea = texture.hitArea
@@ -90,6 +95,7 @@ export class BuildingLifecycle {
     } else {
       changeSpriteColorDirectly(building.sprite, building.owner.color)
     }
+    if (isWall(building)) updateWallAndNeighbours(building)
 
     if (building.type === BUILDING_TYPES.house) {
       if (building.owner.age === 0) {
@@ -236,6 +242,7 @@ export class BuildingLifecycle {
     const {
       context: { map, player, players, menu },
     } = building
+    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid, building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.isDead = true
@@ -300,6 +307,7 @@ export class BuildingLifecycle {
         cell.corpses.add(building)
       }
     })
+    adjacentWalls.forEach(updateWallTexture)
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
     building.context.checkVictory?.()

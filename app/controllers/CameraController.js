@@ -236,11 +236,15 @@ export class CameraController {
   }
 
   updateVisibleCells() {
-    const { map } = this.context
+    const { map, player } = this.context
+    if (!map?.grid?.length) return
+    const viewport = this.getViewportRect()
+    map.updateRenderChunks?.(viewport)
+    if (!player?.views) return
     const newVisible = this._nextVisibleCells ?? new Set()
     newVisible.clear()
     const margin = CELL_WIDTH
-    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
 
     const startX = Math.floor(visibleLeft - margin)
     const endX = Math.floor(visibleLeft + visibleWidth + margin)
@@ -263,11 +267,13 @@ export class CameraController {
     for (let cell of this.visibleCells) {
       if (!newVisible.has(cell)) {
         if (cell.has) cell.has.visible = false
+        for (const corpse of cell.corpses) corpse.visible = false
       }
     }
 
     for (let cell of newVisible) {
-      if (!this.visibleCells.has(cell)) {
+      const hasCameraCulledContent = cell.has || cell.corpses?.size
+      if (!this.visibleCells.has(cell) || hasCameraCulledContent) {
         cell.updateVisible()
       }
     }

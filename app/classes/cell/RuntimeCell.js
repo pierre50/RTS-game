@@ -1,4 +1,4 @@
-import { playerCanSeeInstance } from '../../lib'
+import { updateInstanceRenderVisibility } from '../../lib'
 import { FAMILY_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
 
@@ -30,26 +30,18 @@ export class RuntimeCell {
     this._ditherSprite = source._ditherSprite
     this._ditherKey = source._ditherKey
     this._hasFog = source._hasFog
+    this.terrainSet = source.terrainSet || null
     this._fogChunks = null
     this.cellFog = new CellFog(this)
   }
 
   _updateChild(instance) {
-    const { map, player } = this.context
-    if (instance.family === FAMILY_TYPES.resource && !map.showResources) {
-      instance.visible = false
-      return
-    }
-    instance.visible =
-      map.revealEverything ||
-      instance.owner?.isPlayed ||
-      playerCanSeeInstance(instance, player) ||
-      instance.family === FAMILY_TYPES.resource ||
-      (!map.revealTerrain && !instance.owner)
+    updateInstanceRenderVisibility(instance)
   }
 
   updateVisible() {
     const { map, player } = this.context
+    if (!player?.views) return
     if (!map.revealEverything && !player.views.isViewed(this.i, this.j)) return
     this.visible = true
     if (this.has) this._updateChild(this.has)

@@ -2,7 +2,6 @@ import { Assets, Sprite } from 'pixi.js'
 import { LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 import {
   canAfford,
-  capitalizeFirstLetter,
   changeSpriteColorDirectly,
   getBuildingAsset,
   getFreeCellAroundPoint,
@@ -231,38 +230,7 @@ export class BuildingProduction {
           building.stopInterval()
           building.loading = null
           building.technology = null
-          if (Array.isArray(building.owner[config.key])) {
-            building.owner[config.key].push(config.value || type)
-          } else {
-            building.owner[config.key] = config.value || type
-          }
-          if (config.action) {
-            switch (config.action.type) {
-              case 'upgradeUnit':
-                for (let i = 0; i < building.owner.units.length; i++) {
-                  const unit = building.owner.units[i]
-                  if (unit.type === config.action.source) {
-                    unit.upgrade(config.action.target)
-                  }
-                }
-                break
-              case 'upgradeBuilding':
-                for (let i = 0; i < building.owner.buildings.length; i++) {
-                  const target = building.owner.buildings[i]
-                  if (target.type === config.action.source) {
-                    target.upgrade(config.action.target)
-                  }
-                }
-                break
-              case 'improve':
-                building.owner.updateConfig(
-                  config.action.operations.map(operation => ({ ...operation, value: Number(operation.value) }))
-                )
-                break
-            }
-          }
-          const functionName = `on${capitalizeFirstLetter(config.key)}Change`
-          typeof building.owner[functionName] === 'function' && building.owner[functionName](config.value)
+          building.owner.unlockTechnology(type)
           if (building.owner.isPlayed) {
             menu.updateBottombar()
             menu.updateTopbar()

@@ -313,6 +313,7 @@ export class UnitActions {
         unit.startInterval(
           () => {
             if (!unit.getActionCondition(unit.dest)) {
+              if (unit.dest?.isBuilt && unit.continueBuildingQueue()) return
               if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
                 unit.sendToFarm(unit.dest)
                 return
@@ -342,6 +343,7 @@ export class UnitActions {
                   return
                 }
               }
+              if (unit.continueBuildingQueue()) return
               unit.affectNewDest()
             }
           },

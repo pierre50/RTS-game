@@ -21,6 +21,7 @@ export const BUILDING_TYPES = {
   academy: 'Academy',
   watchTower: 'WatchTower',
   sentryTower: 'SentryTower',
+  smallWall: 'SmallWall',
 }
 
 export const UNIT_TYPES = {

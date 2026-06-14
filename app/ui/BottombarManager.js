@@ -1,7 +1,9 @@
 import { Assets } from 'pixi.js'
 import { getIconPath, canAfford, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
-import { FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { getWallIcon } from '../lib/buildings/walls'
+import { getTowerType } from '../lib/buildings/towers'
 import { syncHitPointsInfo } from './BaseEntityInterface'
 import { playUiSound } from '../lib/uiSound'
 
@@ -105,11 +107,13 @@ export class BottombarManager {
     element.setAttribute('role', 'button')
     element.tabIndex = 0
     element.addEventListener('pointerup', evt => {
+      this.menu.menuTooltip.hide()
       action(evt)
     })
     element.addEventListener('keydown', evt => {
       if (evt.key !== 'Enter' && evt.key !== ' ') return
       evt.preventDefault()
+      this.menu.menuTooltip.hide()
       action(evt)
     })
   }
@@ -120,6 +124,10 @@ export class BottombarManager {
       btn.onCreate(selection, box)
     } else {
       box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : btn.icon))
+    }
+
+    if (btn.tooltip) {
+      this.menu.menuTooltip.bind(box, btn.tooltip)
     }
 
     if (!btn.onCreate) {
@@ -143,6 +151,10 @@ export class BottombarManager {
     const { player } = this.menu.context
     const back = this.createMenuBox('interfaceBackBtn')
     back.appendChild(this.createMenuIcon('assets/interface/50721/010_50721.png'))
+    this.menu.menuTooltip.bind(back, () => ({
+      title: t('back'),
+      description: t('backMenuDescription'),
+    }))
 
     if (parent) {
       this.makePressable(back, () => {
@@ -206,6 +218,10 @@ export class BottombarManager {
         {
           icon: 'assets/interface/50721/003_50721.png',
           id: `${selection.technology}-cancel`,
+          tooltip: () => ({
+            title: t('cancel'),
+            description: t('cancelTechnologyDescription'),
+          }),
           onClick: sel => {
             sel.cancelTechnology()
           },
@@ -261,6 +277,7 @@ export class BottombarManager {
     } = menu
 
     this.resetInfo()
+    menu.menuTooltip.hide()
     menu.bottombarMenu.textContent = ''
     menu.selection = selection
     if (controls.mouseBuilding) {
@@ -276,6 +293,35 @@ export class BottombarManager {
     const { player } = this.menu.context
     const resource = Object.keys(cost).find(prop => player[prop] < cost[prop])
     return t('needMore', { resource: t(resource) })
+  }
+
+  formatCost(cost) {
+    return Object.entries(cost || {})
+      .map(([resource, amount]) => `${amount} ${t(resource)}`)
+      .join(', ')
+  }
+
+  getBuildingTooltip(type, owner, config) {
+    const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner) : type
+    return {
+      title: t(displayType),
+      description: t(`${displayType}Description`),
+      meta: [
+        t('tooltipCost', { cost: this.formatCost(config.cost) }),
+        t('tooltipBuildTime', { time: config.constructionTime }),
+      ],
+    }
+  }
+
+  getTechnologyTooltip(type, config) {
+    return {
+      title: t(type),
+      description: t(`${type}Description`),
+      meta: [
+        t('tooltipCost', { cost: this.formatCost(config.cost) }),
+        t('tooltipResearchTime', { time: config.researchTime }),
+      ],
+    }
   }
 
   getUnitButton(type) {
@@ -347,13 +393,16 @@ export class BottombarManager {
     const config = owner.config.buildings[type]
     return {
       id: type,
+      tooltip: () => this.getBuildingTooltip(type, owner, config),
       icon: () => {
-        const assets = getBuildingAsset(type, owner, Assets)
-        return getIconPath(assets.icon)
+        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner) : type
+        const assets = getBuildingAsset(displayType, owner, Assets)
+        return getIconPath(type === BUILDING_TYPES.smallWall ? getWallIcon(owner, assets.icon) : assets.icon)
       },
-      hide: () => (config.conditions || []).some(condition => !isValidCondition(condition, owner)),
+      hide: () => !owner.isBuildingEligible(type),
       onClick: () => {
-        const assets = getBuildingAsset(type, owner, Assets)
+        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner) : type
+        const assets = getBuildingAsset(displayType, owner, Assets)
         controls.removeMouseBuilding()
         if (canAfford(owner, config.cost)) {
           controls.setMouseBuilding({ ...config, ...assets, type })
@@ -373,6 +422,7 @@ export class BottombarManager {
     return {
       icon: getIconPath(config.icon),
       id: type,
+      tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (config.conditions || []).some(
           condition => player.technologies.includes(type) || !isValidCondition(condition, player)

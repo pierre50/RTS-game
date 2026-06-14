@@ -281,6 +281,28 @@ export class MapResources {
     }
   }
 
+  async generateResourcesAroundPlayersAsync(playersPos) {
+    const yieldFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()))
+    for (const player of playersPos) {
+      for (const [type, quantity, range] of [
+        [RESOURCE_TYPES.berrybush, 8, [7, 14]],
+        [RESOURCE_TYPES.berrybush, 8, [14, 22]],
+        [RESOURCE_TYPES.berrybush, 8, [22, 29]],
+        [RESOURCE_TYPES.stone, 7, [7, 14]],
+        [RESOURCE_TYPES.stone, 7, [14, 22]],
+        [RESOURCE_TYPES.stone, 7, [22, 29]],
+        [RESOURCE_TYPES.gold, 7, [7, 14]],
+        [RESOURCE_TYPES.gold, 7, [14, 22]],
+        [RESOURCE_TYPES.gold, 7, [22, 29]],
+      ]) {
+        this.map.placeResourceGroup(player, type, quantity, range)
+        await yieldFrame()
+      }
+      this.map.generateForestAroundPlayer(player, this.map.size * 4)
+      await yieldFrame()
+    }
+  }
+
   generateNeutralResourceGroups(playersPos) {
     const profile = RESOURCE_DENSITY_PROFILES[this.map.resourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
     const placedCenters = []
@@ -304,6 +326,34 @@ export class MapResources {
         if (!center) break
         if (this.map.placeResourceGroupAt(center, type, quantity, radius)) {
           placedCenters.push(center)
+        }
+      }
+    }
+  }
+
+  async generateNeutralResourceGroupsAsync(playersPos) {
+    const profile = RESOURCE_DENSITY_PROFILES[this.map.resourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
+    const placedCenters = []
+    const sizeScale = Math.max(1, Math.round((this.map.size / 120) ** 2))
+    const groupEntries = [
+      [RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2],
+      [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2],
+      [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2],
+      [RESOURCE_TYPES.tree, profile.neutralGroups.tree, 14, 4],
+    ]
+    let batch = 0
+    for (const [type, baseCount, quantity, radius] of groupEntries) {
+      for (let i = 0; i < baseCount * sizeScale; i++) {
+        const center = this.map.findNeutralResourceCenter(
+          playersPos,
+          placedCenters,
+          profile.playerSafeDistance,
+          profile.minNeutralDistance
+        )
+        if (!center) break
+        if (this.map.placeResourceGroupAt(center, type, quantity, radius)) placedCenters.push(center)
+        if (++batch % 4 === 0) {
+          await new Promise(resolve => requestAnimationFrame(() => resolve()))
         }
       }
     }

@@ -36,12 +36,13 @@ export class UnitCommands {
     return unit.path.length > 0 || unit.isUnitAtDest(action, target)
   }
 
-  commonSendTo(target, work, action, keepPrevious, immediate = false) {
+  commonSendTo(target, work, action, keepPrevious, immediate = false, preserveBuildQueue = false) {
     const unit = this.unit
     const {
       context: { menu },
     } = unit
     if (!target || target.isDestroyed || unit.isDead) return false
+    if (!preserveBuildQueue) unit.buildQueue = []
     if (action && !getActionCondition(unit, target, action)) return false
     if (unit.actionLocked) return unit.queueOrder(target, action)
     if (this.isRedundantOrder(target, work, action)) return false
@@ -189,8 +190,28 @@ export class UnitCommands {
     return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt)
   }
 
-  sendToBuilding(target) {
-    return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build, true)
+  sendToBuilding(target, preserveBuildQueue = false) {
+    if (!preserveBuildQueue) this.unit.buildQueue = []
+    return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build, true, false, true)
+  }
+
+  sendToBuildingQueue(targets) {
+    this.unit.buildQueue = targets.filter(target => getActionCondition(this.unit, target, ACTION_TYPES.build))
+    return this.continueBuildingQueue()
+  }
+
+  continueBuildingQueue() {
+    const unit = this.unit
+    while (unit.buildQueue?.length) {
+      const target = unit.buildQueue[0]
+      if (getActionCondition(unit, target, ACTION_TYPES.build)) {
+        unit.previousDest = null
+        return this.sendToBuilding(target, true)
+      }
+      unit.buildQueue.shift()
+    }
+    unit.buildQueue = []
+    return false
   }
 
   sendToFarm(target) {

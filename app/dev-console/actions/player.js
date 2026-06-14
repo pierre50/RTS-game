@@ -1,7 +1,38 @@
 import { POPULATION_MAX } from '../../constants'
-import { capitalizeFirstLetter } from '../../lib'
+import { capitalizeFirstLetter, isValidCondition } from '../../lib'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/settings'
 import { RESOURCE_NAMES, findKey } from './shared'
+import { refreshOwnerTowers } from '../../lib/buildings/towers'
+
+const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
+
+function isTechnologyEligible(player, type) {
+  if (AGE_TECHNOLOGIES.has(type)) return false
+  if (player.technologies.includes(type)) return false
+  const config = player.techs?.[type]
+  if (!config) return false
+  return (config.conditions || []).every(condition => isValidCondition(condition, player))
+}
+
+function applyEligibleTechnologies(context) {
+  const { player } = context
+  const unlocked = []
+  let appliedInPass = true
+
+  while (appliedInPass) {
+    appliedInPass = false
+    for (const type of Object.keys(player?.techs || {})) {
+      if (!isTechnologyEligible(player, type)) continue
+      const result = applyTechnology(context, type)
+      if (result.ok && result.message !== `${type} already unlocked`) {
+        unlocked.push(type)
+        appliedInPass = true
+      }
+    }
+  }
+
+  return unlocked
+}
 
 export function addResources(player, resourceName, amount) {
   if (resourceName === 'all') {
@@ -19,13 +50,9 @@ export function addResources(player, resourceName, amount) {
 
 export function applyAllTechnologies(context) {
   const { player } = context
-  const keys = Object.keys(player?.techs || {})
-  let count = 0
-  for (const key of keys) {
-    const result = applyTechnology(context, key)
-    if (result.ok && result.message !== `${key} already unlocked`) count++
-  }
-  return { ok: true, message: `Unlocked ${count} technologies` }
+  player.autoTechnologyByAge = true
+  const unlocked = applyEligibleTechnologies(context)
+  return { ok: true, message: `Unlocked ${unlocked.length} technologies` }
 }
 
 export function applyTechnology(context, typeName) {
@@ -53,6 +80,9 @@ export function applyTechnology(context, typeName) {
           if (building.type === config.action.source) building.upgrade(config.action.target)
         })
         break
+      case 'refreshTowers':
+        refreshOwnerTowers(player)
+        break
       case 'improve':
         player.updateConfig(
           config.action.operations.map(operation => ({
@@ -66,6 +96,9 @@ export function applyTechnology(context, typeName) {
 
   const handler = `on${capitalizeFirstLetter(config.key)}Change`
   typeof player[handler] === 'function' && player[handler](config.value)
+  if (config.key === 'age' && player.autoTechnologyByAge) {
+    applyEligibleTechnologies(context)
+  }
   menu.updateBottombar()
   menu.updateTopbar()
   return { ok: true, message: `Unlocked ${type}` }
@@ -76,6 +109,9 @@ export function setAge(context, value) {
   if (!Number.isInteger(age) || age < 0 || age > 3) return { ok: false, message: 'Age must be between 0 and 3' }
   context.player.age = age
   context.player.onAgeChange()
+  if (context.player.autoTechnologyByAge) {
+    applyEligibleTechnologies(context)
+  }
   context.menu.updateBottombar()
   context.menu.updateTopbar()
   return { ok: true, message: `Age set to ${age}` }

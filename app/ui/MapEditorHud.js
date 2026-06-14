@@ -329,7 +329,11 @@ export class MapEditorHud {
       const placement = this.context.editor.getPlacementSelection()
       this._renderInfoLines([
         t('editorMode') + ': ' + t('editorUnits'),
-        placement ? t('editorPlaceHint') : t('editorSelectHint'),
+        placement?.type === 'SmallWall'
+          ? t(this.context.editor.hasWallDraft() ? 'editorWallFinishHint' : 'editorWallStartHint')
+          : placement
+            ? t('editorPlaceHint')
+            : t('editorSelectHint'),
       ])
       return
     }
@@ -355,6 +359,7 @@ export class MapEditorHud {
   }
 
   _setMode(mode) {
+    this.context.editor.cancelWallDraft()
     this.state.mode = mode
     this.context.player?.unselectAll?.()
     if (mode === 'terrain') {

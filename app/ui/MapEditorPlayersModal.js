@@ -25,6 +25,7 @@ export class MapEditorPlayersModal {
     this.playerSetupPanel = new PlayerSetupPanel({
       players: this.players,
       maxPlayers: this.maxPlayers,
+      showAge: true,
     })
 
     layout.appendChild(this.playerSetupPanel.element)
