@@ -46,7 +46,10 @@ export class BuildingProduction {
     building.owner.population++
 
     const unitExtra = extra || (building.owner.getUnitExtraOptions && building.owner.getUnitExtraOptions(type)) || {}
-    building.owner.createUnit({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
+    const unit = building.owner.createUnit({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
+    const rallyPoint = building.rallyPoint
+    const rallyCell = rallyPoint && map.grid[rallyPoint.i]?.[rallyPoint.j]
+    if (rallyCell) unit.sendTo(rallyCell)
 
     if (
       building.owner.isPlayed &&

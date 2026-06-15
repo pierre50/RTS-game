@@ -1,4 +1,4 @@
-import { Assets, Sprite } from 'pixi.js'
+import { AnimatedSprite, Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import {
@@ -15,6 +15,8 @@ import {
   updateInstanceVisibility,
   playSoundCue,
   playSelectionSound,
+  bindAnimatedSpriteToTicker,
+  getRallyPointFrames,
 } from '../../lib'
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
@@ -38,6 +40,8 @@ export class Building extends Instance {
     this.technology = null
     this.loading = null
     this.isUsedBy = null
+    this.rallyPoint = null
+    this.rallyPointFlag = null
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
@@ -87,7 +91,10 @@ export class Building extends Instance {
         const assets = getBuildingAsset(displayType, this.owner, Assets)
         this.buildingInterface.renderInfo(element, assets)
       },
-      menu: this.owner.isPlayed || map.instantMode ? [...units, ...technologies] : [],
+      menu:
+        this.owner.isPlayed || map.instantMode
+          ? [...units, ...(units.length ? [context.menu.getRallyPointButton()] : []), ...technologies]
+          : [],
     }
 
     // Set solid zone
@@ -123,7 +130,17 @@ export class Building extends Instance {
           context: { controls, player, menu, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+        if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
+          controls.mouse.prevent = true
+          controls.rallyPointController.cancel({ clear: true })
+          return
+        }
+        if (
+          controls.rallyPointController?.active ||
+          controls.mouseBuilding ||
+          controls.mouseRectangle ||
+          !controls.isMouseInApp(evt)
+        ) {
           return
         }
         let hasSentVillager = false
@@ -230,6 +247,9 @@ export class Building extends Instance {
       this.finalTexture()
       this.onBuilt()
     }
+    if (options.rallyPoint) {
+      this.setRallyPoint(map.grid[options.rallyPoint.i]?.[options.rallyPoint.j], options.rallyPoint.direction)
+    }
     map.addToInstanceBucket(this)
   }
 
@@ -282,6 +302,7 @@ export class Building extends Instance {
     } = this
     if (this.owner.isPlayed && this.sounds?.create) playSoundCue(this.sounds.create)
     super.select()
+    if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
@@ -289,10 +310,38 @@ export class Building extends Instance {
   unselect() {
     if (!this.selected) return
     super.unselect()
+    if (this.rallyPointFlag) this.rallyPointFlag.visible = false
     const {
       context: { menu, player },
     } = this
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+  }
+
+  setRallyPoint(cell, direction = this.context.map.randomRange(0, 1)) {
+    if (!cell) return false
+    this.clearRallyPoint()
+    this.rallyPoint = { i: cell.i, j: cell.j, direction }
+    const sheet = Assets.cache.get('459')
+    const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction))
+    bindAnimatedSpriteToTicker(flag, this.context.app)
+    flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
+    flag.anchor.set(flag.texture.defaultAnchor.x, flag.texture.defaultAnchor.y)
+    flag.x = cell.x
+    flag.y = cell.y
+    flag.zIndex = cell.z
+    flag.visible = this.selected
+    flag.eventMode = 'none'
+    flag.roundPixels = true
+    flag.play()
+    this.context.map.addChild(flag)
+    this.rallyPointFlag = flag
+    return true
+  }
+
+  clearRallyPoint() {
+    this.rallyPointFlag?.destroy()
+    this.rallyPointFlag = null
+    this.rallyPoint = null
   }
 
   // BuildingLifecycle

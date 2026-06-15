@@ -246,6 +246,7 @@ export class BottombarManager {
     preload('assets/interface/50721/010_50721.png')
     preload('assets/interface/50721/003_50721.png')
     preload('assets/interface/50721/002_50721.png')
+    preload('assets/interface/50721/006_50721.png')
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
@@ -380,6 +381,20 @@ export class BottombarManager {
         div.appendChild(cancel)
         element.appendChild(div)
         element.appendChild(counter)
+      },
+    }
+  }
+
+  getRallyPointButton() {
+    return {
+      id: 'rallyPoint',
+      icon: 'assets/interface/50721/006_50721.png',
+      tooltip: () => ({
+        title: t('rallyPoint'),
+        description: t('rallyPointDescription'),
+      }),
+      onClick: selection => {
+        this.menu.context.controls.rallyPointController.start(selection)
       },
     }
   }

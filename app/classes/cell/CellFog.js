@@ -9,35 +9,12 @@ import {
 } from '../../lib'
 import { COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 
-let _fogTexture = null
-let _darknessTexture = null
 let _fogPatternTexture = null
 
 export const _DW = 64
 export const _DH = 32
 
-function _insideDiamond(px, py) {
-  return px + 2 * py >= 32 && px - 2 * py <= 32 && px - 2 * py >= -32 && px + 2 * py <= 96
-}
-
-export function getFogTexture() {
-  if (_fogTexture) return _fogTexture
-  const canvas = document.createElement('canvas')
-  canvas.width = _DW
-  canvas.height = _DH
-  const ctx = canvas.getContext('2d')
-  for (let px = 0; px < _DW; px++) {
-    for (let py = 0; py < _DH; py++) {
-      if (!_insideDiamond(px, py)) continue
-      if ((px + py) % 2 !== 0) continue
-      ctx.fillStyle = '#000'
-      ctx.fillRect(px, py, 1, 1)
-    }
-  }
-  _fogTexture = Texture.from(canvas)
-  return _fogTexture
-}
-
+// 2x2 repeating checkerboard used by the viewport fog mask.
 export function getFogPatternTexture() {
   if (_fogPatternTexture) return _fogPatternTexture
   const canvas = document.createElement('canvas')
@@ -51,22 +28,6 @@ export function getFogPatternTexture() {
   return _fogPatternTexture
 }
 
-// Solid black diamond for cells never explored
-export function getDarknessTexture() {
-  if (_darknessTexture) return _darknessTexture
-  const canvas = document.createElement('canvas')
-  canvas.width = _DW
-  canvas.height = _DH
-  const ctx = canvas.getContext('2d')
-  ctx.fillStyle = '#000'
-  for (let px = 0; px < _DW; px++) {
-    for (let py = 0; py < _DH; py++) {
-      if (_insideDiamond(px, py)) ctx.fillRect(px, py, 1, 1)
-    }
-  }
-  _darknessTexture = Texture.from(canvas)
-  return _darknessTexture
-}
 
 export class CellFog {
   constructor(cell) {
@@ -141,17 +102,6 @@ export class CellFog {
     }
   }
 
-  _updateEdgeDither() {
-    const { cell } = this
-    const fogLayer = cell.context.map.fogLayer
-    if (cell._ditherSprite) {
-      if (fogLayer) fogLayer.removeChild(cell._ditherSprite)
-      cell._ditherSprite.destroy()
-      cell._ditherSprite = null
-    }
-    cell._ditherKey = null
-  }
-
   setFog(init) {
     const { cell } = this
     if (cell.has && !cell.has.isDead) {
@@ -170,14 +120,6 @@ export class CellFog {
         }
       }
     }
-    this._updateEdgeDither()
-    const { grid } = cell.context.map
-    for (let di = -1; di <= 1; di++) {
-      for (let dj = -1; dj <= 1; dj++) {
-        if (di === 0 && dj === 0) continue
-        grid[cell.i + di]?.[cell.j + dj]?.cellFog._updateEdgeDither()
-      }
-    }
   }
 
   removeFog() {
@@ -189,14 +131,6 @@ export class CellFog {
       const { map } = cell.context
       if (map._fogQueue) {
         map._fogQueue.set(cell, 'clear')
-      }
-    }
-    this._updateEdgeDither()
-    const { grid } = cell.context.map
-    for (let di = -1; di <= 1; di++) {
-      for (let dj = -1; dj <= 1; dj++) {
-        if (di === 0 && dj === 0) continue
-        grid[cell.i + di]?.[cell.j + dj]?.cellFog._updateEdgeDither()
       }
     }
     if (cell.has) {

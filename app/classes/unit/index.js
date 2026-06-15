@@ -179,7 +179,12 @@ export class Unit extends Instance {
         context: { controls, player, editor },
       } = this
       if (editor) return
-      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+      if (
+        controls.rallyPointController?.active ||
+        controls.mouseBuilding ||
+        controls.mouseRectangle ||
+        !controls.isMouseInApp(evt)
+      ) {
         return
       }
       if (controls.consumeUnitDoubleClick(this)) {
@@ -207,7 +212,13 @@ export class Unit extends Instance {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
-      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+      if (
+        controls.doubleClicked ||
+        controls.rallyPointController?.active ||
+        controls.mouseBuilding ||
+        controls.mouseRectangle ||
+        !controls.isMouseInApp(evt)
+      ) {
         return
       }
 

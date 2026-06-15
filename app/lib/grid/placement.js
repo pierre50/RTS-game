@@ -8,9 +8,11 @@ export function clearCellTerrainSet(cell) {
   const set = cell.terrainSet || cell.getChildByLabel?.(LABEL_TYPES.set)
   if (!set) return
 
+  cell.removeChild?.(set)
   set.parent?.removeChild(set)
   set.destroy?.()
   cell.terrainSet = null
+  cell.context?.map?.terrainChunkManager?.invalidateCell(cell)
 }
 
 function createPlacementZone(instance, maxSpace) {

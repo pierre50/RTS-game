@@ -17,6 +17,7 @@ export class RuntimeCell {
     this.category = source.category
     this.color = source.color
     this.assets = source.assets
+    this.terrainTextureName = source.terrainTextureName
     this.solid = source.solid
     this.visible = source.visible
     this.inclined = source.inclined
@@ -27,9 +28,8 @@ export class RuntimeCell {
     this.has = source.has
     this.corpses = source.corpses
     this.fogSprites = source.fogSprites
-    this._ditherSprite = source._ditherSprite
-    this._ditherKey = source._ditherKey
     this._hasFog = source._hasFog
+    this._terrainAppearance = source._terrainAppearance
     this.terrainSet = source.terrainSet || null
     this._fogChunks = null
     this.cellFog = new CellFog(this)

@@ -3,6 +3,7 @@ import { isometricToCartesian, pointsDistance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
+import { RallyPointController } from '../controllers/RallyPointController'
 import { getCameraZoom } from '../lib/settings'
 import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 
@@ -12,6 +13,7 @@ const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
+const COMPATIBILITY_MOUSE_EVENT_DELAY = 800
 
 export default class Controls extends Container {
   constructor(context) {
@@ -44,6 +46,7 @@ export default class Controls extends Container {
     this.mouseDrag = false
     this.touchInteraction = null
     this.touchPanActive = false
+    this.ignoreMouseEventsUntil = 0
     this.lastClickedUnit = null
     this.unitClickTimeout = null
     this.doubleClicked = false
@@ -51,6 +54,7 @@ export default class Controls extends Container {
     this.addChild(this.minimapRectangle)
 
     this.buildingPlacer = new BuildingPlacer(this)
+    this.rallyPointController = new RallyPointController(this)
     this.selectionManager = new SelectionManager(this)
 
     this._onDocMouseMove = evt => this.moveCameraWithMouse(evt)
@@ -160,6 +164,11 @@ export default class Controls extends Container {
       evt.preventDefault()
       return
     }
+    if (evt.key === 'Escape' && this.rallyPointController.active) {
+      evt.preventDefault()
+      this.rallyPointController.cancel()
+      return
+    }
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -232,6 +241,7 @@ export default class Controls extends Container {
 
   onTouchStart(evt) {
     if (this.isInteractionBlocked()) return
+    this.ignoreMouseEventsUntil = performance.now() + COMPATIBILITY_MOUSE_EVENT_DELAY
 
     const touch = evt.touches[0]
     if (evt.touches.length >= 2) {
@@ -253,7 +263,7 @@ export default class Controls extends Container {
 
       this.mouseDrag = false
       this.touchInteraction = {
-        mode: this.mouseBuilding || !IS_MOBILE ? 'tap' : 'select',
+        mode: this.mouseBuilding || this.rallyPointController.active || !IS_MOBILE ? 'tap' : 'select',
         startX: touch.pageX,
         startY: touch.pageY,
         lastX: touch.pageX,
@@ -261,9 +271,9 @@ export default class Controls extends Container {
         moved: false,
       }
 
-      if (this.mouseBuilding) {
+      if (this.mouseBuilding || this.rallyPointController.active) {
         this.pointerStart = null
-        this.buildingPlacer.handleMouseMove()
+        this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
         return
       }
 
@@ -298,7 +308,7 @@ export default class Controls extends Container {
     this.mouse.x = touch.pageX
     this.mouse.y = touch.pageY
 
-    if (this.mouseBuilding) {
+    if (this.mouseBuilding || this.rallyPointController.active) {
       const hasMoved =
         this.touchInteraction &&
         pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
@@ -307,7 +317,7 @@ export default class Controls extends Container {
         this.mouseDrag = true
         this.touchInteraction.moved = true
       }
-      this.buildingPlacer.handleMouseMove()
+      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
       return
     }
 
@@ -341,6 +351,7 @@ export default class Controls extends Container {
   }
 
   onTouchEnd(evt) {
+    this.ignoreMouseEventsUntil = performance.now() + COMPATIBILITY_MOUSE_EVENT_DELAY
     const touch = evt.changedTouches[0]
     if (this.touchPanActive || this.touchInteraction?.mode === 'pan') {
       this.pointerStart = null
@@ -367,7 +378,7 @@ export default class Controls extends Container {
       const mode = this.touchInteraction?.mode
       const moved = this.touchInteraction?.moved
 
-      if (this.mouseBuilding) {
+      if (this.mouseBuilding || this.rallyPointController.active) {
         if (!moved) {
           this.onMouseUp(touch)
         }
@@ -387,6 +398,7 @@ export default class Controls extends Container {
   }
 
   onMouseDown(evt) {
+    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
     if (this.isInteractionBlocked()) return
 
     this.mouse.x = evt.pageX
@@ -396,19 +408,21 @@ export default class Controls extends Container {
   }
 
   onMouseMove(evt) {
+    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
 
     if (this.isInteractionBlocked()) return
 
-    if (this.mouseBuilding) {
-      this.buildingPlacer.handleMouseMove()
+    if (this.mouseBuilding || this.rallyPointController.active) {
+      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
       return
     }
     this.selectionManager.handleMouseMove()
   }
 
   onMouseUp(evt) {
+    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
     if (this.isInteractionBlocked()) {
       this.cancelActiveInteraction()
       return
@@ -428,7 +442,9 @@ export default class Controls extends Container {
       this.mouse.prevent = false
       return
     }
-    player?.selectedBuilding && player.unselectAll()
+    if (!this.rallyPointController.active) {
+      player?.selectedBuilding && player.unselectAll()
+    }
 
     if (this.mouseRectangle) {
       this.selectionManager.handleMouseUp()
@@ -444,6 +460,8 @@ export default class Controls extends Container {
         const cell = map.grid[i][j]
         if (this.mouseBuilding) {
           this.buildingPlacer.handleMouseUp(cell)
+        } else if (this.rallyPointController.active) {
+          this.rallyPointController.handleMouseUp(cell)
         } else if (player?.selectedUnits.length) {
           if ((cell.solid || cell.has) && cell.visible) return
           this.selectionManager.handleClick(cell)
@@ -470,6 +488,10 @@ export default class Controls extends Container {
 
   isMouseInApp(evt) {
     return !this.isInteractionBlocked() && evt.target && (!evt.target.tagName || evt.target.closest('#game'))
+  }
+
+  shouldIgnoreCompatibilityMouseEvent(evt) {
+    return evt?.type?.startsWith('mouse') && performance.now() < this.ignoreMouseEventsUntil
   }
 
   removeMouseBuilding() {
@@ -523,6 +545,7 @@ export default class Controls extends Container {
     this.touchInteraction = null
     this.touchPanActive = false
     this.mouse.prevent = false
+    this.rallyPointController.cancel()
   }
 
   consumeUnitDoubleClick(unit) {

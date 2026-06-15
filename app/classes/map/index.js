@@ -6,6 +6,7 @@ import { MapTerrain } from './MapTerrain'
 import { MapFog } from './MapFog'
 import { createSeededRandom } from '../../lib/random'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
+import { TerrainChunkManager } from './TerrainChunkManager'
 
 export default class Map extends Container {
   constructor(context) {
@@ -63,6 +64,7 @@ export default class Map extends Container {
     this.mapResources = new MapResources(this)
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
+    this.terrainChunkManager = new TerrainChunkManager(this)
   }
 
   resetRandom(stream = 0) {
@@ -101,6 +103,10 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport, margin = CELL_WIDTH * 2) {
+    if (this.terrainChunkManager?.chunks.size) {
+      this.terrainChunkManager.update(viewport)
+    }
+    this.mapFog?.viewportRenderer.update(viewport)
     if (!viewport || !this.renderChunks.length) return
 
     let visibleCount = 0
@@ -349,63 +355,13 @@ export default class Map extends Container {
     return this.mapFog._indexFogChunkCells()
   }
 
-  _createFogPatternSprite(x, y, width, height) {
-    return this.mapFog._createFogPatternSprite(x, y, width, height)
-  }
-
-  _getFogMapBounds() {
-    return this.mapFog._getFogMapBounds()
-  }
-
-  _getFogCellBounds(cell) {
-    return this.mapFog._getFogCellBounds(cell)
-  }
-
-  _getFogChunksForCell(cell) {
-    return this.mapFog._getFogChunksForCell(cell)
-  }
-
-  _drawFogCellShape(graphics, cell) {
-    return this.mapFog._drawFogCellShape(graphics, cell)
-  }
-
-  _getFogCellOpenSides(cell) {
-    return this.mapFog._getFogCellOpenSides(cell)
-  }
-
-  _signedDistanceToFogSide(point, from, to, cell) {
-    return this.mapFog._signedDistanceToFogSide(point, from, to, cell)
-  }
-
-  _clipFogErasePolygonBySide(points, from, to, cell, inset) {
-    return this.mapFog._clipFogErasePolygonBySide(points, from, to, cell, inset)
-  }
-
-  _drawFogEraseCellShape(graphics, cell, inset) {
-    return this.mapFog._drawFogEraseCellShape(graphics, cell, inset)
-  }
-
-  _getFogEraseRefreshCells(cell) {
-    return this.mapFog._getFogEraseRefreshCells(cell)
-  }
-
-  _getFogCellCenter(cell) {
-    return this.mapFog._getFogCellCenter(cell)
-  }
-
-  _getFogCellPoints(cell) {
-    return this.mapFog._getFogCellPoints(cell)
-  }
-
-  _redrawFogEdgesInChunk(renderer, chunk) {
-    return this.mapFog._redrawFogEdgesInChunk(renderer, chunk)
-  }
-
-  _drawVisibleCellsInChunk(graphics, chunk) {
-    return this.mapFog._drawVisibleCellsInChunk(graphics, chunk)
-  }
-
   _flushFogQueue() {
     return this.mapFog._flushFogQueue()
+  }
+
+  destroy(options) {
+    this.terrainChunkManager?.destroy()
+    this.mapFog?.destroyFogResources()
+    super.destroy(options)
   }
 }

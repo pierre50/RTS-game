@@ -113,6 +113,7 @@ function buildingData(building) {
       'isBuilt',
       'hitPoints',
       'quantity',
+      'rallyPoint',
     ]),
     isUsedBy: building.isUsedBy?.label,
   }

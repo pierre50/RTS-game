@@ -3,6 +3,7 @@ import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
 import { CellTerrain } from './CellTerrain'
+export { GenerationCell } from './GenerationCell'
 
 export class Cell extends Container {
   constructor(options, context) {
@@ -28,8 +29,6 @@ export class Cell extends Container {
     this.has = null
     this.corpses = new Set()
     this.fogSprites = []
-    this._ditherSprite = null
-    this._ditherKey = null
     this._hasFog = false
 
     Object.keys(options).forEach(prop => {
@@ -47,7 +46,8 @@ export class Cell extends Container {
     this.zIndex = this.i + this.j
     this.sortableChildren = true
 
-    const textureName = map.randomItem(this.assets)
+    const textureName = options.textureName || map.randomItem(this.assets)
+    this.terrainTextureName = textureName
     const resourceName = textureName.split('_')[1]
     const textureFile = textureName + '.png'
     const spritesheet = Assets.cache.get(resourceName)
@@ -126,9 +126,6 @@ export class Cell extends Container {
   }
   setFogChildren(instance, init) {
     return this.cellFog.setFogChildren(instance, init)
-  }
-  _updateEdgeDither() {
-    return this.cellFog._updateEdgeDither()
   }
 
   // Terrain delegates

@@ -3,10 +3,30 @@ import { Resource } from '../resource'
 import { Human, AI, Gaia } from '../players'
 import { colors, getCellsAroundPoint, getZoneInGridWithCondition, updateInstanceVisibility, rehydrateAIKnowledge } from '../../lib'
 import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
-import { Cell } from '../cell'
+import { Cell, GenerationCell } from '../cell'
 export class MapGeneration {
   constructor(map) {
     this.map = map
+  }
+
+  destroyGeneratedChildren() {
+    this.map.terrainChunkManager?.destroy()
+    this.map.mapFog?.destroyFogResources()
+    for (const row of this.map.grid) {
+      for (const cell of row || []) {
+        if (!cell?.isGenerationCell) continue
+        for (const child of cell.children || []) {
+          child.destroy?.({ children: true, texture: false, textureSource: false })
+        }
+      }
+    }
+    for (const child of this.map.removeChildren()) {
+      child.destroy?.({ children: true, texture: false, textureSource: false })
+    }
+    this.map.grid = []
+    this.map.resources = new Set()
+    this.map.instanceBuckets = null
+    this.map.clearRenderChunks()
   }
 
   yieldToBrowser() {
@@ -338,10 +358,8 @@ export class MapGeneration {
   }
 
   async generateMapAsync(positionsCountOverride = null, repeat = 0, options = {}) {
-    this.map.removeChildren()
-    this.map.clearRenderChunks()
+    this.destroyGeneratedChildren()
     if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
-    this.map.resetRandom(repeat)
     const positionsBySize = {
       120: 2,
       144: 3,
@@ -353,17 +371,40 @@ export class MapGeneration {
     }
     this.map.positionsCount = positionsCountOverride ?? positionsBySize[this.map.size] ?? 2
 
-    await this.generateCellsAsync(options)
-    this.map.totalCells = (this.map.size + 1) ** 2
-    this.map.playersPos = this.map.findPlayerPlaces()
+    const terrain = await this.generateTerrainDataAsync()
+    this.map.size = terrain.length - 1
+    this.map.grid = terrain.map((row, i) =>
+      row.map((terrainType, j) => ({
+        i,
+        j,
+        type: terrainType === 2 ? 'Water' : 'Land',
+        category: terrainType === 2 ? 'Water' : 'Land',
+        border: false,
+        solid: false,
+        inclined: false,
+      }))
+    )
 
-    if (this.map.playersPos.length < this.map.positionsCount) {
-      if (repeat >= 10) {
-        alert('Error while generating the map')
-        return
+    let validSpawns = false
+    for (let attempt = repeat; attempt <= 10; attempt++) {
+      this.map.resetRandom(attempt)
+      this.map.playersPos = this.map.findPlayerPlaces()
+      if (this.map.playersPos.length >= this.map.positionsCount) {
+        this.map.resetRandom(attempt)
+        validSpawns = true
+        break
       }
-      return this.generateMapAsync(positionsCountOverride, repeat + 1, options)
+      await this.yieldToBrowser()
     }
+
+    if (!validSpawns) {
+      this.map.grid = []
+      alert('Error while generating the map')
+      return
+    }
+
+    await this.generateCellsAsync({ ...options, terrain })
+    this.map.totalCells = (this.map.size + 1) ** 2
   }
 
   async stylishMap({ onProgress = async () => {} } = {}) {
@@ -425,7 +466,7 @@ export class MapGeneration {
     this.map._fogInitComplete = true
     this.map._flushFogQueue()
     await onProgress('finalizingWorld', 0.93)
-    this.map.bakeTerrainToChunks()
+    await measureAsync('terrainBake', () => this.map.bakeTerrainToChunks())
     this.map.ready = true
     this.map.generationTimings = timings
     console.table(
@@ -531,10 +572,7 @@ export class MapGeneration {
     this.map.formatCellsWaterBorder()
   }
 
-  async generateCellsAsync({ onProgress = async () => {} } = {}) {
-    const z = 0
-    this.map.grid = []
-    this.map.invalidateReliefCoastDistances()
+  async generateTerrainDataAsync() {
     const terrainStartedAt = performance.now()
     const gridSize = this.map.size ? this.map.size + 1 : 121
     let terrain
@@ -545,6 +583,14 @@ export class MapGeneration {
       terrain = this.map.generateTerrain(gridSize, this.map.mapType || 'plain', this.map.seed)
     }
     this.map.context.performance?.record('terrainData', performance.now() - terrainStartedAt)
+    return terrain
+  }
+
+  async generateCellsAsync({ onProgress = async () => {}, terrain: preparedTerrain = null } = {}) {
+    const z = 0
+    this.map.grid = []
+    this.map.invalidateReliefCoastDistances()
+    const terrain = preparedTerrain || (await this.generateTerrainDataAsync())
     this.map.size = terrain.length - 1
 
     const terrainMap = {
@@ -558,12 +604,12 @@ export class MapGeneration {
       const row = []
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
-        const cell = new Cell({ i, j, z, type: terrainMap[terrain[i][j]] }, this.map.context)
-        this.map.addChild(cell)
+        const cell = new GenerationCell({ i, j, z, type: terrainMap[terrain[i][j]] }, this.map.context)
         row[j] = cell
       }
       if (i % 8 === 0) {
         await onProgress('generatingTerrain', 0.03 + (i / this.map.size) * 0.14)
+        await this.yieldToBrowser()
       }
     }
     this.map.context.performance?.record('cellCreation', performance.now() - startedAt)

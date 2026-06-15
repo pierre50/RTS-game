@@ -160,6 +160,9 @@ export default class Menu {
   getUnitButton(type) {
     return this.bottombarManager.getUnitButton(type)
   }
+  getRallyPointButton() {
+    return this.bottombarManager.getRallyPointButton()
+  }
   getBuildingButton(type) {
     return this.bottombarManager.getBuildingButton(type)
   }

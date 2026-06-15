@@ -245,6 +245,10 @@ export class BuildingLifecycle {
     const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid, building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
+    building.clearRallyPoint()
+    if (building.context.controls.rallyPointController?.building === building) {
+      building.context.controls.rallyPointController.cancel()
+    }
     building.isDead = true
     building.hasActiveBurningSound = false
     if (building.increasePopulation && building.populationCapacityApplied) {
@@ -318,6 +322,7 @@ export class BuildingLifecycle {
     const building = this.building
     if (building.isDestroyed) return
     clearTimeout(building.visibilityTimeout)
+    building.clearRallyPoint()
     const {
       context: { map },
     } = building

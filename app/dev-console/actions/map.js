@@ -23,6 +23,9 @@ export function toggleFog(context, value) {
   const showFog = normalizeToggle(value, currently)
   map.revealEverything = !showFog
   if (map.fogLayer) map.fogLayer.visible = showFog
+  map.mapFog?.viewportRenderer.invalidate()
+
+  map.terrainChunkManager?.invalidateAll()
 
   if (!showFog) {
     menu.revealTerrainMinimap()
@@ -63,6 +66,8 @@ export function toggleTerrainReveal(context, value) {
   const { map, menu } = context
   const revealTerrain = normalizeToggle(value, Boolean(map.revealTerrain))
   map.revealTerrain = revealTerrain
+  map.mapFog?.viewportRenderer.invalidate()
+  map.mapFog?.viewportRenderer.update(context.controls?.cameraController?.getViewportRect())
   if (revealTerrain) {
     menu.revealTerrainMinimap()
   } else {
