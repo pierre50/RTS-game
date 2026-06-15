@@ -147,9 +147,6 @@ export class Cell extends Container {
   setWater() {
     return this.cellTerrain.setWater()
   }
-  fillWaterCellsAroundCell() {
-    return this.cellTerrain.fillWaterCellsAroundCell()
-  }
   fillReliefCellsAroundCell() {
     return this.cellTerrain.fillReliefCellsAroundCell()
   }

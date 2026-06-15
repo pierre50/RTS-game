@@ -203,31 +203,6 @@ export class CellTerrain {
     cell.parent?.invalidateReliefCoastDistances?.()
   }
 
-  fillWaterCellsAroundCell() {
-    const { cell } = this
-    const grid = cell.parent.grid
-    if (cell.type === 'Water' && !cell.sprite.texture.label.includes('15002')) {
-      this.setWater()
-    }
-    getCellsAroundPoint(cell.i, cell.j, grid, 2, neighbor => {
-      if (neighbor.type === 'Water' && cell.type === 'Water') {
-        const dist = instancesDistance(cell, neighbor)
-        const velX = Math.round((cell.i - neighbor.i) / dist)
-        const velY = Math.round((cell.j - neighbor.j) / dist)
-        if (grid[neighbor.i + velX] && grid[neighbor.i + velX][neighbor.j + velY]) {
-          const target = grid[neighbor.i + velX][neighbor.j + velY]
-          const aside = grid[cell.i + neighbor.i - target.i][cell.j + neighbor.j - target.j]
-          if (target.type !== cell.type && aside.type !== cell.type) {
-            if (Math.floor(dist) === 2) {
-              neighbor.setWater()
-              target.setWater()
-            }
-          }
-        }
-      }
-    })
-  }
-
   fillReliefCellsAroundCell() {
     const { cell } = this
     const grid = cell.parent.grid

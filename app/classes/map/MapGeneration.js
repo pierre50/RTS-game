@@ -934,34 +934,33 @@ export class MapGeneration {
     return anchors
   }
 
+  _hasSolidNeighbor(i, j) {
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (Math.abs(di) + Math.abs(dj) <= 1 && this.map.grid[i + di]?.[j + dj]?.solid) return true
+      }
+    }
+    return false
+  }
+
+  _hasWaterNeighbor(i, j) {
+    for (let di = -2; di <= 2; di++) {
+      const maxDj = 2 - Math.abs(di)
+      for (let dj = -maxDj; dj <= maxDj; dj++) {
+        const neighbor = this.map.grid[i + di]?.[j + dj]
+        if (neighbor?.category === 'Water' || neighbor?.waterBorder) return true
+      }
+    }
+    return false
+  }
+
   generateSets() {
-    const hasSolidNeighbor = (i, j) => {
-      for (let di = -1; di <= 1; di++) {
-        for (let dj = -1; dj <= 1; dj++) {
-          if (Math.abs(di) + Math.abs(dj) > 1) continue
-          if (this.map.grid[i + di]?.[j + dj]?.solid) return true
-        }
-      }
-      return false
-    }
-
-    const hasWaterNeighbor = (i, j) => {
-      for (let di = -2; di <= 2; di++) {
-        const maxDj = 2 - Math.abs(di)
-        for (let dj = -maxDj; dj <= maxDj; dj++) {
-          const neighbor = this.map.grid[i + di]?.[j + dj]
-          if (neighbor?.category === 'Water' || neighbor?.waterBorder) return true
-        }
-      }
-      return false
-    }
-
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (hasSolidNeighbor(i, j)) continue
+        if (this._hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          const hasWaterNeighbour = hasWaterNeighbor(i, j)
+          const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
@@ -1057,30 +1056,11 @@ export class MapGeneration {
   }
 
   async generateSetsAsync() {
-    const hasSolidNeighbor = (i, j) => {
-      for (let di = -1; di <= 1; di++) {
-        for (let dj = -1; dj <= 1; dj++) {
-          if (Math.abs(di) + Math.abs(dj) <= 1 && this.map.grid[i + di]?.[j + dj]?.solid) return true
-        }
-      }
-      return false
-    }
-    const hasWaterNeighbor = (i, j) => {
-      for (let di = -2; di <= 2; di++) {
-        const maxDj = 2 - Math.abs(di)
-        for (let dj = -maxDj; dj <= maxDj; dj++) {
-          const neighbor = this.map.grid[i + di]?.[j + dj]
-          if (neighbor?.category === 'Water' || neighbor?.waterBorder) return true
-        }
-      }
-      return false
-    }
-
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
-        const hasWaterNeighbour = hasWaterNeighbor(i, j)
+        if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
+        const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
         if (
           cell.category !== 'Water' &&
           !hasWaterNeighbour &&

@@ -5,7 +5,11 @@ import { getFogPatternTexture } from '../cell/CellFog'
 
 const VIEWPORT_MARGIN = CELL_WIDTH * 2
 const CELL_MARGIN = 3
-const DIAMOND_OVERLAP = 1
+const REVEAL_RX = CELL_WIDTH / 2
+const REVEAL_RY = CELL_HEIGHT / 2
+const FOG_BAND = 20
+const CORNER_RADIUS = 10
+const OVERLAP = 4
 
 export class ViewportFogRenderer {
   constructor(map) {
@@ -124,8 +128,8 @@ export class ViewportFogRenderer {
         const [worldX, worldY] = cartesianToIsometric(i, j)
         const x = worldX - left
         const y = worldY - top
-        if (explored || visible) this._drawDiamond(exploredErase, x, y)
-        if (visible) this._drawDiamond(visibleErase, x, y)
+        this._drawShape(exploredErase, x, y, REVEAL_RX + FOG_BAND + OVERLAP, REVEAL_RY + FOG_BAND / 2 + OVERLAP / 2)
+        if (visible) this._drawShape(visibleErase, x, y, REVEAL_RX + OVERLAP, REVEAL_RY + OVERLAP / 2)
       }
     }
 
@@ -133,10 +137,23 @@ export class ViewportFogRenderer {
     visibleErase.fill({ color: 0xffffff })
   }
 
-  _drawDiamond(graphics, x, y) {
-    const halfWidth = CELL_WIDTH / 2 + DIAMOND_OVERLAP
-    const halfHeight = CELL_HEIGHT / 2 + DIAMOND_OVERLAP
-    graphics.poly([x, y - halfHeight, x + halfWidth, y, x, y + halfHeight, x - halfWidth, y])
+  _drawShape(graphics, x, y, rx, ry) {
+    const L = Math.sqrt(rx * rx + ry * ry)
+    const t = Math.min(CORNER_RADIUS / L, 0.45)
+    const vx = [x, x + rx, x, x - rx]
+    const vy = [y - ry, y, y + ry, y]
+    for (let i = 0; i < 4; i++) {
+      const p = (i + 3) % 4
+      const n = (i + 1) % 4
+      const ax = vx[p] + (vx[i] - vx[p]) * (1 - t)
+      const ay = vy[p] + (vy[i] - vy[p]) * (1 - t)
+      const bx = vx[i] + (vx[n] - vx[i]) * t
+      const by = vy[i] + (vy[n] - vy[i]) * t
+      if (i === 0) graphics.moveTo(ax, ay)
+      else graphics.lineTo(ax, ay)
+      graphics.quadraticCurveTo(vx[i], vy[i], bx, by)
+    }
+    graphics.closePath()
   }
 
   _erase(renderer, graphics, target) {

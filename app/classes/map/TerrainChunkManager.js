@@ -107,16 +107,10 @@ export class TerrainChunkManager {
     const chunk = this.chunks.get(key)
     if (!chunk?.mounted) return
     const cellKey = `${cell.i}:${cell.j}`
-    const existing = chunk.visualCells.get(cellKey)
-    if (this._shouldRenderTerrain(cell)) {
-      if (!existing) {
-        const visualCell = this._createTerrainCell(cell)
-        chunk.visualCells.set(cellKey, visualCell)
-        this.terrainLayer.addChild(visualCell)
-      }
-    } else if (existing) {
-      existing.destroy({ children: true, texture: false, textureSource: false })
-      chunk.visualCells.delete(cellKey)
+    if (!chunk.visualCells.get(cellKey)) {
+      const visualCell = this._createTerrainCell(cell)
+      chunk.visualCells.set(cellKey, visualCell)
+      this.terrainLayer.addChild(visualCell)
     }
   }
 
@@ -136,17 +130,11 @@ export class TerrainChunkManager {
     for (let i = chunk.startI; i <= chunk.endI; i++) {
       for (let j = chunk.startJ; j <= chunk.endJ; j++) {
         const source = this.map.grid[i][j]
-        if (this._shouldRenderTerrain(source)) {
-          const visualCell = this._createTerrainCell(source)
-          chunk.visualCells.set(`${i}:${j}`, visualCell)
-          this.terrainLayer.addChild(visualCell)
-        }
+        const visualCell = this._createTerrainCell(source)
+        chunk.visualCells.set(`${i}:${j}`, visualCell)
+        this.terrainLayer.addChild(visualCell)
       }
     }
-  }
-
-  _shouldRenderTerrain() {
-    return true
   }
 
   _createTerrainCell(source) {
