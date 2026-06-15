@@ -28,7 +28,6 @@ export function getFogPatternTexture() {
   return _fogPatternTexture
 }
 
-
 export class CellFog {
   constructor(cell) {
     this.cell = cell

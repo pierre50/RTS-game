@@ -190,9 +190,7 @@ export class TerrainChunkManager {
     const mounted = [...this.chunks.values()].filter(chunk => chunk.mounted)
     if (mounted.length <= TERRAIN_CHUNK_CACHE_LIMIT) return
 
-    const removable = mounted
-      .filter(chunk => !visibleKeys.has(chunk.key))
-      .sort((a, b) => a.lastUsed - b.lastUsed)
+    const removable = mounted.filter(chunk => !visibleKeys.has(chunk.key)).sort((a, b) => a.lastUsed - b.lastUsed)
     while (mounted.length > TERRAIN_CHUNK_CACHE_LIMIT && removable.length) {
       const chunk = removable.shift()
       this._unmountChunk(chunk)

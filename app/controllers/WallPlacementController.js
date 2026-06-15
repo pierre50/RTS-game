@@ -78,7 +78,10 @@ export class WallPlacementController {
 
       if (getWallLevel(draft.owner) === 1 && wallFrame === 2) {
         const spritesheet = Assets.cache.get('598')
-        const frames = Array.from({ length: 6 }, (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_598.png`])
+        const frames = Array.from(
+          { length: 6 },
+          (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_598.png`]
+        )
         const flagSprite = new AnimatedSprite(frames)
         flagSprite.anchor.copyFrom(frames[0].defaultAnchor)
         flagSprite.x = position.x - 6

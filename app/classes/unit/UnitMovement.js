@@ -198,9 +198,7 @@ export class UnitMovement {
     const unit = this.unit
     unit.stopInterval()
     const queuedBuildInterrupted =
-      unit.work === WORK_TYPES.builder &&
-      unit.action === ACTION_TYPES.build &&
-      unit.buildQueue?.length
+      unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && unit.buildQueue?.length
     if (queuedBuildInterrupted) {
       if (unit.dest && unit.getActionCondition(unit.dest, ACTION_TYPES.build)) {
         unit.buildQueue.push(unit.buildQueue.shift())
@@ -223,9 +221,7 @@ export class UnitMovement {
         return
       }
 
-      const targets = findInstancesInSight(unit, instance =>
-        unit.getActionCondition(instance, ACTION_TYPES.build)
-      )
+      const targets = findInstancesInSight(unit, instance => unit.getActionCondition(instance, ACTION_TYPES.build))
       if (targets.length) {
         const target = getClosestInstanceWithPath(unit, targets)
         if (target) {

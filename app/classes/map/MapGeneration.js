@@ -1,7 +1,13 @@
 import { Assets, Sprite } from 'pixi.js'
 import { Resource } from '../resource'
 import { Human, AI, Gaia } from '../players'
-import { colors, getCellsAroundPoint, getZoneInGridWithCondition, updateInstanceVisibility, rehydrateAIKnowledge } from '../../lib'
+import {
+  colors,
+  getCellsAroundPoint,
+  getZoneInGridWithCondition,
+  updateInstanceVisibility,
+  rehydrateAIKnowledge,
+} from '../../lib'
 import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 export class MapGeneration {

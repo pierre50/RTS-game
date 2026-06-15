@@ -35,7 +35,8 @@ export class PerformanceMonitor {
 
   snapshot() {
     const sortedFrames = [...this.frameTimes].sort((a, b) => a - b)
-    const percentile = ratio => sortedFrames[Math.min(sortedFrames.length - 1, Math.floor(sortedFrames.length * ratio))] || 0
+    const percentile = ratio =>
+      sortedFrames[Math.min(sortedFrames.length - 1, Math.floor(sortedFrames.length * ratio))] || 0
     const metrics = {}
     for (const [name, metric] of this.metrics) {
       metrics[name] = {

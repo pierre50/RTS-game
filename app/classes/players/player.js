@@ -283,11 +283,7 @@ export class Player {
       context: { menu, map },
     } = this
     const config = this.config.buildings[type]
-    if (
-      canAfford(this, config.cost) &&
-      this.isBuildingEligible(type) &&
-      canPlaceBuildingAt(map.grid, i, j, config)
-    ) {
+    if (canAfford(this, config.cost) && this.isBuildingEligible(type) && canPlaceBuildingAt(map.grid, i, j, config)) {
       this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })
       payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()

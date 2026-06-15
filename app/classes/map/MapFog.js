@@ -1,13 +1,4 @@
-import {
-  Container,
-  Sprite,
-  RenderTexture,
-  Matrix,
-  Assets,
-  Particle,
-  ParticleContainer,
-  Rectangle,
-} from 'pixi.js'
+import { Container, Sprite, RenderTexture, Matrix, Assets, Particle, ParticleContainer, Rectangle } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { _DW, _DH } from '../cell/CellFog'
 import { RuntimeCell } from '../cell/RuntimeCell'
@@ -140,7 +131,8 @@ export class MapFog {
       for (const instance of instances) {
         if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
         if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest)
-        if (instance.previousDest?.family === FAMILY_TYPES.cell) instance.previousDest = replaceCell(instance.previousDest)
+        if (instance.previousDest?.family === FAMILY_TYPES.cell)
+          instance.previousDest = replaceCell(instance.previousDest)
         if (instance.path?.length) instance.path = instance.path.map(replaceCell)
       }
       this.map.context.controls?.cameraController?.visibleCells?.clear()

@@ -56,8 +56,10 @@ export class ViewportFogRenderer {
     const height = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
 
     const viewportCovered =
-      this.darknessTexture && this.fogTexture &&
-      left >= this.left && top >= this.top &&
+      this.darknessTexture &&
+      this.fogTexture &&
+      left >= this.left &&
+      top >= this.top &&
       left + width <= this.left + this.width &&
       top + height <= this.top + this.height
 

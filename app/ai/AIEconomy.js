@@ -405,17 +405,13 @@ export class AIEconomy {
       meatDrops: this.getFoodDropSites('meat'),
       plantDrops: this.getFoodDropSites('berry'),
     }
-    const sourceTargets = this.getFoodWorkerTargets(
-      maxVillagersOnFood,
-      sources,
-      {
-        berry: villagersForaging.length,
-        carcass: carcassHunters.length,
-        farm: villagersFarming.length,
-        fish: villagersFishing.length,
-        hunt: liveHunters.length,
-      }
-    )
+    const sourceTargets = this.getFoodWorkerTargets(maxVillagersOnFood, sources, {
+      berry: villagersForaging.length,
+      carcass: carcassHunters.length,
+      farm: villagersFarming.length,
+      fish: villagersFishing.length,
+      hunt: liveHunters.length,
+    })
 
     this.releaseExcessFoodWorkers(villagersForaging, sourceTargets.berry, availableVillagers)
     this.releaseExcessFoodWorkers(carcassHunters, sourceTargets.carcass, availableVillagers)
@@ -468,9 +464,7 @@ export class AIEconomy {
         const worker = availableVillagers[0]
         if (!worker) return 0
         return (
-          Math.abs(worker.i - a.i) +
-          Math.abs(worker.j - a.j) -
-          (Math.abs(worker.i - b.i) + Math.abs(worker.j - b.j))
+          Math.abs(worker.i - a.i) + Math.abs(worker.j - a.j) - (Math.abs(worker.i - b.i) + Math.abs(worker.j - b.j))
         )
       })
     const farmsToAssign = Math.min(
