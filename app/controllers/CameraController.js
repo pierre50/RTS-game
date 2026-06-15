@@ -1,4 +1,4 @@
-import { isometricToCartesian, pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
+import { pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/settings'
 
@@ -222,15 +222,15 @@ export class CameraController {
     }
     const margin = CELL_WIDTH
 
-    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + visibleWidth + margin; i += CELL_WIDTH / 2) {
-      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + visibleHeight + margin; j += CELL_HEIGHT / 2) {
-        const [cartesianX, cartesianY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartesianX, 0), map.size)
-        const y = Math.min(Math.max(cartesianY, 0), map.size)
-
-        if (map.grid[x] && map.grid[x][y]) {
-          callback(map.grid[x][y])
-        }
+    const stepX = CELL_WIDTH / 2
+    const stepY = CELL_HEIGHT / 2
+    const invCW = 1 / CELL_WIDTH
+    const invCH = 1 / CELL_HEIGHT
+    for (let i = cameraFloor.x - margin; i <= cameraFloor.x + visibleWidth + margin; i += stepX) {
+      for (let j = cameraFloor.y - margin; j <= cameraFloor.y + visibleHeight + margin; j += stepY) {
+        const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
+        const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
+        if (map.grid[x]?.[y]) callback(map.grid[x][y])
       }
     }
   }
@@ -251,16 +251,16 @@ export class CameraController {
     const startY = Math.floor(visibleTop - margin)
     const endY = Math.floor(visibleTop + visibleHeight + margin)
 
-    for (let i = startX; i <= endX; i += CELL_WIDTH / 2) {
-      for (let j = startY; j <= endY; j += CELL_HEIGHT / 2) {
-        const [cartX, cartY] = isometricToCartesian(i, j)
-        const x = Math.min(Math.max(cartX, 0), map.size)
-        const y = Math.min(Math.max(cartY, 0), map.size)
-
+    const stepX = CELL_WIDTH / 2
+    const stepY = CELL_HEIGHT / 2
+    const invCW = 1 / CELL_WIDTH
+    const invCH = 1 / CELL_HEIGHT
+    for (let i = startX; i <= endX; i += stepX) {
+      for (let j = startY; j <= endY; j += stepY) {
+        const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
+        const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
         const cell = map.grid[x]?.[y]
-        if (cell) {
-          newVisible.add(cell)
-        }
+        if (cell) newVisible.add(cell)
       }
     }
 

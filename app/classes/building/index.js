@@ -329,7 +329,7 @@ export class Building extends Instance {
     flag.anchor.set(flag.texture.defaultAnchor.x, flag.texture.defaultAnchor.y)
     flag.x = cell.x
     flag.y = cell.y
-    flag.zIndex = cell.z
+    flag.zIndex = getInstanceZIndex({ x: cell.x, y: cell.y, z: cell.z })
     flag.visible = this.selected
     flag.eventMode = 'none'
     flag.roundPixels = true

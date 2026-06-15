@@ -165,6 +165,7 @@ export class Animal extends Instance {
     this.addChild(this.sprite)
 
     setTimeout(() => {
+      if (this.isDestroyed) return
       updateInstanceVisibility(this)
       this.animalBehavior.start()
     })

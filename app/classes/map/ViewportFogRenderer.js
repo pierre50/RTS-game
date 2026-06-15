@@ -71,29 +71,17 @@ export class ViewportFogRenderer {
     this.darknessSprite.position.set(left, top)
     this.fogSprite.position.set(left, top)
 
-    const darkness = new Graphics()
-    darkness.rect(0, 0, width, height).fill({ color: 0x000000 })
-    renderer.render({ container: darkness, target: this.darknessTexture, clear: true })
-    darkness.destroy()
+    renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
 
-    const pattern = new TilingSprite({
-      texture: getFogPatternTexture(),
-      width,
-      height,
-    })
-    pattern.tilePosition.set(-left, -top)
-    pattern.eventMode = 'none'
-    renderer.render({ container: pattern, target: this.fogTexture, clear: true })
-    pattern.destroy()
+    this._fogPattern.tilePosition.set(-left, -top)
+    renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
 
-    const exploredErase = new Graphics()
-    const visibleErase = new Graphics()
-    this._drawViewportCells(exploredErase, visibleErase, views, left, top, width, height)
-    this._erase(renderer, exploredErase, this.darknessTexture)
-    this._erase(renderer, visibleErase, this.fogTexture)
+    this._exploredErase.clear()
+    this._visibleErase.clear()
+    this._drawViewportCells(this._exploredErase, this._visibleErase, views, left, top, width, height)
+    this._erase(renderer, this._exploredErase, this.darknessTexture, this._darknessEraseContainer)
+    this._erase(renderer, this._visibleErase, this.fogTexture, this._fogEraseContainer)
 
-    exploredErase.destroy()
-    visibleErase.destroy()
     this.dirty = false
   }
 
@@ -110,19 +98,30 @@ export class ViewportFogRenderer {
     this.darknessSprite.eventMode = 'none'
     this.fogSprite.eventMode = 'none'
     this.map.fogLayer.addChild(this.darknessSprite, this.fogSprite)
+
+    // Cache objects reused on every fog update to avoid GC pressure
+    this._darknessFill = new Graphics()
+    this._darknessFill.rect(0, 0, width, height).fill({ color: 0x000000 })
+    this._fogPattern = new TilingSprite({ texture: getFogPatternTexture(), width, height })
+    this._fogPattern.eventMode = 'none'
+    this._exploredErase = new Graphics()
+    this._visibleErase = new Graphics()
+    this._darknessEraseContainer = new Container()
+    this._fogEraseContainer = new Container()
+    this._eraseMatrix = new Matrix()
   }
 
   _drawViewportCells(exploredErase, visibleErase, views, left, top, width, height) {
-    const corners = [
+    const [c0, c1, c2, c3] = [
       isometricToCartesian(left, top),
       isometricToCartesian(left + width, top),
       isometricToCartesian(left, top + height),
       isometricToCartesian(left + width, top + height),
     ]
-    const minI = Math.max(0, Math.min(...corners.map(point => point[0])) - CELL_MARGIN)
-    const maxI = Math.min(this.map.size, Math.max(...corners.map(point => point[0])) + CELL_MARGIN)
-    const minJ = Math.max(0, Math.min(...corners.map(point => point[1])) - CELL_MARGIN)
-    const maxJ = Math.min(this.map.size, Math.max(...corners.map(point => point[1])) + CELL_MARGIN)
+    const minI = Math.max(0, Math.min(c0[0], c1[0], c2[0], c3[0]) - CELL_MARGIN)
+    const maxI = Math.min(this.map.size, Math.max(c0[0], c1[0], c2[0], c3[0]) + CELL_MARGIN)
+    const minJ = Math.max(0, Math.min(c0[1], c1[1], c2[1], c3[1]) - CELL_MARGIN)
+    const maxJ = Math.min(this.map.size, Math.max(c0[1], c1[1], c2[1], c3[1]) + CELL_MARGIN)
 
     for (let i = minI; i <= maxI; i++) {
       for (let j = minJ; j <= maxJ; j++) {
@@ -145,34 +144,32 @@ export class ViewportFogRenderer {
   _drawShape(graphics, x, y, rx, ry) {
     const L = Math.sqrt(rx * rx + ry * ry)
     const t = Math.min(CORNER_RADIUS / L, 0.45)
-    const vx = [x, x + rx, x, x - rx]
-    const vy = [y - ry, y, y + ry, y]
-    for (let i = 0; i < 4; i++) {
-      const p = (i + 3) % 4
-      const n = (i + 1) % 4
-      const ax = vx[p] + (vx[i] - vx[p]) * (1 - t)
-      const ay = vy[p] + (vy[i] - vy[p]) * (1 - t)
-      const bx = vx[i] + (vx[n] - vx[i]) * t
-      const by = vy[i] + (vy[n] - vy[i]) * t
-      if (i === 0) graphics.moveTo(ax, ay)
-      else graphics.lineTo(ax, ay)
-      graphics.quadraticCurveTo(vx[i], vy[i], bx, by)
-    }
+    const t1 = 1 - t
+    // Diamond vertices: top, right, bottom, left
+    const v0x = x,       v0y = y - ry
+    const v1x = x + rx,  v1y = y
+    const v2x = x,       v2y = y + ry
+    const v3x = x - rx,  v3y = y
+    // i=0 (top): prev=3, next=1
+    graphics.moveTo(v3x + (v0x - v3x) * t1, v3y + (v0y - v3y) * t1)
+    graphics.quadraticCurveTo(v0x, v0y, v0x + (v1x - v0x) * t, v0y + (v1y - v0y) * t)
+    // i=1 (right): prev=0, next=2
+    graphics.lineTo(v0x + (v1x - v0x) * t1, v0y + (v1y - v0y) * t1)
+    graphics.quadraticCurveTo(v1x, v1y, v1x + (v2x - v1x) * t, v1y + (v2y - v1y) * t)
+    // i=2 (bottom): prev=1, next=3
+    graphics.lineTo(v1x + (v2x - v1x) * t1, v1y + (v2y - v1y) * t1)
+    graphics.quadraticCurveTo(v2x, v2y, v2x + (v3x - v2x) * t, v2y + (v3y - v2y) * t)
+    // i=3 (left): prev=2, next=0
+    graphics.lineTo(v2x + (v3x - v2x) * t1, v2y + (v3y - v2y) * t1)
+    graphics.quadraticCurveTo(v3x, v3y, v3x + (v0x - v3x) * t, v3y + (v0y - v3y) * t)
     graphics.closePath()
   }
 
-  _erase(renderer, graphics, target) {
+  _erase(renderer, graphics, target, container) {
     graphics.blendMode = 'erase'
-    const eraseContainer = new Container()
-    eraseContainer.addChild(graphics)
-    renderer.render({
-      container: eraseContainer,
-      target,
-      transform: new Matrix(),
-      clear: false,
-    })
-    eraseContainer.removeChild(graphics)
-    eraseContainer.destroy()
+    container.addChild(graphics)
+    renderer.render({ container, target, transform: this._eraseMatrix, clear: false })
+    container.removeChild(graphics)
   }
 
   _destroyTargets() {
@@ -180,10 +177,23 @@ export class ViewportFogRenderer {
     this.fogSprite?.destroy({ texture: false, textureSource: false })
     this.darknessTexture?.destroy(true)
     this.fogTexture?.destroy(true)
+    this._darknessFill?.destroy()
+    this._fogPattern?.destroy()
+    this._exploredErase?.destroy()
+    this._visibleErase?.destroy()
+    this._darknessEraseContainer?.destroy()
+    this._fogEraseContainer?.destroy()
     this.darknessSprite = null
     this.fogSprite = null
     this.darknessTexture = null
     this.fogTexture = null
+    this._darknessFill = null
+    this._fogPattern = null
+    this._exploredErase = null
+    this._visibleErase = null
+    this._darknessEraseContainer = null
+    this._fogEraseContainer = null
+    this._eraseMatrix = null
   }
 
   destroy() {

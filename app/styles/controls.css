@@ -49,7 +49,18 @@ button,
   cursor: pointer;
 }
 
-.ui-range::-webkit-slider-thumb,
+.ui-range::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--ui-range-thumb-size);
+  height: var(--ui-range-thumb-size);
+  background-color: var(--form-surface-color);
+  background-image: var(--ui-control-sheen);
+  border: var(--border-btn);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--ui-button-shadow-raised);
+  cursor: pointer;
+}
+
 .ui-range::-moz-range-thumb {
   appearance: none;
   width: var(--ui-range-thumb-size);

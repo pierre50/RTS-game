@@ -75,22 +75,21 @@ export class TerrainChunkManager {
   update(viewport) {
     if (!viewport) return
     this.clock++
-    const visible = []
+    let visibleCount = 0
 
     for (const chunk of this.chunks.values()) {
-      if (!rectangleIntersectsViewport(chunk.bounds, viewport, VIEWPORT_MARGIN)) continue
+      if (!rectangleIntersectsViewport(chunk.bounds, viewport, VIEWPORT_MARGIN)) {
+        if (chunk.mounted) this._setChunkRenderable(chunk, false)
+        continue
+      }
       chunk.lastUsed = this.clock
-      visible.push(chunk)
+      visibleCount++
       if (!chunk.mounted) this._mountChunk(chunk)
       this._setChunkRenderable(chunk, true)
     }
 
-    const visibleKeys = new Set(visible.map(chunk => chunk.key))
-    for (const chunk of this.chunks.values()) {
-      if (chunk.mounted && !visibleKeys.has(chunk.key)) this._setChunkRenderable(chunk, false)
-    }
-    this._trimCache(visibleKeys)
-    this.map.visibleRenderChunkCount = visible.length
+    this._trimCache()
+    this.map.visibleRenderChunkCount = visibleCount
   }
 
   invalidateCell(cell) {
@@ -183,18 +182,26 @@ export class TerrainChunkManager {
   }
 
   _setChunkRenderable(chunk, renderable) {
+    const first = chunk.visualCells.values().next().value
+    if (!first || first.renderable === renderable) return
     for (const visualCell of chunk.visualCells.values()) visualCell.renderable = renderable
   }
 
-  _trimCache(visibleKeys) {
-    const mounted = [...this.chunks.values()].filter(chunk => chunk.mounted)
-    if (mounted.length <= TERRAIN_CHUNK_CACHE_LIMIT) return
+  _trimCache() {
+    let mountedCount = 0
+    for (const chunk of this.chunks.values()) {
+      if (chunk.mounted) mountedCount++
+    }
+    if (mountedCount <= TERRAIN_CHUNK_CACHE_LIMIT) return
 
-    const removable = mounted.filter(chunk => !visibleKeys.has(chunk.key)).sort((a, b) => a.lastUsed - b.lastUsed)
-    while (mounted.length > TERRAIN_CHUNK_CACHE_LIMIT && removable.length) {
-      const chunk = removable.shift()
-      this._unmountChunk(chunk)
-      mounted.pop()
+    const removable = []
+    for (const chunk of this.chunks.values()) {
+      if (chunk.mounted && chunk.lastUsed < this.clock) removable.push(chunk)
+    }
+    removable.sort((a, b) => a.lastUsed - b.lastUsed)
+    while (mountedCount > TERRAIN_CHUNK_CACHE_LIMIT && removable.length) {
+      this._unmountChunk(removable.shift())
+      mountedCount--
     }
   }
 
