@@ -14,6 +14,8 @@ export const SPEED_PRESETS = [
   { key: 'speedFast', value: 2 },
 ]
 export const CAMERA_ZOOM_PRESETS = [
+  { key: 'zoomVeryClose', value: 1.3 },
+  { key: 'zoomClose', value: 1.15 },
   { key: 'zoomStandard', value: 1 },
   { key: 'zoomFar', value: 0.85 },
   { key: 'zoomVeryFar', value: 0.7 },

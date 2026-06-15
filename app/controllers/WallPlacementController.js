@@ -1,7 +1,8 @@
-import { Sprite } from 'pixi.js'
+import { Assets, Sprite, AnimatedSprite } from 'pixi.js'
 import { COLOR_FLASHY_GREEN } from '../constants'
 import { findWallPath, getWallFrame } from '../lib/grid/wallPath'
-import { getWallTexture, isWall } from '../lib/buildings/walls'
+import { getWallLevel, getWallTexture, isWall } from '../lib/buildings/walls'
+import { bindAnimatedSpriteToTicker, changeSpriteColor } from '../lib'
 
 export class WallPlacementController {
   constructor({ context, parent, getPreviewPosition, canUseCell, onCommit, onChange = null }) {
@@ -62,7 +63,8 @@ export class WallPlacementController {
       const hasNorthSouth = [previous, next].some(neighbour => neighbour && neighbour.i !== cell.i)
       const hasEastWest = [previous, next].some(neighbour => neighbour && neighbour.j !== cell.j)
       const isEndpoint = index === 0 || index === draft.path.length - 1
-      const sprite = Sprite.from(getWallTexture(draft.owner, getWallFrame(hasNorthSouth, hasEastWest, isEndpoint)))
+      const wallFrame = getWallFrame(hasNorthSouth, hasEastWest, isEndpoint)
+      const sprite = Sprite.from(getWallTexture(draft.owner, wallFrame))
       const position = this.getPreviewPosition(cell)
       sprite.x = position.x
       sprite.y = position.y
@@ -73,6 +75,25 @@ export class WallPlacementController {
       sprite.roundPixels = true
       this.parent.addChild(sprite)
       draft.preview.push(sprite)
+
+      if (getWallLevel(draft.owner) === 1 && wallFrame === 2) {
+        const spritesheet = Assets.cache.get('598')
+        const frames = Array.from({ length: 6 }, (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_598.png`])
+        const flagSprite = new AnimatedSprite(frames)
+        flagSprite.anchor.copyFrom(frames[0].defaultAnchor)
+        flagSprite.x = position.x - 6
+        flagSprite.y = position.y - 20
+        flagSprite.zIndex = cell.i + cell.j + 0.5
+        flagSprite.alpha = 0.55
+        flagSprite.animationSpeed = 0.15
+        flagSprite.eventMode = 'none'
+        flagSprite.roundPixels = true
+        changeSpriteColor(flagSprite, draft.owner.color)
+        bindAnimatedSpriteToTicker(flagSprite, this.context.app)
+        flagSprite.play()
+        this.parent.addChild(flagSprite)
+        draft.preview.push(flagSprite)
+      }
     })
   }
 

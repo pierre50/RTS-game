@@ -15,7 +15,6 @@ export class ViewportFogRenderer {
   constructor(map) {
     this.map = map
     this.dirty = true
-    this.viewportKey = ''
     this.width = 0
     this.height = 0
     this.left = 0
@@ -55,14 +54,18 @@ export class ViewportFogRenderer {
     const top = Math.floor(viewport.visibleTop - VIEWPORT_MARGIN)
     const width = Math.max(1, Math.ceil(viewport.visibleWidth + VIEWPORT_MARGIN * 2))
     const height = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
-    const viewportKey = `${left}:${top}:${width}:${height}`
 
-    if (!force && !this.dirty && viewportKey === this.viewportKey) return
+    const viewportCovered =
+      this.darknessTexture && this.fogTexture &&
+      left >= this.left && top >= this.top &&
+      left + width <= this.left + this.width &&
+      top + height <= this.top + this.height
+
+    if (!force && !this.dirty && viewportCovered) return
 
     this._ensureTargets(width, height)
     this.left = left
     this.top = top
-    this.viewportKey = viewportKey
     this.darknessSprite.position.set(left, top)
     this.fogSprite.position.set(left, top)
 
@@ -185,7 +188,6 @@ export class ViewportFogRenderer {
     this._destroyTargets()
     this.map.fogLayer?.destroy({ children: true, texture: false, textureSource: false })
     this.map.fogLayer = null
-    this.viewportKey = ''
     this.width = 0
     this.height = 0
     this.dirty = true
