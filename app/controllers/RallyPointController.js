@@ -1,6 +1,6 @@
 import { AnimatedSprite, Assets } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_FLASHY_GREEN, COLOR_RED } from '../constants'
-import { bindAnimatedSpriteToTicker, getRallyPointFrames } from '../lib'
+import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames } from '../lib'
 
 export class RallyPointController {
   constructor(controls) {
@@ -39,7 +39,9 @@ export class RallyPointController {
   }
 
   canPlace(cell) {
-    if (!cell || !cell.visible || cell.solid || cell.inclined || cell.border) return false
+    if (!cell || !cell.visible) return false
+    if (cell.has && !cell.has.isDestroyed && cell.has !== this.building) return true
+    if (cell.solid || cell.inclined || cell.border) return false
     if (this.building?.type === BUILDING_TYPES.dock) {
       return cell.category === 'Water' && !cell.waterBorder
     }
@@ -60,6 +62,23 @@ export class RallyPointController {
   handleMouseUp(cell) {
     if (!this.active || !this.canPlace(cell)) return false
     this.building.setRallyPoint(cell, this.direction)
+    const entity = cell.has
+    if (entity && !entity.isDestroyed) {
+      drawInstanceBlinkingSelection(entity)
+    }
+    this.cancel()
+    return true
+  }
+
+  handleMouseUpOnEntity(entity) {
+    if (!this.active || !entity || entity.isDestroyed) return false
+    const {
+      context: { map },
+    } = this.controls
+    const cell = map.grid[entity.i]?.[entity.j]
+    if (!cell || !cell.visible) return false
+    this.building.setRallyPoint(cell, this.direction)
+    drawInstanceBlinkingSelection(entity)
     this.cancel()
     return true
   }

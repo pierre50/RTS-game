@@ -102,12 +102,12 @@ export class Animal extends Instance {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
-      if (
-        controls.rallyPointController?.active ||
-        controls.mouseBuilding ||
-        controls.mouseRectangle ||
-        !controls.isMouseInApp(evt)
-      ) {
+      if (controls.rallyPointController?.active) {
+        controls.mouse.prevent = true
+        controls.rallyPointController.handleMouseUpOnEntity(this)
+        return
+      }
+      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
       controls.mouse.prevent = true

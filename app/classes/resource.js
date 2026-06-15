@@ -110,12 +110,12 @@ export class Resource extends Instance {
         } = this
         if (editor?.handleEntityInteraction(this)) return
         const action = TYPE_ACTION[this.category || this.type]
-        if (
-          controls.rallyPointController?.active ||
-          controls.mouseBuilding ||
-          controls.mouseRectangle ||
-          !controls.isMouseInApp(evt)
-        ) {
+        if (controls.rallyPointController?.active) {
+          controls.mouse.prevent = true
+          controls.rallyPointController.handleMouseUpOnEntity(this)
+          return
+        }
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
         controls.mouse.prevent = true

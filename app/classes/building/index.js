@@ -93,7 +93,7 @@ export class Building extends Instance {
       },
       menu:
         this.owner.isPlayed || map.instantMode
-          ? [...units, ...(units.length ? [context.menu.getRallyPointButton()] : []), ...technologies]
+          ? [...units, ...technologies, ...(units.length ? [context.menu.getRallyPointButton()] : [])]
           : [],
     }
 
@@ -132,15 +132,16 @@ export class Building extends Instance {
         if (editor?.handleEntityInteraction(this)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
+          drawInstanceBlinkingSelection(this)
           controls.rallyPointController.cancel({ clear: true })
           return
         }
-        if (
-          controls.rallyPointController?.active ||
-          controls.mouseBuilding ||
-          controls.mouseRectangle ||
-          !controls.isMouseInApp(evt)
-        ) {
+        if (controls.rallyPointController?.active) {
+          controls.mouse.prevent = true
+          controls.rallyPointController.handleMouseUpOnEntity(this)
+          return
+        }
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
         let hasSentVillager = false

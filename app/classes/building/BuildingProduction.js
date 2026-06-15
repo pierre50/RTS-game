@@ -1,14 +1,37 @@
 import { Assets, Sprite } from 'pixi.js'
-import { LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
+  getActionCondition,
   getBuildingAsset,
   getFreeCellAroundPoint,
   getTexture,
   payCost,
   refundCost,
 } from '../../lib'
+
+function sendUnitToEntity(unit, target) {
+  if (target.family === FAMILY_TYPES.resource) {
+    const sendToFunc = `sendTo${target.category || target.type}`
+    if (typeof unit[sendToFunc] === 'function') return unit[sendToFunc](target)
+    return unit.sendTo(target)
+  }
+  if (target.family === FAMILY_TYPES.animal) {
+    if (getActionCondition(unit, target, ACTION_TYPES.hunt)) return unit.sendToHunt(target)
+    if (getActionCondition(unit, target, ACTION_TYPES.takemeat)) return unit.sendToTakeMeat(target)
+    return unit.sendTo(target)
+  }
+  if (target.family === FAMILY_TYPES.building) {
+    if (getActionCondition(unit, target, ACTION_TYPES.build)) return unit.sendToBuilding(target)
+    if (getActionCondition(unit, target, ACTION_TYPES.farm)) return unit.sendToFarm(target)
+    if (getActionCondition(unit, target, ACTION_TYPES.attack)) return unit.sendTo(target, ACTION_TYPES.attack)
+  }
+  if (target.family === FAMILY_TYPES.unit) {
+    if (getActionCondition(unit, target, ACTION_TYPES.attack)) return unit.sendTo(target, ACTION_TYPES.attack)
+  }
+  unit.sendTo(target)
+}
 import { t } from '../../lib/lang'
 
 export class BuildingProduction {
@@ -49,7 +72,10 @@ export class BuildingProduction {
     const unit = building.owner.createUnit({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
     const rallyPoint = building.rallyPoint
     const rallyCell = rallyPoint && map.grid[rallyPoint.i]?.[rallyPoint.j]
-    if (rallyCell) unit.sendTo(rallyCell)
+    if (rallyCell) {
+      const rallyTarget = rallyCell.has && !rallyCell.has.isDestroyed ? rallyCell.has : null
+      rallyTarget ? sendUnitToEntity(unit, rallyTarget) : unit.sendTo(rallyCell)
+    }
 
     if (
       building.owner.isPlayed &&
