@@ -15,6 +15,7 @@ import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import { getCameraZoom, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
+import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
 
 /**
  * Main Display Object
@@ -230,19 +231,20 @@ export default class Game extends Container {
   _mountRuntime() {
     this.addChild(this.context.map)
     this.addChild(this.context.controls)
-    this.context.ambientBirds = new AmbientBirds(this.context, () => this._getLocalViewportBounds())
-    this.addChild(this.context.ambientBirds)
+    this.context.ambientBirds = new AmbientBirds(this.context, () => this._getMapWorldBounds())
+    this.context.ambientBirds.zIndex = AMBIENT_BIRD_WORLD_ZINDEX
+    this.context.map.addChild(this.context.ambientBirds)
     this.applyZoom()
     this._attachWindowListeners()
   }
 
-  _getLocalViewportBounds() {
-    const zoom = this.scale.x || 1
+  _getMapWorldBounds() {
+    const { size } = this.context.map
     return {
-      x: -this.position.x / zoom,
-      y: -this.position.y / zoom,
-      width: this.context.app.screen.width / zoom,
-      height: this.context.app.screen.height / zoom,
+      x: -(size * CELL_WIDTH) / 2,
+      y: 0,
+      width: size * CELL_WIDTH,
+      height: size * CELL_HEIGHT,
     }
   }
 
@@ -256,7 +258,6 @@ export default class Game extends Container {
     }
     this.context.scheduler?.clear()
     this.context.performance?.reset()
-    this.context.ambientBirds?.destroy({ children: true })
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy()

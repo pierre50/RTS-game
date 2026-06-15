@@ -25,7 +25,7 @@ export function playAudibleSoundCue(instance, cue) {
 
 export function getSelectionSoundCue(instance) {
   if (!instance) return null
-  return instance.sounds?.command ?? instance.sounds?.select ?? instance.sounds?.hit ?? SOUND_CUES.ui.menuClick
+  return instance.sounds?.command ?? instance.sounds?.select ?? instance.sounds?.hit ?? null
 }
 
 export function playSelectionSound(instance) {

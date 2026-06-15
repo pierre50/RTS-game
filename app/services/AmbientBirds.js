@@ -88,6 +88,7 @@ export class AmbientBirds extends Container {
 
     const sprite = new AnimatedSprite(frames)
     sprite.autoUpdate = false
+    sprite.updateAnchor = true
     sprite.animationSpeed = AMBIENT_BIRD_ANIMATION_SPEED
     sprite.scale.x = mirrored ? -1 : 1
     sprite.play()
@@ -148,8 +149,8 @@ export class AmbientBirds extends Container {
       pass.path.start.y + (pass.path.end.y - pass.path.start.y) * progress
     )
     const animationDelta = elapsedMs > 0 ? elapsedMs / TARGET_FRAME_MS : deltaTime
-    pass.bird.update(animationDelta)
-    pass.shadow.update(animationDelta)
+    pass.bird.update({ deltaTime: animationDelta })
+    pass.shadow.update({ deltaTime: animationDelta })
 
     if (progress >= 1) this.finishPass()
   }

@@ -1,3 +1,5 @@
+export const AMBIENT_BIRD_WORLD_ZINDEX = 5e8
+
 export const AMBIENT_BIRD_ASSETS = [
   {
     spriteSheet: '404',
