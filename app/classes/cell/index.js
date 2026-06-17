@@ -132,6 +132,9 @@ export class Cell extends Container {
   setDesertBorder(direction) {
     return this.cellTerrain.setDesertBorder(direction)
   }
+  setDeepWaterBorder(direction) {
+    return this.cellTerrain.setDeepWaterBorder(direction)
+  }
   resetTerrainAppearance() {
     return this.cellTerrain.resetTerrainAppearance()
   }

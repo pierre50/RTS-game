@@ -1,4 +1,4 @@
-import { Assets, Sprite } from 'pixi.js'
+import { Assets } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getBuildingAsset, getTexture, changeSpriteColorDirectly } from '../index'
 
@@ -41,15 +41,8 @@ export function refreshTower(tower) {
 
   const color = tower.getChildByLabel(LABEL_TYPES.color)
   if (color) color.destroy()
-
-  if (assets.images.color) {
-    const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-    spriteColor.label = LABEL_TYPES.color
-    changeSpriteColorDirectly(spriteColor, tower.owner.color)
-    tower.addChild(spriteColor)
-  } else {
-    changeSpriteColorDirectly(tower.sprite, tower.owner.color)
-  }
+  delete tower.sprite._baseColorTextureKey
+  changeSpriteColorDirectly(tower.sprite, tower.owner.color)
 }
 
 export function refreshOwnerTowers(owner) {

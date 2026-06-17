@@ -28,6 +28,7 @@ export class GenerationCell {
     this._fogChunks = null
     this._terrainAppearance = {
       desertBorders: new Set(),
+      deepWaterBorders: new Set(),
       relief: null,
       waterBorder: null,
     }
@@ -83,8 +84,13 @@ export class GenerationCell {
     this.border = false
     this.waterBorder = false
     this._terrainAppearance.desertBorders.clear()
+    this._terrainAppearance.deepWaterBorders.clear()
     this._terrainAppearance.relief = null
     this._terrainAppearance.waterBorder = null
+  }
+
+  setDeepWaterBorder(direction) {
+    this._terrainAppearance.deepWaterBorders.add(direction)
   }
 
   setWater() {

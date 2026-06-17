@@ -32,6 +32,7 @@ function extractManifestPaths() {
     const ids = textureBundleMatch[2].matchAll(/'(\d+)'/g)
     for (const m of ids) {
       paths.add(`${basePath}/${m[1]}/texture.json`)
+      paths.add(`${basePath}/${m[1]}/texture.png`)
     }
   }
 
@@ -71,14 +72,26 @@ const diskFiles = walkDir(PUBLIC_ASSETS)
 const unused = diskFiles.filter(f => !manifestPaths.has(f))
 const missing = [...manifestPaths].filter(p => !diskFiles.includes(p))
 
-// Group unused by category
+// Group files by category, deduplicating to one entry per folder (sorted numerically)
 function groupBy(files) {
-  return files.reduce((acc, f) => {
+  const acc = {}
+  for (const f of files) {
     const parts = f.replace('assets/', '').split('/')
     const cat = parts[0]
-    ;(acc[cat] ??= []).push(f)
-    return acc
-  }, {})
+    // Use the folder path as the key to deduplicate texture.json + texture.png etc.
+    const folder = parts.length > 2 ? parts.slice(0, 2).join('/') : f.replace('assets/', '')
+    ;(acc[cat] ??= new Set()).add(folder)
+  }
+  // Convert sets to sorted arrays (numeric sort when all entries are numeric IDs)
+  return Object.fromEntries(
+    Object.entries(acc).map(([cat, set]) => {
+      const entries = [...set]
+      const allNumeric = entries.every(e => /^\d+$/.test(e.split('/').pop()))
+      if (allNumeric) entries.sort((a, b) => parseInt(a.split('/').pop()) - parseInt(b.split('/').pop()))
+      else entries.sort()
+      return [cat, entries]
+    })
+  )
 }
 
 // ── Report ────────────────────────────────────────────────────────────────────
@@ -99,15 +112,9 @@ if (unused.length > 0) {
   console.log(' UNUSED FILES (on disk but not in manifest)')
   console.log('───────────────────────────────────────────────')
   const grouped = groupBy(unused)
-  for (const [cat, files] of Object.entries(grouped)) {
-    console.log(`\n[${cat}] — ${files.length} file(s)`)
-    // For graphics, just show folder IDs (not every .png inside)
-    if (cat === 'graphics') {
-      const folderIds = [...new Set(files.map(f => f.split('/')[2]))]
-      console.log(`  Folder IDs: ${folderIds.join(', ')}`)
-    } else {
-      for (const f of files) console.log(`  ${f}`)
-    }
+  for (const [cat, entries] of Object.entries(grouped)) {
+    console.log(`\n[${cat}] — ${entries.length} folder(s)`)
+    for (const e of entries) console.log(`  ${e}`)
   }
 }
 
@@ -116,9 +123,9 @@ if (missing.length > 0) {
   console.log(' MISSING FILES (in manifest but not on disk)')
   console.log('───────────────────────────────────────────────')
   const grouped = groupBy(missing)
-  for (const [cat, files] of Object.entries(grouped)) {
-    console.log(`\n[${cat}] — ${files.length} file(s)`)
-    for (const f of files) console.log(`  ${f}`)
+  for (const [cat, entries] of Object.entries(grouped)) {
+    console.log(`\n[${cat}] — ${entries.length} folder(s)`)
+    for (const e of entries) console.log(`  ${e}`)
   }
 }
 

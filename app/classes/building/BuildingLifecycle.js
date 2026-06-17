@@ -1,4 +1,4 @@
-import { Assets, Sprite, AnimatedSprite, Container } from 'pixi.js'
+import { Assets, AnimatedSprite, Container } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
   ACTION_TYPES,
@@ -86,15 +86,8 @@ export class BuildingLifecycle {
 
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()
-
-    if (assets.images.color) {
-      const spriteColor = Sprite.from(getTexture(assets.images.color, Assets))
-      spriteColor.label = LABEL_TYPES.color
-      changeSpriteColorDirectly(spriteColor, building.owner.color)
-      building.addChild(spriteColor)
-    } else {
-      changeSpriteColorDirectly(building.sprite, building.owner.color)
-    }
+    delete building.sprite._baseColorTextureKey
+    changeSpriteColorDirectly(building.sprite, building.owner.color)
     if (isWall(building)) updateWallAndNeighbours(building)
 
     if (building.type === BUILDING_TYPES.house) {

@@ -60,8 +60,6 @@ export class EditorEntityPreview {
     this.container.y = cell.y - controls.camera.y
 
     const sprite = this.container.getChildByLabel(LABEL_TYPES.sprite)
-    const color = this.container.getChildByLabel(LABEL_TYPES.color)
-
     if (wallDraftActive) {
       this.container.visible = true
       if (sprite) sprite.visible = false
@@ -74,7 +72,6 @@ export class EditorEntityPreview {
     const canPlace = this._canPlace(cell)
     const tint = canPlace ? COLOR_FLASHY_GREEN : COLOR_RED
     if (sprite) sprite.tint = tint
-    if (color) color.tint = tint
   }
 
   _canPlace(cell) {
@@ -126,14 +123,7 @@ export class EditorEntityPreview {
     sprite.label = LABEL_TYPES.sprite
     container.addChild(sprite)
 
-    if (assets.images.color) {
-      const color = Sprite.from(getTexture(assets.images.color, Assets))
-      color.label = LABEL_TYPES.color
-      changeSpriteColor(color, owner.color)
-      container.addChild(color)
-    } else {
-      changeSpriteColor(sprite, owner.color)
-    }
+    changeSpriteColor(sprite, owner.color)
 
     return container
   }

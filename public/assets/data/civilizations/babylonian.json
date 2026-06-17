@@ -4,8 +4,7 @@
       "TownCenter": {
         "icon": "033_50706",
         "images": {
-          "final": "000_280",
-          "color": "000_230"
+          "final": "000_280"
         }
       },
       "Barracks": {
@@ -17,29 +16,25 @@
       "House": {
         "icon": "015_50706",
         "images": {
-          "final": "000_218",
-          "color": "000_233"
+          "final": "000_218"
         }
       },
       "Granary": {
         "icon": "011_50706",
         "images": {
-          "final": "000_164",
-          "color": "000_183"
+          "final": "000_164"
         }
       },
       "StoragePit": {
         "icon": "028_50706",
         "images": {
-          "final": "000_527",
-          "color": "000_235"
+          "final": "000_527"
         }
       },
       "Dock": {
         "icon": "006_50706",
         "images": {
-          "final": "000_355",
-          "color": "000_231"
+          "final": "000_355"
         }
       }
     },
@@ -47,8 +42,7 @@
       "TownCenter": {
         "icon": "035_50706",
         "images": {
-          "final": "001_280",
-          "color": "001_230"
+          "final": "001_280"
         }
       },
       "SmallWall": {
@@ -60,43 +54,37 @@
       "House": {
         "icon": "016_50706",
         "images": {
-          "final": "000_165",
-          "color": "000_184"
+          "final": "000_165"
         }
       },
       "Farm": {
         "icon": "010_50706",
         "images": {
-          "final": "000_447",
-          "color": "000_232"
+          "final": "000_447"
         }
       },
       "WatchTower": {
         "icon": "026_50706",
         "images": {
-          "final": "000_688",
-          "color": "000_237"
+          "final": "000_688"
         }
       },
       "Market": {
         "icon": "021_50706",
         "images": {
-          "final": "000_500",
-          "color": "000_234"
+          "final": "000_500"
         }
       },
       "Stable": {
         "icon": "024_50706",
         "images": {
-          "final": "000_172",
-          "color": "000_191"
+          "final": "000_172"
         }
       },
       "ArcheryRange": {
         "icon": "001_50706",
         "images": {
-          "final": "000_171",
-          "color": "000_190"
+          "final": "000_171"
         }
       }
     },
@@ -104,71 +92,61 @@
       "Barracks": {
         "icon": "004_50706",
         "images": {
-          "final": "000_161",
-          "color": "000_179"
+          "final": "000_161"
         }
       },
       "TownCenter": {
         "icon": "036_50706",
         "images": {
-          "final": "000_162",
-          "color": "000_180"
+          "final": "000_162"
         }
       },
       "House": {
         "icon": "017_50706",
         "images": {
-          "final": "001_165",
-          "color": "001_184"
+          "final": "001_165"
         }
       },
       "Market": {
         "icon": "022_50706",
         "images": {
-          "final": "000_168",
-          "color": "000_187"
+          "final": "000_168"
         }
       },
       "StoragePit": {
         "icon": "029_50706",
         "images": {
-          "final": "000_170",
-          "color": "000_189"
+          "final": "000_170"
         }
       },
       "GovernmentCenter": {
         "icon": "019_50706",
         "images": {
-          "final": "000_166",
-          "color": "000_185"
+          "final": "000_166"
         }
       },
       "Academy": {
         "icon": "000_50706",
         "images": {
-          "final": "000_160",
-          "color": "000_178"
+          "final": "000_160"
         }
       },
       "SiegeWorkshop": {
         "icon": "009_50706",
         "images": {
-          "final": "000_163",
-          "color": "000_182"
+          "final": "000_163"
         }
       },
       "Temple": {
         "icon": "031_50706",
         "images": {
-          "final": "000_173",
-          "color": "000_192"
+          "final": "000_173"
         }
       },
       "SentryTower": {
         "icon": "014_50706",
         "images": {
-          "final": "000_593",
-          "color": "000_236"
+          "final": "000_593"
         }
       }
     },
@@ -176,85 +154,73 @@
       "GuardTower": {
         "icon": "049_50706",
         "images": {
-          "final": "000_175",
-          "color": "000_237"
+          "final": "000_175"
         }
       },
       "BallistaTower": {
         "icon": "049_50706",
         "images": {
-          "final": "000_175",
-          "color": "000_237"
+          "final": "000_175"
         }
       },
       "Granary": {
         "icon": "012_50706",
         "images": {
-          "final": "001_164",
-          "color": "001_183"
+          "final": "001_164"
         }
       },
       "Barracks": {
         "icon": "005_50706",
         "images": {
-          "final": "001_161",
-          "color": "001_179"
+          "final": "001_161"
         }
       },
       "TownCenter": {
         "icon": "038_50706",
         "images": {
-          "final": "002_162",
-          "color": "001_180"
+          "final": "002_162"
         }
       },
       "House": {
         "icon": "018_50706",
         "images": {
-          "final": "002_165",
-          "color": "002_184"
+          "final": "002_165"
         }
       },
       "Stable": {
         "icon": "024_50706",
         "images": {
-          "final": "000_172",
-          "color": "000_191"
+          "final": "000_172"
         }
       },
       "ArcheryRange": {
         "icon": "002_50706",
         "images": {
-          "final": "001_171",
-          "color": "001_190"
+          "final": "001_171"
         }
       },
       "Market": {
         "icon": "023_50706",
         "images": {
-          "final": "001_168",
-          "color": "001_187"
+          "final": "001_168"
         }
       },
       "StoragePit": {
         "icon": "030_50706",
         "images": {
-          "final": "001_170",
-          "color": "001_189"
+          "final": "001_170"
         }
       },
       "GovernmentCenter": {
         "icon": "020_50706",
         "images": {
-          "final": "001_166",
-          "color": "001_185"
+          "final": "001_166"
         }
       },
       "Temple": {
         "icon": "032_50706",
         "images": {
-          "final": "001_173",
-          "color": "001_192"
+          "final": "001_173"
         }
       }
     }

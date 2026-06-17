@@ -61,10 +61,8 @@ export class BuildingPlacer {
     const isFree = canPlaceBuildingAt(map.grid, cell.i, cell.j, controls.mouseBuilding, { requireVisible: true })
 
     const sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
-    const color = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.color)
     const tint = isFree ? COLOR_FLASHY_GREEN : COLOR_RED
     sprite.tint = tint
-    if (color) color.tint = tint
     controls.mouseBuilding.isFree = isFree
   }
 
@@ -106,14 +104,7 @@ export class BuildingPlacer {
     controls.mouseBuilding.x = pointer.x
     controls.mouseBuilding.y = pointer.y
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
-    if (building.images.color) {
-      const color = Sprite.from(getTexture(building.images.color, Assets))
-      color.label = LABEL_TYPES.color
-      changeSpriteColor(color, player.color)
-      controls.mouseBuilding.addChild(color)
-    } else {
-      changeSpriteColor(sprite, player.color)
-    }
+    changeSpriteColor(sprite, player.color)
     controls.addChild(controls.mouseBuilding)
   }
 

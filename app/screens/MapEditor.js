@@ -879,11 +879,14 @@ export default class MapEditor extends Container {
       this.context.map.setCellReliefLevelDirect(cell, waterLevel)
       return true
     }
-    if (cell.has && type === 'Water') {
+    if (cell.has && (type === 'Water' || type === 'DeepWater')) {
       cell.has.die?.(true)
     }
     if (type === 'Water' && cell.z !== waterLevel) {
       this.context.map.setCellReliefLevelDirect(cell, waterLevel)
+    }
+    if (type === 'DeepWater' && cell.z !== 0) {
+      this.context.map.setCellReliefLevelDirect(cell, 0)
     }
     cell.setTerrainType(type)
     if (cell.has?.type === RESOURCE_TYPES.tree) {

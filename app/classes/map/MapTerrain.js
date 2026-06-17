@@ -239,7 +239,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (cell.type === 'Water') enqueue(cell)
+        if (cell.category === 'Water') enqueue(cell)
       }
     }
 
@@ -252,9 +252,9 @@ export class MapTerrain {
         [0, -2],
         [0, 2],
       ]) {
-        if (this.map.grid[cell.i + di]?.[cell.j + dj]?.type !== 'Water') continue
+        if (this.map.grid[cell.i + di]?.[cell.j + dj]?.category !== 'Water') continue
         const middle = this.map.grid[cell.i + di / 2]?.[cell.j + dj / 2]
-        if (middle?.type === 'Water') continue
+        if (middle?.category === 'Water') continue
         if (level != null) this.map.setCellReliefLevelDirect(middle, level)
         middle.setWater()
         filledCells.add(middle)
@@ -288,18 +288,18 @@ export class MapTerrain {
     }
 
     for (const cell of candidates) {
-      if (cell.type === 'Water') continue
+      if (cell.category === 'Water') continue
       const { i, j } = cell
 
       const waterRing = [
-        this.map.grid[i - 1]?.[j]?.type === 'Water',
-        this.map.grid[i - 1]?.[j + 1]?.type === 'Water',
-        this.map.grid[i]?.[j + 1]?.type === 'Water',
-        this.map.grid[i + 1]?.[j + 1]?.type === 'Water',
-        this.map.grid[i + 1]?.[j]?.type === 'Water',
-        this.map.grid[i + 1]?.[j - 1]?.type === 'Water',
-        this.map.grid[i]?.[j - 1]?.type === 'Water',
-        this.map.grid[i - 1]?.[j - 1]?.type === 'Water',
+        this.map.grid[i - 1]?.[j]?.category === 'Water',
+        this.map.grid[i - 1]?.[j + 1]?.category === 'Water',
+        this.map.grid[i]?.[j + 1]?.category === 'Water',
+        this.map.grid[i + 1]?.[j + 1]?.category === 'Water',
+        this.map.grid[i + 1]?.[j]?.category === 'Water',
+        this.map.grid[i + 1]?.[j - 1]?.category === 'Water',
+        this.map.grid[i]?.[j - 1]?.category === 'Water',
+        this.map.grid[i - 1]?.[j - 1]?.category === 'Water',
       ]
 
       if (waterRing.filter(Boolean).length < 2) continue
@@ -784,19 +784,20 @@ export class MapTerrain {
   }
 
   formatCellsWaterBorder() {
+    const isAnyWater = type => type === 'Water' || type === 'DeepWater'
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (cell.type === 'Water') continue
+        if (cell.category === 'Water') continue
 
-        const n = this.map.grid[i - 1]?.[j]?.type === 'Water'
-        const s = this.map.grid[i + 1]?.[j]?.type === 'Water'
-        const w = this.map.grid[i]?.[j - 1]?.type === 'Water'
-        const e = this.map.grid[i]?.[j + 1]?.type === 'Water'
-        const nw = this.map.grid[i - 1]?.[j - 1]?.type === 'Water'
-        const sw = this.map.grid[i + 1]?.[j - 1]?.type === 'Water'
-        const ne = this.map.grid[i - 1]?.[j + 1]?.type === 'Water'
-        const se = this.map.grid[i + 1]?.[j + 1]?.type === 'Water'
+        const n = isAnyWater(this.map.grid[i - 1]?.[j]?.type)
+        const s = isAnyWater(this.map.grid[i + 1]?.[j]?.type)
+        const w = isAnyWater(this.map.grid[i]?.[j - 1]?.type)
+        const e = isAnyWater(this.map.grid[i]?.[j + 1]?.type)
+        const nw = isAnyWater(this.map.grid[i - 1]?.[j - 1]?.type)
+        const sw = isAnyWater(this.map.grid[i + 1]?.[j - 1]?.type)
+        const ne = isAnyWater(this.map.grid[i - 1]?.[j + 1]?.type)
+        const se = isAnyWater(this.map.grid[i + 1]?.[j + 1]?.type)
         if (w && n) cell.setWaterBorder('20000', '001')
         else if (e && s) cell.setWaterBorder('20000', '002')
         else if (w && s) cell.setWaterBorder('20000', '003')
@@ -820,7 +821,7 @@ export class MapTerrain {
         if (!cell.waterBorder) continue
 
         const overlay = (neighbor, direction) => {
-          if (neighbor && !neighbor.waterBorder && neighbor.type !== 'Water' && neighbor.type !== 'Desert') {
+          if (neighbor && !neighbor.waterBorder && neighbor.category !== 'Water' && neighbor.type !== 'Desert') {
             neighbor.setDesertBorder(direction)
           }
         }
@@ -846,7 +847,105 @@ export class MapTerrain {
     this.map.enforceReliefStepContinuity(unrestrictedReliefDistances, protectedReliefCells, waterLevelBounds)
     this.map.formatCellsRelief()
     this.map.formatCellsWaterBorderOverlays()
+    this.map.formatCellsDeepWaterBorder()
     this.map.formatCellsDesert()
+  }
+
+  classifyDeepWater() {
+    const MIN_DIST_FROM_LAND = 3
+    const mapSeed = Number.isFinite(this.map.seed) ? this.map.seed : 0
+    const config = Assets.cache.get('config')
+    const deepWaterDef = config?.cells?.['DeepWater']
+    const waterDef = config?.cells?.['Water']
+
+    const n = this.map.size + 1
+    const dist = new Int16Array(n * n).fill(9999)
+    const queue = []
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        if (this.map.grid[i][j].category !== 'Water') {
+          const idx = i * n + j
+          dist[idx] = 0
+          queue.push(idx)
+        }
+      }
+    }
+
+    for (let qi = 0; qi < queue.length; qi++) {
+      const idx = queue[qi]
+      const ci = Math.floor(idx / n)
+      const cj = idx % n
+      const d = dist[idx]
+      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const ni = ci + di, nj = cj + dj
+        if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
+        const nidx = ni * n + nj
+        if (dist[nidx] > d + 1) {
+          dist[nidx] = d + 1
+          queue.push(nidx)
+        }
+      }
+    }
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.category !== 'Water') continue
+
+        const d = dist[i * n + j]
+        let isDeep = false
+        if (d >= MIN_DIST_FROM_LAND) {
+          // Low-frequency noise (period ~30 cells) creates large coherent zones
+          const h = Math.sin(i * 0.11 + j * 0.17 + mapSeed * 2.3) * 43758.5453
+          const noise = h - Math.floor(h)
+          // Threshold drops quickly with distance: at d=3 → 60% deep, d=5 → 90%, d=7+ → 100%
+          const threshold = Math.max(0, 0.9 - (d - MIN_DIST_FROM_LAND) * 0.25)
+          isDeep = noise > threshold
+        }
+
+        cell.type = isDeep ? 'DeepWater' : 'Water'
+
+        const def = isDeep ? deepWaterDef : waterDef
+        if (!cell.sprite) {
+          if (def?.assets?.length) {
+            cell.assets = def.assets
+            cell.terrainTextureName = def.assets[(i * 31 + j * 17) % def.assets.length]
+          }
+          continue
+        }
+        if (!def?.assets?.length) continue
+        const textureName = def.assets[(i * 31 + j * 17) % def.assets.length]
+        const resourceName = textureName.split('_')[1]
+        const spritesheet = Assets.cache.get(resourceName)
+        const texture = spritesheet?.textures?.[textureName + '.png']
+        if (!texture) continue
+        cell.sprite.texture = texture
+        cell.sprite.anchor.set(
+          Math.floor(texture.width / 2) / texture.width,
+          Math.floor(texture.height / 2) / texture.height
+        )
+      }
+    }
+  }
+
+  formatCellsDeepWaterBorder() {
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (cell.type !== 'DeepWater') continue
+
+        const n = this.map.grid[i - 1]?.[j]
+        const s = this.map.grid[i + 1]?.[j]
+        const w = this.map.grid[i]?.[j - 1]
+        const e = this.map.grid[i]?.[j + 1]
+
+        if (n && n.type !== 'DeepWater') cell.setDeepWaterBorder('west')
+        if (s && s.type !== 'DeepWater') cell.setDeepWaterBorder('east')
+        if (w && w.type !== 'DeepWater') cell.setDeepWaterBorder('north')
+        if (e && e.type !== 'DeepWater') cell.setDeepWaterBorder('south')
+      }
+    }
   }
 
   formatCellsDesert() {

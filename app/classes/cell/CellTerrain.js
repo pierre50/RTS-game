@@ -42,6 +42,39 @@ function getDesertBorderVariants(cellSpriteIndex) {
   return DESERT_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? DESERT_BORDER_VARIANTS_BY_TILE_INDEX[0]
 }
 
+// Border 20006 mirrors 20002 exactly: same 68-frame layout, same tile-index-to-frame mapping.
+const DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX = {
+  0: [0, 1, 2, 3],
+  1: [0, 1, 2, 3],
+  2: [0, 1, 2, 3],
+  3: [0, 1, 2, 3],
+  4: [0, 1, 2, 3],
+  5: [0, 1, 2, 3],
+  6: [0, 1, 2, 3],
+  7: [0, 1, 2, 3],
+  8: [0, 1, 2, 3],
+  9: [4, 5, 6, 7],
+  10: [8, 9, 10, 11],
+  11: [12, 13, 14, 15],
+  12: [16, 17, 18, 19],
+  13: [20, 21, 22, 23],
+  14: [24, 25, 26, 27],
+  15: [28, 29, 30, 31],
+  16: [32, 33, 34, 35],
+  17: [36, 37, 38, 39],
+  18: [40, 41, 42, 43],
+  19: [44, 45, 46, 47],
+  20: [48, 49, 50, 51],
+  21: [52, 53, 54, 55],
+  22: [56, 57, 58, 59],
+  23: [60, 61, 62, 63],
+  24: [64, 65, 66, 67],
+}
+
+function getDeepWaterBorderVariants(cellSpriteIndex) {
+  return DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX[0]
+}
+
 export class CellTerrain {
   constructor(cell) {
     this.cell = cell
@@ -98,7 +131,7 @@ export class CellTerrain {
     Object.keys(definition).forEach(prop => {
       cell[prop] = definition[prop]
     })
-    if ((previousType === 'Water') !== (type === 'Water')) {
+    if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
       cell.parent?.invalidateReliefCoastDistances?.()
     }
     this.resetTerrainAppearance()
@@ -128,6 +161,29 @@ export class CellTerrain {
     sprite.direction = direction
     sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
     sprite.type = 'border'
+    sprite.zIndex = 10
+    cell.addChild(sprite)
+  }
+
+  setDeepWaterBorder(direction) {
+    const { cell } = this
+    const alreadySet = cell.children.some(c => c.type === 'deepWaterBorder' && c.direction === direction)
+    if (alreadySet) return
+    const resourceName = '20006'
+    const cellSpriteTextureName = cell.sprite.texture.label
+    const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
+    const dirIndex = { west: 0, north: 1, south: 2, east: 3 }[direction]
+    const variants = getDeepWaterBorderVariants(cellSpriteIndex)
+    const index = variants[dirIndex]
+    if (index == null) return
+    const spritesheet = Assets.cache.get(resourceName)
+    const textureName = formatNumber(index) + '_' + resourceName + '.png'
+    const texture = spritesheet?.textures?.[textureName]
+    if (!texture) return
+    const sprite = new Sprite(texture)
+    sprite.direction = direction
+    sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
+    sprite.type = 'deepWaterBorder'
     sprite.zIndex = 10
     cell.addChild(sprite)
   }

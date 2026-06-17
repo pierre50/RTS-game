@@ -248,6 +248,14 @@ export default class Map extends Container {
     return this.mapResources.generateNeutralResourceGroupsAsync(playersPos)
   }
 
+  generateBiomeTrees(playersPos) {
+    return this.mapResources.generateBiomeTrees(playersPos)
+  }
+
+  generateBiomeTreesAsync(playersPos) {
+    return this.mapResources.generateBiomeTreesAsync(playersPos)
+  }
+
   findNeutralResourceCenter(playersPos, placedCenters, playerSafeDistance, minNeutralDistance) {
     return this.mapResources.findNeutralResourceCenter(
       playersPos,
@@ -340,6 +348,14 @@ export default class Map extends Container {
 
   formatCellsDesert() {
     return this.mapTerrain.formatCellsDesert()
+  }
+
+  classifyDeepWater() {
+    return this.mapTerrain.classifyDeepWater()
+  }
+
+  formatCellsDeepWaterBorder() {
+    return this.mapTerrain.formatCellsDeepWaterBorder()
   }
 
   // MapFog

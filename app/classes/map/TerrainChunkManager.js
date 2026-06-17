@@ -157,6 +157,7 @@ export class TerrainChunkManager {
       cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
     }
     for (const direction of appearance.desertBorders) cell.setDesertBorder(direction)
+    for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
     for (const decoration of source.getTerrainDecorations()) {
       const sprite = new Sprite(decoration.texture)
       sprite.label = decoration.label

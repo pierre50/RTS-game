@@ -9,7 +9,7 @@ const REVEAL_RX = CELL_WIDTH / 2
 const REVEAL_RY = CELL_HEIGHT / 2
 const FOG_BAND = 20
 const CORNER_RADIUS = 10
-const OVERLAP = 4
+const OVERLAP = 10
 
 export class ViewportFogRenderer {
   constructor(map) {

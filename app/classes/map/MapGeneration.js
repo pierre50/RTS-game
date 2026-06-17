@@ -8,7 +8,23 @@ import {
   updateInstanceVisibility,
   rehydrateAIKnowledge,
 } from '../../lib'
-import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
+import {
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  PLAYER_TYPES,
+  RESOURCE_TYPES,
+  UNIT_TYPES,
+  FLOOR_SETS_GRASS,
+  FLOOR_SETS_DESERT,
+  FLOOR_SETS_JUNGLE,
+  FLOOR_SET_CHANCE,
+  GROUND_SETS,
+  WATER_SETS,
+  WATER_SETS_DEEP,
+  WATER_SET_CHANCE,
+  WATER_SET_DEEP_LAND_MIN_DIST,
+} from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 export class MapGeneration {
   constructor(map) {
@@ -112,12 +128,9 @@ export class MapGeneration {
     const fishTypes = Object.entries(resources)
       .filter(([, definition]) => definition.category === 'Fish')
       .map(([type]) => type)
-    const whaleSafeDistance = 6
-    const availableTypes = this.isFarEnoughFromCoast(i, j, whaleSafeDistance)
-      ? fishTypes
-      : fishTypes.filter(type => type !== 'Whale')
-
-    return this.map.randomItem(availableTypes.length ? availableTypes : [RESOURCE_TYPES.salmon])
+    const cell = this.map.grid[i]?.[j]
+    const available = cell?.type === 'DeepWater' ? fishTypes : fishTypes.filter(type => type !== 'Whale')
+    return this.map.randomItem(available.length ? available : [RESOURCE_TYPES.salmon])
   }
 
   generateFromJSON({ map, players, camera, resources, animals, runtime }) {
@@ -436,12 +449,14 @@ export class MapGeneration {
     await onProgress('generatingRelief', 0.28)
     measure('relief', () => this.map.generateMapRelief())
     await this.yieldToBrowser()
+    measure('deepWater', () => this.map.classifyDeepWater())
     measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
     await onProgress('generatingPlayers', 0.48)
     measure('playerPlacement', () => this.map.placePlayers())
     await onProgress('generatingResources', 0.58)
     await measureAsync('playerResources', () => this.map.generateResourcesAroundPlayersAsync(this.map.playersPos))
     await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
+    await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
     measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
@@ -561,6 +576,7 @@ export class MapGeneration {
       1: 'Desert',
       2: 'Water',
       3: 'Jungle',
+      4: 'DarkForest',
     }
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -604,6 +620,7 @@ export class MapGeneration {
       1: 'Desert',
       2: 'Water',
       3: 'Jungle',
+      4: 'DarkForest',
     }
     const startedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
@@ -676,12 +693,17 @@ export class MapGeneration {
       return 1 - t * t * (3 - 2 * t)
     }
 
+    // Independent noise channel for DarkForest — uncorrelated with biome so patches
+    // can appear anywhere on non-desert ground, not always surrounded by Jungle.
+    const darkForestThreshold = 0.70
     const height = new Float32Array(gridSize * gridSize)
     const biome = new Float32Array(gridSize * gridSize)
+    const darkForestNoise = new Float32Array(gridSize * gridSize)
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         height[i * gridSize + j] = fbm(i * scale, j * scale)
         biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4)
+        darkForestNoise[i * gridSize + j] = fbm(i * scale * 0.9 + 137, j * scale * 0.9 + 241, 4)
       }
     }
 
@@ -813,6 +835,9 @@ export class MapGeneration {
           const b = biome[i * gridSize + j]
           if (b < bt.lo) terrainMap[i][j] = 1
           else if (b > bt.hi) terrainMap[i][j] = 3
+          if (terrainMap[i][j] !== 1 && darkForestNoise[i * gridSize + j] > darkForestThreshold) {
+            terrainMap[i][j] = 4
+          }
         }
       }
 
@@ -856,10 +881,10 @@ export class MapGeneration {
     }
 
     const biomeThresholds = {
-      plain: { lo: 0.38, hi: 0.65 },
+      plain:     { lo: 0.38, hi: 0.65 },
       continent: { lo: 0.33, hi: 0.67 },
-      lac: { lo: 0.32, hi: 0.68 },
-      ilot: { lo: 0.27, hi: 0.6 },
+      lac:       { lo: 0.32, hi: 0.68 },
+      ilot:      { lo: 0.27, hi: 0.6  },
     }
     const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
 
@@ -869,6 +894,9 @@ export class MapGeneration {
         const b = biome[i * gridSize + j]
         if (b < bt.lo) terrainMap[i][j] = 1
         else if (b > bt.hi) terrainMap[i][j] = 3
+        if (terrainMap[i][j] !== 1 && darkForestNoise[i * gridSize + j] > darkForestThreshold) {
+          terrainMap[i][j] = 4
+        }
       }
     }
 
@@ -960,47 +988,60 @@ export class MapGeneration {
     return false
   }
 
+  _hasLandNeighborInRange(i, j, range) {
+    for (let di = -range; di <= range; di++) {
+      const maxDj = range - Math.abs(di)
+      for (let dj = -maxDj; dj <= maxDj; dj++) {
+        const neighbor = this.map.grid[i + di]?.[j + dj]
+        if (neighbor && neighbor.category !== 'Water') return true
+      }
+    }
+    return false
+  }
+
+  _placeWaterSet(cell) {
+    const nearLand = this._hasLandNeighborInRange(cell.i, cell.j, WATER_SET_DEEP_LAND_MIN_DIST)
+    const pool = nearLand ? WATER_SETS : [...WATER_SETS, ...WATER_SETS_DEEP]
+    const sheet = this.map.randomItem(pool)
+    const texture = Assets.cache.get(sheet)?.textures?.[`000_${sheet}.png`]
+    if (!texture) return
+    const set = Sprite.from(texture)
+    set.label = LABEL_TYPES.set
+    set.roundPixels = true
+    set.allowMove = false
+    set.eventMode = 'none'
+    set.allowClick = false
+    set.updateAnchor = true
+    set.zIndex = 2
+    cell.addChild(set)
+  }
+
   generateSets() {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (this._hasSolidNeighbor(i, j)) continue
+if (this._hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
           const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
-            this.map.random() < 0.03 &&
+            this.map.random() < FLOOR_SET_CHANCE &&
             i > 1 &&
             j > 1 &&
             i < this.map.size &&
             j < this.map.size
           ) {
-            let floorSpritesheets = []
+            let floorSpritesheets
             switch (cell.type) {
               case 'Desert':
-                floorSpritesheets = ['275', '276', '277', '278', '303', '304', '305', '306', '307']
+                floorSpritesheets = FLOOR_SETS_DESERT
                 break
               case 'Jungle':
-                floorSpritesheets = [
-                  '275',
-                  '276',
-                  '277',
-                  '278',
-                  '292',
-                  '293',
-                  '294',
-                  '295',
-                  '296',
-                  '297',
-                  '298',
-                  '299',
-                  '300',
-                  '301',
-                ]
+                floorSpritesheets = FLOOR_SETS_JUNGLE
                 break
               default:
-                floorSpritesheets = ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+                floorSpritesheets = FLOOR_SETS_GRASS
                 break
             }
             const randomSpritesheet = this.map.randomItem(floorSpritesheets)
@@ -1027,7 +1068,7 @@ export class MapGeneration {
               const type = this.map.randomItem(['tree', 'rock', 'animal'])
               switch (type) {
                 case 'rock': {
-                  const randomSpritesheet = this.map.randomRange(531, 534).toString()
+                  const randomSpritesheet = this.map.randomItem(GROUND_SETS)
                   const spritesheet = Assets.cache.get(randomSpritesheet)
                   const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
                   const rock = Sprite.from(texture)
@@ -1052,9 +1093,13 @@ export class MapGeneration {
               }
             }
           }
-          if (cell.category === 'Water' && this.map.random() < this.map.chanceOfSets) {
-            const fishType = this.pickFishResourceType(i, j)
-            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+          if (cell.category === 'Water') {
+            if (this.map.random() < this.map.chanceOfSets) {
+              const fishType = this.pickFishResourceType(i, j)
+              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+            } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
+              this._placeWaterSet(cell)
+            }
           }
         }
       }
@@ -1065,21 +1110,19 @@ export class MapGeneration {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
+if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
         const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
         if (
           cell.category !== 'Water' &&
           !hasWaterNeighbour &&
-          this.map.random() < 0.03 &&
+          this.map.random() < FLOOR_SET_CHANCE &&
           i > 1 &&
           j > 1 &&
           i < this.map.size &&
           j < this.map.size
         ) {
           const sheets =
-            cell.type === 'Desert'
-              ? ['275', '276', '277', '278', '303', '304', '305', '306', '307']
-              : ['292', '293', '294', '295', '296', '297', '298', '299', '300', '301']
+            cell.type === 'Desert' ? FLOOR_SETS_DESERT : cell.type === 'Jungle' ? FLOOR_SETS_JUNGLE : FLOOR_SETS_GRASS
           const randomSpritesheet = this.map.randomItem(sheets)
           const texture = Assets.cache.get(randomSpritesheet)?.textures?.[`000_${randomSpritesheet}.png`]
           if (texture) {
@@ -1097,7 +1140,7 @@ export class MapGeneration {
         if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
           const type = this.map.randomItem(['tree', 'rock', 'animal'])
           if (type === 'rock') {
-            const sheet = this.map.randomRange(531, 534).toString()
+            const sheet = this.map.randomItem(GROUND_SETS)
             const texture = Assets.cache.get(sheet)?.textures?.[`000_${sheet}.png`]
             if (texture) {
               const rock = Sprite.from(texture)
@@ -1111,9 +1154,13 @@ export class MapGeneration {
             this.map.gaia.createAnimal({ i, j, type: this.pickAmbientAnimalType(i, j) })
           }
         }
-        if (cell.category === 'Water' && this.map.random() < this.map.chanceOfSets) {
-          const fishType = this.pickFishResourceType(i, j)
-          this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+        if (cell.category === 'Water') {
+          if (this.map.random() < this.map.chanceOfSets) {
+            const fishType = this.pickFishResourceType(i, j)
+            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+          } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
+            this._placeWaterSet(cell)
+          }
         }
       }
       if (i % 8 === 0) await this.yieldToBrowser()

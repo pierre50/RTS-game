@@ -1,5 +1,5 @@
 import { Resource } from '../resource'
-import { RESOURCE_TYPES } from '../../constants'
+import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
 
 const SPACED_RESOURCE_TYPES = new Set([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone])
 
@@ -432,5 +432,45 @@ export class MapResources {
       this.map.resources.add(this.map.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context)))
     }
     return true
+  }
+
+  generateBiomeTrees(playersPos) {
+    const { grid, size } = this.map
+    const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
+    for (let i = 1; i < size; i++) {
+      for (let j = 1; j < size; j++) {
+        const cell = grid[i][j]
+        if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
+        const chance = BIOME_TREE_CHANCE[cell.type] ?? 0
+        if (chance === 0) continue
+        if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
+        if (this.map.random() < chance) {
+          this.map.resources.add(
+            this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context))
+          )
+        }
+      }
+    }
+  }
+
+  async generateBiomeTreesAsync(playersPos) {
+    const yieldFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()))
+    const { grid, size } = this.map
+    const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
+    for (let i = 1; i < size; i++) {
+      for (let j = 1; j < size; j++) {
+        const cell = grid[i][j]
+        if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
+        const chance = BIOME_TREE_CHANCE[cell.type] ?? 0
+        if (chance === 0) continue
+        if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
+        if (this.map.random() < chance) {
+          this.map.resources.add(
+            this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context))
+          )
+        }
+      }
+      if (i % 8 === 0) await yieldFrame()
+    }
   }
 }

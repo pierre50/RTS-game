@@ -33,8 +33,9 @@ export class CellFog {
     this.cell = cell
   }
 
-  addFogBuilding(textureSheet, colorSheet, colorName) {
+  addFogBuilding(textureSheet, colorName) {
     const { cell } = this
+    if (cell.fogSprites.length > 0) return
     if (cell.context.map.revealTerrain && !cell.context.map.revealEverything) return
 
     const fogLayer = cell.context.map.fogLayer
@@ -51,18 +52,9 @@ export class CellFog {
     sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
     sprite.cullable = true
+    changeSpriteColorDirectly(sprite, colorName)
     addToLayer(sprite)
-    cell.fogSprites.push({ sprite, textureSheet, colorSheet, colorName })
-    if (colorSheet) {
-      const spriteColor = Sprite.from(getTexture(colorSheet, Assets))
-      spriteColor.label = LABEL_TYPES.buildingFog
-      spriteColor.tint = COLOR_FOG
-      changeSpriteColorDirectly(spriteColor, colorName)
-      addToLayer(spriteColor)
-      cell.fogSprites.push({ sprite: spriteColor, textureSheet, colorSheet, colorName })
-    } else {
-      changeSpriteColorDirectly(sprite, colorName)
-    }
+    cell.fogSprites.push({ sprite, textureSheet, colorName })
   }
 
   removeFogBuilding(instance) {
@@ -84,7 +76,7 @@ export class CellFog {
           if (!map.revealTerrain) {
             const assets = getBuildingAsset(instance.type, instance.owner, Assets)
             const localCell = map.grid[instance.i][instance.j]
-            localCell.addFogBuilding(assets.images.final, assets.images.color, instance.owner.color)
+            localCell.addFogBuilding(assets.images.final, instance.owner.color)
           }
         }
         instance.visible = false

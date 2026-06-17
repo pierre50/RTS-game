@@ -19,7 +19,7 @@ const BRUSH_SIZES = [
   { value: 6, label: 'editorBrushSizeHuge' },
 ]
 const RELIEF_LEVELS = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
-const MAP_OPTIONS = ['Grass', 'Desert', 'forest', 'Water', 'palmdesert', 'palmjungle']
+const MAP_OPTIONS = ['Grass', 'Desert', 'forest', 'Water', 'DeepWater', 'palmdesert', 'palmjungle']
 
 export class MapEditorHud {
   constructor({ context, state, onQuit, onChange }) {
