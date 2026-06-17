@@ -146,10 +146,14 @@ export class ViewportFogRenderer {
     const t = Math.min(CORNER_RADIUS / L, 0.45)
     const t1 = 1 - t
     // Diamond vertices: top, right, bottom, left
-    const v0x = x,       v0y = y - ry
-    const v1x = x + rx,  v1y = y
-    const v2x = x,       v2y = y + ry
-    const v3x = x - rx,  v3y = y
+    const v0x = x,
+      v0y = y - ry
+    const v1x = x + rx,
+      v1y = y
+    const v2x = x,
+      v2y = y + ry
+    const v3x = x - rx,
+      v3y = y
     // i=0 (top): prev=3, next=1
     graphics.moveTo(v3x + (v0x - v3x) * t1, v3y + (v0y - v3y) * t1)
     graphics.quadraticCurveTo(v0x, v0y, v0x + (v1x - v0x) * t, v0y + (v1y - v0y) * t)

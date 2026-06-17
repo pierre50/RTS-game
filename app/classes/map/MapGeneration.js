@@ -695,7 +695,7 @@ export class MapGeneration {
 
     // Independent noise channel for DarkForest — uncorrelated with biome so patches
     // can appear anywhere on non-desert ground, not always surrounded by Jungle.
-    const darkForestThreshold = 0.70
+    const darkForestThreshold = 0.7
     const height = new Float32Array(gridSize * gridSize)
     const biome = new Float32Array(gridSize * gridSize)
     const darkForestNoise = new Float32Array(gridSize * gridSize)
@@ -881,10 +881,10 @@ export class MapGeneration {
     }
 
     const biomeThresholds = {
-      plain:     { lo: 0.38, hi: 0.65 },
+      plain: { lo: 0.38, hi: 0.65 },
       continent: { lo: 0.33, hi: 0.67 },
-      lac:       { lo: 0.32, hi: 0.68 },
-      ilot:      { lo: 0.27, hi: 0.6  },
+      lac: { lo: 0.32, hi: 0.68 },
+      ilot: { lo: 0.27, hi: 0.6 },
     }
     const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
 
@@ -1020,7 +1020,7 @@ export class MapGeneration {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-if (this._hasSolidNeighbor(i, j)) continue
+        if (this._hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
           const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
           if (
@@ -1110,7 +1110,7 @@ if (this._hasSolidNeighbor(i, j)) continue
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
+        if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
         const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
         if (
           cell.category !== 'Water' &&

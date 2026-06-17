@@ -877,8 +877,14 @@ export class MapTerrain {
       const ci = Math.floor(idx / n)
       const cj = idx % n
       const d = dist[idx]
-      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-        const ni = ci + di, nj = cj + dj
+      for (const [di, dj] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const ni = ci + di,
+          nj = cj + dj
         if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
         const nidx = ni * n + nj
         if (dist[nidx] > d + 1) {

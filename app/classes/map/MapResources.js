@@ -445,9 +445,7 @@ export class MapResources {
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
-          this.map.resources.add(
-            this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context))
-          )
+          this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context)))
         }
       }
     }
@@ -465,9 +463,7 @@ export class MapResources {
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
-          this.map.resources.add(
-            this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context))
-          )
+          this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context)))
         }
       }
       if (i % 8 === 0) await yieldFrame()

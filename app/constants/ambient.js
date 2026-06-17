@@ -4,9 +4,9 @@ export const AMBIENT_BIRD_WORLD_ZINDEX = 5e8
 // Grass/Desert already receive trees via generateForestAroundPlayer + neutral groups.
 export const BIOME_TREE_CHANCE = {
   DarkForest: 0.92,
-  Jungle:     0.92,
-  Grass:      0,
-  Desert:     0,
+  Jungle: 0.92,
+  Grass: 0,
+  Desert: 0,
 }
 // Player safe radius (cells) — no biome trees placed within this distance of any spawn
 export const BIOME_TREE_PLAYER_SAFE_DIST = 22

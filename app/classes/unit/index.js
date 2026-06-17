@@ -217,12 +217,7 @@ export class Unit extends Instance {
         controls.rallyPointController.handleMouseUpOnEntity(this)
         return
       }
-      if (
-        controls.doubleClicked ||
-        controls.mouseBuilding ||
-        controls.mouseRectangle ||
-        !controls.isMouseInApp(evt)
-      ) {
+      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
         return
       }
 
