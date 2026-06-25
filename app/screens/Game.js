@@ -9,6 +9,7 @@ import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
 import { save as saveToStorage } from '../serialization/SaveStorage'
+import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
@@ -76,7 +77,7 @@ export default class Game extends Container {
     this.context.app.ticker.speed = speed
     this.context.scheduler.timeScale = speed
     this._loadingScreen = new GameLoadingScreen()
-    this._loadingScreen.update('generatingTerrain', 0.02)
+    this._loadingScreen.update('generatingWorld', 0.02)
     await this._yieldToBrowser()
     try {
       await this._bootFromConfig(this.config)
@@ -269,6 +270,7 @@ export default class Game extends Container {
   async _bootFromConfig(config) {
     this._createRuntime()
     this._applyMapConfig(this.context.map, config)
+    const hasExplicitSeed = Number.isFinite(config.seed) || this._restartSeed != null
     if (this._restartSeed != null) {
       this.context.map.seed = this._restartSeed
       this._restartSeed = null
@@ -277,11 +279,35 @@ export default class Game extends Container {
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
     const mapGenerationStartedAt = performance.now()
-    await this.context.map.generateMapAsync(posCount, 0, {
-      onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),
-    })
+    const blueprint =
+      hasExplicitSeed
+        ? null
+        : await loadPregeneratedMapBlueprint({
+            size: this.context.map.size,
+            mapType: this.context.map.mapType || 'plain',
+            positionsCount: posCount,
+          })
+    if (blueprint) {
+      await this.context.map.generateFromBlueprint(blueprint, {
+        onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),
+      })
+      this.context.map.pregeneratedBlueprintId = blueprint.id
+      console.info(`[maps] Loaded pregenerated blueprint: ${blueprint.id}`)
+    } else {
+      await this.context.map.generateMapAsync(posCount, 0, {
+        onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),
+      })
+      this.context.map.pregeneratedBlueprintId = null
+    }
     this.context.map.generationTimings = {
       terrainAndSpawns: performance.now() - mapGenerationStartedAt,
+      ...(blueprint?.timings || {}),
+      blueprintDestroy: this.context.map.blueprintDestroyMs || 0,
+      blueprintCellCreation: this.context.map.blueprintCellCreationMs || 0,
+      blueprintFillWaterGaps: this.context.map.blueprintFillWaterGapsMs || 0,
+      blueprintNormalizeWater: this.context.map.blueprintNormalizeWaterMs || 0,
+      blueprintInitialWaterBorder: this.context.map.blueprintInitialWaterBorderMs || 0,
+      blueprintResources: this.context.map.blueprintResourceLoadMs || 0,
     }
     await this._updateLoading('generatingPlayers', 0.2)
     this.context.players = this.context.map.generatePlayers(config.players || null)

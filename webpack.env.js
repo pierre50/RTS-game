@@ -11,6 +11,7 @@ function buildWebpackEnv(mode = 'development') {
     entryFile: path.resolve(__dirname, 'app/entry.js'),
     htmlTemplate: path.resolve(__dirname, 'public/index.html'),
     staticAssetsDir: path.resolve(__dirname, 'public/assets'),
+    staticMapsDir: path.resolve(__dirname, 'public/maps'),
     faviconFile: path.resolve(__dirname, 'public/favicon.ico'),
     devServerPort: Number(process.env.PORT || 8080),
   }

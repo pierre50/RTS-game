@@ -27,6 +27,7 @@ export default class MapEditor extends Container {
     this.onQuit = onQuit
     this._orientationBlocked = false
     this._selectionSuppressedUntil = 0
+    this._terrainStrokeEdits = null
     this._onResize = () => this.applyZoom()
     this.editorState = {
       mode: 'terrain',
@@ -234,13 +235,30 @@ export default class MapEditor extends Container {
   _applyMapFixture() {
     if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return
     const fixture = new URLSearchParams(window.location.search).get('mapFixture')
-    if (!['water-borders', 'water-flat-pinches', 'water-flat-overlap'].includes(fixture)) return
+    if (!['water-borders', 'water-flat-pinches', 'water-flat-overlap', 'water-land-replacement'].includes(fixture)) {
+      return
+    }
 
     const { map } = this.context
+    if (fixture === 'water-land-replacement') {
+      const waterCells = [
+        [4, 2], [4, 3], [4, 4], [4, 5],
+        [5, 3], [5, 4], [5, 5], [5, 6],
+        [6, 3], [6, 4], [6, 5],
+        [7, 3], [7, 4], [7, 5],
+        [8, 3], [8, 5],
+        [9, 4], [9, 9],
+        [10, 4], [10, 5], [10, 6], [10, 7], [10, 8],
+        [11, 4], [11, 5], [11, 6], [11, 7], [11, 8],
+        [12, 8], [13, 8],
+      ]
+      for (const [i, j] of waterCells) map.grid[i]?.[j]?.setTerrainType('Water')
+      return
+    }
+
     if (fixture === 'water-flat-overlap') {
       map.grid[4]?.[9]?.setTerrainType('Water')
       map.grid[6]?.[8]?.setTerrainType('Water')
-      map.normalizeWaterTopology()
       return
     }
 
@@ -289,7 +307,6 @@ export default class MapEditor extends Container {
       ]
 
       for (const [i, j] of waterCells) map.grid[i]?.[j]?.setTerrainType('Water')
-      map.normalizeWaterTopology()
       return
     }
 
@@ -784,12 +801,9 @@ export default class MapEditor extends Container {
   applyBrush(centerCell) {
     if (this._orientationBlocked) return
 
+    const { map } = this.context
     const cells = this.getBrushCells(centerCell)
     const reliefEdits = new Set()
-    const waterEdit =
-      this.editorState.brushType === 'map' && this._getMapPaintTerrain() === 'Water'
-        ? { level: centerCell.z, seeds: new Set() }
-        : null
     let terrainDirty = false
     let resourceDirty = false
 
@@ -803,9 +817,9 @@ export default class MapEditor extends Container {
       switch (this.editorState.brushType) {
         case 'map':
           {
-            const result = this.applyMapPaint(cell, waterEdit?.level)
+            const result = this.applyMapPaint(cell, centerCell.z)
             if (result.terrainChanged) {
-              if (waterEdit) waterEdit.seeds.add(cell)
+              this._terrainStrokeEdits?.add(cell)
               terrainDirty = true
             }
             if (result.resourceChanged) {
@@ -823,7 +837,7 @@ export default class MapEditor extends Container {
     }
 
     if (terrainDirty) {
-      this.refreshTerrainAppearance(reliefEdits, waterEdit)
+      this.refreshTerrainAppearance(reliefEdits)
     } else if (resourceDirty) {
       this.syncResourceSprites()
       this.context.hud?.updateResourcesMiniMap()
@@ -832,6 +846,20 @@ export default class MapEditor extends Container {
     if (this.editorState.brushType === 'map') {
       this.refreshTerrainSets(cells)
     }
+  }
+
+  beginTerrainStroke() {
+    this._terrainStrokeEdits = new Set()
+  }
+
+  finishTerrainStroke() {
+    const edits = this._terrainStrokeEdits
+    this._terrainStrokeEdits = null
+    if (!edits?.size) return
+
+    this.context.map.normalizeWaterTopology(null, null, edits)
+    this.refreshTerrainAppearance()
+    this.refreshTerrainSets([...edits])
   }
 
   _getMapPaintTerrain() {
@@ -929,17 +957,8 @@ export default class MapEditor extends Container {
     return true
   }
 
-  refreshTerrainAppearance(protectedReliefCells = new Set(), waterEdit = null) {
+  refreshTerrainAppearance(protectedReliefCells = new Set()) {
     const { map } = this.context
-
-    const filledWater = map.fillWaterGaps(waterEdit?.level)
-    if (waterEdit) {
-      for (const cell of filledWater) waterEdit.seeds.add(cell)
-      const normalizedWater = map.normalizeWaterTopology(waterEdit.level, waterEdit.seeds)
-      for (const cell of normalizedWater) waterEdit.seeds.add(cell)
-      for (const cell of map.fillWaterGaps(waterEdit.level)) waterEdit.seeds.add(cell)
-      map.flattenWaterComponents(waterEdit.seeds, waterEdit.level)
-    }
 
     map.rebuildTerrainAppearance(protectedReliefCells)
     this.syncResourceSprites()

@@ -1,6 +1,15 @@
 import { Assets, Container, Sprite } from 'pixi.js'
 import { cartesianToIsometric, getCellsAroundPoint, getPlainCellsAroundPoint } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
+import {
+  EIGHT_NEIGHBOR_OFFSETS,
+  getCyclicGroups,
+  getNeighborFlags,
+  getNeighborFlagsFromRing,
+  getNeighborRing,
+  getWaterBorderFrame,
+  hasUnsupportedTransition,
+} from '../../lib/terrain/topology'
 
 export class MapTerrain {
   constructor(map) {
@@ -245,7 +254,6 @@ export class MapTerrain {
 
     for (let index = 0; index < queue.length; index++) {
       const cell = queue[index]
-
       for (const [di, dj] of [
         [-2, 0],
         [2, 0],
@@ -266,8 +274,9 @@ export class MapTerrain {
     return filledCells
   }
 
-  normalizeWaterTopology(level = null, seeds = null) {
+  normalizeWaterTopology(level = null, seeds = null, protectedCells = new Set(), pass = 0) {
     const cellsToFill = []
+    const cellsToLand = []
     const candidates = new Set()
 
     if (seeds?.size) {
@@ -281,46 +290,82 @@ export class MapTerrain {
       }
     } else {
       for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          candidates.add(this.map.grid[i][j])
-        }
+        for (let j = 0; j <= this.map.size; j++) candidates.add(this.map.grid[i][j])
       }
     }
 
     for (const cell of candidates) {
       if (cell.category === 'Water') continue
       const { i, j } = cell
-
-      const waterRing = [
-        this.map.grid[i - 1]?.[j]?.category === 'Water',
-        this.map.grid[i - 1]?.[j + 1]?.category === 'Water',
-        this.map.grid[i]?.[j + 1]?.category === 'Water',
-        this.map.grid[i + 1]?.[j + 1]?.category === 'Water',
-        this.map.grid[i + 1]?.[j]?.category === 'Water',
-        this.map.grid[i + 1]?.[j - 1]?.category === 'Water',
-        this.map.grid[i]?.[j - 1]?.category === 'Water',
-        this.map.grid[i - 1]?.[j - 1]?.category === 'Water',
-      ]
-
+      const waterRing = getNeighborRing(this.map.grid, i, j, neighbor => neighbor?.category === 'Water')
       if (waterRing.filter(Boolean).length < 2) continue
+      const waterNeighbors = getNeighborFlagsFromRing(waterRing)
+      if (!hasUnsupportedTransition(waterNeighbors)) continue
 
-      let waterGroups = 0
-      for (let index = 0; index < waterRing.length; index++) {
-        const previousIndex = (index + waterRing.length - 1) % waterRing.length
-        if (waterRing[index] && !waterRing[previousIndex]) waterGroups++
+      if (protectedCells.has(cell)) {
+        for (let index = 0; index < waterRing.length; index++) {
+          if (!waterRing[index]) continue
+          const [di, dj] = EIGHT_NEIGHBOR_OFFSETS[index]
+          const neighbor = this.map.grid[i + di]?.[j + dj]
+          if (neighbor && !protectedCells.has(neighbor)) cellsToLand.push([neighbor, cell.type])
+        }
+        continue
       }
 
-      // Flat shoreline sprites only support one continuous water arc.
-      if (waterGroups > 1) cellsToFill.push(cell)
+      const hasProtectedWaterNeighbor = EIGHT_NEIGHBOR_OFFSETS.some(([di, dj]) =>
+        protectedCells.has(this.map.grid[i + di]?.[j + dj])
+      )
+      if (hasProtectedWaterNeighbor) {
+        cellsToFill.push(cell)
+        continue
+      }
+
+      const groups = getCyclicGroups(waterRing)
+      if (groups.length < 2) continue
+
+      const largestGroup = groups.reduce((largest, group) => (group.length > largest.length ? group : largest))
+      const removalCost = waterRing.filter(Boolean).length - largestGroup.length
+
+      // Prefer the smallest local edit. Ties favour removing a stray water
+      // fragment, so deleting water is never silently undone by this pass.
+      if (removalCost <= 1) {
+        for (const group of groups) {
+          if (group === largestGroup) continue
+          for (const index of group) {
+            const [di, dj] = EIGHT_NEIGHBOR_OFFSETS[index]
+            const neighbor = this.map.grid[i + di]?.[j + dj]
+            if (neighbor?.category === 'Water' && !protectedCells.has(neighbor)) cellsToLand.push([neighbor, cell.type])
+          }
+        }
+      } else if (!protectedCells.has(cell)) {
+        cellsToFill.push(cell)
+      }
     }
 
+    const changedCells = new Set()
+    for (const [cell, type] of cellsToLand) {
+      if (cell.category !== 'Water') continue
+      cell.setTerrainType(type)
+      changedCells.add(cell)
+    }
     for (const cell of cellsToFill) {
+      if (cell.category === 'Water') continue
       if (level != null) this.map.setCellReliefLevelDirect(cell, level)
       cell.setWater()
+      changedCells.add(cell)
+    }
+    if (changedCells.size) this.invalidateReliefCoastDistances()
+
+    // A correction can expose an invalid neighbour one ring farther out. Run
+    // to a bounded fixed point now, instead of waiting for the next stroke to
+    // incidentally repair it.
+    const maxPasses = Math.max(4, Math.min(24, this.map.size + 1))
+    if (changedCells.size && pass < maxPasses) {
+      const subsequentChanges = this.normalizeWaterTopology(level, changedCells, protectedCells, pass + 1)
+      for (const cell of subsequentChanges) changedCells.add(cell)
     }
 
-    if (cellsToFill.length) this.invalidateReliefCoastDistances()
-    return cellsToFill
+    return changedCells
   }
 
   clampReliefAroundWaterLevels() {
@@ -455,16 +500,7 @@ export class MapTerrain {
     levelBounds = null
   ) {
     const n = this.map.size + 1
-    const diagonalDirections = [
-      [-1, -1],
-      [-1, 0],
-      [-1, 1],
-      [0, -1],
-      [0, 1],
-      [1, -1],
-      [1, 0],
-      [1, 1],
-    ]
+    const diagonalDirections = EIGHT_NEIGHBOR_OFFSETS
     const getLevelBounds = cell => {
       const index = cell.i * n + cell.j
       if (levelBounds) {
@@ -578,34 +614,8 @@ export class MapTerrain {
       }
     }
 
-    const getHigherNeighbors = cell => {
-      const { i, j, z } = cell
-      const isHigher = neighbor => Boolean(neighbor && neighbor.z > z)
-
-      return {
-        n: isHigher(this.map.grid[i - 1]?.[j]),
-        ne: isHigher(this.map.grid[i - 1]?.[j + 1]),
-        e: isHigher(this.map.grid[i]?.[j + 1]),
-        se: isHigher(this.map.grid[i + 1]?.[j + 1]),
-        s: isHigher(this.map.grid[i + 1]?.[j]),
-        sw: isHigher(this.map.grid[i + 1]?.[j - 1]),
-        w: isHigher(this.map.grid[i]?.[j - 1]),
-        nw: isHigher(this.map.grid[i - 1]?.[j - 1]),
-      }
-    }
-
-    const hasUnsupportedHighNeighbors = ({ n, ne, e, se, s, sw, w, nw }) => {
-      const cardinalCount = Number(n) + Number(e) + Number(s) + Number(w)
-      const diagonalCount = Number(ne) + Number(se) + Number(sw) + Number(nw)
-
-      if ((n && s) || (e && w) || cardinalCount >= 3) return true
-      if (cardinalCount === 0) return diagonalCount > 1
-      if (cardinalCount !== 1) return false
-      if (n) return sw || se
-      if (e) return nw || sw
-      if (s) return nw || ne
-      return ne || se
-    }
+    const getHigherNeighbors = cell =>
+      getNeighborFlags(this.map.grid, cell.i, cell.j, neighbor => Boolean(neighbor && neighbor.z > cell.z))
 
     const enforceHeightSteps = () => {
       let changed = false
@@ -699,7 +709,7 @@ export class MapTerrain {
     const maxPasses = Math.max(12, Math.min(64, this.map.size + 1))
     while (changed && pass++ < maxPasses) {
       changed = enforceHeightSteps()
-      changed = raiseUnsupportedTransitions(hasUnsupportedHighNeighbors) || changed
+      changed = raiseUnsupportedTransitions(hasUnsupportedTransition) || changed
     }
   }
 
@@ -711,26 +721,11 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        const nz = this.map.grid[i - 1]?.[j]?.z ?? cell.z
-        const sz = this.map.grid[i + 1]?.[j]?.z ?? cell.z
-        const wz = this.map.grid[i]?.[j - 1]?.z ?? cell.z
-        const ez = this.map.grid[i]?.[j + 1]?.z ?? cell.z
-
         if (cell.category === 'Water' || cell.waterBorder) continue
 
-        const nwz = this.map.grid[i - 1]?.[j - 1]?.z ?? cell.z
-        const nez = this.map.grid[i - 1]?.[j + 1]?.z ?? cell.z
-        const swz = this.map.grid[i + 1]?.[j - 1]?.z ?? cell.z
-        const sez = this.map.grid[i + 1]?.[j + 1]?.z ?? cell.z
-
-        const n = nz > cell.z
-        const s = sz > cell.z
-        const w = wz > cell.z
-        const e = ez > cell.z
-        const nw = nwz > cell.z
-        const ne = nez > cell.z
-        const sw = swz > cell.z
-        const se = sez > cell.z
+        const { n, s, w, e, nw, ne, sw, se } = getNeighborFlags(
+          this.map.grid, i, j, neighbor => (neighbor?.z ?? cell.z) > cell.z
+        )
 
         // Cardinal singles
         if (n && !s && !w && !e) {
@@ -777,7 +772,7 @@ export class MapTerrain {
         } else if (w || e) {
           cell.setReliefBorder('018', CELL_DEPTH / 2)
         } else if (nw || ne || sw || se) {
-          console.log(`[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nwz} NE=${nez} SW=${swz} SE=${sez}`)
+          console.log(`[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nw} NE=${ne} SW=${sw} SE=${se}`)
         }
       }
     }
@@ -789,27 +784,9 @@ export class MapTerrain {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category === 'Water') continue
-
-        const n = isAnyWater(this.map.grid[i - 1]?.[j]?.type)
-        const s = isAnyWater(this.map.grid[i + 1]?.[j]?.type)
-        const w = isAnyWater(this.map.grid[i]?.[j - 1]?.type)
-        const e = isAnyWater(this.map.grid[i]?.[j + 1]?.type)
-        const nw = isAnyWater(this.map.grid[i - 1]?.[j - 1]?.type)
-        const sw = isAnyWater(this.map.grid[i + 1]?.[j - 1]?.type)
-        const ne = isAnyWater(this.map.grid[i - 1]?.[j + 1]?.type)
-        const se = isAnyWater(this.map.grid[i + 1]?.[j + 1]?.type)
-        if (w && n) cell.setWaterBorder('20000', '001')
-        else if (e && s) cell.setWaterBorder('20000', '002')
-        else if (w && s) cell.setWaterBorder('20000', '003')
-        else if (e && n) cell.setWaterBorder('20000', '000')
-        else if (n) cell.setWaterBorder('20000', '008')
-        else if (s) cell.setWaterBorder('20000', '009')
-        else if (w) cell.setWaterBorder('20000', '011')
-        else if (e) cell.setWaterBorder('20000', '010')
-        else if (nw) cell.setWaterBorder('20000', '005')
-        else if (sw) cell.setWaterBorder('20000', '007')
-        else if (ne) cell.setWaterBorder('20000', '004')
-        else if (se) cell.setWaterBorder('20000', '006')
+        const flags = getNeighborFlags(this.map.grid, i, j, neighbor => isAnyWater(neighbor?.type))
+        const frame = getWaterBorderFrame(flags)
+        if (frame) cell.setWaterBorder('20000', frame)
       }
     }
   }
@@ -835,20 +812,43 @@ export class MapTerrain {
   }
 
   rebuildTerrainAppearance(protectedReliefCells = new Set()) {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        this.map.grid[i][j].resetTerrainAppearance()
-      }
+    const timings = this.map.generationTimings
+    const measure = (name, callback) => {
+      if (!timings) return callback()
+      const startedAt = performance.now()
+      const result = callback()
+      timings[name] = performance.now() - startedAt
+      return result
     }
 
-    this.map.formatCellsWaterBorder()
-    const waterLevelBounds = this.map.clampReliefAroundWaterLevels()
-    const unrestrictedReliefDistances = new Int16Array((this.map.size + 1) ** 2).fill(this.map.size + 4)
-    this.map.enforceReliefStepContinuity(unrestrictedReliefDistances, protectedReliefCells, waterLevelBounds)
-    this.map.formatCellsRelief()
-    this.map.formatCellsWaterBorderOverlays()
-    this.map.formatCellsDeepWaterBorder()
-    this.map.formatCellsDesert()
+    measure('terrainResetAppearance', () => {
+      const preserveWaterBorder = Boolean(this.map.blueprintWaterBorderReady)
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          this.map.grid[i][j].resetTerrainAppearance({ preserveWaterBorder })
+        }
+      }
+    })
+
+    if (this.map.blueprintWaterBorderReady) {
+      this.map.generationTimings.terrainWaterBorder = 0
+    } else {
+      measure('terrainWaterBorder', () => this.map.formatCellsWaterBorder())
+    }
+    if (this.map.pregeneratedBlueprintId) {
+      this.map.generationTimings.terrainClampWaterLevels = 0
+      this.map.generationTimings.terrainReliefContinuity = 0
+    } else {
+      const waterLevelBounds = measure('terrainClampWaterLevels', () => this.map.clampReliefAroundWaterLevels())
+      const unrestrictedReliefDistances = new Int16Array((this.map.size + 1) ** 2).fill(this.map.size + 4)
+      measure('terrainReliefContinuity', () =>
+        this.map.enforceReliefStepContinuity(unrestrictedReliefDistances, protectedReliefCells, waterLevelBounds)
+      )
+    }
+    measure('terrainReliefBorders', () => this.map.formatCellsRelief())
+    measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
+    measure('terrainDeepWaterBorders', () => this.map.formatCellsDeepWaterBorder())
+    measure('terrainDesertBorders', () => this.map.formatCellsDesert())
   }
 
   classifyDeepWater() {
@@ -940,16 +940,13 @@ export class MapTerrain {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.type !== 'DeepWater') continue
-
-        const n = this.map.grid[i - 1]?.[j]
-        const s = this.map.grid[i + 1]?.[j]
-        const w = this.map.grid[i]?.[j - 1]
-        const e = this.map.grid[i]?.[j + 1]
-
-        if (n && n.type !== 'DeepWater') cell.setDeepWaterBorder('west')
-        if (s && s.type !== 'DeepWater') cell.setDeepWaterBorder('east')
-        if (w && w.type !== 'DeepWater') cell.setDeepWaterBorder('north')
-        if (e && e.type !== 'DeepWater') cell.setDeepWaterBorder('south')
+        const { n, s, w, e } = getNeighborFlags(
+          this.map.grid, i, j, neighbor => neighbor != null && neighbor.type !== 'DeepWater'
+        )
+        if (n) cell.setDeepWaterBorder('west')
+        if (s) cell.setDeepWaterBorder('east')
+        if (w) cell.setDeepWaterBorder('north')
+        if (e) cell.setDeepWaterBorder('south')
       }
     }
   }

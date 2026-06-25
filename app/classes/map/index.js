@@ -171,6 +171,10 @@ export default class Map extends Container {
     return this.mapGeneration.generateMapAsync(positionsCountOverride, repeat, options)
   }
 
+  generateFromBlueprint(blueprint, options) {
+    return this.mapGeneration.generateFromBlueprint(blueprint, options)
+  }
+
   stylishMap(options) {
     return this.mapGeneration.stylishMap(options)
   }
@@ -310,8 +314,8 @@ export default class Map extends Container {
     return this.mapTerrain.fillWaterGaps(level)
   }
 
-  normalizeWaterTopology(level, seeds) {
-    return this.mapTerrain.normalizeWaterTopology(level, seeds)
+  normalizeWaterTopology(level, seeds, protectedCells) {
+    return this.mapTerrain.normalizeWaterTopology(level, seeds, protectedCells)
   }
 
   clampReliefAroundWaterLevels() {

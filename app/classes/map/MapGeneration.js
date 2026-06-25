@@ -446,17 +446,27 @@ export class MapGeneration {
     }
 
     this.map.gaia = new Gaia(this.map.context)
-    await onProgress('generatingRelief', 0.28)
-    measure('relief', () => this.map.generateMapRelief())
+    if (this.map.pregeneratedBlueprintId) {
+      timings.relief = 0
+    } else {
+      await onProgress('generatingRelief', 0.28)
+      measure('relief', () => this.map.generateMapRelief())
+    }
     await this.yieldToBrowser()
     measure('deepWater', () => this.map.classifyDeepWater())
     measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
     await onProgress('generatingPlayers', 0.48)
     measure('playerPlacement', () => this.map.placePlayers())
     await onProgress('generatingResources', 0.58)
-    await measureAsync('playerResources', () => this.map.generateResourcesAroundPlayersAsync(this.map.playersPos))
-    await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
-    await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
+    if (this.map.pregeneratedResourcesLoaded) {
+      timings.playerResources = 0
+      timings.neutralResources = 0
+      timings.biomeTrees = 0
+    } else {
+      await measureAsync('playerResources', () => this.map.generateResourcesAroundPlayersAsync(this.map.playersPos))
+      await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
+      await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
+    }
     measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
@@ -465,11 +475,12 @@ export class MapGeneration {
 
     if (!this.map.revealEverything) {
       const fogCellsStartedAt = performance.now()
+      const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 12
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           this.map.grid[i][j].setFog()
         }
-        if (i % 12 === 0) await this.yieldToBrowser()
+        if (i % yieldEvery === 0) await this.yieldToBrowser()
       }
       for (let i = 0; i < player.buildings.length; i++) {
         const building = player.buildings[i]
@@ -631,7 +642,7 @@ export class MapGeneration {
         row[j] = cell
       }
       if (i % 8 === 0) {
-        await onProgress('generatingTerrain', 0.03 + (i / this.map.size) * 0.14)
+        await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
         await this.yieldToBrowser()
       }
     }
@@ -642,6 +653,89 @@ export class MapGeneration {
     this.map.normalizeWaterTopology()
     await this.yieldToBrowser()
     this.map.formatCellsWaterBorder()
+  }
+
+  async generateFromBlueprint(blueprint, { onProgress = async () => {} } = {}) {
+    const destroyStartedAt = performance.now()
+    this.destroyGeneratedChildren()
+    this.map.blueprintDestroyMs = performance.now() - destroyStartedAt
+    this.map.seed = blueprint.seed
+    this.map.size = blueprint.size
+    this.map.mapType = blueprint.mapType
+    this.map.playersPos = blueprint.spawns || []
+    this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
+    this.map.resetRandom()
+    this.map.invalidateReliefCoastDistances()
+
+    const startedAt = performance.now()
+    const cellDefinitions = Assets.cache.get('config').cells
+    for (let i = 0; i <= this.map.size; i++) {
+      const row = []
+      this.map.grid[i] = row
+      for (let j = 0; j <= this.map.size; j++) {
+        const type = blueprint.terrain[i][j]
+        row[j] = new GenerationCell(
+          {
+            i,
+            j,
+            z: blueprint.relief[i][j] || 0,
+            type,
+            definition: cellDefinitions[type],
+          },
+          this.map.context
+        )
+      }
+      if (i % 32 === 0) {
+        await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
+        await this.yieldToBrowser()
+      }
+    }
+    this.map.blueprintCellCreationMs = performance.now() - startedAt
+    this.map.context.performance?.record('blueprintCellCreation', this.map.blueprintCellCreationMs)
+
+    const fillWaterStartedAt = performance.now()
+    this.map.fillWaterGaps()
+    this.map.blueprintFillWaterGapsMs = performance.now() - fillWaterStartedAt
+    await this.yieldToBrowser()
+    const normalizeWaterStartedAt = performance.now()
+    this.map.normalizeWaterTopology()
+    this.map.blueprintNormalizeWaterMs = performance.now() - normalizeWaterStartedAt
+    await this.yieldToBrowser()
+    const waterBorderStartedAt = performance.now()
+    this.map.formatCellsWaterBorder()
+    this.map.blueprintWaterBorderReady = true
+    this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
+    this.map.totalCells = (this.map.size + 1) ** 2
+
+    if (Array.isArray(blueprint.resources)) {
+      const startedAt = performance.now()
+      this.map.resources = new Set()
+      const resourcesConfig = Assets.cache.get('config').resources
+      for (const resource of blueprint.resources) {
+        const cell = this.map.grid[resource.i]?.[resource.j]
+        if (!cell || cell.has || cell.solid) continue
+        const definition = resourcesConfig[resource.type]
+        const assets = definition?.assets
+        const hasCompatibleTexture =
+          resource.textureName ||
+          definition?.isAnimated ||
+          Array.isArray(assets) ||
+          typeof assets === 'string' ||
+          Boolean(assets?.[cell.type])
+        if (!hasCompatibleTexture) continue
+        try {
+          this.map.resources.add(this.map.addChild(new Resource(resource, this.map.context)))
+        } catch (error) {
+          console.warn('Skipping invalid blueprint resource', resource, error)
+        }
+      }
+      this.map.pregeneratedResourcesLoaded = true
+      this.map.blueprintResourceLoadMs = performance.now() - startedAt
+      this.map.context.performance?.record('blueprintResources', this.map.blueprintResourceLoadMs)
+    } else {
+      this.map.pregeneratedResourcesLoaded = false
+      this.map.blueprintResourceLoadMs = 0
+    }
   }
 
   generateTerrain(gridSize = 120, mapType = 'plain', seed) {
@@ -1163,7 +1257,8 @@ export class MapGeneration {
           }
         }
       }
-      if (i % 8 === 0) await this.yieldToBrowser()
+      const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 8
+      if (i % yieldEvery === 0) await this.yieldToBrowser()
     }
   }
 

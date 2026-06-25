@@ -42,6 +42,7 @@ module.exports = (_env, argv = {}) => {
       new CopyWebpackPlugin({
         patterns: [
           { from: env.staticAssetsDir, to: 'assets' },
+          { from: env.staticMapsDir, to: 'maps', noErrorOnMissing: true },
           { from: env.faviconFile, to: 'favicon.ico' },
         ],
       }),
@@ -68,9 +69,10 @@ module.exports = (_env, argv = {}) => {
       minimize: env.isProduction,
     },
     devServer: {
-      static: {
-        directory: env.buildDir,
-      },
+      static: [
+        { directory: env.buildDir },
+        { directory: env.staticMapsDir, publicPath: '/maps', watch: true },
+      ],
       compress: true,
       port: env.devServerPort,
       hot: true,

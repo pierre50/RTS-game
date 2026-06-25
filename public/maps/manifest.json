@@ -1,0 +1,200 @@
+{
+  "format": "rts-map-manifest",
+  "version": 1,
+  "generatedAt": "2026-06-25T21:41:59.677Z",
+  "batchSeed": 456,
+  "maps": [
+    {
+      "id": "plain-144-001",
+      "size": 144,
+      "mapType": "plain",
+      "path": "144/plain/plain-144-001.rtsmap",
+      "seed": 296161724,
+      "spawns": 3
+    },
+    {
+      "id": "plain-144-002",
+      "size": 144,
+      "mapType": "plain",
+      "path": "144/plain/plain-144-002.rtsmap",
+      "seed": 1635386937,
+      "spawns": 3
+    },
+    {
+      "id": "continent-144-001",
+      "size": 144,
+      "mapType": "continent",
+      "path": "144/continent/continent-144-001.rtsmap",
+      "seed": 13872235,
+      "spawns": 3
+    },
+    {
+      "id": "continent-144-002",
+      "size": 144,
+      "mapType": "continent",
+      "path": "144/continent/continent-144-002.rtsmap",
+      "seed": 1442897092,
+      "spawns": 3
+    },
+    {
+      "id": "lac-144-001",
+      "size": 144,
+      "mapType": "lac",
+      "path": "144/lac/lac-144-001.rtsmap",
+      "seed": 1989387943,
+      "spawns": 3
+    },
+    {
+      "id": "lac-144-002",
+      "size": 144,
+      "mapType": "lac",
+      "path": "144/lac/lac-144-002.rtsmap",
+      "seed": 374977211,
+      "spawns": 3
+    },
+    {
+      "id": "ilot-144-001",
+      "size": 144,
+      "mapType": "ilot",
+      "path": "144/ilot/ilot-144-001.rtsmap",
+      "seed": 561912793,
+      "spawns": 3
+    },
+    {
+      "id": "ilot-144-002",
+      "size": 144,
+      "mapType": "ilot",
+      "path": "144/ilot/ilot-144-002.rtsmap",
+      "seed": 1924656439,
+      "spawns": 3
+    },
+    {
+      "id": "plain-256-001",
+      "size": 256,
+      "mapType": "plain",
+      "path": "256/plain/plain-256-001.rtsmap",
+      "seed": 56166361,
+      "spawns": 4
+    },
+    {
+      "id": "plain-256-002",
+      "size": 256,
+      "mapType": "plain",
+      "path": "256/plain/plain-256-002.rtsmap",
+      "seed": 2097231051,
+      "spawns": 4
+    },
+    {
+      "id": "continent-256-001",
+      "size": 256,
+      "mapType": "continent",
+      "path": "256/continent/continent-256-001.rtsmap",
+      "seed": 1314249102,
+      "spawns": 4
+    },
+    {
+      "id": "continent-256-002",
+      "size": 256,
+      "mapType": "continent",
+      "path": "256/continent/continent-256-002.rtsmap",
+      "seed": 1744449512,
+      "spawns": 4
+    },
+    {
+      "id": "lac-256-001",
+      "size": 256,
+      "mapType": "lac",
+      "path": "256/lac/lac-256-001.rtsmap",
+      "seed": 120386609,
+      "spawns": 4
+    },
+    {
+      "id": "lac-256-002",
+      "size": 256,
+      "mapType": "lac",
+      "path": "256/lac/lac-256-002.rtsmap",
+      "seed": 2062394689,
+      "spawns": 4
+    },
+    {
+      "id": "ilot-256-001",
+      "size": 256,
+      "mapType": "ilot",
+      "path": "256/ilot/ilot-256-001.rtsmap",
+      "seed": 499101924,
+      "spawns": 4
+    },
+    {
+      "id": "ilot-256-002",
+      "size": 256,
+      "mapType": "ilot",
+      "path": "256/ilot/ilot-256-002.rtsmap",
+      "seed": 847784630,
+      "spawns": 4
+    },
+    {
+      "id": "plain-512-001",
+      "size": 512,
+      "mapType": "plain",
+      "path": "512/plain/plain-512-001.rtsmap",
+      "seed": 1386959505,
+      "spawns": 4
+    },
+    {
+      "id": "plain-512-002",
+      "size": 512,
+      "mapType": "plain",
+      "path": "512/plain/plain-512-002.rtsmap",
+      "seed": 761141865,
+      "spawns": 4
+    },
+    {
+      "id": "continent-512-001",
+      "size": 512,
+      "mapType": "continent",
+      "path": "512/continent/continent-512-001.rtsmap",
+      "seed": 27268586,
+      "spawns": 4
+    },
+    {
+      "id": "continent-512-002",
+      "size": 512,
+      "mapType": "continent",
+      "path": "512/continent/continent-512-002.rtsmap",
+      "seed": 1391260191,
+      "spawns": 4
+    },
+    {
+      "id": "lac-512-001",
+      "size": 512,
+      "mapType": "lac",
+      "path": "512/lac/lac-512-001.rtsmap",
+      "seed": 879910327,
+      "spawns": 4
+    },
+    {
+      "id": "lac-512-002",
+      "size": 512,
+      "mapType": "lac",
+      "path": "512/lac/lac-512-002.rtsmap",
+      "seed": 2124847448,
+      "spawns": 4
+    },
+    {
+      "id": "ilot-512-001",
+      "size": 512,
+      "mapType": "ilot",
+      "path": "512/ilot/ilot-512-001.rtsmap",
+      "seed": 319218978,
+      "spawns": 4
+    },
+    {
+      "id": "ilot-512-002",
+      "size": 512,
+      "mapType": "ilot",
+      "path": "512/ilot/ilot-512-002.rtsmap",
+      "seed": 1044311802,
+      "spawns": 4
+    }
+  ]
+}

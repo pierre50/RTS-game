@@ -3,6 +3,8 @@ import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
 
+const textureIndexForCell = (i, j, assets = []) => (assets.length ? (i * 31 + j * 17) % assets.length : 0)
+
 export class GenerationCell {
   constructor(options, context) {
     this.context = context
@@ -26,15 +28,13 @@ export class GenerationCell {
     this.terrainSet = null
     this._hasFog = false
     this._fogChunks = null
-    this._terrainAppearance = {
-      desertBorders: new Set(),
-      deepWaterBorders: new Set(),
-      relief: null,
-      waterBorder: null,
-    }
+    this._terrainAppearance = { desertBorders: null, deepWaterBorders: null, relief: null, waterBorder: null }
 
-    Object.assign(this, Assets.cache.get('config').cells[this.type], options)
-    this.terrainTextureName = this.map.randomItem(this.assets)
+    const definition = options.definition || Assets.cache.get('config').cells[this.type]
+    this.category = definition.category
+    this.color = definition.color
+    this.assets = definition.assets
+    this.terrainTextureName = options.textureName || this.assets[textureIndexForCell(this.i, this.j, this.assets)]
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH
@@ -76,29 +76,38 @@ export class GenerationCell {
     return this.children.find(child => child.label === label) || null
   }
 
-  resetTerrainAppearance() {
+  resetTerrainAppearance({ preserveWaterBorder = false } = {}) {
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH
     this.inclined = false
-    this.border = false
-    this.waterBorder = false
-    this._terrainAppearance.desertBorders.clear()
-    this._terrainAppearance.deepWaterBorders.clear()
+    if (!preserveWaterBorder) {
+      this.border = false
+      this.waterBorder = false
+    }
+    this._terrainAppearance.desertBorders = null
+    this._terrainAppearance.deepWaterBorders = null
     this._terrainAppearance.relief = null
-    this._terrainAppearance.waterBorder = null
+    if (!preserveWaterBorder) this._terrainAppearance.waterBorder = null
   }
 
   setDeepWaterBorder(direction) {
+    if (!this._terrainAppearance.deepWaterBorders) this._terrainAppearance.deepWaterBorders = new Set()
     this._terrainAppearance.deepWaterBorders.add(direction)
   }
 
-  setWater() {
-    const definition = Assets.cache.get('config').cells.Water
-    this.type = 'Water'
+  setTerrainType(type) {
+    const definition = Assets.cache.get('config').cells[type]
+    if (!definition) return
+    const wasWater = this.category === 'Water'
+    this.type = type
     Object.assign(this, definition)
     this.terrainTextureName = this.map.randomItem(this.assets)
-    this.map.invalidateReliefCoastDistances()
+    if (wasWater !== (this.category === 'Water')) this.map.invalidateReliefCoastDistances()
+  }
+
+  setWater() {
+    this.setTerrainType('Water')
   }
 
   setWaterBorder(resourceName, index) {
@@ -115,6 +124,7 @@ export class GenerationCell {
   }
 
   setDesertBorder(direction) {
+    if (!this._terrainAppearance.desertBorders) this._terrainAppearance.desertBorders = new Set()
     this._terrainAppearance.desertBorders.add(direction)
   }
 

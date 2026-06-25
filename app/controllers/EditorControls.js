@@ -222,6 +222,7 @@ export class EditorControls extends Container {
     if (cell.has) return
     this.context.player?.unselectAll?.()
     this.pointerDown = true
+    this.context.editor.beginTerrainStroke?.()
     this.paint(cell)
   }
 
@@ -229,6 +230,7 @@ export class EditorControls extends Container {
     this.pointerDown = false
     this.lastPaintSignature = null
     this.mouse.prevent = false
+    this.context.editor.finishTerrainStroke?.()
   }
 
   paint(cell) {

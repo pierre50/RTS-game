@@ -73,8 +73,16 @@ export class Resource extends Instance {
       this.sprite.play()
       this.sprite.animationSpeed = 0.2
     } else {
+      const terrainAssets =
+        Array.isArray(this.assets) || typeof this.assets === 'string'
+          ? this.assets
+          : this.assets?.[cell.type] || Object.values(this.assets || {}).find(value => Array.isArray(value))
       this.textureName =
-        this.textureName || map.randomItem(Array.isArray(this.assets) ? this.assets : this.assets[cell.type])
+        this.textureName ||
+        (typeof terrainAssets === 'string' ? `000_${terrainAssets}` : map.randomItem(terrainAssets || []))
+      if (!this.textureName) {
+        throw new Error(`Missing texture for resource ${this.type} on ${cell.type}`)
+      }
       const resourceName = this.textureName.split('_')[1]
       const textureFile = this.textureName + '.png'
       const spritesheet = Assets.cache.get(resourceName)

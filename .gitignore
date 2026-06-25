@@ -4,3 +4,6 @@ node_modules
 *.log*
 .DS_Store
 tools/
+!tools/
+tools/*
+!tools/generate-rtsmaps.cjs
