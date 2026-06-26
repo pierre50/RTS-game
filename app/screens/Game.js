@@ -272,6 +272,7 @@ export default class Game extends Container {
   }
 
   async _bootFromConfig(config) {
+    this.context.performance?.setPhase('load')
     this._createRuntime()
     this._applyMapConfig(this.context.map, config)
     const hasExplicitSeed = Number.isFinite(config.seed) || this._restartSeed != null
@@ -323,16 +324,19 @@ export default class Game extends Container {
     this.context.controls.init()
 
     this._mountRuntime()
+    this.context.performance?.setPhase('runtime')
     this.checkVictory()
   }
 
   _bootFromSave(json) {
+    this.context.performance?.setPhase('load')
     this._createRuntime()
     this.context.map.size = Math.max(0, (json.map?.length || 1) - 1)
     this._applyMapConfig(this.context.map, json.config)
     this._createUiRuntime()
     this.context.map.generateFromJSON(json)
     this._mountRuntime()
+    this.context.performance?.setPhase('runtime')
     this.checkVictory()
   }
 

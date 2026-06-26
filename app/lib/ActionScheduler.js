@@ -74,11 +74,11 @@ export class ActionScheduler {
   }
 
   _runTask(task) {
-    const startedAt = performance.now()
-    try {
+    const performanceMonitor = this._getPerformance()
+    if (!performanceMonitor) {
       task.callback()
-    } finally {
-      this._getPerformance()?.record(task.name, performance.now() - startedAt)
+      return
     }
+    performanceMonitor.measureSampled(task.name, task.callback)
   }
 }

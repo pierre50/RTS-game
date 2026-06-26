@@ -10,6 +10,7 @@ const REVEAL_RY = CELL_HEIGHT / 2
 const FOG_BAND = 20
 const CORNER_RADIUS = 10
 const OVERLAP = 10
+const DIRTY_REDRAW_INTERVAL_MS = 80
 
 export class ViewportFogRenderer {
   constructor(map) {
@@ -19,6 +20,7 @@ export class ViewportFogRenderer {
     this.height = 0
     this.left = 0
     this.top = 0
+    this.lastRedrawAt = 0
   }
 
   initialize() {
@@ -44,6 +46,7 @@ export class ViewportFogRenderer {
 
   update(viewport, force = false) {
     const startedAt = performance.now()
+    let didRedraw = false
     const renderer = this.map.context.app?.renderer
     const views = this.map.context.player?.views
     if (!renderer || !views || !viewport || !this.map.fogLayer) return
@@ -64,8 +67,14 @@ export class ViewportFogRenderer {
         left + width <= this.left + this.width &&
         top + height <= this.top + this.height
 
-      if (!force && !this.dirty && viewportCovered) return
+      const now = performance.now()
+      if (!force && viewportCovered) {
+        if (!this.dirty) return
+        if (now - this.lastRedrawAt < DIRTY_REDRAW_INTERVAL_MS) return
+      }
 
+      didRedraw = true
+      this.lastRedrawAt = now
       this._ensureTargets(width, height)
       this.left = left
       this.top = top
@@ -85,7 +94,7 @@ export class ViewportFogRenderer {
 
       this.dirty = false
     } finally {
-      this.map.context.performance?.record('fog.viewport', performance.now() - startedAt)
+      this.map.context.performance?.record(didRedraw ? 'fog.viewport' : 'fog.viewportSkip', performance.now() - startedAt)
     }
   }
 

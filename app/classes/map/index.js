@@ -108,7 +108,7 @@ export default class Map extends Container {
       if (this.terrainChunkManager?.chunks.size) {
         this.context.performance?.measure('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
       }
-      this.mapFog?.viewportRenderer.update(viewport)
+      if (!this.revealEverything) this.mapFog?.viewportRenderer.update(viewport)
       if (!viewport || !this.renderChunks.length) return
 
       let visibleCount = 0

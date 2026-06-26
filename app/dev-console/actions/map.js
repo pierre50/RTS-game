@@ -23,7 +23,13 @@ export function toggleFog(context, value) {
   const showFog = normalizeToggle(value, currently)
   map.revealEverything = !showFog
   if (map.fogLayer) map.fogLayer.visible = showFog
-  map.mapFog?.viewportRenderer.invalidate()
+  if (showFog) {
+    map.mapFog?.viewportRenderer.invalidate()
+    map.mapFog?.viewportRenderer.update(context.controls?.cameraController?.getViewportRect())
+  } else {
+    map._fogQueue?.clear()
+    map._pendingFogChunkUpdates?.clear()
+  }
 
   map.terrainChunkManager?.invalidateAll()
 

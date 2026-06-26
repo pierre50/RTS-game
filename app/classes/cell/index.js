@@ -65,11 +65,11 @@ export class Cell extends Container {
     this.sprite.allowClick = false
     this.addChild(this.sprite)
 
-    this.cellFog = new CellFog(this)
+    this.cellFog = options.skipFog ? null : new CellFog(this)
     this.cellTerrain = new CellTerrain(this)
 
     // Replay fog building sprites for cells loaded from a save
-    this.fogSprites.forEach(s => this.cellFog.addFogBuilding(...Object.values(s)))
+    if (this.cellFog) this.fogSprites.forEach(s => this.cellFog.addFogBuilding(...Object.values(s)))
 
     this.eventMode = 'none'
     this.allowMove = false
@@ -111,21 +111,26 @@ export class Cell extends Container {
     this.sprite = null
   }
 
+  _ensureCellFog() {
+    if (!this.cellFog) this.cellFog = new CellFog(this)
+    return this.cellFog
+  }
+
   // Fog delegates
   setFog(init) {
-    return this.cellFog.setFog(init)
+    return this._ensureCellFog().setFog(init)
   }
   removeFog() {
-    return this.cellFog.removeFog()
+    return this._ensureCellFog().removeFog()
   }
   addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName)
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
   }
   removeFogBuilding(instance) {
-    return this.cellFog.removeFogBuilding(instance)
+    return this._ensureCellFog().removeFogBuilding(instance)
   }
   setFogChildren(instance, init) {
-    return this.cellFog.setFogChildren(instance, init)
+    return this._ensureCellFog().setFogChildren(instance, init)
   }
 
   // Terrain delegates

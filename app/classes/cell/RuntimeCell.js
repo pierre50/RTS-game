@@ -32,7 +32,7 @@ export class RuntimeCell {
     this._terrainAppearance = source._terrainAppearance
     this.terrainSet = source.terrainSet || null
     this._fogChunks = null
-    this.cellFog = new CellFog(this)
+    this.cellFog = null
   }
 
   _updateChild(instance) {
@@ -64,23 +64,28 @@ export class RuntimeCell {
     return child
   }
 
+  _ensureCellFog() {
+    if (!this.cellFog) this.cellFog = new CellFog(this)
+    return this.cellFog
+  }
+
   setFog(init) {
-    return this.cellFog.setFog(init)
+    return this._ensureCellFog().setFog(init)
   }
 
   removeFog() {
-    return this.cellFog.removeFog()
+    return this._ensureCellFog().removeFog()
   }
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName)
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
   }
 
   removeFogBuilding(instance) {
-    return this.cellFog.removeFogBuilding(instance)
+    return this._ensureCellFog().removeFogBuilding(instance)
   }
 
   setFogChildren(instance, init) {
-    return this.cellFog.setFogChildren(instance, init)
+    return this._ensureCellFog().setFogChildren(instance, init)
   }
 }

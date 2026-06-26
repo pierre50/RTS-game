@@ -6,6 +6,7 @@ import { RuntimeCell } from '../cell/RuntimeCell'
 import { ViewportFogRenderer } from './ViewportFogRenderer'
 
 const WATER_CHUNK_SIZE = 64
+const FOG_VIEWPORT_UPDATE_MARGIN = CELL_WIDTH * 3
 
 export class MapFog {
   constructor(map) {
@@ -31,11 +32,13 @@ export class MapFog {
     const chunkW = totalW / chunksX
     const chunkH = totalH / chunksY
 
+    const visibleStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         this.map.grid[i][j].visible = true
       }
     }
+    this.map.context.performance?.record('terrainBake.markVisible', performance.now() - visibleStartedAt)
 
     const terrainContainer = new Container()
     terrainContainer.sortableChildren = true
@@ -46,6 +49,7 @@ export class MapFog {
     terrainContainer.addChild(backfillContainer)
     const backfillSprites = []
     const terrainSets = []
+    const backfillStartedAt = performance.now()
     for (const source of this.map.terrainBackfill?.children || []) {
       const sprite = new Sprite(source.texture)
       sprite.position.copyFrom(source.position)
@@ -56,6 +60,9 @@ export class MapFog {
       backfillContainer.addChild(sprite)
       backfillSprites.push(sprite)
     }
+    this.map.context.performance?.record('terrainBake.backfill', performance.now() - backfillStartedAt)
+
+    const collectStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -71,7 +78,9 @@ export class MapFog {
         terrainContainer.addChild(cell)
       }
     }
+    this.map.context.performance?.record('terrainBake.collectCells', performance.now() - collectStartedAt)
 
+    const renderStartedAt = performance.now()
     for (let cx = 0; cx < chunksX; cx++) {
       for (let cy = 0; cy < chunksY; cy++) {
         const cMinX = minX + cx * chunkW
@@ -99,33 +108,40 @@ export class MapFog {
         })
       }
     }
+    this.map.context.performance?.record('terrainBake.renderTextures', performance.now() - renderStartedAt)
 
+    const cleanupStartedAt = performance.now()
     for (const sprite of backfillSprites) sprite.destroy()
     backfillContainer.destroy()
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
     terrainSets.forEach(set => this.map.addChild(set))
+    this.map.context.performance?.record('terrainBake.cleanup', performance.now() - cleanupStartedAt)
 
     if (!this.map.context.editor) {
       const compactStartedAt = performance.now()
       const replacements = new globalThis.Map()
+      const runtimeCellsStartedAt = performance.now()
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
-          terrainContainer.removeChild(cell)
-          cell.releaseTerrainRenderResources()
           const runtimeCell = new RuntimeCell(cell)
           replacements.set(cell, runtimeCell)
           this.map.grid[i][j] = runtimeCell
-          cell.destroy()
         }
       }
-      terrainContainer.destroy()
+      this.map.context.performance?.record('cellCompaction.runtimeCells', performance.now() - runtimeCellsStartedAt)
+
+      const destroyStartedAt = performance.now()
+      terrainContainer.destroy({ children: true, texture: false, textureSource: false })
+      this.map.context.performance?.record('cellCompaction.destroyTerrainContainer', performance.now() - destroyStartedAt)
+
       const instances = [
         ...(this.map.gaia?.units || []),
         ...this.map.context.players.flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
         ...this.map.resources,
       ]
       const replaceCell = cell => replacements.get(cell) || cell
+      const relinkStartedAt = performance.now()
       for (const instance of instances) {
         if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
         if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest)
@@ -133,12 +149,17 @@ export class MapFog {
           instance.previousDest = replaceCell(instance.previousDest)
         if (instance.path?.length) instance.path = instance.path.map(replaceCell)
       }
+      this.map.context.performance?.record('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
+
+      const indexStartedAt = performance.now()
       this.map.context.controls?.cameraController?.visibleCells?.clear()
       this._indexFogChunkCells()
+      this.map.context.performance?.record('cellCompaction.reindexFog', performance.now() - indexStartedAt)
       this.map.context.performance?.record('cellCompaction', performance.now() - compactStartedAt)
     }
 
     const { player } = this.map.context
+    const updateViewedStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -147,6 +168,7 @@ export class MapFog {
         }
       }
     }
+    this.map.context.performance?.record('terrainBake.updateViewedCells', performance.now() - updateViewedStartedAt)
 
     this._createWaterAnimation()
     this.map.context.performance?.record('terrainBake', performance.now() - bakeStartedAt)
@@ -154,6 +176,7 @@ export class MapFog {
 
   _materializeGenerationCells() {
     const startedAt = performance.now()
+    const cellsStartedAt = performance.now()
     const replacements = new globalThis.Map()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -167,6 +190,7 @@ export class MapFog {
             type: source.type,
             textureName: source.terrainTextureName,
             fogSprites: source.fogSprites,
+            skipFog: true,
           },
           this.map.context
         )
@@ -181,27 +205,44 @@ export class MapFog {
         cell.corpses = source.corpses
         cell._hasFog = source._hasFog
 
-        const appearance = source._terrainAppearance
-        if (appearance.waterBorder) cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
-        if (appearance.relief) cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
-        for (const direction of appearance.desertBorders ?? []) cell.setDesertBorder(direction)
-        for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
-        for (const decoration of source.getTerrainDecorations()) {
-          const sprite = new Sprite(decoration.texture)
-          sprite.label = decoration.label
-          sprite.position.copyFrom(decoration.position)
-          sprite.anchor.copyFrom(decoration.anchor)
-          sprite.roundPixels = true
-          sprite.eventMode = 'none'
-          sprite.zIndex = decoration.zIndex
-          cell.addChild(sprite)
-        }
-
         replacements.set(source, cell)
         this.map.grid[i][j] = cell
       }
     }
+    this.map.context.performance?.record('generationCellMaterialization.cells', performance.now() - cellsStartedAt)
 
+    const appearanceStartedAt = performance.now()
+    for (const [source, cell] of replacements) {
+      const appearance = source._terrainAppearance
+      if (appearance.waterBorder) cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
+      if (appearance.relief) cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
+      for (const direction of appearance.desertBorders ?? []) cell.setDesertBorder(direction)
+      for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
+    }
+    this.map.context.performance?.record(
+      'generationCellMaterialization.appearance',
+      performance.now() - appearanceStartedAt
+    )
+
+    const decorationsStartedAt = performance.now()
+    for (const [source, cell] of replacements) {
+      for (const decoration of source.getTerrainDecorations()) {
+        const sprite = new Sprite(decoration.texture)
+        sprite.label = decoration.label
+        sprite.position.copyFrom(decoration.position)
+        sprite.anchor.copyFrom(decoration.anchor)
+        sprite.roundPixels = true
+        sprite.eventMode = 'none'
+        sprite.zIndex = decoration.zIndex
+        cell.addChild(sprite)
+      }
+    }
+    this.map.context.performance?.record(
+      'generationCellMaterialization.decorations',
+      performance.now() - decorationsStartedAt
+    )
+
+    const relinkStartedAt = performance.now()
     const replaceCell = cell => replacements.get(cell) || cell
     const instances = [
       ...(this.map.gaia?.units || []),
@@ -214,7 +255,11 @@ export class MapFog {
       if (instance.previousDest?.family === FAMILY_TYPES.cell) instance.previousDest = replaceCell(instance.previousDest)
       if (instance.path?.length) instance.path = instance.path.map(replaceCell)
     }
-    this.map.context.performance?.record('generationCellCompaction', performance.now() - startedAt)
+    this.map.context.performance?.record(
+      'generationCellMaterialization.instanceRelinks',
+      performance.now() - relinkStartedAt
+    )
+    this.map.context.performance?.record('generationCellMaterialization', performance.now() - startedAt)
   }
 
   _createWaterAnimation() {
@@ -395,12 +440,39 @@ export class MapFog {
   }
 
   _flushFogQueue() {
-    if (this.map._fogQueue?.size) {
-      this.map._fogQueue.clear()
-      this.viewportRenderer.invalidate()
+    const fogQueue = this.map._fogQueue
+    const hasFogUpdates = fogQueue?.size > 0
+    if (!hasFogUpdates) {
+      this.map._pendingFogChunkUpdates?.clear()
+      return
     }
+
+    const viewport = this.map.context.controls?.cameraController?.getViewportRect()
+    const updateViewportFog = this._fogQueueTouchesViewport(fogQueue, viewport)
+    fogQueue.clear()
     this.map._pendingFogChunkUpdates?.clear()
-    this.viewportRenderer.update(this.map.context.controls?.cameraController?.getViewportRect())
+
+    if (updateViewportFog) {
+      this.viewportRenderer.invalidate()
+      this.viewportRenderer.update(viewport)
+    }
+  }
+
+  _fogQueueTouchesViewport(fogQueue, viewport) {
+    if (!viewport) return false
+    const left = viewport.visibleLeft - FOG_VIEWPORT_UPDATE_MARGIN
+    const top = viewport.visibleTop - FOG_VIEWPORT_UPDATE_MARGIN
+    const right = viewport.visibleLeft + viewport.visibleWidth + FOG_VIEWPORT_UPDATE_MARGIN
+    const bottom = viewport.visibleTop + viewport.visibleHeight + FOG_VIEWPORT_UPDATE_MARGIN
+
+    for (const cell of fogQueue.keys()) {
+      if (!cell) continue
+      const bounds = this._getFogCellBounds(cell)
+      if (bounds.maxX >= left && bounds.minX <= right && bounds.maxY >= top && bounds.minY <= bottom) {
+        return true
+      }
+    }
+    return false
   }
 
   destroyFogResources() {

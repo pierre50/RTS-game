@@ -128,12 +128,9 @@ export class UnitMovement {
   }
 
   moveToPath() {
-    const startedAt = performance.now()
-    try {
-      return this._moveToPath()
-    } finally {
-      this.unit.context.performance?.record('unit.move', performance.now() - startedAt)
-    }
+    const performanceMonitor = this.unit.context.performance
+    if (performanceMonitor) return performanceMonitor.measureSampled('unit.move', () => this._moveToPath())
+    return this._moveToPath()
   }
 
   _moveToPath() {

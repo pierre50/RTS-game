@@ -69,9 +69,7 @@ export class Building extends Instance {
     this.zIndex = getInstanceZIndex(this)
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
-    if (this.type === BUILDING_TYPES.house && this.owner.age === 0) {
-      spriteSheet = '000_489'
-    } else if (this.type === BUILDING_TYPES.dock) {
+    if (this.type === BUILDING_TYPES.dock) {
       spriteSheet = '000_356'
     }
     const texture = getTexture(spriteSheet, Assets)

@@ -39,7 +39,7 @@ export class GenerationCell {
     this.x = x
     this.y = y - this.z * CELL_DEPTH
     this.zIndex = this.i + this.j
-    this.cellFog = new CellFog(this)
+    this.cellFog = null
     this.isGenerationCell = true
   }
 
@@ -129,23 +129,28 @@ export class GenerationCell {
   }
 
   setFog(init) {
-    return this.cellFog.setFog(init)
+    return this._ensureCellFog().setFog(init)
   }
 
   removeFog() {
-    return this.cellFog.removeFog()
+    return this._ensureCellFog().removeFog()
   }
 
   addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this.cellFog.addFogBuilding(textureSheet, colorSheet, colorName)
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
   }
 
   removeFogBuilding(instance) {
-    return this.cellFog.removeFogBuilding(instance)
+    return this._ensureCellFog().removeFogBuilding(instance)
   }
 
   setFogChildren(instance, init) {
-    return this.cellFog.setFogChildren(instance, init)
+    return this._ensureCellFog().setFogChildren(instance, init)
+  }
+
+  _ensureCellFog() {
+    if (!this.cellFog) this.cellFog = new CellFog(this)
+    return this.cellFog
   }
 
   getTerrainDecorations() {

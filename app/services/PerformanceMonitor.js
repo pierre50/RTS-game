@@ -1,11 +1,22 @@
 const MAX_SAMPLES = 240
 const MAX_SLOW_SAMPLES = 12
 const SLOW_CALL_THRESHOLD_MS = 8
+const RUNTIME_SAMPLE_RATES = new Map([
+  ['animal.step', 16],
+  ['animal.behavior', 16],
+  ['unit.step', 8],
+  ['unit.move', 8],
+  ['visibility.update', 4],
+  ['building.production', 8],
+  ['projectile.step', 8],
+])
 
 export class PerformanceMonitor {
   constructor(app) {
     this.app = app
+    this.phase = 'load'
     this.metrics = new Map()
+    this.sampleCounters = new Map()
     this.frameTimes = []
     this._frameTicker = ticker => {
       this.frameTimes.push(ticker.elapsedMS)
@@ -14,14 +25,38 @@ export class PerformanceMonitor {
     app.ticker.add(this._frameTicker)
   }
 
-  record(name, duration) {
-    let metric = this.metrics.get(name)
+  setPhase(phase) {
+    this.phase = phase
+  }
+
+  metricName(name) {
+    if (name.startsWith('load.') || name.startsWith('runtime.')) return name
+    return `${this.phase}.${name}`
+  }
+
+  sampleRate(name) {
+    if (this.phase !== 'runtime') return 1
+    return RUNTIME_SAMPLE_RATES.get(name) || 1
+  }
+
+  shouldSample(name) {
+    const rate = this.sampleRate(name)
+    if (rate <= 1) return true
+    const metricName = this.metricName(name)
+    const counter = ((this.sampleCounters.get(metricName) || 0) + 1) % rate
+    this.sampleCounters.set(metricName, counter)
+    return counter === 0
+  }
+
+  record(name, duration, weight = 1) {
+    const metricName = this.metricName(name)
+    let metric = this.metrics.get(metricName)
     if (!metric) {
       metric = { count: 0, total: 0, max: 0, last: 0, slowCount: 0, slowSamples: [] }
-      this.metrics.set(name, metric)
+      this.metrics.set(metricName, metric)
     }
-    metric.count++
-    metric.total += duration
+    metric.count += weight
+    metric.total += duration * weight
     metric.max = Math.max(metric.max, duration)
     metric.last = duration
     if (duration >= SLOW_CALL_THRESHOLD_MS) {
@@ -37,6 +72,18 @@ export class PerformanceMonitor {
       return callback()
     } finally {
       this.record(name, performance.now() - startedAt)
+    }
+  }
+
+  measureSampled(name, callback) {
+    const rate = this.sampleRate(name)
+    if (rate <= 1) return this.measure(name, callback)
+    if (!this.shouldSample(name)) return callback()
+    const startedAt = performance.now()
+    try {
+      return callback()
+    } finally {
+      this.record(name, performance.now() - startedAt, rate)
     }
   }
 
@@ -59,6 +106,8 @@ export class PerformanceMonitor {
     return {
       frames: {
         samples: sortedFrames.length,
+        fps: this.app.ticker.FPS,
+        speed: this.app.ticker.speed,
         averageMs: sortedFrames.length
           ? sortedFrames.reduce((total, duration) => total + duration, 0) / sortedFrames.length
           : 0,
@@ -71,6 +120,7 @@ export class PerformanceMonitor {
 
   reset() {
     this.metrics.clear()
+    this.sampleCounters.clear()
     this.frameTimes.length = 0
   }
 

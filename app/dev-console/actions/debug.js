@@ -123,16 +123,17 @@ function ensurePerfOverlay(context) {
   const schedulerTasks = context.scheduler?._tasks?.size ?? 0
   const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
   const perf = context.performance?.snapshot()
-  const pathfinding = perf?.metrics.pathfinding
-  const aiStep = perf?.metrics['ai.step'] || perf?.metrics.aiStep
-  const schedulerTick = perf?.metrics['scheduler.tick']
-  const unitMove = perf?.metrics['unit.move']
-  const visibility = perf?.metrics['visibility.update']
-  const camera = perf?.metrics['camera.visibleCells']
-  const viewportFog = perf?.metrics['fog.viewport']
+  const metric = name => perf?.metrics[`runtime.${name}`] || perf?.metrics[name]
+  const pathfinding = metric('pathfinding')
+  const aiStep = metric('ai.step') || metric('aiStep')
+  const schedulerTick = metric('scheduler.tick')
+  const unitMove = metric('unit.move')
+  const visibility = metric('visibility.update')
+  const camera = metric('camera.visibleCells')
+  const viewportFog = metric('fog.viewport')
   overlay.textContent = [
     `FPS ${Math.round(app.ticker.FPS)}`,
-    `Frame avg ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
+    `Frame interval ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
     `Units ${units}`,
     `Buildings ${buildings}`,
     `Resources ${map.resources.size}`,
@@ -157,7 +158,7 @@ export function performanceReport(context, value) {
   const report = context.performance?.snapshot()
   if (!report) return { ok: false, message: 'Performance monitor unavailable' }
   const lines = [
-    `Frames ${report.frames.samples} | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms`,
+    `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
   ]
   const metrics = Object.entries(report.metrics).sort(([, a], [, b]) => b.totalMs - a.totalMs)
   for (const [name, metric] of metrics) {

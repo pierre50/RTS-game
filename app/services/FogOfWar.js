@@ -76,88 +76,89 @@ export function rehydrateAIKnowledge(viewer, map) {
 }
 
 export function updateVisibility(instance) {
-  const startedAt = performance.now()
+  const performanceMonitor = instance.context.performance
+  if (performanceMonitor) return performanceMonitor.measureSampled('visibility.update', () => updateVisibilityNow(instance))
+  return updateVisibilityNow(instance)
+}
+
+function updateVisibilityNow(instance) {
   const { i: cx, j: cy, sight, owner, context, isDead } = instance
   const map = context.map
   const player = context.player
   if (!owner?.views || !player?.views || !map?.grid) return
-  try {
-    const sightSq = sight * sight
-    const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
+  const sightSq = sight * sight
+  const visiblePlayers = owner.visiblePlayers ? owner.visiblePlayers() : [owner]
 
-    const prevVisible = instance.visibleCells ?? new Set()
-    const newVisible = instance._visibleScratch ?? new Set()
-    newVisible.clear()
+  const prevVisible = instance.visibleCells ?? new Set()
+  const newVisible = instance._visibleScratch ?? new Set()
+  newVisible.clear()
 
-    if (!isDead) {
-      const minI = Math.max(cx - sight, 0)
-      const maxI = Math.min(cx + sight, owner.views.size)
-      const minJ = Math.max(cy - sight, 0)
-      const maxJ = Math.min(cy + sight, owner.views.size)
-      for (let i = minI; i <= maxI; i++) {
-        for (let j = minJ; j <= maxJ; j++) {
-          const dx = i - cx
-          const dy = j - cy
-          if (dx * dx + dy * dy <= sightSq) {
-            newVisible.add(owner.views.index(i, j))
-          }
+  if (!isDead) {
+    const minI = Math.max(cx - sight, 0)
+    const maxI = Math.min(cx + sight, owner.views.size)
+    const minJ = Math.max(cy - sight, 0)
+    const maxJ = Math.min(cy + sight, owner.views.size)
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const dx = i - cx
+        const dy = j - cy
+        if (dx * dx + dy * dy <= sightSq) {
+          newVisible.add(owner.views.index(i, j))
         }
       }
     }
-
-    for (const index of prevVisible) {
-      if (!newVisible.has(index)) {
-        const [i, j] = owner.views.coordinates(index)
-        const globalCell = map.grid[i][j]
-        for (const viewer of visiblePlayers) {
-          viewer.views.removeViewer(i, j, instance)
-        }
-        syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
-
-        if (!player.views.isVisible(i, j) && !map.revealEverything) {
-          globalCell.setFog()
-        }
-      }
-    }
-
-    for (const index of newVisible) {
-      if (!prevVisible.has(index)) {
-        const [i, j] = owner.views.coordinates(index)
-        const globalCell = map.grid[i][j]
-
-        for (const viewer of visiblePlayers) {
-          viewer.views.addViewer(i, j, instance)
-          if (viewer.views.setViewed(i, j)) {
-            viewer.cellViewed++
-          }
-          if (viewer.type === PLAYER_TYPES.ai) {
-            updateAIKnowledge(globalCell, viewer)
-          }
-        }
-        syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
-        globalCell.updateVisible()
-
-        if (!map.revealEverything && player.views.hasViewer(i, j, instance)) {
-          globalCell.removeFog()
-        }
-
-        if (
-          !instance.context.editor &&
-          globalCell.has &&
-          globalCell.has.sight &&
-          typeof globalCell.has.detect === 'function'
-        ) {
-          const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
-          if (distSq <= globalCell.has.sight ** 2) {
-            globalCell.has.detect(instance)
-          }
-        }
-      }
-    }
-
-    instance.visibleCells = newVisible
-    instance._visibleScratch = prevVisible
-  } finally {
-    context.performance?.record('visibility.update', performance.now() - startedAt)
   }
+
+  for (const index of prevVisible) {
+    if (!newVisible.has(index)) {
+      const [i, j] = owner.views.coordinates(index)
+      const globalCell = map.grid[i][j]
+      for (const viewer of visiblePlayers) {
+        viewer.views.removeViewer(i, j, instance)
+      }
+      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
+
+      if (!player.views.isVisible(i, j) && !map.revealEverything) {
+        globalCell.setFog()
+      }
+    }
+  }
+
+  for (const index of newVisible) {
+    if (!prevVisible.has(index)) {
+      const [i, j] = owner.views.coordinates(index)
+      const globalCell = map.grid[i][j]
+
+      for (const viewer of visiblePlayers) {
+        viewer.views.addViewer(i, j, instance)
+        if (viewer.views.setViewed(i, j)) {
+          viewer.cellViewed++
+        }
+        if (viewer.type === PLAYER_TYPES.ai) {
+          updateAIKnowledge(globalCell, viewer)
+        }
+      }
+      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
+      globalCell.updateVisible()
+
+      if (!map.revealEverything && player.views.hasViewer(i, j, instance)) {
+        globalCell.removeFog()
+      }
+
+      if (
+        !instance.context.editor &&
+        globalCell.has &&
+        globalCell.has.sight &&
+        typeof globalCell.has.detect === 'function'
+      ) {
+        const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
+        if (distSq <= globalCell.has.sight ** 2) {
+          globalCell.has.detect(instance)
+        }
+      }
+    }
+  }
+
+  instance.visibleCells = newVisible
+  instance._visibleScratch = prevVisible
 }
