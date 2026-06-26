@@ -25,7 +25,7 @@ export class AnimalBehavior {
       return
     }
     this.scheduleAmbientWalk()
-    this.taskId = animal.context.scheduler.add(() => this.update(), BEHAVIOR_CHECK_INTERVAL)
+    this.taskId = animal.context.scheduler.add(() => this.update(), BEHAVIOR_CHECK_INTERVAL, 'animal.behavior')
   }
 
   stop() {

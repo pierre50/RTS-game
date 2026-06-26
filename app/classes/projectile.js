@@ -221,47 +221,55 @@ export class Projectile extends Container {
     this.addChild(sprite)
     this.updateTrajectoryVisual()
 
-    this.interval = this.context.scheduler.add(() => {
-      if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
-        targetX = this.target.x
-        targetY = this.target.y
-        this.destinationPoint.x = targetX
-        this.destinationPoint.y = targetY
-      }
-      if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
-        if (
-          this.target &&
-          !this.target.isDead &&
-          !this.target.isDestroyed &&
-          pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
-            average(this.target.width, this.target.height)
-        ) {
-          this.onHit(this.target)
+    this.interval = this.context.scheduler.add(
+      () => {
+        if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
+          targetX = this.target.x
+          targetY = this.target.y
+          this.destinationPoint.x = targetX
+          this.destinationPoint.y = targetY
         }
-        this.die()
-        return
-      }
-      moveTowardPoint(this, targetX, targetY, this.speed)
-      this.updateTrajectoryVisual()
-      this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
-    }, STEP_TIME)
+        if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
+          if (
+            this.target &&
+            !this.target.isDead &&
+            !this.target.isDestroyed &&
+            pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
+              average(this.target.width, this.target.height)
+          ) {
+            this.onHit(this.target)
+          }
+          this.die()
+          return
+        }
+        moveTowardPoint(this, targetX, targetY, this.speed)
+        this.updateTrajectoryVisual()
+        this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
+      },
+      STEP_TIME,
+      'projectile.step'
+    )
 
-    this.context.scheduler.addOneShot(() => {
-      const global = this.parent ? this.parent.toGlobal({ x: this.x, y: this.y }) : null
-      debugProjectile('post-add', {
-        type: this.type,
-        label: this.label,
-        hasParent: Boolean(this.parent),
-        parentLabel: this.parent?.label ?? this.parent?.constructor?.name ?? null,
-        visible: this.visible,
-        renderable: this.renderable,
-        worldVisible: this.worldVisible ?? null,
-        destroyed: this.destroyed,
-        childCount: this.children.length,
-        globalX: global?.x ?? null,
-        globalY: global?.y ?? null,
-      })
-    }, 50)
+    this.context.scheduler.addOneShot(
+      () => {
+        const global = this.parent ? this.parent.toGlobal({ x: this.x, y: this.y }) : null
+        debugProjectile('post-add', {
+          type: this.type,
+          label: this.label,
+          hasParent: Boolean(this.parent),
+          parentLabel: this.parent?.label ?? this.parent?.constructor?.name ?? null,
+          visible: this.visible,
+          renderable: this.renderable,
+          worldVisible: this.worldVisible ?? null,
+          destroyed: this.destroyed,
+          childCount: this.children.length,
+          globalX: global?.x ?? null,
+          globalY: global?.y ?? null,
+        })
+      },
+      50,
+      'projectile.debug'
+    )
   }
 
   createSprite(degree) {

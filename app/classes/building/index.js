@@ -258,9 +258,9 @@ export class Building extends Instance {
     return this.buildingCombat.attackAction(target)
   }
 
-  startInterval(callback, time) {
+  startInterval(callback, time, name = 'building.interval') {
     this.stopInterval()
-    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100)
+    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100, name)
   }
 
   stopInterval() {
@@ -273,7 +273,7 @@ export class Building extends Instance {
   startAttackInterval(callback, time) {
     this.stopAttackInterval()
     callback()
-    this.attackIntervalId = this.context.scheduler.add(callback, time * 1000)
+    this.attackIntervalId = this.context.scheduler.add(callback, time * 1000, 'building.attack')
   }
 
   stopAttackInterval() {
@@ -285,7 +285,7 @@ export class Building extends Instance {
 
   startTimeout(cb, time) {
     this.stopTimeout()
-    this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000)
+    this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000, 'building.timeout')
   }
 
   isAttacked(instance) {

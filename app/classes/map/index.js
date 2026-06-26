@@ -103,26 +103,31 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport, margin = CELL_WIDTH * 2) {
-    if (this.terrainChunkManager?.chunks.size) {
-      this.terrainChunkManager.update(viewport)
-    }
-    this.mapFog?.viewportRenderer.update(viewport)
-    if (!viewport || !this.renderChunks.length) return
+    const startedAt = performance.now()
+    try {
+      if (this.terrainChunkManager?.chunks.size) {
+        this.context.performance?.measure('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
+      }
+      this.mapFog?.viewportRenderer.update(viewport)
+      if (!viewport || !this.renderChunks.length) return
 
-    let visibleCount = 0
-    for (const chunk of this.renderChunks) {
-      const renderable = rectangleIntersectsViewport(chunk.bounds, viewport, margin)
-      if (renderable) visibleCount++
-      if (chunk.renderable === renderable) continue
+      let visibleCount = 0
+      for (const chunk of this.renderChunks) {
+        const renderable = rectangleIntersectsViewport(chunk.bounds, viewport, margin)
+        if (renderable) visibleCount++
+        if (chunk.renderable === renderable) continue
 
-      chunk.renderable = renderable
-      for (const displayObject of chunk.displayObjects) {
-        if (displayObject && !displayObject.destroyed) {
-          displayObject.renderable = renderable
+        chunk.renderable = renderable
+        for (const displayObject of chunk.displayObjects) {
+          if (displayObject && !displayObject.destroyed) {
+            displayObject.renderable = renderable
+          }
         }
       }
+      this.visibleRenderChunkCount = visibleCount
+    } finally {
+      this.context.performance?.record('renderChunks.update', performance.now() - startedAt)
     }
-    this.visibleRenderChunkCount = visibleCount
   }
 
   _ensureBuckets() {

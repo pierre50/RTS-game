@@ -139,7 +139,8 @@ export class UnitActions {
         }
       },
       (1 / unit.gatheringRate[unit.work]) * 1000,
-      false
+      false,
+      `unit.gather.${loadingType}`
     )
   }
 
@@ -231,7 +232,8 @@ export class UnitActions {
             }
           },
           (1 / unit.gatheringRate[unit.work]) * 1000,
-          false
+          false,
+          'unit.gather.farm'
         )
         break
       case ACTION_TYPES.chopwood:
@@ -288,7 +290,8 @@ export class UnitActions {
             }
           },
           (1 / unit.gatheringRate[unit.work]) * 1000,
-          false
+          false,
+          'unit.gather.wood'
         )
         break
       case ACTION_TYPES.forageberry:
@@ -348,7 +351,8 @@ export class UnitActions {
             }
           },
           1000,
-          false
+          false,
+          'unit.build'
         )
         break
       case ACTION_TYPES.attack:

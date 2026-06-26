@@ -72,7 +72,11 @@ export class AnimalLifecycle {
         player.unselectAll()
       }
       animal.sprite.currentFrame = 3
-      animal.timeoutId = animal.context.scheduler.addOneShot(() => animal.clear(), CORPSE_TIME * 1000)
+      animal.timeoutId = animal.context.scheduler.addOneShot(
+        () => animal.clear(),
+        CORPSE_TIME * 1000,
+        'animal.clearCorpse'
+      )
     }
   }
 

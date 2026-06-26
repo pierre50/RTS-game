@@ -54,11 +54,14 @@
 
 .dev-console-log {
   max-width: 100%;
+  max-height: min(48vh, 360px);
   padding: 4px 7px;
-  overflow: visible;
+  overflow: auto;
   box-sizing: border-box;
   word-break: break-word;
   white-space: pre-line;
+  -webkit-user-select: text;
+  user-select: text;
   color: var(--dev-console-log-color);
   font-size: 11px;
   font-weight: bold;
@@ -75,6 +78,10 @@
 
 .dev-console-log[data-status='error'] {
   color: var(--dev-console-error-color);
+}
+
+.dev-console-log[data-copied='true'] {
+  color: var(--dev-console-ok-color);
 }
 
 .dev-console-input {

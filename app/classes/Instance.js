@@ -14,9 +14,9 @@ export class Instance extends Container {
     this.timeoutId = null
   }
 
-  startInterval(callback, time, immediate = true) {
+  startInterval(callback, time, immediate = true, name = `${this.family || 'instance'}.interval`) {
     this.stopInterval()
-    this.interval = this.context.scheduler.add(callback, time)
+    this.interval = this.context.scheduler.add(callback, time, name)
     if (immediate) callback()
   }
 

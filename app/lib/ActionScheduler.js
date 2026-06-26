@@ -1,7 +1,8 @@
 export class ActionScheduler {
-  constructor(app, getPaused) {
+  constructor(app, getPaused, getPerformance = () => null) {
     this._app = app
     this._getPaused = getPaused
+    this._getPerformance = getPerformance
     this._tasks = new Map()
     this._nextId = 1
     this._toRemove = []
@@ -11,15 +12,15 @@ export class ActionScheduler {
     app.ticker.add(this._onTick)
   }
 
-  add(callback, intervalMs) {
+  add(callback, intervalMs, name = 'scheduler.task') {
     const id = this._nextId++
-    this._tasks.set(id, { callback, interval: intervalMs, elapsed: 0 })
+    this._tasks.set(id, { callback, interval: intervalMs, elapsed: 0, name })
     return id
   }
 
-  addOneShot(callback, delayMs) {
+  addOneShot(callback, delayMs, name = 'scheduler.oneShot') {
     const id = this._nextId++
-    this._tasks.set(id, { callback, interval: delayMs, elapsed: 0, oneShot: true })
+    this._tasks.set(id, { callback, interval: delayMs, elapsed: 0, oneShot: true, name })
     return id
   }
 
@@ -44,6 +45,7 @@ export class ActionScheduler {
 
   _tick(deltaMS) {
     if (this._getPaused()) return
+    const tickStartedAt = performance.now()
     this.elapsedMs += deltaMS
     this._toRemove.length = 0
     for (const [id, task] of this._tasks) {
@@ -51,7 +53,7 @@ export class ActionScheduler {
       if (task.oneShot) {
         if (task.elapsed >= task.interval) {
           task.elapsed -= task.interval
-          task.callback()
+          this._runTask(task)
           this._toRemove.push(id)
         }
         continue
@@ -59,7 +61,7 @@ export class ActionScheduler {
 
       while (task.elapsed >= task.interval) {
         task.elapsed -= task.interval
-        task.callback()
+        this._runTask(task)
 
         // The callback may remove or replace this task, so stop safely.
         if (!this._tasks.has(id) || this._tasks.get(id) !== task) {
@@ -68,5 +70,15 @@ export class ActionScheduler {
       }
     }
     for (const id of this._toRemove) this._tasks.delete(id)
+    this._getPerformance()?.record('scheduler.tick', performance.now() - tickStartedAt)
+  }
+
+  _runTask(task) {
+    const startedAt = performance.now()
+    try {
+      task.callback()
+    } finally {
+      this._getPerformance()?.record(task.name, performance.now() - startedAt)
+    }
   }
 }

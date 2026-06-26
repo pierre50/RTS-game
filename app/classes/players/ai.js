@@ -475,15 +475,19 @@ export class AI extends Player {
   }
 
   _scheduleStep() {
-    this._stepTaskId = this.context.scheduler.add(() => {
-      const actions = this.context.performance?.measure('aiStep', () => this.step()) ?? this.step()
-      const newDelay =
-        actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 5000)
-      if (newDelay !== this.stepDelay) {
-        this.stepDelay = newDelay
-        this.context.scheduler.update(this._stepTaskId, newDelay)
-      }
-    }, this.stepDelay)
+    this._stepTaskId = this.context.scheduler.add(
+      () => {
+        const actions = this.context.performance?.measure('aiStep', () => this.step()) ?? this.step()
+        const newDelay =
+          actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 5000)
+        if (newDelay !== this.stepDelay) {
+          this.stepDelay = newDelay
+          this.context.scheduler.update(this._stepTaskId, newDelay)
+        }
+      },
+      this.stepDelay,
+      'ai.step'
+    )
   }
 
   hasNotReachBuildingLimit(buildingType, buildings) {

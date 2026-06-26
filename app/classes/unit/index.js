@@ -324,7 +324,7 @@ export class Unit extends Instance {
     this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
-    this.startInterval(() => this.step(), STEP_TIME)
+    this.startInterval(() => this.step(), STEP_TIME, true, 'unit.step')
   }
 
   queueOrder(orderOrDest, action = null) {
@@ -450,12 +450,12 @@ export class Unit extends Instance {
     this.setTextures(SHEET_TYPES.standing)
   }
 
-  startInterval(callback, time, immediate = true) {
+  startInterval(callback, time, immediate = true, name = 'unit.interval') {
     if (this.isDead) {
       return
     }
     this.stopInterval()
-    this.interval = this.context.scheduler.add(callback, time)
+    this.interval = this.context.scheduler.add(callback, time, name)
     if (immediate) callback()
   }
 

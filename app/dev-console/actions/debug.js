@@ -124,8 +124,12 @@ function ensurePerfOverlay(context) {
   const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
   const perf = context.performance?.snapshot()
   const pathfinding = perf?.metrics.pathfinding
-  const aiStep = perf?.metrics.aiStep
-  const fogFlush = perf?.metrics.fogFlush
+  const aiStep = perf?.metrics['ai.step'] || perf?.metrics.aiStep
+  const schedulerTick = perf?.metrics['scheduler.tick']
+  const unitMove = perf?.metrics['unit.move']
+  const visibility = perf?.metrics['visibility.update']
+  const camera = perf?.metrics['camera.visibleCells']
+  const viewportFog = perf?.metrics['fog.viewport']
   overlay.textContent = [
     `FPS ${Math.round(app.ticker.FPS)}`,
     `Frame avg ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
@@ -135,9 +139,13 @@ function ensurePerfOverlay(context) {
     `Tasks ${schedulerTasks}`,
     `Speed ${speed}x`,
     `AI ${context.aiPaused ? 'paused' : 'running'}`,
+    `Scheduler ${schedulerTick?.averageMs.toFixed(2) || '0.00'}ms avg | ${schedulerTick?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Move ${unitMove?.averageMs.toFixed(2) || '0.00'}ms avg | ${unitMove?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Vision ${visibility?.averageMs.toFixed(2) || '0.00'}ms avg | ${visibility?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Camera ${camera?.averageMs.toFixed(2) || '0.00'}ms avg | ${camera?.maxMs.toFixed(2) || '0.00'}ms max`,
     `Path ${pathfinding?.averageMs.toFixed(2) || '0.00'}ms avg | ${pathfinding?.maxMs.toFixed(2) || '0.00'}ms max`,
     `AI step ${aiStep?.averageMs.toFixed(2) || '0.00'}ms avg | ${aiStep?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Fog ${fogFlush?.averageMs.toFixed(2) || '0.00'}ms avg | ${fogFlush?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Fog ${viewportFog?.averageMs.toFixed(2) || '0.00'}ms avg | ${viewportFog?.maxMs.toFixed(2) || '0.00'}ms max`,
   ].join('\n')
 }
 
@@ -151,9 +159,10 @@ export function performanceReport(context, value) {
   const lines = [
     `Frames ${report.frames.samples} | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms`,
   ]
-  for (const [name, metric] of Object.entries(report.metrics)) {
+  const metrics = Object.entries(report.metrics).sort(([, a], [, b]) => b.totalMs - a.totalMs)
+  for (const [name, metric] of metrics) {
     lines.push(
-      `${name}: ${metric.count} calls | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms`
+      `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms | slow ${metric.slowCount}`
     )
   }
   return { ok: true, message: lines.join('\n') }

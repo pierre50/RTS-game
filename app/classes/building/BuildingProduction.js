@@ -121,47 +121,51 @@ export class BuildingProduction {
         if (building.selected && building.owner.isPlayed) {
           building.updateInterfaceLoading()
         }
-        building.startInterval(() => {
-          if (building.queue[0] !== type) {
-            building.stopInterval()
-            building.loading = null
-            if (building.queue.length) {
-              building.buyUnit(building.queue[0], true)
+        building.startInterval(
+          () => {
+            if (building.queue[0] !== type) {
+              building.stopInterval()
+              building.loading = null
+              if (building.queue.length) {
+                building.buyUnit(building.queue[0], true)
+              }
+              hasShowedMessage = false
+              if (building.selected && building.owner.isPlayed) {
+                const still = building.queue.filter(q => q === type).length
+                menu.updateButtonContent(type, still || '')
+                if (still === 0) menu.toggleButtonCancel(type, false)
+                building.updateInterfaceLoading()
+              }
+            } else if (building.loading >= 100 || map.instantMode) {
+              if (!building.placeUnit(type, extra)) return
+              building.stopInterval()
+              building.loading = null
+              building.queue.shift()
+              if (building.queue.length) {
+                building.buyUnit(building.queue[0], true)
+              }
+              hasShowedMessage = false
+              if (building.selected && building.owner.isPlayed) {
+                const still = building.queue.filter(q => q === type).length
+                menu.updateButtonContent(type, still || '')
+                if (still === 0) menu.toggleButtonCancel(type, false)
+                building.updateInterfaceLoading()
+              }
+            } else if (building.loading < 100) {
+              if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
+                building.loading += 1
+              } else if (building.owner.isPlayed && !hasShowedMessage) {
+                menu.showMessage(t('needHouses'), 'warning')
+                hasShowedMessage = true
+              }
+              if (building.selected && building.owner.isPlayed) {
+                building.updateInterfaceLoading()
+              }
             }
-            hasShowedMessage = false
-            if (building.selected && building.owner.isPlayed) {
-              const still = building.queue.filter(q => q === type).length
-              menu.updateButtonContent(type, still || '')
-              if (still === 0) menu.toggleButtonCancel(type, false)
-              building.updateInterfaceLoading()
-            }
-          } else if (building.loading >= 100 || map.instantMode) {
-            if (!building.placeUnit(type, extra)) return
-            building.stopInterval()
-            building.loading = null
-            building.queue.shift()
-            if (building.queue.length) {
-              building.buyUnit(building.queue[0], true)
-            }
-            hasShowedMessage = false
-            if (building.selected && building.owner.isPlayed) {
-              const still = building.queue.filter(q => q === type).length
-              menu.updateButtonContent(type, still || '')
-              if (still === 0) menu.toggleButtonCancel(type, false)
-              building.updateInterfaceLoading()
-            }
-          } else if (building.loading < 100) {
-            if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
-              building.loading += 1
-            } else if (building.owner.isPlayed && !hasShowedMessage) {
-              menu.showMessage(t('needHouses'), 'warning')
-              hasShowedMessage = true
-            }
-            if (building.selected && building.owner.isPlayed) {
-              building.updateInterfaceLoading()
-            }
-          }
-        }, unit.trainingTime)
+          },
+          unit.trainingTime,
+          'building.production'
+        )
       }
       return success
     }
@@ -247,24 +251,28 @@ export class BuildingProduction {
       if (building.selected && building.owner.selectedBuilding === building) {
         menu.setBottombar(building)
       }
-      building.startInterval(() => {
-        const { config, type } = building.technology
-        if (building.loading >= 100 || map.instantMode) {
-          building.stopInterval()
-          building.loading = null
-          building.technology = null
-          building.owner.unlockTechnology(type)
-          if (building.owner.isPlayed) {
-            menu.updateBottombar()
-            menu.updateTopbar()
+      building.startInterval(
+        () => {
+          const { config, type } = building.technology
+          if (building.loading >= 100 || map.instantMode) {
+            building.stopInterval()
+            building.loading = null
+            building.technology = null
+            building.owner.unlockTechnology(type)
+            if (building.owner.isPlayed) {
+              menu.updateBottombar()
+              menu.updateTopbar()
+            }
+          } else if (building.loading < 100) {
+            building.loading += 1
+            if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
+              building.updateInterfaceLoading()
+            }
           }
-        } else if (building.loading < 100) {
-          building.loading += 1
-          if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
-            building.updateInterfaceLoading()
-          }
-        }
-      }, config.researchTime)
+        },
+        config.researchTime,
+        'building.research'
+      )
     }
     return success
   }

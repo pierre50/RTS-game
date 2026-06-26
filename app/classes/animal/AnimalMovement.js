@@ -40,7 +40,7 @@ export class AnimalMovement {
     animal.setTextures(sheet)
     animal.inactif = false
     animal.path = path
-    animal.startInterval(() => animal.step(), STEP_TIME, true)
+    animal.startInterval(() => animal.step(), STEP_TIME, true, 'animal.step')
   }
 
   isAnimalAtDest(action, dest) {

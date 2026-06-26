@@ -168,7 +168,12 @@ export class UnitCombat {
         map.addChild(projectile)
       }
       this.performRangedAttackCycle(launchProjectile)
-      unit.startInterval(() => this.performRangedAttackCycle(launchProjectile), unit.rateOfFire * 1000, false)
+      unit.startInterval(
+        () => this.performRangedAttackCycle(launchProjectile),
+        unit.rateOfFire * 1000,
+        false,
+        'unit.rangedAttack'
+      )
     } else {
       unit.sprite.loop = true
       unit.sprite.onComplete = null
@@ -210,7 +215,8 @@ export class UnitCombat {
           }
         },
         unit.rateOfFire * 1000,
-        false
+        false,
+        'unit.meleeAttack'
       )
     }
   }

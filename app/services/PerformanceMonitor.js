@@ -1,4 +1,6 @@
 const MAX_SAMPLES = 240
+const MAX_SLOW_SAMPLES = 12
+const SLOW_CALL_THRESHOLD_MS = 8
 
 export class PerformanceMonitor {
   constructor(app) {
@@ -15,13 +17,18 @@ export class PerformanceMonitor {
   record(name, duration) {
     let metric = this.metrics.get(name)
     if (!metric) {
-      metric = { count: 0, total: 0, max: 0, last: 0 }
+      metric = { count: 0, total: 0, max: 0, last: 0, slowCount: 0, slowSamples: [] }
       this.metrics.set(name, metric)
     }
     metric.count++
     metric.total += duration
     metric.max = Math.max(metric.max, duration)
     metric.last = duration
+    if (duration >= SLOW_CALL_THRESHOLD_MS) {
+      metric.slowCount++
+      metric.slowSamples.push({ duration, at: performance.now() })
+      if (metric.slowSamples.length > MAX_SLOW_SAMPLES) metric.slowSamples.shift()
+    }
   }
 
   measure(name, callback) {
@@ -41,9 +48,12 @@ export class PerformanceMonitor {
     for (const [name, metric] of this.metrics) {
       metrics[name] = {
         count: metric.count,
+        totalMs: metric.total,
         averageMs: metric.count ? metric.total / metric.count : 0,
         maxMs: metric.max,
         lastMs: metric.last,
+        slowCount: metric.slowCount,
+        slowSamples: metric.slowSamples.map(sample => ({ ...sample })),
       }
     }
     return {

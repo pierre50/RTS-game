@@ -60,8 +60,12 @@ export default class Game extends Container {
       checkDefeat: () => this.checkDefeat(),
       applyZoom: () => this.applyZoom(),
     }
-    this.context.scheduler = new ActionScheduler(app, () => this.context.paused)
     this.context.performance = new PerformanceMonitor(app)
+    this.context.scheduler = new ActionScheduler(
+      app,
+      () => this.context.paused,
+      () => this.context.performance
+    )
     if (config !== null) {
       this.start().catch(error => {
         this._loadingScreen?.destroy()
@@ -279,14 +283,13 @@ export default class Game extends Container {
 
     const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
     const mapGenerationStartedAt = performance.now()
-    const blueprint =
-      hasExplicitSeed
-        ? null
-        : await loadPregeneratedMapBlueprint({
-            size: this.context.map.size,
-            mapType: this.context.map.mapType || 'plain',
-            positionsCount: posCount,
-          })
+    const blueprint = hasExplicitSeed
+      ? null
+      : await loadPregeneratedMapBlueprint({
+          size: this.context.map.size,
+          mapType: this.context.map.mapType || 'plain',
+          positionsCount: posCount,
+        })
     if (blueprint) {
       await this.context.map.generateFromBlueprint(blueprint, {
         onProgress: (messageKey, progress) => this._updateLoading(messageKey, progress),

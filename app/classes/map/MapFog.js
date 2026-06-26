@@ -1,6 +1,7 @@
 import { Container, Sprite, RenderTexture, Matrix, Assets, Particle, ParticleContainer, Rectangle } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { _DW, _DH } from '../cell/CellFog'
+import { Cell } from '../cell'
 import { RuntimeCell } from '../cell/RuntimeCell'
 import { ViewportFogRenderer } from './ViewportFogRenderer'
 
@@ -14,10 +15,7 @@ export class MapFog {
 
   bakeTerrainToChunks() {
     if (this.map.grid[0]?.[0]?.isGenerationCell) {
-      const viewport = this.map.context.controls?.cameraController?.getViewportRect()
-      this.map.terrainChunkManager.initialize(viewport)
-      this.map.context.performance?.record('terrainBake', 0)
-      return
+      this._materializeGenerationCells()
     }
 
     const renderer = this.map.context.app?.renderer
@@ -152,6 +150,71 @@ export class MapFog {
 
     this._createWaterAnimation()
     this.map.context.performance?.record('terrainBake', performance.now() - bakeStartedAt)
+  }
+
+  _materializeGenerationCells() {
+    const startedAt = performance.now()
+    const replacements = new globalThis.Map()
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const source = this.map.grid[i][j]
+        if (!source?.isGenerationCell) continue
+        const cell = new Cell(
+          {
+            i: source.i,
+            j: source.j,
+            z: source.z,
+            type: source.type,
+            textureName: source.terrainTextureName,
+            fogSprites: source.fogSprites,
+          },
+          this.map.context
+        )
+        cell.solid = source.solid
+        cell.visible = source.visible
+        cell.inclined = source.inclined
+        cell.border = source.border
+        cell.waterBorder = source.waterBorder
+        cell.viewed = source.viewed
+        cell.viewBy = source.viewBy
+        cell.has = source.has
+        cell.corpses = source.corpses
+        cell._hasFog = source._hasFog
+
+        const appearance = source._terrainAppearance
+        if (appearance.waterBorder) cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
+        if (appearance.relief) cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
+        for (const direction of appearance.desertBorders ?? []) cell.setDesertBorder(direction)
+        for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
+        for (const decoration of source.getTerrainDecorations()) {
+          const sprite = new Sprite(decoration.texture)
+          sprite.label = decoration.label
+          sprite.position.copyFrom(decoration.position)
+          sprite.anchor.copyFrom(decoration.anchor)
+          sprite.roundPixels = true
+          sprite.eventMode = 'none'
+          sprite.zIndex = decoration.zIndex
+          cell.addChild(sprite)
+        }
+
+        replacements.set(source, cell)
+        this.map.grid[i][j] = cell
+      }
+    }
+
+    const replaceCell = cell => replacements.get(cell) || cell
+    const instances = [
+      ...(this.map.gaia?.units || []),
+      ...this.map.context.players.flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
+      ...this.map.resources,
+    ]
+    for (const instance of instances) {
+      if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
+      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest)
+      if (instance.previousDest?.family === FAMILY_TYPES.cell) instance.previousDest = replaceCell(instance.previousDest)
+      if (instance.path?.length) instance.path = instance.path.map(replaceCell)
+    }
+    this.map.context.performance?.record('generationCellCompaction', performance.now() - startedAt)
   }
 
   _createWaterAnimation() {

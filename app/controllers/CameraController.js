@@ -236,50 +236,55 @@ export class CameraController {
   }
 
   updateVisibleCells() {
+    const startedAt = performance.now()
     const { map, player } = this.context
-    if (!map?.grid?.length) return
-    const viewport = this.getViewportRect()
-    map.updateRenderChunks?.(viewport)
-    if (!player?.views) return
-    const newVisible = this._nextVisibleCells ?? new Set()
-    newVisible.clear()
-    const margin = CELL_WIDTH
-    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
+    try {
+      if (!map?.grid?.length) return
+      const viewport = this.getViewportRect()
+      map.updateRenderChunks?.(viewport)
+      if (!player?.views) return
+      const newVisible = this._nextVisibleCells ?? new Set()
+      newVisible.clear()
+      const margin = CELL_WIDTH
+      const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
 
-    const startX = Math.floor(visibleLeft - margin)
-    const endX = Math.floor(visibleLeft + visibleWidth + margin)
-    const startY = Math.floor(visibleTop - margin)
-    const endY = Math.floor(visibleTop + visibleHeight + margin)
+      const startX = Math.floor(visibleLeft - margin)
+      const endX = Math.floor(visibleLeft + visibleWidth + margin)
+      const startY = Math.floor(visibleTop - margin)
+      const endY = Math.floor(visibleTop + visibleHeight + margin)
 
-    const stepX = CELL_WIDTH / 2
-    const stepY = CELL_HEIGHT / 2
-    const invCW = 1 / CELL_WIDTH
-    const invCH = 1 / CELL_HEIGHT
-    for (let i = startX; i <= endX; i += stepX) {
-      for (let j = startY; j <= endY; j += stepY) {
-        const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
-        const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
-        const cell = map.grid[x]?.[y]
-        if (cell) newVisible.add(cell)
+      const stepX = CELL_WIDTH / 2
+      const stepY = CELL_HEIGHT / 2
+      const invCW = 1 / CELL_WIDTH
+      const invCH = 1 / CELL_HEIGHT
+      for (let i = startX; i <= endX; i += stepX) {
+        for (let j = startY; j <= endY; j += stepY) {
+          const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
+          const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
+          const cell = map.grid[x]?.[y]
+          if (cell) newVisible.add(cell)
+        }
       }
-    }
 
-    for (let cell of this.visibleCells) {
-      if (!newVisible.has(cell)) {
-        if (cell.has) cell.has.visible = false
-        for (const corpse of cell.corpses) corpse.visible = false
+      for (let cell of this.visibleCells) {
+        if (!newVisible.has(cell)) {
+          if (cell.has) cell.has.visible = false
+          for (const corpse of cell.corpses) corpse.visible = false
+        }
       }
-    }
 
-    for (let cell of newVisible) {
-      const hasCameraCulledContent = cell.has || cell.corpses?.size
-      if (!this.visibleCells.has(cell) || hasCameraCulledContent) {
-        cell.updateVisible()
+      for (let cell of newVisible) {
+        const hasCameraCulledContent = cell.has || cell.corpses?.size
+        if (!this.visibleCells.has(cell) || hasCameraCulledContent) {
+          cell.updateVisible()
+        }
       }
-    }
 
-    this._nextVisibleCells = this.visibleCells
-    this.visibleCells = newVisible
+      this._nextVisibleCells = this.visibleCells
+      this.visibleCells = newVisible
+    } finally {
+      this.context.performance?.record('camera.visibleCells', performance.now() - startedAt)
+    }
   }
 
   set(x, y, direct) {

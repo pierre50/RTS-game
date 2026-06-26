@@ -145,7 +145,8 @@ export class AnimalCombat {
             }
           },
           animal.rateOfFire * 1000,
-          false
+          false,
+          'animal.attack'
         )
         break
       default:

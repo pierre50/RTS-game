@@ -43,46 +43,50 @@ export class ViewportFogRenderer {
   }
 
   update(viewport, force = false) {
+    const startedAt = performance.now()
     const renderer = this.map.context.app?.renderer
     const views = this.map.context.player?.views
     if (!renderer || !views || !viewport || !this.map.fogLayer) return
+    try {
+      this.map.fogLayer.visible = !this.map.revealEverything
+      if (this.map.revealEverything) return
 
-    this.map.fogLayer.visible = !this.map.revealEverything
-    if (this.map.revealEverything) return
+      const left = Math.floor(viewport.visibleLeft - VIEWPORT_MARGIN)
+      const top = Math.floor(viewport.visibleTop - VIEWPORT_MARGIN)
+      const width = Math.max(1, Math.ceil(viewport.visibleWidth + VIEWPORT_MARGIN * 2))
+      const height = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
 
-    const left = Math.floor(viewport.visibleLeft - VIEWPORT_MARGIN)
-    const top = Math.floor(viewport.visibleTop - VIEWPORT_MARGIN)
-    const width = Math.max(1, Math.ceil(viewport.visibleWidth + VIEWPORT_MARGIN * 2))
-    const height = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
+      const viewportCovered =
+        this.darknessTexture &&
+        this.fogTexture &&
+        left >= this.left &&
+        top >= this.top &&
+        left + width <= this.left + this.width &&
+        top + height <= this.top + this.height
 
-    const viewportCovered =
-      this.darknessTexture &&
-      this.fogTexture &&
-      left >= this.left &&
-      top >= this.top &&
-      left + width <= this.left + this.width &&
-      top + height <= this.top + this.height
+      if (!force && !this.dirty && viewportCovered) return
 
-    if (!force && !this.dirty && viewportCovered) return
+      this._ensureTargets(width, height)
+      this.left = left
+      this.top = top
+      this.darknessSprite.position.set(left, top)
+      this.fogSprite.position.set(left, top)
 
-    this._ensureTargets(width, height)
-    this.left = left
-    this.top = top
-    this.darknessSprite.position.set(left, top)
-    this.fogSprite.position.set(left, top)
+      renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
 
-    renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
+      this._fogPattern.tilePosition.set(-left, -top)
+      renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
 
-    this._fogPattern.tilePosition.set(-left, -top)
-    renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
+      this._exploredErase.clear()
+      this._visibleErase.clear()
+      this._drawViewportCells(this._exploredErase, this._visibleErase, views, left, top, width, height)
+      this._erase(renderer, this._exploredErase, this.darknessTexture, this._darknessEraseContainer)
+      this._erase(renderer, this._visibleErase, this.fogTexture, this._fogEraseContainer)
 
-    this._exploredErase.clear()
-    this._visibleErase.clear()
-    this._drawViewportCells(this._exploredErase, this._visibleErase, views, left, top, width, height)
-    this._erase(renderer, this._exploredErase, this.darknessTexture, this._darknessEraseContainer)
-    this._erase(renderer, this._visibleErase, this.fogTexture, this._fogEraseContainer)
-
-    this.dirty = false
+      this.dirty = false
+    } finally {
+      this.map.context.performance?.record('fog.viewport', performance.now() - startedAt)
+    }
   }
 
   _ensureTargets(width, height) {

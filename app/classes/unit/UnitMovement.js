@@ -21,6 +21,16 @@ export class UnitMovement {
   }
 
   sendToEvt(dest, action, { forceRepath = false } = {}) {
+    const startedAt = performance.now()
+    if (forceRepath) this.unit.context.performance?.record('unit.repath', 0)
+    try {
+      return this._sendToEvt(dest, action, { forceRepath })
+    } finally {
+      this.unit.context.performance?.record('unit.command', performance.now() - startedAt)
+    }
+  }
+
+  _sendToEvt(dest, action, { forceRepath = false } = {}) {
     const unit = this.unit
     const {
       context: { map },
@@ -118,6 +128,15 @@ export class UnitMovement {
   }
 
   moveToPath() {
+    const startedAt = performance.now()
+    try {
+      return this._moveToPath()
+    } finally {
+      this.unit.context.performance?.record('unit.move', performance.now() - startedAt)
+    }
+  }
+
+  _moveToPath() {
     const unit = this.unit
     const {
       context: { map },
@@ -140,6 +159,7 @@ export class UnitMovement {
       return
     }
     if (nextCell.solid && unit.dest) {
+      unit.context.performance?.record('unit.blockedPath', 0)
       unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })
       return
     }
@@ -204,9 +224,13 @@ export class UnitMovement {
         unit.buildQueue.push(unit.buildQueue.shift())
       }
       unit.stop()
-      unit.context.scheduler.addOneShot(() => {
-        if (unit.inactif && unit.buildQueue?.length) unit.continueBuildingQueue()
-      }, 500)
+      unit.context.scheduler.addOneShot(
+        () => {
+          if (unit.inactif && unit.buildQueue?.length) unit.continueBuildingQueue()
+        },
+        500,
+        'unit.resumeBuildQueue'
+      )
       return
     }
 

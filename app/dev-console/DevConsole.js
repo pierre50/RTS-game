@@ -6,6 +6,7 @@ export class DevConsole {
     this.commands = createDevCommands()
     this.history = []
     this.historyIndex = 0
+    this.lastMessage = ''
     this.isOpen = false
     this.root = null
     this.input = null
@@ -36,6 +37,7 @@ export class DevConsole {
     this.log = document.createElement('div')
     this.log.className = 'dev-console-log'
     this.log.textContent = 'Type help'
+    this.lastMessage = this.log.textContent
 
     this.input = document.createElement('input')
     this.input.className = 'ui-input dev-console-input'
@@ -79,6 +81,11 @@ export class DevConsole {
       this.executeInput()
       return
     }
+    if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'c' && !this.input.value) {
+      evt.preventDefault()
+      this.copyLastMessage()
+      return
+    }
     if (evt.key === 'ArrowUp') {
       evt.preventDefault()
       this.navigateHistory(-1)
@@ -110,10 +117,32 @@ export class DevConsole {
       ...this.context,
       commands: this.commands,
     })
-    this.log.textContent = result.message
-    this.log.dataset.status = result.ok ? 'ok' : 'error'
+    this.setLogMessage(result.message, result.ok ? 'ok' : 'error')
     this.input.value = ''
     this.input.focus()
+  }
+
+  setLogMessage(message, status = 'ok') {
+    this.lastMessage = message
+    this.log.textContent = message
+    this.log.dataset.status = status
+  }
+
+  async copyLastMessage() {
+    if (!this.lastMessage) return
+    try {
+      await navigator.clipboard?.writeText(this.lastMessage)
+      this.log.dataset.copied = 'true'
+      window.setTimeout(() => {
+        if (this.log) delete this.log.dataset.copied
+      }, 900)
+    } catch {
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(this.log)
+      selection.removeAllRanges()
+      selection.addRange(range)
+    }
   }
 
   navigateHistory(direction) {
@@ -137,8 +166,7 @@ export class DevConsole {
       const base = endsWithSpace ? tokens : tokens.slice(0, -1)
       this.input.value = `${[...base, matches[0]].join(' ')} `
     } else {
-      this.log.textContent = matches.join('  ')
-      this.log.dataset.status = 'ok'
+      this.setLogMessage(matches.join('  '), 'ok')
     }
   }
 }
