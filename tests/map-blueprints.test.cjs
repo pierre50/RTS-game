@@ -6,6 +6,23 @@ const { execFileSync } = require('node:child_process')
 const test = require('node:test')
 
 const ROOT = path.join(__dirname, '..')
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
+
+function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
+  if (w && n) return '001'
+  if (e && s) return '002'
+  if (w && s) return '003'
+  if (e && n) return '000'
+  if (n) return '008'
+  if (s) return '009'
+  if (w) return '011'
+  if (e) return '010'
+  if (nw) return '005'
+  if (sw) return '007'
+  if (ne) return '004'
+  if (se) return '006'
+  return null
+}
 
 test('pregenerated map blueprints persist deep water terrain', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'rts-map-blueprint-'))
@@ -32,8 +49,17 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
     const blueprint = JSON.parse(fs.readFileSync(path.join(out, manifest.maps[0].path), 'utf8'))
     const terrain = Buffer.from(blueprint.terrain, 'base64')
+    const relief = Buffer.from(blueprint.relief, 'base64')
     const width = blueprint.size + 1
     let deepWaterBorderCandidates = 0
+    let shoreLevelViolations = 0
+    let reliefStepViolations = 0
+
+    const isWater = (i, j) => {
+      const type = TERRAIN_TYPES[terrain[i * width + j]]
+      return type === 'Water' || type === 'DeepWater'
+    }
+    const getRelief = (i, j) => relief.readInt8(i * width + j)
 
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
@@ -52,8 +78,64 @@ test('pregenerated map blueprints persist deep water terrain', () => {
       }
     }
 
+    for (let i = 0; i <= blueprint.size; i++) {
+      for (let j = 0; j <= blueprint.size; j++) {
+        if (isWater(i, j)) continue
+        const flags = {
+          n: i > 0 && isWater(i - 1, j),
+          s: i < blueprint.size && isWater(i + 1, j),
+          w: j > 0 && isWater(i, j - 1),
+          e: j < blueprint.size && isWater(i, j + 1),
+          nw: i > 0 && j > 0 && isWater(i - 1, j - 1),
+          ne: i > 0 && j < blueprint.size && isWater(i - 1, j + 1),
+          sw: i < blueprint.size && j > 0 && isWater(i + 1, j - 1),
+          se: i < blueprint.size && j < blueprint.size && isWater(i + 1, j + 1),
+        }
+        if (!getWaterBorderFrame(flags)) continue
+
+        let shoreLevel = getRelief(i, j)
+        for (const [di, dj] of [
+          [-1, 0],
+          [-1, 1],
+          [0, 1],
+          [1, 1],
+          [1, 0],
+          [1, -1],
+          [0, -1],
+          [-1, -1],
+        ]) {
+          const ni = i + di
+          const nj = j + dj
+          if (ni >= 0 && ni <= blueprint.size && nj >= 0 && nj <= blueprint.size && isWater(ni, nj)) {
+            shoreLevel = getRelief(ni, nj)
+            break
+          }
+        }
+        if (getRelief(i, j) !== shoreLevel) shoreLevelViolations++
+      }
+    }
+
+    for (let i = 0; i <= blueprint.size; i++) {
+      for (let j = 0; j <= blueprint.size; j++) {
+        if (isWater(i, j)) continue
+        for (const [di, dj] of [
+          [0, 1],
+          [1, -1],
+          [1, 0],
+          [1, 1],
+        ]) {
+          const ni = i + di
+          const nj = j + dj
+          if (ni < 0 || ni > blueprint.size || nj < 0 || nj > blueprint.size || isWater(ni, nj)) continue
+          if (Math.abs(getRelief(i, j) - getRelief(ni, nj)) > 1) reliefStepViolations++
+        }
+      }
+    }
+
     assert.ok(terrain.includes(5), 'blueprint terrain should include DeepWater cells')
     assert.ok(deepWaterBorderCandidates > 0, 'blueprint terrain should include DeepWater border candidates')
+    assert.equal(shoreLevelViolations, 0, 'blueprint relief should keep shore cells at water level')
+    assert.equal(reliefStepViolations, 0, 'blueprint relief should not contain unsupported height jumps')
     assert.equal(
       (blueprint.resources || []).some(resource => resource.type === 'Whale'),
       false,

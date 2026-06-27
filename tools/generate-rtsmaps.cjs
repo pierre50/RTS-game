@@ -245,6 +245,7 @@ const runtimeRelief = MapTerrain.prototype.generateMapRelief
 const runtimeClassifyDeepWater = MapTerrain.prototype.classifyDeepWater
 const runtimeClampReliefAroundWaterLevels = MapTerrain.prototype.clampReliefAroundWaterLevels
 const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefStepContinuity
+const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
 const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
 const runtimeIlotAnchors = MapGeneration.prototype.getIlotSpawnAnchors
 const runtimePlayerResources = MapResources.prototype.generateResourcesAroundPlayers
@@ -298,7 +299,25 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
     map.grid[i] = []
     for (let j = 0; j <= size; j++) {
       const type = TERRAIN[terrain[i][j]]
-      map.grid[i][j] = { i, j, type, category: type === 'Water' || type === 'DeepWater' ? 'Water' : 'Land', z: 0, y: 0, has: null, waterBorder: false, border: false, solid: false, inclined: false }
+      map.grid[i][j] = {
+        i,
+        j,
+        type,
+        category: type === 'Water' || type === 'DeepWater' ? 'Water' : 'Land',
+        z: 0,
+        y: 0,
+        has: null,
+        waterBorder: false,
+        border: false,
+        solid: false,
+        inclined: false,
+        setWaterBorder(resourceName, index) {
+          this.border = true
+          this.waterBorder = true
+          this.waterBorderResourceName = resourceName
+          this.waterBorderIndex = index
+        },
+      }
     }
   }
   map.getReliefCoastDistances = () => map._coastDistances || (map._coastDistances = coastDistances(map))
@@ -324,6 +343,7 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
   }
   map.clampReliefAroundWaterLevels = () => runtimeClampReliefAroundWaterLevels.call({ map })
   map.enforceReliefStepContinuity = (...args) => runtimeEnforceReliefStepContinuity.apply({ map }, args)
+  map.formatCellsWaterBorder = () => runtimeFormatCellsWaterBorder.call({ map })
   map.addChild = instance => instance
   map.randomRange = (min, max) => Math.floor(map.random() * (max - min + 1) + min)
   map.randomItem = (items = []) => items[Math.floor(map.random() * items.length)]
@@ -338,6 +358,93 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
 
 function encode(array) { return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64') }
 
+function normalizeShoreRelief(map) {
+  const shoreCells = []
+
+  for (let i = 0; i <= map.size; i++) {
+    for (let j = 0; j <= map.size; j++) {
+      const cell = map.grid[i][j]
+      if (cell.waterBorder) shoreCells.push(cell)
+    }
+  }
+
+  const flatten = new Map()
+  const protectedCells = new Set()
+  const setTarget = (cell, targetLevel) => {
+    if (!cell || cell.category === 'Water') return
+    const key = cell.i * (map.size + 1) + cell.j
+    if (!flatten.has(key)) flatten.set(key, [cell, targetLevel])
+  }
+
+  for (const cell of shoreCells) {
+    let targetLevel = cell.z
+    for (const [di, dj] of EIGHT_NEIGHBOR_OFFSETS) {
+      const neighbor = map.grid[cell.i + di]?.[cell.j + dj]
+      if (neighbor?.category === 'Water') {
+        targetLevel = neighbor.z
+        break
+      }
+    }
+
+    setTarget(cell, targetLevel)
+    for (const [di, dj] of EIGHT_NEIGHBOR_OFFSETS) {
+      setTarget(map.grid[cell.i + di]?.[cell.j + dj], targetLevel)
+    }
+  }
+
+  for (const [cell, targetLevel] of flatten.values()) {
+    if (cell.z !== targetLevel) map.setCellReliefLevelDirect(cell, targetLevel)
+    if (cell.waterBorder) protectedCells.add(cell)
+  }
+
+  return protectedCells
+}
+
+function enforceGeneratedReliefContinuity(map, protectedCells = new Set()) {
+  const pairs = [
+    [0, 1],
+    [1, -1],
+    [1, 0],
+    [1, 1],
+  ]
+  let changed = true
+  let pass = 0
+  const maxPasses = Math.max(12, Math.min(64, map.size + 1))
+
+  while (changed && pass++ < maxPasses) {
+    changed = false
+
+    for (let i = 0; i <= map.size; i++) {
+      for (let j = 0; j <= map.size; j++) {
+        const cell = map.grid[i][j]
+        if (cell.category === 'Water') continue
+
+        for (const [di, dj] of pairs) {
+          const neighbor = map.grid[i + di]?.[j + dj]
+          if (!neighbor || neighbor.category === 'Water') continue
+
+          const high = cell.z >= neighbor.z ? cell : neighbor
+          const low = high === cell ? neighbor : cell
+          if (high.z - low.z <= 1) continue
+
+          const highProtected = protectedCells.has(high)
+          const lowProtected = protectedCells.has(low)
+          if (highProtected && lowProtected) continue
+
+          if (highProtected) {
+            map.setCellReliefLevelDirect(low, high.z - 1)
+            protectedCells.add(low)
+          } else {
+            map.setCellReliefLevelDirect(high, low.z + 1)
+            if (lowProtected) protectedCells.add(high)
+          }
+          changed = true
+        }
+      }
+    }
+  }
+}
+
 function blueprint(size, mapType, seed) {
   const playerCount = maxPlayersForSize(size)
   const context = { map: { seed, positionsCount: playerCount } }
@@ -351,6 +458,9 @@ function blueprint(size, mapType, seed) {
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
   const unrestrictedReliefDistances = new Int16Array((map.size + 1) ** 2).fill(map.size + 4)
   map.enforceReliefStepContinuity(unrestrictedReliefDistances, new Set(), waterLevelBounds)
+  map.formatCellsWaterBorder()
+  const protectedShoreCells = normalizeShoreRelief(map)
+  enforceGeneratedReliefContinuity(map, protectedShoreCells)
   runtimePlayerResources.call({ map }, spawns)
   runtimeNeutralResources.call({ map }, spawns)
   runtimeBiomeTrees.call({ map }, spawns)

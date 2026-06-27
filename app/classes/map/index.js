@@ -180,6 +180,10 @@ export default class Map extends Container {
     return this.mapGeneration.generateFromBlueprint(blueprint, options)
   }
 
+  generateEditableFromBlueprint(blueprint) {
+    return this.mapGeneration.generateEditableFromBlueprint(blueprint)
+  }
+
   stylishMap(options) {
     return this.mapGeneration.stylishMap(options)
   }

@@ -11,6 +11,7 @@ import { getAdjacentWalls, isWall, updateWallTexture } from '../lib/buildings/wa
 import { EditorControls } from '../controllers/EditorControls'
 import { WallPlacementController } from '../controllers/WallPlacementController'
 import { MapEditorHud } from '../ui/MapEditorHud'
+import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 
 const DEFAULT_MAP_SIZE = 120
 const MAP_EXPORT_EXT = '.rtsmap'
@@ -69,10 +70,12 @@ export default class MapEditor extends Container {
       },
     }
 
-    this.start()
+    this.start().catch(error => {
+      console.error('Unable to start map editor', error)
+    })
   }
 
-  start() {
+  async start() {
     this.context.map = new Map(this.context)
     this.context.map.size = this.config.size || DEFAULT_MAP_SIZE
     this.context.map.mapType = this.config.mapType || 'blank'
@@ -80,7 +83,7 @@ export default class MapEditor extends Container {
     this.context.map.revealTerrain = true
     this.context.map.showResources = true
     this.context.map.gaia = new Gaia(this.context)
-    this._createInitialMap()
+    await this._createInitialMap()
 
     this.context.hud = new MapEditorHud({
       context: this.context,
@@ -115,7 +118,7 @@ export default class MapEditor extends Container {
     return this.editorState.mode === 'units'
   }
 
-  _createInitialMap() {
+  async _createInitialMap() {
     const { map } = this.context
     map.removeChildren()
     map.grid = []
@@ -123,6 +126,29 @@ export default class MapEditor extends Container {
     map.invalidateReliefCoastDistances()
 
     if (map.mapType !== 'blank') {
+      const blueprint = await loadPregeneratedMapBlueprint({
+        size: map.size,
+        mapType: map.mapType,
+        positionsCount: this.config.players?.length || null,
+      })
+
+      if (blueprint) {
+        map.generateEditableFromBlueprint(blueprint)
+        map.pregeneratedBlueprintId = blueprint.id
+        map.generationTimings = blueprint.timings || {}
+        this._initializeEditorPlayers()
+        for (let i = 0; i <= map.size; i++) {
+          for (let j = 0; j <= map.size; j++) {
+            map.grid[i][j].visible = true
+          }
+        }
+        map.ready = true
+        this.refreshTerrainAppearance()
+        this.refreshTerrainSets()
+        return
+      }
+
+      map.pregeneratedBlueprintId = null
       map.generateCells()
       this._initializeEditorPlayers()
       map.generateMapRelief()

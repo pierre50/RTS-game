@@ -659,13 +659,7 @@ export class MapGeneration {
     const destroyStartedAt = performance.now()
     this.destroyGeneratedChildren()
     this.map.blueprintDestroyMs = performance.now() - destroyStartedAt
-    this.map.seed = blueprint.seed
-    this.map.size = blueprint.size
-    this.map.mapType = blueprint.mapType
-    this.map.playersPos = blueprint.spawns || []
-    this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
-    this.map.resetRandom()
-    this.map.invalidateReliefCoastDistances()
+    this._applyBlueprintMetadata(blueprint)
 
     const startedAt = performance.now()
     const cellDefinitions = Assets.cache.get('config').cells
@@ -707,35 +701,78 @@ export class MapGeneration {
     this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
     this.map.totalCells = (this.map.size + 1) ** 2
 
-    if (Array.isArray(blueprint.resources)) {
-      const startedAt = performance.now()
-      this.map.resources = new Set()
-      const resourcesConfig = Assets.cache.get('config').resources
-      for (const resource of blueprint.resources) {
-        const cell = this.map.grid[resource.i]?.[resource.j]
-        if (!cell || cell.has || cell.solid) continue
-        const definition = resourcesConfig[resource.type]
-        const assets = definition?.assets
-        const hasCompatibleTexture =
-          resource.textureName ||
-          definition?.isAnimated ||
-          Array.isArray(assets) ||
-          typeof assets === 'string' ||
-          Boolean(assets?.[cell.type])
-        if (!hasCompatibleTexture) continue
-        try {
-          this.map.resources.add(this.map.addChild(new Resource(resource, this.map.context)))
-        } catch (error) {
-          console.warn('Skipping invalid blueprint resource', resource, error)
-        }
+    this._loadBlueprintResources(blueprint)
+  }
+
+  generateEditableFromBlueprint(blueprint) {
+    this.destroyGeneratedChildren()
+    this._applyBlueprintMetadata(blueprint)
+
+    for (let i = 0; i <= this.map.size; i++) {
+      const row = []
+      this.map.grid[i] = row
+      for (let j = 0; j <= this.map.size; j++) {
+        row[j] = new Cell(
+          {
+            i,
+            j,
+            z: blueprint.relief[i][j] || 0,
+            type: blueprint.terrain[i][j],
+          },
+          this.map.context
+        )
+        this.map.addChild(row[j])
       }
-      this.map.pregeneratedResourcesLoaded = true
-      this.map.blueprintResourceLoadMs = performance.now() - startedAt
-      this.map.context.performance?.record('blueprintResources', this.map.blueprintResourceLoadMs)
-    } else {
+    }
+
+    this.map.fillWaterGaps()
+    this.map.normalizeWaterTopology()
+    this.map.formatCellsWaterBorder()
+    this.map.totalCells = (this.map.size + 1) ** 2
+    this._loadBlueprintResources(blueprint)
+  }
+
+  _applyBlueprintMetadata(blueprint) {
+    this.map.seed = blueprint.seed
+    this.map.size = blueprint.size
+    this.map.mapType = blueprint.mapType
+    this.map.playersPos = blueprint.spawns || []
+    this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
+    this.map.resetRandom()
+    this.map.invalidateReliefCoastDistances()
+  }
+
+  _loadBlueprintResources(blueprint) {
+    if (!Array.isArray(blueprint.resources)) {
       this.map.pregeneratedResourcesLoaded = false
       this.map.blueprintResourceLoadMs = 0
+      return
     }
+
+    const startedAt = performance.now()
+    this.map.resources = new Set()
+    const resourcesConfig = Assets.cache.get('config').resources
+    for (const resource of blueprint.resources) {
+      const cell = this.map.grid[resource.i]?.[resource.j]
+      if (!cell || cell.has || cell.solid) continue
+      const definition = resourcesConfig[resource.type]
+      const assets = definition?.assets
+      const hasCompatibleTexture =
+        resource.textureName ||
+        definition?.isAnimated ||
+        Array.isArray(assets) ||
+        typeof assets === 'string' ||
+        Boolean(assets?.[cell.type])
+      if (!hasCompatibleTexture) continue
+      try {
+        this.map.resources.add(this.map.addChild(new Resource(resource, this.map.context)))
+      } catch (error) {
+        console.warn('Skipping invalid blueprint resource', resource, error)
+      }
+    }
+    this.map.pregeneratedResourcesLoaded = true
+    this.map.blueprintResourceLoadMs = performance.now() - startedAt
+    this.map.context.performance?.record('blueprintResources', this.map.blueprintResourceLoadMs)
   }
 
   generateTerrain(gridSize = 120, mapType = 'plain', seed) {
