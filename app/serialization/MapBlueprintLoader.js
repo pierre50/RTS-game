@@ -1,4 +1,4 @@
-const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest']
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
 
 function decodeBase64Bytes(value, ArrayType = Uint8Array) {
   const binary = atob(value)

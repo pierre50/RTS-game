@@ -852,7 +852,8 @@ export class MapTerrain {
   }
 
   classifyDeepWater() {
-    const MIN_DIST_FROM_LAND = 3
+    const TRANSITION_DIST_FROM_LAND = 4
+    const DEEP_DIST_FROM_LAND = 5
     const mapSeed = Number.isFinite(this.map.seed) ? this.map.seed : 0
     const config = Assets.cache.get('config')
     const deepWaterDef = config?.cells?.['DeepWater']
@@ -901,27 +902,28 @@ export class MapTerrain {
 
         const d = dist[i * n + j]
         let isDeep = false
-        if (d >= MIN_DIST_FROM_LAND) {
-          // Low-frequency noise (period ~30 cells) creates large coherent zones
+        if (d >= DEEP_DIST_FROM_LAND) {
+          isDeep = true
+        } else if (d >= TRANSITION_DIST_FROM_LAND) {
+          // Keep a one-cell organic transition band before the full deep-water shelf.
           const h = Math.sin(i * 0.11 + j * 0.17 + mapSeed * 2.3) * 43758.5453
           const noise = h - Math.floor(h)
-          // Threshold drops quickly with distance: at d=3 → 60% deep, d=5 → 90%, d=7+ → 100%
-          const threshold = Math.max(0, 0.9 - (d - MIN_DIST_FROM_LAND) * 0.25)
-          isDeep = noise > threshold
+          isDeep = noise > 0.55
         }
-
-        cell.type = isDeep ? 'DeepWater' : 'Water'
 
         const def = isDeep ? deepWaterDef : waterDef
+        cell.type = isDeep ? 'DeepWater' : 'Water'
+        if (def) {
+          cell.category = def.category
+          cell.color = def.color
+          cell.assets = def.assets
+        }
+        const textureName = def?.assets?.[(i * 31 + j * 17) % def.assets.length]
+        if (textureName) cell.terrainTextureName = textureName
         if (!cell.sprite) {
-          if (def?.assets?.length) {
-            cell.assets = def.assets
-            cell.terrainTextureName = def.assets[(i * 31 + j * 17) % def.assets.length]
-          }
           continue
         }
-        if (!def?.assets?.length) continue
-        const textureName = def.assets[(i * 31 + j * 17) % def.assets.length]
+        if (!textureName) continue
         const resourceName = textureName.split('_')[1]
         const spritesheet = Assets.cache.get(resourceName)
         const texture = spritesheet?.textures?.[textureName + '.png']

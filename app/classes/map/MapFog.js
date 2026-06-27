@@ -1,11 +1,10 @@
-import { Container, Sprite, RenderTexture, Matrix, Assets, Particle, ParticleContainer, Rectangle } from 'pixi.js'
+import { Container, Sprite, RenderTexture, Matrix } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { _DW, _DH } from '../cell/CellFog'
 import { Cell } from '../cell'
 import { RuntimeCell } from '../cell/RuntimeCell'
 import { ViewportFogRenderer } from './ViewportFogRenderer'
 
-const WATER_CHUNK_SIZE = 64
 const FOG_VIEWPORT_UPDATE_MARGIN = CELL_WIDTH * 3
 
 export class MapFog {
@@ -170,7 +169,6 @@ export class MapFog {
     }
     this.map.context.performance?.record('terrainBake.updateViewedCells', performance.now() - updateViewedStartedAt)
 
-    this._createWaterAnimation()
     this.map.context.performance?.record('terrainBake', performance.now() - bakeStartedAt)
   }
 
@@ -260,116 +258,6 @@ export class MapFog {
       performance.now() - relinkStartedAt
     )
     this.map.context.performance?.record('generationCellMaterialization', performance.now() - startedAt)
-  }
-
-  _createWaterAnimation() {
-    const startedAt = performance.now()
-    const spritesheet = Assets.cache.get('15002')
-    if (!spritesheet) return
-
-    const frames = ['000', '001', '002', '003'].map(i => spritesheet.textures[`${i}_15002.png`]).filter(Boolean)
-    if (!frames.length) return
-
-    const PHASES = frames.length
-
-    // Destroy previous water layers if re-baking (e.g. load from save)
-    if (this.map._waterLayers) {
-      this.map.context.app.ticker.remove(this.map._waterAnimTicker)
-      for (const layer of this.map._waterLayers) {
-        for (const chunk of layer.chunks.values()) {
-          chunk.container.destroy({ children: true, texture: false, textureSource: false })
-        }
-      }
-      this.map._waterLayers = null
-    }
-
-    this.map._waterLayers = Array.from({ length: PHASES }, (_, p) => ({
-      chunks: new globalThis.Map(),
-      phase: p,
-      frameMs: 900 + ((p * 97 + 43) % 300),
-      elapsed: 0,
-    }))
-    for (let p = 0; p < PHASES; p++) {
-      const layer = this.map._waterLayers[p]
-      layer.elapsed = (p / PHASES) * layer.frameMs
-    }
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category !== 'Water') continue
-        const layer = this.map._waterLayers[(cell.i + cell.j) % PHASES]
-        const chunkKey = `${Math.floor(cell.i / WATER_CHUNK_SIZE)}:${Math.floor(cell.j / WATER_CHUNK_SIZE)}`
-        let chunk = layer.chunks.get(chunkKey)
-        if (!chunk) {
-          const container = new ParticleContainer({
-            texture: frames[layer.phase],
-            dynamicProperties: {
-              position: false,
-              rotation: false,
-              vertex: false,
-              uvs: false,
-              color: false,
-            },
-            roundPixels: true,
-          })
-          container.zIndex = -0.5
-          container.eventMode = 'none'
-          container.cullable = true
-          chunk = { container, minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
-          layer.chunks.set(chunkKey, chunk)
-          this.map.addChild(container)
-        }
-        chunk.container.addParticle(
-          new Particle({
-            texture: frames[layer.phase],
-            x: cell.x,
-            y: cell.y,
-            anchorX: 0.5,
-            anchorY: 0.5,
-          })
-        )
-        chunk.minX = Math.min(chunk.minX, cell.x - CELL_WIDTH / 2)
-        chunk.minY = Math.min(chunk.minY, cell.y - CELL_HEIGHT / 2)
-        chunk.maxX = Math.max(chunk.maxX, cell.x + CELL_WIDTH / 2)
-        chunk.maxY = Math.max(chunk.maxY, cell.y + CELL_HEIGHT / 2)
-      }
-    }
-    for (const layer of this.map._waterLayers) {
-      for (const chunk of layer.chunks.values()) {
-        chunk.container.boundsArea = new Rectangle(
-          chunk.minX,
-          chunk.minY,
-          chunk.maxX - chunk.minX,
-          chunk.maxY - chunk.minY
-        )
-        this.map.registerRenderChunk(chunk.container, {
-          minX: chunk.minX,
-          minY: chunk.minY,
-          width: chunk.maxX - chunk.minX,
-          height: chunk.maxY - chunk.minY,
-        })
-      }
-    }
-
-    this.map._waterAnimTicker = ticker => {
-      if (this.map.context.map !== this.map) {
-        this.map.context.app.ticker.remove(this.map._waterAnimTicker)
-        return
-      }
-      for (const layer of this.map._waterLayers) {
-        layer.elapsed += ticker.elapsedMS
-        if (layer.elapsed >= layer.frameMs) {
-          layer.elapsed %= layer.frameMs
-          layer.phase = (layer.phase + 1) % frames.length
-          for (const chunk of layer.chunks.values()) {
-            chunk.container.texture = frames[layer.phase]
-          }
-        }
-      }
-    }
-    this.map.context.app.ticker.add(this.map._waterAnimTicker)
-    this.map.context.performance?.record('waterBuild', performance.now() - startedAt)
   }
 
   _initFogChunks() {

@@ -8,7 +8,8 @@ const path = require('node:path')
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
-const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest']
+const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
+const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 function mapSettingsFromRuntimeConfig() {
   const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.js'), 'utf8')
@@ -241,6 +242,7 @@ function loadRuntimeGenerators() {
 const { MapGeneration, MapTerrain, MapResources } = loadRuntimeGenerators()
 const runtimeTerrain = MapGeneration.prototype.generateTerrain
 const runtimeRelief = MapTerrain.prototype.generateMapRelief
+const runtimeClassifyDeepWater = MapTerrain.prototype.classifyDeepWater
 const runtimeClampReliefAroundWaterLevels = MapTerrain.prototype.clampReliefAroundWaterLevels
 const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefStepContinuity
 const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
@@ -296,7 +298,7 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
     map.grid[i] = []
     for (let j = 0; j <= size; j++) {
       const type = TERRAIN[terrain[i][j]]
-      map.grid[i][j] = { i, j, type, category: type === 'Water' ? 'Water' : 'Land', z: 0, y: 0, has: null, waterBorder: false, border: false, solid: false, inclined: false }
+      map.grid[i][j] = { i, j, type, category: type === 'Water' || type === 'DeepWater' ? 'Water' : 'Land', z: 0, y: 0, has: null, waterBorder: false, border: false, solid: false, inclined: false }
     }
   }
   map.getReliefCoastDistances = () => map._coastDistances || (map._coastDistances = coastDistances(map))
@@ -345,13 +347,14 @@ function blueprint(size, mapType, seed) {
   if (spawns.length !== playerCount) return null
   const map = buildHeadlessMap(terrain, size, seed, spawns, mapType, playerCount)
   runtimeRelief.call({ map })
+  runtimeClassifyDeepWater.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
   const unrestrictedReliefDistances = new Int16Array((map.size + 1) ** 2).fill(map.size + 4)
   map.enforceReliefStepContinuity(unrestrictedReliefDistances, new Set(), waterLevelBounds)
   runtimePlayerResources.call({ map }, spawns)
   runtimeNeutralResources.call({ map }, spawns)
   runtimeBiomeTrees.call({ map }, spawns)
-  const flatTerrain = Uint8Array.from(terrain.flat())
+  const flatTerrain = Uint8Array.from(map.grid.flat().map(cell => TERRAIN_INDEX.get(cell.type) ?? 0))
   const relief = Int8Array.from(map.grid.flat().map(cell => cell.z))
   const resources = [...map.resources].map(resource => ({
     type: resource.type,
