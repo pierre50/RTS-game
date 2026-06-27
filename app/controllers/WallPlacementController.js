@@ -1,5 +1,5 @@
 import { Assets, Sprite, AnimatedSprite } from 'pixi.js'
-import { COLOR_FLASHY_GREEN } from '../constants'
+import { COLOR_GREEN } from '../constants'
 import { findWallPath, getWallFrame } from '../lib/grid/wallPath'
 import { getWallLevel, getWallTexture, isWall } from '../lib/buildings/walls'
 import { bindAnimatedSpriteToTicker, changeSpriteColor } from '../lib'
@@ -70,7 +70,7 @@ export class WallPlacementController {
       sprite.y = position.y
       sprite.zIndex = cell.i + cell.j + 0.5
       sprite.alpha = 0.55
-      sprite.tint = COLOR_FLASHY_GREEN
+      sprite.tint = COLOR_GREEN
       sprite.eventMode = 'none'
       sprite.roundPixels = true
       this.parent.addChild(sprite)

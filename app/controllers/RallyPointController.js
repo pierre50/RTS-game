@@ -1,5 +1,5 @@
 import { AnimatedSprite, Assets } from 'pixi.js'
-import { BUILDING_TYPES, COLOR_FLASHY_GREEN, COLOR_RED } from '../constants'
+import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED } from '../constants'
 import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames } from '../lib'
 
 export class RallyPointController {
@@ -56,7 +56,7 @@ export class RallyPointController {
     this.preview.visible = true
     this.preview.x = cell.x - this.controls.camera.x
     this.preview.y = cell.y - this.controls.camera.y
-    this.preview.tint = this.canPlace(cell) ? COLOR_FLASHY_GREEN : COLOR_RED
+    this.preview.tint = this.canPlace(cell) ? COLOR_GREEN : COLOR_RED
   }
 
   handleMouseUp(cell) {

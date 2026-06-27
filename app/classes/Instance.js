@@ -70,8 +70,8 @@ export class Instance extends Container {
     if (!this.totalHitPoints) return
     if (this.family !== FAMILY_TYPES.unit && this.family !== FAMILY_TYPES.building) return
     if (!this.owner?.isPlayed) return
-    const barWidth = 26
-    const barHeight = 5
+    const barWidth = 20
+    const barHeight = 2
     const x = -barWidth / 2
     const spriteTop = this.sprite ? -(this.sprite.height * this.sprite.anchor.y) : -40
     const y = spriteTop - 10

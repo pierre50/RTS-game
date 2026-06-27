@@ -1,5 +1,5 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import { BUILDING_TYPES, COLOR_FLASHY_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
+import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
 import { getBuildingAsset, getTexture, changeSpriteColor, canPlaceBuildingAt } from '../lib'
 import { getWallTexture } from '../lib/buildings/walls'
 
@@ -70,7 +70,7 @@ export class EditorEntityPreview {
     if (sprite) sprite.visible = true
 
     const canPlace = this._canPlace(cell)
-    const tint = canPlace ? COLOR_FLASHY_GREEN : COLOR_RED
+    const tint = canPlace ? COLOR_GREEN : COLOR_RED
     if (sprite) sprite.tint = tint
   }
 

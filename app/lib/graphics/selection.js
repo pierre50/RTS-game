@@ -1,5 +1,5 @@
 import { Graphics } from 'pixi.js'
-import { COLOR_FLASHY_GREEN, LABEL_TYPES } from '../../constants'
+import { COLOR_GREEN, LABEL_TYPES } from '../../constants'
 
 export function drawInstanceBlinkingSelection(instance) {
   const selection = new Graphics()
@@ -8,7 +8,7 @@ export function drawInstanceBlinkingSelection(instance) {
 
   const path = [-32 * instance.size, 0, 0, -16 * instance.size, 32 * instance.size, 0, 0, 16 * instance.size]
   selection.poly(path)
-  selection.stroke(COLOR_FLASHY_GREEN)
+  selection.stroke(COLOR_GREEN)
   instance.addChildAt(selection, 0)
 
   const blink = (alpha, duration) =>

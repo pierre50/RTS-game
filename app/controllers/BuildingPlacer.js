@@ -1,6 +1,6 @@
 import { Assets, Container, Sprite } from 'pixi.js'
 import { isometricToCartesian, canAfford, canPlaceBuildingAt, changeSpriteColor, getTexture, payCost } from '../lib'
-import { BUILDING_TYPES, COLOR_FLASHY_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { WallPlacementController } from './WallPlacementController'
 import { t } from '../lib/lang'
@@ -46,7 +46,7 @@ export class BuildingPlacer {
       if (!this.wallPlacementController.active) {
         const canPlace = this.canWallUseCell(cell, player)
         sprite.visible = true
-        sprite.tint = canPlace ? COLOR_FLASHY_GREEN : COLOR_RED
+        sprite.tint = canPlace ? COLOR_GREEN : COLOR_RED
         controls.mouseBuilding.x = cell.x - controls.camera.x
         controls.mouseBuilding.y = cell.y - controls.camera.y
       } else {
@@ -61,7 +61,7 @@ export class BuildingPlacer {
     const isFree = canPlaceBuildingAt(map.grid, cell.i, cell.j, controls.mouseBuilding, { requireVisible: true })
 
     const sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
-    const tint = isFree ? COLOR_FLASHY_GREEN : COLOR_RED
+    const tint = isFree ? COLOR_GREEN : COLOR_RED
     sprite.tint = tint
     controls.mouseBuilding.isFree = isFree
   }
