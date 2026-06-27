@@ -7,6 +7,7 @@ import {
   getActionCondition,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
+  getDeterministicCellVariant,
   playSoundCue,
   playSelectionSound,
 } from '../lib'
@@ -246,7 +247,7 @@ export class Resource extends Instance {
     const terrainAssets = this.assets?.[cell?.type]
     if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
 
-    const textureName = terrainAssets[(this.i * 31 + this.j * 17) % terrainAssets.length]
+    const textureName = getDeterministicCellVariant(terrainAssets, this.i, this.j, map.seed)
     const resourceName = textureName.split('_')[1]
     const textureFile = textureName + '.png'
     const spritesheet = Assets.cache.get(resourceName)

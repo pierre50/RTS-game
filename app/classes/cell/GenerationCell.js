@@ -1,9 +1,7 @@
 import { Assets } from 'pixi.js'
-import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
+import { cartesianToIsometric, getDeterministicCellVariant, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { CellFog } from './CellFog'
-
-const textureIndexForCell = (i, j, assets = []) => (assets.length ? (i * 31 + j * 17) % assets.length : 0)
 
 export class GenerationCell {
   constructor(options, context) {
@@ -34,7 +32,10 @@ export class GenerationCell {
     this.category = definition.category
     this.color = definition.color
     this.assets = definition.assets
-    this.terrainTextureName = options.textureName || this.assets[textureIndexForCell(this.i, this.j, this.assets)]
+    this.terrainTextureName =
+      options.textureName ||
+      getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) ||
+      this.assets[0]
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH

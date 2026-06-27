@@ -80,6 +80,22 @@ function randomFrom(seed) {
   }
 }
 
+function getDeterministicCellVariantIndex(i, j, count, seed = 0) {
+  if (!Number.isFinite(count) || count <= 0) return 0
+  let hash = hashSeed(seed)
+  hash ^= Math.imul(i + 1, 374761393)
+  hash = Math.imul(hash, 668265263)
+  hash ^= Math.imul(j + 1, 1274126177)
+  hash = Math.imul(hash, 2246822519)
+  hash ^= hash >>> 15
+  return (hash >>> 0) % count
+}
+
+function getDeterministicCellVariant(items = [], i, j, seed = 0) {
+  if (!Array.isArray(items) || !items.length) return null
+  return items[getDeterministicCellVariantIndex(i, j, items.length, seed)]
+}
+
 function getCellsAroundPoint(i, j, grid, radius, predicate) {
     const cells = []
     for (let x = Math.max(0, i - radius); x <= Math.min(grid.length - 1, i + radius); x++) {
@@ -203,7 +219,13 @@ function loadRuntimeGenerators() {
     if (parent && isMapRuntime(parent.filename)) {
       if (request === 'pixi.js') return pixi
       if (request === '../resource') return { Resource: HeadlessResource }
-      if (request === '../../lib') return { getCellsAroundPoint, getZoneInGridWithCondition }
+      if (request === '../../lib') {
+        return {
+          getCellsAroundPoint,
+          getDeterministicCellVariant,
+          getZoneInGridWithCondition,
+        }
+      }
       if (request === '../../constants') return constants
       if (request === '../../lib/terrain/topology') {
         return {

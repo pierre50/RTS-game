@@ -1,5 +1,5 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import { cartesianToIsometric, getCellsAroundPoint, getPlainCellsAroundPoint } from '../../lib'
+import { cartesianToIsometric, getCellsAroundPoint, getDeterministicCellVariant, getPlainCellsAroundPoint } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 import {
   EIGHT_NEIGHBOR_OFFSETS,
@@ -451,7 +451,7 @@ export class MapTerrain {
         const assets = config?.cells?.[cell.type]?.assets || []
         if (!assets.length) continue
 
-        const textureName = assets[(i * 31 + j * 17) % assets.length]
+        const textureName = getDeterministicCellVariant(assets, i, j, this.map.seed)
         const resourceName = textureName.split('_')[1]
         const texture = Assets.cache.get(resourceName)?.textures?.[textureName + '.png']
         if (!texture) continue
@@ -918,7 +918,7 @@ export class MapTerrain {
           cell.color = def.color
           cell.assets = def.assets
         }
-        const textureName = def?.assets?.[(i * 31 + j * 17) % def.assets.length]
+        const textureName = getDeterministicCellVariant(def?.assets, i, j, this.map.seed)
         if (textureName) cell.terrainTextureName = textureName
         if (!cell.sprite) {
           continue

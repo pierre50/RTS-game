@@ -5,6 +5,7 @@ import {
   getInstanceZIndex,
   formatNumber,
   cartesianToIsometric,
+  getDeterministicCellVariant,
 } from '../../lib'
 import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 
@@ -85,7 +86,7 @@ export class CellTerrain {
     const definition = config?.cells?.[type]
     const assets = definition?.assets || []
     if (!assets.length) return null
-    const textureName = assets[(this.cell.i * 31 + this.cell.j * 17) % assets.length]
+    const textureName = getDeterministicCellVariant(assets, this.cell.i, this.cell.j, this.cell.map?.seed)
     const resourceName = textureName.split('_')[1]
     const spritesheet = Assets.cache.get(resourceName)
     return spritesheet?.textures?.[textureName + '.png'] || null
