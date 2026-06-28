@@ -165,3 +165,47 @@ test('building prerequisites still apply without tech all', () => {
 
   assert.equal(player.isBuildingEligible('ArcheryRange'), false)
 })
+
+test('captured buildings keep their civ but advance visual age on owner age changes', () => {
+  const Player = loadPlayer()
+  const calls = []
+  const player = {
+    age: 3,
+    autoTechnologyByAge: false,
+    buildings: [
+      {
+        assetAge: 1,
+        assetCiv: 'Egyptian',
+        finalTexture() {
+          calls.push(['captured', this.assetCiv, this.assetAge])
+        },
+        isBuilt: true,
+        isDead: false,
+      },
+      {
+        finalTexture() {
+          calls.push(['native', this.assetCiv, this.assetAge])
+        },
+        isBuilt: true,
+        isDead: false,
+      },
+    ],
+    context: {
+      menu: {},
+      players: [],
+    },
+    isPlayed: false,
+  }
+  player.context.players = [player]
+  Object.setPrototypeOf(player, Player.prototype)
+
+  player.onAgeChange()
+
+  assert.equal(player.buildings[0].assetAge, 3)
+  assert.equal(player.buildings[0].assetCiv, 'Egyptian')
+  assert.equal(player.buildings[1].assetAge, undefined)
+  assert.deepEqual(calls, [
+    ['captured', 'Egyptian', 3],
+    ['native', undefined, undefined],
+  ])
+})

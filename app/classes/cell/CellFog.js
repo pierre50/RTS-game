@@ -2,6 +2,7 @@ import { Sprite, Texture } from 'pixi.js'
 import { Assets } from 'pixi.js'
 import {
   getBuildingAsset,
+  getBuildingAssetOwner,
   getTexture,
   changeSpriteColorDirectly,
   playerCanSeeInstance,
@@ -71,7 +72,7 @@ export class CellFog {
       if (instance.owner && !instance.owner.isPlayed) {
         if (!init && instance.family === FAMILY_TYPES.building) {
           if (!map.revealTerrain) {
-            const assets = getBuildingAsset(instance.type, instance.owner, Assets)
+            const assets = getBuildingAsset(instance.assetType || instance.type, getBuildingAssetOwner(instance), Assets)
             const localCell = map.grid[instance.i][instance.j]
             localCell.addFogBuilding(assets.images.final, instance.owner.color)
           }

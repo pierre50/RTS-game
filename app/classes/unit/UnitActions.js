@@ -23,6 +23,7 @@ import {
   boardTransport,
 } from '../../lib'
 import { Projectile } from '../projectile'
+import { getTowerType, isTower } from '../../lib/buildings/towers'
 
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
@@ -126,6 +127,12 @@ export class UnitActions {
     target.realDest = null
     target.previousDest = null
     target.previousWork = null
+    target.actionLocked = false
+    target.pendingOrder = null
+    target.blockedGatherApproach = null
+    target.inactif = true
+    target.assetCiv = target.assetCiv || oldOwner.civ
+    target.assetAge = target.assetAge ?? oldOwner.age
     target.owner = newOwner
 
     if (target.family === FAMILY_TYPES.unit) {
@@ -133,8 +140,10 @@ export class UnitActions {
       addToOwnerList(newOwner, 'units', target)
       oldOwner.population = Math.max(0, oldOwner.population - 1)
       newOwner.population += 1
+      target.setTextures?.(SHEET_TYPES.standing)
       changeSpriteColor(target.sprite, newOwner.color)
     } else if (target.family === FAMILY_TYPES.building) {
+      target.assetType = target.assetType || (isTower(target) ? getTowerType(oldOwner) : target.type)
       removeFromOwnerList(oldOwner, 'buildings', target)
       addToOwnerList(newOwner, 'buildings', target)
       if (target.increasePopulation && target.populationCapacityApplied) {

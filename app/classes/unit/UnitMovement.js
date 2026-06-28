@@ -2,9 +2,9 @@ import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WO
 import {
   canUpdateMinimap,
   degreeToDirection,
+  getCellsAroundPoint,
   findInstancesInSight,
   getClosestInstanceWithPath,
-  getFreeCellAroundPoint,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
@@ -45,6 +45,19 @@ const GATHER_SEND_METHOD_BY_ACTION = {
   [ACTION_TYPES.takemeat]: 'sendToTakeMeat',
 }
 
+const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
+  ACTION_TYPES.chopwood,
+  ACTION_TYPES.farm,
+  ACTION_TYPES.fishing,
+  ACTION_TYPES.forageberry,
+  ACTION_TYPES.hunt,
+  ACTION_TYPES.minegold,
+  ACTION_TYPES.minestone,
+  ACTION_TYPES.takemeat,
+])
+
+const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
+
 export class UnitMovement {
   constructor(unit) {
     this.unit = unit
@@ -71,17 +84,85 @@ export class UnitMovement {
     return true
   }
 
-  sendToEvt(dest, action, { forceRepath = false } = {}) {
+  findClosestReachableCellNearTarget(target, minDistance = 2, allowCurrentCell = false) {
+    const unit = this.unit
+    const {
+      context: { map },
+    } = unit
+    const maxDistance = Math.max(
+      2,
+      Math.min(unit.sight || MAX_BLOCKED_GATHER_APPROACH_DISTANCE, MAX_BLOCKED_GATHER_APPROACH_DISTANCE)
+    )
+    let best = null
+
+    for (let distance = minDistance; distance <= maxDistance; distance++) {
+      const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
+        if (cell.solid || cell.border) return false
+        if (unit.category === 'Boat') return cell.category === 'Water' || cell.waterBorder
+        return cell.category !== 'Water'
+      })
+      cells.sort(
+        (a, b) =>
+          Math.abs(a.i - target.i) + Math.abs(a.j - target.j) - (Math.abs(b.i - target.i) + Math.abs(b.j - target.j)) ||
+          Math.abs(a.i - unit.i) + Math.abs(a.j - unit.j) - (Math.abs(b.i - unit.i) + Math.abs(b.j - unit.j))
+      )
+
+      for (const cell of cells) {
+        if (allowCurrentCell && unit.i === cell.i && unit.j === cell.j) return { cell, path: [] }
+        const path = getInstancePath(unit, cell.i, cell.j, map)
+        if (path.length && (!best || path.length < best.path.length)) {
+          best = { cell, path }
+        }
+      }
+      if (best) return best
+    }
+
+    return null
+  }
+
+  approachBlockedGatherTarget(dest, action) {
+    const unit = this.unit
+    if (unit.type !== UNIT_TYPES.villager || !BLOCKED_GATHER_APPROACH_ACTIONS.has(action)) return false
+    if (!dest || dest.isDestroyed || !unit.getActionCondition(dest, action)) return false
+    if (unit.blockedGatherApproach?.target === dest && unit.blockedGatherApproach.action === action) return false
+
+    const approach = this.findClosestReachableCellNearTarget(dest)
+    if (!approach) return false
+
+    unit.setDest(dest)
+    unit.action = action
+    unit.blockedGatherApproach = { target: dest, action }
+    unit.setPath(approach.path)
+    return true
+  }
+
+  retryBlockedGatherApproach() {
+    const unit = this.unit
+    const blockedGatherApproach = unit.blockedGatherApproach
+    if (!blockedGatherApproach) return false
+
+    unit.blockedGatherApproach = null
+    const { target, action } = blockedGatherApproach
+    if (!target || target.isDestroyed || !unit.getActionCondition(target, action)) {
+      unit.affectNewDest()
+      return true
+    }
+
+    unit.sendToEvt(target, action, { forceRepath: true, allowBlockedGatherApproach: false })
+    return true
+  }
+
+  sendToEvt(dest, action, { forceRepath = false, allowBlockedGatherApproach = true } = {}) {
     const startedAt = performance.now()
     if (forceRepath) this.unit.context.performance?.record('unit.repath', 0)
     try {
-      return this._sendToEvt(dest, action, { forceRepath })
+      return this._sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach })
     } finally {
       this.unit.context.performance?.record('unit.command', performance.now() - startedAt)
     }
   }
 
-  _sendToEvt(dest, action, { forceRepath = false } = {}) {
+  _sendToEvt(dest, action, { forceRepath = false, allowBlockedGatherApproach = true } = {}) {
     const unit = this.unit
     const {
       context: { map },
@@ -100,6 +181,7 @@ export class UnitMovement {
     }
     unit.handleChangeDest()
     unit.stopInterval()
+    unit.blockedGatherApproach = null
     let path = []
     if (!dest || dest.isDestroyed || unit.isDead) return
     if (!action) {
@@ -119,10 +201,12 @@ export class UnitMovement {
     }
     if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
       const allowWaterCellCategory = unit.category === 'Boat'
-      if (map.grid[dest.i][dest.j].solid) {
+      const destCell = map.grid[dest.i][dest.j]
+      if (destCell.solid) {
         path = getInstanceClosestFreeCellPath(unit, dest, map)
         if (!path.length && unit.work) {
           unit.action = action
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
           if (action === ACTION_TYPES.delivery) {
             unit.stop()
           } else {
@@ -130,15 +214,26 @@ export class UnitMovement {
           }
           return
         }
-      } else if (!allowWaterCellCategory && dest.category === 'Water') {
-        const cell = getFreeCellAroundPoint(
-          dest.i,
-          dest.j,
-          1,
-          map.grid,
-          cell => cell.category !== 'Water' && !cell.solid
-        )
-        unit.sendToEvt(cell)
+      } else if (!allowWaterCellCategory && destCell.category === 'Water') {
+        const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
+        if (!approach) {
+          unit.action = action
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
+          action ? unit.affectNewDest() : unit.stop()
+          return
+        }
+        if (!action) {
+          unit.sendToEvt(approach.cell)
+          return
+        }
+        unit.setDest(dest)
+        unit.action = action
+        if (approach.path.length) {
+          unit.setPath(approach.path)
+        } else {
+          unit.degree = getInstanceDegree(unit, dest.x, dest.y)
+          unit.getAction(action)
+        }
         return
       }
     }
@@ -151,6 +246,7 @@ export class UnitMovement {
       unit.setPath(path)
     } else {
       unit.action = action
+      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
       if (action === ACTION_TYPES.delivery) {
         unit.stop()
       } else {
@@ -252,6 +348,7 @@ export class UnitMovement {
         return
       }
       if (!unit.path.length) {
+        if (this.retryBlockedGatherApproach()) return
         unit.affectNewDest()
       }
     } else {

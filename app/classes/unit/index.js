@@ -86,6 +86,7 @@ export class Unit extends Instance {
     this.realDest = null
     this.previousDest = null
     this.previousWork = null
+    this.blockedGatherApproach = null
     this.buildQueue = []
     this.path = []
     this.degree = map.randomRange(1, 360)
@@ -617,6 +618,7 @@ export class Unit extends Instance {
     this.handleChangeDest()
     this.actionLocked = false
     this.pendingOrder = null
+    this.blockedGatherApproach = null
     this.inactif = true
     this.action = null
     this.dest = null

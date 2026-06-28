@@ -16,6 +16,7 @@ function loadAIEconomy() {
       attack: 'attack',
       build: 'build',
       delivery: 'delivery',
+      fishing: 'fishing',
       hunt: 'hunt',
       takemeat: 'takemeat',
     },
@@ -46,7 +47,19 @@ function loadAIEconomy() {
     if (request === '../constants') return constants
     if (request === '../lib') {
       return {
+        getCellsAroundPoint: (x, y, grid, distance, condition = () => true) => {
+          const cells = []
+          for (let i = x - distance; i <= x + distance; i++) {
+            for (let j = y - distance; j <= y + distance; j++) {
+              if (i === x && j === y) continue
+              const cell = grid[i]?.[j]
+              if (cell && condition(cell)) cells.push(cell)
+            }
+          }
+          return cells
+        },
         getClosestInstance: (_source, targets) => [...targets][0] || false,
+        getInstancePath: (unit, i, j) => (unit.reachableCells?.has(`${i}:${j}`) ? [{ i, j }] : []),
         instancesDistance: () => 100,
       }
     }
@@ -156,4 +169,121 @@ test('food scoring prefers a nearby carcass over a distant farm', () => {
   )
 
   assert.deepEqual(targets, { berry: 0, carcass: 1, farm: 0, fish: 0, hunt: 0 })
+})
+
+function createGrid(size, waterCells = []) {
+  const water = new Set(waterCells.map(([i, j]) => `${i}:${j}`))
+  return Array.from({ length: size }, (_, i) =>
+    Array.from({ length: size }, (_, j) => ({
+      border: false,
+      category: water.has(`${i}:${j}`) ? 'Water' : 'Grass',
+      i,
+      inclined: false,
+      j,
+      solid: false,
+    }))
+  )
+}
+
+test('villager economy rejects fish with no reachable shore cell', () => {
+  const { AIEconomy } = loadAIEconomy()
+  const assignments = []
+  const villager = {
+    hitPoints: 20,
+    i: 0,
+    inactif: true,
+    j: 0,
+    reachableCells: new Set(),
+    sendToFish: target => assignments.push(target),
+  }
+  const ai = {
+    buildingsByTypes: () => [],
+    config: {},
+    context: {
+      map: {
+        grid: createGrid(5, [
+          [1, 1],
+          [1, 2],
+          [1, 3],
+          [2, 1],
+          [2, 2],
+          [2, 3],
+          [3, 1],
+          [3, 2],
+          [3, 3],
+        ]),
+      },
+    },
+    foundedAnimals: new Set(),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    foundedFish: new Set([{ i: 2, j: 2, quantity: 250 }]),
+    getHomeAnchor: () => null,
+  }
+  const economy = new AIEconomy(ai)
+
+  const actions = economy.assignFoodSources(
+    [villager],
+    {
+      villagersForaging: [],
+      villagersFarming: [],
+      villagersFishing: [],
+      villagersHunting: [],
+      villagersOnFood: [],
+    },
+    { maxVillagersOnFood: 1 },
+    []
+  )
+
+  assert.equal(actions, 0)
+  assert.deepEqual(assignments, [])
+})
+
+test('villager economy assigns reachable shore fish with the validated shore cell', () => {
+  const { AIEconomy } = loadAIEconomy()
+  const assignments = []
+  const fish = { i: 2, j: 2, quantity: 250 }
+  const villager = {
+    hitPoints: 20,
+    i: 0,
+    inactif: true,
+    j: 0,
+    reachableCells: new Set(['1:2']),
+    sendToFish: target => assignments.push(target),
+  }
+  const ai = {
+    buildingsByTypes: () => [],
+    config: {},
+    context: {
+      map: {
+        grid: createGrid(5, [[2, 2]]),
+      },
+    },
+    foundedAnimals: new Set(),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    foundedFish: new Set([fish]),
+    getHomeAnchor: () => null,
+  }
+  const economy = new AIEconomy(ai)
+
+  const actions = economy.assignFoodSources(
+    [villager],
+    {
+      villagersForaging: [],
+      villagersFarming: [],
+      villagersFishing: [],
+      villagersHunting: [],
+      villagersOnFood: [],
+    },
+    { maxVillagersOnFood: 1 },
+    []
+  )
+
+  assert.equal(actions, 1)
+  assert.equal(assignments[0], fish)
 })

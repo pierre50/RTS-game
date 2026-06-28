@@ -483,6 +483,9 @@ export class MapGeneration {
     measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
+    for (const viewer of this.map.context.players || []) {
+      rehydrateAIKnowledge(viewer, this.map)
+    }
     await onProgress('generatingFog', 0.86)
     measure('fogInit', () => this.map._initFogChunks())
 

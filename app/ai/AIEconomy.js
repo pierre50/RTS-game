@@ -1,5 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getClosestInstance, instancesDistance } from '../lib'
+import { getCellsAroundPoint, getClosestInstance, getInstancePath, instancesDistance } from '../lib'
 
 export class AIEconomy {
   constructor(ai) {
@@ -230,6 +230,57 @@ export class AIEconomy {
       .filter(building => building && building.isBuilt && !building.isDead && !building.isDestroyed)
   }
 
+  getReachableFishShoreCell(fish, villager) {
+    const map = this.ai.context?.map
+    if (!map || !fish || !villager || fish.quantity <= 0 || !this.isLocationSafe(fish)) return null
+
+    const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, cell => {
+      return cell.category !== 'Water'
+    })
+    shoreCells.sort(
+      (a, b) =>
+        Math.abs(villager.i - a.i) +
+        Math.abs(villager.j - a.j) -
+        (Math.abs(villager.i - b.i) + Math.abs(villager.j - b.j))
+    )
+
+    let best = null
+    for (const cell of shoreCells) {
+      if (villager.i === cell.i && villager.j === cell.j) return cell
+      if (cell.solid) continue
+      const path = getInstancePath(villager, cell.i, cell.j, map)
+      if (path.length && (!best || path.length < best.pathLength)) {
+        best = { cell, pathLength: path.length }
+      }
+    }
+
+    return best?.cell || null
+  }
+
+  getVillagerFishSources(villagers = []) {
+    if (!villagers.length) return []
+    return [...this.ai.foundedFish].filter(fish =>
+      villagers.some(villager => this.getReachableFishShoreCell(fish, villager))
+    )
+  }
+
+  getBestVillagerFishTarget(villager, fishList) {
+    let best = null
+    let bestScore = Infinity
+
+    for (const fish of fishList) {
+      const shoreCell = this.getReachableFishShoreCell(fish, villager)
+      if (!shoreCell) continue
+      const score = Math.abs(villager.i - shoreCell.i) + Math.abs(villager.j - shoreCell.j)
+      if (score < bestScore) {
+        bestScore = score
+        best = { fish, shoreCell }
+      }
+    }
+
+    return best
+  }
+
   getNearestDropDistance(source, dropSites) {
     if (!source || !dropSites.length) return 0
     return Math.min(...dropSites.map(site => Math.abs(source.i - site.i) + Math.abs(source.j - site.j)))
@@ -401,7 +452,7 @@ export class AIEconomy {
         animal => !animal.isDestroyed && animal.quantity > 0 && this.isLocationSafe(animal)
       ),
       farms: [...farmCandidates],
-      fish: [...ai.foundedFish].filter(node => node.quantity > 0 && this.isLocationSafe(node)),
+      fish: this.getVillagerFishSources([...availableVillagers, ...villagersFishing]),
       meatDrops: this.getFoodDropSites('meat'),
       plantDrops: this.getFoodDropSites('berry'),
     }
@@ -451,9 +502,10 @@ export class AIEconomy {
     if (sources.fish.length > 0) {
       const toAssign = Math.min(Math.max(0, sourceTargets.fish - activeFishers.length), availableVillagers.length)
       for (let i = 0; i < toAssign; i++) {
-        const fish = getClosestInstance(availableVillagers[0], sources.fish)
-        if (!fish) break
-        availableVillagers.shift().sendToFish(fish)
+        const villager = availableVillagers[0]
+        const target = this.getBestVillagerFishTarget(villager, sources.fish)
+        if (!target) break
+        availableVillagers.shift().sendToFish(target.fish)
         actions++
       }
     }

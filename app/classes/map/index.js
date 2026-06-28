@@ -103,12 +103,13 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport, margin = CELL_WIDTH * 2) {
+    if (this.terrainChunkManager?.chunks.size) {
+      this.context.performance?.measure('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
+    }
+    if (!this.revealEverything) this.mapFog?.viewportRenderer.update(viewport)
+
     const startedAt = performance.now()
     try {
-      if (this.terrainChunkManager?.chunks.size) {
-        this.context.performance?.measure('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
-      }
-      if (!this.revealEverything) this.mapFog?.viewportRenderer.update(viewport)
       if (!viewport || !this.renderChunks.length) return
 
       let visibleCount = 0

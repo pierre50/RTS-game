@@ -127,6 +127,10 @@ test('fishing boats gather silently', () => {
     '../projectile': {
       Projectile: class {},
     },
+    '../../lib/buildings/towers': {
+      getTowerType: target => target?.type,
+      isTower: () => false,
+    },
   })
 
   const fish = {
@@ -220,6 +224,10 @@ test('depleted fish are cleared immediately after gathering', () => {
     },
     '../projectile': {
       Projectile: class {},
+    },
+    '../../lib/buildings/towers': {
+      getTowerType: target => target?.type,
+      isTower: () => false,
     },
   })
 

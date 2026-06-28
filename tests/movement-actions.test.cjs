@@ -29,6 +29,7 @@ const constants = {
     fishing: 'fishing',
     forageberry: 'forageberry',
     hunt: 'hunt',
+    convert: 'convert',
     minegold: 'minegold',
     minestone: 'minestone',
     takemeat: 'takemeat',
@@ -39,6 +40,7 @@ const constants = {
     granary: 'Granary',
     storagePit: 'StoragePit',
     townCenter: 'TownCenter',
+    watchTower: 'WatchTower',
   },
   FAMILY_TYPES: {
     animal: 'animal',
@@ -53,6 +55,7 @@ const constants = {
   },
   STEP_TIME: 100,
   UNIT_TYPES: {
+    priest: 'Priest',
     villager: 'villager',
   },
   WORK_FOOD_TYPES: ['farmer'],
@@ -68,6 +71,18 @@ const constants = {
     woodcutter: 'woodcutter',
   },
 }
+
+test('switching a recolored sprite back to blue clears its color filter', () => {
+  const { changeSpriteColor } = loadModule('app/lib/graphics/colors.js', {
+    'pixi.js': { Texture: { from: () => ({}) } },
+    'pixi-filters': { MultiColorReplaceFilter: class {} },
+  })
+  const sprite = { filters: ['red-filter'] }
+
+  changeSpriteColor(sprite, 'blue')
+
+  assert.equal(sprite.filters, null)
+})
 
 test('sets an automatically selected destination before starting its action', () => {
   const oldTarget = { label: 'empty-tree', family: 'resource' }
@@ -117,6 +132,178 @@ test('sets an automatically selected destination before starting its action', ()
   ])
 })
 
+test('converted units stop old orders, switch owner, and refresh idle color', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      changeSpriteColor: (_sprite, color) => calls.push(['changeSpriteColor', color]),
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.owner.color]),
+    },
+    '../projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+  })
+  const oldOwner = { color: 'red', label: 'enemy', population: 1, units: [] }
+  const newOwner = { color: 'blue', isPlayed: true, label: 'player', population: 0, units: [], technologies: [] }
+  const target = {
+    action: constants.ACTION_TYPES.attack,
+    actionLocked: true,
+    blockedGatherApproach: { target: 'tree' },
+    dest: { label: 'old-target' },
+    family: constants.FAMILY_TYPES.unit,
+    inactif: false,
+    owner: oldOwner,
+    path: [{ i: 1, j: 1 }],
+    pendingOrder: { dest: { label: 'queued' } },
+    previousDest: { label: 'previous' },
+    previousWork: constants.WORK_TYPES.attacker,
+    realDest: { i: 1, j: 1 },
+    selected: false,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite: {
+      onComplete: () => {},
+      onFrameChange: () => {},
+      onLoop: () => {},
+    },
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+  oldOwner.units.push(target)
+  const priest = {
+    context: {
+      menu: {
+        updatePlayerMiniMapEvt: () => {},
+        updateTopbar: () => calls.push(['updateTopbar']),
+      },
+      player: {},
+    },
+    owner: newOwner,
+    stop: () => calls.push(['priestStop']),
+  }
+
+  const converted = new UnitActions(priest).convertTarget(target)
+
+  assert.equal(converted, true)
+  assert.equal(target.owner, newOwner)
+  assert.equal(oldOwner.units.includes(target), false)
+  assert.equal(newOwner.units.includes(target), true)
+  assert.equal(target.action, null)
+  assert.equal(target.dest, null)
+  assert.equal(target.realDest, null)
+  assert.equal(target.actionLocked, false)
+  assert.equal(target.pendingOrder, null)
+  assert.equal(target.blockedGatherApproach, null)
+  assert.equal(target.inactif, true)
+  assert.deepEqual(target.path, [])
+  assert.deepEqual(calls.filter(([name]) => name === 'setTextures' || name === 'changeSpriteColor'), [
+    ['setTextures', constants.SHEET_TYPES.standing],
+    ['changeSpriteColor', 'blue'],
+  ])
+})
+
+test('converted buildings keep their source civilization and age assets', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      changeSpriteColor: () => {},
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetAge]),
+    },
+    '../projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+  })
+  const oldOwner = {
+    age: 1,
+    buildings: [],
+    civ: 'Egyptian',
+    color: 'red',
+    hasBuilt: [],
+    label: 'egypt',
+    population_max: 0,
+  }
+  const newOwner = {
+    age: 3,
+    buildings: [],
+    civ: 'Greek',
+    color: 'blue',
+    hasBuilt: [],
+    isPlayed: true,
+    label: 'greek',
+    population_max: 0,
+  }
+  const target = {
+    clearRallyPoint: () => calls.push(['clearRallyPoint']),
+    family: constants.FAMILY_TYPES.building,
+    finalTexture: () => calls.push(['finalTexture', target.assetCiv, target.assetAge, target.assetType]),
+    isBuilt: true,
+    owner: oldOwner,
+    queue: ['old-unit'],
+    selected: false,
+    sprite: {},
+    stopInterval: () => calls.push(['stopInterval']),
+    technologies: [],
+    type: 'TownCenter',
+    units: [],
+  }
+  oldOwner.buildings.push(target)
+  const priest = {
+    context: {
+      menu: {
+        getRallyPointButton: () => ({}),
+        updatePlayerMiniMapEvt: () => {},
+        updateTopbar: () => calls.push(['updateTopbar']),
+      },
+      player: {},
+    },
+    owner: newOwner,
+    stop: () => calls.push(['priestStop']),
+  }
+
+  const converted = new UnitActions(priest).convertTarget(target)
+
+  assert.equal(converted, true)
+  assert.equal(target.owner, newOwner)
+  assert.equal(target.assetCiv, 'Egyptian')
+  assert.equal(target.assetAge, 1)
+  assert.equal(target.assetType, 'TownCenter')
+  assert.deepEqual(calls.filter(([name]) => name === 'finalTexture'), [['finalTexture', 'Egyptian', 1, 'TownCenter']])
+  assert.equal(oldOwner.buildings.includes(target), false)
+  assert.equal(newOwner.buildings.includes(target), true)
+})
+
 test('destination checks stay pure when no destination exists', () => {
   let redispatched = false
   const lib = {
@@ -146,6 +333,188 @@ test('destination checks stay pure when no destination exists', () => {
 
   assert.equal(movement.isUnitAtDest('chopwood', null), false)
   assert.equal(redispatched, false)
+})
+
+test('a blocked gather target sends the villager near it before retrying', () => {
+  const target = { label: 'berries-1', i: 3, j: 3, isDestroyed: false }
+  const approachCell = { i: 1, j: 3, solid: false, border: false, category: 'Grass' }
+  const approachPath = [{ i: 1, j: 3 }]
+  const grid = Array.from({ length: 6 }, (_, i) =>
+    Array.from({ length: 6 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      border: false,
+      category: 'Grass',
+      has: null,
+    }))
+  )
+  grid[target.i][target.j].solid = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: () => [],
+    getCellsAroundPoint: (_i, _j, _grid, distance, condition) =>
+      distance === 2 && condition(approachCell) ? [approachCell] : [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: (_unit, i, j) => (i === approachCell.i && j === approachCell.j ? approachPath : []),
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    actionLocked: false,
+    category: 'Unit',
+    context: {
+      map: { grid },
+      performance: { record: () => {} },
+    },
+    dest: null,
+    getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.forageberry,
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => false,
+    j: 0,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: nextTarget => {
+      unit.dest = nextTarget
+    },
+    setPath: path => {
+      unit.path = path
+    },
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.forager,
+  }
+
+  new UnitMovement(unit).sendToEvt(target, constants.ACTION_TYPES.forageberry)
+
+  assert.equal(unit.dest, target)
+  assert.equal(unit.action, constants.ACTION_TYPES.forageberry)
+  assert.equal(unit.blockedGatherApproach.target, target)
+  assert.deepEqual(unit.path, approachPath)
+})
+
+test('a villager fishing a water resource keeps the fish target and paths to reachable shore', () => {
+  const fish = { label: 'fish-1', i: 2, j: 2, x: 20, y: 20, category: 'Fish', isDestroyed: false }
+  const shoreCell = { i: 1, j: 2, solid: false, border: false, category: 'Grass' }
+  const shorePath = [{ i: 1, j: 2 }]
+  const grid = Array.from({ length: 5 }, (_, i) =>
+    Array.from({ length: 5 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      border: false,
+      category: i === fish.i && j === fish.j ? 'Water' : 'Grass',
+      has: null,
+    }))
+  )
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: () => [],
+    getCellsAroundPoint: (_i, _j, _grid, distance, condition) =>
+      distance === 1 && condition(shoreCell) ? [shoreCell] : [],
+    getClosestInstanceWithPath: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: (_unit, i, j) => (i === shoreCell.i && j === shoreCell.j ? shorePath : []),
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    actionLocked: false,
+    category: 'Unit',
+    context: {
+      map: { grid },
+      performance: { record: () => {} },
+    },
+    dest: null,
+    getActionCondition: (candidate, action) => candidate === fish && action === constants.ACTION_TYPES.fishing,
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => false,
+    j: 0,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: nextTarget => {
+      unit.dest = nextTarget
+    },
+    setPath: path => {
+      unit.path = path
+    },
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.fisher,
+  }
+
+  new UnitMovement(unit).sendToEvt(fish, constants.ACTION_TYPES.fishing)
+
+  assert.equal(unit.dest, fish)
+  assert.equal(unit.action, constants.ACTION_TYPES.fishing)
+  assert.deepEqual(unit.path, shorePath)
+})
+
+test('a villager retries the original gather order after approaching a blocked target', () => {
+  const target = { label: 'berries-1', isDestroyed: false }
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = {
+    blockedGatherApproach: { target, action: constants.ACTION_TYPES.forageberry },
+    getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.forageberry,
+    sendToEvt: (candidate, action, options) => calls.push([candidate.label, action, options]),
+  }
+
+  const handled = new UnitMovement(unit).retryBlockedGatherApproach()
+
+  assert.equal(handled, true)
+  assert.equal(unit.blockedGatherApproach, null)
+  assert.deepEqual(calls, [
+    ['berries-1', constants.ACTION_TYPES.forageberry, { forceRepath: true, allowBlockedGatherApproach: false }],
+  ])
 })
 
 test('manual move orders cancel previous villager work when the unit arrives', () => {
@@ -529,6 +898,10 @@ test('a farmer returns to the same farm after delivering food', () => {
       updateInstanceVisibility: () => {},
     },
     '../projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
   })
   const unit = {
     context: { map: { grid: [] } },

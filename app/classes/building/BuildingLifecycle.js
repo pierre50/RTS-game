@@ -14,6 +14,7 @@ import {
   canUpdateMinimap,
   changeSpriteColorDirectly,
   getBuildingAsset,
+  getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
   getBuildingRubbleTextureNameWithSize,
   getPercentage,
@@ -76,8 +77,9 @@ export class BuildingLifecycle {
 
   finalTexture() {
     const building = this.building
-    const effectiveType = isTower(building) ? getTowerType(building.owner) : building.type
-    const assets = getBuildingAsset(effectiveType, building.owner, Assets)
+    const assetOwner = getBuildingAssetOwner(building)
+    const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
+    const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
     const texture = getTexture(assets.images.final, Assets)
     building.sprite.texture = texture
     building.sprite.hitArea = texture.hitArea
@@ -92,7 +94,7 @@ export class BuildingLifecycle {
     if (isWall(building)) updateWallAndNeighbours(building)
 
     if (building.type === BUILDING_TYPES.house) {
-      if (building.owner.age === 0) {
+      if (assetOwner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
         const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures))
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)

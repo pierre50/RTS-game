@@ -25,9 +25,12 @@ import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } fr
 
 const NAVAL_MIN_WATER_CLUSTER_CELLS = 36
 const NAVAL_STRONG_WATER_CLUSTER_CELLS = 64
+const NAVAL_WATER_CLUSTER_SCAN_CAP = 80
+const NAVAL_WATER_REACHABILITY_SCAN_CAP = NAVAL_WATER_CLUSTER_SCAN_CAP * 4
 const NAVAL_MIN_FISH_FOR_DOCK = 2
 const NAVAL_DOCK_SEARCH_RADIUS = 18
 const NAVAL_MAX_FISHING_BOATS = 6
+const NAVAL_DOCK_FISH_RADIUS = 28
 
 export class AIStrategy {
   constructor(ai, difficulty = 'medium') {
@@ -237,10 +240,14 @@ export class AIStrategy {
   }
 
   isWaterCell(cell) {
-    return cell && cell.category === 'Water' && !cell.solid && !cell.border
+    return cell && cell.category === 'Water' && !cell.border
   }
 
-  getWaterClusterSize(startCell, grid, cap = NAVAL_STRONG_WATER_CLUSTER_CELLS) {
+  isOpenWaterCell(cell) {
+    return this.isWaterCell(cell) && !cell.solid
+  }
+
+  getWaterClusterSize(startCell, grid, cap = NAVAL_WATER_CLUSTER_SCAN_CAP) {
     if (!this.isWaterCell(startCell)) return 0
 
     const visited = new Set()
@@ -266,6 +273,10 @@ export class AIStrategy {
     }
 
     return visited.size
+  }
+
+  getDockPlacementConfig() {
+    return { ...this.ai.config.buildings[BUILDING_TYPES.dock], type: BUILDING_TYPES.dock }
   }
 
   getNavalOpportunity() {
@@ -303,6 +314,68 @@ export class AIStrategy {
       .filter(building => building && !building.isDead && !building.isDestroyed)
   }
 
+  getNearestDockDistance(instance, docks = this.getHealthyDocks()) {
+    if (!instance || docks.length === 0) return Infinity
+    return Math.min(...docks.map(dock => Math.abs(instance.i - dock.i) + Math.abs(instance.j - dock.j)))
+  }
+
+  isReachableWaterTarget(source, target, cap = NAVAL_WATER_REACHABILITY_SCAN_CAP) {
+    const grid = this.ai.context.map.grid
+    const startCell = grid[source.i]?.[source.j]
+    const targetCell = grid[target.i]?.[target.j]
+    if (!this.isWaterCell(startCell) || !this.isWaterCell(targetCell)) return false
+    if (startCell === targetCell) return true
+
+    const targetKey = `${targetCell.i}:${targetCell.j}`
+    const visited = new Set([`${startCell.i}:${startCell.j}`])
+    const queue = [startCell]
+
+    for (let index = 0; index < queue.length && visited.size < cap; index++) {
+      const cell = queue[index]
+      const neighbors = [
+        grid[cell.i - 1]?.[cell.j],
+        grid[cell.i + 1]?.[cell.j],
+        grid[cell.i]?.[cell.j - 1],
+        grid[cell.i]?.[cell.j + 1],
+      ]
+
+      for (const neighbor of neighbors) {
+        if (!this.isOpenWaterCell(neighbor) && neighbor !== targetCell) continue
+        const key = `${neighbor.i}:${neighbor.j}`
+        if (visited.has(key)) continue
+        if (key === targetKey) return true
+        visited.add(key)
+        queue.push(neighbor)
+      }
+    }
+
+    return false
+  }
+
+  getBestFishForBoat(boat, fishList, docks = this.getHealthyDocks()) {
+    const reachableFish = fishList.filter(fish => this.isReachableWaterTarget(boat, fish))
+    const candidates = reachableFish.length ? reachableFish : fishList
+    if (!candidates.length) return null
+
+    const localFish = candidates.filter(fish => this.getNearestDockDistance(fish, docks) <= NAVAL_DOCK_FISH_RADIUS)
+    const preferredFish = localFish.length ? localFish : candidates
+    let best = null
+    let bestScore = Infinity
+
+    for (const fish of preferredFish) {
+      const boatDistance = Math.abs(boat.i - fish.i) + Math.abs(boat.j - fish.j)
+      const dockDistance = this.getNearestDockDistance(fish, docks)
+      const dockPenalty = Number.isFinite(dockDistance) ? dockDistance * 0.65 : 0
+      const score = boatDistance + dockPenalty
+      if (score < bestScore) {
+        bestScore = score
+        best = fish
+      }
+    }
+
+    return best
+  }
+
   shouldBuildDock(opportunity) {
     if (!opportunity?.desiredFishingBoats) return false
     return this.getHealthyDocks().length === 0
@@ -311,7 +384,8 @@ export class AIStrategy {
   findDockPosition(snapshot, opportunity) {
     const { ai } = this
     const { map } = snapshot
-    const dockConfig = { ...ai.config.buildings[BUILDING_TYPES.dock], type: BUILDING_TYPES.dock }
+
+    const dockConfig = this.getDockPlacementConfig()
     const anchor = snapshot.towncenters[0] || ai.getHomeAnchor()
     const fishByDistance = [...opportunity.fish].sort((a, b) => {
       if (!anchor) return 0
@@ -371,7 +445,7 @@ export class AIStrategy {
 
     const fishingBoats = ai.getLivingUnitsByType(UNIT_TYPES.fishingBoat)
     const fishingBoatLoad = this.getTrainingLoad(builtDocks)
-    const maxFishingBoats = Math.min(opportunity.desiredFishingBoats, opportunity.fish.length * 2)
+    const maxFishingBoats = opportunity.fish.length ? Math.min(opportunity.desiredFishingBoats, opportunity.fish.length * 2) : 0
     actions += this.buyUnits(
       fishingBoats.length + fishingBoatLoad,
       maxFishingBoats,
@@ -385,7 +459,7 @@ export class AIStrategy {
     const availableFish = opportunity.fish.filter(fish => fish.quantity > 0 && ai.economy.isLocationSafe(fish))
     const idleBoats = fishingBoats.filter(boat => boat.inactif && boat.action !== ACTION_TYPES.delivery)
     for (const boat of idleBoats) {
-      const fish = getClosestInstance(boat, availableFish)
+      const fish = this.getBestFishForBoat(boat, availableFish, builtDocks)
       if (fish && boat.sendToFish(fish)) actions++
     }
 

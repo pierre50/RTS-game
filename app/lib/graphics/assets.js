@@ -38,3 +38,10 @@ export function getBuildingAsset(type, owner, assets) {
 
   throw new Error(`Missing building asset for ${owner.civ} ${type} at age ${owner.age}`)
 }
+
+export function getBuildingAssetOwner(building) {
+  return {
+    civ: building.assetCiv || building.owner.civ,
+    age: building.assetAge ?? building.owner.age,
+  }
+}

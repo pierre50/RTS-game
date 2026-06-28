@@ -10,6 +10,7 @@ import {
   playerCanSeeInstance,
   getActionCondition,
   getBuildingAsset,
+  getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
   canUpdateMinimap,
   updateInstanceVisibility,
@@ -85,8 +86,8 @@ export class Building extends Instance {
       : (this.technologies || []).map(key => context.menu.getTechnologyButton(key))
     this.interface = {
       info: element => {
-        const displayType = isTower(this) ? getTowerType(this.owner) : this.type
-        const assets = getBuildingAsset(displayType, this.owner, Assets)
+        const displayType = this.assetType || (isTower(this) ? getTowerType(this.owner) : this.type)
+        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this), Assets)
         this.buildingInterface.renderInfo(element, assets)
       },
       menu:

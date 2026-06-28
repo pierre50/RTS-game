@@ -4,6 +4,8 @@ import { isometricToCartesian } from '../../lib'
 import { getFogPatternTexture } from '../cell/CellFog'
 
 const VIEWPORT_MARGIN = CELL_WIDTH * 2
+const CACHE_MARGIN = CELL_WIDTH * 2
+const CACHE_SNAP = CELL_WIDTH
 const CELL_MARGIN = 3
 const REVEAL_RX = CELL_WIDTH / 2
 const REVEAL_RY = CELL_HEIGHT / 2
@@ -62,18 +64,18 @@ export class ViewportFogRenderer {
       this.map.fogLayer.visible = !this.map.revealEverything
       if (this.map.revealEverything) return
 
-      const left = Math.floor(viewport.visibleLeft - VIEWPORT_MARGIN)
-      const top = Math.floor(viewport.visibleTop - VIEWPORT_MARGIN)
-      const width = Math.max(1, Math.ceil(viewport.visibleWidth + VIEWPORT_MARGIN * 2))
-      const height = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
+      const requiredLeft = Math.floor(viewport.visibleLeft - VIEWPORT_MARGIN)
+      const requiredTop = Math.floor(viewport.visibleTop - VIEWPORT_MARGIN)
+      const requiredWidth = Math.max(1, Math.ceil(viewport.visibleWidth + VIEWPORT_MARGIN * 2))
+      const requiredHeight = Math.max(1, Math.ceil(viewport.visibleHeight + VIEWPORT_MARGIN * 2))
 
       const viewportCovered =
         this.darknessTexture &&
         this.fogTexture &&
-        left >= this.left &&
-        top >= this.top &&
-        left + width <= this.left + this.width &&
-        top + height <= this.top + this.height
+        requiredLeft >= this.left &&
+        requiredTop >= this.top &&
+        requiredLeft + requiredWidth <= this.left + this.width &&
+        requiredTop + requiredHeight <= this.top + this.height
 
       const now = performance.now()
       if (!force && viewportCovered) {
@@ -83,22 +85,38 @@ export class ViewportFogRenderer {
 
       didRedraw = true
       this.lastRedrawAt = now
+      const left = Math.floor((requiredLeft - CACHE_MARGIN) / CACHE_SNAP) * CACHE_SNAP
+      const top = Math.floor((requiredTop - CACHE_MARGIN) / CACHE_SNAP) * CACHE_SNAP
+      const right = Math.ceil((requiredLeft + requiredWidth + CACHE_MARGIN) / CACHE_SNAP) * CACHE_SNAP
+      const bottom = Math.ceil((requiredTop + requiredHeight + CACHE_MARGIN) / CACHE_SNAP) * CACHE_SNAP
+      const width = Math.max(1, right - left)
+      const height = Math.max(1, bottom - top)
       this._ensureTargets(width, height)
       this.left = left
       this.top = top
       this.darknessSprite.position.set(left, top)
       this.fogSprite.position.set(left, top)
 
-      renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
+      const performanceMonitor = this.map.context.performance
+      const renderBase = () => {
+        renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
 
-      this._fogPattern.tilePosition.set(-left, -top)
-      renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
+        this._fogPattern.tilePosition.set(-left, -top)
+        renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
+      }
+      const drawCells = () => {
+        this._exploredErase.clear()
+        this._visibleErase.clear()
+        this._drawViewportCells(this._exploredErase, this._visibleErase, views, left, top, width, height)
+      }
+      const eraseMasks = () => {
+        this._erase(renderer, this._exploredErase, this.darknessTexture, this._darknessEraseContainer)
+        this._erase(renderer, this._visibleErase, this.fogTexture, this._fogEraseContainer)
+      }
 
-      this._exploredErase.clear()
-      this._visibleErase.clear()
-      this._drawViewportCells(this._exploredErase, this._visibleErase, views, left, top, width, height)
-      this._erase(renderer, this._exploredErase, this.darknessTexture, this._darknessEraseContainer)
-      this._erase(renderer, this._visibleErase, this.fogTexture, this._fogEraseContainer)
+      performanceMonitor?.measure('fog.viewport.base', renderBase) ?? renderBase()
+      performanceMonitor?.measure('fog.viewport.drawCells', drawCells) ?? drawCells()
+      performanceMonitor?.measure('fog.viewport.erase', eraseMasks) ?? eraseMasks()
 
       this.dirty = false
     } finally {

@@ -88,6 +88,8 @@ function unitData(unit) {
       'inactif',
       'isDead',
       'isDestroyed',
+      'assetCiv',
+      'assetAge',
     ]),
     loadedInTransport: unit.loadedInTransport?.label,
     currentFrame: unit.sprite?.currentFrame,
@@ -115,6 +117,9 @@ function buildingData(building) {
       'hitPoints',
       'quantity',
       'rallyPoint',
+      'assetCiv',
+      'assetAge',
+      'assetType',
     ]),
     isUsedBy: building.isUsedBy?.label,
   }

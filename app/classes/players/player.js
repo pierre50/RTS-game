@@ -216,6 +216,7 @@ export class Player {
     for (let i = 0; i < this.buildings.length; i++) {
       const building = this.buildings[i]
       if (building.isBuilt && !building.isDead) {
+        if (building.assetCiv) building.assetAge = this.age
         building.finalTexture()
       }
     }

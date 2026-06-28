@@ -236,12 +236,13 @@ export class CameraController {
   }
 
   updateVisibleCells() {
-    const startedAt = performance.now()
     const { map, player } = this.context
+    if (!map?.grid?.length) return
+    const viewport = this.getViewportRect()
+    map.updateRenderChunks?.(viewport)
+
+    const startedAt = performance.now()
     try {
-      if (!map?.grid?.length) return
-      const viewport = this.getViewportRect()
-      map.updateRenderChunks?.(viewport)
       if (!player?.views) return
       const newVisible = this._nextVisibleCells ?? new Set()
       newVisible.clear()

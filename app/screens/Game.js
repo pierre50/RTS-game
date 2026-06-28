@@ -9,6 +9,7 @@ import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
 import { save as saveToStorage } from '../serialization/SaveStorage'
+import { serializeGame } from '../serialization/SaveSerializer'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
@@ -326,6 +327,7 @@ export default class Game extends Container {
     this._mountRuntime()
     this.context.performance?.setPhase('runtime')
     this.checkVictory()
+    this._restartSaveData = structuredClone(serializeGame(this.context))
   }
 
   _bootFromSave(json) {

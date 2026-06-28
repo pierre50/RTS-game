@@ -92,7 +92,10 @@ export function changeSpriteColorDirectly(sprite, color) {
 }
 
 export function changeSpriteColor(sprite, color) {
-  if (color === 'blue') return
+  if (color === 'blue') {
+    sprite.filters = null
+    return
+  }
   if (!COLOR_PALETTES[color]) return
 
   if (!colorFilterCache.has(color)) {
