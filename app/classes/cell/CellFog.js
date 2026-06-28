@@ -7,7 +7,7 @@ import {
   playerCanSeeInstance,
   updateInstanceRenderVisibility,
 } from '../../lib'
-import { COLOR_FOG, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 
 let _fogPatternTexture = null
 
@@ -38,33 +38,30 @@ export class CellFog {
     if (cell.fogSprites.length > 0) return
     if (cell.context.map.revealTerrain && !cell.context.map.revealEverything) return
 
-    const fogLayer = cell.context.map.fogLayer
+    const fogMemoryLayer = cell.context.map.fogMemoryLayer
     const addToLayer = sp => {
       sp.x = cell.x
       sp.y = cell.y
-      sp.zIndex = 0
-      if (fogLayer) fogLayer.addChild(sp)
+      sp.zIndex = cell.i + cell.j
+      if (fogMemoryLayer) fogMemoryLayer.addChild(sp)
       else cell.addChild(sp)
     }
 
     const sprite = Sprite.from(getTexture(textureSheet, Assets))
     sprite.label = LABEL_TYPES.buildingFog
-    sprite.tint = COLOR_FOG
     sprite.anchor.set(sprite.texture.defaultAnchor.x, sprite.texture.defaultAnchor.y)
     sprite.cullable = true
-    changeSpriteColorDirectly(sprite, colorName)
+    if (colorName) changeSpriteColorDirectly(sprite, colorName)
     addToLayer(sprite)
     cell.fogSprites.push({ sprite, textureSheet, colorName })
   }
 
-  removeFogBuilding(instance) {
+  removeFogBuilding(instance = null) {
     const { cell } = this
-    const { map } = cell.context
-    if (instance.owner && !instance.owner.isPlayed && instance.family === FAMILY_TYPES.building) {
-      const localCell = map.grid[instance.i][instance.j]
-      localCell.fogSprites.forEach(s => s.sprite?.destroy())
-      localCell.fogSprites = []
-    }
+    const targetCell = instance ? cell.context.map.grid[instance.i]?.[instance.j] : cell
+    if (!targetCell) return
+    targetCell.fogSprites.forEach(s => s.sprite?.destroy())
+    targetCell.fogSprites = []
   }
 
   setFogChildren(instance, init) {
@@ -124,11 +121,13 @@ export class CellFog {
         map._fogQueue.set(cell, 'clear')
       }
     }
+    this.removeFogBuilding()
     if (cell.has) {
-      this.removeFogBuilding(cell.has)
+      if (cell.has.family === FAMILY_TYPES.building) this.removeFogBuilding(cell.has)
       this._setRemoveChildren(cell.has)
     }
     for (const corpse of cell.corpses) {
+      if (corpse.family === FAMILY_TYPES.building) this.removeFogBuilding(corpse)
       this._setRemoveChildren(corpse)
     }
   }

@@ -45,14 +45,39 @@ function getBuildingFootprintCells(grid, i, j, building) {
   return { cells, expectedCells }
 }
 
-function canPlaceWaterBuilding(cells, requireVisible) {
+function isWaterPlacementCell(cell) {
+  return cell.category === 'Water' || cell.waterBorder
+}
+
+function hasDirectShoreContact(grid, i, j) {
+  const offsets = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]
+
+  return offsets.some(([di, dj]) => {
+    const neighbor = grid[i + di]?.[j + dj]
+    return neighbor && (neighbor.waterBorder || neighbor.category !== 'Water')
+  })
+}
+
+function canPlaceWaterBuilding(grid, i, j, cells, building, requireVisible) {
   let waterBorderedCells = 0
   let waterCells = 0
 
   for (const cell of cells) {
     if (cell.inclined || cell.solid || (requireVisible && !cell.visible)) return false
+    if (!isWaterPlacementCell(cell)) return false
     if (cell.waterBorder) waterBorderedCells++
     else if (cell.category === 'Water') waterCells++
+  }
+
+  if (building.type === 'Dock') {
+    const anchorCell = grid[i]?.[j]
+    if (!anchorCell || anchorCell.category !== 'Water') return false
+    return waterBorderedCells > 0 && hasDirectShoreContact(grid, i, j)
   }
 
   return waterBorderedCells >= 2 || waterCells >= 4
@@ -95,6 +120,6 @@ export function canPlaceBuildingAt(grid, i, j, building, { requireVisible = fals
   if (cells.length !== expectedCells) return false
 
   return building.buildOnWater
-    ? canPlaceWaterBuilding(cells, requireVisible)
+    ? canPlaceWaterBuilding(grid, i, j, cells, building, requireVisible)
     : canPlaceGroundBuilding(cells, requireVisible)
 }

@@ -110,22 +110,24 @@ export class UnitCommands {
     }
     unit.handleChangeDest()
     unit.stopInterval()
-    if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return
-    if (action === ACTION_TYPES.attack && !getActionCondition(unit, target, ACTION_TYPES.attack)) return
+    if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return false
+    if (action && !getActionCondition(unit, target, action)) return false
     if (unit.isUnitAtDest(action, target)) {
       unit.setDest(target)
       unit.action = action
       unit.degree = getInstanceDegree(unit, target.x, target.y)
       unit.getAction(action)
-      return
+      return true
     }
     const path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map)
     if (path.length) {
       unit.setDest(target)
       unit.action = action
       unit.setPath(path)
+      return true
     } else {
       unit.sendToEvt(target, action)
+      return true
     }
   }
 
@@ -174,6 +176,10 @@ export class UnitCommands {
   sendToAttack(target) {
     if (!getActionCondition(this.unit, target, ACTION_TYPES.attack)) return
     return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
+  }
+
+  sendToConvert(target) {
+    return this.commonSendTo(target, WORK_TYPES.healer, ACTION_TYPES.convert)
   }
 
   sendToTakeMeat(target, immediate = false) {

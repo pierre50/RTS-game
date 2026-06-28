@@ -7,6 +7,7 @@ import {
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   rehydrateAIKnowledge,
+  boardTransport,
 } from '../../lib'
 import {
   BUILDING_TYPES,
@@ -211,6 +212,7 @@ export class MapGeneration {
     }
 
     function processUnit(unit, context) {
+      if (unit.loadedInTransport) return
       if (unit.previousDest) {
         unit.previousDest = getDest(unit.previousDest, context)
       }
@@ -221,6 +223,16 @@ export class MapGeneration {
         } else {
           unit.stop()
         }
+      }
+    }
+
+    function restoreTransportCargo(player, savedUnits, context) {
+      for (let index = 0; index < player.units.length; index++) {
+        const unit = player.units[index]
+        const savedUnit = savedUnits[index]
+        if (!unit || !savedUnit?.loadedInTransport) continue
+        const transport = getDest(savedUnit.loadedInTransport, context)
+        if (transport) boardTransport(unit, transport)
       }
     }
 
@@ -316,6 +328,7 @@ export class MapGeneration {
       restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
       rehydrateAIKnowledge(player, this.map)
       restoreAIState(player, savedPlayer, this.map)
+      restoreTransportCargo(player, savedPlayer?.units || [], this.map)
       player.units.forEach(unit => processUnit(unit, this.map))
     })
 

@@ -82,6 +82,32 @@ export class MinimapManager {
     }
   }
 
+  rebuildTerrainMiniMapFromViews() {
+    const { menu } = this
+    const { map, player } = menu.context
+    const canvas = menu.terrainMinimap
+    const context = canvas.getContext('2d')
+    const { factor, translate } = this.getMinimapParams()
+
+    context.clearRect(-translate, 0, canvas.width, canvas.height)
+    if (!player?.views) return
+
+    for (let i = 0; i <= map.size; i++) {
+      for (let j = 0; j <= map.size; j++) {
+        if (!player.views.isViewed(i, j)) continue
+        const cell = map.grid[i][j]
+        canvasDrawDiamond(
+          context,
+          cell.x / factor + translate,
+          cell.y / factor,
+          CELL_WIDTH / factor + 1,
+          CELL_HEIGHT / factor + 1,
+          cell.color
+        )
+      }
+    }
+  }
+
   updateTerrainMiniMap(i, j) {
     const { menu } = this
     const { map } = menu.context

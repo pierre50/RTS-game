@@ -76,7 +76,8 @@
     "icon": "034_50730",
     "allowAction": [
       "Villager",
-      "FishingBoat"
+      "FishingBoat",
+      "FishingShip"
     ],
     "isAnimated": true,
     "assets": "594",
@@ -90,7 +91,8 @@
     "icon": "034_50730",
     "allowAction": [
       "Villager",
-      "FishingBoat"
+      "FishingBoat",
+      "FishingShip"
     ],
     "isAnimated": true,
     "assets": "594",
@@ -104,7 +106,8 @@
     "icon": "034_50730",
     "allowAction": [
       "Villager",
-      "FishingBoat"
+      "FishingBoat",
+      "FishingShip"
     ],
     "isAnimated": true,
     "assets": "594",
@@ -118,7 +121,8 @@
     "icon": "034_50730",
     "allowAction": [
       "Villager",
-      "FishingBoat"
+      "FishingBoat",
+      "FishingShip"
     ],
     "isAnimated": true,
     "assets": "594",
@@ -132,7 +136,8 @@
     "icon": "034_50730",
     "allowAction": [
       "Villager",
-      "FishingBoat"
+      "FishingBoat",
+      "FishingShip"
     ],
     "isAnimated": true,
     "assets": "689",

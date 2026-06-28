@@ -78,24 +78,24 @@ export function createDevCommands() {
   registry.register({
     name: 'spawn',
     aliases: ['unit'],
-    usage: 'spawn <unit> [count]',
+    usage: 'spawn <unit> [count] [playerIndex]',
     describe: 'Spawn units near cursor',
     complete: (_args, { player }) => Object.keys(player?.config?.units || {}),
-    run: ([type, count], context) => {
-      if (!type) return { ok: false, message: 'Usage: spawn <unit> [count]' }
-      return spawnUnits(context, type, count)
+    run: ([type, count, playerIndex], context) => {
+      if (!type) return { ok: false, message: 'Usage: spawn <unit> [count] [playerIndex]' }
+      return spawnUnits(context, type, count, playerIndex)
     },
   })
 
   registry.register({
     name: 'building',
     aliases: ['build'],
-    usage: 'building <type>',
+    usage: 'building <type> [playerIndex]',
     describe: 'Spawn a building near cursor',
     complete: (_args, { player }) => Object.keys(player?.config?.buildings || {}),
-    run: ([type], context) => {
-      if (!type) return { ok: false, message: 'Usage: building <type>' }
-      return spawnBuilding(context, type)
+    run: ([type, playerIndex], context) => {
+      if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
+      return spawnBuilding(context, type, playerIndex)
     },
   })
 

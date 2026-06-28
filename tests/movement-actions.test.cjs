@@ -125,6 +125,93 @@ test('destination checks stay pure when no destination exists', () => {
   assert.equal(redispatched, false)
 })
 
+test('manual move orders cancel previous villager work when the unit arrives', () => {
+  const calls = []
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    dest: { label: 'empty-cell', family: 'cell' },
+    loading: 4,
+    previousDest: { label: 'berry-bush', family: 'resource' },
+    previousWork: 'forager',
+    type: constants.UNIT_TYPES.villager,
+    work: 'forager',
+    stopInterval: () => calls.push(['stopInterval']),
+    goBackToPrevious: () => calls.push(['goBackToPrevious']),
+    sendToDelivery: () => calls.push(['sendToDelivery']),
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitMovement(unit).affectNewDest()
+
+  assert.deepEqual(calls, [['stopInterval'], ['stop']])
+})
+
+test('boats flee to water cells when attacked', () => {
+  const grid = Array.from({ length: 10 }, (_, i) =>
+    Array.from({ length: 10 }, (_, j) => ({
+      i,
+      j,
+      border: false,
+      category: 'Grass',
+      solid: false,
+    }))
+  )
+  grid[8][5].category = 'Water'
+  const calls = []
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    category: 'Boat',
+    context: { map: { grid } },
+    i: 5,
+    j: 5,
+    sendTo: cell => calls.push(cell),
+    sight: 3,
+    stop: () => calls.push('stop'),
+  }
+  const attacker = { i: 4, j: 5 }
+
+  new UnitMovement(unit).runaway(attacker)
+
+  assert.deepEqual(calls, [grid[8][5]])
+})
+
 test('an idle builder picks a nearby unfinished building after completing its current site', () => {
   const completedBuilding = { label: 'house-1', family: constants.FAMILY_TYPES.building, isBuilt: true }
   const nearbyBuilding = { label: 'house-2', family: constants.FAMILY_TYPES.building, isBuilt: false }

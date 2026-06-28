@@ -22,6 +22,7 @@ export function toggleFog(context, value) {
   const currently = map.fogLayer?.visible ?? !map.revealEverything
   const showFog = normalizeToggle(value, currently)
   map.revealEverything = !showFog
+  if (map.fogMemoryLayer) map.fogMemoryLayer.visible = showFog
   if (map.fogLayer) map.fogLayer.visible = showFog
   if (showFog) {
     map.mapFog?.viewportRenderer.invalidate()
@@ -39,12 +40,15 @@ export function toggleFog(context, value) {
       const cell = map.grid[resource.i]?.[resource.j]
       cell?.updateVisible()
     })
+  } else {
+    menu.rebuildTerrainMiniMapFromViews?.()
   }
 
   refreshAnimalsAndCameraVisibility(context)
 
   menu.updateResourcesMiniMapEvt()
   players.forEach(p => menu.updatePlayerMiniMapEvt(p))
+  menu.updateCameraMiniMapEvt()
 
   return { ok: true, message: `Fog of war: ${showFog ? 'on' : 'off'}` }
 }

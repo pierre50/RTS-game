@@ -39,6 +39,8 @@ export const UNIT_TYPES = {
   chariotArcher: 'ChariotArcher',
   scout: 'Scout',
   fishingBoat: 'FishingBoat',
+  lightTransport: 'LightTransport',
+  heavyTransport: 'HeavyTransport',
 }
 
 export const PLAYER_TYPES = {
@@ -83,6 +85,8 @@ export const ACTION_TYPES = {
   minestone: 'minestone',
   chopwood: 'chopwood',
   heal: 'heal',
+  convert: 'convert',
+  loadTransport: 'loadTransport',
 }
 
 export const LOADING_TYPES = {

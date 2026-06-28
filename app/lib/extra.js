@@ -23,6 +23,9 @@ function getSheetDirectionOrder(textures, directionCount, explicitOrder = null) 
   if (explicitOrder?.length) {
     return explicitOrder
   }
+  if (directionCount === 1) {
+    return null
+  }
   if (directionCount === 8) {
     return EIGHT_DIRECTION_ORDER
   }
@@ -80,6 +83,67 @@ export function getMirroredHalfArcFrameIndex(degree, frameCount) {
   const frameIndex = Math.max(0, Math.min(maxIndex, Math.round(halfArcDegree / step)))
 
   return { frameIndex, mirrored }
+}
+
+function getSortedTextureNames(textures) {
+  return Object.keys(textures).sort((a, b) => {
+    const na = parseInt(a.split('_')[0], 10)
+    const nb = parseInt(b.split('_')[0], 10)
+    return na - nb
+  })
+}
+
+export function getSailAnimationFrames(textures, instance) {
+  if (!textures || !instance) {
+    return { textures: [], mirrored: false }
+  }
+
+  const names = getSortedTextureNames(textures)
+  const directionCount = instance.sailDirectionCount ?? 5
+  const framesPerDirection = Math.max(1, Math.floor(names.length / directionCount))
+
+  if (directionCount === 9) {
+    const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(instance.degree, directionCount)
+    const start = frameIndex * framesPerDirection
+    return {
+      textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
+      mirrored,
+    }
+  }
+
+  const direction = degreeToDirection(instance.degree)
+  const directionOrder = getSheetDirectionOrder(textures, directionCount, instance.sailDirectionOrder)
+  const directionIndex = directionOrder?.indexOf(direction) ?? -1
+
+  if (directionOrder?.length === 8 && directionIndex >= 0) {
+    const start = directionIndex * framesPerDirection
+    return {
+      textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
+      mirrored: false,
+    }
+  }
+
+  let sailDirection = direction
+  let mirrored = false
+  if (direction === 'southeast') {
+    sailDirection = 'southwest'
+    mirrored = true
+  } else if (direction === 'northeast') {
+    sailDirection = 'northwest'
+    mirrored = true
+  } else if (direction === 'east') {
+    sailDirection = 'west'
+    mirrored = true
+  }
+
+  const fallbackOrder = directionOrder ?? FIVE_DIRECTION_ORDER
+  const fallbackIndex = Math.max(0, fallbackOrder.indexOf(sailDirection))
+  const start = fallbackIndex * framesPerDirection
+
+  return {
+    textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
+    mirrored,
+  }
 }
 
 export function setUnitTexture(sheet, instance) {

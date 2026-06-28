@@ -1,6 +1,6 @@
 import { AnimatedSprite, Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -207,9 +207,15 @@ export class Building extends Instance {
             this.owner.selectedBuilding = this
           }
         } else if (player.selectedUnits.length) {
+          let hasSentConverter = false
           let hasSentAttacker = false
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
+            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this, ACTION_TYPES.convert)) {
+              hasSentConverter = true
+              playerUnit.sendToConvert(this)
+              continue
+            }
             if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack)) continue
             hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
@@ -218,7 +224,7 @@ export class Building extends Instance {
               playerUnit.sendTo(this, ACTION_TYPES.attack)
             }
           }
-          if (hasSentAttacker) {
+          if (hasSentConverter || hasSentAttacker) {
             drawInstanceBlinkingSelection(this)
           } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
             player.unselectAll()

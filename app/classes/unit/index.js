@@ -22,9 +22,15 @@ import {
   setUnitTexture,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
+  degreeToDirection,
   getAnimationFrames,
+  getSailAnimationFrames,
   playSoundCue,
   playSelectionSound,
+  sendUnitToTransport,
+  isTransportBoat,
+  getTransportLoad,
+  unloadTransport,
 } from '../../lib'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
@@ -41,6 +47,24 @@ function getActionSheet(work, action, Assets, unit) {
   }
   const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
   return Assets.cache.get(unit.allAssets[work][actionSheet])
+}
+
+function isFishingBoat(unit) {
+  return unit.category === 'Boat' && (unit.loadingMax?.fish || unit.gatheringRate?.[WORK_TYPES.fisher])
+}
+
+function getFishingOverlayFrames(spritesheet, unit) {
+  const direction = degreeToDirection(unit.degree)
+  switch (direction) {
+    case 'southeast':
+      return { textures: getAnimationFrames(spritesheet.textures, 'southwest'), mirrored: true }
+    case 'northeast':
+      return { textures: getAnimationFrames(spritesheet.textures, 'northwest'), mirrored: true }
+    case 'east':
+      return { textures: getAnimationFrames(spritesheet.textures, 'west'), mirrored: true }
+    default:
+      return { textures: getAnimationFrames(spritesheet.textures, direction), mirrored: false }
+  }
 }
 
 export class Unit extends Instance {
@@ -89,6 +113,7 @@ export class Unit extends Instance {
     this.zIndex = getInstanceZIndex(this)
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
+    if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
 
     this.currentCell = map.grid[this.i][this.j]
     if (this.currentSheet === SHEET_TYPES.corpse) {
@@ -120,6 +145,9 @@ export class Unit extends Instance {
         this[key] = Assets.cache.get(value)
       }
     }
+    if (this.sailSheet) {
+      this.sailSpritesheet = Assets.cache.get(this.sailSheet)
+    }
 
     if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible(this)) {
       playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
@@ -134,17 +162,41 @@ export class Unit extends Instance {
         }
       },
       menu:
-        this.showBuildings && this.owner.isPlayed && !this.context.editor
+        this.owner.isPlayed && !this.context.editor
           ? [
-              {
-                id: 'build',
-                icon: 'assets/interface/50721/002_50721.png',
-                tooltip: () => ({
-                  title: t('buildMenu'),
-                  description: t('buildMenuDescription'),
-                }),
-                children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key, this.owner)),
-              },
+              ...(this.showBuildings
+                ? [
+                    {
+                      id: 'build',
+                      icon: 'assets/interface/50721/002_50721.png',
+                      tooltip: () => ({
+                        title: t('buildMenu'),
+                        description: t('buildMenuDescription'),
+                      }),
+                      children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key, this.owner)),
+                    },
+                  ]
+                : []),
+              ...(this.transportCapacity
+                ? [
+                    {
+                      id: 'unload',
+                      icon: 'assets/interface/50721/001_50721.png',
+                      hide: () => !getTransportLoad(this),
+                      tooltip: () => ({
+                        title: t('unloadTransport'),
+                        description: t('unloadTransportDescription'),
+                      }),
+                      onClick: selection => {
+                        const unloaded = unloadTransport(selection)
+                        if (unloaded && selection.owner.isPlayed) {
+                          menu.setBottombar(selection)
+                          menu.updatePlayerMiniMapEvt(selection.owner)
+                        }
+                      },
+                    },
+                  ]
+                : []),
             ]
           : [],
     }
@@ -171,6 +223,8 @@ export class Unit extends Instance {
     this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
     this.sprite.updateAnchor = true
     this.addChild(this.sprite)
+    this.setupSailSprite()
+    this.syncFishingOverlaySprite()
 
     this.sendTo = this.owner.isPlayed ? throttle(this.sendToEvt, 100, true) : this.sendToEvt.bind(this)
 
@@ -225,11 +279,21 @@ export class Unit extends Instance {
       controls.registerUnitClick(this)
 
       if (this.owner.isPlayed) {
+        if (isTransportBoat(this) && player.selectedUnits.length) {
+          let hasSentTransportLoad = false
+          for (const playerUnit of [...player.selectedUnits]) {
+            if (sendUnitToTransport(playerUnit, this)) hasSentTransportLoad = true
+          }
+          if (hasSentTransportLoad) {
+            drawInstanceBlinkingSelection(this)
+            return
+          }
+        }
         let hasSentHealer = false
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && this.getActionCondition(playerUnit, ACTION_TYPES.heal)) {
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition(this, ACTION_TYPES.heal)) {
               hasSentHealer = true
               playerUnit.sendTo(this, ACTION_TYPES.heal)
             }
@@ -245,10 +309,16 @@ export class Unit extends Instance {
           player.selectedUnits = [this]
         }
       } else {
+        let hasSentConverter = false
         let hasSentAttacker = false
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition(this, ACTION_TYPES.convert)) {
+              hasSentConverter = true
+              playerUnit.sendToConvert(this)
+              continue
+            }
             if (this.getActionCondition(playerUnit, ACTION_TYPES.attack))
               if (playerUnit.type === UNIT_TYPES.villager) {
                 hasSentAttacker = true
@@ -259,7 +329,7 @@ export class Unit extends Instance {
               }
           }
         }
-        if (hasSentAttacker) {
+        if (hasSentConverter || hasSentAttacker) {
           drawInstanceBlinkingSelection(this)
         } else if ((player.selectedOther !== this && playerCanSeeInstance(this, player)) || map.revealEverything) {
           player.unselectAll()
@@ -276,6 +346,104 @@ export class Unit extends Instance {
     this.visibilityTimeout = setTimeout(() => {
       if (!this.isDestroyed) updateInstanceVisibility(this)
     })
+  }
+
+  setupSailSprite() {
+    if (!this.sailSpritesheet?.textures) return
+
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
+    if (!textures.length) return
+
+    this.sailSprite = new AnimatedSprite(textures)
+    bindAnimatedSpriteToTicker(this.sailSprite, this.context.app)
+    this.sailSprite.label = LABEL_TYPES.sail
+    this.sailSprite.allowMove = false
+    this.sailSprite.eventMode = 'none'
+    this.sailSprite.roundPixels = true
+    this.sailSprite.loop = true
+    this.sailSprite.updateAnchor = true
+    this.sailSprite.animationSpeed = this.sailSpritesheet.data.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
+    this.sailSprite.scale.x = mirrored ? -1 : 1
+    this.sailSprite.play()
+    this.addChild(this.sailSprite)
+  }
+
+  syncSailSprite(goto = null) {
+    if (!this.sailSprite || this.isDead || !this.sailSpritesheet?.textures) {
+      if (this.sailSprite) this.sailSprite.visible = false
+      return
+    }
+
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
+    if (!textures.length) {
+      this.sailSprite.visible = false
+      return
+    }
+
+    this.sailSprite.visible = true
+    this.sailSprite.textures = textures
+    this.sailSprite.scale.x = mirrored ? -1 : 1
+    this.sailSprite.animationSpeed = this.sailSpritesheet.data.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
+    goto && goto < this.sailSprite.textures.length ? this.sailSprite.gotoAndPlay(goto) : this.sailSprite.play()
+  }
+
+  setupFishingOverlaySprite() {
+    if (!this.fishingOverlaySheet?.textures || this.fishingOverlaySprite) return
+
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
+    if (!textures.length) return
+
+    this.fishingOverlaySprite = new AnimatedSprite(textures)
+    bindAnimatedSpriteToTicker(this.fishingOverlaySprite, this.context.app)
+    this.fishingOverlaySprite.label = LABEL_TYPES.fishingNet
+    this.fishingOverlaySprite.allowMove = false
+    this.fishingOverlaySprite.eventMode = 'none'
+    this.fishingOverlaySprite.roundPixels = true
+    this.fishingOverlaySprite.loop = false
+    this.fishingOverlaySprite.updateAnchor = true
+    this.fishingOverlaySprite.zIndex = 3
+    this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
+    this.fishingOverlaySprite.animationSpeed = this.fishingOverlaySheet.data?.animationSpeed ?? 0.3
+    this.fishingOverlaySprite.stop()
+    this.addChild(this.fishingOverlaySprite)
+  }
+
+  removeFishingOverlaySprite() {
+    if (!this.fishingOverlaySprite) return
+    this.fishingOverlaySprite.parent?.removeChild(this.fishingOverlaySprite)
+    this.fishingOverlaySprite.destroy({ children: true, texture: false })
+    this.fishingOverlaySprite = null
+  }
+
+  syncFishingOverlaySprite() {
+    const shouldShow =
+      !this.isDead &&
+      this.action === ACTION_TYPES.fishing &&
+      this.currentSheet === SHEET_TYPES.action &&
+      this.fishingOverlaySheet?.textures
+
+    if (!shouldShow) {
+      this.removeFishingOverlaySprite()
+      return
+    }
+
+    this.setupFishingOverlaySprite()
+    if (!this.fishingOverlaySprite) return
+
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
+    if (!textures.length) {
+      this.removeFishingOverlaySprite()
+      return
+    }
+    this.fishingOverlaySprite.textures = textures
+    this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
+    this.fishingOverlaySprite.gotoAndStop(0)
+  }
+
+  setTextures(sheet) {
+    super.setTextures(sheet)
+    this.syncSailSprite(this.sailSprite?.currentFrame)
+    this.syncFishingOverlaySprite()
   }
 
   select() {
@@ -411,6 +579,10 @@ export class Unit extends Instance {
       return
     }
     this.owner.reportThreat?.(this, instance)
+    if (isFishingBoat(this)) {
+      this.runaway(instance)
+      return
+    }
     if (!this.getActionCondition(instance, ACTION_TYPES.attack)) {
       return
     }
@@ -443,6 +615,8 @@ export class Unit extends Instance {
     this.action = null
     this.dest = null
     this.realDest = null
+    this.transportLoadShoreCell = null
+    this.transportLoadCoastCell = null
     this.currentCell.place(this)
     this.currentCell.solid = true
     this.path = []
@@ -512,6 +686,10 @@ export class Unit extends Instance {
 
   sendToAttack(target) {
     return this.unitCommands.sendToAttack(target)
+  }
+
+  sendToConvert(target) {
+    return this.unitCommands.sendToConvert(target)
   }
 
   sendToTakeMeat(target, immediate = false) {

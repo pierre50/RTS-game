@@ -60,7 +60,7 @@ export class RuntimeCell {
   removeChild() {}
 
   addChild(child) {
-    this.context.map.fogLayer?.addChild(child)
+    this.context.map.fogMemoryLayer?.addChild(child)
     return child
   }
 
@@ -77,8 +77,8 @@ export class RuntimeCell {
     return this._ensureCellFog().removeFog()
   }
 
-  addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
+  addFogBuilding(textureSheet, colorName) {
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorName)
   }
 
   removeFogBuilding(instance) {

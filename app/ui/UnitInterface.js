@@ -1,5 +1,5 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
-import { getIconPath } from '../lib'
+import { getIconPath, getTransportLoad } from '../lib'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 
@@ -85,5 +85,12 @@ export class UnitInterface {
     }
 
     element.appendChild(infosDiv)
+
+    if (unit.showTransportCapacity && unit.transportCapacity) {
+      const capacityDiv = document.createElement('div')
+      capacityDiv.classList.add('info')
+      capacityDiv.appendChild(createInfoText('transport-capacity', `${t('transportCapacity')} ${getTransportLoad(unit)}/${unit.transportCapacity}`))
+      element.appendChild(capacityDiv)
+    }
   }
 }

@@ -111,6 +111,9 @@ export default class Menu {
   revealTerrainMinimap() {
     return this.minimapManager.revealTerrainMinimap()
   }
+  rebuildTerrainMiniMapFromViews() {
+    return this.minimapManager.rebuildTerrainMiniMapFromViews()
+  }
   updateTerrainMiniMap(i, j) {
     return this.minimapManager.updateTerrainMiniMap(i, j)
   }

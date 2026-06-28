@@ -305,6 +305,8 @@
         5051,
         5109
       ],
+      "heal": 5050,
+      "convert": 5051,
       "hit": [
         5138,
         5139,
@@ -756,17 +758,30 @@
     "gatheringRate": {
       "fisher": 0.4
     },
+    "silentWorkSounds": [
+      "fishing"
+    ],
+    "sheetDirectionCounts": {
+      "dyingSheet": 1,
+      "corpseSheet": 1
+    },
     "assets": {
       "standingSheet": "473",
       "walkingSheet": "473",
       "actionSheet": "473",
-      "dyingSheet": "473",
-      "corpseSheet": "473"
+      "fishingOverlaySheet": "697",
+      "dyingSheet": "262",
+      "corpseSheet": "262"
     },
     "sounds": {
       "create": 5030,
       "command": 5027,
       "move": 5027,
+      "die": [
+        5113,
+        5177,
+        5181
+      ],
       "work": {
         "fishing": [
           5182,

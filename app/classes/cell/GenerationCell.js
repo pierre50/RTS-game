@@ -137,8 +137,8 @@ export class GenerationCell {
     return this._ensureCellFog().removeFog()
   }
 
-  addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
+  addFogBuilding(textureSheet, colorName) {
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorName)
   }
 
   removeFogBuilding(instance) {

@@ -24,6 +24,7 @@ function loadTranslations() {
 
 const translations = loadTranslations()
 const buildings = require('../public/assets/data/gameplay/buildings.json')
+const units = require('../public/assets/data/gameplay/units.json')
 const technologies = require('../public/assets/data/technologies/technologies.json')
 
 for (const lang of ['fr', 'en']) {
@@ -38,6 +39,13 @@ for (const lang of ['fr', 'en']) {
     for (const type of Object.keys(technologies)) {
       assert.ok(translations[lang][type], `Missing ${lang} technology name: ${type}`)
       assert.ok(translations[lang][`${type}Description`], `Missing ${lang} technology description: ${type}`)
+    }
+  })
+
+  test(`${lang} has names and descriptions for every unit tooltip`, () => {
+    for (const type of Object.keys(units)) {
+      assert.ok(translations[lang][type], `Missing ${lang} unit name: ${type}`)
+      assert.ok(translations[lang][`${type}Description`], `Missing ${lang} unit description: ${type}`)
     }
   })
 }

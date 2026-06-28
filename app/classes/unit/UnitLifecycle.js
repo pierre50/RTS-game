@@ -1,5 +1,7 @@
-import { CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import { canUpdateMinimap, isPlayerEliminated, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+import { BOAT_CORPSE_TIME, CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { canUpdateMinimap, getTransportCargo, isPlayerEliminated, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+
+const BOAT_CATEGORY = 'Boat'
 
 export class UnitLifecycle {
   constructor(unit) {
@@ -12,8 +14,10 @@ export class UnitLifecycle {
       context: { map },
     } = unit
     unit.setTextures(SHEET_TYPES.corpse)
+    if (unit.sailSprite) unit.sailSprite.visible = false
     unit.sprite.loop = false
-    unit.sprite.animationSpeed = unit.sprite.textures.length / (CORPSE_TIME * 60)
+    const corpseTime = unit.category === BOAT_CATEGORY ? BOAT_CORPSE_TIME : CORPSE_TIME
+    unit.sprite.animationSpeed = unit.sprite.textures.length / (corpseTime * 60)
     unit.sprite.onComplete = () => unit.clear()
     if (map.grid[unit.i][unit.j].has === unit) {
       map.grid[unit.i][unit.j].has = null
@@ -24,7 +28,17 @@ export class UnitLifecycle {
 
   death() {
     const unit = this.unit
+    if (unit.category === BOAT_CATEGORY) {
+      const index = unit.owner.corpses.indexOf(unit)
+      if (index < 0) {
+        unit.owner.corpses.push(unit)
+      }
+      this.decompose()
+      return
+    }
+
     unit.setTextures(SHEET_TYPES.dying)
+    if (unit.sailSprite) unit.sailSprite.visible = false
     unit.zIndex--
     unit.sprite.loop = false
     unit.sprite.onComplete = () => {
@@ -59,6 +73,13 @@ export class UnitLifecycle {
     unit.hitPoints = 0
     unit.path = []
     unit.action = null
+    if (unit.transportCapacity) {
+      for (const cargoUnit of [...getTransportCargo(unit)]) {
+        cargoUnit.loadedInTransport = null
+        cargoUnit.die()
+      }
+      unit.transportedUnits = []
+    }
     unit.eventMode = 'none'
     unit.isDead = true
     unit.context.map.removeFromInstanceBucket(unit)

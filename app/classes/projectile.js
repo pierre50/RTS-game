@@ -1,4 +1,4 @@
-import { AnimatedSprite, Assets, Container, Graphics } from 'pixi.js'
+import { AnimatedSprite, Assets, Container } from 'pixi.js'
 import {
   degreesToRadians,
   getHitPointsWithDamage,
@@ -18,10 +18,9 @@ import {
   projectileTracksTarget,
   playAudibleSoundCue,
 } from '../lib'
-import { COLOR_ARROW, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
+import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 
 const PROJECTILE_Z_OFFSET = 1000000
-const DEBUG_PROJECTILES = false
 
 const DIRECTIONAL_FRAME_INDEX = {
   south: 0,
@@ -98,60 +97,6 @@ function getDirectionalAnimation(projectile, textures, degree) {
   }
 }
 
-function debugProjectile(event, payload) {
-  if (!DEBUG_PROJECTILES) return
-  try {
-    console.log(`[projectile:${event}] ${JSON.stringify(payload)}`)
-  } catch {
-    console.log(`[projectile:${event}]`, payload)
-  }
-}
-
-function createVectorProjectileSprite(projectile, degree) {
-  const sprite = new Graphics()
-
-  switch (projectile.graphicShape) {
-    case 'bolt':
-      sprite.moveTo(-16, 0)
-      sprite.lineTo(10, 0)
-      sprite.stroke({ color: 0xe8f1ff, width: 3 })
-      sprite.moveTo(10, 0)
-      sprite.lineTo(16, -4)
-      sprite.lineTo(16, 4)
-      sprite.lineTo(10, 0)
-      sprite.fill(0xbfd4ff)
-      break
-    case 'bullet':
-      sprite.circle(0, 0, 4)
-      sprite.fill(0xffd34d)
-      sprite.circle(-6, 0, 2)
-      sprite.fill(0xff8a00)
-      break
-    case 'missile':
-      sprite.moveTo(-14, 0)
-      sprite.lineTo(8, 0)
-      sprite.stroke({ color: 0xffd9d9, width: 4 })
-      sprite.moveTo(8, 0)
-      sprite.lineTo(16, -5)
-      sprite.lineTo(16, 5)
-      sprite.lineTo(8, 0)
-      sprite.fill(0xff5a5a)
-      sprite.moveTo(-10, 0)
-      sprite.lineTo(-16, -4)
-      sprite.lineTo(-12, 0)
-      sprite.lineTo(-16, 4)
-      sprite.lineTo(-10, 0)
-      sprite.fill(0xffb347)
-      break
-    default:
-      sprite.rect(1, 1, projectile.size, 1)
-      sprite.fill(COLOR_ARROW)
-  }
-
-  sprite.rotation = degreesToRadians(degree)
-  return sprite
-}
-
 export class Projectile extends Container {
   constructor(options, context) {
     super()
@@ -173,11 +118,6 @@ export class Projectile extends Container {
     this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
-      debugProjectile('missing-target', {
-        type: this.type,
-        ownerType: this.owner?.type,
-        label: this.label,
-      })
       this.isDead = true
       return
     }
@@ -192,27 +132,6 @@ export class Projectile extends Container {
     this.destinationPoint = { x: targetX, y: targetY }
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
-    debugProjectile('spawn', {
-      type: this.type,
-      ownerType: this.owner?.type,
-      label: this.label,
-      assets: this.assets ?? null,
-      x: this.x,
-      y: this.y,
-      z: this.z,
-      zIndex: this.zIndex,
-      degree,
-      speed: this.speed,
-      size: this.size,
-      targetX,
-      targetY,
-      spriteWidth: sprite.width,
-      spriteHeight: sprite.height,
-      anchorX: sprite.anchor?.x ?? null,
-      anchorY: sprite.anchor?.y ?? null,
-      scaleX: sprite.scale?.x ?? null,
-      scaleY: sprite.scale?.y ?? null,
-    })
     sprite.label = LABEL_TYPES.sprite
     sprite.allowMove = false
     sprite.eventMode = 'none'
@@ -249,58 +168,12 @@ export class Projectile extends Container {
       STEP_TIME,
       'projectile.step'
     )
-
-    this.context.scheduler.addOneShot(
-      () => {
-        const global = this.parent ? this.parent.toGlobal({ x: this.x, y: this.y }) : null
-        debugProjectile('post-add', {
-          type: this.type,
-          label: this.label,
-          hasParent: Boolean(this.parent),
-          parentLabel: this.parent?.label ?? this.parent?.constructor?.name ?? null,
-          visible: this.visible,
-          renderable: this.renderable,
-          worldVisible: this.worldVisible ?? null,
-          destroyed: this.destroyed,
-          childCount: this.children.length,
-          globalX: global?.x ?? null,
-          globalY: global?.y ?? null,
-        })
-      },
-      50,
-      'projectile.debug'
-    )
   }
 
   createSprite(degree) {
-    if (this.graphicShape) {
-      const sprite = createVectorProjectileSprite(this, degree)
-      debugProjectile('vector-sprite', {
-        type: this.type,
-        degree,
-        graphicShape: this.graphicShape,
-      })
-      return sprite
-    }
-
-    if (!this.assets) {
-      const sprite = createVectorProjectileSprite(this, degree)
-      debugProjectile('graphics-sprite', {
-        type: this.type,
-        degree,
-        size: this.size,
-      })
-      return sprite
-    }
-
     const spritesheet = Assets.cache.get(this.assets)
     if (!spritesheet) {
-      debugProjectile('missing-spritesheet', {
-        type: this.type,
-        assets: this.assets,
-      })
-      const sprite = createVectorProjectileSprite(this, degree)
-      return sprite
+      throw new Error(`Missing projectile spritesheet for ${this.type} (${this.assets})`)
     }
     const textureNames = getSortedTextureNames(spritesheet.textures)
 
@@ -359,16 +232,6 @@ export class Projectile extends Container {
         sprite.play()
       }
 
-      debugProjectile('animated-sprite', {
-        type: this.type,
-        assets: this.assets,
-        frameCount: sprite.textures.length,
-        firstFrame: textureNames[0] ?? null,
-        anchorX: sprite.anchor.x,
-        anchorY: sprite.anchor.y,
-        width: sprite.width,
-        height: sprite.height,
-      })
       return sprite
     }
 
@@ -387,35 +250,12 @@ export class Projectile extends Container {
         sprite.play()
         const scale = this.scale ?? 1
         sprite.scale.set(mirrored ? -scale : scale, scale)
-        debugProjectile('mirrored-frame', {
-          type: this.type,
-          assets: this.assets,
-          degree,
-          frameCount,
-          frameIndex,
-          textureName,
-          mirrored,
-          anchorX: sprite.anchor.x,
-          anchorY: sprite.anchor.y,
-          scaleX: sprite.scale.x,
-          scaleY: sprite.scale.y,
-          width: sprite.width,
-          height: sprite.height,
-        })
         return sprite
       }
 
       const direction = degreeToDirection(degree)
       const frameIndex = getDirectionalFrameIndex(this, direction)
       textureName = textureNames[Math.min(frameIndex, textureNames.length - 1)]
-      debugProjectile('directional-frame', {
-        type: this.type,
-        assets: this.assets,
-        degree,
-        direction,
-        frameIndex,
-        textureName,
-      })
     }
     const texture = spritesheet.textures[textureName]
     const sprite = new AnimatedSprite([texture])
@@ -430,18 +270,6 @@ export class Projectile extends Container {
     if (this.rotateSprite) {
       sprite.rotation = degreesToRadians(degree)
     }
-    debugProjectile('static-sprite', {
-      type: this.type,
-      assets: this.assets,
-      textureName,
-      anchorX: sprite.anchor.x,
-      anchorY: sprite.anchor.y,
-      scaleX: sprite.scale.x,
-      scaleY: sprite.scale.y,
-      rotation: sprite.rotation,
-      width: sprite.width,
-      height: sprite.height,
-    })
     return sprite
   }
 

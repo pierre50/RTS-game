@@ -68,8 +68,14 @@ export class Cell extends Container {
     this.cellFog = options.skipFog ? null : new CellFog(this)
     this.cellTerrain = new CellTerrain(this)
 
-    // Replay fog building sprites for cells loaded from a save
-    if (this.cellFog) this.fogSprites.forEach(s => this.cellFog.addFogBuilding(...Object.values(s)))
+    // Replay last-seen building snapshots loaded from a save.
+    const savedFogSprites = this.fogSprites
+    this.fogSprites = []
+    if (this.cellFog) {
+      savedFogSprites.forEach(s => this.cellFog.addFogBuilding(s.textureSheet, s.colorName ?? s.colorSheet))
+    } else {
+      this.fogSprites = savedFogSprites
+    }
 
     this.eventMode = 'none'
     this.allowMove = false
@@ -123,8 +129,8 @@ export class Cell extends Container {
   removeFog() {
     return this._ensureCellFog().removeFog()
   }
-  addFogBuilding(textureSheet, colorSheet, colorName) {
-    return this._ensureCellFog().addFogBuilding(textureSheet, colorSheet, colorName)
+  addFogBuilding(textureSheet, colorName) {
+    return this._ensureCellFog().addFogBuilding(textureSheet, colorName)
   }
   removeFogBuilding(instance) {
     return this._ensureCellFog().removeFogBuilding(instance)

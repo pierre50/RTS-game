@@ -12,6 +12,7 @@ export const TOUCH_DRAG_THRESHOLD = 12
 export const MINIMAP_DRAG_THRESHOLD = 8
 
 export const CORPSE_TIME = 120
+export const BOAT_CORPSE_TIME = 12
 export const RUBBLE_TIME = 120
 export const MAX_SELECT_UNITS = 10
 export const POPULATION_MAX = 200

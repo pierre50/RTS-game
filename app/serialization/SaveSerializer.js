@@ -89,6 +89,7 @@ function unitData(unit) {
       'isDead',
       'isDestroyed',
     ]),
+    loadedInTransport: unit.loadedInTransport?.label,
     currentFrame: unit.sprite?.currentFrame,
     loop: unit.sprite?.loop,
     dest: unit.dest && [unit.dest.i, unit.dest.j, unit.dest?.label],
@@ -186,13 +187,12 @@ function cellData(cell) {
   if (cell.fogSprites.length > 0) {
     const seenFogSprites = new Set()
     data.fogSprites = cell.fogSprites
-      .map(({ textureSheet, colorSheet, colorName }) => ({
+      .map(({ textureSheet, colorName }) => ({
         textureSheet,
-        colorSheet,
         colorName,
       }))
       .filter(spriteData => {
-        const key = `${spriteData.textureSheet}|${spriteData.colorSheet || ''}|${spriteData.colorName || ''}`
+        const key = `${spriteData.textureSheet}|${spriteData.colorName || ''}`
         if (seenFogSprites.has(key)) return false
         seenFogSprites.add(key)
         return true

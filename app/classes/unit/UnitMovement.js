@@ -51,6 +51,10 @@ export class UnitMovement {
     unit.stopInterval()
     let path = []
     if (!dest || dest.isDestroyed || unit.isDead) return
+    if (!action) {
+      unit.previousDest = null
+      unit.previousWork = null
+    }
     if (
       unit.isUnitAtDest(action, dest) &&
       (!map.grid[unit.i][unit.j].solid ||
@@ -214,6 +218,10 @@ export class UnitMovement {
   affectNewDest() {
     const unit = this.unit
     unit.stopInterval()
+    if (!unit.action) {
+      unit.stop()
+      return
+    }
     const queuedBuildInterrupted =
       unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && unit.buildQueue?.length
     if (queuedBuildInterrupted) {
@@ -254,6 +262,42 @@ export class UnitMovement {
 
       unit.stop()
       unit.work = null
+      return
+    }
+
+    if (unit.action === ACTION_TYPES.loadTransport) {
+      if (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.loadTransport)) {
+        unit.stop()
+        return
+      }
+      const expectedCoastCell = unit.transportLoadCoastCell
+      unit.setTextures(SHEET_TYPES.standing)
+      unit.startInterval(
+        () => {
+          if (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.loadTransport)) {
+            unit.stop()
+            return
+          }
+          if (unit.isUnitAtDest(ACTION_TYPES.loadTransport, unit.dest)) {
+            unit.getAction(ACTION_TYPES.loadTransport)
+            return
+          }
+          if (
+            expectedCoastCell &&
+            unit.dest.dest &&
+            (unit.dest.dest.i !== expectedCoastCell.i || unit.dest.dest.j !== expectedCoastCell.j)
+          ) {
+            unit.stop()
+            return
+          }
+          if (expectedCoastCell && !unit.dest.dest && !unit.dest.path?.length) {
+            unit.stop()
+          }
+        },
+        250,
+        true,
+        'unit.waitTransport'
+      )
       return
     }
 
@@ -354,7 +398,8 @@ export class UnitMovement {
       const tj = Math.round(unit.j + (dj / len) * dist)
       if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
         const cell = map.grid[ti][tj]
-        if (!cell.solid && !cell.border) {
+        const categoryAllowed = unit.category === 'Boat' ? cell.category === 'Water' : cell.category !== 'Water'
+        if (categoryAllowed && !cell.solid && !cell.border) {
           unit.sendTo(cell)
           return
         }

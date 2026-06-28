@@ -244,6 +244,7 @@ export class BottombarManager {
       new Image().src = src
     }
     preload('assets/interface/50721/010_50721.png')
+    preload('assets/interface/50721/001_50721.png')
     preload('assets/interface/50721/003_50721.png')
     preload('assets/interface/50721/002_50721.png')
     preload('assets/interface/50721/006_50721.png')
@@ -325,6 +326,17 @@ export class BottombarManager {
     }
   }
 
+  getUnitTooltip(type, config) {
+    return {
+      title: t(type),
+      description: t(`${type}Description`),
+      meta: [
+        t('tooltipCost', { cost: this.formatCost(config.cost) }),
+        t('tooltipTrainTime', { time: config.trainingTime }),
+      ],
+    }
+  }
+
   getUnitButton(type) {
     const { menu } = this
     const {
@@ -334,6 +346,7 @@ export class BottombarManager {
     return {
       id: type,
       icon: () => getIconPath(unit.icon),
+      tooltip: () => this.getUnitTooltip(type, unit),
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: selection => {
         if (canAfford(player, unit.cost)) {

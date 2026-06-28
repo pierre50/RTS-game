@@ -1,5 +1,33 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 
+export function canAttack(source) {
+  return Boolean(source && ((source.meleeAttack || 0) > 0 || (source.pierceAttack || 0) > 0))
+}
+
+export function canConvert(source, target) {
+  if (!source || source.type !== UNIT_TYPES.priest || !target || !source.owner?.isEnemy(target.owner)) return false
+  if (target.family === FAMILY_TYPES.unit && target.type !== UNIT_TYPES.priest) return true
+  const hasMonotheism = source.owner.technologies?.includes('Monotheism')
+  return hasMonotheism && (target.family === FAMILY_TYPES.building || target.type === UNIT_TYPES.priest)
+}
+
+function canLoadTransport(source, target) {
+  const cargo = Array.isArray(target?.transportedUnits) ? target.transportedUnits : []
+  const load = cargo.filter(unit => unit && !unit.isDead && !unit.isDestroyed).length
+  return (
+    source &&
+    target &&
+    source !== target &&
+    source.family === FAMILY_TYPES.unit &&
+    target.family === FAMILY_TYPES.unit &&
+    source.owner?.label === target.owner?.label &&
+    source.category !== 'Boat' &&
+    source.type !== UNIT_TYPES.fishingBoat &&
+    target.transportCapacity > 0 &&
+    load < target.transportCapacity
+  )
+}
+
 export function getDamage(source, target) {
   const meleeAttack = source.meleeAttack || 0
   const pierceAttack = source.pierceAttack || 0
@@ -116,6 +144,7 @@ export const getActionCondition = (source, target, action, props) => {
       (!target.isBuilt || target.hitPoints < target.totalHitPoints) &&
       !target.isDead,
     attack: () =>
+      canAttack(source) &&
       target &&
       source.owner?.isEnemy(target.owner) &&
       [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family) &&
@@ -128,6 +157,8 @@ export const getActionCondition = (source, target, action, props) => {
       target.hitPoints > 0 &&
       target.hitPoints < target.totalHitPoints &&
       !target.isDead,
+    convert: () => canConvert(source, target) && target.hitPoints > 0 && !target.isDead,
+    loadTransport: () => canLoadTransport(source, target),
   }
   return target && target !== source && source.hitPoints > 0 && !source.isDead && conditions[action](props)
 }

@@ -11,6 +11,7 @@ const MELEE_SOUNDS = {
 }
 
 const HUMAN_HIT_SOUNDS = [5138, 5139, 5140]
+const SHIP_DESTROYED_SOUNDS = [5113, 5177, 5181]
 const STONE_START_SOUND = null
 const FISHING_SOUNDS = [5182, 5183, 5184]
 
@@ -640,7 +641,7 @@ const EXTRA_UNIT_DEFINITIONS = {
     meleeArmor: 0,
     pierceArmor: 0,
     range: 9,
-    projectile: 'Bolt',
+    projectile: 'Arrow',
     cost: {
       wood: 100,
       stone: 80,
@@ -692,20 +693,111 @@ const EXTRA_UNIT_DEFINITIONS = {
     gatheringRate: {
       fisher: 0.5,
     },
+    silentWorkSounds: ['fishing'],
+    sheetDirectionCounts: {
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
     assets: {
       standingSheet: '474',
       walkingSheet: '474',
-      actionSheet: '697',
-      dyingSheet: '474',
-      corpseSheet: '474',
+      actionSheet: '474',
+      fishingOverlaySheet: '700',
+      dyingSheet: '263',
+      corpseSheet: '263',
     },
     sounds: {
       create: 5030,
       command: 5027,
       move: 5027,
+      die: SHIP_DESTROYED_SOUNDS,
       work: {
         fishing: FISHING_SOUNDS,
       },
+    },
+  },
+  LightTransport: {
+    category: 'Boat',
+    selectionFactor: 2,
+    totalHitPoints: 150,
+    sight: 5,
+    speed: 1.4,
+    trainingTime: 46,
+    icon: '021_50730',
+    transportCapacity: 5,
+    showTransportCapacity: true,
+    meleeArmor: 0,
+    pierceArmor: 0,
+    cost: {
+      wood: 150,
+    },
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 1,
+      },
+    ],
+    sheetDirectionCounts: {
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
+    assets: {
+      standingSheet: '647',
+      walkingSheet: '647',
+      actionSheet: '647',
+      dyingSheet: '263',
+      corpseSheet: '263',
+    },
+    sailSheet: '583',
+    sailDirectionCount: 5,
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      die: SHIP_DESTROYED_SOUNDS,
+    },
+  },
+  HeavyTransport: {
+    category: 'Boat',
+    selectionFactor: 2,
+    totalHitPoints: 200,
+    sight: 5,
+    speed: 1.6,
+    trainingTime: 46,
+    icon: '025_50730',
+    transportCapacity: 10,
+    showTransportCapacity: true,
+    meleeArmor: 0,
+    pierceArmor: 0,
+    cost: {
+      wood: 150,
+    },
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'HeavyTransport',
+      },
+    ],
+    sheetDirectionCounts: {
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
+    assets: {
+      standingSheet: '648',
+      walkingSheet: '648',
+      actionSheet: '648',
+      dyingSheet: '263',
+      corpseSheet: '263',
+    },
+    sailSheet: '583',
+    sailDirectionCount: 5,
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      die: SHIP_DESTROYED_SOUNDS,
     },
   },
   ScoutShip: {
@@ -731,19 +823,25 @@ const EXTRA_UNIT_DEFINITIONS = {
         value: 2,
       },
     ],
+    sheetDirectionCounts: {
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
     assets: {
       standingSheet: '692',
       walkingSheet: '692',
       actionSheet: '692',
-      dyingSheet: '692',
-      corpseSheet: '692',
+      dyingSheet: '263',
+      corpseSheet: '263',
     },
+    sailSheet: '583',
+    sailDirectionCount: 5,
     sounds: {
       create: 5208,
       command: 5027,
       move: 5027,
       hit: HUMAN_HIT_SOUNDS,
-      die: 5113,
+      die: SHIP_DESTROYED_SOUNDS,
     },
   },
   WarGalley: {
@@ -770,19 +868,25 @@ const EXTRA_UNIT_DEFINITIONS = {
         value: 2,
       },
     ],
+    sheetDirectionCounts: {
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
     assets: {
       standingSheet: '691',
       walkingSheet: '691',
       actionSheet: '691',
-      dyingSheet: '691',
-      corpseSheet: '691',
+      dyingSheet: '264',
+      corpseSheet: '264',
     },
+    sailSheet: '583',
+    sailDirectionCount: 5,
     sounds: {
       create: 5208,
       command: 5027,
       move: 5027,
       hit: HUMAN_HIT_SOUNDS,
-      die: 5177,
+      die: SHIP_DESTROYED_SOUNDS,
     },
   },
   Trireme: {
@@ -798,7 +902,7 @@ const EXTRA_UNIT_DEFINITIONS = {
     meleeArmor: 0,
     pierceArmor: 0,
     range: 7,
-    projectile: 'Bolt',
+    projectile: 'Arrow',
     cost: {
       wood: 135,
     },
@@ -809,24 +913,242 @@ const EXTRA_UNIT_DEFINITIONS = {
         value: 3,
       },
     ],
+    sheetDirectionCounts: {
+      standingSheet: 9,
+      walkingSheet: 9,
+      actionSheet: 9,
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
     assets: {
       standingSheet: '693',
       walkingSheet: '693',
       actionSheet: '693',
-      dyingSheet: '693',
-      corpseSheet: '693',
+      dyingSheet: '264',
+      corpseSheet: '264',
     },
+    sailSheet: '584',
+    sailDirectionCount: 9,
     sounds: {
       create: 5208,
       command: 5027,
       move: 5027,
       hit: HUMAN_HIT_SOUNDS,
-      die: 5181,
+      die: SHIP_DESTROYED_SOUNDS,
+    },
+  },
+  CatapultTrireme: {
+    category: 'Boat',
+    selectionFactor: 2,
+    totalHitPoints: 120,
+    sight: 11,
+    speed: 1.6,
+    rateOfFire: 5,
+    trainingTime: 40,
+    icon: '030_50730',
+    pierceAttack: 35,
+    meleeArmor: 0,
+    pierceArmor: 0,
+    range: 10,
+    projectile: 'Stone',
+    cost: {
+      wood: 135,
+    },
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'CatapultTrireme',
+      },
+    ],
+    sheetDirectionCounts: {
+      standingSheet: 9,
+      walkingSheet: 9,
+      actionSheet: 9,
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
+    assets: {
+      standingSheet: '693',
+      walkingSheet: '693',
+      actionSheet: '693',
+      dyingSheet: '264',
+      corpseSheet: '264',
+    },
+    sailSheet: '584',
+    sailDirectionCount: 9,
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      attack: 5040,
+      hit: HUMAN_HIT_SOUNDS,
+      die: SHIP_DESTROYED_SOUNDS,
+    },
+  },
+  Juggernaut: {
+    category: 'Boat',
+    selectionFactor: 2,
+    totalHitPoints: 200,
+    sight: 12,
+    speed: 1.6,
+    rateOfFire: 5,
+    trainingTime: 40,
+    icon: '052_50730',
+    pierceAttack: 50,
+    meleeArmor: 0,
+    pierceArmor: 0,
+    range: 12,
+    projectile: 'Bolt',
+    cost: {
+      wood: 135,
+    },
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'Juggernaut',
+      },
+    ],
+    sheetDirectionCounts: {
+      standingSheet: 9,
+      walkingSheet: 9,
+      actionSheet: 9,
+      dyingSheet: 1,
+      corpseSheet: 1,
+    },
+    assets: {
+      standingSheet: '695',
+      walkingSheet: '695',
+      actionSheet: '695',
+      dyingSheet: '264',
+      corpseSheet: '264',
+    },
+    sailSheet: '584',
+    sailDirectionCount: 9,
+    sounds: {
+      create: 5208,
+      command: 5027,
+      move: 5027,
+      attack: 5040,
+      hit: HUMAN_HIT_SOUNDS,
+      die: SHIP_DESTROYED_SOUNDS,
     },
   },
 }
 
 const UNIT_OVERRIDES = {
+  FishingBoat: {
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'notincludes',
+        value: 'FishingShip',
+      },
+    ],
+  },
+  FishingShip: {
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'FishingShip',
+      },
+    ],
+  },
+  LightTransport: {
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 1,
+      },
+      {
+        key: 'technologies',
+        op: 'notincludes',
+        value: 'HeavyTransport',
+      },
+    ],
+  },
+  HeavyTransport: {
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'HeavyTransport',
+      },
+    ],
+  },
+  ScoutShip: {
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 2,
+      },
+      {
+        key: 'technologies',
+        op: 'notincludes',
+        value: 'WarGalley',
+      },
+    ],
+  },
+  WarGalley: {
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 2,
+      },
+      {
+        key: 'technologies',
+        op: 'notincludes',
+        value: 'Trireme',
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'WarGalley',
+      },
+    ],
+  },
+  Trireme: {
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 3,
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'Trireme',
+      },
+    ],
+  },
+  CatapultTrireme: {
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'notincludes',
+        value: 'Juggernaut',
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'CatapultTrireme',
+      },
+    ],
+  },
+  Juggernaut: {
+    conditions: [
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'Juggernaut',
+      },
+    ],
+  },
   LongSwordsman: {
     conditions: [
       {
@@ -871,14 +1193,25 @@ const BUILDING_OVERRIDES = {
     units: ['StoneThrower', 'Catapult', 'Ballista'],
   },
   Dock: {
-    units: ['FishingBoat', 'FishingShip', 'ScoutShip', 'WarGalley', 'Trireme'],
+    units: [
+      'FishingBoat',
+      'FishingShip',
+      'LightTransport',
+      'HeavyTransport',
+      'ScoutShip',
+      'WarGalley',
+      'Trireme',
+      'CatapultTrireme',
+      'Juggernaut',
+    ],
+    technologies: ['WarGalley', 'Trireme', 'CatapultTrireme', 'Juggernaut', 'FishingShip', 'HeavyTransport'],
   },
 }
 
 const EXTRA_PROJECTILES = {
   Stone: {
     size: 8,
-    speed: 10,
+    speed: 5,
     assets: '360',
     isAnimated: true,
     animationSpeed: 0.35,
@@ -920,7 +1253,6 @@ const EXTRA_PROJECTILES = {
     spriteBaseAngle: 0,
     sounds: {
       launch: [5009, 5010, 5011, 5012],
-      impact: 5028,
     },
   },
   FireArrow: {
@@ -933,7 +1265,6 @@ const EXTRA_PROJECTILES = {
     spriteBaseAngle: 0,
     sounds: {
       launch: [5009, 5010, 5011, 5012],
-      impact: 5028,
     },
   },
   Bolt: {
@@ -1009,6 +1340,145 @@ const EXTRA_PROJECTILES = {
   },
 }
 
+const EXTRA_TECH_DEFINITIONS = {
+  WarGalley: {
+    icon: '024_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 2,
+      },
+    ],
+    researchTime: 38,
+    cost: {
+      wood: 75,
+      food: 150,
+    },
+    action: {
+      type: 'upgradeUnit',
+      source: 'ScoutShip',
+      target: 'WarGalley',
+    },
+  },
+  Trireme: {
+    icon: '026_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 3,
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'WarGalley',
+      },
+    ],
+    researchTime: 40,
+    cost: {
+      wood: 100,
+      food: 250,
+    },
+    action: {
+      type: 'upgradeUnit',
+      source: 'WarGalley',
+      target: 'Trireme',
+    },
+  },
+  FishingShip: {
+    icon: '020_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 2,
+      },
+    ],
+    researchTime: 15,
+    cost: {
+      wood: 100,
+      food: 50,
+    },
+    action: {
+      type: 'upgradeUnit',
+      source: 'FishingBoat',
+      target: 'FishingShip',
+    },
+  },
+  HeavyTransport: {
+    icon: '025_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 3,
+      },
+    ],
+    researchTime: 38,
+    cost: {
+      wood: 125,
+      food: 150,
+    },
+    action: {
+      type: 'upgradeUnit',
+      source: 'LightTransport',
+      target: 'HeavyTransport',
+    },
+  },
+  CatapultTrireme: {
+    icon: '027_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 3,
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'Trireme',
+      },
+    ],
+    researchTime: 50,
+    cost: {
+      wood: 100,
+      food: 300,
+    },
+  },
+  Juggernaut: {
+    icon: '083_50729',
+    key: 'technologies',
+    conditions: [
+      {
+        key: 'age',
+        op: '>=',
+        value: 3,
+      },
+      {
+        key: 'technologies',
+        op: 'includes',
+        value: 'CatapultTrireme',
+      },
+    ],
+    researchTime: 150,
+    cost: {
+      wood: 900,
+      food: 2000,
+    },
+    action: {
+      type: 'upgradeUnit',
+      source: 'CatapultTrireme',
+      target: 'Juggernaut',
+    },
+  },
+}
+
 function normalizeUnitSounds(unit) {
   const sounds = { ...(unit.sounds || {}) }
 
@@ -1025,7 +1495,10 @@ function normalizeUnitSounds(unit) {
 
 export function createPlayerData(baseConfig, baseTechs, civ) {
   const config = deepClone(baseConfig)
-  const techs = deepClone(baseTechs)
+  const techs = {
+    ...deepClone(baseTechs),
+    ...deepClone(EXTRA_TECH_DEFINITIONS),
+  }
   const civilization = getCivilizationDefinition(civ)
 
   config.units = {

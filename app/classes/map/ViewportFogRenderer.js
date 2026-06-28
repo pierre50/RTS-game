@@ -9,7 +9,7 @@ const REVEAL_RX = CELL_WIDTH / 2
 const REVEAL_RY = CELL_HEIGHT / 2
 const FOG_BAND = 20
 const CORNER_RADIUS = 10
-const OVERLAP = 10
+const OVERLAP = 14
 const DIRTY_REDRAW_INTERVAL_MS = 80
 
 export class ViewportFogRenderer {
@@ -27,12 +27,19 @@ export class ViewportFogRenderer {
     this.destroy()
 
     const { map } = this
+    map.fogMemoryLayer = new Container()
+    map.fogMemoryLayer.eventMode = 'none'
+    map.fogMemoryLayer.sortableChildren = true
+    map.fogMemoryLayer.zIndex = 1e9 - 1
+    map.addChild(map.fogMemoryLayer)
+
     map.fogLayer = new Container()
     map.fogLayer.eventMode = 'none'
     map.fogLayer.zIndex = 1e9
     map.addChild(map.fogLayer)
 
     if (map.revealEverything) {
+      map.fogMemoryLayer.visible = false
       map.fogLayer.visible = false
       return
     }
@@ -51,6 +58,7 @@ export class ViewportFogRenderer {
     const views = this.map.context.player?.views
     if (!renderer || !views || !viewport || !this.map.fogLayer) return
     try {
+      if (this.map.fogMemoryLayer) this.map.fogMemoryLayer.visible = !this.map.revealEverything
       this.map.fogLayer.visible = !this.map.revealEverything
       if (this.map.revealEverything) return
 
@@ -217,6 +225,8 @@ export class ViewportFogRenderer {
     this._destroyTargets()
     this.map.fogLayer?.destroy({ children: true, texture: false, textureSource: false })
     this.map.fogLayer = null
+    this.map.fogMemoryLayer?.destroy({ children: true, texture: false, textureSource: false })
+    this.map.fogMemoryLayer = null
     this.width = 0
     this.height = 0
     this.dirty = true

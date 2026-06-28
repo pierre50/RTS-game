@@ -128,26 +128,29 @@ export class Resource extends Instance {
           return
         }
         controls.mouse.prevent = true
-        // Send Villager to forage the berry
-        let hasVillager = false
-        let hasOther = false
+        let hasActionOrder = false
+        let hasFallbackOrder = false
+        let hasSilentCommandOrder = false
         for (let i = 0; i < player.selectedUnits.length; i++) {
           const unit = player.selectedUnits[i]
           if (getActionCondition(unit, this, action)) {
-            hasVillager = true
+            hasActionOrder = true
+            if (this.category === 'Fish' && unit.silentWorkSounds?.includes('fishing')) {
+              hasSilentCommandOrder = true
+            }
             const sendToFunc = `sendTo${this.category || this.type}`
             typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](this) : unit.sendTo(this)
           } else {
-            hasOther = true
+            hasFallbackOrder = true
             unit.sendTo(this)
           }
         }
-        if (hasVillager) {
+        if (hasActionOrder) {
           drawInstanceBlinkingSelection(this)
         }
-        if (hasOther) {
+        if (hasFallbackOrder) {
           playSoundCue(SOUND_CUES.unit.militaryCommand)
-        } else if (hasVillager) {
+        } else if (hasActionOrder && !hasSilentCommandOrder) {
           playSoundCue(this.sounds?.command ?? Assets.cache.get('config').units.Villager.sounds.command)
         }
       })

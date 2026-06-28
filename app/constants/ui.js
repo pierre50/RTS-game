@@ -15,6 +15,8 @@ export const MENU_INFO_IDS = {
 
 export const LABEL_TYPES = {
   sprite: 'sprite',
+  sail: 'sail',
+  fishingNet: 'fishingNet',
   color: 'color',
   deco: 'deco',
   fire: 'fire',
@@ -40,5 +42,4 @@ export const COLOR_INDIGO = 0x4b0082
 export const COLOR_VIOLET = 0xee82ee
 export const COLOR_BONE = 0xe2dac2
 export const COLOR_SHIP_GREY = 0x3c3b3d
-export const COLOR_FOG = 0x999999
 export const COLOR_ARROW = 0xe8e3df
