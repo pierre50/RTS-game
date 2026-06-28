@@ -65,7 +65,7 @@ export function findTransportCoastCell(transport, shoreCell) {
     shoreCell.j,
     grid,
     1,
-    cell => cell.category === 'Water' && !cell.solid && !cell.border
+    cell => (cell.category === 'Water' || cell.waterBorder) && !cell.solid && !cell.border
   )
   candidates.sort((a, b) => instancesDistance(transport, a) - instancesDistance(transport, b))
   return candidates[0] || null

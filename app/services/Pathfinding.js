@@ -92,7 +92,7 @@ export function findInstancePath(instance, x, y, map) {
   function isCellReachable(cell) {
     if (cell.solid) return false
     const allowWaterCellCategory = instance.category === 'Boat'
-    return allowWaterCellCategory ? cell.category === 'Water' : cell.category !== 'Water'
+    return allowWaterCellCategory ? cell.category === 'Water' || cell.waterBorder : cell.category !== 'Water'
   }
 
   const startCell = initCell(start)

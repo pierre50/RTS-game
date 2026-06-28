@@ -15,6 +15,10 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 
+function isBoatNavigationCell(cell) {
+  return cell?.category === 'Water' || cell?.waterBorder
+}
+
 export class UnitMovement {
   constructor(unit) {
     this.unit = unit
@@ -398,7 +402,7 @@ export class UnitMovement {
       const tj = Math.round(unit.j + (dj / len) * dist)
       if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
         const cell = map.grid[ti][tj]
-        const categoryAllowed = unit.category === 'Boat' ? cell.category === 'Water' : cell.category !== 'Water'
+        const categoryAllowed = unit.category === 'Boat' ? isBoatNavigationCell(cell) : cell.category !== 'Water'
         if (categoryAllowed && !cell.solid && !cell.border) {
           unit.sendTo(cell)
           return
