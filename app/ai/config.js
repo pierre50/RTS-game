@@ -84,12 +84,14 @@ export const MAX_BUILDING_BY_AGE = {
   0: {
     StoragePit: 1,
     Granary: 1,
+    Dock: 1,
     Barracks: 1,
     Market: 1,
   },
   1: {
     StoragePit: 2,
     Granary: 2,
+    Dock: 1,
     Farm: 4,
     Barracks: 1,
     Market: 1,
@@ -100,6 +102,7 @@ export const MAX_BUILDING_BY_AGE = {
   2: {
     StoragePit: 3,
     Granary: 3,
+    Dock: 1,
     Farm: 6,
     Barracks: 2,
     Market: 1,
@@ -114,6 +117,7 @@ export const MAX_BUILDING_BY_AGE = {
   3: {
     StoragePit: 4,
     Granary: 4,
+    Dock: 1,
     Farm: 10,
     Barracks: 3,
     Market: 1,

@@ -6,7 +6,17 @@ export function drawInstanceBlinkingSelection(instance) {
   selection.label = LABEL_TYPES.selection
   selection.zIndex = 3
 
-  const path = [-32 * instance.size, 0, 0, -16 * instance.size, 32 * instance.size, 0, 0, 16 * instance.size]
+  const selectionFactor = instance.selectionFactor ?? instance.size
+  const path = [
+    -32 * selectionFactor,
+    0,
+    0,
+    -16 * selectionFactor,
+    32 * selectionFactor,
+    0,
+    0,
+    16 * selectionFactor,
+  ]
   selection.poly(path)
   selection.stroke(COLOR_GREEN)
   instance.addChildAt(selection, 0)

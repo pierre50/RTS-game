@@ -58,6 +58,17 @@ export class UnitActions {
     if (!unit.previousDest) return false
     if (unit.previousDest.family === FAMILY_TYPES.animal) return false
 
+    if (unit.previousDest.family === FAMILY_TYPES.building) {
+      if (
+        unit.getActionCondition(unit.previousDest, ACTION_TYPES.build) ||
+        unit.getActionCondition(unit.previousDest, ACTION_TYPES.farm)
+      ) {
+        return false
+      }
+      unit.previousDest = null
+      return true
+    }
+
     const type = unit.previousDest.category || unit.previousDest.type
     const action = TYPE_ACTION[type]
     if (!action || !unit.getActionCondition(unit.previousDest, action)) {

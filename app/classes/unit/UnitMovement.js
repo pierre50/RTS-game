@@ -236,6 +236,9 @@ export class UnitMovement {
       }
       map.updateInstanceBucket(unit, oldI, oldJ)
       updateInstanceVisibility(unit)
+      if (unit.transportCapacity && unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
+        unit.context.menu.setBottombar(unit)
+      }
       unit.path.pop()
       if (unit.destHasMoved()) {
         unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })

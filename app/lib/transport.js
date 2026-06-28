@@ -7,6 +7,35 @@ import { updateInstanceVisibility } from './grid/visibility'
 const SHORE_SEARCH_RADIUS = 4
 const UNLOAD_SEARCH_RADIUS = 8
 
+function isLoadShoreCell(cell) {
+  return cell?.category !== 'Water' && !cell?.waterBorder && !cell?.solid && !cell?.border && !cell?.inclined
+}
+
+function isTransportCoastCell(cell) {
+  return (cell?.category === 'Water' || cell?.waterBorder) && !cell?.solid
+}
+
+function getCellsAtDistance(startX, startY, grid, distance, callback) {
+  const result = []
+  if (distance === 0) {
+    const cell = grid[startX]?.[startY]
+    if (cell && (!callback || callback(cell))) result.push(cell)
+    return result
+  }
+
+  for (let dx = -distance; dx <= distance; dx++) {
+    const x = startX + dx
+    const row = grid[x]
+    if (!row) continue
+    const dyMax = distance - Math.abs(dx)
+    for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
+      const cell = row[startY + dy]
+      if (cell && (!callback || callback(cell))) result.push(cell)
+    }
+  }
+  return result
+}
+
 export function isTransportBoat(unit) {
   return Boolean(unit?.family === FAMILY_TYPES.unit && unit.transportCapacity > 0)
 }
@@ -22,6 +51,10 @@ export function getTransportLoad(transport) {
 
 export function hasTransportSpace(transport) {
   return isTransportBoat(transport) && getTransportLoad(transport) < transport.transportCapacity
+}
+
+export function canUnloadTransport(transport) {
+  return isTransportBoat(transport) && getTransportLoad(transport) > 0 && Boolean(transport.currentCell?.waterBorder)
 }
 
 export function canUnitEnterTransport(unit, transport) {
@@ -47,12 +80,21 @@ export function findLoadShoreCell(unit, transport) {
     transport.j,
     grid,
     SHORE_SEARCH_RADIUS,
-    cell => cell.category !== 'Water' && !cell.waterBorder && !cell.solid && !cell.border && !cell.inclined
+    isLoadShoreCell
   )
   candidates.sort((a, b) => instancesDistance(unit, a) - instancesDistance(unit, b))
   for (const cell of candidates) {
     if (unit.i === cell.i && unit.j === cell.j) return cell
     if (getInstancePath(unit, cell.i, cell.j, transport.context.map).length) return cell
+  }
+  const maxSearchDistance = grid.length + (grid[0]?.length || 0)
+  for (let distance = 0; distance <= maxSearchDistance; distance++) {
+    const unitCandidates = getCellsAtDistance(unit.i, unit.j, grid, distance, isLoadShoreCell)
+    for (const cell of unitCandidates) {
+      if (!findTransportCoastCell(transport, cell)) continue
+      if (unit.i === cell.i && unit.j === cell.j) return cell
+      if (getInstancePath(unit, cell.i, cell.j, transport.context.map).length) return cell
+    }
   }
   return null
 }
@@ -65,10 +107,14 @@ export function findTransportCoastCell(transport, shoreCell) {
     shoreCell.j,
     grid,
     1,
-    cell => (cell.category === 'Water' || cell.waterBorder) && !cell.solid && !cell.border
+    isTransportCoastCell
   )
   candidates.sort((a, b) => instancesDistance(transport, a) - instancesDistance(transport, b))
-  return candidates[0] || null
+  for (const cell of candidates) {
+    if (transport.i === cell.i && transport.j === cell.j) return cell
+    if (getInstancePath(transport, cell.i, cell.j, transport.context.map).length) return cell
+  }
+  return null
 }
 
 export function findUnloadCell(transport, unit = null) {
@@ -121,12 +167,14 @@ export function boardTransport(unit, transport) {
     unit.currentCell.has = null
     unit.currentCell.solid = false
   }
+  unit.currentCell = null
   unit.context.map.removeFromInstanceBucket(unit)
   if (unit.parent) unit.parent.removeChild(unit)
   return true
 }
 
 export function unloadTransport(transport) {
+  if (!canUnloadTransport(transport)) return 0
   const cargo = getTransportCargo(transport)
   let unloaded = 0
   for (const unit of [...cargo]) {

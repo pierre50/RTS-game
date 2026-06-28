@@ -59,7 +59,11 @@ export class SelectionManager {
     const rectangle = controls.mouseRectangle
     for (let i = 0; i < player.units.length; i++) {
       const unit = player.units[i]
-      if (player.selectedUnits.length < MAX_SELECT_UNITS && this.isUnitInsideSelection(unit, rectangle)) {
+      if (
+        player.selectedUnits.length < MAX_SELECT_UNITS &&
+        this.isUnitSelectable(unit) &&
+        this.isUnitInsideSelection(unit, rectangle)
+      ) {
         unit.select()
         countSelect++
         if (unit.type === UNIT_TYPES.villager) selectVillager = unit
@@ -80,6 +84,10 @@ export class SelectionManager {
       controls.mouseRectangle.graph.destroy(true)
       controls.mouseRectangle = null
     }
+  }
+
+  isUnitSelectable(unit) {
+    return Boolean(unit && !unit.loadedInTransport && !unit.isDead && !unit.isDestroyed && unit.visible !== false)
   }
 
   handleClick(cell) {

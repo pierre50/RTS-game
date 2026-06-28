@@ -1,5 +1,11 @@
-import { BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import {
+  canAfford,
+  canPlaceBuildingAt,
+  getClosestInstance,
+  getPositionInGridAroundInstance,
+  instancesDistance,
+} from '../lib'
 import { AIMilitary } from './AIMilitary'
 import {
   AGE_UP_BUFFERS,
@@ -16,6 +22,12 @@ import {
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
 import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
+
+const NAVAL_MIN_WATER_CLUSTER_CELLS = 36
+const NAVAL_STRONG_WATER_CLUSTER_CELLS = 64
+const NAVAL_MIN_FISH_FOR_DOCK = 2
+const NAVAL_DOCK_SEARCH_RADIUS = 18
+const NAVAL_MAX_FISHING_BOATS = 6
 
 export class AIStrategy {
   constructor(ai, difficulty = 'medium') {
@@ -188,6 +200,9 @@ export class AIStrategy {
     if (!ai.buildings.some(building => building.type === BUILDING_TYPES.market)) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
     }
+    if (this.shouldBuildDock(this.getNavalOpportunity())) {
+      demand.wood += ai.config.buildings[BUILDING_TYPES.dock]?.cost?.wood || 0
+    }
 
     return demand
   }
@@ -219,6 +234,162 @@ export class AIStrategy {
       }
     }
     return unitsBought
+  }
+
+  isWaterCell(cell) {
+    return cell && cell.category === 'Water' && !cell.solid && !cell.border
+  }
+
+  getWaterClusterSize(startCell, grid, cap = NAVAL_STRONG_WATER_CLUSTER_CELLS) {
+    if (!this.isWaterCell(startCell)) return 0
+
+    const visited = new Set()
+    const queue = [startCell]
+    visited.add(`${startCell.i}:${startCell.j}`)
+
+    for (let index = 0; index < queue.length && visited.size < cap; index++) {
+      const cell = queue[index]
+      const neighbors = [
+        grid[cell.i - 1]?.[cell.j],
+        grid[cell.i + 1]?.[cell.j],
+        grid[cell.i]?.[cell.j - 1],
+        grid[cell.i]?.[cell.j + 1],
+      ]
+
+      for (const neighbor of neighbors) {
+        if (!this.isWaterCell(neighbor)) continue
+        const key = `${neighbor.i}:${neighbor.j}`
+        if (visited.has(key)) continue
+        visited.add(key)
+        queue.push(neighbor)
+      }
+    }
+
+    return visited.size
+  }
+
+  getNavalOpportunity() {
+    const { ai } = this
+    const grid = ai.context.map.grid
+    const fish = [...ai.foundedFish]
+      .filter(node => node && node.quantity > 0 && !node.isDead && !node.isDestroyed && ai.economy.isLocationSafe(node))
+      .map(node => ({
+        node,
+        waterClusterSize: this.getWaterClusterSize(grid[node.i]?.[node.j], grid),
+      }))
+      .filter(candidate => candidate.waterClusterSize >= NAVAL_MIN_WATER_CLUSTER_CELLS)
+
+    const maxWaterClusterSize = fish.reduce((max, candidate) => Math.max(max, candidate.waterClusterSize), 0)
+    const hasEnoughFish =
+      fish.length >= NAVAL_MIN_FISH_FOR_DOCK ||
+      (fish.length > 0 && maxWaterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS)
+    const desiredFishingBoats = hasEnoughFish
+      ? Math.min(
+          NAVAL_MAX_FISHING_BOATS,
+          Math.max(1, Math.ceil(fish.length * 0.75), Math.floor(maxWaterClusterSize / 40))
+        )
+      : 0
+
+    return {
+      fish: fish.map(candidate => candidate.node),
+      maxWaterClusterSize,
+      desiredFishingBoats,
+    }
+  }
+
+  getHealthyDocks() {
+    return this.ai
+      .buildingsByTypes([BUILDING_TYPES.dock])
+      .filter(building => building && !building.isDead && !building.isDestroyed)
+  }
+
+  shouldBuildDock(opportunity) {
+    if (!opportunity?.desiredFishingBoats) return false
+    return this.getHealthyDocks().length === 0
+  }
+
+  findDockPosition(snapshot, opportunity) {
+    const { ai } = this
+    const { map } = snapshot
+    const dockConfig = { ...ai.config.buildings[BUILDING_TYPES.dock], type: BUILDING_TYPES.dock }
+    const anchor = snapshot.towncenters[0] || ai.getHomeAnchor()
+    const fishByDistance = [...opportunity.fish].sort((a, b) => {
+      if (!anchor) return 0
+      return instancesDistance(a, anchor) - instancesDistance(b, anchor)
+    })
+    let best = null
+    let bestScore = Infinity
+
+    for (const fish of fishByDistance) {
+      const minI = Math.max(0, fish.i - NAVAL_DOCK_SEARCH_RADIUS)
+      const maxI = Math.min(map.size - 1, fish.i + NAVAL_DOCK_SEARCH_RADIUS)
+      const minJ = Math.max(0, fish.j - NAVAL_DOCK_SEARCH_RADIUS)
+      const maxJ = Math.min(map.size - 1, fish.j + NAVAL_DOCK_SEARCH_RADIUS)
+
+      for (let i = minI; i <= maxI; i++) {
+        for (let j = minJ; j <= maxJ; j++) {
+          if (!canPlaceBuildingAt(map.grid, i, j, dockConfig)) continue
+          const cell = map.grid[i][j]
+          const fishDistance = Math.abs(cell.i - fish.i) + Math.abs(cell.j - fish.j)
+          const homeDistance = anchor ? Math.abs(cell.i - anchor.i) + Math.abs(cell.j - anchor.j) : 0
+          const score = fishDistance + homeDistance * 0.25
+          if (score < bestScore) {
+            bestScore = score
+            best = cell
+          }
+        }
+      }
+      if (best) break
+    }
+
+    return best
+  }
+
+  handleNavalActions(snapshot, reserve = {}, debug = false) {
+    const { ai } = this
+    const opportunity = this.getNavalOpportunity()
+    if (!opportunity.desiredFishingBoats) return 0
+
+    let actions = 0
+    const docks = this.getHealthyDocks()
+    const builtDocks = docks.filter(dock => dock.isBuilt)
+
+    if (this.shouldBuildDock(opportunity)) {
+      const dockCost = ai.config.buildings[BUILDING_TYPES.dock]?.cost || {}
+      const dockReserve = this.getAgeUpReserve()
+      const position = this.findDockPosition(snapshot, opportunity)
+      if (
+        position &&
+        canAfford(ai, dockCost) &&
+        this.canSpendWithReserve(dockCost, dockReserve) &&
+        ai.buyBuilding(position.i, position.j, BUILDING_TYPES.dock)
+      ) {
+        actions++
+        if (debug) console.log('Buying Dock for fishing at position:', position)
+      }
+    }
+
+    const fishingBoats = ai.getLivingUnitsByType(UNIT_TYPES.fishingBoat)
+    const fishingBoatLoad = this.getTrainingLoad(builtDocks)
+    const maxFishingBoats = Math.min(opportunity.desiredFishingBoats, opportunity.fish.length * 2)
+    actions += this.buyUnits(
+      fishingBoats.length + fishingBoatLoad,
+      maxFishingBoats,
+      builtDocks,
+      UNIT_TYPES.fishingBoat,
+      undefined,
+      reserve,
+      debug
+    )
+
+    const availableFish = opportunity.fish.filter(fish => fish.quantity > 0 && ai.economy.isLocationSafe(fish))
+    const idleBoats = fishingBoats.filter(boat => boat.inactif && boat.action !== ACTION_TYPES.delivery)
+    for (const boat of idleBoats) {
+      const fish = getClosestInstance(boat, availableFish)
+      if (fish && boat.sendToFish(fish)) actions++
+    }
+
+    return actions
   }
 
   handleProductionActions(snapshot, debug = false) {
@@ -258,6 +429,7 @@ export class AIStrategy {
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
     actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, reserve, debug)
     actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
+    actions += this.handleNavalActions(snapshot, reserve, debug)
     return actions
   }
 
@@ -373,6 +545,7 @@ export class AIStrategy {
       [BUILDING_TYPES.academy]: academies,
       [BUILDING_TYPES.watchTower]: watchTowers,
       [BUILDING_TYPES.sentryTower]: sentryTowers,
+      [BUILDING_TYPES.dock]: ai.buildingsByTypes([BUILDING_TYPES.dock]),
     }
 
     const isEnemyFacing = origin => cell =>

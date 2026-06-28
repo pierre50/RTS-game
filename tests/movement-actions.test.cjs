@@ -501,6 +501,51 @@ test('a villager builds a town center then starts gathering any nearby compatibl
   assert.deepEqual(calls, [['sendToTree', 'tree-1', true]])
 })
 
+test('a farmer returns to the same farm after delivering food', () => {
+  const farm = {
+    label: 'farm-1',
+    family: constants.FAMILY_TYPES.building,
+    type: constants.BUILDING_TYPES.farm,
+  }
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      changeSpriteColor: () => {},
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../projectile': { Projectile: class {} },
+  })
+  const unit = {
+    context: { map: { grid: [] } },
+    previousDest: farm,
+    previousWork: constants.WORK_TYPES.farmer,
+    work: constants.WORK_TYPES.farmer,
+    getActionCondition: (target, action) => target === farm && action === constants.ACTION_TYPES.farm,
+    sendToFarm: (target, immediate) => calls.push(['sendToFarm', target.label, immediate]),
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitActions(unit).goBackToPrevious()
+
+  assert.deepEqual(calls, [['sendToFarm', 'farm-1', true]])
+  assert.equal(unit.previousDest, null)
+})
+
 test('delivery orders bypass the human command throttle', () => {
   const resource = { label: 'farm-1' }
   const granary = {

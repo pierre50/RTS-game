@@ -30,7 +30,9 @@ import {
   shouldFleeWhenAttacked,
   sendUnitToTransport,
   isTransportBoat,
+  canUnitEnterTransport,
   getTransportLoad,
+  canUnloadTransport,
   unloadTransport,
 } from '../../lib'
 import { Instance } from '../Instance'
@@ -185,6 +187,10 @@ export class Unit extends Instance {
                         description: t('unloadTransportDescription'),
                       }),
                       onClick: selection => {
+                        if (!canUnloadTransport(selection)) {
+                          menu.showMessage(t('transportUnloadNeedsCoast'), 'warning')
+                          return
+                        }
                         const unloaded = unloadTransport(selection)
                         if (unloaded && selection.owner.isPlayed) {
                           menu.setBottombar(selection)
@@ -248,6 +254,7 @@ export class Unit extends Instance {
               cell.has.owner &&
               cell.has.owner.label === this.owner.label &&
               cell.has.type === this.type &&
+              !cell.has.loadedInTransport &&
               !selectedUnits.has(cell.has)
             ) {
               selectedUnits.add(cell.has)
@@ -277,11 +284,12 @@ export class Unit extends Instance {
 
       if (this.owner.isPlayed) {
         if (isTransportBoat(this) && player.selectedUnits.length) {
+          const hasTransportLoadCandidate = player.selectedUnits.some(playerUnit => canUnitEnterTransport(playerUnit, this))
           let hasSentTransportLoad = false
           for (const playerUnit of [...player.selectedUnits]) {
             if (sendUnitToTransport(playerUnit, this)) hasSentTransportLoad = true
           }
-          if (hasSentTransportLoad) {
+          if (hasSentTransportLoad || hasTransportLoadCandidate) {
             drawInstanceBlinkingSelection(this)
             return
           }
@@ -444,6 +452,7 @@ export class Unit extends Instance {
   }
 
   select() {
+    if (this.loadedInTransport) return
     if (this.selected) return
     super.select()
     const {

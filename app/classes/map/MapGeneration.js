@@ -839,14 +839,15 @@ export class MapGeneration {
 
     // Independent noise channel for DarkForest — uncorrelated with biome so patches
     // can appear anywhere on non-desert ground, not always surrounded by Jungle.
-    const darkForestThreshold = 0.7
+    const darkForestThreshold = 0.82
+    const biomePatchScale = 0.6 * Math.max(1, Math.sqrt(gridSize / 144))
     const height = new Float32Array(gridSize * gridSize)
     const biome = new Float32Array(gridSize * gridSize)
     const darkForestNoise = new Float32Array(gridSize * gridSize)
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         height[i * gridSize + j] = fbm(i * scale, j * scale)
-        biome[i * gridSize + j] = fbm(i * scale * 0.6 + 50, j * scale * 0.6 + 70, 4)
+        biome[i * gridSize + j] = fbm(i * scale * biomePatchScale + 50, j * scale * biomePatchScale + 70, 4)
         darkForestNoise[i * gridSize + j] = fbm(i * scale * 0.9 + 137, j * scale * 0.9 + 241, 4)
       }
     }
@@ -972,7 +973,7 @@ export class MapGeneration {
         }
       }
 
-      const bt = { lo: 0.27, hi: 0.6 }
+      const bt = { lo: 0.27, hi: 0.72 }
       for (let i = 0; i < gridSize; i++) {
         for (let j = 0; j < gridSize; j++) {
           if (terrainMap[i][j] === 2) continue
@@ -1025,10 +1026,10 @@ export class MapGeneration {
     }
 
     const biomeThresholds = {
-      plain: { lo: 0.38, hi: 0.65 },
-      continent: { lo: 0.33, hi: 0.67 },
-      lac: { lo: 0.32, hi: 0.68 },
-      ilot: { lo: 0.27, hi: 0.6 },
+      plain: { lo: 0.38, hi: 0.75 },
+      continent: { lo: 0.33, hi: 0.76 },
+      lac: { lo: 0.32, hi: 0.77 },
+      ilot: { lo: 0.27, hi: 0.72 },
     }
     const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
 
