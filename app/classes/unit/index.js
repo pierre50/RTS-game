@@ -27,6 +27,7 @@ import {
   getSailAnimationFrames,
   playSoundCue,
   playSelectionSound,
+  shouldFleeWhenAttacked,
   sendUnitToTransport,
   isTransportBoat,
   getTransportLoad,
@@ -47,10 +48,6 @@ function getActionSheet(work, action, Assets, unit) {
   }
   const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
   return Assets.cache.get(unit.allAssets[work][actionSheet])
-}
-
-function isFishingBoat(unit) {
-  return unit.category === 'Boat' && (unit.loadingMax?.fish || unit.gatheringRate?.[WORK_TYPES.fisher])
 }
 
 function getFishingOverlayFrames(spritesheet, unit) {
@@ -579,7 +576,7 @@ export class Unit extends Instance {
       return
     }
     this.owner.reportThreat?.(this, instance)
-    if (isFishingBoat(this)) {
+    if (shouldFleeWhenAttacked(this)) {
       this.runaway(instance)
       return
     }
@@ -680,8 +677,8 @@ export class Unit extends Instance {
     return this.unitCommands.sendToDelivery()
   }
 
-  sendToFish(target) {
-    return this.unitCommands.sendToFish(target)
+  sendToFish(target, immediate = false) {
+    return this.unitCommands.sendToFish(target, immediate)
   }
 
   sendToAttack(target) {
@@ -696,8 +693,8 @@ export class Unit extends Instance {
     return this.unitCommands.sendToTakeMeat(target, immediate)
   }
 
-  sendToHunt(target) {
-    return this.unitCommands.sendToHunt(target)
+  sendToHunt(target, immediate = false) {
+    return this.unitCommands.sendToHunt(target, immediate)
   }
 
   sendToBuilding(target, preserveBuildQueue = false) {
@@ -712,24 +709,24 @@ export class Unit extends Instance {
     return this.unitCommands.continueBuildingQueue()
   }
 
-  sendToFarm(target) {
-    return this.unitCommands.sendToFarm(target)
+  sendToFarm(target, immediate = false) {
+    return this.unitCommands.sendToFarm(target, immediate)
   }
 
-  sendToTree(target) {
-    return this.unitCommands.sendToTree(target)
+  sendToTree(target, immediate = false) {
+    return this.unitCommands.sendToTree(target, immediate)
   }
 
-  sendToBerrybush(target) {
-    return this.unitCommands.sendToBerrybush(target)
+  sendToBerrybush(target, immediate = false) {
+    return this.unitCommands.sendToBerrybush(target, immediate)
   }
 
-  sendToStone(target) {
-    return this.unitCommands.sendToStone(target)
+  sendToStone(target, immediate = false) {
+    return this.unitCommands.sendToStone(target, immediate)
   }
 
-  sendToGold(target) {
-    return this.unitCommands.sendToGold(target)
+  sendToGold(target, immediate = false) {
+    return this.unitCommands.sendToGold(target, immediate)
   }
 
   setDefaultInterface(element, data) {

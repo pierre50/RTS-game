@@ -63,12 +63,16 @@ function hasDirectShoreContact(grid, i, j) {
   })
 }
 
-function canPlaceWaterBuilding(grid, i, j, cells, building, requireVisible) {
+function hasRequiredVisibility(cell, { requireVisible, requireExplored, isExplored }) {
+  return (!requireVisible || cell.visible) && (!requireExplored || isExplored?.(cell))
+}
+
+function canPlaceWaterBuilding(grid, i, j, cells, building, visibility) {
   let waterBorderedCells = 0
   let waterCells = 0
 
   for (const cell of cells) {
-    if (cell.inclined || cell.solid || (requireVisible && !cell.visible)) return false
+    if (cell.inclined || cell.solid || !hasRequiredVisibility(cell, visibility)) return false
     if (!isWaterPlacementCell(cell)) return false
     if (cell.waterBorder) waterBorderedCells++
     else if (cell.category === 'Water') waterCells++
@@ -83,7 +87,7 @@ function canPlaceWaterBuilding(grid, i, j, cells, building, requireVisible) {
   return waterBorderedCells >= 2 || waterCells >= 4
 }
 
-function canPlaceGroundBuilding(cells, requireVisible) {
+function canPlaceGroundBuilding(cells, visibility) {
   const groundLevel = cells[0].z
   return cells.every(
     cell =>
@@ -93,7 +97,7 @@ function canPlaceGroundBuilding(cells, requireVisible) {
       !cell.inclined &&
       !cell.border &&
       cell.z === groundLevel &&
-      (!requireVisible || cell.visible)
+      hasRequiredVisibility(cell, visibility)
   )
 }
 
@@ -115,11 +119,18 @@ export function getPositionInGridAroundInstance(
     : getZoneInGridWithCondition(zone, grid, size, cellCondition) || null
 }
 
-export function canPlaceBuildingAt(grid, i, j, building, { requireVisible = false } = {}) {
+export function canPlaceBuildingAt(
+  grid,
+  i,
+  j,
+  building,
+  { requireVisible = false, requireExplored = false, isExplored = null } = {}
+) {
   const { cells, expectedCells } = getBuildingFootprintCells(grid, i, j, building)
   if (cells.length !== expectedCells) return false
 
+  const visibility = { requireVisible, requireExplored, isExplored }
   return building.buildOnWater
-    ? canPlaceWaterBuilding(grid, i, j, cells, building, requireVisible)
-    : canPlaceGroundBuilding(cells, requireVisible)
+    ? canPlaceWaterBuilding(grid, i, j, cells, building, visibility)
+    : canPlaceGroundBuilding(cells, visibility)
 }

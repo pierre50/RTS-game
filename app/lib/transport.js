@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint } from './grid/cells'
 import { getInstancePath } from './grid/movement'
 import { getInstanceZIndex, instancesDistance } from './maths'
@@ -149,7 +149,7 @@ export function unloadTransport(transport) {
     unit.visible = true
     transport.context.map.addChild(unit)
     transport.context.map.addToInstanceBucket(unit)
-    unit.setTextures(unit.currentSheet)
+    unit.setTextures(SHEET_TYPES.standing)
     updateInstanceVisibility(unit)
     unloaded++
   }

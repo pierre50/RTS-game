@@ -183,19 +183,19 @@ export class UnitActions {
       if (unit.getActionCondition(dest, ACTION_TYPES.build)) {
         unit.sendToBuilding(dest)
       } else if (unit.getActionCondition(dest, ACTION_TYPES.farm)) {
-        unit.sendToFarm(dest)
+        unit.sendToFarm(dest, true)
       } else {
-        unit.sendTo(map.grid[dest.i][dest.j], ACTION_TYPES.build)
+        unit.sendToEvt(map.grid[dest.i][dest.j], ACTION_TYPES.build)
       }
     } else if (TYPE_ACTION[type]) {
       if (unit.getActionCondition(dest, TYPE_ACTION[type])) {
         const sendToFunc = `sendTo${type}`
-        typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](dest) : unit.stop()
+        typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](dest, true) : unit.stop()
       } else {
-        unit.sendTo(map.grid[dest.i][dest.j], TYPE_ACTION[type])
+        unit.sendToEvt(map.grid[dest.i][dest.j], TYPE_ACTION[type])
       }
     } else {
-      unit.sendTo(map.grid[dest.i][dest.j])
+      unit.sendToEvt(map.grid[dest.i][dest.j])
     }
   }
 
@@ -426,7 +426,7 @@ export class UnitActions {
             if (!unit.getActionCondition(unit.dest)) {
               if (unit.dest?.isBuilt && unit.continueBuildingQueue()) return
               if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
-                unit.sendToFarm(unit.dest)
+                unit.sendToFarm(unit.dest, true)
                 return
               }
               unit.affectNewDest()
@@ -450,7 +450,7 @@ export class UnitActions {
                 unit.dest.updateHitPoints(unit.action)
                 unit.dest.isBuilt = true
                 if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
-                  unit.sendToFarm(unit.dest)
+                  unit.sendToFarm(unit.dest, true)
                   return
                 }
               }
@@ -562,6 +562,7 @@ export class UnitActions {
       case ACTION_TYPES.fishing:
         this.startGathering(LOADING_TYPES.fish, this.getAudibleWorkSound('fishing'), {
           checkOwner: true,
+          dieOnEmpty: true,
         })
         if (unit.category !== 'Boat') {
           onSpriteLoopAtFrame(unit.sprite, 6, () => {

@@ -1,4 +1,4 @@
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
 
 const HALF_CELL_WIDTH = CELL_WIDTH / 2
 const HALF_CELL_HEIGHT = CELL_HEIGHT / 2
@@ -143,8 +143,16 @@ export function instancesDistance(a, b, useCartesian = true) {
  */
 export function getInstanceZIndex(instance) {
   const pos = isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH)
-  const footprintOffset = instance.family === FAMILY_TYPES.building && instance.size === 3 ? 2 : 0
-  return pos[0] + pos[1] + footprintOffset
+  return pos[0] + pos[1]
+}
+
+/**
+ * Get the map-level zIndex for terrain sets such as rocks.
+ * They must stay behind units and animals standing on the same tile.
+ * @param {object} cell
+ */
+export function getTerrainSetZIndex(cell) {
+  return cell.i + cell.j - 0.1
 }
 
 /**

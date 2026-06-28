@@ -1,5 +1,6 @@
 import { Container, Sprite, RenderTexture, Matrix } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { getTerrainSetZIndex } from '../../lib'
 import { _DW, _DH } from '../cell/CellFog'
 import { Cell } from '../cell'
 import { RuntimeCell } from '../cell/RuntimeCell'
@@ -70,7 +71,7 @@ export class MapFog {
           cell.removeChild(set)
           set.x += cell.x
           set.y += cell.y
-          set.zIndex = cell.i + cell.j + 0.1
+          set.zIndex = getTerrainSetZIndex(cell)
           cell.terrainSet = set
           terrainSets.push(set)
         }

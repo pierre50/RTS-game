@@ -1,6 +1,6 @@
 import { Container, Graphics, Matrix, RenderTexture, Sprite, TilingSprite } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
-import { cartesianToIsometric, isometricToCartesian } from '../../lib'
+import { isometricToCartesian } from '../../lib'
 import { getFogPatternTexture } from '../cell/CellFog'
 
 const VIEWPORT_MARGIN = CELL_WIDTH * 2
@@ -150,9 +150,11 @@ export class ViewportFogRenderer {
         const visible = views.isVisible(i, j)
         if (!explored && !visible) continue
 
-        const [worldX, worldY] = cartesianToIsometric(i, j)
-        const x = worldX - left
-        const y = worldY - top
+        const cell = this.map.grid[i]?.[j]
+        if (!cell) continue
+
+        const x = cell.x - left
+        const y = cell.y - top
         this._drawShape(exploredErase, x, y, REVEAL_RX + FOG_BAND + OVERLAP, REVEAL_RY + FOG_BAND / 2 + OVERLAP / 2)
         if (visible) this._drawShape(visibleErase, x, y, REVEAL_RX + OVERLAP, REVEAL_RY + OVERLAP / 2)
       }

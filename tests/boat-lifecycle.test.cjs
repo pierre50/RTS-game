@@ -179,3 +179,99 @@ test('fishing boats gather silently', () => {
   assert.equal(fish.quantity, 9)
   assert.deepEqual(playedSounds, [])
 })
+
+test('depleted fish are cleared immediately after gathering', () => {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          get: () => ({}),
+        },
+      },
+    },
+    '../../constants': {
+      ACTION_TYPES: {
+        fishing: 'fishing',
+      },
+      BUILDING_TYPES: {},
+      FAMILY_TYPES: {},
+      LOADING_FOOD_TYPES: ['fish'],
+      LOADING_TYPES: {
+        fish: 'fish',
+      },
+      MENU_INFO_IDS: {
+        quantityText: 'quantityText',
+      },
+      SHEET_TYPES: {
+        action: 'actionSheet',
+      },
+      SOUND_CUES: {
+        villager: {},
+      },
+      TYPE_ACTION: {},
+      UNIT_TYPES: {},
+    },
+    '../../lib': {
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playSoundCue: () => {},
+      playerCanSeeInstance: () => false,
+    },
+    '../projectile': {
+      Projectile: class {},
+    },
+  })
+
+  let fishDied = false
+  let affectedNewDest = false
+  const fish = {
+    quantity: 1,
+    selected: false,
+    die() {
+      fishDied = true
+    },
+  }
+  const unit = {
+    category: 'Boat',
+    action: 'fishing',
+    work: 'fisher',
+    loading: 0,
+    loadingType: null,
+    loadingMax: {
+      fish: 10,
+    },
+    gatheringRate: {
+      fisher: 1,
+    },
+    silentWorkSounds: ['fishing'],
+    dest: fish,
+    sprite: {},
+    context: {
+      controls: {
+        instanceIsAudible: () => true,
+      },
+      menu: {
+        updateInfo: () => {},
+      },
+      player: {},
+      map: {},
+    },
+    getActionCondition: () => true,
+    setTextures: () => {},
+    startInterval(callback) {
+      callback()
+    },
+    updateInterfaceLoading: () => {},
+    affectNewDest() {
+      affectedNewDest = true
+    },
+    sendToDelivery: () => {},
+  }
+
+  new UnitActions(unit).getAction('fishing')
+
+  assert.equal(fish.quantity, 0)
+  assert.equal(fishDied, true)
+  assert.equal(affectedNewDest, true)
+})

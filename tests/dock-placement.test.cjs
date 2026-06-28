@@ -75,6 +75,7 @@ function createGrid(size, factory) {
 
 const { canPlaceBuildingAt } = loadPlacementModule()
 const dock = { type: 'Dock', size: 3, buildOnWater: true }
+const barracks = { type: 'Barracks', size: 3, buildOnWater: false }
 
 test('dock can only anchor on a coastal water cell', () => {
   const grid = createGrid(5, (i, j) => {
@@ -100,4 +101,31 @@ test('dock placement is rejected when the footprint includes normal land cells',
   })
 
   assert.equal(canPlaceBuildingAt(grid, 2, 2, dock), false)
+})
+
+test('building placement is rejected when any footprint cell is unexplored', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j))
+  const explored = new Set(['1,1', '1,2', '1,3', '2,1', '2,2', '2,3', '3,1', '3,2'])
+
+  assert.equal(
+    canPlaceBuildingAt(grid, 2, 2, barracks, {
+      requireExplored: true,
+      isExplored: cell => explored.has(`${cell.i},${cell.j}`),
+    }),
+    false
+  )
+})
+
+test('building placement is allowed on explored fogged terrain', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j, { visible: true }))
+  const explored = new Set(['1,1', '1,2', '1,3', '2,1', '2,2', '2,3', '3,1', '3,2', '3,3'])
+
+  assert.equal(
+    canPlaceBuildingAt(grid, 2, 2, barracks, {
+      requireVisible: true,
+      requireExplored: true,
+      isExplored: cell => explored.has(`${cell.i},${cell.j}`),
+    }),
+    true
+  )
 })

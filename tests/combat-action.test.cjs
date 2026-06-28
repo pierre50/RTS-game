@@ -58,6 +58,24 @@ test('units with no attack stats cannot attack enemies', () => {
   assert.equal(getActionCondition(fishingBoat, target, 'attack'), false)
 })
 
+test('non-attacking boats flee when attacked', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.js', {
+    '../constants': constants,
+  })
+
+  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'FishingBoat' }), true)
+  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'LightTransport', transportCapacity: 5 }), true)
+  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'HeavyTransport', transportCapacity: 10 }), true)
+})
+
+test('attacking boats do not use the unarmed flee behavior', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.js', {
+    '../constants': constants,
+  })
+
+  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'ScoutShip', pierceAttack: 5 }), false)
+})
+
 test('units with attack stats can attack enemies', () => {
   const { getActionCondition } = loadModule('app/lib/combat.js', {
     '../constants': constants,
@@ -72,4 +90,51 @@ test('units with attack stats can attack enemies', () => {
   }
 
   assert.equal(getActionCondition(scoutShip, target, 'attack'), true)
+})
+
+test('land ranged units can target enemy boats', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.js', {
+    '../constants': constants,
+  })
+
+  const archer = {
+    hitPoints: 35,
+    isDead: false,
+    owner,
+    pierceAttack: 3,
+    type: 'Bowman',
+  }
+  const enemyBoat = {
+    family: constants.FAMILY_TYPES.unit,
+    category: 'Boat',
+    hitPoints: 120,
+    isDead: false,
+    owner: { label: 'enemy' },
+  }
+
+  assert.equal(getActionCondition(archer, enemyBoat, 'attack'), true)
+})
+
+test('attacking boats can target enemy land units', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.js', {
+    '../constants': constants,
+  })
+
+  const scoutShip = {
+    category: 'Boat',
+    hitPoints: 120,
+    isDead: false,
+    owner,
+    pierceAttack: 5,
+    type: 'ScoutShip',
+  }
+  const enemyArcher = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 35,
+    isDead: false,
+    owner: { label: 'enemy' },
+    type: 'Bowman',
+  }
+
+  assert.equal(getActionCondition(scoutShip, enemyArcher, 'attack'), true)
 })

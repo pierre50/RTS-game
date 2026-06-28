@@ -58,7 +58,7 @@ export class BuildingPlacer {
 
     controls.mouseBuilding.x = cell.x - controls.camera.x
     controls.mouseBuilding.y = cell.y - controls.camera.y
-    const isFree = canPlaceBuildingAt(map.grid, cell.i, cell.j, controls.mouseBuilding, { requireVisible: true })
+    const isFree = this.canPlaceMouseBuilding(cell)
 
     const sprite = controls.mouseBuilding.getChildByLabel(LABEL_TYPES.sprite)
     const tint = isFree ? COLOR_GREEN : COLOR_RED
@@ -75,7 +75,7 @@ export class BuildingPlacer {
       return this.wallPlacementController.handleClick(cell, player)
     }
     if (cell.inclined || cell.border) return
-    if (controls.mouseBuilding.isFree) {
+    if (this.canPlaceMouseBuilding(cell)) {
       if (player.buyBuilding(cell.i, cell.j, controls.mouseBuilding.type)) {
         controls.removeMouseBuilding()
         if (menu.selection) {
@@ -121,8 +121,40 @@ export class BuildingPlacer {
     return this.wallPlacementController.cancel()
   }
 
+  isExploredForPlacement(cell, owner) {
+    const {
+      controls: {
+        context: { map },
+      },
+    } = this
+    return Boolean(cell && (map.revealEverything || map.revealTerrain || owner?.views?.isViewed(cell.i, cell.j)))
+  }
+
+  canPlaceMouseBuilding(cell) {
+    const {
+      controls,
+      controls: {
+        context: { map, player },
+      },
+    } = this
+    if (!cell) return false
+    return canPlaceBuildingAt(map.grid, cell.i, cell.j, controls.mouseBuilding, {
+      requireVisible: true,
+      requireExplored: true,
+      isExplored: candidate => this.isExploredForPlacement(candidate, player),
+    })
+  }
+
   canWallUseCell(cell, owner, allowExistingWall = false) {
-    if (!cell || !cell.visible || cell.category === 'Water' || cell.waterBorder || cell.inclined || cell.border) {
+    if (
+      !cell ||
+      !cell.visible ||
+      !this.isExploredForPlacement(cell, owner) ||
+      cell.category === 'Water' ||
+      cell.waterBorder ||
+      cell.inclined ||
+      cell.border
+    ) {
       return false
     }
     if (!cell.has && !cell.solid) return true

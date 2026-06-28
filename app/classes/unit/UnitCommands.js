@@ -15,6 +15,7 @@ import {
   getInstancePath,
   getWorkWithLoadingType,
 } from '../../lib'
+import { t } from '../../lib/lang'
 
 function getActionSheet(work, action, unit) {
   if (!work) {
@@ -74,7 +75,9 @@ export class UnitCommands {
     }
     if (unit.work !== work || unit.action !== action) {
       unit.work = work
-      unit.owner.isPlayed && unit.owner.selectedUnit === unit && menu.updateInfo(MENU_INFO_IDS.type, unit.work)
+      if (unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
+        menu.updateInfo(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
+      }
       if (unit.allAssets && unit.allAssets[work]) {
         unit.actionSheet = getActionSheet(work, action, unit)
         if (!unit.loading) {
@@ -166,11 +169,11 @@ export class UnitCommands {
     } else {
       unit.previousDest = map.grid[unit.i][unit.j]
     }
-    unit.sendTo(target, ACTION_TYPES.delivery)
+    unit.sendToEvt(target, ACTION_TYPES.delivery)
   }
 
-  sendToFish(target) {
-    return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing)
+  sendToFish(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing, false, immediate)
   }
 
   sendToAttack(target) {
@@ -192,8 +195,8 @@ export class UnitCommands {
     )
   }
 
-  sendToHunt(target) {
-    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt)
+  sendToHunt(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt, false, immediate)
   }
 
   sendToBuilding(target, preserveBuildQueue = false) {
@@ -220,23 +223,23 @@ export class UnitCommands {
     return false
   }
 
-  sendToFarm(target) {
-    return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm)
+  sendToFarm(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm, false, immediate)
   }
 
-  sendToTree(target) {
-    return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood)
+  sendToTree(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood, false, immediate)
   }
 
-  sendToBerrybush(target) {
-    return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry)
+  sendToBerrybush(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry, false, immediate)
   }
 
-  sendToStone(target) {
-    return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone)
+  sendToStone(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone, false, immediate)
   }
 
-  sendToGold(target) {
-    return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold)
+  sendToGold(target, immediate = false) {
+    return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold, false, immediate)
   }
 }

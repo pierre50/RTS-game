@@ -4,6 +4,10 @@ export function canAttack(source) {
   return Boolean(source && ((source.meleeAttack || 0) > 0 || (source.pierceAttack || 0) > 0))
 }
 
+export function shouldFleeWhenAttacked(source) {
+  return source?.category === 'Boat' && !canAttack(source)
+}
+
 export function canConvert(source, target) {
   if (!source || source.type !== UNIT_TYPES.priest || !target || !source.owner?.isEnemy(target.owner)) return false
   if (target.family === FAMILY_TYPES.unit && target.type !== UNIT_TYPES.priest) return true

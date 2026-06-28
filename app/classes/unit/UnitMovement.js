@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   canUpdateMinimap,
   degreeToDirection,
@@ -19,9 +19,56 @@ function isBoatNavigationCell(cell) {
   return cell?.category === 'Water' || cell?.waterBorder
 }
 
+const POST_BUILD_GATHER_ACTIONS = {
+  [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
+  [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ACTION_TYPES.minestone, ACTION_TYPES.minegold],
+  [BUILDING_TYPES.townCenter]: [
+    ACTION_TYPES.chopwood,
+    ACTION_TYPES.forageberry,
+    ACTION_TYPES.minestone,
+    ACTION_TYPES.minegold,
+    ACTION_TYPES.farm,
+    ACTION_TYPES.hunt,
+    ACTION_TYPES.takemeat,
+    ACTION_TYPES.fishing,
+  ],
+}
+
+const GATHER_SEND_METHOD_BY_ACTION = {
+  [ACTION_TYPES.chopwood]: 'sendToTree',
+  [ACTION_TYPES.farm]: 'sendToFarm',
+  [ACTION_TYPES.fishing]: 'sendToFish',
+  [ACTION_TYPES.forageberry]: 'sendToBerrybush',
+  [ACTION_TYPES.hunt]: 'sendToHunt',
+  [ACTION_TYPES.minegold]: 'sendToGold',
+  [ACTION_TYPES.minestone]: 'sendToStone',
+  [ACTION_TYPES.takemeat]: 'sendToTakeMeat',
+}
+
 export class UnitMovement {
   constructor(unit) {
     this.unit = unit
+  }
+
+  sendToPostBuildResource() {
+    const unit = this.unit
+    const actions = POST_BUILD_GATHER_ACTIONS[unit.dest?.type]
+    if (!actions || !unit.dest?.isBuilt || unit.dest.isDead || unit.dest.isDestroyed) return false
+
+    const targets = findInstancesInSight(unit, instance =>
+      actions.some(action => unit.getActionCondition(instance, action))
+    )
+    if (!targets.length) return false
+
+    const target = getClosestInstanceWithPath(unit, targets)
+    if (!target) return false
+
+    const action = actions.find(candidate => unit.getActionCondition(target.instance, candidate))
+    const sendMethod = GATHER_SEND_METHOD_BY_ACTION[action]
+    if (!sendMethod || typeof unit[sendMethod] !== 'function') return false
+
+    unit[sendMethod](target.instance, true)
+    return true
   }
 
   sendToEvt(dest, action, { forceRepath = false } = {}) {
@@ -253,6 +300,8 @@ export class UnitMovement {
         unit.goBackToPrevious()
         return
       }
+
+      if (this.sendToPostBuildResource()) return
 
       const targets = findInstancesInSight(unit, instance => unit.getActionCondition(instance, ACTION_TYPES.build))
       if (targets.length) {
