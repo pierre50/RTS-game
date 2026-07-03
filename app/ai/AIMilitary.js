@@ -1,6 +1,20 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
-import { getCellsAroundPoint } from '../lib'
+import {
+  findLoadShoreCell,
+  findTransportCoastCell,
+  getCellsAroundPoint,
+  getInstancePath,
+  getTransportLoad,
+  unloadTransport,
+} from '../lib'
 import { BASE_TARGET_VALUE_BY_TYPE } from './config'
+
+const NAVAL_TRANSPORT_GROUP_MIN = 4
+const NAVAL_TRANSPORT_GROUP_MAX = 5
+const NAVAL_LANDING_SEARCH_RADIUS = 28
+const NAVAL_LANDING_PATH_ATTEMPTS = 48
+const NAVAL_OPERATION_TIMEOUT_MS = 90000
+const NAVAL_OPERATION_RETRY_MS = 20000
 
 export class AIMilitary {
   constructor(ai, strategy) {
@@ -248,12 +262,243 @@ export class AIMilitary {
     }
   }
 
+  getUnitByLabel(label) {
+    return this.ai.units.find(unit => unit.label === label && !unit.isDead && !unit.isDestroyed)
+  }
+
+  getTransportCandidates() {
+    return this.ai
+      .getLivingUnitsByType(UNIT_TYPES.lightTransport)
+      .filter(transport => transport && !transport.isDead && !transport.isDestroyed)
+  }
+
+  getLandingTarget() {
+    return this.getBestEnemyTarget() || null
+  }
+
+  hasLandingRoom(cell) {
+    if (!cell) return false
+    const { map } = this.ai.context
+    return (
+      getCellsAroundPoint(
+        cell.i,
+        cell.j,
+        map.grid,
+        2,
+        candidate =>
+          candidate.category !== 'Water' &&
+          !candidate.waterBorder &&
+          !candidate.solid &&
+          !candidate.border &&
+          !candidate.inclined
+      ).length > 0
+    )
+  }
+
+  findLandingCell(transport, target) {
+    if (!transport || !target) return null
+    const { map } = this.ai.context
+    const candidates = []
+    const minI = Math.max(0, target.i - NAVAL_LANDING_SEARCH_RADIUS)
+    const maxI = Math.min(map.size - 1, target.i + NAVAL_LANDING_SEARCH_RADIUS)
+    const minJ = Math.max(0, target.j - NAVAL_LANDING_SEARCH_RADIUS)
+    const maxJ = Math.min(map.size - 1, target.j + NAVAL_LANDING_SEARCH_RADIUS)
+
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const cell = map.grid[i]?.[j]
+        if (!cell?.waterBorder || cell.solid || cell.border) continue
+        if (!this.hasLandingRoom(cell)) continue
+        candidates.push({
+          cell,
+          targetDistance: Math.abs(cell.i - target.i) + Math.abs(cell.j - target.j),
+          transportDistance: Math.abs(cell.i - transport.i) + Math.abs(cell.j - transport.j),
+        })
+      }
+    }
+
+    candidates.sort(
+      (a, b) => a.targetDistance - b.targetDistance || a.transportDistance - b.transportDistance
+    )
+
+    let best = null
+    let bestScore = Infinity
+    for (const { cell, targetDistance } of candidates.slice(0, NAVAL_LANDING_PATH_ATTEMPTS)) {
+      const path = getInstancePath(transport, cell.i, cell.j, map)
+      if (!path.length && (transport.i !== cell.i || transport.j !== cell.j)) continue
+      const score = path.length + targetDistance
+      if (score < bestScore) {
+        bestScore = score
+        best = cell
+      }
+    }
+
+    return best
+  }
+
+  clearNavalOperation(reason = null, debug = false, { keepAssault = false } = {}) {
+    const operation = this.ai.navalOperation
+    if (!operation) return
+    if (!keepAssault) {
+      for (const label of operation.unitLabels || []) {
+        const unit = this.getUnitByLabel(label)
+        if (unit && !unit.loadedInTransport) unit.assault = false
+      }
+    }
+    this.ai.navalOperation = null
+    this.ai.lastNavalOperationEndedAt = this.ai.getNow()
+    this.ai.lastNavalOperationFailure = reason
+    if (debug && reason) console.log('Naval operation ended:', reason)
+  }
+
+  handleActiveNavalOperation(debug = false) {
+    const operation = this.ai.navalOperation
+    if (!operation) return 0
+
+    const now = this.ai.getNow()
+    const transport = this.getUnitByLabel(operation.transportLabel)
+    const target = operation.targetLabel
+      ? this.ai.getEnemyMemories({ freshWithin: Infinity }).find(memory => memory.label === operation.targetLabel)
+          ?.instance
+      : this.getLandingTarget()
+
+    if (!transport || !target || now - operation.startedAt > NAVAL_OPERATION_TIMEOUT_MS) {
+      this.clearNavalOperation('lost transport/target or timeout', debug)
+      return 0
+    }
+
+    const cargoLoad = getTransportLoad(transport)
+    const units = operation.unitLabels.map(label => this.getUnitByLabel(label)).filter(Boolean)
+
+    if (operation.stage === 'loading') {
+      const loadShoreCell = this.ai.context.map.grid[operation.loadShoreCell?.i]?.[operation.loadShoreCell?.j]
+      const loadCoastCell = this.ai.context.map.grid[operation.loadCoastCell?.i]?.[operation.loadCoastCell?.j]
+      if (!loadShoreCell || !loadCoastCell) {
+        this.clearNavalOperation('lost load shore', debug)
+        return 0
+      }
+      if ((transport.inactif || !transport.path?.length) && (transport.i !== loadCoastCell.i || transport.j !== loadCoastCell.j)) {
+        transport.sendTo(loadCoastCell)
+      }
+      for (const unit of units) {
+        if (!unit.loadedInTransport && unit.inactif && getTransportLoad(transport) < transport.transportCapacity) {
+          unit.transportLoadShoreCell = loadShoreCell
+          unit.transportLoadCoastCell = loadCoastCell
+          unit.sendToWithCell(transport, loadShoreCell, ACTION_TYPES.loadTransport)
+        }
+      }
+
+      const allLoaded = units.length > 0 && units.every(unit => unit.loadedInTransport === transport)
+      const enoughLoaded = cargoLoad >= Math.min(NAVAL_TRANSPORT_GROUP_MIN, units.length)
+      const waitedLongEnough = now - operation.startedAt > 15000 && cargoLoad > 0
+      if (allLoaded || enoughLoaded || waitedLongEnough) {
+        const landingCell = this.findLandingCell(transport, target)
+        if (!landingCell) {
+          this.clearNavalOperation('no landing cell', debug)
+          return 0
+        }
+        operation.stage = 'sailing'
+        operation.landingCell = { i: landingCell.i, j: landingCell.j }
+        transport.sendTo(landingCell)
+        if (debug) console.log('Naval transport sailing with cargo:', cargoLoad)
+        return 1
+      }
+      return 0
+    }
+
+    if (operation.stage === 'sailing') {
+      const landingCell = this.ai.context.map.grid[operation.landingCell?.i]?.[operation.landingCell?.j]
+      if (!landingCell) {
+        this.clearNavalOperation('landing cell disappeared', debug)
+        return 0
+      }
+      if (transport.i !== landingCell.i || transport.j !== landingCell.j) {
+        if (transport.inactif && !transport.path?.length) transport.sendTo(landingCell)
+        return 0
+      }
+
+      const cargo = [...(transport.transportedUnits || [])]
+      const unloaded = unloadTransport(transport)
+      if (!unloaded) return 0
+      operation.stage = 'assault'
+      for (const unit of cargo) {
+        if (unit && !unit.loadedInTransport && !unit.isDead && !unit.isDestroyed) {
+          unit.assault = true
+          unit.sendTo(target, ACTION_TYPES.attack)
+        }
+      }
+      this.ai.lastAttackWaveAt = now
+      this.clearNavalOperation('unloaded assault', debug, { keepAssault: true })
+      this.ai.lastNavalOperationFailure = null
+      return 1
+    }
+
+    this.clearNavalOperation('unknown stage', debug)
+    return 0
+  }
+
+  maybeStartNavalTransportAttack(availableMilitary, debug = false) {
+    const { ai } = this
+    if (ai.navalOperation) return 0
+    if (ai.getNow() - (ai.lastNavalOperationEndedAt || -Infinity) < NAVAL_OPERATION_RETRY_MS) return 0
+    if (!ai.strategy.needsNavalTransport(availableMilitary.length)) return 0
+
+    const transport = this.getTransportCandidates().find(candidate => candidate.inactif && getTransportLoad(candidate) === 0)
+    if (!transport) return 0
+
+    const target = this.getLandingTarget()
+    if (!target) return 0
+    const landingCell = this.findLandingCell(transport, target)
+    if (!landingCell) return 0
+
+    const groupSize = Math.min(NAVAL_TRANSPORT_GROUP_MAX, transport.transportCapacity, availableMilitary.length)
+    if (groupSize < NAVAL_TRANSPORT_GROUP_MIN) return 0
+    const group = availableMilitary.slice(0, groupSize)
+    let loadPlan = null
+    for (const unit of group) {
+      const shoreCell = findLoadShoreCell(unit, transport)
+      const coastCell = findTransportCoastCell(transport, shoreCell)
+      if (shoreCell && coastCell) {
+        loadPlan = { shoreCell, coastCell }
+        break
+      }
+    }
+    if (!loadPlan) return 0
+
+    transport.sendTo(loadPlan.coastCell)
+    for (const unit of group) {
+      unit.assault = true
+      unit.transportLoadShoreCell = loadPlan.shoreCell
+      unit.transportLoadCoastCell = loadPlan.coastCell
+      unit.sendToWithCell(transport, loadPlan.shoreCell, ACTION_TYPES.loadTransport)
+    }
+    const groupLabels = new Set(group.map(unit => unit.label))
+    for (let index = availableMilitary.length - 1; index >= 0; index--) {
+      if (groupLabels.has(availableMilitary[index].label)) availableMilitary.splice(index, 1)
+    }
+    ai.navalOperation = {
+      stage: 'loading',
+      startedAt: ai.getNow(),
+      transportLabel: transport.label,
+      unitLabels: group.map(unit => unit.label),
+      targetLabel: target.label,
+      landingCell: { i: landingCell.i, j: landingCell.j },
+      loadShoreCell: { i: loadPlan.shoreCell.i, j: loadPlan.shoreCell.j },
+      loadCoastCell: { i: loadPlan.coastCell.i, j: loadPlan.coastCell.j },
+    }
+    if (debug) console.log('Starting naval transport operation:', group.length, 'units')
+    return 1
+  }
+
   handleActions({ waitingMilitary, inactifMilitary, howManySoldiersBeforeAttack, debug = false }) {
     const { ai } = this
     const { difficultyConfig } = this.strategy
     let actions = 0
 
     const availableMilitary = [...waitingMilitary]
+
+    actions += this.handleActiveNavalOperation(debug)
+    actions += this.maybeStartNavalTransportAttack(availableMilitary, debug)
 
     const defenseTargets = this.getDefenseTargets()
     if (defenseTargets.length > 0 && availableMilitary.length > 0) {
@@ -283,6 +528,10 @@ export class AIMilitary {
         this.sendToAttack(defenders, urgentThreat, debug)
         actions++
       }
+    }
+
+    if (ai.navalOperation || ai.strategy.needsNavalTransport(availableMilitary.length)) {
+      return actions
     }
 
     const raidThreshold = difficultyConfig.raidThreshold

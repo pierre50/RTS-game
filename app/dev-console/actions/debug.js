@@ -197,6 +197,7 @@ function getAiDebugLines(aiPlayers, targetIndex = null) {
     const workerSnapshot = ai.economy.getWorkerSnapshot(villagers)
     const workerTargets = ai.economy.getResourceTargets(villagers.length)
     const demand = ai.strategy.getEconomicDemand()
+    const naval = ai.strategy.getNavalDebugInfo()
     const builders = villagers.filter(v => !v.isDead && v.hitPoints > 0 && v.action === ACTION_TYPES.build).length
     const scoutLabel = ai.scout && !ai.scout.isDead ? `${ai.scout.type}#${ai.scout.name || ai.scout.label}` : 'none'
     const scoutStatus =
@@ -221,6 +222,12 @@ function getAiDebugLines(aiPlayers, targetIndex = null) {
     )
     lines.push(
       `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees.size} berries:${ai.foundedBerrybushs.size} hunt:${ai.foundedAnimals.size} fish:${ai.foundedFish.size} gold:${ai.foundedGolds.size} stone:${ai.foundedStones.size}`
+    )
+    lines.push(
+      `Naval land:${naval.land.reachable ? `yes ${naval.land.distance}` : naval.land.reason} | needTransport:${naval.needsTransport ? 'yes' : 'no'} | dock:${naval.builtDocks}/${naval.docks}${naval.dock ? ` candidate ${naval.dock.i},${naval.dock.j}` : ''}`
+    )
+    lines.push(
+      `Naval fish:${naval.fish} boats:${naval.desiredFishingBoats} scout:${naval.scout ? 'yes' : 'no'} | transports:${naval.transports} | op:${naval.operationStage} cargo:${naval.cargo}${naval.failure ? ` fail:${naval.failure}` : ''}`
     )
     lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map(t => t.target.type).join(', ')}` : ''}`)
     lines.push('')

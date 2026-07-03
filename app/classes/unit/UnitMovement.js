@@ -443,7 +443,9 @@ export class UnitMovement {
             unit.stop()
             return
           }
-          if (expectedCoastCell && !unit.dest.dest && !unit.dest.path?.length) {
+          const transportAtExpectedCoast =
+            expectedCoastCell && unit.dest.i === expectedCoastCell.i && unit.dest.j === expectedCoastCell.j
+          if (expectedCoastCell && !transportAtExpectedCoast && !unit.dest.dest && !unit.dest.path?.length) {
             unit.stop()
           }
         },

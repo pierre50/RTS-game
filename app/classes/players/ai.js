@@ -43,6 +43,9 @@ export class AI extends Player {
     this.phase = 'economy' // economy | military_build | attack
     this.threatenedTargets = new Map()
     this.lastAttackWaveAt = -Infinity
+    this.navalOperation = null
+    this.lastNavalOperationEndedAt = -Infinity
+    this.lastNavalOperationFailure = null
   }
 
   getNow() {

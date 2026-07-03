@@ -18,9 +18,12 @@ function loadAIStrategy() {
       dock: 'Dock',
       house: 'House',
       market: 'Market',
+      townCenter: 'TownCenter',
     },
     UNIT_TYPES: {
       fishingBoat: 'FishingBoat',
+      lightTransport: 'LightTransport',
+      villager: 'Villager',
     },
     WORK_TYPES: {},
   }
@@ -64,6 +67,40 @@ function loadAIStrategy() {
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.AIStrategy
+}
+
+function loadAIMilitary(libOverrides = {}) {
+  const filename = path.join(__dirname, '../app/ai/AIMilitary.js')
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+  })
+  const constants = {
+    ACTION_TYPES: { attack: 'attack', loadTransport: 'loadTransport' },
+    BUILDING_TYPES: { townCenter: 'TownCenter' },
+    FAMILY_TYPES: { unit: 'unit' },
+    UNIT_TYPES: { lightTransport: 'LightTransport' },
+  }
+  const module = { exports: {} }
+  const localRequire = request => {
+    if (request === '../constants') return constants
+    if (request === '../lib') {
+      return {
+        findLoadShoreCell: () => null,
+        findTransportCoastCell: () => null,
+        getCellsAroundPoint: () => [],
+        getInstancePath: () => [],
+        getTransportLoad: () => 0,
+        unloadTransport: () => 0,
+        ...libOverrides,
+      }
+    }
+    if (request === './config') return { BASE_TARGET_VALUE_BY_TYPE: {} }
+    return require(request)
+  }
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports.AIMilitary
 }
 
 function createWaterGrid(width) {
@@ -170,4 +207,68 @@ test('fish on occupied water cells still count as naval opportunities', () => {
 
   assert.deepEqual(opportunity.fish, [fish])
   assert.equal(opportunity.desiredFishingBoats, 1)
+})
+
+test('naval transport is needed when the enemy island has no land path', () => {
+  const AIStrategy = loadAIStrategy()
+  const grid = Array.from({ length: 5 }, (_, i) =>
+    Array.from({ length: 5 }, (_, j) => ({
+      border: false,
+      category: j === 2 ? 'Water' : 'Grass',
+      i,
+      j,
+      solid: false,
+      waterBorder: false,
+    }))
+  )
+  const ai = {
+    age: 1,
+    context: { map: { grid, size: 4 } },
+    enemyPlayers: () => [{ buildings: [{ i: 2, j: 4, type: 'TownCenter' }] }],
+    getHomeAnchor: () => ({ i: 2, j: 0 }),
+  }
+  const strategy = new AIStrategy(ai)
+
+  const diagnostic = strategy.getLandAccessDiagnostic(ai.getHomeAnchor(), ai.enemyPlayers()[0].buildings[0])
+
+  assert.equal(diagnostic.reachable, false)
+  assert.equal(diagnostic.reason, 'no_land_path')
+  assert.equal(strategy.needsNavalTransport(4), true)
+})
+
+test('landing cells are ignored when there is no valid land room to unload', () => {
+  const AIMilitary = loadAIMilitary({
+    getCellsAroundPoint: (_i, _j, _grid, _distance, condition) =>
+      [
+        { category: 'Water', waterBorder: false, solid: false, border: false, inclined: false },
+        { category: 'Grass', waterBorder: true, solid: false, border: false, inclined: false },
+      ].filter(condition),
+    getInstancePath: () => [{ i: 1, j: 1 }],
+  })
+  const landingCandidate = {
+    border: false,
+    category: 'Water',
+    i: 2,
+    j: 2,
+    solid: false,
+    waterBorder: true,
+  }
+  const ai = {
+    context: {
+      map: {
+        grid: Array.from({ length: 5 }, (_, i) =>
+          Array.from({ length: 5 }, (_, j) =>
+            i === landingCandidate.i && j === landingCandidate.j
+              ? landingCandidate
+              : { border: false, category: 'Water', i, j, solid: false, waterBorder: false }
+          )
+        ),
+        size: 4,
+      },
+    },
+    units: [],
+  }
+  const military = new AIMilitary(ai, {})
+
+  assert.equal(military.findLandingCell({ i: 0, j: 0 }, { i: 2, j: 2 }), null)
 })
