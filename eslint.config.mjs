@@ -1,3 +1,19 @@
+import tsParser from '@typescript-eslint/parser'
+
+const browserGlobals = {
+  alert: 'readonly',
+  console: 'readonly',
+  document: 'readonly',
+  localStorage: 'readonly',
+  navigator: 'readonly',
+  performance: 'readonly',
+  requestAnimationFrame: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  structuredClone: 'readonly',
+  window: 'readonly',
+}
+
 export default [
   {
     ignores: ['build/**', 'dist/**', 'node_modules/**'],
@@ -7,19 +23,17 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        alert: 'readonly',
-        console: 'readonly',
-        document: 'readonly',
-        localStorage: 'readonly',
-        navigator: 'readonly',
-        performance: 'readonly',
-        requestAnimationFrame: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        structuredClone: 'readonly',
-        window: 'readonly',
-      },
+      globals: browserGlobals,
+    },
+    rules: {},
+  },
+  {
+    files: ['app/**/*.ts'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parser: tsParser,
+      globals: browserGlobals,
     },
     rules: {},
   },

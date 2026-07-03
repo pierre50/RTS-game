@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -21,7 +21,7 @@ function loadModule(relativePath, mocks) {
 }
 
 test('direction count 1 keeps every wreck frame instead of slicing it as a 5-direction sheet', () => {
-  const { getAnimationFrames } = loadModule('app/lib/extra.js', {
+  const { getAnimationFrames } = loadModule('app/lib/extra.ts', {
     '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
     './grid': { instanceIsInPlayerSight: () => false },
     './maths': {},

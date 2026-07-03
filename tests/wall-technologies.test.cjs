@@ -5,16 +5,18 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadWalls() {
-  const filename = path.join(__dirname, '../app/lib/buildings/walls.js')
+  const filename = path.join(__dirname, '../app/lib/buildings/walls.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const mocks = {
     'pixi.js': { Assets: {} },
     '../../constants': { BUILDING_TYPES: { smallWall: 'SmallWall' } },
+    '../extra': { bindAnimatedSpriteToTicker: () => {} },
+    '../graphics/colors': { changeSpriteColor: () => {} },
     '../graphics/textures': { getTexture: name => name },
     '../grid/wallPath': {
       getWallFrame: (vertical, horizontal, endpoint) => (endpoint || (vertical && horizontal) ? 2 : vertical ? 1 : 0),

@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -82,7 +82,7 @@ test('unloading a transported unit leaves it standing instead of walking', () =>
     },
     transportedUnits: [unit],
   }
-  const { unloadTransport } = loadModule('app/lib/transport.js', {
+  const { unloadTransport } = loadModule('app/lib/transport.ts', {
     '../constants': constants,
     './grid/cells': {
       getCellsAroundPoint: () => [unloadedCell],
@@ -127,7 +127,7 @@ test('unloading only works while the transport is on a water border cell', () =>
     },
     transportedUnits: [unit],
   }
-  const { canUnloadTransport, unloadTransport } = loadModule('app/lib/transport.js', {
+  const { canUnloadTransport, unloadTransport } = loadModule('app/lib/transport.ts', {
     '../constants': constants,
     './grid/cells': {
       getCellsAroundPoint: () => {
@@ -195,7 +195,7 @@ test('sending a unit to an offshore transport moves both to a reachable shore', 
     context: { map },
     sendTo: cell => sentTransport.push(cell),
   }
-  const { sendUnitToTransport } = loadModule('app/lib/transport.js', {
+  const { sendUnitToTransport } = loadModule('app/lib/transport.ts', {
     '../constants': constants,
     './grid/cells': {
       getCellsAroundPoint: (i, j, _grid, distance) => {
@@ -272,7 +272,7 @@ test('sending a unit already standing on shore to an offshore transport uses its
     context: { map },
     sendTo: cell => sentTransport.push(cell),
   }
-  const { sendUnitToTransport } = loadModule('app/lib/transport.js', {
+  const { sendUnitToTransport } = loadModule('app/lib/transport.ts', {
     '../constants': constants,
     './grid/cells': {
       getCellsAroundPoint: (i, j, _grid, distance) => {
@@ -283,7 +283,8 @@ test('sending a unit already standing on shore to an offshore transport uses its
       },
     },
     './grid/movement': {
-      getInstancePath: (instance, i, j) => (instance === transport && i === coastCell.i && j === coastCell.j ? [coastCell] : []),
+      getInstancePath: (instance, i, j) =>
+        instance === transport && i === coastCell.i && j === coastCell.j ? [coastCell] : [],
     },
     './grid/visibility': {
       updateInstanceVisibility: () => {},
@@ -343,7 +344,7 @@ test('transport loading accepts water border cells as boat coast destinations', 
     context: { map },
     sendTo: cell => sentTransport.push(cell),
   }
-  const { sendUnitToTransport } = loadModule('app/lib/transport.js', {
+  const { sendUnitToTransport } = loadModule('app/lib/transport.ts', {
     '../constants': constants,
     './grid/cells': {
       getCellsAroundPoint: (i, j, _grid, distance) => {
@@ -353,7 +354,8 @@ test('transport loading accepts water border cells as boat coast destinations', 
       },
     },
     './grid/movement': {
-      getInstancePath: (instance, i, j) => (instance === transport && i === coastCell.i && j === coastCell.j ? [coastCell] : []),
+      getInstancePath: (instance, i, j) =>
+        instance === transport && i === coastCell.i && j === coastCell.j ? [coastCell] : [],
     },
     './grid/visibility': {
       updateInstanceVisibility: () => {},

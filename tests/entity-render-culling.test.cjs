@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks = {}) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
@@ -17,7 +17,7 @@ function loadModule(relativePath, mocks = {}) {
   return module.exports
 }
 
-const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.js', {
+const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.ts', {
   '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
   './grid': { instanceIsInPlayerSight: () => false },
   './maths': {},
@@ -25,7 +25,7 @@ const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.js', {
   './lang': {},
 })
 
-const { instanceShouldRender } = loadModule('app/lib/grid/visibility.js', {
+const { instanceShouldRender } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
 })

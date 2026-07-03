@@ -5,11 +5,11 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadChunkCulling() {
-  const filename = path.join(__dirname, '../app/lib/graphics/chunkCulling.js')
+  const filename = path.join(__dirname, '../app/lib/graphics/chunkCulling.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   new Function('module', 'exports', 'require', code)(module, module.exports, require)
@@ -25,17 +25,11 @@ const viewport = {
 }
 
 test('keeps chunks intersecting the viewport edges renderable', () => {
-  assert.equal(
-    rectangleIntersectsViewport({ minX: 900, minY: 300, width: 200, height: 200 }, viewport),
-    true
-  )
+  assert.equal(rectangleIntersectsViewport({ minX: 900, minY: 300, width: 200, height: 200 }, viewport), true)
 })
 
 test('rejects chunks fully outside the viewport', () => {
-  assert.equal(
-    rectangleIntersectsViewport({ minX: 901, minY: 300, width: 200, height: 200 }, viewport),
-    false
-  )
+  assert.equal(rectangleIntersectsViewport({ minX: 901, minY: 300, width: 200, height: 200 }, viewport), false)
 })
 
 test('uses a preload margin to avoid popping while the camera moves', () => {

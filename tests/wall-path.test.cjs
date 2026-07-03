@@ -5,11 +5,11 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadWallPath() {
-  const filename = path.join(__dirname, '../app/lib/grid/wallPath.js')
+  const filename = path.join(__dirname, '../app/lib/grid/wallPath.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   new Function('module', 'exports', 'require', code)(module, module.exports, require)

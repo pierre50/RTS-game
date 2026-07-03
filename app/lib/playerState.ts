@@ -1,0 +1,43 @@
+type UnitState = {
+  hitPoints?: number
+  isDead?: boolean
+}
+
+type BuildingState = UnitState & {
+  isBuilt?: boolean
+  range?: number
+  units?: unknown[]
+}
+
+type PlayerState = {
+  buildings?: BuildingState[]
+  units?: UnitState[]
+}
+
+function isOperationalBuilding(building?: BuildingState | null): boolean {
+  if (!building || building.isDead || (building.hitPoints ?? 0) <= 0 || !building.isBuilt) {
+    return false
+  }
+
+  if ((building.range ?? 0) > 0) {
+    return true
+  }
+
+  return Array.isArray(building.units) && building.units.length > 0
+}
+
+export function hasLivingUnits(player?: PlayerState | null): boolean {
+  return !!player?.units?.some(unit => unit && !unit.isDead && (unit.hitPoints ?? 0) > 0)
+}
+
+export function hasOperationalBuildings(player?: PlayerState | null): boolean {
+  return !!player?.buildings?.some(isOperationalBuilding)
+}
+
+export function canPlayerStillAct(player?: PlayerState | null): boolean {
+  return hasLivingUnits(player) || hasOperationalBuildings(player)
+}
+
+export function isPlayerEliminated(player?: PlayerState | null): boolean {
+  return !canPlayerStillAct(player)
+}

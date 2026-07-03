@@ -17,7 +17,7 @@ module.exports = (_env, argv = {}) => {
     module: {
       rules: [
         {
-          test: /\.js$/,
+          test: /\.[jt]s$/,
           exclude: /node_modules/,
           use: 'babel-loader',
         },
@@ -34,6 +34,9 @@ module.exports = (_env, argv = {}) => {
           use: 'raw-loader',
         },
       ],
+    },
+    resolve: {
+      extensions: ['.ts', '.js'],
     },
     plugins: [
       new HtmlWebpackPlugin({
@@ -69,10 +72,7 @@ module.exports = (_env, argv = {}) => {
       minimize: env.isProduction,
     },
     devServer: {
-      static: [
-        { directory: env.buildDir },
-        { directory: env.staticMapsDir, publicPath: '/maps', watch: true },
-      ],
+      static: [{ directory: env.buildDir }, { directory: env.staticMapsDir, publicPath: '/maps', watch: true }],
       compress: true,
       port: env.devServerPort,
       hot: true,

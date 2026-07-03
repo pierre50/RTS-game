@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -73,7 +73,7 @@ const constants = {
 }
 
 test('switching a recolored sprite back to blue clears its color filter', () => {
-  const { changeSpriteColor } = loadModule('app/lib/graphics/colors.js', {
+  const { changeSpriteColor } = loadModule('app/lib/graphics/colors.ts', {
     'pixi.js': { Texture: { from: () => ({}) } },
     'pixi-filters': { MultiColorReplaceFilter: class {} },
   })
@@ -211,10 +211,13 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
   assert.equal(target.blockedGatherApproach, null)
   assert.equal(target.inactif, true)
   assert.deepEqual(target.path, [])
-  assert.deepEqual(calls.filter(([name]) => name === 'setTextures' || name === 'changeSpriteColor'), [
-    ['setTextures', constants.SHEET_TYPES.standing],
-    ['changeSpriteColor', 'blue'],
-  ])
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'setTextures' || name === 'changeSpriteColor'),
+    [
+      ['setTextures', constants.SHEET_TYPES.standing],
+      ['changeSpriteColor', 'blue'],
+    ]
+  )
 })
 
 test('converted buildings keep their source civilization and age assets', () => {
@@ -299,7 +302,10 @@ test('converted buildings keep their source civilization and age assets', () => 
   assert.equal(target.assetCiv, 'Egyptian')
   assert.equal(target.assetAge, 1)
   assert.equal(target.assetType, 'TownCenter')
-  assert.deepEqual(calls.filter(([name]) => name === 'finalTexture'), [['finalTexture', 'Egyptian', 1, 'TownCenter']])
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'finalTexture'),
+    [['finalTexture', 'Egyptian', 1, 'TownCenter']]
+  )
   assert.equal(oldOwner.buildings.includes(target), false)
   assert.equal(newOwner.buildings.includes(target), true)
 })

@@ -1,0 +1,48 @@
+import { sound } from '@pixi/sound'
+
+type SoundCue = string | number
+type MaybeSoundCue = SoundCue | SoundCue[] | null | undefined
+
+type AudibleInstance = {
+  context?: {
+    controls?: {
+      instanceIsAudible?: (instance: AudibleInstance) => boolean
+    }
+  }
+  sounds?: {
+    command?: MaybeSoundCue
+    hit?: MaybeSoundCue
+    select?: MaybeSoundCue
+  }
+}
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+export function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
+  if (cue == null) return null
+  if (Array.isArray(cue)) return cue.length ? pickRandom(cue) : null
+  return cue
+}
+
+export function playSoundCue(cue: MaybeSoundCue): SoundCue | null {
+  const soundId = resolveSoundCue(cue)
+  if (!soundId) return null
+  sound.play(soundId as string)
+  return soundId
+}
+
+export function playAudibleSoundCue(instance: AudibleInstance, cue: MaybeSoundCue): SoundCue | null {
+  if (!instance?.context?.controls?.instanceIsAudible?.(instance)) return null
+  return playSoundCue(cue)
+}
+
+export function getSelectionSoundCue(instance?: AudibleInstance | null): MaybeSoundCue | null {
+  if (!instance) return null
+  return instance.sounds?.command ?? instance.sounds?.select ?? instance.sounds?.hit ?? null
+}
+
+export function playSelectionSound(instance?: AudibleInstance | null): SoundCue | null {
+  return playSoundCue(getSelectionSoundCue(instance))
+}

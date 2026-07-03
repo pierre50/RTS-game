@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -44,7 +44,7 @@ const target = {
 }
 
 test('units with no attack stats cannot attack enemies', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.js', {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 
@@ -59,7 +59,7 @@ test('units with no attack stats cannot attack enemies', () => {
 })
 
 test('non-attacking boats flee when attacked', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.js', {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 
@@ -69,7 +69,7 @@ test('non-attacking boats flee when attacked', () => {
 })
 
 test('attacking boats do not use the unarmed flee behavior', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.js', {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 
@@ -77,7 +77,7 @@ test('attacking boats do not use the unarmed flee behavior', () => {
 })
 
 test('units with attack stats can attack enemies', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.js', {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 
@@ -93,7 +93,7 @@ test('units with attack stats can attack enemies', () => {
 })
 
 test('land ranged units can target enemy boats', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.js', {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 
@@ -116,7 +116,7 @@ test('land ranged units can target enemy boats', () => {
 })
 
 test('attacking boats can target enemy land units', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.js', {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
 

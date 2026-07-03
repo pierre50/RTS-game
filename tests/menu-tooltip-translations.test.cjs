@@ -1,25 +1,26 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const vm = require('node:vm')
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const babel = require('@babel/core')
+
+function loadModule(filename, mocks = {}) {
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  const localRequire = request => mocks[request] || require(request)
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports
+}
 
 function loadTranslations() {
-  const tooltipFilename = path.join(__dirname, '../app/lib/i18n/entityTooltips.js')
-  const tooltipSource = fs
-    .readFileSync(tooltipFilename, 'utf8')
-    .replace('export const ENTITY_TOOLTIP_TRANSLATIONS =', 'ENTITY_TOOLTIP_TRANSLATIONS =')
-  const context = {}
-  vm.createContext(context)
-  vm.runInContext(tooltipSource, context)
-
-  const translationsFilename = path.join(__dirname, '../app/lib/i18n/translations.js')
-  const translationsSource = fs
-    .readFileSync(translationsFilename, 'utf8')
-    .replace("import { ENTITY_TOOLTIP_TRANSLATIONS } from './entityTooltips'\n\n", '')
-    .replace('export const TRANSLATIONS =', 'TRANSLATIONS =')
-  vm.runInContext(translationsSource, context)
-  return context.TRANSLATIONS
+  const tooltipFilename = path.join(__dirname, '../app/lib/i18n/entityTooltips.ts')
+  const tooltipModule = loadModule(tooltipFilename)
+  const translationsFilename = path.join(__dirname, '../app/lib/i18n/translations.ts')
+  return loadModule(translationsFilename, { './entityTooltips': tooltipModule }).TRANSLATIONS
 }
 
 const translations = loadTranslations()
