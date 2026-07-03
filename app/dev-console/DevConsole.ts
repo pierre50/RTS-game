@@ -1,0 +1,187 @@
+import { createDevCommands } from './createDevCommands'
+import { DevCommandRegistry } from './DevCommandRegistry'
+
+type AnyRecord = Record<string, any>
+
+export class DevConsole {
+  context: AnyRecord
+  commands: DevCommandRegistry
+  history: string[]
+  historyIndex: number
+  lastMessage: string
+  isOpen: boolean
+  root: HTMLDivElement | null
+  input: HTMLInputElement | null
+  log!: HTMLDivElement | null
+  _onKeyDown: (evt: KeyboardEvent) => void
+  _onSubmit: (evt: Event) => void
+
+  constructor(context: AnyRecord) {
+    this.context = context
+    this.commands = createDevCommands()
+    this.history = []
+    this.historyIndex = 0
+    this.lastMessage = ''
+    this.isOpen = false
+    this.root = null
+    this.input = null
+
+    this._onKeyDown = evt => this.onKeyDown(evt)
+    this._onSubmit = evt => this.onSubmit(evt)
+    document.addEventListener('keydown', this._onKeyDown)
+  }
+
+  destroy(): void {
+    document.removeEventListener('keydown', this._onKeyDown)
+    this.close()
+  }
+
+  open(): void {
+    if (this.isOpen || this.context.victory) return
+    this.isOpen = true
+    this.context.devConsoleOpen = true
+    this.context.controls?.stopKeyboardMove?.()
+
+    this.root = document.createElement('div')
+    this.root.id = 'dev-console'
+
+    const panel = document.createElement('form')
+    panel.className = 'dev-console-panel ui-panel-enter'
+    panel.addEventListener('submit', this._onSubmit)
+
+    this.log = document.createElement('div')
+    this.log.className = 'dev-console-log'
+    this.log.textContent = 'Type help'
+    this.lastMessage = this.log.textContent
+
+    this.input = document.createElement('input')
+    this.input.className = 'ui-input dev-console-input'
+    this.input.type = 'text'
+    this.input.spellcheck = false
+    this.input.autocomplete = 'off'
+
+    panel.appendChild(this.log)
+    panel.appendChild(this.input)
+    this.root.appendChild(panel)
+    this.context.gamebox.appendChild(this.root)
+
+    requestAnimationFrame(() => this.input?.focus())
+  }
+
+  close(): void {
+    if (!this.isOpen) return
+    this.isOpen = false
+    this.context.devConsoleOpen = false
+    this.root?.remove()
+    this.root = null
+    this.input = null
+    this.log = null
+  }
+
+  onKeyDown(evt: KeyboardEvent): void {
+    if (!this.isOpen && evt.key === 'Enter') {
+      evt.preventDefault()
+      this.open()
+      return
+    }
+    if (!this.isOpen) return
+
+    if (evt.key === 'Escape') {
+      evt.preventDefault()
+      this.close()
+      return
+    }
+    if (evt.key === 'Enter') {
+      evt.preventDefault()
+      this.executeInput()
+      return
+    }
+    if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'c' && !this.input!.value) {
+      evt.preventDefault()
+      this.copyLastMessage()
+      return
+    }
+    if (evt.key === 'ArrowUp') {
+      evt.preventDefault()
+      this.navigateHistory(-1)
+      return
+    }
+    if (evt.key === 'ArrowDown') {
+      evt.preventDefault()
+      this.navigateHistory(1)
+      return
+    }
+    if (evt.key === 'Tab') {
+      evt.preventDefault()
+      this.autocomplete()
+    }
+  }
+
+  onSubmit(evt: Event): void {
+    evt.preventDefault()
+    this.executeInput()
+  }
+
+  executeInput(): void {
+    const input = this.input!.value.trim()
+    if (!input) return
+
+    this.history.push(input)
+    this.historyIndex = this.history.length
+    const result = this.commands.execute(input, {
+      ...this.context,
+      commands: this.commands,
+    })
+    this.setLogMessage(result.message, result.ok ? 'ok' : 'error')
+    this.input!.value = ''
+    this.input!.focus()
+  }
+
+  setLogMessage(message: string, status = 'ok'): void {
+    this.lastMessage = message
+    this.log!.textContent = message
+    this.log!.dataset.status = status
+  }
+
+  async copyLastMessage(): Promise<void> {
+    if (!this.lastMessage) return
+    try {
+      await navigator.clipboard?.writeText(this.lastMessage)
+      this.log!.dataset.copied = 'true'
+      window.setTimeout(() => {
+        if (this.log) delete this.log.dataset.copied
+      }, 900)
+    } catch {
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(this.log!)
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+    }
+  }
+
+  navigateHistory(direction: number): void {
+    if (!this.history.length) return
+    this.historyIndex = Math.max(0, Math.min(this.history.length, this.historyIndex + direction))
+    this.input!.value = this.history[this.historyIndex] || ''
+    this.input!.setSelectionRange(this.input!.value.length, this.input!.value.length)
+  }
+
+  autocomplete(): void {
+    const raw = this.input!.value
+    if (!raw.trim()) return
+
+    const context = { ...this.context, commands: this.commands }
+    const matches = this.commands.complete(raw, context)
+    if (!matches.length) return
+
+    if (matches.length === 1) {
+      const endsWithSpace = /\s$/.test(raw)
+      const tokens = raw.trim().split(/\s+/)
+      const base = endsWithSpace ? tokens : tokens.slice(0, -1)
+      this.input!.value = `${[...base, matches[0]].join(' ')} `
+    } else {
+      this.setLogMessage(matches.join('  '), 'ok')
+    }
+  }
+}

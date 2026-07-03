@@ -1,0 +1,94 @@
+import { Modal } from '../lib'
+import { t } from '../lib/lang'
+import { playClickSound } from '../lib/uiSound'
+import { buildSelectRow } from '../ui/formUtils'
+import { MAP_EDITOR_SIZES } from '../config/mapSizes'
+import { MAP_TYPES } from '../config/mapTypes'
+
+type AnyRecord = Record<string, any>
+
+const MAP_PATTERNS = [{ label: () => t('editorMapPatternBlank'), value: 'blank' }, ...MAP_TYPES]
+
+export default class MapEditorConfig {
+  onCreate: (config: AnyRecord) => void
+  _onKeyDown: (evt: KeyboardEvent) => void
+  config: AnyRecord
+  _modal: AnyRecord
+  _destroyed?: boolean
+
+  constructor({ onCreate }: { onCreate: (config: AnyRecord) => void }) {
+    this.onCreate = onCreate
+    this._onKeyDown = this._handleKeyDown.bind(this)
+    this.config = {
+      name: t('editorDefaultMapName'),
+      size: MAP_EDITOR_SIZES[0].value,
+      mapType: 'blank',
+      players: [
+        { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
+        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', team: null, isHuman: false, difficulty: 'medium' },
+      ],
+    }
+
+    this._modal = new Modal({
+      title: t('createMap'),
+      content: this._buildContent(),
+      onClose: () => this.destroy(),
+    })
+
+    document.addEventListener('keydown', this._onKeyDown)
+  }
+
+  _buildContent(): HTMLDivElement {
+    const content = document.createElement('div')
+    const form = document.createElement('div')
+    form.className = 'config-form'
+
+    form.appendChild(
+      buildSelectRow(t('mapSizeLabel'), MAP_EDITOR_SIZES, this.config.size, (value: any) => {
+        this.config.size = parseInt(value)
+      })
+    )
+
+    form.appendChild(
+      buildSelectRow(t('editorMapPatternLabel'), MAP_PATTERNS, this.config.mapType, (value: any) => {
+        this.config.mapType = value
+      })
+    )
+
+    const buttons = document.createElement('div')
+    buttons.className = 'button-group button-group--row'
+
+    const createButton = document.createElement('button')
+    createButton.className = 'ui-btn'
+    createButton.textContent = t('createMap')
+    createButton.addEventListener('pointerdown', playClickSound)
+    createButton.addEventListener('click', () => this._submit())
+    buttons.appendChild(createButton)
+
+    content.appendChild(form)
+    content.appendChild(buttons)
+
+    return content
+  }
+
+  _handleKeyDown(evt: KeyboardEvent): void {
+    if (evt.key !== 'Enter' || evt.repeat) return
+    if (!document.getElementById(this._modal?._id)) return
+
+    evt.preventDefault()
+    playClickSound()
+    this._submit()
+  }
+
+  _submit(): void {
+    this.destroy()
+    this.onCreate({ ...this.config })
+  }
+
+  destroy(): void {
+    if (this._destroyed) return
+    this._destroyed = true
+    document.removeEventListener('keydown', this._onKeyDown)
+    this._modal.close()
+  }
+}

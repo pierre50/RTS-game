@@ -11,7 +11,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -43,7 +43,7 @@ function visibleUnits(config, player) {
 }
 
 test('Dock only shows the current boat in each upgrade chain', () => {
-  const { createPlayerData } = loadModule('app/config/playerConfig.js', {
+  const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
     '../lib/extra': { EAST_FIRST_EIGHT_DIRECTION_ORDER: [] },
   })

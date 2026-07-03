@@ -1,0 +1,69 @@
+import type { ResourceAmount, UnknownRecord } from './common'
+import type { RuntimeCell } from './map'
+import type { RuntimeEntity, UnitEntity, BuildingEntity } from './entities'
+
+export interface VisionGridLike {
+  size: number
+  index(i: number, j: number): number
+  coordinates(index: number): [number, number]
+  addViewer(i: number, j: number, viewer: unknown): void
+  removeViewer(i: number, j: number, viewer: unknown): void
+  getViewers(i: number, j: number): ReadonlySet<unknown>
+  hasViewer(i: number, j: number, viewer: unknown): boolean
+  isViewed(i: number, j: number): boolean
+  isVisible(i: number, j: number): boolean
+  setViewed(i: number, j: number): boolean
+  getKnownOccupant(i: number, j: number): RuntimeEntity | null
+  setKnownOccupant(i: number, j: number, occupant: RuntimeEntity): void
+  toJSON(): unknown
+}
+
+export interface PlayerConfigLike {
+  units: Record<string, UnknownRecord>
+  buildings: Record<string, UnknownRecord & { cost?: ResourceAmount }>
+}
+
+export interface PlayerLike extends UnknownRecord {
+  label: string
+  i: number
+  j: number
+  type: string
+  civ?: string
+  color?: string
+  team?: number | null
+  age: number
+  cellViewed: number
+  wood: number
+  food: number
+  stone: number
+  gold: number
+  isPlayed?: boolean
+  views: VisionGridLike
+  config: PlayerConfigLike
+  technologies: string[]
+  selectedUnits: UnitEntity[]
+  selectedUnit?: UnitEntity | null
+  selectedBuilding?: BuildingEntity | null
+  units: UnitEntity[]
+  buildings: BuildingEntity[]
+  corpses: UnitEntity[]
+  visiblePlayers?: () => PlayerLike[]
+  isEnemy?: (other?: PlayerLike | null) => boolean
+  buyBuilding?: (i: number, j: number, type: string) => boolean
+  createBuilding: (options: { i: number; j: number; type: string; isBuilt?: boolean }) => BuildingEntity
+  unselectAll(): void
+  foundedTrees?: Set<RuntimeEntity>
+  foundedBerrybushs?: Set<RuntimeEntity>
+  foundedStones?: Set<RuntimeEntity>
+  foundedGolds?: Set<RuntimeEntity>
+  foundedFish?: Set<RuntimeEntity>
+  foundedAnimals?: Set<RuntimeEntity>
+  foundedDeadAnimals?: Set<RuntimeEntity>
+  foundedEnemyBuildings?: Set<RuntimeEntity>
+  foundedEnemyUnits?: Set<RuntimeEntity>
+  rememberEnemy?: (entity: RuntimeEntity) => void
+}
+
+export type PlacementOwner = PlayerLike
+
+export type CellExplorer = Pick<PlayerLike, 'views'>

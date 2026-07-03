@@ -1,0 +1,489 @@
+import { Container } from 'pixi.js'
+import { sound } from '@pixi/sound'
+import { t } from '../lib/lang'
+import Map from '../classes/map'
+import Menu from '../classes/menu'
+import Controls from '../classes/controls'
+import { canPlayerStillAct, debounce, isPlayerEliminated } from '../lib'
+import { ActionScheduler } from '../lib/ActionScheduler'
+import { stopAllUiSounds } from '../lib/uiSound'
+import { validateSaveData } from '../serialization/SaveValidator'
+import { save as saveToStorage } from '../serialization/SaveStorage'
+import { serializeGame } from '../serialization/SaveSerializer'
+import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
+import { DevConsole } from '../dev-console/DevConsole'
+import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
+import { PerformanceMonitor } from '../services/PerformanceMonitor'
+import { getCameraZoom, getGameSpeed } from '../lib/settings'
+import { GameLoadingScreen } from '../ui/GameLoadingScreen'
+import { AmbientBirds } from '../services/AmbientBirds'
+import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
+
+type AnyRecord = Record<string, any>
+
+/**
+ * Main Display Object
+ * @exports Game
+ * @extends Container
+ */
+
+export default class Game extends Container {
+  _pausedByVisibility: boolean
+  _pausedByOrientation: boolean
+  _restartSaveData: AnyRecord | null
+  _restartSeed?: number | null
+  config: any
+  onQuit: (() => void) | null
+  context: any
+  _loadingScreen?: AnyRecord | null
+  _wakeLock?: AnyRecord | null
+  _onVisibilityChange?: () => void
+  _onKeydown?: (evt: KeyboardEvent) => void
+  _onResize?: () => void
+  _onDocumentVisibilityChange?: () => void
+
+  constructor(app: any, gamebox: AnyRecord, config: any = null, onQuit: (() => void) | null = null) {
+    super()
+    this._pausedByVisibility = false
+    this._pausedByOrientation = false
+    this._restartSaveData = null
+    this.config = config
+    this.onQuit = onQuit
+    this.context = {
+      app,
+      gamebox,
+      menu: null,
+      player: null,
+      players: [],
+      map: null,
+      controls: null,
+      ambientBirds: null,
+      devConsole: null,
+      devConsoleOpen: false,
+      paused: false,
+      victory: false,
+      defeat: false,
+      scheduler: null,
+      performance: null,
+      save: () => this.save(),
+      load: (evt: AnyRecord) => this.load(evt),
+      pause: () => this.togglePause(true),
+      resume: () => {
+        if (!this.context.victory && !this.context.defeat) this.togglePause(false)
+      },
+      restart: () => this.restart(),
+      quit: () => this.quit(),
+      checkVictory: () => this.checkVictory(),
+      checkDefeat: () => this.checkDefeat(),
+      applyZoom: () => this.applyZoom(),
+    }
+    this.context.performance = new PerformanceMonitor(app)
+    this.context.scheduler = new ActionScheduler(
+      app,
+      () => this.context.paused,
+      () => this.context.performance
+    )
+    if (config !== null) {
+      this.start().catch(error => {
+        this._loadingScreen?.destroy()
+        console.error('Unable to start game', error)
+        this.quit()
+      })
+    }
+  }
+
+  async start(): Promise<void> {
+    this._acquireWakeLock()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
+    this._loadingScreen = new GameLoadingScreen()
+    this._loadingScreen.update('generatingWorld', 0.02)
+    await this._yieldToBrowser()
+    try {
+      await this._bootFromConfig(this.config)
+    } finally {
+      this._loadingScreen?.destroy()
+      this._loadingScreen = null
+    }
+  }
+
+  _yieldToBrowser(): Promise<void> {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  async _updateLoading(messageKey: string, progress: number): Promise<void> {
+    this._loadingScreen?.update(messageKey, progress)
+    await this._yieldToBrowser()
+  }
+
+  async _acquireWakeLock(): Promise<void> {
+    if (!navigator.wakeLock) return
+    try {
+      this._wakeLock = await navigator.wakeLock.request('screen')
+      document.addEventListener(
+        'visibilitychange',
+        (this._onVisibilityChange = async () => {
+          if (this._wakeLock && document.visibilityState === 'visible') {
+            this._wakeLock = await navigator.wakeLock.request('screen').catch(() => null)
+          }
+        })
+      )
+    } catch {
+      // silently ignored — wake lock is a hint, not a requirement
+    }
+  }
+
+  _attachWindowListeners(): void {
+    this._onKeydown = evt => {
+      if (this.context.devConsoleOpen) return
+      if (evt.key.toLowerCase() === 'p') {
+        if (this.context.victory || this.context.defeat) return
+        if (document.querySelector('.modal')) return
+        this.context.paused ? this.context.resume() : this.context.pause()
+      }
+    }
+    this._onResize = debounce(() => {
+      this.applyZoom()
+      if (this.context.controls) this.context.controls.updateVisibleCells()
+      if (this.context.menu) this.context.menu.updateCameraMiniMap()
+    }, 100)
+    this._onDocumentVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        this._handleDocumentHidden()
+        return
+      }
+      this._handleDocumentVisible()
+    }
+    window.addEventListener('keydown', this._onKeydown)
+    window.addEventListener('resize', this._onResize)
+    document.addEventListener('visibilitychange', this._onDocumentVisibilityChange)
+  }
+
+  _removeWindowListeners(): void {
+    window.removeEventListener('keydown', this._onKeydown as EventListener)
+    window.removeEventListener('resize', this._onResize as EventListener)
+    document.removeEventListener('visibilitychange', this._onDocumentVisibilityChange as EventListener)
+  }
+
+  _handleDocumentHidden(): void {
+    if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+      this._pausedByVisibility = true
+      this.togglePause(true, { silent: true })
+    }
+    sound.stopAll()
+    stopAllUiSounds()
+  }
+
+  _handleDocumentVisible(): void {
+    if (!this._pausedByVisibility) return
+    if (this._pausedByOrientation) return
+    this._pausedByVisibility = false
+    if (!this.context.victory && !this.context.defeat) {
+      this.togglePause(false, { silent: true })
+    }
+  }
+
+  setOrientationBlocked(blocked: boolean): void {
+    if (blocked) {
+      if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+        this._pausedByOrientation = true
+        this.togglePause(true, { silent: true })
+      }
+      return
+    }
+
+    if (!this._pausedByOrientation) return
+    this._pausedByOrientation = false
+    if (!this._pausedByVisibility && !this.context.victory && !this.context.defeat) {
+      this.togglePause(false, { silent: true })
+    }
+  }
+
+  _applyMapConfig(map: AnyRecord, config: AnyRecord = {}): void {
+    if (config.size) map.size = config.size
+    if (Number.isFinite(config.seed)) map.seed = config.seed
+    if (config.mapType) map.mapType = config.mapType
+    if (config.instantMode) map.instantMode = true
+    if (config.startingAge != null) map.startingAge = Number(config.startingAge)
+    if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
+    if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
+    if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
+    if (config.startingResources) map.startingResources = config.startingResources
+    if (config.resourceDensity) map.resourceDensity = config.resourceDensity
+    if (config.difficulty) map.difficulty = config.difficulty
+  }
+
+  _resetOverlayDom(): void {
+    document.getElementById('pause')?.remove()
+    document.getElementById('victory')?.remove()
+    document.getElementById('defeat')?.remove()
+  }
+
+  _resetRuntimeState(): void {
+    this._pausedByVisibility = false
+    this._pausedByOrientation = false
+    this.context = {
+      ...this.context,
+      player: null,
+      players: [],
+      map: null,
+      controls: null,
+      ambientBirds: null,
+      devConsole: null,
+      devConsoleOpen: false,
+      paused: false,
+      victory: false,
+      defeat: false,
+    }
+  }
+
+  _createRuntime(): void {
+    const { context } = this
+    context.map = new Map(context)
+  }
+
+  _createUiRuntime(): void {
+    const { context } = this
+    context.controls = new Controls(context)
+    context.menu = new Menu(context)
+    context.devConsole = new DevConsole(context)
+  }
+
+  _mountRuntime(): void {
+    this.addChild(this.context.map)
+    this.addChild(this.context.controls)
+    this.context.ambientBirds = new AmbientBirds(this.context, () => this._getMapWorldBounds())
+    this.context.ambientBirds.zIndex = AMBIENT_BIRD_WORLD_ZINDEX
+    this.context.map.addChild(this.context.ambientBirds)
+    this.applyZoom()
+    this._attachWindowListeners()
+  }
+
+  _getMapWorldBounds(): { x: number; y: number; width: number; height: number } {
+    const { size } = this.context.map
+    return {
+      x: -(size * CELL_WIDTH) / 2,
+      y: 0,
+      width: size * CELL_WIDTH,
+      height: size * CELL_HEIGHT,
+    }
+  }
+
+  _destroyRuntime(): void {
+    this._loadingScreen?.destroy()
+    this._loadingScreen = null
+    this._resetOverlayDom()
+    this._removeWindowListeners()
+    if (this.context.map) {
+      cleanupDebugArtifacts(this.context)
+    }
+    this.context.scheduler?.clear()
+    this.context.performance?.reset()
+    this.context.controls?.destroy({ children: true })
+    this.context.devConsole?.destroy()
+    this.context.menu?.destroy()
+    this.context.map?.destroy({ children: true })
+    this.removeChildren()
+    this._resetRuntimeState()
+  }
+
+  async _bootFromConfig(config: AnyRecord): Promise<void> {
+    this.context.performance?.setPhase('load')
+    this._createRuntime()
+    this._applyMapConfig(this.context.map, config)
+    const hasExplicitSeed = Number.isFinite(config.seed) || this._restartSeed != null
+    if (this._restartSeed != null) {
+      this.context.map.seed = this._restartSeed
+      this._restartSeed = null
+    }
+    this._createUiRuntime()
+
+    const posCount = config.players ? config.players.length : config.bots != null ? config.bots + 1 : null
+    const mapGenerationStartedAt = performance.now()
+    const blueprint = hasExplicitSeed
+      ? null
+      : await loadPregeneratedMapBlueprint({
+          size: this.context.map.size,
+          mapType: this.context.map.mapType || 'plain',
+          positionsCount: posCount,
+        })
+    if (blueprint) {
+      await this.context.map.generateFromBlueprint(blueprint, {
+        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+      })
+      this.context.map.pregeneratedBlueprintId = blueprint.id
+      console.info(`[maps] Loaded pregenerated blueprint: ${blueprint.id}`)
+    } else {
+      await this.context.map.generateMapAsync(posCount, 0, {
+        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+      })
+      this.context.map.pregeneratedBlueprintId = null
+    }
+    this.context.map.generationTimings = {
+      terrainAndSpawns: performance.now() - mapGenerationStartedAt,
+      ...(blueprint?.timings || {}),
+      blueprintDestroy: this.context.map.blueprintDestroyMs || 0,
+      blueprintCellCreation: this.context.map.blueprintCellCreationMs || 0,
+      blueprintFillWaterGaps: this.context.map.blueprintFillWaterGapsMs || 0,
+      blueprintNormalizeWater: this.context.map.blueprintNormalizeWaterMs || 0,
+      blueprintInitialWaterBorder: this.context.map.blueprintInitialWaterBorderMs || 0,
+      blueprintResources: this.context.map.blueprintResourceLoadMs || 0,
+    }
+    await this._updateLoading('generatingPlayers', 0.2)
+    this.context.players = this.context.map.generatePlayers(config.players || null)
+    this.context.player = this.context.players[0]
+    this.context.menu.init()
+    await this.context.map.stylishMap({
+      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+    })
+    await this._updateLoading('finalizingWorld', 0.96)
+    this.context.controls.init()
+
+    this._mountRuntime()
+    this.context.performance?.setPhase('runtime')
+    this.checkVictory()
+    this._restartSaveData = structuredClone(serializeGame(this.context))
+  }
+
+  _bootFromSave(json: AnyRecord): void {
+    this.context.performance?.setPhase('load')
+    this._createRuntime()
+    this.context.map.size = Math.max(0, (json.map?.length || 1) - 1)
+    this._applyMapConfig(this.context.map, json.config)
+    this._createUiRuntime()
+    this.context.map.generateFromJSON(json)
+    this._mountRuntime()
+    this.context.performance?.setPhase('runtime')
+    this.checkVictory()
+  }
+
+  save(): AnyRecord {
+    return saveToStorage(this.context)
+  }
+
+  load(json: AnyRecord): void {
+    validateSaveData(json)
+    this._restartSaveData = structuredClone(json)
+    this._destroyRuntime()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
+    this._bootFromSave(structuredClone(this._restartSaveData))
+  }
+
+  applyZoom(): void {
+    const zoom = getCameraZoom()
+    this.scale.set(zoom)
+    this.position.set(
+      (this.context.app.screen.width * (1 - zoom)) / 2,
+      (this.context.app.screen.height * (1 - zoom)) / 2
+    )
+  }
+
+  async restart(): Promise<void> {
+    if (this._restartSaveData) {
+      this._destroyRuntime()
+      const speed = getGameSpeed()
+      this.context.app.ticker.speed = speed
+      this.context.scheduler.timeScale = speed
+      this._bootFromSave(structuredClone(this._restartSaveData))
+      return
+    }
+
+    this._restartSeed = this.context.map?.seed
+    this._destroyRuntime()
+    const speed = getGameSpeed()
+    this.context.app.ticker.speed = speed
+    this.context.scheduler.timeScale = speed
+    this._loadingScreen = new GameLoadingScreen()
+    this._loadingScreen.update('generatingTerrain', 0.02)
+    await this._yieldToBrowser()
+    try {
+      await this._bootFromConfig(this.config)
+    } finally {
+      this._loadingScreen?.destroy()
+      this._loadingScreen = null
+    }
+  }
+
+  quit(): void {
+    this._destroyRuntime()
+    if (this.onQuit) this.onQuit()
+  }
+
+  destroy(options?: AnyRecord): void {
+    this._wakeLock?.release()
+    document.removeEventListener('visibilitychange', this._onVisibilityChange as EventListener)
+    this._destroyRuntime()
+    this.context.scheduler?.destroy()
+    this.context.scheduler = null
+    this.context.performance?.destroy()
+    this.context.performance = null
+    super.destroy(options)
+  }
+
+  checkVictory(): void {
+    const { player } = this.context
+    if (this.context.victory || !player) return
+
+    const enemies = player.enemyPlayers()
+    if (!enemies.length) return
+
+    const hasLivingEnemies = enemies.some((enemy: AnyRecord) => canPlayerStillAct(enemy))
+    if (hasLivingEnemies) return
+
+    this.context.victory = true
+    this.togglePause(true, { silent: true })
+    const div = document.createElement('div')
+    div.id = 'victory'
+    div.className = 'game-overlay'
+    div.innerText = t('victory')
+    document.body.appendChild(div)
+  }
+
+  checkDefeat(): void {
+    const { player } = this.context
+    if (this.context.defeat || this.context.victory || !player) return
+
+    if (!isPlayerEliminated(player)) return
+
+    this.context.defeat = true
+    this.togglePause(true, { silent: true })
+    const div = document.createElement('div')
+    div.id = 'defeat'
+    div.className = 'game-overlay'
+    div.innerText = t('defeat')
+    document.body.appendChild(div)
+  }
+
+  togglePause(pause: boolean, options: AnyRecord = {}): void {
+    if ((this.context.victory || this.context.defeat) && !pause) return
+    const { map, players } = this.context
+    if (pause) {
+      document.getElementById('pause')?.remove()
+      if (!options.silent && !this.context.victory && !this.context.defeat) {
+        const div = document.createElement('div')
+        div.id = 'pause'
+        div.className = 'game-overlay'
+        div.innerText = t('pause')
+        document.body.appendChild(div)
+      }
+    } else {
+      document.getElementById('pause')?.remove()
+    }
+    for (let i = 0; i < map.gaia.units.length; i++) {
+      pause ? map.gaia.units[i].pause() : map.gaia.units[i].resume()
+    }
+    for (let i = 0; i < players.length; i++) {
+      const player = players[i]
+      for (let j = 0; j < player.units.length; j++) {
+        pause ? player.units[j].pause() : player.units[j].resume()
+      }
+      for (let j = 0; j < player.buildings.length; j++) {
+        pause ? player.buildings[j].pause() : player.buildings[j].resume()
+      }
+    }
+    this.context.paused = pause
+  }
+}

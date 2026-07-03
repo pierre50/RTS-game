@@ -1,0 +1,442 @@
+import { AnimatedSprite, Assets, Sprite } from 'pixi.js'
+import { Polygon } from 'pixi.js'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import {
+  getTexture,
+  getInstanceZIndex,
+  getPlainCellsAroundPoint,
+  clearCellTerrainSet,
+  drawInstanceBlinkingSelection,
+  playerCanSeeInstance,
+  getActionCondition,
+  getBuildingAsset,
+  getBuildingAssetOwner,
+  getBuildingTextureNameWithSize,
+  canUpdateMinimap,
+  updateInstanceVisibility,
+  playSoundCue,
+  playSelectionSound,
+  bindAnimatedSpriteToTicker,
+  getRallyPointFrames,
+} from '../../lib'
+import { BuildingInterface } from '../../ui/BuildingInterface'
+import { BuildingLifecycle } from './BuildingLifecycle'
+import { BuildingProduction } from './BuildingProduction'
+import { Instance } from '../Instance'
+import { BuildingCombat } from './BuildingCombat'
+import { getTowerType, isTower } from '../../lib/buildings/towers'
+
+type AnyRecord = Record<string, any>
+
+export class Building extends Instance {
+  buildingInterface: AnyRecord
+  buildingLifecycle: BuildingLifecycle
+  buildingProduction: BuildingProduction
+  buildingCombat: BuildingCombat
+  queue: any[]
+  technology: AnyRecord | null
+  loading: number | null
+  isUsedBy: AnyRecord | null
+  rallyPoint: AnyRecord | null
+  rallyPointFlag: AnyRecord | null
+  intervalId: any
+  attackIntervalId: any
+
+  constructor(options: AnyRecord, context: AnyRecord) {
+    super(context)
+
+    const { map, controls } = context
+
+    this.family = FAMILY_TYPES.building
+    this.buildingInterface = new BuildingInterface(this)
+    this.buildingLifecycle = new BuildingLifecycle(this)
+    this.buildingProduction = new BuildingProduction(this)
+    this.buildingCombat = new BuildingCombat(this)
+    this.queue = []
+    this.technology = null
+    this.loading = null
+    this.isUsedBy = null
+    this.rallyPoint = null
+    this.rallyPointFlag = null
+
+    Object.assign(this, options)
+    Object.assign(this, this.owner.config.buildings[this.type])
+    if (isTower(this as any)) {
+      const effectiveType = getTowerType(this.owner)
+      if (effectiveType !== this.type) Object.assign(this, this.owner.config.buildings[effectiveType])
+    }
+    this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
+
+    this.intervalId = null
+    this.attackIntervalId = null
+
+    if (this.queue.length) {
+      this.buyUnit(this.queue[0], true, true)
+    } else if (this.technology) {
+      this.buyTechnology((this.technology as AnyRecord).type, true, true)
+    }
+
+    this.quantity = this.quantity ?? this.totalQuantity
+    this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
+
+    this.x = map.grid[this.i][this.j].x
+    this.y = map.grid[this.i][this.j].y
+    this.z = map.grid[this.i][this.j].z
+    this.zIndex = getInstanceZIndex(this as any)
+    this.visible = map.revealEverything && controls.instanceInCamera(this)
+    let spriteSheet = getBuildingTextureNameWithSize(this.size)
+    if (this.type === BUILDING_TYPES.dock) {
+      spriteSheet = '000_356'
+    }
+    const texture = getTexture(spriteSheet as string, Assets)
+    this.sprite = Sprite.from(texture)
+    this.sprite.updateAnchor = true
+    this.sprite.label = LABEL_TYPES.sprite
+    this.sprite.hitArea = (texture as any).hitArea
+      ? new Polygon((texture as any).hitArea)
+      : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getUnitButton(key))
+    const technologies = context.editor
+      ? []
+      : (this.technologies || []).map((key: string) => context.menu.getTechnologyButton(key))
+    this.interface = {
+      info: (element: AnyRecord) => {
+        const displayType = this.assetType || (isTower(this as any) ? getTowerType(this.owner) : this.type)
+        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this as any), Assets)
+        this.buildingInterface.renderInfo(element, assets)
+      },
+      menu:
+        this.owner.isPlayed || map.instantMode
+          ? [...units, ...technologies, ...(units.length ? [context.menu.getRallyPointButton()] : [])]
+          : [],
+    }
+
+    // Set solid zone
+    const dist = this.size === 3 ? 1 : 0
+    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, ((cell: AnyRecord) => {
+      clearCellTerrainSet(cell as any)
+      for (const corpse of cell.corpses) {
+        typeof corpse.clear === 'function' && corpse.clear()
+      }
+      cell.has = this
+      cell.solid = true
+      const visiblePlayers = this.owner.visiblePlayers ? this.owner.visiblePlayers() : [this.owner]
+      for (const viewer of visiblePlayers) {
+        viewer.views.addViewer(cell.i, cell.j, this)
+        if (viewer.views.setViewed(cell.i, cell.j)) {
+          viewer.cellViewed++
+        }
+      }
+      cell.viewBy = new Set(this.context.player.views.getViewers(cell.i, cell.j))
+      if (this.context.player.views.hasViewer(cell.i, cell.j, this) && !map.revealEverything) {
+        cell.removeFog()
+      }
+    }) as any)
+
+    this.allowMove = false
+    if (this.sprite) {
+      this.sprite.allowMove = false
+      this.sprite.eventMode = 'static'
+      this.sprite.roundPixels = true
+
+      this.sprite.on('pointertap', (evt: AnyRecord) => {
+        const {
+          context: { controls, player, menu, editor },
+        } = this
+        if (editor?.handleEntityInteraction(this)) return
+        if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
+          controls.mouse.prevent = true
+          drawInstanceBlinkingSelection(this as any)
+          controls.rallyPointController.cancel({ clear: true })
+          return
+        }
+        if (controls.rallyPointController?.active) {
+          controls.mouse.prevent = true
+          controls.rallyPointController.handleMouseUpOnEntity(this)
+          return
+        }
+        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+          return
+        }
+        let hasSentVillager = false
+        let hasSentOther = false
+        controls.mouse.prevent = true
+        if (this.owner.isPlayed) {
+          if (!this.isBuilt) {
+            for (let i = 0; i < player.selectedUnits.length; i++) {
+              const unit = player.selectedUnits[i]
+              if (unit.type === UNIT_TYPES.villager) {
+                if (getActionCondition(unit, this as any, ACTION_TYPES.build)) {
+                  hasSentVillager = true
+                  unit.sendToBuilding(this)
+                }
+              } else {
+                unit.sendTo(this)
+                hasSentOther = true
+              }
+            }
+            if (hasSentVillager) {
+              drawInstanceBlinkingSelection(this as any)
+            }
+            if (hasSentOther) {
+              playSoundCue(SOUND_CUES.unit.militaryCommand)
+              return
+            } else if (hasSentVillager) {
+              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
+              playSoundCue(voice)
+              return
+            }
+          } else if (player.selectedUnits) {
+            for (let i = 0; i < player.selectedUnits.length; i++) {
+              const unit = player.selectedUnits[i]
+              const accept =
+                unit.category === 'Boat'
+                  ? this.type === BUILDING_TYPES.dock
+                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType))
+              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as any, ACTION_TYPES.build)) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendToBuilding(this)
+              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as any, ACTION_TYPES.farm)) {
+                hasSentVillager = true
+                unit.sendToFarm(this)
+              } else if (
+                accept &&
+                getActionCondition(unit, this as any, ACTION_TYPES.delivery, { buildingTypes: [this.type] })
+              ) {
+                hasSentVillager = true
+                unit.previousDest = null
+                unit.sendTo(this, ACTION_TYPES.delivery)
+              }
+            }
+            if (hasSentVillager) {
+              drawInstanceBlinkingSelection(this as any)
+              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
+              playSoundCue(voice)
+              return
+            }
+          }
+          if (this.owner.selectedBuilding !== this) {
+            this.owner.unselectAll()
+            this.select()
+            menu.setBottombar(this)
+            this.owner.selectedBuilding = this
+          }
+        } else if (player.selectedUnits.length) {
+          let hasSentConverter = false
+          let hasSentAttacker = false
+          for (let i = 0; i < player.selectedUnits.length; i++) {
+            const playerUnit = player.selectedUnits[i]
+            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this as any, ACTION_TYPES.convert)) {
+              hasSentConverter = true
+              playerUnit.sendToConvert(this)
+              continue
+            }
+            if (!getActionCondition(playerUnit, this as any, ACTION_TYPES.attack)) continue
+            hasSentAttacker = true
+            if (playerUnit.type === UNIT_TYPES.villager) {
+              playerUnit.sendToAttack(this)
+            } else {
+              playerUnit.sendTo(this, ACTION_TYPES.attack)
+            }
+          }
+          if (hasSentConverter || hasSentAttacker) {
+            drawInstanceBlinkingSelection(this as any)
+          } else if (playerCanSeeInstance(this as any, player) || map.revealEverything) {
+            player.unselectAll()
+            this.select()
+            menu.setBottombar(this)
+            player.selectedOther = this
+            playSelectionSound(this)
+          }
+        } else if (playerCanSeeInstance(this as any, player) || map.revealEverything) {
+          player.unselectAll()
+          this.select()
+          menu.setBottombar(this)
+          player.selectedOther = this
+          playSelectionSound(this)
+        }
+      })
+
+      this.addChild(this.sprite)
+    }
+
+    if (this.isBuilt) {
+      this.visibilityTimeout = setTimeout(() => {
+        updateInstanceVisibility(this as any)
+      })
+      this.finalTexture()
+      this.onBuilt()
+    }
+    if (options.rallyPoint) {
+      this.setRallyPoint(map.grid[options.rallyPoint.i]?.[options.rallyPoint.j], options.rallyPoint.direction)
+    }
+    map.addToInstanceBucket(this)
+  }
+
+  attackAction(target: AnyRecord): void {
+    return this.buildingCombat.attackAction(target)
+  }
+
+  startInterval(callback: (...args: any[]) => void, time: number, name: any = 'building.interval'): void {
+    this.stopInterval()
+    this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100, name)
+  }
+
+  stopInterval(): void {
+    if (this.intervalId != null) {
+      this.context.scheduler.remove(this.intervalId)
+      this.intervalId = null
+    }
+  }
+
+  startAttackInterval(callback: (...args: any[]) => void, time: number): void {
+    this.stopAttackInterval()
+    callback()
+    this.attackIntervalId = this.context.scheduler.add(callback, time * 1000, 'building.attack')
+  }
+
+  stopAttackInterval(): void {
+    if (this.attackIntervalId != null) {
+      this.context.scheduler.remove(this.attackIntervalId)
+      this.attackIntervalId = null
+    }
+  }
+
+  startTimeout(cb: (...args: any[]) => void, time: number): void {
+    this.stopTimeout()
+    this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000, 'building.timeout')
+  }
+
+  isAttacked(instance: AnyRecord): void {
+    return this.buildingCombat.isAttacked(instance)
+  }
+
+  detect(instance: AnyRecord): void {
+    return this.buildingCombat.detect(instance)
+  }
+
+  select(): void {
+    if (this.selected) return
+    const {
+      context: { menu, player },
+    } = this
+    if (this.owner.isPlayed && this.sounds?.create) playSoundCue(this.sounds.create)
+    super.select()
+    if (this.rallyPointFlag) this.rallyPointFlag.visible = true
+    if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
+    canUpdateMinimap(this as any, player) && menu.updatePlayerMiniMapEvt(this.owner)
+  }
+
+  unselect(): void {
+    if (!this.selected) return
+    super.unselect()
+    if (this.rallyPointFlag) this.rallyPointFlag.visible = false
+    const {
+      context: { menu, player },
+    } = this
+    canUpdateMinimap(this as any, player) && menu.updatePlayerMiniMapEvt(this.owner)
+  }
+
+  setRallyPoint(cell: AnyRecord, direction: number = this.context.map.randomRange(0, 1)): boolean {
+    if (!cell) return false
+    this.clearRallyPoint()
+    this.rallyPoint = { i: cell.i, j: cell.j, direction }
+    const sheet = Assets.cache.get('459')
+    const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction) as any)
+    bindAnimatedSpriteToTicker(flag, this.context.app)
+    flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
+    flag.anchor.set(flag.texture.defaultAnchor!.x, flag.texture.defaultAnchor!.y)
+    flag.x = cell.x
+    flag.y = cell.y
+    flag.zIndex = getInstanceZIndex({ x: cell.x, y: cell.y, z: cell.z })
+    flag.visible = this.selected
+    flag.eventMode = 'none'
+    flag.roundPixels = true
+    flag.play()
+    this.context.map.addChild(flag)
+    this.rallyPointFlag = flag
+    return true
+  }
+
+  clearRallyPoint(): void {
+    this.rallyPointFlag?.destroy()
+    this.rallyPointFlag = null
+    this.rallyPoint = null
+  }
+
+  // BuildingLifecycle
+  updateTexture(): void {
+    return this.buildingLifecycle.updateTexture()
+  }
+
+  finalTexture(): void {
+    return this.buildingLifecycle.finalTexture()
+  }
+
+  generateFire(spriteId: string): void {
+    return this.buildingLifecycle.generateFire(spriteId)
+  }
+
+  onBuilt(): void {
+    return this.buildingLifecycle.onBuilt()
+  }
+
+  updateHitPoints(action: string): void {
+    return this.buildingLifecycle.updateHitPoints(action)
+  }
+
+  pause(): void {
+    return this.buildingLifecycle.pause()
+  }
+
+  resume(): void {
+    return this.buildingLifecycle.resume()
+  }
+
+  die(): void {
+    return this.buildingLifecycle.die()
+  }
+
+  clear(): void {
+    return this.buildingLifecycle.clear()
+  }
+
+  // BuildingProduction
+  placeUnit(type: string, extra?: AnyRecord): boolean {
+    return this.buildingProduction.placeUnit(type, extra)
+  }
+
+  buyUnit(type: string, alreadyPaid = false, force = false, extra?: AnyRecord): boolean | undefined {
+    return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
+  }
+
+  cancelUnits(type: string): boolean {
+    return this.buildingProduction.cancelUnits(type)
+  }
+
+  cancelTechnology(): boolean {
+    return this.buildingProduction.cancelTechnology()
+  }
+
+  upgrade(type: string): void {
+    return this.buildingProduction.upgrade(type)
+  }
+
+  buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
+    return this.buildingProduction.buyTechnology(type, alreadyPaid, force)
+  }
+
+  // BuildingInterface
+  updateInterfaceLoading(): void {
+    this.buildingInterface.updateLoading()
+  }
+
+  getLoadingElement(): any {
+    return this.buildingInterface.getLoadingElement()
+  }
+
+  setDefaultInterface(element: AnyRecord, data: AnyRecord): void {
+    this.buildingInterface.setDefaultInterface(element, data)
+  }
+}

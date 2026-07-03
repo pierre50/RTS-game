@@ -103,7 +103,7 @@ test('sets an automatically selected destination before starting its action', ()
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -134,7 +134,7 @@ test('sets an automatically selected destination before starting its action', ()
 
 test('converted units stop old orders, switch owner, and refresh idle color', () => {
   const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': {
       ...constants,
@@ -222,7 +222,7 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
 
 test('converted buildings keep their source civilization and age assets', () => {
   const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': {
       ...constants,
@@ -327,7 +327,7 @@ test('destination checks stay pure when no destination exists', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -373,7 +373,7 @@ test('a blocked gather target sends the villager near it before retrying', () =>
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -445,7 +445,7 @@ test('a villager fishing a water resource keeps the fish target and paths to rea
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -489,7 +489,7 @@ test('a villager fishing a water resource keeps the fish target and paths to rea
 test('a villager retries the original gather order after approaching a blocked target', () => {
   const target = { label: 'berries-1', isDestroyed: false }
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -540,7 +540,7 @@ test('manual move orders cancel previous villager work when the unit arrives', (
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -590,7 +590,7 @@ test('boats flee to water cells when attacked', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -629,7 +629,7 @@ test('land attackers keep the attack order when targeting an enemy boat', () => 
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -689,7 +689,7 @@ test('boats keep the attack order when targeting an enemy land unit', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -750,7 +750,7 @@ test('an idle builder picks a nearby unfinished building after completing its cu
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -806,7 +806,7 @@ test('a villager builds a granary then starts gathering nearby berries', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -853,7 +853,7 @@ test('a villager builds a town center then starts gathering any nearby compatibl
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.js', {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -883,7 +883,7 @@ test('a farmer returns to the same farm after delivering food', () => {
     type: constants.BUILDING_TYPES.farm,
   }
   const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': {
       ...constants,
@@ -932,7 +932,7 @@ test('delivery orders bypass the human command throttle', () => {
     type: constants.BUILDING_TYPES.granary,
   }
   const calls = []
-  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.js', {
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': constants,
     '../../lib': {
@@ -973,7 +973,7 @@ test('delivery orders bypass the human command throttle', () => {
 test('immediate farm orders bypass the human command throttle', () => {
   const farm = { label: 'farm-1', type: constants.BUILDING_TYPES.farm }
   const calls = []
-  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.js', {
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': constants,
     '../../lib': {

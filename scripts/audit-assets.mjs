@@ -2,7 +2,7 @@
 /**
  * Audit unused/missing assets by comparing:
  *  - public/assets/ (files on disk)
- *  - app/config/assetManifest.js (declared assets)
+ *  - app/config/assetManifest.ts (declared assets)
  */
 
 import fs from 'fs'
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
 const PUBLIC_ASSETS = path.join(ROOT, 'public', 'assets')
-const MANIFEST_PATH = path.join(ROOT, 'app', 'config', 'assetManifest.js')
+const MANIFEST_PATH = path.join(ROOT, 'app', 'config', 'assetManifest.ts')
 
 // ── Parse manifest ────────────────────────────────────────────────────────────
 

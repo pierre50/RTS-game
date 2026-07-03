@@ -17,7 +17,7 @@ module.exports = (_env, argv = {}) => {
     module: {
       rules: [
         {
-          test: /\.[jt]s$/,
+          test: /\.ts$/,
           exclude: /node_modules/,
           use: 'babel-loader',
         },

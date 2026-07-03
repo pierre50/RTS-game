@@ -46,7 +46,7 @@ test('direction count 1 keeps every wreck frame instead of slicing it as a 5-dir
 })
 
 test('Trireme declares its 9-direction sheets so it does not animate through headings while idle', () => {
-  const { createPlayerData } = loadModule('app/config/playerConfig.js', {
+  const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
     '../lib/extra': { EAST_FIRST_EIGHT_DIRECTION_ORDER: [] },
   })
@@ -74,7 +74,7 @@ test('Trireme declares its 9-direction sheets so it does not animate through hea
 })
 
 test('Boat wreck sheets stay non-directional and use sinking animations', () => {
-  const { createPlayerData } = loadModule('app/config/playerConfig.js', {
+  const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
     '../lib/extra': { EAST_FIRST_EIGHT_DIRECTION_ORDER: [] },
   })
@@ -108,7 +108,7 @@ test('Boat wreck sheets stay non-directional and use sinking animations', () => 
 })
 
 test('Asset manifest preloads the sinking sheets used by boats', () => {
-  const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.js', {})
+  const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.ts', {})
   assert.equal(ASSET_BUNDLES.graphics[262], 'assets/graphics/262/texture.json')
   assert.equal(ASSET_BUNDLES.graphics[263], 'assets/graphics/263/texture.json')
   assert.equal(ASSET_BUNDLES.graphics[264], 'assets/graphics/264/texture.json')

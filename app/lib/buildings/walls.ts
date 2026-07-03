@@ -29,7 +29,7 @@ type WallOwner = {
   civ?: keyof (typeof WALL_SHEETS)[2] | keyof (typeof WALL_SHEETS)[3] | string
   color?: string
   technologies?: string[]
-  buildings?: WallBuilding[]
+  buildings?: unknown[]
 }
 
 type WallCell = GridCell & {
@@ -141,5 +141,7 @@ export function updateWallAndNeighbours(wall?: WallBuilding | null): void {
 }
 
 export function refreshOwnerWalls(owner?: WallOwner | null): void {
-  owner?.buildings?.filter(building => isWall(building, owner)).forEach(updateWallTexture)
+  owner?.buildings
+    ?.filter((building): building is WallBuilding => isWall(building as WallBuilding, owner))
+    .forEach(updateWallTexture)
 }

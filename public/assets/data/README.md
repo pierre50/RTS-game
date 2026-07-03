@@ -1,4 +1,4 @@
-Gameplay data is split by domain and merged at runtime by `app/screens/Loader.js`.
+Gameplay data is split by domain and merged at runtime by `app/screens/Loader.ts`.
 
 Directories:
 - `gameplay/`: core gameplay definitions loaded into the shared config bundle

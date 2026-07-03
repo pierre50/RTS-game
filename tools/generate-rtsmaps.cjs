@@ -12,8 +12,8 @@ const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater'
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 function mapSettingsFromRuntimeConfig() {
-  const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.js'), 'utf8')
-  const typesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapTypes.js'), 'utf8')
+  const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
+  const typesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapTypes.ts'), 'utf8')
   const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*maxPlayers:\s*(\d+)(?:,\s*editorOnly:\s*true)?/g)]
     .map(([, size, maxPlayers]) => ({ size: Number(size), maxPlayers: Number(maxPlayers) }))
     .filter(({ size }) => size !== 16)
@@ -182,9 +182,9 @@ function loadRuntimeGenerators() {
   const Module = require('node:module')
   const babel = require('@babel/core')
   const originalLoad = Module._load
-  const originalExtension = require.extensions['.js']
+  const originalExtension = require.extensions['.ts']
   const isMapRuntime = filename =>
-    filename.endsWith('/MapGeneration.js') || filename.endsWith('/MapTerrain.js') || filename.endsWith('/MapResources.js')
+    filename.endsWith('/MapGeneration.ts') || filename.endsWith('/MapTerrain.ts') || filename.endsWith('/MapResources.ts')
   const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: class {}, Container: class {} }
   class HeadlessResource {
     constructor(options, context) {
@@ -242,22 +242,24 @@ function loadRuntimeGenerators() {
     }
     return originalLoad(request, parent, isMain)
   }
-  require.extensions['.js'] = (module, filename) => {
+  require.extensions['.ts'] = (module, filename) => {
     if (isMapRuntime(filename)) {
-      const code = babel.transformFileSync(filename, { presets: [['@babel/preset-env', { targets: { node: 'current' } }]] }).code
+      const code = babel.transformFileSync(filename, {
+        presets: [['@babel/preset-env', { targets: { node: 'current' } }], '@babel/preset-typescript'],
+      }).code
       module._compile(code, filename)
       return
     }
     originalExtension(module, filename)
   }
   try {
-    const { MapGeneration } = require(path.join(ROOT, 'app/classes/map/MapGeneration.js'))
-    const { MapTerrain } = require(path.join(ROOT, 'app/classes/map/MapTerrain.js'))
-    const { MapResources } = require(path.join(ROOT, 'app/classes/map/MapResources.js'))
+    const { MapGeneration } = require(path.join(ROOT, 'app/classes/map/MapGeneration.ts'))
+    const { MapTerrain } = require(path.join(ROOT, 'app/classes/map/MapTerrain.ts'))
+    const { MapResources } = require(path.join(ROOT, 'app/classes/map/MapResources.ts'))
     return { MapGeneration, MapTerrain, MapResources }
   } finally {
     Module._load = originalLoad
-    require.extensions['.js'] = originalExtension
+    require.extensions['.ts'] = originalExtension
   }
 }
 

@@ -5,11 +5,11 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadCameraController() {
-  const filename = path.join(__dirname, '../app/controllers/CameraController.js')
+  const filename = path.join(__dirname, '../app/controllers/CameraController.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const mocks = {

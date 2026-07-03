@@ -61,7 +61,7 @@ export function findInstancesInSight<TInstance extends RenderableInstance>(
 }
 
 export function updateInstanceVisibility(instance: RenderableInstance): unknown {
-  return updateVisibility(instance)
+  return updateVisibility(instance as Parameters<typeof updateVisibility>[0])
 }
 
 export function instanceShouldRender(instance?: RenderableInstance | null): boolean {

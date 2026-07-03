@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
@@ -56,7 +56,7 @@ function createBehavior({ nearby = [], elapsedMs = 0 } = {}) {
     getCellsAroundPoint: (_i, _j, _grid, _range, condition) => cells.filter(condition),
     instancesDistance: (_animal, instance) => instance.distance,
   }
-  const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.js', {
+  const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })

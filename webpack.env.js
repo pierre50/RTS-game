@@ -8,7 +8,7 @@ function buildWebpackEnv(mode = 'development') {
     isProduction,
     isDevelopment: !isProduction,
     buildDir: path.resolve(__dirname, 'build'),
-    entryFile: path.resolve(__dirname, 'app/entry.js'),
+    entryFile: path.resolve(__dirname, 'app/entry.ts'),
     htmlTemplate: path.resolve(__dirname, 'public/index.html'),
     staticAssetsDir: path.resolve(__dirname, 'public/assets'),
     staticMapsDir: path.resolve(__dirname, 'public/maps'),

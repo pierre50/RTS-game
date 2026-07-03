@@ -1,0 +1,90 @@
+import { MENU_INFO_IDS, POPULATION_MAX, BUILDING_TYPES } from '../constants'
+import { getIconPath } from '../lib'
+import { t } from '../lib/lang'
+import { getWallIcon } from '../lib/buildings/walls'
+import { getTowerType, isTower } from '../lib/buildings/towers'
+import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+
+type AnyRecord = Record<string, any>
+
+export class BuildingInterface {
+  building: AnyRecord
+
+  constructor(building: AnyRecord) {
+    this.building = building
+  }
+
+  renderInfo(element: HTMLElement, data: AnyRecord): void {
+    const building = this.building
+    this.setDefaultInterface(element, data)
+    if (building.displayPopulation && building.owner.isPlayed && building.isBuilt) {
+      element.appendChild(this.getPopulationElement())
+    }
+    element.appendChild(this.getLoadingElement())
+  }
+
+  getPopulationElement(): HTMLDivElement {
+    const building = this.building
+    const populationDiv = document.createElement('div')
+    populationDiv.classList.add(MENU_INFO_IDS.population)
+    populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
+    const populationSpan = document.createElement('span')
+    populationSpan.classList.add(MENU_INFO_IDS.populationText)
+    populationSpan.textContent =
+      building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+    populationDiv.appendChild(populationSpan)
+    return populationDiv
+  }
+
+  updateLoading(): void {
+    const building = this.building
+    const {
+      context: { menu },
+    } = building
+    if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
+      if (building.loading === 1) {
+        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = this.getLoadingElement().innerHTML))
+      } else if (building.loading > 1) {
+        menu.updateInfo(MENU_INFO_IDS.loadingText, building.loading + '%')
+      } else {
+        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
+      }
+    }
+  }
+
+  getLoadingElement(): HTMLDivElement {
+    const building = this.building
+    const loadingDiv = document.createElement('div')
+    loadingDiv.className = 'building-loading'
+    loadingDiv.classList.add(MENU_INFO_IDS.loading)
+
+    if (building.loading && building.owner.isPlayed) {
+      loadingDiv.appendChild(createInfoImage('building-loading-icon', getIconPath('009_50731')))
+      loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, building.loading + '%'))
+    }
+    return loadingDiv
+  }
+
+  setDefaultInterface(element: HTMLElement, data: AnyRecord): void {
+    const building = this.building
+    const {
+      context: { menu },
+    } = building
+    const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
+
+    const displayType = isTower(building) ? getTowerType(building.owner) : building.type
+    const icon = building.type === BUILDING_TYPES.smallWall ? getWallIcon(building.owner, data.icon) : data.icon
+    appendBaseEntityInfo(
+      element,
+      t(building.owner.civ),
+      t(displayType),
+      getIconPath(icon),
+      hitPoints,
+      building.totalHitPoints
+    )
+
+    if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
+      appendQuantityInfo(element, menu.icons['food'], building.quantity)
+    }
+  }
+}

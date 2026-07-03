@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => {
@@ -21,7 +21,7 @@ function loadModule(relativePath, mocks) {
 }
 
 test('boat death plays the wreck corpse animation directly with boat timing', () => {
-  const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.js', {
+  const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
     '../../constants': {
       BOAT_CORPSE_TIME: 12,
       CORPSE_TIME: 120,
@@ -87,7 +87,7 @@ test('boat death plays the wreck corpse animation directly with boat timing', ()
 
 test('fishing boats gather silently', () => {
   const playedSounds = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': {
       Assets: {
         cache: {
@@ -185,7 +185,7 @@ test('fishing boats gather silently', () => {
 })
 
 test('depleted fish are cleared immediately after gathering', () => {
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.js', {
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': {
       Assets: {
         cache: {

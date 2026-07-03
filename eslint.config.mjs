@@ -19,15 +19,6 @@ export default [
     ignores: ['build/**', 'dist/**', 'node_modules/**'],
   },
   {
-    files: ['app/**/*.js'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: browserGlobals,
-    },
-    rules: {},
-  },
-  {
     files: ['app/**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',

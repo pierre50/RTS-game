@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
     "isolatedModules": true,
     "lib": ["DOM", "ES2022"],
     "module": "ESNext",
@@ -11,5 +9,5 @@
     "strict": true,
     "target": "ES2022"
   },
-  "include": ["app/**/*.ts", "app/**/*.js"]
+  "include": ["app/**/*.ts"]
 }

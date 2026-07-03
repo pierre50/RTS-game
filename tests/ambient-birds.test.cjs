@@ -9,7 +9,7 @@ function loadModule(relativePath, mocks) {
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
@@ -33,7 +33,7 @@ const constants = {
   AMBIENT_BIRD_SHADOW_OFFSET_Y: 20,
 }
 
-const { createBirdPath, getBirdDirectionalFrames } = loadModule('app/services/AmbientBirds.js', {
+const { createBirdPath, getBirdDirectionalFrames } = loadModule('app/services/AmbientBirds.ts', {
   'pixi.js': {
     AnimatedSprite: class {},
     Assets: {},

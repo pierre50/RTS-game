@@ -5,11 +5,11 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadAIStrategy() {
-  const filename = path.join(__dirname, '../app/ai/AIStrategy.js')
+  const filename = path.join(__dirname, '../app/ai/AIStrategy.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const constants = {
     ACTION_TYPES: { delivery: 'delivery' },
@@ -70,11 +70,11 @@ function loadAIStrategy() {
 }
 
 function loadAIMilitary(libOverrides = {}) {
-  const filename = path.join(__dirname, '../app/ai/AIMilitary.js')
+  const filename = path.join(__dirname, '../app/ai/AIMilitary.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }]],
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const constants = {
     ACTION_TYPES: { attack: 'attack', loadTransport: 'loadTransport' },
