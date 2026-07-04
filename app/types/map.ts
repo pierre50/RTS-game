@@ -2,7 +2,7 @@ import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid } from './grid'
 import type { RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
-import type { ResourceAmount, UnknownRecord } from './common'
+import type { ResourceAmount } from './common'
 
 export interface FogSpriteMemory {
   textureSheet: string
@@ -47,7 +47,7 @@ export interface RenderChunk {
   renderable: boolean
 }
 
-export interface RuntimeMap extends UnknownRecord {
+export interface RuntimeMap {
   grid: Grid<RuntimeCell>
   size: number
   x: number
@@ -62,6 +62,9 @@ export interface RuntimeMap extends UnknownRecord {
   startingAge?: number
   allTechnologies?: boolean
   resourceDensity?: string
+  difficulty?: string
+  positionsCount?: number
+  pregeneratedBlueprintId?: string | number | null
   startingResources: ResourceAmount
   resources: Set<RuntimeEntity>
   gaia?: PlayerLike | null

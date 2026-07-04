@@ -186,7 +186,7 @@ export class Resource extends Instance {
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === PLAYER_TYPES.ai) {
-        const list = players[i][listName] as Set<RuntimeEntity> | undefined
+        const list = (players[i] as unknown as Record<string, Set<RuntimeEntity> | undefined>)[listName]
         if (list) {
           list.delete(this)
         }

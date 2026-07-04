@@ -2,13 +2,12 @@ import { Assets } from 'pixi.js'
 import type { ContainerChild } from 'pixi.js'
 import { cartesianToIsometric, getDeterministicCellVariant, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
-import type { UnknownRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import { CellFog } from './CellFog'
 
-type GenerationCellContext = UnknownRecord & {
-  map: UnknownRecord & {
+type GenerationCellContext = {
+  map: {
     seed?: string | number
     randomItem<T>(items: T[]): T
     invalidateReliefCoastDistances(): void

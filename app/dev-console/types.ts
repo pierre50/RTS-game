@@ -5,13 +5,14 @@ import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { UnknownRecord, ResourceAmount } from '../types/common'
 
-export type DebugTickerCallback = (ticker?: { deltaTime?: number }) => void
+export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
-export type DevMapLike = UnknownRecord & {
+export type DevMapLike = {
   size: number
   grid: RuntimeCell[][]
   resources: Set<DevEntity>
   gaia?: { units: DevEntity[] } | null
+  instantMode?: boolean
   revealEverything?: boolean
   revealTerrain?: boolean
   showResources?: boolean
@@ -85,7 +86,7 @@ type DevPerformanceSnapshot = {
   metrics: Record<string, DevPerformanceMetric>
 }
 
-export type DevConsoleContext = UnknownRecord & {
+export type DevConsoleContext = {
   commands: {
     get(name: string): Command | undefined
     all(): Command[]

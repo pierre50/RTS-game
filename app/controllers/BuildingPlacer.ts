@@ -197,8 +197,9 @@ export class BuildingPlacer {
     const totalCost = Object.fromEntries(
       Object.entries(config.cost ?? {}).map(([resource, amount]) => [resource, (amount as number) * cells.length])
     ) as ResourceLedger
-    if (!canAfford(owner as unknown as ResourceLedger, totalCost as ResourceLedger)) {
-      const resource = Object.keys(totalCost).find(key => Number(owner[key]) < Number(totalCost[key]))
+    const ownerLedger = owner as unknown as ResourceLedger
+    if (!canAfford(ownerLedger, totalCost as ResourceLedger)) {
+      const resource = Object.keys(totalCost).find(key => Number(ownerLedger[key]) < Number(totalCost[key]))
       menu.showMessage(t('needMore', { resource: t(resource ?? '') }), 'warning')
       return false
     }

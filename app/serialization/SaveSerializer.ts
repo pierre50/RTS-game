@@ -37,8 +37,7 @@ type SerializableEntity = RuntimeEntityBase &
     textureName?: string
     work?: string | null
   }
-type SerializablePlayer = PlayerLike &
-  UnknownRecord & {
+type SerializablePlayer = PlayerLike & {
     aiState?: unknown
     difficulty?: string
     enemyBuildingMemory?: Map<unknown, ThreatMemory>
@@ -52,12 +51,12 @@ type SerializablePlayer = PlayerLike &
     threatenedTargets?: Map<unknown, ThreatTargetMemory>
     views: VisionGridLike
   }
-type ThreatMemory = UnknownRecord & {
+type ThreatMemory = {
   instance?: { label?: string } | null
   label?: string
   lastSeenAt?: number
 }
-type ThreatTargetMemory = UnknownRecord & {
+type ThreatTargetMemory = {
   attacker?: { label?: string } | null
   attackerFamily?: string | null
   attackerType?: string | null

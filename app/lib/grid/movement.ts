@@ -5,7 +5,6 @@ import type { Grid, GridCell, GridPosition, InstanceLike, Point } from '../../ty
 
 export type GameMap<TCell extends GridCell = GridCell> = {
   grid: Grid<TCell>
-  [key: string]: unknown
 }
 
 type PathInstanceLike = GridPosition & Partial<Point> & { category?: string }

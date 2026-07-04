@@ -1,24 +1,23 @@
 import { Container, Assets, Sprite } from 'pixi.js'
 import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
-import type { UnknownRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import { CellFog } from './CellFog'
 import { CellTerrain } from './CellTerrain'
 export { GenerationCell } from './GenerationCell'
 
-type CellMap = UnknownRecord & {
+type CellMap = {
     revealEverything?: boolean
     randomItem<T>(items: T[]): T
 }
 
-type CellContext = UnknownRecord & {
+type CellContext = {
   map?: CellMap
   player?: { views?: { isViewed(i: number, j: number): boolean } }
 }
 
-type CellOptions = UnknownRecord & {
+type CellOptions = {
   i: number
   j: number
   z?: number

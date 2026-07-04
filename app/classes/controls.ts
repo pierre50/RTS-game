@@ -40,7 +40,7 @@ type TouchInteraction =
     moved: boolean
   }
 type TickerLike = { elapsedMS?: number; deltaTime: number }
-type AudibleEntity = UnknownRecord & {
+type AudibleEntity = {
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
   target?: { visible?: boolean }
   visible?: boolean

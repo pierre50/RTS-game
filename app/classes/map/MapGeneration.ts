@@ -43,8 +43,7 @@ type GeneratedPosition = GridPosition | null
 // Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
 // that MapGeneration relies on. Map can't be imported directly here: it imports
 // MapGeneration itself, so importing it back would create a circular dependency.
-type MapGenerationMap = RuntimeMap &
-  UnknownRecord & {
+type MapGenerationMap = RuntimeMap & {
     context: GameContextLike
     playersPos: GeneratedPosition[]
     positionsCount: number
@@ -113,13 +112,13 @@ type GameConfig = {
   resources: Record<string, ResourceDefinition>
   cells: Record<string, unknown>
 }
-type BlueprintResource = UnknownRecord & {
+type BlueprintResource = {
   i: number
   j: number
   type: string
   textureName?: string
 }
-type MapBlueprint = UnknownRecord & {
+type MapBlueprint = {
   seed?: string | number
   size: number
   mapType?: string
@@ -128,7 +127,7 @@ type MapBlueprint = UnknownRecord & {
   relief?: number[][]
   resources?: BlueprintResource[]
 }
-type SavedThreatState = UnknownRecord & {
+type SavedThreatState = {
   target?: unknown
   attacker?: unknown
   lastSeenAgo?: number
@@ -137,11 +136,11 @@ type SavedThreatState = UnknownRecord & {
   attackerType?: string
   count?: number
 }
-type SavedEnemyMemoryState = UnknownRecord & {
+type SavedEnemyMemoryState = {
   instance?: unknown
   lastSeenAgo?: number
 }
-type SavedAIState = UnknownRecord & {
+type SavedAIState = {
   phase?: string
   lastAttackWaveAgo?: number
   lastAttackWaveAt?: number
@@ -150,13 +149,17 @@ type SavedAIState = UnknownRecord & {
   enemyBuildings?: SavedEnemyMemoryState[]
   threatenedTargets?: SavedThreatState[]
 }
-type SavedPlayer = UnknownRecord & {
+type SavedPlayer = {
   type: string
   isPlayed?: boolean
   buildings?: UnknownRecord[]
   units?: UnknownRecord[]
   corpses?: UnknownRecord[]
   aiState?: SavedAIState
+  selectedUnitLabels?: unknown[]
+  selectedUnitLabel?: unknown
+  selectedBuildingLabel?: unknown
+  selectedOtherLabel?: unknown
 }
 type SavedGameData = {
   map: Array<Array<UnknownRecord & { type: string; z?: number; fogSprites?: FogSpriteMemory[] }>>

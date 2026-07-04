@@ -146,11 +146,12 @@ export function getSolidDebugColor(cell: DevCell): number {
 }
 
 export function stopDebugTicker(context: DevConsoleContext, tickerName: string): void {
-  const { app, map } = context
-  const ticker = map[tickerName]
+  const { map } = context
+  const tickers = map as unknown as Record<string, DebugTickerCallback | null | undefined>
+  const ticker = tickers[tickerName]
   if (ticker) {
-    context.app?.ticker.remove(ticker as DebugTickerCallback)
-    map[tickerName] = null
+    context.app?.ticker.remove(ticker)
+    tickers[tickerName] = null
   }
 }
 
@@ -171,14 +172,15 @@ export function addDebugTicker(
 ): void {
   const { app, map } = context
   stopDebugTicker(context, tickerName)
+  const tickers = map as unknown as Record<string, DebugTickerCallback | null | undefined>
   let elapsed = 0
-  map[tickerName] = (ticker?: { elapsedMS?: number }) => {
+  tickers[tickerName] = (ticker?: { elapsedMS?: number }) => {
     elapsed += ticker?.elapsedMS ?? 0
     if (elapsed < DEBUG_CELL_REFRESH_MS) return
     elapsed = 0
     draw(context)
   }
-  app?.ticker.add(map[tickerName] as DebugTickerCallback)
+  app?.ticker.add(tickers[tickerName] as DebugTickerCallback)
 }
 
 export function cleanupDebugArtifacts(context: DevConsoleContext): void {

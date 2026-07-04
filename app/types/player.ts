@@ -28,7 +28,7 @@ export interface PlayerConfigLike {
   projectiles?: Record<string, ProjectileConfig>
 }
 
-export interface PlayerLike extends UnknownRecord {
+export interface PlayerLike {
   label: string
   i: number
   j: number

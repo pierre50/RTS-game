@@ -14,7 +14,7 @@ import type { RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
 
-type MapContext = UnknownRecord & {
+type MapContext = {
   performance?: {
     measure?<T>(name: string, callback: () => T): T
     record?(name: string, value: number): void

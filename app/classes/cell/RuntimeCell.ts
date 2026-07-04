@@ -1,13 +1,12 @@
 import type { ContainerChild } from 'pixi.js'
 import { updateInstanceRenderVisibility } from '../../lib'
 import { FAMILY_TYPES } from '../../constants'
-import type { UnknownRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import { CellFog } from './CellFog'
 
-type RuntimeCellContext = UnknownRecord & {
-  map: UnknownRecord & {
+type RuntimeCellContext = {
+  map: {
     fogMemoryLayer?: { addChild<T extends ContainerChild>(child: T): T }
     revealEverything?: boolean
   }

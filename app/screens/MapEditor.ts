@@ -472,7 +472,10 @@ export default class MapEditor extends Container {
 
   exportMap(): void {
     const exportedPlayers = (
-      (this.config.players?.length ? this.config.players : this.context.players) as (EditorPlayerConfig | PlayerLike)[]
+      (this.config.players?.length ? this.config.players : this.context.players) as ((EditorPlayerConfig | PlayerLike) & {
+        isHuman?: boolean
+        difficulty?: string
+      })[]
     ).map(player => {
       const isHuman = Boolean(player.isHuman ?? (player as PlayerLike).isPlayed)
       return {

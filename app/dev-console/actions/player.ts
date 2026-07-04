@@ -65,16 +65,17 @@ function applyEligibleTechnologies(context: DevConsoleContext): string[] {
 }
 
 export function addResources(player: DevPlayer, resourceName: string, amount: number): string {
+  const ledger = player as unknown as Record<string, number | undefined>
   if (resourceName === 'all') {
     RESOURCE_NAMES.forEach(name => {
-      player[name] = Number(player[name] ?? 0) + amount
+      ledger[name] = Number(ledger[name] ?? 0) + amount
     })
     return `Added ${amount} to all resources`
   }
   if (!RESOURCE_NAMES.includes(resourceName)) {
     return `Unknown resource: ${resourceName}`
   }
-  player[resourceName] = Number(player[resourceName] ?? 0) + amount
+  ledger[resourceName] = Number(ledger[resourceName] ?? 0) + amount
   return `Added ${amount} ${resourceName}`
 }
 

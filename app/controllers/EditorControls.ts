@@ -51,7 +51,7 @@ type EditorControlsContext = {
     applyBrush(cell: RuntimeCell): void
   }
 }
-type AudibleEntity = UnknownRecord & {
+type AudibleEntity = {
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
   target?: { visible?: boolean }
   visible?: boolean

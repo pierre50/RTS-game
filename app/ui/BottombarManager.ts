@@ -376,7 +376,7 @@ export class BottombarManager {
       id: type,
       icon: () => getIconPath(unit.icon),
       tooltip: () => this.getUnitTooltip(type, unit),
-      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player as unknown as Record<string, unknown>)),
       onClick: (selection: RuntimeEntity) => {
         if (canAfford(asLedger(player), unit.cost)) {
           if (player.population >= player.population_max) {
@@ -487,7 +487,7 @@ export class BottombarManager {
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (config.conditions || []).some(
-          condition => player.technologies.includes(type) || !isValidCondition(condition, player)
+          condition => player.technologies.includes(type) || !isValidCondition(condition, player as unknown as Record<string, unknown>)
         ),
       onClick: (selection: RuntimeEntity) => {
         controls.removeMouseBuilding()

@@ -4,6 +4,7 @@ export type SaveRecord = UnknownRecord
 
 export type GameConfig = UnknownRecord & {
   allTechnologies?: boolean
+  difficulty?: string
   instantMode?: boolean
   mapType?: string
   players?: PlayerSetupConfig[]

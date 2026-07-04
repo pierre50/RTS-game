@@ -3,7 +3,6 @@ import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
 import type { RuntimeEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
-import type { UnknownRecord } from './common'
 
 export interface SchedulerLike {
   elapsedMs: number
@@ -119,7 +118,7 @@ export interface SelectionRectangle {
   graph: Graphics
 }
 
-export interface GameContextLike extends UnknownRecord {
+export interface GameContextLike {
   app: Application
   gamebox: HTMLElement
   map: RuntimeMap
@@ -131,6 +130,7 @@ export interface GameContextLike extends UnknownRecord {
   performance?: PerformanceMonitorLike | null
   editor?: MapEditorLike
   paused?: boolean
+  aiPaused?: boolean
   devConsoleOpen?: boolean
   victory?: boolean
   defeat?: boolean
