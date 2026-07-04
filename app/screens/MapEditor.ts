@@ -624,13 +624,14 @@ export default class MapEditor extends Container {
 
     if (entity.family === FAMILY_TYPES.building) {
       const dist = entity.size === 3 ? 1 : 0
-      getPlainCellsAroundPoint(entity.i, entity.j, map.grid, dist, ((cell: RuntimeCell) => {
+      getPlainCellsAroundPoint(entity.i, entity.j, map.grid, dist, (cell: RuntimeCell) => {
         if (cell.has === entity) {
           cell.has = null
           cell.solid = false
         }
         cell.corpses.delete(entity)
-      }) as never)
+        return true
+      })
     } else {
       const cell = map.grid[entity.i]?.[entity.j]
       if (cell?.has === entity) {
@@ -749,11 +750,16 @@ export default class MapEditor extends Container {
   }
 
   _getAdjacentWalls(i: number, j: number, owner: PlayerLike): BuildingEntity[] {
-    return getAdjacentWalls(this.context.map.grid as never, i, j, owner as never) as unknown as BuildingEntity[]
+    return getAdjacentWalls(
+      this.context.map.grid as Parameters<typeof getAdjacentWalls>[0],
+      i,
+      j,
+      owner as Parameters<typeof getAdjacentWalls>[3]
+    ) as unknown as BuildingEntity[]
   }
 
   _updateWallTexture(wall: BuildingEntity): void {
-    updateWallTexture(wall as never)
+    updateWallTexture(wall as Parameters<typeof updateWallTexture>[0])
   }
 
   cancelWallDraft(): boolean {
@@ -845,7 +851,17 @@ export default class MapEditor extends Container {
 
   _spawnBuildingAt(cell: RuntimeCell, owner: PlayerLike, type: string, onSpawn: (() => void) | null = null): boolean {
     const config = owner.config?.buildings?.[type]
-    if (!config || !canPlaceBuildingAt(this.context.map.grid as never, cell.i, cell.j, config as never)) return false
+    if (
+      !config ||
+      !canPlaceBuildingAt(
+        this.context.map.grid as Parameters<typeof canPlaceBuildingAt>[0],
+        cell.i,
+        cell.j,
+        config as Parameters<typeof canPlaceBuildingAt>[3]
+      )
+    ) {
+      return false
+    }
     owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
     onSpawn?.()
     this.refreshTerrainAppearance()

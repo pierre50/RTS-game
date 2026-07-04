@@ -11,6 +11,7 @@ import {
 } from '../../lib'
 import { Projectile } from '../projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
 
 export class UnitCombat {
   unit: UnitEntity
@@ -21,20 +22,22 @@ export class UnitCombat {
 
   setStandingPose() {
     const unit = this.unit
-    const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+    const sprite = unit.sprite
+    if (!sprite) return
     sprite.loop = true
-    sprite.onComplete = null
+    sprite.onComplete = undefined
     unit.setTextures?.(SHEET_TYPES.standing)
   }
 
   playSingleAttackAnimation(onFire: () => void) {
     const unit = this.unit
-    const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+    const sprite = unit.sprite
+    if (!sprite) return
 
     unit.actionLocked = true
     sprite.loop = false
     sprite.onComplete = () => {
-      sprite.onComplete = null
+      sprite.onComplete = undefined
       unit.actionLocked = false
       const hadPendingOrder = unit.flushPendingOrder?.()
       if (hadPendingOrder) {
@@ -87,12 +90,12 @@ export class UnitCombat {
 
   handleAffectNewDestHunter(): boolean {
     const unit = this.unit
-    const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
-    const firstTargets = findInstancesInSight(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.takemeat))
+    const unitAsInstance = unit
+    const firstTargets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+      Boolean(unit.getActionCondition?.(instance, ACTION_TYPES.takemeat))
     )
     if (firstTargets.length) {
-      const target = getClosestInstanceWithPath(unitAsInstance, firstTargets)
+      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, firstTargets)
       if (target) {
         if (unit.action !== ACTION_TYPES.takemeat) {
           unit.action = ACTION_TYPES.takemeat
@@ -101,21 +104,21 @@ export class UnitCombat {
             unit.actionSheet = Assets.cache.get(workAssets.harvestSheet)
           }
         }
-        unit.setDest?.(target.instance as unknown as RuntimeEntity)
+        unit.setDest?.(target.instance)
         if (instanceContactInstance(unitAsInstance, target.instance)) {
           unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
           unit.getAction?.(unit.action)
           return true
         }
-        unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
+        unit.setPath?.(target.path)
         return true
       }
     }
-    const secondTargets = findInstancesInSight(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.hunt))
+    const secondTargets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+      Boolean(unit.getActionCondition?.(instance, ACTION_TYPES.hunt))
     )
     if (secondTargets.length) {
-      const target = getClosestInstanceWithPath(unitAsInstance, secondTargets)
+      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, secondTargets)
       if (target) {
         if (unit.action !== ACTION_TYPES.hunt) {
           unit.action = ACTION_TYPES.hunt
@@ -124,13 +127,13 @@ export class UnitCombat {
             unit.actionSheet = Assets.cache.get(workAssets.actionSheet)
           }
         }
-        unit.setDest?.(target.instance as unknown as RuntimeEntity)
+        unit.setDest?.(target.instance)
         if (instanceContactInstance(unitAsInstance, target.instance)) {
           unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
           unit.getAction?.(unit.action)
           return true
         }
-        unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
+        unit.setPath?.(target.path)
         return true
       }
     }
@@ -146,7 +149,7 @@ export class UnitCombat {
       unit.realDest.x = dest.x
       unit.realDest.y = dest.y
       const oldDeg = unit.degree
-      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
       if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.action)
       }
@@ -168,7 +171,7 @@ export class UnitCombat {
       const launchProjectile = () => {
         const dest = unit.dest as RuntimeEntity | null | undefined
         if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
-        playAudibleSoundCue(unit as unknown as Parameters<typeof playAudibleSoundCue>[0], unit.sounds?.attack)
+        playAudibleSoundCue(unit, unit.sounds?.attack)
         const projectile = new Projectile(
           {
             owner: unit,
@@ -188,9 +191,10 @@ export class UnitCombat {
         'unit.rangedAttack'
       )
     } else {
-      const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+      const sprite = unit.sprite
+      if (!sprite) return
       sprite.loop = true
-      sprite.onComplete = null
+      sprite.onComplete = undefined
       unit.setTextures?.(SHEET_TYPES.action)
       unit.startInterval?.(
         () => {
@@ -208,20 +212,19 @@ export class UnitCombat {
             return
           }
           if (unit.sounds && unit.sounds.hit) {
-            playAudibleSoundCue(unit as unknown as Parameters<typeof playAudibleSoundCue>[0], unit.sounds.hit)
+            playAudibleSoundCue(unit, unit.sounds.hit)
           }
           if (dest && (dest.hitPoints ?? 0) > 0) {
             dest.hitPoints = getHitPointsWithDamage(
-              unit as unknown as Parameters<typeof getHitPointsWithDamage>[0],
-              dest as unknown as Parameters<typeof getHitPointsWithDamage>[1]
+              unit,
+              dest
             )
             if (dest.selected) {
               dest.drawHealthBar?.()
-              const playerLike = player as unknown as { selectedUnit?: unknown; selectedBuilding?: unknown; selectedOther?: unknown }
               if (
-                playerLike.selectedUnit === dest ||
-                playerLike.selectedBuilding === dest ||
-                playerLike.selectedOther === dest
+                player?.selectedUnit === dest ||
+                player?.selectedBuilding === dest ||
+                player?.selectedOther === dest
               ) {
                 menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
               }

@@ -31,15 +31,5 @@ export const LABEL_TYPES = {
 }
 
 export const COLOR_WHITE = 0xffffff
-export const COLOR_BLACK = 0x000000
-export const COLOR_GREY = 0x808080
 export const COLOR_RED = 0xff0000
-export const COLOR_ORANGE = 0xffa500
-export const COLOR_YELLOW = 0xffff00
 export const COLOR_GREEN = 0x00ff00
-export const COLOR_BLUE = 0x0000ff
-export const COLOR_INDIGO = 0x4b0082
-export const COLOR_VIOLET = 0xee82ee
-export const COLOR_BONE = 0xe2dac2
-export const COLOR_SHIP_GREY = 0x3c3b3d
-export const COLOR_ARROW = 0xe8e3df

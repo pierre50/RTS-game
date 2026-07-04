@@ -22,7 +22,7 @@ import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
-import type { LooseRecord, UnknownRecord } from '../../types/common'
+import type { DynamicValue, LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { ConfigOperation, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -33,7 +33,7 @@ import type { Condition } from '../../lib/combat'
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
 export class Player {
-  [key: string]: any
+  [key: string]: DynamicValue
 
   family: string
   context: GameContextLike

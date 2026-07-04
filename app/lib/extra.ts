@@ -556,7 +556,7 @@ export class Modal {
   }
 }
 
-export var CustomTimeout = function (
+var CustomTimeout = function (
   this: { pause: () => number; resume: () => void; reset: () => void },
   callback: () => void,
   delay: number
@@ -791,5 +791,11 @@ export const canUpdateMinimap = (instance: VisibleInstance, player?: PlayerLike 
 
 export const playerCanSeeInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
   if (!instance || !player) return false
-  return instance.owner?.label === player.label || instanceIsInPlayerSight(instance as never, player as never)
+  return (
+    instance.owner?.label === player.label ||
+    instanceIsInPlayerSight(
+      instance as Parameters<typeof instanceIsInPlayerSight>[0],
+      player as Parameters<typeof instanceIsInPlayerSight>[1]
+    )
+  )
 }

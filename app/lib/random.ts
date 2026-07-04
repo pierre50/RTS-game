@@ -34,7 +34,7 @@ export function createSeededRandom(seed: SeedValue): () => number {
   }
 }
 
-export function getDeterministicCellVariantIndex(i: number, j: number, count: number, seed: SeedValue = 0): number {
+function getDeterministicCellVariantIndex(i: number, j: number, count: number, seed: SeedValue = 0): number {
   if (!Number.isFinite(count) || count <= 0) return 0
   return hashCoordinates(seed, i, j) % count
 }

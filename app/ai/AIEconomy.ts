@@ -16,6 +16,7 @@ import type {
 } from './types'
 
 type PathInstance = Parameters<typeof getInstancePath>[0]
+type ClosestInstance = Parameters<typeof getClosestInstance>[0]
 type FoodOpportunity = {
   type: AIFoodSourceType
   score: number
@@ -29,6 +30,10 @@ type GatheringResource = {
 
 function asPathInstance(instance: AIGridPosition): PathInstance {
   return instance as unknown as PathInstance
+}
+
+function asClosestInstance(instance: AIGridPosition): ClosestInstance {
+  return instance as unknown as ClosestInstance
 }
 
 export class AIEconomy {
@@ -543,8 +548,8 @@ export class AIEconomy {
       )
       for (let i = 0; i < toAssign; i++) {
         const animal = getClosestInstance(
-          asPathInstance(availableVillagers[0]),
-          sources.carcasses as unknown as Iterable<PathInstance>
+          asClosestInstance(availableVillagers[0]),
+          sources.carcasses as unknown as Iterable<ClosestInstance>
         ) as unknown as AIEntityLike | null
         if (!animal) break
         availableVillagers.shift()?.sendToTakeMeat?.(animal)
@@ -774,8 +779,8 @@ export class AIEconomy {
     if (availableVillagers.length > 0 && this.ai.foundedTrees.size > 0) {
       for (const villager of [...availableVillagers]) {
         const tree = getClosestInstance(
-          asPathInstance(villager),
-          this.ai.foundedTrees as unknown as Iterable<PathInstance>
+          asClosestInstance(villager),
+          this.ai.foundedTrees as unknown as Iterable<ClosestInstance>
         ) as unknown as AIEntityLike | null
         if (tree) {
           villager.sendToTree?.(tree)

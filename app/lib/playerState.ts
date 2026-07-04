@@ -26,11 +26,11 @@ function isOperationalBuilding(building?: BuildingState | null): boolean {
   return Array.isArray(building.units) && building.units.length > 0
 }
 
-export function hasLivingUnits(player?: PlayerState | null): boolean {
+function hasLivingUnits(player?: PlayerState | null): boolean {
   return !!player?.units?.some(unit => unit && !unit.isDead && (unit.hitPoints ?? 0) > 0)
 }
 
-export function hasOperationalBuildings(player?: PlayerState | null): boolean {
+function hasOperationalBuildings(player?: PlayerState | null): boolean {
   return !!player?.buildings?.some(isOperationalBuilding)
 }
 

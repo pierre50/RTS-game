@@ -7,6 +7,7 @@ export type GameConfig = UnknownRecord & {
   instantMode?: boolean
   mapType?: string
   players?: PlayerSetupConfig[]
+  pregeneratedBlueprintId?: string | null
   resourceDensity?: string
   revealEverything?: boolean
   revealTerrain?: boolean

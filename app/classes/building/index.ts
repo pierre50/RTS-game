@@ -54,7 +54,7 @@ export class Building extends Instance {
     const { map, controls } = context
 
     this.family = FAMILY_TYPES.building
-    this.buildingInterface = new BuildingInterface(this as unknown as BuildingEntity)
+    this.buildingInterface = new BuildingInterface(this as BuildingEntity)
     this.buildingLifecycle = new BuildingLifecycle(this)
     this.buildingProduction = new BuildingProduction(this)
     this.buildingCombat = new BuildingCombat(this)
@@ -67,8 +67,8 @@ export class Building extends Instance {
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
-    if (isTower(this as unknown as Parameters<typeof isTower>[0])) {
-      const effectiveType = getTowerType(this.owner)
+    if (isTower(this as Parameters<typeof isTower>[0])) {
+      const effectiveType = getTowerType(this.owner as Parameters<typeof getTowerType>[0])
       if (effectiveType !== this.type) Object.assign(this, this.owner.config.buildings[effectiveType])
     }
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
@@ -89,7 +89,7 @@ export class Building extends Instance {
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.dock) {
@@ -108,8 +108,9 @@ export class Building extends Instance {
       : (this.technologies || []).map((key: string) => context.menu.getTechnologyButton(key))
     this.interface = {
       info: (element: HTMLElement) => {
-        const displayType = this.assetType || (isTower(this as unknown as Parameters<typeof isTower>[0]) ? getTowerType(this.owner) : this.type)
-        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this as unknown as Parameters<typeof getBuildingAssetOwner>[0]), Assets)
+        const displayType =
+          this.assetType || (isTower(this as Parameters<typeof isTower>[0]) ? getTowerType(this.owner as Parameters<typeof getTowerType>[0]) : this.type)
+        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this as Parameters<typeof getBuildingAssetOwner>[0]), Assets)
         this.buildingInterface.renderInfo(element, assets as BuildingConfig)
       },
       menu:
@@ -153,7 +154,7 @@ export class Building extends Instance {
         if (editor?.handleEntityInteraction(this)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
-          drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+          drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
           controls.rallyPointController.cancel({ clear: true })
           return
         }
@@ -173,7 +174,7 @@ export class Building extends Instance {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === UNIT_TYPES.villager) {
-                if (getActionCondition(unit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
+                if (getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
                   hasSentVillager = true
                   unit.sendToBuilding(this)
                 }
@@ -183,7 +184,7 @@ export class Building extends Instance {
               }
             }
             if (hasSentVillager) {
-              drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+              drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
             }
             if (hasSentOther) {
               playSoundCue(SOUND_CUES.unit.militaryCommand)
@@ -200,16 +201,16 @@ export class Building extends Instance {
                 unit.category === 'Boat'
                   ? this.type === BUILDING_TYPES.dock
                   : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType))
-              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
+              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
-              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.farm)) {
+              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.farm)) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
               } else if (
                 accept &&
-                getActionCondition(unit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.delivery, { buildingTypes: [this.type] })
+                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.delivery, { buildingTypes: [this.type] })
               ) {
                 hasSentVillager = true
                 unit.previousDest = null
@@ -217,7 +218,7 @@ export class Building extends Instance {
               }
             }
             if (hasSentVillager) {
-              drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+              drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
               const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
               playSoundCue(voice)
               return
@@ -234,12 +235,12 @@ export class Building extends Instance {
           let hasSentAttacker = false
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.convert)) {
+            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.convert)) {
               hasSentConverter = true
-              playerUnit.sendToConvert(this as unknown as RuntimeEntity)
+              playerUnit.sendToConvert(this as RuntimeEntity)
               continue
             }
-            if (!getActionCondition(playerUnit, this as unknown as Parameters<typeof getActionCondition>[1], ACTION_TYPES.attack)) continue
+            if (!getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.attack)) continue
             hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(this)
@@ -248,7 +249,7 @@ export class Building extends Instance {
             }
           }
           if (hasSentConverter || hasSentAttacker) {
-            drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+            drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
           } else if (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) {
             player.unselectAll()
             this.select()

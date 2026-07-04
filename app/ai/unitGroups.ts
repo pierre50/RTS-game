@@ -13,8 +13,8 @@ export const ARCHER_TECH_UPGRADES = [
   ['ImprovedBow', 'ImprovedBowman'],
 ]
 
-export const INFANTRY_UNIT_TYPES = ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman', 'LongSwordsman']
-export const ARCHER_UNIT_TYPES = ['Bowman', 'ImprovedBowman', 'CompositeBowman']
+const INFANTRY_UNIT_TYPES = ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman', 'LongSwordsman']
+const ARCHER_UNIT_TYPES = ['Bowman', 'ImprovedBowman', 'CompositeBowman']
 
 export function getBestUnitFromTechs(technologies: string[], upgrades: string[][], fallback: string): string {
   const found = upgrades.find(([tech]) => technologies.includes(tech))
@@ -25,19 +25,19 @@ export function isAliveUnit(unit: Pick<AIEntityLike, 'hitPoints'>): boolean {
   return (unit.hitPoints ?? 0) > 0
 }
 
-export function isInfantryUnit(unit: AIEntityLike): boolean {
+function isInfantryUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && INFANTRY_UNIT_TYPES.includes(unit.type)
 }
 
-export function isArcherUnit(unit: AIEntityLike): boolean {
+function isArcherUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && ARCHER_UNIT_TYPES.includes(unit.type)
 }
 
-export function isCavalryUnit(unit: AIEntityLike): boolean {
+function isCavalryUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && unit.type === UNIT_TYPES.scout
 }
 
-export function isHopliteUnit(unit: AIEntityLike): boolean {
+function isHopliteUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && unit.type === 'Hoplite'
 }
 

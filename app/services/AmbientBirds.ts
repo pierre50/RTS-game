@@ -186,8 +186,8 @@ export class AmbientBirds extends Container {
         pass.path.start.x + (pass.path.end.x - pass.path.start.x) * progress,
         pass.path.start.y + (pass.path.end.y - pass.path.start.y) * progress
       )
-      pass.bird.update(tick as never)
-      pass.shadow.update(tick as never)
+      pass.bird.update(tick as Parameters<typeof pass.bird.update>[0])
+      pass.shadow.update(tick as Parameters<typeof pass.shadow.update>[0])
       if (progress >= 1) this.finishPass(pass)
     }
   }

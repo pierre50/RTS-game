@@ -1,5 +1,5 @@
 import { instancesDistance } from '../maths'
-import { getInstanceClosestFreeCellPath } from './movement'
+import { getInstanceClosestFreeCellPath, type GameMap } from './movement'
 import type { GridCell, InstanceLike } from '../../types/grid'
 
 type Candidate<TInstance extends InstanceLike> = {
@@ -44,12 +44,13 @@ export function getClosestInstance<TInstance extends InstanceLike>(
   return closestInstance || false
 }
 
-export function getClosestInstanceWithPath<TInstance extends InstanceLike>(
+export function getClosestInstanceWithPath<TInstance extends InstanceLike, TCell extends GridCell = GridCell>(
   instance: InstanceLike,
   instances: Iterable<TInstance>,
   maxCandidates = 6
-): InstanceWithPath<TInstance> | null {
+): InstanceWithPath<TInstance, TCell> | null {
   if (!instance.parent) return null
+  const map = instance.parent as unknown as GameMap<TCell>
 
   const candidates: Array<Candidate<TInstance>> = []
   for (const target of instances) {
@@ -63,12 +64,12 @@ export function getClosestInstanceWithPath<TInstance extends InstanceLike>(
     )
   }
 
-  let closest: InstanceWithPath<TInstance> | null = null
+  let closest: InstanceWithPath<TInstance, TCell> | null = null
 
   for (const candidate of candidates) {
     if (closest && candidate.distance >= closest.path.length) break
 
-    const path = getInstanceClosestFreeCellPath<GridCell>(instance, candidate.instance, instance.parent)
+    const path = getInstanceClosestFreeCellPath<TCell>(instance, candidate.instance, map)
     if (path.length && (!closest || path.length < closest.path.length)) {
       closest = { instance: candidate.instance, path }
     }

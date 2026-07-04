@@ -91,20 +91,6 @@ export function appendQuantityInfo(element: HTMLElement, iconSrc: string, quanti
   element.appendChild(quantityDiv)
 }
 
-export function appendIconValueInfo(
-  element: HTMLElement,
-  containerClass: string,
-  iconSrc: string,
-  textClass: string,
-  text: string | number
-): void {
-  const wrapper = document.createElement('div')
-  wrapper.classList.add(containerClass)
-  wrapper.appendChild(createInfoImage('', iconSrc))
-  wrapper.appendChild(createInfoText(textClass, text))
-  element.appendChild(wrapper)
-}
-
 export function appendBaseEntityInfo(
   element: HTMLElement,
   civText: string,

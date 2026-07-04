@@ -2,9 +2,11 @@ import { Container, Graphics } from 'pixi.js'
 import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike } from '../types/context'
+import type { DynamicValue } from '../types/common'
+import type { PlayerLike } from '../types/player'
 
 export class Instance extends Container {
-  [key: string]: any
+  [key: string]: DynamicValue
 
   context: GameContextLike
   selected: boolean
@@ -16,6 +18,13 @@ export class Instance extends Container {
   type!: string
   i!: number
   j!: number
+  z!: number | null
+  size!: number
+  degree!: number
+  selectionFactor?: number
+  owner!: PlayerLike
+  hitPoints!: number
+  totalHitPoints!: number
 
   constructor(context: GameContextLike) {
     super()
@@ -111,10 +120,14 @@ export class Instance extends Container {
   }
 
   getActionCondition(target: unknown, action = this.action): boolean {
-    return getActionCondition(this as never, target as never, action)
+    return getActionCondition(
+      this as Parameters<typeof getActionCondition>[0],
+      target as Parameters<typeof getActionCondition>[1],
+      action
+    )
   }
 
   setTextures(sheet: string): void {
-    setUnitTexture(sheet, this as unknown as Parameters<typeof setUnitTexture>[1])
+    setUnitTexture(sheet, this as Parameters<typeof setUnitTexture>[1])
   }
 }

@@ -20,6 +20,7 @@ import { AmbientBirds } from '../services/AmbientBirds'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type { GameConfig, SerializedSave } from '../types/save'
+import type { UnknownRecord } from '../types/common'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeMap } from '../types/map'
 
@@ -53,7 +54,6 @@ export default class Game extends Container {
   _pausedByVisibility: boolean
   _pausedByOrientation: boolean
   _restartSaveData: SerializedSave | null
-  _restartSeed?: string | number | null
   config: GameConfig | null
   onQuit: (() => void) | null
   context: GameRuntimeContext
@@ -320,22 +320,15 @@ export default class Game extends Container {
     this._createRuntime()
     const map = this.context.map as unknown as MapInstance
     this._applyMapConfig(this.context.map, config)
-    const hasExplicitSeed = Number.isFinite(config.seed) || this._restartSeed != null
-    if (this._restartSeed != null) {
-      map.seed = this._restartSeed
-      this._restartSeed = null
-    }
     this._createUiRuntime()
 
     const posCount = config.players ? config.players.length : config.bots != null ? Number(config.bots) + 1 : null
     const mapGenerationStartedAt = performance.now()
-    const blueprint = hasExplicitSeed
-      ? null
-      : await loadPregeneratedMapBlueprint({
-          size: map.size,
-          mapType: map.mapType || 'plain',
-          positionsCount: posCount ?? undefined,
-        })
+    const blueprint = await loadPregeneratedMapBlueprint({
+      size: map.size,
+      mapType: map.mapType || 'plain',
+      positionsCount: posCount ?? undefined,
+    })
     if (blueprint) {
       await map.generateFromBlueprint(blueprint, {
         onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
@@ -359,7 +352,7 @@ export default class Game extends Container {
       blueprintResources: map.blueprintResourceLoadMs || 0,
     }
     await this._updateLoading('generatingPlayers', 0.2)
-    this.context.players = map.generatePlayers((config.players as never) || null)
+    this.context.players = map.generatePlayers((config.players as Array<Partial<PlayerLike> & UnknownRecord>) || null)
     this.context.player = this.context.players[0]
     this.context.menu.init?.()
     await map.stylishMap({
@@ -395,13 +388,26 @@ export default class Game extends Container {
         ? Number(world.positionsCount)
         : savedPlayers.length || null
 
-    await map.generateMapAsync(positionsCount, 0, {
-      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-    })
+    const blueprintId = world.pregeneratedBlueprintId
+    const blueprint = blueprintId
+      ? await loadPregeneratedMapBlueprint({ size: map.size, mapType: map.mapType || 'plain', id: blueprintId })
+      : null
+    if (blueprint) {
+      await map.generateFromBlueprint(blueprint, {
+        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+      })
+      map.pregeneratedBlueprintId = blueprint.id
+    } else {
+      if (blueprintId) console.warn(`[maps] Unable to reload pregenerated blueprint: ${blueprintId}`)
+      await map.generateMapAsync(positionsCount, 0, {
+        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+      })
+      map.pregeneratedBlueprintId = null
+    }
     await map.prepareTerrainForSavedState({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
-    map.mapGeneration.applySavedStateToGeneratedMap(json as never)
+    map.mapGeneration.applySavedStateToGeneratedMap(json)
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -419,7 +425,7 @@ export default class Game extends Container {
     map.size = Math.max(0, (savedMap?.length || 1) - 1)
     this._applyMapConfig(this.context.map, (json.config as GameConfig) || {})
     this._createUiRuntime()
-    map.generateFromJSON(json as never)
+    map.generateFromJSON(json as UnknownRecord)
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -467,24 +473,6 @@ export default class Game extends Container {
   }
 
   async restart(): Promise<void> {
-    if (this._restartSaveData) {
-      this._destroyRuntime()
-      const speed = getGameSpeed()
-      this.context.app.ticker.speed = speed
-      this.context.scheduler.timeScale = speed
-      this._loadingScreen = new GameLoadingScreen()
-      this._loadingScreen.update('generatingTerrain', 0.02)
-      await this._yieldToBrowser()
-      try {
-        await this._bootFromSave(structuredClone(this._restartSaveData))
-      } finally {
-        this._loadingScreen?.destroy()
-        this._loadingScreen = null
-      }
-      return
-    }
-
-    this._restartSeed = this.context.map?.seed
     this._destroyRuntime()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
@@ -493,7 +481,7 @@ export default class Game extends Container {
     this._loadingScreen.update('generatingTerrain', 0.02)
     await this._yieldToBrowser()
     try {
-      await this._bootFromConfig(this.config!)
+      await this._bootFromSave(structuredClone(this._restartSaveData!))
     } finally {
       this._loadingScreen?.destroy()
       this._loadingScreen = null

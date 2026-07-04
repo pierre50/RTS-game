@@ -27,20 +27,42 @@ import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
-
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
 const ASTROLOGY_CONVERSION_CHANCE = 0.39
 
+const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
+  Stone: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
+  Gold: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
+  Berrybush: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
+  Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
+  Fish: (unit, dest) => (unit.sendToFish ? (unit.sendToFish(dest, true), true) : false),
+}
+
+type OwnerListKey = 'units' | 'buildings'
+type PlayerResourceKey = 'food' | 'wood' | 'stone' | 'gold'
+
+const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined =>
+  owner?.[key] as RuntimeEntity[] | undefined
+
+function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
+  if (!loadingType) return null
+  if (LOADING_FOOD_TYPES.includes(loadingType)) return 'food'
+  if (loadingType === LOADING_TYPES.wood) return 'wood'
+  if (loadingType === LOADING_TYPES.stone) return 'stone'
+  if (loadingType === LOADING_TYPES.gold) return 'gold'
+  return null
+}
+
 function removeFromOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
-  const list = owner?.[key] as unknown as RuntimeEntity[] | undefined
+  const list = ownerList(owner, key)
   if (!Array.isArray(list)) return
   const index = list.indexOf(instance)
   if (index >= 0) list.splice(index, 1)
 }
 
 function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
-  const list = owner?.[key] as unknown as RuntimeEntity[] | undefined
+  const list = ownerList(owner, key)
   if (!Array.isArray(list) || list.includes(instance)) return
   list.push(instance)
 }
@@ -87,7 +109,7 @@ export class UnitActions {
 
   playSound(soundId: CommandSound) {
     const unit = this.unit
-    const controls = unit.context?.controls as unknown as { instanceIsAudible?: (instance: RuntimeEntity) => boolean } | undefined
+    const controls = unit.context?.controls
     if (!soundId || !controls?.instanceIsAudible?.(unit)) return
     playSoundCue(soundId)
   }
@@ -119,16 +141,14 @@ export class UnitActions {
 
     if (t.selected) {
       t.select?.()
-      const owner = player as unknown as { selectedOther?: RuntimeEntity | null }
-      if (owner.selectedOther === target) owner.selectedOther = null
+      if (player?.selectedOther === target) player.selectedOther = null
     }
 
     t.stopInterval?.()
     if (t.sprite) {
-      const sprite = t.sprite as unknown as { onLoop: unknown; onFrameChange: unknown; onComplete: unknown }
-      sprite.onLoop = null
-      sprite.onFrameChange = null
-      sprite.onComplete = null
+      t.sprite.onLoop = undefined
+      t.sprite.onFrameChange = undefined
+      t.sprite.onComplete = undefined
     }
     t.path = []
     t.action = null
@@ -149,8 +169,8 @@ export class UnitActions {
       addToOwnerList(newOwner, 'units', t)
       oldOwner.population = Math.max(0, oldOwner.population - 1)
       newOwner.population += 1
-      ;(t as unknown as { setTextures?: (sheet: string) => void }).setTextures?.(SHEET_TYPES.standing)
-      changeSpriteColor(t.sprite as unknown as Parameters<typeof changeSpriteColor>[0], newOwner.color ?? '')
+      t.setTextures?.(SHEET_TYPES.standing)
+      changeSpriteColor(t.sprite!, newOwner.color ?? '')
     } else if (t.family === FAMILY_TYPES.building) {
       t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner as Parameters<typeof getTowerType>[0]) : t.type)
       removeFromOwnerList(oldOwner, 'buildings', t)
@@ -180,9 +200,9 @@ export class UnitActions {
       return false
     }
 
-    updateInstanceVisibility(t as unknown as Parameters<typeof updateInstanceVisibility>[0])
-    canUpdateMinimap(t as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
-    canUpdateMinimap(t as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
+    updateInstanceVisibility(t)
+    canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
+    canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
     if (newOwner.isPlayed) menu?.updateTopbar()
     unit.stop?.()
     return true
@@ -218,9 +238,8 @@ export class UnitActions {
     } else if (TYPE_ACTION[type as keyof typeof TYPE_ACTION]) {
       const action = TYPE_ACTION[type as keyof typeof TYPE_ACTION]
       if (unit.getActionCondition?.(dest, action)) {
-        const sendToFunc = `sendTo${type}`
-        const dynamicUnit = unit as unknown as Record<string, (target: RuntimeEntity, immediate?: boolean) => void>
-        typeof dynamicUnit[sendToFunc] === 'function' ? dynamicUnit[sendToFunc](dest, true) : unit.stop?.()
+        const sendTo = RESOURCE_SEND_TO_BY_TYPE[type as keyof typeof TYPE_ACTION]
+        if (!sendTo(unit, dest)) unit.stop?.()
       } else if (map) {
         unit.sendToEvt?.(map.grid[dest.i][dest.j], action)
       }
@@ -289,7 +308,7 @@ export class UnitActions {
     if (!data) return
     unit.type = type
     unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
-    const dynamicUnit = unit as unknown as Record<string, unknown>
+    const dynamicUnit = unit as UnitEntity & Record<string, unknown>
     for (const [key, value] of Object.entries(data)) {
       dynamicUnit[key] = value
     }
@@ -311,18 +330,20 @@ export class UnitActions {
     const menu = unit.context?.menu
     const player = unit.owner
     const map = unit.context?.map
-    const sprite = unit.sprite as unknown as { onLoop: unknown; onFrameChange: unknown }
-    sprite.onLoop = null
-    sprite.onFrameChange = null
+    const sprite = unit.sprite
+    if (!sprite) return
+    sprite.onLoop = undefined
+    sprite.onFrameChange = undefined
     switch (name) {
       case ACTION_TYPES.delivery: {
         if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
           unit.stop?.()
           return
         }
-        const owner = unit.owner as unknown as Record<string, number>
-        const resourceKey = LOADING_FOOD_TYPES.includes(unit.loadingType ?? '') ? 'food' : (unit.loadingType ?? '')
-        owner[resourceKey] = (owner[resourceKey] ?? 0) + (unit.loading ?? 0)
+        const resourceKey = getPlayerResourceKey(unit.loadingType)
+        if (resourceKey && unit.owner) {
+          unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + (unit.loading ?? 0)
+        }
         unit.owner?.isPlayed && menu?.updateTopbar()
         unit.loading = 0
         unit.updateInterfaceLoading?.()
@@ -417,7 +438,7 @@ export class UnitActions {
               }
               if ((dest.hitPoints ?? 0) <= 0) {
                 dest.hitPoints = 0
-                ;(dest as unknown as { setCuttedTreeTexture?: () => void }).setCuttedTreeTexture?.()
+                dest.setCuttedTreeTexture?.()
               }
             } else {
               unit.loading = (unit.loading ?? 0) + 1
@@ -511,7 +532,7 @@ export class UnitActions {
         break
       }
       case ACTION_TYPES.attack:
-        ;(unit as unknown as { unitCombat: { handleAttackAction: () => void } }).unitCombat.handleAttackAction()
+        unit.unitCombat?.handleAttackAction()
         break
       case ACTION_TYPES.heal:
         if (!unit.getActionCondition?.(unit.dest)) {
@@ -531,7 +552,7 @@ export class UnitActions {
             unit.realDest.x = dest.x
             unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            unit.degree = getInstanceDegree(unit, dest.x, dest.y)
             if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
               unit.setTextures?.(SHEET_TYPES.action)
             }
@@ -571,7 +592,7 @@ export class UnitActions {
             unit.realDest.x = dest.x
             unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            unit.degree = getInstanceDegree(unit, dest.x, dest.y)
             if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
               unit.setTextures?.(SHEET_TYPES.action)
             }
@@ -596,7 +617,7 @@ export class UnitActions {
         }
         {
           const transport = unit.dest as UnitEntity
-          boardTransport(unit as unknown as Parameters<typeof boardTransport>[0], transport as unknown as Parameters<typeof boardTransport>[1])
+          boardTransport(unit, transport)
           if (transport.owner?.isPlayed && transport.selected) {
             menu?.setBottombar(transport)
           }
@@ -614,9 +635,11 @@ export class UnitActions {
           dieOnEmpty: true,
         })
         if (unit.category !== 'Boat') {
-          onSpriteLoopAtFrame(unit.sprite as unknown as Parameters<typeof onSpriteLoopAtFrame>[0], 6, () => {
-            this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
-          })
+          if (unit.sprite) {
+            onSpriteLoopAtFrame(unit.sprite, 6, () => {
+              this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
+            })
+          }
         }
         break
       case ACTION_TYPES.hunt: {
@@ -642,7 +665,7 @@ export class UnitActions {
             return
           }
           if (!unit.isUnitAtDest?.(unit.action, dest)) {
-            if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest as unknown as Parameters<typeof playerCanSeeInstance>[0], unit.owner))) {
+            if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest, unit.owner))) {
               unit.sendToEvt?.(dest ?? null, ACTION_TYPES.hunt, { forceRepath: true })
             } else {
               unit.stop?.()
@@ -655,27 +678,29 @@ export class UnitActions {
             unit.realDest.x = dest.x
             unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            unit.degree = getInstanceDegree(unit, dest.x, dest.y)
             if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
               unit.setTextures?.(SHEET_TYPES.action)
             }
           }
         }
-        onSpriteLoopAtFrame(unit.sprite as unknown as Parameters<typeof onSpriteLoopAtFrame>[0], 6, () => {
-          const dest = unit.dest as RuntimeEntity | null | undefined
-          if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
-          const projectile = new Projectile(
-            {
-              owner: unit,
-              target: dest,
-              type: 'Spear',
-              destination: unit.realDest,
-              damage: 4,
-            },
-            unit.context!
-          )
-          map.addChild(projectile)
-        })
+        if (unit.sprite) {
+          onSpriteLoopAtFrame(unit.sprite, 6, () => {
+            const dest = unit.dest as RuntimeEntity | null | undefined
+            if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
+            const projectile = new Projectile(
+              {
+                owner: unit,
+                target: dest,
+                type: 'Spear',
+                destination: unit.realDest,
+                damage: 4,
+              },
+              unit.context!
+            )
+            map.addChild(projectile)
+          })
+        }
         break
       }
       default:

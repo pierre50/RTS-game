@@ -6,7 +6,7 @@ type MaybeSoundCue = SoundCue | SoundCue[] | null | undefined
 type AudibleInstance = {
   context?: {
     controls?: {
-      instanceIsAudible?: (instance: AudibleInstance) => boolean
+      instanceIsAudible?: (instance: unknown) => boolean
     }
   }
   sounds?: {
@@ -20,7 +20,7 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-export function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
+function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
   if (cue == null) return null
   if (Array.isArray(cue)) return cue.length ? pickRandom(cue) : null
   return cue
@@ -38,7 +38,7 @@ export function playAudibleSoundCue(instance: AudibleInstance, cue: MaybeSoundCu
   return playSoundCue(cue)
 }
 
-export function getSelectionSoundCue(instance?: AudibleInstance | null): MaybeSoundCue | null {
+function getSelectionSoundCue(instance?: AudibleInstance | null): MaybeSoundCue | null {
   if (!instance) return null
   return instance.sounds?.command ?? instance.sounds?.select ?? instance.sounds?.hit ?? null
 }

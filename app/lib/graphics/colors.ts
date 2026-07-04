@@ -2,7 +2,7 @@ import { Texture, type Filter } from 'pixi.js'
 import { MultiColorReplaceFilter } from 'pixi-filters'
 
 export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'] as const
-export type PlayerColor = (typeof colors)[number]
+type PlayerColor = (typeof colors)[number]
 
 const SOURCE_COLORS = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057]
 
@@ -45,7 +45,7 @@ type RecolorableTexture = Texture & {
 
 type RecolorableSprite = {
   _baseColorTextureKey?: string
-  filters: Filter[] | null
+  filters: readonly Filter[] | null
   texture: RecolorableTexture
 }
 

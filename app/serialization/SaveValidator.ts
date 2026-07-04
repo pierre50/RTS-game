@@ -321,12 +321,3 @@ export function validateSaveData(data: unknown): SaveRecord {
   return data as SerializedSave
 }
 
-export function parseSaveJSON(raw: string): SaveRecord {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    fail('Invalid save file: malformed JSON.')
-  }
-  return validateSaveData(parsed)
-}

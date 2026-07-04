@@ -6,8 +6,6 @@ import type { UnitEntity } from '../types/entities'
 import type { UnitConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
-type TransportBoatLike = Parameters<typeof getTransportLoad>[0]
-
 export class UnitInterface {
   unit: UnitEntity
 
@@ -95,7 +93,7 @@ export class UnitInterface {
       capacityDiv.appendChild(
         createInfoText(
           'transport-capacity',
-          `${t('transportCapacity')} ${getTransportLoad(unit as unknown as TransportBoatLike)}/${unit.transportCapacity}`
+          `${t('transportCapacity')} ${getTransportLoad(unit)}/${unit.transportCapacity}`
         )
       )
       element.appendChild(capacityDiv)

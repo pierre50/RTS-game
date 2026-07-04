@@ -42,7 +42,7 @@ export class Animal extends Instance {
       context: { map },
     } = this
     this.family = FAMILY_TYPES.animal
-    this.animalInterface = new AnimalInterface(this as unknown as AnimalEntity)
+    this.animalInterface = new AnimalInterface(this as AnimalEntity)
     this.animalLifecycle = new AnimalLifecycle(this)
     this.animalMovement = new AnimalMovement(this)
     this.animalCombat = new AnimalCombat(this)
@@ -63,7 +63,7 @@ export class Animal extends Instance {
     this.z = null as unknown as number
 
     Object.assign(this, options)
-    Object.assign(this, this.owner.config.animals[this.type])
+    Object.assign(this, this.owner.config.animals?.[this.type] ?? {})
     this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 
     this.size = 1
@@ -72,7 +72,7 @@ export class Animal extends Instance {
     this.x = this.x ?? map.grid[this.i][this.j].x
     this.y = this.y ?? map.grid[this.i][this.j].y
     this.z = this.z ?? map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
 
     this.currentCell = map.grid[this.i][this.j]
     this.currentCell.place(this)
@@ -88,8 +88,8 @@ export class Animal extends Instance {
 
     this.interface = {
       info: (element: HTMLElement) => {
-        const data = this.owner.config.animals[this.type]
-        this.setDefaultInterface(element, data)
+        const data = this.owner.config.animals?.[this.type]
+        if (data) this.setDefaultInterface(element, data)
       },
     }
 
@@ -152,7 +152,7 @@ export class Animal extends Instance {
           getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
           instancesDistance(
             player.selectedBuilding,
-            this as unknown as Parameters<typeof instancesDistance>[1]
+            this as Parameters<typeof instancesDistance>[1]
           ) <= player.selectedBuilding.range
         ) {
           player.selectedBuilding.attackAction(this)
@@ -173,7 +173,7 @@ export class Animal extends Instance {
         playSoundCue(voice)
       }
       if (drawDestinationRectangle) {
-        drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+        drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
       }
     })
 

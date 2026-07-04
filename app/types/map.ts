@@ -28,6 +28,13 @@ export interface RuntimeCell extends GridCell {
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
   viewBy: Set<unknown>
+  // Generation-time cells (see app/classes/cell/GenerationCell.ts) act as their own
+  // lightweight Container for terrain decorations before the real Cell/Container
+  // tree is built, so they also expose these Container-shaped members.
+  isGenerationCell?: boolean
+  children?: Array<{ label?: string; destroy?: (options?: unknown) => void }>
+  addChild?<T>(child: T): T
+  getChildByLabel?(label: string): ContainerChild | null
   updateVisible(): void
   place(entity: RuntimeEntity): void
   setFog(init?: boolean): void

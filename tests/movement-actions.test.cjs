@@ -4,6 +4,13 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
+const runtimeTypesMock = new Proxy(
+  {},
+  {
+    get: (_target, prop) => (prop === 'unsetRuntimeCoordinate' ? () => null : value => value),
+  }
+)
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -13,6 +20,7 @@ function loadModule(relativePath, mocks) {
   })
   const module = { exports: {} }
   const localRequire = request => {
+    if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
     return require(request)
   }

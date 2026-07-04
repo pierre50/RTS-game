@@ -153,13 +153,6 @@ export const TECH_PRIORITY_BY_BUILDING = {
   [BUILDING_TYPES.granary]: ['ResearchWatchTower', 'ResearchSentryTower'],
 }
 
-export const MILITARY_CAPS_BY_GROUP = {
-  infantry: MAX_INFANTRY_BY_AGE,
-  archer: MAX_ARCHER_BY_AGE,
-  cavalry: MAX_CAVALRY_BY_AGE,
-  hoplite: MAX_HOPLITE_BY_AGE,
-}
-
 export const BASE_TARGET_VALUE_BY_TYPE = {
   [UNIT_TYPES.villager]: 10,
   [BUILDING_TYPES.townCenter]: 14,

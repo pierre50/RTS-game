@@ -121,8 +121,11 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     flagSprite.eventMode = 'none'
     flagSprite.roundPixels = true
     flagSprite.animationSpeed = 0.15
-    changeSpriteColor(flagSprite as never, wall.owner.color ?? 'blue')
-    bindAnimatedSpriteToTicker(flagSprite as never, wall.context.app as never)
+    changeSpriteColor(flagSprite as unknown as Parameters<typeof changeSpriteColor>[0], wall.owner.color ?? 'blue')
+    bindAnimatedSpriteToTicker(
+      flagSprite as Parameters<typeof bindAnimatedSpriteToTicker>[0],
+      wall.context.app as Parameters<typeof bindAnimatedSpriteToTicker>[1]
+    )
     flagSprite.play()
     wall.addChild(flagSprite)
   }

@@ -5,7 +5,7 @@ export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
 export type AIResourceAmount = Partial<Record<AIResourceName, number>>
 
-export type AIPhase = 'economy' | 'military_build' | 'attack'
+type AIPhase = 'economy' | 'military_build' | 'attack'
 
 export type AIAge = 0 | 1 | 2 | 3
 
@@ -110,7 +110,7 @@ export type AITechCondition = {
   value: number | string
 }
 
-export type AITechConfig = {
+type AITechConfig = {
   cost?: AIResourceAmount
   conditions?: AITechCondition[]
 }
@@ -138,7 +138,7 @@ export type AILandAccessDiagnostic = {
   visited: number
 }
 
-export type AINavalOperation = {
+type AINavalOperation = {
   stage?: 'loading' | 'sailing' | 'assault' | string
   targetLabel?: string
   transportLabel?: string
@@ -150,7 +150,7 @@ export type AINavalOperation = {
   loadCoastCell?: AIGridPosition | null
 }
 
-export type AIEconomyLike = {
+type AIEconomyLike = {
   isLocationSafe(pos: AIGridPosition): boolean
 }
 

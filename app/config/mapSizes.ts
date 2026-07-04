@@ -5,7 +5,7 @@ interface MapSizeDefinition {
   editorOnly?: boolean
 }
 
-export const MAP_SIZE_DEFINITIONS: MapSizeDefinition[] = [
+const MAP_SIZE_DEFINITIONS: MapSizeDefinition[] = [
   { label: 'Dev    (16x16)', value: 16, maxPlayers: 2, editorOnly: true },
   { label: 'Small  (144x144)', value: 144, maxPlayers: 3 },
   { label: 'Medium (256x256)', value: 256, maxPlayers: 4 },

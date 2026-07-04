@@ -3,41 +3,43 @@ import { getCellsAroundPoint } from './grid/cells'
 import { getInstancePath } from './grid/movement'
 import { getInstanceZIndex, instancesDistance } from './maths'
 import { updateInstanceVisibility } from './grid/visibility'
-import type { Grid, GridCell, InstanceLike } from '../types/grid'
+import type { Grid, GridCell, GridPosition, Point } from '../types/grid'
 
 const SHORE_SEARCH_RADIUS = 4
 const UNLOAD_SEARCH_RADIUS = 8
 
-type TransportCell = GridCell & {
-  has?: TransportUnit | null
-  place?: (unit: TransportUnit) => void
+export type TransportCell = GridCell & {
+  has?: unknown
+  place?: unknown
   solid?: boolean
   x?: number
   y?: number
   z?: number
 }
 
-type TransportMap = {
-  addChild: (unit: TransportUnit) => void
+export type TransportMap = {
+  addChild: (unit: unknown) => unknown
   addToInstanceBucket: (unit: TransportUnit) => void
   grid: Grid<TransportCell>
   removeFromInstanceBucket: (unit: TransportUnit) => void
 }
 
-type TransportOwner = {
+export type TransportOwner = {
   isPlayed?: boolean
   label?: string
-  selectedUnit?: TransportUnit | null
-  selectedUnits?: TransportUnit[]
+  selectedUnit?: unknown
+  selectedUnits?: unknown[]
 }
 
-type TransportUnit = InstanceLike & {
+type TransportContext = {
+  map?: TransportMap
+  player?: TransportOwner
+}
+
+export type TransportUnit = GridPosition & Partial<Point> & {
   action?: string | null
   category?: string
-  context: {
-    map: TransportMap
-    player?: TransportOwner
-  }
+  context?: unknown
   currentCell?: TransportCell | null
   dest?: unknown
   eventMode?: string
@@ -46,14 +48,13 @@ type TransportUnit = InstanceLike & {
   inactif?: boolean
   isDead?: boolean
   isDestroyed?: boolean
-  loadedInTransport?: TransportBoat | null
-  owner?: TransportOwner
-  parent?: {
-    removeChild?: (unit: TransportUnit) => void
-  } | null
+  label?: string
+  loadedInTransport?: unknown
+  owner?: TransportOwner | null
+  parent?: unknown
   path?: TransportCell[]
   realDest?: unknown
-  sendToWithCell?: (transport: TransportBoat, cell: TransportCell, action: string) => boolean
+  sendToWithCell?: unknown
   setTextures?: (sheet: string) => void
   stopInterval?: () => void
   transportLoadCoastCell?: TransportCell | null
@@ -61,14 +62,14 @@ type TransportUnit = InstanceLike & {
   type?: string
   unselect?: () => void
   visible?: boolean
-  z?: number
+  z?: number | null
   zIndex?: number
 }
 
-type TransportBoat = TransportUnit & {
+export type TransportBoat = TransportUnit & {
   currentCell?: TransportCell | null
   selected?: boolean
-  sendTo: (cell: TransportCell) => void
+  sendTo?: unknown
   transportedUnits?: TransportUnit[]
   transportCapacity?: number
 }
@@ -108,6 +109,47 @@ function getCellsAtDistance(
   return result
 }
 
+function getTransportContext(unit?: TransportUnit | null): TransportContext | null {
+  const context = unit?.context
+  return typeof context === 'object' && context !== null ? (context as TransportContext) : null
+}
+
+function getTransportMap(unit?: TransportUnit | null): TransportMap | null {
+  return getTransportContext(unit)?.map ?? null
+}
+
+function getTransportPlayer(unit?: TransportUnit | null): TransportOwner | null {
+  return getTransportContext(unit)?.player ?? null
+}
+
+function placeTransportUnit(cell: TransportCell, unit: TransportUnit): void {
+  if (typeof cell.place === 'function') {
+    ;(cell.place as (unit: TransportUnit) => void)(unit)
+  }
+}
+
+function removeTransportUnitFromParent(unit: TransportUnit): void {
+  const parent = unit.parent
+  if (typeof parent === 'object' && parent !== null && typeof (parent as { removeChild?: unknown }).removeChild === 'function') {
+    ;((parent as { removeChild: (unit: TransportUnit) => unknown }).removeChild)(unit)
+  }
+}
+
+function sendTransportUnitToCell(unit: TransportUnit, transport: TransportBoat, cell: TransportCell): boolean {
+  if (typeof unit.sendToWithCell !== 'function') return false
+  return Boolean((unit.sendToWithCell as (transport: TransportBoat, cell: TransportCell, action: string) => boolean | undefined)(
+    transport,
+    cell,
+    ACTION_TYPES.loadTransport
+  ))
+}
+
+function sendTransportToCoastCell(transport: TransportBoat, cell: TransportCell): void {
+  if (typeof transport.sendTo === 'function') {
+    ;(transport.sendTo as (cell: TransportCell) => void)(cell)
+  }
+}
+
 export function isTransportBoat(unit?: TransportUnit | null): unit is TransportBoat {
   return Boolean(unit?.family === FAMILY_TYPES.unit && ((unit as TransportBoat).transportCapacity ?? 0) > 0)
 }
@@ -121,7 +163,7 @@ export function getTransportLoad(transport: TransportBoat): number {
   return getTransportCargo(transport).filter(unit => unit && !unit.isDead && !unit.isDestroyed).length
 }
 
-export function hasTransportSpace(transport?: TransportUnit | null): transport is TransportBoat {
+function hasTransportSpace(transport?: TransportUnit | null): transport is TransportBoat {
   return isTransportBoat(transport) && getTransportLoad(transport) < (transport.transportCapacity ?? 0)
 }
 
@@ -148,13 +190,14 @@ export function canUnitEnterTransport(
 }
 
 export function findLoadShoreCell(unit?: TransportUnit | null, transport?: TransportUnit | null): TransportCell | null {
-  if (!unit || !transport?.context?.map) return null
-  const { grid } = transport.context.map
+  const map = getTransportMap(transport)
+  if (!unit || !transport || !map) return null
+  const { grid } = map
   const candidates = getCellsAroundPoint(transport.i, transport.j, grid, SHORE_SEARCH_RADIUS, isLoadShoreCell)
   candidates.sort((a, b) => instancesDistance(unit, a) - instancesDistance(unit, b))
   for (const cell of candidates) {
     if (unit.i === cell.i && unit.j === cell.j) return cell
-    if (getInstancePath(unit, cell.i, cell.j, transport.context.map).length) return cell
+    if (getInstancePath(unit, cell.i, cell.j, map).length) return cell
   }
   const maxSearchDistance = grid.length + (grid[0]?.length || 0)
   for (let distance = 0; distance <= maxSearchDistance; distance++) {
@@ -162,7 +205,7 @@ export function findLoadShoreCell(unit?: TransportUnit | null, transport?: Trans
     for (const cell of unitCandidates) {
       if (!findTransportCoastCell(transport, cell)) continue
       if (unit.i === cell.i && unit.j === cell.j) return cell
-      if (getInstancePath(unit, cell.i, cell.j, transport.context.map).length) return cell
+      if (getInstancePath(unit, cell.i, cell.j, map).length) return cell
     }
   }
   return null
@@ -172,23 +215,25 @@ export function findTransportCoastCell(
   transport?: TransportUnit | null,
   shoreCell?: TransportCell | null
 ): TransportCell | null {
-  if (!transport?.context?.map || !shoreCell) return null
-  const { grid } = transport.context.map
+  const map = getTransportMap(transport)
+  if (!transport || !map || !shoreCell) return null
+  const { grid } = map
   const candidates = getCellsAroundPoint(shoreCell.i, shoreCell.j, grid, 1, isTransportCoastCell)
   candidates.sort((a, b) => instancesDistance(transport, a) - instancesDistance(transport, b))
   for (const cell of candidates) {
     if (transport.i === cell.i && transport.j === cell.j) return cell
-    if (getInstancePath(transport, cell.i, cell.j, transport.context.map).length) return cell
+    if (getInstancePath(transport, cell.i, cell.j, map).length) return cell
   }
   return null
 }
 
-export function findUnloadCell(
+function findUnloadCell(
   transport?: TransportUnit | null,
   unit: TransportUnit | null = null
 ): TransportCell | null {
-  if (!transport?.context?.map) return null
-  const { grid } = transport.context.map
+  const map = getTransportMap(transport)
+  if (!transport || !map) return null
+  const { grid } = map
   for (let distance = 1; distance <= UNLOAD_SEARCH_RADIUS; distance++) {
     const candidates = getCellsAroundPoint(
       transport.i,
@@ -211,6 +256,8 @@ export function findUnloadCell(
 
 export function boardTransport(unit?: TransportUnit | null, transport?: TransportUnit | null): boolean {
   if (!unit || !canUnitEnterTransport(unit, transport)) return false
+  const map = getTransportMap(unit)
+  if (!map) return false
   const cargo = getTransportCargo(transport)
   cargo.push(unit)
   unit.stopInterval?.()
@@ -226,7 +273,7 @@ export function boardTransport(unit?: TransportUnit | null, transport?: Transpor
   unit.visible = false
   unit.eventMode = 'none'
   unit.unselect?.()
-  const player = unit.context.player
+  const player = getTransportPlayer(unit)
   if (player?.selectedUnit === unit) player.selectedUnit = null
   if (Array.isArray(player?.selectedUnits)) {
     const selectedIndex = player.selectedUnits.indexOf(unit)
@@ -237,13 +284,15 @@ export function boardTransport(unit?: TransportUnit | null, transport?: Transpor
     unit.currentCell.solid = false
   }
   unit.currentCell = null
-  unit.context.map.removeFromInstanceBucket(unit)
-  if (unit.parent) unit.parent.removeChild?.(unit)
+  map.removeFromInstanceBucket(unit)
+  removeTransportUnitFromParent(unit)
   return true
 }
 
 export function unloadTransport(transport?: TransportUnit | null): number {
   if (!canUnloadTransport(transport)) return 0
+  const map = getTransportMap(transport)
+  if (!map) return 0
   const cargo = getTransportCargo(transport)
   let unloaded = 0
   for (const unit of [...cargo]) {
@@ -258,16 +307,16 @@ export function unloadTransport(transport?: TransportUnit | null): number {
     unit.x = cell.x ?? unit.x
     unit.y = cell.y ?? unit.y
     unit.z = cell.z ?? unit.z ?? 0
-    unit.zIndex = getInstanceZIndex(unit as TransportUnit & { z: number })
+    unit.zIndex = getInstanceZIndex({ x: unit.x ?? 0, y: unit.y ?? 0, z: unit.z })
     unit.currentCell = cell
-    cell.place?.(unit)
+    placeTransportUnit(cell, unit)
     cell.solid = true
     unit.eventMode = 'static'
     unit.visible = true
-    transport.context.map.addChild(unit)
-    transport.context.map.addToInstanceBucket(unit)
+    map.addChild(unit)
+    map.addToInstanceBucket(unit)
     unit.setTextures?.(SHEET_TYPES.standing)
-    updateInstanceVisibility(unit as never)
+    updateInstanceVisibility(unit as Parameters<typeof updateInstanceVisibility>[0])
     unloaded++
   }
   return unloaded
@@ -280,6 +329,6 @@ export function sendUnitToTransport(unit?: TransportUnit | null, transport?: Tra
   const coastCell = findTransportCoastCell(transport, shoreCell)
   unit.transportLoadShoreCell = shoreCell
   unit.transportLoadCoastCell = coastCell
-  if (coastCell) transport.sendTo(coastCell)
-  return unit.sendToWithCell?.(transport, shoreCell, ACTION_TYPES.loadTransport) ?? false
+  if (coastCell) sendTransportToCoastCell(transport, coastCell)
+  return sendTransportUnitToCell(unit, transport, shoreCell)
 }

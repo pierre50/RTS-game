@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Assets, Container, Sprite } from 'pixi.js'
 import { cartesianToIsometric, getCellsAroundPoint, getDeterministicCellVariant, getPlainCellsAroundPoint } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
@@ -13,6 +12,17 @@ import {
 } from '../../lib/terrain/topology'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell as RuntimeCellLike } from '../../types/map'
+
+type TerrainDefinition = {
+  category?: string
+  color?: unknown
+  assets?: string[]
+  [key: string]: unknown
+}
+
+type TerrainConfig = {
+  cells?: Record<string, TerrainDefinition>
+}
 
 type TerrainCell = RuntimeCellLike & {
   category?: string
@@ -30,7 +40,7 @@ type TerrainCell = RuntimeCellLike & {
   resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
 }
 
-type TerrainMap = {
+type TerrainMap = Container & {
   size: number
   seed?: string | number
   grid: TerrainCell[][]
@@ -52,7 +62,6 @@ type TerrainMap = {
   formatCellsWaterBorderOverlays(): void
   formatCellsDeepWaterBorder(): void
   formatCellsDesert(): void
-  addChild(child: Container): Container
 }
 
 type ReliefLevelBounds = {
@@ -62,8 +71,27 @@ type ReliefLevelBounds = {
 
 type TerrainLandChange = [cell: TerrainCell, type: string]
 type TerrainLevelAdjustment = [cell: TerrainCell, targetLevel: number]
-type NeighborFlags = Record<string, boolean>
+type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
+type NeighborFlags = Record<NeighborName, boolean>
 type ReliefBounds = { min: number; max: number }
+
+function isGridPosition(value: unknown): value is GridPosition {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Number.isFinite((value as GridPosition).i) &&
+    Number.isFinite((value as GridPosition).j)
+  )
+}
+
+function isReliefLevelBounds(value: unknown): value is ReliefLevelBounds {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as ReliefLevelBounds).minLevels instanceof Int16Array &&
+    (value as ReliefLevelBounds).maxLevels instanceof Int16Array
+  )
+}
 
 export class MapTerrain {
   map: TerrainMap
@@ -77,7 +105,7 @@ export class MapTerrain {
   }
 
   generateMapRelief(): void {
-    const seed = Number.isFinite(this.map.seed) ? this.map.seed : Math.random() * 9999
+    const seed = typeof this.map.seed === 'number' && Number.isFinite(this.map.seed) ? this.map.seed : Math.random() * 9999
 
     function hash(x: number, y: number, offset: number = 0): number {
       const n = Math.sin(x * 83.7 + y * 214.3 + (seed + offset) * 5.1) * 43758.5453
@@ -114,7 +142,7 @@ export class MapTerrain {
     const n = this.map.size + 1
     const dist = this.map.getReliefCoastDistances()
     const reliefH = new Float32Array(n * n)
-    const landHeights = []
+    const landHeights: number[] = []
     const scale = 4.5 / this.map.size
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -135,8 +163,9 @@ export class MapTerrain {
     }
 
     landHeights.sort((a, b) => a - b)
-    const getQuantile = ratio => landHeights[Math.min(landHeights.length - 1, Math.floor(landHeights.length * ratio))]
-    const reliefBands = [
+    const getQuantile = (ratio: number): number =>
+      landHeights[Math.min(landHeights.length - 1, Math.floor(landHeights.length * ratio))]
+    const reliefBands: [number, number][] = [
       [0.01, -4],
       [0.035, -3],
       [0.09, -2],
@@ -174,12 +203,14 @@ export class MapTerrain {
           let cpt = 0
           getCellsAroundPoint(i, j, this.map.grid, 1, c => {
             if (c.z > 0) cpt++
+            return false
           })
           if (cpt < 3) this.map.setCellReliefLevelDirect(cell, 0)
         } else if (cell.z === -1) {
           let cpt = 0
           getCellsAroundPoint(i, j, this.map.grid, 1, c => {
             if (c.z < 0) cpt++
+            return false
           })
           if (cpt < 3) this.map.setCellReliefLevelDirect(cell, 0)
         }
@@ -192,6 +223,7 @@ export class MapTerrain {
 
   flattenPlayerStartZones(radius: number = 4): void {
     for (const pos of this.map.playersPos) {
+      if (!isGridPosition(pos)) continue
       const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius).filter(
         (cell: TerrainCell) => cell.category !== 'Water' && !cell.waterBorder
       )
@@ -211,7 +243,7 @@ export class MapTerrain {
     }
 
     const dist = new Int16Array(n * n).fill(9999)
-    const queue = []
+    const queue: number[] = []
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -321,6 +353,7 @@ export class MapTerrain {
         if (this.map.grid[cell.i + di]?.[cell.j + dj]?.category !== 'Water') continue
         const middle = this.map.grid[cell.i + di / 2]?.[cell.j + dj / 2]
         if (middle?.category === 'Water') continue
+        if (!middle?.setWater) continue
         if (level != null) this.map.setCellReliefLevelDirect(middle, level)
         middle.setWater()
         filledCells.add(middle)
@@ -344,6 +377,7 @@ export class MapTerrain {
 
     if (seeds?.size) {
       for (const seed of seeds) {
+        if (!isGridPosition(seed)) continue
         for (let di = -1; di <= 1; di++) {
           for (let dj = -1; dj <= 1; dj++) {
             const candidate = this.map.grid[seed.i + di]?.[seed.j + dj]
@@ -407,12 +441,12 @@ export class MapTerrain {
 
     const changedCells = new Set<TerrainCell>()
     for (const [cell, type] of cellsToLand) {
-      if (cell.category !== 'Water') continue
+      if (cell.category !== 'Water' || !cell.setTerrainType) continue
       cell.setTerrainType(type)
       changedCells.add(cell)
     }
     for (const cell of cellsToFill) {
-      if (cell.category === 'Water') continue
+      if (cell.category === 'Water' || !cell.setWater) continue
       if (level != null) this.map.setCellReliefLevelDirect(cell, level)
       cell.setWater()
       changedCells.add(cell)
@@ -437,7 +471,7 @@ export class MapTerrain {
     const waterLevel = new Int16Array(n * n)
     const minLevels = new Int16Array(n * n).fill(-32768)
     const maxLevels = new Int16Array(n * n).fill(32767)
-    const queue = []
+    const queue: number[] = []
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -504,7 +538,7 @@ export class MapTerrain {
     for (const child of layer.removeChildren()) child.destroy()
     layer.visible = true
 
-    const config = Assets.cache.get('config')
+    const config = Assets.cache.get('config') as TerrainConfig
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -515,6 +549,7 @@ export class MapTerrain {
         if (!assets.length) continue
 
         const textureName = getDeterministicCellVariant(assets, i, j, this.map.seed)
+        if (!textureName) continue
         const resourceName = textureName.split('_')[1]
         const texture = Assets.cache.get(resourceName)?.textures?.[textureName + '.png']
         if (!texture) continue
@@ -544,7 +579,10 @@ export class MapTerrain {
     }
   }
 
-  clampReliefAroundWater(dist: unknown = this.map.getReliefCoastDistances()): void {
+  clampReliefAroundWater(distInput: unknown = this.map.getReliefCoastDistances()): void {
+    // TerrainMap forwards this call from Map's own loosely-typed delegate method, so the
+    // parameter is narrowed here rather than trusted at the type level.
+    const dist = distInput instanceof Int16Array ? distInput : this.map.getReliefCoastDistances()
     const n = this.map.size + 1
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -558,10 +596,14 @@ export class MapTerrain {
   }
 
   enforceReliefStepContinuity(
-    dist: unknown = this.map.getReliefCoastDistances(),
+    distInput: unknown = this.map.getReliefCoastDistances(),
     protectedCells: Set<unknown> = new Set(),
-    levelBounds: unknown = null
+    levelBoundsInput: unknown = null
   ): void {
+    // TerrainMap forwards this call from Map's own loosely-typed delegate method, so the
+    // parameters are narrowed here rather than trusted at the type level.
+    const dist = distInput instanceof Int16Array ? distInput : this.map.getReliefCoastDistances()
+    const levelBounds = isReliefLevelBounds(levelBoundsInput) ? levelBoundsInput : null
     const n = this.map.size + 1
     const diagonalDirections = EIGHT_NEIGHBOR_OFFSETS
     const getLevelBounds = (cell: TerrainCell): ReliefBounds => {
@@ -641,7 +683,7 @@ export class MapTerrain {
 
     const noDepressionLimit = 32767
     const depressionUpperBounds = new Int16Array(n * n).fill(noDepressionLimit)
-    const queue = []
+    const queue: TerrainCell[] = []
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -678,7 +720,7 @@ export class MapTerrain {
     }
 
     const getHigherNeighbors = (cell: TerrainCell) =>
-      getNeighborFlags(this.map.grid, cell.i, cell.j, (neighbor: TerrainCell) => Boolean(neighbor && neighbor.z > cell.z))
+      getNeighborFlags(this.map.grid, cell.i, cell.j, (neighbor: TerrainCell | undefined) => Boolean(neighbor && neighbor.z > cell.z))
 
     const enforceHeightSteps = (): boolean => {
       let changed = false
@@ -787,53 +829,53 @@ export class MapTerrain {
         if (cell.category === 'Water' || cell.waterBorder) continue
 
         const { n, s, w, e, nw, ne, sw, se } = getNeighborFlags(
-          this.map.grid, i, j, (neighbor: TerrainCell) => (neighbor?.z ?? cell.z) > cell.z
+          this.map.grid, i, j, (neighbor: TerrainCell | undefined) => (neighbor?.z ?? cell.z) > cell.z
         )
 
         // Cardinal singles
         if (n && !s && !w && !e) {
-          cell.setReliefBorder('014', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('014', CELL_DEPTH / 2)
         } else if (s && !n && !w && !e) {
-          cell.setReliefBorder('015', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('015', CELL_DEPTH / 2)
         } else if (w && !n && !s && !e) {
-          cell.setReliefBorder('016', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('016', CELL_DEPTH / 2)
         } else if (e && !n && !s && !w) {
-          cell.setReliefBorder('013', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('013', CELL_DEPTH / 2)
           // Diagonal singles — only fire when adjacent cardinals are not higher
         } else if (nw && !n && !w) {
-          cell.setReliefBorder('010', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('010', CELL_DEPTH / 2)
         } else if (sw && !s && !w) {
-          cell.setReliefBorder('012')
+          cell.setReliefBorder?.('012')
         } else if (ne && !n && !e) {
-          cell.setReliefBorder('011')
+          cell.setReliefBorder?.('011')
         } else if (se && !s && !e) {
-          cell.setReliefBorder('009', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('009', CELL_DEPTH / 2)
           // Cardinal pairs (exact) — guards on opposite directions fix the z=2 corner bug
         } else if (w && n && !s && !e) {
-          cell.setReliefBorder('022', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('022', CELL_DEPTH / 2)
         } else if (e && s && !n && !w) {
-          cell.setReliefBorder('021', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('021', CELL_DEPTH / 2)
         } else if (w && s && !n && !e) {
-          cell.setReliefBorder('023', CELL_DEPTH)
+          cell.setReliefBorder?.('023', CELL_DEPTH)
         } else if (e && n && !s && !w) {
-          cell.setReliefBorder('024', CELL_DEPTH)
+          cell.setReliefBorder?.('024', CELL_DEPTH)
         } else if (n && s && !w && !e) {
-          cell.setReliefBorder('017', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('017', CELL_DEPTH / 2)
         } else if (w && e && !n && !s) {
-          cell.setReliefBorder('018', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('018', CELL_DEPTH / 2)
           // 3+ cardinals higher — approximate with the most visually dominant pair
         } else if (n && w) {
-          cell.setReliefBorder('022', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('022', CELL_DEPTH / 2)
         } else if (s && e) {
-          cell.setReliefBorder('021', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('021', CELL_DEPTH / 2)
         } else if (w && s) {
-          cell.setReliefBorder('023', CELL_DEPTH)
+          cell.setReliefBorder?.('023', CELL_DEPTH)
         } else if (e && n) {
-          cell.setReliefBorder('024', CELL_DEPTH)
+          cell.setReliefBorder?.('024', CELL_DEPTH)
         } else if (n || s) {
-          cell.setReliefBorder('017', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('017', CELL_DEPTH / 2)
         } else if (w || e) {
-          cell.setReliefBorder('018', CELL_DEPTH / 2)
+          cell.setReliefBorder?.('018', CELL_DEPTH / 2)
         } else if (nw || ne || sw || se) {
           console.log(`[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nw} NE=${ne} SW=${sw} SE=${se}`)
         }
@@ -842,14 +884,14 @@ export class MapTerrain {
   }
 
   formatCellsWaterBorder(): void {
-    const isAnyWater = (type: string) => type === 'Water' || type === 'DeepWater'
+    const isAnyWater = (type: string | undefined) => type === 'Water' || type === 'DeepWater'
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category === 'Water') continue
-        const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell) => isAnyWater(neighbor?.type))
+        const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell | undefined) => isAnyWater(neighbor?.type))
         const frame = getWaterBorderFrame(flags)
-        if (frame) cell.setWaterBorder('20000', frame)
+        if (frame) cell.setWaterBorder?.('20000', frame)
       }
     }
   }
@@ -860,9 +902,9 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         if (!cell.waterBorder) continue
 
-        const overlay = (neighbor: TerrainCell, direction: string) => {
+        const overlay = (neighbor: TerrainCell | undefined, direction: string) => {
           if (neighbor && !neighbor.waterBorder && neighbor.category !== 'Water' && neighbor.type !== 'Desert') {
-            neighbor.setDesertBorder(direction)
+            neighbor.setDesertBorder?.(direction)
           }
         }
 
@@ -888,19 +930,21 @@ export class MapTerrain {
       const preserveWaterBorder = Boolean(this.map.blueprintWaterBorderReady)
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
-          this.map.grid[i][j].resetTerrainAppearance({ preserveWaterBorder })
+          this.map.grid[i][j].resetTerrainAppearance?.({ preserveWaterBorder })
         }
       }
     })
 
     if (this.map.blueprintWaterBorderReady) {
-      this.map.generationTimings.terrainWaterBorder = 0
+      if (timings) timings.terrainWaterBorder = 0
     } else {
       measure('terrainWaterBorder', () => this.map.formatCellsWaterBorder())
     }
     if (this.map.pregeneratedBlueprintId) {
-      this.map.generationTimings.terrainClampWaterLevels = 0
-      this.map.generationTimings.terrainReliefContinuity = 0
+      if (timings) {
+        timings.terrainClampWaterLevels = 0
+        timings.terrainReliefContinuity = 0
+      }
     } else {
       const waterLevelBounds = measure('terrainClampWaterLevels', () => this.map.clampReliefAroundWaterLevels())
       const unrestrictedReliefDistances = new Int16Array((this.map.size + 1) ** 2).fill(this.map.size + 4)
@@ -917,14 +961,14 @@ export class MapTerrain {
   classifyDeepWater(): void {
     const TRANSITION_DIST_FROM_LAND = 4
     const DEEP_DIST_FROM_LAND = 5
-    const mapSeed = Number.isFinite(this.map.seed) ? this.map.seed : 0
-    const config = Assets.cache.get('config')
+    const mapSeed = typeof this.map.seed === 'number' && Number.isFinite(this.map.seed) ? this.map.seed : 0
+    const config = Assets.cache.get('config') as TerrainConfig
     const deepWaterDef = config?.cells?.['DeepWater']
     const waterDef = config?.cells?.['Water']
 
     const n = this.map.size + 1
     const dist = new Int16Array(n * n).fill(9999)
-    const queue = []
+    const queue: number[] = []
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -978,7 +1022,7 @@ export class MapTerrain {
         cell.type = isDeep ? 'DeepWater' : 'Water'
         if (def) {
           cell.category = def.category
-          cell.color = def.color
+          if (typeof def.color === 'string') cell.color = def.color
           cell.assets = def.assets
         }
         const textureName = getDeterministicCellVariant(def?.assets, i, j, this.map.seed)
@@ -1006,12 +1050,12 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         if (cell.type !== 'DeepWater') continue
         const { n, s, w, e } = getNeighborFlags(
-          this.map.grid, i, j, (neighbor: TerrainCell) => neighbor != null && neighbor.type !== 'DeepWater'
+          this.map.grid, i, j, (neighbor: TerrainCell | undefined) => neighbor != null && neighbor.type !== 'DeepWater'
         )
-        if (n) cell.setDeepWaterBorder('west')
-        if (s) cell.setDeepWaterBorder('east')
-        if (w) cell.setDeepWaterBorder('north')
-        if (e) cell.setDeepWaterBorder('south')
+        if (n) cell.setDeepWaterBorder?.('west')
+        if (s) cell.setDeepWaterBorder?.('east')
+        if (w) cell.setDeepWaterBorder?.('north')
+        if (e) cell.setDeepWaterBorder?.('south')
       }
     }
   }
@@ -1027,10 +1071,10 @@ export class MapTerrain {
           const s = this.map.grid[i + 1]?.[j]
           const w = this.map.grid[i]?.[j - 1]
           const e = this.map.grid[i]?.[j + 1]
-          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder('east')
-          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder('west')
-          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder('south')
-          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder('north')
+          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder?.('east')
+          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder?.('west')
+          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder?.('south')
+          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder?.('north')
         }
       }
     }

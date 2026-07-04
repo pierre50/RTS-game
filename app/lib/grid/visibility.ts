@@ -1,6 +1,6 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { updateVisibility } from '../../services/FogOfWar'
-import type { InstanceLike } from '../../types/grid'
+import type { GridPosition, Point } from '../../types/grid'
 
 type PlayerVisibility = {
   views?: {
@@ -8,7 +8,7 @@ type PlayerVisibility = {
   }
 }
 
-type RenderableInstance = InstanceLike & {
+export type RenderableInstance = GridPosition & Point & {
   context?: {
     controls?: {
       instanceInCamera: (instance: RenderableInstance) => boolean
@@ -22,23 +22,29 @@ type RenderableInstance = InstanceLike & {
     player?: PlayerVisibility
   }
   family?: string
+  type?: string
   owner?: {
     isPlayed?: boolean
   } | null
+  isDestroyed?: boolean
   sight?: number
+  size?: number
   visible?: boolean
 }
 
-export function findInstancesInSight<TInstance extends RenderableInstance>(
+export function findInstancesInSight<
+  TInstance extends RenderableInstance,
+  TTarget extends RenderableInstance = RenderableInstance,
+>(
   instance: TInstance,
-  condition: (target: RenderableInstance) => boolean
-): RenderableInstance[] {
+  condition: (target: TTarget) => boolean
+): TTarget[] {
   const { i: instX, j: instY, sight = 0 } = instance
   const { instanceBuckets } = instance.context?.map || {}
   if (!instanceBuckets) return []
 
   const sightSq = sight * sight
-  const instances: RenderableInstance[] = []
+  const instances: TTarget[] = []
 
   const minBi = Math.max(Math.floor((instX - sight) / BUCKET_SIZE), 0)
   const maxBi = Math.min(Math.floor((instX + sight) / BUCKET_SIZE), instanceBuckets.length - 1)
@@ -50,8 +56,9 @@ export function findInstancesInSight<TInstance extends RenderableInstance>(
       for (const target of instanceBuckets[bi][bj]) {
         const dx = target.i - instX
         const dy = target.j - instY
-        if (dx * dx + dy * dy <= sightSq && condition(target)) {
-          instances.push(target)
+        const typedTarget = target as TTarget
+        if (dx * dx + dy * dy <= sightSq && condition(typedTarget)) {
+          instances.push(typedTarget)
         }
       }
     }

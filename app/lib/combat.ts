@@ -41,7 +41,7 @@ type ActionProps = {
   buildingTypes?: string[]
 }
 
-export function canAttack(source?: CombatEntity | null): boolean {
+function canAttack(source?: CombatEntity | null): boolean {
   return Boolean(source && ((source.meleeAttack || 0) > 0 || (source.pierceAttack || 0) > 0))
 }
 
@@ -49,7 +49,7 @@ export function shouldFleeWhenAttacked(source?: CombatEntity | null): boolean {
   return source?.category === 'Boat' && !canAttack(source)
 }
 
-export function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
+function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
   if (!source || source.type !== UNIT_TYPES.priest || !target || !source.owner?.isEnemy?.(target.owner)) return false
   if (target.family === FAMILY_TYPES.unit && target.type !== UNIT_TYPES.priest) return true
   const hasMonotheism = source.owner.technologies?.includes('Monotheism')
@@ -73,7 +73,7 @@ function canLoadTransport(source?: CombatEntity | null, target?: CombatEntity | 
   )
 }
 
-export function getDamage(source: CombatEntity, target: CombatEntity): number {
+function getDamage(source: CombatEntity, target: CombatEntity): number {
   const meleeAttack = source.meleeAttack || 0
   const pierceAttack = source.pierceAttack || 0
   const meleeArmor = target.meleeArmor || 0

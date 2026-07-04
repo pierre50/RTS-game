@@ -14,6 +14,7 @@ type SerializableEntity = RuntimeEntityBase &
     assetAge?: unknown
     assetCiv?: unknown
     assetType?: unknown
+    buildQueue?: { label?: string }[] | null
     currentSheet?: unknown
     degree?: number
     dest?: Destination | null
@@ -124,6 +125,7 @@ function animalData(animal: SerializableEntity) {
       'isDead',
       'isDestroyed',
       'quantity',
+      'isFleeing',
     ]),
     currentFrame: animal.sprite?.currentFrame,
     loop: animal.sprite?.loop,
@@ -169,6 +171,11 @@ function unitData(unit: SerializableEntity) {
     previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, unit.previousDest?.label],
     path: pathData(unit.path),
     realDest: destinationData(unit.realDest),
+    buildQueue: unit.buildQueue?.length ? unit.buildQueue.map(target => target.label) : undefined,
+    blockedGatherApproach: unit.blockedGatherApproach && {
+      target: [unit.blockedGatherApproach.target.i, unit.blockedGatherApproach.target.j, unit.blockedGatherApproach.target.label],
+      action: unit.blockedGatherApproach.action,
+    },
   }
 }
 
@@ -221,6 +228,10 @@ function playerData(player: SerializablePlayer) {
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
     views: player.views.toJSON(),
+    selectedUnitLabels: player.selectedUnits?.length ? player.selectedUnits.map(unit => unit.label) : undefined,
+    selectedUnitLabel: player.selectedUnit?.label,
+    selectedBuildingLabel: player.selectedBuilding?.label,
+    selectedOtherLabel: player.selectedOther?.label,
   }
 
   if (player.type === 'AI') {

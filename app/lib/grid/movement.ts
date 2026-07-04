@@ -1,12 +1,14 @@
 import { findInstancePath } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint } from './cells'
-import type { Grid, GridCell, InstanceLike } from '../../types/grid'
+import type { Grid, GridCell, GridPosition, InstanceLike, Point } from '../../types/grid'
 
 export type GameMap<TCell extends GridCell = GridCell> = {
   grid: Grid<TCell>
   [key: string]: unknown
 }
+
+type PathInstanceLike = GridPosition & Partial<Point> & { category?: string }
 
 export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boolean {
   return Math.floor(instancesDistance(a, b)) <= ((b.size ?? 1) - 1 || 1) && !b.isDestroyed
@@ -45,7 +47,7 @@ export function getFreeCellAroundPoint<TCell extends GridCell>(
 }
 
 export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
-  instance: InstanceLike,
+  instance: PathInstanceLike,
   target: InstanceLike | TCell,
   map: GameMap<TCell>
 ): TCell[] {
@@ -71,7 +73,7 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
 }
 
 export function getInstancePath<TCell extends GridCell>(
-  instance: InstanceLike,
+  instance: PathInstanceLike,
   x: number,
   y: number,
   map: GameMap<TCell>

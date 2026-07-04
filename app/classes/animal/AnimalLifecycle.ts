@@ -101,7 +101,7 @@ export class AnimalLifecycle {
       cell.solid = false
     }
     cell?.corpses.delete(animal)
-    const index = animal.owner.units.indexOf(animal)
+    const index = animal.owner.units.indexOf(animal as unknown as Parameters<typeof animal.owner.units.indexOf>[0])
     if (index >= 0) {
       animal.owner.units.splice(index, 1)
     }

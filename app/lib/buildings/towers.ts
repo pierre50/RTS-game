@@ -1,13 +1,16 @@
 import { Assets, Texture } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getBuildingAsset, getTexture, changeSpriteColorDirectly } from '../index'
+import type { BuildingConfig } from '../../types/config'
+
+type TowerBuildingConfig = BuildingConfig & Partial<TowerBuilding>
 
 type TowerOwner = {
   age: number
   civ: string
   color?: string
   config?: {
-    buildings: Record<string, Partial<TowerBuilding>>
+    buildings: Record<string, TowerBuildingConfig>
   }
   technologies?: string[]
 }
@@ -44,11 +47,7 @@ export function isTower(instance?: { type?: string } | null): instance is TowerB
   return instance?.type === BUILDING_TYPES.watchTower
 }
 
-export function getTowerAssets(owner: TowerOwner, assets = Assets) {
-  return getBuildingAsset(getTowerType(owner), owner, assets)
-}
-
-export function refreshTower(tower?: TowerBuilding | null): void {
+function refreshTower(tower?: TowerBuilding | null): void {
   if (!isTower(tower) || tower.isDestroyed) return
 
   const effectiveType = getTowerType(tower.owner)
@@ -74,7 +73,10 @@ export function refreshTower(tower?: TowerBuilding | null): void {
   const color = tower.getChildByLabel(LABEL_TYPES.color)
   if (color) color.destroy()
   delete tower.sprite._baseColorTextureKey
-  changeSpriteColorDirectly(tower.sprite as never, tower.owner.color ?? 'blue')
+  changeSpriteColorDirectly(
+    tower.sprite as unknown as Parameters<typeof changeSpriteColorDirectly>[0],
+    tower.owner.color ?? 'blue'
+  )
 }
 
 export function refreshOwnerTowers(owner?: (TowerOwner & { buildings?: TowerBuilding[] }) | null): void {

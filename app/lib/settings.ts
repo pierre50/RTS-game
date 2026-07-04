@@ -20,7 +20,7 @@ export const CAMERA_ZOOM_PRESETS = [
   { key: 'zoomFar', value: 0.85 },
   { key: 'zoomVeryFar', value: 0.7 },
 ]
-export const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]
+const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]
 export const SPEED_VALUES = DEV_SPEED_PRESETS.map(({ value }) => String(value))
 export const GAME_SPEED_USAGE = `speed <${SPEED_VALUES.join('|')}>`
 
@@ -79,11 +79,11 @@ export function setCameraZoom(v: number | string): boolean {
   return true
 }
 
-export function isVisibleGameSpeedPreset(v: number | string): boolean {
+function isVisibleGameSpeedPreset(v: number | string): boolean {
   return SPEED_PRESETS.some(p => p.value === Number(v))
 }
 
-export function isVisibleCameraZoomPreset(v: number | string): boolean {
+function isVisibleCameraZoomPreset(v: number | string): boolean {
   return CAMERA_ZOOM_PRESETS.some(p => p.value === Number(v))
 }
 

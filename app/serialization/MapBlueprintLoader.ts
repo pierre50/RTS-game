@@ -29,6 +29,7 @@ type LoadBlueprintOptions = {
   positionsCount?: number
   random?: () => number
   size?: number
+  id?: string
 }
 
 function decodeBase64Bytes(value: string, ArrayType: Uint8ArrayConstructor): Uint8Array
@@ -76,6 +77,7 @@ export async function loadPregeneratedMapBlueprint({
   mapType,
   positionsCount,
   random = Math.random,
+  id,
 }: LoadBlueprintOptions = {}) {
   const timings: BlueprintTimings = {}
   let manifest: BlueprintManifest | undefined
@@ -92,10 +94,15 @@ export async function loadPregeneratedMapBlueprint({
   }
   if (size == null || mapType == null) return null
 
-  const candidates = compatibleMaps(manifest, { size, mapType, positionsCount })
-  if (!candidates.length) return null
-
-  const selected = candidates[Math.floor(random() * candidates.length)]
+  let selected: BlueprintManifestEntry | undefined
+  if (id) {
+    selected = (manifest?.maps || []).find(map => map.id === id)
+    if (!selected) return null
+  } else {
+    const candidates = compatibleMaps(manifest, { size, mapType, positionsCount })
+    if (!candidates.length) return null
+    selected = candidates[Math.floor(random() * candidates.length)]
+  }
   try {
     const mapFetchStartedAt = performance.now()
     const response = await fetch(`maps/${selected.path}`, { cache: 'no-store' })

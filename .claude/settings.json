@@ -9,7 +9,25 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(timeout 100 pnpm build:dev)",
       "Bash(md5 app/classes/unit/UnitActions.ts)",
-      "Bash(grep -n \"unit.context$\\\\|unit.context\\)\" app/classes/unit/UnitActions.ts)"
+      "Bash(grep -n \"unit.context$\\\\|unit.context\\)\" app/classes/unit/UnitActions.ts)",
+      "Bash(grep -n \"^  [a-zA-Z].*\\(.*\\) {$\\\\|loadGame\\\\|generateFromSave\\\\|resumeGame\\\\|continueGame\" /Users/pierrenicolas/dev/rts-game/app/classes/map/MapGeneration.ts)",
+      "Bash(awk 'NR>=180 && NR<=270 && /^  [a-zA-Z]/' /Users/pierrenicolas/dev/rts-game/app/classes/map/MapGeneration.ts)",
+      "Bash(awk 'NR>=400 && NR<=495 && /^  [a-zA-Z]/' /Users/pierrenicolas/dev/rts-game/app/classes/map/MapGeneration.ts)",
+      "Bash(awk 'NR>=1 && NR<=491 && /^  [a-zA-Z].*\\\\\\(.*\\\\\\).*{$/ {print NR\": \"$0}' /Users/pierrenicolas/dev/rts-game/app/classes/map/MapGeneration.ts)",
+      "Bash(node /private/tmp/claude-501/-Users-pierrenicolas-dev-rts-game/752cf2b8-56a8-4432-90e0-ebc2293e853f/scratchpad/repro-build-resume.cjs)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(node tests/_scratch-repro-build-resume.cjs)",
+      "Bash(md5 /Users/pierrenicolas/dev/rts-game/app/classes/map/MapGeneration.ts)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(awk -F'error' '{print $1}')",
+      "Bash(grep -rn \"asRuntimeDynamicUnit\\\\|sendTo\\\\`\\\\|sendTo\\\\${\" /Users/pierrenicolas/dev/rts-game/app --include=\"*.ts\" -R)",
+      "Bash(./node_modules/.bin/tsc -p /tmp/probe_ts)",
+      "Bash(grep -rn \"options: UnknownRecord\\\\|\\(options: UnknownRecord\\\\|{ ...props }: UnknownRecord\" app --include=\"*.ts\")",
+      "Bash(ls unit *)",
+      "Bash(wc -l unit/*.ts animal/*.ts building/*.ts resource.ts players/player.ts)",
+      "Read(//Users/rierrenicolas/dev/rts-game/app/classes/map/**)"
     ]
   }
 }

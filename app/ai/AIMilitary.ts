@@ -22,7 +22,6 @@ import type {
 } from './types'
 
 type PathInstance = Parameters<typeof getInstancePath>[0]
-type TransportUnit = Parameters<typeof getTransportLoad>[0]
 type LoadPlan = {
   shoreCell: RuntimeCell
   coastCell: RuntimeCell
@@ -41,10 +40,6 @@ type DefenseTargetCandidate = {
 
 function asPathInstance(instance: AIGridPosition): PathInstance {
   return instance as unknown as PathInstance
-}
-
-function asTransportUnit(instance: AIEntityLike): TransportUnit {
-  return instance as unknown as TransportUnit
 }
 
 const NAVAL_TRANSPORT_GROUP_MIN = 4
@@ -413,7 +408,7 @@ export class AIMilitary {
       return 0
     }
 
-    const cargoLoad = getTransportLoad(asTransportUnit(transport))
+    const cargoLoad = getTransportLoad(transport)
     const units = (operation.unitLabels || [])
       .map((label: string) => this.getUnitByLabel(label))
       .filter((unit): unit is AIEntityLike => !!unit)
@@ -434,7 +429,7 @@ export class AIMilitary {
         if (
           !unit.loadedInTransport &&
           unit.inactif &&
-          getTransportLoad(asTransportUnit(transport)) < (transport.transportCapacity || 0)
+          getTransportLoad(transport) < (transport.transportCapacity || 0)
         ) {
           unit.transportLoadShoreCell = loadShoreCell
           unit.transportLoadCoastCell = loadCoastCell
@@ -473,7 +468,7 @@ export class AIMilitary {
       }
 
       const cargo = [...(transport.transportedUnits || [])]
-      const unloaded = unloadTransport(asTransportUnit(transport))
+      const unloaded = unloadTransport(transport)
       if (!unloaded) return 0
       operation.stage = 'assault'
       for (const unit of cargo) {
@@ -499,7 +494,7 @@ export class AIMilitary {
     if (!ai.strategy.needsNavalTransport(availableMilitary.length)) return 0
 
     const transport = this.getTransportCandidates().find(
-      (candidate: AIEntityLike) => candidate.inactif && getTransportLoad(asTransportUnit(candidate)) === 0
+      (candidate: AIEntityLike) => candidate.inactif && getTransportLoad(candidate) === 0
     )
     if (!transport) return 0
 
@@ -513,8 +508,8 @@ export class AIMilitary {
     const group = availableMilitary.slice(0, groupSize)
     let loadPlan: LoadPlan | null = null
     for (const unit of group) {
-      const shoreCell = findLoadShoreCell(asTransportUnit(unit), asTransportUnit(transport))
-      const coastCell = findTransportCoastCell(asTransportUnit(transport), shoreCell)
+      const shoreCell = findLoadShoreCell(unit, transport)
+      const coastCell = findTransportCoastCell(transport, shoreCell)
       if (shoreCell && coastCell) {
         loadPlan = { shoreCell: shoreCell as unknown as RuntimeCell, coastCell: coastCell as unknown as RuntimeCell }
         break

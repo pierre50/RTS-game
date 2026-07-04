@@ -1,7 +1,7 @@
 import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity, UnitEntity } from './entities'
+import type { RuntimeEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { UnknownRecord } from './common'
 
@@ -37,6 +37,7 @@ export interface MenuLike {
   updateTerrainMiniMap?(i: number, j: number): void
   updateResourcesMiniMap(): void
   updateCameraMiniMap?(): void
+  updatePlayerMiniMap?(player: PlayerLike): void
   updatePlayerMiniMapEvt(player: PlayerLike): void
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
@@ -50,11 +51,11 @@ export interface MenuLike {
   destroy?(): void
 }
 
-export interface EntityPreviewLike {
+interface EntityPreviewLike {
   set(selection: unknown): void
 }
 
-export interface MinimapManagerLike {
+interface MinimapManagerLike {
   getMinimapFactor(): number
 }
 
@@ -72,7 +73,7 @@ export interface MinimapHostLike {
   toggled: boolean
 }
 
-export interface RallyPointControllerLike {
+interface RallyPointControllerLike {
   active: boolean
   building: RuntimeEntity | null
   start(building: RuntimeEntity): void
@@ -96,7 +97,7 @@ export interface ControlsLike extends Container {
   getViewportMetrics(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }
   removeMouseBuilding(): void
   setMouseBuilding?(building: import('./entities').PlaceableBuildingConfig): void
-  setCamera?(x: number, y: number): void
+  setCamera?(x: number, y: number, direct?: boolean): void
   sendUnits?(cell: RuntimeCell): void
   updateVisibleCells?(): void
   instanceInCamera(instance: unknown): boolean
@@ -143,6 +144,3 @@ export interface GameContextLike extends UnknownRecord {
   quit: () => void
   applyZoom: () => void
 }
-
-export type CellCommand = (cell: RuntimeCell) => void
-export type SelectedUnits = UnitEntity[]

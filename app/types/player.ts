@@ -5,6 +5,7 @@ import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, 
 
 export interface VisionGridLike {
   size: number
+  onViewed?: ((i: number, j: number) => void) | null
   index(i: number, j: number): number
   coordinates(index: number): [number, number]
   addViewer(i: number, j: number, viewer: unknown): void
@@ -16,6 +17,7 @@ export interface VisionGridLike {
   setViewed(i: number, j: number): boolean
   getKnownOccupant(i: number, j: number): RuntimeEntity | null
   setKnownOccupant(i: number, j: number, occupant: RuntimeEntity): void
+  restoreViewers(resolve: (label: string) => unknown): void
   toJSON(): unknown
 }
 
@@ -60,7 +62,13 @@ export interface PlayerLike extends UnknownRecord {
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean
-  createBuilding: (options: { i: number; j: number; type: string; isBuilt?: boolean }) => BuildingEntity
+  createBuilding: (
+    options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
+  ) => BuildingEntity
+  createUnit?: (options: UnknownRecord) => UnitEntity
+  spawnBuilding?: (
+    options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean }
+  ) => BuildingEntity | undefined
   isBuildingEligible?: (type: string) => boolean
   unselectAll(): void
   foundedTrees?: Set<RuntimeEntity>
@@ -75,8 +83,9 @@ export interface PlayerLike extends UnknownRecord {
   rememberEnemy?: (entity: RuntimeEntity) => void
   reportThreat?: (target: RuntimeEntity, attacker: RuntimeEntity) => void
   hasBuilt?: string[]
+  autoTechnologyByAge?: boolean
+  applyEligibleTechnologies?: () => string[]
 }
 
 export type PlacementOwner = PlayerLike
 
-export type CellExplorer = Pick<PlayerLike, 'views'>

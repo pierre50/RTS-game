@@ -1,5 +1,5 @@
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
-import type { GridPosition, IsoPosition, Point } from '../types/grid'
+import type { GridPosition, Point } from '../types/grid'
 
 type Direction = 'north' | 'south' | 'west' | 'northwest' | 'southwest' | 'east' | 'northeast' | 'southeast'
 
@@ -67,15 +67,6 @@ export function isometricToCartesian(x: number, y: number): [number, number] {
  */
 export function getPercentage(a: number, b: number): number {
   return Math.floor((a / b) * 100)
-}
-
-/**
- * Get value of percentage
- * @param {number} a
- * @param {number} b
- */
-export function getValuePercentage(val: number, perc: number): number {
-  return Math.floor((perc * val) / 100)
 }
 
 /**
@@ -157,8 +148,8 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
  * Get the instance zIndex according to his position
  * @param {object} instance
  */
-export function getInstanceZIndex(instance: IsoPosition): number {
-  const pos = isometricToCartesian(instance.x, instance.y + instance.z * CELL_DEPTH)
+export function getInstanceZIndex(instance: Point & { z?: number | null }): number {
+  const pos = isometricToCartesian(instance.x, instance.y + (instance.z ?? 0) * CELL_DEPTH)
   return pos[0] + pos[1]
 }
 
@@ -169,15 +160,6 @@ export function getInstanceZIndex(instance: IsoPosition): number {
  */
 export function getTerrainSetZIndex(cell: GridPosition): number {
   return cell.i + cell.j - 0.1
-}
-
-/**
- * Get the difference between two number
- * @param {number} a
- * @param {number} b
- */
-export function diff(a: number, b: number): number {
-  return Math.abs(a - b)
 }
 
 /**

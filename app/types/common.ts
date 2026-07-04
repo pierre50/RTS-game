@@ -1,9 +1,5 @@
 export type UnknownRecord = Record<string, unknown>
-export type LooseRecord = Record<string, any>
-
-export type Nullable<T> = T | null
-
-export type JsonPrimitive = string | number | boolean | null
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
+export type DynamicValue = ReturnType<typeof JSON.parse>
+export type LooseRecord = Record<string, DynamicValue>
 
 export type ResourceAmount = Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>

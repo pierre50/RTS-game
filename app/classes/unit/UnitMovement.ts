@@ -21,6 +21,10 @@ function isBoatNavigationCell(cell: RuntimeCell | null | undefined) {
   return cell?.category === 'Water' || cell?.waterBorder
 }
 
+function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity {
+  return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
+}
+
 const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
   [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ACTION_TYPES.minestone, ACTION_TYPES.minegold],
@@ -36,15 +40,15 @@ const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   ],
 }
 
-const GATHER_SEND_METHOD_BY_ACTION: Record<string, string> = {
-  [ACTION_TYPES.chopwood]: 'sendToTree',
-  [ACTION_TYPES.farm]: 'sendToFarm',
-  [ACTION_TYPES.fishing]: 'sendToFish',
-  [ACTION_TYPES.forageberry]: 'sendToBerrybush',
-  [ACTION_TYPES.hunt]: 'sendToHunt',
-  [ACTION_TYPES.minegold]: 'sendToGold',
-  [ACTION_TYPES.minestone]: 'sendToStone',
-  [ACTION_TYPES.takemeat]: 'sendToTakeMeat',
+const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: RuntimeEntity) => boolean> = {
+  [ACTION_TYPES.chopwood]: (unit, target) => (unit.sendToTree ? (unit.sendToTree(target, true), true) : false),
+  [ACTION_TYPES.farm]: (unit, target) => (unit.sendToFarm(target, true), true),
+  [ACTION_TYPES.fishing]: (unit, target) => (unit.sendToFish ? (unit.sendToFish(target, true), true) : false),
+  [ACTION_TYPES.forageberry]: (unit, target) => (unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false),
+  [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
+  [ACTION_TYPES.minegold]: (unit, target) => (unit.sendToGold ? (unit.sendToGold(target, true), true) : false),
+  [ACTION_TYPES.minestone]: (unit, target) => (unit.sendToStone ? (unit.sendToStone(target, true), true) : false),
+  [ACTION_TYPES.takemeat]: (unit, target) => (unit.sendToTakeMeat(target, true), true),
 }
 
 const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
@@ -61,7 +65,6 @@ const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
 const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
 
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
-type DynamicSendTo = (target: RuntimeEntity, immediate?: boolean) => void
 
 export class UnitMovement {
   unit: UnitEntity
@@ -76,22 +79,18 @@ export class UnitMovement {
     const actions = dest?.type ? POST_BUILD_GATHER_ACTIONS[dest.type] : undefined
     if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed) return false
 
-    const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
-    const targets = findInstancesInSight(unitAsInstance, instance =>
-      actions.some(action => unit.getActionCondition?.(instance as unknown as RuntimeEntity, action))
+    const unitAsInstance = unit
+    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+      actions.some(action => unit.getActionCondition?.(instance, action))
     )
     if (!targets.length) return false
 
-    const target = getClosestInstanceWithPath(unitAsInstance, targets)
+    const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
     if (!target) return false
 
-    const action = actions.find(candidate => unit.getActionCondition?.(target.instance as unknown as RuntimeEntity, candidate))
-    const sendMethod = action ? GATHER_SEND_METHOD_BY_ACTION[action] : undefined
-    const dynamicUnit = unit as unknown as Record<string, DynamicSendTo>
-    if (!sendMethod || typeof dynamicUnit[sendMethod] !== 'function') return false
-
-    dynamicUnit[sendMethod](target.instance as unknown as RuntimeEntity, true)
-    return true
+    const action = actions.find(candidate => unit.getActionCondition?.(target.instance, candidate))
+    const sendTo = action ? GATHER_SEND_TO_BY_ACTION[action] : undefined
+    return sendTo ? sendTo(unit, target.instance) : false
   }
 
   findClosestReachableCellNearTarget(target: RuntimeEntity, minDistance = 2, allowCurrentCell = false): { cell: RuntimeCell; path: RuntimeCell[] } | null {
@@ -118,7 +117,7 @@ export class UnitMovement {
 
       for (const cell of cells) {
         if (allowCurrentCell && unit.i === cell.i && unit.j === cell.j) return { cell, path: [] }
-        const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], cell.i, cell.j, map)
+        const path = getInstancePath(unit, cell.i, cell.j, map)
         if (path.length && (!best || path.length < best.path.length)) {
           best = { cell, path }
         }
@@ -204,7 +203,7 @@ export class UnitMovement {
     ) {
       unit.setDest?.(dest)
       unit.action = action
-      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
       unit.getAction?.(action ?? '')
       return
     }
@@ -212,10 +211,10 @@ export class UnitMovement {
       const allowWaterCellCategory = unit.category === 'Boat'
       const destCell = map.grid[destEntity.i][destEntity.j]
       if (destCell.solid) {
-        path = getInstanceClosestFreeCellPath(unit as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[0], destEntity as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[1], map) as unknown as RuntimeCell[]
+        path = getInstanceClosestFreeCellPath(unit, destEntity, map) as RuntimeCell[]
         if (!path.length && unit.work) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
           } else {
@@ -227,7 +226,7 @@ export class UnitMovement {
         const approach = this.findClosestReachableCellNearTarget(destEntity, 1, true)
         if (!approach) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
           action ? unit.affectNewDest?.() : unit.stop?.()
           return
         }
@@ -240,14 +239,14 @@ export class UnitMovement {
         if (approach.path.length) {
           unit.setPath?.(approach.path)
         } else {
-          unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+          unit.degree = getInstanceDegree(unit, dest.x, dest.y)
           unit.getAction?.(action)
         }
         return
       }
     }
     if (!path.length) {
-      path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], destEntity.i, destEntity.j, map)
+      path = getInstancePath(unit, destEntity.i, destEntity.j, map)
     }
     if (path.length) {
       unit.setDest?.(dest)
@@ -255,7 +254,7 @@ export class UnitMovement {
       unit.setPath?.(path)
     } else {
       unit.action = action
-      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
+      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
       if (action === ACTION_TYPES.delivery) {
         unit.stop?.()
       } else {
@@ -272,11 +271,11 @@ export class UnitMovement {
     if (
       (unit.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) &&
       effectiveRange &&
-      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], dest as unknown as Parameters<typeof instancesDistance>[1]) <= effectiveRange
+      instancesDistance(unit, dest) <= effectiveRange
     ) {
       return true
     }
-    return instanceContactInstance(unit as unknown as Parameters<typeof instanceContactInstance>[0], dest as unknown as Parameters<typeof instanceContactInstance>[1])
+    return instanceContactInstance(unit, dest)
   }
 
   destHasMoved(): boolean {
@@ -285,7 +284,7 @@ export class UnitMovement {
     if (!dest || !unit.realDest) return false
     return (
       (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) &&
-      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], dest as unknown as Parameters<typeof instancesDistance>[1]) <= (unit.sight ?? 0)
+      instancesDistance(unit, dest) <= (unit.sight ?? 0)
     )
   }
 
@@ -306,16 +305,16 @@ export class UnitMovement {
       unit.affectNewDest?.()
       return
     }
-    const nextCellHas = nextCell.has as unknown as (UnitEntity & { hasPath?: () => boolean; sprite?: { playing?: boolean; stop?: () => void; play?: () => void } }) | null
+    const nextCellHas = nextCell.has
     if (
       nextCellHas &&
-      nextCellHas.family === FAMILY_TYPES.unit &&
+      isMovingUnitEntity(nextCellHas) &&
       nextCellHas.label !== unit.label &&
       nextCellHas.hasPath?.() &&
-      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], nextCellHas as unknown as Parameters<typeof instancesDistance>[1]) <= 1 &&
+      instancesDistance(unit, nextCellHas) <= 1 &&
       nextCellHas.sprite?.playing
     ) {
-      ;(unit.sprite as unknown as { stop: () => void }).stop()
+      unit.sprite?.stop()
       return
     }
     if (nextCell.solid && unit.dest) {
@@ -323,17 +322,18 @@ export class UnitMovement {
       unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
       return
     }
-    const sprite = unit.sprite as unknown as { playing: boolean; play: () => void; stop: () => void }
+    const sprite = unit.sprite
+    if (!sprite) return
     if (!sprite.playing) {
       sprite.play()
     }
-    if (instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], nextCell as unknown as Parameters<typeof instancesDistance>[1], false) <= (unit.speed ?? 0)) {
+    if (instancesDistance(unit, nextCell, false) <= (unit.speed ?? 0)) {
       const oldI = unit.i,
         oldJ = unit.j
       unit.z = nextCell.z
       unit.i = nextCell.i
       unit.j = nextCell.j
-      unit.zIndex = getInstanceZIndex(unit as unknown as Parameters<typeof getInstanceZIndex>[0])
+      unit.zIndex = getInstanceZIndex(unit)
       const currentCell = unit.currentCell
       if (currentCell?.has === unit) {
         currentCell.has = null
@@ -344,8 +344,8 @@ export class UnitMovement {
         unit.currentCell.place(unit)
         unit.currentCell.solid = true
       }
-      ;(map as unknown as { updateInstanceBucket: (instance: RuntimeEntity, oldI: number, oldJ: number) => void }).updateInstanceBucket(unit, oldI, oldJ)
-      updateInstanceVisibility(unit as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      map.updateInstanceBucket(unit, oldI, oldJ)
+      updateInstanceVisibility(unit)
       if (unit.transportCapacity && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
         unit.context?.menu.setBottombar(unit)
       }
@@ -357,7 +357,7 @@ export class UnitMovement {
       if (unit.isUnitAtDest?.(unit.action, dest)) {
         unit.path = []
         unit.stopInterval?.()
-        unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+        unit.degree = getInstanceDegree(unit, dest.x, dest.y)
         unit.getAction?.(unit.action ?? '')
         return
       }
@@ -371,8 +371,8 @@ export class UnitMovement {
       const oldDeg = unit.degree
       let speed = unit.speed ?? 0
       if ((unit.loading ?? 0) > 0) speed *= 0.8
-      moveTowardPoint(unit as unknown as Parameters<typeof moveTowardPoint>[0], nextCell.x, nextCell.y, speed)
-      canUpdateMinimap(unit as unknown as Parameters<typeof canUpdateMinimap>[0], player) && (menu as unknown as { updatePlayerMiniMap?: (owner: unknown) => void })?.updatePlayerMiniMap?.(unit.owner!)
+      moveTowardPoint(unit, nextCell.x, nextCell.y, speed)
+      canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
       if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)
       }
@@ -417,15 +417,15 @@ export class UnitMovement {
 
       if (this.sendToPostBuildResource()) return
 
-      const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
-      const targets = findInstancesInSight(unitAsInstance, instance =>
-        Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.build))
+      const unitAsInstance = unit
+      const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+        Boolean(unit.getActionCondition?.(instance, ACTION_TYPES.build))
       )
       if (targets.length) {
-        const target = getClosestInstanceWithPath(unitAsInstance, targets)
+        const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
         if (target) {
-          unit.setDest?.(target.instance as unknown as RuntimeEntity)
-          unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
+          unit.setDest?.(target.instance)
+          unit.setPath?.(target.path as RuntimeCell[])
           return
         }
       }
@@ -486,18 +486,18 @@ export class UnitMovement {
     ) {
       handleSuccess = Boolean(unit.handleAffectNewDestHunter?.())
     } else if (!dest || dest.family !== FAMILY_TYPES.animal) {
-      const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
-      const targets = findInstancesInSight(unitAsInstance, instance => Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity)))
+      const unitAsInstance = unit
+      const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance => Boolean(unit.getActionCondition?.(instance)))
       if (targets.length) {
-        const target = getClosestInstanceWithPath(unitAsInstance, targets)
+        const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
         if (target) {
-          unit.setDest?.(target.instance as unknown as RuntimeEntity)
+          unit.setDest?.(target.instance)
           if (instanceContactInstance(unitAsInstance, target.instance)) {
             unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
             unit.getAction?.(unit.action)
             return
           }
-          unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
+          unit.setPath?.(target.path as RuntimeCell[])
           return
         }
       }
@@ -549,7 +549,7 @@ export class UnitMovement {
     candidates.sort((a, b) => b.score - a.score || a.dist - b.dist)
 
     for (const { cell } of candidates.slice(0, 12)) {
-      const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], cell.i, cell.j, map)
+      const path = getInstancePath(unit, cell.i, cell.j, map)
       if (path.length) {
         unit.sendTo?.(cell)
         return true

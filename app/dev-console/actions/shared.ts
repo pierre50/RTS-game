@@ -11,7 +11,7 @@ export const DEBUG_VISION_LAYER = 'debugVisionLayer'
 export const DEBUG_GRID_LAYER = 'debugGridLayer'
 export const DEBUG_COORDS_LAYER = 'debugCoordsLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
-export const DEBUG_CELL_REFRESH_MS = 180
+const DEBUG_CELL_REFRESH_MS = 180
 
 export function normalizeToggle(value: unknown, currently: boolean): boolean {
   return value === 'on' ? true : value === 'off' ? false : !currently

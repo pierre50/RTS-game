@@ -1,6 +1,6 @@
 import { TRANSLATIONS } from './i18n/translations'
 
-export const LANG_STORAGE_KEY = 'lang'
+const LANG_STORAGE_KEY = 'lang'
 export const LANG_CHANGE_EVENT = 'doe:langchange'
 export const SUPPORTED_LANGS = [
   { code: 'fr', label: 'Français' },

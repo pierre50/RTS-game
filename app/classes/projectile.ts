@@ -20,7 +20,7 @@ import {
 } from '../lib'
 import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 import type { Texture } from 'pixi.js'
-import type { LooseRecord } from '../types/common'
+import type { DynamicValue, LooseRecord } from '../types/common'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { Point } from '../types/grid'
@@ -116,7 +116,7 @@ function getDirectionalAnimation(projectile: RuntimeProjectile, textures: Textur
 }
 
 export class Projectile extends Container {
-  [key: string]: any
+  [key: string]: DynamicValue
 
   context: GameContextLike
   family: string

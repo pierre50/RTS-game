@@ -1,4 +1,4 @@
-import type { Container, Graphics } from 'pixi.js'
+import type { Container } from 'pixi.js'
 import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -42,7 +42,7 @@ export type DevMapLike = UnknownRecord & {
   registerRenderChunk?(displayObjects: unknown, bounds: unknown): unknown
 }
 
-export type DevMenuLike = {
+type DevMenuLike = {
   updateTopbar(): void
   updateBottombar?(): void
   updateTerrainMiniMap?(i: number, j: number): void
@@ -54,7 +54,7 @@ export type DevMenuLike = {
   showMessage?(message: string, type?: string): void
 }
 
-export type DevControlsLike = {
+type DevControlsLike = {
   mouse?: { x: number; y: number }
   getCellUnderCursor?(): DevCell | null
   updateVisibleCells?(): void
@@ -73,7 +73,7 @@ export type DevPerformanceMetric = {
   slowCount?: number
 }
 
-export type DevPerformanceSnapshot = {
+type DevPerformanceSnapshot = {
   frames: {
     samples: number
     averageMs: number
@@ -157,4 +157,3 @@ export type DevCell = RuntimeCell & {
   removeFog?(): void
 }
 
-export type DebugLayer = Graphics | Container

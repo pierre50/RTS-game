@@ -3,6 +3,8 @@ import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
+import type { DynamicValue, UnknownRecord } from './common'
+import type { TransportBoat } from '../lib/transport'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 
@@ -12,7 +14,7 @@ export interface EntityInterfaceLike {
 }
 
 export interface RuntimeEntityBase extends GridPosition, Point {
-  [key: string]: any
+  [key: string]: DynamicValue
   label: string
   family: string
   type: string
@@ -48,18 +50,18 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   setTextures?: (sheet: string) => void
 }
 
-export interface UnitPendingOrder {
+interface UnitPendingOrder {
   execute?: () => void
   dest?: RuntimeEntity | RuntimeCell | null
   action?: string | null
 }
 
-export interface UnitBlockedGatherApproach {
+interface UnitBlockedGatherApproach {
   target: RuntimeEntity
   action: string
 }
 
-export interface UnitRealDest {
+interface UnitRealDest {
   i: number
   j: number
   x: number
@@ -82,7 +84,8 @@ export interface UnitSounds {
 }
 
 export interface UnitEntity extends RuntimeEntityBase {
-  loadedInTransport?: RuntimeEntity | null
+  sprite?: AnimatedSprite
+  loadedInTransport?: TransportBoat | null
   inactif?: boolean
   sounds?: UnitSounds
   work?: string | null
@@ -90,7 +93,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   loadingType?: string | null
   showTransportCapacity?: boolean
   transportCapacity?: number
-  transportedUnits?: RuntimeEntity[]
+  transportedUnits?: UnitEntity[]
   transportLoadShoreCell?: RuntimeCell | null
   transportLoadCoastCell?: RuntimeCell | null
   queue?: string[]
@@ -109,7 +112,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   degree?: number
   speed?: number
   huntRange?: number
-  currentCell?: RuntimeCell
+  currentCell?: RuntimeCell | null
   visibleCells?: Set<unknown>
 
   // Animation / action state
@@ -159,6 +162,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   category?: string
 
   // Delegate methods called across the 5 composition classes
+  unitCombat?: { handleAttackAction: () => void }
   stop?: () => void
   setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
   setPath?: (path: RuntimeCell[]) => void
@@ -166,6 +170,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: Record<string, unknown>) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
+  sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
   sendToDelivery?: () => void
   sendToFish?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToAttack(target: RuntimeEntity): void
@@ -218,6 +223,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]
+  placeUnit?: (type: string, extra?: UnknownRecord) => boolean
 }
 
 export interface ResourceEntity extends RuntimeEntityBase {

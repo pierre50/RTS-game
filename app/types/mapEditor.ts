@@ -42,7 +42,7 @@ export interface EditorConfig {
   name?: string
 }
 
-export interface MapEditorHudLike {
+interface MapEditorHudLike {
   sync(): void
   setBottombar(selection?: RuntimeEntity | null): void
   updateStatus(cell: RuntimeCell | null): void

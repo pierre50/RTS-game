@@ -1,9 +1,9 @@
 import type { Grid, GridCell } from '../../types/grid'
 
 type NeighborOffset = readonly [number, number]
-type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
+export type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
 type NeighborRing = boolean[]
-type NeighborFlags = Record<NeighborName, boolean>
+export type NeighborFlags = Record<NeighborName, boolean>
 
 export const EIGHT_NEIGHBOR_OFFSETS: readonly NeighborOffset[] = Object.freeze([
   [-1, 0],
@@ -16,7 +16,7 @@ export const EIGHT_NEIGHBOR_OFFSETS: readonly NeighborOffset[] = Object.freeze([
   [-1, -1],
 ])
 
-export const EIGHT_NEIGHBOR_NAMES: readonly NeighborName[] = Object.freeze(['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'])
+const EIGHT_NEIGHBOR_NAMES: readonly NeighborName[] = Object.freeze(['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'])
 
 export function getNeighborRing<TCell extends GridCell>(
   grid: Grid<TCell>,

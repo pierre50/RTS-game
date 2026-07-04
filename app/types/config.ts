@@ -2,7 +2,7 @@ import type { ResourceAmount } from './common'
 import type { Condition } from '../lib/combat'
 import type { UnitSounds } from './entities'
 
-export interface EntityConfig {
+interface EntityConfig {
   icon: string
   cost?: ResourceAmount
   conditions?: Condition[]
@@ -24,7 +24,7 @@ export interface BuildingConfig extends EntityConfig {
   technologies?: string[]
 }
 
-export interface TechnologyAction {
+interface TechnologyAction {
   type: string
   source?: string
   target?: string
@@ -51,14 +51,14 @@ export interface AnimalConfig extends EntityConfig {
   totalQuantity?: number
 }
 
-export interface ProjectileTrajectory {
+interface ProjectileTrajectory {
   kind: string
   minArcHeight?: number
   arcHeightFactor?: number
   maxArcHeight?: number
 }
 
-export interface ProjectileImpactEffect {
+interface ProjectileImpactEffect {
   assets: string
   animationSpeed?: number
   scale?: number
