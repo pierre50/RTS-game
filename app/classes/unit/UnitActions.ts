@@ -24,30 +24,31 @@ import {
 } from '../../lib'
 import { Projectile } from '../projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-
-type AnyRecord = Record<string, any>
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { PlayerLike } from '../../types/player'
+import type { CommandSound } from '../../types/entities'
 
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
 const ASTROLOGY_CONVERSION_CHANCE = 0.39
 
-function removeFromOwnerList(owner: AnyRecord, key: string, instance: any) {
-  const list = owner?.[key]
+function removeFromOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
+  const list = owner?.[key] as unknown as RuntimeEntity[] | undefined
   if (!Array.isArray(list)) return
   const index = list.indexOf(instance)
   if (index >= 0) list.splice(index, 1)
 }
 
-function addToOwnerList(owner: AnyRecord, key: string, instance: any) {
-  const list = owner?.[key]
+function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
+  const list = owner?.[key] as unknown as RuntimeEntity[] | undefined
   if (!Array.isArray(list) || list.includes(instance)) return
   list.push(instance)
 }
 
 export class UnitActions {
-  unit: AnyRecord
+  unit: UnitEntity
 
-  constructor(unit: AnyRecord) {
+  constructor(unit: UnitEntity) {
     this.unit = unit
   }
 
@@ -58,15 +59,16 @@ export class UnitActions {
     unit.previousWork = null
   }
 
-  clearInvalidPreviousTask() {
+  clearInvalidPreviousTask(): boolean {
     const unit = this.unit
-    if (!unit.previousDest) return false
-    if (unit.previousDest.family === FAMILY_TYPES.animal) return false
+    const previousDest = unit.previousDest as RuntimeEntity | null | undefined
+    if (!previousDest) return false
+    if (previousDest.family === FAMILY_TYPES.animal) return false
 
-    if (unit.previousDest.family === FAMILY_TYPES.building) {
+    if (previousDest.family === FAMILY_TYPES.building) {
       if (
-        unit.getActionCondition(unit.previousDest, ACTION_TYPES.build) ||
-        unit.getActionCondition(unit.previousDest, ACTION_TYPES.farm)
+        unit.getActionCondition?.(previousDest, ACTION_TYPES.build) ||
+        unit.getActionCondition?.(previousDest, ACTION_TYPES.farm)
       ) {
         return false
       }
@@ -74,26 +76,27 @@ export class UnitActions {
       return true
     }
 
-    const type = unit.previousDest.category || unit.previousDest.type
+    const type = previousDest.category || previousDest.type
     const action = TYPE_ACTION[type as keyof typeof TYPE_ACTION]
-    if (!action || !unit.getActionCondition(unit.previousDest, action)) {
+    if (!action || !unit.getActionCondition?.(previousDest, action)) {
       unit.previousDest = null
       return true
     }
     return false
   }
 
-  playSound(soundId: any) {
+  playSound(soundId: CommandSound) {
     const unit = this.unit
-    if (!soundId || !unit.context.controls.instanceIsAudible(unit)) return
+    const controls = unit.context?.controls as unknown as { instanceIsAudible?: (instance: RuntimeEntity) => boolean } | undefined
+    if (!soundId || !controls?.instanceIsAudible?.(unit)) return
     playSoundCue(soundId)
   }
 
-  getWorkSound(key: string, fallback: any = null) {
+  getWorkSound(key: string, fallback: CommandSound = null): CommandSound {
     return this.unit.sounds?.work?.[key] ?? fallback
   }
 
-  getAudibleWorkSound(key: string, fallback: any = null) {
+  getAudibleWorkSound(key: string, fallback: CommandSound = null): CommandSound {
     if (this.unit.silentWorkSounds?.includes(key)) return null
     return this.getWorkSound(key, fallback)
   }
@@ -105,331 +108,344 @@ export class UnitActions {
       : { minChants: BASE_CONVERSION_MIN_CHANTS, chance: BASE_CONVERSION_CHANCE }
   }
 
-  convertTarget(target: AnyRecord) {
+  convertTarget(target: RuntimeEntity): boolean {
     const unit = this.unit
-    const {
-      context: { menu, player },
-    } = unit
-    const oldOwner = target.owner
+    const menu = unit.context?.menu
+    const player = unit.owner
+    const t = target as UnitEntity & BuildingEntity
+    const oldOwner = t.owner
     const newOwner = unit.owner
     if (!oldOwner || !newOwner || oldOwner.label === newOwner.label) return false
 
-    if (target.selected) {
-      target.unselect()
-      if (player.selectedOther === target) player.selectedOther = null
+    if (t.selected) {
+      t.select?.()
+      const owner = player as unknown as { selectedOther?: RuntimeEntity | null }
+      if (owner.selectedOther === target) owner.selectedOther = null
     }
 
-    target.stopInterval?.()
-    if (target.sprite) {
-      target.sprite.onLoop = null
-      target.sprite.onFrameChange = null
-      target.sprite.onComplete = null
+    t.stopInterval?.()
+    if (t.sprite) {
+      const sprite = t.sprite as unknown as { onLoop: unknown; onFrameChange: unknown; onComplete: unknown }
+      sprite.onLoop = null
+      sprite.onFrameChange = null
+      sprite.onComplete = null
     }
-    target.path = []
-    target.action = null
-    target.dest = null
-    target.realDest = null
-    target.previousDest = null
-    target.previousWork = null
-    target.actionLocked = false
-    target.pendingOrder = null
-    target.blockedGatherApproach = null
-    target.inactif = true
-    target.assetCiv = target.assetCiv || oldOwner.civ
-    target.assetAge = target.assetAge ?? oldOwner.age
-    target.owner = newOwner
+    t.path = []
+    t.action = null
+    t.dest = null
+    t.realDest = null
+    t.previousDest = null
+    t.previousWork = null
+    t.actionLocked = false
+    t.pendingOrder = null
+    t.blockedGatherApproach = null
+    t.inactif = true
+    t.assetCiv = t.assetCiv || oldOwner.civ
+    t.assetAge = t.assetAge ?? oldOwner.age
+    t.owner = newOwner
 
-    if (target.family === FAMILY_TYPES.unit) {
-      removeFromOwnerList(oldOwner, 'units', target)
-      addToOwnerList(newOwner, 'units', target)
+    if (t.family === FAMILY_TYPES.unit) {
+      removeFromOwnerList(oldOwner, 'units', t)
+      addToOwnerList(newOwner, 'units', t)
       oldOwner.population = Math.max(0, oldOwner.population - 1)
       newOwner.population += 1
-      target.setTextures?.(SHEET_TYPES.standing)
-      changeSpriteColor(target.sprite, newOwner.color)
-    } else if (target.family === FAMILY_TYPES.building) {
-      target.assetType = target.assetType || (isTower(target) ? getTowerType(oldOwner) : target.type)
-      removeFromOwnerList(oldOwner, 'buildings', target)
-      addToOwnerList(newOwner, 'buildings', target)
-      if (target.increasePopulation && target.populationCapacityApplied) {
-        oldOwner.population_max = Math.max(0, oldOwner.population_max - target.increasePopulation)
-        newOwner.population_max += target.increasePopulation
+      ;(t as unknown as { setTextures?: (sheet: string) => void }).setTextures?.(SHEET_TYPES.standing)
+      changeSpriteColor(t.sprite as unknown as Parameters<typeof changeSpriteColor>[0], newOwner.color ?? '')
+    } else if (t.family === FAMILY_TYPES.building) {
+      t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner as Parameters<typeof getTowerType>[0]) : t.type)
+      removeFromOwnerList(oldOwner, 'buildings', t)
+      addToOwnerList(newOwner, 'buildings', t)
+      if (t.increasePopulation && t.populationCapacityApplied) {
+        oldOwner.population_max = Math.max(0, oldOwner.population_max - t.increasePopulation)
+        newOwner.population_max += t.increasePopulation
       }
-      target.clearRallyPoint?.()
-      target.queue = []
-      target.technology = null
-      target.loading = null
-      target.finalTexture?.()
-      if (target.interface) {
-        const units = newOwner.isPlayed ? (target.units || []).map((key: any) => menu.getUnitButton(key)) : []
-        const technologies = newOwner.isPlayed
-          ? (target.technologies || []).map((key: any) => menu.getTechnologyButton(key))
+      t.clearRallyPoint?.()
+      t.queue = []
+      t.technology = null
+      t.loading = null
+      t.finalTexture?.()
+      if (t.interface) {
+        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getUnitButton?.(key)) : []
+        const technologies = newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getTechnologyButton?.(key)) : []
+        t.interface.menu = newOwner.isPlayed
+          ? [...units, ...technologies, ...(units.length && menu ? [menu.getRallyPointButton?.()] : [])].filter(
+              (item): item is NonNullable<typeof item> => Boolean(item)
+            )
           : []
-        target.interface.menu =
-          newOwner.isPlayed ? [...units, ...technologies, ...(units.length ? [menu.getRallyPointButton()] : [])] : []
       }
-      if (target.isBuilt && !newOwner.hasBuilt.includes(target.type)) {
-        newOwner.hasBuilt.push(target.type)
+      if (t.isBuilt && !newOwner.hasBuilt?.includes(t.type)) {
+        newOwner.hasBuilt?.push(t.type)
       }
     } else {
       return false
     }
 
-    updateInstanceVisibility(target as any)
-    canUpdateMinimap(target as any, player) && menu.updatePlayerMiniMapEvt(oldOwner)
-    canUpdateMinimap(target as any, player) && menu.updatePlayerMiniMapEvt(newOwner)
-    if (newOwner.isPlayed) menu.updateTopbar()
-    unit.stop()
+    updateInstanceVisibility(t as unknown as Parameters<typeof updateInstanceVisibility>[0])
+    canUpdateMinimap(t as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
+    canUpdateMinimap(t as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
+    if (newOwner.isPlayed) menu?.updateTopbar()
+    unit.stop?.()
     return true
   }
 
   goBackToPrevious() {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
     this.clearInvalidPreviousTask()
     if (!unit.previousDest) {
       this.restorePreviousWork()
-      unit.stop()
+      unit.stop?.()
       return
     }
-    const dest = unit.previousDest
+    const dest = unit.previousDest as RuntimeEntity
     const type = dest.category || dest.type
     unit.previousDest = null
     this.restorePreviousWork()
     if (dest.family === FAMILY_TYPES.animal) {
-      if (unit.getActionCondition(dest, ACTION_TYPES.takemeat)) {
-        unit.sendToTakeMeat(dest, true)
-      } else {
-        unit.sendToEvt(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
+      if (unit.getActionCondition?.(dest, ACTION_TYPES.takemeat)) {
+        unit.sendToTakeMeat?.(dest, true)
+      } else if (map) {
+        unit.sendToEvt?.(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
       }
     } else if (dest.family === FAMILY_TYPES.building) {
-      if (unit.getActionCondition(dest, ACTION_TYPES.build)) {
-        unit.sendToBuilding(dest)
-      } else if (unit.getActionCondition(dest, ACTION_TYPES.farm)) {
-        unit.sendToFarm(dest, true)
-      } else {
-        unit.sendToEvt(map.grid[dest.i][dest.j], ACTION_TYPES.build)
+      if (unit.getActionCondition?.(dest, ACTION_TYPES.build)) {
+        unit.sendToBuilding?.(dest as BuildingEntity)
+      } else if (unit.getActionCondition?.(dest, ACTION_TYPES.farm)) {
+        unit.sendToFarm?.(dest, true)
+      } else if (map) {
+        unit.sendToEvt?.(map.grid[dest.i][dest.j], ACTION_TYPES.build)
       }
     } else if (TYPE_ACTION[type as keyof typeof TYPE_ACTION]) {
-      if (unit.getActionCondition(dest, TYPE_ACTION[type as keyof typeof TYPE_ACTION])) {
+      const action = TYPE_ACTION[type as keyof typeof TYPE_ACTION]
+      if (unit.getActionCondition?.(dest, action)) {
         const sendToFunc = `sendTo${type}`
-        typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](dest, true) : unit.stop()
-      } else {
-        unit.sendToEvt(map.grid[dest.i][dest.j], TYPE_ACTION[type as keyof typeof TYPE_ACTION])
+        const dynamicUnit = unit as unknown as Record<string, (target: RuntimeEntity, immediate?: boolean) => void>
+        typeof dynamicUnit[sendToFunc] === 'function' ? dynamicUnit[sendToFunc](dest, true) : unit.stop?.()
+      } else if (map) {
+        unit.sendToEvt?.(map.grid[dest.i][dest.j], action)
       }
-    } else {
-      unit.sendToEvt(map.grid[dest.i][dest.j])
+    } else if (map) {
+      unit.sendToEvt?.(map.grid[dest.i][dest.j])
     }
   }
 
   startGathering(
-    loadingType: any,
-    soundId: any,
-    { dieOnEmpty = false, checkOwner = false, updateTexture = false }: AnyRecord = {}
+    loadingType: string,
+    soundId: CommandSound,
+    { dieOnEmpty = false, checkOwner = false, updateTexture = false }: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean } = {}
   ) {
     const unit = this.unit
-    const { menu } = unit.context
-    if (!unit.getActionCondition(unit.dest)) {
-      unit.affectNewDest()
+    const menu = unit.context?.menu
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
       return
     }
-    unit.setTextures(SHEET_TYPES.action)
-    unit.startInterval(
+    unit.setTextures?.(SHEET_TYPES.action)
+    unit.startInterval?.(
       () => {
-        if (!unit.getActionCondition(unit.dest)) {
-          if (dieOnEmpty && unit.dest.quantity <= 0) {
-            unit.dest.die()
+        const dest = unit.dest as RuntimeEntity | null | undefined
+        if (!unit.getActionCondition?.(dest)) {
+          if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
+            dest.die?.()
           }
-          unit.affectNewDest()
+          unit.affectNewDest?.()
           return
         }
-        if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
-          unit.sendToDelivery()
+        if (!dest || unit.loading === unit.loadingMax?.[unit.loadingType ?? '']) {
+          unit.sendToDelivery?.()
           return
         }
-        unit.loading++
+        unit.loading = (unit.loading ?? 0) + 1
         unit.loadingType = loadingType
-        unit.updateInterfaceLoading()
+        unit.updateInterfaceLoading?.()
         this.playSound(soundId)
-        if (updateTexture) unit.dest.updateTexture()
-        unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
-        if (unit.dest.selected && (!checkOwner || unit.owner.isPlayed)) {
-          menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity)
+        if (updateTexture) dest.updateTexture?.()
+        dest.quantity = Math.max((dest.quantity ?? 0) - 1, 0)
+        if (dest.selected && (!checkOwner || unit.owner?.isPlayed)) {
+          menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
         }
-        if (unit.dest.quantity <= 0) {
-          if (dieOnEmpty) unit.dest.die()
-          unit.affectNewDest()
+        if ((dest.quantity ?? 0) <= 0) {
+          if (dieOnEmpty) dest.die?.()
+          unit.affectNewDest?.()
         }
         if (unit.loading === 1) {
-          if (unit.allAssets && unit.allAssets[unit.work]) {
-            unit.walkingSheet = Assets.cache.get(unit.allAssets[unit.work].loadedSheet)
-            unit.standingSheet = Assets.cache.get(unit.allAssets[unit.work].standingSheet)
+          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
+          if (workAssets) {
+            unit.walkingSheet = Assets.cache.get(workAssets.loadedSheet)
+            unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
           }
         }
       },
-      (1 / unit.gatheringRate[unit.work]) * 1000,
+      (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
       false,
       `unit.gather.${loadingType}`
     )
   }
 
-  upgrade(type: any) {
+  upgrade(type: string) {
     const unit = this.unit
-    const {
-      context: { menu },
-    } = unit
-    const data = unit.owner.config.units[type]
+    const menu = unit.context?.menu
+    const data = unit.owner?.config.units[type]
+    if (!data) return
     unit.type = type
-    unit.hitPoints = data.totalHitPoints - (unit.totalHitPoints - unit.hitPoints)
+    unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
+    const dynamicUnit = unit as unknown as Record<string, unknown>
     for (const [key, value] of Object.entries(data)) {
-      unit[key] = value
+      dynamicUnit[key] = value
     }
-    for (const [key, value] of Object.entries(unit.assets)) {
-      unit[key] = Assets.cache.get(value)
+    for (const [key, value] of Object.entries(unit.assets ?? {})) {
+      dynamicUnit[key] = Assets.cache.get(value)
     }
-    if (unit.action && !unit.path.length) {
-      unit.getAction(unit.action)
+    if (unit.action && !unit.path?.length) {
+      unit.getAction?.(unit.action)
     } else {
-      unit.setTextures(unit.currentSheet)
+      unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
     }
-    if (unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
-      menu.setBottombar(unit)
+    if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
+      menu?.setBottombar(unit)
     }
   }
 
-  getAction(name: any) {
+  getAction(name: string) {
     const unit = this.unit
-    const {
-      context: { menu, player, map },
-    } = unit
-    unit.sprite.onLoop = null
-    unit.sprite.onFrameChange = null
+    const menu = unit.context?.menu
+    const player = unit.owner
+    const map = unit.context?.map
+    const sprite = unit.sprite as unknown as { onLoop: unknown; onFrameChange: unknown }
+    sprite.onLoop = null
+    sprite.onFrameChange = null
     switch (name) {
-      case ACTION_TYPES.delivery:
-        if (!unit.getActionCondition(unit.dest, unit.action)) {
-          unit.stop()
+      case ACTION_TYPES.delivery: {
+        if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
+          unit.stop?.()
           return
         }
-        unit.owner[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType] += unit.loading
-        unit.owner.isPlayed && menu.updateTopbar()
+        const owner = unit.owner as unknown as Record<string, number>
+        const resourceKey = LOADING_FOOD_TYPES.includes(unit.loadingType ?? '') ? 'food' : (unit.loadingType ?? '')
+        owner[resourceKey] = (owner[resourceKey] ?? 0) + (unit.loading ?? 0)
+        unit.owner?.isPlayed && menu?.updateTopbar()
         unit.loading = 0
-        unit.updateInterfaceLoading()
-        if (unit.allAssets && unit.allAssets[unit.work]) {
-          unit.standingSheet = Assets.cache.get(unit.allAssets[unit.work].standingSheet)
-          unit.walkingSheet = Assets.cache.get(unit.allAssets[unit.work].walkingSheet)
+        unit.updateInterfaceLoading?.()
+        const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
+        if (workAssets) {
+          unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
+          unit.walkingSheet = Assets.cache.get(workAssets.walkingSheet)
         }
-        unit.setTextures(SHEET_TYPES.standing)
+        unit.setTextures?.(SHEET_TYPES.standing)
         if (unit.previousDest) {
-          unit.goBackToPrevious()
+          unit.goBackToPrevious?.()
         } else {
-          unit.stop()
+          unit.stop?.()
         }
         break
-      case ACTION_TYPES.farm:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+      }
+      case ACTION_TYPES.farm: {
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
-        unit.dest.isUsedBy = unit
-        unit.setTextures(SHEET_TYPES.action)
-        unit.startInterval(
+        const dest = unit.dest as BuildingEntity
+        dest.isUsedBy = unit
+        unit.setTextures?.(SHEET_TYPES.action)
+        unit.startInterval?.(
           () => {
-            if (!unit.getActionCondition(unit.dest)) {
-              if (unit.dest.quantity <= 0) {
-                unit.dest.die()
+            const d = unit.dest as BuildingEntity | null | undefined
+            if (!unit.getActionCondition?.(d)) {
+              if ((d?.quantity ?? 0) <= 0) {
+                d?.die?.()
               }
-              unit.affectNewDest()
+              unit.affectNewDest?.()
               return
             }
-            unit.dest.isUsedBy = unit
-            if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
-              unit.sendToDelivery()
-              if (unit.dest) unit.dest.isUsedBy = null
+            if (d) d.isUsedBy = unit
+            if (!d || unit.loading === unit.loadingMax?.[unit.loadingType ?? '']) {
+              unit.sendToDelivery?.()
+              if (d) d.isUsedBy = null
               return
             }
-            unit.loading++
+            unit.loading = (unit.loading ?? 0) + 1
             unit.loadingType = LOADING_TYPES.wheat
-            unit.updateInterfaceLoading()
+            unit.updateInterfaceLoading?.()
             this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
-            unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
-            if (unit.dest.selected) {
-              menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity)
+            d.quantity = Math.max((d.quantity ?? 0) - 1, 0)
+            if (d.selected) {
+              menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
             }
-            if (unit.dest.quantity <= 0) {
-              unit.dest.die()
-              unit.affectNewDest()
+            if ((d.quantity ?? 0) <= 0) {
+              d.die?.()
+              unit.affectNewDest?.()
             }
             if (unit.loading === 1) {
-              if (unit.allAssets[unit.work]) {
-                unit.walkingSheet = Assets.cache.get(unit.allAssets[unit.work].loadedSheet)
+              const workAssets2 = unit.work ? unit.allAssets?.[unit.work] : undefined
+              if (workAssets2) {
+                unit.walkingSheet = Assets.cache.get(workAssets2.loadedSheet)
               }
               unit.standingSheet = null
             }
           },
-          (1 / unit.gatheringRate[unit.work]) * 1000,
+          (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
           false,
           'unit.gather.farm'
         )
         break
-      case ACTION_TYPES.chopwood:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+      }
+      case ACTION_TYPES.chopwood: {
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
-        unit.setTextures(SHEET_TYPES.action)
-        unit.startInterval(
+        unit.setTextures?.(SHEET_TYPES.action)
+        unit.startInterval?.(
           () => {
-            if (!unit.getActionCondition(unit.dest)) {
-              if (unit.dest.quantity <= 0) {
-                unit.dest.die()
+            const dest = unit.dest as (BuildingEntity | (RuntimeEntity & { setCuttedTreeTexture?: () => void })) | null | undefined
+            if (!unit.getActionCondition?.(dest)) {
+              if ((dest?.quantity ?? 0) <= 0) {
+                dest?.die?.()
               }
-              unit.affectNewDest()
+              unit.affectNewDest?.()
               return
             }
-            if (unit.loading === unit.loadingMax[unit.loadingType] || !unit.dest) {
-              unit.sendToDelivery()
-              return
-            }
-            this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
-            if (unit.dest.hitPoints > 0) {
-              unit.dest.hitPoints = Math.max(unit.dest.hitPoints - 1, 0)
-              if (unit.dest.selected) {
-                unit.dest.drawHealthBar()
-                menu.updateInfo(
+            if (!dest) return
+            if ((dest.hitPoints ?? 0) > 0) {
+              dest.hitPoints = Math.max((dest.hitPoints ?? 0) - 1, 0)
+              if (dest.selected) {
+                dest.drawHealthBar?.()
+                menu?.updateInfo?.(
                   MENU_INFO_IDS.hitPoints,
-                  unit.dest.hitPoints > 0 ? unit.dest.hitPoints + '/' + unit.dest.totalHitPoints : ''
+                  (dest.hitPoints ?? 0) > 0 ? dest.hitPoints + '/' + dest.totalHitPoints : ''
                 )
               }
-              if (unit.dest.hitPoints <= 0) {
-                unit.dest.hitPoints = 0
-                unit.dest.setCuttedTreeTexture()
+              if ((dest.hitPoints ?? 0) <= 0) {
+                dest.hitPoints = 0
+                ;(dest as unknown as { setCuttedTreeTexture?: () => void }).setCuttedTreeTexture?.()
               }
             } else {
-              unit.loading++
+              unit.loading = (unit.loading ?? 0) + 1
               unit.loadingType = LOADING_TYPES.wood
-              unit.updateInterfaceLoading()
-              unit.dest.quantity = Math.max(unit.dest.quantity - 1, 0)
-              if (unit.dest.selected) {
-                menu.updateInfo(MENU_INFO_IDS.quantityText, unit.dest.quantity)
+              unit.updateInterfaceLoading?.()
+              dest.quantity = Math.max((dest.quantity ?? 0) - 1, 0)
+              if (dest.selected) {
+                menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
               }
-              if (unit.dest.quantity <= 0) {
-                unit.dest.die()
-                unit.affectNewDest()
+              if ((dest.quantity ?? 0) <= 0) {
+                dest.die?.()
+                unit.affectNewDest?.()
               }
               if (unit.loading === 1) {
-                if (unit.allAssets[unit.work]) {
-                  unit.walkingSheet = Assets.cache.get(unit.allAssets[unit.work].loadedSheet)
+                const workAssets3 = unit.work ? unit.allAssets?.[unit.work] : undefined
+                if (workAssets3) {
+                  unit.walkingSheet = Assets.cache.get(workAssets3.loadedSheet)
                 }
                 unit.standingSheet = null
               }
             }
           },
-          (1 / unit.gatheringRate[unit.work]) * 1000,
+          (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
           false,
           'unit.gather.wood'
         )
         break
+      }
       case ACTION_TYPES.forageberry:
         this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
           dieOnEmpty: true,
@@ -443,47 +459,49 @@ export class UnitActions {
       case ACTION_TYPES.minegold:
         this.startGathering(LOADING_TYPES.gold, this.getWorkSound('mineGold', SOUND_CUES.villager.mineOre))
         break
-      case ACTION_TYPES.build:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+      case ACTION_TYPES.build: {
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
-        unit.setTextures(SHEET_TYPES.action)
-        unit.startInterval(
+        unit.setTextures?.(SHEET_TYPES.action)
+        unit.startInterval?.(
           () => {
-            if (!unit.getActionCondition(unit.dest)) {
-              if (unit.dest?.isBuilt && unit.continueBuildingQueue()) return
-              if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
-                unit.sendToFarm(unit.dest, true)
+            const dest = unit.dest as BuildingEntity | null | undefined
+            if (!unit.getActionCondition?.(dest)) {
+              if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
+              if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+                unit.sendToFarm?.(dest, true)
                 return
               }
-              unit.affectNewDest()
+              unit.affectNewDest?.()
               return
             }
-            if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
+            if (!dest) return
+            if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
               this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-              unit.dest.hitPoints = Math.min(
-                Math.round(unit.dest.hitPoints + unit.dest.totalHitPoints / unit.dest.constructionTime),
-                unit.dest.totalHitPoints
+              dest.hitPoints = Math.min(
+                Math.round((dest.hitPoints ?? 0) + (dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)),
+                dest.totalHitPoints ?? 0
               )
-              if (unit.dest.selected) {
-                unit.dest.drawHealthBar()
-                if (unit.owner.isPlayed) {
-                  menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+              if (dest.selected) {
+                dest.drawHealthBar?.()
+                if (unit.owner?.isPlayed) {
+                  menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
                 }
               }
-              unit.dest.updateHitPoints(unit.action)
+              dest.updateHitPoints?.(unit.action ?? '')
             } else {
-              if (!unit.dest.isBuilt) {
-                unit.dest.updateHitPoints(unit.action)
-                unit.dest.isBuilt = true
-                if (unit.dest.type === BUILDING_TYPES.farm && !unit.dest.isUsedBy) {
-                  unit.sendToFarm(unit.dest, true)
+              if (!dest.isBuilt) {
+                dest.updateHitPoints?.(unit.action ?? '')
+                dest.isBuilt = true
+                if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+                  unit.sendToFarm?.(dest, true)
                   return
                 }
               }
-              if (unit.continueBuildingQueue()) return
-              unit.affectNewDest()
+              if (unit.continueBuildingQueue?.()) return
+              unit.affectNewDest?.()
             }
           },
           1000,
@@ -491,93 +509,96 @@ export class UnitActions {
           'unit.build'
         )
         break
+      }
       case ACTION_TYPES.attack:
-        unit.unitCombat.handleAttackAction()
+        ;(unit as unknown as { unitCombat: { handleAttackAction: () => void } }).unitCombat.handleAttackAction()
         break
       case ACTION_TYPES.heal:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
-        unit.setTextures(SHEET_TYPES.action)
-        unit.sprite.onLoop = () => {
-          if (!unit.getActionCondition(unit.dest)) {
-            unit.affectNewDest()
+        unit.setTextures?.(SHEET_TYPES.action)
+        sprite.onLoop = () => {
+          const dest = unit.dest as RuntimeEntity | null | undefined
+          if (!unit.getActionCondition?.(dest)) {
+            unit.affectNewDest?.()
             return
           }
-          if (unit.destHasMoved()) {
-            unit.realDest.i = unit.dest.i
-            unit.realDest.j = unit.dest.j
-            unit.realDest.x = unit.dest.x
-            unit.realDest.y = unit.dest.y
+          if (unit.destHasMoved?.() && dest && unit.realDest) {
+            unit.realDest.i = dest.i
+            unit.realDest.j = dest.j
+            unit.realDest.x = dest.x
+            unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as any, unit.dest.x, unit.dest.y)
-            if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
-              unit.setTextures(SHEET_TYPES.action)
+            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+              unit.setTextures?.(SHEET_TYPES.action)
             }
           }
-          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.sendToEvt(unit.dest, ACTION_TYPES.heal, { forceRepath: true })
+          if (!unit.isUnitAtDest?.(unit.action, dest)) {
+            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.heal, { forceRepath: true })
             return
           }
-          if (unit.dest.hitPoints < unit.dest.totalHitPoints) {
+          if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
             this.playSound(unit.sounds?.heal)
-            unit.dest.hitPoints = Math.min(unit.dest.hitPoints + unit.healing, unit.dest.totalHitPoints)
-            if (unit.dest.selected) {
-              unit.dest.drawHealthBar()
-              if (player.selectedUnit === unit.dest) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+            dest.hitPoints = Math.min((dest.hitPoints ?? 0) + (unit.healing ?? 0), dest.totalHitPoints ?? 0)
+            if (dest.selected) {
+              dest.drawHealthBar?.()
+              if (player?.selectedUnit === dest) {
+                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
               }
             }
           }
         }
         break
       case ACTION_TYPES.convert:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
         unit.conversionChants = 0
-        unit.setTextures(SHEET_TYPES.action)
-        unit.sprite.onLoop = () => {
-          if (!unit.getActionCondition(unit.dest)) {
-            unit.affectNewDest()
+        unit.setTextures?.(SHEET_TYPES.action)
+        sprite.onLoop = () => {
+          const dest = unit.dest as RuntimeEntity | null | undefined
+          if (!unit.getActionCondition?.(dest)) {
+            unit.affectNewDest?.()
             return
           }
-          if (unit.destHasMoved()) {
-            unit.realDest.i = unit.dest.i
-            unit.realDest.j = unit.dest.j
-            unit.realDest.x = unit.dest.x
-            unit.realDest.y = unit.dest.y
+          if (unit.destHasMoved?.() && dest && unit.realDest) {
+            unit.realDest.i = dest.i
+            unit.realDest.j = dest.j
+            unit.realDest.x = dest.x
+            unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as any, unit.dest.x, unit.dest.y)
-            if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
-              unit.setTextures(SHEET_TYPES.action)
+            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+              unit.setTextures?.(SHEET_TYPES.action)
             }
           }
-          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.sendToEvt(unit.dest, ACTION_TYPES.convert, { forceRepath: true })
+          if (!unit.isUnitAtDest?.(unit.action, dest)) {
+            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.convert, { forceRepath: true })
             return
           }
 
           this.playSound(unit.sounds?.convert)
           unit.conversionChants = (unit.conversionChants || 0) + 1
           const { minChants, chance } = this.getConversionRules()
-          if (unit.conversionChants >= minChants && map.random() < chance) {
-            this.convertTarget(unit.dest)
+          if (unit.conversionChants >= minChants && map && map.random() < chance && dest) {
+            this.convertTarget(dest)
           }
         }
         break
       case ACTION_TYPES.loadTransport:
-        if (!unit.getActionCondition(unit.dest, ACTION_TYPES.loadTransport)) {
-          unit.affectNewDest()
+        if (!unit.getActionCondition?.(unit.dest, ACTION_TYPES.loadTransport)) {
+          unit.affectNewDest?.()
           return
         }
         {
-          const transport = unit.dest
-          boardTransport(unit as any, transport)
+          const transport = unit.dest as UnitEntity
+          boardTransport(unit as unknown as Parameters<typeof boardTransport>[0], transport as unknown as Parameters<typeof boardTransport>[1])
           if (transport.owner?.isPlayed && transport.selected) {
-            menu.setBottombar(transport)
+            menu?.setBottombar(transport)
           }
         }
         break
@@ -593,68 +614,72 @@ export class UnitActions {
           dieOnEmpty: true,
         })
         if (unit.category !== 'Boat') {
-          onSpriteLoopAtFrame(unit.sprite, 6, () => {
+          onSpriteLoopAtFrame(unit.sprite as unknown as Parameters<typeof onSpriteLoopAtFrame>[0], 6, () => {
             this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
           })
         }
         break
-      case ACTION_TYPES.hunt:
-        if (!unit.getActionCondition(unit.dest)) {
-          unit.affectNewDest()
+      case ACTION_TYPES.hunt: {
+        if (!unit.getActionCondition?.(unit.dest)) {
+          unit.affectNewDest?.()
           return
         }
-        if (unit.dest.isDead) {
-          unit.previousDest ? unit.goBackToPrevious() : unit.sendToTakeMeat(unit.dest)
+        const huntDest = unit.dest as RuntimeEntity
+        if (huntDest.isDead) {
+          unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
           return
         }
-        unit.setTextures(SHEET_TYPES.action)
-        unit.sprite.onLoop = () => {
-          if (!unit.getActionCondition(unit.dest)) {
-            if (unit.dest && unit.dest.hitPoints <= 0) {
-              unit.dest.die()
-              unit.previousDest ? unit.goBackToPrevious() : unit.sendToTakeMeat(unit.dest)
+        unit.setTextures?.(SHEET_TYPES.action)
+        sprite.onLoop = () => {
+          const dest = unit.dest as RuntimeEntity | null | undefined
+          if (!unit.getActionCondition?.(dest)) {
+            if (dest && (dest.hitPoints ?? 0) <= 0) {
+              dest.die?.()
+              unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)
               return
             }
-            unit.affectNewDest()
+            unit.affectNewDest?.()
             return
           }
-          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            if (unit.context.map.revealEverything || playerCanSeeInstance(unit.dest, unit.owner)) {
-              unit.sendToEvt(unit.dest, ACTION_TYPES.hunt, { forceRepath: true })
+          if (!unit.isUnitAtDest?.(unit.action, dest)) {
+            if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest as unknown as Parameters<typeof playerCanSeeInstance>[0], unit.owner))) {
+              unit.sendToEvt?.(dest ?? null, ACTION_TYPES.hunt, { forceRepath: true })
             } else {
-              unit.stop()
+              unit.stop?.()
             }
             return
           }
-          if (unit.destHasMoved()) {
-            unit.realDest.i = unit.dest.i
-            unit.realDest.j = unit.dest.j
-            unit.realDest.x = unit.dest.x
-            unit.realDest.y = unit.dest.y
+          if (unit.destHasMoved?.() && dest && unit.realDest) {
+            unit.realDest.i = dest.i
+            unit.realDest.j = dest.j
+            unit.realDest.x = dest.x
+            unit.realDest.y = dest.y
             const oldDeg = unit.degree
-            unit.degree = getInstanceDegree(unit as any, unit.dest.x, unit.dest.y)
-            if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
-              unit.setTextures(SHEET_TYPES.action)
+            unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+            if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+              unit.setTextures?.(SHEET_TYPES.action)
             }
           }
         }
-        onSpriteLoopAtFrame(unit.sprite, 6, () => {
-          if (!unit.getActionCondition(unit.dest) || !unit.realDest) return
+        onSpriteLoopAtFrame(unit.sprite as unknown as Parameters<typeof onSpriteLoopAtFrame>[0], 6, () => {
+          const dest = unit.dest as RuntimeEntity | null | undefined
+          if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
           const projectile = new Projectile(
             {
               owner: unit,
-              target: unit.dest,
+              target: dest,
               type: 'Spear',
               destination: unit.realDest,
               damage: 4,
             },
-            unit.context
+            unit.context!
           )
           map.addChild(projectile)
         })
         break
+      }
       default:
-        unit.stop()
+        unit.stop?.()
     }
   }
 }

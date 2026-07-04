@@ -2,42 +2,41 @@ import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath, getTransportLoad } from '../lib'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+import type { UnitEntity } from '../types/entities'
+import type { UnitConfig } from '../types/config'
+import type { MenuLike } from '../types/context'
 
-type AnyRecord = Record<string, any>
+type TransportBoatLike = Parameters<typeof getTransportLoad>[0]
 
 export class UnitInterface {
-  unit: AnyRecord
+  unit: UnitEntity
 
-  constructor(unit: AnyRecord) {
+  constructor(unit: UnitEntity) {
     this.unit = unit
   }
 
   updateLoading(): void {
     const unit = this.unit
-    const {
-      context: { menu },
-    } = unit
-    if (unit.selected && unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
+    const menu = (unit.context as { menu: MenuLike }).menu
+    if (unit.selected && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
       if (unit.loading === 1) {
-        const iconSrc = menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
-        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => {
+        const iconSrc = menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType!) ? 'food' : unit.loadingType!]
+        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => {
           element.replaceChildren()
-          element.appendChild(createInfoImage('unit-loading-icon', iconSrc))
-          element.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))
+          element.appendChild(createInfoImage('unit-loading-icon', iconSrc!))
+          element.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading!))
         })
-      } else if (unit.loading > 1) {
-        menu.updateInfo(MENU_INFO_IDS.loadingText, unit.loading)
+      } else if (unit.loading! > 1) {
+        menu.updateInfo!(MENU_INFO_IDS.loadingText, unit.loading!)
       } else {
-        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
+        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
       }
     }
   }
 
   getLoadingElement(): HTMLDivElement {
     const unit = this.unit
-    const {
-      context: { menu },
-    } = unit
+    const menu = (unit.context as { menu: MenuLike }).menu
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'unit-loading'
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
@@ -46,7 +45,7 @@ export class UnitInterface {
       loadingDiv.appendChild(
         createInfoImage(
           'unit-loading-icon',
-          menu.infoIcons[LOADING_FOOD_TYPES.includes(unit.loadingType) ? 'food' : unit.loadingType]
+          menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType!) ? 'food' : unit.loadingType!]!
         )
       )
       loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))
@@ -54,12 +53,12 @@ export class UnitInterface {
     return loadingDiv
   }
 
-  setDefaultInterface(element: HTMLElement, data: AnyRecord): void {
+  setDefaultInterface(element: HTMLElement, data: UnitConfig): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
     appendBaseEntityInfo(
       element,
-      t(unit.owner.civ),
+      t(unit.owner!.civ!),
       typeText,
       getIconPath(data.icon),
       unit.hitPoints,
@@ -69,7 +68,7 @@ export class UnitInterface {
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos = [
+    const infos: [keyof UnitConfig, string][] = [
       ['meleeAttack', '007_50731'],
       ['pierceAttack', '006_50731'],
       ['meleeArmor', '008_50731'],
@@ -83,7 +82,7 @@ export class UnitInterface {
         infoDiv.classList.add('info')
 
         infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
-        infoDiv.appendChild(createInfoText(info[0], data[info[0]]))
+        infoDiv.appendChild(createInfoText(String(info[0]), data[info[0]] as number))
         infosDiv.appendChild(infoDiv)
       }
     }
@@ -93,7 +92,12 @@ export class UnitInterface {
     if (unit.showTransportCapacity && unit.transportCapacity) {
       const capacityDiv = document.createElement('div')
       capacityDiv.classList.add('info')
-      capacityDiv.appendChild(createInfoText('transport-capacity', `${t('transportCapacity')} ${getTransportLoad(unit as any)}/${unit.transportCapacity}`))
+      capacityDiv.appendChild(
+        createInfoText(
+          'transport-capacity',
+          `${t('transportCapacity')} ${getTransportLoad(unit as unknown as TransportBoatLike)}/${unit.transportCapacity}`
+        )
+      )
       element.appendChild(capacityDiv)
     }
   }

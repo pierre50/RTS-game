@@ -5,8 +5,18 @@ import { MinimapManager } from './MinimapManager'
 import { MinimapInputController } from './MinimapInputController'
 import { MapEditorMenu } from './MapEditorMenu'
 import { MapEditorPlayersModal } from './MapEditorPlayersModal'
+import type { GameContextLike } from '../types/context'
+import type { RuntimeEntity, ResourceEntity } from '../types/entities'
+import type { PlayerLike } from '../types/player'
+import type { RuntimeCell } from '../types/map'
+import type { MapEditorLike, MapEditorUiState } from '../types/mapEditor'
+import type { PlayerSetupConfig } from '../types/save'
+import type { MinimapPlayerCanvas } from '../types/ui'
 
-type AnyRecord = Record<string, any>
+type MapEditorContext = GameContextLike & {
+  editor: MapEditorLike
+  editorConfig: { players: PlayerSetupConfig[] }
+}
 
 const TOOLS = [
   { id: 'map', label: 'editorMap' },
@@ -24,8 +34,8 @@ const RELIEF_LEVELS = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
 const MAP_OPTIONS = ['Grass', 'Desert', 'forest', 'Water', 'DeepWater', 'palmdesert', 'palmjungle']
 
 export class MapEditorHud {
-  context: AnyRecord
-  state: AnyRecord
+  context: MapEditorContext
+  state: MapEditorUiState
   onQuit: () => void
   onChange: () => void
   toolButtons: Map<string, HTMLButtonElement>
@@ -37,28 +47,40 @@ export class MapEditorHud {
   gameHud: HTMLDivElement
   topbar: HTMLDivElement
   resources: HTMLDivElement
-  icons: AnyRecord
-  infoIcons: AnyRecord
+  icons: Record<string, string>
+  infoIcons: Record<string, string>
   age: HTMLDivElement
   bottombar: HTMLDivElement
   bottombarInfo: HTMLDivElement
   bottombarMenu: HTMLDivElement
   bottombarMap: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
-  playersMinimap: AnyRecord[]
+  playersMinimap: MinimapPlayerCanvas[]
   resourcesMinimap: HTMLCanvasElement
   cameraMinimap: HTMLCanvasElement
 
-  minimapManager: AnyRecord
-  updatePlayerMiniMap: AnyRecord
-  minimapInputController: AnyRecord
-  selection: AnyRecord | null
+  minimapManager: MinimapManager
+  updatePlayerMiniMap: (owner: PlayerLike) => void
+  minimapInputController: MinimapInputController
+  selection: RuntimeEntity | null
+  toggle?: HTMLButtonElement
+  toggled!: boolean
 
   detailLabel!: HTMLDivElement
   detailList!: HTMLDivElement
   brushSizeList!: HTMLDivElement
 
-  constructor({ context, state, onQuit, onChange }: { context: AnyRecord; state: AnyRecord; onQuit: () => void; onChange: () => void }) {
+  constructor({
+    context,
+    state,
+    onQuit,
+    onChange,
+  }: {
+    context: MapEditorContext
+    state: MapEditorUiState
+    onQuit: () => void
+    onChange: () => void
+  }) {
     this.context = context
     this.state = state
     this.onQuit = onQuit
@@ -146,11 +168,12 @@ export class MapEditorHud {
     this.gameHud.appendChild(this.bottombar)
     document.body.appendChild(this.gameHud)
 
-    this.minimapManager = new MinimapManager(this as any)
+    this.toggled = false
+    this.minimapManager = new MinimapManager(this)
     this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap
     this.updateResourcesMiniMap = this.minimapManager.updateResourcesMiniMap
     this.updateCameraMiniMap = this.minimapManager.updateCameraMiniMap
-    this.minimapInputController = new MinimapInputController(this as any)
+    this.minimapInputController = new MinimapInputController(this)
     this.minimapInputController.bind()
     this.selection = null
 
@@ -292,7 +315,7 @@ export class MapEditorHud {
     columns.className = 'map-editor-columns'
 
     const owners = this.context.editor.getPlacementOwners()
-    const activeOwner = owners.find((owner: AnyRecord) => owner.label === this.state.placementOwnerLabel) || owners[0] || null
+    const activeOwner = owners.find(owner => owner.label === this.state.placementOwnerLabel) || owners[0] || null
     if (activeOwner && activeOwner.label !== this.state.placementOwnerLabel) {
       this.state.placementOwnerLabel = activeOwner.label
     }
@@ -302,7 +325,7 @@ export class MapEditorHud {
     playerWrap.appendChild(this._sectionTitle(t('editorPlayer')))
     const playerList = document.createElement('div')
     playerList.className = 'map-editor-vertical-list map-editor-scroll-list'
-    owners.forEach((owner: AnyRecord) => {
+    owners.forEach(owner => {
       const label = owner.name || (owner === this.context.map.gaia ? t('gaia') : t('players'))
       const button = this._createListButton(label, () => {
         this.context.editor.setPlacementSelection(owner.label, null, null)
@@ -346,7 +369,7 @@ export class MapEditorHud {
     Object.keys(unitSource).forEach(type => {
       const kind = activeOwner === this.context.map.gaia ? 'animal' : 'unit'
       const button = this._createListButton(t(type), () => {
-        this.context.editor.setPlacementSelection(activeOwner.label, type, kind)
+        this.context.editor.setPlacementSelection(activeOwner!.label, type, kind)
       })
       const isActive =
         this.state.placementOwnerLabel === activeOwner?.label &&
@@ -381,7 +404,7 @@ export class MapEditorHud {
       this.setBottombar()
     })
     const deleteButton = this._createListButton(t('editorDelete'), () => {
-      this.context.editor.removeEntity(this.selection)
+      if (this.selection) this.context.editor.removeEntity(this.selection)
     })
     actionRow.appendChild(deselectButton)
     actionRow.appendChild(deleteButton)
@@ -394,7 +417,7 @@ export class MapEditorHud {
     this.onChange()
   }
 
-  _setMode(mode: string): void {
+  _setMode(mode: 'terrain' | 'units'): void {
     this.context.editor.cancelWallDraft()
     this.state.mode = mode
     this.context.player?.unselectAll?.()
@@ -413,7 +436,7 @@ export class MapEditorHud {
       size: this.context.map.size,
       players: this.context.editorConfig.players,
       maxPlayers,
-      onSave: (players: AnyRecord[]) => this.context.editor.updatePlayersConfig(players),
+      onSave: (players: PlayerSetupConfig[]) => this.context.editor.updatePlayersConfig(players),
     })
   }
 
@@ -491,7 +514,7 @@ export class MapEditorHud {
     }
   }
 
-  setBottombar(selection: AnyRecord | null = null): void {
+  setBottombar(selection: RuntimeEntity | null = null): void {
     this.selection = selection
     this.bottombarMenu.textContent = ''
     this.bottombarInfo.textContent = ''
@@ -512,7 +535,9 @@ export class MapEditorHud {
     actionRow.appendChild(
       this._createIconActionBox(
         getIconPath('003_50721'),
-        () => this.context.editor.removeEntity(this.selection),
+        () => {
+          if (this.selection) this.context.editor.removeEntity(this.selection)
+        },
         t('editorDelete')
       )
     )
@@ -530,7 +555,7 @@ export class MapEditorHud {
     this.bottombarMenu.appendChild(wrapper)
   }
 
-  updateStatus(cell: AnyRecord | null): void {
+  updateStatus(cell: RuntimeCell | null): void {
     if (!cell) {
       this.age.textContent = t('editorStatusIdle')
       return
@@ -540,38 +565,38 @@ export class MapEditorHud {
       j: cell.j,
       type: t(cell.type),
       level: cell.z,
-    } as any)
+    })
   }
 
-  getMinimapFactor(): any {
+  getMinimapFactor(): number {
     return this.minimapManager.getMinimapFactor()
   }
 
-  revealTerrainMinimap(): any {
+  revealTerrainMinimap(): void {
     return this.minimapManager.revealTerrainMinimap()
   }
 
-  rebuildTerrainMiniMapFromViews(): any {
+  rebuildTerrainMiniMapFromViews(): void {
     return this.minimapManager.rebuildTerrainMiniMapFromViews()
   }
 
-  updateTerrainMiniMap(i: number, j: number): any {
+  updateTerrainMiniMap(i: number, j: number): void {
     return this.minimapManager.updateTerrainMiniMap(i, j)
   }
 
-  updateResourceMiniMap(resource: AnyRecord): any {
+  updateResourceMiniMap(resource: ResourceEntity): void {
     return this.minimapManager.updateResourceMiniMap(resource)
   }
 
-  updatePlayerMiniMapEvt(owner: AnyRecord): any {
+  updatePlayerMiniMapEvt(owner: PlayerLike): void {
     return this.minimapManager.updatePlayerMiniMapEvt(owner)
   }
 
-  updateResourcesMiniMap(): any {
+  updateResourcesMiniMap(): void {
     return this.minimapManager.updateResourcesMiniMapEvt()
   }
 
-  updateCameraMiniMap(): any {
+  updateCameraMiniMap(): void {
     if (!this.context.controls?.getViewportMetrics) return
     return this.minimapManager.updateCameraMiniMapEvt()
   }

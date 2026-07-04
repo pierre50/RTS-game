@@ -29,8 +29,7 @@ import {
   toggleTerrainReveal,
   toggleVisionDebug,
 } from './DevCommandActions'
-
-type AnyRecord = Record<string, any>
+import type { DevEntity, DevPlayer } from './types'
 
 const RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold']
 
@@ -50,7 +49,7 @@ export function createDevCommands(): DevCommandRegistry {
         if (c.aliases?.length) lines.push(`Aliases: ${c.aliases.join(', ')}`)
         return { ok: true, message: lines.join('\n') }
       }
-      const lines = commands.all().map((c: AnyRecord) => `${(c.usage || c.name).padEnd(32)} ${c.describe || ''}`)
+      const lines = commands.all().map(c => `${(c.usage || c.name).padEnd(32)} ${c.describe || ''}`)
       return { ok: true, message: lines.join('\n') }
     },
   })
@@ -270,7 +269,7 @@ export function createDevCommands(): DevCommandRegistry {
     complete: (_args, context) => [
       'on',
       'off',
-      ...context.players.filter((p: AnyRecord) => p.type === 'ai').map((_: AnyRecord, index: number) => `${index}`),
+      ...context.players.filter((p: DevPlayer) => p.type === 'ai').map((_, index: number) => `${index}`),
     ],
     run: ([value], context) => aiInfo(context, value),
   })
@@ -304,7 +303,7 @@ export function createDevCommands(): DevCommandRegistry {
     aliases: ['killres'],
     usage: 'kill-resources [type|all]',
     describe: 'Remove resources from the map',
-    complete: (_args, { map }) => ['all', ...new Set([...map.resources].map((resource: AnyRecord) => resource.type))],
+    complete: (_args, { map }) => ['all', ...new Set([...map.resources].map((resource: DevEntity) => resource.type))],
     run: ([type], context) => killResources(context, type),
   })
 

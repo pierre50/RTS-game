@@ -2,10 +2,17 @@ import type { AnimatedSprite, Container, Sprite } from 'pixi.js'
 import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
+import type { GameContextLike } from './context'
 
-export type CommandSound = string | string[] | null | undefined
+export type CommandSound = string | number | (string | number)[] | null | undefined
+
+export interface EntityInterfaceLike {
+  info?: (element: HTMLElement) => void
+  menu?: import('./ui').MenuButtonSpec[]
+}
 
 export interface RuntimeEntityBase extends GridPosition, Point {
+  [key: string]: any
   label: string
   family: string
   type: string
@@ -17,6 +24,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   zIndex?: number
   size?: number
   visible?: boolean
+  selected?: boolean
+  color?: string
   hitPoints?: number
   totalHitPoints?: number
   sight?: number
@@ -24,33 +33,197 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   isDead?: boolean
   isDestroyed?: boolean
   sprite?: Sprite | AnimatedSprite
-  context?: unknown
+  context?: GameContextLike
+  interface?: EntityInterfaceLike
   select?: () => void
+  unselect?: () => void
   die?: () => void
+  pause?: () => void
+  resume?: () => void
   getChildByLabel?: (label: string) => unknown
+  updateTexture?: () => void
+  drawHealthBar?: () => void
+  isAttacked?: (attacker: RuntimeEntity) => void
+  stopInterval?: () => void
+  setTextures?: (sheet: string) => void
+}
+
+export interface UnitPendingOrder {
+  execute?: () => void
+  dest?: RuntimeEntity | RuntimeCell | null
+  action?: string | null
+}
+
+export interface UnitBlockedGatherApproach {
+  target: RuntimeEntity
+  action: string
+}
+
+export interface UnitRealDest {
+  i: number
+  j: number
+  x: number
+  y: number
+  label: string
+}
+
+export interface UnitSounds {
+  command?: CommandSound
+  buildCommand?: CommandSound
+  huntCommand?: CommandSound
+  move?: CommandSound
+  work?: Record<string, CommandSound>
+  heal?: CommandSound
+  convert?: CommandSound
+  attack?: CommandSound
+  hit?: CommandSound
+  die?: CommandSound
+  create?: CommandSound
 }
 
 export interface UnitEntity extends RuntimeEntityBase {
   loadedInTransport?: RuntimeEntity | null
   inactif?: boolean
-  sounds?: { command?: CommandSound }
+  sounds?: UnitSounds
+  work?: string | null
+  loading?: number | null
+  loadingType?: string | null
+  showTransportCapacity?: boolean
+  transportCapacity?: number
+  transportedUnits?: RuntimeEntity[]
+  transportLoadShoreCell?: RuntimeCell | null
+  transportLoadCoastCell?: RuntimeCell | null
+  queue?: string[]
+  buyUnit?: (type: string) => void
+  cancelUnits?: (type: string) => void
+
+  // Movement / order state
+  dest?: RuntimeEntity | RuntimeCell | null
+  realDest?: UnitRealDest | null
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  previousWork?: string | null
+  path?: RuntimeCell[]
+  pendingOrder?: UnitPendingOrder | null
+  blockedGatherApproach?: UnitBlockedGatherApproach | null
+  buildQueue?: BuildingEntity[]
+  degree?: number
+  speed?: number
+  huntRange?: number
+  currentCell?: RuntimeCell
+  visibleCells?: Set<unknown>
+
+  // Animation / action state
+  action?: string | null
+  actionLocked?: boolean
+  currentSheet?: string
+  currentFrame?: number
+  actionSheet?: unknown
+  walkingSheet?: unknown
+  standingSheet?: unknown
+  corpseSheet?: unknown
+  dyingSheet?: unknown
+  loop?: boolean
+  allowMove?: boolean
+  eventMode?: string
+  sailSheet?: string
+  sailSpritesheet?: { textures: Record<string, unknown>; data: { animationSpeed?: number } }
+  sailSprite?: AnimatedSprite | null
+  sailAnimationSpeed?: number
+  fishingOverlaySheet?: { textures: Record<string, unknown>; data?: { animationSpeed?: number } }
+  fishingOverlaySprite?: AnimatedSprite | null
+  showLoading?: boolean
+  showBuildings?: boolean
+
+  // Combat
+  meleeAttack?: number
+  pierceAttack?: number
+  meleeArmor?: number
+  pierceArmor?: number
+  range?: number
+  rateOfFire?: number
+  projectile?: string
+  healing?: number
+  conversionChants?: number
+
+  // Gathering
+  gatheringRate?: Record<string, number>
+  loadingMax?: Record<string, number>
+  assets?: Record<string, string>
+  allAssets?: Record<string, Record<string, string>>
+  silentWorkSounds?: string[]
+
+  // Identity
+  assetCiv?: string
+  assetAge?: number
+  totalQuantity?: number
+  category?: string
+
+  // Delegate methods called across the 5 composition classes
+  stop?: () => void
+  setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
+  setPath?: (path: RuntimeCell[]) => void
   sendTo(target: RuntimeCell | RuntimeEntity, action?: string): void
-  sendToBuilding?: (building: BuildingEntity) => void
-  sendToBuildingQueue?: (buildings: BuildingEntity[]) => void
+  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: Record<string, unknown>) => void
+  sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
+  sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
+  sendToDelivery?: () => void
+  sendToFish?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToAttack(target: RuntimeEntity): void
+  sendToConvert(target: RuntimeEntity): void
+  sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
+  sendToHunt(target: RuntimeEntity, immediate?: boolean): void
+  sendToFarm(target: RuntimeEntity, immediate?: boolean): void
+  sendToTree?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToStone?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToGold?: (target: RuntimeEntity, immediate?: boolean) => void
+  affectNewDest?: () => void
+  isUnitAtDest?: (action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) => boolean
+  destHasMoved?: () => boolean
+  moveToPath?: () => void
+  getAction?: (name: string) => void
+  getActionCondition?: (target: RuntimeEntity | RuntimeCell | null | undefined, action?: string, extra?: Record<string, unknown>) => boolean
+  startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
+  stopInterval?: () => void
+  handleChangeDest?: () => void
+  queueOrder?: (orderOrDest: (() => void) | RuntimeEntity | RuntimeCell, action?: string | null) => boolean
+  flushPendingOrder?: () => boolean
+  goBackToPrevious?: () => void
+  continueBuildingQueue?: () => boolean
+  handleAffectNewDestHunter?: () => boolean
+  updateInterfaceLoading?: () => void
+  handleSetDest?: (dest: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
+  handleIsAttacked?: (instance: RuntimeEntity, unit: UnitEntity) => boolean
+  clear?: () => void
+  visibilityTimeout?: number | ReturnType<typeof setTimeout>
 }
 
 export interface BuildingEntity extends RuntimeEntityBase {
   isBuilt?: boolean
   queue?: string[]
-  technology?: { type?: string } | null
+  technology?: { type?: string; config?: unknown } | null
   isUsedBy?: RuntimeEntity | null
   addChild?: Container['addChild']
   setRallyPoint?: (cell: RuntimeCell, direction: number) => void
   clearRallyPoint?: () => void
+  displayPopulation?: boolean
+  loading?: number | null
+  buyTechnology?: (type: string) => void
+  cancelTechnology?: () => void
+  assetType?: string
+  finalTexture?: () => void
+  increasePopulation?: number
+  populationCapacityApplied?: boolean
+  constructionTime?: number
+  updateHitPoints?: (action: string) => void
+  units?: string[]
+  technologies?: string[]
 }
 
 export interface ResourceEntity extends RuntimeEntityBase {
   textureName?: string
+  setCuttedTreeTexture?: () => void
+  isUsedBy?: RuntimeEntity | null
 }
 
 export interface AnimalEntity extends RuntimeEntityBase {

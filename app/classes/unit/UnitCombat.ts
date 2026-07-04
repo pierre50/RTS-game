@@ -10,120 +10,127 @@ import {
   playAudibleSoundCue,
 } from '../../lib'
 import { Projectile } from '../projectile'
-
-type AnyRecord = Record<string, any>
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 export class UnitCombat {
-  unit: AnyRecord
+  unit: UnitEntity
 
-  constructor(unit: AnyRecord) {
+  constructor(unit: UnitEntity) {
     this.unit = unit
   }
 
   setStandingPose() {
     const unit = this.unit
-    unit.sprite.loop = true
-    unit.sprite.onComplete = null
-    unit.setTextures(SHEET_TYPES.standing)
+    const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+    sprite.loop = true
+    sprite.onComplete = null
+    unit.setTextures?.(SHEET_TYPES.standing)
   }
 
-  playSingleAttackAnimation(onFire: (...args: any[]) => void) {
+  playSingleAttackAnimation(onFire: () => void) {
     const unit = this.unit
+    const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
 
     unit.actionLocked = true
-    unit.sprite.loop = false
-    unit.sprite.onComplete = () => {
-      unit.sprite.onComplete = null
+    sprite.loop = false
+    sprite.onComplete = () => {
+      sprite.onComplete = null
       unit.actionLocked = false
-      const hadPendingOrder = unit.flushPendingOrder()
+      const hadPendingOrder = unit.flushPendingOrder?.()
       if (hadPendingOrder) {
-        unit.sprite.loop = true
+        sprite.loop = true
         return
       }
       if (!unit.isDead && unit.action === ACTION_TYPES.attack) {
         this.setStandingPose()
       } else {
-        unit.sprite.loop = true
+        sprite.loop = true
       }
     }
-    unit.setTextures(SHEET_TYPES.action)
+    unit.setTextures?.(SHEET_TYPES.action)
     onFire()
   }
 
-  performRangedAttackCycle(launchProjectile: (...args: any[]) => void) {
+  performRangedAttackCycle(launchProjectile: () => void) {
     const unit = this.unit
 
-    if (!unit.getActionCondition(unit.dest)) {
-      if (unit.dest && unit.dest.hitPoints <= 0) {
-        unit.dest.die()
+    if (!unit.getActionCondition?.(unit.dest)) {
+      const dest = unit.dest as RuntimeEntity | null | undefined
+      if (dest && (dest.hitPoints ?? 0) <= 0) {
+        dest.die?.()
       }
-      unit.affectNewDest()
+      unit.affectNewDest?.()
       return
     }
     this.syncMovingTargetDirection()
-    if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-      unit.sendToEvt(unit.dest, ACTION_TYPES.attack, { forceRepath: true })
+    if (!unit.isUnitAtDest?.(unit.action, unit.dest)) {
+      unit.sendToEvt?.(unit.dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
       return
     }
     this.playSingleAttackAnimation(() => launchProjectile())
   }
 
-  detect(instance: any) {
+  detect(instance: RuntimeEntity | null) {
     const unit = this.unit
-    if (unit.context.editor) return
+    if (unit.context?.editor) return
     if (
       unit.work === WORK_TYPES.attacker &&
       instance &&
       instance.family === FAMILY_TYPES.unit &&
-      !unit.path.length &&
+      !unit.path?.length &&
       !unit.dest &&
-      unit.getActionCondition(instance, ACTION_TYPES.attack)
+      unit.getActionCondition?.(instance, ACTION_TYPES.attack)
     ) {
-      unit.sendTo(instance, ACTION_TYPES.attack)
+      unit.sendTo?.(instance, ACTION_TYPES.attack)
     }
   }
 
-  handleAffectNewDestHunter() {
+  handleAffectNewDestHunter(): boolean {
     const unit = this.unit
-    const firstTargets = findInstancesInSight(unit as any, (instance: any) =>
-      unit.getActionCondition(instance, ACTION_TYPES.takemeat)
+    const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
+    const firstTargets = findInstancesInSight(unitAsInstance, instance =>
+      Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.takemeat))
     )
     if (firstTargets.length) {
-      const target = getClosestInstanceWithPath(unit as any, firstTargets)
+      const target = getClosestInstanceWithPath(unitAsInstance, firstTargets)
       if (target) {
         if (unit.action !== ACTION_TYPES.takemeat) {
           unit.action = ACTION_TYPES.takemeat
-          if (unit.allAssets[unit.work]) {
-            unit.actionSheet = Assets.cache.get(unit.allAssets[unit.work].harvestSheet)
+          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
+          if (workAssets) {
+            unit.actionSheet = Assets.cache.get(workAssets.harvestSheet)
           }
         }
-        unit.setDest(target.instance)
-        if (instanceContactInstance(unit as any, target.instance)) {
-          unit.degree = getInstanceDegree(unit as any, target.instance.x, target.instance.y)
-          unit.getAction(unit.action)
+        unit.setDest?.(target.instance as unknown as RuntimeEntity)
+        if (instanceContactInstance(unitAsInstance, target.instance)) {
+          unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
+          unit.getAction?.(unit.action)
           return true
         }
-        unit.setPath(target.path)
+        unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
         return true
       }
     }
-    const secondTargets = findInstancesInSight(unit as any, (instance: any) => unit.getActionCondition(instance, ACTION_TYPES.hunt))
+    const secondTargets = findInstancesInSight(unitAsInstance, instance =>
+      Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.hunt))
+    )
     if (secondTargets.length) {
-      const target = getClosestInstanceWithPath(unit as any, secondTargets)
+      const target = getClosestInstanceWithPath(unitAsInstance, secondTargets)
       if (target) {
         if (unit.action !== ACTION_TYPES.hunt) {
           unit.action = ACTION_TYPES.hunt
-          if (unit.allAssets[unit.work]) {
-            unit.actionSheet = Assets.cache.get(unit.allAssets[unit.work].actionSheet)
+          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
+          if (workAssets) {
+            unit.actionSheet = Assets.cache.get(workAssets.actionSheet)
           }
         }
-        unit.setDest(target.instance)
-        if (instanceContactInstance(unit as any, target.instance)) {
-          unit.degree = getInstanceDegree(unit as any, target.instance.x, target.instance.y)
-          unit.getAction(unit.action)
+        unit.setDest?.(target.instance as unknown as RuntimeEntity)
+        if (instanceContactInstance(unitAsInstance, target.instance)) {
+          unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
+          unit.getAction?.(unit.action)
           return true
         }
-        unit.setPath(target.path)
+        unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
         return true
       }
     }
@@ -132,93 +139,101 @@ export class UnitCombat {
 
   syncMovingTargetDirection() {
     const unit = this.unit
-    if (unit.destHasMoved()) {
-      unit.realDest.i = unit.dest.i
-      unit.realDest.j = unit.dest.j
-      unit.realDest.x = unit.dest.x
-      unit.realDest.y = unit.dest.y
+    const dest = unit.dest as RuntimeEntity | null | undefined
+    if (unit.destHasMoved?.() && dest && unit.realDest) {
+      unit.realDest.i = dest.i
+      unit.realDest.j = dest.j
+      unit.realDest.x = dest.x
+      unit.realDest.y = dest.y
       const oldDeg = unit.degree
-      unit.degree = getInstanceDegree(unit as any, unit.dest.x, unit.dest.y)
-      if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
-        unit.setTextures(SHEET_TYPES.action)
+      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+      if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+        unit.setTextures?.(SHEET_TYPES.action)
       }
     }
   }
 
   handleAttackAction() {
     const unit = this.unit
-    const {
-      context: { map, menu, player },
-    } = unit
+    const map = unit.context?.map
+    const menu = unit.context?.menu
+    const player = unit.owner
 
-    if (!unit.getActionCondition(unit.dest)) {
-      unit.affectNewDest()
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
       return
     }
     if (unit.range && unit.type !== UNIT_TYPES.villager) {
       this.setStandingPose()
       const launchProjectile = () => {
-        if (!unit.getActionCondition(unit.dest) || !unit.realDest) return
-        playAudibleSoundCue(unit, unit.sounds?.attack)
+        const dest = unit.dest as RuntimeEntity | null | undefined
+        if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
+        playAudibleSoundCue(unit as unknown as Parameters<typeof playAudibleSoundCue>[0], unit.sounds?.attack)
         const projectile = new Projectile(
           {
             owner: unit,
-            target: unit.dest,
-            type: unit.projectile,
+            target: dest,
+            type: unit.projectile || '',
             destination: unit.realDest,
           },
-          unit.context
+          unit.context!
         )
         map.addChild(projectile)
       }
       this.performRangedAttackCycle(launchProjectile)
-      unit.startInterval(
+      unit.startInterval?.(
         () => this.performRangedAttackCycle(launchProjectile),
-        unit.rateOfFire * 1000,
+        (unit.rateOfFire ?? 1) * 1000,
         false,
         'unit.rangedAttack'
       )
     } else {
-      unit.sprite.loop = true
-      unit.sprite.onComplete = null
-      unit.setTextures(SHEET_TYPES.action)
-      unit.startInterval(
+      const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+      sprite.loop = true
+      sprite.onComplete = null
+      unit.setTextures?.(SHEET_TYPES.action)
+      unit.startInterval?.(
         () => {
-          if (!unit.getActionCondition(unit.dest)) {
-            if (unit.dest && unit.dest.hitPoints <= 0) {
-              unit.dest.die()
+          const dest = unit.dest as RuntimeEntity | null | undefined
+          if (!unit.getActionCondition?.(dest)) {
+            if (dest && (dest.hitPoints ?? 0) <= 0) {
+              dest.die?.()
             }
-            unit.affectNewDest()
+            unit.affectNewDest?.()
             return
           }
           this.syncMovingTargetDirection()
-          if (!unit.isUnitAtDest(unit.action, unit.dest)) {
-            unit.sendToEvt(unit.dest, ACTION_TYPES.attack, { forceRepath: true })
+          if (!unit.isUnitAtDest?.(unit.action, dest)) {
+            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
             return
           }
           if (unit.sounds && unit.sounds.hit) {
-            playAudibleSoundCue(unit, unit.sounds.hit)
+            playAudibleSoundCue(unit as unknown as Parameters<typeof playAudibleSoundCue>[0], unit.sounds.hit)
           }
-          if (unit.dest.hitPoints > 0) {
-            unit.dest.hitPoints = getHitPointsWithDamage(unit, unit.dest)
-            if (unit.dest.selected) {
-              unit.dest.drawHealthBar()
+          if (dest && (dest.hitPoints ?? 0) > 0) {
+            dest.hitPoints = getHitPointsWithDamage(
+              unit as unknown as Parameters<typeof getHitPointsWithDamage>[0],
+              dest as unknown as Parameters<typeof getHitPointsWithDamage>[1]
+            )
+            if (dest.selected) {
+              dest.drawHealthBar?.()
+              const playerLike = player as unknown as { selectedUnit?: unknown; selectedBuilding?: unknown; selectedOther?: unknown }
               if (
-                player.selectedUnit === unit.dest ||
-                player.selectedBuilding === unit.dest ||
-                player.selectedOther === unit.dest
+                playerLike.selectedUnit === dest ||
+                playerLike.selectedBuilding === dest ||
+                playerLike.selectedOther === dest
               ) {
-                menu.updateInfo(MENU_INFO_IDS.hitPoints, unit.dest.hitPoints + '/' + unit.dest.totalHitPoints)
+                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
               }
             }
-            unit.dest.isAttacked(unit)
-            if (unit.dest.hitPoints <= 0) {
-              unit.dest.die()
-              unit.affectNewDest()
+            dest.isAttacked?.(unit)
+            if ((dest.hitPoints ?? 0) <= 0) {
+              dest.die?.()
+              unit.affectNewDest?.()
             }
           }
         },
-        unit.rateOfFire * 1000,
+        (unit.rateOfFire ?? 1) * 1000,
         false,
         'unit.meleeAttack'
       )

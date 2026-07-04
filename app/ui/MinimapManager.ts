@@ -7,24 +7,25 @@ import {
   playerCanSeeInstance,
 } from '../lib'
 import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../constants'
-
-type AnyRecord = Record<string, any>
+import type { MinimapHostLike } from '../types/context'
+import type { PlayerLike } from '../types/player'
+import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 
 export class MinimapManager {
-  menu: AnyRecord
+  menu: MinimapHostLike
   miniMapAlpha: number
-  updatePlayerMiniMap: (owner: AnyRecord) => void
-  updateResourcesMiniMap: (...args: any[]) => void
-  updateCameraMiniMap: (...args: any[]) => void
+  updatePlayerMiniMap: (owner: PlayerLike) => void
+  updateResourcesMiniMap: () => void
+  updateCameraMiniMap: () => void
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: MinimapHostLike) {
     this.menu = menu
     this.miniMapAlpha = 1.284
 
     this.updatePlayerMiniMap = throttleByKey(
       this.updatePlayerMiniMapEvt.bind(this),
       500,
-      (owner: AnyRecord) => owner?.label ?? owner
+      (owner: PlayerLike) => owner?.label ?? owner
     )
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt.bind(this), 500)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt.bind(this), 100)
@@ -47,7 +48,7 @@ export class MinimapManager {
     const { factor, translate } = this.getMinimapParams()
 
     for (const canvas of [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]) {
-      canvas.getContext('2d').translate(translate, 0)
+      canvas.getContext('2d')!.translate(translate, 0)
     }
 
     const N = map.size
@@ -71,7 +72,7 @@ export class MinimapManager {
     const { menu } = this
     const { map } = menu.context
     const canvas = menu.terrainMinimap
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
@@ -84,7 +85,7 @@ export class MinimapManager {
           cell.y / factor,
           CELL_WIDTH / factor + 1,
           CELL_HEIGHT / factor + 1,
-          cell.color
+          cell.color ?? ''
         )
       }
     }
@@ -94,7 +95,7 @@ export class MinimapManager {
     const { menu } = this
     const { map, player } = menu.context
     const canvas = menu.terrainMinimap
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
@@ -110,7 +111,7 @@ export class MinimapManager {
           cell.y / factor,
           CELL_WIDTH / factor + 1,
           CELL_HEIGHT / factor + 1,
-          cell.color
+          cell.color ?? ''
         )
       }
     }
@@ -120,7 +121,7 @@ export class MinimapManager {
     const { menu } = this
     const { map } = menu.context
     const canvas = menu.terrainMinimap
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const cell = map.grid[i][j]
 
@@ -130,19 +131,19 @@ export class MinimapManager {
       cell.y / factor,
       CELL_WIDTH / factor + 1,
       CELL_HEIGHT / factor + 1,
-      cell.color
+      cell.color ?? ''
     )
     if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
-      this.updateResourceMiniMap(cell.has)
+      this.updateResourceMiniMap(cell.has as ResourceEntity)
     }
   }
 
-  updateResourceMiniMap(resource: AnyRecord): void {
+  updateResourceMiniMap(resource: ResourceEntity): void {
     const { menu } = this
     const { map } = menu.context
     if (!map.showResources) return
 
-    const context = menu.resourcesMinimap.getContext('2d')
+    const context = menu.resourcesMinimap.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 4
     canvasDrawRectangle(
@@ -151,7 +152,7 @@ export class MinimapManager {
       resource.y / factor - squareSize / 2,
       squareSize,
       squareSize,
-      resource.color
+      resource.color ?? ''
     )
   }
 
@@ -159,14 +160,14 @@ export class MinimapManager {
     const { menu } = this
     const { map, player } = menu.context
     const canvas = menu.resourcesMinimap
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 4
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
     if (!map.showResources) return
 
-    map.resources.forEach((resource: AnyRecord) => {
+    map.resources.forEach(resource => {
       if (resource.color && (player?.views?.isViewed(resource.i, resource.j) || map.revealEverything)) {
         canvasDrawRectangle(
           context,
@@ -184,7 +185,7 @@ export class MinimapManager {
     const { menu } = this
     const { controls } = menu.context
     const canvas = menu.cameraMinimap
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = controls.getViewportMetrics()
 
@@ -199,7 +200,7 @@ export class MinimapManager {
     )
   }
 
-  updatePlayerMiniMapEvt(owner: AnyRecord): void {
+  updatePlayerMiniMapEvt(owner: PlayerLike): void {
     if (!owner) return
 
     const { menu } = this
@@ -209,14 +210,15 @@ export class MinimapManager {
     const color = owner.colorHex
     const id = `minimap-${owner.label}`
 
-    let canvas: any, context: any
-    const existing = menu.playersMinimap.find((p: AnyRecord) => p.id === id)
+    let canvas: HTMLCanvasElement
+    let context: CanvasRenderingContext2D
+    const existing = menu.playersMinimap.find(p => p.id === id)
     if (existing) {
       canvas = existing.canvas
       context = existing.context
     } else {
       canvas = document.createElement('canvas')
-      context = canvas.getContext('2d')
+      context = canvas.getContext('2d')!
       context.translate(translate, 0)
       menu.playersMinimap.push({ id, canvas, context })
       menu.bottombarMap.appendChild(canvas)
@@ -224,11 +226,12 @@ export class MinimapManager {
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
-    const isVisible = (instance: AnyRecord) => map.revealEverything || playerCanSeeInstance(instance as any, player)
+    const isVisible = (instance: RuntimeEntity) =>
+      map.revealEverything || playerCanSeeInstance(instance as unknown as Parameters<typeof playerCanSeeInstance>[0], player)
 
-    owner.buildings.forEach((building: AnyRecord) => {
+    owner.buildings.forEach(building => {
       if (!isVisible(building)) return
-      const { x, y, size, selected } = building
+      const { x, y, size = 0, selected } = building
       const finalSize = squareSize + size
       canvasDrawRectangle(
         context,
@@ -239,7 +242,7 @@ export class MinimapManager {
         selected ? 'white' : color
       )
     })
-    owner.units.forEach((unit: AnyRecord) => {
+    owner.units.forEach(unit => {
       if (!isVisible(unit)) return
       const { x, y, selected } = unit
       canvasDrawRectangle(

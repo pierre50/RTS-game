@@ -9,17 +9,19 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-
-type AnyRecord = Record<string, any>
+import type { LooseRecord } from '../../types/common'
+import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
+import type { Animal } from './index'
 
 export class AnimalCombat {
-  animal: AnyRecord
+  animal: Animal & LooseRecord
 
-  constructor(animal: AnyRecord) {
+  constructor(animal: Animal & LooseRecord) {
     this.animal = animal
   }
 
-  getReaction(instance: AnyRecord): void {
+  getReaction(instance: RuntimeEntity): void {
     const animal = this.animal
     if (animal.strategy === 'runaway') {
       animal.runaway(instance)
@@ -28,7 +30,7 @@ export class AnimalCombat {
     }
   }
 
-  detect(instance: AnyRecord): void {
+  detect(instance: RuntimeEntity): void {
     const animal = this.animal
     if (animal.context.editor) return
     if (
@@ -43,7 +45,7 @@ export class AnimalCombat {
     }
   }
 
-  isAttacked(instance: AnyRecord): void {
+  isAttacked(instance: RuntimeEntity): void {
     const animal = this.animal
     if (animal.context.editor) return
     if (!instance || animal.dest || animal.isDead) return
@@ -57,30 +59,41 @@ export class AnimalCombat {
       animal.stop()
       return
     }
-    const targets = findInstancesInSight(animal as any, (instance: AnyRecord) => animal.getActionCondition(instance))
+    const targets = findInstancesInSight(
+      animal as unknown as Parameters<typeof findInstancesInSight>[0],
+      (instance: LooseRecord) => animal.getActionCondition(instance)
+    )
     if (targets.length) {
-      const target = getClosestInstanceWithPath(animal as any, targets as any)
+      const target = getClosestInstanceWithPath(
+        animal as unknown as Parameters<typeof getClosestInstanceWithPath>[0],
+        targets as unknown as Parameters<typeof getClosestInstanceWithPath>[1]
+      )
       if (target) {
-        animal.setDest(target.instance)
-        if (instanceContactInstance(animal as any, target.instance as any)) {
-          animal.degree = getInstanceDegree(animal as any, target.instance.x, target.instance.y)
+        animal.setDest(target.instance as LooseRecord)
+        if (
+          instanceContactInstance(
+            animal as unknown as Parameters<typeof instanceContactInstance>[0],
+            target.instance as unknown as Parameters<typeof instanceContactInstance>[1]
+          )
+        ) {
+          animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], target.instance.x, target.instance.y)
           animal.getAction(animal.action)
           return
         }
-        animal.setPath(target.path)
+        animal.setPath(target.path as LooseRecord[])
         return
       }
     }
     animal.stop()
   }
 
-  runaway(instance: AnyRecord): void {
+  runaway(instance: RuntimeEntity): void {
     const animal = this.animal
     const {
       context: { map },
     } = animal
-    let dest: AnyRecord | null = null
-    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight, ((cell: AnyRecord) => {
+    let dest: RuntimeCell | null = null
+    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight, ((cell: RuntimeCell) => {
       if (
         !cell.solid &&
         (!dest ||
@@ -89,7 +102,7 @@ export class AnimalCombat {
       ) {
         dest = cell
       }
-    }) as any)
+    }) as unknown as Parameters<typeof getCellsAroundPoint>[4])
     if (dest) {
       animal.isFleeing = true
       animal.sendTo(dest, null, {
@@ -122,10 +135,15 @@ export class AnimalCombat {
               return
             }
             if (animal.destHasMoved()) {
-              animal.degree = getInstanceDegree(animal as any, animal.dest.x, animal.dest.y)
+              animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], animal.dest.x, animal.dest.y)
               animal.setTextures(SHEET_TYPES.action)
             }
-            if (!instanceContactInstance(animal as any, animal.dest as any)) {
+            if (
+              !instanceContactInstance(
+                animal as unknown as Parameters<typeof instanceContactInstance>[0],
+                animal.dest as unknown as Parameters<typeof instanceContactInstance>[1]
+              )
+            ) {
               animal.sendTo(animal.dest, ACTION_TYPES.attack, { forceRepath: true })
               return
             }

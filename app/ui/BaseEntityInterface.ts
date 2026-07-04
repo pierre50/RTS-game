@@ -1,7 +1,5 @@
 import { MENU_INFO_IDS } from '../constants'
 
-type AnyRecord = Record<string, any>
-
 export function createInfoImage(className: string, src: string): HTMLImageElement {
   const img = document.createElement('img')
   img.className = className
@@ -9,14 +7,21 @@ export function createInfoImage(className: string, src: string): HTMLImageElemen
   return img
 }
 
-export function createInfoText(className: string, text: any): HTMLDivElement {
+export function createInfoText(className: string, text: string | number): HTMLDivElement {
   const div = document.createElement('div')
   div.classList.add(className)
-  div.textContent = text
+  div.textContent = String(text)
   return div
 }
 
-function parseHitPoints(value: any, totalHitPoints: any): { current: number; max: number } {
+interface HitPointsFillElement extends HTMLElement {
+  _hitPointsFill?: HTMLElement
+}
+
+function parseHitPoints(
+  value: string | number,
+  totalHitPoints: string | number
+): { current: number; max: number } {
   if (typeof value === 'string') {
     const [current, max] = value.split('/').map(part => Number(part))
     if (Number.isFinite(current) && Number.isFinite(max)) {
@@ -32,8 +37,12 @@ function parseHitPoints(value: any, totalHitPoints: any): { current: number; max
   }
 }
 
-export function syncHitPointsInfo(element: AnyRecord, value: any, totalHitPoints?: any): void {
-  const { current, max } = parseHitPoints(value, totalHitPoints)
+export function syncHitPointsInfo(
+  element: HitPointsFillElement,
+  value: string | number,
+  totalHitPoints?: string | number
+): void {
+  const { current, max } = parseHitPoints(value, totalHitPoints ?? 0)
   const safeMax = Math.max(0, max)
   const safeCurrent = Math.max(0, Math.min(current, safeMax || current))
   const ratio = safeMax > 0 ? safeCurrent / safeMax : 0
@@ -41,13 +50,19 @@ export function syncHitPointsInfo(element: AnyRecord, value: any, totalHitPoints
   element.textContent = `${safeCurrent}/${safeMax}`
 
   const fill =
-    element.closest('.hit-points-display')?.querySelector('.hit-points-fill') || element._hitPointsFill || null
+    element.closest('.hit-points-display')?.querySelector<HTMLElement>('.hit-points-fill') ||
+    element._hitPointsFill ||
+    null
   if (fill) {
     fill.style.width = `${Math.round(ratio * 100)}%`
   }
 }
 
-export function createHitPointsInfo(className: string, hitPoints: any, totalHitPoints: any): HTMLDivElement {
+export function createHitPointsInfo(
+  className: string,
+  hitPoints: string | number,
+  totalHitPoints: string | number
+): HTMLDivElement {
   const wrapper = document.createElement('div')
   wrapper.className = 'hit-points-display'
 
@@ -58,16 +73,16 @@ export function createHitPointsInfo(className: string, hitPoints: any, totalHitP
   fill.className = 'hit-points-fill ui-progress__fill'
   bar.appendChild(fill)
 
-  const text: AnyRecord = createInfoText(className, '')
+  const text: HitPointsFillElement = createInfoText(className, '')
   text._hitPointsFill = fill
   syncHitPointsInfo(text, hitPoints, totalHitPoints)
 
   wrapper.appendChild(bar)
-  wrapper.appendChild(text as any)
+  wrapper.appendChild(text)
   return wrapper
 }
 
-export function appendQuantityInfo(element: HTMLElement, iconSrc: string, quantity: any): void {
+export function appendQuantityInfo(element: HTMLElement, iconSrc: string, quantity: string | number): void {
   const quantityDiv = document.createElement('div')
   quantityDiv.classList.add(MENU_INFO_IDS.quantity)
   quantityDiv.className = 'resource-quantity'
@@ -81,7 +96,7 @@ export function appendIconValueInfo(
   containerClass: string,
   iconSrc: string,
   textClass: string,
-  text: any
+  text: string | number
 ): void {
   const wrapper = document.createElement('div')
   wrapper.classList.add(containerClass)
@@ -95,13 +110,13 @@ export function appendBaseEntityInfo(
   civText: string,
   typeText: string,
   iconSrc: string,
-  hitPoints?: any,
-  totalHitPoints?: any
+  hitPoints?: string | number,
+  totalHitPoints?: string | number
 ): void {
   element.appendChild(createInfoText(MENU_INFO_IDS.civ, civText))
   element.appendChild(createInfoText(MENU_INFO_IDS.type, typeText))
   element.appendChild(createInfoImage(MENU_INFO_IDS.icon, iconSrc))
 
   if (hitPoints !== undefined)
-    element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, hitPoints, totalHitPoints))
+    element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, hitPoints, totalHitPoints ?? 0))
 }

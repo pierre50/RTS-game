@@ -1,7 +1,8 @@
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
-
-type AnyRecord = Record<string, any>
+import type { LooseRecord } from '../../types/common'
+import type { RuntimeEntity } from '../../types/entities'
+import type { Animal } from './index'
 
 const BEHAVIOR_CHECK_INTERVAL = 250
 const AMBIENT_WALK_DELAY_MIN = 4000
@@ -9,11 +10,11 @@ const AMBIENT_WALK_DELAY_MAX = 9000
 const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
-  animal: AnyRecord
-  taskId: any
+  animal: Animal & LooseRecord
+  taskId: unknown
   nextAmbientWalkAt: number
 
-  constructor(animal: AnyRecord) {
+  constructor(animal: Animal & LooseRecord) {
     this.animal = animal
     this.taskId = null
     this.nextAmbientWalkAt = 0
@@ -47,19 +48,27 @@ export class AnimalBehavior {
     this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(AMBIENT_WALK_DELAY_MIN, AMBIENT_WALK_DELAY_MAX)
   }
 
-  findNearbyVillager(): AnyRecord | null {
+  findNearbyVillager(): LooseRecord | null {
     const animal = this.animal
     const villagers = findInstancesInSight(
-      animal as any,
-      (instance: AnyRecord) =>
+      animal as unknown as Parameters<typeof findInstancesInSight>[0],
+      (instance: LooseRecord) =>
         instance.family === FAMILY_TYPES.unit &&
         instance.type === UNIT_TYPES.villager &&
         !instance.isDead &&
         !instance.isDestroyed
     )
     return villagers.reduce(
-      (closest: AnyRecord | null, villager: AnyRecord) =>
-        !closest || instancesDistance(animal as any, villager as any) < instancesDistance(animal as any, closest as any)
+      (closest: LooseRecord | null, villager: LooseRecord) =>
+        !closest ||
+        instancesDistance(
+          animal as unknown as Parameters<typeof instancesDistance>[0],
+          villager as unknown as Parameters<typeof instancesDistance>[1]
+        ) <
+          instancesDistance(
+            animal as unknown as Parameters<typeof instancesDistance>[0],
+            closest as unknown as Parameters<typeof instancesDistance>[1]
+          )
           ? villager
           : closest,
       null
@@ -75,7 +84,7 @@ export class AnimalBehavior {
 
     const villager = this.findNearbyVillager()
     if (villager && !animal.isFleeing) {
-      animal.runaway(villager)
+      animal.runaway(villager as RuntimeEntity)
       return
     }
 

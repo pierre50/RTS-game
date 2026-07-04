@@ -23,15 +23,19 @@ import {
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
-
-type AnyRecord = Record<string, any>
+import type { FederatedPointerEvent, Texture } from 'pixi.js'
+import type { UnknownRecord } from '../types/common'
+import type { GameContextLike } from '../types/context'
+import type { RuntimeEntity } from '../types/entities'
+import type { ResourceConfig } from '../types/config'
+import type { EntityInterfaceLike, ResourceEntity } from '../types/entities'
 
 export class Resource extends Instance {
   resourceInterface: ResourceInterface
-  quantity: any
-  interface: AnyRecord
+  quantity!: number
+  interface: EntityInterfaceLike
 
-  constructor(options: AnyRecord, context: AnyRecord) {
+  constructor(options: UnknownRecord, context: GameContextLike) {
     super(context)
 
     const {
@@ -39,7 +43,7 @@ export class Resource extends Instance {
     } = this
 
     this.family = FAMILY_TYPES.resource
-    this.resourceInterface = new ResourceInterface(this)
+    this.resourceInterface = new ResourceInterface(this as unknown as ResourceEntity)
     this.size = 1
 
     Object.keys(options).forEach(prop => {
@@ -55,7 +59,7 @@ export class Resource extends Instance {
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as any)
+    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
     this.visible = false
 
     // Set solid zone
@@ -68,14 +72,14 @@ export class Resource extends Instance {
     this.allowMove = false
 
     this.interface = {
-      info: (element: any) => {
+      info: (element: HTMLElement) => {
         const data = config.resources[this.type]
         this.setDefaultInterface(element, data)
       },
     }
     if (this.isAnimated) {
       const spritesheetJump = Assets.cache.get(this.assets)
-      this.sprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as any)
+      this.sprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
       bindAnimatedSpriteToTicker(this.sprite, this.context.app)
       this.sprite.play()
       this.sprite.animationSpeed = 0.2
@@ -111,7 +115,10 @@ export class Resource extends Instance {
           context: { player, menu, controls, editor },
         } = this
         if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked()) return
-        if (!player.selectedUnits.length && (playerCanSeeInstance(this as any, player) || map.revealEverything)) {
+        if (
+          !player.selectedUnits.length &&
+          (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything)
+        ) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -119,12 +126,12 @@ export class Resource extends Instance {
           playSelectionSound(this)
         }
       })
-      this.sprite.on('pointerup', (evt: any) => {
+      this.sprite.on('pointerup', (evt: FederatedPointerEvent) => {
         const {
           context: { player, controls, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
-        const action = (TYPE_ACTION as AnyRecord)[this.category || this.type]
+        const action = (TYPE_ACTION as Record<string, string>)[this.category || this.type]
         if (controls.rallyPointController?.active) {
           controls.mouse.prevent = true
           controls.rallyPointController.handleMouseUpOnEntity(this)
@@ -152,7 +159,7 @@ export class Resource extends Instance {
           }
         }
         if (hasActionOrder) {
-          drawInstanceBlinkingSelection(this as any)
+          drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
         }
         if (hasFallbackOrder) {
           playSoundCue(SOUND_CUES.unit.militaryCommand)
@@ -179,7 +186,7 @@ export class Resource extends Instance {
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === PLAYER_TYPES.ai) {
-        const list = players[i][listName]
+        const list = players[i][listName] as Set<RuntimeEntity> | undefined
         if (list) {
           list.delete(this)
         }
@@ -242,7 +249,7 @@ export class Resource extends Instance {
     this.destroy({ children: true, texture: false })
   }
 
-  setDefaultInterface(element: any, data: any) {
+  setDefaultInterface(element: HTMLElement, data: ResourceConfig) {
     return this.resourceInterface.setDefaultInterface(element, data)
   }
 
@@ -277,7 +284,7 @@ export class Resource extends Instance {
     this.x = cell.x
     this.y = cell.y
     this.z = cell.z
-    this.zIndex = getInstanceZIndex(this as any)
+    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
     this.visible = true
     this.refreshTextureForTerrain()
   }

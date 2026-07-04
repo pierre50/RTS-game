@@ -1,7 +1,8 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import type { PlayerLike } from '../types/player'
 
 type OwnerLike = {
-  isEnemy?: (owner?: OwnerLike | null) => boolean
+  isEnemy?: (owner?: PlayerLike | null) => boolean
   label?: string
   technologies?: string[]
 }
@@ -14,11 +15,11 @@ type CombatEntity = {
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
-  isUsedBy?: CombatEntity | null
-  loading?: number
+  isUsedBy?: unknown
+  loading?: number | null
   meleeArmor?: number
   meleeAttack?: number
-  owner?: OwnerLike | null
+  owner?: PlayerLike | null
   pierceArmor?: number
   pierceAttack?: number
   quantity?: number
@@ -28,7 +29,7 @@ type CombatEntity = {
   type?: string
 }
 
-type Condition = {
+export type Condition = {
   key: string
   op: '=' | '!=' | '<' | '<=' | '>=' | '>' | 'includes' | 'notincludes'
   value: unknown

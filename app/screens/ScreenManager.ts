@@ -5,17 +5,20 @@ import MapEditorConfig from './MapEditorConfig'
 import MainMenu from './MainMenu'
 import MapConfig from './MapConfig'
 import { OrientationGuard } from '../ui/OrientationGuard'
+import type { GameConfig, SaveRecord } from '../types/save'
 
-type AnyRecord = Record<string, any>
+type RuntimeScreen = (Game | MapEditor) & {
+  setOrientationBlocked(blocked: boolean): void
+}
 
 export class ScreenManager {
   app: Application
-  gamebox: AnyRecord
-  currentMenuScreen: any
-  currentRuntime: any
+  gamebox: HTMLElement
+  currentMenuScreen: MainMenu | null
+  currentRuntime: RuntimeScreen | null
   orientationGuard: OrientationGuard
 
-  constructor(app: Application, gamebox: AnyRecord) {
+  constructor(app: Application, gamebox: HTMLElement) {
     this.app = app
     this.gamebox = gamebox
     this.currentMenuScreen = null
@@ -49,23 +52,23 @@ export class ScreenManager {
     this.currentMenuScreen = new MainMenu({
       onStart: () => this.showMapConfig(),
       onMapEditor: () => this.showMapEditorConfig(),
-      onLoad: (save: AnyRecord) => this.loadGame(save),
+      onLoad: (save: SaveRecord) => this.loadGame(save),
     })
   }
 
   showMapConfig(): void {
     new MapConfig({
-      onPlay: (config: AnyRecord) => this.startGame(config),
+      onPlay: (config: GameConfig) => this.startGame(config),
     })
   }
 
   showMapEditorConfig(): void {
     new MapEditorConfig({
-      onCreate: (config: AnyRecord) => this.showMapEditor(config),
+      onCreate: (config: GameConfig) => this.showMapEditor(config),
     })
   }
 
-  startGame(config: AnyRecord): void {
+  startGame(config: GameConfig): void {
     this.destroyCurrentMenuScreen()
     this.destroyCurrentRuntime()
     this.currentRuntime = new Game(this.app, this.gamebox, config, () => this.handleQuitRuntime())
@@ -73,7 +76,7 @@ export class ScreenManager {
     this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
   }
 
-  showMapEditor(config: AnyRecord): void {
+  showMapEditor(config: GameConfig): void {
     this.destroyCurrentMenuScreen()
     this.destroyCurrentRuntime()
     this.currentRuntime = new MapEditor(this.app, this.gamebox, config, () => this.handleQuitRuntime())
@@ -81,7 +84,7 @@ export class ScreenManager {
     this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
   }
 
-  loadGame(save: AnyRecord): void {
+  loadGame(save: SaveRecord): void {
     this.destroyCurrentMenuScreen()
     this.destroyCurrentRuntime()
     this.currentRuntime = new Game(this.app, this.gamebox, null, () => this.handleQuitRuntime())

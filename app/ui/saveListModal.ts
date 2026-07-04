@@ -2,19 +2,18 @@ import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { listSaves, loadSave, deleteSave, exportSave, importSaveFile, EXPORT_EXT } from '../serialization/SaveStorage'
-
-type AnyRecord = Record<string, any>
+import type { SaveIndexEntry, SaveRecord } from '../types/save'
 
 export function openSaveListModal({
   onLoad,
   onError,
   onClose,
 }: {
-  onLoad: (saveData: AnyRecord) => void
+  onLoad: (saveData: SaveRecord) => void
   onError?: (message: string) => void
   onClose?: () => void
 }): void {
-  let saves: AnyRecord[] = listSaves()
+  let saves: SaveIndexEntry[] = listSaves()
 
   const wrapper = document.createElement('div')
   wrapper.className = 'save-list-wrapper'
@@ -22,7 +21,7 @@ export function openSaveListModal({
   const listEl = document.createElement('div')
   listEl.className = 'save-list'
 
-  let modal: AnyRecord
+  let modal: Modal
   let importStatus: HTMLSpanElement
 
   function reportError(message: string): void {
@@ -166,11 +165,12 @@ export function openSaveListModal({
       renderList()
       importStatus.textContent = t('importSuccess', { name })
       importStatus.classList.add('save-list-import-status--ok')
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
       const msgKey =
-        err.message === 'MAX_SAVES_REACHED'
+        message === 'MAX_SAVES_REACHED'
           ? 'maxSavesReached'
-          : err.message === 'STORAGE_FULL'
+          : message === 'STORAGE_FULL'
             ? 'storageFull'
             : 'importError'
       importStatus.textContent = t(msgKey)

@@ -19,12 +19,15 @@ import {
   playAudibleSoundCue,
 } from '../lib'
 import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
-
-type AnyRecord = Record<string, any>
+import type { Texture } from 'pixi.js'
+import type { LooseRecord } from '../types/common'
+import type { GameContextLike } from '../types/context'
+import type { RuntimeEntity } from '../types/entities'
+import type { Point } from '../types/grid'
 
 const PROJECTILE_Z_OFFSET = 1000000
 
-const DIRECTIONAL_FRAME_INDEX: AnyRecord = {
+const DIRECTIONAL_FRAME_INDEX: Record<string, number> = {
   south: 0,
   southwest: 1,
   west: 2,
@@ -35,7 +38,20 @@ const DIRECTIONAL_FRAME_INDEX: AnyRecord = {
   southeast: 7,
 }
 
-function getDirectionalFrameIndex(projectile: AnyRecord, direction: string) {
+type ProjectileOptions = {
+  owner: RuntimeEntity
+  type: string
+  target?: RuntimeEntity
+  destination?: Point
+  degree?: number
+  damage?: number
+}
+
+type RuntimeProjectile = LooseRecord & ProjectileOptions
+type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
+type ProjectileSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
+
+function getDirectionalFrameIndex(projectile: RuntimeProjectile, direction: string) {
   if (Array.isArray(projectile.directionalFrameOrder)) {
     const frameIndex = projectile.directionalFrameOrder.indexOf(direction)
     if (frameIndex >= 0) {
@@ -46,7 +62,7 @@ function getDirectionalFrameIndex(projectile: AnyRecord, direction: string) {
   return DIRECTIONAL_FRAME_INDEX[direction] ?? 0
 }
 
-function getSortedTextureNames(textures: AnyRecord) {
+function getSortedTextureNames(textures: Record<string, Texture>) {
   return Object.keys(textures).sort((a, b) => {
     const na = parseInt(a.split('_')[0], 10)
     const nb = parseInt(b.split('_')[0], 10)
@@ -54,7 +70,7 @@ function getSortedTextureNames(textures: AnyRecord) {
   })
 }
 
-function applyTextureAnchor(sprite: any, texture: any) {
+function applyTextureAnchor(sprite: Pick<AnimatedSprite, 'anchor'>, texture?: ProjectileTexture) {
   const anchor = texture?.defaultAnchor
   if (
     anchor &&
@@ -72,9 +88,9 @@ function applyTextureAnchor(sprite: any, texture: any) {
   sprite.anchor.set(0.5, 0.5)
 }
 
-function getDirectionalAnimation(projectile: AnyRecord, textures: any[], degree: number) {
-  const framesPerDirection = projectile.directionalAnimationFrames
-  if (!Number.isInteger(framesPerDirection) || framesPerDirection <= 0) {
+function getDirectionalAnimation(projectile: RuntimeProjectile, textures: Texture[], degree: number) {
+  const framesPerDirection = projectile.directionalAnimationFrames as number | undefined
+  if (typeof framesPerDirection !== 'number' || !Number.isInteger(framesPerDirection) || framesPerDirection <= 0) {
     return null
   }
 
@@ -102,12 +118,12 @@ function getDirectionalAnimation(projectile: AnyRecord, textures: any[], degree:
 export class Projectile extends Container {
   [key: string]: any
 
-  context: AnyRecord
+  context: GameContextLike
   family: string
-  interval: any
-  sprite: any
+  interval: unknown
+  sprite?: ProjectileSprite
 
-  constructor(options: AnyRecord, context: AnyRecord) {
+  constructor(options: ProjectileOptions, context: GameContextLike) {
     super()
 
     this.context = context
@@ -124,7 +140,7 @@ export class Projectile extends Container {
     this.x = this.owner.x + (this.spawnOffsetX ?? 0)
     this.y = this.owner.y - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     this.z = this.owner.z ?? 0
-    this.zIndex = getInstanceZIndex(this as any) + PROJECTILE_Z_OFFSET
+    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0]) + PROJECTILE_Z_OFFSET
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
       this.isDead = true
@@ -142,9 +158,9 @@ export class Projectile extends Container {
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
     sprite.label = LABEL_TYPES.sprite
-    ;(sprite as any).allowMove = false
+    sprite.allowMove = false
     sprite.eventMode = 'none'
-    ;(sprite as any).allowClick = false
+    sprite.allowClick = false
     sprite.roundPixels = true
     this.addChild(sprite)
     this.updateTrajectoryVisual()
@@ -170,16 +186,16 @@ export class Projectile extends Container {
           this.die()
           return
         }
-        moveTowardPoint(this as any, targetX, targetY, this.speed)
+        moveTowardPoint(this as unknown as Parameters<typeof moveTowardPoint>[0], targetX, targetY, this.speed)
         this.updateTrajectoryVisual()
-        this.zIndex = getInstanceZIndex(this as any) + PROJECTILE_Z_OFFSET
+        this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0]) + PROJECTILE_Z_OFFSET
       },
       STEP_TIME,
       'projectile.step'
     )
   }
 
-  createSprite(degree: number) {
+  createSprite(degree: number): ProjectileSprite {
     const spritesheet = Assets.cache.get(this.assets)
     if (!spritesheet) {
       throw new Error(`Missing projectile spritesheet for ${this.type} (${this.assets})`)
@@ -188,8 +204,8 @@ export class Projectile extends Container {
 
     if (this.isAnimated) {
       const textures = textureNames.map(name => spritesheet.textures[name])
-      const directionalAnimation = getDirectionalAnimation(this, textures, degree)
-      const sprite = new AnimatedSprite(directionalAnimation?.textures ?? textures)
+      const directionalAnimation = getDirectionalAnimation(this as RuntimeProjectile, textures, degree)
+      const sprite = new AnimatedSprite(directionalAnimation?.textures ?? textures) as ProjectileSprite
       bindAnimatedSpriteToTicker(sprite, this.context.app)
       sprite.updateAnchor = true
 
@@ -199,7 +215,7 @@ export class Projectile extends Container {
           ? Math.max(0, Math.min(staticFrame, directionalAnimation.textures.length - 1))
           : 0
         applyTextureAnchor(sprite, directionalAnimation.textures[frameIndex])
-        const scale = (this as any).scale ?? 1
+        const scale = this.getProjectileScale()
         sprite.scale.set(directionalAnimation.mirrored ? -scale : scale, scale)
         if (Number.isInteger(staticFrame)) {
           sprite.gotoAndStop(frameIndex)
@@ -220,12 +236,12 @@ export class Projectile extends Container {
             const clampedIndex = Math.min(frameIndex, textures.length - 1)
             applyTextureAnchor(sprite, textures[clampedIndex])
             sprite.gotoAndStop(clampedIndex)
-            const scale = (this as any).scale ?? 1
+            const scale = this.getProjectileScale()
             sprite.scale.set(mirrored ? scale : -scale, scale)
           }
         } else {
           const direction = degreeToDirection(degree)
-          const frameIndex = Math.min(getDirectionalFrameIndex(this, direction as string), textures.length - 1)
+          const frameIndex = Math.min(getDirectionalFrameIndex(this as RuntimeProjectile, direction as string), textures.length - 1)
           applyTextureAnchor(sprite, textures[frameIndex])
           sprite.gotoAndStop(frameIndex)
         }
@@ -251,30 +267,31 @@ export class Projectile extends Container {
         const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(degree, frameCount)
         textureName = textureNames[Math.min(frameIndex, textureNames.length - 1)]
         const texture = spritesheet.textures[textureName]
-        const sprite = new AnimatedSprite([texture])
+        const sprite = new AnimatedSprite([texture]) as ProjectileSprite
         bindAnimatedSpriteToTicker(sprite, this.context.app)
         sprite.updateAnchor = true
         applyTextureAnchor(sprite, texture)
         sprite.animationSpeed = 0
         sprite.play()
-        const scale = (this as any).scale ?? 1
+        const scale = this.getProjectileScale()
         sprite.scale.set(mirrored ? -scale : scale, scale)
         return sprite
       }
 
       const direction = degreeToDirection(degree)
-      const frameIndex = getDirectionalFrameIndex(this, direction as string)
+      const frameIndex = getDirectionalFrameIndex(this as RuntimeProjectile, direction as string)
       textureName = textureNames[Math.min(frameIndex, textureNames.length - 1)]
     }
     const texture = spritesheet.textures[textureName]
-    const sprite = new AnimatedSprite([texture])
+    const sprite = new AnimatedSprite([texture]) as ProjectileSprite
     bindAnimatedSpriteToTicker(sprite, this.context.app)
     sprite.updateAnchor = true
     applyTextureAnchor(sprite, texture)
     sprite.animationSpeed = 0
     sprite.play()
-    if ((this as any).scale) {
-      sprite.scale.set((this as any).scale)
+    const scale = this.getProjectileScale()
+    if (scale !== 1) {
+      sprite.scale.set(scale)
     }
     if (this.rotateSprite) {
       sprite.rotation = degreesToRadians(degree)
@@ -309,19 +326,19 @@ export class Projectile extends Container {
     const spritesheet = Assets.cache.get(this.impactEffect.assets)
     if (!spritesheet) return
 
-    const sprite = new AnimatedSprite(getAnimationFrames(spritesheet.textures) as any)
+    const sprite = new AnimatedSprite(getAnimationFrames(spritesheet.textures) as Texture[]) as ProjectileSprite
     bindAnimatedSpriteToTicker(sprite, this.context.app)
     sprite.updateAnchor = true
     sprite.label = LABEL_TYPES.sprite
-    ;(sprite as any).allowMove = false
+    sprite.allowMove = false
     sprite.eventMode = 'none'
-    ;(sprite as any).allowClick = false
+    sprite.allowClick = false
     sprite.roundPixels = true
     sprite.loop = false
     sprite.x = x
     sprite.y = y
     sprite.zIndex = (this.zIndex ?? this.owner.zIndex ?? 0) + 1
-    applyTextureAnchor(sprite, sprite.textures[0])
+    applyTextureAnchor(sprite, sprite.textures[0] as ProjectileTexture)
     sprite.scale.set(this.impactEffect.scale ?? 1)
     sprite.animationSpeed = this.impactEffect.animationSpeed ?? 0.2
     sprite.onComplete = () => {
@@ -332,7 +349,11 @@ export class Projectile extends Container {
     sprite.play()
   }
 
-  onHit(instance: any) {
+  getProjectileScale(): number {
+    return typeof this.scale === 'number' ? this.scale : 1
+  }
+
+  onHit(instance: RuntimeEntity) {
     const {
       context: { menu, player },
     } = this
@@ -341,13 +362,13 @@ export class Projectile extends Container {
     }
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected) {
-      instance.drawHealthBar()
+      instance.drawHealthBar?.()
       if (player.selectedOther === instance) {
         menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
       }
     }
     if (instance.hitPoints <= 0) {
-      instance.die()
+      instance.die?.()
     } else {
       typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)
     }

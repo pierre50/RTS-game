@@ -16,6 +16,7 @@ import {
   LABEL_TYPES,
   PLAYER_TYPES,
   RESOURCE_TYPES,
+  SHEET_TYPES,
   UNIT_TYPES,
   FLOOR_SETS_GRASS,
   FLOOR_SETS_DESERT,
@@ -269,13 +270,27 @@ export class MapGeneration {
 
     function processUnit(unit: RuntimeEntity & UnknownRecord, context: MapGenerationMap): void {
       if (unit.loadedInTransport) return
+      const savedPath = Array.isArray(unit.path) ? unit.path : []
+      const savedAction = unit.action
+      const savedMovementSheet = unit.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
       if (unit.previousDest) {
         unit.previousDest = getDest(unit.previousDest, context)
       }
       if (unit.dest && !unit.isDead) {
         const dest = getDest(unit.dest, context)
         if (dest) {
-          unit.commonSendTo ? unit.commonSendTo(dest, unit.work, unit.action, true) : unit.sendTo(dest, unit.action)
+          unit.dest = null
+          unit.path = []
+          unit.setDest?.(dest)
+          unit.action = savedAction
+          const restoredPath = savedPath.map(cell => context.grid[cell.i]?.[cell.j]).filter(Boolean)
+          if (restoredPath.length) {
+            unit.setPath?.(restoredPath, savedMovementSheet)
+          } else {
+            unit.commonSendTo
+              ? unit.commonSendTo(dest, unit.work, savedAction, true, true)
+              : unit.sendTo(dest, savedAction, { forceRepath: true, movementSheet: savedMovementSheet })
+          }
         } else {
           unit.stop()
         }
@@ -391,6 +406,220 @@ export class MapGeneration {
     this.map._fogInitComplete = true
     this.map._flushFogQueue()
     this.map.bakeTerrainToChunks()
+    this.map.ready = true
+  }
+
+  clearGeneratedGameplayState(): void {
+    const dynamicFamilies = new Set([
+      FAMILY_TYPES.animal,
+      FAMILY_TYPES.building,
+      FAMILY_TYPES.projectile,
+      FAMILY_TYPES.resource,
+      FAMILY_TYPES.unit,
+    ])
+    for (const child of [...(this.map.children || [])]) {
+      if (!dynamicFamilies.has(child?.family)) continue
+      child.stopInterval?.()
+      child.stopTimeout?.()
+      child.animalBehavior?.stop?.()
+      child.isDestroyed = true
+      this.map.removeChild(child)
+      child.destroy?.({ children: true, texture: false, textureSource: false })
+    }
+    for (const row of this.map.grid || []) {
+      for (const cell of row || []) {
+        cell.has = null
+        cell.solid = false
+        cell.corpses?.clear?.()
+      }
+    }
+    this.map.resources = new Set()
+    this.map.instanceBuckets = null
+    this.map.context.players = []
+    this.map.context.player = null
+    this.map.gaia = new Gaia(this.map.context)
+  }
+
+  applySavedStateToGeneratedMap(data: SavedGameData | UnknownRecord): void {
+    const { players, camera, resources, animals, runtime } = data as SavedGameData
+    const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
+    const { menu, controls } = this.map.context
+
+    this.clearGeneratedGameplayState()
+
+    this.map.context.players = players.map((player: SavedPlayer) => {
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
+      if (player.isPlayed) {
+        this.map.context.player = p
+      }
+      return p
+    })
+    if (Number.isFinite(runtime?.elapsedMs) && this.map.context.scheduler) {
+      this.map.context.scheduler.elapsedMs = Math.max(0, runtime.elapsedMs)
+    }
+
+    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource, this.map.context))))
+
+    controls.setCamera(camera.x, camera.y, true)
+    menu.init()
+    menu.updateResourcesMiniMap()
+
+    this.map.context.players.forEach((player, index) => {
+      const { buildings, units, corpses } = players[index]
+      player.buildings = buildings.map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
+      player.units = units.map(unit => player.createUnit(unit))
+      player.corpses = corpses.map(unit => player.createUnit(unit))
+    })
+    animals.filter(animal => !animal.isDestroyed).forEach(animal => this.map.gaia.createAnimal(animal))
+
+    function getDest(val: unknown, map: MapGenerationMap): RuntimeEntity | RuntimeCell | null {
+      if (val) {
+        if (Array.isArray(val)) {
+          return val[2] ? map.getChildByLabel(val[2]) : map.grid[val[0]][val[1]]
+        } else {
+          return map.getChildByLabel(val)
+        }
+      }
+      return null
+    }
+
+    function processUnit(unit: RuntimeEntity & UnknownRecord, context: MapGenerationMap): void {
+      if (unit.loadedInTransport) return
+      const savedPath = Array.isArray(unit.path) ? unit.path : []
+      const savedAction = unit.action
+      const savedMovementSheet = unit.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
+      if (unit.previousDest) {
+        unit.previousDest = getDest(unit.previousDest, context)
+      }
+      if (unit.dest && !unit.isDead) {
+        const dest = getDest(unit.dest, context)
+        if (dest) {
+          unit.dest = null
+          unit.path = []
+          unit.setDest?.(dest)
+          unit.action = savedAction
+          const restoredPath = savedPath.map(cell => context.grid[cell.i]?.[cell.j]).filter(Boolean)
+          if (restoredPath.length) {
+            unit.setPath?.(restoredPath, savedMovementSheet)
+          } else {
+            unit.commonSendTo
+              ? unit.commonSendTo(dest, unit.work, savedAction, true, true)
+              : unit.sendTo(dest, savedAction, { forceRepath: true, movementSheet: savedMovementSheet })
+          }
+        } else {
+          unit.stop()
+        }
+      }
+    }
+
+    function restoreTransportCargo(player: PlayerLike, savedUnits: UnknownRecord[], context: MapGenerationMap): void {
+      for (let index = 0; index < player.units.length; index++) {
+        const unit = player.units[index]
+        const savedUnit = savedUnits[index]
+        if (!unit || !savedUnit?.loadedInTransport) continue
+        const transport = getDest(savedUnit.loadedInTransport, context)
+        if (transport) boardTransport(unit, transport)
+      }
+    }
+
+    function restoreBuildingAssignments(player: PlayerLike, savedBuildings: UnknownRecord[], context: MapGenerationMap): void {
+      for (let index = 0; index < player.buildings.length; index++) {
+        const building = player.buildings[index]
+        const savedBuilding = savedBuildings[index]
+        if (!building || !savedBuilding?.isUsedBy) continue
+        const user = getDest(savedBuilding.isUsedBy, context)
+        if (user && !user.isDead && !user.isDestroyed) {
+          building.isUsedBy = user
+        }
+      }
+    }
+
+    function restoreAIState(player: PlayerLike & UnknownRecord, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
+      if (player.type !== PLAYER_TYPES.ai || !savedPlayer?.aiState) return
+
+      const state = savedPlayer.aiState
+      const now = player.getNow()
+      const validPhases = new Set(['economy', 'military_build', 'attack'])
+      if (validPhases.has(state.phase)) {
+        player.phase = state.phase
+      }
+
+      if (Number.isFinite(state.lastAttackWaveAgo)) {
+        player.lastAttackWaveAt = now - Math.max(0, state.lastAttackWaveAgo)
+      } else if (Number.isFinite(state.lastAttackWaveAt) && Number.isFinite(state.savedAt)) {
+        player.lastAttackWaveAt = now - Math.max(0, state.savedAt - state.lastAttackWaveAt)
+      }
+
+      const restoreMemories = (savedMemories: UnknownRecord[], memoryMap: Map<string, UnknownRecord>) => {
+        memoryMap.clear()
+        for (const savedMemory of savedMemories || []) {
+          if (!savedMemory || typeof savedMemory !== 'object') continue
+          const instance = getDest(savedMemory.instance, context)
+          if (!instance || instance.isDead || instance.isDestroyed || !player.isEnemy(instance.owner)) continue
+
+          player.rememberEnemy(instance)
+          const memory = memoryMap.get(instance.label)
+          if (!memory) continue
+          memory.lastSeenAt = now - Math.max(0, savedMemory.lastSeenAgo || 0)
+          memory.visible = player.views.isVisible(instance.i, instance.j)
+          if (instance.family === FAMILY_TYPES.building) player.foundedEnemyBuildings.add(instance)
+          if (instance.family === FAMILY_TYPES.unit) player.foundedEnemyUnits.add(instance)
+        }
+      }
+      restoreMemories(state.enemyUnits, player.enemyUnitMemory)
+      restoreMemories(state.enemyBuildings, player.enemyBuildingMemory)
+
+      player.threatenedTargets.clear()
+      for (const threat of state.threatenedTargets || []) {
+        if (!threat || typeof threat !== 'object') continue
+        const target = getDest(threat.target, context)
+        if (!target || target.isDead || target.isDestroyed) continue
+
+        const attacker = getDest(threat.attacker, context)
+        const lastSeenAgo = Number.isFinite(threat.lastSeenAgo)
+          ? Math.max(0, threat.lastSeenAgo)
+          : Number.isFinite(state.savedAt) && Number.isFinite(threat.lastSeenAt)
+            ? Math.max(0, state.savedAt - threat.lastSeenAt)
+            : 0
+        player.threatenedTargets.set(target.label, {
+          target,
+          attacker: attacker || null,
+          attackerFamily: attacker?.family || threat.attackerFamily || null,
+          attackerType: attacker?.type || threat.attackerType || null,
+          lastSeenAt: now - lastSeenAgo,
+          count: Number.isFinite(threat.count) ? threat.count : 0,
+        })
+      }
+    }
+
+    this.map.gaia.units.forEach(animal => processUnit(animal, this.map))
+
+    this.map.context.players.forEach((player, index) => {
+      const savedPlayer = players[index]
+      player.views.restoreViewers(name => getDest(name, this.map))
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          if (player.views.isViewed(i, j)) {
+            player.views.onViewed?.(i, j)
+          }
+          if (player.isPlayed && player.views.isViewed(i, j)) {
+            if (!player.views.isVisible(i, j)) {
+              this.map.grid[i][j].setFog(true)
+            } else {
+              this.map.grid[i][j].removeFog()
+            }
+          }
+        }
+      }
+      restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
+      rehydrateAIKnowledge(player, this.map)
+      restoreAIState(player, savedPlayer, this.map)
+      restoreTransportCargo(player, savedPlayer?.units || [], this.map)
+      player.units.forEach(unit => processUnit(unit, this.map))
+    })
+
+    this.map._fogInitComplete = true
+    this.map._flushFogQueue()
     this.map.ready = true
   }
 
@@ -577,6 +806,53 @@ export class MapGeneration {
       Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`]))
     )
     menu.updateResourcesMiniMap()
+  }
+
+  async prepareTerrainForSavedState({
+    onProgress = async (_stage: string, _progress: number) => {},
+  }: {
+    onProgress?: ProgressCallback
+  } = {}): Promise<void> {
+    const timings: Record<string, number> = this.map.generationTimings || {}
+    const measure = <T>(name: string, callback: () => T): T => {
+      const startedAt = performance.now()
+      const result = callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    }
+    const measureAsync = async <T>(name: string, callback: () => Promise<T> | T): Promise<T> => {
+      const startedAt = performance.now()
+      const result = await callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    }
+
+    this.map.gaia = new Gaia(this.map.context)
+    await onProgress('generatingRelief', 0.28)
+    measure('relief', () => this.map.generateMapRelief())
+    await this.yieldToBrowser()
+    measure('deepWater', () => this.map.classifyDeepWater())
+    measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
+    await onProgress('generatingFog', 0.72)
+    measure('fogInit', () => this.map._initFogChunks())
+
+    if (!this.map.revealEverything) {
+      const fogCellsStartedAt = performance.now()
+      for (let i = 0; i <= this.map.size; i++) {
+        for (let j = 0; j <= this.map.size; j++) {
+          this.map.grid[i][j].setFog()
+        }
+        if (i % 16 === 0) await this.yieldToBrowser()
+      }
+      timings.fogCells = performance.now() - fogCellsStartedAt
+    }
+
+    this.map._fogInitComplete = true
+    this.map._flushFogQueue()
+    await onProgress('finalizingWorld', 0.92)
+    await measureAsync('terrainBake', () => this.map.bakeTerrainToChunks())
+    this.map.ready = true
+    this.map.generationTimings = timings
   }
 
   applyStartingBonuses(player, configuredAge = null) {

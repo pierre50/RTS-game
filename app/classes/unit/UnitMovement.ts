@@ -14,14 +14,14 @@ import {
   moveTowardPoint,
   updateInstanceVisibility,
 } from '../../lib'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
 
-type AnyRecord = Record<string, any>
-
-function isBoatNavigationCell(cell: any) {
+function isBoatNavigationCell(cell: RuntimeCell | null | undefined) {
   return cell?.category === 'Water' || cell?.waterBorder
 }
 
-const POST_BUILD_GATHER_ACTIONS = {
+const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
   [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ACTION_TYPES.minestone, ACTION_TYPES.minegold],
   [BUILDING_TYPES.townCenter]: [
@@ -36,7 +36,7 @@ const POST_BUILD_GATHER_ACTIONS = {
   ],
 }
 
-const GATHER_SEND_METHOD_BY_ACTION = {
+const GATHER_SEND_METHOD_BY_ACTION: Record<string, string> = {
   [ACTION_TYPES.chopwood]: 'sendToTree',
   [ACTION_TYPES.farm]: 'sendToFarm',
   [ACTION_TYPES.fishing]: 'sendToFish',
@@ -60,49 +60,54 @@ const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
 
 const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
 
-export class UnitMovement {
-  unit: AnyRecord
+type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+type DynamicSendTo = (target: RuntimeEntity, immediate?: boolean) => void
 
-  constructor(unit: AnyRecord) {
+export class UnitMovement {
+  unit: UnitEntity
+
+  constructor(unit: UnitEntity) {
     this.unit = unit
   }
 
-  sendToPostBuildResource() {
+  sendToPostBuildResource(): boolean {
     const unit = this.unit
-    const actions = POST_BUILD_GATHER_ACTIONS[unit.dest?.type]
-    if (!actions || !unit.dest?.isBuilt || unit.dest.isDead || unit.dest.isDestroyed) return false
+    const dest = unit.dest as RuntimeEntity | null | undefined
+    const actions = dest?.type ? POST_BUILD_GATHER_ACTIONS[dest.type] : undefined
+    if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed) return false
 
-    const targets = findInstancesInSight(unit as any, (instance: any) =>
-      actions.some((action: any) => unit.getActionCondition(instance, action))
+    const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
+    const targets = findInstancesInSight(unitAsInstance, instance =>
+      actions.some(action => unit.getActionCondition?.(instance as unknown as RuntimeEntity, action))
     )
     if (!targets.length) return false
 
-    const target = getClosestInstanceWithPath(unit as any, targets)
+    const target = getClosestInstanceWithPath(unitAsInstance, targets)
     if (!target) return false
 
-    const action = actions.find((candidate: any) => unit.getActionCondition(target.instance, candidate))
-    const sendMethod = GATHER_SEND_METHOD_BY_ACTION[action as keyof typeof GATHER_SEND_METHOD_BY_ACTION]
-    if (!sendMethod || typeof unit[sendMethod] !== 'function') return false
+    const action = actions.find(candidate => unit.getActionCondition?.(target.instance as unknown as RuntimeEntity, candidate))
+    const sendMethod = action ? GATHER_SEND_METHOD_BY_ACTION[action] : undefined
+    const dynamicUnit = unit as unknown as Record<string, DynamicSendTo>
+    if (!sendMethod || typeof dynamicUnit[sendMethod] !== 'function') return false
 
-    unit[sendMethod](target.instance, true)
+    dynamicUnit[sendMethod](target.instance as unknown as RuntimeEntity, true)
     return true
   }
 
-  findClosestReachableCellNearTarget(target: any, minDistance = 2, allowCurrentCell = false) {
+  findClosestReachableCellNearTarget(target: RuntimeEntity, minDistance = 2, allowCurrentCell = false): { cell: RuntimeCell; path: RuntimeCell[] } | null {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
+    if (!map) return null
     const maxDistance = Math.max(
       2,
       Math.min(unit.sight || MAX_BLOCKED_GATHER_APPROACH_DISTANCE, MAX_BLOCKED_GATHER_APPROACH_DISTANCE)
     )
-    let best = null
+    let best: { cell: RuntimeCell; path: RuntimeCell[] } | null = null
 
     for (let distance = minDistance; distance <= maxDistance; distance++) {
-      const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, (cell: any): boolean => {
+      const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
         if (cell.solid || cell.border) return false
-        if (unit.category === 'Boat') return cell.category === 'Water' || cell.waterBorder
+        if (unit.category === 'Boat') return Boolean(cell.category === 'Water' || cell.waterBorder)
         return cell.category !== 'Water'
       })
       cells.sort(
@@ -113,7 +118,7 @@ export class UnitMovement {
 
       for (const cell of cells) {
         if (allowCurrentCell && unit.i === cell.i && unit.j === cell.j) return { cell, path: [] }
-        const path = getInstancePath(unit as any, cell.i, cell.j, map)
+        const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], cell.i, cell.j, map)
         if (path.length && (!best || path.length < best.path.length)) {
           best = { cell, path }
         }
@@ -124,142 +129,142 @@ export class UnitMovement {
     return null
   }
 
-  approachBlockedGatherTarget(dest: any, action: any) {
+  approachBlockedGatherTarget(dest: RuntimeEntity | null | undefined, action: string): boolean {
     const unit = this.unit
     if (unit.type !== UNIT_TYPES.villager || !BLOCKED_GATHER_APPROACH_ACTIONS.has(action)) return false
-    if (!dest || dest.isDestroyed || !unit.getActionCondition(dest, action)) return false
+    if (!dest || dest.isDestroyed || !unit.getActionCondition?.(dest, action)) return false
     if (unit.blockedGatherApproach?.target === dest && unit.blockedGatherApproach.action === action) return false
 
     const approach = this.findClosestReachableCellNearTarget(dest)
     if (!approach) return false
 
-    unit.setDest(dest)
+    unit.setDest?.(dest)
     unit.action = action
     unit.blockedGatherApproach = { target: dest, action }
-    unit.setPath(approach.path)
+    unit.setPath?.(approach.path)
     return true
   }
 
-  retryBlockedGatherApproach() {
+  retryBlockedGatherApproach(): boolean {
     const unit = this.unit
     const blockedGatherApproach = unit.blockedGatherApproach
     if (!blockedGatherApproach) return false
 
     unit.blockedGatherApproach = null
     const { target, action } = blockedGatherApproach
-    if (!target || target.isDestroyed || !unit.getActionCondition(target, action)) {
-      unit.affectNewDest()
+    if (!target || target.isDestroyed || !unit.getActionCondition?.(target, action)) {
+      unit.affectNewDest?.()
       return true
     }
 
-    unit.sendToEvt(target, action, { forceRepath: true, allowBlockedGatherApproach: false })
+    unit.sendToEvt?.(target, action, { forceRepath: true, allowBlockedGatherApproach: false })
     return true
   }
 
-  sendToEvt(dest: any, action: any, { forceRepath = false, allowBlockedGatherApproach = true }: AnyRecord = {}) {
+  sendToEvt(dest: RuntimeEntity | RuntimeCell | null, action: string | null, { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}) {
     const startedAt = performance.now()
-    if (forceRepath) this.unit.context.performance?.record('unit.repath', 0)
+    if (forceRepath) this.unit.context?.performance?.record?.('unit.repath', 0)
     try {
       return this._sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach })
     } finally {
-      this.unit.context.performance?.record('unit.command', performance.now() - startedAt)
+      this.unit.context?.performance?.record?.('unit.command', performance.now() - startedAt)
     }
   }
 
-  _sendToEvt(dest: any, action: any, { forceRepath = false, allowBlockedGatherApproach = true }: AnyRecord = {}) {
+  _sendToEvt(dest: RuntimeEntity | RuntimeCell | null, action: string | null, { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}) {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
     if (unit.actionLocked) {
-      return unit.queueOrder(dest, action)
+      return unit.queueOrder?.(dest ?? (() => {}), action)
     }
+    const currentDest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
     if (
       !forceRepath &&
       dest &&
-      unit.dest?.label === dest.label &&
+      (currentDest as RuntimeEntity | undefined)?.label === (dest as RuntimeEntity).label &&
       unit.action === action &&
-      (unit.path.length > 0 || unit.isUnitAtDest(action, dest))
+      ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
     ) {
       return
     }
-    unit.handleChangeDest()
-    unit.stopInterval()
+    unit.handleChangeDest?.()
+    unit.stopInterval?.()
     unit.blockedGatherApproach = null
-    let path = []
-    if (!dest || dest.isDestroyed || unit.isDead) return
+    let path: RuntimeCell[] = []
+    if (!dest || dest.isDestroyed || unit.isDead || !map) return
     if (!action) {
       unit.previousDest = null
       unit.previousWork = null
     }
+    const destEntity = dest as RuntimeEntity
     if (
-      unit.isUnitAtDest(action, dest) &&
+      unit.isUnitAtDest?.(action, dest) &&
       (!map.grid[unit.i][unit.j].solid ||
         (map.grid[unit.i][unit.j].solid && map.grid[unit.i][unit.j].has?.label === unit.label))
     ) {
-      unit.setDest(dest)
+      unit.setDest?.(dest)
       unit.action = action
-      unit.degree = getInstanceDegree(unit as any, dest.x, dest.y)
-      unit.getAction(action)
+      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+      unit.getAction?.(action ?? '')
       return
     }
-    if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
+    if (map.grid[destEntity.i] && map.grid[destEntity.i][destEntity.j]) {
       const allowWaterCellCategory = unit.category === 'Boat'
-      const destCell = map.grid[dest.i][dest.j]
+      const destCell = map.grid[destEntity.i][destEntity.j]
       if (destCell.solid) {
-        path = getInstanceClosestFreeCellPath(unit as any, dest, map)
+        path = getInstanceClosestFreeCellPath(unit as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[0], destEntity as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[1], map) as unknown as RuntimeCell[]
         if (!path.length && unit.work) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
           if (action === ACTION_TYPES.delivery) {
-            unit.stop()
+            unit.stop?.()
           } else {
-            unit.affectNewDest()
+            unit.affectNewDest?.()
           }
           return
         }
       } else if (!allowWaterCellCategory && destCell.category === 'Water') {
-        const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
+        const approach = this.findClosestReachableCellNearTarget(destEntity, 1, true)
         if (!approach) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
-          action ? unit.affectNewDest() : unit.stop()
+          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
+          action ? unit.affectNewDest?.() : unit.stop?.()
           return
         }
         if (!action) {
-          unit.sendToEvt(approach.cell)
+          unit.sendToEvt?.(approach.cell, null)
           return
         }
-        unit.setDest(dest)
+        unit.setDest?.(dest)
         unit.action = action
         if (approach.path.length) {
-          unit.setPath(approach.path)
+          unit.setPath?.(approach.path)
         } else {
-          unit.degree = getInstanceDegree(unit as any, dest.x, dest.y)
-          unit.getAction(action)
+          unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+          unit.getAction?.(action)
         }
         return
       }
     }
     if (!path.length) {
-      path = getInstancePath(unit as any, dest.i, dest.j, map)
+      path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], destEntity.i, destEntity.j, map)
     }
     if (path.length) {
-      unit.setDest(dest)
+      unit.setDest?.(dest)
       unit.action = action
-      unit.setPath(path)
+      unit.setPath?.(path)
     } else {
       unit.action = action
-      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest, action)) return
+      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(dest as unknown as RuntimeEntity, action ?? '')) return
       if (action === ACTION_TYPES.delivery) {
-        unit.stop()
+        unit.stop?.()
       } else {
-        unit.affectNewDest()
+        unit.affectNewDest?.()
       }
     }
   }
 
-  isUnitAtDest(action: any, dest: any) {
+  isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!action || !dest) return false
     const effectiveRange =
@@ -267,126 +272,131 @@ export class UnitMovement {
     if (
       (unit.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) &&
       effectiveRange &&
-      instancesDistance(unit as any, dest) <= effectiveRange
+      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], dest as unknown as Parameters<typeof instancesDistance>[1]) <= effectiveRange
     ) {
       return true
     }
-    return instanceContactInstance(unit as any, dest)
+    return instanceContactInstance(unit as unknown as Parameters<typeof instanceContactInstance>[0], dest as unknown as Parameters<typeof instanceContactInstance>[1])
   }
 
-  destHasMoved() {
+  destHasMoved(): boolean {
     const unit = this.unit
+    const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
+    if (!dest || !unit.realDest) return false
     return (
-      (unit.dest.i !== unit.realDest.i || unit.dest.j !== unit.realDest.j) &&
-      instancesDistance(unit as any, unit.dest) <= unit.sight
+      (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) &&
+      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], dest as unknown as Parameters<typeof instancesDistance>[1]) <= (unit.sight ?? 0)
     )
   }
 
   moveToPath() {
-    const performanceMonitor = this.unit.context.performance
+    const performanceMonitor = this.unit.context?.performance
     if (performanceMonitor) return performanceMonitor.measureSampled('unit.move', () => this._moveToPath())
     return this._moveToPath()
   }
 
   _moveToPath() {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
+    if (!map || !unit.path?.length) return
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
-    if (!unit.dest || unit.dest.isDestroyed) {
-      unit.affectNewDest()
+    const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
+    if (!dest || dest.isDestroyed) {
+      unit.affectNewDest?.()
       return
     }
+    const nextCellHas = nextCell.has as unknown as (UnitEntity & { hasPath?: () => boolean; sprite?: { playing?: boolean; stop?: () => void; play?: () => void } }) | null
     if (
-      nextCell.has &&
-      nextCell.has.family === FAMILY_TYPES.unit &&
-      nextCell.has.label !== unit.label &&
-      nextCell.has.hasPath() &&
-      instancesDistance(unit as any, nextCell.has) <= 1 &&
-      nextCell.has.sprite.playing
+      nextCellHas &&
+      nextCellHas.family === FAMILY_TYPES.unit &&
+      nextCellHas.label !== unit.label &&
+      nextCellHas.hasPath?.() &&
+      instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], nextCellHas as unknown as Parameters<typeof instancesDistance>[1]) <= 1 &&
+      nextCellHas.sprite?.playing
     ) {
-      unit.sprite.stop()
+      ;(unit.sprite as unknown as { stop: () => void }).stop()
       return
     }
     if (nextCell.solid && unit.dest) {
-      unit.context.performance?.record('unit.blockedPath', 0)
-      unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })
+      unit.context?.performance?.record?.('unit.blockedPath', 0)
+      unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
       return
     }
-    if (!unit.sprite.playing) {
-      unit.sprite.play()
+    const sprite = unit.sprite as unknown as { playing: boolean; play: () => void; stop: () => void }
+    if (!sprite.playing) {
+      sprite.play()
     }
-    if (instancesDistance(unit as any, nextCell, false) <= unit.speed) {
+    if (instancesDistance(unit as unknown as Parameters<typeof instancesDistance>[0], nextCell as unknown as Parameters<typeof instancesDistance>[1], false) <= (unit.speed ?? 0)) {
       const oldI = unit.i,
         oldJ = unit.j
       unit.z = nextCell.z
       unit.i = nextCell.i
       unit.j = nextCell.j
-      unit.zIndex = getInstanceZIndex(unit as any)
-      if (unit.currentCell.has === unit) {
-        unit.currentCell.has = null
-        unit.currentCell.solid = false
+      unit.zIndex = getInstanceZIndex(unit as unknown as Parameters<typeof getInstanceZIndex>[0])
+      const currentCell = unit.currentCell
+      if (currentCell?.has === unit) {
+        currentCell.has = null
+        currentCell.solid = false
       }
       unit.currentCell = map.grid[unit.i][unit.j]
       if (unit.currentCell.has === null) {
         unit.currentCell.place(unit)
         unit.currentCell.solid = true
       }
-      map.updateInstanceBucket(unit, oldI, oldJ)
-      updateInstanceVisibility(unit as any)
-      if (unit.transportCapacity && unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
-        unit.context.menu.setBottombar(unit)
+      ;(map as unknown as { updateInstanceBucket: (instance: RuntimeEntity, oldI: number, oldJ: number) => void }).updateInstanceBucket(unit, oldI, oldJ)
+      updateInstanceVisibility(unit as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      if (unit.transportCapacity && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
+        unit.context?.menu.setBottombar(unit)
       }
       unit.path.pop()
-      if (unit.destHasMoved()) {
-        unit.sendToEvt(unit.dest, unit.action, { forceRepath: true })
+      if (unit.destHasMoved?.()) {
+        unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
         return
       }
-      if (unit.isUnitAtDest(unit.action, unit.dest)) {
+      if (unit.isUnitAtDest?.(unit.action, dest)) {
         unit.path = []
-        unit.stopInterval()
-        unit.degree = getInstanceDegree(unit as any, unit.dest.x, unit.dest.y)
-        unit.getAction(unit.action)
+        unit.stopInterval?.()
+        unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+        unit.getAction?.(unit.action ?? '')
         return
       }
       if (!unit.path.length) {
         if (this.retryBlockedGatherApproach()) return
-        unit.affectNewDest()
+        unit.affectNewDest?.()
       }
     } else {
-      const {
-        context: { menu, player },
-      } = unit
+      const menu = unit.context?.menu
+      const player = unit.owner
       const oldDeg = unit.degree
-      let speed = unit.speed
-      if (unit.loading > 0) speed *= 0.8
-      moveTowardPoint(unit as any, nextCell.x, nextCell.y, speed)
-      canUpdateMinimap(unit as any, player) && menu.updatePlayerMiniMap(unit.owner)
-      if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree)) {
-        unit.setTextures(SHEET_TYPES.walking)
+      let speed = unit.speed ?? 0
+      if ((unit.loading ?? 0) > 0) speed *= 0.8
+      moveTowardPoint(unit as unknown as Parameters<typeof moveTowardPoint>[0], nextCell.x, nextCell.y, speed)
+      canUpdateMinimap(unit as unknown as Parameters<typeof canUpdateMinimap>[0], player) && (menu as unknown as { updatePlayerMiniMap?: (owner: unknown) => void })?.updatePlayerMiniMap?.(unit.owner!)
+      if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+        unit.setTextures?.(SHEET_TYPES.walking)
       }
     }
   }
 
   affectNewDest() {
     const unit = this.unit
-    unit.stopInterval()
+    unit.stopInterval?.()
     if (!unit.action) {
-      unit.stop()
+      unit.stop?.()
       return
     }
+    const dest = unit.dest as RuntimeEntity | null | undefined
     const queuedBuildInterrupted =
-      unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && unit.buildQueue?.length
+      unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && (unit.buildQueue?.length ?? 0) > 0
     if (queuedBuildInterrupted) {
-      if (unit.dest && unit.getActionCondition(unit.dest, ACTION_TYPES.build)) {
-        unit.buildQueue.push(unit.buildQueue.shift())
+      if (dest && unit.getActionCondition?.(dest, ACTION_TYPES.build) && unit.buildQueue) {
+        unit.buildQueue.push(unit.buildQueue.shift()!)
       }
-      unit.stop()
-      unit.context.scheduler.addOneShot(
+      unit.stop?.()
+      unit.context?.scheduler?.addOneShot?.(
         () => {
-          if (unit.inactif && unit.buildQueue?.length) unit.continueBuildingQueue()
+          if (unit.inactif && (unit.buildQueue?.length ?? 0) > 0) unit.continueBuildingQueue?.()
         },
         500,
         'unit.resumeBuildQueue'
@@ -397,60 +407,65 @@ export class UnitMovement {
     const lostBuildTarget =
       unit.work === WORK_TYPES.builder &&
       unit.action === ACTION_TYPES.build &&
-      (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.build))
+      (!dest || !unit.getActionCondition?.(dest, ACTION_TYPES.build))
 
     if (lostBuildTarget) {
       if (unit.previousDest || unit.previousWork) {
-        unit.goBackToPrevious()
+        unit.goBackToPrevious?.()
         return
       }
 
       if (this.sendToPostBuildResource()) return
 
-      const targets = findInstancesInSight(unit as any, (instance: any) => unit.getActionCondition(instance, ACTION_TYPES.build))
+      const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
+      const targets = findInstancesInSight(unitAsInstance, instance =>
+        Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity, ACTION_TYPES.build))
+      )
       if (targets.length) {
-        const target = getClosestInstanceWithPath(unit as any, targets)
+        const target = getClosestInstanceWithPath(unitAsInstance, targets)
         if (target) {
-          unit.setDest(target.instance)
-          unit.setPath(target.path)
+          unit.setDest?.(target.instance as unknown as RuntimeEntity)
+          unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
           return
         }
       }
 
-      unit.stop()
+      unit.stop?.()
       unit.work = null
       return
     }
 
     if (unit.action === ACTION_TYPES.loadTransport) {
-      if (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.loadTransport)) {
-        unit.stop()
+      if (!dest || !unit.getActionCondition?.(dest, ACTION_TYPES.loadTransport)) {
+        unit.stop?.()
         return
       }
       const expectedCoastCell = unit.transportLoadCoastCell
-      unit.setTextures(SHEET_TYPES.standing)
-      unit.startInterval(
+      unit.setTextures?.(SHEET_TYPES.standing)
+      unit.startInterval?.(
         () => {
-          if (!unit.dest || !unit.getActionCondition(unit.dest, ACTION_TYPES.loadTransport)) {
-            unit.stop()
+          const currentDest = unit.dest as (RuntimeEntity & { dest?: RuntimeEntity | RuntimeCell | null; path?: unknown[] }) | null | undefined
+          if (!currentDest || !unit.getActionCondition?.(currentDest, ACTION_TYPES.loadTransport)) {
+            unit.stop?.()
             return
           }
-          if (unit.isUnitAtDest(ACTION_TYPES.loadTransport, unit.dest)) {
-            unit.getAction(ACTION_TYPES.loadTransport)
+          if (unit.isUnitAtDest?.(ACTION_TYPES.loadTransport, currentDest)) {
+            unit.getAction?.(ACTION_TYPES.loadTransport)
             return
           }
+          const innerDest = currentDest.dest as RuntimeEntity | RuntimeCell | null | undefined
           if (
             expectedCoastCell &&
-            unit.dest.dest &&
-            (unit.dest.dest.i !== expectedCoastCell.i || unit.dest.dest.j !== expectedCoastCell.j)
+            innerDest &&
+            (innerDest.i !== expectedCoastCell.i || innerDest.j !== expectedCoastCell.j)
           ) {
-            unit.stop()
+            unit.stop?.()
             return
           }
           const transportAtExpectedCoast =
-            expectedCoastCell && unit.dest.i === expectedCoastCell.i && unit.dest.j === expectedCoastCell.j
-          if (expectedCoastCell && !transportAtExpectedCoast && !unit.dest.dest && !unit.dest.path?.length) {
-            unit.stop()
+            expectedCoastCell && currentDest.i === expectedCoastCell.i && currentDest.j === expectedCoastCell.j
+          if (expectedCoastCell && !transportAtExpectedCoast && !innerDest && !currentDest.path?.length) {
+            unit.stop?.()
           }
         },
         250,
@@ -461,7 +476,7 @@ export class UnitMovement {
     }
 
     if (unit.previousDest && unit.action !== ACTION_TYPES.delivery) {
-      unit.goBackToPrevious()
+      unit.goBackToPrevious?.()
       return
     }
     let handleSuccess = false
@@ -469,19 +484,20 @@ export class UnitMovement {
       unit.type === UNIT_TYPES.villager &&
       (unit.action === ACTION_TYPES.takemeat || unit.action === ACTION_TYPES.hunt)
     ) {
-      handleSuccess = unit.handleAffectNewDestHunter()
-    } else if (!unit.dest || unit.dest.family !== FAMILY_TYPES.animal) {
-      const targets = findInstancesInSight(unit as any, (instance: any) => unit.getActionCondition(instance))
+      handleSuccess = Boolean(unit.handleAffectNewDestHunter?.())
+    } else if (!dest || dest.family !== FAMILY_TYPES.animal) {
+      const unitAsInstance = unit as unknown as Parameters<typeof findInstancesInSight>[0]
+      const targets = findInstancesInSight(unitAsInstance, instance => Boolean(unit.getActionCondition?.(instance as unknown as RuntimeEntity)))
       if (targets.length) {
-        const target = getClosestInstanceWithPath(unit as any, targets)
+        const target = getClosestInstanceWithPath(unitAsInstance, targets)
         if (target) {
-          unit.setDest(target.instance)
-          if (instanceContactInstance(unit as any, target.instance)) {
-            unit.degree = getInstanceDegree(unit as any, target.instance.x, target.instance.y)
-            unit.getAction(unit.action)
+          unit.setDest?.(target.instance as unknown as RuntimeEntity)
+          if (instanceContactInstance(unitAsInstance, target.instance)) {
+            unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
+            unit.getAction?.(unit.action)
             return
           }
-          unit.setPath(target.path)
+          unit.setPath?.(target.path as unknown as Parameters<NonNullable<UnitEntity['setPath']>>[0])
           return
         }
       }
@@ -489,23 +505,23 @@ export class UnitMovement {
     if (!handleSuccess) {
       const notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer]
       if (unit.loading && unit.work === WORK_TYPES.builder && unit.previousWork) {
-        unit.goBackToPrevious()
-      } else if (unit.loading && !notDeliveryWork.includes(unit.work)) {
-        unit.sendToDelivery()
+        unit.goBackToPrevious?.()
+      } else if (unit.loading && unit.work && !notDeliveryWork.includes(unit.work)) {
+        unit.sendToDelivery?.()
       } else {
-        unit.stop()
+        unit.stop?.()
       }
     }
   }
 
-  explore() {
+  explore(): boolean {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
+    if (!map) return false
     const { grid } = map
-    const views = unit.owner.views
-    const candidates = []
+    const views = unit.owner?.views
+    if (!views) return false
+    const candidates: { cell: RuntimeCell; score: number; dist: number }[] = []
 
     for (let r = 1; r <= 50; r++) {
       for (let dx = -r; dx <= r; dx++) {
@@ -533,37 +549,36 @@ export class UnitMovement {
     candidates.sort((a, b) => b.score - a.score || a.dist - b.dist)
 
     for (const { cell } of candidates.slice(0, 12)) {
-      const path = getInstancePath(unit as any, cell.i, cell.j, map)
+      const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], cell.i, cell.j, map)
       if (path.length) {
-        unit.sendTo(cell)
+        unit.sendTo?.(cell)
         return true
       }
     }
 
-    unit.stop()
+    unit.stop?.()
     return false
   }
 
-  runaway(instance: any) {
+  runaway(instance: RuntimeEntity) {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
+    if (!map) return
     const di = unit.i - instance.i
     const dj = unit.j - instance.j
     const len = Math.sqrt(di * di + dj * dj) || 1
-    for (let dist = unit.sight; dist >= 1; dist--) {
+    for (let dist = unit.sight ?? 0; dist >= 1; dist--) {
       const ti = Math.round(unit.i + (di / len) * dist)
       const tj = Math.round(unit.j + (dj / len) * dist)
       if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
         const cell = map.grid[ti][tj]
         const categoryAllowed = unit.category === 'Boat' ? isBoatNavigationCell(cell) : cell.category !== 'Water'
         if (categoryAllowed && !cell.solid && !cell.border) {
-          unit.sendTo(cell)
+          unit.sendTo?.(cell)
           return
         }
       }
     }
-    unit.stop()
+    unit.stop?.()
   }
 }

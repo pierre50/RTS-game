@@ -1,8 +1,75 @@
 import { filterObject } from '../lib'
+import type { GameContextLike } from '../types/context'
+import type { RuntimeCell } from '../types/map'
+import type { PlayerLike, VisionGridLike } from '../types/player'
+import type { RuntimeEntityBase } from '../types/entities'
+import type { UnknownRecord } from '../types/common'
 
-type AnyRecord = Record<string, any>
 type GridPoint = { i: number; j: number }
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
+type SpriteState = { currentFrame?: number; loop?: boolean }
+type SerializableEntity = RuntimeEntityBase &
+  {
+    action?: string | null
+    assetAge?: unknown
+    assetCiv?: unknown
+    assetType?: unknown
+    currentSheet?: unknown
+    degree?: number
+    dest?: Destination | null
+    direction?: number
+    inactif?: boolean
+    isBuilt?: boolean
+    isUsedBy?: { label?: string } | null
+    loadedInTransport?: { label?: string } | null
+    loading?: unknown
+    loadingType?: unknown
+    loop?: boolean
+    path?: GridPoint[]
+    previousDest?: Destination | null
+    previousWork?: string | null
+    queue?: unknown[]
+    rallyPoint?: unknown
+    realDest?: Destination | null
+    sprite?: SpriteState | null
+    technology?: unknown
+    textureName?: string
+    work?: string | null
+  }
+type SerializablePlayer = PlayerLike &
+  UnknownRecord & {
+    aiState?: unknown
+    difficulty?: string
+    enemyBuildingMemory?: Map<unknown, ThreatMemory>
+    enemyUnitMemory?: Map<unknown, ThreatMemory>
+    getNow?: () => number
+    hasBuilt?: unknown
+    lastAttackWaveAt?: number
+    phase?: string
+    population?: number
+    population_max?: number
+    threatenedTargets?: Map<unknown, ThreatTargetMemory>
+    views: VisionGridLike
+  }
+type ThreatMemory = UnknownRecord & {
+  instance?: { label?: string } | null
+  label?: string
+  lastSeenAt?: number
+}
+type ThreatTargetMemory = UnknownRecord & {
+  attacker?: { label?: string } | null
+  attackerFamily?: string | null
+  attackerType?: string | null
+  count?: number
+  lastSeenAt?: number
+  target?: { label?: string } | null
+}
+type SerializableCell = RuntimeCell & {
+  fogSprites: { textureSheet: string; colorName?: string }[]
+}
+type SerializableContext = GameContextLike & {
+  players?: SerializablePlayer[]
+}
 
 function cameraData(camera?: { x?: number; y?: number } | null) {
   return {
@@ -26,14 +93,14 @@ function destinationData(dest?: Destination | null) {
   }
 }
 
-function resourceData(resource: AnyRecord) {
+function resourceData(resource: SerializableEntity) {
   return {
     ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
     textureName: (resource.textureName || '').split('.')[0],
   }
 }
 
-function animalData(animal: AnyRecord) {
+function animalData(animal: SerializableEntity) {
   return {
     ...filterObject(animal, [
       'label',
@@ -67,7 +134,7 @@ function animalData(animal: AnyRecord) {
   }
 }
 
-function unitData(unit: AnyRecord) {
+function unitData(unit: SerializableEntity) {
   return {
     ...filterObject(unit, [
       'label',
@@ -105,7 +172,7 @@ function unitData(unit: AnyRecord) {
   }
 }
 
-function buildingData(building: AnyRecord) {
+function buildingData(building: SerializableEntity) {
   return {
     ...filterObject(building, [
       'label',
@@ -129,8 +196,8 @@ function buildingData(building: AnyRecord) {
   }
 }
 
-function playerData(player: AnyRecord) {
-  const data: AnyRecord = {
+function playerData(player: SerializablePlayer) {
+  const data: UnknownRecord = {
     ...filterObject(player, [
       'label',
       'age',
@@ -150,15 +217,15 @@ function playerData(player: AnyRecord) {
       'isPlayed',
       'hasBuilt',
     ]),
-    buildings: (player.buildings as AnyRecord[]).map((b: AnyRecord) => buildingData(b)),
-    units: (player.units as AnyRecord[]).map((u: AnyRecord) => unitData(u)),
-    corpses: (player.corpses as AnyRecord[]).map((c: AnyRecord) => unitData(c)),
+    buildings: player.buildings.map(buildingData),
+    units: player.units.map(unitData),
+    corpses: player.corpses.map(unitData),
     views: player.views.toJSON(),
   }
 
   if (player.type === 'AI') {
     const savedAt = player.getNow?.() ?? 0
-    const serializeMemory = (memory: AnyRecord) => ({
+    const serializeMemory = (memory: ThreatMemory) => ({
       instance: memory.instance?.label || memory.label || null,
       lastSeenAgo: Math.max(0, savedAt - (memory.lastSeenAt ?? savedAt)),
     })
@@ -166,12 +233,13 @@ function playerData(player: AnyRecord) {
     data.aiState = {
       phase: player.phase,
       savedAt,
-      lastAttackWaveAgo: Number.isFinite(player.lastAttackWaveAt)
-        ? Math.max(0, savedAt - player.lastAttackWaveAt)
-        : null,
+      lastAttackWaveAgo:
+        typeof player.lastAttackWaveAt === 'number' && Number.isFinite(player.lastAttackWaveAt)
+          ? Math.max(0, savedAt - player.lastAttackWaveAt)
+          : null,
       enemyUnits: [...(player.enemyUnitMemory?.values?.() || [])].map(serializeMemory),
       enemyBuildings: [...(player.enemyBuildingMemory?.values?.() || [])].map(serializeMemory),
-      threatenedTargets: [...(player.threatenedTargets?.values?.() || [])].map(threat => ({
+      threatenedTargets: [...(player.threatenedTargets?.values() || [])].map(threat => ({
         target: threat.target?.label || null,
         attacker: threat.attacker?.label || null,
         lastSeenAgo: Math.max(0, savedAt - (threat.lastSeenAt ?? savedAt)),
@@ -185,8 +253,8 @@ function playerData(player: AnyRecord) {
   return data
 }
 
-function cellData(cell: AnyRecord) {
-  const data: AnyRecord = { type: cell.type }
+function cellData(cell: SerializableCell) {
+  const data: UnknownRecord = { type: cell.type }
   if (cell.z !== 0) data.z = cell.z
   if (cell.viewed) data.viewed = true
   if (cell.inclined) data.inclined = true
@@ -196,11 +264,11 @@ function cellData(cell: AnyRecord) {
   if (cell.fogSprites.length > 0) {
     const seenFogSprites = new Set()
     data.fogSprites = cell.fogSprites
-      .map(({ textureSheet, colorName }: AnyRecord) => ({
+      .map(({ textureSheet, colorName }) => ({
         textureSheet,
         colorName,
       }))
-      .filter((spriteData: AnyRecord) => {
+      .filter(spriteData => {
         const key = `${spriteData.textureSheet}|${spriteData.colorName || ''}`
         if (seenFogSprites.has(key)) return false
         seenFogSprites.add(key)
@@ -210,14 +278,25 @@ function cellData(cell: AnyRecord) {
   return data
 }
 
-export function serializeGame(context: AnyRecord) {
-  return {
+export function serializeGame(context: SerializableContext) {
+  const world = {
+    seed: context.map.seed,
+    size: context.map.size,
+    mapType: context.map.mapType || 'plain',
+    positionsCount: context.map.positionsCount,
+    pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
+  }
+  const data: UnknownRecord = {
+    version: 2,
     runtime: {
       elapsedMs: context.scheduler?.elapsedMs ?? 0,
     },
     camera: cameraData(context.controls.camera),
+    world,
     config: {
       seed: context.map.seed,
+      size: context.map.size,
+      mapType: context.map.mapType || 'plain',
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
       startingAge: context.map.startingAge,
@@ -225,12 +304,14 @@ export function serializeGame(context: AnyRecord) {
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,
       resourceDensity: context.map.resourceDensity,
+      difficulty: context.map.difficulty,
     },
-    players: (context.players as AnyRecord[]).map((p: AnyRecord) => playerData(p)),
-    resources: [...context.map.resources].map(r => resourceData(r)),
-    map: (context.map.grid as AnyRecord[][]).map((line: AnyRecord[]) => line.map((cell: AnyRecord) => cellData(cell))),
-    animals: (context.map.gaia.units as AnyRecord[])
-      .filter((animal: AnyRecord) => !animal.isDestroyed)
-      .map((animal: AnyRecord) => animalData(animal)),
+    players: (context.players ?? []).map(playerData),
+    resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
+    animals: (context.map.gaia?.units ?? [])
+      .filter(animal => !animal.isDestroyed)
+      .map(animal => animalData(animal as SerializableEntity)),
   }
+
+  return data
 }

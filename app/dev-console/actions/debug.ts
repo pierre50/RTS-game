@@ -2,6 +2,7 @@ import { Text } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import type { CommandResult } from '../DevCommandRegistry'
+import type { DevCell, DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
@@ -21,9 +22,68 @@ import {
   stopDebugTicker,
 } from './shared'
 
-type AnyRecord = Record<string, any>
+type AiDebugPlayer = DevPlayer & {
+  difficulty?: string
+  phase?: string
+  population?: number
+  population_max?: number
+  stepDelay?: number
+  maxVillagerPerAge: Record<number, number>
+  maxInfantryByAge: Record<number, number>
+  maxArcherByAge: Record<number, number>
+  maxCavalryByAge: Record<number, number>
+  maxHopliteByAge: Record<number, number>
+  difficultyConfig: { popCapMultiplier: number; attackCooldownMs: number; attackThreshold: number }
+  lastAttackWaveAt: number
+  enemyUnitMemory: { size: number }
+  enemyBuildingMemory: { size: number }
+  strategy: {
+    military: { getGroupCombatPower(units: DevEntity[]): number; getDesiredAttackPower(): number }
+    getEconomicDemand(): Record<string, number>
+    getNavalDebugInfo(): NavalDebugInfo
+  }
+  economy: {
+    getWorkerSnapshot(villagers: DevEntity[]): WorkerSnapshot
+    getResourceTargets(villagerCount: number): WorkerTargets
+  }
+  scout?: DevEntity | null
+  getLivingUnitsByType(type: string): DevEntity[]
+  getActiveThreats(): Array<{ target: DevEntity }>
+  getNow(): number
+}
 
-function drawSolidDebug(context: AnyRecord): void {
+type WorkerSnapshot = {
+  villagersOnFood: DevEntity[]
+  villagersOnWood: DevEntity[]
+  villagersOnGold: DevEntity[]
+  villagersOnStone: DevEntity[]
+  inactifVillagers: DevEntity[]
+  villagersHunting: DevEntity[]
+}
+
+type WorkerTargets = {
+  maxVillagersOnFood: number
+  maxVillagersOnWood: number
+  maxVillagersOnGold: number
+  maxVillagersOnStone: number
+}
+
+type NavalDebugInfo = {
+  land: { reachable?: boolean; distance?: number; reason?: string }
+  needsTransport?: boolean
+  builtDocks?: number
+  docks?: number
+  dock?: { i: number; j: number } | null
+  fish?: number
+  desiredFishingBoats?: number
+  scout?: boolean
+  transports?: number
+  operationStage?: string
+  cargo?: number
+  failure?: string
+}
+
+function drawSolidDebug(context: DevConsoleContext): void {
   const { map } = context
   const layer = getDebugLayer(map, DEBUG_SOLID_LAYER, DEBUG_OVERLAY_Z + 1)
   layer.clear()
@@ -34,15 +94,15 @@ function drawSolidDebug(context: AnyRecord): void {
   }
 }
 
-function drawPathDebug(context: AnyRecord): void {
+function drawPathDebug(context: DevConsoleContext): void {
   const { map, players } = context
   const layer = getDebugLayer(map, DEBUG_PATH_LAYER, DEBUG_OVERLAY_Z + 2)
   layer.clear()
 
-  const allUnits = players.flatMap((p: AnyRecord) => p.units).filter((u: AnyRecord) => u.path?.length)
-  allUnits.forEach((unit: AnyRecord, index: number) => {
+  const allUnits = players.flatMap(p => p.units).filter(unit => Boolean((unit as DevEntity).path?.length))
+  allUnits.forEach((unit, index: number) => {
     const color = index % 2 ? 0x35a7ff : 0xfff04a
-    const cells = [...unit.path].reverse()
+    const cells = [...((unit as DevEntity).path ?? [])].reverse()
     layer.moveTo(unit.x, unit.y)
     cells.forEach(cell => {
       layer.lineTo(cell.x, cell.y)
@@ -53,7 +113,7 @@ function drawPathDebug(context: AnyRecord): void {
   })
 }
 
-function drawGridDebug(context: AnyRecord): void {
+function drawGridDebug(context: DevConsoleContext): void {
   const { map } = context
   const layer = getDebugLayer(map, DEBUG_GRID_LAYER, DEBUG_OVERLAY_Z + 3)
   layer.clear()
@@ -64,10 +124,10 @@ function drawGridDebug(context: AnyRecord): void {
   }
 }
 
-function drawCoordsDebug(context: AnyRecord): void {
+function drawCoordsDebug(context: DevConsoleContext): void {
   const { map } = context
   const layer = getDebugContainer(map, DEBUG_COORDS_LAYER, DEBUG_OVERLAY_Z + 4)
-  layer.removeChildren().forEach((child: AnyRecord) => child.destroy())
+  layer.removeChildren().forEach(child => child.destroy())
 
   for (const cell of getCameraCells(context)) {
     if (!cell) continue
@@ -90,7 +150,7 @@ function drawCoordsDebug(context: AnyRecord): void {
   }
 }
 
-function drawVisionDebug(context: AnyRecord): void {
+function drawVisionDebug(context: DevConsoleContext): void {
   const { map, player } = context
   const layer = getDebugLayer(map, DEBUG_VISION_LAYER, DEBUG_OVERLAY_Z)
   layer.clear()
@@ -118,15 +178,14 @@ function ensureDebugOverlay(id: string): HTMLElement {
   return overlay
 }
 
-function ensurePerfOverlay(context: AnyRecord): void {
+function ensurePerfOverlay(context: DevConsoleContext): void {
   const overlay = ensureDebugOverlay('debug-perf')
   const { app, map, players } = context
-  const units =
-    players.reduce((sum: number, player: AnyRecord) => sum + player.units.length, 0) + (map.gaia?.units.length || 0)
-  const buildings = players.reduce((sum: number, player: AnyRecord) => sum + player.buildings.length, 0)
+  const units = players.reduce((sum: number, player) => sum + player.units.length, 0) + (map.gaia?.units.length || 0)
+  const buildings = players.reduce((sum: number, player) => sum + player.buildings.length, 0)
   const schedulerTasks = context.scheduler?._tasks?.size ?? 0
   const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
-  const perf = context.performance?.snapshot()
+  const perf = context.performance?.snapshot?.()
   const metric = (name: string) => perf?.metrics[`runtime.${name}`] || perf?.metrics[name]
   const pathfinding = metric('pathfinding')
   const aiStep = metric('ai.step') || metric('aiStep')
@@ -136,7 +195,7 @@ function ensurePerfOverlay(context: AnyRecord): void {
   const camera = metric('camera.visibleCells')
   const viewportFog = metric('fog.viewport')
   overlay.textContent = [
-    `FPS ${Math.round(app.ticker.FPS)}`,
+    `FPS ${Math.round(app?.ticker.FPS ?? 0)}`,
     `Frame interval ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
     `Units ${units}`,
     `Buildings ${buildings}`,
@@ -154,20 +213,20 @@ function ensurePerfOverlay(context: AnyRecord): void {
   ].join('\n')
 }
 
-export function performanceReport(context: AnyRecord, value: string): CommandResult {
+export function performanceReport(context: DevConsoleContext, value: string): CommandResult {
   if (value === 'reset') {
-    context.performance?.reset()
+    context.performance?.reset?.()
     return { ok: true, message: 'Performance samples reset' }
   }
-  const report = context.performance?.snapshot()
+  const report = context.performance?.snapshot?.()
   if (!report) return { ok: false, message: 'Performance monitor unavailable' }
   const lines = [
     `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
   ]
   const metrics = Object.entries(report.metrics).sort(
-    ([, a]: [string, any], [, b]: [string, any]) => b.totalMs - a.totalMs
+    ([, a], [, b]) => b.totalMs - a.totalMs
   )
-  for (const [name, metric] of metrics as [string, AnyRecord][]) {
+  for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
     lines.push(
       `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms | slow ${metric.slowCount}`
     )
@@ -175,7 +234,7 @@ export function performanceReport(context: AnyRecord, value: string): CommandRes
   return { ok: true, message: lines.join('\n') }
 }
 
-function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = null): string[] | null {
+function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null = null): string[] | null {
   const targets = targetIndex !== null ? [aiPlayers[targetIndex]].filter(Boolean) : aiPlayers
   if (!targets.length) return null
 
@@ -184,7 +243,10 @@ function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = nu
   for (const ai of targets) {
     const idx = aiPlayers.indexOf(ai)
     const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(ai.units.filter((u: AnyRecord) => isAliveUnit(u)))
+    const aliveUnits = ai.units.filter(u => isAliveUnit(u as Parameters<typeof isAliveUnit>[0]))
+    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(
+      aliveUnits as Parameters<typeof classifyMilitaryUnits>[0]
+    ) as Record<'infantry' | 'archers' | 'cavalry' | 'hoplites', DevEntity[]>
     const military = [...infantry, ...archers, ...cavalry, ...hoplites]
     const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
     const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
@@ -205,7 +267,7 @@ function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = nu
     const demand = ai.strategy.getEconomicDemand()
     const naval = ai.strategy.getNavalDebugInfo()
     const builders = villagers.filter(
-      (v: AnyRecord) => !v.isDead && v.hitPoints > 0 && v.action === ACTION_TYPES.build
+      (v: DevEntity) => !v.isDead && (v.hitPoints ?? 0) > 0 && v.action === ACTION_TYPES.build
     ).length
     const scoutLabel = ai.scout && !ai.scout.isDead ? `${ai.scout.type}#${ai.scout.name || ai.scout.label}` : 'none'
     const scoutStatus =
@@ -229,7 +291,7 @@ function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = nu
       `Power ${militaryPower}/${desiredPower} | Attack ${cooldownLeft > 0 ? `${cooldownLeft}s` : 'ready'} | Threshold ${ai.difficultyConfig.attackThreshold}`
     )
     lines.push(
-      `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees.size} berries:${ai.foundedBerrybushs.size} hunt:${ai.foundedAnimals.size} fish:${ai.foundedFish.size} gold:${ai.foundedGolds.size} stone:${ai.foundedStones.size}`
+      `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees?.size ?? 0} berries:${ai.foundedBerrybushs?.size ?? 0} hunt:${ai.foundedAnimals?.size ?? 0} fish:${ai.foundedFish?.size ?? 0} gold:${ai.foundedGolds?.size ?? 0} stone:${ai.foundedStones?.size ?? 0}`
     )
     lines.push(
       `Naval land:${naval.land.reachable ? `yes ${naval.land.distance}` : naval.land.reason} | needTransport:${naval.needsTransport ? 'yes' : 'no'} | dock:${naval.builtDocks}/${naval.docks}${naval.dock ? ` candidate ${naval.dock.i},${naval.dock.j}` : ''}`
@@ -237,7 +299,7 @@ function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = nu
     lines.push(
       `Naval fish:${naval.fish} boats:${naval.desiredFishingBoats} scout:${naval.scout ? 'yes' : 'no'} | transports:${naval.transports} | op:${naval.operationStage} cargo:${naval.cargo}${naval.failure ? ` fail:${naval.failure}` : ''}`
     )
-    lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map((t: AnyRecord) => t.target.type).join(', ')}` : ''}`)
+    lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map(t => t.target.type).join(', ')}` : ''}`)
     lines.push('')
   }
 
@@ -245,9 +307,9 @@ function getAiDebugLines(aiPlayers: AnyRecord[], targetIndex: number | null = nu
   return lines
 }
 
-function ensureAiInfoOverlay(context: AnyRecord): void {
+function ensureAiInfoOverlay(context: DevConsoleContext): void {
   const overlay = ensureDebugOverlay('debug-ai-info')
-  const aiPlayers = context.players.filter((p: AnyRecord) => p.type === PLAYER_TYPES.ai)
+  const aiPlayers = context.players.filter((p): p is AiDebugPlayer => p.type === PLAYER_TYPES.ai)
 
   if (!aiPlayers.length) {
     overlay.textContent = 'No AI players on the map'
@@ -259,7 +321,7 @@ function ensureAiInfoOverlay(context: AnyRecord): void {
   overlay.textContent = lines?.join('\n') || `No AI player at index ${targetIndex}`
 }
 
-export function toggleSolidDebug(context: AnyRecord, value: string): CommandResult {
+export function toggleSolidDebug(context: DevConsoleContext, value: string): CommandResult {
   const { map } = context
   const showSolid = normalizeToggle(value, Boolean(map.debugSolidVisible))
 
@@ -274,7 +336,7 @@ export function toggleSolidDebug(context: AnyRecord, value: string): CommandResu
   return { ok: true, message: 'Solid debug: on' }
 }
 
-export function togglePathDebug(context: AnyRecord, value: string): CommandResult {
+export function togglePathDebug(context: DevConsoleContext, value: string): CommandResult {
   const { app, map } = context
   const showPath = normalizeToggle(value, Boolean(map.debugPathVisible))
 
@@ -287,11 +349,11 @@ export function togglePathDebug(context: AnyRecord, value: string): CommandResul
   drawPathDebug(context)
   stopDebugTicker(context, '_debugPathTicker')
   map._debugPathTicker = () => drawPathDebug(context)
-  app.ticker.add(map._debugPathTicker)
+  app?.ticker.add(map._debugPathTicker)
   return { ok: true, message: 'Path debug: on' }
 }
 
-export function toggleVisionDebug(context: AnyRecord, value: string): CommandResult {
+export function toggleVisionDebug(context: DevConsoleContext, value: string): CommandResult {
   const { map } = context
   const showVision = normalizeToggle(value, Boolean(map.debugVisionVisible))
 
@@ -306,7 +368,7 @@ export function toggleVisionDebug(context: AnyRecord, value: string): CommandRes
   return { ok: true, message: 'Vision debug: on' }
 }
 
-export function toggleGridDebug(context: AnyRecord, value: string): CommandResult {
+export function toggleGridDebug(context: DevConsoleContext, value: string): CommandResult {
   const { map } = context
   const showGrid = normalizeToggle(value, Boolean(map.debugGridVisible))
   map.debugGridVisible = showGrid
@@ -321,7 +383,7 @@ export function toggleGridDebug(context: AnyRecord, value: string): CommandResul
   return { ok: true, message: `Grid debug: ${showGrid ? 'on' : 'off'}` }
 }
 
-export function toggleCoordsDebug(context: AnyRecord, value: string): CommandResult {
+export function toggleCoordsDebug(context: DevConsoleContext, value: string): CommandResult {
   const { map } = context
   const showCoords = normalizeToggle(value, Boolean(map.debugCoordsVisible))
   map.debugCoordsVisible = showCoords
@@ -336,7 +398,7 @@ export function toggleCoordsDebug(context: AnyRecord, value: string): CommandRes
   return { ok: true, message: `Coords debug: ${showCoords ? 'on' : 'off'}` }
 }
 
-export function togglePerfDebug(context: AnyRecord, value: string): CommandResult {
+export function togglePerfDebug(context: DevConsoleContext, value: string): CommandResult {
   const { app, map } = context
   const showPerf = normalizeToggle(value, Boolean(map.debugPerfVisible))
 
@@ -350,18 +412,18 @@ export function togglePerfDebug(context: AnyRecord, value: string): CommandResul
   ensurePerfOverlay(context)
   stopDebugTicker(context, '_debugPerfTicker')
   map._debugPerfTicker = () => ensurePerfOverlay(context)
-  app.ticker.add(map._debugPerfTicker)
+  app?.ticker.add(map._debugPerfTicker)
   return { ok: true, message: 'Perf debug: on' }
 }
 
-export function toggleAiDebug(context: AnyRecord, value: string): CommandResult {
+export function toggleAiDebug(context: DevConsoleContext, value: string): CommandResult {
   const pauseAI = value === 'pause' ? true : value === 'resume' ? false : !context.aiPaused
   context.aiPaused = pauseAI
   return { ok: true, message: `AI: ${pauseAI ? 'paused' : 'running'}` }
 }
 
-export function aiInfo(context: AnyRecord, value: string): CommandResult {
-  const aiPlayers = context.players.filter((p: AnyRecord) => p.type === PLAYER_TYPES.ai)
+export function aiInfo(context: DevConsoleContext, value: string): CommandResult {
+  const aiPlayers = context.players.filter((p): p is AiDebugPlayer => p.type === PLAYER_TYPES.ai)
   if (!aiPlayers.length) return { ok: false, message: 'No AI players on the map' }
 
   const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
@@ -396,7 +458,7 @@ export function aiInfo(context: AnyRecord, value: string): CommandResult {
   ensureAiInfoOverlay(context)
   stopDebugTicker(context, '_debugAiInfoTicker')
   context.map._debugAiInfoTicker = () => ensureAiInfoOverlay(context)
-  context.app.ticker.add(context.map._debugAiInfoTicker)
+  context.app?.ticker.add(context.map._debugAiInfoTicker)
 
   return {
     ok: true,

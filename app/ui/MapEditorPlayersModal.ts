@@ -2,16 +2,15 @@ import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { playClickSound } from '../lib/uiSound'
 import { PlayerSetupPanel } from './PlayerSetupPanel'
-
-type AnyRecord = Record<string, any>
+import type { PlayerSetupConfig } from '../types/save'
 
 export class MapEditorPlayersModal {
   size: number
-  players: AnyRecord[]
+  players: PlayerSetupConfig[]
   maxPlayers: number
-  onSave?: (players: AnyRecord[]) => void
-  _modal: AnyRecord
-  playerSetupPanel!: AnyRecord
+  onSave?: (players: PlayerSetupConfig[]) => void
+  _modal: Modal
+  playerSetupPanel!: PlayerSetupPanel
 
   constructor({
     size,
@@ -20,9 +19,9 @@ export class MapEditorPlayersModal {
     onSave,
   }: {
     size: number
-    players: AnyRecord[]
+    players: PlayerSetupConfig[]
     maxPlayers: number
-    onSave?: (players: AnyRecord[]) => void
+    onSave?: (players: PlayerSetupConfig[]) => void
   }) {
     this.size = size
     this.players = players
@@ -45,7 +44,7 @@ export class MapEditorPlayersModal {
       players: this.players,
       maxPlayers: this.maxPlayers,
       showAge: true,
-    } as any)
+    })
 
     layout.appendChild(this.playerSetupPanel.element)
     content.appendChild(layout)

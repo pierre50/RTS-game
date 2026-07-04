@@ -15,8 +15,15 @@ type PointerPoint = { x: number; y: number }
 type PointerPageEvent = {
   pageX: number
   pageY: number
+  clientX?: number
+  clientY?: number
   target?: EventTarget | null
   type?: string
+  nativeEvent?: {
+    clientX?: number
+    clientY?: number
+    target?: EventTarget | null
+  } | null
 }
 type TouchLike = PointerPageEvent
 type TouchInputEvent = {
@@ -576,8 +583,21 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   isMouseInApp(evt: PointerPageEvent): boolean {
-    const target = evt.target
-    return !this.isInteractionBlocked() && target instanceof Element && (!target.tagName || Boolean(target.closest('#game')))
+    if (this.isInteractionBlocked()) return false
+
+    const target = evt.target instanceof Element ? evt.target : evt.nativeEvent?.target
+    if (target instanceof Element) {
+      return !target.tagName || Boolean(target.closest('#game'))
+    }
+
+    const clientX = evt.clientX ?? evt.nativeEvent?.clientX
+    const clientY = evt.clientY ?? evt.nativeEvent?.clientY
+    if (typeof clientX === 'number' && typeof clientY === 'number') {
+      const rect = this.context.gamebox.getBoundingClientRect()
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    }
+
+    return false
   }
 
   shouldIgnoreCompatibilityMouseEvent(evt: PointerPageEvent): boolean {

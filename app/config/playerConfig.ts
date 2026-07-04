@@ -1,7 +1,7 @@
 import { EAST_FIRST_EIGHT_DIRECTION_ORDER } from '../lib/extra'
 import { getCivilizationDefinition } from './civilizations'
-
-type AnyRecord = Record<string, any>
+import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
+import type { PlayerConfigLike } from '../types/player'
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -17,7 +17,7 @@ const SHIP_DESTROYED_SOUNDS = [5113, 5177, 5181]
 const STONE_START_SOUND = null
 const FISHING_SOUNDS = [5182, 5183, 5184]
 
-const EXTRA_UNIT_DEFINITIONS: AnyRecord = {
+const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   Trooper: {
     category: 'Archer',
     totalHitPoints: 100,
@@ -1039,7 +1039,7 @@ const EXTRA_UNIT_DEFINITIONS: AnyRecord = {
   },
 }
 
-const UNIT_OVERRIDES: AnyRecord = {
+const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {
   FishingBoat: {
     conditions: [
       {
@@ -1176,7 +1176,7 @@ const UNIT_OVERRIDES: AnyRecord = {
   },
 }
 
-const BUILDING_OVERRIDES: AnyRecord = {
+const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   ArcheryRange: {
     units: [
       'Bowman',
@@ -1210,7 +1210,7 @@ const BUILDING_OVERRIDES: AnyRecord = {
   },
 }
 
-const EXTRA_PROJECTILES: AnyRecord = {
+const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
   Stone: {
     size: 8,
     speed: 5,
@@ -1342,7 +1342,7 @@ const EXTRA_PROJECTILES: AnyRecord = {
   },
 }
 
-const EXTRA_TECH_DEFINITIONS: AnyRecord = {
+const EXTRA_TECH_DEFINITIONS: Record<string, TechnologyConfig> = {
   WarGalley: {
     icon: '024_50729',
     key: 'technologies',
@@ -1481,8 +1481,8 @@ const EXTRA_TECH_DEFINITIONS: AnyRecord = {
   },
 }
 
-function normalizeUnitSounds(unit: AnyRecord): AnyRecord {
-  const sounds: AnyRecord = { ...(unit.sounds || {}) }
+function normalizeUnitSounds(unit: UnitConfig): UnitConfig {
+  const sounds = { ...(unit.sounds || {}) }
 
   if (sounds.command == null && sounds.move != null) {
     sounds.command = sounds.move
@@ -1495,9 +1495,13 @@ function normalizeUnitSounds(unit: AnyRecord): AnyRecord {
   return unit
 }
 
-export function createPlayerData(baseConfig: AnyRecord, baseTechs: AnyRecord, civ: string): AnyRecord {
+export function createPlayerData(
+  baseConfig: PlayerConfigLike,
+  baseTechs: Record<string, TechnologyConfig>,
+  civ: string
+): { config: PlayerConfigLike; techs: Record<string, TechnologyConfig> } {
   const config = deepClone(baseConfig)
-  const techs = {
+  const techs: Record<string, TechnologyConfig> = {
     ...deepClone(baseTechs),
     ...deepClone(EXTRA_TECH_DEFINITIONS),
   }
@@ -1511,18 +1515,18 @@ export function createPlayerData(baseConfig: AnyRecord, baseTechs: AnyRecord, ci
   for (const [unitName, override] of Object.entries(UNIT_OVERRIDES)) {
     config.units[unitName] = {
       ...config.units[unitName],
-      ...(override as AnyRecord),
+      ...override,
     }
   }
 
   for (const unit of Object.values(config.units)) {
-    normalizeUnitSounds(unit as AnyRecord)
+    normalizeUnitSounds(unit)
   }
 
   for (const [buildingName, override] of Object.entries(BUILDING_OVERRIDES)) {
     config.buildings[buildingName] = {
       ...config.buildings[buildingName],
-      ...(override as AnyRecord),
+      ...override,
     }
   }
 
@@ -1539,7 +1543,7 @@ export function createPlayerData(baseConfig: AnyRecord, baseTechs: AnyRecord, ci
     delete techs[techName]
   }
 
-  for (const building of Object.values(config.buildings) as AnyRecord[]) {
+  for (const building of Object.values(config.buildings)) {
     if (Array.isArray(building.units)) {
       building.units = building.units.filter((unitName: string) => config.units[unitName])
     }

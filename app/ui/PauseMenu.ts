@@ -3,13 +3,12 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { buildSettingsContent } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
-
-type AnyRecord = Record<string, any>
+import type Menu from '../classes/menu'
 
 export class PauseMenu {
-  menu: AnyRecord
+  menu: Menu
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: Menu) {
     this.menu = menu
   }
 
@@ -26,9 +25,9 @@ export class PauseMenu {
   open(): void {
     const { menu } = this
     const shouldResume = !menu.context.paused
-    if (shouldResume) menu.context.pause()
+    if (shouldResume) menu.context.pause?.()
     const resumeIfNeeded = () => {
-      if (shouldResume) menu.context.resume()
+      if (shouldResume) menu.context.resume?.()
     }
 
     const content = document.createElement('div')
@@ -43,12 +42,13 @@ export class PauseMenu {
     content.appendChild(
       this._btn(t('save'), () => {
         try {
-          menu.context.save()
+          menu.context.save?.()
           modal.close()
           resumeIfNeeded()
           menu.showMessage(t('saveSuccess'), 'success')
-        } catch (e: any) {
-          menu.showMessage(e.message === 'MAX_SAVES_REACHED' ? t('maxSavesReached') : t('storageFull'), 'warning')
+        } catch (e) {
+          const message = e instanceof Error ? e.message : ''
+          menu.showMessage(message === 'MAX_SAVES_REACHED' ? t('maxSavesReached') : t('storageFull'), 'warning')
         }
       })
     )
@@ -70,14 +70,14 @@ export class PauseMenu {
     content.appendChild(
       this._btn(t('restart'), () => {
         modal.close()
-        menu.context.restart()
+        menu.context.restart?.()
       })
     )
 
     content.appendChild(
       this._btn(t('quit'), () => {
         modal.close()
-        menu.context.quit()
+        menu.context.quit?.()
       })
     )
   }
@@ -92,8 +92,8 @@ export class PauseMenu {
         }
       },
       onZoomChange: () => {
-        menu.context.applyZoom()
-        menu.context.controls?.updateVisibleCells()
+        menu.context.applyZoom?.()
+        menu.context.controls?.updateVisibleCells?.()
         menu.updateCameraMiniMap()
       },
     })
@@ -108,7 +108,7 @@ export class PauseMenu {
   _openSaveList(resumeIfNeeded: () => void): void {
     const { menu } = this
     openSaveListModal({
-      onLoad: saveData => menu.context.load(saveData),
+      onLoad: saveData => menu.context.load?.(saveData),
       onError: msg => menu.showMessage(msg, 'error'),
       onClose: resumeIfNeeded,
     })

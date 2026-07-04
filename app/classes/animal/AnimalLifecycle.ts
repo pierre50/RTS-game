@@ -1,12 +1,12 @@
 import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
-
-type AnyRecord = Record<string, any>
+import type { LooseRecord } from '../../types/common'
+import type { Animal } from './index'
 
 export class AnimalLifecycle {
-  animal: AnyRecord
+  animal: Animal & LooseRecord
 
-  constructor(animal: AnyRecord) {
+  constructor(animal: Animal & LooseRecord) {
     this.animal = animal
   }
 
@@ -17,7 +17,7 @@ export class AnimalLifecycle {
       playAudibleSoundCue(animal, animal.sounds.die)
       playAudibleSoundCue(animal, animal.sounds.fall)
     }
-    updateInstanceVisibility(animal as any)
+    updateInstanceVisibility(animal as unknown as Parameters<typeof updateInstanceVisibility>[0])
     animal.owner.population = Math.max(0, animal.owner.population - 1)
     animal.stopInterval()
     animal.stopTimeout()

@@ -17,6 +17,7 @@ export interface RuntimeCell extends GridCell {
   zIndex?: number
   type: string
   category?: string
+  color?: string
   solid: boolean
   visible: boolean
   inclined?: boolean
@@ -50,6 +51,7 @@ export interface RuntimeMap extends UnknownRecord {
   instantMode: boolean
   revealEverything: boolean
   revealTerrain: boolean
+  showResources?: boolean
   startingAge?: number
   allTechnologies?: boolean
   resourceDensity?: string
@@ -58,6 +60,11 @@ export interface RuntimeMap extends UnknownRecord {
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container
   randomRange(min: number, max: number): number
+  random(): number
+  randomItem<T>(items: T[]): T
   addToInstanceBucket(instance: RuntimeEntity): void
   removeFromInstanceBucket(instance: RuntimeEntity): void
+  updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void
+  addChild: Container['addChild']
+  removeChild: Container['removeChild']
 }

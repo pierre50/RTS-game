@@ -1,13 +1,12 @@
 import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
-
-type AnyRecord = Record<string, any>
+import type { MapEditorHud } from './MapEditorHud'
 
 export class MapEditorMenu {
-  hud: AnyRecord
+  hud: MapEditorHud
 
-  constructor(hud: AnyRecord) {
+  constructor(hud: MapEditorHud) {
     this.hud = hud
   }
 

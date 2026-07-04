@@ -3,17 +3,24 @@ import { t } from '../lib/lang'
 import { Modal } from '../lib'
 import { buildSettingsContent } from '../ui/settingsPanel'
 import { openSaveListModal } from '../ui/saveListModal'
-
-type AnyRecord = Record<string, any>
+import type { SaveRecord } from '../types/save'
 
 export default class MainMenu {
   onStart: () => void
-  onLoad: (save: AnyRecord) => void
+  onLoad: (save: SaveRecord) => void
   onMapEditor: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
   el: HTMLDivElement
 
-  constructor({ onStart, onLoad, onMapEditor }: { onStart: () => void; onLoad: (save: AnyRecord) => void; onMapEditor: () => void }) {
+  constructor({
+    onStart,
+    onLoad,
+    onMapEditor,
+  }: {
+    onStart: () => void
+    onLoad: (save: SaveRecord) => void
+    onMapEditor: () => void
+  }) {
     this.onStart = onStart
     this.onLoad = onLoad
     this.onMapEditor = onMapEditor
@@ -50,7 +57,7 @@ export default class MainMenu {
     logo.src = 'assets/logo.png'
     logo.alt = 'Dawn of Empires'
     logo.decoding = 'async'
-    ;(logo as any).fetchPriority = 'high'
+    logo.fetchPriority = 'high'
     logoShell.appendChild(logo)
     panel.appendChild(logoShell)
 
@@ -100,8 +107,8 @@ export default class MainMenu {
 
   _openSaveList(): void {
     openSaveListModal({
-      onLoad: (saveData: AnyRecord) => this.onLoad(saveData),
-    } as any)
+      onLoad: saveData => this.onLoad(saveData),
+    })
   }
 
   destroy(): void {

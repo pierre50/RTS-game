@@ -1,20 +1,20 @@
-type AnyRecord = Record<string, any>
+type AssetBundle = Record<string, string>
 
-function toTextureBundle(basePath: string, ids: string[]): AnyRecord {
-  return ids.reduce((bundle: AnyRecord, id) => {
+function toTextureBundle(basePath: string, ids: string[]): AssetBundle {
+  return ids.reduce((bundle: AssetBundle, id) => {
     bundle[id] = `${basePath}/${id}/texture.json`
     return bundle
   }, {})
 }
 
-function toSoundBundle(ids: string[]): AnyRecord {
-  return ids.reduce((bundle: AnyRecord, id) => {
+function toSoundBundle(ids: string[]): AssetBundle {
+  return ids.reduce((bundle: AssetBundle, id) => {
     bundle[id] = `assets/sounds/${id}.wav`
     return bundle
   }, {})
 }
 
-export const ASSET_BUNDLES: AnyRecord = {
+export const ASSET_BUNDLES: Record<string, AssetBundle> = {
   config: {
     buildingsData: 'assets/data/gameplay/buildings.json',
     unitsData: 'assets/data/gameplay/units.json',

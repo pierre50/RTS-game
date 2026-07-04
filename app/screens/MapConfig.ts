@@ -5,8 +5,8 @@ import { buildSelectRow, buildCheckboxRow } from '../ui/formUtils'
 import { MAP_SIZES } from '../config/mapSizes'
 import { MAP_TYPES } from '../config/mapTypes'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
-
-type AnyRecord = Record<string, any>
+import type { ResourceAmount } from '../types/common'
+import type { GameConfig } from '../types/save'
 
 const STARTING_RESOURCES = [
   { label: () => t('resLow'), value: 'low' },
@@ -28,7 +28,7 @@ const STARTING_AGES = [
   { label: () => t('ironAge'), value: 3 },
 ]
 
-const RESOURCES_MAP: AnyRecord = {
+const RESOURCES_MAP: Record<string, ResourceAmount> = {
   low: { wood: 100, food: 150, stone: 50, gold: 0 },
   standard: { wood: 200, food: 200, stone: 150, gold: 0 },
   high: { wood: 500, food: 500, stone: 300, gold: 0 },
@@ -36,15 +36,15 @@ const RESOURCES_MAP: AnyRecord = {
 }
 
 export default class MapConfig {
-  onPlay: (config: AnyRecord) => void
+  onPlay: (config: GameConfig) => void
   _onKeyDown: (evt: KeyboardEvent) => void
-  config: AnyRecord
+  config: GameConfig
   maxPlayers: number
-  _modal: AnyRecord
-  playerSetupPanel!: AnyRecord
+  _modal: Modal
+  playerSetupPanel!: PlayerSetupPanel
   _destroyed?: boolean
 
-  constructor({ onPlay }: { onPlay: (config: AnyRecord) => void }) {
+  constructor({ onPlay }: { onPlay: (config: GameConfig) => void }) {
     this.onPlay = onPlay
     this._onKeyDown = this._handleKeyDown.bind(this)
 
@@ -90,7 +90,7 @@ export default class MapConfig {
     const leftCol = document.createElement('div')
     leftCol.className = 'lobby-col'
 
-    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers } as any)
+    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers })
     leftCol.appendChild(this.playerSetupPanel.element)
 
     // ── Right column: settings ──
@@ -101,7 +101,7 @@ export default class MapConfig {
     settingsForm.className = 'config-form lobby-settings-form'
 
     settingsForm.appendChild(
-      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 256, (val: any) => {
+      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 256, val => {
         this.config.size = parseInt(val)
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
         this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
@@ -110,37 +110,37 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
-      buildSelectRow(t('mapTypeLabel'), MAP_TYPES, 'plain', (val: any) => {
+      buildSelectRow(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
         this.config.mapType = val
       })
     )
 
     settingsForm.appendChild(
-      buildSelectRow(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', (val: any) => {
+      buildSelectRow(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', val => {
         this.config.startingResources = RESOURCES_MAP[val]
       })
     )
 
     settingsForm.appendChild(
-      buildSelectRow(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', (val: any) => {
+      buildSelectRow(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', val => {
         this.config.resourceDensity = val
       })
     )
 
     settingsForm.appendChild(
-      buildSelectRow(t('startingAgeLabel'), STARTING_AGES, 0, (val: any) => {
+      buildSelectRow(t('startingAgeLabel'), STARTING_AGES, 0, val => {
         this.config.startingAge = parseInt(val)
       })
     )
 
     settingsForm.appendChild(
-      buildCheckboxRow(t('allTechnologiesLabel'), false, (val: any) => {
+      buildCheckboxRow(t('allTechnologiesLabel'), false, val => {
         this.config.allTechnologies = val
       })
     )
 
     settingsForm.appendChild(
-      buildCheckboxRow(t('revealTerrain'), false, (val: any) => {
+      buildCheckboxRow(t('revealTerrain'), false, val => {
         this.config.revealTerrain = val
       })
     )

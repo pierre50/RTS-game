@@ -1,17 +1,12 @@
 import LZString from 'lz-string'
 import { serializeGame } from './SaveSerializer'
-import { parseSaveJSON } from './SaveValidator'
+import type { GameContextLike } from '../types/context'
+import type { SaveIndexEntry, SaveRecord } from '../types/save'
 
 const INDEX_KEY = 'rts_saves_index'
 const MAX_SAVES = 10
 const EXPORT_FORMAT = 'rts-save'
 export const EXPORT_EXT = '.rts'
-
-type SaveIndexEntry = {
-  date: number
-  key: string
-  name: string
-}
 
 type ExportPayload = {
   data?: string
@@ -42,7 +37,7 @@ function formatSaveName() {
   return `${day}/${month} ${hours}:${minutes}`
 }
 
-export function save(context: Record<string, any>): { key: string; name: string } {
+export function save(context: GameContextLike): { key: string; name: string } {
   const index = getIndex()
   if (index.length >= MAX_SAVES) {
     throw new Error('MAX_SAVES_REACHED')
@@ -65,12 +60,16 @@ export function listSaves(): SaveIndexEntry[] {
   return getIndex().slice().reverse()
 }
 
-export function loadSave(key: string): Record<string, any> {
+export function loadSave(key: string): SaveRecord {
   const compressed = localStorage.getItem(key)
   if (!compressed) throw new Error('SAVE_NOT_FOUND')
   const raw = LZString.decompressFromBase64(compressed)
   if (!raw) throw new Error('SAVE_CORRUPT')
-  return parseSaveJSON(raw)
+  try {
+    return JSON.parse(raw) as SaveRecord
+  } catch {
+    throw new Error('SAVE_CORRUPT')
+  }
 }
 
 export function deleteSave(key: string): void {

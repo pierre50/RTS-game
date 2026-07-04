@@ -1,4 +1,4 @@
-type AnyRecord = Record<string, any>
+import type { DevConsoleContext } from './types'
 
 export interface CommandResult {
   ok: boolean
@@ -10,8 +10,8 @@ export interface Command {
   aliases?: string[]
   usage?: string
   describe?: string
-  complete?: (args: string[], context: AnyRecord) => string[]
-  run: (args: string[], context: AnyRecord) => CommandResult
+  complete?: (args: string[], context: DevConsoleContext) => string[]
+  run: (args: string[], context: DevConsoleContext) => CommandResult
 }
 
 export class DevCommandRegistry {
@@ -40,7 +40,7 @@ export class DevCommandRegistry {
     return [...new Set([...this.commands.keys(), ...this.aliases.keys()])].sort()
   }
 
-  complete(input: string, context: AnyRecord): string[] {
+  complete(input: string, context: DevConsoleContext): string[] {
     const endsWithSpace = /\s$/.test(input)
     const parts = input.trim().split(/\s+/).filter(Boolean)
 
@@ -60,7 +60,7 @@ export class DevCommandRegistry {
     return suggestions.filter(s => s.toLowerCase().startsWith(prefix.toLowerCase()))
   }
 
-  execute(input: string, context: AnyRecord): CommandResult {
+  execute(input: string, context: DevConsoleContext): CommandResult {
     const [name, ...args] = input.trim().split(/\s+/)
     const command = this.get(name)
     if (!command) {

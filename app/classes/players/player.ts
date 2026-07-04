@@ -22,8 +22,13 @@ import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
-
-type AnyRecord = Record<string, any>
+import type { LooseRecord, UnknownRecord } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { ConfigOperation, TechnologyConfig } from '../../types/config'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeMap } from '../../types/map'
+import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
+import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
@@ -31,30 +36,37 @@ export class Player {
   [key: string]: any
 
   family: string
-  context: AnyRecord
+  context: GameContextLike
   label: string
-  parent: AnyRecord
+  parent: RuntimeMap
+  i!: number
+  j!: number
+  type!: string
   wood: number
   food: number
   stone: number
   gold: number
-  corpses: any[]
-  units: any[]
-  buildings: any[]
+  corpses: RuntimeEntity[]
+  units: RuntimeEntity[]
+  selectedUnits!: UnitEntity[]
+  selectedUnit!: UnitEntity | null
+  selectedBuilding!: BuildingEntity | null
+  selectedOther!: RuntimeEntity | null
+  buildings: BuildingEntity[]
   population: number
-  technologies: any[]
+  technologies: string[]
   cellViewed: number
   age: number
   lastUnderAttackAlertAt: number
   team!: number | null
   population_max!: number
-  colorHex: any
-  config: AnyRecord
-  techs: AnyRecord
-  hasBuilt!: any[]
-  views!: any
+  colorHex: string
+  config: PlayerConfigLike
+  techs: Record<string, TechnologyConfig>
+  hasBuilt!: string[]
+  views!: VisionGridLike
 
-  constructor(options: AnyRecord, context: AnyRecord) {
+  constructor(options: UnknownRecord, context: GameContextLike) {
     this.family = FAMILY_TYPES.player
     this.context = context
 
@@ -63,10 +75,10 @@ export class Player {
     this.parent = map
 
     const res = map.startingResources
-    this.wood = res.wood
-    this.food = res.food
-    this.stone = res.stone
-    this.gold = res.gold
+    this.wood = res.wood ?? 0
+    this.food = res.food ?? 0
+    this.stone = res.stone ?? 0
+    this.gold = res.gold ?? 0
     this.corpses = []
     this.units = []
     this.buildings = []
@@ -78,7 +90,8 @@ export class Player {
     Object.keys(options).forEach(prop => {
       this[prop] = options[prop]
     })
-    this.team = this.team == null || (this.team as any) === '' ? null : Number(this.team)
+    const rawTeam = this.team as unknown
+    this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
 
     this.population_max = this.population_max || (map.instantMode ? POPULATION_MAX : 0)
@@ -90,17 +103,17 @@ export class Player {
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     this.views = new VisionGrid(
       map.size,
-      this.views,
+      this.views as unknown as Array<Array<{ viewed?: boolean; viewBy?: unknown[] }>>,
       (i, j) => {
         if (this.isPlayed && !map.revealEverything) {
-          this.context.menu.updateTerrainMiniMap(i, j)
+          this.context.menu.updateTerrainMiniMap?.(i, j)
         }
       },
       this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain
-    )
+    ) as unknown as VisionGridLike
   }
 
-  reportThreat(target: AnyRecord, attacker: AnyRecord) {
+  reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
     if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
     if (!this.isPlayed || this.type !== PLAYER_TYPES.human) return
 
@@ -115,7 +128,7 @@ export class Player {
     playUiSound(SOUND_CUES.ui.underAttack)
   }
 
-  spawnBuilding(options: AnyRecord) {
+  spawnBuilding(options: UnknownRecord) {
     const building = this.createBuilding(options)
     if (this.isPlayed) {
       let hasSentVillager = false
@@ -134,13 +147,13 @@ export class Player {
         }
       }
       if (hasSentVillager) {
-        drawInstanceBlinkingSelection(building)
+        drawInstanceBlinkingSelection(building as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
       }
       if (hasSentOther) {
         playSoundCue(SOUND_CUES.unit.militaryCommand)
         return
       } else if (hasSentVillager) {
-        const voice = this.config.units.Villager.sounds.buildCommand
+        const voice = this.config.units.Villager?.sounds?.buildCommand
         playSoundCue(voice)
         return
       }
@@ -156,7 +169,9 @@ export class Player {
     const config = this.techs?.[type]
     if (!config) return false
 
-    return (config.conditions || []).every((condition: AnyRecord) => isValidCondition(condition as any, this as any))
+    return (config.conditions || []).every((condition: Condition) =>
+      isValidCondition(condition, this as unknown as Record<string, unknown>)
+    )
   }
 
   unlockTechnology(type: string) {
@@ -165,42 +180,44 @@ export class Player {
     const config = this.techs?.[type]
     if (!config) return false
 
-    if (Array.isArray(this[config.key])) {
-      this[config.key].push(config.value || type)
+    const key = config.key || type
+    if (Array.isArray(this[key])) {
+      this[key].push(config.value || type)
     } else {
-      this[config.key] = config.value || type
+      this[key] = config.value || type
     }
 
-    if (config.action) {
-      switch (config.action.type) {
+    const action = config.action
+    if (action) {
+      switch (action.type) {
         case 'upgradeUnit':
-          this.units.forEach((unit: AnyRecord) => {
-            if (unit.type === config.action.source) unit.upgrade(config.action.target)
+          this.units.forEach((unit: LooseRecord) => {
+            if (unit.type === action.source) unit.upgrade(action.target)
           })
           break
         case 'upgradeBuilding':
-          this.buildings.forEach((building: AnyRecord) => {
-            if (building.type === config.action.source) building.upgrade(config.action.target)
+          this.buildings.forEach((building: LooseRecord) => {
+            if (building.type === action.source) building.upgrade(action.target)
           })
           break
         case 'improve':
           this.updateConfig(
-            config.action.operations.map((operation: AnyRecord) => ({
+            (action.operations || []).map((operation: ConfigOperation) => ({
               ...operation,
               value: Number(operation.value),
             }))
           )
           break
         case 'refreshWalls':
-          refreshOwnerWalls(this as any)
+          refreshOwnerWalls(this as unknown as Parameters<typeof refreshOwnerWalls>[0])
           break
         case 'refreshTowers':
-          refreshOwnerTowers(this as any)
+          refreshOwnerTowers(this as unknown as Parameters<typeof refreshOwnerTowers>[0])
           break
       }
     }
 
-    const handler = `on${capitalizeFirstLetter(config.key)}Change`
+    const handler = `on${capitalizeFirstLetter(config.key || '')}Change`
     typeof this[handler] === 'function' && this[handler](config.value)
     return true
   }
@@ -227,7 +244,7 @@ export class Player {
     const {
       context: { players, menu },
     } = this
-    const refreshSelection = (selection: AnyRecord) => {
+    const refreshSelection = (selection: RuntimeEntity | null | undefined) => {
       if (!selection?.interface) return false
       if (selection.owner?.label !== this.label) return false
       menu.setBottombar(selection)
@@ -245,7 +262,7 @@ export class Player {
       const building = this.buildings[i]
       if (building.isBuilt && !building.isDead) {
         if (building.assetCiv) building.assetAge = this.age
-        building.finalTexture()
+        building.finalTexture?.()
       }
     }
     for (let i = 0; i < players.length; i++) {
@@ -263,15 +280,15 @@ export class Player {
       context: { players },
     } = this
     const others = [...players]
-    others.splice(players.indexOf(this), 1)
+    others.splice(players.indexOf(this as unknown as PlayerLike), 1)
     return others
   }
 
-  isAlliedWith(player: AnyRecord) {
+  isAlliedWith(player: PlayerLike | null | undefined) {
     return !!player && player.label !== this.label && this.team !== null && this.team === player.team
   }
 
-  isEnemy(player: AnyRecord) {
+  isEnemy(player: PlayerLike | null | undefined) {
     return !!player && player.label !== this.label && !this.isAlliedWith(player)
   }
 
@@ -283,16 +300,18 @@ export class Player {
     return [this, ...this.otherPlayers().filter(player => this.isAlliedWith(player))]
   }
 
-  updateConfig(operations: AnyRecord[]) {
+  updateConfig(operations: ConfigOperation[]) {
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
       const types = Array.isArray(operation.type) ? operation.type : [operation.type]
       for (let j = 0; j < types.length; j++) {
-        const type: string = types[j]
+        const type = types[j] as string
         if (Object.keys(this.config.buildings).includes(type)) {
-          this.config.buildings[type] && updateObject(this.config.buildings[type], operation as any)
+          this.config.buildings[type] &&
+            updateObject(this.config.buildings[type], operation as unknown as Parameters<typeof updateObject>[1])
         } else if (Object.keys(this.config.units).includes(type)) {
-          this.config.units[type] && updateObject(this.config.units[type], operation as any)
+          this.config.units[type] &&
+            updateObject(this.config.units[type], operation as unknown as Parameters<typeof updateObject>[1])
         }
       }
     }
@@ -303,7 +322,9 @@ export class Player {
     if (!config) return false
 
     return (config.conditions || []).every(
-      (condition: AnyRecord) => (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition as any, this as any)
+      (condition: Condition) =>
+        (this.autoTechnologyByAge && condition.key !== 'age') ||
+        isValidCondition(condition, this as unknown as Record<string, unknown>)
     )
   }
 
@@ -326,19 +347,24 @@ export class Player {
     return false
   }
 
-  createUnit(options: AnyRecord) {
+  createUnit(options: UnknownRecord) {
     const { context } = this
-    let unit = context.map.addChild(new Unit({ ...options, owner: this }, context))
-    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
+    let unit = context.map.addChild(
+      new Unit(
+        { ...options, owner: this } as unknown as ConstructorParameters<typeof Unit>[0],
+        context as ConstructorParameters<typeof Unit>[1]
+      )
+    )
+    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this as unknown as PlayerLike)
     return unit
   }
 
-  createBuilding(options: AnyRecord) {
+  createBuilding(options: UnknownRecord) {
     const { context } = this
     const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)
-    updateWallAndNeighbours(building)
-    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
+    updateWallAndNeighbours(building as unknown as Parameters<typeof updateWallAndNeighbours>[0])
+    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this as unknown as PlayerLike)
     return building
   }
 }

@@ -1,18 +1,25 @@
+import type { Ticker } from 'pixi.js'
 import { canPlayerStillAct, isPlayerEliminated } from '../lib'
+import type Menu from '../classes/menu'
+import type { PlayerLike } from '../types/player'
 
-type AnyRecord = Record<string, any>
+type PlayerStatRow = {
+  dead: boolean
+  colorHex: string
+  text: string
+}
 
 export class PlayerStatsManager {
-  menu: AnyRecord
+  menu: Menu
   _open: boolean
   _renderEveryMs: number
   _renderCooldownMs: number
   _renderSignature: string | null
-  _tickRender: (ticker: AnyRecord) => void
+  _tickRender: (ticker: Ticker) => void
   btn: HTMLButtonElement
   el: HTMLDivElement
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: Menu) {
     this.menu = menu
     this._open = false
     this._renderEveryMs = 250
@@ -47,9 +54,9 @@ export class PlayerStatsManager {
     }
   }
 
-  _getRenderData(): AnyRecord[] {
-    const { players, player: me } = this.menu.context
-    const sorted = [...players].sort((a: AnyRecord, b: AnyRecord) => {
+  _getRenderData(): PlayerStatRow[] {
+    const { players = [], player: me } = this.menu.context
+    const sorted = [...players].sort((a: PlayerLike, b: PlayerLike) => {
       const activeDiff = Number(canPlayerStillAct(b)) - Number(canPlayerStillAct(a))
       if (activeDiff !== 0) return activeDiff
 
@@ -57,10 +64,10 @@ export class PlayerStatsManager {
       const scoreB = b.units.length + b.buildings.length
       return scoreB - scoreA
     })
-    return sorted.map((p: AnyRecord, rank: number) => {
+    return sorted.map((p: PlayerLike, rank: number) => {
       const dead = isPlayerEliminated(p)
       const isMe = p === me
-      const label = isMe ? 'You' : p.color.charAt(0).toUpperCase() + p.color.slice(1)
+      const label = isMe ? 'You' : (p.color?.charAt(0).toUpperCase() ?? '') + p.color?.slice(1)
       return {
         dead,
         colorHex: p.colorHex,
@@ -69,7 +76,7 @@ export class PlayerStatsManager {
     })
   }
 
-  _getSignature(rows: AnyRecord[]): string {
+  _getSignature(rows: PlayerStatRow[]): string {
     return rows.map(({ dead, colorHex, text }) => `${dead ? 1 : 0}|${colorHex}|${text}`).join('\n')
   }
 

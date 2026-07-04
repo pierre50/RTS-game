@@ -12,13 +12,86 @@ import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, R
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
+import type { AIStrategyPlayerLike } from '../../ai/types'
+import type { LooseRecord, UnknownRecord } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { RuntimeEntity } from '../../types/entities'
 
-type AnyRecord = Record<string, any>
+type EnemyMemory = {
+  instance: LooseRecord
+  label: string
+  ownerLabel?: string
+  family?: string
+  type: string
+  i: number
+  j: number
+  hitPoints?: number
+  totalHitPoints?: number
+  lastSeenAt: number
+  visible: boolean
+}
+
+type ThreatProfile = {
+  hostileUnits: LooseRecord[]
+  hostileMilitary: LooseRecord[]
+  hostileVillagers: LooseRecord[]
+  hostileAnimals: LooseRecord[]
+  hostilePower: number
+  isNearHome: boolean
+  isInVillageCore: boolean
+  isRemoteVillagerIncident: boolean
+  isDirectVillageAssault: boolean
+  isSeriousMilitaryThreat: boolean
+  targetDistanceToHome: number
+  isCriticalBuilding: boolean
+  isBuilding: boolean
+  shouldRecallAssaultUnits: boolean
+  priority: number
+}
+
+type ActiveThreat = {
+  target: LooseRecord
+  lastSeenAt: number
+  attacker: LooseRecord
+  attackerFamily?: string
+  attackerType: string
+  count: number
+  hostiles: LooseRecord[]
+  profile: ThreatProfile
+}
+
+type EnemyMemoryOptions = {
+  family?: string | null
+  freshWithin?: number
+  visibleOnly?: boolean
+}
+
+type StrategySnapshotState = UnknownRecord & {
+  map?: unknown
+  villagers?: unknown
+  maxVillagers?: unknown
+  infantry?: unknown
+  maxInfantry?: unknown
+  infantryUnit?: unknown
+  archers?: unknown
+  maxArcher?: unknown
+  archerUnit?: unknown
+  cavalry?: unknown
+  maxCavalry?: unknown
+  hoplites?: unknown
+  maxHoplite?: unknown
+  notBuiltHouses?: unknown
+}
+
+type UnitExtraOptions = {
+  handleSetDest?: (target: LooseRecord) => void
+  handleIsAttacked?: (attacker: LooseRecord, unit: LooseRecord) => boolean
+}
 
 const DEBUG = false
 
 export class AI extends Player {
-  constructor({ ...props }: AnyRecord, context: AnyRecord) {
+  constructor({ ...props }: UnknownRecord, context: GameContextLike) {
     super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
     this.foundedTrees = new Set()
     this.foundedBerrybushs = new Set()
@@ -32,9 +105,9 @@ export class AI extends Player {
     this.enemyUnitMemory = new Map()
     this.enemyBuildingMemory = new Map()
     this.difficulty = props.difficulty || 'medium'
-    this.strategy = new AIStrategy(this, this.difficulty)
-    this.economy = new AIEconomy(this)
-    this.strategy.applyConfig(this)
+    this.strategy = new AIStrategy(this as unknown as AIStrategyPlayerLike, this.difficulty)
+    this.economy = new AIEconomy(this as unknown as AIStrategyPlayerLike)
+    this.strategy.applyConfig(this as unknown as AIStrategyPlayerLike)
     this.stepDelay = this.difficultyConfig.stepDelayBase
     this._scheduleStep()
     this.selectedUnits = []
@@ -54,7 +127,7 @@ export class AI extends Player {
     return this.context.scheduler?.elapsedMs || 0
   }
 
-  rememberEnemy(enemy: AnyRecord) {
+  rememberEnemy(enemy: LooseRecord) {
     if (!enemy?.label || !this.isEnemy(enemy.owner)) return
     const memoryMap = enemy.family === FAMILY_TYPES.building ? this.enemyBuildingMemory : this.enemyUnitMemory
     const visible = this.views.isVisible(enemy.i, enemy.j)
@@ -73,11 +146,11 @@ export class AI extends Player {
     })
   }
 
-  _refreshEnemyMemory(memoryMap: Map<any, any>) {
+  _refreshEnemyMemory(memoryMap: Map<string, EnemyMemory>) {
     const now = this.getNow()
     for (const [label, memory] of memoryMap) {
       const enemy = memory.instance
-      if (!enemy || enemy.isDead || enemy.isDestroyed || enemy.hitPoints <= 0 || !this.isEnemy(enemy.owner)) {
+      if (!enemy || enemy.isDead || enemy.isDestroyed || (enemy.hitPoints ?? 0) <= 0 || !this.isEnemy(enemy.owner)) {
         memoryMap.delete(label)
         continue
       }
@@ -96,7 +169,7 @@ export class AI extends Player {
     }
   }
 
-  getEnemyMemories({ family = null, freshWithin = Infinity, visibleOnly = false } = {}) {
+  getEnemyMemories({ family = null, freshWithin = Infinity, visibleOnly = false }: EnemyMemoryOptions = {}) {
     const now = this.getNow()
     const sources = []
     if (!family || family === FAMILY_TYPES.unit) sources.push(...this.enemyUnitMemory.values())
@@ -112,7 +185,7 @@ export class AI extends Player {
     return this.getEnemyMemories(options).map(memory => memory.instance)
   }
 
-  reportThreat(target: AnyRecord, attacker: AnyRecord) {
+  reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
     if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
 
     const now = this.getNow()
@@ -162,11 +235,11 @@ export class AI extends Player {
     }
   }
 
-  getVisibleHostilesNear(target: AnyRecord, radius = 10) {
+  getVisibleHostilesNear(target: LooseRecord, radius = 10) {
     return findInstancesInSight(
-      { i: target.i, j: target.j, sight: radius, context: this.context } as any,
-      (instance: AnyRecord) => {
-        if (!instance || instance === target || instance.isDead || instance.isDestroyed || instance.hitPoints <= 0) {
+      { i: target.i, j: target.j, sight: radius, context: this.context } as unknown as Parameters<typeof findInstancesInSight>[0],
+      (instance: LooseRecord) => {
+        if (!instance || instance === target || instance.isDead || instance.isDestroyed || (instance.hitPoints ?? 0) <= 0) {
           return false
         }
         if (instance.family === FAMILY_TYPES.animal) {
@@ -181,7 +254,7 @@ export class AI extends Player {
     )
   }
 
-  isBuildingThreatened(building: AnyRecord) {
+  isBuildingThreatened(building: LooseRecord) {
     const threat = this.threatenedTargets.get(building?.label)
     if (!threat) return false
     if (!building || building.isDead || building.isDestroyed) return false
@@ -191,14 +264,14 @@ export class AI extends Player {
   getActiveThreats() {
     this.cleanupThreats()
     return [...this.threatenedTargets.values()]
-      .filter((threat: AnyRecord) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
-      .map((threat: AnyRecord): AnyRecord => {
+      .filter((threat: ActiveThreat) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
+      .map((threat: ActiveThreat): ActiveThreat => {
         const hostiles = this.getVisibleHostilesNear(threat.target)
         const profile = this.getThreatProfile({ ...threat, hostiles })
         return { ...threat, hostiles, profile }
       })
-      .filter((threat: AnyRecord) => threat.target && threat.hostiles.length > 0)
-      .sort((a: AnyRecord, b: AnyRecord) => b.profile.priority - a.profile.priority)
+      .filter((threat: ActiveThreat) => threat.target && threat.hostiles.length > 0)
+      .sort((a: ActiveThreat, b: ActiveThreat) => b.profile.priority - a.profile.priority)
   }
 
   getHomeAnchor() {
@@ -214,13 +287,13 @@ export class AI extends Player {
     return fallbackVillager || null
   }
 
-  getThreatProfile(threat: AnyRecord) {
+  getThreatProfile(threat: ActiveThreat): ThreatProfile {
     const military = this.strategy.military
     const homeAnchor = this.getHomeAnchor()
-    const hostileUnits = threat.hostiles.filter((hostile: AnyRecord) => hostile.family === FAMILY_TYPES.unit)
-    const hostileMilitary = hostileUnits.filter((hostile: AnyRecord) => hostile.type !== UNIT_TYPES.villager)
-    const hostileVillagers = hostileUnits.filter((hostile: AnyRecord) => hostile.type === UNIT_TYPES.villager)
-    const hostileAnimals = threat.hostiles.filter((hostile: AnyRecord) => hostile.family === FAMILY_TYPES.animal)
+    const hostileUnits = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.unit)
+    const hostileMilitary = hostileUnits.filter((hostile: LooseRecord) => hostile.type !== UNIT_TYPES.villager)
+    const hostileVillagers = hostileUnits.filter((hostile: LooseRecord) => hostile.type === UNIT_TYPES.villager)
+    const hostileAnimals = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.animal)
     const hostilePower = military.getGroupCombatPower(threat.hostiles)
     const targetDistanceToHome = homeAnchor
       ? Math.abs(threat.target.i - homeAnchor.i) + Math.abs(threat.target.j - homeAnchor.j)
@@ -276,7 +349,7 @@ export class AI extends Player {
     }
   }
 
-  getDefensePowerNeed(profile: AnyRecord) {
+  getDefensePowerNeed(profile: ThreatProfile) {
     if (!profile) return 0
 
     if (profile.hostileMilitary.length > 0) {
@@ -304,13 +377,13 @@ export class AI extends Player {
     return 0
   }
 
-  getRecallableAssaultMilitary(assaultMilitary: AnyRecord[], assignedMilitary: Set<any>, threat: AnyRecord) {
+  getRecallableAssaultMilitary(assaultMilitary: LooseRecord[], assignedMilitary: Set<string>, threat: ActiveThreat) {
     const recallMaxRatio = this.difficultyConfig.assaultRecallMaxRatio || 0.5
     const minAssaultGroup = Math.max(2, Math.ceil(this.difficultyConfig.attackThreshold * 0.6))
     const availableAssault = assaultMilitary
-      .filter((unit: AnyRecord) => !assignedMilitary.has(unit.label))
+      .filter((unit: LooseRecord) => unit.label && !assignedMilitary.has(unit.label))
       .sort(
-        (a: AnyRecord, b: AnyRecord) =>
+        (a: LooseRecord, b: LooseRecord) =>
           Math.abs(a.i - threat.target.i) +
           Math.abs(a.j - threat.target.j) -
           (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
@@ -330,17 +403,17 @@ export class AI extends Player {
     assaultMilitary,
     debug = false,
   }: {
-    villagers: AnyRecord[]
-    waitingMilitary: AnyRecord[]
-    assaultMilitary: AnyRecord[]
+    villagers: LooseRecord[]
+    waitingMilitary: LooseRecord[]
+    assaultMilitary: LooseRecord[]
     debug?: boolean
   }) {
     const threats = this.getActiveThreats()
     if (!threats.length) return 0
 
     let actions = 0
-    const assignedMilitary = new Set()
-    const assignedVillagers = new Set()
+    const assignedMilitary = new Set<string>()
+    const assignedVillagers = new Set<string>()
 
     for (const threat of threats) {
       if (!threat.target) continue
@@ -366,16 +439,16 @@ export class AI extends Player {
               : 10
 
       const nearbyMilitary = waitingMilitary
-        .filter((unit: AnyRecord) => !assignedMilitary.has(unit.label))
+        .filter((unit: LooseRecord) => unit.label && !assignedMilitary.has(unit.label))
         .sort(
-          (a: AnyRecord, b: AnyRecord) =>
+          (a: LooseRecord, b: LooseRecord) =>
             Math.abs(a.i - threat.target.i) +
             Math.abs(a.j - threat.target.j) -
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
       const desiredDefensePower = this.getDefensePowerNeed(profile)
-      const chosenMilitary: AnyRecord[] = []
+      const chosenMilitary: LooseRecord[] = []
       let defensePower = 0
 
       for (const soldier of nearbyMilitary) {
@@ -399,20 +472,20 @@ export class AI extends Player {
       }
 
       const nearbyVillagers = villagers
-        .filter((villager: AnyRecord) => {
+        .filter((villager: LooseRecord) => {
           if (assignedVillagers.has(villager.label) || villager === this.scout || villager.isDead) return false
-          if (villager.hitPoints <= villager.totalHitPoints * 0.35) return false
+          if ((villager.hitPoints ?? 0) <= (villager.totalHitPoints ?? 1) * 0.35) return false
           const distance = Math.abs(villager.i - threat.target.i) + Math.abs(villager.j - threat.target.j)
           return distance <= responseRadius
         })
         .sort(
-          (a: AnyRecord, b: AnyRecord) =>
+          (a: LooseRecord, b: LooseRecord) =>
             Math.abs(a.i - threat.target.i) +
             Math.abs(a.j - threat.target.j) -
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
-      const buildersOnSite = nearbyVillagers.filter((villager: AnyRecord) => villager.dest?.label === threat.target.label)
+      const buildersOnSite = nearbyVillagers.filter((villager: LooseRecord) => villager.dest?.label === threat.target.label)
       let villagerDefenseCount = 0
 
       if (!lethalThreat) {
@@ -449,11 +522,11 @@ export class AI extends Player {
         }
       }
 
-      const evacVillagers = buildersOnSite.filter((villager: AnyRecord) => !assignedVillagers.has(villager.label))
+      const evacVillagers = buildersOnSite.filter((villager: LooseRecord) => villager.label && !assignedVillagers.has(villager.label))
       const shouldEvacuateNearbyVillagers = lethalThreat && (profile.isNearHome || profile.isDirectVillageAssault)
       const nearbyWorkersToEvacuate = shouldEvacuateNearbyVillagers
         ? nearbyVillagers.filter(
-            (villager: AnyRecord) => !assignedVillagers.has(villager.label) && villager.dest?.label !== threat.target.label
+            (villager: LooseRecord) => villager.label && !assignedVillagers.has(villager.label) && villager.dest?.label !== threat.target.label
           )
         : []
       for (const villager of nearbyWorkersToEvacuate) {
@@ -508,7 +581,7 @@ export class AI extends Player {
     )
   }
 
-  hasNotReachBuildingLimit(buildingType: string, buildings: AnyRecord[]) {
+  hasNotReachBuildingLimit(buildingType: string, buildings: LooseRecord[]) {
     const currentBuildings = buildings || []
     return (
       !this.maxBuildingByAge[this.age][buildingType] ||
@@ -520,7 +593,7 @@ export class AI extends Player {
     return this.buildings.filter(b => types.includes(b.type))
   }
 
-  getStrategySnapshot(state: AnyRecord) {
+  getStrategySnapshot(state: StrategySnapshotState) {
     return {
       map: state.map,
       otherPlayers: this.enemyPlayers(),
@@ -588,8 +661,8 @@ export class AI extends Player {
 
   getUnitExtraOptions(type: string) {
     const me = this
-    const options: AnyRecord = {
-      handleSetDest: (target: AnyRecord) => {
+    const options: UnitExtraOptions = {
+      handleSetDest: (target: LooseRecord) => {
         const { map } = me.context
         if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
           const buildingType =
@@ -601,12 +674,12 @@ export class AI extends Player {
             me.strategy.canSpendWithReserve(me.config.buildings[buildingType].cost, reserve) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
-            const closestBuilding = getClosestInstance(target as any, [
+            const closestBuilding = getClosestInstance(target as unknown as Parameters<typeof getClosestInstance>[0], [
               ...buildings,
               ...me.buildingsByTypes([BUILDING_TYPES.townCenter]),
-            ])
-            if (!closestBuilding || instancesDistance(closestBuilding, target as any) > 5) {
-              const pos = getPositionInGridAroundInstance(target as any, map.grid, [1, 5], 1)
+            ] as unknown as Parameters<typeof getClosestInstance>[1])
+            if (!closestBuilding || instancesDistance(closestBuilding, target as unknown as Parameters<typeof instancesDistance>[1]) > 5) {
+              const pos = getPositionInGridAroundInstance(target as unknown as Parameters<typeof getPositionInGridAroundInstance>[0], map.grid, [1, 5], 1)
               if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
                 if (DEBUG) console.log(`Building ${buildingType} at:`, pos)
               }
@@ -616,7 +689,7 @@ export class AI extends Player {
       },
     }
     if (type === UNIT_TYPES.villager) {
-      options.handleIsAttacked = (attacker: AnyRecord, unit: AnyRecord) => {
+      options.handleIsAttacked = (attacker: LooseRecord, unit: LooseRecord) => {
         const currentDest = unit.dest
 
         if (attacker.family !== FAMILY_TYPES.animal) {
@@ -682,7 +755,7 @@ export class AI extends Player {
     }
 
     const villagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(this.units)
+    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(this.units as unknown as Parameters<typeof classifyMilitaryUnits>[0])
     const military = [...infantry, ...archers, ...cavalry, ...hoplites]
     const militaryPower = this.strategy.military.getGroupCombatPower(military)
 
@@ -714,17 +787,17 @@ export class AI extends Player {
       )
 
     const notBuiltBuildings = this.buildings
-      .filter(b => !b.isBuilt || (b.hitPoints > 0 && b.hitPoints < b.totalHitPoints))
+      .filter(b => !b.isBuilt || ((b.hitPoints ?? 0) > 0 && (b.hitPoints ?? 0) < (b.totalHitPoints ?? 1)))
       .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
     const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)
 
     // Retreat: critically injured assault soldiers fall back and stop attacking
     const RETREAT_HP_RATIO = 0.3
     military
-      .filter(u => u.assault && u.hitPoints < u.totalHitPoints * RETREAT_HP_RATIO)
+      .filter(u => u.assault && (u.hitPoints ?? 0) < (u.totalHitPoints ?? 1) * RETREAT_HP_RATIO)
       .forEach(u => {
         u.assault = false
-        u.stop()
+        u.stop?.()
       })
 
     // Soldiers: those already on assault vs those waiting at base (exclude low-HP from attack pool)
@@ -734,10 +807,10 @@ export class AI extends Player {
         c.inactif &&
         c.action !== ACTION_TYPES.attack &&
         !c.assault &&
-        c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO
+        (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO
     )
     const assaultMilitary = military.filter(
-      c => c.assault && c.hitPoints >= c.totalHitPoints * RETREAT_HP_RATIO && c.action === ACTION_TYPES.attack
+      c => c.assault && (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO && c.action === ACTION_TYPES.attack
     )
 
     if (DEBUG)
@@ -814,6 +887,6 @@ export class AI extends Player {
       context: { players },
     } = this
     this.context.scheduler.remove(this._stepTaskId)
-    players.splice(players.indexOf(this), 1)
+    players.splice(players.indexOf(this as unknown as (typeof players)[number]), 1)
   }
 }

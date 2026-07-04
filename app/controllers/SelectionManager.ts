@@ -139,9 +139,9 @@ export class SelectionManager {
       if (unit.type === UNIT_TYPES.villager) hasSentVillager = true
       else hasSentSoldier = true
       if (map.grid[finalX] && map.grid[finalX][finalY]) {
-        player.selectedUnits[u].sendTo(map.grid[finalX][finalY])
+        player.selectedUnits[u].sendTo?.(map.grid[finalX][finalY])
       } else {
-        player.selectedUnits[u].sendTo(cell)
+        player.selectedUnits[u].sendTo?.(cell)
       }
     }
     const selectedCommandSound = this.getSelectionCommandSound(player.selectedUnits)

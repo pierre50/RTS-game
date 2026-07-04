@@ -1,11 +1,14 @@
-type AnyRecord = Record<string, any>
+type SelectOption = {
+  label: string | (() => string)
+  value: string | number | boolean
+}
 
 let _cbId = 0
 
 export function buildSelectRow(
   label: string,
-  options: AnyRecord[],
-  value: any,
+  options: SelectOption[],
+  value: string | number | boolean,
   onChange: (value: string) => void
 ): HTMLDivElement {
   const row = document.createElement('div')

@@ -1,10 +1,11 @@
 import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { Player } from './player'
-
-type AnyRecord = Record<string, any>
+import type { UnknownRecord } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { UnitEntity } from '../../types/entities'
 
 export class Human extends Player {
-  constructor({ ...props }: AnyRecord, context: AnyRecord) {
+  constructor({ ...props }: UnknownRecord, context: GameContextLike) {
     super({ ...props, type: PLAYER_TYPES.human }, context)
     this.selectedUnits = []
     this.selectedUnit = null
@@ -12,7 +13,7 @@ export class Human extends Player {
     this.selectedOther = null
   }
 
-  unselectUnit(unit: AnyRecord) {
+  unselectUnit(unit: UnitEntity) {
     const {
       context: { menu },
     } = this
@@ -47,7 +48,7 @@ export class Human extends Player {
       context: { menu },
     } = this
     for (let i = 0; i < this.selectedUnits.length; i++) {
-      this.selectedUnits[i].unselect()
+      this.selectedUnits[i].unselect?.()
     }
     this.selectedUnit = null
     this.selectedUnits = []
@@ -56,11 +57,11 @@ export class Human extends Player {
 
   unselectAll() {
     if (this.selectedBuilding) {
-      this.selectedBuilding.unselect()
+      this.selectedBuilding.unselect?.()
       this.selectedBuilding = null
     }
     if (this.selectedOther) {
-      this.selectedOther.unselect()
+      this.selectedOther.unselect?.()
       this.selectedOther = null
     }
     this.unselectAllUnits()

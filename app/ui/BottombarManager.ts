@@ -6,14 +6,21 @@ import { getWallIcon } from '../lib/buildings/walls'
 import { getTowerType } from '../lib/buildings/towers'
 import { syncHitPointsInfo } from './BaseEntityInterface'
 import { playUiSound } from '../lib/uiSound'
+import type Menu from '../classes/menu'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { PlayerLike } from '../types/player'
+import type { MenuButtonSpec, TooltipContent } from '../types/ui'
+import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
+import type { ResourceAmount } from '../types/common'
+import type { LoadedGameConfig } from '../types/save'
 
-type AnyRecord = Record<string, any>
+const asLedger = (player: PlayerLike): Record<string, number | undefined> => player as unknown as Record<string, number | undefined>
 
 export class BottombarManager {
-  menu: AnyRecord
+  menu: Menu
   activeHotkeys: Map<string, () => void>
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: Menu) {
     this.menu = menu
     this.activeHotkeys = new Map()
   }
@@ -41,41 +48,47 @@ export class BottombarManager {
     this.activeHotkeys.clear()
   }
 
-  generateInfo(selection: AnyRecord): void {
+  generateInfo(selection: RuntimeEntity): void {
     const { menu } = this
     this.resetInfo()
     menu.bottombarInfo.classList.add('active')
-    if (typeof selection.interface.info === 'function') {
+    if (typeof selection.interface?.info === 'function') {
       selection.interface.info(menu.bottombarInfo)
     }
   }
 
-  updateInfo(target: string, action: any): any {
+  updateInfo(target: string, action: string | number | ((element: HTMLElement) => void)): void {
     const { menu } = this
     if (!menu._infoCache) menu._infoCache = new Map()
     let targetElement = menu._infoCache.get(target)
     if (!targetElement) {
-      targetElement = menu.bottombarInfo.querySelector(`.${target}`)
-      if (!targetElement) return
+      const found = menu.bottombarInfo.querySelector<HTMLElement>(`.${target}`)
+      if (!found) return
+      targetElement = found
       menu._infoCache.set(target, targetElement)
     }
     if (typeof action !== 'function') {
       if (target === 'hit-points') {
-        return syncHitPointsInfo(targetElement, action)
+        syncHitPointsInfo(targetElement, action)
+        return
       }
-      targetElement.textContent = action
-      return action
+      targetElement.textContent = String(action)
+      return
     }
-    return action(targetElement)
+    action(targetElement)
   }
 
-  updateButtonContent(target: string, action: any): any {
+  updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
     const { menu } = this
     const targetElement = menu.bottombarMenu.querySelector(`[id=${target}]`)
     if (!targetElement) return
-    const contentElement = targetElement.querySelector('.content')
+    const contentElement = targetElement.querySelector<HTMLElement>('.content')
     if (!contentElement) return
-    return typeof action !== 'function' ? (contentElement.textContent = action) : action(contentElement)
+    if (typeof action !== 'function') {
+      contentElement.textContent = action
+    } else {
+      action(contentElement)
+    }
   }
 
   toggleButtonCancel(target: string, value: boolean): void {
@@ -123,12 +136,18 @@ export class BottombarManager {
     })
   }
 
-  createMenuButton(selection: AnyRecord, btn: AnyRecord, index: number, hotkey: string | null, onNavigate: (children: any) => void): HTMLDivElement {
+  createMenuButton(
+    selection: RuntimeEntity,
+    btn: MenuButtonSpec,
+    index: number,
+    hotkey: string | null,
+    onNavigate: (children: MenuButtonSpec[]) => void
+  ): HTMLDivElement {
     const box = this.createMenuBox(btn.id || `btn-${index}`)
     if (typeof btn.onCreate === 'function') {
       btn.onCreate(selection, box)
     } else {
-      box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : btn.icon))
+      box.appendChild(this.createMenuIcon(typeof btn.icon === 'function' ? btn.icon() : (btn.icon ?? '')))
     }
 
     if (btn.tooltip) {
@@ -136,15 +155,17 @@ export class BottombarManager {
     }
 
     if (!btn.onCreate) {
-      if (btn.children) {
+      const children = btn.children
+      const onClick = btn.onClick
+      if (children) {
         this.makePressable(box, () => {
           this.playUiClick()
-          onNavigate(btn.children)
+          onNavigate(children)
         })
-      } else if (typeof btn.onClick === 'function') {
+      } else if (typeof onClick === 'function') {
         this.makePressable(box, evt => {
           this.playUiClick()
-          btn.onClick(selection, evt)
+          onClick(selection, evt)
         })
       }
     }
@@ -152,7 +173,7 @@ export class BottombarManager {
     return box
   }
 
-  renderBackButton(selection: AnyRecord, element: HTMLElement, parent?: AnyRecord): void {
+  renderBackButton(selection: RuntimeEntity, element: HTMLElement, parent?: MenuButtonSpec[]): void {
     const { player } = this.menu.context
     const back = this.createMenuBox('interfaceBackBtn')
     back.appendChild(this.createMenuIcon('assets/interface/50721/010_50721.png'))
@@ -166,7 +187,7 @@ export class BottombarManager {
         this.playUiClick()
         element.textContent = ''
         this.clearMenuSelection()
-        this.renderMenuLevel(selection, element, parent as any)
+        this.renderMenuLevel(selection, element, parent)
       })
     } else {
       this.makePressable(back, () => {
@@ -179,7 +200,7 @@ export class BottombarManager {
     element.appendChild(back)
   }
 
-  renderMenuLevel(selection: AnyRecord, element: HTMLElement, items: AnyRecord[], parent?: AnyRecord): void {
+  renderMenuLevel(selection: RuntimeEntity, element: HTMLElement, items: MenuButtonSpec[], parent?: MenuButtonSpec[]): void {
     this.activeHotkeys.clear()
     const usedKeys = new Set<string>()
 
@@ -187,7 +208,7 @@ export class BottombarManager {
       .filter(btn => !btn.hide || !btn.hide())
       .forEach((btn, index) => {
         const hotkey = this.assignHotkey(btn.id || '', usedKeys)
-        const onNavigate = (children: any) => {
+        const onNavigate = (children: MenuButtonSpec[]) => {
           element.textContent = ''
           this.clearMenuSelection()
           this.renderMenuLevel(selection, element, children, items)
@@ -198,12 +219,12 @@ export class BottombarManager {
           if (btn.children) {
             this.activeHotkeys.set(hotkey, () => {
               this.playUiClick()
-              onNavigate(btn.children)
+              onNavigate(btn.children!)
             })
           } else if (typeof btn.onClick === 'function') {
             this.activeHotkeys.set(hotkey, () => {
               this.playUiClick()
-              btn.onClick(selection, null)
+              btn.onClick!(selection, null)
             })
           }
         }
@@ -214,26 +235,27 @@ export class BottombarManager {
     }
   }
 
-  getSelectionMenuItems(selection: AnyRecord): AnyRecord[] {
-    if (!selection?.interface) return []
+  getSelectionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
+    if (!selection.interface) return []
     if (selection.family !== FAMILY_TYPES.building) return selection.interface.menu || []
-    if (!selection.isBuilt) return []
-    if (selection.technology) {
+    const building = selection as BuildingEntity
+    if (!building.isBuilt) return []
+    if (building.technology) {
       return [
         {
           icon: 'assets/interface/50721/003_50721.png',
-          id: `${selection.technology}-cancel`,
+          id: `${building.technology}-cancel`,
           tooltip: () => ({
             title: t('cancel'),
             description: t('cancelTechnologyDescription'),
           }),
-          onClick: (sel: AnyRecord) => {
-            sel.cancelTechnology()
+          onClick: (sel: RuntimeEntity) => {
+            ;(sel as BuildingEntity).cancelTechnology?.()
           },
         },
       ]
     }
-    return selection.interface.menu || []
+    return building.interface?.menu || []
   }
 
   updateBottombar(): void {
@@ -244,7 +266,7 @@ export class BottombarManager {
     }
   }
 
-  preloadIcons(player: AnyRecord): void {
+  preloadIcons(player: PlayerLike): void {
     const preload = (src: string) => {
       new Image().src = src
     }
@@ -256,28 +278,28 @@ export class BottombarManager {
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
-    Object.values(player.config.units).forEach((unit: any) => {
+    Object.values(player.config.units).forEach(unit => {
       if (unit.icon) preload(getIconPath(unit.icon))
     })
-    Object.values(player.techs).forEach((config: any) => {
+    Object.values(player.techs).forEach(config => {
       if (config.icon) preload(getIconPath(config.icon))
     })
     Object.keys(player.config.buildings).forEach(type => {
       try {
-        const asset = getBuildingAsset(type, player as any, Assets)
+        const asset = getBuildingAsset(type, player as Parameters<typeof getBuildingAsset>[1], Assets)
         if (asset?.icon) preload(getIconPath(asset.icon as string))
       } catch {}
     })
-    const gameConfig = Assets.cache.get('config')
-    Object.values(gameConfig.resources || {}).forEach((res: any) => {
+    const gameConfig = Assets.cache.get('config') as LoadedGameConfig
+    Object.values((gameConfig.resources || {}) as Record<string, { icon?: string }>).forEach(res => {
       if (res.icon) preload(getIconPath(res.icon))
     })
-    Object.values(gameConfig.animals || {}).forEach((animal: any) => {
+    Object.values((gameConfig.animals || {}) as Record<string, { icon?: string }>).forEach(animal => {
       if (animal.icon) preload(getIconPath(animal.icon))
     })
   }
 
-  setBottombar(selection: AnyRecord | null = null): void {
+  setBottombar(selection: RuntimeEntity | null = null): void {
     const { menu } = this
     const {
       context: { controls, player },
@@ -296,53 +318,55 @@ export class BottombarManager {
     }
   }
 
-  getMessage(cost: AnyRecord): string {
+  getMessage(cost: ResourceAmount): string {
     const { player } = this.menu.context
-    const resource = Object.keys(cost).find(prop => player[prop] < cost[prop])
+    const resource = (Object.keys(cost) as (keyof ResourceAmount)[]).find(
+      prop => player[prop] < (cost[prop] ?? 0)
+    )
     return t('needMore', { resource: t(resource as string) })
   }
 
-  formatCost(cost: AnyRecord): string {
+  formatCost(cost?: ResourceAmount): string {
     return Object.entries(cost || {})
       .map(([resource, amount]) => `${amount} ${t(resource)}`)
       .join(', ')
   }
 
-  getBuildingTooltip(type: string, owner: AnyRecord, config: AnyRecord): AnyRecord {
-    const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as any) : type
+  getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
+    const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
     return {
       title: t(displayType),
       description: t(`${displayType}Description`),
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipBuildTime', { time: config.constructionTime }),
+        t('tooltipBuildTime', { time: config.constructionTime ?? 0 }),
       ],
     }
   }
 
-  getTechnologyTooltip(type: string, config: AnyRecord): AnyRecord {
+  getTechnologyTooltip(type: string, config: TechnologyConfig): TooltipContent {
     return {
       title: t(type),
       description: t(`${type}Description`),
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipResearchTime', { time: config.researchTime }),
+        t('tooltipResearchTime', { time: config.researchTime ?? 0 }),
       ],
     }
   }
 
-  getUnitTooltip(type: string, config: AnyRecord): AnyRecord {
+  getUnitTooltip(type: string, config: UnitConfig): TooltipContent {
     return {
       title: t(type),
       description: t(`${type}Description`),
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipTrainTime', { time: config.trainingTime }),
+        t('tooltipTrainTime', { time: config.trainingTime ?? 0 }),
       ],
     }
   }
 
-  getUnitButton(type: string): AnyRecord {
+  getUnitButton(type: string): MenuButtonSpec {
     const { menu } = this
     const {
       context: { player },
@@ -352,49 +376,50 @@ export class BottombarManager {
       id: type,
       icon: () => getIconPath(unit.icon),
       tooltip: () => this.getUnitTooltip(type, unit),
-      hide: () => (unit.conditions || []).some((condition: any) => !isValidCondition(condition, player)),
-      onClick: (selection: AnyRecord) => {
-        if (canAfford(player, unit.cost)) {
+      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
+      onClick: (selection: RuntimeEntity) => {
+        if (canAfford(asLedger(player), unit.cost)) {
           if (player.population >= player.population_max) {
             menu.showMessage(t('needHouses'), 'warning')
             return
           }
           this.toggleButtonCancel(type, true)
-          selection.buyUnit(type)
+          ;(selection as UnitEntity).buyUnit?.(type)
         } else {
-          menu.showMessage(this.getMessage(unit.cost), 'warning')
+          menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
         }
       },
-      onCreate: (selection: AnyRecord, element: HTMLElement) => {
+      onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
+        const unitSelection = selection as UnitEntity
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'
         const cancel = this.createMenuIcon('assets/interface/50721/003_50721.png')
         cancel.id = `${type}-cancel`
-        if (!selection.queue.some((q: any) => q === type)) {
+        if (!unitSelection.queue?.some(q => q === type)) {
           cancel.classList.add('hidden')
         }
         cancel.addEventListener('pointerup', () => {
           this.playUiClick()
-          selection.cancelUnits(type)
+          unitSelection.cancelUnits?.(type)
         })
         const img = this.createMenuIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
           this.playUiClick()
-          if (canAfford(player, unit.cost)) {
+          if (canAfford(asLedger(player), unit.cost)) {
             if (player.population >= player.population_max) {
               menu.showMessage(t('needHouses'), 'warning')
               return
             }
             this.toggleButtonCancel(type, true)
-            selection.buyUnit(type)
+            unitSelection.buyUnit?.(type)
           } else {
-            menu.showMessage(this.getMessage(unit.cost), 'warning')
+            menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
           }
         })
-        const queue = selection.queue.filter((q: any) => q === type).length
+        const queue = unitSelection.queue?.filter(q => q === type).length ?? 0
         const counter = document.createElement('div')
         counter.classList.add('content')
-        counter.textContent = queue || ''
+        counter.textContent = queue ? String(queue) : ''
         div.appendChild(img)
         div.appendChild(cancel)
         element.appendChild(div)
@@ -403,7 +428,7 @@ export class BottombarManager {
     }
   }
 
-  getRallyPointButton(): AnyRecord {
+  getRallyPointButton(): MenuButtonSpec {
     return {
       id: 'rallyPoint',
       icon: 'assets/interface/50721/006_50721.png',
@@ -411,13 +436,13 @@ export class BottombarManager {
         title: t('rallyPoint'),
         description: t('rallyPointDescription'),
       }),
-      onClick: (selection: AnyRecord) => {
-        this.menu.context.controls.rallyPointController.start(selection)
+      onClick: (selection: RuntimeEntity) => {
+        this.menu.context.controls.rallyPointController?.start(selection)
       },
     }
   }
 
-  getBuildingButton(type: string, ownerOverride: AnyRecord | null = null): AnyRecord {
+  getBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     const { menu } = this
     const {
       context: { controls, player },
@@ -428,29 +453,29 @@ export class BottombarManager {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       icon: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as any) : type
-        const assets = getBuildingAsset(displayType, owner as any, Assets)
+        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+        const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
         return getIconPath(
           type === BUILDING_TYPES.smallWall
-            ? getWallIcon(owner as any, assets.icon as string)
+            ? getWallIcon(owner as Parameters<typeof getWallIcon>[0], assets.icon as string)
             : (assets.icon as string)
         )
       },
-      hide: () => !owner.isBuildingEligible(type),
+      hide: () => !owner.isBuildingEligible?.(type),
       onClick: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as any) : type
-        const assets = getBuildingAsset(displayType, owner as any, Assets)
+        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+        const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
         controls.removeMouseBuilding()
-        if (canAfford(owner, config.cost)) {
-          controls.setMouseBuilding({ ...config, ...assets, type })
+        if (canAfford(asLedger(owner), config.cost)) {
+          controls.setMouseBuilding?.({ ...config, ...assets, type } as unknown as PlaceableBuildingConfig)
         } else {
-          menu.showMessage(this.getMessage(config.cost), 'warning')
+          menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
         }
       },
     }
   }
 
-  getTechnologyButton(type: string): AnyRecord {
+  getTechnologyButton(type: string): MenuButtonSpec {
     const { menu } = this
     const {
       context: { controls, player },
@@ -462,14 +487,14 @@ export class BottombarManager {
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (config.conditions || []).some(
-          (condition: any) => player.technologies.includes(type) || !isValidCondition(condition, player)
+          condition => player.technologies.includes(type) || !isValidCondition(condition, player)
         ),
-      onClick: (selection: AnyRecord) => {
+      onClick: (selection: RuntimeEntity) => {
         controls.removeMouseBuilding()
-        if (canAfford(player, config.cost)) {
-          selection.buyTechnology(type)
+        if (canAfford(asLedger(player), config.cost)) {
+          ;(selection as BuildingEntity).buyTechnology?.(type)
         } else {
-          menu.showMessage(this.getMessage(config.cost), 'warning')
+          menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
         }
       },
     }

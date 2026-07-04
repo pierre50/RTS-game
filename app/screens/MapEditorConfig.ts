@@ -4,19 +4,18 @@ import { playClickSound } from '../lib/uiSound'
 import { buildSelectRow } from '../ui/formUtils'
 import { MAP_EDITOR_SIZES } from '../config/mapSizes'
 import { MAP_TYPES } from '../config/mapTypes'
-
-type AnyRecord = Record<string, any>
+import type { GameConfig } from '../types/save'
 
 const MAP_PATTERNS = [{ label: () => t('editorMapPatternBlank'), value: 'blank' }, ...MAP_TYPES]
 
 export default class MapEditorConfig {
-  onCreate: (config: AnyRecord) => void
+  onCreate: (config: GameConfig) => void
   _onKeyDown: (evt: KeyboardEvent) => void
-  config: AnyRecord
-  _modal: AnyRecord
+  config: GameConfig
+  _modal: Modal
   _destroyed?: boolean
 
-  constructor({ onCreate }: { onCreate: (config: AnyRecord) => void }) {
+  constructor({ onCreate }: { onCreate: (config: GameConfig) => void }) {
     this.onCreate = onCreate
     this._onKeyDown = this._handleKeyDown.bind(this)
     this.config = {
@@ -44,13 +43,13 @@ export default class MapEditorConfig {
     form.className = 'config-form'
 
     form.appendChild(
-      buildSelectRow(t('mapSizeLabel'), MAP_EDITOR_SIZES, this.config.size, (value: any) => {
+      buildSelectRow(t('mapSizeLabel'), MAP_EDITOR_SIZES, this.config.size ?? MAP_EDITOR_SIZES[0].value, value => {
         this.config.size = parseInt(value)
       })
     )
 
     form.appendChild(
-      buildSelectRow(t('editorMapPatternLabel'), MAP_PATTERNS, this.config.mapType, (value: any) => {
+      buildSelectRow(t('editorMapPatternLabel'), MAP_PATTERNS, this.config.mapType ?? 'blank', value => {
         this.config.mapType = value
       })
     )

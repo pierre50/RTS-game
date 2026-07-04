@@ -4,20 +4,21 @@ import { t } from '../lib/lang'
 import { getWallIcon } from '../lib/buildings/walls'
 import { getTowerType, isTower } from '../lib/buildings/towers'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
-
-type AnyRecord = Record<string, any>
+import type { BuildingEntity } from '../types/entities'
+import type { BuildingConfig } from '../types/config'
+import type { MenuLike } from '../types/context'
 
 export class BuildingInterface {
-  building: AnyRecord
+  building: BuildingEntity
 
-  constructor(building: AnyRecord) {
+  constructor(building: BuildingEntity) {
     this.building = building
   }
 
-  renderInfo(element: HTMLElement, data: AnyRecord): void {
+  renderInfo(element: HTMLElement, data: BuildingConfig): void {
     const building = this.building
     this.setDefaultInterface(element, data)
-    if (building.displayPopulation && building.owner.isPlayed && building.isBuilt) {
+    if (building.displayPopulation && building.owner?.isPlayed && building.isBuilt) {
       element.appendChild(this.getPopulationElement())
     }
     element.appendChild(this.getLoadingElement())
@@ -25,29 +26,27 @@ export class BuildingInterface {
 
   getPopulationElement(): HTMLDivElement {
     const building = this.building
+    const owner = building.owner!
     const populationDiv = document.createElement('div')
     populationDiv.classList.add(MENU_INFO_IDS.population)
     populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
     const populationSpan = document.createElement('span')
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent =
-      building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+    populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.population_max)
     populationDiv.appendChild(populationSpan)
     return populationDiv
   }
 
   updateLoading(): void {
     const building = this.building
-    const {
-      context: { menu },
-    } = building
-    if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
+    const menu = (building.context as { menu: MenuLike }).menu
+    if (building.owner?.isPlayed && building.owner.selectedBuilding === building) {
       if (building.loading === 1) {
-        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = this.getLoadingElement().innerHTML))
-      } else if (building.loading > 1) {
-        menu.updateInfo(MENU_INFO_IDS.loadingText, building.loading + '%')
+        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = this.getLoadingElement().innerHTML))
+      } else if (building.loading! > 1) {
+        menu.updateInfo!(MENU_INFO_IDS.loadingText, building.loading + '%')
       } else {
-        menu.updateInfo(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
+        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
       }
     }
   }
@@ -58,25 +57,23 @@ export class BuildingInterface {
     loadingDiv.className = 'building-loading'
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
-    if (building.loading && building.owner.isPlayed) {
+    if (building.loading && building.owner?.isPlayed) {
       loadingDiv.appendChild(createInfoImage('building-loading-icon', getIconPath('009_50731')))
       loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, building.loading + '%'))
     }
     return loadingDiv
   }
 
-  setDefaultInterface(element: HTMLElement, data: AnyRecord): void {
+  setDefaultInterface(element: HTMLElement, data: BuildingConfig): void {
     const building = this.building
-    const {
-      context: { menu },
-    } = building
+    const menu = (building.context as { menu: MenuLike }).menu
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
-    const displayType = isTower(building) ? getTowerType(building.owner) : building.type
-    const icon = building.type === BUILDING_TYPES.smallWall ? getWallIcon(building.owner, data.icon) : data.icon
+    const displayType = (isTower(building) ? getTowerType(building.owner!) : building.type) || building.type
+    const icon = building.type === BUILDING_TYPES.smallWall ? getWallIcon(building.owner!, data.icon) : data.icon || ''
     appendBaseEntityInfo(
       element,
-      t(building.owner.civ),
+      t(building.owner!.civ || ''),
       t(displayType),
       getIconPath(icon),
       hitPoints,
@@ -84,7 +81,7 @@ export class BuildingInterface {
     )
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
-      appendQuantityInfo(element, menu.icons['food'], building.quantity)
+      appendQuantityInfo(element, menu.icons!['food'], building.quantity)
     }
   }
 }

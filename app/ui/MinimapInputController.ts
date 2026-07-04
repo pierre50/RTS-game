@@ -1,15 +1,21 @@
 import { isometricToCartesian } from '../lib'
 import { LONG_CLICK_DURATION, IS_MOBILE, MINIMAP_DRAG_THRESHOLD } from '../constants'
+import type { ControlsLike, MinimapHostLike } from '../types/context'
 
-type AnyRecord = Record<string, any>
+type PointerSession = {
+  id: number
+  startX: number
+  startY: number
+  dragging: boolean
+}
 
 export class MinimapInputController {
-  menu: AnyRecord
+  menu: MinimapHostLike
   longClick: boolean
   mouseHoldTimeout: ReturnType<typeof setTimeout> | null
-  pointerSession: AnyRecord | null
+  pointerSession: PointerSession | null
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: MinimapHostLike) {
     this.menu = menu
     this.longClick = false
     this.mouseHoldTimeout = null
@@ -44,7 +50,7 @@ export class MinimapInputController {
       startY: evt.clientY,
       dragging: false,
     }
-    ;(evt.currentTarget as any)?.setPointerCapture?.(evt.pointerId)
+    ;(evt.currentTarget as Element | null)?.setPointerCapture?.(evt.pointerId)
     this.mouseHoldTimeout = setTimeout(() => {
       if (!this.pointerSession || this.pointerSession.dragging) return
       this.longClick = true
@@ -64,7 +70,7 @@ export class MinimapInputController {
     const movedY = Math.abs(evt.clientY - this.pointerSession.startY)
     if (!this.pointerSession.dragging && Math.max(movedX, movedY) >= MINIMAP_DRAG_THRESHOLD) {
       this.pointerSession.dragging = true
-      clearTimeout(this.mouseHoldTimeout as any)
+      clearTimeout(this.mouseHoldTimeout ?? undefined)
     }
 
     if (this.pointerSession.dragging || this.longClick) {
@@ -79,11 +85,11 @@ export class MinimapInputController {
         context: { player, controls, map },
       },
     } = this
-    clearTimeout(this.mouseHoldTimeout as any)
+    clearTimeout(this.mouseHoldTimeout ?? undefined)
     if (!this.pointerSession || evt.pointerId !== this.pointerSession.id) return
     const wasDrag = this.pointerSession.dragging
     this.pointerSession = null
-    ;(evt.currentTarget as any)?.releasePointerCapture?.(evt.pointerId)
+    ;(evt.currentTarget as Element | null)?.releasePointerCapture?.(evt.pointerId)
 
     if (controls.mouseRectangle || wasDrag || this.longClick) {
       this.longClick = false
@@ -93,7 +99,7 @@ export class MinimapInputController {
     const { x, y } = this.getMinimapPointer(evt)
 
     if (controls.mouseBuilding) {
-      controls.setCamera(x, y)
+      controls.setCamera?.(x, y)
       return
     }
 
@@ -102,15 +108,15 @@ export class MinimapInputController {
       const i = Math.min(Math.max(pos[0], 0), map.size)
       const j = Math.min(Math.max(pos[1], 0), map.size)
       if (map.grid[i] && map.grid[i][j]) {
-        controls.sendUnits(map.grid[i][j])
+        controls.sendUnits?.(map.grid[i][j])
       }
     } else {
-      controls.setCamera(x, y)
+      controls.setCamera?.(x, y)
     }
   }
 
   onPointerCancel = (): void => {
-    clearTimeout(this.mouseHoldTimeout as any)
+    clearTimeout(this.mouseHoldTimeout ?? undefined)
     this.longClick = false
     this.pointerSession = null
   }
@@ -125,7 +131,7 @@ export class MinimapInputController {
   }
 
   updateToggleIcon(): void {
-    this.menu.toggle.textContent = 'M'
+    if (this.menu.toggle) this.menu.toggle.textContent = 'M'
   }
 
   getMinimapPointer(evt: PointerEvent): { x: number; y: number } {
@@ -137,13 +143,13 @@ export class MinimapInputController {
     }
   }
 
-  moveCameraFromMinimap(evt: PointerEvent, controls: AnyRecord): void {
+  moveCameraFromMinimap(evt: PointerEvent, controls: ControlsLike): void {
     const { x, y } = this.getMinimapPointer(evt)
-    controls.setCamera(x, y)
+    controls.setCamera?.(x, y)
   }
 
   destroy(): void {
-    clearTimeout(this.mouseHoldTimeout as any)
+    clearTimeout(this.mouseHoldTimeout ?? undefined)
     this.menu.bottombarMap?.removeEventListener('pointerdown', this.onPointerDown)
     this.menu.bottombarMap?.removeEventListener('pointermove', this.onPointerMove)
     this.menu.bottombarMap?.removeEventListener('pointerup', this.onPointerUp)

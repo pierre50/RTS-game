@@ -1,6 +1,5 @@
 import { UNIT_TYPES } from '../constants'
-
-type AnyRecord = Record<string, any>
+import type { AIEntityLike } from './types'
 
 export const INFANTRY_TECH_UPGRADES = [
   ['LongSword', 'LongSwordsman'],
@@ -22,27 +21,27 @@ export function getBestUnitFromTechs(technologies: string[], upgrades: string[][
   return found ? found[1] : fallback
 }
 
-export function isAliveUnit(unit: AnyRecord): boolean {
-  return unit.hitPoints > 0
+export function isAliveUnit(unit: Pick<AIEntityLike, 'hitPoints'>): boolean {
+  return (unit.hitPoints ?? 0) > 0
 }
 
-export function isInfantryUnit(unit: AnyRecord): boolean {
+export function isInfantryUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && INFANTRY_UNIT_TYPES.includes(unit.type)
 }
 
-export function isArcherUnit(unit: AnyRecord): boolean {
+export function isArcherUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && ARCHER_UNIT_TYPES.includes(unit.type)
 }
 
-export function isCavalryUnit(unit: AnyRecord): boolean {
+export function isCavalryUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && unit.type === UNIT_TYPES.scout
 }
 
-export function isHopliteUnit(unit: AnyRecord): boolean {
+export function isHopliteUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && unit.type === 'Hoplite'
 }
 
-export function classifyMilitaryUnits(units: AnyRecord[]) {
+export function classifyMilitaryUnits<TUnit extends AIEntityLike>(units: TUnit[]) {
   return {
     infantry: units.filter(isInfantryUnit),
     archers: units.filter(isArcherUnit),

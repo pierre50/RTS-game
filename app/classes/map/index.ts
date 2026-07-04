@@ -252,6 +252,10 @@ export default class Map extends Container {
     return this.mapGeneration.stylishMap(options)
   }
 
+  prepareTerrainForSavedState(options?: UnknownRecord): Promise<void> {
+    return this.mapGeneration.prepareTerrainForSavedState(options)
+  }
+
   generatePlayers(playersConfig?: Array<Partial<PlayerLike> & UnknownRecord> | null): PlayerLike[] {
     return this.mapGeneration.generatePlayers(playersConfig) as PlayerLike[]
   }

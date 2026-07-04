@@ -10,10 +10,12 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
+import type { LooseRecord, UnknownRecord } from '../../types/common'
+import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
+import type { Building } from './index'
 
-type AnyRecord = Record<string, any>
-
-function sendUnitToEntity(unit: AnyRecord, target: AnyRecord): any {
+function sendUnitToEntity(unit: LooseRecord, target: RuntimeEntity & LooseRecord): void {
   if (target.family === FAMILY_TYPES.resource) {
     const sendToFunc = `sendTo${target.category || target.type}`
     if (typeof unit[sendToFunc] === 'function') return unit[sendToFunc](target)
@@ -37,14 +39,14 @@ function sendUnitToEntity(unit: AnyRecord, target: AnyRecord): any {
 import { t } from '../../lib/lang'
 
 export class BuildingProduction {
-  building: AnyRecord
+  building: Building & LooseRecord
 
-  constructor(building: AnyRecord) {
+  constructor(building: Building & LooseRecord) {
     this.building = building
   }
 
-  placeUnit(type: string, extra?: AnyRecord): boolean {
-    const building = this.building
+  placeUnit(type: string, extra?: UnknownRecord): boolean {
+    const building = this.building as LooseRecord
     const {
       context: { map, menu },
     } = building
@@ -56,8 +58,8 @@ export class BuildingProduction {
         building.j,
         building.size,
         map.grid,
-        (cell: AnyRecord) => cell.category === 'Water' && !cell.solid,
-        (items: AnyRecord[]) => map.randomItem(items)
+        (cell: RuntimeCell) => cell.category === 'Water' && !cell.solid,
+        (items: RuntimeCell[]) => map.randomItem(items)
       )
     } else {
       spawnCell = getFreeCellAroundPoint(
@@ -65,8 +67,8 @@ export class BuildingProduction {
         building.j,
         building.size,
         map.grid,
-        (cell: AnyRecord) => cell.category !== 'Water' && !cell.solid,
-        (items: AnyRecord[]) => map.randomItem(items)
+        (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
+        (items: RuntimeCell[]) => map.randomItem(items)
       )
     }
     if (!spawnCell || building.owner.population >= Math.min(POPULATION_MAX, building.owner.population_max)) return false
@@ -94,8 +96,8 @@ export class BuildingProduction {
     return true
   }
 
-  buyUnit(type: string, alreadyPaid = false, force = false, extra?: AnyRecord): boolean | undefined {
-    const building = this.building
+  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnknownRecord): boolean | undefined {
+    const building = this.building as LooseRecord
     const {
       context: { menu, map },
     } = building
@@ -176,7 +178,7 @@ export class BuildingProduction {
   }
 
   cancelUnits(type: string): boolean {
-    const building = this.building
+    const building = this.building as LooseRecord
     const unit = building.owner.config.units[type]
     if (!unit) return false
 
@@ -198,7 +200,7 @@ export class BuildingProduction {
   }
 
   cancelTechnology(): boolean {
-    const building = this.building
+    const building = this.building as LooseRecord
     const { menu } = building.context
     if (!building.technology) return false
 
@@ -214,7 +216,7 @@ export class BuildingProduction {
   }
 
   upgrade(type: string): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const data = building.owner.config.buildings[type]
     building.type = type
     building.hitPoints = data.totalHitPoints - (building.totalHitPoints - building.hitPoints)
@@ -231,7 +233,7 @@ export class BuildingProduction {
   }
 
   buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
-    const building = this.building
+    const building = this.building as LooseRecord
     const {
       context: { menu, map },
     } = building

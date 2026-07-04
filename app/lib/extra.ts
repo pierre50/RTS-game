@@ -4,12 +4,15 @@ import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
 import { t } from './lang'
 import type { GridPosition } from '../types/grid'
+import type { Ticker } from 'pixi.js'
 
 type Direction = 'south' | 'southwest' | 'west' | 'northwest' | 'north' | 'northeast' | 'east' | 'southeast'
 type DirectionOrder = Direction[]
 type TextureMap<TTexture = unknown> = Record<string, TTexture>
-type UnknownRecord = Record<string, any>
+type UnknownRecord = Record<string, unknown>
 type TimeoutId = ReturnType<typeof window.setTimeout> | null
+type DestroyOption = boolean | { children?: boolean; texture?: boolean; textureSource?: boolean; context?: boolean }
+type DefaultAnchor = { x: number; y: number }
 
 const FIVE_DIRECTION_ORDER: DirectionOrder = ['south', 'southwest', 'west', 'northwest', 'north']
 const EIGHT_DIRECTION_ORDER: DirectionOrder = [
@@ -184,14 +187,14 @@ export function getSailAnimationFrames<TTexture>(
   }
 }
 
-type AnimatedSpriteLike<TTexture = any> = {
+type AnimatedSpriteLike<TTexture = unknown> = {
   _usesAppTicker?: boolean
   anchor: { set: (x: number, y: number) => void }
   animationSpeed?: number
   autoUpdate?: boolean
   currentFrame: number
   destroyed?: boolean
-  destroy: (...args: any[]) => unknown
+  destroy: (options?: DestroyOption) => unknown
   gotoAndPlay: (frame: number) => void
   onComplete?: unknown
   onFrameChange?: ((frame: number) => void) | null
@@ -202,8 +205,8 @@ type AnimatedSpriteLike<TTexture = any> = {
   renderable?: boolean
   scale: { x: number }
   stop: () => void
-  textures: Array<TTexture & { defaultAnchor?: { x: number; y: number } }>
-  update: (deltaTime: any) => void
+  textures: TTexture[]
+  update: (ticker: Ticker) => void
   visible?: boolean
 }
 
@@ -218,9 +221,26 @@ type DisplayObjectLike = {
   visible?: boolean
 }
 
-type SheetLike<TTexture = any> = {
+type SheetLike<TTexture = unknown> = {
   data: { animationSpeed?: number }
-  textures: TextureMap<TTexture & { defaultAnchor?: { x: number; y: number } }>
+  textures: TextureMap<TTexture>
+}
+
+function getDefaultAnchor(texture: unknown): DefaultAnchor | null {
+  if (typeof texture !== 'object' || texture === null) return null
+  const directAnchor = (texture as { defaultAnchor?: unknown }).defaultAnchor
+  if (isDefaultAnchor(directAnchor)) return directAnchor
+  const frameTexture = (texture as { texture?: { defaultAnchor?: unknown } }).texture
+  return isDefaultAnchor(frameTexture?.defaultAnchor) ? frameTexture.defaultAnchor : null
+}
+
+function isDefaultAnchor(value: unknown): value is DefaultAnchor {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { x?: unknown }).x === 'number' &&
+    typeof (value as { y?: unknown }).y === 'number'
+  )
 }
 
 type UnitTextureInstance = UnknownRecord & {
@@ -251,12 +271,14 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     }
     instance.currentSheet = SHEET_TYPES.walking
     instance.sprite.stop()
-    instance.sprite.anchor.set(
-      instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.x,
-      instance.sprite.textures[instance.sprite.currentFrame].defaultAnchor.y
-    )
+    const currentTexture = instance.sprite.textures[instance.sprite.currentFrame]
+    const defaultAnchor = getDefaultAnchor(currentTexture)
+    if (defaultAnchor) {
+      instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+    }
     return
   }
+  const selectedSheet = instance[sheet] as SheetLike
   if (!sheetToReset.includes(sheet)) {
     instance.sprite.onLoop = null
     instance.sprite.onFrameChange = null
@@ -267,7 +289,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   const directionCount = instance.sheetDirectionCounts?.[sheet] ?? null
   const directionOrderOverride = instance.sheetDirectionOrders?.[sheet] ?? null
   if (directionCount === 9) {
-    const names = Object.keys(instance[sheet].textures).sort((a, b) => {
+    const names = Object.keys(selectedSheet.textures).sort((a, b) => {
       const na = parseInt(a.split('_')[0], 10)
       const nb = parseInt(b.split('_')[0], 10)
       return na - nb
@@ -278,17 +300,17 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     const end = start + framesPerDirection
 
     instance.sprite.scale.x = mirrored ? -1 : 1
-    instance.sprite.textures = names.slice(start, end).map(name => instance[sheet].textures[name])
-    instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
+    instance.sprite.textures = names.slice(start, end).map(name => selectedSheet.textures[name])
+    instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
     goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
     return
   }
-  const directionOrder = getSheetDirectionOrder(instance[sheet].textures, directionCount, directionOrderOverride)
+  const directionOrder = getSheetDirectionOrder(selectedSheet.textures, directionCount, directionOrderOverride)
 
   if (directionOrder?.length === 8) {
     instance.sprite.scale.x = 1
     instance.sprite.textures = getAnimationFrames(
-      instance[sheet].textures,
+      selectedSheet.textures,
       direction,
       directionCount,
       directionOrderOverride
@@ -298,7 +320,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
       case 'southeast':
         instance.sprite.scale.x = -1
         instance.sprite.textures = getAnimationFrames(
-          instance[sheet].textures,
+          selectedSheet.textures,
           'southwest',
           directionCount,
           directionOrderOverride
@@ -307,7 +329,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
       case 'northeast':
         instance.sprite.scale.x = -1
         instance.sprite.textures = getAnimationFrames(
-          instance[sheet].textures,
+          selectedSheet.textures,
           'northwest',
           directionCount,
           directionOrderOverride
@@ -316,7 +338,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
       case 'east':
         instance.sprite.scale.x = -1
         instance.sprite.textures = getAnimationFrames(
-          instance[sheet].textures,
+          selectedSheet.textures,
           'west',
           directionCount,
           directionOrderOverride
@@ -325,14 +347,14 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
       default:
         instance.sprite.scale.x = 1
         instance.sprite.textures = getAnimationFrames(
-          instance[sheet].textures,
+          selectedSheet.textures,
           direction,
           directionCount,
           directionOrderOverride
         )
     }
   }
-  instance.sprite.animationSpeed = instance[sheet].data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
+  instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 
@@ -351,7 +373,7 @@ export function displayObjectCanUpdateAnimation(displayObject?: DisplayObjectLik
 
 export function bindAnimatedSpriteToTicker<TSprite extends AnimatedSpriteLike | null | undefined>(
   sprite: TSprite,
-  app?: { ticker?: { add: (tick: (deltaTime: any) => void) => void; remove: (tick: (deltaTime: any) => void) => void } }
+  app?: { ticker?: { add: (tick: (ticker: Ticker) => void) => void; remove: (tick: (ticker: Ticker) => void) => void } }
 ): TSprite {
   const ticker = app?.ticker
   if (!sprite || !ticker || sprite._usesAppTicker) {
@@ -360,17 +382,17 @@ export function bindAnimatedSpriteToTicker<TSprite extends AnimatedSpriteLike | 
 
   sprite.autoUpdate = false
 
-  const tick = (deltaTime: any) => {
+  const tick = (ticker: Ticker) => {
     if (displayObjectCanUpdateAnimation(sprite)) {
-      sprite.update(deltaTime)
+      sprite.update(ticker)
     }
   }
 
   const originalDestroy = sprite.destroy.bind(sprite)
-  sprite.destroy = (...args) => {
+  sprite.destroy = (options?: DestroyOption) => {
     ticker.remove(tick)
     sprite._usesAppTicker = false
-    return originalDestroy(...args)
+    return originalDestroy(options)
   }
 
   sprite._usesAppTicker = true
@@ -378,7 +400,7 @@ export function bindAnimatedSpriteToTicker<TSprite extends AnimatedSpriteLike | 
   return sprite
 }
 
-export function filterObject<T extends UnknownRecord, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+export function filterObject<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
   if (typeof obj !== 'object' || obj === null) {
     throw new Error('Expected an object to filter.')
   }
@@ -693,13 +715,18 @@ export const updateObject = (target: UnknownRecord, operation: NumericOperation)
     throw new Error('Invalid operation: key, op, and value are required.')
   }
 
+  function isRecord(value: unknown): value is UnknownRecord {
+    return typeof value === 'object' && value !== null
+  }
+
   function setToValue(obj: UnknownRecord, value: number, path: string): void {
     const keys = path.split('.')
     for (let i = 0; i < keys.length - 1; i++) {
-      if (!obj[keys[i]]) {
+      const next = obj[keys[i]]
+      if (!isRecord(next)) {
         throw new Error(`Path not found: ${keys.slice(0, i + 1).join('.')}`)
       }
-      obj = obj[keys[i]]
+      obj = next
     }
     obj[keys[keys.length - 1]] = value
   }
@@ -710,13 +737,20 @@ export const updateObject = (target: UnknownRecord, operation: NumericOperation)
       : operation.key
 
   const keys = resolvedKey.split('.')
-  let result: any = target
+  let result: unknown = target
 
   for (const key of keys) {
+    if (!isRecord(result)) {
+      throw new Error(`Key not found: ${resolvedKey}`)
+    }
     if (result[key] === undefined) {
       throw new Error(`Key not found: ${resolvedKey}`)
     }
     result = result[key]
+  }
+
+  if (typeof result !== 'number') {
+    throw new Error(`Value is not numeric: ${resolvedKey}`)
   }
 
   switch (operation.op) {

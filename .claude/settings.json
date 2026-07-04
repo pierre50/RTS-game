@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(read -r f)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import PIL; print\\(PIL.__version__\\)\")",
+      "Bash(npx knip *)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(timeout 100 pnpm build:dev)",
+      "Bash(md5 app/classes/unit/UnitActions.ts)",
+      "Bash(grep -n \"unit.context$\\\\|unit.context\\)\" app/classes/unit/UnitActions.ts)"
+    ]
+  }
+}

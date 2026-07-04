@@ -1,17 +1,17 @@
 import { Assets } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
+import type { UnknownRecord } from '../types/common'
+import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 
 const MAX_MAP_EDGE = 513
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
 
-type AnyRecord = Record<string, any>
-
 function fail(message: string): never {
   throw new Error(message)
 }
 
-function isObject(value: unknown): value is AnyRecord {
+function isObject(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -25,7 +25,7 @@ function validateGridPosition(value: unknown, size: number, label: string): void
   }
 }
 
-function validateArray(value: unknown, label: string): asserts value is any[] {
+function validateArray(value: unknown, label: string): asserts value is unknown[] {
   if (!Array.isArray(value)) {
     fail(`Invalid save file: ${label} must be an array.`)
   }
@@ -46,7 +46,7 @@ function validateViewCell(cell: unknown, i: number, j: number): void {
   validateArray(cell.viewBy ?? [], `view cell ${i},${j} viewBy`)
 }
 
-function validateEntityPosition(entity: unknown, size: number, label: string): asserts entity is AnyRecord {
+function validateEntityPosition(entity: unknown, size: number, label: string): asserts entity is UnknownRecord {
   if (!isObject(entity)) fail(`Invalid save file: ${label} is invalid.`)
   validateGridPosition(entity.i, size, `${label}.i`)
   validateGridPosition(entity.j, size, `${label}.j`)
@@ -106,7 +106,10 @@ function validateAIState(aiState: unknown, playerIndex: number): void {
   if (aiState == null) return
   if (!isObject(aiState)) fail(`Invalid save file: player ${playerIndex} AI state is invalid.`)
 
-  if (aiState.phase != null && !['economy', 'military_build', 'attack'].includes(aiState.phase)) {
+  if (
+    aiState.phase != null &&
+    (typeof aiState.phase !== 'string' || !['economy', 'military_build', 'attack'].includes(aiState.phase))
+  ) {
     fail(`Invalid save file: player ${playerIndex} AI phase is invalid.`)
   }
   validateOptionalFiniteNumber(aiState.savedAt, `player ${playerIndex} AI savedAt`)
@@ -117,12 +120,12 @@ function validateAIState(aiState: unknown, playerIndex: number): void {
   validateArray(aiState.threatenedTargets ?? [], `player ${playerIndex} AI threatenedTargets`)
 }
 
-function getLoadedConfig(): AnyRecord {
+function getLoadedConfig(): LoadedGameConfig {
   const config = Assets.cache.get('config')
   if (!config) {
     fail('Invalid save file: game config is not loaded.')
   }
-  return config
+  return config as LoadedGameConfig
 }
 
 function validateMap(map: unknown): number {
@@ -132,18 +135,37 @@ function validateMap(map: unknown): number {
   }
   const size = map.length
   for (let i = 0; i < size; i++) {
-    validateArray(map[i], `map row ${i}`)
-    if (map[i].length !== size) {
+    const row = map[i]
+    validateArray(row, `map row ${i}`)
+    if (row.length !== size) {
       fail('Invalid save file: map must be square.')
     }
     for (let j = 0; j < size; j++) {
-      validateCell(map[i][j], i, j)
+      validateCell(row[j], i, j)
     }
   }
   return size
 }
 
-function validatePlayers(players: unknown, size: number, config: AnyRecord): void {
+function validateSeedWorld(data: UnknownRecord, legacyMapSize: number | null = null): number {
+  const world = isObject(data.world) ? data.world : {}
+  const config = isObject(data.config) ? data.config : {}
+  const rawSize = world.size ?? config.size ?? (legacyMapSize != null ? legacyMapSize - 1 : null)
+  if (typeof rawSize !== 'number' || !Number.isInteger(rawSize) || rawSize < 1 || rawSize >= MAX_MAP_EDGE) {
+    fail('Invalid save file: map size is unsupported.')
+  }
+  const seed = world.seed ?? config.seed
+  if (typeof seed !== 'number' || !Number.isFinite(seed)) {
+    fail('Invalid save file: map seed is invalid.')
+  }
+  const mapType = world.mapType ?? config.mapType
+  if (mapType != null && (typeof mapType !== 'string' || !mapType)) {
+    fail('Invalid save file: map type is invalid.')
+  }
+  return rawSize + 1
+}
+
+function validatePlayers(players: unknown, size: number, config: LoadedGameConfig): void {
   validateArray(players, 'players')
   if (!players.length) fail('Invalid save file: players list is empty.')
 
@@ -151,7 +173,7 @@ function validatePlayers(players: unknown, size: number, config: AnyRecord): voi
   for (let index = 0; index < players.length; index++) {
     const player = players[index]
     if (!isObject(player)) fail(`Invalid save file: player ${index} is invalid.`)
-    if (![PLAYER_TYPES.human, PLAYER_TYPES.ai].includes(player.type)) {
+    if (typeof player.type !== 'string' || ![PLAYER_TYPES.human, PLAYER_TYPES.ai].includes(player.type)) {
       fail(`Invalid save file: player ${index} has an unsupported type.`)
     }
     if (typeof player.isPlayed !== 'boolean') {
@@ -160,39 +182,44 @@ function validatePlayers(players: unknown, size: number, config: AnyRecord): voi
     if (player.isPlayed) playedPlayers++
     if (player.type === PLAYER_TYPES.ai) validateAIState(player.aiState, index)
 
-    validateArray(player.buildings ?? [], `player ${index} buildings`)
-    validateArray(player.units ?? [], `player ${index} units`)
-    validateArray(player.corpses ?? [], `player ${index} corpses`)
-    validateArray(player.views ?? [], `player ${index} views`)
-    if (player.views.length !== size) {
+    const buildings = player.buildings ?? []
+    const units = player.units ?? []
+    const corpses = player.corpses ?? []
+    const views = player.views ?? []
+    validateArray(buildings, `player ${index} buildings`)
+    validateArray(units, `player ${index} units`)
+    validateArray(corpses, `player ${index} corpses`)
+    validateArray(views, `player ${index} views`)
+    if (views.length !== size) {
       fail(`Invalid save file: player ${index} views have an invalid size.`)
     }
 
     for (let i = 0; i < size; i++) {
-      validateArray(player.views[i], `player ${index} view row ${i}`)
-      if (player.views[i].length !== size) {
+      const viewRow = views[i]
+      validateArray(viewRow, `player ${index} view row ${i}`)
+      if (viewRow.length !== size) {
         fail(`Invalid save file: player ${index} views must match the map size.`)
       }
       for (let j = 0; j < size; j++) {
-        validateViewCell(player.views[i][j], i, j)
+        validateViewCell(viewRow[j], i, j)
       }
     }
 
-    player.buildings.forEach((building: unknown, buildingIndex: number) => {
+    buildings.forEach((building: unknown, buildingIndex: number) => {
       validateEntityPosition(building, size, `player ${index} building ${buildingIndex}`)
       if (typeof building.type !== 'string' || !config.buildings?.[building.type]) {
         fail(`Invalid save file: player ${index} building ${buildingIndex} has an unsupported type.`)
       }
     })
 
-    player.units.forEach((unit: unknown, unitIndex: number) => {
+    units.forEach((unit: unknown, unitIndex: number) => {
       validateEntityPosition(unit, size, `player ${index} unit ${unitIndex}`)
       if (typeof unit.type !== 'string' || !config.units?.[unit.type]) {
         fail(`Invalid save file: player ${index} unit ${unitIndex} has an unsupported type.`)
       }
     })
 
-    player.corpses.forEach((corpse: unknown, corpseIndex: number) => {
+    corpses.forEach((corpse: unknown, corpseIndex: number) => {
       validateEntityPosition(corpse, size, `player ${index} corpse ${corpseIndex}`)
       if (typeof corpse.type !== 'string' || !config.units?.[corpse.type]) {
         fail(`Invalid save file: player ${index} corpse ${corpseIndex} has an unsupported type.`)
@@ -205,7 +232,7 @@ function validatePlayers(players: unknown, size: number, config: AnyRecord): voi
   }
 }
 
-function validateResources(resources: unknown, size: number, config: AnyRecord): void {
+function validateResources(resources: unknown, size: number, config: LoadedGameConfig): void {
   validateArray(resources, 'resources')
   resources.forEach((resource, index) => {
     validateEntityPosition(resource, size, `resource ${index}`)
@@ -215,7 +242,7 @@ function validateResources(resources: unknown, size: number, config: AnyRecord):
   })
 }
 
-function validateAnimals(animals: unknown, size: number, config: AnyRecord): void {
+function validateAnimals(animals: unknown, size: number, config: LoadedGameConfig): void {
   validateArray(animals, 'animals')
   animals.forEach((animal, index) => {
     const label = `animal ${index}`
@@ -226,11 +253,19 @@ function validateAnimals(animals: unknown, size: number, config: AnyRecord): voi
 
     const definition = config.animals[animal.type]
     validateOptionalFiniteNumber(animal.quantity, `${label}.quantity`)
-    if (animal.quantity != null && (animal.quantity < 0 || animal.quantity > definition.totalQuantity)) {
+    if (
+      typeof animal.quantity === 'number' &&
+      typeof definition.totalQuantity === 'number' &&
+      (animal.quantity < 0 || animal.quantity > definition.totalQuantity)
+    ) {
       fail(`Invalid save file: ${label}.quantity is out of range.`)
     }
     validateOptionalFiniteNumber(animal.hitPoints, `${label}.hitPoints`)
-    if (animal.hitPoints != null && (animal.hitPoints < 0 || animal.hitPoints > definition.totalHitPoints)) {
+    if (
+      typeof animal.hitPoints === 'number' &&
+      typeof definition.totalHitPoints === 'number' &&
+      (animal.hitPoints < 0 || animal.hitPoints > definition.totalHitPoints)
+    ) {
       fail(`Invalid save file: ${label}.hitPoints is out of range.`)
     }
 
@@ -262,13 +297,14 @@ function validateCamera(camera: unknown): void {
   }
 }
 
-export function validateSaveData(data: unknown): AnyRecord {
+export function validateSaveData(data: unknown): SaveRecord {
   if (!isObject(data)) {
     fail('Invalid save file: expected an object.')
   }
 
   const config = getLoadedConfig()
-  const size = validateMap(data.map)
+  const legacyMapSize = Array.isArray(data.map) ? validateMap(data.map) : null
+  const size = validateSeedWorld(data, legacyMapSize)
   validateCamera(data.camera)
   validatePlayers(data.players, size, config)
   validateResources(data.resources, size, config)
@@ -282,11 +318,11 @@ export function validateSaveData(data: unknown): AnyRecord {
     fail('Invalid save file: config is invalid.')
   }
 
-  return data
+  return data as SerializedSave
 }
 
-export function parseSaveJSON(raw: string): AnyRecord {
-  let parsed
+export function parseSaveJSON(raw: string): SaveRecord {
+  let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch {

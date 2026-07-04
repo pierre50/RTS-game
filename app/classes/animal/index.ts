@@ -16,20 +16,25 @@ import {
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
+import type { AnimalEntity } from '../../types/entities'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
-
-type AnyRecord = Record<string, any>
+import type { FederatedPointerEvent, Texture } from 'pixi.js'
+import type { UnknownRecord } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { AnimalConfig } from '../../types/config'
+import type { RuntimeEntity } from '../../types/entities'
+import type { LooseRecord } from '../../types/common'
 
 export class Animal extends Instance {
-  animalInterface: AnyRecord
+  animalInterface: AnimalInterface
   animalLifecycle: AnimalLifecycle
   animalMovement: AnimalMovement
   animalCombat: AnimalCombat
   animalBehavior: AnimalBehavior
 
-  constructor(options: AnyRecord, context: AnyRecord) {
+  constructor(options: UnknownRecord, context: GameContextLike) {
     super(context)
     this.selectionFactor = 0.5
 
@@ -37,7 +42,7 @@ export class Animal extends Instance {
       context: { map },
     } = this
     this.family = FAMILY_TYPES.animal
-    this.animalInterface = new AnimalInterface(this)
+    this.animalInterface = new AnimalInterface(this as unknown as AnimalEntity)
     this.animalLifecycle = new AnimalLifecycle(this)
     this.animalMovement = new AnimalMovement(this)
     this.animalCombat = new AnimalCombat(this)
@@ -53,9 +58,9 @@ export class Animal extends Instance {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.isFleeing = false
-    this.x = null as any
-    this.y = null as any
-    this.z = null as any
+    this.x = null as unknown as number
+    this.y = null as unknown as number
+    this.z = null as unknown as number
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.animals[this.type])
@@ -67,7 +72,7 @@ export class Animal extends Instance {
     this.x = this.x ?? map.grid[this.i][this.j].x
     this.y = this.y ?? map.grid[this.i][this.j].y
     this.z = this.z ?? map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as any)
+    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
 
     this.currentCell = map.grid[this.i][this.j]
     this.currentCell.place(this)
@@ -82,7 +87,7 @@ export class Animal extends Instance {
     }
 
     this.interface = {
-      info: (element: any) => {
+      info: (element: HTMLElement) => {
         const data = this.owner.config.animals[this.type]
         this.setDefaultInterface(element, data)
       },
@@ -90,7 +95,7 @@ export class Animal extends Instance {
 
     this.allowMove = false
     this.eventMode = 'static'
-    this.sprite = new AnimatedSprite(getAnimationFrames(this.standingSheet.textures, 'south') as any)
+    this.sprite = new AnimatedSprite(getAnimationFrames(this.standingSheet.textures, 'south') as Texture[])
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
@@ -105,7 +110,7 @@ export class Animal extends Instance {
     }
     this.sprite.currentFrame = this.currentFrame
 
-    this.on('pointerup', evt => {
+    this.on('pointerup', (evt: FederatedPointerEvent) => {
       const {
         context: { controls, player, menu, editor },
       } = this
@@ -145,12 +150,15 @@ export class Animal extends Instance {
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
         if (
           getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
-          instancesDistance(player.selectedBuilding, this as any) <= player.selectedBuilding.range
+          instancesDistance(
+            player.selectedBuilding,
+            this as unknown as Parameters<typeof instancesDistance>[1]
+          ) <= player.selectedBuilding.range
         ) {
           player.selectedBuilding.attackAction(this)
           drawDestinationRectangle = true
         }
-      } else if ((playerCanSeeInstance(this as any, player) || map.revealEverything) && this.quantity > 0) {
+      } else if ((playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) && this.quantity > 0) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
@@ -165,7 +173,7 @@ export class Animal extends Instance {
         playSoundCue(voice)
       }
       if (drawDestinationRectangle) {
-        drawInstanceBlinkingSelection(this as any)
+        drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
       }
     })
 
@@ -174,7 +182,7 @@ export class Animal extends Instance {
 
     setTimeout(() => {
       if (this.isDestroyed) return
-      updateInstanceVisibility(this as any)
+      updateInstanceVisibility(this as unknown as Parameters<typeof updateInstanceVisibility>[0])
       this.animalBehavior.start()
     })
   }
@@ -196,7 +204,7 @@ export class Animal extends Instance {
     this.setTextures(SHEET_TYPES.standing)
   }
 
-  setDefaultInterface(element: any, data: AnyRecord): void {
+  setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
     return this.animalInterface.setDefaultInterface(element, data)
   }
 
@@ -221,39 +229,39 @@ export class Animal extends Instance {
   hasPath(): boolean {
     return this.animalMovement.hasPath()
   }
-  setDest(dest: AnyRecord): void {
+  setDest(dest: LooseRecord | null): void {
     return this.animalMovement.setDest(dest)
   }
-  setPath(path: AnyRecord[], sheet?: any): void {
+  setPath(path: LooseRecord[], sheet?: string): void {
     return this.animalMovement.setPath(path, sheet)
   }
-  isAnimalAtDest(action: any, dest: AnyRecord): boolean {
+  isAnimalAtDest(action: string | null, dest: LooseRecord | null): boolean {
     return this.animalMovement.isAnimalAtDest(action, dest)
   }
   destHasMoved(): boolean {
     return this.animalMovement.destHasMoved()
   }
-  sendTo(dest: AnyRecord, action?: any, options?: AnyRecord): void {
-    return this.animalMovement.sendTo(dest, action, options)
+  sendTo(dest: LooseRecord | null, action?: string | null, options?: UnknownRecord): void {
+    return this.animalMovement.sendTo(dest, action ?? null, options)
   }
   moveToPath(): void {
     return this.animalMovement.moveToPath()
   }
 
   // AnimalCombat
-  getReaction(instance: AnyRecord): void {
+  getReaction(instance: RuntimeEntity): void {
     return this.animalCombat.getReaction(instance)
   }
-  detect(instance: AnyRecord): void {
+  detect(instance: RuntimeEntity): void {
     return this.animalCombat.detect(instance)
   }
-  isAttacked(instance: AnyRecord): void {
+  isAttacked(instance: RuntimeEntity): void {
     return this.animalCombat.isAttacked(instance)
   }
   affectNewDest(): void {
     return this.animalCombat.affectNewDest()
   }
-  runaway(instance: AnyRecord): void {
+  runaway(instance: RuntimeEntity): void {
     return this.animalCombat.runaway(instance)
   }
   getAction(name: string): void {

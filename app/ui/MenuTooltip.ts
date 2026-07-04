@@ -1,4 +1,4 @@
-type AnyRecord = Record<string, any>
+import type { TooltipContent, TooltipSource } from '../types/ui'
 
 const LONG_PRESS_DELAY = 450
 const VIEWPORT_MARGIN = 10
@@ -25,11 +25,11 @@ export class MenuTooltip {
     document.addEventListener('pointerdown', this.onDocumentPointerDown)
   }
 
-  resolveContent(content: any): any {
+  resolveContent(content: TooltipSource): TooltipContent {
     return typeof content === 'function' ? content() : content
   }
 
-  bind(element: HTMLElement, content: any): void {
+  bind(element: HTMLElement, content: TooltipSource): void {
     if (!content) return
 
     const show = () => {
@@ -68,7 +68,7 @@ export class MenuTooltip {
     element.addEventListener('pointercancel', onPointerEnd)
   }
 
-  show(target: HTMLElement, { title, description, meta = [] }: AnyRecord): void {
+  show(target: HTMLElement, { title, description, meta = [] }: TooltipContent): void {
     this.activeTarget = target
     this.element.textContent = ''
 

@@ -29,18 +29,25 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
+import type { LooseRecord } from '../../types/common'
+import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
+import type { Building } from './index'
+import type { Texture } from 'pixi.js'
 
-type AnyRecord = Record<string, any>
+type RuntimeAnimatedSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
+type RuntimeContainer = Container & { allowMove?: boolean; allowClick?: boolean }
+type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number }; _baseColorTextureKey?: string }
 
 export class BuildingLifecycle {
-  building: AnyRecord
+  building: Building & LooseRecord
 
-  constructor(building: AnyRecord) {
+  constructor(building: Building & LooseRecord) {
     this.building = building
   }
 
   updateTexture(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const {
       context: { menu },
     } = building
@@ -75,16 +82,16 @@ export class BuildingLifecycle {
       if (building.owner.isPlayed && building.selected) {
         menu.setBottombar(building)
       }
-      updateInstanceVisibility(building as any)
+      updateInstanceVisibility(building as unknown as Parameters<typeof updateInstanceVisibility>[0])
     }
   }
 
   finalTexture(): void {
-    const building = this.building
-    const assetOwner = getBuildingAssetOwner(building as any)
+    const building = this.building as LooseRecord
+    const assetOwner = getBuildingAssetOwner(building as unknown as Parameters<typeof getBuildingAssetOwner>[0])
     const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
-    const texture: any = getTexture(assets.images!.final as string, Assets)
+    const texture = getTexture(assets.images!.final as string, Assets) as BuildingTexture
     building.sprite.texture = texture
     building.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
@@ -100,7 +107,7 @@ export class BuildingLifecycle {
     if (building.type === BUILDING_TYPES.house) {
       if (assetOwner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
-        const spriteFire: any = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as any)
+        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.label = LABEL_TYPES.deco
         spriteFire.allowMove = false
@@ -120,16 +127,17 @@ export class BuildingLifecycle {
   }
 
   generateFire(spriteId: string): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     const spritesheetFire = Assets.cache.get(spriteId)
     if (fire) {
       for (let i = 0; i < fire.children.length; i++) {
-        fire.children[i].textures = getAnimationFrames(spritesheetFire.textures)
-        fire.children[i].play()
+        const child = fire.children[i] as AnimatedSprite
+        child.textures = getAnimationFrames(spritesheetFire.textures) as Texture[]
+        child.play()
       }
     } else {
-      const newFire: any = new Container()
+      const newFire = new Container() as RuntimeContainer
       newFire.label = LABEL_TYPES.fire
       newFire.allowMove = false
       newFire.allowClick = false
@@ -144,7 +152,7 @@ export class BuildingLifecycle {
         ]
       }
       for (let i = 0; i < poses.length; i++) {
-        const spriteFire: any = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as any)
+        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.allowMove = false
         spriteFire.allowClick = false
@@ -161,7 +169,7 @@ export class BuildingLifecycle {
   }
 
   onBuilt(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const {
       context: { menu },
     } = building
@@ -181,7 +189,7 @@ export class BuildingLifecycle {
   }
 
   updateHitPoints(action: string): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     if (building.hitPoints > building.totalHitPoints) {
       building.hitPoints = building.totalHitPoints
     }
@@ -214,35 +222,35 @@ export class BuildingLifecycle {
   }
 
   playBurningSound(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     if (building.hasActiveBurningSound || !building.context.controls.instanceIsAudible(building)) return
     building.hasActiveBurningSound = true
     playSoundCue(building.sounds?.burning ?? SOUND_CUES.building.burning)
   }
 
   pause(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach((s: AnyRecord) => s.stop())
+    if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).stop())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof deco.stop === 'function') deco.stop()
+    if (deco && typeof (deco as LooseRecord).stop === 'function') (deco as LooseRecord).stop()
   }
 
   resume(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach((s: AnyRecord) => s.play())
+    if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).play())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof deco.play === 'function') deco.play()
+    if (deco && typeof (deco as LooseRecord).play === 'function') (deco as LooseRecord).play()
   }
 
   die(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     if (building.isDead) return
     const {
       context: { map, player, players, menu },
     } = building
-    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid, building.i, building.j, building.owner) : []
+    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid as Parameters<typeof getAdjacentWalls>[0], building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.clearRallyPoint()
@@ -304,24 +312,24 @@ export class BuildingLifecycle {
       changeSpriteColorDirectly(building.sprite, building.owner.color)
     }
 
-    updateInstanceVisibility(building as any)
+    updateInstanceVisibility(building as unknown as Parameters<typeof updateInstanceVisibility>[0])
     const dist = building.size === 3 ? 1 : 0
-    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: AnyRecord) => {
+    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false
-        cell.corpses.add(building)
+        cell.corpses.add(building as unknown as RuntimeEntity)
       }
-    }) as any)
-    adjacentWalls.forEach(updateWallTexture)
+    }) as Parameters<typeof getPlainCellsAroundPoint>[4])
+    adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
-    canUpdateMinimap(building as any, player) && menu.updatePlayerMiniMapEvt(building.owner)
+    canUpdateMinimap(building as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt(building.owner)
     building.context.checkVictory?.()
     building.context.checkDefeat?.()
   }
 
   clear(): void {
-    const building = this.building
+    const building = this.building as LooseRecord
     if (building.isDestroyed) return
     clearTimeout(building.visibilityTimeout)
     building.clearRallyPoint()
@@ -329,9 +337,9 @@ export class BuildingLifecycle {
       context: { map },
     } = building
     const dist = building.size === 3 ? 1 : 0
-    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: AnyRecord) => {
-      cell.corpses.delete(building)
-    }) as any)
+    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
+      cell.corpses.delete(building as unknown as RuntimeEntity)
+    }) as Parameters<typeof getPlainCellsAroundPoint>[4])
     building.isDestroyed = true
     building.destroy({ children: true, texture: false })
   }

@@ -1,6 +1,7 @@
 import type { ResourceAmount, UnknownRecord } from './common'
 import type { RuntimeCell } from './map'
 import type { RuntimeEntity, UnitEntity, BuildingEntity } from './entities'
+import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from './config'
 
 export interface VisionGridLike {
   size: number
@@ -19,8 +20,10 @@ export interface VisionGridLike {
 }
 
 export interface PlayerConfigLike {
-  units: Record<string, UnknownRecord>
-  buildings: Record<string, UnknownRecord & { cost?: ResourceAmount }>
+  units: Record<string, UnitConfig>
+  buildings: Record<string, BuildingConfig>
+  animals?: Record<string, AnimalConfig>
+  projectiles?: Record<string, ProjectileConfig>
 }
 
 export interface PlayerLike extends UnknownRecord {
@@ -30,6 +33,8 @@ export interface PlayerLike extends UnknownRecord {
   type: string
   civ?: string
   color?: string
+  colorHex: string
+  name?: string
   team?: number | null
   age: number
   cellViewed: number
@@ -37,20 +42,26 @@ export interface PlayerLike extends UnknownRecord {
   food: number
   stone: number
   gold: number
+  population: number
+  population_max: number
   isPlayed?: boolean
   views: VisionGridLike
   config: PlayerConfigLike
   technologies: string[]
+  techs: Record<string, TechnologyConfig>
   selectedUnits: UnitEntity[]
   selectedUnit?: UnitEntity | null
   selectedBuilding?: BuildingEntity | null
+  selectedOther?: RuntimeEntity | null
   units: UnitEntity[]
   buildings: BuildingEntity[]
   corpses: UnitEntity[]
   visiblePlayers?: () => PlayerLike[]
+  enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean
   createBuilding: (options: { i: number; j: number; type: string; isBuilt?: boolean }) => BuildingEntity
+  isBuildingEligible?: (type: string) => boolean
   unselectAll(): void
   foundedTrees?: Set<RuntimeEntity>
   foundedBerrybushs?: Set<RuntimeEntity>
@@ -62,6 +73,8 @@ export interface PlayerLike extends UnknownRecord {
   foundedEnemyBuildings?: Set<RuntimeEntity>
   foundedEnemyUnits?: Set<RuntimeEntity>
   rememberEnemy?: (entity: RuntimeEntity) => void
+  reportThreat?: (target: RuntimeEntity, attacker: RuntimeEntity) => void
+  hasBuilt?: string[]
 }
 
 export type PlacementOwner = PlayerLike

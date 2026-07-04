@@ -1,20 +1,23 @@
 import { Container, Graphics } from 'pixi.js'
 import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
-
-type AnyRecord = Record<string, any>
+import type { GameContextLike } from '../types/context'
 
 export class Instance extends Container {
   [key: string]: any
 
-  context: AnyRecord
+  context: GameContextLike
   selected: boolean
   isDead: boolean
   isDestroyed: boolean
-  interval: any
-  timeoutId: any
+  interval: unknown
+  timeoutId: unknown
+  family!: string
+  type!: string
+  i!: number
+  j!: number
 
-  constructor(context: AnyRecord) {
+  constructor(context: GameContextLike) {
     super()
     this.context = context
     this.label = uuidv4()
@@ -25,7 +28,7 @@ export class Instance extends Container {
     this.timeoutId = null
   }
 
-  startInterval(callback: (...args: any[]) => void, time: number, immediate = true, name = `${this.family || 'instance'}.interval`): void {
+  startInterval(callback: (...args: unknown[]) => void, time: number, immediate = true, name = `${this.family || 'instance'}.interval`): void {
     this.stopInterval()
     this.interval = this.context.scheduler.add(callback, time, name)
     if (immediate) callback()
@@ -107,11 +110,11 @@ export class Instance extends Container {
     }
   }
 
-  getActionCondition(target: AnyRecord, action = this.action): boolean {
-    return getActionCondition(this, target, action)
+  getActionCondition(target: unknown, action = this.action): boolean {
+    return getActionCondition(this as never, target as never, action)
   }
 
-  setTextures(sheet: any): void {
-    setUnitTexture(sheet, this as any)
+  setTextures(sheet: string): void {
+    setUnitTexture(sheet, this as unknown as Parameters<typeof setUnitTexture>[1])
   }
 }

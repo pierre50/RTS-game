@@ -1,8 +1,23 @@
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { CIVILIZATIONS } from '../config/civilizations'
+import type { PlayerSetupConfig } from '../types/save'
 
-type AnyRecord = Record<string, any>
+type PlayerSetupPanelOptions = {
+  players?: PlayerSetupConfig[]
+  maxPlayers?: number
+  onChange?: ((players: PlayerSetupConfig[]) => void) | null
+  showAge?: boolean
+}
+
+type PlayerSetupConfigWithAge = PlayerSetupConfig & {
+  civ: string
+  color: string
+  isHuman: boolean
+  name: string
+  team: number | null
+  age?: number
+}
 
 const DIFFICULTIES = [
   { label: () => t('diffEasy'), value: 'easy' },
@@ -34,10 +49,10 @@ const PLAYER_COLORS = [
 ]
 
 export class PlayerSetupPanel {
-  onChange: ((players: AnyRecord[]) => void) | null
+  onChange: ((players: PlayerSetupConfig[]) => void) | null
   showAge: boolean
   maxPlayers: number
-  players: AnyRecord[]
+  players: PlayerSetupConfigWithAge[]
   element: HTMLDivElement
   playerTableEl: HTMLDivElement
   playerCountRow: HTMLDivElement
@@ -48,16 +63,11 @@ export class PlayerSetupPanel {
     maxPlayers,
     onChange = null,
     showAge = false,
-  }: {
-    players?: AnyRecord[]
-    maxPlayers?: number
-    onChange?: ((players: AnyRecord[]) => void) | null
-    showAge?: boolean
-  }) {
+  }: PlayerSetupPanelOptions) {
     this.onChange = onChange
     this.showAge = showAge
     this.maxPlayers = Math.max(2, Math.min(maxPlayers || 2, MAX_PLAYERS))
-    this.players = (players?.length ? players : this._createDefaultPlayers()).map(player => ({ ...player }))
+    this.players = (players?.length ? players : this._createDefaultPlayers()).map(player => this._normalizePlayer(player))
     if (this.showAge) {
       this.players.forEach(player => {
         player.age = Math.max(0, Math.min(Number(player.age) || 0, 3))
@@ -77,7 +87,7 @@ export class PlayerSetupPanel {
     this._refreshPlayerTable()
   }
 
-  _createDefaultPlayers(): AnyRecord[] {
+  _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
     return [
       { name: t('you'), color: 'blue', civ: this._randomCiv(), team: null, isHuman: true },
       {
@@ -91,11 +101,23 @@ export class PlayerSetupPanel {
     ]
   }
 
+  _normalizePlayer(player: PlayerSetupConfig): PlayerSetupConfigWithAge {
+    return {
+      name: player.name || t('computer'),
+      color: player.color || PLAYER_COLORS[0].name,
+      civ: player.civ || this._randomCiv(),
+      team: typeof player.team === 'number' ? player.team : null,
+      isHuman: player.isHuman === true,
+      difficulty: player.difficulty || 'medium',
+      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 3)) } : {}),
+    }
+  }
+
   _emitChange(): void {
     this.onChange?.(this.getPlayers())
   }
 
-  getPlayers(): AnyRecord[] {
+  getPlayers(): PlayerSetupConfig[] {
     return this.players.map(player => ({ ...player }))
   }
 
@@ -161,8 +183,8 @@ export class PlayerSetupPanel {
     })
   }
 
-  _setPlayerCount(count: any): void {
-    const playerCount = Math.max(2, Math.min(parseInt(count), this.maxPlayers, MAX_PLAYERS))
+  _setPlayerCount(count: string | number): void {
+    const playerCount = Math.max(2, Math.min(parseInt(String(count)), this.maxPlayers, MAX_PLAYERS))
 
     while (this.players.length < playerCount) {
       this._addBot()
@@ -282,7 +304,7 @@ export class PlayerSetupPanel {
       const teamBtn = document.createElement('button')
       teamBtn.className = 'team-cycle ui-btn'
       teamBtn.type = 'button'
-      teamBtn.textContent = player.team ?? '-'
+      teamBtn.textContent = player.team == null ? '-' : String(player.team)
       teamBtn.title = t('teamInput')
       teamBtn.addEventListener('pointerdown', playClickSound)
       teamBtn.addEventListener('click', () => this._cycleTeam(index))

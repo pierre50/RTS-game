@@ -16,40 +16,60 @@ import {
   getWorkWithLoadingType,
 } from '../../lib'
 import { t } from '../../lib/lang'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
 
-type AnyRecord = Record<string, any>
-
-function getActionSheet(work: any, action: any, unit: AnyRecord) {
+function getActionSheet(work: string | null | undefined, action: string | null | undefined, unit: UnitEntity) {
   if (!work) {
     return
   }
   const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
-  return Assets.cache.get(unit.allAssets[work][actionSheet])
+  return Assets.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
+}
+
+function checkActionCondition(
+  source: UnitEntity,
+  target: RuntimeEntity | null | undefined,
+  action?: string,
+  props?: Record<string, unknown>
+): boolean {
+  return getActionCondition(
+    source as unknown as Parameters<typeof getActionCondition>[0],
+    target as unknown as Parameters<typeof getActionCondition>[1],
+    action ?? '',
+    props
+  )
 }
 
 export class UnitCommands {
-  unit: AnyRecord
+  unit: UnitEntity
 
-  constructor(unit: AnyRecord) {
+  constructor(unit: UnitEntity) {
     this.unit = unit
   }
 
-  isRedundantOrder(target: any, work: any, action: any) {
+  isRedundantOrder(target: RuntimeEntity | null | undefined, work: string | null | undefined, action: string | null | undefined): boolean {
     const unit = this.unit
-    if (!target || unit.dest?.label !== target.label) return false
+    const dest = unit.dest as RuntimeEntity | null | undefined
+    if (!target || dest?.label !== target.label) return false
     if (unit.work !== work || unit.action !== action) return false
-    return unit.path.length > 0 || unit.isUnitAtDest(action, target)
+    return (unit.path?.length ?? 0) > 0 || Boolean(unit.isUnitAtDest?.(action, target))
   }
 
-  commonSendTo(target: any, work: any, action: any, keepPrevious: any, immediate = false, preserveBuildQueue = false) {
+  commonSendTo(
+    target: RuntimeEntity,
+    work: string,
+    action: string | null,
+    keepPrevious: boolean | Record<string, unknown>,
+    immediate = false,
+    preserveBuildQueue = false
+  ) {
     const unit = this.unit
-    const {
-      context: { menu },
-    } = unit
+    const menu = unit.context?.menu
     if (!target || target.isDestroyed || unit.isDead) return false
     if (!preserveBuildQueue) unit.buildQueue = []
-    if (action && !getActionCondition(unit, target, action)) return false
-    if (unit.actionLocked) return unit.queueOrder(target, action)
+    if (action && !checkActionCondition(unit, target, action)) return false
+    if (unit.actionLocked) return unit.queueOrder?.(target, action)
     if (this.isRedundantOrder(target, work, action)) return false
 
     const shouldRememberPreviousTask =
@@ -67,129 +87,131 @@ export class UnitCommands {
       unit.previousWork = null
     }
 
-    const workFromLoading = getWorkWithLoadingType(unit.loadingType)
+    const workFromLoading = getWorkWithLoadingType(unit.loadingType ?? '')
     if (
       work !== WORK_TYPES.builder &&
       work !== workFromLoading &&
-      !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading))
+      !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading ?? ''))
     ) {
       unit.loading = 0
       unit.loadingType = null
-      unit.updateInterfaceLoading()
+      unit.updateInterfaceLoading?.()
     }
     if (unit.work !== work || unit.action !== action) {
       unit.work = work
-      if (unit.owner.isPlayed && unit.owner.selectedUnit === unit) {
-        menu.updateInfo(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
+      if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
+        menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
       }
-      if (unit.allAssets && unit.allAssets[work]) {
+      const workAssets = unit.allAssets?.[work]
+      if (workAssets) {
         unit.actionSheet = getActionSheet(work, action, unit)
         if (!unit.loading) {
-          unit.standingSheet = Assets.cache.get(unit.allAssets[work][SHEET_TYPES.standing])
-          unit.walkingSheet = Assets.cache.get(unit.allAssets[work][SHEET_TYPES.walking])
-          unit.dyingSheet = Assets.cache.get(unit.allAssets[work][SHEET_TYPES.dying])
-          unit.corpseSheet = Assets.cache.get(unit.allAssets[work][SHEET_TYPES.corpse])
+          unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
+          unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
+          unit.dyingSheet = Assets.cache.get(workAssets[SHEET_TYPES.dying])
+          unit.corpseSheet = Assets.cache.get(workAssets[SHEET_TYPES.corpse])
         }
       }
       // If the unit is already moving when AI/job assignment changes its role,
       // refresh the walking animation immediately so the sprite matches the new work.
-      if (unit.path.length) {
-        unit.setTextures(SHEET_TYPES.walking)
+      if (unit.path?.length) {
+        unit.setTextures?.(SHEET_TYPES.walking)
       }
     }
     unit.previousDest = keepPrevious ? unit.previousDest : null
 
     // AI job switches must bypass the public command throttle, otherwise the villager
     // can change work/action while still keeping the old destination.
-    if (immediate || !unit.owner.isPlayed) {
-      return unit.sendToEvt(target, action)
+    if (immediate || !unit.owner?.isPlayed) {
+      return unit.sendToEvt?.(target, action ?? undefined)
     }
-    return unit.sendTo(target, action)
+    return unit.sendTo?.(target, action ?? undefined)
   }
 
-  sendToWithCell(target: any, arrivalCell: any, action: any) {
+  sendToWithCell(target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
+    const map = unit.context?.map
     if (unit.actionLocked) {
-      return unit.queueOrder(() => this.sendToWithCell(target, arrivalCell, action))
+      return unit.queueOrder?.(() => this.sendToWithCell(target, arrivalCell, action))
     }
-    unit.handleChangeDest()
-    unit.stopInterval()
+    unit.handleChangeDest?.()
+    unit.stopInterval?.()
     if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return false
-    if (action && !getActionCondition(unit, target, action)) return false
-    if (unit.isUnitAtDest(action, target)) {
-      unit.setDest(target)
+    if (action && !checkActionCondition(unit, target, action)) return false
+    if (unit.isUnitAtDest?.(action, target)) {
+      unit.setDest?.(target)
       unit.action = action
-      unit.degree = getInstanceDegree(unit as any, target.x, target.y)
-      unit.getAction(action)
+      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], target.x, target.y)
+      unit.getAction?.(action)
       return true
     }
-    const path = getInstancePath(unit as any, arrivalCell.i, arrivalCell.j, map)
+    if (!map) return false
+    const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], arrivalCell.i, arrivalCell.j, map)
     if (path.length) {
-      unit.setDest(target)
+      unit.setDest?.(target)
       unit.action = action
-      unit.setPath(path)
+      unit.setPath?.(path)
       return true
     } else {
-      unit.sendToEvt(target, action)
+      unit.sendToEvt?.(target, action)
       return true
     }
   }
 
   sendToDelivery() {
     const unit = this.unit
-    const {
-      context: { map },
-    } = unit
-    let buildingTypes = []
+    const map = unit.context?.map
+    let buildingTypes: string[] = []
     if (unit.category === 'Boat') {
       buildingTypes = [BUILDING_TYPES.dock]
     } else {
       buildingTypes = [BUILDING_TYPES.townCenter]
       const buildings = {
-        Granary: unit.owner.config.buildings.Granary,
-        StoragePit: unit.owner.config.buildings.StoragePit,
+        Granary: unit.owner?.config.buildings.Granary,
+        StoragePit: unit.owner?.config.buildings.StoragePit,
       }
       for (const [key, value] of Object.entries(buildings)) {
-        if (value.accept && value.accept.includes(unit.loadingType)) {
+        const accept = (value as { accept?: string[] } | undefined)?.accept
+        if (accept && accept.includes(unit.loadingType ?? '')) {
           buildingTypes.push(key)
           break
         }
       }
     }
 
-    const targets = unit.owner.buildings.filter((building: any) =>
-      getActionCondition(unit, building, ACTION_TYPES.delivery, { buildingTypes })
+    const targets = (unit.owner?.buildings ?? []).filter(building =>
+      checkActionCondition(unit, building, ACTION_TYPES.delivery, { buildingTypes })
     )
-    const target = getClosestInstance(unit as any, targets)
+    const target = getClosestInstance(
+      unit as unknown as Parameters<typeof getClosestInstance>[0],
+      targets as unknown as Parameters<typeof getClosestInstance>[1]
+    ) as BuildingEntity | false
     if (!target) {
-      unit.stop()
+      unit.stop?.()
       return
     }
     if (unit.dest) {
       unit.previousDest = unit.dest
-    } else {
+    } else if (map) {
       unit.previousDest = map.grid[unit.i][unit.j]
     }
-    unit.sendToEvt(target, ACTION_TYPES.delivery)
+    unit.sendToEvt?.(target, ACTION_TYPES.delivery)
   }
 
-  sendToFish(target: any, immediate = false) {
+  sendToFish(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing, false, immediate)
   }
 
-  sendToAttack(target: any) {
-    if (!getActionCondition(this.unit, target, ACTION_TYPES.attack)) return
+  sendToAttack(target: RuntimeEntity) {
+    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
     return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
   }
 
-  sendToConvert(target: any) {
-    return this.commonSendTo(target, WORK_TYPES.healer, ACTION_TYPES.convert, undefined)
+  sendToConvert(target: RuntimeEntity) {
+    return this.commonSendTo(target, WORK_TYPES.healer, ACTION_TYPES.convert, false)
   }
 
-  sendToTakeMeat(target: any, immediate = false) {
+  sendToTakeMeat(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(
       target,
       WORK_TYPES.hunter,
@@ -199,27 +221,28 @@ export class UnitCommands {
     )
   }
 
-  sendToHunt(target: any, immediate = false) {
+  sendToHunt(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt, false, immediate)
   }
 
-  sendToBuilding(target: any, preserveBuildQueue = false) {
+  sendToBuilding(target: BuildingEntity, preserveBuildQueue = false) {
     if (!preserveBuildQueue) this.unit.buildQueue = []
     return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build, true, false, true)
   }
 
-  sendToBuildingQueue(targets: any[]) {
-    this.unit.buildQueue = targets.filter(target => getActionCondition(this.unit, target, ACTION_TYPES.build))
+  sendToBuildingQueue(targets: BuildingEntity[]) {
+    this.unit.buildQueue = targets.filter(target => checkActionCondition(this.unit, target, ACTION_TYPES.build))
     return this.continueBuildingQueue()
   }
 
-  continueBuildingQueue() {
+  continueBuildingQueue(): boolean {
     const unit = this.unit
     while (unit.buildQueue?.length) {
       const target = unit.buildQueue[0]
-      if (getActionCondition(unit, target, ACTION_TYPES.build)) {
+      if (checkActionCondition(unit, target, ACTION_TYPES.build)) {
         unit.previousDest = null
-        return this.sendToBuilding(target, true)
+        this.sendToBuilding(target, true)
+        return true
       }
       unit.buildQueue.shift()
     }
@@ -227,23 +250,23 @@ export class UnitCommands {
     return false
   }
 
-  sendToFarm(target: any, immediate = false) {
+  sendToFarm(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.farmer, ACTION_TYPES.farm, false, immediate)
   }
 
-  sendToTree(target: any, immediate = false) {
+  sendToTree(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.woodcutter, ACTION_TYPES.chopwood, false, immediate)
   }
 
-  sendToBerrybush(target: any, immediate = false) {
+  sendToBerrybush(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry, false, immediate)
   }
 
-  sendToStone(target: any, immediate = false) {
+  sendToStone(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone, false, immediate)
   }
 
-  sendToGold(target: any, immediate = false) {
+  sendToGold(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold, false, immediate)
   }
 }

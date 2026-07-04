@@ -1,27 +1,55 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getCellsAroundPoint, getClosestInstance, getInstancePath, instancesDistance } from '../lib'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
+import type {
+  AIBuildingLike,
+  AIEntityLike,
+  AIFoodSources,
+  AIFoodSourceType,
+  AIFoodTarget,
+  AIFoodWorkerCounts,
+  AIGridPosition,
+  AIStrategyPlayerLike,
+  AIVillagerActionOptions,
+  AIWorkerSnapshot,
+  AIWorkerTargets,
+} from './types'
 
-type AnyRecord = Record<string, any>
+type PathInstance = Parameters<typeof getInstancePath>[0]
+type FoodOpportunity = {
+  type: AIFoodSourceType
+  score: number
+}
+type GatheringResource = {
+  workers: AIEntityLike[]
+  set: Set<AIEntityLike>
+  max: number
+  cb: (villager: AIEntityLike, resource: AIEntityLike) => void
+}
+
+function asPathInstance(instance: AIGridPosition): PathInstance {
+  return instance as unknown as PathInstance
+}
 
 export class AIEconomy {
-  ai: AnyRecord
+  ai: AIStrategyPlayerLike
   _exploredAll: boolean
   _unexploredScanIndex: number
 
-  constructor(ai: AnyRecord) {
+  constructor(ai: AIStrategyPlayerLike) {
     this.ai = ai
     this._exploredAll = false
     this._unexploredScanIndex = 0
   }
 
-  getStorageDropSites(extraBuildings: AnyRecord[] = []): AnyRecord[] {
+  getStorageDropSites(extraBuildings: AIBuildingLike[] = []): AIBuildingLike[] {
     const { ai } = this
     return [...ai.buildingsByTypes([BUILDING_TYPES.townCenter, BUILDING_TYPES.granary]), ...extraBuildings].filter(
       building => building && building.isBuilt && !building.isDead && !building.isDestroyed
     )
   }
 
-  getViableBerryBushes(dropSites: AnyRecord[] = []): Set<AnyRecord> {
+  getViableBerryBushes(dropSites: AIBuildingLike[] = []): Set<AIEntityLike> {
     const { ai } = this
     const effectiveDropSites = dropSites.length > 0 ? dropSites : this.getStorageDropSites()
     const homeAnchor = ai.getHomeAnchor()
@@ -29,8 +57,8 @@ export class AIEconomy {
     const MAX_BERRY_HOME_DIST = 30
 
     return new Set(
-      [...ai.foundedBerrybushs].filter((bush: AnyRecord) => {
-        if (!bush || bush.isDead || bush.quantity <= 0 || !this.isLocationSafe(bush)) return false
+      [...ai.foundedBerrybushs].filter((bush: AIEntityLike) => {
+        if (!bush || bush.isDead || (bush.quantity || 0) <= 0 || !this.isLocationSafe(bush)) return false
 
         const nearDropSite =
           effectiveDropSites.length === 0 ||
@@ -43,8 +71,8 @@ export class AIEconomy {
     )
   }
 
-  getWorkerSnapshot(villagers: AnyRecord[]): AnyRecord {
-    const byWork = (works: string[]) => villagers.filter(v => !v.inactif && works.includes(v.work))
+  getWorkerSnapshot(villagers: AIEntityLike[]): AIWorkerSnapshot {
+    const byWork = (works: string[]) => villagers.filter(v => !v.inactif && works.includes(v.work || ''))
     const inactifVillagers = villagers.filter(v => v.inactif && v.action !== ACTION_TYPES.attack)
 
     const villagersForaging = byWork([WORK_TYPES.forager])
@@ -69,22 +97,26 @@ export class AIEconomy {
     }
   }
 
-  getResourceTargets(villagersCount: number): AnyRecord {
+  getResourceTargets(villagersCount: number): AIWorkerTargets {
     const { ai } = this
     const demand = ai.strategy.getEconomicDemand()
     const base = ai.villageTargetPercentageByAge[ai.age]
+    const demandWood = demand.wood || 0
+    const demandFood = demand.food || 0
+    const demandGold = demand.gold || 0
+    const demandStone = demand.stone || 0
 
-    const woodBoost = (ai.wood < 50 ? 15 : 0) + (demand.wood > 0 ? 10 : 0)
-    const foodBoost = (ai.food < 50 ? 15 : 0) + (demand.food > 0 ? 10 : 0)
-    const shouldProspectGold = ai.foundedGolds.size > 0 || demand.gold > 0
-    const shouldProspectStone = ai.foundedStones.size > 0 || demand.stone > 0
+    const woodBoost = (ai.wood < 50 ? 15 : 0) + (demandWood > 0 ? 10 : 0)
+    const foodBoost = (ai.food < 50 ? 15 : 0) + (demandFood > 0 ? 10 : 0)
+    const shouldProspectGold = ai.foundedGolds.size > 0 || demandGold > 0
+    const shouldProspectStone = ai.foundedStones.size > 0 || demandStone > 0
 
     const weights = {
       food: base.food + foodBoost,
       wood: base.wood + woodBoost,
       // Allow unmet demand to trigger prospecting for undiscovered ore nodes.
-      gold: shouldProspectGold ? base.gold + (demand.gold > 0 ? 10 : 0) : 0,
-      stone: shouldProspectStone ? base.stone + (demand.stone > 0 ? 10 : 0) : 0,
+      gold: shouldProspectGold ? base.gold + (demandGold > 0 ? 10 : 0) : 0,
+      stone: shouldProspectStone ? base.stone + (demandStone > 0 ? 10 : 0) : 0,
     }
 
     const totalWeight = weights.food + weights.wood + weights.gold + weights.stone
@@ -136,15 +168,15 @@ export class AIEconomy {
   // Keep real Scout units exploring — villager exploration is handled demand-driven separately
   updateRealScout(): void {
     const { ai } = this
-    ai.scout = ai.units.find((u: AnyRecord) => u.type === UNIT_TYPES.scout && !u.isDead && u.hitPoints > 0) || null
-    if (ai.scout && ai.scout.inactif && this.hasUnexploredCells()) ai.scout.explore()
+    ai.scout = ai.units.find((u: AIEntityLike) => u.type === UNIT_TYPES.scout && !u.isDead && (u.hitPoints || 0) > 0) || null
+    if (ai.scout && ai.scout.inactif && this.hasUnexploredCells()) ai.scout.explore?.()
   }
 
   // How many villagers should explore based on the gap between known resource nodes and actual need.
   // 1 explorer per 4 units of worker-deficit, capped at 3.
-  getExplorationNeed(targets: AnyRecord): number {
+  getExplorationNeed(targets: AIWorkerTargets): number {
     const { ai } = this
-    const aliveAnimals = [...ai.foundedAnimals].filter((a: AnyRecord) => !a.isDead).length
+    const aliveAnimals = [...ai.foundedAnimals].filter((a: AIEntityLike) => !a.isDead).length
 
     const deficit =
       Math.max(0, targets.maxVillagersOnWood - ai.foundedTrees.size * 2) +
@@ -158,23 +190,23 @@ export class AIEconomy {
     return Math.min(3, Math.ceil(deficit / 4))
   }
 
-  sendVillagerExploring(villager: AnyRecord): boolean {
+  sendVillagerExploring(villager: AIEntityLike): boolean {
     villager.work = null
     villager.previousWork = null
     villager.previousDest = null
-    return villager.explore()
+    return villager.explore?.() ?? false
   }
 
   assignVillagersToResource(
-    availableVillagers: AnyRecord[],
-    villagersOnResource: AnyRecord[],
-    resourceList: Set<AnyRecord>,
+    availableVillagers: AIEntityLike[],
+    villagersOnResource: AIEntityLike[],
+    resourceList: Set<AIEntityLike>,
     maxVillagersForResource: number,
-    actionCallback: (villager: AnyRecord, resource: AnyRecord) => void
+    actionCallback: (villager: AIEntityLike, resource: AIEntityLike) => void
   ): number {
     for (let i = maxVillagersForResource; i < villagersOnResource.length; i++) {
       const villager = villagersOnResource[i]
-      villager.stop()
+      villager.stop?.()
       if (villager !== this.ai.scout && !availableVillagers.includes(villager)) {
         availableVillagers.push(villager)
       }
@@ -186,16 +218,16 @@ export class AIEconomy {
     if (toAssign === 0) return 0
 
     // Track workers per node to spread evenly instead of stacking on the closest
-    const nodeLoad = new Map<AnyRecord, number>()
+    const nodeLoad = new Map<AIEntityLike, number>()
     for (let i = 0; i < activeVillagers; i++) {
       const v = villagersOnResource[i]
-      if (v.dest) nodeLoad.set(v.dest, (nodeLoad.get(v.dest) || 0) + 1)
+      if (v.dest && 'type' in v.dest) nodeLoad.set(v.dest, (nodeLoad.get(v.dest) || 0) + 1)
     }
 
     let assigned = 0
     for (let i = 0; i < toAssign; i++) {
-      const villager = availableVillagers.shift() as AnyRecord
-      let best: AnyRecord | null = null,
+      const villager = availableVillagers.shift() as AIEntityLike
+      let best: AIEntityLike | null = null,
         bestScore = Infinity
       for (const resource of resourceList) {
         const dist = Math.abs(villager.i - resource.i) + Math.abs(villager.j - resource.j)
@@ -213,19 +245,19 @@ export class AIEconomy {
     return assigned
   }
 
-  isLocationSafe(pos: AnyRecord): boolean {
+  isLocationSafe(pos: AIEntityLike): boolean {
     const { ai } = this
     const dangerRadius = 15
     for (const b of ai.foundedEnemyBuildings) {
-      if (instancesDistance(pos as any, b as any) < dangerRadius) return false
+      if (instancesDistance(asPathInstance(pos), asPathInstance(b)) < dangerRadius) return false
     }
     for (const u of ai.foundedEnemyUnits) {
-      if (instancesDistance(pos as any, u as any) < dangerRadius) return false
+      if (instancesDistance(asPathInstance(pos), asPathInstance(u)) < dangerRadius) return false
     }
     return true
   }
 
-  getFoodDropSites(loadingType: string): AnyRecord[] {
+  getFoodDropSites(loadingType: string): AIBuildingLike[] {
     const { ai } = this
     const types =
       loadingType === 'berry' || loadingType === 'wheat'
@@ -233,28 +265,28 @@ export class AIEconomy {
         : [BUILDING_TYPES.townCenter, BUILDING_TYPES.storagePit]
     return ai
       .buildingsByTypes(types)
-      .filter((building: AnyRecord) => building && building.isBuilt && !building.isDead && !building.isDestroyed)
+      .filter((building: AIBuildingLike) => building && building.isBuilt && !building.isDead && !building.isDestroyed)
   }
 
-  getReachableFishShoreCell(fish: AnyRecord, villager: AnyRecord): AnyRecord | null {
+  getReachableFishShoreCell(fish: AIEntityLike, villager: AIEntityLike): RuntimeCell | null {
     const map = this.ai.context?.map
-    if (!map || !fish || !villager || fish.quantity <= 0 || !this.isLocationSafe(fish)) return null
+    if (!map || !fish || !villager || (fish.quantity || 0) <= 0 || !this.isLocationSafe(fish)) return null
 
-    const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, (cell: AnyRecord) => {
+    const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, (cell: RuntimeCell) => {
       return cell.category !== 'Water'
     })
     shoreCells.sort(
-      (a: AnyRecord, b: AnyRecord) =>
+      (a: RuntimeCell, b: RuntimeCell) =>
         Math.abs(villager.i - a.i) +
         Math.abs(villager.j - a.j) -
         (Math.abs(villager.i - b.i) + Math.abs(villager.j - b.j))
     )
 
-    let best: { cell: AnyRecord; pathLength: number } | null = null
+    let best: { cell: RuntimeCell; pathLength: number } | null = null
     for (const cell of shoreCells) {
       if (villager.i === cell.i && villager.j === cell.j) return cell
       if (cell.solid) continue
-      const path = getInstancePath(villager as any, cell.i, cell.j, map)
+      const path = getInstancePath(asPathInstance(villager), cell.i, cell.j, map)
       if (path.length && (!best || path.length < best.pathLength)) {
         best = { cell, pathLength: path.length }
       }
@@ -263,15 +295,15 @@ export class AIEconomy {
     return best?.cell || null
   }
 
-  getVillagerFishSources(villagers: AnyRecord[] = []): AnyRecord[] {
+  getVillagerFishSources(villagers: AIEntityLike[] = []): AIEntityLike[] {
     if (!villagers.length) return []
-    return [...this.ai.foundedFish].filter((fish: AnyRecord) =>
+    return [...this.ai.foundedFish].filter((fish: AIEntityLike) =>
       villagers.some(villager => this.getReachableFishShoreCell(fish, villager))
     )
   }
 
-  getBestVillagerFishTarget(villager: AnyRecord, fishList: AnyRecord[]): AnyRecord | null {
-    let best: AnyRecord | null = null
+  getBestVillagerFishTarget(villager: AIEntityLike, fishList: AIEntityLike[]): AIFoodTarget | null {
+    let best: AIFoodTarget | null = null
     let bestScore = Infinity
 
     for (const fish of fishList) {
@@ -287,28 +319,28 @@ export class AIEconomy {
     return best
   }
 
-  getNearestDropDistance(source: AnyRecord, dropSites: AnyRecord[]): number {
+  getNearestDropDistance(source: AIEntityLike, dropSites: AIBuildingLike[]): number {
     if (!source || !dropSites.length) return 0
     return Math.min(...dropSites.map(site => Math.abs(source.i - site.i) + Math.abs(source.j - site.j)))
   }
 
   getFoodSourceScore(
-    type: string,
-    source: AnyRecord,
-    dropSites: AnyRecord[],
+    type: AIFoodSourceType,
+    source: AIEntityLike,
+    dropSites: AIBuildingLike[],
     slot: number = 0,
     hunterCount: number = 1
   ): number {
-    const rates = this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}
-    const workByType: AnyRecord = {
+    const rates = (this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}) as Record<string, number | undefined>
+    const workByType: Record<AIFoodSourceType, string> = {
       berry: WORK_TYPES.forager,
       carcass: WORK_TYPES.hunter,
       fish: WORK_TYPES.fisher,
       farm: WORK_TYPES.farmer,
       hunt: WORK_TYPES.hunter,
     }
-    const fallbackRates: AnyRecord = { berry: 0.45, carcass: 0.4725, fish: 0.6, farm: 0.45, hunt: 0.4725 }
-    const rate = rates[workByType[type]] || fallbackRates[type]
+    const fallbackRates: Record<AIFoodSourceType, number> = { berry: 0.45, carcass: 0.4725, fish: 0.6, farm: 0.45, hunt: 0.4725 }
+    const rate = Number(rates[workByType[type]] || fallbackRates[type])
     const quantity = Math.max(0, source.quantity ?? source.totalQuantity ?? 0)
     const quantityFactor = 0.55 + Math.min(quantity / 150, 1) * 0.45
     const distance = this.getNearestDropDistance(source, dropSites)
@@ -319,14 +351,14 @@ export class AIEconomy {
     return (rate * quantityFactor * renewableBonus) / (travelPenalty * saturationPenalty * killPenalty)
   }
 
-  getFoodWorkerTargets(maxWorkers: number, sources: AnyRecord, currentCounts: AnyRecord): AnyRecord {
-    const opportunities: AnyRecord[] = []
-    const retainedSlots: AnyRecord = { ...currentCounts }
+  getFoodWorkerTargets(maxWorkers: number, sources: AIFoodSources, currentCounts: AIFoodWorkerCounts): AIFoodWorkerCounts {
+    const opportunities: FoodOpportunity[] = []
+    const retainedSlots: AIFoodWorkerCounts = { ...currentCounts }
     const addSlots = (
-      type: string,
-      source: AnyRecord,
+      type: AIFoodSourceType,
+      source: AIEntityLike,
       count: number,
-      dropSites: AnyRecord[],
+      dropSites: AIBuildingLike[],
       hunterCount: number = 1
     ) => {
       for (let slot = 0; slot < count; slot++) {
@@ -340,24 +372,24 @@ export class AIEconomy {
     }
 
     for (const carcass of sources.carcasses) {
-      addSlots('carcass', carcass, Math.min(3, Math.max(1, Math.ceil(carcass.quantity / 75))), sources.meatDrops)
+      addSlots('carcass', carcass, Math.min(3, Math.max(1, Math.ceil((carcass.quantity || 0) / 75))), sources.meatDrops)
     }
     for (const bush of sources.berries) addSlots('berry', bush, 2, sources.plantDrops)
     for (const farm of sources.farms) addSlots('farm', farm, 1, sources.plantDrops)
     for (const fish of sources.fish) addSlots('fish', fish, 1, sources.meatDrops)
     for (const animal of sources.animals) {
       if (animal.type === 'Elephant') continue
-      const hunters = animal.totalHitPoints >= 20 ? Math.min(4, Math.max(1, Math.ceil(animal.hitPoints / 4))) : 1
+      const hunters = (animal.totalHitPoints || 0) >= 20 ? Math.min(4, Math.max(1, Math.ceil((animal.hitPoints || 0) / 4))) : 1
       addSlots('hunt', animal, hunters, sources.meatDrops, hunters)
     }
 
     opportunities.sort((a, b) => b.score - a.score)
-    const targets: AnyRecord = { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 0 }
+    const targets: AIFoodWorkerCounts = { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 0 }
     for (const opportunity of opportunities.slice(0, maxWorkers)) targets[opportunity.type]++
     return targets
   }
 
-  releaseExcessFoodWorkers(workers: AnyRecord[], target: number, availableVillagers: AnyRecord[]): void {
+  releaseExcessFoodWorkers(workers: AIEntityLike[], target: number, availableVillagers: AIEntityLike[]): void {
     let excess = Math.max(0, workers.length - target)
     if (!excess) return
     const releasable = workers
@@ -369,7 +401,7 @@ export class AIEconomy {
       })
     for (const villager of releasable) {
       if (excess <= 0) break
-      villager.stop()
+      villager.stop?.()
       if (!availableVillagers.includes(villager)) availableVillagers.push(villager)
       excess--
     }
@@ -377,15 +409,15 @@ export class AIEconomy {
 
   // Group-aware hunting for non-elephant prey: large animals need several hunters on the same target.
   // Small animals get 1 hunter each. Returns count of new hunters assigned.
-  assignHunters(availableVillagers: AnyRecord[], villagersHunting: AnyRecord[], maxTotalHunters: number): number {
+  assignHunters(availableVillagers: AIEntityLike[], villagersHunting: AIEntityLike[], maxTotalHunters: number): number {
     const { ai } = this
-    const safeAnimals = [...ai.foundedAnimals].filter((a: AnyRecord) => !a.isDead && this.isLocationSafe(a))
+    const safeAnimals = [...ai.foundedAnimals].filter((a: AIEntityLike) => !a.isDead && this.isLocationSafe(a))
     if (!safeAnimals.length) return 0
 
     // Count hunters already chasing each animal
-    const huntersByAnimal = new Map<AnyRecord, number>()
+    const huntersByAnimal = new Map<AIEntityLike, number>()
     for (const v of villagersHunting) {
-      if (v.dest && !v.dest.isDead) {
+      if (v.dest && 'type' in v.dest && !v.dest.isDead) {
         huntersByAnimal.set(v.dest, (huntersByAnimal.get(v.dest) || 0) + 1)
       }
     }
@@ -399,7 +431,7 @@ export class AIEconomy {
     // Large animals: send a pack — enough hunters to kill before losing too many villagers
     // Prefer animals already being hunted (finish them first) to not waste effort
     const large = safeAnimals
-      .filter((a: AnyRecord) => a.totalHitPoints >= LARGE_HP && a.type !== 'Elephant')
+      .filter((a: AIEntityLike) => (a.totalHitPoints || 0) >= LARGE_HP && a.type !== 'Elephant')
       .sort((a, b) => (huntersByAnimal.get(b) || 0) - (huntersByAnimal.get(a) || 0))
 
     for (const animal of large) {
@@ -408,11 +440,11 @@ export class AIEconomy {
       const maxAssignable = Math.min(maxTotalHunters - totalHunters, availableVillagers.length)
 
       // How many hunters needed to kill this animal within ~3 attack rounds
-      const needed = Math.max(0, Math.ceil(animal.hitPoints / DAMAGE_PER_HUNTER) - current)
+      const needed = Math.max(0, Math.ceil((animal.hitPoints || 0) / DAMAGE_PER_HUNTER) - current)
       if (needed === 0) continue
       const toSend = Math.min(needed, maxAssignable)
       for (let i = 0; i < toSend; i++) {
-        availableVillagers.shift()!.sendToHunt(animal)
+        availableVillagers.shift()?.sendToHunt?.(animal)
         huntersByAnimal.set(animal, (huntersByAnimal.get(animal) || 0) + 1)
         totalHunters++
         actions++
@@ -420,11 +452,11 @@ export class AIEconomy {
     }
 
     // Small animals: 1 hunter per animal, first-come first-served
-    const small = safeAnimals.filter((a: AnyRecord) => a.totalHitPoints < LARGE_HP)
+    const small = safeAnimals.filter((a: AIEntityLike) => (a.totalHitPoints || 0) < LARGE_HP)
     for (const animal of small) {
       if (totalHunters >= maxTotalHunters || availableVillagers.length === 0) break
       if ((huntersByAnimal.get(animal) || 0) > 0) continue
-      availableVillagers.shift()!.sendToHunt(animal)
+      availableVillagers.shift()?.sendToHunt?.(animal)
       totalHunters++
       actions++
     }
@@ -432,20 +464,20 @@ export class AIEconomy {
     return actions
   }
 
-  discoverDeadAnimals(map: AnyRecord): void {
+  discoverDeadAnimals(map: RuntimeMap): void {
     const { ai } = this
-    for (const animal of map.gaia.units) {
-      if (animal.isDead && !animal.isDestroyed && animal.quantity > 0) {
-        if (ai.views.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal)
+    for (const animal of map.gaia?.units || []) {
+      if (animal.isDead && !animal.isDestroyed && (animal.quantity || 0) > 0) {
+        if (ai.views?.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal as unknown as AIEntityLike)
       }
     }
   }
 
   assignFoodSources(
-    availableVillagers: AnyRecord[],
-    workerSnapshot: AnyRecord,
-    targets: AnyRecord,
-    emptyFarms: AnyRecord[]
+    availableVillagers: AIEntityLike[],
+    workerSnapshot: AIWorkerSnapshot,
+    targets: AIWorkerTargets,
+    emptyFarms: AIBuildingLike[]
   ): number {
     const { ai } = this
     const {
@@ -459,20 +491,25 @@ export class AIEconomy {
     const berryDropSites = this.getStorageDropSites()
     const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
     const carcassHunters = villagersHunting.filter(
-      (villager: AnyRecord) => villager.action === ACTION_TYPES.takemeat || villager.dest?.isDead
+      (villager: AIEntityLike) => villager.action === ACTION_TYPES.takemeat || villager.dest?.isDead
     )
     const liveHunters = villagersHunting.filter(
-      (villager: AnyRecord) => villager.action === ACTION_TYPES.hunt && villager.dest && !villager.dest.isDead
+      (villager: AIEntityLike) => villager.action === ACTION_TYPES.hunt && villager.dest && !villager.dest.isDead
     )
     const farmCandidates = new Set([
-      ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && farm.quantity > 0),
-      ...villagersFarming.map((villager: AnyRecord) => villager.dest).filter((farm: AnyRecord) => farm && !farm.isDead && farm.quantity > 0),
+      ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0),
+      ...villagersFarming
+        .map((villager: AIEntityLike) => villager.dest)
+        .filter(
+          (farm): farm is AIBuildingLike =>
+            !!farm && 'type' in farm && !farm.isDead && (Number(farm.quantity) || 0) > 0
+        ),
     ])
     const sources = {
-      animals: [...ai.foundedAnimals].filter((animal: AnyRecord) => !animal.isDead && this.isLocationSafe(animal)),
+      animals: [...ai.foundedAnimals].filter((animal: AIEntityLike) => !animal.isDead && this.isLocationSafe(animal)),
       berries: [...viableBerryBushes],
       carcasses: [...ai.foundedDeadAnimals].filter(
-        (animal: AnyRecord) => !animal.isDestroyed && animal.quantity > 0 && this.isLocationSafe(animal)
+        (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0 && this.isLocationSafe(animal)
       ),
       farms: [...farmCandidates],
       fish: this.getVillagerFishSources([...availableVillagers, ...villagersFishing]),
@@ -493,11 +530,11 @@ export class AIEconomy {
     this.releaseExcessFoodWorkers(villagersFishing, sourceTargets.fish, availableVillagers)
     this.releaseExcessFoodWorkers(villagersFarming, sourceTargets.farm, availableVillagers)
 
-    const activeForagers = villagersForaging.filter((villager: AnyRecord) => !villager.inactif)
-    const activeCarcassHunters = carcassHunters.filter((villager: AnyRecord) => !villager.inactif)
-    const activeLiveHunters = liveHunters.filter((villager: AnyRecord) => !villager.inactif)
-    const activeFishers = villagersFishing.filter((villager: AnyRecord) => !villager.inactif)
-    const activeFarmers = villagersFarming.filter((villager: AnyRecord) => !villager.inactif)
+    const activeForagers = villagersForaging.filter((villager: AIEntityLike) => !villager.inactif)
+    const activeCarcassHunters = carcassHunters.filter((villager: AIEntityLike) => !villager.inactif)
+    const activeLiveHunters = liveHunters.filter((villager: AIEntityLike) => !villager.inactif)
+    const activeFishers = villagersFishing.filter((villager: AIEntityLike) => !villager.inactif)
+    const activeFarmers = villagersFarming.filter((villager: AIEntityLike) => !villager.inactif)
 
     if (sources.carcasses.length > 0) {
       const toAssign = Math.min(
@@ -505,9 +542,12 @@ export class AIEconomy {
         availableVillagers.length
       )
       for (let i = 0; i < toAssign; i++) {
-        const animal = getClosestInstance(availableVillagers[0] as any, sources.carcasses)
+        const animal = getClosestInstance(
+          asPathInstance(availableVillagers[0]),
+          sources.carcasses as unknown as Iterable<PathInstance>
+        ) as unknown as AIEntityLike | null
         if (!animal) break
-        availableVillagers.shift()!.sendToTakeMeat(animal)
+        availableVillagers.shift()?.sendToTakeMeat?.(animal)
         actions++
       }
     }
@@ -517,7 +557,7 @@ export class AIEconomy {
       activeForagers,
       viableBerryBushes,
       sourceTargets.berry,
-      (villager, bush) => villager.sendToBerrybush(bush)
+      (villager, bush) => villager.sendToBerrybush?.(bush)
     )
 
     actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt)
@@ -528,13 +568,13 @@ export class AIEconomy {
         const villager = availableVillagers[0]
         const target = this.getBestVillagerFishTarget(villager, sources.fish)
         if (!target) break
-        availableVillagers.shift()!.sendToFish(target.fish)
+        availableVillagers.shift()?.sendToFish?.(target.fish)
         actions++
       }
     }
 
     const availableFarms = emptyFarms
-      .filter(farm => farm.isBuilt && !farm.isDead && farm.quantity > 0 && !farm.isUsedBy)
+      .filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0 && !farm.isUsedBy)
       .sort((a, b) => {
         const worker = availableVillagers[0]
         if (!worker) return 0
@@ -548,7 +588,7 @@ export class AIEconomy {
       availableVillagers.length
     )
     for (let i = 0; i < farmsToAssign; i++) {
-      availableVillagers.shift()!.sendToFarm(availableFarms[i])
+      availableVillagers.shift()?.sendToFarm?.(availableFarms[i])
       actions++
     }
 
@@ -568,25 +608,25 @@ export class AIEconomy {
     }
   }
 
-  isValidBuildAssignment(villager: AnyRecord): boolean {
+  isValidBuildAssignment(villager: AIEntityLike): boolean {
     return (
       villager &&
       !villager.isDead &&
       villager.action === ACTION_TYPES.build &&
       villager.work === WORK_TYPES.builder &&
       villager.dest?.family === FAMILY_TYPES.building &&
-      villager.getActionCondition(villager.dest, ACTION_TYPES.build)
+      (villager.getActionCondition?.(villager.dest, ACTION_TYPES.build) ?? false)
     )
   }
 
-  recoverInvalidBuilder(villager: AnyRecord): boolean {
+  recoverInvalidBuilder(villager: AIEntityLike): boolean {
     if (!villager || villager.isDead || this.isValidBuildAssignment(villager)) return false
     if (villager.work !== WORK_TYPES.builder && villager.action !== ACTION_TYPES.build) return false
 
     if (villager.previousDest || villager.previousWork) {
-      villager.goBackToPrevious()
+      villager.goBackToPrevious?.()
     } else {
-      villager.stop()
+      villager.stop?.()
       villager.work = null
     }
     return true
@@ -594,15 +634,18 @@ export class AIEconomy {
 
   // Builders borrow from their current job — no global cap, per-building limit by type.
   // Returns the Set of villagers sent to build this step (to exclude from resource pool).
-  assignBuilders(villagers: AnyRecord[], notBuiltBuildings: AnyRecord[], debug: boolean = false): Set<AnyRecord> {
-    const assigned = new Set<AnyRecord>()
+  assignBuilders(villagers: AIEntityLike[], notBuiltBuildings: AIBuildingLike[], debug: boolean = false): Set<AIEntityLike> {
+    const assigned = new Set<AIEntityLike>()
     if (!notBuiltBuildings.length) return assigned
 
     // Count who is already actively building each site
     const buildingLoad = new Map<string, number>()
     for (const v of villagers) {
       if (this.isValidBuildAssignment(v)) {
-        buildingLoad.set(v.dest.label, (buildingLoad.get(v.dest.label) || 0) + 1)
+        const label = v.dest && 'label' in v.dest && typeof v.dest.label === 'string' ? v.dest.label : null
+        if (label) {
+          buildingLoad.set(label, (buildingLoad.get(label) || 0) + 1)
+        }
         assigned.add(v)
       } else {
         this.recoverInvalidBuilder(v)
@@ -611,17 +654,17 @@ export class AIEconomy {
 
     // Buildings with fewest builders get priority
     const prioritized = [...notBuiltBuildings].sort(
-      (a, b) => (buildingLoad.get(a.label) || 0) - (buildingLoad.get(b.label) || 0)
+      (a, b) => (buildingLoad.get(a.label || '') || 0) - (buildingLoad.get(b.label || '') || 0)
     )
 
     for (const building of prioritized) {
-      if (this.ai.isBuildingThreatened(building)) continue
-      const needed = this.getBuildersNeeded(building.type) - (buildingLoad.get(building.label) || 0)
+      if (this.ai.isBuildingThreatened?.(building)) continue
+      const needed = this.getBuildersNeeded(building.type) - (buildingLoad.get(building.label || '') || 0)
       if (needed <= 0) continue
 
       // Prefer idle villagers (−30 distance bonus); fall back to active gatherers if needed
       const candidates = villagers
-        .filter(v => !assigned.has(v) && v !== this.ai.scout && v.hitPoints > v.totalHitPoints * 0.3)
+        .filter(v => !assigned.has(v) && v !== this.ai.scout && (v.hitPoints || 0) > (v.totalHitPoints || 0) * 0.3)
         .sort((a, b) => {
           const da = Math.abs(a.i - building.i) + Math.abs(a.j - building.j) + (a.inactif ? -30 : 0)
           const db = Math.abs(b.i - building.i) + Math.abs(b.j - building.j) + (b.inactif ? -30 : 0)
@@ -630,9 +673,9 @@ export class AIEconomy {
 
       for (let i = 0; i < Math.min(needed, candidates.length); i++) {
         const v = candidates[i]
-        v.sendToBuilding(building)
+        v.sendToBuilding?.(building)
         assigned.add(v)
-        buildingLoad.set(building.label, (buildingLoad.get(building.label) || 0) + 1)
+        if (building.label) buildingLoad.set(building.label, (buildingLoad.get(building.label) || 0) + 1)
         if (debug) console.log('Villager sent to build:', building.type)
       }
     }
@@ -648,15 +691,7 @@ export class AIEconomy {
     storagepits,
     towncenters,
     debug = false,
-  }: {
-    villagers: AnyRecord[]
-    map: AnyRecord
-    farms: AnyRecord[]
-    notBuiltBuildings: AnyRecord[]
-    storagepits: AnyRecord[]
-    towncenters: AnyRecord[]
-    debug?: boolean
-  }): number {
+  }: AIVillagerActionOptions): number {
     const workerSnapshot = this.getWorkerSnapshot(villagers)
     const targets = this.getResourceTargets(villagers.length)
     const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
@@ -675,15 +710,15 @@ export class AIEconomy {
 
     // Idle villagers not already sent to build
     const availableVillagers = workerSnapshot.inactifVillagers
-      .filter((v: AnyRecord) => !buildingVillagers.has(v))
-      .sort((a: AnyRecord, b: AnyRecord) => b.hitPoints - a.hitPoints)
+      .filter((v: AIEntityLike) => !buildingVillagers.has(v))
+      .sort((a: AIEntityLike, b: AIEntityLike) => (b.hitPoints || 0) - (a.hitPoints || 0))
 
     actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
 
     // Only mine gold/stone near a storage building — long trips kill efficiency
     const storageBuildings = [...(storagepits || []), ...(towncenters || [])].filter(b => b.isBuilt)
     const MAX_MINING_DIST = 22
-    const nearStorage = (node: AnyRecord) =>
+    const nearStorage = (node: AIEntityLike) =>
       !storageBuildings.length ||
       storageBuildings.some(s => Math.abs(node.i - s.i) + Math.abs(node.j - s.j) <= MAX_MINING_DIST)
 
@@ -696,21 +731,23 @@ export class AIEconomy {
         workers: workerSnapshot.villagersOnWood,
         set: this.ai.foundedTrees,
         max: targets.maxVillagersOnWood,
-        cb: (v: AnyRecord, r: AnyRecord) => v.sendToTree(r),
+        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToTree?.(r),
       },
       {
         workers: workerSnapshot.villagersOnStone,
         set: viableStones,
         max: targets.maxVillagersOnStone,
-        cb: (v: AnyRecord, r: AnyRecord) => v.sendToStone(r),
+        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToStone?.(r),
       },
       {
         workers: workerSnapshot.villagersOnGold,
         set: viableGolds,
         max: targets.maxVillagersOnGold,
-        cb: (v: AnyRecord, r: AnyRecord) => v.sendToGold(r),
+        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToGold?.(r),
       },
-    ].sort((a, b) => {
+    ] satisfies GatheringResource[]
+
+    gatheringResources.sort((a, b) => {
       const ra = a.max > 0 ? a.workers.length / a.max : 1
       const rb = b.max > 0 ? b.workers.length / b.max : 1
       return ra - rb
@@ -736,9 +773,12 @@ export class AIEconomy {
     // Any remaining idle villager goes to wood (quota was already met, this is overflow)
     if (availableVillagers.length > 0 && this.ai.foundedTrees.size > 0) {
       for (const villager of [...availableVillagers]) {
-        const tree = getClosestInstance(villager, this.ai.foundedTrees)
+        const tree = getClosestInstance(
+          asPathInstance(villager),
+          this.ai.foundedTrees as unknown as Iterable<PathInstance>
+        ) as unknown as AIEntityLike | null
         if (tree) {
-          villager.sendToTree(tree)
+          villager.sendToTree?.(tree)
           actions++
         }
       }

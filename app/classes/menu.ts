@@ -6,20 +6,21 @@ import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
 import { MenuTooltip } from '../ui/MenuTooltip'
+import type { GameContextLike, MenuLike } from '../types/context'
+import type { ResourceEntity, RuntimeEntity } from '../types/entities'
+import type { PlayerLike } from '../types/player'
+import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
+import type { ResourceAmount } from '../types/common'
 
-type AnyRecord = Record<string, any>
-
-export default class Menu {
-  [key: string]: any
-
-  context: AnyRecord
+export default class Menu implements MenuLike {
+  context: GameContextLike
   gameHud: HTMLDivElement
   bottombar: HTMLDivElement
   bottombarInfo: HTMLDivElement
   bottombarMenu: HTMLDivElement
   bottombarMap: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
-  playersMinimap: any[]
+  playersMinimap: MinimapPlayerCanvas[]
   resourcesMinimap: HTMLCanvasElement
   cameraMinimap: HTMLCanvasElement
   minimapManager: MinimapManager
@@ -29,14 +30,20 @@ export default class Menu {
   topbarView: TopbarView
   minimapInputController: MinimapInputController
   menuTooltip: MenuTooltip
+  toggle?: HTMLButtonElement
   toggled: boolean
-  updatePlayerMiniMap: any
-  updateResourcesMiniMap: any
-  updateCameraMiniMap: any
-  _infoCache: any
-  selection: any
+  icons!: Record<string, string>
+  infoIcons!: Record<string, string>
+  topbar!: HTMLDivElement
+  resources!: HTMLDivElement
+  age!: HTMLDivElement
+  updatePlayerMiniMap: (owner: PlayerLike) => void
+  updateResourcesMiniMap: () => void
+  updateCameraMiniMap: () => void
+  _infoCache: Map<string, HTMLElement> | null
+  selection: RuntimeEntity | null
 
-  constructor(context: AnyRecord) {
+  constructor(context: GameContextLike) {
     this.context = context
     this.gameHud = document.createElement('div')
     this.gameHud.className = 'game-hud'
@@ -133,74 +140,74 @@ export default class Menu {
   }
 
   // Minimap delegates
-  getMinimapFactor(): any {
+  getMinimapFactor(): number {
     return this.minimapManager.getMinimapFactor()
   }
-  revealTerrainMinimap(): any {
+  revealTerrainMinimap(): void {
     return this.minimapManager.revealTerrainMinimap()
   }
-  rebuildTerrainMiniMapFromViews(): any {
+  rebuildTerrainMiniMapFromViews(): void {
     return this.minimapManager.rebuildTerrainMiniMapFromViews()
   }
-  updateTerrainMiniMap(i: any, j: any): any {
+  updateTerrainMiniMap(i: number, j: number): void {
     return this.minimapManager.updateTerrainMiniMap(i, j)
   }
-  updateResourceMiniMap(resource: any): any {
+  updateResourceMiniMap(resource: ResourceEntity): void {
     return this.minimapManager.updateResourceMiniMap(resource)
   }
-  updatePlayerMiniMapEvt(owner: any): any {
+  updatePlayerMiniMapEvt(owner: PlayerLike): void {
     return this.minimapManager.updatePlayerMiniMapEvt(owner)
   }
-  updateResourcesMiniMapEvt(): any {
+  updateResourcesMiniMapEvt(): void {
     return this.minimapManager.updateResourcesMiniMapEvt()
   }
-  updateCameraMiniMapEvt(): any {
+  updateCameraMiniMapEvt(): void {
     return this.minimapManager.updateCameraMiniMapEvt()
   }
 
   // PlayerStats delegate
-  updatePlayerStats(): any {
+  updatePlayerStats(): void {
     return this.playerStatsManager.update()
   }
 
   // Bottombar delegates
-  resetInfo(): any {
+  resetInfo(): void {
     return this.bottombarManager.resetInfo()
   }
-  generateInfo(selection: any): any {
+  generateInfo(selection: RuntimeEntity): void {
     return this.bottombarManager.generateInfo(selection)
   }
-  updateInfo(target: any, action: any): any {
-    return this.bottombarManager.updateInfo(target, action)
+  updateInfo(target: string, action: string | number | ((element: HTMLElement) => void)): void {
+    this.bottombarManager.updateInfo(target, action)
   }
-  updateButtonContent(target: any, action: any): any {
-    return this.bottombarManager.updateButtonContent(target, action)
+  updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
+    this.bottombarManager.updateButtonContent(target, action)
   }
-  toggleButtonCancel(target: any, value: any): any {
+  toggleButtonCancel(target: string, value: boolean): void {
     return this.bottombarManager.toggleButtonCancel(target, value)
   }
-  updateBottombar(): any {
+  updateBottombar(): void {
     return this.bottombarManager.updateBottombar()
   }
-  setBottombar(selection: any): any {
+  setBottombar(selection?: RuntimeEntity | null): void {
     return this.bottombarManager.setBottombar(selection)
   }
-  getMessage(cost: any): any {
+  getMessage(cost: ResourceAmount): string {
     return this.bottombarManager.getMessage(cost)
   }
-  getUnitButton(type: any): any {
+  getUnitButton(type: string): MenuButtonSpec {
     return this.bottombarManager.getUnitButton(type)
   }
-  getRallyPointButton(): any {
+  getRallyPointButton(): MenuButtonSpec {
     return this.bottombarManager.getRallyPointButton()
   }
-  getBuildingButton(type: any): any {
-    return this.bottombarManager.getBuildingButton(type)
+  getBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
+    return this.bottombarManager.getBuildingButton(type, ownerOverride)
   }
-  getTechnologyButton(type: any): any {
+  getTechnologyButton(type: string): MenuButtonSpec {
     return this.bottombarManager.getTechnologyButton(type)
   }
-  handleHotkey(key: any): any {
+  handleHotkey(key: string): void {
     return this.bottombarManager.handleHotkey(key)
   }
 }

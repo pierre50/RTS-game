@@ -9,13 +9,11 @@ import { ASSET_BUNDLES, ASSET_LOAD_SEQUENCE } from '../config/assetManifest'
  */
 
 export default class LoaderScreen extends Container {
-  app: any
   loadingDiv: HTMLDivElement
   done: () => void
 
   constructor() {
     super()
-    this.app
 
     this.loadingDiv = document.createElement('div')
     this.loadingDiv.className = 'loading'
@@ -25,7 +23,7 @@ export default class LoaderScreen extends Container {
 
   async start(): Promise<void> {
     Object.entries(ASSET_BUNDLES).forEach(([bundleName, assets]) => {
-      Assets.addBundle(bundleName, assets as any)
+      Assets.addBundle(bundleName, assets)
     })
 
     for (const { bundle, messageKey } of ASSET_LOAD_SEQUENCE) {

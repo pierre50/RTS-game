@@ -43,19 +43,23 @@ import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
+import type { GameContextLike } from '../../types/context'
+import type { PlayerLike } from '../../types/player'
 
-type AnyRecord = Record<string, any>
+type UnitSpawnOptions = Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }
 
-function getActionSheet(work: any, action: any, Assets: any, unit: AnyRecord) {
+function getActionSheet(work: string | null | undefined, action: string | null | undefined, AssetsRef: typeof Assets, unit: UnitEntity) {
   if (!work) {
     return
   }
   const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
-  return Assets.cache.get(unit.allAssets[work][actionSheet])
+  return AssetsRef.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
 }
 
-function getFishingOverlayFrames(spritesheet: any, unit: AnyRecord) {
-  const direction = degreeToDirection(unit.degree)
+function getFishingOverlayFrames(spritesheet: { textures: Record<string, unknown> }, unit: UnitEntity) {
+  const direction = degreeToDirection(unit.degree ?? 0)
   switch (direction) {
     case 'southeast':
       return { textures: getAnimationFrames(spritesheet.textures, 'southwest'), mirrored: true }
@@ -69,14 +73,15 @@ function getFishingOverlayFrames(spritesheet: any, unit: AnyRecord) {
 }
 
 export class Unit extends Instance {
-  unitInterface: AnyRecord
+  unitInterface: UnitInterface
   unitCommands: UnitCommands
   unitLifecycle: UnitLifecycle
   unitCombat: UnitCombat
   unitActions: UnitActions
   unitMovement: UnitMovement
+  sendTo!: (target: RuntimeCell | RuntimeEntity, action?: string) => void
 
-  constructor(options: AnyRecord, context: AnyRecord) {
+  constructor(options: UnitSpawnOptions, context: GameContextLike) {
     super(context)
     this.selectionFactor = 0.5
 
@@ -84,12 +89,12 @@ export class Unit extends Instance {
       context: { map, menu },
     } = this
     this.family = FAMILY_TYPES.unit
-    this.unitInterface = new UnitInterface(this)
-    this.unitCommands = new UnitCommands(this)
-    this.unitLifecycle = new UnitLifecycle(this)
-    this.unitCombat = new UnitCombat(this)
-    this.unitActions = new UnitActions(this)
-    this.unitMovement = new UnitMovement(this)
+    this.unitInterface = new UnitInterface(this as unknown as UnitEntity)
+    this.unitCommands = new UnitCommands(this as unknown as UnitEntity)
+    this.unitLifecycle = new UnitLifecycle(this as unknown as UnitEntity)
+    this.unitCombat = new UnitCombat(this as unknown as UnitEntity)
+    this.unitActions = new UnitActions(this as unknown as UnitEntity)
+    this.unitMovement = new UnitMovement(this as unknown as UnitEntity)
 
     this.dest = null
     this.realDest = null
@@ -107,8 +112,8 @@ export class Unit extends Instance {
     this.loadingType = null
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
-    this.x = null as any
-    this.y = null as any
+    this.x = null as unknown as number
+    this.y = null as unknown as number
     this.z = null
 
     Object.assign(this, options)
@@ -119,7 +124,7 @@ export class Unit extends Instance {
     this.x = this.x ?? map.grid[this.i][this.j].x
     this.y = this.y ?? map.grid[this.i][this.j].y
     this.z = this.z ?? map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as any)
+    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
@@ -158,12 +163,12 @@ export class Unit extends Instance {
       this.sailSpritesheet = Assets.cache.get(this.sailSheet)
     }
 
-    if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible(this)) {
+    if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible?.(this)) {
       playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
     }
 
     this.interface = {
-      info: (element: any) => {
+      info: (element: HTMLElement) => {
         const data = this.owner.config.units[this.type]
         this.setDefaultInterface(element, data)
         if (this.showLoading && this.owner.isPlayed) {
@@ -182,7 +187,9 @@ export class Unit extends Instance {
                         title: t('buildMenu'),
                         description: t('buildMenuDescription'),
                       }),
-                      children: Object.keys(this.owner.config.buildings).map(key => menu.getBuildingButton(key, this.owner)),
+                      children: Object.keys(this.owner.config.buildings)
+                        .map(key => menu.getBuildingButton?.(key, this.owner))
+                        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
                     },
                   ]
                 : []),
@@ -191,20 +198,20 @@ export class Unit extends Instance {
                     {
                       id: 'unload',
                       icon: 'assets/interface/50721/001_50721.png',
-                      hide: () => !getTransportLoad(this as any),
+                      hide: () => !getTransportLoad(this as unknown as Parameters<typeof getTransportLoad>[0]),
                       tooltip: () => ({
                         title: t('unloadTransport'),
                         description: t('unloadTransportDescription'),
                       }),
-                      onClick: (selection: any) => {
-                        if (!canUnloadTransport(selection)) {
+                      onClick: (selection: RuntimeEntity) => {
+                        if (!canUnloadTransport(selection as unknown as Parameters<typeof canUnloadTransport>[0])) {
                           menu.showMessage(t('transportUnloadNeedsCoast'), 'warning')
                           return
                         }
-                        const unloaded = unloadTransport(selection)
+                        const unloaded = unloadTransport(selection as unknown as Parameters<typeof unloadTransport>[0])
                         if (unloaded && selection.owner?.isPlayed) {
                           menu.setBottombar(selection)
-                          menu.updatePlayerMiniMapEvt(selection.owner)
+                          menu.updatePlayerMiniMapEvt?.(selection.owner)
                         }
                       },
                     },
@@ -216,8 +223,10 @@ export class Unit extends Instance {
 
     this.allowMove = false
     this.eventMode = 'static'
-    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
-    this.sprite = new AnimatedSprite(getAnimationFrames(this[SHEET_TYPES.standing].textures, 'south') as any)
+    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this as unknown as UnitEntity)
+    this.sprite = new AnimatedSprite(
+      getAnimationFrames(this[SHEET_TYPES.standing].textures, 'south') as unknown as ConstructorParameters<typeof AnimatedSprite>[0]
+    )
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
@@ -239,7 +248,9 @@ export class Unit extends Instance {
     this.setupSailSprite()
     this.syncFishingOverlaySprite()
 
-    this.sendTo = this.owner.isPlayed ? throttle(this.sendToEvt, 100, true) : this.sendToEvt.bind(this)
+    this.sendTo = this.owner.isPlayed
+      ? (throttle(this.sendToEvt.bind(this), 100, true) as unknown as (target: RuntimeCell | RuntimeEntity, action?: string) => void)
+      : (this.sendToEvt.bind(this) as unknown as (target: RuntimeCell | RuntimeEntity, action?: string) => void)
 
     this.on('pointerdown', evt => {
       const {
@@ -250,26 +261,27 @@ export class Unit extends Instance {
         controls.rallyPointController?.active ||
         controls.mouseBuilding ||
         controls.mouseRectangle ||
-        !controls.isMouseInApp(evt)
+        !controls.isMouseInApp?.(evt as unknown as never)
       ) {
         return
       }
-      if (controls.consumeUnitDoubleClick(this)) {
+      if (controls.consumeUnitDoubleClick?.(this as unknown as RuntimeEntity)) {
         if (this.owner.isPlayed) {
           const selectedUnits = new Set(player.selectedUnits)
-          controls.getCellOnCamera((cell: any) => {
+          controls.getCellOnCamera?.((cell: RuntimeCell) => {
+            const has = cell.has as unknown as UnitEntity | null
             if (
               player.selectedUnits.length < MAX_SELECT_UNITS &&
-              cell.has &&
-              cell.has.owner &&
-              cell.has.owner.label === this.owner.label &&
-              cell.has.type === this.type &&
-              !cell.has.loadedInTransport &&
-              !selectedUnits.has(cell.has)
+              has &&
+              has.owner &&
+              has.owner.label === this.owner.label &&
+              has.type === this.type &&
+              !has.loadedInTransport &&
+              !selectedUnits.has(has as unknown as UnitEntity)
             ) {
-              selectedUnits.add(cell.has)
-              cell.has.select()
-              player.selectedUnits.push(cell.has)
+              selectedUnits.add(has as unknown as UnitEntity)
+              has.select?.()
+              player.selectedUnits.push(has)
             }
           })
         }
@@ -279,28 +291,39 @@ export class Unit extends Instance {
       const {
         context: { controls, player, menu, editor },
       } = this
-      if (editor?.handleEntityInteraction(this)) return
+      if (editor?.handleEntityInteraction?.(this as unknown as RuntimeEntity)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
-        controls.rallyPointController.handleMouseUpOnEntity(this)
+        controls.rallyPointController.handleMouseUpOnEntity(this as unknown as RuntimeEntity)
         return
       }
-      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
+      if (controls.doubleClicked || controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp?.(evt as unknown as never)) {
         return
       }
 
       controls.mouse.prevent = true
-      controls.registerUnitClick(this)
+      controls.registerUnitClick?.(this as unknown as RuntimeEntity)
 
       if (this.owner.isPlayed) {
-        if (isTransportBoat(this as any) && player.selectedUnits.length) {
-          const hasTransportLoadCandidate = player.selectedUnits.some((playerUnit: any) => canUnitEnterTransport(playerUnit, this as any))
+        if (isTransportBoat(this as unknown as Parameters<typeof isTransportBoat>[0]) && player.selectedUnits.length) {
+          const hasTransportLoadCandidate = player.selectedUnits.some((playerUnit: UnitEntity) =>
+            canUnitEnterTransport(
+              playerUnit as unknown as Parameters<typeof canUnitEnterTransport>[0],
+              this as unknown as Parameters<typeof canUnitEnterTransport>[1]
+            )
+          )
           let hasSentTransportLoad = false
           for (const playerUnit of [...player.selectedUnits]) {
-            if (sendUnitToTransport(playerUnit, this as any)) hasSentTransportLoad = true
+            if (
+              sendUnitToTransport(
+                playerUnit as unknown as Parameters<typeof sendUnitToTransport>[0],
+                this as unknown as Parameters<typeof sendUnitToTransport>[1]
+              )
+            )
+              hasSentTransportLoad = true
           }
           if (hasSentTransportLoad || hasTransportLoadCandidate) {
-            drawInstanceBlinkingSelection(this as any)
+            drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
             return
           }
         }
@@ -308,20 +331,20 @@ export class Unit extends Instance {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition(this, ACTION_TYPES.heal)) {
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this as unknown as RuntimeEntity, ACTION_TYPES.heal)) {
               hasSentHealer = true
-              playerUnit.sendTo(this, ACTION_TYPES.heal)
+              playerUnit.sendTo?.(this as unknown as RuntimeEntity, ACTION_TYPES.heal)
             }
           }
         }
         if (hasSentHealer) {
-          drawInstanceBlinkingSelection(this as any)
-        } else if (player.selectedUnit !== this) {
+          drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+        } else if (player.selectedUnit !== (this as unknown as UnitEntity)) {
           this.owner.unselectAll()
           this.select()
-          menu.setBottombar(this)
-          player.selectedUnit = this
-          player.selectedUnits = [this]
+          menu.setBottombar(this as unknown as RuntimeEntity)
+          player.selectedUnit = this as unknown as UnitEntity
+          player.selectedUnits = [this as unknown as UnitEntity]
         }
       } else {
         let hasSentConverter = false
@@ -329,47 +352,51 @@ export class Unit extends Instance {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition(this, ACTION_TYPES.convert)) {
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this as unknown as RuntimeEntity, ACTION_TYPES.convert)) {
               hasSentConverter = true
-              playerUnit.sendToConvert(this)
+              playerUnit.sendToConvert?.(this as unknown as RuntimeEntity)
               continue
             }
             if (this.getActionCondition(playerUnit, ACTION_TYPES.attack))
               if (playerUnit.type === UNIT_TYPES.villager) {
                 hasSentAttacker = true
-                playerUnit.sendToAttack(this)
+                playerUnit.sendToAttack?.(this as unknown as RuntimeEntity)
               } else if (playerUnit.work === WORK_TYPES.attacker) {
                 hasSentAttacker = true
-                playerUnit.sendTo(this, ACTION_TYPES.attack)
+                playerUnit.sendTo?.(this as unknown as RuntimeEntity, ACTION_TYPES.attack)
               }
           }
         }
         if (hasSentConverter || hasSentAttacker) {
-          drawInstanceBlinkingSelection(this as any)
-        } else if ((player.selectedOther !== this && playerCanSeeInstance(this as any, player)) || map.revealEverything) {
+          drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+        } else if (
+          (player.selectedOther !== (this as unknown as RuntimeEntity) &&
+            playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player)) ||
+          map.revealEverything
+        ) {
           player.unselectAll()
           this.select()
-          menu.setBottombar(this)
-          player.selectedOther = this
-          playSelectionSound(this)
+          menu.setBottombar(this as unknown as RuntimeEntity)
+          player.selectedOther = this as unknown as RuntimeEntity
+          playSelectionSound(this as unknown as Parameters<typeof playSelectionSound>[0])
         }
       }
     })
 
-    changeSpriteColor(this.sprite, this.owner.color)
+    changeSpriteColor(this.sprite as unknown as Parameters<typeof changeSpriteColor>[0], this.owner.color ?? '')
 
     this.visibilityTimeout = setTimeout(() => {
-      if (!this.isDestroyed) updateInstanceVisibility(this as any)
+      if (!this.isDestroyed) updateInstanceVisibility(this as unknown as Parameters<typeof updateInstanceVisibility>[0])
     })
   }
 
   setupSailSprite() {
     if (!this.sailSpritesheet?.textures) return
 
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as any)
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as unknown as Parameters<typeof getSailAnimationFrames>[1])
     if (!textures.length) return
 
-    this.sailSprite = new AnimatedSprite(textures as any)
+    this.sailSprite = new AnimatedSprite(textures as unknown as ConstructorParameters<typeof AnimatedSprite>[0])
     bindAnimatedSpriteToTicker(this.sailSprite, this.context.app)
     this.sailSprite.label = LABEL_TYPES.sail
     this.sailSprite.allowMove = false
@@ -383,13 +410,13 @@ export class Unit extends Instance {
     this.addChild(this.sailSprite)
   }
 
-  syncSailSprite(goto: any = null) {
+  syncSailSprite(goto: number | null = null) {
     if (!this.sailSprite || this.isDead || !this.sailSpritesheet?.textures) {
       if (this.sailSprite) this.sailSprite.visible = false
       return
     }
 
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as any)
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as unknown as Parameters<typeof getSailAnimationFrames>[1])
     if (!textures.length) {
       this.sailSprite.visible = false
       return
@@ -405,10 +432,10 @@ export class Unit extends Instance {
   setupFishingOverlaySprite() {
     if (!this.fishingOverlaySheet?.textures || this.fishingOverlaySprite) return
 
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this as unknown as UnitEntity)
     if (!textures.length) return
 
-    this.fishingOverlaySprite = new AnimatedSprite(textures as any)
+    this.fishingOverlaySprite = new AnimatedSprite(textures as unknown as ConstructorParameters<typeof AnimatedSprite>[0])
     bindAnimatedSpriteToTicker(this.fishingOverlaySprite, this.context.app)
     this.fishingOverlaySprite.label = LABEL_TYPES.fishingNet
     this.fishingOverlaySprite.allowMove = false
@@ -445,7 +472,7 @@ export class Unit extends Instance {
     this.setupFishingOverlaySprite()
     if (!this.fishingOverlaySprite) return
 
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this as unknown as UnitEntity)
     if (!textures.length) {
       this.removeFishingOverlaySprite()
       return
@@ -455,7 +482,7 @@ export class Unit extends Instance {
     this.fishingOverlaySprite.gotoAndStop(0)
   }
 
-  setTextures(sheet: any) {
+  setTextures(sheet: string) {
     super.setTextures(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
     this.syncFishingOverlaySprite()
@@ -468,7 +495,7 @@ export class Unit extends Instance {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this as any, player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
   unselect() {
@@ -477,14 +504,14 @@ export class Unit extends Instance {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this as any, player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
   hasPath() {
     return this.path.length > 0
   }
 
-  setDest(dest: any) {
+  setDest(dest: RuntimeEntity | RuntimeCell | null) {
     if (!dest || dest.isDestroyed) {
       this.stop()
       return
@@ -496,11 +523,11 @@ export class Unit extends Instance {
       j: dest.j,
       x: dest.x,
       y: dest.y,
-      label: dest.label,
+      label: (dest as RuntimeEntity).label,
     }
   }
 
-  setPath(path: any[]) {
+  setPath(path: RuntimeCell[]) {
     if (!path.length) {
       this.stop()
       return
@@ -511,7 +538,7 @@ export class Unit extends Instance {
     this.startInterval(() => this.step(), STEP_TIME, true, 'unit.step')
   }
 
-  queueOrder(orderOrDest: any, action: any = null) {
+  queueOrder(orderOrDest: (() => void) | RuntimeEntity | RuntimeCell, action: string | null = null): boolean {
     if (typeof orderOrDest === 'function') {
       this.pendingOrder = { execute: orderOrDest }
       return true
@@ -523,7 +550,7 @@ export class Unit extends Instance {
     return true
   }
 
-  flushPendingOrder() {
+  flushPendingOrder(): boolean {
     if (!this.pendingOrder || this.isDead) return false
     const pendingOrder = this.pendingOrder
     this.pendingOrder = null
@@ -533,17 +560,18 @@ export class Unit extends Instance {
     }
     const { dest, action } = pendingOrder
     if (!dest || dest.isDestroyed) return false
-    this.sendToEvt(dest, action)
+    this.sendToEvt(dest, action ?? null)
     return true
   }
 
   handleChangeDest() {
-    if (this.dest && this.dest.isUsedBy === this) {
-      this.dest.isUsedBy = null
+    const dest = this.dest as unknown as { isUsedBy?: unknown } | null
+    if (dest && dest.isUsedBy === this) {
+      dest.isUsedBy = null
     }
   }
 
-  sendToEvt(dest: any, action: any, options?: any) {
+  sendToEvt(dest: RuntimeEntity | RuntimeCell | null, action: string | null, options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }) {
     return this.unitMovement.sendToEvt(dest, action, options)
   }
 
@@ -551,15 +579,15 @@ export class Unit extends Instance {
     return this.unitActions.goBackToPrevious()
   }
 
-  startGathering(loadingType: any, soundId: any, opts?: any) {
+  startGathering(loadingType: string, soundId: string | string[] | null | undefined, opts?: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean }) {
     return this.unitActions.startGathering(loadingType, soundId, opts)
   }
 
-  getAction(name: any) {
+  getAction(name: string) {
     return this.unitActions.getAction(name)
   }
 
-  detect(instance: any) {
+  detect(instance: RuntimeEntity | null) {
     return this.unitCombat.detect(instance)
   }
 
@@ -567,7 +595,7 @@ export class Unit extends Instance {
     return this.unitCombat.handleAffectNewDestHunter()
   }
 
-  upgrade(type: any) {
+  upgrade(type: string) {
     return this.unitActions.upgrade(type)
   }
 
@@ -575,7 +603,7 @@ export class Unit extends Instance {
     return this.unitMovement.affectNewDest()
   }
 
-  isUnitAtDest(action: any, dest: any) {
+  isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) {
     return this.unitMovement.isUnitAtDest(action, dest)
   }
 
@@ -587,15 +615,18 @@ export class Unit extends Instance {
     return this.unitMovement.moveToPath()
   }
 
-  isAttacked(instance: any) {
+  isAttacked(instance: RuntimeEntity | null) {
     if (this.context.editor) {
       return
     }
     if (!instance || this.isDead) {
       return
     }
-    this.owner.reportThreat?.(this, instance)
-    if (shouldFleeWhenAttacked(this)) {
+    ;(this.owner as unknown as { reportThreat?: (target: RuntimeEntity, attacker: RuntimeEntity) => void }).reportThreat?.(
+      this as unknown as RuntimeEntity,
+      instance
+    )
+    if (shouldFleeWhenAttacked(this as unknown as Parameters<typeof shouldFleeWhenAttacked>[0])) {
       this.runaway(instance)
       return
     }
@@ -641,7 +672,7 @@ export class Unit extends Instance {
     this.setTextures(SHEET_TYPES.standing)
   }
 
-  startInterval(callback: (...args: any[]) => void, time: number, immediate = true, name = 'unit.interval') {
+  startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {
     if (this.isDead) {
       return
     }
@@ -654,7 +685,7 @@ export class Unit extends Instance {
     return this.unitMovement.explore()
   }
 
-  runaway(instance: any) {
+  runaway(instance: RuntimeEntity) {
     return this.unitMovement.runaway(instance)
   }
 
@@ -682,14 +713,14 @@ export class Unit extends Instance {
     return this.unitInterface.getLoadingElement()
   }
 
-  commonSendTo(target: any, work: any, action: any, keepPrevious: any, immediate = false, preserveBuildQueue = false) {
+  commonSendTo(target: RuntimeEntity, work: string, action: string | null, keepPrevious: boolean | Record<string, unknown>, immediate = false, preserveBuildQueue = false) {
     return this.unitCommands.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue)
   }
 
   // Navigate to arrivalCell but set target as the attack dest.
   // Avoids the N×M A* calls getInstanceClosestFreeCellPath makes when multiple
   // units are sent to the same solid target — each unit gets exactly one A* call.
-  sendToWithCell(target: any, arrivalCell: any, action: any) {
+  sendToWithCell(target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) {
     return this.unitCommands.sendToWithCell(target, arrivalCell, action)
   }
 
@@ -697,31 +728,31 @@ export class Unit extends Instance {
     return this.unitCommands.sendToDelivery()
   }
 
-  sendToFish(target: any, immediate = false) {
+  sendToFish(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToFish(target, immediate)
   }
 
-  sendToAttack(target: any) {
+  sendToAttack(target: RuntimeEntity) {
     return this.unitCommands.sendToAttack(target)
   }
 
-  sendToConvert(target: any) {
+  sendToConvert(target: RuntimeEntity) {
     return this.unitCommands.sendToConvert(target)
   }
 
-  sendToTakeMeat(target: any, immediate = false) {
+  sendToTakeMeat(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToTakeMeat(target, immediate)
   }
 
-  sendToHunt(target: any, immediate = false) {
+  sendToHunt(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToHunt(target, immediate)
   }
 
-  sendToBuilding(target: any, preserveBuildQueue = false) {
+  sendToBuilding(target: BuildingEntity, preserveBuildQueue = false) {
     return this.unitCommands.sendToBuilding(target, preserveBuildQueue)
   }
 
-  sendToBuildingQueue(targets: any[]) {
+  sendToBuildingQueue(targets: BuildingEntity[]) {
     return this.unitCommands.sendToBuildingQueue(targets)
   }
 
@@ -729,27 +760,27 @@ export class Unit extends Instance {
     return this.unitCommands.continueBuildingQueue()
   }
 
-  sendToFarm(target: any, immediate = false) {
+  sendToFarm(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToFarm(target, immediate)
   }
 
-  sendToTree(target: any, immediate = false) {
+  sendToTree(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToTree(target, immediate)
   }
 
-  sendToBerrybush(target: any, immediate = false) {
+  sendToBerrybush(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToBerrybush(target, immediate)
   }
 
-  sendToStone(target: any, immediate = false) {
+  sendToStone(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToStone(target, immediate)
   }
 
-  sendToGold(target: any, immediate = false) {
+  sendToGold(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToGold(target, immediate)
   }
 
-  setDefaultInterface(element: any, data: any) {
-    this.unitInterface.setDefaultInterface(element, data)
+  setDefaultInterface(element: HTMLElement, data: unknown) {
+    this.unitInterface.setDefaultInterface(element, data as Parameters<UnitInterface['setDefaultInterface']>[1])
   }
 }

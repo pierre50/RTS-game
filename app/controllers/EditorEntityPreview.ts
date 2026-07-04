@@ -74,7 +74,8 @@ export class EditorEntityPreview {
     this._kind = kind
     this._type = type
     this._owner = owner
-    this._buildingConfig = kind === 'building' ? (owner.config?.buildings?.[type] as PlaceableBuildingConfig) : null
+    this._buildingConfig =
+      kind === 'building' ? (owner.config?.buildings?.[type] as unknown as PlaceableBuildingConfig) : null
     this._isBoat = kind === 'unit' && (owner.config?.units?.[type] as UnitPreviewConfig | undefined)?.category === 'Boat'
     this.controls.addChild(container)
   }

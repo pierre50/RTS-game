@@ -1,4 +1,5 @@
 export type UnknownRecord = Record<string, unknown>
+export type LooseRecord = Record<string, any>
 
 export type Nullable<T> = T | null
 

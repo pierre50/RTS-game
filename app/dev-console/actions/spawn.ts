@@ -1,16 +1,19 @@
 import type { CommandResult } from '../DevCommandRegistry'
+import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
 import { findKey, getAmount, getSpawnCell } from './shared'
 
-type AnyRecord = Record<string, any>
+type UnitSpawnConfig = {
+  category?: string
+}
 
-function canSpawnUnitOnCell(cell: AnyRecord, unitConfig: AnyRecord): boolean {
+function canSpawnUnitOnCell(cell: DevCell, unitConfig: UnitSpawnConfig): boolean {
   if (!cell || cell.solid || cell.has) return false
   return unitConfig.category === 'Boat' ? cell.category === 'Water' : cell.category !== 'Water' && !cell.waterBorder
 }
 
-type ResolveOwnerResult = { owner: AnyRecord; ownerIndex: number; error: null } | { owner: null; ownerIndex: null; error: string }
+type ResolveOwnerResult = { owner: DevPlayer; ownerIndex: number; error: null } | { owner: null; ownerIndex: null; error: string }
 
-function resolveOwner(context: AnyRecord, playerIndex: string | number | null): ResolveOwnerResult {
+function resolveOwner(context: DevConsoleContext, playerIndex: string | number | null): ResolveOwnerResult {
   if (playerIndex == null) {
     return { owner: context.player, ownerIndex: context.players.indexOf(context.player), error: null }
   }
@@ -32,7 +35,7 @@ function formatSpawnMessage(entityType: string, spawned: number, ownerIndex: num
 }
 
 export function spawnUnits(
-  context: AnyRecord,
+  context: DevConsoleContext,
   typeName: string,
   count: string | number = 1,
   playerIndex: string | number | null = null
@@ -47,14 +50,14 @@ export function spawnUnits(
     const suffix = playerIndex == null ? '' : ` for player ${ownerIndex}`
     return { ok: false, message: `Unknown unit${suffix}: ${typeName}` }
   }
-  const config = owner.config.units[type]
+  const config = owner.config.units[type] as UnitSpawnConfig
 
   let spawned = 0
   for (let i = 0; i < getAmount(count); i++) {
     const cell = getSpawnCell(context, { cellCondition: cell => canSpawnUnitOnCell(cell, config) })
     if (!cell) break
-    owner.createUnit({ i: cell.i, j: cell.j, type })
-    owner.population++
+    owner.createUnit?.({ i: cell.i, j: cell.j, type })
+    owner.population = (owner.population ?? 0) + 1
     spawned++
   }
   if (!spawned) {
@@ -62,12 +65,12 @@ export function spawnUnits(
     return { ok: false, message }
   }
   menu.updateTopbar()
-  menu.updatePlayerMiniMapEvt(owner)
+  menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, spawned, ownerIndex, playerIndex != null) }
 }
 
 export function spawnBuilding(
-  context: AnyRecord,
+  context: DevConsoleContext,
   typeName: string,
   playerIndex: string | number | null = null
 ): CommandResult {
@@ -87,9 +90,10 @@ export function spawnBuilding(
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }
 
   const building = owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
+  owner.hasBuilt ??= []
   if (!owner.hasBuilt.includes(type)) owner.hasBuilt.push(type)
-  building.updateTexture()
+  ;(building as { updateTexture?: () => void }).updateTexture?.()
   menu.updateTopbar()
-  menu.updatePlayerMiniMapEvt(owner)
+  menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, 1, ownerIndex, playerIndex != null) }
 }

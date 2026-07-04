@@ -8,8 +8,44 @@ import {
   unloadTransport,
 } from '../lib'
 import { BASE_TARGET_VALUE_BY_TYPE } from './config'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
+import type {
+  AIBuildingLike,
+  AIDefenseTarget,
+  AIDifficultyConfig,
+  AIEntityConfig,
+  AIEntityLike,
+  AIGridPosition,
+  AIMemoryLike,
+  AIMilitaryActionOptions,
+  AIStrategyPlayerLike,
+} from './types'
 
-type AnyRecord = Record<string, any>
+type PathInstance = Parameters<typeof getInstancePath>[0]
+type TransportUnit = Parameters<typeof getTransportLoad>[0]
+type LoadPlan = {
+  shoreCell: RuntimeCell
+  coastCell: RuntimeCell
+}
+
+type AIMilitaryStrategyLike = {
+  difficultyConfig: AIDifficultyConfig
+  needsNavalTransport(militaryCount?: number): boolean
+}
+
+type DefenseTargetCandidate = {
+  memory: AIMemoryLike
+  target: AIEntityLike | null
+  dist: number
+}
+
+function asPathInstance(instance: AIGridPosition): PathInstance {
+  return instance as unknown as PathInstance
+}
+
+function asTransportUnit(instance: AIEntityLike): TransportUnit {
+  return instance as unknown as TransportUnit
+}
 
 const NAVAL_TRANSPORT_GROUP_MIN = 4
 const NAVAL_TRANSPORT_GROUP_MAX = 5
@@ -19,15 +55,15 @@ const NAVAL_OPERATION_TIMEOUT_MS = 90000
 const NAVAL_OPERATION_RETRY_MS = 20000
 
 export class AIMilitary {
-  ai: AnyRecord
-  strategy: AnyRecord
+  ai: AIStrategyPlayerLike
+  strategy: AIMilitaryStrategyLike
 
-  constructor(ai: AnyRecord, strategy: AnyRecord) {
+  constructor(ai: AIStrategyPlayerLike, strategy: AIMilitaryStrategyLike) {
     this.ai = ai
     this.strategy = strategy
   }
 
-  sendToAttack(soldiers: AnyRecord[], target: AnyRecord, debug = false): void {
+  sendToAttack(soldiers: AIEntityLike[], target: AIEntityLike, debug = false): void {
     if (target?.owner && !this.ai.isEnemy(target.owner)) return
     if (debug) console.log('Sending soldiers to attack:', target)
     soldiers.forEach(c => {
@@ -47,9 +83,9 @@ export class AIMilitary {
         dist,
         cell => !cell.solid && cell.category !== 'Water'
       )
-      const taken = new Set<AnyRecord>()
+      const taken = new Set<RuntimeCell>()
       for (const soldier of soldiers) {
-        let best: AnyRecord | null = null,
+        let best: RuntimeCell | null = null,
           bestDist = Infinity
         for (const cell of candidates) {
           if (taken.has(cell)) continue
@@ -61,23 +97,23 @@ export class AIMilitary {
         }
         if (best) {
           taken.add(best)
-          soldier.sendToWithCell(target, best, ACTION_TYPES.attack)
+          soldier.sendToWithCell?.(target, best, ACTION_TYPES.attack)
         } else {
-          soldier.sendTo(target, ACTION_TYPES.attack)
+          soldier.sendTo?.(target, ACTION_TYPES.attack)
         }
       }
     } else {
-      soldiers.forEach(c => c.sendTo(target, ACTION_TYPES.attack))
+      soldiers.forEach(c => c.sendTo?.(target, ACTION_TYPES.attack))
     }
   }
 
-  getArmyCenter(units: AnyRecord[]): AnyRecord | null {
+  getArmyCenter(units: AIEntityLike[]): AIGridPosition | null {
     if (!units.length) return null
     const sum = units.reduce((acc, unit) => ({ i: acc.i + unit.i, j: acc.j + unit.j }), { i: 0, j: 0 })
     return { i: sum.i / units.length, j: sum.j / units.length }
   }
 
-  getEntityConfig(instance: AnyRecord): AnyRecord | null {
+  getEntityConfig(instance: AIEntityLike): AIEntityConfig | null {
     if (!instance?.type) return null
     if (instance.family === FAMILY_TYPES.unit) {
       return this.ai.config.units?.[instance.type] || null
@@ -88,8 +124,8 @@ export class AIMilitary {
     return null
   }
 
-  getCombatPower(instance: AnyRecord): number {
-    if (!instance || instance.isDead || instance.isDestroyed || instance.hitPoints <= 0) return 0
+  getCombatPower(instance?: AIEntityLike | null): number {
+    if (!instance || instance.isDead || instance.isDestroyed || (instance.hitPoints || 0) <= 0) return 0
 
     const config = this.getEntityConfig(instance) || {}
     const totalHitPoints = instance.totalHitPoints || config.totalHitPoints || instance.hitPoints || 1
@@ -118,7 +154,7 @@ export class AIMilitary {
     return power * (0.35 + hpRatio * 0.65)
   }
 
-  getGroupCombatPower(units: AnyRecord[] = []): number {
+  getGroupCombatPower(units: AIEntityLike[] = []): number {
     return units.reduce((total, unit) => total + this.getCombatPower(unit), 0)
   }
 
@@ -128,7 +164,7 @@ export class AIMilitary {
     return baseThreshold * 7 + ai.age * 4
   }
 
-  estimateLocalThreat(target: AnyRecord): number {
+  estimateLocalThreat(target: AIGridPosition): number {
     const freshUnits = this.ai.getEnemyMemories({ family: FAMILY_TYPES.unit, freshWithin: 20000 })
     const freshBuildings = this.ai.getEnemyMemories({ family: FAMILY_TYPES.building, freshWithin: 30000 })
     let threat = 0
@@ -145,56 +181,61 @@ export class AIMilitary {
     return Math.max(0, threat)
   }
 
-  estimateTargetDefensePower(target: AnyRecord | null): number {
+  estimateTargetDefensePower(target: AIEntityLike | null): number {
     if (!target) return 0
     return this.getCombatPower(target) + this.estimateLocalThreat(target)
   }
 
-  scoreEnemyTarget(memory: AnyRecord, armyCenter: AnyRecord | null): number {
+  scoreEnemyTarget(memory: AIMemoryLike, armyCenter: AIGridPosition | null): number {
     const target = memory.instance
     if (!target || target.isDead || target.isDestroyed) return -Infinity
 
     const travelCost = armyCenter ? (Math.abs(target.i - armyCenter.i) + Math.abs(target.j - armyCenter.j)) / 4 : 0
     const freshnessPenalty = memory.visible ? 0 : Math.min(6, (this.ai.getNow() - memory.lastSeenAt) / 4000)
     const localThreat = this.estimateLocalThreat(target) / 8
-    const hpRatio = target.totalHitPoints ? target.hitPoints / target.totalHitPoints : 1
+    const hpRatio = target.totalHitPoints ? (target.hitPoints || 0) / target.totalHitPoints : 1
     const finishBonus = 1 - hpRatio
     const baseValue = BASE_TARGET_VALUE_BY_TYPE[target.type] || (target.family === FAMILY_TYPES.building ? 6 : 5)
 
     return baseValue + finishBonus * 3 - travelCost - localThreat - freshnessPenalty
   }
 
-  getBestEnemyTarget(units: AnyRecord[] = []): AnyRecord | null {
+  getBestEnemyTarget(units: AIEntityLike[] = []): AIEntityLike | null {
     const armyCenter = this.getArmyCenter(units)
-    const candidates = this.ai.getEnemyMemories({ freshWithin: 45000 }).filter((memory: AnyRecord) => memory.instance?.hitPoints > 0)
+    const candidates = this.ai
+      .getEnemyMemories({ freshWithin: 45000 })
+      .filter((memory: AIMemoryLike) => (memory.instance?.hitPoints || 0) > 0)
 
     if (candidates.length) {
       return candidates
         .slice()
-        .sort((a: AnyRecord, b: AnyRecord) => this.scoreEnemyTarget(b, armyCenter) - this.scoreEnemyTarget(a, armyCenter))[0].instance
+        .sort((a: AIMemoryLike, b: AIMemoryLike) => this.scoreEnemyTarget(b, armyCenter) - this.scoreEnemyTarget(a, armyCenter))[0]
+        .instance || null
     }
 
     const enemyPlayers = this.ai.enemyPlayers()
     return (
       enemyPlayers
-        .flatMap((player: AnyRecord) => player.buildings)
-        .find((b: AnyRecord) => b.type === BUILDING_TYPES.townCenter && b.hitPoints > 0 && !b.isDead) ||
-      enemyPlayers.flatMap((player: AnyRecord) => player.buildings).find((b: AnyRecord) => b.hitPoints > 0 && !b.isDead) ||
+        .flatMap((player: AIStrategyPlayerLike) => player.buildings)
+        .find((b: AIBuildingLike) => b.type === BUILDING_TYPES.townCenter && (b.hitPoints || 0) > 0 && !b.isDead) ||
+      enemyPlayers
+        .flatMap((player: AIStrategyPlayerLike) => player.buildings)
+        .find((b: AIBuildingLike) => (b.hitPoints || 0) > 0 && !b.isDead) ||
       null
     )
   }
 
-  getDefenseTargets(): AnyRecord[] {
+  getDefenseTargets(): AIDefenseTarget[] {
     const { ai } = this
     const memories = ai
       .getEnemyMemories({ family: FAMILY_TYPES.unit, freshWithin: 15000 })
-      .filter((memory: AnyRecord) => memory.visible || ai.getNow() - memory.lastSeenAt <= 6000)
+      .filter((memory: AIMemoryLike) => memory.visible || ai.getNow() - memory.lastSeenAt <= 6000)
 
-    const protectedTargets = [...ai.units.filter((u: AnyRecord) => u.type === UNIT_TYPES.villager), ...ai.buildings]
+    const protectedTargets = [...ai.units.filter((u: AIEntityLike) => u.type === UNIT_TYPES.villager), ...ai.buildings]
     return memories
-      .map((memory: AnyRecord) => {
+      .map((memory: AIMemoryLike): DefenseTargetCandidate => {
         const closestProtected = protectedTargets.reduce(
-          (best: AnyRecord, target: AnyRecord) => {
+          (best: { target: AIEntityLike | null; dist: number }, target: AIEntityLike) => {
             const dist = Math.abs(target.i - memory.i) + Math.abs(target.j - memory.j)
             return dist < best.dist ? { target, dist } : best
           },
@@ -202,23 +243,23 @@ export class AIMilitary {
         )
         return { memory, ...closestProtected }
       })
-      .filter((entry: AnyRecord) => entry.target && entry.dist <= 10)
-      .sort((a: AnyRecord, b: AnyRecord) => a.dist - b.dist)
+      .filter((entry): entry is AIDefenseTarget => !!entry.target && entry.dist <= 10)
+      .sort((a: AIDefenseTarget, b: AIDefenseTarget) => a.dist - b.dist)
   }
 
   getMinAttackForce(): number {
     return Math.max(this.strategy.difficultyConfig.attackThreshold, 3 + this.ai.age)
   }
 
-  getHomeDefenseReserve(units: AnyRecord[] = []): number {
+  getHomeDefenseReserve(units: AIEntityLike[] = []): number {
     const baseReserve = Math.max(1, Math.ceil(units.length * this.strategy.difficultyConfig.defenderRatio))
     const townCenters = this.ai.buildings.filter(
-      (building: AnyRecord) => building.type === BUILDING_TYPES.townCenter && !building.isDead && !building.isDestroyed
+      (building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead && !building.isDestroyed
     ).length
     return Math.min(units.length, Math.max(baseReserve, townCenters > 1 ? 3 : 2))
   }
 
-  splitAttackForce(units: AnyRecord[] = [], minAttackForce = 0): { defenders: AnyRecord[]; attackers: AnyRecord[] } {
+  splitAttackForce(units: AIEntityLike[] = [], minAttackForce = 0): { defenders: AIEntityLike[]; attackers: AIEntityLike[] } {
     if (units.length < minAttackForce) {
       return { defenders: units.slice(), attackers: [] }
     }
@@ -238,50 +279,50 @@ export class AIMilitary {
 
   hasActiveAssault(): boolean {
     return this.ai.units.some(
-      (unit: AnyRecord) =>
+      (unit: AIEntityLike) =>
         unit &&
         unit.assault &&
         unit.type !== UNIT_TYPES.villager &&
         !unit.isDead &&
         !unit.isDestroyed &&
-        unit.hitPoints > 0 &&
+        (unit.hitPoints || 0) > 0 &&
         unit.action === ACTION_TYPES.attack
     )
   }
 
-  canCommitToTarget(force: AnyRecord[], target: AnyRecord | null, desiredPowerRatio = 0.65, defenseRatio = 1.1): boolean {
+  canCommitToTarget(force: AIEntityLike[], target: AIEntityLike | null, desiredPowerRatio = 0.65, defenseRatio = 1.1): boolean {
     if (!target || force.length === 0) return false
     const forcePower = this.getGroupCombatPower(force)
     const targetDefensePower = this.estimateTargetDefensePower(target)
     return forcePower >= Math.max(this.getDesiredAttackPower() * desiredPowerRatio, targetDefensePower * defenseRatio)
   }
 
-  getDefenseResponsePower(threat: AnyRecord): number {
+  getDefenseResponsePower(threat: AIEntityLike): number {
     const hostilePower = this.getCombatPower(threat)
     return hostilePower > 0 ? hostilePower * 1.2 : 0
   }
 
-  releaseIdleAssault(inactifMilitary: AnyRecord[]): void {
+  releaseIdleAssault(inactifMilitary: AIEntityLike[]): void {
     for (const soldier of inactifMilitary) {
       soldier.assault = false
     }
   }
 
-  getUnitByLabel(label: string): AnyRecord | undefined {
-    return this.ai.units.find((unit: AnyRecord) => unit.label === label && !unit.isDead && !unit.isDestroyed)
+  getUnitByLabel(label: string): AIEntityLike | undefined {
+    return this.ai.units.find((unit: AIEntityLike) => unit.label === label && !unit.isDead && !unit.isDestroyed)
   }
 
-  getTransportCandidates(): AnyRecord[] {
+  getTransportCandidates(): AIEntityLike[] {
     return this.ai
       .getLivingUnitsByType(UNIT_TYPES.lightTransport)
-      .filter((transport: AnyRecord) => transport && !transport.isDead && !transport.isDestroyed)
+      .filter((transport: AIEntityLike) => transport && !transport.isDead && !transport.isDestroyed)
   }
 
-  getLandingTarget(): AnyRecord | null {
+  getLandingTarget(): AIEntityLike | null {
     return this.getBestEnemyTarget() || null
   }
 
-  hasLandingRoom(cell: AnyRecord): boolean {
+  hasLandingRoom(cell: RuntimeCell | null): boolean {
     if (!cell) return false
     const { map } = this.ai.context
     return (
@@ -290,7 +331,7 @@ export class AIMilitary {
         cell.j,
         map.grid,
         2,
-        (candidate: AnyRecord) =>
+        (candidate: RuntimeCell) =>
           candidate.category !== 'Water' &&
           !candidate.waterBorder &&
           !candidate.solid &&
@@ -300,10 +341,10 @@ export class AIMilitary {
     )
   }
 
-  findLandingCell(transport: AnyRecord, target: AnyRecord): AnyRecord | null {
+  findLandingCell(transport: AIEntityLike, target: AIGridPosition): RuntimeCell | null {
     if (!transport || !target) return null
     const { map } = this.ai.context
-    const candidates: AnyRecord[] = []
+    const candidates: { cell: RuntimeCell; targetDistance: number; transportDistance: number }[] = []
     const minI = Math.max(0, target.i - NAVAL_LANDING_SEARCH_RADIUS)
     const maxI = Math.min(map.size - 1, target.i + NAVAL_LANDING_SEARCH_RADIUS)
     const minJ = Math.max(0, target.j - NAVAL_LANDING_SEARCH_RADIUS)
@@ -326,10 +367,10 @@ export class AIMilitary {
       (a, b) => a.targetDistance - b.targetDistance || a.transportDistance - b.transportDistance
     )
 
-    let best: AnyRecord | null = null
+    let best: RuntimeCell | null = null
     let bestScore = Infinity
     for (const { cell, targetDistance } of candidates.slice(0, NAVAL_LANDING_PATH_ATTEMPTS)) {
-      const path = getInstancePath(transport as any, cell.i, cell.j, map)
+      const path = getInstancePath(asPathInstance(transport), cell.i, cell.j, map)
       if (!path.length && (transport.i !== cell.i || transport.j !== cell.j)) continue
       const score = path.length + targetDistance
       if (score < bestScore) {
@@ -361,41 +402,49 @@ export class AIMilitary {
     if (!operation) return 0
 
     const now = this.ai.getNow()
-    const transport = this.getUnitByLabel(operation.transportLabel)
+    const transport = operation.transportLabel ? this.getUnitByLabel(operation.transportLabel) : null
     const target = operation.targetLabel
-      ? this.ai.getEnemyMemories({ freshWithin: Infinity }).find((memory: AnyRecord) => memory.label === operation.targetLabel)
+      ? this.ai.getEnemyMemories({ freshWithin: Infinity }).find((memory: AIMemoryLike) => memory.label === operation.targetLabel)
           ?.instance
       : this.getLandingTarget()
 
-    if (!transport || !target || now - operation.startedAt > NAVAL_OPERATION_TIMEOUT_MS) {
+    if (!transport || !target || now - (operation.startedAt || 0) > NAVAL_OPERATION_TIMEOUT_MS) {
       this.clearNavalOperation('lost transport/target or timeout', debug)
       return 0
     }
 
-    const cargoLoad = getTransportLoad(transport as any)
-    const units = operation.unitLabels.map((label: string) => this.getUnitByLabel(label)).filter(Boolean)
+    const cargoLoad = getTransportLoad(asTransportUnit(transport))
+    const units = (operation.unitLabels || [])
+      .map((label: string) => this.getUnitByLabel(label))
+      .filter((unit): unit is AIEntityLike => !!unit)
 
     if (operation.stage === 'loading') {
-      const loadShoreCell = this.ai.context.map.grid[operation.loadShoreCell?.i]?.[operation.loadShoreCell?.j]
-      const loadCoastCell = this.ai.context.map.grid[operation.loadCoastCell?.i]?.[operation.loadCoastCell?.j]
+      const loadShoreCell =
+        operation.loadShoreCell && this.ai.context.map.grid[operation.loadShoreCell.i]?.[operation.loadShoreCell.j]
+      const loadCoastCell =
+        operation.loadCoastCell && this.ai.context.map.grid[operation.loadCoastCell.i]?.[operation.loadCoastCell.j]
       if (!loadShoreCell || !loadCoastCell) {
         this.clearNavalOperation('lost load shore', debug)
         return 0
       }
       if ((transport.inactif || !transport.path?.length) && (transport.i !== loadCoastCell.i || transport.j !== loadCoastCell.j)) {
-        transport.sendTo(loadCoastCell)
+        transport.sendTo?.(loadCoastCell)
       }
       for (const unit of units) {
-        if (!unit.loadedInTransport && unit.inactif && getTransportLoad(transport as any) < transport.transportCapacity) {
+        if (
+          !unit.loadedInTransport &&
+          unit.inactif &&
+          getTransportLoad(asTransportUnit(transport)) < (transport.transportCapacity || 0)
+        ) {
           unit.transportLoadShoreCell = loadShoreCell
           unit.transportLoadCoastCell = loadCoastCell
-          unit.sendToWithCell(transport, loadShoreCell, ACTION_TYPES.loadTransport)
+          unit.sendToWithCell?.(transport, loadShoreCell, ACTION_TYPES.loadTransport)
         }
       }
 
-      const allLoaded = units.length > 0 && units.every((unit: AnyRecord) => unit.loadedInTransport === transport)
+      const allLoaded = units.length > 0 && units.every((unit: AIEntityLike) => unit.loadedInTransport === transport)
       const enoughLoaded = cargoLoad >= Math.min(NAVAL_TRANSPORT_GROUP_MIN, units.length)
-      const waitedLongEnough = now - operation.startedAt > 15000 && cargoLoad > 0
+      const waitedLongEnough = now - (operation.startedAt || 0) > 15000 && cargoLoad > 0
       if (allLoaded || enoughLoaded || waitedLongEnough) {
         const landingCell = this.findLandingCell(transport, target)
         if (!landingCell) {
@@ -404,7 +453,7 @@ export class AIMilitary {
         }
         operation.stage = 'sailing'
         operation.landingCell = { i: landingCell.i, j: landingCell.j }
-        transport.sendTo(landingCell)
+        transport.sendTo?.(landingCell)
         if (debug) console.log('Naval transport sailing with cargo:', cargoLoad)
         return 1
       }
@@ -412,24 +461,25 @@ export class AIMilitary {
     }
 
     if (operation.stage === 'sailing') {
-      const landingCell = this.ai.context.map.grid[operation.landingCell?.i]?.[operation.landingCell?.j]
+      const landingCell =
+        operation.landingCell && this.ai.context.map.grid[operation.landingCell.i]?.[operation.landingCell.j]
       if (!landingCell) {
         this.clearNavalOperation('landing cell disappeared', debug)
         return 0
       }
       if (transport.i !== landingCell.i || transport.j !== landingCell.j) {
-        if (transport.inactif && !transport.path?.length) transport.sendTo(landingCell)
+        if (transport.inactif && !transport.path?.length) transport.sendTo?.(landingCell)
         return 0
       }
 
       const cargo = [...(transport.transportedUnits || [])]
-      const unloaded = unloadTransport(transport as any)
+      const unloaded = unloadTransport(asTransportUnit(transport))
       if (!unloaded) return 0
       operation.stage = 'assault'
       for (const unit of cargo) {
         if (unit && !unit.loadedInTransport && !unit.isDead && !unit.isDestroyed) {
           unit.assault = true
-          unit.sendTo(target, ACTION_TYPES.attack)
+          unit.sendTo?.(target, ACTION_TYPES.attack)
         }
       }
       this.ai.lastAttackWaveAt = now
@@ -442,13 +492,15 @@ export class AIMilitary {
     return 0
   }
 
-  maybeStartNavalTransportAttack(availableMilitary: AnyRecord[], debug = false): number {
+  maybeStartNavalTransportAttack(availableMilitary: AIEntityLike[], debug = false): number {
     const { ai } = this
     if (ai.navalOperation) return 0
     if (ai.getNow() - (ai.lastNavalOperationEndedAt || -Infinity) < NAVAL_OPERATION_RETRY_MS) return 0
     if (!ai.strategy.needsNavalTransport(availableMilitary.length)) return 0
 
-    const transport = this.getTransportCandidates().find((candidate: AnyRecord) => candidate.inactif && getTransportLoad(candidate as any) === 0)
+    const transport = this.getTransportCandidates().find(
+      (candidate: AIEntityLike) => candidate.inactif && getTransportLoad(asTransportUnit(candidate)) === 0
+    )
     if (!transport) return 0
 
     const target = this.getLandingTarget()
@@ -456,37 +508,37 @@ export class AIMilitary {
     const landingCell = this.findLandingCell(transport, target)
     if (!landingCell) return 0
 
-    const groupSize = Math.min(NAVAL_TRANSPORT_GROUP_MAX, transport.transportCapacity, availableMilitary.length)
+    const groupSize = Math.min(NAVAL_TRANSPORT_GROUP_MAX, transport.transportCapacity || 0, availableMilitary.length)
     if (groupSize < NAVAL_TRANSPORT_GROUP_MIN) return 0
     const group = availableMilitary.slice(0, groupSize)
-    let loadPlan: AnyRecord | null = null
+    let loadPlan: LoadPlan | null = null
     for (const unit of group) {
-      const shoreCell = findLoadShoreCell(unit as any, transport as any)
-      const coastCell = findTransportCoastCell(transport as any, shoreCell as any)
+      const shoreCell = findLoadShoreCell(asTransportUnit(unit), asTransportUnit(transport))
+      const coastCell = findTransportCoastCell(asTransportUnit(transport), shoreCell)
       if (shoreCell && coastCell) {
-        loadPlan = { shoreCell, coastCell }
+        loadPlan = { shoreCell: shoreCell as unknown as RuntimeCell, coastCell: coastCell as unknown as RuntimeCell }
         break
       }
     }
     if (!loadPlan) return 0
 
-    transport.sendTo(loadPlan.coastCell)
+    transport.sendTo?.(loadPlan.coastCell)
     for (const unit of group) {
       unit.assault = true
       unit.transportLoadShoreCell = loadPlan.shoreCell
       unit.transportLoadCoastCell = loadPlan.coastCell
-      unit.sendToWithCell(transport, loadPlan.shoreCell, ACTION_TYPES.loadTransport)
+      unit.sendToWithCell?.(transport, loadPlan.shoreCell, ACTION_TYPES.loadTransport)
     }
-    const groupLabels = new Set(group.map((unit: AnyRecord) => unit.label))
+    const groupLabels = new Set(group.map((unit: AIEntityLike) => unit.label))
     for (let index = availableMilitary.length - 1; index >= 0; index--) {
       if (groupLabels.has(availableMilitary[index].label)) availableMilitary.splice(index, 1)
     }
     ai.navalOperation = {
       stage: 'loading',
       startedAt: ai.getNow(),
-      transportLabel: transport.label,
-      unitLabels: group.map(unit => unit.label),
-      targetLabel: target.label,
+      transportLabel: transport.label || '',
+      unitLabels: group.map(unit => unit.label).filter((label): label is string => !!label),
+      targetLabel: target.label || '',
       landingCell: { i: landingCell.i, j: landingCell.j },
       loadShoreCell: { i: loadPlan.shoreCell.i, j: loadPlan.shoreCell.j },
       loadCoastCell: { i: loadPlan.coastCell.i, j: loadPlan.coastCell.j },
@@ -500,12 +552,7 @@ export class AIMilitary {
     inactifMilitary,
     howManySoldiersBeforeAttack,
     debug = false,
-  }: {
-    waitingMilitary: AnyRecord[]
-    inactifMilitary: AnyRecord[]
-    howManySoldiersBeforeAttack: number
-    debug?: boolean
-  }): number {
+  }: AIMilitaryActionOptions): number {
     const { ai } = this
     const { difficultyConfig } = this.strategy
     let actions = 0
@@ -520,7 +567,7 @@ export class AIMilitary {
       const urgentThreat = defenseTargets[0].memory.instance
       if (urgentThreat) {
         const requiredDefensePower = this.getDefenseResponsePower(urgentThreat)
-        const defenders: AnyRecord[] = []
+        const defenders: AIEntityLike[] = []
         let defenderPower = 0
         const candidates = availableMilitary.sort(
           (a, b) =>
@@ -533,7 +580,7 @@ export class AIMilitary {
           defenderPower += this.getCombatPower(soldier)
           if (defenderPower >= requiredDefensePower) break
         }
-        const defenderLabels = new Set(defenders.map((unit: AnyRecord) => unit.label))
+        const defenderLabels = new Set(defenders.map((unit: AIEntityLike) => unit.label))
         for (let i = availableMilitary.length - 1; i >= 0; i--) {
           if (defenderLabels.has(availableMilitary[i].label)) {
             availableMilitary.splice(i, 1)
@@ -559,8 +606,8 @@ export class AIMilitary {
     ) {
       const raidTarget =
         ai
-          .getFreshEnemyInstances({ family: FAMILY_TYPES.unit, freshWithin: 25000 })
-          .find((u: AnyRecord) => u.hitPoints > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner)) ||
+          .getFreshEnemyInstances?.({ family: FAMILY_TYPES.unit, freshWithin: 25000 })
+          ?.find((u: AIEntityLike) => (u.hitPoints || 0) > 0 && u.type === UNIT_TYPES.villager && ai.isEnemy(u.owner)) ||
         this.getBestEnemyTarget(availableMilitary)
       const raidParty = availableMilitary.slice(0, raidSize)
       const raidPower = this.getGroupCombatPower(raidParty)
@@ -594,8 +641,8 @@ export class AIMilitary {
             `Launching attack wave! ${attackers.length} attackers, ${availableMilitary.length - attackers.length} defenders held home. Target:`,
             target
           )
-        if (this.canCommitToTarget(attackers, target, 0.65, 1.15)) {
-          this.sendToAttack(attackers, target as AnyRecord, debug)
+        if (target && this.canCommitToTarget(attackers, target, 0.65, 1.15)) {
+          this.sendToAttack(attackers, target, debug)
           ai.lastAttackWaveAt = ai.getNow()
           actions++
         }
@@ -615,13 +662,13 @@ export class AIMilitary {
         ? this.canCommitToTarget(inactifMilitary, target, 0.45, 0.9)
         : this.canCommitToTarget(inactifMilitary, target, 0.65, 1.1)
 
-      if (canRejoinAttack) {
+      if (target && canRejoinAttack) {
         if (debug)
           console.log(
             reinforcingActiveAssault ? 'Sending reinforcements to assault:' : 'Redirecting assault soldiers to:',
             target
           )
-        this.sendToAttack(inactifMilitary, target as AnyRecord, debug)
+        this.sendToAttack(inactifMilitary, target, debug)
         ai.lastAttackWaveAt = ai.getNow()
         actions++
       } else if (!reinforcingActiveAssault) {

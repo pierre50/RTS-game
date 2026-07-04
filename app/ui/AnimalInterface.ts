@@ -2,24 +2,23 @@ import { MENU_INFO_IDS } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
-
-type AnyRecord = Record<string, any>
+import type { AnimalEntity } from '../types/entities'
+import type { AnimalConfig } from '../types/config'
+import type { MenuLike } from '../types/context'
 
 export class AnimalInterface {
-  animal: AnyRecord
+  animal: AnimalEntity
 
-  constructor(animal: AnyRecord) {
+  constructor(animal: AnimalEntity) {
     this.animal = animal
   }
 
-  setDefaultInterface(element: HTMLElement, data: AnyRecord): void {
+  setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
     const animal = this.animal
-    const {
-      context: { menu },
-    } = animal
+    const menu = (animal.context as { menu: MenuLike }).menu
 
     appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints)
 
-    appendQuantityInfo(element, menu.icons['food'], animal.quantity)
+    appendQuantityInfo(element, menu.icons!['food'], animal.quantity!)
   }
 }

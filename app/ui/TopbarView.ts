@@ -1,13 +1,19 @@
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
+import type Menu from '../classes/menu'
 
-type AnyRecord = Record<string, any>
+const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
+const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
+type ResourceName = (typeof RESOURCE_NAMES)[number]
+type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number }
 
 export class TopbarView {
-  menu: AnyRecord
+  menu: Menu
+  resourceEls: Record<string, HTMLDivElement>
 
-  constructor(menu: AnyRecord) {
+  constructor(menu: Menu) {
     this.menu = menu
+    this.resourceEls = {}
   }
 
   build(): void {
@@ -30,7 +36,7 @@ export class TopbarView {
 
     menu.resources = document.createElement('div')
     menu.resources.className = 'topbar-resources'
-    ;['wood', 'food', 'stone', 'gold'].forEach(res => this.setResourceBox(res))
+    RESOURCE_NAMES.forEach(res => this.setResourceBox(res))
 
     menu.age = document.createElement('div')
     menu.age.className = 'topbar-age'
@@ -45,39 +51,37 @@ export class TopbarView {
     menu.gameHud.prepend(menu.topbar)
   }
 
-  setResourceBox(name: string): void {
+  setResourceBox(name: ResourceName): void {
     const { menu } = this
+    const icons = menu.icons as Record<ResourceName, string>
     const box = document.createElement('div')
     box.className = 'resource'
 
     const img = document.createElement('img')
     img.className = 'resource-content'
-    img.src = menu.icons[name]
+    img.src = icons[name]
 
-    menu[name] = document.createElement('div')
+    const valueEl = document.createElement('div')
+    this.resourceEls[name] = valueEl
     box.appendChild(img)
-    box.appendChild(menu[name])
+    box.appendChild(valueEl)
     menu.resources.appendChild(box)
   }
 
   update(): void {
     const {
-      menu,
       menu: {
         context: { player },
       },
     } = this
-    const ageLabels: AnyRecord = {
-      0: t('stoneAge'),
-      1: t('toolAge'),
-      2: t('bronzeAge'),
-      3: t('ironAge'),
-    }
-    ;['wood', 'food', 'stone', 'gold', 'age'].forEach(prop => {
-      const val = Math.min((player && player[prop]) || 0, 99999)
-      menu[prop].textContent = prop === 'age' ? ageLabels[val] : val
+    RESOURCE_NAMES.forEach(prop => {
+      const resourcePlayer = player as ResourcePlayer | null
+      const val = Math.min(resourcePlayer?.[prop] || 0, 99999)
+      this.resourceEls[prop].textContent = String(val)
     })
-    this.updateAgeTheme(player?.age || 0)
+    const age = (player as ResourcePlayer | null)?.age || 0
+    this.menu.age.textContent = t(AGE_LABEL_KEYS[Math.max(0, Math.min(age, 3))])
+    this.updateAgeTheme(age)
   }
 
   updateAgeTheme(age = 0): void {
