@@ -153,7 +153,6 @@ export type DevPlayer = PlayerLike & {
 }
 
 export type DevCell = RuntimeCell & {
-  [key: string]: unknown
   setFog?(init?: boolean): void
   removeFog?(): void
 }

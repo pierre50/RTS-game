@@ -28,11 +28,13 @@ import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity } from '../../types/entities'
+import type { BuildingEntity, EntityInterfaceLike, RuntimeEntity, UnitSounds } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
+
+export type BuildingOptions = UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
 
 export class Building extends Instance {
   buildingInterface: BuildingInterface
@@ -47,8 +49,21 @@ export class Building extends Instance {
   rallyPointFlag: AnimatedSprite | null
   intervalId: unknown
   attackIntervalId: unknown
+  declare sprite: Sprite
+  populationCapacityApplied!: boolean
+  isBuilt?: boolean
+  quantity?: number
+  totalQuantity?: number
+  units?: string[]
+  technologies?: string[]
+  interface!: EntityInterfaceLike
+  assetType?: string
+  allowMove!: boolean
+  accept?: string[]
+  visibilityTimeout?: unknown
+  sounds?: UnitSounds
 
-  constructor(options: UnknownRecord, context: GameContextLike) {
+  constructor(options: BuildingOptions, context: GameContextLike) {
     super(context)
 
     const { map, controls } = context
@@ -97,7 +112,8 @@ export class Building extends Instance {
     }
     const texture = getTexture(spriteSheet as string, Assets) as BuildingTexture
     this.sprite = Sprite.from(texture)
-    this.sprite.updateAnchor = true
+    const interactiveSprite = this.sprite as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    interactiveSprite.updateAnchor = true
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
@@ -143,7 +159,7 @@ export class Building extends Instance {
 
     this.allowMove = false
     if (this.sprite) {
-      this.sprite.allowMove = false
+      interactiveSprite.allowMove = false
       this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
@@ -200,7 +216,7 @@ export class Building extends Instance {
               const accept =
                 unit.category === 'Boat'
                   ? this.type === BUILDING_TYPES.dock
-                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType))
+                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType ?? ''))
               if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
                 hasSentVillager = true
                 unit.previousDest = null

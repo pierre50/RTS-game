@@ -27,7 +27,16 @@
       "Bash(grep -rn \"options: UnknownRecord\\\\|\\(options: UnknownRecord\\\\|{ ...props }: UnknownRecord\" app --include=\"*.ts\")",
       "Bash(ls unit *)",
       "Bash(wc -l unit/*.ts animal/*.ts building/*.ts resource.ts players/player.ts)",
-      "Read(//Users/rierrenicolas/dev/rts-game/app/classes/map/**)"
+      "Read(//Users/rierrenicolas/dev/rts-game/app/classes/map/**)",
+      "Bash(awk '{$1=$1; print}')",
+      "Bash(sort -t: -k1,1)",
+      "Bash(grep -n \"const handler = \\\\`on\\\\${capitalizeFirstLetter\" app/classes/players/player.ts)",
+      "Bash(grep -n \"import type { AIEntityLike, AIStrategyPlayerLike }\" app/classes/players/ai.ts)",
+      "Bash(grep -n \"import type { AIAge, AIEntityLike, AIStrategyPlayerLike }\" app/classes/players/ai.ts)",
+      "Bash(grep -n \"constructor\\(options: UnknownRecord, context: GameContextLike\\) {\" app/classes/players/player.ts)",
+      "Bash(grep -n \"constructor\\(options: UnknownRecord, context: GameContextLike\\) {\" app/classes/animal/index.ts)",
+      "Bash(grep -n \"^import type { PlayerLike }\\\\|from '../players/player'\" app/classes/map/MapGeneration.ts)",
+      "Bash(awk 'NR==541{print NR\": \"$0} NR<541 && NR>480 && /resources/{print NR\": \"$0}' app/classes/map/MapGeneration.ts)"
     ]
   }
 }

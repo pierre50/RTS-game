@@ -40,7 +40,6 @@ type TerrainParentLike = TerrainMapLike & {
 }
 
 type TerrainCellLike = {
-  [key: string]: unknown
   context: { map: TerrainMapLike }
   parent?: TerrainParentLike | null
   map?: TerrainMapLike
@@ -189,8 +188,9 @@ export class CellTerrain {
 
     const previousType = cell.type
     cell.type = type
+    const dynamicCell = cell as unknown as Record<string, unknown>
     Object.keys(definition).forEach(prop => {
-      cell[prop] = definition[prop]
+      dynamicCell[prop] = definition[prop]
     })
     if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
       cell.parent?.invalidateReliefCoastDistances?.()

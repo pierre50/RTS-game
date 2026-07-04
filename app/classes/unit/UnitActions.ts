@@ -24,7 +24,7 @@ import {
 } from '../../lib'
 import { Projectile } from '../projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
 const BASE_CONVERSION_MIN_CHANTS = 3
@@ -418,7 +418,7 @@ export class UnitActions {
         unit.setTextures?.(SHEET_TYPES.action)
         unit.startInterval?.(
           () => {
-            const dest = unit.dest as (BuildingEntity | (RuntimeEntity & { setCuttedTreeTexture?: () => void })) | null | undefined
+            const dest = unit.dest as ResourceEntity | null | undefined
             if (!unit.getActionCondition?.(dest)) {
               if ((dest?.quantity ?? 0) <= 0) {
                 dest?.die?.()

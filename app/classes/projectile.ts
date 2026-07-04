@@ -22,7 +22,8 @@ import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constant
 import type { Texture } from 'pixi.js'
 import type { DynamicValue, LooseRecord } from '../types/common'
 import type { GameContextLike } from '../types/context'
-import type { RuntimeEntity } from '../types/entities'
+import type { CommandSound, RuntimeEntity } from '../types/entities'
+import type { PlayerLike } from '../types/player'
 import type { Point } from '../types/grid'
 
 const PROJECTILE_Z_OFFSET = 1000000
@@ -116,12 +117,42 @@ function getDirectionalAnimation(projectile: RuntimeProjectile, textures: Textur
 }
 
 export class Projectile extends Container {
-  [key: string]: DynamicValue
-
   context: GameContextLike
   family: string
   interval: unknown
   sprite?: ProjectileSprite
+
+  owner!: RuntimeEntity
+  type!: string
+  target?: RuntimeEntity
+  destination?: Point
+  degree?: number
+  damage?: number
+  tracksTarget!: boolean
+  isDead!: boolean
+  z!: number
+  destinationPoint!: Point
+  totalDistance!: number
+  trajectoryState: { kind: string; arcHeight: number } | null = null
+
+  size!: number
+  speed!: number
+  assets!: string
+  isAnimated?: boolean
+  animationSpeed?: number
+  rotateSprite?: boolean
+  staticFrame?: number
+  staticDirectionalAnimationFrame?: number
+  spriteBaseAngle?: number
+  directionalFrames?: number
+  directionalFrameOrder?: string[]
+  directionalAnimationFrames?: number
+  spawnOffsetX?: number
+  spawnOffsetY?: number
+  fullCircleStartDegree?: number
+  trajectory?: { kind: string; minArcHeight?: number; arcHeightFactor?: number; maxArcHeight?: number }
+  impactEffect?: { assets: string; animationSpeed?: number; scale?: number }
+  sounds?: { launch?: CommandSound; impact?: CommandSound }
 
   constructor(options: ProjectileOptions, context: GameContextLike) {
     super()
@@ -131,10 +162,10 @@ export class Projectile extends Container {
     this.family = FAMILY_TYPES.projectile
 
     Object.assign(this, options)
-    const player = this.owner.owner
+    const player = this.owner.owner as PlayerLike
     this.type = getEffectiveProjectileType(this.type, player)
     this.tracksTarget = projectileTracksTarget(this.type, player)
-    Object.assign(this, player.config.projectiles[this.type])
+    Object.assign(this, player.config.projectiles?.[this.type])
 
     const ownerSpriteHeight = this.owner.sprite?.height ?? 0
     this.x = this.owner.x + (this.spawnOffsetX ?? 0)
@@ -148,12 +179,12 @@ export class Projectile extends Container {
     }
     let { x: targetX, y: targetY } = targetPoint
 
-    playAudibleSoundCue(this, this.sounds?.launch)
+    playAudibleSoundCue(this as unknown as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.launch)
 
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = this.createSprite(degree)
     this.sprite = sprite
-    this.origin = { x: this.x, y: this.y }
+    ;(this as unknown as Record<string, unknown>).origin = { x: this.x, y: this.y }
     this.destinationPoint = { x: targetX, y: targetY }
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
@@ -179,7 +210,7 @@ export class Projectile extends Container {
             !this.target.isDead &&
             !this.target.isDestroyed &&
             pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
-              average(this.target.width, this.target.height)
+              average((this.target as unknown as { width: number }).width, (this.target as unknown as { height: number }).height)
           ) {
             this.onHit(this.target)
           }
@@ -212,7 +243,7 @@ export class Projectile extends Container {
       if (directionalAnimation) {
         const staticFrame = this.staticDirectionalAnimationFrame
         const frameIndex = Number.isInteger(staticFrame)
-          ? Math.max(0, Math.min(staticFrame, directionalAnimation.textures.length - 1))
+          ? Math.max(0, Math.min(staticFrame as number, directionalAnimation.textures.length - 1))
           : 0
         applyTextureAnchor(sprite, directionalAnimation.textures[frameIndex])
         const scale = this.getProjectileScale()
@@ -315,7 +346,8 @@ export class Projectile extends Container {
       return
     }
 
-    const traveledDistance = pointsDistance(this.origin.x, this.origin.y, this.x, this.y)
+    const origin = (this as unknown as Record<string, Point>).origin
+    const traveledDistance = pointsDistance(origin.x, origin.y, this.x, this.y)
     const progress = Math.max(0, Math.min(1, traveledDistance / this.totalDistance))
     this.sprite.y = -getArcProgressOffset(progress, this.trajectoryState.arcHeight)
   }
@@ -350,7 +382,8 @@ export class Projectile extends Container {
   }
 
   getProjectileScale(): number {
-    return typeof this.scale === 'number' ? this.scale : 1
+    const dynamicScale = (this as unknown as Record<string, unknown>).scale
+    return typeof dynamicScale === 'number' ? dynamicScale : 1
   }
 
   onHit(instance: RuntimeEntity) {
@@ -358,7 +391,7 @@ export class Projectile extends Container {
       context: { menu, player },
     } = this
     if (instance.family === FAMILY_TYPES.building) {
-      playAudibleSoundCue(this, this.sounds?.impact)
+      playAudibleSoundCue(this as unknown as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.impact)
     }
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected) {

@@ -422,7 +422,7 @@ export class AIEconomy {
     // Count hunters already chasing each animal
     const huntersByAnimal = new Map<AIEntityLike, number>()
     for (const v of villagersHunting) {
-      if (v.dest && 'type' in v.dest && !v.dest.isDead) {
+      if (v.dest && 'isDead' in v.dest && !v.dest.isDead) {
         huntersByAnimal.set(v.dest, (huntersByAnimal.get(v.dest) || 0) + 1)
       }
     }
@@ -496,10 +496,10 @@ export class AIEconomy {
     const berryDropSites = this.getStorageDropSites()
     const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
     const carcassHunters = villagersHunting.filter(
-      (villager: AIEntityLike) => villager.action === ACTION_TYPES.takemeat || villager.dest?.isDead
+      (villager: AIEntityLike) => villager.action === ACTION_TYPES.takemeat || (villager.dest as AIEntityLike | undefined)?.isDead
     )
     const liveHunters = villagersHunting.filter(
-      (villager: AIEntityLike) => villager.action === ACTION_TYPES.hunt && villager.dest && !villager.dest.isDead
+      (villager: AIEntityLike) => villager.action === ACTION_TYPES.hunt && villager.dest && !(villager.dest as AIEntityLike).isDead
     )
     const farmCandidates = new Set([
       ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0),
@@ -507,7 +507,7 @@ export class AIEconomy {
         .map((villager: AIEntityLike) => villager.dest)
         .filter(
           (farm): farm is AIBuildingLike =>
-            !!farm && 'type' in farm && !farm.isDead && (Number(farm.quantity) || 0) > 0
+            !!farm && 'isDead' in farm && !farm.isDead && (Number(farm.quantity) || 0) > 0
         ),
     ])
     const sources = {
@@ -619,8 +619,8 @@ export class AIEconomy {
       !villager.isDead &&
       villager.action === ACTION_TYPES.build &&
       villager.work === WORK_TYPES.builder &&
-      villager.dest?.family === FAMILY_TYPES.building &&
-      (villager.getActionCondition?.(villager.dest, ACTION_TYPES.build) ?? false)
+      (villager.dest as AIEntityLike | undefined)?.family === FAMILY_TYPES.building &&
+      (villager.getActionCondition?.(villager.dest as AIEntityLike, ACTION_TYPES.build) ?? false)
     )
   }
 

@@ -1,4 +1,5 @@
 import { Player } from './player'
+import type { PlayerOptions } from './player'
 
 import {
   getPositionInGridAroundInstance,
@@ -12,7 +13,7 @@ import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, R
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
-import type { AIStrategyPlayerLike } from '../../ai/types'
+import type { AIAge, AIBuildingLike, AIEntityLike, AIStrategyPlayerLike, AIStrategySnapshot } from '../../ai/types'
 import type { LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeEntity } from '../../types/entities'
@@ -49,13 +50,16 @@ type ThreatProfile = {
   priority: number
 }
 
-type ActiveThreat = {
+type StoredThreat = {
   target: LooseRecord
   lastSeenAt: number
   attacker: LooseRecord
   attackerFamily?: string
   attackerType: string
   count: number
+}
+
+type ActiveThreat = StoredThreat & {
   hostiles: LooseRecord[]
   profile: ThreatProfile
 }
@@ -91,7 +95,42 @@ type UnitExtraOptions = {
 const DEBUG = false
 
 export class AI extends Player {
-  constructor({ ...props }: UnknownRecord, context: GameContextLike) {
+  foundedTrees!: Set<LooseRecord>
+  foundedBerrybushs!: Set<LooseRecord>
+  foundedGolds!: Set<LooseRecord>
+  foundedStones!: Set<LooseRecord>
+  foundedAnimals!: Set<LooseRecord>
+  foundedDeadAnimals!: Set<LooseRecord>
+  foundedFish!: Set<LooseRecord>
+  foundedEnemyBuildings!: Set<LooseRecord>
+  foundedEnemyUnits!: Set<LooseRecord>
+  enemyUnitMemory!: Map<string, EnemyMemory>
+  enemyBuildingMemory!: Map<string, EnemyMemory>
+  difficulty!: string
+  strategy!: AIStrategy
+  economy!: AIEconomy
+  stepDelay!: number
+  scout!: LooseRecord | null
+  phase!: AIStrategyPlayerLike['phase']
+  threatenedTargets!: Map<string, StoredThreat>
+  lastAttackWaveAt!: number
+  navalOperation: AIStrategyPlayerLike['navalOperation']
+  lastNavalOperationEndedAt!: number
+  lastNavalOperationFailure: AIStrategyPlayerLike['lastNavalOperationFailure']
+  difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
+  nextAge!: AIStrategyPlayerLike['nextAge']
+  maxVillagerPerAge!: AIStrategyPlayerLike['maxVillagerPerAge']
+  villageTargetPercentageByAge!: AIStrategyPlayerLike['villageTargetPercentageByAge']
+  maxBuildingByAge!: AIStrategyPlayerLike['maxBuildingByAge']
+  maxInfantryByAge!: AIStrategyPlayerLike['maxInfantryByAge']
+  maxArcherByAge!: AIStrategyPlayerLike['maxArcherByAge']
+  maxCavalryByAge!: AIStrategyPlayerLike['maxCavalryByAge']
+  maxHopliteByAge!: AIStrategyPlayerLike['maxHopliteByAge']
+  techPriorityByBuilding!: AIStrategyPlayerLike['techPriorityByBuilding']
+  _stepTaskId!: unknown
+  lastNavalConnectivity?: AIStrategyPlayerLike['lastNavalConnectivity']
+
+  constructor({ ...props }: PlayerOptions, context: GameContextLike) {
     super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
     this.foundedTrees = new Set()
     this.foundedBerrybushs = new Set()
@@ -104,7 +143,7 @@ export class AI extends Player {
     this.foundedEnemyUnits = new Set()
     this.enemyUnitMemory = new Map()
     this.enemyBuildingMemory = new Map()
-    this.difficulty = props.difficulty || 'medium'
+    this.difficulty = (props.difficulty as string) || 'medium'
     this.strategy = new AIStrategy(this as unknown as AIStrategyPlayerLike, this.difficulty)
     this.economy = new AIEconomy(this as unknown as AIStrategyPlayerLike)
     this.strategy.applyConfig(this as unknown as AIStrategyPlayerLike)
@@ -225,7 +264,7 @@ export class AI extends Player {
         threat.lastSeenAt = now
         threat.attacker = hostiles[0]
         threat.attackerFamily = hostiles[0].family
-        threat.attackerType = hostiles[0].type
+        threat.attackerType = (hostiles[0].type as string) ?? ''
         continue
       }
 
@@ -235,7 +274,7 @@ export class AI extends Player {
     }
   }
 
-  getVisibleHostilesNear(target: LooseRecord, radius = 10) {
+  getVisibleHostilesNear(target: LooseRecord, radius = 10): LooseRecord[] {
     return findInstancesInSight(
       { i: target.i, j: target.j, sight: radius, context: this.context } as unknown as Parameters<typeof findInstancesInSight>[0],
       (instance: LooseRecord) => {
@@ -264,8 +303,8 @@ export class AI extends Player {
   getActiveThreats() {
     this.cleanupThreats()
     return [...this.threatenedTargets.values()]
-      .filter((threat: ActiveThreat) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
-      .map((threat: ActiveThreat): ActiveThreat => {
+      .filter((threat: StoredThreat) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
+      .map((threat: StoredThreat): ActiveThreat => {
         const hostiles = this.getVisibleHostilesNear(threat.target)
         const profile = this.getThreatProfile({ ...threat, hostiles })
         return { ...threat, hostiles, profile }
@@ -287,14 +326,14 @@ export class AI extends Player {
     return fallbackVillager || null
   }
 
-  getThreatProfile(threat: ActiveThreat): ThreatProfile {
+  getThreatProfile(threat: StoredThreat & { hostiles: LooseRecord[] }): ThreatProfile {
     const military = this.strategy.military
     const homeAnchor = this.getHomeAnchor()
     const hostileUnits = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.unit)
     const hostileMilitary = hostileUnits.filter((hostile: LooseRecord) => hostile.type !== UNIT_TYPES.villager)
     const hostileVillagers = hostileUnits.filter((hostile: LooseRecord) => hostile.type === UNIT_TYPES.villager)
     const hostileAnimals = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.animal)
-    const hostilePower = military.getGroupCombatPower(threat.hostiles)
+    const hostilePower = military.getGroupCombatPower(threat.hostiles as unknown as AIEntityLike[])
     const targetDistanceToHome = homeAnchor
       ? Math.abs(threat.target.i - homeAnchor.i) + Math.abs(threat.target.j - homeAnchor.j)
       : Infinity
@@ -453,7 +492,7 @@ export class AI extends Player {
 
       for (const soldier of nearbyMilitary) {
         chosenMilitary.push(soldier)
-        defensePower += this.strategy.military.getCombatPower(soldier)
+        defensePower += this.strategy.military.getCombatPower(soldier as unknown as AIEntityLike)
         if (defensePower >= desiredDefensePower) break
       }
 
@@ -461,7 +500,7 @@ export class AI extends Player {
         const recallCandidates = this.getRecallableAssaultMilitary(assaultMilitary, assignedMilitary, threat)
         for (const soldier of recallCandidates) {
           chosenMilitary.push(soldier)
-          defensePower += this.strategy.military.getCombatPower(soldier)
+          defensePower += this.strategy.military.getCombatPower(soldier as unknown as AIEntityLike)
           if (defensePower >= desiredDefensePower) break
         }
       }
@@ -584,16 +623,16 @@ export class AI extends Player {
   hasNotReachBuildingLimit(buildingType: string, buildings: LooseRecord[]) {
     const currentBuildings = buildings || []
     return (
-      !this.maxBuildingByAge[this.age][buildingType] ||
-      currentBuildings.length < this.maxBuildingByAge[this.age][buildingType]
+      !this.maxBuildingByAge[this.age as AIAge][buildingType] ||
+      currentBuildings.length < this.maxBuildingByAge[this.age as AIAge][buildingType]
     )
   }
 
-  buildingsByTypes(types: string[]) {
-    return this.buildings.filter(b => types.includes(b.type))
+  buildingsByTypes(types: string[]): AIBuildingLike[] {
+    return this.buildings.filter(b => types.includes(b.type)) as unknown as AIBuildingLike[]
   }
 
-  getStrategySnapshot(state: StrategySnapshotState) {
+  getStrategySnapshot(state: StrategySnapshotState): AIStrategySnapshot {
     return {
       map: state.map,
       otherPlayers: this.enemyPlayers(),
@@ -623,7 +662,7 @@ export class AI extends Player {
       watchTowers: this.buildingsByTypes([BUILDING_TYPES.watchTower]),
       sentryTowers: this.buildingsByTypes([BUILDING_TYPES.sentryTower]),
       notBuiltHouses: state.notBuiltHouses,
-    }
+    } as unknown as AIStrategySnapshot
   }
 
   // Remove depleted resources and destroyed buildings from tracked Sets
@@ -670,8 +709,11 @@ export class AI extends Player {
           const buildings = me.buildingsByTypes([buildingType])
           const reserve = me.strategy.getAgeUpReserve()
           if (
-            canAfford(me, me.config.buildings[buildingType].cost) &&
-            me.strategy.canSpendWithReserve(me.config.buildings[buildingType].cost, reserve) &&
+            canAfford(me as unknown as Record<string, number | undefined>, me.config.buildings[buildingType].cost) &&
+            me.strategy.canSpendWithReserve(
+              me.config.buildings[buildingType].cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>,
+              reserve
+            ) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
             const closestBuilding = getClosestInstance(target as unknown as Parameters<typeof getClosestInstance>[0], [
@@ -728,8 +770,8 @@ export class AI extends Player {
     return this.strategy.getBestArcherUnit()
   }
 
-  getLivingUnitsByType(type: string) {
-    return this.units.filter(unit => unit.type === type && isAliveUnit(unit))
+  getLivingUnitsByType(type: string): AIEntityLike[] {
+    return this.units.filter(unit => unit.type === type && isAliveUnit(unit)) as unknown as AIEntityLike[]
   }
 
   step() {
@@ -738,11 +780,11 @@ export class AI extends Player {
 
     let actions = 0
 
-    const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier)
-    const maxInfantry = this.maxInfantryByAge[this.age]
-    const maxArcher = this.maxArcherByAge[this.age]
-    const maxCavalry = this.maxCavalryByAge[this.age]
-    const maxHoplite = this.maxHopliteByAge[this.age]
+    const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age as AIAge] * this.difficultyConfig.popCapMultiplier)
+    const maxInfantry = this.maxInfantryByAge[this.age as AIAge]
+    const maxArcher = this.maxArcherByAge[this.age as AIAge]
+    const maxCavalry = this.maxCavalryByAge[this.age as AIAge]
+    const maxHoplite = this.maxHopliteByAge[this.age as AIAge]
     const infantryUnit = this.getBestInfantryUnit()
     const archerUnit = this.getBestArcherUnit()
     const howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold
@@ -786,7 +828,7 @@ export class AI extends Player {
         `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`
       )
 
-    const notBuiltBuildings = this.buildings
+    const notBuiltBuildings = (this.buildings as unknown as AIBuildingLike[])
       .filter(b => !b.isBuilt || ((b.hitPoints ?? 0) > 0 && (b.hitPoints ?? 0) < (b.totalHitPoints ?? 1)))
       .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
     const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)

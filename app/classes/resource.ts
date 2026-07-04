@@ -28,14 +28,25 @@ import type { UnknownRecord } from '../types/common'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
-import type { EntityInterfaceLike, ResourceEntity } from '../types/entities'
+import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
+
+export type ResourceOptions = UnknownRecord & { i: number; j: number; type: string }
 
 export class Resource extends Instance {
   resourceInterface: ResourceInterface
   quantity!: number
   interface: EntityInterfaceLike
+  declare sprite: Sprite | AnimatedSprite
+  totalQuantity!: number
+  allowClick!: boolean
+  allowMove!: boolean
+  isAnimated?: boolean
+  assets!: string | string[] | Record<string, unknown>
+  textureName!: string
+  category?: string
+  sounds?: UnitSounds
 
-  constructor(options: UnknownRecord, context: GameContextLike) {
+  constructor(options: ResourceOptions, context: GameContextLike) {
     super(context)
 
     const {
@@ -46,12 +57,13 @@ export class Resource extends Instance {
     this.resourceInterface = new ResourceInterface(this as unknown as ResourceEntity)
     this.size = 1
 
+    const dynamicResource = this as unknown as Record<string, unknown>
     Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
+      dynamicResource[prop] = options[prop]
     })
     const config = Assets.cache.get('config')
     Object.keys(config.resources[this.type]).forEach(prop => {
-      this[prop] = config.resources[this.type][prop]
+      dynamicResource[prop] = config.resources[this.type][prop]
     })
 
     this.quantity = this.quantity ?? this.totalQuantity
@@ -78,19 +90,21 @@ export class Resource extends Instance {
       },
     }
     if (this.isAnimated) {
-      const spritesheetJump = Assets.cache.get(this.assets)
-      this.sprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
-      bindAnimatedSpriteToTicker(this.sprite, this.context.app)
-      this.sprite.play()
-      this.sprite.animationSpeed = 0.2
+      const spritesheetJump = Assets.cache.get(this.assets as string)
+      const animatedSprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
+      bindAnimatedSpriteToTicker(animatedSprite, this.context.app)
+      animatedSprite.play()
+      animatedSprite.animationSpeed = 0.2
+      this.sprite = animatedSprite
     } else {
       const terrainAssets =
         Array.isArray(this.assets) || typeof this.assets === 'string'
           ? this.assets
-          : this.assets?.[cell.type] || Object.values(this.assets || {}).find(value => Array.isArray(value))
+          : (this.assets as Record<string, unknown> | undefined)?.[cell.type] ||
+            Object.values(this.assets || {}).find(value => Array.isArray(value))
       this.textureName =
         this.textureName ||
-        (typeof terrainAssets === 'string' ? `000_${terrainAssets}` : map.randomItem(terrainAssets || []))
+        (typeof terrainAssets === 'string' ? `000_${terrainAssets}` : map.randomItem((terrainAssets as string[]) || []))
       if (!this.textureName) {
         throw new Error(`Missing texture for resource ${this.type} on ${cell.type}`)
       }
@@ -103,12 +117,13 @@ export class Resource extends Instance {
         spritesheet.data.frames[textureFile].hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
     }
 
-    this.sprite.updateAnchor = true
-    this.sprite.label = LABEL_TYPES.sprite
+    const interactiveSprite = this.sprite as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    interactiveSprite.updateAnchor = true
+    interactiveSprite.label = LABEL_TYPES.sprite
     if (this.sprite) {
-      this.sprite.allowMove = false
-      this.sprite.eventMode = 'static'
-      this.sprite.roundPixels = true
+      interactiveSprite.allowMove = false
+      interactiveSprite.eventMode = 'static'
+      interactiveSprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
         const {
@@ -152,7 +167,8 @@ export class Resource extends Instance {
               hasSilentCommandOrder = true
             }
             const sendToFunc = `sendTo${this.category || this.type}`
-            typeof unit[sendToFunc] === 'function' ? unit[sendToFunc](this) : unit.sendTo(this)
+            const dynamicUnit = unit as unknown as Record<string, ((target: unknown) => void) | undefined>
+            typeof dynamicUnit[sendToFunc] === 'function' ? dynamicUnit[sendToFunc]?.(this) : unit.sendTo(this)
           } else {
             hasFallbackOrder = true
             unit.sendTo(this)
@@ -260,7 +276,7 @@ export class Resource extends Instance {
       context: { map },
     } = this
     const cell = map.grid[this.i]?.[this.j]
-    const terrainAssets = this.assets?.[cell?.type]
+    const terrainAssets = (this.assets as Record<string, unknown> | undefined)?.[cell?.type ?? '']
     if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
 
     const textureName = getDeterministicCellVariant(terrainAssets, this.i, this.j, map.seed)

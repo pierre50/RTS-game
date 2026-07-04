@@ -1,4 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
+import type { AnimatedSprite, Sprite } from 'pixi.js'
 import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike } from '../types/context'
@@ -6,8 +7,6 @@ import type { DynamicValue } from '../types/common'
 import type { PlayerLike } from '../types/player'
 
 export class Instance extends Container {
-  [key: string]: DynamicValue
-
   context: GameContextLike
   selected: boolean
   isDead: boolean
@@ -25,6 +24,11 @@ export class Instance extends Container {
   owner!: PlayerLike
   hitPoints!: number
   totalHitPoints!: number
+  sprite?: Sprite | AnimatedSprite
+  action?: string | null
+  die?(): void
+  hasPath?(): boolean
+  moveToPath?(): void
 
   constructor(context: GameContextLike) {
     super()
@@ -58,11 +62,11 @@ export class Instance extends Container {
   }
 
   pause(): void {
-    this.sprite?.stop()
+    (this.sprite as AnimatedSprite | undefined)?.stop()
   }
 
   resume(): void {
-    this.sprite?.play()
+    (this.sprite as AnimatedSprite | undefined)?.play()
   }
 
   select(): void {
@@ -113,13 +117,13 @@ export class Instance extends Container {
 
   step(): void {
     if (this.hitPoints <= 0) {
-      this.die()
-    } else if (this.hasPath()) {
-      this.moveToPath()
+      this.die?.()
+    } else if (this.hasPath?.()) {
+      this.moveToPath?.()
     }
   }
 
-  getActionCondition(target: unknown, action = this.action): boolean {
+  getActionCondition(target: unknown, action = this.action ?? undefined): boolean {
     return getActionCondition(
       this as Parameters<typeof getActionCondition>[0],
       target as Parameters<typeof getActionCondition>[1],

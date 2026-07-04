@@ -130,7 +130,7 @@ export const isValidCondition = (condition: Condition | null | undefined, values
 export const getActionCondition = (
   source: CombatEntity,
   target: CombatEntity,
-  action: string,
+  action: string | undefined,
   props?: ActionProps
 ): boolean => {
   if (!action) return false

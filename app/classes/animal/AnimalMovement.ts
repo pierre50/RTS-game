@@ -60,6 +60,7 @@ export class AnimalMovement {
 
   destHasMoved(): boolean {
     const animal = this.animal
+    if (!animal.dest || !animal.realDest) return false
     return (
       (animal.dest.i !== animal.realDest.i || animal.dest.j !== animal.realDest.j) &&
       instancesDistance(
@@ -180,14 +181,14 @@ export class AnimalMovement {
       updateInstanceVisibility(animal as unknown as Parameters<typeof updateInstanceVisibility>[0])
       animal.path.pop()
       if (this.destHasMoved()) {
-        animal.sendTo(animal.dest, animal.action, { forceRepath: true })
+        animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true })
         return
       }
-      if (this.isAnimalAtDest(animal.action, animal.dest)) {
+      if (this.isAnimalAtDest(animal.action ?? null, animal.dest)) {
         animal.path = []
         animal.stopInterval()
         animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], animal.dest.x, animal.dest.y)
-        animal.getAction(animal.action)
+        animal.getAction(animal.action ?? '')
         return
       }
       if (!animal.path.length) {

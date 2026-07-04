@@ -15,7 +15,6 @@ import {
   LABEL_TYPES,
   PLAYER_TYPES,
   RESOURCE_TYPES,
-  SHEET_TYPES,
   UNIT_TYPES,
   FLOOR_SETS_GRASS,
   FLOOR_SETS_DESERT,
@@ -33,6 +32,8 @@ import type { UnknownRecord } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
+import type { PlayerOptions } from '../players/player'
+import type { ResourceOptions } from '../resource'
 import type { RuntimeEntity, UnitEntity, BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { FogSpriteMemory } from '../../types/map'
@@ -208,12 +209,11 @@ function getDestEntity(val: unknown, map: MapGenerationMap): RuntimeEntity | nul
   return getDest(val, map) as RuntimeEntity | null
 }
 
-function processUnit(unit: RuntimeEntity, context: MapGenerationMap): void {
+function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
   if (unit.loadedInTransport) return
   const savedPath: RuntimeCell[] = Array.isArray(unit.path) ? unit.path : []
   const savedAction = unit.action
   const savedBuildQueue: unknown[] = Array.isArray(unit.buildQueue) ? unit.buildQueue : []
-  const savedMovementSheet = unit.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
   if (unit.previousDest) {
     unit.previousDest = getDest(unit.previousDest, context)
   }
@@ -226,20 +226,22 @@ function processUnit(unit: RuntimeEntity, context: MapGenerationMap): void {
       unit.action = savedAction
       const restoredPath = savedPath.map((cell: RuntimeCell) => context.grid[cell.i]?.[cell.j]).filter(Boolean)
       if (restoredPath.length) {
-        unit.setPath?.(restoredPath, savedMovementSheet)
+        unit.setPath?.(restoredPath)
       } else if (savedAction && unit.getAction) {
         unit.getAction(savedAction)
       } else {
         unit.commonSendTo
-          ? unit.commonSendTo(dest, unit.work, savedAction, true, true, true)
-          : unit.sendTo(dest, savedAction, { forceRepath: true, movementSheet: savedMovementSheet })
+          ? unit.commonSendTo(dest as RuntimeEntity, unit.work ?? '', savedAction ?? null, true, true, true)
+          : unit.sendTo(dest, savedAction ?? undefined)
       }
     } else {
-      unit.stop()
+      unit.stop?.()
     }
   }
   if (savedBuildQueue.length) {
-    unit.buildQueue = savedBuildQueue.map(label => getDestEntity(label, context)).filter(Boolean)
+    unit.buildQueue = savedBuildQueue
+      .map(label => getDestEntity(label, context))
+      .filter((entity): entity is BuildingEntity => Boolean(entity))
   }
   if (unit.blockedGatherApproach) {
     const saved = unit.blockedGatherApproach as unknown as { target: unknown; action: string }
@@ -537,7 +539,7 @@ export class MapGeneration {
 
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
-    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource, this.map.context))))
+    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context))))
 
     this.map.rebuildTerrainAppearance()
 
@@ -556,8 +558,12 @@ export class MapGeneration {
     this.map.context.players.forEach((player, index) => {
       const { buildings, units, corpses } = players[index]
       player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<typeof player.createBuilding>[0]))
-      player.units = (units || []).map(unit => player.createUnit?.(unit)).filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-      player.corpses = (corpses || []).map(unit => player.createUnit?.(unit)).filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+      player.units = (units || [])
+        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
+        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+      player.corpses = (corpses || [])
+        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
+        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
     })
     animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
 
@@ -631,7 +637,7 @@ export class MapGeneration {
       this.map.context.scheduler.elapsedMs = Math.max(0, runtime?.elapsedMs ?? 0)
     }
 
-    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource, this.map.context))))
+    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context))))
 
     controls.setCamera?.(camera.x, camera.y, true)
     menu.init?.()
@@ -640,8 +646,12 @@ export class MapGeneration {
     this.map.context.players.forEach((player, index) => {
       const { buildings, units, corpses } = players[index]
       player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<typeof player.createBuilding>[0]))
-      player.units = (units || []).map(unit => player.createUnit?.(unit)).filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-      player.corpses = (corpses || []).map(unit => player.createUnit?.(unit)).filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+      player.units = (units || [])
+        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
+        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+      player.corpses = (corpses || [])
+        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
+        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
     })
     // See generateFromJSON for why Gaia is narrowed like this.
     const gaia = this.map.gaia as unknown as PlayerLike & { createAnimal: (options: UnknownRecord) => RuntimeEntity }
@@ -918,7 +928,7 @@ export class MapGeneration {
     player.applyEligibleTechnologies?.()
   }
 
-  generatePlayers(playersConfig: Array<Partial<PlayerLike> & UnknownRecord> | null = null): PlayerLike[] {
+  generatePlayers(playersConfig: Array<PlayerOptions> | null = null): PlayerLike[] {
     const { context } = this.map
 
     const players: PlayerLike[] = []

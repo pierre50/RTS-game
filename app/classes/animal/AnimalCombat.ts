@@ -77,7 +77,7 @@ export class AnimalCombat {
           )
         ) {
           animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], target.instance.x, target.instance.y)
-          animal.getAction(animal.action)
+          animal.getAction(animal.action ?? '')
           return
         }
         animal.setPath(target.path as LooseRecord[])
@@ -93,7 +93,7 @@ export class AnimalCombat {
       context: { map },
     } = animal
     let dest: RuntimeCell | null = null
-    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight, ((cell: RuntimeCell) => {
+    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, ((cell: RuntimeCell) => {
       if (
         !cell.solid &&
         (!dest ||
@@ -134,6 +134,7 @@ export class AnimalCombat {
               animal.affectNewDest()
               return
             }
+            if (!animal.dest) return
             if (animal.destHasMoved()) {
               animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], animal.dest.x, animal.dest.y)
               animal.setTextures(SHEET_TYPES.action)

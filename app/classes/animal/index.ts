@@ -16,7 +16,7 @@ import {
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
-import type { AnimalEntity } from '../../types/entities'
+import type { AnimalEntity, UnitSounds } from '../../types/entities'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
@@ -26,6 +26,10 @@ import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
 import type { LooseRecord } from '../../types/common'
+import type { RuntimeCell } from '../../types/map'
+import type { InteractiveSprite } from '../../types/pixi'
+
+export type AnimalOptions = UnknownRecord & { i: number; j: number; type: string }
 
 export class Animal extends Instance {
   animalInterface: AnimalInterface
@@ -33,8 +37,35 @@ export class Animal extends Instance {
   animalMovement: AnimalMovement
   animalCombat: AnimalCombat
   animalBehavior: AnimalBehavior
+  declare sprite: InteractiveSprite
 
-  constructor(options: UnknownRecord, context: GameContextLike) {
+  dest: LooseRecord | null
+  realDest: LooseRecord | null
+  previousDest: LooseRecord | null
+  path: LooseRecord[]
+  currentFrame!: number
+  currentSheet!: string
+  movementSheet?: string
+  inactif!: boolean
+  isFleeing!: boolean
+  visibleCells!: Set<unknown>
+  currentCell!: RuntimeCell
+  quantity!: number
+  totalQuantity!: number
+  assets!: Record<string, string>
+  standingSheet!: unknown
+  interface!: { info: (element: HTMLElement) => void }
+  allowMove!: boolean
+  loop?: boolean
+  huntRange?: number
+  speed!: number
+  sight!: number
+  runningSheet?: unknown
+  strategy?: string
+  rateOfFire!: number
+  sounds?: UnitSounds
+
+  constructor(options: AnimalOptions, context: GameContextLike) {
     super(context)
     this.selectionFactor = 0.5
 
@@ -82,8 +113,9 @@ export class Animal extends Instance {
     this.quantity = this.quantity ?? this.totalQuantity
     map.addToInstanceBucket(this)
 
+    const dynamicAnimal = this as unknown as Record<string, unknown>
     for (const [key, value] of Object.entries(this.assets)) {
-      this[key] = Assets.cache.get(value)
+      dynamicAnimal[key] = Assets.cache.get(value)
     }
 
     this.interface = {
@@ -95,7 +127,9 @@ export class Animal extends Instance {
 
     this.allowMove = false
     this.eventMode = 'static'
-    this.sprite = new AnimatedSprite(getAnimationFrames(this.standingSheet.textures, 'south') as Texture[])
+    this.sprite = new AnimatedSprite(
+      getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
+    )
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.allowMove = false
@@ -155,7 +189,7 @@ export class Animal extends Instance {
             this as Parameters<typeof instancesDistance>[1]
           ) <= player.selectedBuilding.range
         ) {
-          player.selectedBuilding.attackAction(this)
+          player.selectedBuilding.attackAction?.(this)
           drawDestinationRectangle = true
         }
       } else if ((playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) && this.quantity > 0) {

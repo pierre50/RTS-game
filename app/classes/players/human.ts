@@ -1,11 +1,11 @@
 import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { Player } from './player'
-import type { UnknownRecord } from '../../types/common'
+import type { PlayerOptions } from './player'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 
 export class Human extends Player {
-  constructor({ ...props }: UnknownRecord, context: GameContextLike) {
+  constructor({ ...props }: PlayerOptions, context: GameContextLike) {
     super({ ...props, type: PLAYER_TYPES.human }, context)
     this.selectedUnits = []
     this.selectedUnit = null
@@ -43,27 +43,4 @@ export class Human extends Player {
     menu.setBottombar(this.selectedUnit)
   }
 
-  unselectAllUnits() {
-    const {
-      context: { menu },
-    } = this
-    for (let i = 0; i < this.selectedUnits.length; i++) {
-      this.selectedUnits[i].unselect?.()
-    }
-    this.selectedUnit = null
-    this.selectedUnits = []
-    menu.setBottombar()
-  }
-
-  unselectAll() {
-    if (this.selectedBuilding) {
-      this.selectedBuilding.unselect?.()
-      this.selectedBuilding = null
-    }
-    if (this.selectedOther) {
-      this.selectedOther.unselect?.()
-      this.selectedOther = null
-    }
-    this.unselectAllUnits()
-  }
 }

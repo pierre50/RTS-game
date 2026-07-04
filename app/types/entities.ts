@@ -1,4 +1,4 @@
-import type { AnimatedSprite, Container, Sprite } from 'pixi.js'
+import type { AnimatedSprite, Container, DestroyOptions, Sprite } from 'pixi.js'
 import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
@@ -14,7 +14,6 @@ export interface EntityInterfaceLike {
 }
 
 export interface RuntimeEntityBase extends GridPosition, Point {
-  [key: string]: DynamicValue
   label: string
   family: string
   type: string
@@ -47,21 +46,25 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   drawHealthBar?: () => void
   isAttacked?: (attacker: RuntimeEntity) => void
   stopInterval?: () => void
+  stopTimeout?: () => void
+  destroy?: (options?: DestroyOptions) => void
+  animalBehavior?: { stop?: () => void }
+  clear?: () => void
   setTextures?: (sheet: string) => void
 }
 
-interface UnitPendingOrder {
+export interface UnitPendingOrder {
   execute?: () => void
   dest?: RuntimeEntity | RuntimeCell | null
   action?: string | null
 }
 
-interface UnitBlockedGatherApproach {
+export interface UnitBlockedGatherApproach {
   target: RuntimeEntity
   action: string
 }
 
-interface UnitRealDest {
+export interface UnitRealDest {
   i: number
   j: number
   x: number
@@ -81,6 +84,7 @@ export interface UnitSounds {
   hit?: CommandSound
   die?: CommandSound
   create?: CommandSound
+  fall?: CommandSound
 }
 
 export interface UnitEntity extends RuntimeEntityBase {
@@ -106,6 +110,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   previousDest?: RuntimeEntity | RuntimeCell | null
   previousWork?: string | null
   path?: RuntimeCell[]
+  hasPath?: () => boolean
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]
@@ -167,6 +172,14 @@ export interface UnitEntity extends RuntimeEntityBase {
   setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
   setPath?: (path: RuntimeCell[]) => void
   sendTo(target: RuntimeCell | RuntimeEntity, action?: string): void
+  commonSendTo?: (
+    target: RuntimeEntity,
+    work: string,
+    action: string | null,
+    keepPrevious: boolean | Record<string, unknown>,
+    immediate?: boolean,
+    preserveBuildQueue?: boolean
+  ) => unknown
   sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: Record<string, unknown>) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
@@ -224,6 +237,11 @@ export interface BuildingEntity extends RuntimeEntityBase {
   units?: string[]
   technologies?: string[]
   placeUnit?: (type: string, extra?: UnknownRecord) => boolean
+  range?: number
+  attackAction?: (target: RuntimeEntity) => void
+  visibleCells?: Set<unknown>
+  assetCiv?: string
+  assetAge?: unknown
 }
 
 export interface ResourceEntity extends RuntimeEntityBase {
@@ -234,6 +252,7 @@ export interface ResourceEntity extends RuntimeEntityBase {
 
 export interface AnimalEntity extends RuntimeEntityBase {
   dest?: RuntimeCell | RuntimeEntity | null
+  isFleeing?: boolean
 }
 
 export type RuntimeEntity = UnitEntity | BuildingEntity | ResourceEntity | AnimalEntity

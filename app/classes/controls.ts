@@ -9,7 +9,6 @@ import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { ControlsLike, GameContextLike, SelectionRectangle } from '../types/context'
 import type { PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
-import type { UnknownRecord } from '../types/common'
 
 type PointerPoint = { x: number; y: number }
 type PointerPageEvent = {
@@ -696,7 +695,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   getCellOnCamera(callback: (cell: RuntimeCell) => void): void {
-    this.cameraController.getCellOnCamera(callback as (cell: UnknownRecord) => void)
+    this.cameraController.getCellOnCamera(callback)
   }
 
   updateVisibleCells(): void {

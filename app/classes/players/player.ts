@@ -14,7 +14,9 @@ import {
   playSoundCue,
 } from '../../lib'
 import { Building } from '../building'
+import type { BuildingOptions } from '../building'
 import { Unit } from '../unit'
+import type { UnitSpawnOptions } from '../unit'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { playUiSound } from '../../lib/uiSound'
@@ -32,9 +34,9 @@ import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
-export class Player {
-  [key: string]: DynamicValue
+export type PlayerOptions = Partial<PlayerLike> & { difficulty?: string }
 
+export class Player implements PlayerLike {
   family: string
   context: GameContextLike
   label: string
@@ -46,8 +48,8 @@ export class Player {
   food: number
   stone: number
   gold: number
-  corpses: RuntimeEntity[]
-  units: RuntimeEntity[]
+  corpses: UnitEntity[]
+  units: UnitEntity[]
   selectedUnits!: UnitEntity[]
   selectedUnit!: UnitEntity | null
   selectedBuilding!: BuildingEntity | null
@@ -65,8 +67,13 @@ export class Player {
   techs: Record<string, TechnologyConfig>
   hasBuilt!: string[]
   views!: VisionGridLike
+  isPlayed?: boolean
+  color?: string
+  civ?: string
+  name?: string
+  autoTechnologyByAge?: boolean
 
-  constructor(options: UnknownRecord, context: GameContextLike) {
+  constructor(options: PlayerOptions, context: GameContextLike) {
     this.family = FAMILY_TYPES.player
     this.context = context
 
@@ -87,8 +94,10 @@ export class Player {
     this.cellViewed = 0
     this.age = 0
     this.lastUnderAttackAlertAt = 0
+    const dynamicPlayer = this as unknown as Record<string, unknown>
+    const dynamicOptions = options as unknown as Record<string, unknown>
     Object.keys(options).forEach(prop => {
-      this[prop] = options[prop]
+      dynamicPlayer[prop] = dynamicOptions[prop]
     })
     const rawTeam = this.team as unknown
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
@@ -96,8 +105,8 @@ export class Player {
 
     this.population_max = this.population_max || (map.instantMode ? POPULATION_MAX : 0)
 
-    this.colorHex = getHexColor(this.color)
-    const { config, techs } = createPlayerData(Assets.cache.get('config'), Assets.cache.get('technology'), this.civ)
+    this.colorHex = getHexColor(this.color ?? '')
+    const { config, techs } = createPlayerData(Assets.cache.get('config'), Assets.cache.get('technology'), this.civ ?? '')
     this.config = config
     this.techs = techs
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
@@ -128,7 +137,7 @@ export class Player {
     playUiSound(SOUND_CUES.ui.underAttack)
   }
 
-  spawnBuilding(options: UnknownRecord) {
+  spawnBuilding(options: BuildingOptions) {
     const building = this.createBuilding(options)
     if (this.isPlayed) {
       let hasSentVillager = false
@@ -180,11 +189,12 @@ export class Player {
     const config = this.techs?.[type]
     if (!config) return false
 
+    const dynamicPlayer = this as unknown as Record<string, unknown>
     const key = config.key || type
-    if (Array.isArray(this[key])) {
-      this[key].push(config.value || type)
+    if (Array.isArray(dynamicPlayer[key])) {
+      (dynamicPlayer[key] as unknown[]).push(config.value || type)
     } else {
-      this[key] = config.value || type
+      dynamicPlayer[key] = config.value || type
     }
 
     const action = config.action
@@ -218,7 +228,8 @@ export class Player {
     }
 
     const handler = `on${capitalizeFirstLetter(config.key || '')}Change`
-    typeof this[handler] === 'function' && this[handler](config.value)
+    const handlerFn = dynamicPlayer[handler]
+    typeof handlerFn === 'function' && (handlerFn as (value: unknown) => void)(config.value)
     return true
   }
 
@@ -300,6 +311,30 @@ export class Player {
     return [this, ...this.otherPlayers().filter(player => this.isAlliedWith(player))]
   }
 
+  unselectAllUnits() {
+    const {
+      context: { menu },
+    } = this
+    for (let i = 0; i < this.selectedUnits.length; i++) {
+      this.selectedUnits[i].unselect?.()
+    }
+    this.selectedUnit = null
+    this.selectedUnits = []
+    menu.setBottombar()
+  }
+
+  unselectAll() {
+    if (this.selectedBuilding) {
+      this.selectedBuilding.unselect?.()
+      this.selectedBuilding = null
+    }
+    if (this.selectedOther) {
+      this.selectedOther.unselect?.()
+      this.selectedOther = null
+    }
+    this.unselectAllUnits()
+  }
+
   updateConfig(operations: ConfigOperation[]) {
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
@@ -335,31 +370,26 @@ export class Player {
     const config = this.config.buildings[type]
     const placementConfig = { ...config, type }
     if (
-      canAfford(this, config.cost) &&
+      canAfford(this as unknown as Record<string, number | undefined>, config.cost) &&
       this.isBuildingEligible(type) &&
       canPlaceBuildingAt(map.grid, i, j, placementConfig)
     ) {
       this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })
-      payCost(this, config.cost)
+      payCost(this as unknown as Record<string, number | undefined>, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true
     }
     return false
   }
 
-  createUnit(options: UnknownRecord) {
+  createUnit(options: UnitSpawnOptions) {
     const { context } = this
-    let unit = context.map.addChild(
-      new Unit(
-        { ...options, owner: this } as unknown as ConstructorParameters<typeof Unit>[0],
-        context as ConstructorParameters<typeof Unit>[1]
-      )
-    )
+    let unit = context.map.addChild(new Unit({ ...options, owner: this as unknown as PlayerLike }, context))
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this as unknown as PlayerLike)
     return unit
   }
 
-  createBuilding(options: UnknownRecord) {
+  createBuilding(options: BuildingOptions) {
     const { context } = this
     const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)

@@ -14,6 +14,7 @@ type SerializableEntity = RuntimeEntityBase &
     assetAge?: unknown
     assetCiv?: unknown
     assetType?: unknown
+    blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
     buildQueue?: { label?: string }[] | null
     currentSheet?: unknown
     degree?: number
@@ -32,6 +33,7 @@ type SerializableEntity = RuntimeEntityBase &
     queue?: unknown[]
     rallyPoint?: unknown
     realDest?: Destination | null
+    isFleeing?: boolean
     sprite?: SpriteState | null
     technology?: unknown
     textureName?: string

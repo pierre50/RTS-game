@@ -49,7 +49,8 @@ import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 
-type UnitSpawnOptions = Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }
+export type UnitSpawnOptions = Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }
+type InteractiveAnimatedSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
 
 function getActionSheet(work: string | null | undefined, action: string | null | undefined, AssetsRef: typeof Assets, unit: UnitEntity) {
   if (!work) {
@@ -73,7 +74,7 @@ function getFishingOverlayFrames(spritesheet: { textures: Record<string, unknown
   }
 }
 
-export class Unit extends Instance {
+export class Unit extends Instance implements UnitEntity {
   unitInterface: UnitInterface
   unitCommands: UnitCommands
   unitLifecycle: UnitLifecycle
@@ -81,6 +82,58 @@ export class Unit extends Instance {
   unitActions: UnitActions
   unitMovement: UnitMovement
   sendTo!: (target: RuntimeCell | RuntimeEntity, action?: string) => void
+
+  declare sprite: AnimatedSprite
+  loadedInTransport: UnitEntity['loadedInTransport']
+  inactif!: boolean
+  sounds?: UnitEntity['sounds']
+  work: UnitEntity['work']
+  loading!: UnitEntity['loading']
+  loadingType: UnitEntity['loadingType']
+  transportCapacity?: UnitEntity['transportCapacity']
+  transportedUnits?: UnitEntity['transportedUnits']
+  transportLoadShoreCell?: UnitEntity['transportLoadShoreCell']
+  transportLoadCoastCell?: UnitEntity['transportLoadCoastCell']
+
+  dest: UnitEntity['dest']
+  realDest: UnitEntity['realDest']
+  previousDest: UnitEntity['previousDest']
+  previousWork: UnitEntity['previousWork']
+  path!: NonNullable<UnitEntity['path']>
+  pendingOrder: UnitEntity['pendingOrder']
+  blockedGatherApproach: UnitEntity['blockedGatherApproach']
+  buildQueue!: NonNullable<UnitEntity['buildQueue']>
+  currentCell!: NonNullable<UnitEntity['currentCell']>
+  visibleCells!: NonNullable<UnitEntity['visibleCells']>
+
+  actionLocked!: boolean
+  currentSheet!: NonNullable<UnitEntity['currentSheet']>
+  currentFrame!: NonNullable<UnitEntity['currentFrame']>
+  actionSheet?: UnitEntity['actionSheet']
+  walkingSheet?: UnitEntity['walkingSheet']
+  standingSheet?: UnitEntity['standingSheet']
+  loop?: UnitEntity['loop']
+  allowMove?: UnitEntity['allowMove']
+  allowClick?: boolean
+  visibilityTimeout?: UnitEntity['visibilityTimeout']
+  sailSheet?: UnitEntity['sailSheet']
+  sailSpritesheet?: UnitEntity['sailSpritesheet']
+  sailSprite?: UnitEntity['sailSprite']
+  sailAnimationSpeed?: UnitEntity['sailAnimationSpeed']
+  fishingOverlaySheet?: UnitEntity['fishingOverlaySheet']
+  fishingOverlaySprite?: UnitEntity['fishingOverlaySprite']
+  showLoading?: UnitEntity['showLoading']
+  showBuildings?: UnitEntity['showBuildings']
+
+  assets?: UnitEntity['assets']
+  allAssets?: UnitEntity['allAssets']
+
+  totalQuantity?: UnitEntity['totalQuantity']
+  quantity!: number
+
+  interface!: UnitEntity['interface']
+  handleSetDest?: UnitEntity['handleSetDest']
+  handleIsAttacked?: UnitEntity['handleIsAttacked']
 
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
     super(context)
@@ -153,13 +206,14 @@ export class Unit extends Instance {
         this.work = WORK_TYPES.attacker
     }
 
+    const dynamicUnit = this as unknown as Record<string, unknown>
     if (this.assets) {
       for (const [key, value] of Object.entries(this.assets)) {
-        this[key] = Assets.cache.get(value)
+        dynamicUnit[key] = Assets.cache.get(value)
       }
     } else if (this.allAssets) {
       for (const [key, value] of Object.entries(this.allAssets.default)) {
-        this[key] = Assets.cache.get(value)
+        dynamicUnit[key] = Assets.cache.get(value)
       }
     }
     if (this.sailSheet) {
@@ -227,19 +281,21 @@ export class Unit extends Instance {
     this.allowMove = false
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this as UnitEntity)
-    this.sprite = new AnimatedSprite(getAnimationFrames(this.standingSheet.textures, 'south') as Texture[])
+    this.sprite = new AnimatedSprite(getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[])
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
+    const interactiveSprite = this.sprite as AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
     this.sprite.label = LABEL_TYPES.sprite
-    this.sprite.allowMove = false
+    interactiveSprite.allowMove = false
     this.sprite.eventMode = 'auto'
-    this.sprite.allowClick = false
+    interactiveSprite.allowClick = false
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
     if (this.isDead) {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
-    } else if (this.loading > 0) {
-      this.walkingSheet = Assets.cache.get(this.allAssets[getWorkWithLoadingType(this.loadingType)].loadedSheet)
-      this.standingSheet = Assets.cache.get(this.allAssets[getWorkWithLoadingType(this.loadingType)].standingSheet)
+    } else if ((this.loading ?? 0) > 0) {
+      const loadingWork = getWorkWithLoadingType(this.loadingType ?? '')
+      this.walkingSheet = this.allAssets?.[loadingWork] && Assets.cache.get(this.allAssets[loadingWork].loadedSheet)
+      this.standingSheet = this.allAssets?.[loadingWork] && Assets.cache.get(this.allAssets[loadingWork].standingSheet)
     }
     this.setTextures(this.currentSheet)
 
@@ -405,7 +461,7 @@ export class Unit extends Instance {
     this.sailSprite = new AnimatedSprite(textures as Texture[])
     bindAnimatedSpriteToTicker(this.sailSprite, this.context.app)
     this.sailSprite.label = LABEL_TYPES.sail
-    this.sailSprite.allowMove = false
+    ;(this.sailSprite as InteractiveAnimatedSprite).allowMove = false
     this.sailSprite.eventMode = 'none'
     this.sailSprite.roundPixels = true
     this.sailSprite.loop = true
@@ -429,7 +485,7 @@ export class Unit extends Instance {
     }
 
     this.sailSprite.visible = true
-    this.sailSprite.textures = textures
+    this.sailSprite.textures = textures as Texture[]
     this.sailSprite.scale.x = mirrored ? -1 : 1
     this.sailSprite.animationSpeed = this.sailSpritesheet.data.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
     goto && goto < this.sailSprite.textures.length ? this.sailSprite.gotoAndPlay(goto) : this.sailSprite.play()
@@ -444,7 +500,7 @@ export class Unit extends Instance {
     this.fishingOverlaySprite = new AnimatedSprite(textures as Texture[])
     bindAnimatedSpriteToTicker(this.fishingOverlaySprite, this.context.app)
     this.fishingOverlaySprite.label = LABEL_TYPES.fishingNet
-    this.fishingOverlaySprite.allowMove = false
+    ;(this.fishingOverlaySprite as InteractiveAnimatedSprite).allowMove = false
     this.fishingOverlaySprite.eventMode = 'none'
     this.fishingOverlaySprite.roundPixels = true
     this.fishingOverlaySprite.loop = false
@@ -476,14 +532,14 @@ export class Unit extends Instance {
     }
 
     this.setupFishingOverlaySprite()
-    if (!this.fishingOverlaySprite) return
+    if (!this.fishingOverlaySprite || !this.fishingOverlaySheet) return
 
     const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this as UnitEntity)
     if (!textures.length) {
       this.removeFishingOverlaySprite()
       return
     }
-    this.fishingOverlaySprite.textures = textures
+    this.fishingOverlaySprite.textures = textures as Texture[]
     this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
     this.fishingOverlaySprite.gotoAndStop(0)
   }
@@ -518,7 +574,7 @@ export class Unit extends Instance {
   }
 
   setDest(dest: RuntimeEntity | RuntimeCell | null) {
-    if (!dest || dest.isDestroyed) {
+    if (!dest || (dest as RuntimeEntity).isDestroyed) {
       this.stop()
       return
     }
@@ -551,7 +607,7 @@ export class Unit extends Instance {
     }
 
     const dest = orderOrDest
-    if (!dest || dest.isDestroyed) return false
+    if (!dest || (dest as RuntimeEntity).isDestroyed) return false
     this.pendingOrder = { dest, action }
     return true
   }
@@ -565,7 +621,7 @@ export class Unit extends Instance {
       return true
     }
     const { dest, action } = pendingOrder
-    if (!dest || dest.isDestroyed) return false
+    if (!dest || (dest as RuntimeEntity).isDestroyed) return false
     this.sendToEvt(dest, action ?? null)
     return true
   }

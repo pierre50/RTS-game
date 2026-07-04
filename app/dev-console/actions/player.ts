@@ -27,7 +27,6 @@ type DevTechnologyPlayer = DevPlayer & {
   onAgeChange?: () => void
   population_max?: number
   updateConfig?: (operations: Array<Record<string, unknown> & { value: number }>) => void
-  [key: string]: unknown
 }
 
 function getTechConfig(player: DevTechnologyPlayer, type: string): TechnologyConfig | null {
@@ -95,11 +94,12 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
 
   const config = getTechConfig(player, type)
   if (!config) return { ok: false, message: `Unknown technology: ${typeName}` }
-  const currentValue = player[config.key]
+  const dynamicPlayer = player as unknown as Record<string, unknown>
+  const currentValue = dynamicPlayer[config.key]
   if (Array.isArray(currentValue)) {
     currentValue.push(config.value || type)
   } else {
-    player[config.key] = config.value || type
+    dynamicPlayer[config.key] = config.value || type
   }
 
   const { action } = config
@@ -131,7 +131,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
   }
 
   const handler = `on${capitalizeFirstLetter(config.key)}Change`
-  const changeHandler = player[handler]
+  const changeHandler = (player as unknown as Record<string, unknown>)[handler]
   if (typeof changeHandler === 'function') {
     ;(changeHandler as (value: unknown) => void)(config.value)
   }

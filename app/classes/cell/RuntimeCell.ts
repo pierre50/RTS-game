@@ -50,8 +50,6 @@ type RuntimeCellSource = {
 }
 
 export class RuntimeCell {
-  [key: string]: unknown
-
   context: RuntimeCellContext
   family: string
   map: RuntimeCellContext['map']

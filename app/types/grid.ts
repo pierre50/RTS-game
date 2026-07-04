@@ -20,7 +20,6 @@ export type GridCell = GridPosition & {
   visible?: boolean
   waterBorder?: boolean
   z?: number
-  [key: string]: unknown
 }
 
 export type Grid<TCell extends GridCell = GridCell> = TCell[][]
@@ -40,8 +39,6 @@ export type InstanceLike = GridPosition &
     parent?: {
       grid: Grid
       size: number
-      [key: string]: unknown
     }
     size?: number
-    [key: string]: unknown
   }

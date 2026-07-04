@@ -43,8 +43,6 @@ type CellSprite = Sprite & {
 }
 
 export class Cell extends Container {
-  [key: string]: unknown
-
   context: CellContext
   family: string
   map: CellMap
@@ -69,6 +67,9 @@ export class Cell extends Container {
   sprite: CellSprite | null
   cellFog: CellFog | null
   cellTerrain: CellTerrain
+  allowMove?: boolean
+  allowClick?: boolean
+  _terrainRenderResourcesReleased?: boolean
 
   constructor(options: CellOptions, context: CellContext) {
     super()

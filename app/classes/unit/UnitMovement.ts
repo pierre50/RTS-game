@@ -190,7 +190,7 @@ export class UnitMovement {
     unit.stopInterval?.()
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []
-    if (!dest || dest.isDestroyed || unit.isDead || !map) return
+    if (!dest || (dest as RuntimeEntity).isDestroyed || unit.isDead || !map) return
     if (!action) {
       unit.previousDest = null
       unit.previousWork = null
@@ -301,7 +301,7 @@ export class UnitMovement {
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
     const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
-    if (!dest || dest.isDestroyed) {
+    if (!dest || (dest as RuntimeEntity).isDestroyed) {
       unit.affectNewDest?.()
       return
     }

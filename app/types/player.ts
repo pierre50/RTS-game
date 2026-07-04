@@ -65,7 +65,7 @@ export interface PlayerLike {
   createBuilding: (
     options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
   ) => BuildingEntity
-  createUnit?: (options: UnknownRecord) => UnitEntity
+  createUnit?: (options: Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }) => UnitEntity
   spawnBuilding?: (
     options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean }
   ) => BuildingEntity | undefined

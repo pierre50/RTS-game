@@ -44,8 +44,6 @@ type TerrainDecoration = ContainerChild & {
 }
 
 export class GenerationCell {
-  [key: string]: unknown
-
   context: GenerationCellContext
   map: GenerationCellContext['map']
   family: string
