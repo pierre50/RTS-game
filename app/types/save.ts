@@ -9,12 +9,12 @@ export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; la
 export type SaveEntityState = {
   action?: string | null
   assetAge?: unknown
-  assetCiv?: unknown
-  assetType?: unknown
+  assetCiv?: string
+  assetType?: string
   blockedGatherApproach?: { target: SaveReference; action: string } | null
   buildQueue?: string[]
   currentFrame?: number
-  currentSheet?: unknown
+  currentSheet?: string
   degree?: number
   dest?: SaveReference | SaveDestination | null
   direction?: number
@@ -29,18 +29,18 @@ export type SaveEntityState = {
   j: number
   label?: string
   loadedInTransport?: string | null
-  loading?: unknown
-  loadingType?: unknown
+  loading?: number | null
+  loadingType?: string | null
   loop?: boolean
   path?: SaveGridPoint[]
   previousDest?: SaveReference | SaveDestination | null
   previousWork?: string | null
   quantity?: number
-  queue?: unknown[]
+  queue?: string[]
   rallyPoint?: unknown
   realDest?: SaveDestination | null
   size?: number
-  technology?: unknown
+  technology?: { type?: string; config?: unknown } | null
   textureName?: string
   totalHitPoints?: number
   type: string

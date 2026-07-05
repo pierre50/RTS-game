@@ -2,10 +2,10 @@ import { Assets, Container, Sprite, Texture } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
 import { getBuildingAsset, getTexture, changeSpriteColor, canPlaceBuildingAt } from '../lib'
 import { getWallTexture } from '../lib/buildings/walls'
-import type { GameContextLike } from '../types/context'
 import type { PlaceableBuildingConfig } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlacementOwner } from '../types/player'
+import type { RecolorableSprite } from '../lib'
 
 type EditorPreviewKind = 'building' | 'unit' | 'animal'
 
@@ -16,7 +16,8 @@ type EditorPlacementSelection = {
 }
 
 export type EditorPreviewControls = Container & {
-  context: GameContextLike & {
+  context: {
+    map: RuntimeMap
     editor: {
       hasWallDraft?: () => boolean
       _canWallUseCell: (cell: RuntimeCell, owner: PlacementOwner | null) => boolean
@@ -74,8 +75,8 @@ export class EditorEntityPreview {
     this._kind = kind
     this._type = type
     this._owner = owner
-    this._buildingConfig =
-      kind === 'building' ? (owner.config?.buildings?.[type] as unknown as PlaceableBuildingConfig) : null
+    const buildingConfig = kind === 'building' ? owner.config?.buildings?.[type] : null
+    this._buildingConfig = buildingConfig ? { ...buildingConfig, type } : null
     this._isBoat = kind === 'unit' && (owner.config?.units?.[type] as UnitPreviewConfig | undefined)?.category === 'Boat'
     this.controls.addChild(container)
   }
@@ -170,7 +171,7 @@ export class EditorEntityPreview {
     sprite.label = LABEL_TYPES.sprite
     container.addChild(sprite)
 
-    changeSpriteColor(sprite as unknown as Parameters<typeof changeSpriteColor>[0], owner.color ?? '')
+    changeSpriteColor(sprite as RecolorableSprite, owner.color ?? '')
 
     return container
   }
@@ -185,7 +186,7 @@ export class EditorEntityPreview {
     const container = new Container()
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
-    changeSpriteColor(sprite as unknown as Parameters<typeof changeSpriteColor>[0], owner.color ?? '')
+    changeSpriteColor(sprite as RecolorableSprite, owner.color ?? '')
     container.addChild(sprite)
     return container
   }

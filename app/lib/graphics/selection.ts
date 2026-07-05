@@ -5,7 +5,7 @@ type SelectableInstance = {
   addChildAt: (child: Graphics, index: number) => void
   removeChild: (child: Graphics) => void
   selectionFactor?: number
-  size: number
+  size?: number
 }
 
 export function drawInstanceBlinkingSelection(instance: SelectableInstance): void {
@@ -13,7 +13,7 @@ export function drawInstanceBlinkingSelection(instance: SelectableInstance): voi
   selection.label = LABEL_TYPES.selection
   selection.zIndex = 3
 
-  const selectionFactor = instance.selectionFactor ?? instance.size
+  const selectionFactor = instance.selectionFactor ?? instance.size ?? 1
   const path = [-32 * selectionFactor, 0, 0, -16 * selectionFactor, 32 * selectionFactor, 0, 0, 16 * selectionFactor]
   selection.poly(path)
   selection.stroke(COLOR_GREEN)

@@ -4,7 +4,7 @@ import { canPlaceBuildingAt } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevEntity, DevMapLike, DebugTickerCallback } from '../types'
 
-export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold']
+export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
 export const DEBUG_PATH_LAYER = 'debugPathLayer'
 export const DEBUG_VISION_LAYER = 'debugVisionLayer'
@@ -12,6 +12,7 @@ export const DEBUG_GRID_LAYER = 'debugGridLayer'
 export const DEBUG_COORDS_LAYER = 'debugCoordsLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
+type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
 
 export function normalizeToggle(value: unknown, currently: boolean): boolean {
   return value === 'on' ? true : value === 'off' ? false : !currently
@@ -147,11 +148,11 @@ export function getSolidDebugColor(cell: DevCell): number {
 
 export function stopDebugTicker(context: DevConsoleContext, tickerName: string): void {
   const { map } = context
-  const tickers = map as unknown as Record<string, DebugTickerCallback | null | undefined>
-  const ticker = tickers[tickerName]
+  const tickerKey = tickerName as DebugTickerName
+  const ticker = map[tickerKey]
   if (ticker) {
     context.app?.ticker.remove(ticker)
-    tickers[tickerName] = null
+    map[tickerKey] = null
   }
 }
 
@@ -172,15 +173,15 @@ export function addDebugTicker(
 ): void {
   const { app, map } = context
   stopDebugTicker(context, tickerName)
-  const tickers = map as unknown as Record<string, DebugTickerCallback | null | undefined>
+  const tickerKey = tickerName as DebugTickerName
   let elapsed = 0
-  tickers[tickerName] = (ticker?: { elapsedMS?: number }) => {
+  map[tickerKey] = (ticker?: { elapsedMS?: number }) => {
     elapsed += ticker?.elapsedMS ?? 0
     if (elapsed < DEBUG_CELL_REFRESH_MS) return
     elapsed = 0
     draw(context)
   }
-  app?.ticker.add(tickers[tickerName] as DebugTickerCallback)
+  app?.ticker.add(map[tickerKey])
 }
 
 export function cleanupDebugArtifacts(context: DevConsoleContext): void {

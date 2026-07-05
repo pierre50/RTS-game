@@ -36,9 +36,6 @@ export type InstanceLike = GridPosition &
     category?: string
     degree?: number
     isDestroyed?: boolean
-    parent?: {
-      grid: Grid
-      size: number
-    }
+    parent?: object | null
     size?: number
   }

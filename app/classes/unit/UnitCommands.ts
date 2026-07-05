@@ -33,12 +33,8 @@ function checkActionCondition(
   action?: string,
   props?: Record<string, unknown>
 ): boolean {
-  return getActionCondition(
-    source as unknown as Parameters<typeof getActionCondition>[0],
-    target as unknown as Parameters<typeof getActionCondition>[1],
-    action ?? '',
-    props
-  )
+  if (!target) return false
+  return getActionCondition(source, target, action ?? '', props)
 }
 
 export class UnitCommands {
@@ -48,7 +44,11 @@ export class UnitCommands {
     this.unit = unit
   }
 
-  isRedundantOrder(target: RuntimeEntity | null | undefined, work: string | null | undefined, action: string | null | undefined): boolean {
+  isRedundantOrder(
+    target: RuntimeEntity | null | undefined,
+    work: string | null | undefined,
+    action: string | null | undefined
+  ): boolean {
     const unit = this.unit
     const dest = unit.dest as RuntimeEntity | null | undefined
     if (!target || dest?.label !== target.label) return false
@@ -100,7 +100,10 @@ export class UnitCommands {
     if (unit.work !== work || unit.action !== action) {
       unit.work = work
       if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-        menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
+        menu?.updateInfo?.(
+          MENU_INFO_IDS.type,
+          t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
+        )
       }
       const workAssets = unit.allAssets?.[work]
       if (workAssets) {
@@ -141,12 +144,12 @@ export class UnitCommands {
     if (unit.isUnitAtDest?.(action, target)) {
       unit.setDest?.(target)
       unit.action = action
-      unit.degree = getInstanceDegree(unit as unknown as Parameters<typeof getInstanceDegree>[0], target.x, target.y)
+      unit.degree = getInstanceDegree(unit, target.x, target.y)
       unit.getAction?.(action)
       return true
     }
     if (!map) return false
-    const path = getInstancePath(unit as unknown as Parameters<typeof getInstancePath>[0], arrivalCell.i, arrivalCell.j, map)
+    const path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map)
     if (path.length) {
       unit.setDest?.(target)
       unit.action = action
@@ -182,10 +185,7 @@ export class UnitCommands {
     const targets = (unit.owner?.buildings ?? []).filter(building =>
       checkActionCondition(unit, building, ACTION_TYPES.delivery, { buildingTypes })
     )
-    const target = getClosestInstance(
-      unit as unknown as Parameters<typeof getClosestInstance>[0],
-      targets as unknown as Parameters<typeof getClosestInstance>[1]
-    ) as BuildingEntity | false
+    const target = getClosestInstance(unit, targets)
     if (!target) {
       unit.stop?.()
       return

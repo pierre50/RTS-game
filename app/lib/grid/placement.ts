@@ -5,9 +5,7 @@ import type { Grid, GridCell, GridPosition, GridZone, InstanceLike } from '../..
 
 type DestroyableDisplayObject = {
   destroy?: () => void
-  parent?: {
-    removeChild?: (child: DestroyableDisplayObject) => void
-  }
+  parent?: unknown
 }
 
 type TerrainCell = GridCell & {
@@ -18,9 +16,9 @@ type TerrainCell = GridCell & {
       }
     }
   }
-  getChildByLabel?: (label: string) => DestroyableDisplayObject | null
-  removeChild?: (child: DestroyableDisplayObject) => void
-  terrainSet?: DestroyableDisplayObject | null
+  getChildByLabel?: (label: string) => unknown
+  removeChild?: unknown
+  terrainSet?: unknown
 }
 
 type BuildingPlacement = {
@@ -39,22 +37,30 @@ export function clearCellTerrainSet(cell?: TerrainCell | null): void {
   if (!cell) return
 
   const set = cell.terrainSet || cell.getChildByLabel?.(LABEL_TYPES.set)
-  if (!set) return
+  if (!set || typeof set !== 'object') return
 
-  cell.removeChild?.(set)
-  set.parent?.removeChild?.(set)
-  set.destroy?.()
+  if (typeof cell.removeChild === 'function') {
+    cell.removeChild(set)
+  }
+  if ('parent' in set && set.parent && typeof set.parent === 'object' && 'removeChild' in set.parent) {
+    const removeFromParent = set.parent.removeChild
+    if (typeof removeFromParent === 'function') removeFromParent(set)
+  }
+  if ('destroy' in set && typeof set.destroy === 'function') {
+    set.destroy()
+  }
   cell.terrainSet = null
   cell.context?.map?.terrainChunkManager?.invalidateCell?.(cell)
 }
 
 function createPlacementZone(instance: InstanceLike, maxSpace: number): GridZone {
-  const mapSize = instance.parent?.size ?? 0
+  const parentSize =
+    instance.parent && 'size' in instance.parent && typeof instance.parent.size === 'number' ? instance.parent.size : 0
   return {
     minX: Math.max(instance.i - maxSpace, 0),
     minY: Math.max(instance.j - maxSpace, 0),
-    maxX: Math.min(instance.i + maxSpace, mapSize - 1),
-    maxY: Math.min(instance.j + maxSpace, mapSize - 1),
+    maxX: Math.min(instance.i + maxSpace, parentSize - 1),
+    maxY: Math.min(instance.j + maxSpace, parentSize - 1),
   }
 }
 

@@ -5,6 +5,8 @@ import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { RESOURCE_NAMES, findKey } from './shared'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
+import type { ResourceAmount } from '../../types/common'
+import type { TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
@@ -14,14 +16,13 @@ type TechnologyAction =
   | { type: 'refreshTowers' }
   | { type: 'improve'; operations: Array<Record<string, unknown> & { value: unknown }> }
 
-type TechnologyConfig = {
+type DevTechnologyConfig = BaseTechnologyConfig & {
   key: string
-  value?: unknown
-  conditions?: Parameters<typeof isValidCondition>[0][]
   action?: TechnologyAction
 }
 
 type DevTechnologyPlayer = DevPlayer & {
+  [key: string]: unknown
   autoTechnologyByAge?: boolean
   enemyPlayers?: () => DevTechnologyPlayer[]
   onAgeChange?: () => void
@@ -29,8 +30,14 @@ type DevTechnologyPlayer = DevPlayer & {
   updateConfig?: (operations: Array<Record<string, unknown> & { value: number }>) => void
 }
 
-function getTechConfig(player: DevTechnologyPlayer, type: string): TechnologyConfig | null {
-  return (player.techs[type] as unknown as TechnologyConfig | undefined) ?? null
+type ResourceName = (typeof RESOURCE_NAMES)[number]
+
+function isResourceName(value: string): value is ResourceName {
+  return (RESOURCE_NAMES as readonly string[]).includes(value)
+}
+
+function getTechConfig(player: DevTechnologyPlayer, type: string): DevTechnologyConfig | null {
+  return (player.techs[type] as DevTechnologyConfig | undefined) ?? null
 }
 
 function isTechnologyEligible(player: DevTechnologyPlayer, type: string): boolean {
@@ -38,9 +45,7 @@ function isTechnologyEligible(player: DevTechnologyPlayer, type: string): boolea
   if (player.technologies.includes(type)) return false
   const config = getTechConfig(player, type)
   if (!config) return false
-  return (config.conditions || []).every(condition =>
-    isValidCondition(condition, player as unknown as Parameters<typeof isValidCondition>[1])
-  )
+  return (config.conditions || []).every(condition => isValidCondition(condition, player))
 }
 
 function applyEligibleTechnologies(context: DevConsoleContext): string[] {
@@ -64,14 +69,14 @@ function applyEligibleTechnologies(context: DevConsoleContext): string[] {
 }
 
 export function addResources(player: DevPlayer, resourceName: string, amount: number): string {
-  const ledger = player as unknown as Record<string, number | undefined>
+  const ledger: ResourceAmount = player
   if (resourceName === 'all') {
     RESOURCE_NAMES.forEach(name => {
       ledger[name] = Number(ledger[name] ?? 0) + amount
     })
     return `Added ${amount} to all resources`
   }
-  if (!RESOURCE_NAMES.includes(resourceName)) {
+  if (!isResourceName(resourceName)) {
     return `Unknown resource: ${resourceName}`
   }
   ledger[resourceName] = Number(ledger[resourceName] ?? 0) + amount
@@ -94,7 +99,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
 
   const config = getTechConfig(player, type)
   if (!config) return { ok: false, message: `Unknown technology: ${typeName}` }
-  const dynamicPlayer = player as unknown as Record<string, unknown>
+  const dynamicPlayer: Record<string, unknown> = player
   const currentValue = dynamicPlayer[config.key]
   if (Array.isArray(currentValue)) {
     currentValue.push(config.value || type)
@@ -121,7 +126,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
         break
       case 'improve':
         player.updateConfig?.(
-          action.operations.map(operation => ({
+          action.operations.map((operation: Record<string, unknown> & { value: unknown }) => ({
             ...operation,
             value: Number(operation.value),
           }))
@@ -131,7 +136,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
   }
 
   const handler = `on${capitalizeFirstLetter(config.key)}Change`
-  const changeHandler = (player as unknown as Record<string, unknown>)[handler]
+  const changeHandler = dynamicPlayer[handler]
   if (typeof changeHandler === 'function') {
     ;(changeHandler as (value: unknown) => void)(config.value)
   }

@@ -79,7 +79,11 @@ export type AIEntityLike = {
   die?(immediate?: boolean): void
   upgrade?(target: string): void
   goBackToPrevious?(): void
-  getActionCondition?(target: AIEntityLike | RuntimeEntity | RuntimeCell | null | undefined, action?: string, extra?: Record<string, unknown>): boolean
+  getActionCondition?(
+    target: AIEntityLike | RuntimeEntity | RuntimeCell | null | undefined,
+    action?: string,
+    extra?: Record<string, unknown>
+  ): boolean
   handleChangeDest?(): void
   setTextures?(sheet: string): void
   stopInterval?(): void

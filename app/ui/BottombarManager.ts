@@ -14,8 +14,6 @@ import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/conf
 import type { ResourceAmount } from '../types/common'
 import type { LoadedGameConfig } from '../types/save'
 
-const asLedger = (player: PlayerLike): Record<string, number | undefined> => player as unknown as Record<string, number | undefined>
-
 export class BottombarManager {
   menu: Menu
   activeHotkeys: Map<string, () => void>
@@ -376,9 +374,9 @@ export class BottombarManager {
       id: type,
       icon: () => getIconPath(unit.icon),
       tooltip: () => this.getUnitTooltip(type, unit),
-      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player as unknown as Record<string, unknown>)),
+      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: (selection: RuntimeEntity) => {
-        if (canAfford(asLedger(player), unit.cost)) {
+        if (canAfford(player, unit.cost)) {
           if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
             return
@@ -405,7 +403,7 @@ export class BottombarManager {
         const img = this.createMenuIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
           this.playUiClick()
-          if (canAfford(asLedger(player), unit.cost)) {
+          if (canAfford(player, unit.cost)) {
             if (player.population >= player.populationMax) {
               menu.showMessage(t('needHouses'), 'warning')
               return
@@ -466,8 +464,9 @@ export class BottombarManager {
         const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
         const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
         controls.removeMouseBuilding()
-        if (canAfford(asLedger(owner), config.cost)) {
-          controls.setMouseBuilding?.({ ...config, ...assets, type } as unknown as PlaceableBuildingConfig)
+        if (canAfford(owner, config.cost)) {
+          const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
+          controls.setMouseBuilding?.(placeableBuilding)
         } else {
           menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
         }
@@ -487,11 +486,11 @@ export class BottombarManager {
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (config.conditions || []).some(
-          condition => player.technologies.includes(type) || !isValidCondition(condition, player as unknown as Record<string, unknown>)
+          condition => player.technologies.includes(type) || !isValidCondition(condition, player)
         ),
       onClick: (selection: RuntimeEntity) => {
         controls.removeMouseBuilding()
-        if (canAfford(asLedger(player), config.cost)) {
+        if (canAfford(player, config.cost)) {
           ;(selection as BuildingEntity).buyTechnology?.(type)
         } else {
           menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')

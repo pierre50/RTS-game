@@ -1,13 +1,15 @@
 import { Assets, Texture } from 'pixi.js'
+import type { Filter } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getBuildingAsset, getTexture, changeSpriteColorDirectly } from '../index'
 import type { BuildingConfig } from '../../types/config'
+import type { RecolorableSprite } from '../graphics/colors'
 
 type TowerBuildingConfig = BuildingConfig & Partial<TowerBuilding>
 
 type TowerOwner = {
   age: number
-  civ: string
+  civ?: string
   color?: string
   config?: {
     buildings: Record<string, TowerBuildingConfig>
@@ -16,7 +18,7 @@ type TowerOwner = {
 }
 
 type TowerBuilding = {
-  getChildByLabel: (label: string) => { destroy: () => void } | null
+  getChildByLabel?: (label: string) => { destroy?: () => void } | null | unknown
   hitPoints: number
   isBuilt?: boolean
   isDestroyed?: boolean
@@ -28,6 +30,7 @@ type TowerBuilding = {
   sight?: number
   sprite?: {
     anchor: { set: (x: number, y: number) => void }
+    filters: readonly Filter[] | null
     texture: Texture
     [key: string]: unknown
   }
@@ -44,6 +47,10 @@ export function getTowerType(owner?: TowerOwner | null): string {
 
 export function isTower(instance?: { type?: string } | null): instance is TowerBuilding {
   return instance?.type === BUILDING_TYPES.watchTower
+}
+
+function isTowerCandidate(instance: unknown): instance is { type?: string } {
+  return typeof instance === 'object' && instance !== null
 }
 
 function refreshTower(tower?: TowerBuilding | null): void {
@@ -64,19 +71,18 @@ function refreshTower(tower?: TowerBuilding | null): void {
 
   if (!tower.sprite || !tower.isBuilt) return
 
-  const assets = getBuildingAsset(effectiveType, tower.owner, Assets)
+  const assets = getBuildingAsset(effectiveType, { ...tower.owner, civ: tower.owner.civ || '' }, Assets)
   if (!assets.images?.final) return
   tower.sprite.texture = getTexture(assets.images.final, Assets)
   tower.sprite.anchor.set(tower.sprite.texture.defaultAnchor?.x ?? 0, tower.sprite.texture.defaultAnchor?.y ?? 0)
 
-  const color = tower.getChildByLabel(LABEL_TYPES.color)
-  if (color) color.destroy()
-  changeSpriteColorDirectly(
-    tower.sprite as unknown as Parameters<typeof changeSpriteColorDirectly>[0],
-    tower.owner.color ?? 'blue'
-  )
+  const color = tower.getChildByLabel?.(LABEL_TYPES.color)
+  if (color && typeof color === 'object' && 'destroy' in color && typeof color.destroy === 'function') color.destroy()
+  changeSpriteColorDirectly(tower.sprite as RecolorableSprite, tower.owner.color ?? 'blue')
 }
 
-export function refreshOwnerTowers(owner?: (TowerOwner & { buildings?: TowerBuilding[] }) | null): void {
-  owner?.buildings?.filter(isTower).forEach(refreshTower)
+export function refreshOwnerTowers(owner?: (TowerOwner & { buildings?: unknown[] }) | null): void {
+  owner?.buildings
+    ?.filter((building): building is TowerBuilding => isTowerCandidate(building) && isTower(building))
+    .forEach(refreshTower)
 }

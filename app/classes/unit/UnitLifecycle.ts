@@ -1,5 +1,13 @@
 import { BOAT_CORPSE_TIME, CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import { canUpdateMinimap, getTransportCargo, isPlayerEliminated, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+import {
+  canUpdateMinimap,
+  getTransportCargo,
+  isPlayerEliminated,
+  isTransportBoat,
+  playAudibleSoundCue,
+  updateInstanceVisibility,
+} from '../../lib'
+import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
 const BOAT_CATEGORY = 'Boat'
@@ -16,7 +24,7 @@ export class UnitLifecycle {
     const map = unit.context?.map
     unit.setTextures?.(SHEET_TYPES.corpse)
     if (unit.sailSprite) unit.sailSprite.visible = false
-    const sprite = unit.sprite as unknown as { loop: boolean; textures: unknown[]; animationSpeed: number; onComplete: (() => void) | null }
+    const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     const corpseTime = unit.category === BOAT_CATEGORY ? BOAT_CORPSE_TIME : CORPSE_TIME
     sprite.animationSpeed = sprite.textures.length / (corpseTime * 60)
@@ -46,10 +54,10 @@ export class UnitLifecycle {
     unit.setTextures?.(SHEET_TYPES.dying)
     if (unit.sailSprite) unit.sailSprite.visible = false
     unit.zIndex = (unit.zIndex ?? 0) - 1
-    const sprite = unit.sprite as unknown as { loop: boolean; onComplete: (() => void) | null }
+    const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     sprite.onComplete = () => {
-      updateInstanceVisibility(unit as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      updateInstanceVisibility(unit)
       const corpses = unit.owner?.corpses
       const index = corpses?.indexOf(unit) ?? -1
       if (index < 0) {
@@ -67,22 +75,22 @@ export class UnitLifecycle {
     const player = unit.owner
     const menu = unit.context?.menu
 
-    playAudibleSoundCue(unit as unknown as Parameters<typeof playAudibleSoundCue>[0], unit.sounds?.die)
+    playAudibleSoundCue(unit, unit.sounds?.die)
 
     unit.stopInterval?.()
     clearTimeout(unit.visibilityTimeout as number | undefined)
     if (unit.selected && unit.owner?.isPlayed) {
-      ;(player as unknown as { unselectUnit?: (unit: UnitEntity) => void }).unselectUnit?.(unit)
+      player?.unselectUnit?.(unit)
     }
-    const dest = unit.dest as unknown as { isUsedBy?: unknown } | null | undefined
-    if (dest && dest.isUsedBy === unit) {
+    const dest = unit.dest
+    if (dest && 'isUsedBy' in dest && dest.isUsedBy === unit) {
       dest.isUsedBy = null
     }
     unit.hitPoints = 0
     unit.path = []
     unit.action = null
-    if (unit.transportCapacity) {
-      const cargo = getTransportCargo(unit as unknown as Parameters<typeof getTransportCargo>[0]) as unknown as UnitEntity[]
+    if (isTransportBoat(unit)) {
+      const cargo = getTransportCargo(unit)
       for (const cargoUnit of [...cargo]) {
         cargoUnit.loadedInTransport = null
         cargoUnit.die?.()
@@ -113,7 +121,7 @@ export class UnitLifecycle {
       }
     }
     this.death()
-    canUpdateMinimap(unit as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu?.updatePlayerMiniMapEvt?.(unit.owner!)
+    canUpdateMinimap(unit, player) && unit.owner && menu?.updatePlayerMiniMapEvt?.(unit.owner)
     unit.context?.checkVictory?.()
     unit.context?.checkDefeat?.()
   }
@@ -129,9 +137,9 @@ export class UnitLifecycle {
     }
     if (map) {
       map.grid[unit.i][unit.j].corpses.delete(unit)
-      map.removeChild(unit as unknown as Parameters<typeof map.removeChild>[0])
+      map.removeChild(unit)
     }
-    ;(unit as unknown as { destroy: (options: { children: boolean; texture: boolean }) => void }).destroy({
+    unit.destroy?.({
       children: true,
       texture: false,
     })

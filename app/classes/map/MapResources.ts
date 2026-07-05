@@ -2,10 +2,12 @@ import { Resource } from '../resource'
 import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
-import type { RuntimeEntity } from '../../types/entities'
+import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 
 type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
-type ResourceGroupEntry = [string, number, number, number]
+type ResourceType = string
+type ResourceRange = [min: number, max: number]
+type ResourceGroupEntry = [type: ResourceType, baseCount: number, quantity: number, clusterRadius: number]
 type ResourceCenter = GridPosition
 type MapResourcesMap = {
   context: unknown
@@ -13,7 +15,7 @@ type MapResourcesMap = {
   size: number
   mapType?: string
   resourceDensity?: ResourceDensity
-  resources: Set<unknown>
+  resources: Set<ResourceEntity>
   gaia?: {
     createAnimal(options: { i: number; j: number; type: string }): RuntimeEntity
   } | null
@@ -21,9 +23,9 @@ type MapResourcesMap = {
   randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
   addChild<T>(child: T): T
-  placeAnimalHerd(player: GridPosition, quantity: number, range: [number, number]): void
-  placeResourceGroup(player: GridPosition, type: string, quantity: number, range: [number, number]): boolean
-  placeResourceGroupAt(center: GridPosition, type: string, quantity: number, clusterRadius?: number): boolean
+  placeAnimalHerd(player: GridPosition, quantity: number, range: ResourceRange): void
+  placeResourceGroup(player: GridPosition, type: ResourceType, quantity: number, range: ResourceRange): boolean
+  placeResourceGroupAt(center: GridPosition, type: ResourceType, quantity: number, clusterRadius?: number): boolean
   generateForestAroundPlayer(player: GridPosition, treeCount: number): void
   findNeutralResourceCenter(
     playersPos: GridPosition[],
@@ -48,6 +50,10 @@ function hasSpacedResourceAround(grid: RuntimeCell[][], i: number, j: number, ra
     }
   }
   return false
+}
+
+function createResource(map: MapResourcesMap, i: number, j: number, type: ResourceType): ResourceEntity {
+  return map.addChild(new Resource({ i, j, type }, map.context as ConstructorParameters<typeof Resource>[1]))
 }
 
 const RESOURCE_DENSITY_PROFILES = {
@@ -100,7 +106,13 @@ export class MapResources {
     }
     const safeDistanceSq = safeDistance ** 2
 
-    function createCircle(centerI: number, centerJ: number, radius: number, density: number = 0.7, edgeNoise: number = 0): ResourceCenter[] {
+    function createCircle(
+      centerI: number,
+      centerJ: number,
+      radius: number,
+      density: number = 0.7,
+      edgeNoise: number = 0
+    ): ResourceCenter[] {
       const circleCells: ResourceCenter[] = []
       for (let x = -radius; x <= radius; x++) {
         for (let y = -radius; y <= radius; y++) {
@@ -258,19 +270,12 @@ export class MapResources {
         !grid[cell.i][cell.j].inclined
       ) {
         !hasSpacedResourceAround(grid, cell.i, cell.j) &&
-          this.map.resources.add(
-            this.map.addChild(
-              new Resource(
-                { i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree },
-                this.map.context as ConstructorParameters<typeof Resource>[1]
-              )
-            )
-          )
+          this.map.resources.add(createResource(this.map, cell.i, cell.j, RESOURCE_TYPES.tree))
       }
     }
   }
 
-  placeAnimalHerd(player: GridPosition, quantity: number, range: [number, number]): void {
+  placeAnimalHerd(player: GridPosition, quantity: number, range: ResourceRange): void {
     const { grid } = this.map
     const randomDistance = this.map.randomRange(range[0], range[1])
     const centerI = player.i + this.map.randomItem([-randomDistance, randomDistance])
@@ -323,7 +328,7 @@ export class MapResources {
   async generateResourcesAroundPlayersAsync(playersPos: GridPosition[]): Promise<void> {
     const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     for (const player of playersPos) {
-      const groups: Array<[string, number, [number, number]]> = [
+      const groups: Array<[type: ResourceType, quantity: number, range: ResourceRange]> = [
         [RESOURCE_TYPES.berrybush, 8, [7, 14]],
         [RESOURCE_TYPES.berrybush, 8, [14, 22]],
         [RESOURCE_TYPES.berrybush, 8, [22, 29]],
@@ -429,7 +434,7 @@ export class MapResources {
     return null
   }
 
-  placeResourceGroup(player: GridPosition, instance: string, quantity: number, range: [number, number]): boolean {
+  placeResourceGroup(player: GridPosition, instance: ResourceType, quantity: number, range: ResourceRange): boolean {
     const angle = this.map.random() * 2 * Math.PI
     const dist = range[0] + this.map.random() * (range[1] - range[0])
     const centerI = Math.round(player.i + Math.cos(angle) * dist)
@@ -438,8 +443,13 @@ export class MapResources {
     return this.map.placeResourceGroupAt({ i: centerI, j: centerJ }, instance, quantity)
   }
 
-  placeResourceGroupAt(center: GridPosition, instance: string, quantity: number, clusterRadius: number = 2): boolean {
-    const { context, grid } = this.map
+  placeResourceGroupAt(
+    center: GridPosition,
+    instance: ResourceType,
+    quantity: number,
+    clusterRadius: number = 2
+  ): boolean {
+    const { grid } = this.map
 
     function getValidCells(ci: number, cj: number, radius: number): ResourceCenter[] {
       const cells: ResourceCenter[] = []
@@ -476,9 +486,7 @@ export class MapResources {
     }
 
     for (const cell of cellsToPlace) {
-      this.map.resources.add(
-        this.map.addChild(new Resource({ i: cell.i, j: cell.j, type: instance }, context as ConstructorParameters<typeof Resource>[1]))
-      )
+      this.map.resources.add(createResource(this.map, cell.i, cell.j, instance))
     }
     return true
   }
@@ -494,11 +502,7 @@ export class MapResources {
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
-          this.map.resources.add(
-            this.map.addChild(
-              new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context as ConstructorParameters<typeof Resource>[1])
-            )
-          )
+          this.map.resources.add(createResource(this.map, i, j, RESOURCE_TYPES.tree))
         }
       }
     }
@@ -516,11 +520,7 @@ export class MapResources {
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
-          this.map.resources.add(
-            this.map.addChild(
-              new Resource({ i, j, type: RESOURCE_TYPES.tree }, this.map.context as ConstructorParameters<typeof Resource>[1])
-            )
-          )
+          this.map.resources.add(createResource(this.map, i, j, RESOURCE_TYPES.tree))
         }
       }
       if (i % 8 === 0) await yieldFrame()

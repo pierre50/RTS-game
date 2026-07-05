@@ -25,7 +25,7 @@ export class Instance extends Container {
   totalHitPoints!: number
   sprite?: Sprite | AnimatedSprite
   action?: string | null
-  die?(): void
+  die?(immediate?: boolean): void
   hasPath?(): boolean
   moveToPath?(): void
 
@@ -40,7 +40,12 @@ export class Instance extends Container {
     this.timeoutId = null
   }
 
-  startInterval(callback: (...args: unknown[]) => void, time: number, immediate = true, name = `${this.family || 'instance'}.interval`): void {
+  startInterval(
+    callback: (...args: unknown[]) => void,
+    time: number,
+    immediate = true,
+    name = `${this.family || 'instance'}.interval`
+  ): void {
     this.stopInterval()
     this.interval = this.context.scheduler.add(callback, time, name)
     if (immediate) callback()
@@ -61,11 +66,11 @@ export class Instance extends Container {
   }
 
   pause(): void {
-    (this.sprite as AnimatedSprite | undefined)?.stop()
+    ;(this.sprite as AnimatedSprite | undefined)?.stop()
   }
 
   resume(): void {
-    (this.sprite as AnimatedSprite | undefined)?.play()
+    ;(this.sprite as AnimatedSprite | undefined)?.play()
   }
 
   select(): void {

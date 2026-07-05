@@ -13,9 +13,14 @@ import { WallPlacementController } from '../controllers/WallPlacementController'
 import { MapEditorHud } from '../ui/MapEditorHud'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import type { MenuLike, SchedulerLike } from '../types/context'
-import type { EditorConfig, EditorPlayerConfig, MapEditorContextLike, MapEditorPlacementSelection } from '../types/mapEditor'
+import type {
+  EditorConfig,
+  EditorPlayerConfig,
+  MapEditorContextLike,
+  MapEditorPlacementSelection,
+} from '../types/mapEditor'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 
 type MapInstance = InstanceType<typeof Map> & {
@@ -28,6 +33,10 @@ type EditableCell = RuntimeCell & {
   children: ContainerChild[]
   addChild(child: ContainerChild): void
   removeChild(child: ContainerChild): void
+}
+
+function isResourceEntity(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
+  return entity?.family === FAMILY_TYPES.resource
 }
 
 const DEFAULT_MAP_SIZE = 120
@@ -49,12 +58,7 @@ export default class MapEditor extends Container {
   context: MapEditorContextLike
   wallPlacementController?: WallPlacementController
 
-  constructor(
-    app: Application,
-    gamebox: HTMLElement,
-    config: EditorConfig = {},
-    onQuit: (() => void) | null = null
-  ) {
+  constructor(app: Application, gamebox: HTMLElement, config: EditorConfig = {}, onQuit: (() => void) | null = null) {
     super()
     this.config = config
     this.onQuit = onQuit
@@ -123,7 +127,7 @@ export default class MapEditor extends Container {
     map.revealEverything = true
     map.revealTerrain = true
     map.showResources = true
-    map.gaia = new Gaia(this.context) as unknown as PlayerLike
+    map.gaia = new Gaia(this.context)
     await this._createInitialMap()
 
     this.context.hud = new MapEditorHud({
@@ -246,17 +250,16 @@ export default class MapEditor extends Container {
         color: config.color || 'blue',
         team: config.team ?? null,
       }
-      const player = (
+      const player =
         index === 0 || config.isHuman
           ? new Human({ ...baseOptions, isPlayed: index === 0 }, this.context)
           : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, this.context)
-      ) as unknown as PlayerLike
       players.push(player)
     })
 
-    this.context.player = (players.find(player => player.isPlayed) || players[0] || null) as unknown as PlayerLike
+    this.context.player = players.find(player => player.isPlayed) || players[0]
     this.context.players = players
-    const gaia = new Gaia(this.context) as unknown as PlayerLike
+    const gaia = new Gaia(this.context)
     map.gaia = gaia
     gaia.name = 'Gaia'
   }
@@ -292,7 +295,8 @@ export default class MapEditor extends Container {
         ]
 
     for (const anchor of forestAnchors) {
-      map.generateForestAroundPlayer(anchor as unknown as PlayerLike, map.size * 4)
+      if (!anchor) continue
+      map.generateForestAroundPlayer(anchor, map.size * 4)
     }
 
     const neutralForestCenters: { i: number; j: number }[] = []
@@ -311,22 +315,47 @@ export default class MapEditor extends Container {
   _applyMapFixture(): void {
     if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return
     const fixture = new URLSearchParams(window.location.search).get('mapFixture')
-    if (!['water-borders', 'water-flat-pinches', 'water-flat-overlap', 'water-land-replacement'].includes(fixture as string)) {
+    if (
+      !['water-borders', 'water-flat-pinches', 'water-flat-overlap', 'water-land-replacement'].includes(
+        fixture as string
+      )
+    ) {
       return
     }
 
     const map = this._map
     if (fixture === 'water-land-replacement') {
       const waterCells = [
-        [4, 2], [4, 3], [4, 4], [4, 5],
-        [5, 3], [5, 4], [5, 5], [5, 6],
-        [6, 3], [6, 4], [6, 5],
-        [7, 3], [7, 4], [7, 5],
-        [8, 3], [8, 5],
-        [9, 4], [9, 9],
-        [10, 4], [10, 5], [10, 6], [10, 7], [10, 8],
-        [11, 4], [11, 5], [11, 6], [11, 7], [11, 8],
-        [12, 8], [13, 8],
+        [4, 2],
+        [4, 3],
+        [4, 4],
+        [4, 5],
+        [5, 3],
+        [5, 4],
+        [5, 5],
+        [5, 6],
+        [6, 3],
+        [6, 4],
+        [6, 5],
+        [7, 3],
+        [7, 4],
+        [7, 5],
+        [8, 3],
+        [8, 5],
+        [9, 4],
+        [9, 9],
+        [10, 4],
+        [10, 5],
+        [10, 6],
+        [10, 7],
+        [10, 8],
+        [11, 4],
+        [11, 5],
+        [11, 6],
+        [11, 7],
+        [11, 8],
+        [12, 8],
+        [13, 8],
       ]
       for (const [i, j] of waterCells) (map.grid[i]?.[j] as EditableCell | undefined)?.setTerrainType('Water')
       return
@@ -471,7 +500,10 @@ export default class MapEditor extends Container {
 
   exportMap(): void {
     const exportedPlayers = (
-      (this.config.players?.length ? this.config.players : this.context.players) as ((EditorPlayerConfig | PlayerLike) & {
+      (this.config.players?.length ? this.config.players : this.context.players) as ((
+        | EditorPlayerConfig
+        | PlayerLike
+      ) & {
         isHuman?: boolean
         difficulty?: string
       })[]
@@ -644,7 +676,8 @@ export default class MapEditor extends Container {
     }
 
     if (entity.family === FAMILY_TYPES.animal || entity.family === FAMILY_TYPES.unit) {
-      const ownerList = entity.isDead || entity.currentSheet === 'corpseSheet' ? entity.owner?.corpses : entity.owner?.units
+      const ownerList =
+        entity.isDead || entity.currentSheet === 'corpseSheet' ? entity.owner?.corpses : entity.owner?.units
       const index = ownerList?.indexOf(entity as UnitEntity) ?? -1
       if (index >= 0) ownerList?.splice(index, 1)
     }
@@ -665,7 +698,8 @@ export default class MapEditor extends Container {
     if (!instance || instance.isDestroyed) return false
     const removedWall = this._isWall(instance)
     const building = instance as BuildingEntity
-    const adjacentWalls = removedWall && building.owner ? this._getAdjacentWalls(building.i, building.j, building.owner) : []
+    const adjacentWalls =
+      removedWall && building.owner ? this._getAdjacentWalls(building.i, building.j, building.owner) : []
     this.context.player?.unselectAll?.()
     this._hardRemoveInstance(instance)
     adjacentWalls.forEach(wall => this._updateWallTexture(wall))
@@ -675,7 +709,9 @@ export default class MapEditor extends Container {
   }
 
   getPlacementOwners(): PlayerLike[] {
-    return [...(this.context.players ?? []), this.context.map.gaia].filter((owner): owner is PlayerLike => Boolean(owner))
+    return [...(this.context.players ?? []), this.context.map.gaia].filter((owner): owner is PlayerLike =>
+      Boolean(owner)
+    )
   }
 
   setPlacementSelection(ownerLabel: string | null, type: string | null, kind: string | null): void {
@@ -704,7 +740,11 @@ export default class MapEditor extends Container {
     return instance?.family === FAMILY_TYPES.building && isWall(instance, owner)
   }
 
-  _canWallUseCell(cell: RuntimeCell | null | undefined, owner: PlayerLike | null, allowExistingWall: boolean = false): boolean {
+  _canWallUseCell(
+    cell: RuntimeCell | null | undefined,
+    owner: PlayerLike | null,
+    allowExistingWall: boolean = false
+  ): boolean {
     if (!cell || cell.category === 'Water' || cell.waterBorder || cell.inclined || cell.border) return false
     if (!cell.has && !cell.solid) return true
     return allowExistingWall && this._isWall(cell.has, owner)
@@ -873,7 +913,7 @@ export default class MapEditor extends Container {
   _spawnUnitAt(cell: RuntimeCell, owner: PlayerLike, type: string, onSpawn: (() => void) | null = null): boolean {
     const unitConfig = owner.config?.units?.[type]
     if (!unitConfig || !this._canSpawnMobileAt(cell, unitConfig.category === 'Boat')) return false
-    ;(owner as unknown as { createUnit: (options: unknown) => void }).createUnit({ i: cell.i, j: cell.j, type })
+    owner.createUnit?.({ i: cell.i, j: cell.j, type })
     onSpawn?.()
     this.context.hud?.updateResourcesMiniMap()
     return true
@@ -881,11 +921,9 @@ export default class MapEditor extends Container {
 
   _spawnAnimalAt(cell: RuntimeCell, type: string, onSpawn: (() => void) | null = null): boolean {
     if (!this._canSpawnMobileAt(cell, false)) return false
-    ;(this.context.map.gaia as unknown as { createAnimal: (options: unknown) => void })?.createAnimal({
-      i: cell.i,
-      j: cell.j,
-      type,
-    })
+    if (this.context.map.gaia instanceof Gaia) {
+      this.context.map.gaia.createAnimal({ i: cell.i, j: cell.j, type })
+    }
     onSpawn?.()
     this.context.hud?.updateResourcesMiniMap()
     return true
@@ -1022,7 +1060,7 @@ export default class MapEditor extends Container {
       return true
     }
     if (cell.has && (type === 'Water' || type === 'DeepWater')) {
-      ;(cell.has as unknown as { die?: (immediate?: boolean) => void }).die?.(true)
+      cell.has.die?.(true)
     }
     if (type === 'Water' && cell.z !== waterLevel) {
       this._map.setCellReliefLevelDirect(cell, waterLevel)
@@ -1031,8 +1069,8 @@ export default class MapEditor extends Container {
       this._map.setCellReliefLevelDirect(cell, 0)
     }
     ;(cell as EditableCell).setTerrainType(type)
-    if (cell.has?.type === RESOURCE_TYPES.tree) {
-      ;(cell.has as unknown as { refreshTextureForTerrain: () => void }).refreshTextureForTerrain()
+    if (isResourceEntity(cell.has) && cell.has.type === RESOURCE_TYPES.tree) {
+      cell.has.refreshTextureForTerrain?.()
     }
     return true
   }
@@ -1054,8 +1092,8 @@ export default class MapEditor extends Container {
       resource.sprite.eventMode = 'none'
     }
     resource.visible = true
-    ;(this.context.map as unknown as Container).addChild(resource)
-    this.context.map.resources.add(resource as unknown as RuntimeEntity)
+    this.context.map.addChild(resource)
+    this.context.map.resources.add(resource)
     resource.syncWithCell()
     return true
   }
@@ -1065,7 +1103,7 @@ export default class MapEditor extends Container {
     const resource = cell.has
     this.context.map.resources.delete(resource)
     this.context.map.removeFromInstanceBucket(resource)
-    ;(resource as unknown as { clear: () => void }).clear()
+    resource.clear?.()
     return true
   }
 
@@ -1171,7 +1209,7 @@ export default class MapEditor extends Container {
 
   syncResourceSprites(): void {
     for (const resource of this.context.map.resources) {
-      ;(resource as unknown as { syncWithCell: () => void }).syncWithCell()
+      resource.syncWithCell?.()
     }
   }
 

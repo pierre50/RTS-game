@@ -41,10 +41,12 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   interface?: EntityInterfaceLike
   select?: () => void
   unselect?: () => void
-  die?: () => void
+  die?: (immediate?: boolean) => void
   pause?: () => void
   resume?: () => void
   getChildByLabel?: (label: string) => unknown
+  addChildAt: Container['addChildAt']
+  removeChild: Container['removeChild']
   updateTexture?: () => void
   drawHealthBar?: () => void
   isAttacked?: (attacker: RuntimeEntity) => void
@@ -258,6 +260,8 @@ export interface BuildingEntity extends RuntimeEntityBase {
 export interface ResourceEntity extends RuntimeEntityBase {
   textureName?: string
   setCuttedTreeTexture?: () => void
+  refreshTextureForTerrain?: () => void
+  syncWithCell?: () => void
   isUsedBy?: RuntimeEntity | null
 }
 
@@ -271,7 +275,7 @@ export type RuntimeEntity = UnitEntity | BuildingEntity | ResourceEntity | Anima
 export interface PlaceableBuildingConfig {
   type: string
   images?: {
-    final: string
+    final?: string
   }
   [key: string]: unknown
 }

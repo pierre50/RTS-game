@@ -1,6 +1,7 @@
 import type { ResourceAmount } from './common'
 import type { RuntimeCell } from './map'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
+import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
 import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from './config'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 
@@ -28,6 +29,20 @@ export interface PlayerConfigLike {
   animals?: Record<string, AnimalConfig>
   projectiles?: Record<string, ProjectileConfig>
 }
+
+type UnitRestoreReferences = {
+  assetAge?: unknown
+  dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
+  previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
+  realDest?: UnitEntity['realDest'] | SaveDestination | null
+  path?: RuntimeCell[] | SaveGridPoint[]
+  loadedInTransport?: UnitEntity['loadedInTransport'] | string | null
+  buildQueue?: BuildingEntity[] | string[]
+  blockedGatherApproach?: UnitEntity['blockedGatherApproach'] | { target: SaveReference; action: string } | null
+}
+
+export type PlayerUnitCreationOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
+  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
 
 export interface PlayerLike {
   label: string
@@ -64,9 +79,15 @@ export interface PlayerLike {
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean
   createBuilding: (
-    options: Partial<BuildingConfig> & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
+    options: Partial<BuildingConfig> & {
+      i: number
+      j: number
+      type: string
+      isBuilt?: boolean
+      skipBuiltEffects?: boolean
+    }
   ) => BuildingEntity
-  createUnit?: (options: Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }) => UnitEntity
+  createUnit?: (options: PlayerUnitCreationOptions) => UnitEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void
   spawnBuilding?: (
@@ -74,6 +95,7 @@ export interface PlayerLike {
   ) => BuildingEntity | undefined
   isBuildingEligible?: (type: string) => boolean
   unselectAll(): void
+  unselectUnit?: (unit: UnitEntity) => void
   foundedTrees?: Set<RuntimeEntity>
   foundedBerrybushs?: Set<RuntimeEntity>
   foundedStones?: Set<RuntimeEntity>

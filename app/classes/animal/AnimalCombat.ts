@@ -58,24 +58,15 @@ export class AnimalCombat {
       animal.stop()
       return
     }
-    const targets = findInstancesInSight(
-      animal as unknown as Parameters<typeof findInstancesInSight>[0],
-      (instance: RuntimeEntity) => animal.getActionCondition(instance)
-    ) as RuntimeEntity[]
+    const targets = findInstancesInSight<Animal, RuntimeEntity>(animal, (instance: RuntimeEntity) =>
+      animal.getActionCondition(instance)
+    )
     if (targets.length) {
-      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(
-        animal as unknown as Parameters<typeof getClosestInstanceWithPath>[0],
-        targets
-      )
+      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(animal, targets)
       if (target) {
         animal.setDest(target.instance)
-        if (
-          instanceContactInstance(
-            animal as unknown as Parameters<typeof instanceContactInstance>[0],
-            target.instance as unknown as Parameters<typeof instanceContactInstance>[1]
-          )
-        ) {
-          animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], target.instance.x, target.instance.y)
+        if (instanceContactInstance(animal, target.instance)) {
+          animal.degree = getInstanceDegree(animal, target.instance.x, target.instance.y)
           animal.getAction(animal.action ?? '')
           return
         }
@@ -92,7 +83,7 @@ export class AnimalCombat {
       context: { map },
     } = animal
     let dest: RuntimeCell | null = null
-    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, ((cell: RuntimeCell) => {
+    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, (cell: RuntimeCell) => {
       if (
         !cell.solid &&
         (!dest ||
@@ -101,7 +92,8 @@ export class AnimalCombat {
       ) {
         dest = cell
       }
-    }) as unknown as Parameters<typeof getCellsAroundPoint>[4])
+      return false
+    })
     if (dest) {
       animal.isFleeing = true
       animal.sendTo(dest, null, {
@@ -137,15 +129,10 @@ export class AnimalCombat {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
             if (!target) return
             if (animal.destHasMoved()) {
-              animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], target.x, target.y)
+              animal.degree = getInstanceDegree(animal, target.x, target.y)
               animal.setTextures(SHEET_TYPES.action)
             }
-            if (
-              !instanceContactInstance(
-                animal as unknown as Parameters<typeof instanceContactInstance>[0],
-                target as unknown as Parameters<typeof instanceContactInstance>[1]
-              )
-            ) {
+            if (!instanceContactInstance(animal, target)) {
               animal.sendTo(target, ACTION_TYPES.attack, { forceRepath: true })
               return
             }

@@ -10,7 +10,7 @@ import { TerrainChunkManager } from './TerrainChunkManager'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RenderChunk } from '../../types/map'
-import type { RuntimeEntity } from '../../types/entities'
+import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
 import type { SaveCellState, SerializedSave, PlayerSetupConfig } from '../../types/save'
@@ -60,7 +60,7 @@ export default class Map extends Container {
   playersPos: GeneratedPosition[]
   positionsCount: number
   gaia: PlayerLike | null
-  resources: Set<RuntimeEntity>
+  resources: Set<ResourceEntity>
   instanceBuckets: InstanceBuckets | null
   renderChunks: RenderChunk[]
   _random: () => number
@@ -291,7 +291,7 @@ export default class Map extends Container {
 
   // MapResources
   generateForestAroundPlayer(
-    player: PlayerLike,
+    player: GridPosition,
     treeCount: number,
     clusterCount?: number,
     minClusterRadius?: number,

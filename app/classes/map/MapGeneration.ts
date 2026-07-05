@@ -34,7 +34,7 @@ import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/player'
 import type { ResourceOptions } from '../resource'
 import type { AnimalOptions } from '../animal'
-import type { RuntimeEntity, UnitEntity, BuildingEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitEntity, BuildingEntity, ResourceEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { FogSpriteMemory } from '../../types/map'
 import type {
@@ -112,9 +112,10 @@ type MapGenerationMap = RuntimeMap & {
 type SetSprite = Sprite & {
   updateAnchor?: boolean
 }
+type ResourceAssets = string | string[] | Record<string, string[]>
 type ResourceDefinition = {
   category?: string
-  assets?: string | string[] | Record<string, unknown>
+  assets?: ResourceAssets
   isAnimated?: boolean
 }
 type GameConfig = {
@@ -192,6 +193,18 @@ type AIPlayerMemoryState = PlayerLike & {
   enemyBuildingMemory: Map<string, AIEnemyMemoryRuntime>
   threatenedTargets: Map<string, AIThreatRuntime>
 }
+type RestoringUnitEntity = Omit<UnitEntity, 'blockedGatherApproach' | 'buildQueue'> & {
+  blockedGatherApproach?: { target: unknown; action: string } | null
+  buildQueue?: Array<string | BuildingEntity>
+}
+
+function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record<string, string[]> {
+  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets))
+}
+
+function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
+  return map.addChild(new Resource(resource, map.context))
+}
 
 // --- Saved-game restore helpers -------------------------------------------------
 // Shared by generateFromJSON and applySavedStateToGeneratedMap, which rebuild the
@@ -218,10 +231,11 @@ function getDestEntity(val: unknown, map: MapGenerationMap): RuntimeEntity | nul
 }
 
 function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
+  const restoringUnit = unit as RestoringUnitEntity
   if (unit.loadedInTransport) return
   const savedPath: RuntimeCell[] = Array.isArray(unit.path) ? unit.path : []
   const savedAction = unit.action
-  const savedBuildQueue: unknown[] = Array.isArray(unit.buildQueue) ? unit.buildQueue : []
+  const savedBuildQueue = Array.isArray(restoringUnit.buildQueue) ? restoringUnit.buildQueue : []
   if (unit.previousDest) {
     unit.previousDest = getDest(unit.previousDest, context)
   }
@@ -248,11 +262,11 @@ function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
   }
   if (savedBuildQueue.length) {
     unit.buildQueue = savedBuildQueue
-      .map(label => getDestEntity(label, context))
+      .map(item => (typeof item === 'string' ? getDestEntity(item, context) : item))
       .filter((entity): entity is BuildingEntity => Boolean(entity))
   }
-  if (unit.blockedGatherApproach) {
-    const saved = unit.blockedGatherApproach as unknown as { target: unknown; action: string }
+  if (restoringUnit.blockedGatherApproach) {
+    const saved = restoringUnit.blockedGatherApproach
     const target = getDestEntity(saved.target, context)
     unit.blockedGatherApproach = target ? { target, action: saved.action } : null
   }
@@ -266,6 +280,17 @@ function restoreTransportCargo(player: PlayerLike, savedUnits: SaveEntityState[]
     const transport = getDestEntity(savedUnit.loadedInTransport, context)
     if (transport) boardTransport(unit, transport)
   }
+}
+
+function restorePlayerEntitiesFromSave(player: PlayerLike, savedPlayer: SavedPlayer): void {
+  const { buildings, units, corpses } = savedPlayer
+  player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
+  player.units = (units || [])
+    .map(unit => player.createUnit?.(unit))
+    .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+  player.corpses = (corpses || [])
+    .map(unit => player.createUnit?.(unit))
+    .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
 }
 
 function restoreBuildingAssignments(
@@ -526,10 +551,7 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type](
-        { ...player, corpses: [], buildings: [], units: [] },
-        this.map.context
-      ) as unknown as PlayerLike
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -540,11 +562,7 @@ export class MapGeneration {
     }
 
     this.map._initFogChunks()
-    // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
-    // PlayerLike method (e.g. unselectAll, which only makes sense for a selectable player).
-    const gaia = new Gaia(this.map.context) as unknown as PlayerLike & {
-      createAnimal: (options: AnimalOptions) => RuntimeEntity
-    }
+    const gaia = new Gaia(this.map.context)
     this.map.gaia = gaia
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -566,9 +584,7 @@ export class MapGeneration {
 
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
-    this.map.resources = new Set(
-      resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context)))
-    )
+    this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
 
     this.map.rebuildTerrainAppearance()
 
@@ -584,20 +600,7 @@ export class MapGeneration {
     menu.init?.()
     menu.updateResourcesMiniMap()
 
-    this.map.context.players.forEach((player, index) => {
-      const { buildings, units, corpses } = players[index]
-      player.buildings = (buildings || []).map(building =>
-        player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<
-          typeof player.createBuilding
-        >[0])
-      )
-      player.units = (units || [])
-        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
-        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-      player.corpses = (corpses || [])
-        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
-        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-    })
+    this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
     animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
 
     gaia.units.forEach(animal => processUnit(animal, this.map))
@@ -647,9 +650,7 @@ export class MapGeneration {
     this.map.instanceBuckets = null
     this.map.context.players = []
     this.map.context.player = null as unknown as PlayerLike
-    // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
-    // PlayerLike method (e.g. unselectAll, which only makes sense for a selectable player).
-    this.map.gaia = new Gaia(this.map.context) as unknown as PlayerLike
+    this.map.gaia = new Gaia(this.map.context)
   }
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
@@ -660,10 +661,7 @@ export class MapGeneration {
     this.clearGeneratedGameplayState()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type](
-        { ...player, corpses: [], buildings: [], units: [] },
-        this.map.context
-      ) as unknown as PlayerLike
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -673,33 +671,17 @@ export class MapGeneration {
       this.map.context.scheduler.elapsedMs = Math.max(0, runtime?.elapsedMs ?? 0)
     }
 
-    this.map.resources = new Set(
-      resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context)))
-    )
+    this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
 
     controls.setCamera?.(camera.x, camera.y, true)
     menu.init?.()
     menu.updateResourcesMiniMap()
 
-    this.map.context.players.forEach((player, index) => {
-      const { buildings, units, corpses } = players[index]
-      player.buildings = (buildings || []).map(building =>
-        player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<
-          typeof player.createBuilding
-        >[0])
-      )
-      player.units = (units || [])
-        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
-        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-      player.corpses = (corpses || [])
-        .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
-        .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
-    })
-    // See generateFromJSON for why Gaia is narrowed like this.
-    const gaia = this.map.gaia as unknown as PlayerLike & { createAnimal: (options: AnimalOptions) => RuntimeEntity }
-    animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
+    this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
+    const gaia = this.map.gaia instanceof Gaia ? this.map.gaia : null
+    animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia?.createAnimal(animal))
 
-    gaia.units.forEach(animal => processUnit(animal, this.map))
+    gaia?.units.forEach(animal => processUnit(animal, this.map))
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]
@@ -845,9 +827,7 @@ export class MapGeneration {
       return result
     }
 
-    // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
-    // PlayerLike method (e.g. unselectAll, which only makes sense for a selectable player).
-    this.map.gaia = new Gaia(this.map.context) as unknown as PlayerLike
+    this.map.gaia = new Gaia(this.map.context)
     if (this.map.pregeneratedBlueprintId) {
       timings.relief = 0
     } else {
@@ -929,9 +909,7 @@ export class MapGeneration {
       return result
     }
 
-    // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
-    // PlayerLike method (e.g. unselectAll, which only makes sense for a selectable player).
-    this.map.gaia = new Gaia(this.map.context) as unknown as PlayerLike
+    this.map.gaia = new Gaia(this.map.context)
     if (this.map.pregeneratedBlueprintId) {
       timings.relief = 0
     } else {
@@ -996,13 +974,9 @@ export class MapGeneration {
         const team = playersConfig?.[i]?.team ?? null
         const difficulty = playersConfig?.[i]?.difficulty ?? this.map.difficulty
         if (!i) {
-          players.push(
-            new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context) as unknown as PlayerLike
-          )
+          players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context))
         } else if (!this.map.noAI) {
-          players.push(
-            new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty }, context) as unknown as PlayerLike
-          )
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty }, context))
         }
       }
     }
@@ -1239,10 +1213,10 @@ export class MapGeneration {
         definition?.isAnimated ||
         Array.isArray(assets) ||
         typeof assets === 'string' ||
-        Boolean((assets as Record<string, unknown> | undefined)?.[cell.type])
+        (isTerrainAssetMap(assets) && Boolean(assets[cell.type]))
       if (!hasCompatibleTexture) continue
       try {
-        this.map.resources.add(this.map.addChild(new Resource(resource, this.map.context)))
+        this.map.resources.add(createResourceFromState(resource, this.map))
       } catch (error) {
         console.warn('Skipping invalid blueprint resource', resource, error)
       }
@@ -1626,12 +1600,10 @@ export class MapGeneration {
     return false
   }
 
-  // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
-  // PlayerLike method — narrow to the one method used here, see other gaia casts above.
   _gaiaCreateAnimal(options: AnimalOptions): void {
-    ;(this.map.gaia as unknown as { createAnimal: (options: AnimalOptions) => RuntimeEntity } | null)?.createAnimal(
-      options
-    )
+    if (this.map.gaia instanceof Gaia) {
+      this.map.gaia.createAnimal(options)
+    }
   }
 
   _placeWaterSet(cell: RuntimeCell): void {

@@ -50,10 +50,7 @@ export class AnimalMovement {
   isAnimalAtDest(action: string | null, dest: AnimalDestination | null): boolean {
     const animal = this.animal
     if (!action || !dest) return false
-    return instanceContactInstance(
-      animal as unknown as Parameters<typeof instanceContactInstance>[0],
-      dest as unknown as Parameters<typeof instanceContactInstance>[1]
-    )
+    return instanceContactInstance(animal, dest)
   }
 
   destHasMoved(): boolean {
@@ -61,10 +58,7 @@ export class AnimalMovement {
     if (!animal.dest || !animal.realDest) return false
     return (
       (animal.dest.i !== animal.realDest.i || animal.dest.j !== animal.realDest.j) &&
-      instancesDistance(
-        animal as unknown as Parameters<typeof instancesDistance>[0],
-        animal.dest as unknown as Parameters<typeof instancesDistance>[1]
-      ) <= animal.sight
+      instancesDistance(animal, animal.dest) <= animal.sight
     )
   }
 
@@ -101,19 +95,15 @@ export class AnimalMovement {
     ) {
       animal.setDest(dest)
       animal.action = action
-      animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], dest.x, dest.y)
+      animal.degree = getInstanceDegree(animal, dest.x, dest.y)
       animal.getAction(action ?? '')
       return
     }
     let path: RuntimeCell[] = []
     if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-      path = getInstanceClosestFreeCellPath<RuntimeCell>(
-        animal as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[0],
-        dest as RuntimeCell,
-        map
-      )
+      path = getInstanceClosestFreeCellPath<RuntimeCell>(animal, dest as RuntimeCell, map)
     } else {
-      path = getInstancePath<RuntimeCell>(animal as unknown as Parameters<typeof getInstancePath>[0], dest.i, dest.j, map)
+      path = getInstancePath<RuntimeCell>(animal, dest.i, dest.j, map)
     }
     if (path.length) {
       animal.setDest(dest)
@@ -142,10 +132,7 @@ export class AnimalMovement {
       'hasPath' in nextCell.has &&
       typeof nextCell.has.hasPath === 'function' &&
       nextCell.has.hasPath() &&
-      instancesDistance(
-        animal as unknown as Parameters<typeof instancesDistance>[0],
-        nextCell.has as unknown as Parameters<typeof instancesDistance>[1]
-      ) <= 1 &&
+      instancesDistance(animal, nextCell.has) <= 1 &&
       nextCell.has.sprite instanceof Object &&
       'playing' in nextCell.has.sprite &&
       nextCell.has.sprite.playing
@@ -160,14 +147,8 @@ export class AnimalMovement {
     if (!animal.sprite.playing) {
       animal.sprite.play()
     }
-    animal.zIndex = getInstanceZIndex(animal as unknown as Parameters<typeof getInstanceZIndex>[0])
-    if (
-      instancesDistance(
-        animal as unknown as Parameters<typeof instancesDistance>[0],
-        nextCell as unknown as Parameters<typeof instancesDistance>[1],
-        false
-      ) < animal.speed
-    ) {
+    animal.zIndex = getInstanceZIndex(animal)
+    if (instancesDistance(animal, nextCell, false) < animal.speed) {
       const oldI = animal.i,
         oldJ = animal.j
       animal.z = nextCell.z
@@ -183,7 +164,7 @@ export class AnimalMovement {
         animal.currentCell.solid = true
       }
       map.updateInstanceBucket(animal, oldI, oldJ)
-      updateInstanceVisibility(animal as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      updateInstanceVisibility(animal)
       animal.path.pop()
       if (this.destHasMoved()) {
         animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true })
@@ -192,7 +173,7 @@ export class AnimalMovement {
       if (this.isAnimalAtDest(animal.action ?? null, animal.dest)) {
         animal.path = []
         animal.stopInterval()
-        animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], animal.dest.x, animal.dest.y)
+        animal.degree = getInstanceDegree(animal, animal.dest.x, animal.dest.y)
         animal.getAction(animal.action ?? '')
         return
       }
@@ -201,7 +182,7 @@ export class AnimalMovement {
       }
     } else {
       const oldDeg = animal.degree
-      moveTowardPoint(animal as unknown as Parameters<typeof moveTowardPoint>[0], nextCell.x, nextCell.y, animal.speed)
+      moveTowardPoint(animal, nextCell.x, nextCell.y, animal.speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
         animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
       }

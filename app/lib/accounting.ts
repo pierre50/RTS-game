@@ -1,4 +1,13 @@
-type ResourceLedger = Record<string, number | undefined>
+import type { ResourceAmount } from '../types/common'
+
+export type ResourceLedger = ResourceAmount
+type ResourceName = keyof ResourceLedger
+
+function resourceEntries(cost: ResourceLedger): Array<[ResourceName, number]> {
+  return (Object.entries(cost) as Array<[ResourceName, number | undefined]>).filter(
+    (entry): entry is [ResourceName, number] => typeof entry[1] === 'number'
+  )
+}
 
 /**
  * Refunds costs to the player's resources.
@@ -7,10 +16,8 @@ type ResourceLedger = Record<string, number | undefined>
  */
 export function refundCost(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): void {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
-  for (const prop in cost) {
-    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
-      player[prop] = (player[prop] || 0) + cost[prop]
-    }
+  for (const [prop, amount] of resourceEntries(cost)) {
+    player[prop] = (player[prop] || 0) + amount
   }
 }
 
@@ -21,10 +28,8 @@ export function refundCost(player: ResourceLedger | null | undefined, cost: Reso
  */
 export function payCost(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): void {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
-  for (const prop in cost) {
-    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
-      player[prop] = (player[prop] || 0) - cost[prop]
-    }
+  for (const [prop, amount] of resourceEntries(cost)) {
+    player[prop] = (player[prop] || 0) - amount
   }
 }
 
@@ -36,10 +41,8 @@ export function payCost(player: ResourceLedger | null | undefined, cost: Resourc
  */
 export function canAfford(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): boolean {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return false
-  for (const prop in cost) {
-    if (Object.prototype.hasOwnProperty.call(cost, prop) && typeof cost[prop] === 'number') {
-      if ((player[prop] || 0) < cost[prop]) return false
-    }
+  for (const [prop, amount] of resourceEntries(cost)) {
+    if ((player[prop] || 0) < amount) return false
   }
   return true
 }

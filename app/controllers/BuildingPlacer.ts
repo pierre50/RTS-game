@@ -8,13 +8,14 @@ import type { ControlsLike } from '../types/context'
 import type { PlaceableBuildingConfig, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
+import type { RecolorableSprite } from '../lib'
+import type { ResourceLedger } from '../lib'
 
 type MouseBuilding = Container &
   PlaceableBuildingConfig & {
     isFree?: boolean
     [key: string]: unknown
   }
-type ResourceLedger = Record<string, number | undefined>
 
 export class BuildingPlacer {
   controls: ControlsLike
@@ -124,7 +125,7 @@ export class BuildingPlacer {
     controls.mouseBuilding.x = pointer.x
     controls.mouseBuilding.y = pointer.y
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
-    changeSpriteColor(sprite as unknown as Parameters<typeof changeSpriteColor>[0], player.color ?? '')
+    changeSpriteColor(sprite as RecolorableSprite, player.color ?? '')
     controls.addChild(controls.mouseBuilding)
   }
 
@@ -197,14 +198,16 @@ export class BuildingPlacer {
     const totalCost = Object.fromEntries(
       Object.entries(config.cost ?? {}).map(([resource, amount]) => [resource, (amount as number) * cells.length])
     ) as ResourceLedger
-    const ownerLedger = owner as unknown as ResourceLedger
+    const ownerLedger: ResourceLedger = owner
     if (!canAfford(ownerLedger, totalCost as ResourceLedger)) {
-      const resource = Object.keys(totalCost).find(key => Number(ownerLedger[key]) < Number(totalCost[key]))
+      const resource = (Object.keys(totalCost) as Array<keyof ResourceLedger>).find(
+        key => Number(ownerLedger[key]) < Number(totalCost[key])
+      )
       menu.showMessage(t('needMore', { resource: t(resource ?? '') }), 'warning')
       return false
     }
 
-    payCost(owner as unknown as ResourceLedger, totalCost as ResourceLedger)
+    payCost(owner, totalCost as ResourceLedger)
     const walls = cells.map(cell =>
       owner.createBuilding({
         i: cell.i,

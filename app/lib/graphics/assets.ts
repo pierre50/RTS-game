@@ -24,7 +24,10 @@ type AssetOwner = {
 type BuildingWithAssetOwner = {
   assetAge?: number
   assetCiv?: string
-  owner: AssetOwner
+  owner: {
+    age: number
+    civ?: string
+  }
 }
 
 export function getIconPath(name: string): string {
@@ -71,7 +74,7 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
 
 export function getBuildingAssetOwner(building: BuildingWithAssetOwner): AssetOwner {
   return {
-    civ: building.assetCiv || building.owner.civ,
+    civ: building.assetCiv || building.owner.civ || '',
     age: building.assetAge ?? building.owner.age,
   }
 }

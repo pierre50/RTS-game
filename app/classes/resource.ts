@@ -29,16 +29,45 @@ import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
 import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
 
-export type ResourceOptions = Partial<ResourceConfig> & { i: number; j: number; type: string }
+type ResourceAssetList = string[]
+type ResourceAssetsByTerrain = Record<string, ResourceAssetList>
+type ResourceAssets = string | ResourceAssetList | ResourceAssetsByTerrain
+type ResourceDefinition = ResourceConfig & {
+  assets: ResourceAssets
+  isAnimated?: boolean
+  sounds?: UnitSounds
+}
+type ResourceConfigCache = {
+  resources: Record<string, ResourceDefinition>
+  units: {
+    Villager: {
+      sounds: UnitSounds
+    }
+  }
+}
 
-export class Resource extends Instance {
+export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string }
+
+function getResourceConfig(): ResourceConfigCache {
+  return Assets.cache.get('config') as ResourceConfigCache
+}
+
+function getTerrainAssets(
+  assets: ResourceAssets | undefined,
+  terrainType: string
+): string | ResourceAssetList | undefined {
+  if (typeof assets === 'string' || Array.isArray(assets)) return assets
+  return assets?.[terrainType] || Object.values(assets || {}).find(value => Array.isArray(value))
+}
+
+export class Resource extends Instance implements ResourceEntity {
   resourceInterface: ResourceInterface
   quantity!: number
   interface: EntityInterfaceLike
   declare sprite: Sprite | AnimatedSprite
   totalQuantity!: number
   isAnimated?: boolean
-  assets!: string | string[] | Record<string, unknown>
+  assets!: ResourceAssets
   textureName!: string
   category?: string
   sounds?: UnitSounds
@@ -51,14 +80,14 @@ export class Resource extends Instance {
     } = this
 
     this.family = FAMILY_TYPES.resource
-    this.resourceInterface = new ResourceInterface(this as unknown as ResourceEntity)
+    this.resourceInterface = new ResourceInterface(this)
     this.size = 1
 
     const dynamicResource = this as unknown as Record<string, unknown>
     Object.keys(options).forEach(prop => {
       dynamicResource[prop] = options[prop]
     })
-    const config = Assets.cache.get('config')
+    const config = getResourceConfig()
     Object.keys(config.resources[this.type]).forEach(prop => {
       dynamicResource[prop] = config.resources[this.type][prop]
     })
@@ -68,7 +97,7 @@ export class Resource extends Instance {
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this)
     this.visible = false
 
     // Set solid zone
@@ -92,11 +121,7 @@ export class Resource extends Instance {
       animatedSprite.animationSpeed = 0.2
       this.sprite = animatedSprite
     } else {
-      const terrainAssets =
-        Array.isArray(this.assets) || typeof this.assets === 'string'
-          ? this.assets
-          : (this.assets as Record<string, unknown> | undefined)?.[cell.type] ||
-            Object.values(this.assets || {}).find(value => Array.isArray(value))
+      const terrainAssets = getTerrainAssets(this.assets, cell.type)
       this.textureName =
         this.textureName ||
         (typeof terrainAssets === 'string' ? `000_${terrainAssets}` : map.randomItem((terrainAssets as string[]) || []))
@@ -124,10 +149,7 @@ export class Resource extends Instance {
           context: { player, menu, controls, editor },
         } = this
         if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked()) return
-        if (
-          !player.selectedUnits.length &&
-          (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything)
-        ) {
+        if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -169,12 +191,12 @@ export class Resource extends Instance {
           }
         }
         if (hasActionOrder) {
-          drawInstanceBlinkingSelection(this as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+          drawInstanceBlinkingSelection(this)
         }
         if (hasFallbackOrder) {
           playSoundCue(SOUND_CUES.unit.militaryCommand)
         } else if (hasActionOrder && !hasSilentCommandOrder) {
-          playSoundCue(this.sounds?.command ?? Assets.cache.get('config').units.Villager.sounds.command)
+          playSoundCue(this.sounds?.command ?? getResourceConfig().units.Villager.sounds.command)
         }
       })
 
@@ -270,10 +292,11 @@ export class Resource extends Instance {
       context: { map },
     } = this
     const cell = map.grid[this.i]?.[this.j]
-    const terrainAssets = (this.assets as Record<string, unknown> | undefined)?.[cell?.type ?? '']
+    const terrainAssets = getTerrainAssets(this.assets, cell?.type ?? '')
     if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
 
     const textureName = getDeterministicCellVariant(terrainAssets, this.i, this.j, map.seed)
+    if (!textureName) return
     const resourceName = textureName.split('_')[1]
     const textureFile = textureName + '.png'
     const spritesheet = Assets.cache.get(resourceName)
@@ -294,7 +317,7 @@ export class Resource extends Instance {
     this.x = cell.x
     this.y = cell.y
     this.z = cell.z
-    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this)
     this.visible = true
     this.refreshTextureForTerrain()
   }

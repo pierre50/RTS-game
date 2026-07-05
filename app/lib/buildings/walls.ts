@@ -5,6 +5,7 @@ import { changeSpriteColor } from '../graphics/colors'
 import { bindAnimatedSpriteToTicker } from '../extra'
 import { getWallFrame } from '../grid/wallPath'
 import type { Grid, GridCell } from '../../types/grid'
+import type { RecolorableSprite } from '../graphics/colors'
 
 const WALL_SHEETS = {
   1: {
@@ -33,7 +34,7 @@ type WallOwner = {
 }
 
 type WallCell = GridCell & {
-  has?: WallBuilding | null
+  has?: unknown | null
 }
 
 type WallBuilding = {
@@ -51,10 +52,14 @@ type WallBuilding = {
   isDestroyed?: boolean
   owner: WallOwner
   sprite?: {
-    anchor: { copyFrom: (anchor: unknown) => void }
+    anchor: { copyFrom: (anchor: { x: number; y: number }) => void }
     texture: Texture
   }
   type?: string
+}
+
+function isWallCandidate(instance: unknown): instance is { owner?: WallOwner; type?: string } {
+  return typeof instance === 'object' && instance !== null
 }
 
 export function isWall(
@@ -87,11 +92,15 @@ export function getWallIcon(owner: WallOwner | null, baseIcon: string): string {
 }
 
 export function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): number {
+  const north = grid[i - 1]?.[j]?.has
+  const south = grid[i + 1]?.[j]?.has
+  const west = grid[i]?.[j - 1]?.has
+  const east = grid[i]?.[j + 1]?.has
   const neighbours = [
-    isWall(grid[i - 1]?.[j]?.has, owner),
-    isWall(grid[i + 1]?.[j]?.has, owner),
-    isWall(grid[i]?.[j - 1]?.has, owner),
-    isWall(grid[i]?.[j + 1]?.has, owner),
+    isWallCandidate(north) && isWall(north, owner),
+    isWallCandidate(south) && isWall(south, owner),
+    isWallCandidate(west) && isWall(west, owner),
+    isWallCandidate(east) && isWall(east, owner),
   ]
   const hasNorthSouth = neighbours[0] || neighbours[1]
   const hasEastWest = neighbours[2] || neighbours[3]
@@ -102,7 +111,9 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
   if (!isWall(wall) || !wall.sprite || wall.isDestroyed || !wall.isBuilt) return
   const frame = getWallFrameAt(wall.context.map.grid, wall.i, wall.j, wall.owner)
   wall.sprite.texture = getWallTexture(wall.owner, frame)
-  wall.sprite.anchor.copyFrom(wall.sprite.texture.defaultAnchor)
+  if (wall.sprite.texture.defaultAnchor) {
+    wall.sprite.anchor.copyFrom(wall.sprite.texture.defaultAnchor)
+  }
 
   const existingFill = wall.getChildByLabel(LABEL_TYPES.deco)
   if (existingFill) existingFill.destroy()
@@ -121,7 +132,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     flagSprite.eventMode = 'none'
     flagSprite.roundPixels = true
     flagSprite.animationSpeed = 0.15
-    changeSpriteColor(flagSprite as unknown as Parameters<typeof changeSpriteColor>[0], wall.owner.color ?? 'blue')
+    changeSpriteColor(flagSprite as RecolorableSprite, wall.owner.color ?? 'blue')
     bindAnimatedSpriteToTicker(
       flagSprite as Parameters<typeof bindAnimatedSpriteToTicker>[0],
       wall.context.app as Parameters<typeof bindAnimatedSpriteToTicker>[1]
@@ -132,8 +143,8 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
 }
 
 export function getAdjacentWalls(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): WallBuilding[] {
-  return [grid[i - 1]?.[j]?.has, grid[i + 1]?.[j]?.has, grid[i]?.[j - 1]?.has, grid[i]?.[j + 1]?.has].filter(instance =>
-    isWall(instance, owner)
+  return [grid[i - 1]?.[j]?.has, grid[i + 1]?.[j]?.has, grid[i]?.[j - 1]?.has, grid[i]?.[j + 1]?.has].filter(
+    instance => isWallCandidate(instance) && isWall(instance, owner)
   )
 }
 

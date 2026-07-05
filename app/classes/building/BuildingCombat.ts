@@ -23,12 +23,9 @@ export class BuildingCombat {
       if (
         building.isBuilt &&
         getActionCondition(building, target, ACTION_TYPES.attack) &&
-        instancesDistance(
-          building as unknown as Parameters<typeof instancesDistance>[0],
-          target as unknown as Parameters<typeof instancesDistance>[1]
-        ) <= range
+        instancesDistance(building, target) <= range
       ) {
-        const projectile = new Projectile({ owner: building as unknown as RuntimeEntity, type: projectileType, target }, building.context)
+        const projectile = new Projectile({ owner: building, type: projectileType, target }, building.context)
         map.addChild(projectile)
       } else {
         building.stopAttackInterval()
@@ -45,10 +42,7 @@ export class BuildingCombat {
       instance.family !== FAMILY_TYPES.animal &&
       !building.attackIntervalId &&
       getActionCondition(building, instance, ACTION_TYPES.attack) &&
-      instancesDistance(
-        building as unknown as Parameters<typeof instancesDistance>[0],
-        instance as unknown as Parameters<typeof instancesDistance>[1]
-      ) <= building.range
+      instancesDistance(building, instance) <= building.range
     ) {
       this.attackAction(instance)
     }
@@ -63,10 +57,7 @@ export class BuildingCombat {
       building.isBuilt &&
       building.range &&
       getActionCondition(building, instance, ACTION_TYPES.attack) &&
-      instancesDistance(
-        building as unknown as Parameters<typeof instancesDistance>[0],
-        instance as unknown as Parameters<typeof instancesDistance>[1]
-      ) <= building.range
+      instancesDistance(building, instance) <= building.range
     ) {
       this.attackAction(instance)
     }

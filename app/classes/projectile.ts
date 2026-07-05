@@ -174,7 +174,7 @@ export class Projectile extends Container {
     this.x = this.owner.x + (this.spawnOffsetX ?? 0)
     this.y = this.owner.y - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     this.z = this.owner.z ?? 0
-    this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0]) + PROJECTILE_Z_OFFSET
+    this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
       this.isDead = true
@@ -211,7 +211,10 @@ export class Projectile extends Container {
             !this.target.isDead &&
             !this.target.isDestroyed &&
             pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
-              average((this.target as unknown as { width: number }).width, (this.target as unknown as { height: number }).height)
+              average(
+                (this.target as unknown as { width: number }).width,
+                (this.target as unknown as { height: number }).height
+              )
           ) {
             this.onHit(this.target)
           }
@@ -220,7 +223,7 @@ export class Projectile extends Container {
         }
         moveTowardPoint(this as unknown as Parameters<typeof moveTowardPoint>[0], targetX, targetY, this.speed)
         this.updateTrajectoryVisual()
-        this.zIndex = getInstanceZIndex(this as unknown as Parameters<typeof getInstanceZIndex>[0]) + PROJECTILE_Z_OFFSET
+        this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
       },
       STEP_TIME,
       'projectile.step'
@@ -273,7 +276,10 @@ export class Projectile extends Container {
           }
         } else {
           const direction = degreeToDirection(degree)
-          const frameIndex = Math.min(getDirectionalFrameIndex(this as RuntimeProjectile, direction as string), textures.length - 1)
+          const frameIndex = Math.min(
+            getDirectionalFrameIndex(this as RuntimeProjectile, direction as string),
+            textures.length - 1
+          )
           applyTextureAnchor(sprite, textures[frameIndex])
           sprite.gotoAndStop(frameIndex)
         }

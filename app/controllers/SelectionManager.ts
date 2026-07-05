@@ -1,4 +1,5 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
+import type { Texture } from 'pixi.js'
 import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, getAnimationFrames, playSoundCue } from '../lib'
 import { COLOR_WHITE, MAX_SELECT_UNITS, SOUND_CUES, UNIT_TYPES } from '../constants'
 import type { ControlsLike, SelectionRectangle } from '../types/context'
@@ -99,10 +100,8 @@ export class SelectionManager {
 
   handleClick(cell: RuntimeCell): void {
     const { controls } = this
-    const pointerSheet = Assets.cache.get('50405')
-    const pointer = new AnimatedSprite(
-      getAnimationFrames(pointerSheet.textures) as unknown as ConstructorParameters<typeof AnimatedSprite>[0]
-    ) as InteractiveSprite
+    const pointerSheet = Assets.cache.get('50405') as { textures: Record<string, Texture> }
+    const pointer = new AnimatedSprite(getAnimationFrames(pointerSheet.textures)) as InteractiveSprite
     bindAnimatedSpriteToTicker(pointer, controls.context.app)
     pointer.animationSpeed = 0.2
     pointer.loop = false

@@ -226,8 +226,7 @@ export class MinimapManager {
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
 
-    const isVisible = (instance: RuntimeEntity) =>
-      map.revealEverything || playerCanSeeInstance(instance as unknown as Parameters<typeof playerCanSeeInstance>[0], player)
+    const isVisible = (instance: RuntimeEntity) => map.revealEverything || playerCanSeeInstance(instance, player)
 
     owner.buildings.forEach(building => {
       if (!isVisible(building)) return

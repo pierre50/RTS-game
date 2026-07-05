@@ -8,51 +8,50 @@ import type { SaveCellState, SaveEntityState, SavePlayerState, SaveReference, Se
 type GridPoint = { i: number; j: number }
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
-type SerializableEntity = RuntimeEntityBase &
-  {
-    action?: string | null
-    assetAge?: unknown
-    assetCiv?: unknown
-    assetType?: unknown
-    blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
-    buildQueue?: { label?: string }[] | null
-    currentSheet?: unknown
-    degree?: number
-    dest?: Destination | null
-    direction?: number
-    inactif?: boolean
-    isBuilt?: boolean
-    isUsedBy?: { label?: string } | null
-    loadedInTransport?: { label?: string } | null
-    loading?: unknown
-    loadingType?: unknown
-    loop?: boolean
-    path?: GridPoint[]
-    previousDest?: Destination | null
-    previousWork?: string | null
-    queue?: unknown[]
-    rallyPoint?: unknown
-    realDest?: Destination | null
-    isFleeing?: boolean
-    sprite?: SpriteState | null
-    technology?: unknown
-    textureName?: string
-    work?: string | null
-  }
+type SerializableEntity = RuntimeEntityBase & {
+  action?: string | null
+  assetAge?: unknown
+  assetCiv?: string
+  assetType?: string
+  blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
+  buildQueue?: { label?: string }[] | null
+  currentSheet?: string
+  degree?: number
+  dest?: Destination | null
+  direction?: number
+  inactif?: boolean
+  isBuilt?: boolean
+  isUsedBy?: { label?: string } | null
+  loadedInTransport?: { label?: string } | null
+  loading?: number | null
+  loadingType?: string | null
+  loop?: boolean
+  path?: GridPoint[]
+  previousDest?: Destination | null
+  previousWork?: string | null
+  queue?: string[]
+  rallyPoint?: unknown
+  realDest?: Destination | null
+  isFleeing?: boolean
+  sprite?: SpriteState | null
+  technology?: { type?: string; config?: unknown } | null
+  textureName?: string
+  work?: string | null
+}
 type SerializablePlayer = PlayerLike & {
-    aiState?: unknown
-    difficulty?: string
-    enemyBuildingMemory?: Map<unknown, ThreatMemory>
-    enemyUnitMemory?: Map<unknown, ThreatMemory>
-    getNow?: () => number
-    hasBuilt?: unknown
-    lastAttackWaveAt?: number
-    phase?: string
-    population?: number
-    populationMax?: number
-    threatenedTargets?: Map<unknown, ThreatTargetMemory>
-    views: VisionGridLike
-  }
+  aiState?: unknown
+  difficulty?: string
+  enemyBuildingMemory?: Map<unknown, ThreatMemory>
+  enemyUnitMemory?: Map<unknown, ThreatMemory>
+  getNow?: () => number
+  hasBuilt?: unknown
+  lastAttackWaveAt?: number
+  phase?: string
+  population?: number
+  populationMax?: number
+  threatenedTargets?: Map<unknown, ThreatTargetMemory>
+  views: VisionGridLike
+}
 type ThreatMemory = {
   instance?: { label?: string } | null
   label?: string

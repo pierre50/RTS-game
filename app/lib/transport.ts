@@ -27,8 +27,8 @@ export type TransportMap = {
 export type TransportOwner = {
   isPlayed?: boolean
   label?: string
-  selectedUnit?: unknown
-  selectedUnits?: unknown[]
+  selectedUnit?: TransportUnit | null
+  selectedUnits?: TransportUnit[]
 }
 
 type TransportContext = {
@@ -36,35 +36,37 @@ type TransportContext = {
   player?: TransportOwner
 }
 
-export type TransportUnit = GridPosition & Partial<Point> & {
-  action?: string | null
-  category?: string
-  context?: unknown
-  currentCell?: TransportCell | null
-  dest?: unknown
-  eventMode?: string
-  family?: string
-  handleChangeDest?: () => void
-  inactif?: boolean
-  isDead?: boolean
-  isDestroyed?: boolean
-  label?: string
-  loadedInTransport?: unknown
-  owner?: TransportOwner | null
-  parent?: unknown
-  path?: TransportCell[]
-  realDest?: unknown
-  sendToWithCell?: unknown
-  setTextures?: (sheet: string) => void
-  stopInterval?: () => void
-  transportLoadCoastCell?: TransportCell | null
-  transportLoadShoreCell?: TransportCell | null
-  type?: string
-  unselect?: () => void
-  visible?: boolean
-  z?: number | null
-  zIndex?: number
-}
+export type TransportUnit = GridPosition &
+  Partial<Point> & {
+    action?: string | null
+    category?: string
+    context?: unknown
+    currentCell?: TransportCell | null
+    die?: () => void
+    dest?: unknown
+    eventMode?: string
+    family?: string
+    handleChangeDest?: () => void
+    inactif?: boolean
+    isDead?: boolean
+    isDestroyed?: boolean
+    label?: string
+    loadedInTransport?: unknown
+    owner?: TransportOwner | null
+    parent?: unknown
+    path?: TransportCell[]
+    realDest?: unknown
+    sendToWithCell?: unknown
+    setTextures?: (sheet: string) => void
+    stopInterval?: () => void
+    transportLoadCoastCell?: TransportCell | null
+    transportLoadShoreCell?: TransportCell | null
+    type?: string
+    unselect?: () => void
+    visible?: boolean
+    z?: number | null
+    zIndex?: number
+  }
 
 export type TransportBoat = TransportUnit & {
   currentCell?: TransportCell | null
@@ -130,18 +132,24 @@ function placeTransportUnit(cell: TransportCell, unit: TransportUnit): void {
 
 function removeTransportUnitFromParent(unit: TransportUnit): void {
   const parent = unit.parent
-  if (typeof parent === 'object' && parent !== null && typeof (parent as { removeChild?: unknown }).removeChild === 'function') {
-    ;((parent as { removeChild: (unit: TransportUnit) => unknown }).removeChild)(unit)
+  if (
+    typeof parent === 'object' &&
+    parent !== null &&
+    typeof (parent as { removeChild?: unknown }).removeChild === 'function'
+  ) {
+    ;(parent as { removeChild: (unit: TransportUnit) => unknown }).removeChild(unit)
   }
 }
 
 function sendTransportUnitToCell(unit: TransportUnit, transport: TransportBoat, cell: TransportCell): boolean {
   if (typeof unit.sendToWithCell !== 'function') return false
-  return Boolean((unit.sendToWithCell as (transport: TransportBoat, cell: TransportCell, action: string) => boolean | undefined)(
-    transport,
-    cell,
-    ACTION_TYPES.loadTransport
-  ))
+  return Boolean(
+    (unit.sendToWithCell as (transport: TransportBoat, cell: TransportCell, action: string) => boolean | undefined)(
+      transport,
+      cell,
+      ACTION_TYPES.loadTransport
+    )
+  )
 }
 
 function sendTransportToCoastCell(transport: TransportBoat, cell: TransportCell): void {
@@ -227,10 +235,7 @@ export function findTransportCoastCell(
   return null
 }
 
-function findUnloadCell(
-  transport?: TransportUnit | null,
-  unit: TransportUnit | null = null
-): TransportCell | null {
+function findUnloadCell(transport?: TransportUnit | null, unit: TransportUnit | null = null): TransportCell | null {
   const map = getTransportMap(transport)
   if (!transport || !map) return null
   const { grid } = map

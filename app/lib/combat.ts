@@ -35,8 +35,6 @@ export type Condition = {
   value: unknown
 }
 
-type ConditionValues = Record<string, unknown>
-
 type ActionProps = {
   buildingTypes?: string[]
 }
@@ -94,11 +92,11 @@ const arraysEqual = (a: unknown, b: unknown): boolean => {
   return sortedA.every((val, index) => val === sortedB[index])
 }
 
-export const isValidCondition = (condition: Condition | null | undefined, values: ConditionValues): boolean => {
+export const isValidCondition = (condition: Condition | null | undefined, values: object): boolean => {
   if (!condition) return true
 
   const { op, key, value } = condition
-  const expectedValue = values[key]
+  const expectedValue = (values as Record<string, unknown>)[key]
 
   if (expectedValue === undefined) {
     throw new Error(`Key not found in values: ${key}`)

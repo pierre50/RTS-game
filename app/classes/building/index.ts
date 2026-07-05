@@ -1,6 +1,14 @@
 import { AnimatedSprite, Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  SOUND_CUES,
+  UNIT_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import {
   getTexture,
   getInstanceZIndex,
@@ -51,7 +59,7 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   skipBuiltEffects?: boolean
 }
 
-export class Building extends Instance {
+export class Building extends Instance implements BuildingEntity {
   buildingInterface: BuildingInterface
   buildingLifecycle: BuildingLifecycle
   buildingProduction: BuildingProduction
@@ -144,8 +152,15 @@ export class Building extends Instance {
     this.interface = {
       info: (element: HTMLElement) => {
         const displayType =
-          this.assetType || (isTower(this as Parameters<typeof isTower>[0]) ? getTowerType(this.owner as Parameters<typeof getTowerType>[0]) : this.type)
-        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this as Parameters<typeof getBuildingAssetOwner>[0]), Assets)
+          this.assetType ||
+          (isTower(this as Parameters<typeof isTower>[0])
+            ? getTowerType(this.owner as Parameters<typeof getTowerType>[0])
+            : this.type)
+        const assets = getBuildingAsset(
+          displayType,
+          getBuildingAssetOwner(this as Parameters<typeof getBuildingAssetOwner>[0]),
+          Assets
+        )
         this.buildingInterface.renderInfo(element, assets as BuildingConfig)
       },
       menu:
@@ -157,7 +172,7 @@ export class Building extends Instance {
     // Set solid zone
     const dist = this.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, ((cell: RuntimeCell) => {
-      clearCellTerrainSet(cell as unknown as Parameters<typeof clearCellTerrainSet>[0])
+      clearCellTerrainSet(cell)
       for (const corpse of cell.corpses) {
         typeof corpse.clear === 'function' && corpse.clear()
       }
@@ -233,17 +248,26 @@ export class Building extends Instance {
               const accept =
                 unit.category === 'Boat'
                   ? this.type === BUILDING_TYPES.dock
-                  : this.type === BUILDING_TYPES.townCenter || (this.accept && this.accept.includes(unit.loadingType ?? ''))
-              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
+                  : this.type === BUILDING_TYPES.townCenter ||
+                    (this.accept && this.accept.includes(unit.loadingType ?? ''))
+              if (
+                unit.type === UNIT_TYPES.villager &&
+                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)
+              ) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
-              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.farm)) {
+              } else if (
+                unit.type === UNIT_TYPES.villager &&
+                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.farm)
+              ) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
               } else if (
                 accept &&
-                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.delivery, { buildingTypes: [this.type] })
+                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.delivery, {
+                  buildingTypes: [this.type],
+                })
               ) {
                 hasSentVillager = true
                 unit.previousDest = null
@@ -268,12 +292,16 @@ export class Building extends Instance {
           let hasSentAttacker = false
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.convert)) {
+            if (
+              playerUnit.work === WORK_TYPES.healer &&
+              getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.convert)
+            ) {
               hasSentConverter = true
               playerUnit.sendToConvert(this as RuntimeEntity)
               continue
             }
-            if (!getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.attack)) continue
+            if (!getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.attack))
+              continue
             hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(this)
@@ -283,14 +311,14 @@ export class Building extends Instance {
           }
           if (hasSentConverter || hasSentAttacker) {
             drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
-          } else if (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) {
+          } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
             player.unselectAll()
             this.select()
             menu.setBottombar(this)
             player.selectedOther = this
             playSelectionSound(this)
           }
-        } else if (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) {
+        } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -304,7 +332,7 @@ export class Building extends Instance {
 
     if (this.isBuilt) {
       this.visibilityTimeout = setTimeout(() => {
-        updateInstanceVisibility(this as unknown as Parameters<typeof updateInstanceVisibility>[0])
+        updateInstanceVisibility(this)
       })
       this.finalTexture()
       this.onBuilt()
@@ -375,7 +403,7 @@ export class Building extends Instance {
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
-    canUpdateMinimap(this as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   unselect(): void {
@@ -385,7 +413,7 @@ export class Building extends Instance {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   setRallyPoint(cell: RuntimeCell | undefined, direction: number = this.context.map.randomRange(0, 1)): boolean {

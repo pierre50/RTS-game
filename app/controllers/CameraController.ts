@@ -25,6 +25,7 @@ type CameraContext = {
   } | null
   player?: {
     views?: unknown
+    unselectAll?: unknown
   } | null
   performance?: {
     record(name: string, value: number): void

@@ -43,7 +43,7 @@ type RecolorableTexture = Texture & {
   textureCacheIds?: string[]
 }
 
-type RecolorableSprite = {
+export type RecolorableSprite = {
   filters: readonly Filter[] | null
   texture: RecolorableTexture
 }

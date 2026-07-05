@@ -29,12 +29,18 @@ import type { InteractiveSprite } from '../../types/pixi'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
+type PositionedConfig = { x?: number; y?: number; z?: number | null }
+type AnimalAssetTarget = Animal & Record<string, unknown>
 export type AnimalMoveOptions = {
   forceRepath?: boolean
   movementSheet?: string
 }
 
-export class Animal extends Instance {
+function numberCoordinate(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined
+}
+
+export class Animal extends Instance implements AnimalEntity {
   animalInterface: AnimalInterface
   animalLifecycle: AnimalLifecycle
   animalMovement: AnimalMovement
@@ -93,20 +99,19 @@ export class Animal extends Instance {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.isFleeing = false
-    this.x = null as unknown as number
-    this.y = null as unknown as number
-    this.z = null as unknown as number
 
     Object.assign(this, options)
-    Object.assign(this, this.owner.config.animals?.[this.type] ?? {})
+    const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
+    Object.assign(this, animalConfig)
     this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 
     this.size = 1
     this.visible = false
     this.visibleCells = new Set()
-    this.x = this.x ?? map.grid[this.i][this.j].x
-    this.y = this.y ?? map.grid[this.i][this.j].y
-    this.z = this.z ?? map.grid[this.i][this.j].z
+    const spawnCell = map.grid[this.i][this.j]
+    this.x = animalConfig.x ?? numberCoordinate(options.x) ?? spawnCell.x
+    this.y = animalConfig.y ?? numberCoordinate(options.y) ?? spawnCell.y
+    this.z = animalConfig.z ?? numberCoordinate(options.z) ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
 
     this.currentCell = map.grid[this.i][this.j]
@@ -117,7 +122,7 @@ export class Animal extends Instance {
     this.quantity = this.quantity ?? this.totalQuantity
     map.addToInstanceBucket(this)
 
-    const dynamicAnimal = this as unknown as Record<string, unknown>
+    const dynamicAnimal = this as AnimalAssetTarget
     for (const [key, value] of Object.entries(this.assets)) {
       dynamicAnimal[key] = Assets.cache.get(value)
     }
@@ -191,11 +196,7 @@ export class Animal extends Instance {
           player.selectedBuilding.attackAction?.(this)
           drawDestinationRectangle = true
         }
-      } else if (
-        (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) ||
-          map.revealEverything) &&
-        this.quantity > 0
-      ) {
+      } else if ((playerCanSeeInstance(this, player) || map.revealEverything) && this.quantity > 0) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
@@ -219,7 +220,7 @@ export class Animal extends Instance {
 
     setTimeout(() => {
       if (this.isDestroyed) return
-      updateInstanceVisibility(this as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      updateInstanceVisibility(this)
       this.animalBehavior.start()
     })
   }

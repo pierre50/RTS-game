@@ -6,6 +6,7 @@ import { bindAnimatedSpriteToTicker, changeSpriteColor } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
+import type { RecolorableSprite } from '../lib'
 
 type WallPreview = Sprite | AnimatedSprite
 
@@ -125,7 +126,7 @@ export class WallPlacementController {
         flagSprite.animationSpeed = 0.15
         flagSprite.eventMode = 'none'
         flagSprite.roundPixels = true
-        changeSpriteColor(flagSprite as unknown as Parameters<typeof changeSpriteColor>[0], draft.owner.color ?? '')
+        changeSpriteColor(flagSprite as RecolorableSprite, draft.owner.color ?? '')
         bindAnimatedSpriteToTicker(flagSprite, this.context.app)
         flagSprite.play()
         this.parent.addChild(flagSprite)

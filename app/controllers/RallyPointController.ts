@@ -46,9 +46,7 @@ export class RallyPointController {
 
   createFlag(): AnimatedSprite {
     const sheet = Assets.cache.get('459') as RallyPointSheet
-    const flag = new AnimatedSprite(
-      getRallyPointFrames(sheet.textures, this.direction) as unknown as ConstructorParameters<typeof AnimatedSprite>[0]
-    ) as InteractiveSprite
+    const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, this.direction)) as InteractiveSprite
     bindAnimatedSpriteToTicker(flag, this.controls.context.app)
     flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
     if (flag.texture.defaultAnchor) flag.anchor.set(flag.texture.defaultAnchor.x, flag.texture.defaultAnchor.y)
@@ -84,7 +82,7 @@ export class RallyPointController {
     this.building!.setRallyPoint?.(cell, this.direction)
     const entity = cell.has
     if (entity && !entity.isDestroyed) {
-      drawInstanceBlinkingSelection(entity as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+      drawInstanceBlinkingSelection(entity)
     }
     this.cancel()
     return true
@@ -98,7 +96,7 @@ export class RallyPointController {
     const cell = map.grid[entity.i]?.[entity.j]
     if (!cell || !cell.visible) return false
     this.building!.setRallyPoint?.(cell, this.direction)
-    drawInstanceBlinkingSelection(entity as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+    drawInstanceBlinkingSelection(entity)
     this.cancel()
     return true
   }

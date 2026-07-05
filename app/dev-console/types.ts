@@ -4,6 +4,7 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entitie
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { ResourceAmount } from '../types/common'
+import type { TechnologyConfig } from '../types/config'
 
 export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
@@ -143,7 +144,7 @@ export type DevPlayer = PlayerLike & {
   buildings: BuildingEntity[]
   units: UnitEntity[]
   corpses: UnitEntity[]
-  techs: Record<string, unknown>
+  techs: Record<string, TechnologyConfig>
   popMax?: number
   population?: number
   hasBuilt?: string[]

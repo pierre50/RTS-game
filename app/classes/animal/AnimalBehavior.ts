@@ -59,17 +59,7 @@ export class AnimalBehavior {
     )
     return villagers.reduce(
       (closest: UnitEntity | null, villager: UnitEntity) =>
-        !closest ||
-        instancesDistance(
-          animal as unknown as Parameters<typeof instancesDistance>[0],
-          villager as unknown as Parameters<typeof instancesDistance>[1]
-        ) <
-          instancesDistance(
-            animal as unknown as Parameters<typeof instancesDistance>[0],
-            closest as unknown as Parameters<typeof instancesDistance>[1]
-          )
-          ? villager
-          : closest,
+        !closest || instancesDistance(animal, villager) < instancesDistance(animal, closest) ? villager : closest,
       null
     )
   }

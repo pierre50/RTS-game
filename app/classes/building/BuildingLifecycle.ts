@@ -81,13 +81,13 @@ export class BuildingLifecycle {
       if (building.owner.isPlayed && building.selected) {
         menu.setBottombar(building)
       }
-      updateInstanceVisibility(building as unknown as Parameters<typeof updateInstanceVisibility>[0])
+      updateInstanceVisibility(building)
     }
   }
 
   finalTexture(): void {
     const building = this.building
-    const assetOwner = getBuildingAssetOwner(building as unknown as Parameters<typeof getBuildingAssetOwner>[0])
+    const assetOwner = getBuildingAssetOwner(building)
     const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
     const texture = getTexture(assets.images!.final as string, Assets) as BuildingTexture
@@ -105,7 +105,9 @@ export class BuildingLifecycle {
     if (building.type === BUILDING_TYPES.house) {
       if (assetOwner.age === 0) {
         const spritesheetFire = Assets.cache.get('347')
-        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
+        const spriteFire = new AnimatedSprite(
+          getAnimationFrames(spritesheetFire.textures) as Texture[]
+        ) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.label = LABEL_TYPES.deco
         spriteFire.eventMode = 'none'
@@ -146,7 +148,9 @@ export class BuildingLifecycle {
         ]
       }
       for (let i = 0; i < poses.length; i++) {
-        const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
+        const spriteFire = new AnimatedSprite(
+          getAnimationFrames(spritesheetFire.textures) as Texture[]
+        ) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
@@ -244,7 +248,9 @@ export class BuildingLifecycle {
     const {
       context: { map, player, players, menu },
     } = building
-    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid as Parameters<typeof getAdjacentWalls>[0], building.i, building.j, building.owner) : []
+    const adjacentWalls = isWall(building)
+      ? getAdjacentWalls(map.grid as Parameters<typeof getAdjacentWalls>[0], building.i, building.j, building.owner)
+      : []
     clearTimeout(building.visibilityTimeout as ReturnType<typeof setTimeout> | undefined)
     building.stopInterval()
     building.clearRallyPoint()
@@ -304,18 +310,18 @@ export class BuildingLifecycle {
       changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     }
 
-    updateInstanceVisibility(building as unknown as Parameters<typeof updateInstanceVisibility>[0])
+    updateInstanceVisibility(building)
     const dist = building.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false
-        cell.corpses.add(building as unknown as RuntimeEntity)
+        cell.corpses.add(building)
       }
     }) as Parameters<typeof getPlainCellsAroundPoint>[4])
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
-    canUpdateMinimap(building as unknown as Parameters<typeof canUpdateMinimap>[0], player) && menu.updatePlayerMiniMapEvt(building.owner)
+    canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
     building.context.checkVictory?.()
     building.context.checkDefeat?.()
   }
@@ -330,7 +336,7 @@ export class BuildingLifecycle {
     } = building
     const dist = building.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
-      cell.corpses.delete(building as unknown as RuntimeEntity)
+      cell.corpses.delete(building)
     }) as Parameters<typeof getPlainCellsAroundPoint>[4])
     building.isDestroyed = true
     building.destroy({ children: true, texture: false })

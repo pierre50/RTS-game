@@ -27,7 +27,7 @@ type FogMapLike = {
 
 type FogCellContext = {
   map: FogMapLike
-  player?: { views?: { isViewed(i: number, j: number): boolean } }
+  player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
 }
 
 type FogInstance = RuntimeEntity & {
@@ -120,12 +120,7 @@ export class CellFog {
   setFogChildren(instance: FogInstance, init: boolean): void {
     const { cell } = this
     const { player, map } = cell.context
-    if (
-      !playerCanSeeInstance(
-        instance as unknown as Parameters<typeof playerCanSeeInstance>[0],
-        player as unknown as Parameters<typeof playerCanSeeInstance>[1]
-      )
-    ) {
+    if (!playerCanSeeInstance(instance, player)) {
       if (instance.owner && !instance.owner.isPlayed) {
         if (!init && instance.family === FAMILY_TYPES.building) {
           if (!map.revealTerrain) {

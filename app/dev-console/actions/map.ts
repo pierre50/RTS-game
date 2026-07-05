@@ -92,9 +92,7 @@ export function highlightInstances(context: DevConsoleContext, category: string,
   if (!category) return { ok: false, message: 'Usage: highlight <units|buildings|resources|enemies> [type]' }
   const instances = getInstancesByCategory(context, normalize(category), typeName)
   if (!instances) return { ok: false, message: 'Usage: highlight <units|buildings|resources|enemies> [type]' }
-  instances.forEach(instance =>
-    drawInstanceBlinkingSelection(instance as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
-  )
+  instances.forEach(instance => drawInstanceBlinkingSelection(instance))
   return { ok: true, message: `Highlighted ${instances.length} ${category}${typeName ? ` ${typeName}` : ''}` }
 }
 

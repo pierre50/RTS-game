@@ -48,10 +48,31 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
+import type { SaveDestination, SaveGridPoint, SaveReference } from '../../types/save'
 
-export type UnitSpawnOptions = Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }
+type UnitRestoreReferences = {
+  assetAge?: unknown
+  dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
+  previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
+  realDest?: UnitEntity['realDest'] | SaveDestination | null
+  path?: RuntimeCell[] | SaveGridPoint[]
+  loadedInTransport?: UnitEntity['loadedInTransport'] | string | null
+  buildQueue?: BuildingEntity[] | string[]
+  blockedGatherApproach?: UnitEntity['blockedGatherApproach'] | { target: SaveReference; action: string } | null
+}
 
-function getActionSheet(work: string | null | undefined, action: string | null | undefined, AssetsRef: typeof Assets, unit: UnitEntity) {
+type PositionedConfig = { x?: number; y?: number; z?: number | null }
+type UnitAssetTarget = Unit & Record<string, unknown>
+
+export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
+  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
+
+function getActionSheet(
+  work: string | null | undefined,
+  action: string | null | undefined,
+  AssetsRef: typeof Assets,
+  unit: UnitEntity
+) {
   if (!work) {
     return
   }
@@ -163,20 +184,16 @@ export class Unit extends Instance implements UnitEntity {
     this.loadingType = null
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
-    // Container initializes x/y to 0, which would defeat the `?? map.grid` fallback below
-    // (0 is not nullish) if options/config don't set an explicit position.
-    this.x = null as unknown as number
-    this.y = null as unknown as number
-    this.z = null
-
     Object.assign(this, options)
-    Object.assign(this, this.owner.config.units[this.type])
+    const unitConfig = this.owner.config.units[this.type] as typeof this.owner.config.units[string] & PositionedConfig
+    Object.assign(this, unitConfig)
     this.size = 1
     this.visible = false
     this.visibleCells = new Set()
-    this.x = this.x ?? map.grid[this.i][this.j].x
-    this.y = this.y ?? map.grid[this.i][this.j].y
-    this.z = this.z ?? map.grid[this.i][this.j].z
+    const spawnCell = map.grid[this.i][this.j]
+    this.x = unitConfig.x ?? options.x ?? spawnCell.x
+    this.y = unitConfig.y ?? options.y ?? spawnCell.y
+    this.z = unitConfig.z ?? options.z ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
@@ -203,7 +220,7 @@ export class Unit extends Instance implements UnitEntity {
         this.work = WORK_TYPES.attacker
     }
 
-    const dynamicUnit = this as unknown as Record<string, unknown>
+    const dynamicUnit = this as UnitAssetTarget
     if (this.assets) {
       for (const [key, value] of Object.entries(this.assets)) {
         dynamicUnit[key] = Assets.cache.get(value)
@@ -277,7 +294,9 @@ export class Unit extends Instance implements UnitEntity {
 
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this as UnitEntity)
-    this.sprite = new AnimatedSprite(getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[])
+    this.sprite = new AnimatedSprite(
+      getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
+    )
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.eventMode = 'auto'
@@ -299,8 +318,16 @@ export class Unit extends Instance implements UnitEntity {
     this.syncFishingOverlaySprite()
 
     this.sendTo = this.owner.isPlayed
-      ? (throttle((target: RuntimeCell | RuntimeEntity, action?: string) => { this.sendToEvt(target, action) }, 100, true))
-      : ((target: RuntimeCell | RuntimeEntity, action?: string) => { this.sendToEvt(target, action) })
+      ? throttle(
+          (target: RuntimeCell | RuntimeEntity, action?: string) => {
+            this.sendToEvt(target, action)
+          },
+          100,
+          true
+        )
+      : (target: RuntimeCell | RuntimeEntity, action?: string) => {
+          this.sendToEvt(target, action)
+        }
 
     this.on('pointerdown', evt => {
       const {
@@ -362,20 +389,11 @@ export class Unit extends Instance implements UnitEntity {
       if (this.owner.isPlayed) {
         if (isTransportBoat(this) && player.selectedUnits.length) {
           const hasTransportLoadCandidate = player.selectedUnits.some((playerUnit: UnitEntity) =>
-            canUnitEnterTransport(
-              playerUnit,
-              this
-            )
+            canUnitEnterTransport(playerUnit, this)
           )
           let hasSentTransportLoad = false
           for (const playerUnit of [...player.selectedUnits]) {
-            if (
-              sendUnitToTransport(
-                playerUnit,
-                this
-              )
-            )
-              hasSentTransportLoad = true
+            if (sendUnitToTransport(playerUnit, this)) hasSentTransportLoad = true
           }
           if (hasSentTransportLoad || hasTransportLoadCandidate) {
             drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
@@ -386,7 +404,10 @@ export class Unit extends Instance implements UnitEntity {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.heal)) {
+            if (
+              playerUnit.work === WORK_TYPES.healer &&
+              playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.heal)
+            ) {
               hasSentHealer = true
               playerUnit.sendTo?.(this as RuntimeEntity, ACTION_TYPES.heal)
             }
@@ -407,7 +428,10 @@ export class Unit extends Instance implements UnitEntity {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.convert)) {
+            if (
+              playerUnit.work === WORK_TYPES.healer &&
+              playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.convert)
+            ) {
               hasSentConverter = true
               playerUnit.sendToConvert?.(this as RuntimeEntity)
               continue
@@ -425,8 +449,7 @@ export class Unit extends Instance implements UnitEntity {
         if (hasSentConverter || hasSentAttacker) {
           drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
         } else if (
-          (player.selectedOther !== (this as RuntimeEntity) &&
-            playerCanSeeInstance(this, player)) ||
+          (player.selectedOther !== (this as RuntimeEntity) && playerCanSeeInstance(this, player)) ||
           map.revealEverything
         ) {
           player.unselectAll()
@@ -448,7 +471,10 @@ export class Unit extends Instance implements UnitEntity {
   setupSailSprite() {
     if (!this.sailSpritesheet?.textures) return
 
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as Parameters<typeof getSailAnimationFrames>[1])
+    const { textures, mirrored } = getSailAnimationFrames(
+      this.sailSpritesheet.textures,
+      this as Parameters<typeof getSailAnimationFrames>[1]
+    )
     if (!textures.length) return
 
     this.sailSprite = new AnimatedSprite(textures as Texture[])
@@ -470,7 +496,10 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
 
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this as Parameters<typeof getSailAnimationFrames>[1])
+    const { textures, mirrored } = getSailAnimationFrames(
+      this.sailSpritesheet.textures,
+      this as Parameters<typeof getSailAnimationFrames>[1]
+    )
     if (!textures.length) {
       this.sailSprite.visible = false
       return
@@ -636,7 +665,11 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitActions.goBackToPrevious()
   }
 
-  startGathering(loadingType: string, soundId: string | string[] | null | undefined, opts?: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean }) {
+  startGathering(
+    loadingType: string,
+    soundId: string | string[] | null | undefined,
+    opts?: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean }
+  ) {
     return this.unitActions.startGathering(loadingType, soundId, opts)
   }
 
@@ -767,7 +800,14 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitInterface.getLoadingElement()
   }
 
-  commonSendTo(target: RuntimeEntity, work: string, action: string | null, keepPrevious: boolean | Record<string, unknown>, immediate = false, preserveBuildQueue = false) {
+  commonSendTo(
+    target: RuntimeEntity,
+    work: string,
+    action: string | null,
+    keepPrevious: boolean | Record<string, unknown>,
+    immediate = false,
+    preserveBuildQueue = false
+  ) {
     return this.unitCommands.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue)
   }
 

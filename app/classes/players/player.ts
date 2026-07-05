@@ -31,8 +31,15 @@ import type { RuntimeMap } from '../../types/map'
 import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
 import type { Condition } from '../../lib/combat'
+import type { ResourceAmount } from '../../types/common'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
+
+type PlayerDynamicState = ResourceAmount &
+  Record<string, unknown> & {
+    age: number
+    technologies: string[]
+  }
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'views'> & {
   difficulty?: string
@@ -97,11 +104,7 @@ export class Player implements PlayerLike {
     this.cellViewed = 0
     this.age = 0
     this.lastUnderAttackAlertAt = 0
-    const dynamicPlayer = this as unknown as Record<string, unknown>
-    const dynamicOptions = options as unknown as Record<string, unknown>
-    Object.keys(options).forEach(prop => {
-      dynamicPlayer[prop] = dynamicOptions[prop]
-    })
+    Object.assign(this, options)
     const rawTeam = this.team as unknown
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
@@ -163,7 +166,7 @@ export class Player implements PlayerLike {
         }
       }
       if (hasSentVillager) {
-        drawInstanceBlinkingSelection(building as unknown as Parameters<typeof drawInstanceBlinkingSelection>[0])
+        drawInstanceBlinkingSelection(building)
       }
       if (hasSentOther) {
         playSoundCue(SOUND_CUES.unit.militaryCommand)
@@ -186,7 +189,7 @@ export class Player implements PlayerLike {
     if (!config) return false
 
     return (config.conditions || []).every((condition: Condition) =>
-      isValidCondition(condition, this as unknown as Record<string, unknown>)
+      isValidCondition(condition, this as PlayerDynamicState)
     )
   }
 
@@ -196,10 +199,10 @@ export class Player implements PlayerLike {
     const config = this.techs?.[type]
     if (!config) return false
 
-    const dynamicPlayer = this as unknown as Record<string, unknown>
+    const dynamicPlayer = this as PlayerDynamicState
     const key = config.key || type
     if (Array.isArray(dynamicPlayer[key])) {
-      ;(dynamicPlayer[key] as unknown[]).push(config.value || type)
+      dynamicPlayer[key].push(config.value || type)
     } else {
       dynamicPlayer[key] = config.value || type
     }
@@ -228,10 +231,10 @@ export class Player implements PlayerLike {
           )
           break
         case 'refreshWalls':
-          refreshOwnerWalls(this as unknown as Parameters<typeof refreshOwnerWalls>[0])
+          refreshOwnerWalls(this)
           break
         case 'refreshTowers':
-          refreshOwnerTowers(this as unknown as Parameters<typeof refreshOwnerTowers>[0])
+          refreshOwnerTowers(this)
           break
       }
     }
@@ -300,7 +303,7 @@ export class Player implements PlayerLike {
       context: { players },
     } = this
     const others = [...players]
-    others.splice(players.indexOf(this as unknown as PlayerLike), 1)
+    others.splice(players.indexOf(this), 1)
     return others
   }
 
@@ -367,8 +370,7 @@ export class Player implements PlayerLike {
 
     return (config.conditions || []).every(
       (condition: Condition) =>
-        (this.autoTechnologyByAge && condition.key !== 'age') ||
-        isValidCondition(condition, this as unknown as Record<string, unknown>)
+        (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition, this as PlayerDynamicState)
     )
   }
 
@@ -379,12 +381,12 @@ export class Player implements PlayerLike {
     const config = this.config.buildings[type]
     const placementConfig = { ...config, type }
     if (
-      canAfford(this as unknown as Record<string, number | undefined>, config.cost) &&
+      canAfford(this, config.cost) &&
       this.isBuildingEligible(type) &&
       canPlaceBuildingAt(map.grid, i, j, placementConfig)
     ) {
       this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })
-      payCost(this as unknown as Record<string, number | undefined>, config.cost)
+      payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true
     }
@@ -393,8 +395,8 @@ export class Player implements PlayerLike {
 
   createUnit(options: UnitSpawnOptions) {
     const { context } = this
-    let unit = context.map.addChild(new Unit({ ...options, owner: this as unknown as PlayerLike }, context))
-    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this as unknown as PlayerLike)
+    let unit = context.map.addChild(new Unit({ ...options, owner: this }, context))
+    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }
 
@@ -402,8 +404,8 @@ export class Player implements PlayerLike {
     const { context } = this
     const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)
-    updateWallAndNeighbours(building as unknown as Parameters<typeof updateWallAndNeighbours>[0])
-    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this as unknown as PlayerLike)
+    updateWallAndNeighbours(building)
+    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return building
   }
 }

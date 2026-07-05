@@ -1,9 +1,10 @@
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid } from './grid'
-import type { RuntimeEntity } from './entities'
+import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
 import type { VisionViewerRef } from './vision'
+import type { Viewport } from './geometry'
 
 export interface FogSpriteMemory {
   textureSheet: string
@@ -67,15 +68,17 @@ export interface RuntimeMap {
   positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
   startingResources: ResourceAmount
-  resources: Set<RuntimeEntity>
+  resources: Set<ResourceEntity>
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container
   randomRange(min: number, max: number): number
   random(): number
   randomItem<T>(items: T[]): T
+  setCoordinate(x: number, y: number): void
+  updateRenderChunks?(viewport: Viewport): void
   addToInstanceBucket(instance: RuntimeEntity): void
   removeFromInstanceBucket(instance: RuntimeEntity): void
   updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void
   addChild: Container['addChild']
-  removeChild: Container['removeChild']
+  removeChild(child: RuntimeEntity | Container): unknown
 }

@@ -48,6 +48,8 @@ type EditorControlsContext = {
     beginTerrainStroke?: () => void
     finishTerrainStroke?: () => void
     applyBrush(cell: RuntimeCell): void
+    hasWallDraft?: () => boolean
+    _canWallUseCell(cell: RuntimeCell, owner: PlayerLike | null): boolean
   }
 }
 type AudibleEntity = {
@@ -94,7 +96,7 @@ export class EditorControls extends Container {
   constructor(context: EditorControlsContext) {
     super()
     this.context = context
-    this.cameraController = new CameraController(context as unknown as ConstructorParameters<typeof CameraController>[0])
+    this.cameraController = new CameraController(context)
     this.mouse = { prevent: false }
     this.mouseBuilding = null
     this.mouseRectangle = false
@@ -107,7 +109,7 @@ export class EditorControls extends Container {
     this.pointerDown = false
     this.lastPaintSignature = null
     this.hoveredCell = null
-    this.entityPreview = new EditorEntityPreview(this as unknown as EditorPreviewControls)
+    this.entityPreview = new EditorEntityPreview(this as EditorPreviewControls)
 
     this._onDocMouseMove = evt => this.moveCameraWithMouse(evt)
     this._onDocMouseOut = () => this.stopMouseCameraMove()

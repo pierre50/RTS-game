@@ -16,7 +16,7 @@ export class AnimalLifecycle {
       playAudibleSoundCue(animal, animal.sounds.die)
       playAudibleSoundCue(animal, animal.sounds.fall)
     }
-    updateInstanceVisibility(animal as unknown as Parameters<typeof updateInstanceVisibility>[0])
+    updateInstanceVisibility(animal)
     animal.owner.population = Math.max(0, animal.owner.population - 1)
     animal.stopInterval()
     animal.stopTimeout()
@@ -100,7 +100,7 @@ export class AnimalLifecycle {
       cell.solid = false
     }
     cell?.corpses.delete(animal)
-    const index = animal.owner.units.indexOf(animal as unknown as Parameters<typeof animal.owner.units.indexOf>[0])
+    const index = animal.owner.units.findIndex(unit => unit.label === animal.label)
     if (index >= 0) {
       animal.owner.units.splice(index, 1)
     }

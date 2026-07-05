@@ -15,8 +15,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 
 type DynamicUnitCommand = (target: RuntimeEntity) => void
-type ResourceLedger = Record<string, number | undefined>
-type BuildingUpgradeConfig = Record<string, unknown> & { totalHitPoints: number }
+type DynamicBuildingState = Building & Record<string, unknown>
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
@@ -108,17 +107,16 @@ export class BuildingProduction {
     } = building
     let success = false
     const unit = building.owner.config.units[type]
-    const ownerLedger = building.owner as unknown as ResourceLedger
-    if (building.isBuilt && !building.isDead && (canAfford(ownerLedger, unit.cost) || alreadyPaid)) {
+    if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (building.owner.type === PLAYER_TYPES.ai) {
           if (!building.queue.length && building.loading === null) {
-            payCost(ownerLedger, unit.cost)
+            payCost(building.owner, unit.cost)
             building.queue.push(type)
             success = true
           }
         } else {
-          payCost(ownerLedger, unit.cost)
+          payCost(building.owner, unit.cost)
           building.queue.push(type)
           if (building.selected && building.owner.isPlayed) {
             menu.updateButtonContent(type, building.queue.filter((q: string) => q === type).length)
@@ -192,7 +190,7 @@ export class BuildingProduction {
     if (!cancelled) return false
 
     for (let index = 0; index < cancelled; index++) {
-      refundCost(building.owner as unknown as ResourceLedger, unit.cost)
+      refundCost(building.owner, unit.cost)
     }
     building.queue = building.queue.filter((queuedType: string) => queuedType !== type)
 
@@ -211,7 +209,7 @@ export class BuildingProduction {
     if (!building.technology) return false
 
     building.stopInterval()
-    refundCost(building.owner as unknown as ResourceLedger, building.technology.config.cost)
+    refundCost(building.owner, building.technology.config.cost)
     building.technology = null
     building.loading = null
     if (building.owner.isPlayed) {
@@ -223,11 +221,12 @@ export class BuildingProduction {
 
   upgrade(type: string): void {
     const building = this.building
-    const data = building.owner.config.buildings[type] as unknown as BuildingUpgradeConfig
+    const data = building.owner.config.buildings[type]
+    const nextTotalHitPoints = Number(data.totalHitPoints) || building.totalHitPoints
     building.type = type
-    building.hitPoints = data.totalHitPoints - (building.totalHitPoints - building.hitPoints)
+    building.hitPoints = nextTotalHitPoints - (building.totalHitPoints - building.hitPoints)
     for (const [key, value] of Object.entries(data)) {
-      ;(building as unknown as Record<string, unknown>)[key] = value
+      ;(building as DynamicBuildingState)[key] = value
     }
     const assets = getBuildingAsset(building.type, building.owner as Parameters<typeof getBuildingAsset>[1], Assets)
     building.sprite.texture = getTexture(assets.images!.final as string, Assets)
@@ -244,15 +243,14 @@ export class BuildingProduction {
     } = building
     let success = false
     const config = building.owner.techs[type]
-    const ownerLedger = building.owner as unknown as ResourceLedger
     if (
       !building.queue.length &&
       building.isBuilt &&
       (force || building.loading === null) &&
       !building.isDead &&
-      (alreadyPaid || canAfford(ownerLedger, config.cost))
+      (alreadyPaid || canAfford(building.owner, config.cost))
     ) {
-      !alreadyPaid && payCost(ownerLedger, config.cost)
+      !alreadyPaid && payCost(building.owner, config.cost)
       success = true
       if (building.owner.isPlayed) {
         menu.updateTopbar()

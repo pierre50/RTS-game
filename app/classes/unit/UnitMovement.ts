@@ -25,6 +25,15 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
   return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
 }
 
+type TransportLoadTarget = RuntimeEntity & {
+  dest?: RuntimeEntity | RuntimeCell | null
+  path?: RuntimeCell[]
+}
+
+function isTransportLoadTarget(entity: UnitEntity['dest']): entity is TransportLoadTarget {
+  return Boolean(entity && 'family' in entity)
+}
+
 const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
   [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ACTION_TYPES.minestone, ACTION_TYPES.minegold],
@@ -44,7 +53,8 @@ const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: Runtim
   [ACTION_TYPES.chopwood]: (unit, target) => (unit.sendToTree ? (unit.sendToTree(target, true), true) : false),
   [ACTION_TYPES.farm]: (unit, target) => (unit.sendToFarm(target, true), true),
   [ACTION_TYPES.fishing]: (unit, target) => (unit.sendToFish ? (unit.sendToFish(target, true), true) : false),
-  [ACTION_TYPES.forageberry]: (unit, target) => (unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false),
+  [ACTION_TYPES.forageberry]: (unit, target) =>
+    unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
   [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
   [ACTION_TYPES.minegold]: (unit, target) => (unit.sendToGold ? (unit.sendToGold(target, true), true) : false),
   [ACTION_TYPES.minestone]: (unit, target) => (unit.sendToStone ? (unit.sendToStone(target, true), true) : false),
@@ -77,7 +87,8 @@ export class UnitMovement {
     const unit = this.unit
     const dest = unit.dest as RuntimeEntity | null | undefined
     const actions = dest?.type ? POST_BUILD_GATHER_ACTIONS[dest.type] : undefined
-    if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed) return false
+    if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed)
+      return false
 
     const unitAsInstance = unit
     const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
@@ -93,7 +104,11 @@ export class UnitMovement {
     return sendTo ? sendTo(unit, target.instance) : false
   }
 
-  findClosestReachableCellNearTarget(target: RuntimeEntity, minDistance = 2, allowCurrentCell = false): { cell: RuntimeCell; path: RuntimeCell[] } | null {
+  findClosestReachableCellNearTarget(
+    target: RuntimeEntity,
+    minDistance = 2,
+    allowCurrentCell = false
+  ): { cell: RuntimeCell; path: RuntimeCell[] } | null {
     const unit = this.unit
     const map = unit.context?.map
     if (!map) return null
@@ -160,7 +175,11 @@ export class UnitMovement {
     return true
   }
 
-  sendToEvt(dest: RuntimeEntity | RuntimeCell | null, action: string | null, { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}) {
+  sendToEvt(
+    dest: RuntimeEntity | RuntimeCell | null,
+    action: string | null,
+    { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}
+  ) {
     const startedAt = performance.now()
     if (forceRepath) this.unit.context?.performance?.record?.('unit.repath', 0)
     try {
@@ -170,7 +189,11 @@ export class UnitMovement {
     }
   }
 
-  _sendToEvt(dest: RuntimeEntity | RuntimeCell | null, action: string | null, { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}) {
+  _sendToEvt(
+    dest: RuntimeEntity | RuntimeCell | null,
+    action: string | null,
+    { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}
+  ) {
     const unit = this.unit
     const map = unit.context?.map
     if (unit.actionLocked) {
@@ -283,8 +306,7 @@ export class UnitMovement {
     const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
     if (!dest || !unit.realDest) return false
     return (
-      (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) &&
-      instancesDistance(unit, dest) <= (unit.sight ?? 0)
+      (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) && instancesDistance(unit, dest) <= (unit.sight ?? 0)
     )
   }
 
@@ -444,7 +466,7 @@ export class UnitMovement {
       unit.setTextures?.(SHEET_TYPES.standing)
       unit.startInterval?.(
         () => {
-          const currentDest = unit.dest as (RuntimeEntity & { dest?: RuntimeEntity | RuntimeCell | null; path?: unknown[] }) | null | undefined
+          const currentDest = isTransportLoadTarget(unit.dest) ? unit.dest : null
           if (!currentDest || !unit.getActionCondition?.(currentDest, ACTION_TYPES.loadTransport)) {
             unit.stop?.()
             return
@@ -453,7 +475,7 @@ export class UnitMovement {
             unit.getAction?.(ACTION_TYPES.loadTransport)
             return
           }
-          const innerDest = currentDest.dest as RuntimeEntity | RuntimeCell | null | undefined
+          const innerDest = currentDest.dest
           if (
             expectedCoastCell &&
             innerDest &&
@@ -487,7 +509,9 @@ export class UnitMovement {
       handleSuccess = Boolean(unit.handleAffectNewDestHunter?.())
     } else if (!dest || dest.family !== FAMILY_TYPES.animal) {
       const unitAsInstance = unit
-      const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance => Boolean(unit.getActionCondition?.(instance)))
+      const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+        Boolean(unit.getActionCondition?.(instance))
+      )
       if (targets.length) {
         const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
         if (target) {
