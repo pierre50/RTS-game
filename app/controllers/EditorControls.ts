@@ -7,7 +7,6 @@ import type { RuntimeCell } from '../types/map'
 import type { RuntimeMap } from '../types/map'
 import type { PlaceableBuildingConfig } from '../types/entities'
 import type { PlayerLike } from '../types/player'
-import type { UnknownRecord } from '../types/common'
 
 type TickerLike = { elapsedMS?: number; deltaTime: number }
 type ViewportMetrics = {
@@ -52,10 +51,13 @@ type EditorControlsContext = {
   }
 }
 type AudibleEntity = {
+  x?: number
+  y?: number
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
   target?: { visible?: boolean }
   visible?: boolean
 }
+type CameraPoint = { x: number; y: number }
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -72,7 +74,7 @@ export class EditorControls extends Container {
   mouseRectangle: unknown | false
   clicked: boolean
   doubleClicked: boolean
-  double: UnknownRecord | null
+  double: CameraPoint | null
   keysPressed: Record<string, boolean>
   keyPressedCount: number
   keySpeed: number
@@ -201,8 +203,8 @@ export class EditorControls extends Container {
     this.cameraController.stopMouseMove()
   }
 
-  instanceInCamera(instance: UnknownRecord): boolean {
-    return this.cameraController.instanceInCamera(instance as unknown as { x: number; y: number })
+  instanceInCamera(instance: CameraPoint): boolean {
+    return this.cameraController.instanceInCamera(instance)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {
@@ -210,7 +212,12 @@ export class EditorControls extends Container {
       context: { map },
     } = this
 
-    if (!this.instanceInCamera(instance)) return false
+    if (
+      typeof instance.x === 'number' &&
+      typeof instance.y === 'number' &&
+      !this.instanceInCamera({ x: instance.x, y: instance.y })
+    )
+      return false
     if (map.revealEverything) return true
     if (instance.owner?.isPlayed || instance.owner?.owner?.isPlayed) return true
 

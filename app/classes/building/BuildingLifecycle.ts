@@ -29,7 +29,6 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-import type { LooseRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
@@ -40,14 +39,14 @@ type RuntimeContainer = Container & { allowMove?: boolean; allowClick?: boolean 
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number }; _baseColorTextureKey?: string }
 
 export class BuildingLifecycle {
-  building: Building & LooseRecord
+  building: Building
 
-  constructor(building: Building & LooseRecord) {
+  constructor(building: Building) {
     this.building = building
   }
 
   updateTexture(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const {
       context: { menu },
     } = building
@@ -76,7 +75,7 @@ export class BuildingLifecycle {
         }
         building.onBuilt()
       }
-      if (!building.owner.hasBuilt.includes(building.type)) {
+      if (building.owner.hasBuilt && !building.owner.hasBuilt.includes(building.type)) {
         building.owner.hasBuilt.push(building.type)
       }
       if (building.owner.isPlayed && building.selected) {
@@ -87,7 +86,7 @@ export class BuildingLifecycle {
   }
 
   finalTexture(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const assetOwner = getBuildingAssetOwner(building as unknown as Parameters<typeof getBuildingAssetOwner>[0])
     const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
@@ -101,7 +100,7 @@ export class BuildingLifecycle {
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()
     delete building.sprite._baseColorTextureKey
-    changeSpriteColorDirectly(building.sprite, building.owner.color)
+    changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     if (isWall(building)) updateWallAndNeighbours(building)
 
     if (building.type === BUILDING_TYPES.house) {
@@ -127,7 +126,7 @@ export class BuildingLifecycle {
   }
 
   generateFire(spriteId: string): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     const spritesheetFire = Assets.cache.get(spriteId)
     if (fire) {
@@ -169,17 +168,17 @@ export class BuildingLifecycle {
   }
 
   onBuilt(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const {
       context: { menu },
     } = building
     if (building.increasePopulation && !building.populationCapacityApplied) {
-      building.owner.population_max += building.increasePopulation
+      building.owner.populationMax += building.increasePopulation
       building.populationCapacityApplied = true
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
         menu.updateInfo(
           MENU_INFO_IDS.populationText,
-          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
         )
       }
     }
@@ -189,7 +188,7 @@ export class BuildingLifecycle {
   }
 
   updateHitPoints(action: string): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     if (building.hitPoints > building.totalHitPoints) {
       building.hitPoints = building.totalHitPoints
     }
@@ -222,36 +221,38 @@ export class BuildingLifecycle {
   }
 
   playBurningSound(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     if (building.hasActiveBurningSound || !building.context.controls.instanceIsAudible(building)) return
     building.hasActiveBurningSound = true
     playSoundCue(building.sounds?.burning ?? SOUND_CUES.building.burning)
   }
 
   pause(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).stop())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof (deco as LooseRecord).stop === 'function') (deco as LooseRecord).stop()
+    const stoppableDeco = deco as { stop?: () => void } | null
+    stoppableDeco?.stop?.()
   }
 
   resume(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).play())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    if (deco && typeof (deco as LooseRecord).play === 'function') (deco as LooseRecord).play()
+    const playableDeco = deco as { play?: () => void } | null
+    playableDeco?.play?.()
   }
 
   die(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     if (building.isDead) return
     const {
       context: { map, player, players, menu },
     } = building
     const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid as Parameters<typeof getAdjacentWalls>[0], building.i, building.j, building.owner) : []
-    clearTimeout(building.visibilityTimeout)
+    clearTimeout(building.visibilityTimeout as ReturnType<typeof setTimeout> | undefined)
     building.stopInterval()
     building.clearRallyPoint()
     if (building.context.controls.rallyPointController?.building === building) {
@@ -260,12 +261,12 @@ export class BuildingLifecycle {
     building.isDead = true
     building.hasActiveBurningSound = false
     if (building.increasePopulation && building.populationCapacityApplied) {
-      building.owner.population_max = Math.max(0, building.owner.population_max - building.increasePopulation)
+      building.owner.populationMax = Math.max(0, building.owner.populationMax - building.increasePopulation)
       building.populationCapacityApplied = false
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
         menu.updateInfo(
           MENU_INFO_IDS.populationText,
-          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
         )
       }
     }
@@ -287,7 +288,7 @@ export class BuildingLifecycle {
 
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === PLAYER_TYPES.ai) {
-        players[i].foundedEnemyBuildings.delete(building)
+        players[i].foundedEnemyBuildings?.delete(building)
       }
     }
     const color = building.getChildByLabel(LABEL_TYPES.color)
@@ -309,7 +310,7 @@ export class BuildingLifecycle {
     building.sprite.allowClick = false
     building.zIndex--
     if (building.type === BUILDING_TYPES.farm) {
-      changeSpriteColorDirectly(building.sprite, building.owner.color)
+      changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     }
 
     updateInstanceVisibility(building as unknown as Parameters<typeof updateInstanceVisibility>[0])
@@ -329,9 +330,9 @@ export class BuildingLifecycle {
   }
 
   clear(): void {
-    const building = this.building as LooseRecord
+    const building = this.building
     if (building.isDestroyed) return
-    clearTimeout(building.visibilityTimeout)
+    clearTimeout(building.visibilityTimeout as ReturnType<typeof setTimeout> | undefined)
     building.clearRallyPoint()
     const {
       context: { map },

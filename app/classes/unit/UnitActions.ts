@@ -176,8 +176,8 @@ export class UnitActions {
       removeFromOwnerList(oldOwner, 'buildings', t)
       addToOwnerList(newOwner, 'buildings', t)
       if (t.increasePopulation && t.populationCapacityApplied) {
-        oldOwner.population_max = Math.max(0, oldOwner.population_max - t.increasePopulation)
-        newOwner.population_max += t.increasePopulation
+        oldOwner.populationMax = Math.max(0, oldOwner.populationMax - t.increasePopulation)
+        newOwner.populationMax += t.increasePopulation
       }
       t.clearRallyPoint?.()
       t.queue = []

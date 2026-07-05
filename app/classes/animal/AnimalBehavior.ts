@@ -1,7 +1,6 @@
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
-import type { LooseRecord } from '../../types/common'
-import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { Animal } from './index'
 
 const BEHAVIOR_CHECK_INTERVAL = 250
@@ -10,11 +9,11 @@ const AMBIENT_WALK_DELAY_MAX = 9000
 const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
-  animal: Animal & LooseRecord
+  animal: Animal
   taskId: unknown
   nextAmbientWalkAt: number
 
-  constructor(animal: Animal & LooseRecord) {
+  constructor(animal: Animal) {
     this.animal = animal
     this.taskId = null
     this.nextAmbientWalkAt = 0
@@ -48,18 +47,18 @@ export class AnimalBehavior {
     this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(AMBIENT_WALK_DELAY_MIN, AMBIENT_WALK_DELAY_MAX)
   }
 
-  findNearbyVillager(): LooseRecord | null {
+  findNearbyVillager(): UnitEntity | null {
     const animal = this.animal
-    const villagers = findInstancesInSight(
-      animal as unknown as Parameters<typeof findInstancesInSight>[0],
-      (instance: LooseRecord) =>
+    const villagers = findInstancesInSight<Animal, UnitEntity>(
+      animal,
+      (instance: UnitEntity) =>
         instance.family === FAMILY_TYPES.unit &&
         instance.type === UNIT_TYPES.villager &&
         !instance.isDead &&
         !instance.isDestroyed
     )
     return villagers.reduce(
-      (closest: LooseRecord | null, villager: LooseRecord) =>
+      (closest: UnitEntity | null, villager: UnitEntity) =>
         !closest ||
         instancesDistance(
           animal as unknown as Parameters<typeof instancesDistance>[0],

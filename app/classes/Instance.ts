@@ -3,7 +3,6 @@ import type { AnimatedSprite, Sprite } from 'pixi.js'
 import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike } from '../types/context'
-import type { DynamicValue } from '../types/common'
 import type { PlayerLike } from '../types/player'
 
 export class Instance extends Container {
@@ -132,6 +131,6 @@ export class Instance extends Container {
   }
 
   setTextures(sheet: string): void {
-    setUnitTexture(sheet, this as Parameters<typeof setUnitTexture>[1])
+    setUnitTexture(sheet, this as unknown as Parameters<typeof setUnitTexture>[1])
   }
 }

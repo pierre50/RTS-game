@@ -84,7 +84,7 @@ export function spawnBuilding(
     const suffix = playerIndex == null ? '' : ` for player ${ownerIndex}`
     return { ok: false, message: `Unknown building${suffix}: ${typeName}` }
   }
-  const config = owner.config.buildings[type]
+  const config = { ...owner.config.buildings[type], type }
 
   const cell = getSpawnCell(context, { buildingConfig: config })
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }

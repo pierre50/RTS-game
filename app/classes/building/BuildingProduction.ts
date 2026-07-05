@@ -10,15 +10,19 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
-import type { LooseRecord, UnknownRecord } from '../../types/common'
-import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 
-function sendUnitToEntity(unit: LooseRecord, target: RuntimeEntity & LooseRecord): void {
+type DynamicUnitCommand = (target: RuntimeEntity) => void
+type ResourceLedger = Record<string, number | undefined>
+type BuildingUpgradeConfig = Record<string, unknown> & { totalHitPoints: number }
+
+function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
     const sendToFunc = `sendTo${target.category || target.type}`
-    if (typeof unit[sendToFunc] === 'function') return unit[sendToFunc](target)
+    const command = (unit as unknown as Record<string, DynamicUnitCommand | undefined>)[sendToFunc]
+    if (typeof command === 'function') return command(target)
     return unit.sendTo(target)
   }
   if (target.family === FAMILY_TYPES.animal) {
@@ -39,14 +43,14 @@ function sendUnitToEntity(unit: LooseRecord, target: RuntimeEntity & LooseRecord
 import { t } from '../../lib/lang'
 
 export class BuildingProduction {
-  building: Building & LooseRecord
+  building: Building
 
-  constructor(building: Building & LooseRecord) {
+  constructor(building: Building) {
     this.building = building
   }
 
-  placeUnit(type: string, extra?: UnknownRecord): boolean {
-    const building = this.building as LooseRecord
+  placeUnit(type: string, extra?: UnitCreationExtra): boolean {
+    const building = this.building
     const {
       context: { map, menu },
     } = building
@@ -71,11 +75,12 @@ export class BuildingProduction {
         (items: RuntimeCell[]) => map.randomItem(items)
       )
     }
-    if (!spawnCell || building.owner.population >= Math.min(POPULATION_MAX, building.owner.population_max)) return false
+    if (!spawnCell || building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax)) return false
     building.owner.population++
 
-    const unitExtra = extra || (building.owner.getUnitExtraOptions && building.owner.getUnitExtraOptions(type)) || {}
-    const unit = building.owner.createUnit({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
+    const unitExtra = extra || building.owner.getUnitExtraOptions?.(type) || {}
+    const unit = building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
+    if (!unit) return false
     const rallyPoint = building.rallyPoint
     const rallyCell = rallyPoint && map.grid[rallyPoint.i]?.[rallyPoint.j]
     if (rallyCell) {
@@ -90,29 +95,30 @@ export class BuildingProduction {
     ) {
       menu.updateInfo(
         MENU_INFO_IDS.populationText,
-        building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.population_max)
+        building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
       )
     }
     return true
   }
 
-  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnknownRecord): boolean | undefined {
-    const building = this.building as LooseRecord
+  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnitCreationExtra): boolean | undefined {
+    const building = this.building
     const {
       context: { menu, map },
     } = building
     let success = false
     const unit = building.owner.config.units[type]
-    if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
+    const ownerLedger = building.owner as unknown as ResourceLedger
+    if (building.isBuilt && !building.isDead && (canAfford(ownerLedger, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (building.owner.type === PLAYER_TYPES.ai) {
           if (!building.queue.length && building.loading === null) {
-            payCost(building.owner, unit.cost)
+            payCost(ownerLedger, unit.cost)
             building.queue.push(type)
             success = true
           }
         } else {
-          payCost(building.owner, unit.cost)
+          payCost(ownerLedger, unit.cost)
           building.queue.push(type)
           if (building.selected && building.owner.isPlayed) {
             menu.updateButtonContent(type, building.queue.filter((q: string) => q === type).length)
@@ -142,7 +148,7 @@ export class BuildingProduction {
                 if (still === 0) menu.toggleButtonCancel(type, false)
                 building.updateInterfaceLoading()
               }
-            } else if (building.loading >= 100 || map.instantMode) {
+            } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
               if (!building.placeUnit(type, extra)) return
               building.stopInterval()
               building.loading = null
@@ -157,9 +163,9 @@ export class BuildingProduction {
                 if (still === 0) menu.toggleButtonCancel(type, false)
                 building.updateInterfaceLoading()
               }
-            } else if (building.loading < 100) {
-              if (building.owner.population < Math.min(POPULATION_MAX, building.owner.population_max)) {
-                building.loading += 1
+            } else if ((building.loading ?? 0) < 100) {
+              if (building.owner.population < Math.min(POPULATION_MAX, building.owner.populationMax)) {
+                building.loading = (building.loading ?? 0) + 1
               } else if (building.owner.isPlayed && !hasShowedMessage) {
                 menu.showMessage(t('needHouses'), 'warning')
                 hasShowedMessage = true
@@ -169,7 +175,7 @@ export class BuildingProduction {
               }
             }
           },
-          unit.trainingTime,
+          unit.trainingTime ?? 0,
           'building.production'
         )
       }
@@ -178,7 +184,7 @@ export class BuildingProduction {
   }
 
   cancelUnits(type: string): boolean {
-    const building = this.building as LooseRecord
+    const building = this.building
     const unit = building.owner.config.units[type]
     if (!unit) return false
 
@@ -186,7 +192,7 @@ export class BuildingProduction {
     if (!cancelled) return false
 
     for (let index = 0; index < cancelled; index++) {
-      refundCost(building.owner, unit.cost)
+      refundCost(building.owner as unknown as ResourceLedger, unit.cost)
     }
     building.queue = building.queue.filter((queuedType: string) => queuedType !== type)
 
@@ -200,12 +206,12 @@ export class BuildingProduction {
   }
 
   cancelTechnology(): boolean {
-    const building = this.building as LooseRecord
+    const building = this.building
     const { menu } = building.context
     if (!building.technology) return false
 
     building.stopInterval()
-    refundCost(building.owner, building.technology.config.cost)
+    refundCost(building.owner as unknown as ResourceLedger, building.technology.config.cost)
     building.technology = null
     building.loading = null
     if (building.owner.isPlayed) {
@@ -216,37 +222,38 @@ export class BuildingProduction {
   }
 
   upgrade(type: string): void {
-    const building = this.building as LooseRecord
-    const data = building.owner.config.buildings[type]
+    const building = this.building
+    const data = building.owner.config.buildings[type] as unknown as BuildingUpgradeConfig
     building.type = type
     building.hitPoints = data.totalHitPoints - (building.totalHitPoints - building.hitPoints)
     for (const [key, value] of Object.entries(data)) {
-      building[key] = value
+      ;(building as unknown as Record<string, unknown>)[key] = value
     }
-    const assets = getBuildingAsset(building.type, building.owner, Assets)
+    const assets = getBuildingAsset(building.type, building.owner as Parameters<typeof getBuildingAsset>[1], Assets)
     building.sprite.texture = getTexture(assets.images!.final as string, Assets)
-    building.sprite.anchor.set(building.sprite.texture.defaultAnchor.x, building.sprite.texture.defaultAnchor.y)
+    building.sprite.anchor.set(building.sprite.texture.defaultAnchor!.x, building.sprite.texture.defaultAnchor!.y)
     const color = building.getChildByLabel(LABEL_TYPES.color)
     color?.destroy()
     delete building.sprite._baseColorTextureKey
-    changeSpriteColorDirectly(building.sprite, building.owner.color)
+    changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
   }
 
   buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
-    const building = this.building as LooseRecord
+    const building = this.building
     const {
       context: { menu, map },
     } = building
     let success = false
     const config = building.owner.techs[type]
+    const ownerLedger = building.owner as unknown as ResourceLedger
     if (
       !building.queue.length &&
       building.isBuilt &&
       (force || building.loading === null) &&
       !building.isDead &&
-      (alreadyPaid || canAfford(building.owner, config.cost))
+      (alreadyPaid || canAfford(ownerLedger, config.cost))
     ) {
-      !alreadyPaid && payCost(building.owner, config.cost)
+      !alreadyPaid && payCost(ownerLedger, config.cost)
       success = true
       if (building.owner.isPlayed) {
         menu.updateTopbar()
@@ -259,24 +266,26 @@ export class BuildingProduction {
       }
       building.startInterval(
         () => {
-          const { config, type } = building.technology
-          if (building.loading >= 100 || map.instantMode) {
+          const technology = building.technology
+          if (!technology) return
+          const { config, type } = technology
+          if ((building.loading ?? 0) >= 100 || map.instantMode) {
             building.stopInterval()
             building.loading = null
             building.technology = null
-            building.owner.unlockTechnology(type)
+            building.owner.unlockTechnology?.(type)
             if (building.owner.isPlayed) {
               menu.updateBottombar()
               menu.updateTopbar()
             }
-          } else if (building.loading < 100) {
-            building.loading += 1
+          } else if ((building.loading ?? 0) < 100) {
+            building.loading = (building.loading ?? 0) + 1
             if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
               building.updateInterfaceLoading()
             }
           }
         },
-        config.researchTime,
+        config.researchTime ?? 0,
         'building.research'
       )
     }

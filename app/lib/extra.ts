@@ -9,7 +9,7 @@ import type { Ticker } from 'pixi.js'
 type Direction = 'south' | 'southwest' | 'west' | 'northwest' | 'north' | 'northeast' | 'east' | 'southeast'
 type DirectionOrder = Direction[]
 type TextureMap<TTexture = unknown> = Record<string, TTexture>
-type UnknownRecord = Record<string, unknown>
+type MutableConfigObject = { [key: string]: unknown }
 type TimeoutId = ReturnType<typeof window.setTimeout> | null
 type DestroyOption = boolean | { children?: boolean; texture?: boolean; textureSource?: boolean; context?: boolean }
 type DefaultAnchor = { x: number; y: number }
@@ -243,7 +243,7 @@ function isDefaultAnchor(value: unknown): value is DefaultAnchor {
   )
 }
 
-type UnitTextureInstance = UnknownRecord & {
+type UnitTextureInstance = MutableConfigObject & {
   context: { paused?: boolean }
   currentSheet?: string
   degree: number
@@ -706,7 +706,7 @@ type NumericOperation = {
   value: number
 }
 
-export const updateObject = (target: UnknownRecord, operation: NumericOperation): void => {
+export const updateObject = (target: MutableConfigObject, operation: NumericOperation): void => {
   if (typeof target !== 'object' || target === null) {
     throw new Error('Target must be a non-null object.')
   }
@@ -715,11 +715,11 @@ export const updateObject = (target: UnknownRecord, operation: NumericOperation)
     throw new Error('Invalid operation: key, op, and value are required.')
   }
 
-  function isRecord(value: unknown): value is UnknownRecord {
+  function isRecord(value: unknown): value is MutableConfigObject {
     return typeof value === 'object' && value !== null
   }
 
-  function setToValue(obj: UnknownRecord, value: number, path: string): void {
+  function setToValue(obj: MutableConfigObject, value: number, path: string): void {
     const keys = path.split('.')
     for (let i = 0; i < keys.length - 1; i++) {
       const next = obj[keys[i]]

@@ -3,13 +3,14 @@ import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
+import type { VisionViewerRef } from '../../types/vision'
 import { CellFog } from './CellFog'
 import { CellTerrain } from './CellTerrain'
 export { GenerationCell } from './GenerationCell'
 
 type CellMap = {
-    revealEverything?: boolean
-    randomItem<T>(items: T[]): T
+  revealEverything?: boolean
+  randomItem<T>(items: T[]): T
 }
 
 type CellContext = {
@@ -58,7 +59,7 @@ export class Cell extends Container {
   waterBorder: boolean
   z: number
   viewed: boolean
-  viewBy: Set<unknown>
+  viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
@@ -138,7 +139,9 @@ export class Cell extends Container {
     const savedFogSprites = this.fogSprites
     this.fogSprites = []
     if (this.cellFog) {
-      savedFogSprites.forEach((s: SavedFogSprite) => this.cellFog!.addFogBuilding(s.textureSheet, s.colorName ?? s.colorSheet))
+      savedFogSprites.forEach((s: SavedFogSprite) =>
+        this.cellFog!.addFogBuilding(s.textureSheet, s.colorName ?? s.colorSheet)
+      )
     } else {
       this.fogSprites = savedFogSprites
     }

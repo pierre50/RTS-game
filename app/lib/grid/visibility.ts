@@ -8,37 +8,36 @@ type PlayerVisibility = {
   }
 }
 
-export type RenderableInstance = GridPosition & Point & {
-  context?: {
-    controls?: {
-      instanceInCamera: (instance: RenderableInstance) => boolean
+export type RenderableInstance = GridPosition &
+  Point & {
+    label: string
+    context?: {
+      controls?: {
+        instanceInCamera: (instance: RenderableInstance) => boolean
+      }
+      map?: {
+        instanceBuckets?: RenderableInstance[][][]
+        revealEverything?: boolean
+        revealTerrain?: boolean
+        showResources?: boolean
+      }
+      player?: PlayerVisibility
     }
-    map?: {
-      instanceBuckets?: RenderableInstance[][][]
-      revealEverything?: boolean
-      revealTerrain?: boolean
-      showResources?: boolean
-    }
-    player?: PlayerVisibility
+    family?: string
+    type?: string
+    owner?: {
+      isPlayed?: boolean
+    } | null
+    isDestroyed?: boolean
+    sight?: number
+    size?: number
+    visible?: boolean
   }
-  family?: string
-  type?: string
-  owner?: {
-    isPlayed?: boolean
-  } | null
-  isDestroyed?: boolean
-  sight?: number
-  size?: number
-  visible?: boolean
-}
 
 export function findInstancesInSight<
   TInstance extends RenderableInstance,
   TTarget extends RenderableInstance = RenderableInstance,
->(
-  instance: TInstance,
-  condition: (target: TTarget) => boolean
-): TTarget[] {
+>(instance: TInstance, condition: (target: TTarget) => boolean): TTarget[] {
   const { i: instX, j: instY, sight = 0 } = instance
   const { instanceBuckets } = instance.context?.map || {}
   if (!instanceBuckets) return []

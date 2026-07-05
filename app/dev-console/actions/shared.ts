@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import { canPlaceBuildingAt } from '../../lib'
-import type { UnknownRecord } from '../../types/common'
+import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevEntity, DevMapLike, DebugTickerCallback } from '../types'
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold']
@@ -36,7 +36,7 @@ export function getSpawnCell(
   {
     buildingConfig = null,
     cellCondition = null,
-  }: { buildingConfig?: UnknownRecord | null; cellCondition?: ((cell: DevCell) => boolean) | null } = {}
+  }: { buildingConfig?: PlaceableBuildingConfig | null; cellCondition?: ((cell: DevCell) => boolean) | null } = {}
 ): DevCell | null {
   const { map, controls } = context
   const cursorCell = controls?.getCellUnderCursor?.()

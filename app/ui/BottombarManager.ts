@@ -379,7 +379,7 @@ export class BottombarManager {
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player as unknown as Record<string, unknown>)),
       onClick: (selection: RuntimeEntity) => {
         if (canAfford(asLedger(player), unit.cost)) {
-          if (player.population >= player.population_max) {
+          if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
             return
           }
@@ -406,7 +406,7 @@ export class BottombarManager {
         img.addEventListener('pointerup', () => {
           this.playUiClick()
           if (canAfford(asLedger(player), unit.cost)) {
-            if (player.population >= player.population_max) {
+            if (player.population >= player.populationMax) {
               menu.showMessage(t('needHouses'), 'warning')
               return
             }

@@ -1,18 +1,19 @@
 import { Container, type ContainerChild } from 'pixi.js'
 import { BUCKET_SIZE, CELL_WIDTH } from '../../constants'
-import { MapGeneration } from './MapGeneration'
+import { MapGeneration, type GenerateMapOptions, type MapBlueprint, type TerrainGrid } from './MapGeneration'
 import { MapResources } from './MapResources'
-import { MapTerrain } from './MapTerrain'
+import { MapTerrain, type ReliefLevelBounds } from './MapTerrain'
 import { MapFog } from './MapFog'
 import { createSeededRandom } from '../../lib/random'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
 import { TerrainChunkManager } from './TerrainChunkManager'
-import type { UnknownRecord, ResourceAmount } from '../../types/common'
+import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RenderChunk } from '../../types/map'
 import type { RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
+import type { SaveCellState, SerializedSave, PlayerSetupConfig } from '../../types/save'
 
 type MapContext = {
   performance?: {
@@ -21,10 +22,12 @@ type MapContext = {
   } | null
 }
 type InstanceBuckets = Array<Array<Set<RuntimeEntity>>>
-type GeneratedPosition = UnknownRecord | null
+type GeneratedPosition = GridPosition | null
 
 function compactPositions(positions: GeneratedPosition[]): GridPosition[] {
-  return positions.filter((position): position is GridPosition => Boolean(position && Number.isFinite(position.i) && Number.isFinite(position.j)))
+  return positions.filter((position): position is GridPosition =>
+    Boolean(position && Number.isFinite(position.i) && Number.isFinite(position.j))
+  )
 }
 
 export default class Map extends Container {
@@ -127,7 +130,9 @@ export default class Map extends Container {
     this.mapResources = new MapResources(this as unknown as ConstructorParameters<typeof MapResources>[0])
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
-    this.terrainChunkManager = new TerrainChunkManager(this as unknown as ConstructorParameters<typeof TerrainChunkManager>[0])
+    this.terrainChunkManager = new TerrainChunkManager(
+      this as unknown as ConstructorParameters<typeof TerrainChunkManager>[0]
+    )
   }
 
   resetRandom(stream: number | string = 0): void {
@@ -228,7 +233,7 @@ export default class Map extends Container {
   }
 
   // MapGeneration
-  generateFromJSON(data: UnknownRecord): void {
+  generateFromJSON(data: SerializedSave & { map: SaveCellState[][] }): void {
     return this.mapGeneration.generateFromJSON(data)
   }
 
@@ -236,27 +241,31 @@ export default class Map extends Container {
     return this.mapGeneration.generateMap(positionsCountOverride, repeat)
   }
 
-  generateMapAsync(positionsCountOverride: number | null = null, repeat: number = 0, options?: UnknownRecord): Promise<void> {
+  generateMapAsync(
+    positionsCountOverride: number | null = null,
+    repeat: number = 0,
+    options?: GenerateMapOptions
+  ): Promise<void> {
     return this.mapGeneration.generateMapAsync(positionsCountOverride, repeat, options)
   }
 
-  generateFromBlueprint(blueprint: UnknownRecord, options?: UnknownRecord): Promise<void> {
+  generateFromBlueprint(blueprint: MapBlueprint, options?: GenerateMapOptions): Promise<void> {
     return this.mapGeneration.generateFromBlueprint(blueprint, options)
   }
 
-  generateEditableFromBlueprint(blueprint: UnknownRecord): void {
+  generateEditableFromBlueprint(blueprint: MapBlueprint): void {
     return this.mapGeneration.generateEditableFromBlueprint(blueprint)
   }
 
-  stylishMap(options?: UnknownRecord): Promise<void> {
+  stylishMap(options?: GenerateMapOptions): Promise<void> {
     return this.mapGeneration.stylishMap(options)
   }
 
-  prepareTerrainForSavedState(options?: UnknownRecord): Promise<void> {
+  prepareTerrainForSavedState(options?: GenerateMapOptions): Promise<void> {
     return this.mapGeneration.prepareTerrainForSavedState(options)
   }
 
-  generatePlayers(playersConfig?: Array<Partial<PlayerLike> & UnknownRecord> | null): PlayerLike[] {
+  generatePlayers(playersConfig?: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[] {
     return this.mapGeneration.generatePlayers(playersConfig) as PlayerLike[]
   }
 
@@ -268,12 +277,12 @@ export default class Map extends Container {
     return this.mapGeneration.generateCells()
   }
 
-  generateCellsAsync(options?: UnknownRecord): Promise<void> {
+  generateCellsAsync(options?: GenerateMapOptions): Promise<void> {
     return this.mapGeneration.generateCellsAsync(options)
   }
 
-  generateTerrain(gridSize: number = 120, mapType: string = 'plain', seed?: number): UnknownRecord {
-    return this.mapGeneration.generateTerrain(gridSize, mapType, seed) as unknown as UnknownRecord
+  generateTerrain(gridSize: number = 120, mapType: string = 'plain', seed?: number): TerrainGrid {
+    return this.mapGeneration.generateTerrain(gridSize, mapType, seed)
   }
 
   generateSets(): void {
@@ -396,19 +405,27 @@ export default class Map extends Container {
     return this.mapTerrain.fillWaterGaps(level) as Set<RuntimeCell>
   }
 
-  normalizeWaterTopology(level?: number | null, seeds?: Set<RuntimeCell> | null, protectedCells?: Set<RuntimeCell>): Set<RuntimeCell> {
-    return this.mapTerrain.normalizeWaterTopology(level, seeds as Set<UnknownRecord> | null | undefined, protectedCells as Set<UnknownRecord> | undefined) as Set<RuntimeCell>
+  normalizeWaterTopology(
+    level?: number | null,
+    seeds?: Set<RuntimeCell> | null,
+    protectedCells?: Set<RuntimeCell>
+  ): Set<RuntimeCell> {
+    return this.mapTerrain.normalizeWaterTopology(level, seeds, protectedCells) as Set<RuntimeCell>
   }
 
-  clampReliefAroundWaterLevels(): UnknownRecord {
+  clampReliefAroundWaterLevels(): ReliefLevelBounds {
     return this.mapTerrain.clampReliefAroundWaterLevels()
   }
 
-  clampReliefAroundWater(dist?: UnknownRecord): void {
+  clampReliefAroundWater(dist?: Int16Array): void {
     return this.mapTerrain.clampReliefAroundWater(dist)
   }
 
-  enforceReliefStepContinuity(dist?: UnknownRecord, protectedCells?: Set<RuntimeCell>, levelBounds?: UnknownRecord): void {
+  enforceReliefStepContinuity(
+    dist?: Int16Array,
+    protectedCells?: Set<RuntimeCell>,
+    levelBounds?: ReliefLevelBounds
+  ): void {
     return this.mapTerrain.enforceReliefStepContinuity(dist, protectedCells, levelBounds)
   }
 

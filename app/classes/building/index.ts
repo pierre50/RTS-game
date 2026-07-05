@@ -26,15 +26,30 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
-import type { LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, EntityInterfaceLike, RuntimeEntity, UnitSounds } from '../../types/entities'
+import type {
+  BuildingEntity,
+  CommandSound,
+  EntityInterfaceLike,
+  RuntimeEntity,
+  UnitCreationExtra,
+  UnitSounds,
+} from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { BuildingConfig } from '../../types/config'
+import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
+type BuildingSprite = Sprite & { allowMove?: boolean; allowClick?: boolean; _baseColorTextureKey?: string }
+type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
+type QueuedTechnology = { type: string; config: TechnologyConfig }
 
-export type BuildingOptions = UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
+export type BuildingOptions = Partial<BuildingConfig> & {
+  i: number
+  j: number
+  type: string
+  isBuilt?: boolean
+  skipBuiltEffects?: boolean
+}
 
 export class Building extends Instance {
   buildingInterface: BuildingInterface
@@ -42,14 +57,14 @@ export class Building extends Instance {
   buildingProduction: BuildingProduction
   buildingCombat: BuildingCombat
   queue: string[]
-  technology: LooseRecord | null
+  technology: QueuedTechnology | null
   loading: number | null
   isUsedBy: RuntimeEntity | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
   intervalId: unknown
   attackIntervalId: unknown
-  declare sprite: Sprite
+  declare sprite: BuildingSprite
   populationCapacityApplied!: boolean
   isBuilt?: boolean
   quantity?: number
@@ -61,7 +76,12 @@ export class Building extends Instance {
   allowMove!: boolean
   accept?: string[]
   visibilityTimeout?: unknown
-  sounds?: UnitSounds
+  sounds?: BuildingSounds
+  projectile?: string
+  rateOfFire!: number
+  range?: number
+  hasActiveBurningSound?: boolean
+  increasePopulation?: number
 
   constructor(options: BuildingOptions, context: GameContextLike) {
     super(context)
@@ -94,8 +114,8 @@ export class Building extends Instance {
     if (this.queue.length) {
       this.buyUnit(this.queue[0], true, true)
     } else {
-      const technology = this.technology as LooseRecord | null
-      if (technology) this.buyTechnology(technology.type, true, true)
+      const queuedTechnology = this.technology as QueuedTechnology | null
+      if (queuedTechnology) this.buyTechnology(queuedTechnology.type, true, true)
     }
 
     this.quantity = this.quantity ?? this.totalQuantity
@@ -299,7 +319,7 @@ export class Building extends Instance {
     map.addToInstanceBucket(this)
   }
 
-  attackAction(target: RuntimeEntity & LooseRecord): void {
+  attackAction(target: RuntimeEntity): void {
     return this.buildingCombat.attackAction(target)
   }
 
@@ -341,11 +361,11 @@ export class Building extends Instance {
     this.timeoutId = this.context.scheduler.addOneShot(cb, time * 1000, 'building.timeout')
   }
 
-  isAttacked(instance: RuntimeEntity & LooseRecord): void {
+  isAttacked(instance: RuntimeEntity): void {
     return this.buildingCombat.isAttacked(instance)
   }
 
-  detect(instance: RuntimeEntity & LooseRecord): void {
+  detect(instance: RuntimeEntity): void {
     return this.buildingCombat.detect(instance)
   }
 
@@ -436,11 +456,11 @@ export class Building extends Instance {
   }
 
   // BuildingProduction
-  placeUnit(type: string, extra?: UnknownRecord): boolean {
+  placeUnit(type: string, extra?: UnitCreationExtra): boolean {
     return this.buildingProduction.placeUnit(type, extra)
   }
 
-  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnknownRecord): boolean | undefined {
+  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnitCreationExtra): boolean | undefined {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
   }
 

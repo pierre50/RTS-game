@@ -24,13 +24,12 @@ import {
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
-import type { UnknownRecord } from '../types/common'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
 import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
 
-export type ResourceOptions = UnknownRecord & { i: number; j: number; type: string }
+export type ResourceOptions = Partial<ResourceConfig> & { i: number; j: number; type: string }
 
 export class Resource extends Instance {
   resourceInterface: ResourceInterface

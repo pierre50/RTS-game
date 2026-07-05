@@ -3,10 +3,13 @@ import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
-import type { DynamicValue, UnknownRecord } from './common'
 import type { TransportBoat } from '../lib/transport'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
+export type UnitCreationExtra = {
+  handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
+  handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
+}
 
 export interface EntityInterfaceLike {
   info?: (element: HTMLElement) => void
@@ -103,6 +106,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
+  upgrade?: (target: string) => void
 
   // Movement / order state
   dest?: RuntimeEntity | RuntimeCell | null
@@ -118,7 +122,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   speed?: number
   huntRange?: number
   currentCell?: RuntimeCell | null
-  visibleCells?: Set<unknown>
+  visibleCells?: Set<number>
 
   // Animation / action state
   action?: string | null
@@ -180,7 +184,11 @@ export interface UnitEntity extends RuntimeEntityBase {
     immediate?: boolean,
     preserveBuildQueue?: boolean
   ) => unknown
-  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: Record<string, unknown>) => void
+  sendToEvt?: (
+    dest: RuntimeEntity | RuntimeCell | null,
+    action?: string | null,
+    options?: Record<string, unknown>
+  ) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
@@ -200,7 +208,11 @@ export interface UnitEntity extends RuntimeEntityBase {
   destHasMoved?: () => boolean
   moveToPath?: () => void
   getAction?: (name: string) => void
-  getActionCondition?: (target: RuntimeEntity | RuntimeCell | null | undefined, action?: string, extra?: Record<string, unknown>) => boolean
+  getActionCondition?: (
+    target: RuntimeEntity | RuntimeCell | null | undefined,
+    action?: string,
+    extra?: Record<string, unknown>
+  ) => boolean
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
   handleChangeDest?: () => void
@@ -236,10 +248,10 @@ export interface BuildingEntity extends RuntimeEntityBase {
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]
-  placeUnit?: (type: string, extra?: UnknownRecord) => boolean
+  placeUnit?: (type: string, extra?: UnitCreationExtra) => boolean
   range?: number
   attackAction?: (target: RuntimeEntity) => void
-  visibleCells?: Set<unknown>
+  visibleCells?: Set<number>
   assetCiv?: string
   assetAge?: unknown
 }

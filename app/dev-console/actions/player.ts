@@ -25,7 +25,7 @@ type DevTechnologyPlayer = DevPlayer & {
   autoTechnologyByAge?: boolean
   enemyPlayers?: () => DevTechnologyPlayer[]
   onAgeChange?: () => void
-  population_max?: number
+  populationMax?: number
   updateConfig?: (operations: Array<Record<string, unknown> & { value: number }>) => void
 }
 
@@ -227,7 +227,7 @@ export function setPopMax(context: DevConsoleContext, value: string): CommandRes
   const { player, menu } = context
   const amount = value != null ? parseInt(value) : POPULATION_MAX
   if (!Number.isFinite(amount) || amount < 0) return { ok: false, message: 'Usage: popmax [amount]' }
-  ;(player as DevTechnologyPlayer).population_max = amount
+  ;(player as DevTechnologyPlayer).populationMax = amount
   menu.updateTopbar()
   return { ok: true, message: `Population max: ${amount}` }
 }

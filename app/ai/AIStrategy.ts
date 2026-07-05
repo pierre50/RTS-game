@@ -258,7 +258,7 @@ export class AIStrategy {
       }
     }
 
-    if (ai.population + 2 > ai.population_max) {
+    if (ai.population + 2 > ai.populationMax) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.house]?.cost?.wood || 0
     }
     const currentBarracks = ai.buildings.filter(
@@ -910,7 +910,7 @@ export class AIStrategy {
 
     if (
       buy(
-        ai.population + 2 > ai.population_max && !notBuiltHouses.length,
+        ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
         BUILDING_TYPES.house,
         () => getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 10], 0),
         false
@@ -944,7 +944,7 @@ export class AIStrategy {
         ai.age >= 2 &&
           towncenters.length < 2 &&
           governmentCenters.some((gc: AIBuildingLike) => gc.isBuilt) &&
-          ai.population_max >= 24 &&
+          ai.populationMax >= 24 &&
           ai.population >= 16,
         BUILDING_TYPES.townCenter,
         () => getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [14, 30], 2, false, isEnemyFacing(anchor))

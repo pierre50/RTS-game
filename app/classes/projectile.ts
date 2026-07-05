@@ -20,7 +20,6 @@ import {
 } from '../lib'
 import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 import type { Texture } from 'pixi.js'
-import type { DynamicValue, LooseRecord } from '../types/common'
 import type { GameContextLike } from '../types/context'
 import type { CommandSound, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -48,7 +47,11 @@ type ProjectileOptions = {
   damage?: number
 }
 
-type RuntimeProjectile = LooseRecord & ProjectileOptions
+type RuntimeProjectile = ProjectileOptions & {
+  directionalFrameOrder?: string[]
+  directionalAnimationFrames?: number
+  fullCircleStartDegree?: number
+}
 type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
 type ProjectileSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
 

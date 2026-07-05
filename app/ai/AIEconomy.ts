@@ -226,7 +226,9 @@ export class AIEconomy {
     const nodeLoad = new Map<AIEntityLike, number>()
     for (let i = 0; i < activeVillagers; i++) {
       const v = villagersOnResource[i]
-      if (v.dest && 'type' in v.dest) nodeLoad.set(v.dest, (nodeLoad.get(v.dest) || 0) + 1)
+      if (v.dest && 'type' in v.dest && 'label' in v.dest) {
+        nodeLoad.set(v.dest, (nodeLoad.get(v.dest) || 0) + 1)
+      }
     }
 
     let assigned = 0

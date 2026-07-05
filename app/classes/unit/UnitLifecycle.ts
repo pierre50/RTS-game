@@ -98,7 +98,7 @@ export class UnitLifecycle {
       if (unit.owner.isPlayed && unit.owner.selectedBuilding && unit.owner.selectedBuilding.displayPopulation) {
         menu?.updateInfo?.(
           MENU_INFO_IDS.populationText,
-          unit.owner.population + '/' + Math.min(POPULATION_MAX, unit.owner.population_max)
+          unit.owner.population + '/' + Math.min(POPULATION_MAX, unit.owner.populationMax)
         )
       }
       const index = unit.owner.units.indexOf(unit)

@@ -1,5 +1,6 @@
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
+import type { RuntimeEntity } from '../types/entities'
 
 export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
@@ -10,7 +11,7 @@ type AIPhase = 'economy' | 'military_build' | 'attack'
 export type AIAge = 0 | 1 | 2 | 3
 
 export type AIEntityLike = {
-  label?: string
+  label: string
   name?: string
   family?: string
   type: string
@@ -30,8 +31,8 @@ export type AIEntityLike = {
   action?: string | null
   work?: string | null
   previousWork?: string | null
-  dest?: AIEntityLike | RuntimeCell | null
-  previousDest?: AIEntityLike | RuntimeCell | null
+  dest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
+  previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
   currentCell?: RuntimeCell | null
   context?: { map: RuntimeMap; player?: unknown }
   parent?: { removeChild?: (unit: AIEntityLike) => void } | null
@@ -40,7 +41,7 @@ export type AIEntityLike = {
   totalQuantity?: number
   loading?: unknown
   isUsedBy?: unknown
-  loadedInTransport?: AIEntityLike | null
+  loadedInTransport?: unknown
   transportedUnits?: AIEntityLike[]
   transportCapacity?: number
   transportLoadCoastCell?: RuntimeCell | null
@@ -50,34 +51,35 @@ export type AIEntityLike = {
   eventMode?: string
   selected?: boolean
   visible?: boolean
-  z?: number
+  z?: number | null
   zIndex?: number
   meleeAttack?: number
   pierceAttack?: number
   range?: number
   rateOfFire?: number
   speed?: number
+  strategy?: string
   meleeArmor?: number
   pierceArmor?: number
-  sendTo?(target: AIEntityLike | RuntimeCell, action?: string): void
-  sendToWithCell?(target: AIEntityLike, cell: RuntimeCell, action?: string): void
-  sendToFish?(target: AIEntityLike): boolean
-  sendToTree?(target: AIEntityLike): void
-  sendToStone?(target: AIEntityLike): void
-  sendToGold?(target: AIEntityLike): void
-  sendToBerrybush?(target: AIEntityLike): void
-  sendToHunt?(target: AIEntityLike): void
-  sendToTakeMeat?(target: AIEntityLike): void
-  sendToFarm?(target: AIEntityLike): void
-  sendToBuilding?(target: AIEntityLike): void
-  sendToAttack?(target: AIEntityLike): void
-  runaway?(target: AIEntityLike): void
+  sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell, action?: string): void
+  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell, action?: string): unknown
+  sendToFish?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToTree?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToStone?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToGold?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToBerrybush?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToHunt?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToTakeMeat?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToFarm?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToBuilding?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToAttack?(target: AIEntityLike | RuntimeEntity): unknown
+  runaway?(target: AIEntityLike | RuntimeEntity): unknown
   stop?(): void
   explore?(): boolean
   die?(immediate?: boolean): void
   upgrade?(target: string): void
   goBackToPrevious?(): void
-  getActionCondition?(target: AIEntityLike, action: string): boolean
+  getActionCondition?(target: AIEntityLike | RuntimeEntity | RuntimeCell | null | undefined, action?: string, extra?: Record<string, unknown>): boolean
   handleChangeDest?(): void
   setTextures?(sheet: string): void
   stopInterval?(): void
@@ -168,7 +170,7 @@ export type AIStrategyPlayerLike = {
   age: AIAge
   phase: AIPhase
   population: number
-  population_max: number
+  populationMax: number
   technologies: string[]
   difficultyConfig: AIDifficultyConfig
   nextAge: Partial<Record<1 | 2 | 3, string>>

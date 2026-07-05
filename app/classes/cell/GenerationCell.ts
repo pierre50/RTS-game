@@ -4,6 +4,7 @@ import { cartesianToIsometric, getDeterministicCellVariant, updateInstanceRender
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
+import type { VisionViewerRef } from '../../types/vision'
 import { CellFog } from './CellFog'
 
 type GenerationCellContext = {
@@ -57,7 +58,7 @@ export class GenerationCell {
   border: boolean
   waterBorder: boolean
   viewed: boolean
-  viewBy: Set<unknown>
+  viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
@@ -105,9 +106,7 @@ export class GenerationCell {
     this.color = definition.color
     this.assets = definition.assets
     this.terrainTextureName =
-      options.textureName ||
-      getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) ||
-      this.assets[0]
+      options.textureName || getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) || this.assets[0]
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH

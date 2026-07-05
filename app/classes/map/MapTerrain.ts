@@ -1,5 +1,10 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import { cartesianToIsometric, getCellsAroundPoint, getDeterministicCellVariant, getPlainCellsAroundPoint } from '../../lib'
+import {
+  cartesianToIsometric,
+  getCellsAroundPoint,
+  getDeterministicCellVariant,
+  getPlainCellsAroundPoint,
+} from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 import {
   EIGHT_NEIGHBOR_OFFSETS,
@@ -44,7 +49,7 @@ type TerrainMap = Container & {
   size: number
   seed?: string | number
   grid: TerrainCell[][]
-  playersPos: unknown[]
+  playersPos: Array<GridPosition | null>
   terrainBackfill?: Container | null
   generationTimings?: Record<string, number>
   blueprintWaterBorderReady?: boolean
@@ -53,18 +58,22 @@ type TerrainMap = Container & {
   getMaxReliefLevelFromCoastDistance(distance: number): number
   getMinReliefLevelFromCoastDistance(distance: number): number
   setCellReliefLevelDirect(cell: TerrainCell, level: number): void
-  clampReliefAroundWater(dist?: unknown): void
+  clampReliefAroundWater(dist?: Int16Array): void
   flattenPlayerStartZones(radius?: number): void
   formatCellsWaterBorder(): void
-  clampReliefAroundWaterLevels(): unknown
-  enforceReliefStepContinuity(dist?: unknown, protectedCells?: Set<unknown>, levelBounds?: unknown): void
+  clampReliefAroundWaterLevels(): ReliefLevelBounds
+  enforceReliefStepContinuity(
+    dist?: Int16Array,
+    protectedCells?: Set<TerrainCell>,
+    levelBounds?: ReliefLevelBounds
+  ): void
   formatCellsRelief(): void
   formatCellsWaterBorderOverlays(): void
   formatCellsDeepWaterBorder(): void
   formatCellsDesert(): void
 }
 
-type ReliefLevelBounds = {
+export type ReliefLevelBounds = {
   minLevels: Int16Array
   maxLevels: Int16Array
 }
@@ -84,15 +93,6 @@ function isGridPosition(value: unknown): value is GridPosition {
   )
 }
 
-function isReliefLevelBounds(value: unknown): value is ReliefLevelBounds {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as ReliefLevelBounds).minLevels instanceof Int16Array &&
-    (value as ReliefLevelBounds).maxLevels instanceof Int16Array
-  )
-}
-
 export class MapTerrain {
   map: TerrainMap
   reliefCoastDistances: Int16Array | null
@@ -105,7 +105,8 @@ export class MapTerrain {
   }
 
   generateMapRelief(): void {
-    const seed = typeof this.map.seed === 'number' && Number.isFinite(this.map.seed) ? this.map.seed : Math.random() * 9999
+    const seed =
+      typeof this.map.seed === 'number' && Number.isFinite(this.map.seed) ? this.map.seed : Math.random() * 9999
 
     function hash(x: number, y: number, offset: number = 0): number {
       const n = Math.sin(x * 83.7 + y * 214.3 + (seed + offset) * 5.1) * 43758.5453
@@ -367,8 +368,8 @@ export class MapTerrain {
 
   normalizeWaterTopology(
     level: number | null = null,
-    seeds: Set<unknown> | null = null,
-    protectedCells: Set<unknown> = new Set(),
+    seeds: Set<GridPosition> | null = null,
+    protectedCells: Set<TerrainCell> = new Set(),
     pass: number = 0
   ): Set<TerrainCell> {
     const cellsToFill: TerrainCell[] = []
@@ -579,10 +580,7 @@ export class MapTerrain {
     }
   }
 
-  clampReliefAroundWater(distInput: unknown = this.map.getReliefCoastDistances()): void {
-    // TerrainMap forwards this call from Map's own loosely-typed delegate method, so the
-    // parameter is narrowed here rather than trusted at the type level.
-    const dist = distInput instanceof Int16Array ? distInput : this.map.getReliefCoastDistances()
+  clampReliefAroundWater(dist: Int16Array = this.map.getReliefCoastDistances()): void {
     const n = this.map.size + 1
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -596,14 +594,10 @@ export class MapTerrain {
   }
 
   enforceReliefStepContinuity(
-    distInput: unknown = this.map.getReliefCoastDistances(),
-    protectedCells: Set<unknown> = new Set(),
-    levelBoundsInput: unknown = null
+    dist: Int16Array = this.map.getReliefCoastDistances(),
+    protectedCells: Set<TerrainCell> = new Set(),
+    levelBounds: ReliefLevelBounds | null = null
   ): void {
-    // TerrainMap forwards this call from Map's own loosely-typed delegate method, so the
-    // parameters are narrowed here rather than trusted at the type level.
-    const dist = distInput instanceof Int16Array ? distInput : this.map.getReliefCoastDistances()
-    const levelBounds = isReliefLevelBounds(levelBoundsInput) ? levelBoundsInput : null
     const n = this.map.size + 1
     const diagonalDirections = EIGHT_NEIGHBOR_OFFSETS
     const getLevelBounds = (cell: TerrainCell): ReliefBounds => {
@@ -720,7 +714,9 @@ export class MapTerrain {
     }
 
     const getHigherNeighbors = (cell: TerrainCell) =>
-      getNeighborFlags(this.map.grid, cell.i, cell.j, (neighbor: TerrainCell | undefined) => Boolean(neighbor && neighbor.z > cell.z))
+      getNeighborFlags(this.map.grid, cell.i, cell.j, (neighbor: TerrainCell | undefined) =>
+        Boolean(neighbor && neighbor.z > cell.z)
+      )
 
     const enforceHeightSteps = (): boolean => {
       let changed = false
@@ -829,7 +825,10 @@ export class MapTerrain {
         if (cell.category === 'Water' || cell.waterBorder) continue
 
         const { n, s, w, e, nw, ne, sw, se } = getNeighborFlags(
-          this.map.grid, i, j, (neighbor: TerrainCell | undefined) => (neighbor?.z ?? cell.z) > cell.z
+          this.map.grid,
+          i,
+          j,
+          (neighbor: TerrainCell | undefined) => (neighbor?.z ?? cell.z) > cell.z
         )
 
         // Cardinal singles
@@ -889,7 +888,9 @@ export class MapTerrain {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category === 'Water') continue
-        const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell | undefined) => isAnyWater(neighbor?.type))
+        const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell | undefined) =>
+          isAnyWater(neighbor?.type)
+        )
         const frame = getWaterBorderFrame(flags)
         if (frame) cell.setWaterBorder?.('20000', frame)
       }
@@ -916,7 +917,7 @@ export class MapTerrain {
     }
   }
 
-  rebuildTerrainAppearance(protectedReliefCells: Set<unknown> = new Set()): void {
+  rebuildTerrainAppearance(protectedReliefCells: Set<TerrainCell> = new Set()): void {
     const timings = this.map.generationTimings
     const measure = <T>(name: string, callback: () => T): T => {
       if (!timings) return callback()
@@ -1050,7 +1051,10 @@ export class MapTerrain {
         const cell = this.map.grid[i][j]
         if (cell.type !== 'DeepWater') continue
         const { n, s, w, e } = getNeighborFlags(
-          this.map.grid, i, j, (neighbor: TerrainCell | undefined) => neighbor != null && neighbor.type !== 'DeepWater'
+          this.map.grid,
+          i,
+          j,
+          (neighbor: TerrainCell | undefined) => neighbor != null && neighbor.type !== 'DeepWater'
         )
         if (n) cell.setDeepWaterBorder?.('west')
         if (s) cell.setDeepWaterBorder?.('east')

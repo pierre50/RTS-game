@@ -3,7 +3,7 @@ import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { UnknownRecord, ResourceAmount } from '../types/common'
+import type { ResourceAmount } from '../types/common'
 
 export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
@@ -156,4 +156,3 @@ export type DevCell = RuntimeCell & {
   setFog?(init?: boolean): void
   removeFog?(): void
 }
-

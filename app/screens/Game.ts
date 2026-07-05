@@ -19,8 +19,7 @@ import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
-import type { GameConfig, SerializedSave } from '../types/save'
-import type { UnknownRecord } from '../types/common'
+import type { GameConfig, PlayerSetupConfig, SaveCellState, SerializedSave } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeMap } from '../types/map'
 
@@ -352,7 +351,7 @@ export default class Game extends Container {
       blueprintResources: map.blueprintResourceLoadMs || 0,
     }
     await this._updateLoading('generatingPlayers', 0.2)
-    this.context.players = map.generatePlayers((config.players as Array<Partial<PlayerLike> & UnknownRecord>) || null)
+    this.context.players = map.generatePlayers((config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null)
     this.context.player = this.context.players[0]
     this.context.menu.init?.()
     await map.stylishMap({
@@ -390,7 +389,7 @@ export default class Game extends Container {
 
     const blueprintId = world.pregeneratedBlueprintId
     const blueprint = blueprintId
-      ? await loadPregeneratedMapBlueprint({ size: map.size, mapType: map.mapType || 'plain', id: blueprintId })
+      ? await loadPregeneratedMapBlueprint({ size: map.size, mapType: map.mapType || 'plain', id: String(blueprintId) })
       : null
     if (blueprint) {
       await map.generateFromBlueprint(blueprint, {
@@ -407,7 +406,7 @@ export default class Game extends Container {
     await map.prepareTerrainForSavedState({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
-    map.mapGeneration.applySavedStateToGeneratedMap(json)
+    map.mapGeneration.applySavedStateToGeneratedMap(json as SerializedSave & { map: SaveCellState[][] })
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -425,7 +424,7 @@ export default class Game extends Container {
     map.size = Math.max(0, (savedMap?.length || 1) - 1)
     this._applyMapConfig(this.context.map, (json.config as GameConfig) || {})
     this._createUiRuntime()
-    map.generateFromJSON(json as UnknownRecord)
+    map.generateFromJSON(json as SerializedSave & { map: SaveCellState[][] })
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()

@@ -3,7 +3,7 @@ import type { GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { RuntimeEntityBase } from '../types/entities'
-import type { UnknownRecord } from '../types/common'
+import type { SaveCellState, SaveEntityState, SavePlayerState, SaveReference, SerializedSave } from '../types/save'
 
 type GridPoint = { i: number; j: number }
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
@@ -49,7 +49,7 @@ type SerializablePlayer = PlayerLike & {
     lastAttackWaveAt?: number
     phase?: string
     population?: number
-    population_max?: number
+    populationMax?: number
     threatenedTargets?: Map<unknown, ThreatTargetMemory>
     views: VisionGridLike
   }
@@ -95,14 +95,19 @@ function destinationData(dest?: Destination | null) {
   }
 }
 
-function resourceData(resource: SerializableEntity) {
+function referenceData(dest?: Destination | null): SaveReference | null | undefined {
+  if (!dest) return dest
+  return [dest.i ?? 0, dest.j ?? 0, dest.label]
+}
+
+function resourceData(resource: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
     textureName: (resource.textureName || '').split('.')[0],
   }
 }
 
-function animalData(animal: SerializableEntity) {
+function animalData(animal: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(animal, [
       'label',
@@ -130,14 +135,14 @@ function animalData(animal: SerializableEntity) {
     ]),
     currentFrame: animal.sprite?.currentFrame,
     loop: animal.sprite?.loop,
-    dest: animal.dest && [animal.dest.i, animal.dest.j, animal.dest?.label],
-    previousDest: animal.previousDest && [animal.previousDest.i, animal.previousDest.j, animal.previousDest?.label],
+    dest: referenceData(animal.dest),
+    previousDest: referenceData(animal.previousDest),
     path: pathData(animal.path),
     realDest: destinationData(animal.realDest),
   }
 }
 
-function unitData(unit: SerializableEntity) {
+function unitData(unit: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(unit, [
       'label',
@@ -168,19 +173,25 @@ function unitData(unit: SerializableEntity) {
     loadedInTransport: unit.loadedInTransport?.label,
     currentFrame: unit.sprite?.currentFrame,
     loop: unit.sprite?.loop,
-    dest: unit.dest && [unit.dest.i, unit.dest.j, unit.dest?.label],
-    previousDest: unit.previousDest && [unit.previousDest.i, unit.previousDest.j, unit.previousDest?.label],
+    dest: referenceData(unit.dest),
+    previousDest: referenceData(unit.previousDest),
     path: pathData(unit.path),
     realDest: destinationData(unit.realDest),
-    buildQueue: unit.buildQueue?.length ? unit.buildQueue.map(target => target.label) : undefined,
+    buildQueue: unit.buildQueue?.length
+      ? unit.buildQueue.map(target => target.label).filter((label): label is string => typeof label === 'string')
+      : undefined,
     blockedGatherApproach: unit.blockedGatherApproach && {
-      target: [unit.blockedGatherApproach.target.i, unit.blockedGatherApproach.target.j, unit.blockedGatherApproach.target.label],
+      target: [
+        unit.blockedGatherApproach.target.i,
+        unit.blockedGatherApproach.target.j,
+        unit.blockedGatherApproach.target.label,
+      ],
       action: unit.blockedGatherApproach.action,
     },
   }
 }
 
-function buildingData(building: SerializableEntity) {
+function buildingData(building: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(building, [
       'label',
@@ -205,7 +216,7 @@ function buildingData(building: SerializableEntity) {
 }
 
 function playerData(player: SerializablePlayer) {
-  const data: UnknownRecord = {
+  const data: SavePlayerState = {
     ...filterObject(player, [
       'label',
       'age',
@@ -219,7 +230,7 @@ function playerData(player: SerializablePlayer) {
       'difficulty',
       'team',
       'population',
-      'population_max',
+      'populationMax',
       'technologies',
       'cellViewed',
       'isPlayed',
@@ -266,7 +277,7 @@ function playerData(player: SerializablePlayer) {
 }
 
 function cellData(cell: SerializableCell) {
-  const data: UnknownRecord = { type: cell.type }
+  const data: SaveCellState = { type: cell.type }
   if (cell.z !== 0) data.z = cell.z
   if (cell.viewed) data.viewed = true
   if (cell.inclined) data.inclined = true
@@ -298,7 +309,7 @@ export function serializeGame(context: SerializableContext) {
     positionsCount: context.map.positionsCount,
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
   }
-  const data: UnknownRecord = {
+  const data: SerializedSave = {
     version: 2,
     runtime: {
       elapsedMs: context.scheduler?.elapsedMs ?? 0,

@@ -24,17 +24,20 @@ import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
-import type { DynamicValue, LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { ConfigOperation, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
 import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
+import type { SerializedVisionGrid } from '../../types/vision'
 import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
-export type PlayerOptions = Partial<PlayerLike> & { difficulty?: string }
+export type PlayerOptions = Omit<Partial<PlayerLike>, 'views'> & {
+  difficulty?: string
+  views?: VisionGridLike | SerializedVisionGrid
+}
 
 export class Player implements PlayerLike {
   family: string
@@ -61,7 +64,7 @@ export class Player implements PlayerLike {
   age: number
   lastUnderAttackAlertAt: number
   team!: number | null
-  population_max!: number
+  populationMax!: number
   colorHex: string
   config: PlayerConfigLike
   techs: Record<string, TechnologyConfig>
@@ -103,16 +106,20 @@ export class Player implements PlayerLike {
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
 
-    this.population_max = this.population_max || (map.instantMode ? POPULATION_MAX : 0)
+    this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
 
     this.colorHex = getHexColor(this.color ?? '')
-    const { config, techs } = createPlayerData(Assets.cache.get('config'), Assets.cache.get('technology'), this.civ ?? '')
+    const { config, techs } = createPlayerData(
+      Assets.cache.get('config'),
+      Assets.cache.get('technology'),
+      this.civ ?? ''
+    )
     this.config = config
     this.techs = techs
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     this.views = new VisionGrid(
       map.size,
-      this.views as unknown as Array<Array<{ viewed?: boolean; viewBy?: unknown[] }>>,
+      Array.isArray(options.views) ? options.views : [],
       (i, j) => {
         if (this.isPlayed && !map.revealEverything) {
           this.context.menu.updateTerrainMiniMap?.(i, j)
@@ -192,7 +199,7 @@ export class Player implements PlayerLike {
     const dynamicPlayer = this as unknown as Record<string, unknown>
     const key = config.key || type
     if (Array.isArray(dynamicPlayer[key])) {
-      (dynamicPlayer[key] as unknown[]).push(config.value || type)
+      ;(dynamicPlayer[key] as unknown[]).push(config.value || type)
     } else {
       dynamicPlayer[key] = config.value || type
     }
@@ -201,13 +208,15 @@ export class Player implements PlayerLike {
     if (action) {
       switch (action.type) {
         case 'upgradeUnit':
-          this.units.forEach((unit: LooseRecord) => {
-            if (unit.type === action.source) unit.upgrade(action.target)
+          this.units.forEach((unit: UnitEntity) => {
+            if (unit.type === action.source && action.target) unit.upgrade?.(action.target)
           })
           break
         case 'upgradeBuilding':
-          this.buildings.forEach((building: LooseRecord) => {
-            if (building.type === action.source) building.upgrade(action.target)
+          this.buildings.forEach((building: BuildingEntity) => {
+            if (building.type === action.source && action.target) {
+              ;(building as BuildingEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
+            }
           })
           break
         case 'improve':

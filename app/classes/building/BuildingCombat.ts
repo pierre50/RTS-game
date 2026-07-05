@@ -1,20 +1,21 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { getActionCondition, instancesDistance } from '../../lib'
 import { Projectile } from '../projectile'
-import type { LooseRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Building } from './index'
 
 export class BuildingCombat {
-  building: Building & LooseRecord
+  building: Building
 
-  constructor(building: Building & LooseRecord) {
+  constructor(building: Building) {
     this.building = building
   }
 
-  attackAction(target: RuntimeEntity & LooseRecord): void {
-    const building = this.building as LooseRecord
-    if (!building.isBuilt || building.isDead) return
+  attackAction(target: RuntimeEntity): void {
+    const building = this.building
+    if (!building.isBuilt || building.isDead || !building.range || !building.projectile) return
+    const range = building.range
+    const projectileType = building.projectile
     const {
       context: { map },
     } = building
@@ -25,9 +26,9 @@ export class BuildingCombat {
         instancesDistance(
           building as unknown as Parameters<typeof instancesDistance>[0],
           target as unknown as Parameters<typeof instancesDistance>[1]
-        ) <= building.range
+        ) <= range
       ) {
-        const projectile = new Projectile({ owner: building as unknown as RuntimeEntity, type: building.projectile, target }, building.context)
+        const projectile = new Projectile({ owner: building as unknown as RuntimeEntity, type: projectileType, target }, building.context)
         map.addChild(projectile)
       } else {
         building.stopAttackInterval()
@@ -35,8 +36,8 @@ export class BuildingCombat {
     }, building.rateOfFire)
   }
 
-  detect(instance: RuntimeEntity & LooseRecord): void {
-    const building = this.building as LooseRecord
+  detect(instance: RuntimeEntity): void {
+    const building = this.building
     if (building.context.editor) return
     if (
       building.isBuilt &&
@@ -53,8 +54,8 @@ export class BuildingCombat {
     }
   }
 
-  isAttacked(instance: RuntimeEntity & LooseRecord): void {
-    const building = this.building as LooseRecord
+  isAttacked(instance: RuntimeEntity): void {
+    const building = this.building
     if (building.context.editor) return
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)

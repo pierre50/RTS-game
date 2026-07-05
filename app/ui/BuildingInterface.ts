@@ -32,7 +32,7 @@ export class BuildingInterface {
     populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
     const populationSpan = document.createElement('span')
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.population_max)
+    populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.populationMax)
     populationDiv.appendChild(populationSpan)
     return populationDiv
   }

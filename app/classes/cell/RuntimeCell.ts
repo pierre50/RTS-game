@@ -3,6 +3,7 @@ import { updateInstanceRenderVisibility } from '../../lib'
 import { FAMILY_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
+import type { VisionViewerRef } from '../../types/vision'
 import { CellFog } from './CellFog'
 
 type RuntimeCellContext = {
@@ -40,7 +41,7 @@ type RuntimeCellSource = {
   border?: boolean
   waterBorder?: boolean
   viewed?: boolean
-  viewBy?: Set<unknown>
+  viewBy?: Set<VisionViewerRef>
   has?: RuntimeEntity | null
   corpses?: Set<RuntimeEntity>
   fogSprites?: FogSpriteMemory[]
@@ -70,7 +71,7 @@ export class RuntimeCell {
   border: boolean
   waterBorder: boolean
   viewed: boolean
-  viewBy: Set<unknown>
+  viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]

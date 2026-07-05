@@ -10,15 +10,13 @@ import {
   moveTowardPoint,
   updateInstanceVisibility,
 } from '../../lib'
-import type { LooseRecord, UnknownRecord } from '../../types/common'
-import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { Animal } from './index'
+import type { Animal, AnimalDestination, AnimalMoveOptions } from './index'
 
 export class AnimalMovement {
-  animal: Animal & LooseRecord
+  animal: Animal
 
-  constructor(animal: Animal & LooseRecord) {
+  constructor(animal: Animal) {
     this.animal = animal
   }
 
@@ -26,7 +24,7 @@ export class AnimalMovement {
     return this.animal.path.length > 0
   }
 
-  setDest(dest: LooseRecord | null): void {
+  setDest(dest: AnimalDestination | null): void {
     const animal = this.animal
     if (!dest) {
       animal.stop()
@@ -36,7 +34,7 @@ export class AnimalMovement {
     animal.realDest = { i: dest.i, j: dest.j }
   }
 
-  setPath(path: LooseRecord[], sheet = SHEET_TYPES.walking): void {
+  setPath(path: RuntimeCell[], sheet = SHEET_TYPES.walking): void {
     const animal = this.animal
     if (!path.length) {
       animal.stop()
@@ -49,7 +47,7 @@ export class AnimalMovement {
     animal.startInterval(() => animal.step(), STEP_TIME, true, 'animal.step')
   }
 
-  isAnimalAtDest(action: string | null, dest: LooseRecord | null): boolean {
+  isAnimalAtDest(action: string | null, dest: AnimalDestination | null): boolean {
     const animal = this.animal
     if (!action || !dest) return false
     return instanceContactInstance(
@@ -71,9 +69,9 @@ export class AnimalMovement {
   }
 
   sendTo(
-    dest: LooseRecord | null,
+    dest: AnimalDestination | null,
     action: string | null,
-    { forceRepath = false, movementSheet = SHEET_TYPES.walking }: UnknownRecord = {}
+    { forceRepath = false, movementSheet = SHEET_TYPES.walking }: AnimalMoveOptions = {}
   ): void {
     const animal = this.animal
     const {
@@ -87,7 +85,10 @@ export class AnimalMovement {
     if (
       !forceRepath &&
       dest &&
-      animal.dest?.label === dest.label &&
+      animal.dest &&
+      'label' in animal.dest &&
+      'label' in dest &&
+      animal.dest.label === dest.label &&
       animal.action === action &&
       (animal.path.length > 0 || this.isAnimalAtDest(action, dest))
     ) {
@@ -104,15 +105,15 @@ export class AnimalMovement {
       animal.getAction(action ?? '')
       return
     }
-    let path: LooseRecord[] = []
+    let path: RuntimeCell[] = []
     if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-      path = getInstanceClosestFreeCellPath(
+      path = getInstanceClosestFreeCellPath<RuntimeCell>(
         animal as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[0],
-        dest as unknown as Parameters<typeof getInstanceClosestFreeCellPath>[1],
+        dest as RuntimeCell,
         map
-      ) as LooseRecord[]
+      )
     } else {
-      path = getInstancePath(animal as unknown as Parameters<typeof getInstancePath>[0], dest.i, dest.j, map) as LooseRecord[]
+      path = getInstancePath<RuntimeCell>(animal as unknown as Parameters<typeof getInstancePath>[0], dest.i, dest.j, map)
     }
     if (path.length) {
       animal.setDest(dest)
@@ -130,7 +131,7 @@ export class AnimalMovement {
     } = animal
     const next = animal.path[animal.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
-    if (!animal.dest || animal.dest.isDestroyed) {
+    if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
       animal.affectNewDest()
       return
     }
@@ -138,12 +139,16 @@ export class AnimalMovement {
       nextCell.has &&
       nextCell.has.family === FAMILY_TYPES.animal &&
       nextCell.has.label !== animal.label &&
-      (nextCell.has as LooseRecord).hasPath() &&
+      'hasPath' in nextCell.has &&
+      typeof nextCell.has.hasPath === 'function' &&
+      nextCell.has.hasPath() &&
       instancesDistance(
         animal as unknown as Parameters<typeof instancesDistance>[0],
         nextCell.has as unknown as Parameters<typeof instancesDistance>[1]
       ) <= 1 &&
-      (nextCell.has.sprite as LooseRecord)?.playing
+      nextCell.has.sprite instanceof Object &&
+      'playing' in nextCell.has.sprite &&
+      nextCell.has.sprite.playing
     ) {
       animal.sprite.stop()
       return

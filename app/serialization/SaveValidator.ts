@@ -1,17 +1,17 @@
 import { Assets } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
-import type { UnknownRecord } from '../types/common'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 
 const MAX_MAP_EDGE = 513
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
+type ObjectRecord = Record<string, unknown>
 
 function fail(message: string): never {
   throw new Error(message)
 }
 
-function isObject(value: unknown): value is UnknownRecord {
+function isObject(value: unknown): value is ObjectRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -46,7 +46,7 @@ function validateViewCell(cell: unknown, i: number, j: number): void {
   validateArray(cell.viewBy ?? [], `view cell ${i},${j} viewBy`)
 }
 
-function validateEntityPosition(entity: unknown, size: number, label: string): asserts entity is UnknownRecord {
+function validateEntityPosition(entity: unknown, size: number, label: string): asserts entity is ObjectRecord {
   if (!isObject(entity)) fail(`Invalid save file: ${label} is invalid.`)
   validateGridPosition(entity.i, size, `${label}.i`)
   validateGridPosition(entity.j, size, `${label}.j`)
@@ -147,7 +147,7 @@ function validateMap(map: unknown): number {
   return size
 }
 
-function validateSeedWorld(data: UnknownRecord, legacyMapSize: number | null = null): number {
+function validateSeedWorld(data: ObjectRecord, legacyMapSize: number | null = null): number {
   const world = isObject(data.world) ? data.world : {}
   const config = isObject(data.config) ? data.config : {}
   const rawSize = world.size ?? config.size ?? (legacyMapSize != null ? legacyMapSize - 1 : null)
@@ -320,4 +320,3 @@ export function validateSaveData(data: unknown): SaveRecord {
 
   return data as SerializedSave
 }
-

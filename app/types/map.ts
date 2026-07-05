@@ -3,6 +3,7 @@ import type { GridCell, Grid } from './grid'
 import type { RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
+import type { VisionViewerRef } from './vision'
 
 export interface FogSpriteMemory {
   textureSheet: string
@@ -27,7 +28,7 @@ export interface RuntimeCell extends GridCell {
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
-  viewBy: Set<unknown>
+  viewBy: Set<VisionViewerRef>
   // Generation-time cells (see app/classes/cell/GenerationCell.ts) act as their own
   // lightweight Container for terrain decorations before the real Cell/Container
   // tree is built, so they also expose these Container-shaped members.

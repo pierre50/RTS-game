@@ -1,12 +1,11 @@
 import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
-import type { LooseRecord } from '../../types/common'
 import type { Animal } from './index'
 
 export class AnimalLifecycle {
-  animal: Animal & LooseRecord
+  animal: Animal
 
-  constructor(animal: Animal & LooseRecord) {
+  constructor(animal: Animal) {
     this.animal = animal
   }
 

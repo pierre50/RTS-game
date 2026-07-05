@@ -9,15 +9,14 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-import type { LooseRecord } from '../../types/common'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Animal } from './index'
 
 export class AnimalCombat {
-  animal: Animal & LooseRecord
+  animal: Animal
 
-  constructor(animal: Animal & LooseRecord) {
+  constructor(animal: Animal) {
     this.animal = animal
   }
 
@@ -61,15 +60,15 @@ export class AnimalCombat {
     }
     const targets = findInstancesInSight(
       animal as unknown as Parameters<typeof findInstancesInSight>[0],
-      (instance: LooseRecord) => animal.getActionCondition(instance)
-    )
+      (instance: RuntimeEntity) => animal.getActionCondition(instance)
+    ) as RuntimeEntity[]
     if (targets.length) {
-      const target = getClosestInstanceWithPath(
+      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(
         animal as unknown as Parameters<typeof getClosestInstanceWithPath>[0],
-        targets as unknown as Parameters<typeof getClosestInstanceWithPath>[1]
+        targets
       )
       if (target) {
-        animal.setDest(target.instance as LooseRecord)
+        animal.setDest(target.instance)
         if (
           instanceContactInstance(
             animal as unknown as Parameters<typeof instanceContactInstance>[0],
@@ -80,7 +79,7 @@ export class AnimalCombat {
           animal.getAction(animal.action ?? '')
           return
         }
-        animal.setPath(target.path as LooseRecord[])
+        animal.setPath(target.path as RuntimeCell[])
         return
       }
     }
@@ -128,42 +127,44 @@ export class AnimalCombat {
         animal.startInterval(
           () => {
             if (!animal.getActionCondition(animal.dest)) {
-              if (animal.dest && animal.dest.hitPoints <= 0) {
-                animal.dest.die()
+              const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
+              if (target && (target.hitPoints ?? 0) <= 0) {
+                target.die?.()
               }
               animal.affectNewDest()
               return
             }
-            if (!animal.dest) return
+            const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
+            if (!target) return
             if (animal.destHasMoved()) {
-              animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], animal.dest.x, animal.dest.y)
+              animal.degree = getInstanceDegree(animal as unknown as Parameters<typeof getInstanceDegree>[0], target.x, target.y)
               animal.setTextures(SHEET_TYPES.action)
             }
             if (
               !instanceContactInstance(
                 animal as unknown as Parameters<typeof instanceContactInstance>[0],
-                animal.dest as unknown as Parameters<typeof instanceContactInstance>[1]
+                target as unknown as Parameters<typeof instanceContactInstance>[1]
               )
             ) {
-              animal.sendTo(animal.dest, ACTION_TYPES.attack, { forceRepath: true })
+              animal.sendTo(target, ACTION_TYPES.attack, { forceRepath: true })
               return
             }
             animal.sounds &&
               animal.sounds.hit &&
               animal.context.controls.instanceIsAudible(animal) &&
               playAudibleSoundCue(animal, animal.sounds.hit)
-            if (animal.dest.hitPoints > 0) {
-              animal.dest.hitPoints = getHitPointsWithDamage(animal, animal.dest)
-              if (animal.dest.selected) {
-                animal.dest.drawHealthBar()
-                if (player && (player.selectedUnit === animal.dest || player.selectedBuilding === animal.dest)) {
-                  menu.updateInfo(MENU_INFO_IDS.hitPoints, animal.dest.hitPoints + '/' + animal.dest.totalHitPoints)
+            if ((target.hitPoints ?? 0) > 0) {
+              target.hitPoints = getHitPointsWithDamage(animal, target)
+              if (target.selected) {
+                target.drawHealthBar?.()
+                if (player && (player.selectedUnit === target || player.selectedBuilding === target)) {
+                  menu.updateInfo(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)
                 }
               }
-              animal.dest.isAttacked(animal)
+              target.isAttacked?.(animal)
             }
-            if (animal.dest.hitPoints <= 0) {
-              animal.dest.die()
+            if ((target.hitPoints ?? 0) <= 0) {
+              target.die?.()
               animal.affectNewDest()
             }
           },

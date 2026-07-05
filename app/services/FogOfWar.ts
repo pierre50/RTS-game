@@ -3,8 +3,9 @@ import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
+import type { VisionViewer, VisionViewerRef } from '../types/vision'
 
-type ViewerSet = Set<unknown>
+type ViewerSet = Set<VisionViewerRef>
 
 type VisibilityContext = {
   performance?: PerformanceMonitorLike | null
@@ -24,6 +25,7 @@ type VisibilityOwner = Partial<PlayerLike> & {
 type VisibilityEntity = {
   i: number
   j: number
+  label: string
   visible?: boolean
   context?: VisibilityContext
   owner?: VisibilityOwner | null
@@ -41,7 +43,7 @@ function canDetect(entity: RuntimeEntity): entity is DetectingEntity {
   return typeof (entity as { detect?: unknown }).detect === 'function'
 }
 
-function syncVisibleSet(target: ViewerSet, source: ReadonlySet<unknown>): void {
+function syncVisibleSet(target: ViewerSet, source: ReadonlySet<VisionViewerRef>): void {
   if (target === source) return
   if (target.size === source.size) {
     let identical = true
@@ -107,7 +109,12 @@ export function rehydrateAIKnowledge(viewer: PlayerLike, map: RuntimeMap): void 
 
       if (viewer.views.isVisible(i, j)) {
         for (const corpse of globalCell.corpses || []) {
-          if (corpse.family === FAMILY_TYPES.animal && corpse.isDead && !corpse.isDestroyed && (corpse.quantity ?? 0) > 0) {
+          if (
+            corpse.family === FAMILY_TYPES.animal &&
+            corpse.isDead &&
+            !corpse.isDestroyed &&
+            (corpse.quantity ?? 0) > 0
+          ) {
             viewer.foundedDeadAnimals?.add(corpse)
           }
         }
@@ -188,12 +195,7 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
         globalCell.removeFog()
       }
 
-      if (
-        !context?.editor &&
-        globalCell.has &&
-        globalCell.has.sight &&
-        canDetect(globalCell.has)
-      ) {
+      if (!context?.editor && globalCell.has && globalCell.has.sight && canDetect(globalCell.has)) {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
         if (distSq <= globalCell.has.sight ** 2) {
           globalCell.has.detect(instance)

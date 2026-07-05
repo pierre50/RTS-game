@@ -3,7 +3,6 @@ import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/settings'
 import type { Viewport } from '../types/geometry'
 import type { RuntimeCell } from '../types/map'
-import type { UnknownRecord } from '../types/common'
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'

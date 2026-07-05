@@ -263,7 +263,7 @@ test('converted buildings keep their source civilization and age assets', () => 
     color: 'red',
     hasBuilt: [],
     label: 'egypt',
-    population_max: 0,
+    populationMax: 0,
   }
   const newOwner = {
     age: 3,
@@ -273,7 +273,7 @@ test('converted buildings keep their source civilization and age assets', () => 
     hasBuilt: [],
     isPlayed: true,
     label: 'greek',
-    population_max: 0,
+    populationMax: 0,
   }
   const target = {
     clearRallyPoint: () => calls.push(['clearRallyPoint']),

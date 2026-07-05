@@ -26,7 +26,7 @@ type AiDebugPlayer = DevPlayer & {
   difficulty?: string
   phase?: string
   population?: number
-  population_max?: number
+  populationMax?: number
   stepDelay?: number
   maxVillagerPerAge: Record<number, number>
   maxInfantryByAge: Record<number, number>
@@ -274,7 +274,7 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
       ai.scout && !ai.scout.isDead ? (ai.scout.inactif ? 'idle' : ai.scout.dest ? 'moving' : 'active') : 'none'
 
     lines.push(`AI [${idx}] ${ai.label} (${ai.difficulty})`)
-    lines.push(`Phase ${ai.phase} | Age ${ai.age} | Pop ${ai.population}/${ai.population_max} | Step ${ai.stepDelay}ms`)
+    lines.push(`Phase ${ai.phase} | Age ${ai.age} | Pop ${ai.population}/${ai.populationMax} | Step ${ai.stepDelay}ms`)
     lines.push(
       `Res W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold} | Demand W:${demand.wood} F:${demand.food} S:${demand.stone} G:${demand.gold}`
     )

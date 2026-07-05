@@ -28,74 +28,87 @@ import {
 } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import type { ContainerChild } from 'pixi.js'
-import type { UnknownRecord } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/player'
 import type { ResourceOptions } from '../resource'
+import type { AnimalOptions } from '../animal'
 import type { RuntimeEntity, UnitEntity, BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { FogSpriteMemory } from '../../types/map'
+import type {
+  SaveCellState,
+  SaveEntityState,
+  SavedAIState,
+  SavedEnemyMemoryState,
+  SavedThreatState,
+  SerializedSave,
+} from '../../types/save'
 
 type TerrainValue = 0 | 1 | 2 | 3 | 4
-type TerrainGrid = TerrainValue[][]
+type BlueprintTerrainValue = TerrainValue | string
+export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
 // Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
 // that MapGeneration relies on. Map can't be imported directly here: it imports
 // MapGeneration itself, so importing it back would create a circular dependency.
 type MapGenerationMap = RuntimeMap & {
-    context: GameContextLike
-    playersPos: GeneratedPosition[]
-    positionsCount: number
-    noAI?: boolean
-    startingUnits: number
-    generationTimings?: Record<string, number>
-    difficulty: string
-    chanceOfSets: number
-    allTechnologies: boolean
-    startingAge: number
-    totalCells: number
-    instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
-    pregeneratedBlueprintId?: string | null
-    pregeneratedResourcesLoaded?: boolean
-    blueprintDestroyMs?: number
-    blueprintCellCreationMs?: number
-    blueprintFillWaterGapsMs?: number
-    blueprintNormalizeWaterMs?: number
-    blueprintInitialWaterBorderMs?: number
-    blueprintWaterBorderReady?: boolean
-    blueprintResourceLoadMs?: number
-    _fogInitComplete?: boolean
-    terrainChunkManager?: { destroy(): void }
-    mapFog?: { destroyFogResources(): void }
-    children: RuntimeEntity[]
-    removeChildren(): RuntimeEntity[]
-    getChildByLabel(label: string): RuntimeEntity | null
-    clearRenderChunks(): void
-    resetRandom(stream?: number | string): void
-    findPlayerPlaces(): GeneratedPosition[]
-    generateCells(): void
-    generateMap(positionsCountOverride?: number | null, repeat?: number): void
-    generateTerrain(gridSize?: number, mapType?: string, seed?: number): TerrainGrid
-    invalidateReliefCoastDistances(): void
-    fillWaterGaps(level?: number | null): Set<RuntimeCell>
-    normalizeWaterTopology(level?: number | null, seeds?: Set<RuntimeCell> | null, protectedCells?: Set<RuntimeCell>): Set<RuntimeCell>
-    formatCellsWaterBorder(): void
-    rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
-    classifyDeepWater(): void
-    generateMapRelief(): void
-    generateAnimalsAroundPlayers(playersPos: GeneratedPosition[]): void
-    generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
-    generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
-    generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void>
-    placePlayers(): void
-    _initFogChunks(): void
-    _indexFogChunkCells(): void
-    _flushFogQueue(): void
-    bakeTerrainToChunks(): void
-    getChildByLabel(label: string): RuntimeEntity | null
-  }
+  context: GameContextLike
+  playersPos: GeneratedPosition[]
+  positionsCount: number
+  noAI?: boolean
+  startingUnits: number
+  generationTimings?: Record<string, number>
+  difficulty: string
+  chanceOfSets: number
+  allTechnologies: boolean
+  startingAge: number
+  totalCells: number
+  instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
+  pregeneratedBlueprintId?: string | null
+  pregeneratedResourcesLoaded?: boolean
+  blueprintDestroyMs?: number
+  blueprintCellCreationMs?: number
+  blueprintFillWaterGapsMs?: number
+  blueprintNormalizeWaterMs?: number
+  blueprintInitialWaterBorderMs?: number
+  blueprintWaterBorderReady?: boolean
+  blueprintResourceLoadMs?: number
+  _fogInitComplete?: boolean
+  terrainChunkManager?: { destroy(): void }
+  mapFog?: { destroyFogResources(): void }
+  children: RuntimeEntity[]
+  removeChildren(): RuntimeEntity[]
+  getChildByLabel(label: string): RuntimeEntity | null
+  clearRenderChunks(): void
+  resetRandom(stream?: number | string): void
+  findPlayerPlaces(): GeneratedPosition[]
+  generateCells(): void
+  generateMap(positionsCountOverride?: number | null, repeat?: number): void
+  generateTerrain(gridSize?: number, mapType?: string, seed?: number): TerrainGrid
+  invalidateReliefCoastDistances(): void
+  fillWaterGaps(level?: number | null): Set<RuntimeCell>
+  normalizeWaterTopology(
+    level?: number | null,
+    seeds?: Set<RuntimeCell> | null,
+    protectedCells?: Set<RuntimeCell>
+  ): Set<RuntimeCell>
+  formatCellsWaterBorder(): void
+  rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
+  classifyDeepWater(): void
+  generateMapRelief(): void
+  generateAnimalsAroundPlayers(playersPos: GeneratedPosition[]): void
+  generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
+  generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
+  generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void>
+  placePlayers(): void
+  _initFogChunks(): void
+  _indexFogChunkCells(): void
+  _flushFogQueue(): void
+  bakeTerrainToChunks(): void
+  getChildByLabel(label: string): RuntimeEntity | null
+}
 // Pixi's Sprite type doesn't know about these app-specific interaction flags, which are
 // set directly on decorative sprites (floor/rock/water sets) added to generation cells.
 type SetSprite = Sprite & {
@@ -113,64 +126,63 @@ type GameConfig = {
   resources: Record<string, ResourceDefinition>
   cells: Record<string, unknown>
 }
+type CellDefinition = {
+  assets: string[]
+  [key: string]: unknown
+}
+export type GenerateMapOptions = {
+  onProgress?: ProgressCallback
+  terrain?: TerrainGrid | null
+}
 type BlueprintResource = {
   i: number
   j: number
   type: string
   textureName?: string
 }
-type MapBlueprint = {
+export type MapBlueprint = {
   seed?: string | number
   size: number
   mapType?: string
   spawns?: GeneratedPosition[]
-  terrain: TerrainValue[][]
+  terrain: BlueprintTerrainValue[][]
   relief?: number[][]
   resources?: BlueprintResource[]
-}
-type SavedThreatState = {
-  target?: unknown
-  attacker?: unknown
-  lastSeenAgo?: number
-  lastSeenAt?: number
-  attackerFamily?: string
-  attackerType?: string
-  count?: number
-}
-type SavedEnemyMemoryState = {
-  instance?: unknown
-  lastSeenAgo?: number
-}
-type SavedAIState = {
-  phase?: string
-  lastAttackWaveAgo?: number
-  lastAttackWaveAt?: number
-  savedAt?: number
-  enemyUnits?: SavedEnemyMemoryState[]
-  enemyBuildings?: SavedEnemyMemoryState[]
-  threatenedTargets?: SavedThreatState[]
 }
 type SavedPlayer = {
   type: string
   isPlayed?: boolean
-  buildings?: UnknownRecord[]
-  units?: UnknownRecord[]
-  corpses?: UnknownRecord[]
+  buildings?: SaveEntityState[]
+  units?: SaveEntityState[]
+  corpses?: SaveEntityState[]
   aiState?: SavedAIState
   selectedUnitLabels?: unknown[]
   selectedUnitLabel?: unknown
   selectedBuildingLabel?: unknown
   selectedOtherLabel?: unknown
 }
-type SavedGameData = {
-  map: Array<Array<UnknownRecord & { type: string; z?: number; fogSprites?: FogSpriteMemory[] }>>
+type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals'> & {
+  map: SaveCellState[][]
   players: SavedPlayer[]
   camera: { x: number; y: number }
-  resources: UnknownRecord[]
-  animals: UnknownRecord[]
-  runtime?: { elapsedMs?: number }
+  resources: SaveEntityState[]
+  animals: SaveEntityState[]
 }
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
+type AIEnemyMemoryRuntime = {
+  instance: RuntimeEntity
+  label: string
+  lastSeenAt: number
+  visible?: boolean
+}
+type AIThreatRuntime = {
+  target: RuntimeEntity | null
+  attacker: RuntimeEntity | null
+  lastSeenAt: number
+  attackerFamily?: string
+  attackerType?: string
+  count?: number
+}
 
 // Local view of the AI-only bookkeeping fields used while restoring saved games.
 // These live on the concrete AI player instance but are not part of the shared
@@ -180,9 +192,9 @@ type AIPlayerMemoryState = PlayerLike & {
   phase: string
   lastAttackWaveAt: number
   getNow(): number
-  enemyUnitMemory: Map<string, UnknownRecord>
-  enemyBuildingMemory: Map<string, UnknownRecord>
-  threatenedTargets: Map<string, UnknownRecord>
+  enemyUnitMemory: Map<string, AIEnemyMemoryRuntime>
+  enemyBuildingMemory: Map<string, AIEnemyMemoryRuntime>
+  threatenedTargets: Map<string, AIThreatRuntime>
 }
 
 // --- Saved-game restore helpers -------------------------------------------------
@@ -250,7 +262,7 @@ function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
   }
 }
 
-function restoreTransportCargo(player: PlayerLike, savedUnits: UnknownRecord[], context: MapGenerationMap): void {
+function restoreTransportCargo(player: PlayerLike, savedUnits: SaveEntityState[], context: MapGenerationMap): void {
   for (let index = 0; index < player.units.length; index++) {
     const unit = player.units[index]
     const savedUnit = savedUnits[index]
@@ -260,7 +272,11 @@ function restoreTransportCargo(player: PlayerLike, savedUnits: UnknownRecord[], 
   }
 }
 
-function restoreBuildingAssignments(player: PlayerLike, savedBuildings: UnknownRecord[], context: MapGenerationMap): void {
+function restoreBuildingAssignments(
+  player: PlayerLike,
+  savedBuildings: SaveEntityState[],
+  context: MapGenerationMap
+): void {
   for (let index = 0; index < player.buildings.length; index++) {
     const building = player.buildings[index]
     const savedBuilding = savedBuildings[index]
@@ -282,7 +298,8 @@ function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context:
   selectedUnits.forEach(unit => unit.select?.())
   const typedSelectedUnits = selectedUnits as UnitEntity[]
   player.selectedUnits = typedSelectedUnits
-  player.selectedUnit = (getDestEntity(savedPlayer.selectedUnitLabel, context) as UnitEntity | null) ?? typedSelectedUnits[0] ?? null
+  player.selectedUnit =
+    (getDestEntity(savedPlayer.selectedUnitLabel, context) as UnitEntity | null) ?? typedSelectedUnits[0] ?? null
 
   const selectedBuilding = getDestEntity(savedPlayer.selectedBuildingLabel, context)
   if (selectedBuilding && !selectedBuilding.isDead && !selectedBuilding.isDestroyed) {
@@ -324,7 +341,10 @@ function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: M
     aiPlayer.lastAttackWaveAt = now - Math.max(0, (state.savedAt ?? 0) - (state.lastAttackWaveAt ?? 0))
   }
 
-  const restoreMemories = (savedMemories: SavedEnemyMemoryState[] | undefined, memoryMap: Map<string, UnknownRecord>) => {
+  const restoreMemories = (
+    savedMemories: SavedEnemyMemoryState[] | undefined,
+    memoryMap: Map<string, AIEnemyMemoryRuntime>
+  ) => {
     memoryMap.clear()
     for (const savedMemory of savedMemories || []) {
       if (!savedMemory || typeof savedMemory !== 'object') continue
@@ -358,8 +378,8 @@ function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: M
     aiPlayer.threatenedTargets.set(target.label, {
       target,
       attacker: attacker || null,
-      attackerFamily: attacker?.family || threat.attackerFamily || null,
-      attackerType: attacker?.type || threat.attackerType || null,
+      attackerFamily: attacker?.family || threat.attackerFamily || undefined,
+      attackerType: attacker?.type || threat.attackerType || undefined,
       lastSeenAt: now - lastSeenAgo,
       count: Number.isFinite(threat.count) ? (threat.count ?? 0) : 0,
     })
@@ -367,7 +387,7 @@ function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: M
 }
 
 function restorePlayerViewsAndFog(player: PlayerLike, map: MapGenerationMap): void {
-  player.views.restoreViewers(name => getDest(name, map))
+  player.views.restoreViewers(name => getDestEntity(name, map))
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       if (player.views.isViewed(i, j)) {
@@ -463,7 +483,13 @@ export class MapGeneration {
   }
 
   isFarEnoughFromCoast(i: number, j: number, minDistance: number = 6): boolean {
-    const coastCells = getCellsAroundPoint(i, j, this.map.grid, minDistance, (cell: RuntimeCell) => cell.category !== 'Water')
+    const coastCells = getCellsAroundPoint(
+      i,
+      j,
+      this.map.grid,
+      minDistance,
+      (cell: RuntimeCell) => cell.category !== 'Water'
+    )
     return coastCells.length === 0
   }
 
@@ -493,7 +519,7 @@ export class MapGeneration {
     return this.map.randomItem(available.length ? available : [RESOURCE_TYPES.salmon])
   }
 
-  generateFromJSON(data: SavedGameData | UnknownRecord): void {
+  generateFromJSON(data: SavedGameData): void {
     const { map, players, camera, resources, animals, runtime } = data as SavedGameData
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
     const { menu, controls } = this.map.context
@@ -504,7 +530,10 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context) as unknown as PlayerLike
+      const p = new classMap[player.type](
+        { ...player, corpses: [], buildings: [], units: [] },
+        this.map.context
+      ) as unknown as PlayerLike
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -517,7 +546,9 @@ export class MapGeneration {
     this.map._initFogChunks()
     // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
     // PlayerLike method (e.g. unselectAll, which only makes sense for a selectable player).
-    const gaia = new Gaia(this.map.context) as unknown as PlayerLike & { createAnimal: (options: UnknownRecord) => RuntimeEntity }
+    const gaia = new Gaia(this.map.context) as unknown as PlayerLike & {
+      createAnimal: (options: AnimalOptions) => RuntimeEntity
+    }
     this.map.gaia = gaia
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -539,7 +570,9 @@ export class MapGeneration {
 
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
-    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context))))
+    this.map.resources = new Set(
+      resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context)))
+    )
 
     this.map.rebuildTerrainAppearance()
 
@@ -557,7 +590,11 @@ export class MapGeneration {
 
     this.map.context.players.forEach((player, index) => {
       const { buildings, units, corpses } = players[index]
-      player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<typeof player.createBuilding>[0]))
+      player.buildings = (buildings || []).map(building =>
+        player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<
+          typeof player.createBuilding
+        >[0])
+      )
       player.units = (units || [])
         .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
         .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
@@ -619,7 +656,7 @@ export class MapGeneration {
     this.map.gaia = new Gaia(this.map.context) as unknown as PlayerLike
   }
 
-  applySavedStateToGeneratedMap(data: SavedGameData | UnknownRecord): void {
+  applySavedStateToGeneratedMap(data: SavedGameData): void {
     const { players, camera, resources, animals, runtime } = data as SavedGameData
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
     const { menu, controls } = this.map.context
@@ -627,7 +664,10 @@ export class MapGeneration {
     this.clearGeneratedGameplayState()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context) as unknown as PlayerLike
+      const p = new classMap[player.type](
+        { ...player, corpses: [], buildings: [], units: [] },
+        this.map.context
+      ) as unknown as PlayerLike
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -637,7 +677,9 @@ export class MapGeneration {
       this.map.context.scheduler.elapsedMs = Math.max(0, runtime?.elapsedMs ?? 0)
     }
 
-    this.map.resources = new Set(resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context))))
+    this.map.resources = new Set(
+      resources.map(resource => this.map.addChild(new Resource(resource as ResourceOptions, this.map.context)))
+    )
 
     controls.setCamera?.(camera.x, camera.y, true)
     menu.init?.()
@@ -645,7 +687,11 @@ export class MapGeneration {
 
     this.map.context.players.forEach((player, index) => {
       const { buildings, units, corpses } = players[index]
-      player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<typeof player.createBuilding>[0]))
+      player.buildings = (buildings || []).map(building =>
+        player.createBuilding({ ...building, skipBuiltEffects: true } as unknown as Parameters<
+          typeof player.createBuilding
+        >[0])
+      )
       player.units = (units || [])
         .map(unit => player.createUnit?.(unit as unknown as Parameters<NonNullable<typeof player.createUnit>>[0]))
         .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
@@ -654,7 +700,7 @@ export class MapGeneration {
         .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
     })
     // See generateFromJSON for why Gaia is narrowed like this.
-    const gaia = this.map.gaia as unknown as PlayerLike & { createAnimal: (options: UnknownRecord) => RuntimeEntity }
+    const gaia = this.map.gaia as unknown as PlayerLike & { createAnimal: (options: AnimalOptions) => RuntimeEntity }
     animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
 
     gaia.units.forEach(animal => processUnit(animal, this.map))
@@ -726,7 +772,11 @@ export class MapGeneration {
     }
   }
 
-  async generateMapAsync(positionsCountOverride: number | null = null, repeat: number = 0, options: UnknownRecord = {}): Promise<void> {
+  async generateMapAsync(
+    positionsCountOverride: number | null = null,
+    repeat: number = 0,
+    options: GenerateMapOptions = {}
+  ): Promise<void> {
     this.destroyGeneratedChildren()
     if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
     const positionsBySize: Record<number, number> = {
@@ -778,7 +828,9 @@ export class MapGeneration {
     this.map.totalCells = (this.map.size + 1) ** 2
   }
 
-  async stylishMap({ onProgress = async (_stage: string, _progress: number) => {} }: { onProgress?: ProgressCallback } = {}): Promise<void> {
+  async stylishMap({
+    onProgress = async (_stage: string, _progress: number) => {},
+  }: GenerateMapOptions = {}): Promise<void> {
     const {
       context: { menu, player },
     } = this.map
@@ -866,9 +918,7 @@ export class MapGeneration {
 
   async prepareTerrainForSavedState({
     onProgress = async (_stage: string, _progress: number) => {},
-  }: {
-    onProgress?: ProgressCallback
-  } = {}): Promise<void> {
+  }: GenerateMapOptions = {}): Promise<void> {
     const timings: Record<string, number> = this.map.generationTimings || {}
     const measure = <T>(name: string, callback: () => T): T => {
       const startedAt = performance.now()
@@ -950,9 +1000,13 @@ export class MapGeneration {
         const team = playersConfig?.[i]?.team ?? null
         const difficulty = playersConfig?.[i]?.difficulty ?? this.map.difficulty
         if (!i) {
-          players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context) as unknown as PlayerLike)
+          players.push(
+            new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context) as unknown as PlayerLike
+          )
         } else if (!this.map.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty }, context) as unknown as PlayerLike)
+          players.push(
+            new AI({ i: posI, j: posJ, age: 0, civ, color, team, difficulty }, context) as unknown as PlayerLike
+          )
         }
       }
     }
@@ -1034,7 +1088,7 @@ export class MapGeneration {
   async generateCellsAsync({
     onProgress = async (_stage: string, _progress: number) => {},
     terrain: preparedTerrain = null,
-  }: { onProgress?: ProgressCallback; terrain?: TerrainGrid | null } = {}): Promise<void> {
+  }: GenerateMapOptions = {}): Promise<void> {
     const z = 0
     this.map.grid = []
     this.map.invalidateReliefCoastDistances()
@@ -1074,7 +1128,7 @@ export class MapGeneration {
   }
 
   async generateFromBlueprint(
-    blueprintData: MapBlueprint | UnknownRecord,
+    blueprintData: MapBlueprint,
     { onProgress = async (_stage: string, _progress: number) => {} }: { onProgress?: ProgressCallback } = {}
   ): Promise<void> {
     const blueprint = blueprintData as MapBlueprint
@@ -1097,7 +1151,7 @@ export class MapGeneration {
             j,
             z: relief[i]?.[j] || 0,
             type: String(type),
-            definition: cellDefinitions[type] as UnknownRecord & { assets: string[] },
+            definition: cellDefinitions[type] as CellDefinition,
           },
           this.map.context as unknown as ConstructorParameters<typeof GenerationCell>[1]
         )
@@ -1128,7 +1182,7 @@ export class MapGeneration {
     this._loadBlueprintResources(blueprint)
   }
 
-  generateEditableFromBlueprint(blueprintData: MapBlueprint | UnknownRecord): void {
+  generateEditableFromBlueprint(blueprintData: MapBlueprint): void {
     const blueprint = blueprintData as MapBlueprint
     this.destroyGeneratedChildren()
     this._applyBlueprintMetadata(blueprint)
@@ -1578,8 +1632,8 @@ export class MapGeneration {
 
   // Gaia (the neutral "player" that owns wildlife) intentionally doesn't implement every
   // PlayerLike method — narrow to the one method used here, see other gaia casts above.
-  _gaiaCreateAnimal(options: UnknownRecord): void {
-    ;(this.map.gaia as unknown as { createAnimal: (options: UnknownRecord) => RuntimeEntity } | null)?.createAnimal(
+  _gaiaCreateAnimal(options: AnimalOptions): void {
+    ;(this.map.gaia as unknown as { createAnimal: (options: AnimalOptions) => RuntimeEntity } | null)?.createAnimal(
       options
     )
   }

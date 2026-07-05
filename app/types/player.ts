@@ -1,24 +1,25 @@
-import type { ResourceAmount, UnknownRecord } from './common'
+import type { ResourceAmount } from './common'
 import type { RuntimeCell } from './map'
-import type { RuntimeEntity, UnitEntity, BuildingEntity } from './entities'
+import type { RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from './config'
+import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 
 export interface VisionGridLike {
   size: number
   onViewed?: ((i: number, j: number) => void) | null
   index(i: number, j: number): number
   coordinates(index: number): [number, number]
-  addViewer(i: number, j: number, viewer: unknown): void
-  removeViewer(i: number, j: number, viewer: unknown): void
-  getViewers(i: number, j: number): ReadonlySet<unknown>
-  hasViewer(i: number, j: number, viewer: unknown): boolean
+  addViewer(i: number, j: number, viewer: VisionViewer): void
+  removeViewer(i: number, j: number, viewer: VisionViewer): void
+  getViewers(i: number, j: number): ReadonlySet<VisionViewerRef>
+  hasViewer(i: number, j: number, viewer: VisionViewer): boolean
   isViewed(i: number, j: number): boolean
   isVisible(i: number, j: number): boolean
   setViewed(i: number, j: number): boolean
   getKnownOccupant(i: number, j: number): RuntimeEntity | null
   setKnownOccupant(i: number, j: number, occupant: RuntimeEntity): void
-  restoreViewers(resolve: (label: string) => unknown): void
-  toJSON(): unknown
+  restoreViewers(resolve: (label: string) => VisionViewer | null): void
+  toJSON(): SerializedVisionGrid
 }
 
 export interface PlayerConfigLike {
@@ -45,7 +46,7 @@ export interface PlayerLike {
   stone: number
   gold: number
   population: number
-  population_max: number
+  populationMax: number
   isPlayed?: boolean
   views: VisionGridLike
   config: PlayerConfigLike
@@ -63,11 +64,13 @@ export interface PlayerLike {
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean
   createBuilding: (
-    options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
+    options: Partial<BuildingConfig> & { i: number; j: number; type: string; isBuilt?: boolean; skipBuiltEffects?: boolean }
   ) => BuildingEntity
   createUnit?: (options: Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }) => UnitEntity
+  getUnitExtraOptions?: (type: string) => UnitCreationExtra
+  unlockTechnology?: (type: string) => void
   spawnBuilding?: (
-    options: UnknownRecord & { i: number; j: number; type: string; isBuilt?: boolean }
+    options: Partial<BuildingConfig> & { i: number; j: number; type: string; isBuilt?: boolean }
   ) => BuildingEntity | undefined
   isBuildingEligible?: (type: string) => boolean
   unselectAll(): void
@@ -88,4 +91,3 @@ export interface PlayerLike {
 }
 
 export type PlacementOwner = PlayerLike
-

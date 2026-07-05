@@ -21,15 +21,18 @@ import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
-import type { UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
-import type { LooseRecord } from '../../types/common'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite } from '../../types/pixi'
 
-export type AnimalOptions = UnknownRecord & { i: number; j: number; type: string }
+export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
+export type AnimalDestination = RuntimeEntity | RuntimeCell
+export type AnimalMoveOptions = {
+  forceRepath?: boolean
+  movementSheet?: string
+}
 
 export class Animal extends Instance {
   animalInterface: AnimalInterface
@@ -39,16 +42,16 @@ export class Animal extends Instance {
   animalBehavior: AnimalBehavior
   declare sprite: InteractiveSprite
 
-  dest: LooseRecord | null
-  realDest: LooseRecord | null
-  previousDest: LooseRecord | null
-  path: LooseRecord[]
+  dest: AnimalDestination | null
+  realDest: Pick<AnimalDestination, 'i' | 'j'> | null
+  previousDest: AnimalDestination | null
+  path: RuntimeCell[]
   currentFrame!: number
   currentSheet!: string
   movementSheet?: string
   inactif!: boolean
   isFleeing!: boolean
-  visibleCells!: Set<unknown>
+  visibleCells!: Set<number>
   currentCell!: RuntimeCell
   quantity!: number
   totalQuantity!: number
@@ -62,6 +65,8 @@ export class Animal extends Instance {
   sight!: number
   runningSheet?: unknown
   strategy?: string
+  ambientMovement?: boolean
+  ambientWalkRange?: number
   rateOfFire!: number
   sounds?: UnitSounds
 
@@ -184,15 +189,17 @@ export class Animal extends Instance {
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
         if (
           getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
-          instancesDistance(
-            player.selectedBuilding,
-            this as Parameters<typeof instancesDistance>[1]
-          ) <= player.selectedBuilding.range
+          instancesDistance(player.selectedBuilding, this as Parameters<typeof instancesDistance>[1]) <=
+            player.selectedBuilding.range
         ) {
           player.selectedBuilding.attackAction?.(this)
           drawDestinationRectangle = true
         }
-      } else if ((playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) || map.revealEverything) && this.quantity > 0) {
+      } else if (
+        (playerCanSeeInstance(this as unknown as Parameters<typeof playerCanSeeInstance>[0], player) ||
+          map.revealEverything) &&
+        this.quantity > 0
+      ) {
         player.unselectAll()
         this.select()
         menu.setBottombar(this)
@@ -263,19 +270,19 @@ export class Animal extends Instance {
   hasPath(): boolean {
     return this.animalMovement.hasPath()
   }
-  setDest(dest: LooseRecord | null): void {
+  setDest(dest: AnimalDestination | null): void {
     return this.animalMovement.setDest(dest)
   }
-  setPath(path: LooseRecord[], sheet?: string): void {
+  setPath(path: RuntimeCell[], sheet?: string): void {
     return this.animalMovement.setPath(path, sheet)
   }
-  isAnimalAtDest(action: string | null, dest: LooseRecord | null): boolean {
+  isAnimalAtDest(action: string | null, dest: AnimalDestination | null): boolean {
     return this.animalMovement.isAnimalAtDest(action, dest)
   }
   destHasMoved(): boolean {
     return this.animalMovement.destHasMoved()
   }
-  sendTo(dest: LooseRecord | null, action?: string | null, options?: UnknownRecord): void {
+  sendTo(dest: AnimalDestination | null, action?: string | null, options?: AnimalMoveOptions): void {
     return this.animalMovement.sendTo(dest, action ?? null, options)
   }
   moveToPath(): void {

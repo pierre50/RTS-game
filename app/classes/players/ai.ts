@@ -14,12 +14,12 @@ import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import type { AIAge, AIBuildingLike, AIEntityLike, AIStrategyPlayerLike, AIStrategySnapshot } from '../../ai/types'
-import type { LooseRecord, UnknownRecord } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
-import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
 
 type EnemyMemory = {
-  instance: LooseRecord
+  instance: AIEntityLike
   label: string
   ownerLabel?: string
   family?: string
@@ -33,10 +33,10 @@ type EnemyMemory = {
 }
 
 type ThreatProfile = {
-  hostileUnits: LooseRecord[]
-  hostileMilitary: LooseRecord[]
-  hostileVillagers: LooseRecord[]
-  hostileAnimals: LooseRecord[]
+  hostileUnits: AIEntityLike[]
+  hostileMilitary: AIEntityLike[]
+  hostileVillagers: AIEntityLike[]
+  hostileAnimals: AIEntityLike[]
   hostilePower: number
   isNearHome: boolean
   isInVillageCore: boolean
@@ -51,16 +51,16 @@ type ThreatProfile = {
 }
 
 type StoredThreat = {
-  target: LooseRecord
+  target: AIEntityLike
   lastSeenAt: number
-  attacker: LooseRecord
+  attacker: AIEntityLike
   attackerFamily?: string
   attackerType: string
   count: number
 }
 
 type ActiveThreat = StoredThreat & {
-  hostiles: LooseRecord[]
+  hostiles: AIEntityLike[]
   profile: ThreatProfile
 }
 
@@ -70,7 +70,7 @@ type EnemyMemoryOptions = {
   visibleOnly?: boolean
 }
 
-type StrategySnapshotState = UnknownRecord & {
+type StrategySnapshotState = {
   map?: unknown
   villagers?: unknown
   maxVillagers?: unknown
@@ -87,30 +87,25 @@ type StrategySnapshotState = UnknownRecord & {
   notBuiltHouses?: unknown
 }
 
-type UnitExtraOptions = {
-  handleSetDest?: (target: LooseRecord) => void
-  handleIsAttacked?: (attacker: LooseRecord, unit: LooseRecord) => boolean
-}
-
 const DEBUG = false
 
 export class AI extends Player {
-  foundedTrees!: Set<LooseRecord>
-  foundedBerrybushs!: Set<LooseRecord>
-  foundedGolds!: Set<LooseRecord>
-  foundedStones!: Set<LooseRecord>
-  foundedAnimals!: Set<LooseRecord>
-  foundedDeadAnimals!: Set<LooseRecord>
-  foundedFish!: Set<LooseRecord>
-  foundedEnemyBuildings!: Set<LooseRecord>
-  foundedEnemyUnits!: Set<LooseRecord>
+  foundedTrees!: Set<AIEntityLike>
+  foundedBerrybushs!: Set<AIEntityLike>
+  foundedGolds!: Set<AIEntityLike>
+  foundedStones!: Set<AIEntityLike>
+  foundedAnimals!: Set<AIEntityLike>
+  foundedDeadAnimals!: Set<AIEntityLike>
+  foundedFish!: Set<AIEntityLike>
+  foundedEnemyBuildings!: Set<AIEntityLike>
+  foundedEnemyUnits!: Set<AIEntityLike>
   enemyUnitMemory!: Map<string, EnemyMemory>
   enemyBuildingMemory!: Map<string, EnemyMemory>
   difficulty!: string
   strategy!: AIStrategy
   economy!: AIEconomy
   stepDelay!: number
-  scout!: LooseRecord | null
+  scout!: AIEntityLike | null
   phase!: AIStrategyPlayerLike['phase']
   threatenedTargets!: Map<string, StoredThreat>
   lastAttackWaveAt!: number
@@ -166,7 +161,7 @@ export class AI extends Player {
     return this.context.scheduler?.elapsedMs || 0
   }
 
-  rememberEnemy(enemy: LooseRecord) {
+  rememberEnemy(enemy: AIEntityLike) {
     if (!enemy?.label || !this.isEnemy(enemy.owner)) return
     const memoryMap = enemy.family === FAMILY_TYPES.building ? this.enemyBuildingMemory : this.enemyUnitMemory
     const visible = this.views.isVisible(enemy.i, enemy.j)
@@ -274,10 +269,10 @@ export class AI extends Player {
     }
   }
 
-  getVisibleHostilesNear(target: LooseRecord, radius = 10): LooseRecord[] {
+  getVisibleHostilesNear(target: AIEntityLike, radius = 10): AIEntityLike[] {
     return findInstancesInSight(
       { i: target.i, j: target.j, sight: radius, context: this.context } as unknown as Parameters<typeof findInstancesInSight>[0],
-      (instance: LooseRecord) => {
+      ((instance: AIEntityLike) => {
         if (!instance || instance === target || instance.isDead || instance.isDestroyed || (instance.hitPoints ?? 0) <= 0) {
           return false
         }
@@ -285,15 +280,15 @@ export class AI extends Player {
           return (
             instance.strategy === 'attack' ||
             instance.action === ACTION_TYPES.attack ||
-            instance.dest?.owner?.label === this.label
+            (instance.dest && 'owner' in instance.dest && instance.dest.owner?.label === this.label)
           )
         }
         return this.isEnemy(instance.owner)
-      }
-    )
+      }) as Parameters<typeof findInstancesInSight>[1]
+    ) as AIEntityLike[]
   }
 
-  isBuildingThreatened(building: LooseRecord) {
+  isBuildingThreatened(building: AIEntityLike) {
     const threat = this.threatenedTargets.get(building?.label)
     if (!threat) return false
     if (!building || building.isDead || building.isDestroyed) return false
@@ -326,13 +321,13 @@ export class AI extends Player {
     return fallbackVillager || null
   }
 
-  getThreatProfile(threat: StoredThreat & { hostiles: LooseRecord[] }): ThreatProfile {
+  getThreatProfile(threat: StoredThreat & { hostiles: AIEntityLike[] }): ThreatProfile {
     const military = this.strategy.military
     const homeAnchor = this.getHomeAnchor()
-    const hostileUnits = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.unit)
-    const hostileMilitary = hostileUnits.filter((hostile: LooseRecord) => hostile.type !== UNIT_TYPES.villager)
-    const hostileVillagers = hostileUnits.filter((hostile: LooseRecord) => hostile.type === UNIT_TYPES.villager)
-    const hostileAnimals = threat.hostiles.filter((hostile: LooseRecord) => hostile.family === FAMILY_TYPES.animal)
+    const hostileUnits = threat.hostiles.filter((hostile: AIEntityLike) => hostile.family === FAMILY_TYPES.unit)
+    const hostileMilitary = hostileUnits.filter((hostile: AIEntityLike) => hostile.type !== UNIT_TYPES.villager)
+    const hostileVillagers = hostileUnits.filter((hostile: AIEntityLike) => hostile.type === UNIT_TYPES.villager)
+    const hostileAnimals = threat.hostiles.filter((hostile: AIEntityLike) => hostile.family === FAMILY_TYPES.animal)
     const hostilePower = military.getGroupCombatPower(threat.hostiles as unknown as AIEntityLike[])
     const targetDistanceToHome = homeAnchor
       ? Math.abs(threat.target.i - homeAnchor.i) + Math.abs(threat.target.j - homeAnchor.j)
@@ -416,13 +411,13 @@ export class AI extends Player {
     return 0
   }
 
-  getRecallableAssaultMilitary(assaultMilitary: LooseRecord[], assignedMilitary: Set<string>, threat: ActiveThreat) {
+  getRecallableAssaultMilitary(assaultMilitary: AIEntityLike[], assignedMilitary: Set<string>, threat: ActiveThreat) {
     const recallMaxRatio = this.difficultyConfig.assaultRecallMaxRatio || 0.5
     const minAssaultGroup = Math.max(2, Math.ceil(this.difficultyConfig.attackThreshold * 0.6))
     const availableAssault = assaultMilitary
-      .filter((unit: LooseRecord) => unit.label && !assignedMilitary.has(unit.label))
+      .filter((unit: AIEntityLike) => unit.label && !assignedMilitary.has(unit.label))
       .sort(
-        (a: LooseRecord, b: LooseRecord) =>
+        (a: AIEntityLike, b: AIEntityLike) =>
           Math.abs(a.i - threat.target.i) +
           Math.abs(a.j - threat.target.j) -
           (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
@@ -442,9 +437,9 @@ export class AI extends Player {
     assaultMilitary,
     debug = false,
   }: {
-    villagers: LooseRecord[]
-    waitingMilitary: LooseRecord[]
-    assaultMilitary: LooseRecord[]
+    villagers: AIEntityLike[]
+    waitingMilitary: AIEntityLike[]
+    assaultMilitary: AIEntityLike[]
     debug?: boolean
   }) {
     const threats = this.getActiveThreats()
@@ -478,16 +473,16 @@ export class AI extends Player {
               : 10
 
       const nearbyMilitary = waitingMilitary
-        .filter((unit: LooseRecord) => unit.label && !assignedMilitary.has(unit.label))
+        .filter((unit: AIEntityLike) => unit.label && !assignedMilitary.has(unit.label))
         .sort(
-          (a: LooseRecord, b: LooseRecord) =>
+          (a: AIEntityLike, b: AIEntityLike) =>
             Math.abs(a.i - threat.target.i) +
             Math.abs(a.j - threat.target.j) -
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
       const desiredDefensePower = this.getDefensePowerNeed(profile)
-      const chosenMilitary: LooseRecord[] = []
+      const chosenMilitary: AIEntityLike[] = []
       let defensePower = 0
 
       for (const soldier of nearbyMilitary) {
@@ -507,24 +502,26 @@ export class AI extends Player {
 
       for (const soldier of chosenMilitary) {
         assignedMilitary.add(soldier.label)
-        soldier.sendTo(primaryHostile, ACTION_TYPES.attack)
+        soldier.sendTo?.(primaryHostile, ACTION_TYPES.attack)
       }
 
       const nearbyVillagers = villagers
-        .filter((villager: LooseRecord) => {
+        .filter((villager: AIEntityLike) => {
           if (assignedVillagers.has(villager.label) || villager === this.scout || villager.isDead) return false
           if ((villager.hitPoints ?? 0) <= (villager.totalHitPoints ?? 1) * 0.35) return false
           const distance = Math.abs(villager.i - threat.target.i) + Math.abs(villager.j - threat.target.j)
           return distance <= responseRadius
         })
         .sort(
-          (a: LooseRecord, b: LooseRecord) =>
+          (a: AIEntityLike, b: AIEntityLike) =>
             Math.abs(a.i - threat.target.i) +
             Math.abs(a.j - threat.target.j) -
             (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
         )
 
-      const buildersOnSite = nearbyVillagers.filter((villager: LooseRecord) => villager.dest?.label === threat.target.label)
+      const buildersOnSite = nearbyVillagers.filter(
+        (villager: AIEntityLike) => villager.dest && 'label' in villager.dest && villager.dest.label === threat.target.label
+      )
       let villagerDefenseCount = 0
 
       if (!lethalThreat) {
@@ -555,26 +552,29 @@ export class AI extends Player {
       for (const villager of chosenVillagers) {
         assignedVillagers.add(villager.label)
         if (primaryHostile.family === FAMILY_TYPES.animal) {
-          villager.sendToHunt(primaryHostile)
+          villager.sendToHunt?.(primaryHostile)
         } else {
-          villager.sendToAttack(primaryHostile)
+          villager.sendToAttack?.(primaryHostile)
         }
       }
 
-      const evacVillagers = buildersOnSite.filter((villager: LooseRecord) => villager.label && !assignedVillagers.has(villager.label))
+      const evacVillagers = buildersOnSite.filter((villager: AIEntityLike) => villager.label && !assignedVillagers.has(villager.label))
       const shouldEvacuateNearbyVillagers = lethalThreat && (profile.isNearHome || profile.isDirectVillageAssault)
       const nearbyWorkersToEvacuate = shouldEvacuateNearbyVillagers
         ? nearbyVillagers.filter(
-            (villager: LooseRecord) => villager.label && !assignedVillagers.has(villager.label) && villager.dest?.label !== threat.target.label
+            (villager: AIEntityLike) =>
+              villager.label &&
+              !assignedVillagers.has(villager.label) &&
+              (!villager.dest || !('label' in villager.dest) || villager.dest.label !== threat.target.label)
           )
         : []
       for (const villager of nearbyWorkersToEvacuate) {
         assignedVillagers.add(villager.label)
-        villager.runaway(primaryHostile)
+        villager.runaway?.(primaryHostile)
       }
       for (const villager of evacVillagers) {
         assignedVillagers.add(villager.label)
-        villager.runaway(primaryHostile)
+        villager.runaway?.(primaryHostile)
       }
 
       if (debug) {
@@ -620,7 +620,7 @@ export class AI extends Player {
     )
   }
 
-  hasNotReachBuildingLimit(buildingType: string, buildings: LooseRecord[]) {
+  hasNotReachBuildingLimit(buildingType: string, buildings: AIEntityLike[]) {
     const currentBuildings = buildings || []
     return (
       !this.maxBuildingByAge[this.age as AIAge][buildingType] ||
@@ -668,31 +668,31 @@ export class AI extends Player {
   // Remove depleted resources and destroyed buildings from tracked Sets
   cleanupSets() {
     for (const r of this.foundedTrees) {
-      if (r.quantity <= 0 || r.isDead) this.foundedTrees.delete(r)
+      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedTrees.delete(r)
     }
     for (const r of this.foundedBerrybushs) {
-      if (r.quantity <= 0 || r.isDead) this.foundedBerrybushs.delete(r)
+      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedBerrybushs.delete(r)
     }
     for (const r of this.foundedStones) {
-      if (r.quantity <= 0 || r.isDead) this.foundedStones.delete(r)
+      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedStones.delete(r)
     }
     for (const r of this.foundedGolds) {
-      if (r.quantity <= 0 || r.isDead) this.foundedGolds.delete(r)
+      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedGolds.delete(r)
     }
     for (const a of this.foundedAnimals) {
-      if (a.isDead || a.isDestroyed || a.hitPoints <= 0) this.foundedAnimals.delete(a)
+      if (a.isDead || a.isDestroyed || (a.hitPoints ?? 0) <= 0) this.foundedAnimals.delete(a)
     }
     for (const a of this.foundedDeadAnimals) {
-      if (a.isDestroyed || a.quantity <= 0) this.foundedDeadAnimals.delete(a)
+      if (a.isDestroyed || (a.quantity ?? 0) <= 0) this.foundedDeadAnimals.delete(a)
     }
     for (const r of this.foundedFish) {
-      if (r.quantity <= 0 || r.isDead) this.foundedFish.delete(r)
+      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedFish.delete(r)
     }
     for (const b of this.foundedEnemyBuildings) {
       if (b.isDead || b.isDestroyed || !this.isEnemy(b.owner)) this.foundedEnemyBuildings.delete(b)
     }
     for (const u of this.foundedEnemyUnits) {
-      if (u.isDead || u.isDestroyed || u.hitPoints <= 0 || !this.isEnemy(u.owner)) this.foundedEnemyUnits.delete(u)
+      if (u.isDead || u.isDestroyed || (u.hitPoints ?? 0) <= 0 || !this.isEnemy(u.owner)) this.foundedEnemyUnits.delete(u)
     }
     this._refreshEnemyMemory(this.enemyBuildingMemory)
     this._refreshEnemyMemory(this.enemyUnitMemory)
@@ -700,12 +700,14 @@ export class AI extends Player {
 
   getUnitExtraOptions(type: string) {
     const me = this
-    const options: UnitExtraOptions = {
-      handleSetDest: (target: LooseRecord) => {
+    const options: UnitCreationExtra = {
+      handleSetDest: (target: RuntimeEntity | RuntimeCell) => {
+        if (!('family' in target)) return
+        const aiTarget = target as unknown as AIEntityLike
         const { map } = me.context
-        if (type === UNIT_TYPES.villager && target.family === FAMILY_TYPES.resource) {
+        if (type === UNIT_TYPES.villager && aiTarget.family === FAMILY_TYPES.resource) {
           const buildingType =
-            target.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
+            aiTarget.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
           const buildings = me.buildingsByTypes([buildingType])
           const reserve = me.strategy.getAgeUpReserve()
           if (
@@ -716,12 +718,12 @@ export class AI extends Player {
             ) &&
             me.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
-            const closestBuilding = getClosestInstance(target as unknown as Parameters<typeof getClosestInstance>[0], [
+            const closestBuilding = getClosestInstance(aiTarget as unknown as Parameters<typeof getClosestInstance>[0], [
               ...buildings,
               ...me.buildingsByTypes([BUILDING_TYPES.townCenter]),
             ] as unknown as Parameters<typeof getClosestInstance>[1])
-            if (!closestBuilding || instancesDistance(closestBuilding, target as unknown as Parameters<typeof instancesDistance>[1]) > 5) {
-              const pos = getPositionInGridAroundInstance(target as unknown as Parameters<typeof getPositionInGridAroundInstance>[0], map.grid, [1, 5], 1)
+            if (!closestBuilding || instancesDistance(closestBuilding, aiTarget as unknown as Parameters<typeof instancesDistance>[1]) > 5) {
+              const pos = getPositionInGridAroundInstance(aiTarget as unknown as Parameters<typeof getPositionInGridAroundInstance>[0], map.grid, [1, 5], 1)
               if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
                 if (DEBUG) console.log(`Building ${buildingType} at:`, pos)
               }
@@ -731,24 +733,26 @@ export class AI extends Player {
       },
     }
     if (type === UNIT_TYPES.villager) {
-      options.handleIsAttacked = (attacker: LooseRecord, unit: LooseRecord) => {
-        const currentDest = unit.dest
+      options.handleIsAttacked = (attacker: RuntimeEntity, unit: UnitEntity) => {
+        const aiAttacker = attacker as unknown as AIEntityLike
+        const aiUnit = unit as unknown as AIEntityLike
+        const currentDest = aiUnit.dest
 
-        if (attacker.family !== FAMILY_TYPES.animal) {
-          unit.runaway(attacker)
+        if (aiAttacker.family !== FAMILY_TYPES.animal) {
+          aiUnit.runaway?.(aiAttacker)
           return true
         }
 
-        if (attacker.meleeAttack) {
-          const unitHpRatio = unit.hitPoints / unit.totalHitPoints
-          const attackerHpRatio = attacker.hitPoints / attacker.totalHitPoints
+        if (aiAttacker.meleeAttack) {
+          const unitHpRatio = (aiUnit.hitPoints ?? 0) / (aiUnit.totalHitPoints ?? 1)
+          const attackerHpRatio = (aiAttacker.hitPoints ?? 0) / (aiAttacker.totalHitPoints ?? 1)
           const shouldRunAway = unitHpRatio <= 0.3 && attackerHpRatio > 0.4
 
           if (shouldRunAway) {
-            unit.runaway(attacker)
+            aiUnit.runaway?.(aiAttacker)
           } else {
-            unit.sendToHunt(attacker)
-            unit.previousDest = currentDest
+            aiUnit.sendToHunt?.(aiAttacker)
+            aiUnit.previousDest = currentDest
           }
           return true
         }
@@ -792,7 +796,7 @@ export class AI extends Player {
     if (DEBUG) {
       console.log('----Step started')
       console.log(
-        `Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.population_max}`
+        `Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.populationMax}`
       )
     }
 
