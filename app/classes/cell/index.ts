@@ -38,10 +38,7 @@ type SavedFogSprite = FogSpriteMemory & {
   colorSheet?: string
 }
 
-type CellSprite = Sprite & {
-  allowMove?: boolean
-  allowClick?: boolean
-}
+type CellSprite = Sprite
 
 export class Cell extends Container {
   context: CellContext
@@ -68,8 +65,6 @@ export class Cell extends Container {
   sprite: CellSprite | null
   cellFog: CellFog | null
   cellTerrain: CellTerrain
-  allowMove?: boolean
-  allowClick?: boolean
   _terrainRenderResourcesReleased?: boolean
 
   constructor(options: CellOptions, context: CellContext) {
@@ -127,9 +122,7 @@ export class Cell extends Container {
       Math.floor(texture.height / 2) / texture.height
     )
     this.sprite.roundPixels = true
-    this.sprite.allowMove = false
     this.sprite.eventMode = 'none'
-    this.sprite.allowClick = false
     this.addChild(this.sprite)
 
     this.cellFog = options.skipFog ? null : new CellFog(this as unknown as ConstructorParameters<typeof CellFog>[0])
@@ -147,8 +140,6 @@ export class Cell extends Container {
     }
 
     this.eventMode = 'none'
-    this.allowMove = false
-    this.allowClick = false
   }
 
   _updateChild(instance: RuntimeEntity): void {

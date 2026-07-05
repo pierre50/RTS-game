@@ -110,8 +110,6 @@ export class SelectionManager {
     const pointerPos = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
     pointer.x = pointerPos.x
     pointer.y = pointerPos.y
-    pointer.allowMove = false
-    pointer.allowClick = false
     pointer.eventMode = 'auto'
     pointer.roundPixels = true
     pointer.onComplete = () => {

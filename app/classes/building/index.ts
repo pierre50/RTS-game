@@ -39,7 +39,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
-type BuildingSprite = Sprite & { allowMove?: boolean; allowClick?: boolean; _baseColorTextureKey?: string }
+type BuildingSprite = Sprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
 
@@ -73,7 +73,6 @@ export class Building extends Instance {
   technologies?: string[]
   interface!: EntityInterfaceLike
   assetType?: string
-  allowMove!: boolean
   accept?: string[]
   visibilityTimeout?: unknown
   sounds?: BuildingSounds
@@ -132,7 +131,7 @@ export class Building extends Instance {
     }
     const texture = getTexture(spriteSheet as string, Assets) as BuildingTexture
     this.sprite = Sprite.from(texture)
-    const interactiveSprite = this.sprite as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
     interactiveSprite.updateAnchor = true
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.hitArea = texture.hitArea
@@ -177,9 +176,7 @@ export class Building extends Instance {
       }
     }) as Parameters<typeof getPlainCellsAroundPoint>[4])
 
-    this.allowMove = false
     if (this.sprite) {
-      interactiveSprite.allowMove = false
       this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 

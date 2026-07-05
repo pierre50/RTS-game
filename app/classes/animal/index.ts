@@ -58,7 +58,6 @@ export class Animal extends Instance {
   assets!: Record<string, string>
   standingSheet!: unknown
   interface!: { info: (element: HTMLElement) => void }
-  allowMove!: boolean
   loop?: boolean
   huntRange?: number
   speed!: number
@@ -130,16 +129,13 @@ export class Animal extends Instance {
       },
     }
 
-    this.allowMove = false
     this.eventMode = 'static'
     this.sprite = new AnimatedSprite(
       getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
     )
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
-    this.sprite.allowMove = false
     this.sprite.eventMode = 'auto'
-    this.sprite.allowClick = false
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
     if (this.isDead) {

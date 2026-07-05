@@ -1,7 +1,6 @@
 export {
   aiInfo,
   performanceReport,
-  toggleAiDebug,
   toggleCoordsDebug,
   toggleGridDebug,
   togglePathDebug,

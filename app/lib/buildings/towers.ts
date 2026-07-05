@@ -27,7 +27,6 @@ type TowerBuilding = {
   rateOfFire?: number
   sight?: number
   sprite?: {
-    _baseColorTextureKey?: string
     anchor: { set: (x: number, y: number) => void }
     texture: Texture
     [key: string]: unknown
@@ -72,7 +71,6 @@ function refreshTower(tower?: TowerBuilding | null): void {
 
   const color = tower.getChildByLabel(LABEL_TYPES.color)
   if (color) color.destroy()
-  delete tower.sprite._baseColorTextureKey
   changeSpriteColorDirectly(
     tower.sprite as unknown as Parameters<typeof changeSpriteColorDirectly>[0],
     tower.owner.color ?? 'blue'

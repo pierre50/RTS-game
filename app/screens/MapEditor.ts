@@ -85,7 +85,6 @@ export default class MapEditor extends Container {
       player: null,
       players: [],
       paused: false,
-      aiPaused: true,
       pause() {},
       resume() {},
       restart() {},
@@ -1051,8 +1050,6 @@ export default class MapEditor extends Container {
 
     const resource = new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.context)
     resource.eventMode = 'none'
-    resource.allowClick = false
-    resource.allowMove = false
     if (resource.sprite) {
       resource.sprite.eventMode = 'none'
     }
@@ -1148,12 +1145,10 @@ export default class MapEditor extends Container {
     const texture = spritesheet?.textures?.[`000_${randomSpritesheet}.png`]
     if (!texture) return
 
-    const floor = Sprite.from(texture) as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    const floor = Sprite.from(texture) as Sprite & { updateAnchor?: boolean }
     floor.label = LABEL_TYPES.floor
     floor.roundPixels = true
-    floor.allowMove = false
     floor.eventMode = 'none'
-    floor.allowClick = false
     floor.updateAnchor = true
     floor.zIndex = 1
     ;(cell as EditableCell).addChild(floor)
@@ -1165,12 +1160,10 @@ export default class MapEditor extends Container {
     const texture = spritesheet?.textures?.[`000_${randomSpritesheet}.png`]
     if (!texture) return
 
-    const set = Sprite.from(texture) as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    const set = Sprite.from(texture) as Sprite & { updateAnchor?: boolean }
     set.label = LABEL_TYPES.set
     set.roundPixels = true
-    set.allowMove = false
     set.eventMode = 'none'
-    set.allowClick = false
     set.updateAnchor = true
     set.zIndex = 11
     ;(cell as EditableCell).addChild(set)

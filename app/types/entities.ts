@@ -135,7 +135,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   corpseSheet?: unknown
   dyingSheet?: unknown
   loop?: boolean
-  allowMove?: boolean
   eventMode?: string
   sailSheet?: string
   sailSpritesheet?: { textures: Record<string, unknown>; data: { animationSpeed?: number } }

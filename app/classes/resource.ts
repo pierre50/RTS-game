@@ -37,8 +37,6 @@ export class Resource extends Instance {
   interface: EntityInterfaceLike
   declare sprite: Sprite | AnimatedSprite
   totalQuantity!: number
-  allowClick!: boolean
-  allowMove!: boolean
   isAnimated?: boolean
   assets!: string | string[] | Record<string, unknown>
   textureName!: string
@@ -79,8 +77,6 @@ export class Resource extends Instance {
     cell.has = this
 
     this.eventMode = 'auto'
-    this.allowClick = false
-    this.allowMove = false
 
     this.interface = {
       info: (element: HTMLElement) => {
@@ -116,11 +112,10 @@ export class Resource extends Instance {
         spritesheet.data.frames[textureFile].hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
     }
 
-    const interactiveSprite = this.sprite as Sprite & { allowMove?: boolean; allowClick?: boolean; updateAnchor?: boolean }
+    const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
     interactiveSprite.updateAnchor = true
     interactiveSprite.label = LABEL_TYPES.sprite
     if (this.sprite) {
-      interactiveSprite.allowMove = false
       interactiveSprite.eventMode = 'static'
       interactiveSprite.roundPixels = true
 

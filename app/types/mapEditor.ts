@@ -58,5 +58,4 @@ export interface MapEditorContextLike extends GameContextLike {
   editorConfig: { players: EditorPlayerConfig[] }
   editorState: MapEditorUiState
   hud: MapEditorHudLike | null
-  aiPaused: boolean
 }

@@ -53,7 +53,7 @@ type RuntimeProjectile = ProjectileOptions & {
   fullCircleStartDegree?: number
 }
 type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
-type ProjectileSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
+type ProjectileSprite = AnimatedSprite
 
 function getDirectionalFrameIndex(projectile: RuntimeProjectile, direction: string) {
   if (Array.isArray(projectile.directionalFrameOrder)) {
@@ -192,9 +192,7 @@ export class Projectile extends Container {
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
     sprite.label = LABEL_TYPES.sprite
-    sprite.allowMove = false
     sprite.eventMode = 'none'
-    sprite.allowClick = false
     sprite.roundPixels = true
     this.addChild(sprite)
     this.updateTrajectoryVisual()
@@ -365,9 +363,7 @@ export class Projectile extends Container {
     bindAnimatedSpriteToTicker(sprite, this.context.app)
     sprite.updateAnchor = true
     sprite.label = LABEL_TYPES.sprite
-    sprite.allowMove = false
     sprite.eventMode = 'none'
-    sprite.allowClick = false
     sprite.roundPixels = true
     sprite.loop = false
     sprite.x = x

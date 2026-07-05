@@ -109,11 +109,7 @@ type MapGenerationMap = RuntimeMap & {
   bakeTerrainToChunks(): void
   getChildByLabel(label: string): RuntimeEntity | null
 }
-// Pixi's Sprite type doesn't know about these app-specific interaction flags, which are
-// set directly on decorative sprites (floor/rock/water sets) added to generation cells.
 type SetSprite = Sprite & {
-  allowMove?: boolean
-  allowClick?: boolean
   updateAnchor?: boolean
 }
 type ResourceDefinition = {
@@ -1647,9 +1643,7 @@ export class MapGeneration {
     const set: SetSprite = Sprite.from(texture)
     set.label = LABEL_TYPES.set
     set.roundPixels = true
-    set.allowMove = false
     set.eventMode = 'none'
-    set.allowClick = false
     set.updateAnchor = true
     set.zIndex = 2
     cell.addChild?.(set)
@@ -1695,9 +1689,7 @@ export class MapGeneration {
             const floor: SetSprite = Sprite.from(texture)
             floor.label = LABEL_TYPES.floor
             floor.roundPixels = true
-            floor.allowMove = false
             floor.eventMode = 'none'
-            floor.allowClick = false
             floor.updateAnchor = true
             floor.zIndex = 1
             cell.addChild?.(floor)
@@ -1713,9 +1705,7 @@ export class MapGeneration {
                   const rock: SetSprite = Sprite.from(texture)
                   rock.label = LABEL_TYPES.set
                   rock.roundPixels = true
-                  rock.allowMove = false
                   rock.eventMode = 'none'
-                  rock.allowClick = false
                   rock.updateAnchor = true
                   rock.zIndex = 2
                   cell.addChild?.(rock)
@@ -1768,9 +1758,7 @@ export class MapGeneration {
             const floor: SetSprite = Sprite.from(texture)
             floor.label = LABEL_TYPES.floor
             floor.roundPixels = true
-            floor.allowMove = false
             floor.eventMode = 'none'
-            floor.allowClick = false
             floor.updateAnchor = true
             floor.zIndex = 1
             cell.addChild?.(floor)

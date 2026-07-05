@@ -118,7 +118,6 @@ export type DevConsoleContext = {
     _tasks?: { size: number }
     timeScale?: number
   }
-  aiPaused?: boolean
   debugAiInfoTargetIndex?: number | null
 }
 

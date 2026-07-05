@@ -34,9 +34,9 @@ import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 import type { Texture } from 'pixi.js'
 
-type RuntimeAnimatedSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
-type RuntimeContainer = Container & { allowMove?: boolean; allowClick?: boolean }
-type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number }; _baseColorTextureKey?: string }
+type RuntimeAnimatedSprite = AnimatedSprite
+type RuntimeContainer = Container
+type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 
 export class BuildingLifecycle {
   building: Building
@@ -99,7 +99,6 @@ export class BuildingLifecycle {
 
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()
-    delete building.sprite._baseColorTextureKey
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     if (isWall(building)) updateWallAndNeighbours(building)
 
@@ -109,8 +108,6 @@ export class BuildingLifecycle {
         const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
         spriteFire.label = LABEL_TYPES.deco
-        spriteFire.allowMove = false
-        spriteFire.allowClick = false
         spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
         spriteFire.x = 10
@@ -138,8 +135,6 @@ export class BuildingLifecycle {
     } else {
       const newFire = new Container() as RuntimeContainer
       newFire.label = LABEL_TYPES.fire
-      newFire.allowMove = false
-      newFire.allowClick = false
       newFire.eventMode = 'none'
       let poses: number[][] = [[0, 0]]
       if (building.size === 3) {
@@ -153,8 +148,6 @@ export class BuildingLifecycle {
       for (let i = 0; i < poses.length; i++) {
         const spriteFire = new AnimatedSprite(getAnimationFrames(spritesheetFire.textures) as Texture[]) as RuntimeAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
-        spriteFire.allowMove = false
-        spriteFire.allowClick = false
         spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
         spriteFire.x = poses[i][0]
@@ -305,9 +298,7 @@ export class BuildingLifecycle {
       rubbleSheet = '000_358'
     }
     building.sprite.texture = getTexture(rubbleSheet as string, Assets)
-    building.sprite.allowMove = false
     building.sprite.eventMode = 'none'
-    building.sprite.allowClick = false
     building.zIndex--
     if (building.type === BUILDING_TYPES.farm) {
       changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')

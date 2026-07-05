@@ -65,8 +65,6 @@ export default class Map extends Container {
   renderChunks: RenderChunk[]
   _random: () => number
   totalCells: number
-  allowMove: boolean
-  allowClick: boolean
   mapGeneration: MapGeneration
   mapResources: MapResources
   mapTerrain: MapTerrain
@@ -122,8 +120,6 @@ export default class Map extends Container {
     this._random = Math.random
 
     this.eventMode = 'auto'
-    this.allowMove = false
-    this.allowClick = false
     this.totalCells = 0
 
     this.mapGeneration = new MapGeneration(this as unknown as ConstructorParameters<typeof MapGeneration>[0])

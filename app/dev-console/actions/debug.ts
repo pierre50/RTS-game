@@ -202,7 +202,6 @@ function ensurePerfOverlay(context: DevConsoleContext): void {
     `Resources ${map.resources.size}`,
     `Tasks ${schedulerTasks}`,
     `Speed ${speed}x`,
-    `AI ${context.aiPaused ? 'paused' : 'running'}`,
     `Scheduler ${schedulerTick?.averageMs.toFixed(2) || '0.00'}ms avg | ${schedulerTick?.maxMs.toFixed(2) || '0.00'}ms max`,
     `Move ${unitMove?.averageMs.toFixed(2) || '0.00'}ms avg | ${unitMove?.maxMs.toFixed(2) || '0.00'}ms max`,
     `Vision ${visibility?.averageMs.toFixed(2) || '0.00'}ms avg | ${visibility?.maxMs.toFixed(2) || '0.00'}ms max`,
@@ -414,12 +413,6 @@ export function togglePerfDebug(context: DevConsoleContext, value: string): Comm
   map._debugPerfTicker = () => ensurePerfOverlay(context)
   app?.ticker.add(map._debugPerfTicker)
   return { ok: true, message: 'Perf debug: on' }
-}
-
-export function toggleAiDebug(context: DevConsoleContext, value: string): CommandResult {
-  const pauseAI = value === 'pause' ? true : value === 'resume' ? false : !context.aiPaused
-  context.aiPaused = pauseAI
-  return { ok: true, message: `AI: ${pauseAI ? 'paused' : 'running'}` }
 }
 
 export function aiInfo(context: DevConsoleContext, value: string): CommandResult {

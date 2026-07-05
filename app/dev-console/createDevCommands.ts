@@ -18,7 +18,6 @@ import {
   setCiv,
   spawnBuilding,
   spawnUnits,
-  toggleAiDebug,
   toggleFog,
   toggleCoordsDebug,
   toggleGridDebug,
@@ -251,14 +250,6 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Print or reset frame, pathfinding, AI and fog timings',
     complete: () => ['reset'],
     run: ([value], context) => performanceReport(context, value),
-  })
-
-  registry.register({
-    name: 'ai',
-    usage: 'ai [pause|resume]',
-    describe: 'Pause or resume AI decisions',
-    complete: () => ['pause', 'resume'],
-    run: ([value], context) => toggleAiDebug(context, value),
   })
 
   registry.register({

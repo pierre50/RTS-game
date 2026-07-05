@@ -61,8 +61,6 @@ export default class Controls extends Container implements ControlsLike {
   keysPressed: Record<string, boolean>
   keyPressedCount: number
   keySpeed: number
-  allowMove: boolean
-  allowClick: boolean
   mouseBuilding: ControlsLike['mouseBuilding']
   mouseRectangle: SelectionRectangle | null | undefined
   mouseTouch: PointerPoint | null | undefined
@@ -115,8 +113,6 @@ export default class Controls extends Container implements ControlsLike {
     this.keyPressedCount = 0
     this.keySpeed = 0
     this.eventMode = 'auto'
-    this.allowMove = false
-    this.allowClick = false
     this.mouseRectangle = undefined
     this.mouseTouch = undefined
     this.mouseDrag = false

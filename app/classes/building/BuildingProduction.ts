@@ -234,7 +234,6 @@ export class BuildingProduction {
     building.sprite.anchor.set(building.sprite.texture.defaultAnchor!.x, building.sprite.texture.defaultAnchor!.y)
     const color = building.getChildByLabel(LABEL_TYPES.color)
     color?.destroy()
-    delete building.sprite._baseColorTextureKey
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
   }
 

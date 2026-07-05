@@ -52,8 +52,6 @@ export class RallyPointController {
     bindAnimatedSpriteToTicker(flag, this.controls.context.app)
     flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
     if (flag.texture.defaultAnchor) flag.anchor.set(flag.texture.defaultAnchor.x, flag.texture.defaultAnchor.y)
-    flag.allowMove = false
-    flag.allowClick = false
     flag.eventMode = 'none'
     flag.roundPixels = true
     flag.play()

@@ -8,15 +8,18 @@
 .debug-overlay {
   position: fixed;
   z-index: 9999;
-  padding: 5px 8px;
+  max-width: min(520px, calc(100vw - 20px));
+  padding: 8px 10px;
   color: var(--text-color-white);
-  font: bold 13px monospace;
-  line-height: 1.25;
-  white-space: pre;
+  font: bold 12px monospace;
+  line-height: 1.35;
+  white-space: pre-wrap;
   text-shadow: var(--text-shadow-none);
   pointer-events: none;
-  background: var(--surface-dark-heavy);
+  background: var(--debug-overlay-bg);
+  border: 1px solid var(--debug-overlay-border);
   border-radius: 3px;
+  box-shadow: var(--debug-overlay-shadow);
 }
 
 #debug-perf {
@@ -27,14 +30,6 @@
 #debug-ai-info {
   top: 34px;
   left: 10px;
-  max-width: min(520px, calc(100vw - 20px));
-  padding: 8px 10px;
-  font-size: 12px;
-  line-height: 1.35;
-  background: var(--debug-overlay-bg);
-  border: 1px solid var(--debug-overlay-border);
-  box-shadow: var(--debug-overlay-shadow);
-  white-space: pre-wrap;
 }
 
 .dev-console-panel {

@@ -130,7 +130,6 @@ export interface GameContextLike {
   performance?: PerformanceMonitorLike | null
   editor?: MapEditorLike
   paused?: boolean
-  aiPaused?: boolean
   devConsoleOpen?: boolean
   victory?: boolean
   defeat?: boolean

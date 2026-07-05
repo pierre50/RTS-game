@@ -50,7 +50,6 @@ import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 
 export type UnitSpawnOptions = Partial<UnitEntity> & { i: number; j: number; type: string; owner?: PlayerLike }
-type InteractiveAnimatedSprite = AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
 
 function getActionSheet(work: string | null | undefined, action: string | null | undefined, AssetsRef: typeof Assets, unit: UnitEntity) {
   if (!work) {
@@ -113,8 +112,6 @@ export class Unit extends Instance implements UnitEntity {
   walkingSheet?: UnitEntity['walkingSheet']
   standingSheet?: UnitEntity['standingSheet']
   loop?: UnitEntity['loop']
-  allowMove?: UnitEntity['allowMove']
-  allowClick?: boolean
   visibilityTimeout?: UnitEntity['visibilityTimeout']
   sailSheet?: UnitEntity['sailSheet']
   sailSpritesheet?: UnitEntity['sailSpritesheet']
@@ -278,16 +275,12 @@ export class Unit extends Instance implements UnitEntity {
           : [],
     }
 
-    this.allowMove = false
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this as UnitEntity)
     this.sprite = new AnimatedSprite(getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[])
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
-    const interactiveSprite = this.sprite as AnimatedSprite & { allowMove?: boolean; allowClick?: boolean }
     this.sprite.label = LABEL_TYPES.sprite
-    interactiveSprite.allowMove = false
     this.sprite.eventMode = 'auto'
-    interactiveSprite.allowClick = false
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
     if (this.isDead) {
@@ -461,7 +454,6 @@ export class Unit extends Instance implements UnitEntity {
     this.sailSprite = new AnimatedSprite(textures as Texture[])
     bindAnimatedSpriteToTicker(this.sailSprite, this.context.app)
     this.sailSprite.label = LABEL_TYPES.sail
-    ;(this.sailSprite as InteractiveAnimatedSprite).allowMove = false
     this.sailSprite.eventMode = 'none'
     this.sailSprite.roundPixels = true
     this.sailSprite.loop = true
@@ -500,7 +492,6 @@ export class Unit extends Instance implements UnitEntity {
     this.fishingOverlaySprite = new AnimatedSprite(textures as Texture[])
     bindAnimatedSpriteToTicker(this.fishingOverlaySprite, this.context.app)
     this.fishingOverlaySprite.label = LABEL_TYPES.fishingNet
-    ;(this.fishingOverlaySprite as InteractiveAnimatedSprite).allowMove = false
     this.fishingOverlaySprite.eventMode = 'none'
     this.fishingOverlaySprite.roundPixels = true
     this.fishingOverlaySprite.loop = false
