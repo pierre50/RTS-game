@@ -6,7 +6,6 @@ import {
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   getActionCondition,
-  setUnitTexture,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
@@ -247,7 +246,7 @@ export class Animal extends Instance implements AnimalEntity {
   }
 
   // AnimalLifecycle
-  die(): void {
+  override die(): void {
     return this.animalLifecycle.die()
   }
   death(): void {
@@ -264,7 +263,7 @@ export class Animal extends Instance implements AnimalEntity {
   }
 
   // AnimalMovement
-  hasPath(): boolean {
+  override hasPath(): boolean {
     return this.animalMovement.hasPath()
   }
   setDest(dest: AnimalDestination | null): void {
@@ -282,7 +281,7 @@ export class Animal extends Instance implements AnimalEntity {
   sendTo(dest: AnimalDestination | null, action?: string | null, options?: AnimalMoveOptions): void {
     return this.animalMovement.sendTo(dest, action ?? null, options)
   }
-  moveToPath(): void {
+  override moveToPath(): void {
     return this.animalMovement.moveToPath()
   }
 

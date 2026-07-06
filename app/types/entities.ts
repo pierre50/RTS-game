@@ -4,6 +4,7 @@ import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
 import type { TransportBoat } from '../lib/transport'
+import type { MenuButtonSpec } from './ui'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitCreationExtra = {
@@ -13,7 +14,7 @@ export type UnitCreationExtra = {
 
 export interface EntityInterfaceLike {
   info?: (element: HTMLElement) => void
-  menu?: import('./ui').MenuButtonSpec[]
+  menu?: MenuButtonSpec[]
 }
 
 export interface RuntimeEntityBase extends GridPosition, Point {
@@ -27,6 +28,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   z?: number | null
   zIndex?: number
   size?: number
+  width: number
+  height: number
   visible?: boolean
   selected?: boolean
   color?: string
@@ -50,6 +53,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   updateTexture?: () => void
   drawHealthBar?: () => void
   isAttacked?: (attacker: RuntimeEntity) => void
+  stopAttackInterval?: () => void
   stopInterval?: () => void
   stopTimeout?: () => void
   destroy?: (options?: DestroyOptions) => void
@@ -188,7 +192,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   sendToEvt?: (
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: Record<string, unknown>
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
   ) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean

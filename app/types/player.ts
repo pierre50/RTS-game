@@ -1,4 +1,3 @@
-import type { ResourceAmount } from './common'
 import type { RuntimeCell } from './map'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
@@ -6,6 +5,7 @@ import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, 
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 
 export interface VisionGridLike {
+  length: number
   size: number
   onViewed?: ((i: number, j: number) => void) | null
   index(i: number, j: number): number

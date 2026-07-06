@@ -1,18 +1,18 @@
 import { instancesDistance } from '../maths'
 import { getInstanceClosestFreeCellPath, type GameMap } from './movement'
-import type { GridCell, InstanceLike } from '../../types/grid'
+import type { GridCell, GridInstanceLike } from '../../types/grid'
 
-type Candidate<TInstance extends InstanceLike> = {
+type Candidate<TInstance extends GridInstanceLike> = {
   distance: number
   instance: TInstance
 }
 
-type InstanceWithPath<TInstance extends InstanceLike, TCell extends GridCell = GridCell> = {
+type InstanceWithPath<TInstance extends GridInstanceLike, TCell extends GridCell = GridCell> = {
   instance: TInstance
   path: TCell[]
 }
 
-function insertCandidate<TInstance extends InstanceLike>(
+function insertCandidate<TInstance extends GridInstanceLike>(
   candidates: Array<Candidate<TInstance>>,
   candidate: Candidate<TInstance>,
   maxCandidates: number
@@ -25,8 +25,12 @@ function insertCandidate<TInstance extends InstanceLike>(
   }
 }
 
-export function getClosestInstance<TInstance extends InstanceLike>(
-  instance: InstanceLike,
+function isGameMap<TCell extends GridCell>(parent: unknown): parent is GameMap<TCell> {
+  return Boolean(parent && typeof parent === 'object' && Array.isArray((parent as Partial<GameMap<TCell>>).grid))
+}
+
+export function getClosestInstance<TInstance extends GridInstanceLike>(
+  instance: GridInstanceLike,
   instances: Iterable<TInstance>
 ): TInstance | false {
   let closestInstance: TInstance | null = null
@@ -44,13 +48,13 @@ export function getClosestInstance<TInstance extends InstanceLike>(
   return closestInstance || false
 }
 
-export function getClosestInstanceWithPath<TInstance extends InstanceLike, TCell extends GridCell = GridCell>(
-  instance: InstanceLike,
+export function getClosestInstanceWithPath<TInstance extends GridInstanceLike, TCell extends GridCell = GridCell>(
+  instance: GridInstanceLike,
   instances: Iterable<TInstance>,
   maxCandidates = 6
 ): InstanceWithPath<TInstance, TCell> | null {
-  if (!instance.parent) return null
-  const map = instance.parent as unknown as GameMap<TCell>
+  if (!isGameMap<TCell>(instance.parent)) return null
+  const map = instance.parent
 
   const candidates: Array<Candidate<TInstance>> = []
   for (const target of instances) {

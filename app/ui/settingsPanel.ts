@@ -22,7 +22,11 @@ export function buildSettingsContent({
   onLangChange,
   onSpeedChange,
   onZoomChange,
-}: { onLangChange?: () => void; onSpeedChange?: (v: number) => void; onZoomChange?: (v: number) => void } = {}): HTMLDivElement {
+}: {
+  onLangChange?: () => void
+  onSpeedChange?: (v: number) => void
+  onZoomChange?: (v: number) => void
+} = {}): HTMLDivElement {
   const content = document.createElement('div')
   content.className = 'config-form'
 

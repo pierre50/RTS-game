@@ -53,7 +53,7 @@ export class BuildingPlacer {
   handleMouseMove(): void {
     const { controls } = this
     const {
-      context: { map, player },
+      context: { player },
     } = controls
     const cell = this.getPointerCell()
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
@@ -113,7 +113,9 @@ export class BuildingPlacer {
     } = controls
     controls.mouseBuilding = new Container() as MouseBuilding
     const texture =
-      building.type === BUILDING_TYPES.smallWall ? getWallTexture(player, 2) : getTexture(building.images?.final ?? '', Assets)
+      building.type === BUILDING_TYPES.smallWall
+        ? getWallTexture(player, 2)
+        : getTexture(building.images?.final ?? '', Assets)
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
     sprite.visible = building.type !== BUILDING_TYPES.smallWall

@@ -556,44 +556,6 @@ export class Modal {
   }
 }
 
-var CustomTimeout = function (
-  this: { pause: () => number; resume: () => void; reset: () => void },
-  callback: () => void,
-  delay: number
-) {
-  if (typeof callback !== 'function' || typeof delay !== 'number') {
-    throw new Error('Invalid arguments for CustomTimeout.')
-  }
-
-  let timerId: TimeoutId,
-    start = 0,
-    remaining = delay
-
-  this.pause = () => {
-    if (timerId !== null) window.clearTimeout(timerId)
-    timerId = null
-    remaining -= Date.now() - start
-    return remaining
-  }
-
-  this.resume = () => {
-    if (timerId) {
-      return
-    }
-
-    start = Date.now()
-    timerId = window.setTimeout(callback, remaining)
-  }
-
-  this.reset = () => {
-    this.pause()
-    remaining = delay
-    this.resume()
-  }
-
-  this.resume()
-}
-
 export function throttle<TArgs extends unknown[]>(
   callback: (this: unknown, ...args: TArgs) => void,
   wait: number,
@@ -636,6 +598,7 @@ export function throttle<TArgs extends unknown[]>(
     }
 
     pendingArgs = args
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- preserves the caller's dynamic `this` for the deferred call
     pendingThis = this
     if (!timeout) schedule()
   }

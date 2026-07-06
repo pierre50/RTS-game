@@ -1,4 +1,5 @@
-import { AnimatedSprite, Assets, Container, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
+import { AnimatedSprite, Assets, Container } from 'pixi.js'
 import {
   AMBIENT_BIRD_ANIMATION_SPEED,
   AMBIENT_BIRD_ASSETS,
@@ -192,7 +193,7 @@ export class AmbientBirds extends Container {
     }
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     this.context.app.ticker.remove(this._onTick)
     this.activePasses = []
     super.destroy(options)

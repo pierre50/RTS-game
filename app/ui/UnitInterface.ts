@@ -43,7 +43,8 @@ export class UnitInterface {
       loadingDiv.appendChild(
         createInfoImage(
           'unit-loading-icon',
-          menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType!) ? 'food' : unit.loadingType!]!
+          menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType ?? '') ? 'food' : (unit.loadingType ?? '')] ??
+            ''
         )
       )
       loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))

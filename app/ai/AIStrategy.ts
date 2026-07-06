@@ -1,11 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import {
-  canAfford,
-  canPlaceBuildingAt,
-  getClosestInstance,
-  getPositionInGridAroundInstance,
-  instancesDistance,
-} from '../lib'
+import { canAfford, canPlaceBuildingAt, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { AIMilitary } from './AIMilitary'
 import {
   AGE_UP_BUFFERS,
@@ -30,6 +24,7 @@ import type {
   AIDockOpportunity,
   AIEntityConfig,
   AIEntityLike,
+  AIEnemyPlayerLike,
   AIGridPosition,
   AILandAccessDiagnostic,
   AINavalOpportunity,
@@ -45,7 +40,6 @@ type NextAgeMap = Partial<Record<1 | 2 | 3, string>>
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type MilitaryOptions = Parameters<AIMilitary['handleActions']>[0]
 type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
-type PlacementAnchor = Parameters<typeof getPositionInGridAroundInstance>[0]
 type ResourceLedger = Record<string, number | undefined>
 
 const RESOURCE_NAMES: AIResourceName[] = ['wood', 'food', 'gold', 'stone']
@@ -57,11 +51,12 @@ function resourceEntries(cost: AIResourceAmount = {}): [AIResourceName, number][
 }
 
 function asResourceLedger(player: AIStrategyPlayerLike): ResourceLedger {
-  return player as unknown as ResourceLedger
-}
-
-function asPlacementAnchor(instance: AIGridPosition): PlacementAnchor {
-  return instance as unknown as PlacementAnchor
+  return {
+    wood: player.wood,
+    food: player.food,
+    gold: player.gold,
+    stone: player.stone,
+  }
 }
 
 const NAVAL_MIN_WATER_CLUSTER_CELLS = 36
@@ -262,7 +257,8 @@ export class AIStrategy {
       demand.wood += ai.config.buildings[BUILDING_TYPES.house]?.cost?.wood || 0
     }
     const currentBarracks = ai.buildings.filter(
-      (building: AIBuildingLike) => building.type === BUILDING_TYPES.barracks && !building.isDead && !building.isDestroyed
+      (building: AIBuildingLike) =>
+        building.type === BUILDING_TYPES.barracks && !building.isDead && !building.isDestroyed
     ).length
     const desiredBarracks = this.getDesiredBarracksCount()
     if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
@@ -308,7 +304,11 @@ export class AIStrategy {
     const unitCost = this.ai.config.units[unitType]?.cost || {}
     for (const building of buildingList) {
       if (unitsBought >= unitsNeeded) break
-      if (building && this.canSpendWithReserve(unitCost, reserve) && building.buyUnit?.(unitType, false, false, extra)) {
+      if (
+        building &&
+        this.canSpendWithReserve(unitCost, reserve) &&
+        building.buyUnit?.(unitType, false, false, extra)
+      ) {
         unitsBought++
         if (debug) console.log(`Buying ${unitType} from ${building.type}, Total Bought: ${unitsBought}`)
       }
@@ -324,7 +324,11 @@ export class AIStrategy {
     return this.isWaterCell(cell) && !cell.solid
   }
 
-  getWaterClusterSize(startCell: RuntimeCell | undefined, grid: RuntimeCell[][], cap: number = NAVAL_WATER_CLUSTER_SCAN_CAP): number {
+  getWaterClusterSize(
+    startCell: RuntimeCell | undefined,
+    grid: RuntimeCell[][],
+    cap: number = NAVAL_WATER_CLUSTER_SCAN_CAP
+  ): number {
     if (!this.isWaterCell(startCell)) return 0
 
     const visited = new Set<string>()
@@ -447,7 +451,11 @@ export class AIStrategy {
   getPrimaryEnemyAnchor(): AIGridPosition | null {
     const enemy = this.ai.enemyPlayers()[0]
     if (!enemy) return null
-    return enemy.buildings.find((building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead) || enemy
+    return (
+      enemy.buildings.find(
+        (building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead
+      ) || enemy
+    )
   }
 
   needsNavalTransport(militaryCount: number = 0): boolean {
@@ -455,9 +463,11 @@ export class AIStrategy {
     if (ai.age < 1 || militaryCount < NAVAL_TRANSPORT_MIN_ARMY) return false
     const home = ai.getHomeAnchor()
     if (!home) return false
-    return ai.enemyPlayers().some((enemy: AIStrategyPlayerLike) => {
+    return ai.enemyPlayers().some((enemy: AIEnemyPlayerLike) => {
       const enemyAnchor =
-        enemy.buildings.find((building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead) || enemy
+        enemy.buildings.find(
+          (building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead
+        ) || enemy
       const diagnostic = this.getLandAccessDiagnostic(home, enemyAnchor)
       ai.lastNavalConnectivity = diagnostic
       return enemyAnchor && !diagnostic.reachable
@@ -512,7 +522,8 @@ export class AIStrategy {
       fish.length >= NAVAL_MIN_FISH_FOR_DOCK ||
       (fish.length > 0 && maxWaterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS)
     const militaryCount = (ai.units || []).filter(
-      (unit: AIEntityLike) => unit && unit.type !== UNIT_TYPES.villager && unit.category !== 'Boat' && (unit.hitPoints || 0) > 0
+      (unit: AIEntityLike) =>
+        unit && unit.type !== UNIT_TYPES.villager && unit.category !== 'Boat' && (unit.hitPoints || 0) > 0
     ).length
     const needsTransport = this.needsNavalTransport(militaryCount)
     const shouldScoutCoast = !hasEnoughFish && coastalOpportunity.waterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS
@@ -523,7 +534,7 @@ export class AIStrategy {
         )
       : shouldScoutCoast
         ? 1
-      : 0
+        : 0
 
     return {
       fish: fish.map(candidate => candidate.node),
@@ -546,7 +557,11 @@ export class AIStrategy {
     return Math.min(...docks.map(dock => Math.abs(instance.i - dock.i) + Math.abs(instance.j - dock.j)))
   }
 
-  isReachableWaterTarget(source: AIGridPosition, target: AIGridPosition, cap: number = NAVAL_WATER_REACHABILITY_SCAN_CAP): boolean {
+  isReachableWaterTarget(
+    source: AIGridPosition,
+    target: AIGridPosition,
+    cap: number = NAVAL_WATER_REACHABILITY_SCAN_CAP
+  ): boolean {
     const grid = this.ai.context.map.grid
     const startCell = grid[source.i]?.[source.j]
     const targetCell = grid[target.i]?.[target.j]
@@ -579,7 +594,11 @@ export class AIStrategy {
     return false
   }
 
-  getBestFishForBoat(boat: AIEntityLike, fishList: AIEntityLike[], docks: AIBuildingLike[] = this.getHealthyDocks()): AIEntityLike | null {
+  getBestFishForBoat(
+    boat: AIEntityLike,
+    fishList: AIEntityLike[],
+    docks: AIBuildingLike[] = this.getHealthyDocks()
+  ): AIEntityLike | null {
     const reachableFish = fishList.filter(fish => this.isReachableWaterTarget(boat, fish))
     const candidates = reachableFish.length ? reachableFish : fishList
     if (!candidates.length) return null
@@ -885,10 +904,7 @@ export class AIStrategy {
     }
 
     const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
-      otherPlayers.every(
-        (player: AIStrategyPlayerLike) =>
-          instancesDistance(cell, player) <= instancesDistance(origin, player)
-      )
+      otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
     const ageUpReserve = this.getAgeUpReserve()
     const buy = (
       condition: boolean,
@@ -912,7 +928,7 @@ export class AIStrategy {
       buy(
         ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
         BUILDING_TYPES.house,
-        () => getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 10], 0),
+        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0),
         false
       )
     )
@@ -920,21 +936,21 @@ export class AIStrategy {
 
     if (
       buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(markets.length === 0, BUILDING_TYPES.market, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(ai.age >= 2 && markets.some((m: AIBuildingLike) => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -947,21 +963,21 @@ export class AIStrategy {
           ai.populationMax >= 24 &&
           ai.population >= 16,
         BUILDING_TYPES.townCenter,
-        () => getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
+        () => getPositionInGridAroundInstance(anchor, map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -970,7 +986,7 @@ export class AIStrategy {
       buy(
         stables.some((s: AIBuildingLike) => s.isBuilt),
         BUILDING_TYPES.academy,
-        () => getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -980,7 +996,7 @@ export class AIStrategy {
         const buildings = [...granarys, ...towncenters]
         for (const building of buildings) {
           const position = getPositionInGridAroundInstance(
-            asPlacementAnchor(building),
+            building,
             map.grid,
             [2, 10],
             2,
@@ -997,14 +1013,14 @@ export class AIStrategy {
 
     if (
       buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
     if (
       buy(ai.technologies.includes('ResearchSentryTower'), BUILDING_TYPES.sentryTower, () =>
-        getPositionInGridAroundInstance(asPlacementAnchor(anchor), map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
+        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++

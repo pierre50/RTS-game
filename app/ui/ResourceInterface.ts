@@ -21,7 +21,9 @@ export class ResourceInterface {
     element.appendChild(createInfoImage(MENU_INFO_IDS.icon, getIconPath(data.icon)))
 
     if (resource.hitPoints) {
-      element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, resource.hitPoints, resource.totalHitPoints ?? 0))
+      element.appendChild(
+        createHitPointsInfo(MENU_INFO_IDS.hitPoints, resource.hitPoints, resource.totalHitPoints ?? 0)
+      )
     }
 
     if (resource.quantity) {

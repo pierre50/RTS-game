@@ -1,4 +1,5 @@
-import { Assets, AnimatedSprite, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
+import { Assets, AnimatedSprite } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getTexture } from '../graphics/textures'
 import { changeSpriteColor } from '../graphics/colors'
@@ -30,7 +31,7 @@ type WallOwner = {
   civ?: keyof (typeof WALL_SHEETS)[2] | keyof (typeof WALL_SHEETS)[3] | string
   color?: string
   technologies?: string[]
-  buildings?: unknown[]
+  buildings?: Array<{ owner?: WallOwner; type?: string }>
 }
 
 type WallCell = GridCell & {
@@ -155,7 +156,5 @@ export function updateWallAndNeighbours(wall?: WallBuilding | null): void {
 }
 
 export function refreshOwnerWalls(owner?: WallOwner | null): void {
-  owner?.buildings
-    ?.filter((building): building is WallBuilding => isWall(building as WallBuilding, owner))
-    .forEach(updateWallTexture)
+  owner?.buildings?.filter((building): building is WallBuilding => isWall(building, owner)).forEach(updateWallTexture)
 }

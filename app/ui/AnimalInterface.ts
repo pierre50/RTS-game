@@ -1,4 +1,3 @@
-import { MENU_INFO_IDS } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'

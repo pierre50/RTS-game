@@ -1,4 +1,5 @@
-import { Application, Assets, Container, type ContainerChild, Sprite } from 'pixi.js'
+import type { Application } from 'pixi.js'
+import { Assets, Container, type ContainerChild, Sprite } from 'pixi.js'
 import Map from '../classes/map'
 import { Cell } from '../classes/cell'
 import { Resource } from '../classes/resource'
@@ -12,7 +13,7 @@ import { EditorControls } from '../controllers/EditorControls'
 import { WallPlacementController } from '../controllers/WallPlacementController'
 import { MapEditorHud } from '../ui/MapEditorHud'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
-import type { MenuLike, SchedulerLike } from '../types/context'
+import type { SchedulerLike } from '../types/context'
 import type {
   EditorConfig,
   EditorPlayerConfig,
@@ -33,6 +34,11 @@ type EditableCell = RuntimeCell & {
   children: ContainerChild[]
   addChild(child: ContainerChild): void
   removeChild(child: ContainerChild): void
+}
+
+type DestroyableEditorEntity = RuntimeEntity & {
+  parent?: { removeChild?: (child: RuntimeEntity) => void } | null
+  visibilityTimeout?: ReturnType<typeof setTimeout>
 }
 
 function isResourceEntity(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
@@ -116,11 +122,11 @@ export default class MapEditor extends Container {
   }
 
   get _map(): MapInstance {
-    return this.context.map as unknown as MapInstance
+    return this.context.map as MapInstance
   }
 
   async start(): Promise<void> {
-    this.context.map = new Map(this.context) as unknown as RuntimeMap
+    this.context.map = new Map(this.context) as RuntimeMap
     const map = this._map
     map.size = this.config.size || DEFAULT_MAP_SIZE
     map.mapType = this.config.mapType || 'blank'
@@ -130,20 +136,20 @@ export default class MapEditor extends Container {
     map.gaia = new Gaia(this.context)
     await this._createInitialMap()
 
-    this.context.hud = new MapEditorHud({
-      context: this.context as unknown as ConstructorParameters<typeof MapEditorHud>[0]['context'],
+    const hud = new MapEditorHud({
+      context: this.context as ConstructorParameters<typeof MapEditorHud>[0]['context'],
       state: this.editorState,
       onQuit: () => this.quit(),
       onChange: () => this.context.hud?.sync(),
     })
-    this.context.menu = this.context.hud as unknown as MenuLike
+    this.context.hud = hud
+    this.context.menu = hud
 
-    this.context.controls = new EditorControls(
-      this.context as unknown as ConstructorParameters<typeof EditorControls>[0]
-    ) as unknown as typeof this.context.controls
+    const controls = new EditorControls({ ...this.context, hud })
+    this.context.controls = controls as unknown as typeof this.context.controls
     this.wallPlacementController = new WallPlacementController({
       context: this.context,
-      parent: this.context.map as unknown as Container,
+      parent: map,
       getPreviewPosition: (cell: RuntimeCell) => ({ x: cell.x, y: cell.y }),
       canUseCell: (cell: RuntimeCell, owner: PlayerLike, allowExistingWall: boolean = false) =>
         this._canWallUseCell(cell, owner, allowExistingWall),
@@ -151,8 +157,8 @@ export default class MapEditor extends Container {
       onChange: () => this.context.hud?.sync(),
     })
 
-    this.addChild(this.context.map as unknown as ContainerChild)
-    this.addChild(this.context.controls)
+    this.addChild(map as ContainerChild)
+    this.addChild(controls)
     this.applyZoom()
     this.context.hud.init()
     window.addEventListener('resize', this._onResize)
@@ -214,10 +220,7 @@ export default class MapEditor extends Container {
     for (let i = 0; i <= map.size; i++) {
       map.grid[i] = []
       for (let j = 0; j <= map.size; j++) {
-        const cell = new Cell(
-          { i, j, z: 0, type: 'Grass' },
-          this.context as unknown as ConstructorParameters<typeof Cell>[1]
-        )
+        const cell = new Cell({ i, j, z: 0, type: 'Grass' }, this.context as ConstructorParameters<typeof Cell>[1])
         cell.visible = true
         map.addChild(cell)
         map.grid[i][j] = cell as unknown as RuntimeCell
@@ -267,7 +270,7 @@ export default class MapEditor extends Container {
   _getEditorPlayerAnchors(count: number = 1): { i: number; j: number }[] {
     const map = this._map
     const size = map.size
-    const playersPos = map.playersPos as unknown as { i: number; j: number }[]
+    const playersPos = map.playersPos as { i: number; j: number }[]
     if (Array.isArray(playersPos) && playersPos.length >= count) {
       return playersPos.slice(0, count)
     }
@@ -643,10 +646,10 @@ export default class MapEditor extends Container {
 
     const map = this._map
     entity.stopInterval?.()
-    ;(entity as unknown as { stopAttackInterval?: () => void }).stopAttackInterval?.()
-    ;(entity as unknown as { stopTimeout?: () => void }).stopTimeout?.()
-    clearTimeout((entity as unknown as { visibilityTimeout?: ReturnType<typeof setTimeout> }).visibilityTimeout)
-    ;(entity as unknown as { unselect?: () => void }).unselect?.()
+    entity.stopAttackInterval?.()
+    entity.stopTimeout?.()
+    clearTimeout((entity as DestroyableEditorEntity).visibilityTimeout)
+    entity.unselect?.()
     entity.path = []
     entity.dest = null
     entity.realDest = null
@@ -687,8 +690,8 @@ export default class MapEditor extends Container {
       if (index >= 0) entity.owner?.buildings.splice(index, 1)
     }
 
-    ;(entity as unknown as { parent?: { removeChild?: (child: unknown) => void } }).parent?.removeChild?.(entity)
-    ;(entity as unknown as { destroy: (opts?: unknown) => void }).destroy({
+    ;(entity as DestroyableEditorEntity).parent?.removeChild?.(entity)
+    entity.destroy?.({
       children: true,
       texture: entity.family !== FAMILY_TYPES.building,
     })
@@ -797,7 +800,7 @@ export default class MapEditor extends Container {
       i,
       j,
       owner as Parameters<typeof getAdjacentWalls>[3]
-    ) as unknown as BuildingEntity[]
+    ) as BuildingEntity[]
   }
 
   _updateWallTexture(wall: BuildingEntity): void {
@@ -953,7 +956,6 @@ export default class MapEditor extends Container {
   applyBrush(centerCell: RuntimeCell): void {
     if (this._orientationBlocked) return
 
-    const map = this._map
     const cells = this.getBrushCells(centerCell)
     const reliefEdits = new Set<RuntimeCell>()
     let terrainDirty = false
@@ -1213,11 +1215,11 @@ export default class MapEditor extends Container {
     }
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     window.removeEventListener('resize', this._onResize)
     this.context.controls?.destroy({ children: true })
     this.context.hud?.destroy()
-    ;(this.context.map as unknown as Container | null)?.destroy({ children: true })
+    ;(this.context.map as MapInstance | null)?.destroy({ children: true })
     super.destroy(options)
   }
 }

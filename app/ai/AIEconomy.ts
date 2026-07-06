@@ -8,15 +8,12 @@ import type {
   AIFoodSourceType,
   AIFoodTarget,
   AIFoodWorkerCounts,
-  AIGridPosition,
   AIStrategyPlayerLike,
   AIVillagerActionOptions,
   AIWorkerSnapshot,
   AIWorkerTargets,
 } from './types'
 
-type PathInstance = Parameters<typeof getInstancePath>[0]
-type ClosestInstance = Parameters<typeof getClosestInstance>[0]
 type FoodOpportunity = {
   type: AIFoodSourceType
   score: number
@@ -26,14 +23,6 @@ type GatheringResource = {
   set: Set<AIEntityLike>
   max: number
   cb: (villager: AIEntityLike, resource: AIEntityLike) => void
-}
-
-function asPathInstance(instance: AIGridPosition): PathInstance {
-  return instance as unknown as PathInstance
-}
-
-function asClosestInstance(instance: AIGridPosition): ClosestInstance {
-  return instance as unknown as ClosestInstance
 }
 
 export class AIEconomy {
@@ -173,7 +162,8 @@ export class AIEconomy {
   // Keep real Scout units exploring — villager exploration is handled demand-driven separately
   updateRealScout(): void {
     const { ai } = this
-    ai.scout = ai.units.find((u: AIEntityLike) => u.type === UNIT_TYPES.scout && !u.isDead && (u.hitPoints || 0) > 0) || null
+    ai.scout =
+      ai.units.find((u: AIEntityLike) => u.type === UNIT_TYPES.scout && !u.isDead && (u.hitPoints || 0) > 0) || null
     if (ai.scout && ai.scout.inactif && this.hasUnexploredCells()) ai.scout.explore?.()
   }
 
@@ -256,10 +246,10 @@ export class AIEconomy {
     const { ai } = this
     const dangerRadius = 15
     for (const b of ai.foundedEnemyBuildings) {
-      if (instancesDistance(asPathInstance(pos), asPathInstance(b)) < dangerRadius) return false
+      if (instancesDistance(pos, b) < dangerRadius) return false
     }
     for (const u of ai.foundedEnemyUnits) {
-      if (instancesDistance(asPathInstance(pos), asPathInstance(u)) < dangerRadius) return false
+      if (instancesDistance(pos, u) < dangerRadius) return false
     }
     return true
   }
@@ -293,7 +283,7 @@ export class AIEconomy {
     for (const cell of shoreCells) {
       if (villager.i === cell.i && villager.j === cell.j) return cell
       if (cell.solid) continue
-      const path = getInstancePath(asPathInstance(villager), cell.i, cell.j, map)
+      const path = getInstancePath(villager, cell.i, cell.j, map)
       if (path.length && (!best || path.length < best.pathLength)) {
         best = { cell, pathLength: path.length }
       }
@@ -338,7 +328,10 @@ export class AIEconomy {
     slot: number = 0,
     hunterCount: number = 1
   ): number {
-    const rates = (this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}) as Record<string, number | undefined>
+    const rates = (this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}) as Record<
+      string,
+      number | undefined
+    >
     const workByType: Record<AIFoodSourceType, string> = {
       berry: WORK_TYPES.forager,
       carcass: WORK_TYPES.hunter,
@@ -346,7 +339,13 @@ export class AIEconomy {
       farm: WORK_TYPES.farmer,
       hunt: WORK_TYPES.hunter,
     }
-    const fallbackRates: Record<AIFoodSourceType, number> = { berry: 0.45, carcass: 0.4725, fish: 0.6, farm: 0.45, hunt: 0.4725 }
+    const fallbackRates: Record<AIFoodSourceType, number> = {
+      berry: 0.45,
+      carcass: 0.4725,
+      fish: 0.6,
+      farm: 0.45,
+      hunt: 0.4725,
+    }
     const rate = Number(rates[workByType[type]] || fallbackRates[type])
     const quantity = Math.max(0, source.quantity ?? source.totalQuantity ?? 0)
     const quantityFactor = 0.55 + Math.min(quantity / 150, 1) * 0.45
@@ -358,7 +357,11 @@ export class AIEconomy {
     return (rate * quantityFactor * renewableBonus) / (travelPenalty * saturationPenalty * killPenalty)
   }
 
-  getFoodWorkerTargets(maxWorkers: number, sources: AIFoodSources, currentCounts: AIFoodWorkerCounts): AIFoodWorkerCounts {
+  getFoodWorkerTargets(
+    maxWorkers: number,
+    sources: AIFoodSources,
+    currentCounts: AIFoodWorkerCounts
+  ): AIFoodWorkerCounts {
     const opportunities: FoodOpportunity[] = []
     const retainedSlots: AIFoodWorkerCounts = { ...currentCounts }
     const addSlots = (
@@ -386,7 +389,8 @@ export class AIEconomy {
     for (const fish of sources.fish) addSlots('fish', fish, 1, sources.meatDrops)
     for (const animal of sources.animals) {
       if (animal.type === 'Elephant') continue
-      const hunters = (animal.totalHitPoints || 0) >= 20 ? Math.min(4, Math.max(1, Math.ceil((animal.hitPoints || 0) / 4))) : 1
+      const hunters =
+        (animal.totalHitPoints || 0) >= 20 ? Math.min(4, Math.max(1, Math.ceil((animal.hitPoints || 0) / 4))) : 1
       addSlots('hunt', animal, hunters, sources.meatDrops, hunters)
     }
 
@@ -475,7 +479,7 @@ export class AIEconomy {
     const { ai } = this
     for (const animal of map.gaia?.units || []) {
       if (animal.isDead && !animal.isDestroyed && (animal.quantity || 0) > 0) {
-        if (ai.views?.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal as unknown as AIEntityLike)
+        if (ai.views?.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal)
       }
     }
   }
@@ -498,10 +502,12 @@ export class AIEconomy {
     const berryDropSites = this.getStorageDropSites()
     const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
     const carcassHunters = villagersHunting.filter(
-      (villager: AIEntityLike) => villager.action === ACTION_TYPES.takemeat || (villager.dest as AIEntityLike | undefined)?.isDead
+      (villager: AIEntityLike) =>
+        villager.action === ACTION_TYPES.takemeat || (villager.dest as AIEntityLike | undefined)?.isDead
     )
     const liveHunters = villagersHunting.filter(
-      (villager: AIEntityLike) => villager.action === ACTION_TYPES.hunt && villager.dest && !(villager.dest as AIEntityLike).isDead
+      (villager: AIEntityLike) =>
+        villager.action === ACTION_TYPES.hunt && villager.dest && !(villager.dest as AIEntityLike).isDead
     )
     const farmCandidates = new Set([
       ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0),
@@ -549,10 +555,7 @@ export class AIEconomy {
         availableVillagers.length
       )
       for (let i = 0; i < toAssign; i++) {
-        const animal = getClosestInstance(
-          asClosestInstance(availableVillagers[0]),
-          sources.carcasses as unknown as Iterable<ClosestInstance>
-        ) as unknown as AIEntityLike | null
+        const animal = getClosestInstance(availableVillagers[0], sources.carcasses) || null
         if (!animal) break
         availableVillagers.shift()?.sendToTakeMeat?.(animal)
         actions++
@@ -641,7 +644,11 @@ export class AIEconomy {
 
   // Builders borrow from their current job — no global cap, per-building limit by type.
   // Returns the Set of villagers sent to build this step (to exclude from resource pool).
-  assignBuilders(villagers: AIEntityLike[], notBuiltBuildings: AIBuildingLike[], debug: boolean = false): Set<AIEntityLike> {
+  assignBuilders(
+    villagers: AIEntityLike[],
+    notBuiltBuildings: AIBuildingLike[],
+    debug: boolean = false
+  ): Set<AIEntityLike> {
     const assigned = new Set<AIEntityLike>()
     if (!notBuiltBuildings.length) return assigned
 
@@ -780,10 +787,7 @@ export class AIEconomy {
     // Any remaining idle villager goes to wood (quota was already met, this is overflow)
     if (availableVillagers.length > 0 && this.ai.foundedTrees.size > 0) {
       for (const villager of [...availableVillagers]) {
-        const tree = getClosestInstance(
-          asClosestInstance(villager),
-          this.ai.foundedTrees as unknown as Iterable<ClosestInstance>
-        ) as unknown as AIEntityLike | null
+        const tree = getClosestInstance(villager, this.ai.foundedTrees) || null
         if (tree) {
           villager.sendToTree?.(tree)
           actions++

@@ -1,4 +1,5 @@
-import { Application, Container, type ContainerChild } from 'pixi.js'
+import type { Application } from 'pixi.js'
+import { Container, type ContainerChild } from 'pixi.js'
 import { sound } from '@pixi/sound'
 import { t } from '../lib/lang'
 import Map from '../classes/map'
@@ -22,8 +23,14 @@ import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../
 import type { GameConfig, PlayerSetupConfig, SaveCellState, SerializedSave } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeMap } from '../types/map'
+import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
-type MapInstance = InstanceType<typeof Map> & {
+type RuntimeMapInstance = InstanceType<typeof Map> &
+  RuntimeMap & {
+    destroy(options?: Parameters<Container['destroy']>[0]): void
+  }
+
+type MapInstance = RuntimeMapInstance & {
   pregeneratedBlueprintId?: string | number | null
   generationTimings?: Record<string, number>
   blueprintDestroyMs?: number
@@ -34,9 +41,17 @@ type MapInstance = InstanceType<typeof Map> & {
   blueprintResourceLoadMs?: number
 }
 
-interface GameRuntimeContext extends GameContextLike {
-  scheduler: SchedulerLike
-  performance: PerformanceMonitorLike
+type GameRuntimeContext = Omit<
+  GameContextLike,
+  'map' | 'player' | 'controls' | 'menu' | 'scheduler' | 'performance'
+> & {
+  map: RuntimeMapInstance | null
+  player: PlayerLike | null
+  players: PlayerLike[]
+  controls: Controls | null
+  menu: Menu | null
+  scheduler: SchedulerLike | null
+  performance: PerformanceMonitorLike | null
   ambientBirds: AmbientBirds | null
   devConsole: DevConsole | null
   checkVictory: () => boolean
@@ -102,7 +117,7 @@ export default class Game extends Container {
       checkVictory: () => this.checkVictory(),
       checkDefeat: () => this.checkDefeat(),
       applyZoom: () => this.applyZoom(),
-    } as unknown as GameRuntimeContext
+    }
     this.context.performance = new PerformanceMonitor(app)
     this.context.scheduler = new ActionScheduler(
       app,
@@ -122,7 +137,7 @@ export default class Game extends Container {
     this._acquireWakeLock()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
-    this.context.scheduler.timeScale = speed
+    if (this.context.scheduler) this.context.scheduler.timeScale = speed
     this._loadingScreen = new GameLoadingScreen()
     this._loadingScreen.update('generatingWorld', 0.02)
     await this._yieldToBrowser()
@@ -136,6 +151,19 @@ export default class Game extends Container {
 
   _yieldToBrowser(): Promise<void> {
     return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  _gameContext(): GameContextLike {
+    const { map, player, controls, menu, scheduler } = this.context
+    if (!map || !player || !controls || !menu || !scheduler) {
+      throw new Error('Game runtime is not ready')
+    }
+    return this.context as GameContextLike
+  }
+
+  _map(): MapInstance {
+    if (!this.context.map) throw new Error('Game map is not ready')
+    return this.context.map as MapInstance
   }
 
   async _updateLoading(messageKey: string, progress: number): Promise<void> {
@@ -261,33 +289,36 @@ export default class Game extends Container {
       paused: false,
       victory: false,
       defeat: false,
-    } as unknown as GameRuntimeContext
+    }
   }
 
   _createRuntime(): void {
     const { context } = this
-    context.map = new Map(context) as unknown as RuntimeMap
+    context.map = new Map(context) as RuntimeMapInstance
   }
 
   _createUiRuntime(): void {
     const { context } = this
-    context.controls = new Controls(context)
-    context.menu = new Menu(context)
-    context.devConsole = new DevConsole(context as unknown as ConstructorParameters<typeof DevConsole>[0])
+    const gameContext = context as GameContextLike
+    context.controls = new Controls(gameContext)
+    context.menu = new Menu(gameContext)
+    context.devConsole = new DevConsole(context as DevConsoleRuntimeContext)
   }
 
   _mountRuntime(): void {
-    this.addChild(this.context.map as unknown as ContainerChild)
-    this.addChild(this.context.controls)
+    const { map, controls } = this.context
+    if (!map || !controls) return
+    this.addChild(map as ContainerChild)
+    this.addChild(controls)
     this.context.ambientBirds = new AmbientBirds(this.context, () => this._getMapWorldBounds())
     this.context.ambientBirds.zIndex = AMBIENT_BIRD_WORLD_ZINDEX
-    ;(this.context.map as unknown as Container).addChild(this.context.ambientBirds)
+    map.addChild(this.context.ambientBirds)
     this.applyZoom()
     this._attachWindowListeners()
   }
 
   _getMapWorldBounds(): { x: number; y: number; width: number; height: number } {
-    const { size } = this.context.map
+    const size = this.context.map?.size ?? 0
     return {
       x: -(size * CELL_WIDTH) / 2,
       y: 0,
@@ -302,14 +333,14 @@ export default class Game extends Container {
     this._resetOverlayDom()
     this._removeWindowListeners()
     if (this.context.map) {
-      cleanupDebugArtifacts(this.context as unknown as Parameters<typeof cleanupDebugArtifacts>[0])
+      cleanupDebugArtifacts(this.context as DevConsoleRuntimeContext)
     }
     this.context.scheduler?.clear?.()
     this.context.performance?.reset?.()
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy?.()
-    ;(this.context.map as unknown as Container | null)?.destroy({ children: true })
+    this.context.map?.destroy({ children: true })
     this.removeChildren()
     this._resetRuntimeState()
   }
@@ -317,8 +348,8 @@ export default class Game extends Container {
   async _bootFromConfig(config: GameConfig): Promise<void> {
     this.context.performance?.setPhase?.('load')
     this._createRuntime()
-    const map = this.context.map as unknown as MapInstance
-    this._applyMapConfig(this.context.map, config)
+    const map = this._map()
+    this._applyMapConfig(map, config)
     this._createUiRuntime()
 
     const posCount = config.players ? config.players.length : config.bots != null ? Number(config.bots) + 1 : null
@@ -351,25 +382,27 @@ export default class Game extends Container {
       blueprintResources: map.blueprintResourceLoadMs || 0,
     }
     await this._updateLoading('generatingPlayers', 0.2)
-    this.context.players = map.generatePlayers((config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null)
+    this.context.players = map.generatePlayers(
+      (config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null
+    )
     this.context.player = this.context.players[0]
-    this.context.menu.init?.()
+    this.context.menu?.init?.()
     await map.stylishMap({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
     await this._updateLoading('finalizingWorld', 0.96)
-    this.context.controls.init?.()
+    this.context.controls?.init?.()
 
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
-    this._restartSaveData = structuredClone(serializeGame(this.context)) as SerializedSave
+    this._restartSaveData = structuredClone(serializeGame(this._gameContext())) as SerializedSave
   }
 
   async _bootFromSeedSave(json: SerializedSave): Promise<void> {
     this.context.performance?.setPhase?.('load')
     this._createRuntime()
-    const map = this.context.map as unknown as MapInstance
+    const map = this._map()
     const world = (json.world || {}) as GameConfig
     const savedConfig = (json.config || {}) as GameConfig
     const seedConfig = {
@@ -378,7 +411,7 @@ export default class Game extends Container {
       size: world.size ?? savedConfig.size,
       mapType: world.mapType ?? savedConfig.mapType,
     }
-    this._applyMapConfig(this.context.map, seedConfig)
+    this._applyMapConfig(map, seedConfig)
     this._createUiRuntime()
 
     const savedPlayers = Array.isArray(json.players) ? json.players : []
@@ -419,10 +452,10 @@ export default class Game extends Container {
       return
     }
     this._createRuntime()
-    const map = this.context.map as unknown as MapInstance
-    const savedMap = json.map as unknown[] | undefined
+    const map = this._map()
+    const savedMap = json.map
     map.size = Math.max(0, (savedMap?.length || 1) - 1)
-    this._applyMapConfig(this.context.map, (json.config as GameConfig) || {})
+    this._applyMapConfig(map, (json.config as GameConfig) || {})
     this._createUiRuntime()
     map.generateFromJSON(json as SerializedSave & { map: SaveCellState[][] })
     this._mountRuntime()
@@ -431,7 +464,7 @@ export default class Game extends Container {
   }
 
   save(): { key: string; name: string } {
-    return saveToStorage(this.context)
+    return saveToStorage(this._gameContext())
   }
 
   async load(json: SerializedSave): Promise<void> {
@@ -441,7 +474,7 @@ export default class Game extends Container {
       this._destroyRuntime()
       const speed = getGameSpeed()
       this.context.app.ticker.speed = speed
-      this.context.scheduler.timeScale = speed
+      if (this.context.scheduler) this.context.scheduler.timeScale = speed
       this._loadingScreen = new GameLoadingScreen()
       this._loadingScreen.update('generatingTerrain', 0.02)
       await this._yieldToBrowser()
@@ -475,7 +508,7 @@ export default class Game extends Container {
     this._destroyRuntime()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
-    this.context.scheduler.timeScale = speed
+    if (this.context.scheduler) this.context.scheduler.timeScale = speed
     this._loadingScreen = new GameLoadingScreen()
     this._loadingScreen.update('generatingTerrain', 0.02)
     await this._yieldToBrowser()
@@ -492,14 +525,14 @@ export default class Game extends Container {
     if (this.onQuit) this.onQuit()
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     this._wakeLock?.release()
     document.removeEventListener('visibilitychange', this._onVisibilityChange as EventListener)
     this._destroyRuntime()
     this.context.scheduler?.destroy?.()
     this.context.performance?.destroy?.()
-    ;(this.context as unknown as { scheduler: SchedulerLike | null; performance: PerformanceMonitorLike | null }).scheduler = null
-    ;(this.context as unknown as { scheduler: SchedulerLike | null; performance: PerformanceMonitorLike | null }).performance = null
+    this.context.scheduler = null
+    this.context.performance = null
     super.destroy(options)
   }
 
@@ -542,6 +575,7 @@ export default class Game extends Container {
   togglePause(pause: boolean, options: { silent?: boolean } = {}): void {
     if ((this.context.victory || this.context.defeat) && !pause) return
     const { map, players = [] } = this.context
+    if (!map) return
     if (pause) {
       document.getElementById('pause')?.remove()
       if (!options.silent && !this.context.victory && !this.context.defeat) {

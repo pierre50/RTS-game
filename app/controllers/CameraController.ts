@@ -1,17 +1,11 @@
 import { pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/settings'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Viewport } from '../types/geometry'
-import type { RuntimeCell } from '../types/map'
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'
-type CameraMap = {
-  size: number
-  grid: RuntimeCell[][]
-  setCoordinate(x: number, y: number): void
-  updateRenderChunks?: (viewport: Viewport) => void
-}
 type CameraContext = {
   app: {
     screen: {
@@ -19,9 +13,9 @@ type CameraContext = {
       height: number
     }
   }
-  map: CameraMap
+  map: RuntimeMap
   menu?: {
-    updateCameraMiniMap(): void
+    updateCameraMiniMap?(): void
   } | null
   player?: {
     views?: unknown
@@ -192,7 +186,7 @@ export class CameraController {
     if (this.camera.x === prevX && this.camera.y === prevY) return
 
     this.clampCameraToMap()
-    menu?.updateCameraMiniMap()
+    menu?.updateCameraMiniMap?.()
     map.setCoordinate(-this.camera.x, -this.camera.y)
     this.scheduleVisibleCellsUpdate()
   }
@@ -339,7 +333,7 @@ export class CameraController {
       x: center.x - app.screen.width / 2,
       y: center.y - app.screen.height / 2,
     }
-    menu && menu.updateCameraMiniMap()
+    menu?.updateCameraMiniMap?.()
     map.setCoordinate(-this.camera.x, -this.camera.y)
     this.updateVisibleCells()
   }

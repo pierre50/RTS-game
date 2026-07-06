@@ -3,7 +3,6 @@ import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { ResourceAmount } from '../types/common'
 import type { TechnologyConfig } from '../types/config'
 
 export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
@@ -121,6 +120,8 @@ export type DevConsoleContext = {
   }
   debugAiInfoTargetIndex?: number | null
 }
+
+export type DevConsoleRuntimeContext = Omit<DevConsoleContext, 'commands'>
 
 export type DevEntity = RuntimeEntity & {
   action?: string | null

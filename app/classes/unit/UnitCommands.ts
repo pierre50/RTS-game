@@ -18,6 +18,7 @@ import {
 import { t } from '../../lib/lang'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import type { ActionProps } from '../../lib/combat'
 
 function getActionSheet(work: string | null | undefined, action: string | null | undefined, unit: UnitEntity) {
   if (!work) {
@@ -31,7 +32,7 @@ function checkActionCondition(
   source: UnitEntity,
   target: RuntimeEntity | null | undefined,
   action?: string,
-  props?: Record<string, unknown>
+  props?: ActionProps
 ): boolean {
   if (!target) return false
   return getActionCondition(source, target, action ?? '', props)

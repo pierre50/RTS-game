@@ -13,7 +13,15 @@ import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, R
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
-import type { AIAge, AIBuildingLike, AIEntityLike, AIStrategyPlayerLike, AIStrategySnapshot } from '../../ai/types'
+import type {
+  AIAge,
+  AIBuildingLike,
+  AIEntityLike,
+  AIStrategyPlayerLike,
+  AIStrategySnapshot,
+  EnemyMemoryOptions,
+} from '../../ai/types'
+import type { RenderableInstance } from '../../lib/grid/visibility'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -64,12 +72,6 @@ type ActiveThreat = StoredThreat & {
   profile: ThreatProfile
 }
 
-type EnemyMemoryOptions = {
-  family?: string | null
-  freshWithin?: number
-  visibleOnly?: boolean
-}
-
 type StrategySnapshotState = {
   map: AIStrategySnapshot['map']
   villagers: AIStrategySnapshot['villagers']
@@ -90,6 +92,7 @@ type StrategySnapshotState = {
 const DEBUG = false
 
 export class AI extends Player {
+  declare age: AIAge
   foundedTrees!: Set<RuntimeEntity>
   foundedBerrybushs!: Set<RuntimeEntity>
   foundedGolds!: Set<RuntimeEntity>
@@ -139,9 +142,9 @@ export class AI extends Player {
     this.enemyUnitMemory = new Map()
     this.enemyBuildingMemory = new Map()
     this.difficulty = (props.difficulty as string) || 'medium'
-    this.strategy = new AIStrategy(this as unknown as AIStrategyPlayerLike, this.difficulty)
-    this.economy = new AIEconomy(this as unknown as AIStrategyPlayerLike)
-    this.strategy.applyConfig(this as unknown as AIStrategyPlayerLike)
+    this.strategy = new AIStrategy(this, this.difficulty)
+    this.economy = new AIEconomy(this)
+    this.strategy.applyConfig(this)
     this.stepDelay = this.difficultyConfig.stepDelayBase
     this._scheduleStep()
     this.selectedUnits = []
@@ -219,7 +222,7 @@ export class AI extends Player {
     return this.getEnemyMemories(options).map(memory => memory.instance)
   }
 
-  reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
+  override reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
     if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
 
     const now = this.getNow()
@@ -270,30 +273,34 @@ export class AI extends Player {
   }
 
   getVisibleHostilesNear(target: AIEntityLike, radius = 10): AIEntityLike[] {
-    return findInstancesInSight(
-      { i: target.i, j: target.j, sight: radius, context: this.context } as unknown as Parameters<
-        typeof findInstancesInSight
-      >[0],
-      ((instance: AIEntityLike) => {
-        if (
-          !instance ||
-          instance === target ||
-          instance.isDead ||
-          instance.isDestroyed ||
-          (instance.hitPoints ?? 0) <= 0
-        ) {
-          return false
-        }
-        if (instance.family === FAMILY_TYPES.animal) {
-          return (
-            instance.strategy === 'attack' ||
-            instance.action === ACTION_TYPES.attack ||
-            (instance.dest && 'owner' in instance.dest && instance.dest.owner?.label === this.label)
-          )
-        }
-        return this.isEnemy(instance.owner)
-      }) as Parameters<typeof findInstancesInSight>[1]
-    ) as AIEntityLike[]
+    const sightOrigin: RenderableInstance = {
+      i: target.i,
+      j: target.j,
+      x: target.x ?? target.i,
+      y: target.y ?? target.j,
+      label: target.label,
+      sight: radius,
+      context: this.context,
+    }
+    return findInstancesInSight(sightOrigin, ((instance: AIEntityLike) => {
+      if (
+        !instance ||
+        instance === target ||
+        instance.isDead ||
+        instance.isDestroyed ||
+        (instance.hitPoints ?? 0) <= 0
+      ) {
+        return false
+      }
+      if (instance.family === FAMILY_TYPES.animal) {
+        return (
+          instance.strategy === 'attack' ||
+          instance.action === ACTION_TYPES.attack ||
+          (instance.dest && 'owner' in instance.dest && instance.dest.owner?.label === this.label)
+        )
+      }
+      return this.isEnemy(instance.owner)
+    }) as Parameters<typeof findInstancesInSight>[1]) as AIEntityLike[]
   }
 
   isBuildingThreatened(building: AIEntityLike) {
@@ -646,7 +653,7 @@ export class AI extends Player {
   getStrategySnapshot(state: StrategySnapshotState): AIStrategySnapshot {
     return {
       map: state.map,
-      otherPlayers: this.enemyPlayers() as unknown as AIStrategyPlayerLike[],
+      otherPlayers: this.enemyPlayers(),
       villagers: state.villagers,
       maxVillagers: state.maxVillagers,
       towncenters: this.buildingsByTypes([BUILDING_TYPES.townCenter]),
@@ -711,42 +718,31 @@ export class AI extends Player {
   }
 
   getUnitExtraOptions(type: string) {
-    const me = this
     const options: UnitCreationExtra = {
       handleSetDest: (target: RuntimeEntity | RuntimeCell) => {
         if (!('family' in target)) return
-        const aiTarget = target as unknown as AIEntityLike
-        const { map } = me.context
+        const aiTarget = target
+        const { map } = this.context
         if (type === UNIT_TYPES.villager && aiTarget.family === FAMILY_TYPES.resource) {
           const buildingType =
             aiTarget.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
-          const buildings = me.buildingsByTypes([buildingType])
-          const reserve = me.strategy.getAgeUpReserve()
+          const buildings = this.buildingsByTypes([buildingType])
+          const reserve = this.strategy.getAgeUpReserve()
           if (
-            canAfford(me, me.config.buildings[buildingType].cost) &&
-            me.strategy.canSpendWithReserve(
-              me.config.buildings[buildingType].cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>,
+            canAfford(this, this.config.buildings[buildingType].cost) &&
+            this.strategy.canSpendWithReserve(
+              this.config.buildings[buildingType].cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>,
               reserve
             ) &&
-            me.hasNotReachBuildingLimit(buildingType, buildings)
+            this.hasNotReachBuildingLimit(buildingType, buildings)
           ) {
-            const closestBuilding = getClosestInstance(
-              aiTarget as unknown as Parameters<typeof getClosestInstance>[0],
-              [...buildings, ...me.buildingsByTypes([BUILDING_TYPES.townCenter])] as unknown as Parameters<
-                typeof getClosestInstance
-              >[1]
-            )
-            if (
-              !closestBuilding ||
-              instancesDistance(closestBuilding, aiTarget as unknown as Parameters<typeof instancesDistance>[1]) > 5
-            ) {
-              const pos = getPositionInGridAroundInstance(
-                aiTarget as unknown as Parameters<typeof getPositionInGridAroundInstance>[0],
-                map.grid,
-                [1, 5],
-                1
-              )
-              if (pos && me.buyBuilding(pos.i, pos.j, buildingType)) {
+            const closestBuilding = getClosestInstance(aiTarget, [
+              ...buildings,
+              ...this.buildingsByTypes([BUILDING_TYPES.townCenter]),
+            ])
+            if (!closestBuilding || instancesDistance(closestBuilding, aiTarget) > 5) {
+              const pos = getPositionInGridAroundInstance(aiTarget, map.grid, [1, 5], 1)
+              if (pos && this.buyBuilding(pos.i, pos.j, buildingType)) {
                 if (DEBUG) console.log(`Building ${buildingType} at:`, pos)
               }
             }
@@ -844,11 +840,6 @@ export class AI extends Player {
     const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
     const markets = this.buildingsByTypes([BUILDING_TYPES.market])
     const farms = this.buildingsByTypes([BUILDING_TYPES.farm])
-    const archeryRanges = this.buildingsByTypes([BUILDING_TYPES.archeryRange])
-    const stables = this.buildingsByTypes([BUILDING_TYPES.stable])
-    const academies = this.buildingsByTypes([BUILDING_TYPES.academy])
-    const watchTowers = this.buildingsByTypes([BUILDING_TYPES.watchTower])
-    const sentryTowers = this.buildingsByTypes([BUILDING_TYPES.sentryTower])
     if (DEBUG)
       console.log(
         `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`
@@ -958,6 +949,6 @@ export class AI extends Player {
       context: { players },
     } = this
     this.context.scheduler.remove(this._stepTaskId)
-    players.splice(players.indexOf(this as unknown as (typeof players)[number]), 1)
+    players.splice(players.indexOf(this), 1)
   }
 }

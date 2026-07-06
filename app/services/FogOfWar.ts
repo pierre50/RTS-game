@@ -3,7 +3,7 @@ import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { VisionViewer, VisionViewerRef } from '../types/vision'
+import type { VisionViewerRef } from '../types/vision'
 
 type ViewerSet = Set<VisionViewerRef>
 

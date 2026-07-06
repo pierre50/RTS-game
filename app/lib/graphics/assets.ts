@@ -21,8 +21,8 @@ type AssetOwner = {
   civ: string
 }
 
-type BuildingWithAssetOwner = {
-  assetAge?: number
+export type BuildingWithAssetOwner = {
+  assetAge?: unknown
   assetCiv?: string
   owner: {
     age: number
@@ -73,8 +73,9 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
 }
 
 export function getBuildingAssetOwner(building: BuildingWithAssetOwner): AssetOwner {
+  const age = typeof building.assetAge === 'number' ? building.assetAge : building.owner.age
   return {
     civ: building.assetCiv || building.owner.civ || '',
-    age: building.assetAge ?? building.owner.age,
+    age,
   }
 }

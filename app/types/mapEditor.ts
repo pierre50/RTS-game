@@ -2,7 +2,7 @@ import type { PlayerLike } from './player'
 import type { RuntimeEntity } from './entities'
 import type { RuntimeCell } from './map'
 import type { PlayerSetupConfig } from './save'
-import type { GameContextLike } from './context'
+import type { GameContextLike, MenuLike } from './context'
 
 export interface MapEditorPlacementSelection {
   owner: PlayerLike
@@ -12,6 +12,11 @@ export interface MapEditorPlacementSelection {
 
 export interface MapEditorLike {
   handleEntityInteraction(entity: RuntimeEntity): boolean
+  canSelectEntities(): boolean
+  handleUnitsModeMapClick(cell: RuntimeCell): boolean
+  canPaintTerrain(): boolean
+  applyBrush(cell: RuntimeCell): void
+  _canWallUseCell(cell: RuntimeCell, owner: PlayerLike | null, allowExistingWall?: boolean): boolean
   exportMap(): void
   getPlacementOwners(): PlayerLike[]
   setPlacementSelection(ownerLabel: string | null, type: string | null, kind: string | null): void
@@ -42,13 +47,12 @@ export interface EditorConfig {
   name?: string
 }
 
-interface MapEditorHudLike {
+interface MapEditorHudLike extends MenuLike {
   sync(): void
-  setBottombar(selection?: RuntimeEntity | null): void
   updateStatus(cell: RuntimeCell | null): void
+  updateCameraMiniMap(): void
   updateResourcesMiniMap(): void
   revealTerrainMinimap(): void
-  updateCameraMiniMap(): void
   init(): void
   destroy(): void
 }

@@ -3,8 +3,7 @@ import { isometricToCartesian } from '../lib'
 import { CameraController } from './CameraController'
 import { getCameraZoom } from '../lib/settings'
 import { EditorEntityPreview, type EditorPreviewControls } from './EditorEntityPreview'
-import type { RuntimeCell } from '../types/map'
-import type { RuntimeMap } from '../types/map'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlaceableBuildingConfig } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 
@@ -71,7 +70,7 @@ const TARGET_FRAME_MS = 1000 / 60
 export class EditorControls extends Container {
   context: EditorControlsContext
   cameraController: CameraController
-  mouse: { prevent: boolean }
+  mouse: { x: number; y: number; prevent: boolean }
   mouseBuilding: PlaceableBuildingConfig | null
   mouseRectangle: unknown | false
   clicked: boolean
@@ -97,7 +96,7 @@ export class EditorControls extends Container {
     super()
     this.context = context
     this.cameraController = new CameraController(context)
-    this.mouse = { prevent: false }
+    this.mouse = { x: 0, y: 0, prevent: false }
     this.mouseBuilding = null
     this.mouseRectangle = false
     this.clicked = false
@@ -133,7 +132,7 @@ export class EditorControls extends Container {
     this.updateVisibleCells()
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     document.removeEventListener('mousemove', this._onDocMouseMove)
     document.removeEventListener('mouseout', this._onDocMouseOut)
     document.removeEventListener('keydown', this._onKeyDown)
@@ -175,6 +174,18 @@ export class EditorControls extends Container {
       x: (x - offsetX) / zoom,
       y: (y - offsetY) / zoom,
     }
+  }
+
+  localToScreen(x: number, y: number): { x: number; y: number } {
+    const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    return {
+      x: x * zoom + offsetX,
+      y: y * zoom + offsetY,
+    }
+  }
+
+  isInteractionBlocked(): boolean {
+    return false
   }
 
   isMouseInApp(evt: MouseEvent): boolean {

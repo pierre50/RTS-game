@@ -36,7 +36,22 @@
       "Bash(grep -n \"constructor\\(options: UnknownRecord, context: GameContextLike\\) {\" app/classes/players/player.ts)",
       "Bash(grep -n \"constructor\\(options: UnknownRecord, context: GameContextLike\\) {\" app/classes/animal/index.ts)",
       "Bash(grep -n \"^import type { PlayerLike }\\\\|from '../players/player'\" app/classes/map/MapGeneration.ts)",
-      "Bash(awk 'NR==541{print NR\": \"$0} NR<541 && NR>480 && /resources/{print NR\": \"$0}' app/classes/map/MapGeneration.ts)"
+      "Bash(awk 'NR==541{print NR\": \"$0} NR<541 && NR>480 && /resources/{print NR\": \"$0}' app/classes/map/MapGeneration.ts)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/eslint \"app/**/*.ts\")",
+      "Bash(xargs -I{} sh -c 'echo \"$\\(grep -c \"unknown\" {}\\): {}\"')",
+      "Bash(npm --version)",
+      "Bash(node -e \"const p = require\\('@typescript-eslint/eslint-plugin'\\); console.log\\(Object.keys\\(p.configs\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(./node_modules/.bin/eslint \"app/**/*.ts\" --fix)",
+      "Bash(grep -rn \";$\" app --include=\"*.ts\")",
+      "Bash(./node_modules/.bin/prettier --write \"app/**/*.ts\")",
+      "Bash(grep -v \"no-unused-expressions\\\\|^--$\")",
+      "Bash(./node_modules/.bin/eslint \"app/**/*.ts\" -f json)",
+      "Bash(grep -v \"no-unused-vars\\\\|^--$\")",
+      "Bash(awk 'NR==956,/^  \\\\}/{print NR\": \"$0; if\\(NR>956 && /^  \\\\}$/\\) exit}' app/screens/MapEditor.ts)",
+      "Bash(awk 'NR==305,0{print; if\\(NR>305 && /^  \\\\}$/\\) exit}' app/ui/BottombarManager.ts)",
+      "Bash(sort -t: -k1,1 -k2,2n)"
     ]
   }
 }

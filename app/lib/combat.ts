@@ -1,12 +1,6 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import type { PlayerLike } from '../types/player'
 
-type OwnerLike = {
-  isEnemy?: (owner?: PlayerLike | null) => boolean
-  label?: string
-  technologies?: string[]
-}
-
 type CombatEntity = {
   allowAction?: string[]
   category?: string
@@ -35,7 +29,7 @@ export type Condition = {
   value: unknown
 }
 
-type ActionProps = {
+export type ActionProps = {
   buildingTypes?: string[]
 }
 

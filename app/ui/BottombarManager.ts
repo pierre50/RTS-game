@@ -198,7 +198,12 @@ export class BottombarManager {
     element.appendChild(back)
   }
 
-  renderMenuLevel(selection: RuntimeEntity, element: HTMLElement, items: MenuButtonSpec[], parent?: MenuButtonSpec[]): void {
+  renderMenuLevel(
+    selection: RuntimeEntity,
+    element: HTMLElement,
+    items: MenuButtonSpec[],
+    parent?: MenuButtonSpec[]
+  ): void {
     this.activeHotkeys.clear()
     const usedKeys = new Set<string>()
 
@@ -300,7 +305,7 @@ export class BottombarManager {
   setBottombar(selection: RuntimeEntity | null = null): void {
     const { menu } = this
     const {
-      context: { controls, player },
+      context: { controls },
     } = menu
 
     this.resetInfo()
@@ -318,9 +323,7 @@ export class BottombarManager {
 
   getMessage(cost: ResourceAmount): string {
     const { player } = this.menu.context
-    const resource = (Object.keys(cost) as (keyof ResourceAmount)[]).find(
-      prop => player[prop] < (cost[prop] ?? 0)
-    )
+    const resource = (Object.keys(cost) as (keyof ResourceAmount)[]).find(prop => player[prop] < (cost[prop] ?? 0))
     return t('needMore', { resource: t(resource as string) })
   }
 
@@ -331,7 +334,8 @@ export class BottombarManager {
   }
 
   getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
-    const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+    const displayType =
+      type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
     return {
       title: t(displayType),
       description: t(`${displayType}Description`),
@@ -451,7 +455,8 @@ export class BottombarManager {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       icon: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+        const displayType =
+          type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
         const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
         return getIconPath(
           type === BUILDING_TYPES.smallWall
@@ -461,7 +466,8 @@ export class BottombarManager {
       },
       hide: () => !owner.isBuildingEligible?.(type),
       onClick: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+        const displayType =
+          type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
         const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
         controls.removeMouseBuilding()
         if (canAfford(owner, config.cost)) {

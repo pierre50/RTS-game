@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
+import { FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   degreeToDirection,
   getInstanceClosestFreeCellPath,

@@ -11,6 +11,7 @@ import {
 import { COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
+import type { BuildingWithAssetOwner, RecolorableSprite } from '../../lib'
 
 type FogMemorySprite = FogSpriteMemory & {
   sprite?: Sprite
@@ -20,7 +21,7 @@ type FogMapLike = {
   revealTerrain?: boolean
   revealEverything?: boolean
   fogMemoryLayer?: { addChild(child: Sprite): unknown } | null
-  grid: FogCellLike[][]
+  grid?: FogCellLike[][]
   _fogQueue?: Map<FogCellLike, string>
   _fogInitComplete?: boolean
 }
@@ -103,7 +104,7 @@ export class CellFog {
     sprite.anchor.set(sprite.texture.defaultAnchor?.x ?? 0.5, sprite.texture.defaultAnchor?.y ?? 0.5)
     sprite.cullable = true
     if (colorName) {
-      changeSpriteColorDirectly(sprite as unknown as Parameters<typeof changeSpriteColorDirectly>[0], colorName)
+      changeSpriteColorDirectly(sprite as RecolorableSprite, colorName)
     }
     addToLayer(sprite)
     cell.fogSprites.push({ sprite, textureSheet, colorName })
@@ -111,7 +112,7 @@ export class CellFog {
 
   removeFogBuilding(instance: FogInstance | null = null): void {
     const { cell } = this
-    const targetCell = instance ? cell.context.map.grid[instance.i]?.[instance.j] : cell
+    const targetCell = instance ? cell.context.map.grid?.[instance.i]?.[instance.j] : cell
     if (!targetCell) return
     targetCell.fogSprites.forEach(s => s.sprite?.destroy())
     targetCell.fogSprites = []
@@ -126,10 +127,11 @@ export class CellFog {
           if (!map.revealTerrain) {
             const assets = getBuildingAsset(
               instance.assetType || instance.type,
-              getBuildingAssetOwner(instance as unknown as Parameters<typeof getBuildingAssetOwner>[0]),
+              getBuildingAssetOwner(instance as BuildingWithAssetOwner),
               Assets
             ) as BuildingAssetWithFinalImage
-            const localCell = map.grid[instance.i][instance.j]
+            const localCell = map.grid?.[instance.i]?.[instance.j]
+            if (!localCell) return
             localCell.addFogBuilding(assets.images.final, instance.owner.color)
           }
         }
@@ -139,7 +141,7 @@ export class CellFog {
   }
 
   _setRemoveChildren(instance: FogInstance): void {
-    updateInstanceRenderVisibility(instance as unknown as Parameters<typeof updateInstanceRenderVisibility>[0])
+    updateInstanceRenderVisibility(instance)
     for (let i = 0; i < (instance.children?.length ?? 0); i++) {
       const child = instance.children?.[i]
       if (child?.tint) {

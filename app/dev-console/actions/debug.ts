@@ -2,7 +2,7 @@ import { Text } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import type { CommandResult } from '../DevCommandRegistry'
-import type { DevCell, DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
+import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
@@ -222,9 +222,7 @@ export function performanceReport(context: DevConsoleContext, value: string): Co
   const lines = [
     `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
   ]
-  const metrics = Object.entries(report.metrics).sort(
-    ([, a], [, b]) => b.totalMs - a.totalMs
-  )
+  const metrics = Object.entries(report.metrics).sort(([, a], [, b]) => b.totalMs - a.totalMs)
   for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
     lines.push(
       `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms | slow ${metric.slowCount}`

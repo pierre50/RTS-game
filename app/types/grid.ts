@@ -39,3 +39,11 @@ export type InstanceLike = GridPosition &
     parent?: object | null
     size?: number
   }
+
+export type GridInstanceLike = GridPosition &
+  Partial<Point> & {
+    category?: string
+    isDestroyed?: boolean
+    parent?: object | null
+    size?: number
+  }

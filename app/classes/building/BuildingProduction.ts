@@ -265,7 +265,7 @@ export class BuildingProduction {
         () => {
           const technology = building.technology
           if (!technology) return
-          const { config, type } = technology
+          const { type } = technology
           if ((building.loading ?? 0) >= 100 || map.instantMode) {
             building.stopInterval()
             building.loading = null

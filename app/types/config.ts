@@ -44,7 +44,7 @@ export interface TechnologyConfig extends EntityConfig {
   action?: TechnologyAction
 }
 
-export interface ResourceConfig extends EntityConfig {}
+export type ResourceConfig = EntityConfig
 
 export interface AnimalConfig extends EntityConfig {
   totalHitPoints?: number

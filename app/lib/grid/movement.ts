@@ -1,7 +1,7 @@
 import { findInstancePath } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint } from './cells'
-import type { Grid, GridCell, GridPosition, InstanceLike, Point } from '../../types/grid'
+import type { Grid, GridCell, GridInstanceLike, GridPosition, InstanceLike, Point } from '../../types/grid'
 
 export type GameMap<TCell extends GridCell = GridCell> = {
   grid: Grid<TCell>
@@ -13,7 +13,9 @@ export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boole
   return Math.floor(instancesDistance(a, b)) <= ((b.size ?? 1) - 1 || 1) && !b.isDestroyed
 }
 
-export function moveTowardPoint(instance: InstanceLike, x: number, y: number, speed: number): void {
+type MovableInstance = Point & { degree?: number }
+
+export function moveTowardPoint(instance: MovableInstance, x: number, y: number, speed: number): void {
   const dist = pointsDistance(x, y, instance.x, instance.y)
   if (dist === 0) return
 
@@ -47,11 +49,12 @@ export function getFreeCellAroundPoint<TCell extends GridCell>(
 
 export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   instance: PathInstanceLike,
-  target: InstanceLike | TCell,
+  target: GridInstanceLike | TCell,
   map: GameMap<TCell>
 ): TCell[] {
   const occupiedInstance = (target as { has?: unknown }).has as InstanceLike | undefined
-  const size = (target as InstanceLike).size || occupiedInstance?.size || 1
+  const targetSize = 'size' in target && typeof target.size === 'number' ? target.size : 0
+  const size = targetSize || occupiedInstance?.size || 1
   const distance = size === 3 ? 2 : 1
 
   const candidates = getCellsAroundPoint(target.i, target.j, map.grid, distance)

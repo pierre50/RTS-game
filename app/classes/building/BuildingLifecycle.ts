@@ -29,7 +29,6 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 import type { Texture } from 'pixi.js'

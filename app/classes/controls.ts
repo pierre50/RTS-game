@@ -24,20 +24,14 @@ type PointerPageEvent = {
     target?: EventTarget | null
   } | null
 }
-type TouchLike = PointerPageEvent
-type TouchInputEvent = {
-  touches: TouchLike[]
-  changedTouches: TouchLike[]
+type TouchInteraction = {
+  mode: 'pan' | 'tap' | 'select'
+  startX: number
+  startY: number
+  lastX: number
+  lastY: number
+  moved: boolean
 }
-type TouchInteraction =
-  {
-    mode: 'pan' | 'tap' | 'select'
-    startX: number
-    startY: number
-    lastX: number
-    lastY: number
-    moved: boolean
-  }
 type TickerLike = { elapsedMS?: number; deltaTime: number }
 type AudibleEntity = {
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
@@ -105,7 +99,7 @@ export default class Controls extends Container implements ControlsLike {
       prevent: false,
     }
 
-    this.cameraController = new CameraController(context as unknown as ConstructorParameters<typeof CameraController>[0])
+    this.cameraController = new CameraController(context)
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
     this.mouseHoldTimeout = undefined
@@ -158,7 +152,7 @@ export default class Controls extends Container implements ControlsLike {
     context.app.ticker.add(this._onTick)
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     const {
       context: { gamebox },
     } = this
@@ -397,8 +391,7 @@ export default class Controls extends Container implements ControlsLike {
       const interaction = this.touchInteraction
       const hasMoved =
         interaction &&
-        pointsDistance(this.mouse.x, this.mouse.y, interaction.startX, interaction.startY) >
-          TOUCH_DRAG_THRESHOLD
+        pointsDistance(this.mouse.x, this.mouse.y, interaction.startX, interaction.startY) > TOUCH_DRAG_THRESHOLD
       if (hasMoved) {
         this.mouseDrag = true
         interaction.moved = true
@@ -675,7 +668,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   instanceInCamera(instance: unknown): boolean {
-    return this.cameraController.instanceInCamera(instance as unknown as { x: number; y: number })
+    return this.cameraController.instanceInCamera(instance as { x: number; y: number })
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {

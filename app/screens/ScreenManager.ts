@@ -1,4 +1,4 @@
-import { Application } from 'pixi.js'
+import type { Application } from 'pixi.js'
 import Game from './Game'
 import MapEditor from './MapEditor'
 import MapEditorConfig from './MapEditorConfig'

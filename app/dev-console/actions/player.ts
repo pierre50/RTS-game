@@ -112,7 +112,8 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
     switch (action.type) {
       case 'upgradeUnit':
         player.units.forEach(unit => {
-          if (unit.type === action.source) (unit as DevEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
+          if (unit.type === action.source)
+            (unit as DevEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
         })
         break
       case 'upgradeBuilding':

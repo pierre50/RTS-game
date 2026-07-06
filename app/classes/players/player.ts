@@ -129,7 +129,7 @@ export class Player implements PlayerLike {
         }
       },
       this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain
-    ) as unknown as VisionGridLike
+    )
   }
 
   reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {

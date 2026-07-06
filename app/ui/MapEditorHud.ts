@@ -11,7 +11,7 @@ import type { PlayerLike } from '../types/player'
 import type { RuntimeCell } from '../types/map'
 import type { MapEditorLike, MapEditorUiState } from '../types/mapEditor'
 import type { PlayerSetupConfig } from '../types/save'
-import type { MinimapPlayerCanvas } from '../types/ui'
+import type { MenuButtonSpec, MinimapPlayerCanvas } from '../types/ui'
 
 type MapEditorContext = GameContextLike & {
   editor: MapEditorLike
@@ -553,6 +553,42 @@ export class MapEditorHud {
     )
     wrapper.appendChild(actionRow)
     this.bottombarMenu.appendChild(wrapper)
+  }
+
+  showMessage(): void {}
+
+  updateTopbar(): void {
+    this.sync()
+  }
+
+  updateBottombar(): void {
+    this.setBottombar(this.selection)
+  }
+
+  updatePlayerStats(): void {
+    this.sync()
+  }
+
+  updateInfo(): void {}
+
+  updateButtonContent(): void {}
+
+  toggleButtonCancel(): void {}
+
+  getUnitButton(): MenuButtonSpec {
+    return { id: 'editor-unit-placeholder' }
+  }
+
+  getTechnologyButton(): MenuButtonSpec {
+    return { id: 'editor-technology-placeholder' }
+  }
+
+  getRallyPointButton(): MenuButtonSpec {
+    return { id: 'editor-rally-placeholder' }
+  }
+
+  getBuildingButton(): MenuButtonSpec {
+    return { id: 'editor-building-placeholder' }
   }
 
   updateStatus(cell: RuntimeCell | null): void {

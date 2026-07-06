@@ -42,5 +42,4 @@ export class Human extends Player {
     this.selectedUnit = nextVillager || this.selectedUnits[0]
     menu.setBottombar(this.selectedUnit)
   }
-
 }

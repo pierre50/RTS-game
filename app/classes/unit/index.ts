@@ -16,11 +16,9 @@ import {
   changeSpriteColor,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
-  getActionCondition,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
-  setUnitTexture,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   degreeToDirection,
@@ -185,7 +183,7 @@ export class Unit extends Instance implements UnitEntity {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     Object.assign(this, options)
-    const unitConfig = this.owner.config.units[this.type] as typeof this.owner.config.units[string] & PositionedConfig
+    const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     Object.assign(this, unitConfig)
     this.size = 1
     this.visible = false
@@ -564,13 +562,13 @@ export class Unit extends Instance implements UnitEntity {
     this.fishingOverlaySprite.gotoAndStop(0)
   }
 
-  setTextures(sheet: string) {
+  override setTextures(sheet: string) {
     super.setTextures(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
     this.syncFishingOverlaySprite()
   }
 
-  select() {
+  override select() {
     if (this.loadedInTransport) return
     if (this.selected) return
     super.select()
@@ -580,7 +578,7 @@ export class Unit extends Instance implements UnitEntity {
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
-  unselect() {
+  override unselect() {
     if (!this.selected) return
     super.unselect()
     const {
@@ -589,7 +587,7 @@ export class Unit extends Instance implements UnitEntity {
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
-  hasPath() {
+  override hasPath() {
     return this.path.length > 0
   }
 
@@ -656,7 +654,7 @@ export class Unit extends Instance implements UnitEntity {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: Record<string, unknown> & { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
   ) {
     return this.unitMovement.sendToEvt(dest, action ?? null, options)
   }
@@ -701,7 +699,7 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitMovement.destHasMoved()
   }
 
-  moveToPath() {
+  override moveToPath() {
     return this.unitMovement.moveToPath()
   }
 
@@ -759,7 +757,7 @@ export class Unit extends Instance implements UnitEntity {
     this.setTextures(SHEET_TYPES.standing)
   }
 
-  startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {
+  override startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {
     if (this.isDead) {
       return
     }
@@ -784,7 +782,7 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitLifecycle.death()
   }
 
-  die() {
+  override die() {
     return this.unitLifecycle.die()
   }
 

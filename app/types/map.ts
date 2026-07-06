@@ -74,6 +74,7 @@ export interface RuntimeMap {
   randomRange(min: number, max: number): number
   random(): number
   randomItem<T>(items: T[]): T
+  invalidateReliefCoastDistances(): void
   setCoordinate(x: number, y: number): void
   updateRenderChunks?(viewport: Viewport): void
   addToInstanceBucket(instance: RuntimeEntity): void

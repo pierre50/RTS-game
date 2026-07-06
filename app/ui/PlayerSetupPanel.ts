@@ -58,16 +58,13 @@ export class PlayerSetupPanel {
   playerCountRow: HTMLDivElement
   playerCountSelect!: HTMLSelectElement
 
-  constructor({
-    players,
-    maxPlayers,
-    onChange = null,
-    showAge = false,
-  }: PlayerSetupPanelOptions) {
+  constructor({ players, maxPlayers, onChange = null, showAge = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
     this.showAge = showAge
     this.maxPlayers = Math.max(2, Math.min(maxPlayers || 2, MAX_PLAYERS))
-    this.players = (players?.length ? players : this._createDefaultPlayers()).map(player => this._normalizePlayer(player))
+    this.players = (players?.length ? players : this._createDefaultPlayers()).map(player =>
+      this._normalizePlayer(player)
+    )
     if (this.showAge) {
       this.players.forEach(player => {
         player.age = Math.max(0, Math.min(Number(player.age) || 0, 3))

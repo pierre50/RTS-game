@@ -474,7 +474,7 @@ export default class Map extends Container {
     return this.mapFog._flushFogQueue()
   }
 
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
     this.terrainChunkManager?.destroy()
     this.mapFog?.destroyFogResources()
     super.destroy(options ?? undefined)

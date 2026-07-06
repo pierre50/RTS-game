@@ -215,10 +215,7 @@ export class UnitCombat {
             playAudibleSoundCue(unit, unit.sounds.hit)
           }
           if (dest && (dest.hitPoints ?? 0) > 0) {
-            dest.hitPoints = getHitPointsWithDamage(
-              unit,
-              dest
-            )
+            dest.hitPoints = getHitPointsWithDamage(unit, dest)
             if (dest.selected) {
               dest.drawHealthBar?.()
               if (

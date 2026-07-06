@@ -138,7 +138,7 @@ export class MapFog {
     if (!renderer) return
     const bakeStartedAt = performance.now()
 
-    const { minX, minY, maxX, maxY, totalW, totalH } = this._getFogMapBounds()
+    const { minX, minY, totalW, totalH } = this._getFogMapBounds()
 
     const gl = renderer.gl
     const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
@@ -249,7 +249,10 @@ export class MapFog {
 
       const destroyStartedAt = performance.now()
       terrainContainer.destroy({ children: true, texture: false, textureSource: false })
-      this.map.context.performance?.record?.('cellCompaction.destroyTerrainContainer', performance.now() - destroyStartedAt)
+      this.map.context.performance?.record?.(
+        'cellCompaction.destroyTerrainContainer',
+        performance.now() - destroyStartedAt
+      )
 
       const instances = [
         ...(this.map.gaia?.units || []),

@@ -11,7 +11,9 @@ function canSpawnUnitOnCell(cell: DevCell, unitConfig: UnitSpawnConfig): boolean
   return unitConfig.category === 'Boat' ? cell.category === 'Water' : cell.category !== 'Water' && !cell.waterBorder
 }
 
-type ResolveOwnerResult = { owner: DevPlayer; ownerIndex: number; error: null } | { owner: null; ownerIndex: null; error: string }
+type ResolveOwnerResult =
+  | { owner: DevPlayer; ownerIndex: number; error: null }
+  | { owner: null; ownerIndex: null; error: string }
 
 function resolveOwner(context: DevConsoleContext, playerIndex: string | number | null): ResolveOwnerResult {
   if (playerIndex == null) {

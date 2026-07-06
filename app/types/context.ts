@@ -1,8 +1,9 @@
 import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity } from './entities'
+import type { RuntimeEntity, PlaceableBuildingConfig } from './entities'
 import type { MapEditorLike } from './mapEditor'
+import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 
 export interface SchedulerLike {
   elapsedMs: number
@@ -41,10 +42,10 @@ export interface MenuLike {
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   toggleButtonCancel(id: string, enabled: boolean): void
-  getUnitButton(type: string): import('./ui').MenuButtonSpec
-  getTechnologyButton(type: string): import('./ui').MenuButtonSpec
-  getRallyPointButton(): import('./ui').MenuButtonSpec
-  getBuildingButton(type: string, ownerOverride?: PlayerLike | null): import('./ui').MenuButtonSpec
+  getUnitButton(type: string): MenuButtonSpec
+  getTechnologyButton(type: string): MenuButtonSpec
+  getRallyPointButton(): MenuButtonSpec
+  getBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   updatePlayerStats(): void
   init?(): void
   destroy?(): void
@@ -66,7 +67,7 @@ export interface MinimapHostLike {
   terrainMinimap: HTMLCanvasElement
   resourcesMinimap: HTMLCanvasElement
   cameraMinimap: HTMLCanvasElement
-  playersMinimap: import('./ui').MinimapPlayerCanvas[]
+  playersMinimap: MinimapPlayerCanvas[]
   minimapManager: MinimapManagerLike
   toggle?: HTMLButtonElement
   toggled: boolean
@@ -95,7 +96,7 @@ export interface ControlsLike extends Container {
   localToScreen(x: number, y: number): { x: number; y: number }
   getViewportMetrics(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }
   removeMouseBuilding(): void
-  setMouseBuilding?(building: import('./entities').PlaceableBuildingConfig): void
+  setMouseBuilding?(building: PlaceableBuildingConfig): void
   setCamera?(x: number, y: number, direct?: boolean): void
   sendUnits?(cell: RuntimeCell): void
   updateVisibleCells?(): void

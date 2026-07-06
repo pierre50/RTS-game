@@ -1,9 +1,9 @@
 import { createDevCommands } from './createDevCommands'
-import { DevCommandRegistry } from './DevCommandRegistry'
-import type { DevConsoleContext } from './types'
+import type { DevCommandRegistry } from './DevCommandRegistry'
+import type { DevConsoleRuntimeContext } from './types'
 
 export class DevConsole {
-  context: DevConsoleContext
+  context: DevConsoleRuntimeContext
   commands: DevCommandRegistry
   history: string[]
   historyIndex: number
@@ -15,7 +15,7 @@ export class DevConsole {
   _onKeyDown: (evt: KeyboardEvent) => void
   _onSubmit: (evt: Event) => void
 
-  constructor(context: DevConsoleContext) {
+  constructor(context: DevConsoleRuntimeContext) {
     this.context = context
     this.commands = createDevCommands()
     this.history = []

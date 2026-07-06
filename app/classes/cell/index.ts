@@ -14,8 +14,8 @@ type CellMap = {
 }
 
 type CellContext = {
-  map?: CellMap
-  player?: { views?: { isViewed(i: number, j: number): boolean } }
+  map: CellMap
+  player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
 }
 
 type CellOptions = {
@@ -72,7 +72,7 @@ export class Cell extends Container {
 
     this.context = context
 
-    const map = context.map as CellMap
+    const map = context.map
     this.family = FAMILY_TYPES.cell
     this.map = map
 
@@ -125,7 +125,7 @@ export class Cell extends Container {
     this.sprite.eventMode = 'none'
     this.addChild(this.sprite)
 
-    this.cellFog = options.skipFog ? null : new CellFog(this as unknown as ConstructorParameters<typeof CellFog>[0])
+    this.cellFog = options.skipFog ? null : new CellFog(this)
     this.cellTerrain = new CellTerrain(this as unknown as ConstructorParameters<typeof CellTerrain>[0])
 
     // Replay last-seen building snapshots loaded from a save.
@@ -143,7 +143,7 @@ export class Cell extends Container {
   }
 
   _updateChild(instance: RuntimeEntity): void {
-    updateInstanceRenderVisibility(instance as unknown as Parameters<typeof updateInstanceRenderVisibility>[0])
+    updateInstanceRenderVisibility(instance)
   }
 
   updateVisible(): void {
@@ -177,7 +177,7 @@ export class Cell extends Container {
   }
 
   _ensureCellFog(): CellFog {
-    if (!this.cellFog) this.cellFog = new CellFog(this as unknown as ConstructorParameters<typeof CellFog>[0])
+    if (!this.cellFog) this.cellFog = new CellFog(this)
     return this.cellFog
   }
 

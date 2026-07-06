@@ -1,4 +1,5 @@
-import { Assets, Container, Sprite, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
+import { Assets, Container, Sprite } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
 import { getBuildingAsset, getTexture, changeSpriteColor, canPlaceBuildingAt } from '../lib'
 import { getWallTexture } from '../lib/buildings/walls'
@@ -77,7 +78,8 @@ export class EditorEntityPreview {
     this._owner = owner
     const buildingConfig = kind === 'building' ? owner.config?.buildings?.[type] : null
     this._buildingConfig = buildingConfig ? { ...buildingConfig, type } : null
-    this._isBoat = kind === 'unit' && (owner.config?.units?.[type] as UnitPreviewConfig | undefined)?.category === 'Boat'
+    this._isBoat =
+      kind === 'unit' && (owner.config?.units?.[type] as UnitPreviewConfig | undefined)?.category === 'Boat'
     this.controls.addChild(container)
   }
 
@@ -192,7 +194,9 @@ export class EditorEntityPreview {
   }
 
   _buildAnimalContainer(type: string): Container | null {
-    const animalConfig = (Assets.cache.get('config') as { animals?: Record<string, { assets?: { standingSheet?: string } }> })?.animals?.[type]
+    const animalConfig = (
+      Assets.cache.get('config') as { animals?: Record<string, { assets?: { standingSheet?: string } }> }
+    )?.animals?.[type]
     const sheetId = animalConfig?.assets?.standingSheet
     if (!sheetId) return null
     const texture = this._getFirstSheetFrame(sheetId)

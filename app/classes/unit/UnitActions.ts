@@ -9,7 +9,6 @@ import {
   SHEET_TYPES,
   SOUND_CUES,
   TYPE_ACTION,
-  UNIT_TYPES,
 } from '../../constants'
 import {
   degreeToDirection,
@@ -54,7 +53,11 @@ function getPlayerResourceKey(loadingType: string | null | undefined): PlayerRes
   return null
 }
 
-function removeFromOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
+function removeFromOwnerList(
+  owner: PlayerLike | null | undefined,
+  key: 'units' | 'buildings',
+  instance: RuntimeEntity
+) {
   const list = ownerList(owner, key)
   if (!Array.isArray(list)) return
   const index = list.indexOf(instance)
@@ -186,7 +189,8 @@ export class UnitActions {
       t.finalTexture?.()
       if (t.interface) {
         const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getUnitButton?.(key)) : []
-        const technologies = newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getTechnologyButton?.(key)) : []
+        const technologies =
+          newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getTechnologyButton?.(key)) : []
         t.interface.menu = newOwner.isPlayed
           ? [...units, ...technologies, ...(units.length && menu ? [menu.getRallyPointButton?.()] : [])].filter(
               (item): item is NonNullable<typeof item> => Boolean(item)
@@ -251,7 +255,11 @@ export class UnitActions {
   startGathering(
     loadingType: string,
     soundId: CommandSound,
-    { dieOnEmpty = false, checkOwner = false, updateTexture = false }: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean } = {}
+    {
+      dieOnEmpty = false,
+      checkOwner = false,
+      updateTexture = false,
+    }: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean } = {}
   ) {
     const unit = this.unit
     const menu = unit.context?.menu

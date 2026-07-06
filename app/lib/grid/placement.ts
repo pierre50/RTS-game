@@ -1,12 +1,7 @@
 import { instancesDistance } from '../maths'
 import { LABEL_TYPES } from '../../constants'
 import { getPlainCellsAroundPoint, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
-import type { Grid, GridCell, GridPosition, GridZone, InstanceLike } from '../../types/grid'
-
-type DestroyableDisplayObject = {
-  destroy?: () => void
-  parent?: unknown
-}
+import type { Grid, GridCell, GridInstanceLike, GridPosition, GridZone } from '../../types/grid'
 
 type TerrainCell = GridCell & {
   context?: {
@@ -53,7 +48,7 @@ export function clearCellTerrainSet(cell?: TerrainCell | null): void {
   cell.context?.map?.terrainChunkManager?.invalidateCell?.(cell)
 }
 
-function createPlacementZone(instance: InstanceLike, maxSpace: number): GridZone {
+function createPlacementZone(instance: GridInstanceLike, maxSpace: number): GridZone {
   const parentSize =
     instance.parent && 'size' in instance.parent && typeof instance.parent.size === 'number' ? instance.parent.size : 0
   return {
@@ -65,7 +60,7 @@ function createPlacementZone(instance: InstanceLike, maxSpace: number): GridZone
 }
 
 function createPositionCondition<TCell extends GridCell>(
-  instance: InstanceLike,
+  instance: GridInstanceLike,
   minSpace: number,
   maxSpace: number,
   allowInclined: boolean,
@@ -166,7 +161,7 @@ function canPlaceGroundBuilding<TCell extends GridCell>(
 }
 
 export function getPositionInGridAroundInstance(
-  instance: InstanceLike,
+  instance: GridInstanceLike,
   grid: Grid,
   space: [number, number],
   size: number,

@@ -1,4 +1,4 @@
-import { Graphics, Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
+import { Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
   getInstanceZIndex,
   playerCanSeeInstance,
@@ -205,7 +205,7 @@ export class Resource extends Instance implements ResourceEntity {
     map.addToInstanceBucket(this)
   }
 
-  die(immediate?: boolean) {
+  override die(immediate?: boolean) {
     if (this.isDead) {
       return
     }

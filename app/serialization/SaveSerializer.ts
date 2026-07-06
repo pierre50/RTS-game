@@ -1,9 +1,8 @@
 import { filterObject } from '../lib'
 import type { GameContextLike } from '../types/context'
-import type { RuntimeCell } from '../types/map'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { RuntimeEntityBase } from '../types/entities'
-import type { SaveCellState, SaveEntityState, SavePlayerState, SaveReference, SerializedSave } from '../types/save'
+import type { SaveEntityState, SavePlayerState, SaveReference, SerializedSave } from '../types/save'
 
 type GridPoint = { i: number; j: number }
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
@@ -64,9 +63,6 @@ type ThreatTargetMemory = {
   count?: number
   lastSeenAt?: number
   target?: { label?: string } | null
-}
-type SerializableCell = RuntimeCell & {
-  fogSprites: { textureSheet: string; colorName?: string }[]
 }
 type SerializableContext = GameContextLike & {
   players?: SerializablePlayer[]
@@ -272,31 +268,6 @@ function playerData(player: SerializablePlayer) {
     }
   }
 
-  return data
-}
-
-function cellData(cell: SerializableCell) {
-  const data: SaveCellState = { type: cell.type }
-  if (cell.z !== 0) data.z = cell.z
-  if (cell.viewed) data.viewed = true
-  if (cell.inclined) data.inclined = true
-  if (cell.border) data.border = true
-  if (cell.waterBorder) data.waterBorder = true
-  if (cell.has) data.has = cell.has.label
-  if (cell.fogSprites.length > 0) {
-    const seenFogSprites = new Set()
-    data.fogSprites = cell.fogSprites
-      .map(({ textureSheet, colorName }) => ({
-        textureSheet,
-        colorName,
-      }))
-      .filter(spriteData => {
-        const key = `${spriteData.textureSheet}|${spriteData.colorName || ''}`
-        if (seenFogSprites.has(key)) return false
-        seenFogSprites.add(key)
-        return true
-      })
-  }
   return data
 }
 

@@ -14,7 +14,7 @@ type GenerationCellContext = {
     invalidateReliefCoastDistances(): void
     revealEverything?: boolean
   }
-  player?: { views?: { isViewed(i: number, j: number): boolean } }
+  player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
 }
 
 type GenerationCellOptions = {
@@ -116,7 +116,7 @@ export class GenerationCell {
   }
 
   _updateChild(instance: RuntimeEntity): void {
-    updateInstanceRenderVisibility(instance as unknown as Parameters<typeof updateInstanceRenderVisibility>[0])
+    updateInstanceRenderVisibility(instance)
   }
 
   updateVisible(): void {
@@ -221,7 +221,7 @@ export class GenerationCell {
   }
 
   _ensureCellFog(): CellFog {
-    if (!this.cellFog) this.cellFog = new CellFog(this as unknown as ConstructorParameters<typeof CellFog>[0])
+    if (!this.cellFog) this.cellFog = new CellFog(this)
     return this.cellFog
   }
 

@@ -1,4 +1,5 @@
-import { Assets, Sprite, AnimatedSprite, Container, Texture } from 'pixi.js'
+import type { Container, Texture } from 'pixi.js'
+import { Assets, Sprite, AnimatedSprite } from 'pixi.js'
 import { COLOR_GREEN } from '../constants'
 import { findWallPath, getWallFrame } from '../lib/grid/wallPath'
 import { getWallLevel, getWallTexture, isWall } from '../lib/buildings/walls'
@@ -77,7 +78,8 @@ export class WallPlacementController {
       this.context.map.grid,
       draft.start,
       cell,
-      (candidate: RuntimeCell, isEnd: boolean) => candidate === draft.start || this.canUseCell(candidate, draft.owner, isEnd)
+      (candidate: RuntimeCell, isEnd: boolean) =>
+        candidate === draft.start || this.canUseCell(candidate, draft.owner, isEnd)
     )
     if (!path.length) return false
     draft.path = path

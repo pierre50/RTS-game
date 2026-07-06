@@ -1,5 +1,5 @@
-import { Assets, Texture } from 'pixi.js'
-import type { Filter } from 'pixi.js'
+import { Assets } from 'pixi.js'
+import type { Filter, Texture } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getBuildingAsset, getTexture, changeSpriteColorDirectly } from '../index'
 import type { BuildingConfig } from '../../types/config'

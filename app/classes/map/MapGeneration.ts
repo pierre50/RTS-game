@@ -27,7 +27,6 @@ import {
   WATER_SET_DEEP_LAND_MIN_DIST,
 } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
-import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -36,13 +35,11 @@ import type { ResourceOptions } from '../resource'
 import type { AnimalOptions } from '../animal'
 import type { RuntimeEntity, UnitEntity, BuildingEntity, ResourceEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
-import type { FogSpriteMemory } from '../../types/map'
 import type {
   SaveCellState,
   SaveEntityState,
   SavedAIState,
   SavedEnemyMemoryState,
-  SavedThreatState,
   SerializedSave,
 } from '../../types/save'
 
@@ -53,6 +50,7 @@ type GeneratedPosition = GridPosition | null
 // Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
 // that MapGeneration relies on. Map can't be imported directly here: it imports
 // MapGeneration itself, so importing it back would create a circular dependency.
+type NullablePlayerContext = Omit<GameContextLike, 'player'> & { player: PlayerLike | null }
 type MapGenerationMap = RuntimeMap & {
   context: GameContextLike
   playersPos: GeneratedPosition[]
@@ -87,7 +85,6 @@ type MapGenerationMap = RuntimeMap & {
   generateCells(): void
   generateMap(positionsCountOverride?: number | null, repeat?: number): void
   generateTerrain(gridSize?: number, mapType?: string, seed?: number): TerrainGrid
-  invalidateReliefCoastDistances(): void
   fillWaterGaps(level?: number | null): Set<RuntimeCell>
   normalizeWaterTopology(
     level?: number | null,
@@ -153,7 +150,7 @@ type SavedPlayer = {
   units?: SaveEntityState[]
   corpses?: SaveEntityState[]
   aiState?: SavedAIState
-  selectedUnitLabels?: unknown[]
+  selectedUnitLabels?: string[]
   selectedUnitLabel?: unknown
   selectedBuildingLabel?: unknown
   selectedOtherLabel?: unknown
@@ -179,6 +176,33 @@ type AIThreatRuntime = {
   attackerFamily?: string
   attackerType?: string
   count?: number
+}
+
+function createSpawnSearchCell(i: number, j: number, terrainType: TerrainValue): RuntimeCell {
+  return {
+    i,
+    j,
+    x: 0,
+    y: 0,
+    z: 0,
+    type: terrainType === 2 ? 'Water' : 'Land',
+    category: terrainType === 2 ? 'Water' : 'Land',
+    border: false,
+    waterBorder: false,
+    solid: false,
+    visible: false,
+    inclined: false,
+    has: null,
+    corpses: new Set(),
+    fogSprites: [],
+    viewBy: new Set(),
+    updateVisible() {},
+    place(entity: RuntimeEntity) {
+      this.has = entity
+    },
+    setFog() {},
+    removeFog() {},
+  }
 }
 
 // Local view of the AI-only bookkeeping fields used while restoring saved games.
@@ -312,15 +336,17 @@ function restoreBuildingAssignments(
 function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
   if (!savedPlayer?.isPlayed) return
 
-  const savedUnitLabels = Array.isArray(savedPlayer.selectedUnitLabels) ? savedPlayer.selectedUnitLabels : []
+  const savedUnitLabels = savedPlayer.selectedUnitLabels ?? []
   const selectedUnits = savedUnitLabels
     .map(label => getDestEntity(label, context))
-    .filter((unit): unit is RuntimeEntity => Boolean(unit) && !unit!.isDead && !unit!.isDestroyed)
+    .filter(
+      (unit): unit is UnitEntity =>
+        Boolean(unit) && unit!.family === FAMILY_TYPES.unit && !unit!.isDead && !unit!.isDestroyed
+    )
   selectedUnits.forEach(unit => unit.select?.())
-  const typedSelectedUnits = selectedUnits as UnitEntity[]
-  player.selectedUnits = typedSelectedUnits
+  player.selectedUnits = selectedUnits
   player.selectedUnit =
-    (getDestEntity(savedPlayer.selectedUnitLabel, context) as UnitEntity | null) ?? typedSelectedUnits[0] ?? null
+    (getDestEntity(savedPlayer.selectedUnitLabel, context) as UnitEntity | null) ?? selectedUnits[0] ?? null
 
   const selectedBuilding = getDestEntity(savedPlayer.selectedBuildingLabel, context)
   if (selectedBuilding && !selectedBuilding.isDead && !selectedBuilding.isDestroyed) {
@@ -636,7 +662,7 @@ export class MapGeneration {
       child.stopTimeout?.()
       child.animalBehavior?.stop?.()
       child.isDestroyed = true
-      this.map.removeChild(child as unknown as ContainerChild)
+      this.map.removeChild(child)
       child.destroy?.({ children: true, texture: false, textureSource: false })
     }
     for (const row of this.map.grid || []) {
@@ -649,7 +675,7 @@ export class MapGeneration {
     this.map.resources = new Set()
     this.map.instanceBuckets = null
     this.map.context.players = []
-    this.map.context.player = null as unknown as PlayerLike
+    ;(this.map.context as NullablePlayerContext).player = null
     this.map.gaia = new Gaia(this.map.context)
   }
 
@@ -773,16 +799,8 @@ export class MapGeneration {
     // Lightweight placeholder grid used only for the findPlayerPlaces() spawn search below;
     // generateCellsAsync() replaces it with real GenerationCell instances further down.
     this.map.grid = terrain.map((row: TerrainValue[], i: number) =>
-      row.map((terrainType: number, j: number) => ({
-        i,
-        j,
-        type: terrainType === 2 ? 'Water' : 'Land',
-        category: terrainType === 2 ? 'Water' : 'Land',
-        border: false,
-        solid: false,
-        inclined: false,
-      }))
-    ) as unknown as RuntimeCell[][]
+      row.map((terrainType: TerrainValue, j: number) => createSpawnSearchCell(i, j, terrainType))
+    )
 
     let validSpawns = false
     for (let attempt = repeat; attempt <= 10; attempt++) {
@@ -1077,10 +1095,7 @@ export class MapGeneration {
       const row: RuntimeCell[] = []
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
-        const cell = new GenerationCell(
-          { i, j, z, type: terrainMap[terrain[i][j]] },
-          this.map.context as unknown as ConstructorParameters<typeof GenerationCell>[1]
-        )
+        const cell = new GenerationCell({ i, j, z, type: terrainMap[terrain[i][j]] }, this.map.context)
         row[j] = cell as unknown as RuntimeCell
       }
       if (i % 8 === 0) {
@@ -1123,7 +1138,7 @@ export class MapGeneration {
             type: String(type),
             definition: cellDefinitions[type] as CellDefinition,
           },
-          this.map.context as unknown as ConstructorParameters<typeof GenerationCell>[1]
+          this.map.context
         )
         row[j] = cell as unknown as RuntimeCell
       }

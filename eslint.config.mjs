@@ -1,4 +1,5 @@
 import tsParser from '@typescript-eslint/parser'
+import tsPlugin from '@typescript-eslint/eslint-plugin'
 
 const browserGlobals = {
   alert: 'readonly',
@@ -26,7 +27,18 @@ export default [
       parser: tsParser,
       globals: browserGlobals,
     },
-    rules: {},
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      ...tsPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-unused-expressions': ['error', { allowShortCircuit: true, allowTernary: true }],
+      'no-unused-vars': 'off',
+    },
   },
   {
     files: ['main.js'],

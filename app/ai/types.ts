@@ -1,3 +1,5 @@
+import type { GridInstanceLike } from '../types/grid'
+import type { TransportCell } from '../lib'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeEntity } from '../types/entities'
@@ -9,6 +11,12 @@ export type AIResourceAmount = Partial<Record<AIResourceName, number>>
 type AIPhase = 'economy' | 'military_build' | 'attack'
 
 export type AIAge = 0 | 1 | 2 | 3
+
+export type EnemyMemoryOptions = {
+  family?: string | null
+  freshWithin?: number
+  visibleOnly?: boolean
+}
 
 export type AIEntityLike = {
   label: string
@@ -31,8 +39,8 @@ export type AIEntityLike = {
   action?: string | null
   work?: string | null
   previousWork?: string | null
-  dest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
-  previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
+  dest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
+  previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
   currentCell?: RuntimeCell | null
   context?: { map: RuntimeMap; player?: unknown }
   parent?: { removeChild?: (unit: AIEntityLike) => void } | null
@@ -44,8 +52,8 @@ export type AIEntityLike = {
   loadedInTransport?: unknown
   transportedUnits?: AIEntityLike[]
   transportCapacity?: number
-  transportLoadCoastCell?: RuntimeCell | null
-  transportLoadShoreCell?: RuntimeCell | null
+  transportLoadCoastCell?: RuntimeCell | TransportCell | null
+  transportLoadShoreCell?: RuntimeCell | TransportCell | null
   assault?: boolean
   realDest?: unknown
   eventMode?: string
@@ -61,8 +69,8 @@ export type AIEntityLike = {
   strategy?: string
   meleeArmor?: number
   pierceArmor?: number
-  sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell, action?: string): void
-  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell, action?: string): unknown
+  sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell, action?: string): void
+  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell | TransportCell, action?: string): unknown
   sendToFish?(target: AIEntityLike | RuntimeEntity): unknown
   sendToTree?(target: AIEntityLike | RuntimeEntity): unknown
   sendToStone?(target: AIEntityLike | RuntimeEntity): unknown
@@ -94,8 +102,8 @@ export type AIBuildingLike = AIEntityLike & {
   queue?: string[]
   loading?: unknown
   technology?: { type?: string } | null
-  buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: unknown): boolean
-  buyTechnology?(technology: string): boolean
+  buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: unknown): boolean | void
+  buyTechnology?(technology: string): boolean | void
 }
 
 export type AIEntityConfig = Record<string, unknown> & {
@@ -113,7 +121,7 @@ export type AIEntityConfig = Record<string, unknown> & {
 export type AITechCondition = {
   key: 'age' | 'technologies' | string
   op: '>=' | '=' | 'includes' | 'notincludes' | string
-  value: number | string
+  value: unknown
 }
 
 type AITechConfig = {
@@ -201,15 +209,15 @@ export type AIStrategyPlayerLike = {
     isViewed(i: number, j: number): boolean
     isVisible(i: number, j: number): boolean
   }
-  foundedTrees: Set<AIEntityLike>
-  foundedGolds: Set<AIEntityLike>
-  foundedStones: Set<AIEntityLike>
-  foundedEnemyBuildings: Set<AIEntityLike>
-  foundedEnemyUnits: Set<AIEntityLike>
-  foundedFish: Set<AIEntityLike>
-  foundedAnimals: Set<AIEntityLike>
-  foundedDeadAnimals: Set<AIEntityLike>
-  foundedBerrybushs: Set<AIEntityLike>
+  foundedTrees: Set<RuntimeEntity>
+  foundedGolds: Set<RuntimeEntity>
+  foundedStones: Set<RuntimeEntity>
+  foundedEnemyBuildings: Set<RuntimeEntity>
+  foundedEnemyUnits: Set<RuntimeEntity>
+  foundedFish: Set<RuntimeEntity>
+  foundedAnimals: Set<RuntimeEntity>
+  foundedDeadAnimals: Set<RuntimeEntity>
+  foundedBerrybushs: Set<RuntimeEntity>
   navalOperation?: AINavalOperation | null
   lastNavalConnectivity?: AILandAccessDiagnostic
   lastNavalOperationFailure?: unknown
@@ -220,17 +228,21 @@ export type AIStrategyPlayerLike = {
     needsNavalTransport(militaryCount?: number): boolean
     getEconomicDemand(): AIResourceAmount
   }
-  enemyPlayers(): AIStrategyPlayerLike[]
+  enemyPlayers(): AIEnemyPlayerLike[]
   getHomeAnchor(): AIGridPosition | null
   buildingsByTypes(types: string[]): AIBuildingLike[]
   getLivingUnitsByType(type: string): AIEntityLike[]
-  getEnemyMemories(options?: Record<string, unknown>): AIMemoryLike[]
-  getFreshEnemyInstances?(options?: Record<string, unknown>): AIEntityLike[]
+  getEnemyMemories(options?: EnemyMemoryOptions): AIMemoryLike[]
+  getFreshEnemyInstances?(options?: EnemyMemoryOptions): AIEntityLike[]
   getNow(): number
   isEnemy(owner?: PlayerLike | null): boolean
   buyBuilding(i: number, j: number, type: string): boolean
   hasNotReachBuildingLimit(type: string, buildings?: AIBuildingLike[]): boolean
   isBuildingThreatened?(building: AIEntityLike): boolean
+}
+
+export type AIEnemyPlayerLike = AIGridPosition & {
+  buildings: AIBuildingLike[]
 }
 
 export type AIMemoryLike = {
@@ -284,10 +296,7 @@ export type AIVillagerActionOptions = {
   debug?: boolean
 }
 
-export type AIGridPosition = {
-  i: number
-  j: number
-}
+export type AIGridPosition = GridInstanceLike
 
 export type AIDockOpportunity = {
   position: RuntimeCell | null
@@ -305,7 +314,7 @@ export type AINavalOpportunity = {
 
 export type AIStrategySnapshot = {
   map: RuntimeMap
-  otherPlayers: AIStrategyPlayerLike[]
+  otherPlayers: AIGridPosition[]
   villagers: AIEntityLike[]
   maxVillagers: number
   towncenters: AIBuildingLike[]

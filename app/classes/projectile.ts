@@ -136,6 +136,7 @@ export class Projectile extends Container {
   z!: number
   destinationPoint!: Point
   totalDistance!: number
+  spawnOrigin!: Point
   trajectoryState: { kind: string; arcHeight: number } | null = null
 
   size!: number
@@ -182,12 +183,12 @@ export class Projectile extends Container {
     }
     let { x: targetX, y: targetY } = targetPoint
 
-    playAudibleSoundCue(this as unknown as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.launch)
+    playAudibleSoundCue(this as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.launch)
 
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = this.createSprite(degree)
     this.sprite = sprite
-    ;(this as unknown as Record<string, unknown>).origin = { x: this.x, y: this.y }
+    this.spawnOrigin = { x: this.x, y: this.y }
     this.destinationPoint = { x: targetX, y: targetY }
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
@@ -211,17 +212,14 @@ export class Projectile extends Container {
             !this.target.isDead &&
             !this.target.isDestroyed &&
             pointsDistance(targetX, targetY, this.target.x, this.target.y) <=
-              average(
-                (this.target as unknown as { width: number }).width,
-                (this.target as unknown as { height: number }).height
-              )
+              average(this.target.width, this.target.height)
           ) {
             this.onHit(this.target)
           }
           this.die()
           return
         }
-        moveTowardPoint(this as unknown as Parameters<typeof moveTowardPoint>[0], targetX, targetY, this.speed)
+        moveTowardPoint(this, targetX, targetY, this.speed)
         this.updateTrajectoryVisual()
         this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
       },
@@ -353,8 +351,8 @@ export class Projectile extends Container {
       return
     }
 
-    const origin = (this as unknown as Record<string, Point>).origin
-    const traveledDistance = pointsDistance(origin.x, origin.y, this.x, this.y)
+    const { spawnOrigin } = this
+    const traveledDistance = pointsDistance(spawnOrigin.x, spawnOrigin.y, this.x, this.y)
     const progress = Math.max(0, Math.min(1, traveledDistance / this.totalDistance))
     this.sprite.y = -getArcProgressOffset(progress, this.trajectoryState.arcHeight)
   }
@@ -396,7 +394,7 @@ export class Projectile extends Container {
       context: { menu, player },
     } = this
     if (instance.family === FAMILY_TYPES.building) {
-      playAudibleSoundCue(this as unknown as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.impact)
+      playAudibleSoundCue(this as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.impact)
     }
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected) {

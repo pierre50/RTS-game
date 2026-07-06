@@ -1,4 +1,5 @@
-import { AnimatedSprite, Assets, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
+import { AnimatedSprite, Assets } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED } from '../constants'
 import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames } from '../lib'
 import type { ControlsLike } from '../types/context'

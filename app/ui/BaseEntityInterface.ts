@@ -18,10 +18,7 @@ interface HitPointsFillElement extends HTMLElement {
   _hitPointsFill?: HTMLElement
 }
 
-function parseHitPoints(
-  value: string | number,
-  totalHitPoints: string | number
-): { current: number; max: number } {
+function parseHitPoints(value: string | number, totalHitPoints: string | number): { current: number; max: number } {
   if (typeof value === 'string') {
     const [current, max] = value.split('/').map(part => Number(part))
     if (Number.isFinite(current) && Number.isFinite(max)) {

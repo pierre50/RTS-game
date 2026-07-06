@@ -348,9 +348,9 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingCombat.attackAction(target)
   }
 
-  startInterval(callback: () => void, time: number, name?: string): void
-  startInterval(callback: (...args: unknown[]) => void, time: number, immediate?: boolean, name?: string): void
-  startInterval(
+  override startInterval(callback: () => void, time: number, name?: string): void
+  override startInterval(callback: (...args: unknown[]) => void, time: number, immediate?: boolean, name?: string): void
+  override startInterval(
     callback: () => void,
     time: number,
     immediateOrName: boolean | string = 'building.interval',
@@ -361,7 +361,7 @@ export class Building extends Instance implements BuildingEntity {
     this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100, intervalName)
   }
 
-  stopInterval(): void {
+  override stopInterval(): void {
     if (this.intervalId != null) {
       this.context.scheduler.remove(this.intervalId)
       this.intervalId = null
@@ -394,7 +394,7 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingCombat.detect(instance)
   }
 
-  select(): void {
+  override select(): void {
     if (this.selected) return
     const {
       context: { menu, player },
@@ -406,7 +406,7 @@ export class Building extends Instance implements BuildingEntity {
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
-  unselect(): void {
+  override unselect(): void {
     if (!this.selected) return
     super.unselect()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = false
@@ -464,15 +464,15 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingLifecycle.updateHitPoints(action)
   }
 
-  pause(): void {
+  override pause(): void {
     return this.buildingLifecycle.pause()
   }
 
-  resume(): void {
+  override resume(): void {
     return this.buildingLifecycle.resume()
   }
 
-  die(): void {
+  override die(): void {
     return this.buildingLifecycle.die()
   }
 

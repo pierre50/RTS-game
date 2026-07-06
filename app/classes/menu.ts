@@ -1,4 +1,3 @@
-import { t } from '../lib/lang'
 import { MinimapManager } from '../ui/MinimapManager'
 import { BottombarManager } from '../ui/BottombarManager'
 import { PlayerStatsManager } from '../ui/PlayerStatsManager'

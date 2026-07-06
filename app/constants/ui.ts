@@ -1,5 +1,3 @@
-import { ACTION_TYPES } from './entities'
-
 export const MENU_INFO_IDS = {
   loading: 'info-loading',
   hitPoints: 'hit-points',

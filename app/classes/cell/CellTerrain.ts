@@ -1,4 +1,5 @@
-import { Assets, Sprite, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
 import {
   instancesDistance,
   getCellsAroundPoint,
@@ -188,10 +189,7 @@ export class CellTerrain {
 
     const previousType = cell.type
     cell.type = type
-    const dynamicCell = cell as unknown as Record<string, unknown>
-    Object.keys(definition).forEach(prop => {
-      dynamicCell[prop] = definition[prop]
-    })
+    Object.assign(cell, definition)
     if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
       cell.parent?.invalidateReliefCoastDistances?.()
     }
@@ -206,7 +204,9 @@ export class CellTerrain {
     const cellSpriteTextureName = cell.sprite.texture.label
     if (!cellSpriteTextureName) return
     const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
-    const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[direction as Direction]
+    const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
+      direction as Direction
+    ]
     const variants = getDesertBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
@@ -235,7 +235,9 @@ export class CellTerrain {
     const cellSpriteTextureName = cell.sprite.texture.label
     if (!cellSpriteTextureName) return
     const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
-    const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[direction as Direction]
+    const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
+      direction as Direction
+    ]
     const variants = getDeepWaterBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
@@ -328,10 +330,7 @@ export class CellTerrain {
     if (!grid) return
     getCellsAroundPoint(cell.i, cell.j, grid, 2, (neighbor: TerrainCellLike) => {
       if (neighbor.z === cell.z) {
-        const dist = instancesDistance(
-          cell as unknown as Parameters<typeof instancesDistance>[0],
-          neighbor as unknown as Parameters<typeof instancesDistance>[1]
-        )
+        const dist = instancesDistance(cell, neighbor)
         const velX = Math.round((cell.i - neighbor.i) / dist)
         const velY = Math.round((cell.j - neighbor.j) / dist)
         if (grid[neighbor.i + velX] && grid[neighbor.i + velX][neighbor.j + velY]) {

@@ -150,7 +150,7 @@ export class ViewportFogRenderer {
         renderer.render({ container: this._darknessFill, target: this.darknessTexture, clear: true })
 
         this._fogPattern.tilePosition.set(-left, -top)
-        renderer.render({ container: this._fogPattern as unknown as Container, target: this.fogTexture, clear: true })
+        renderer.render({ container: this._fogPattern, target: this.fogTexture, clear: true })
       }
       const drawCells = () => {
         if (!this._exploredErase || !this._visibleErase) return

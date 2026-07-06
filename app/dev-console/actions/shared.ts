@@ -2,7 +2,7 @@ import { Container, Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import { canPlaceBuildingAt } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
-import type { DevCell, DevConsoleContext, DevEntity, DevMapLike, DebugTickerCallback } from '../types'
+import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
@@ -45,12 +45,7 @@ export function getSpawnCell(
   if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
   if (
     buildingConfig &&
-    canPlaceBuildingAt(
-      map.grid,
-      cursorCell.i,
-      cursorCell.j,
-      buildingConfig as Parameters<typeof canPlaceBuildingAt>[3]
-    )
+    canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig as Parameters<typeof canPlaceBuildingAt>[3])
   )
     return cursorCell
 
@@ -62,9 +57,7 @@ export function getSpawnCell(
         const cell = map.grid[cursorCell.i + di]?.[cursorCell.j + dj]
         if (!cell) continue
         if (buildingConfig) {
-          if (
-            canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig as Parameters<typeof canPlaceBuildingAt>[3])
-          )
+          if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig as Parameters<typeof canPlaceBuildingAt>[3]))
             return cell
         } else if (!cellCondition || cellCondition(cell)) {
           return cell
@@ -146,7 +139,7 @@ export function getSolidDebugColor(cell: DevCell): number {
   return 0xff4d4d
 }
 
-export function stopDebugTicker(context: DevConsoleContext, tickerName: string): void {
+export function stopDebugTicker(context: DevConsoleRuntimeContext, tickerName: string): void {
   const { map } = context
   const tickerKey = tickerName as DebugTickerName
   const ticker = map[tickerKey]
@@ -156,7 +149,7 @@ export function stopDebugTicker(context: DevConsoleContext, tickerName: string):
   }
 }
 
-export function removeDebugLayer(context: DevConsoleContext, layerLabel: string, tickerName: string): void {
+export function removeDebugLayer(context: DevConsoleRuntimeContext, layerLabel: string, tickerName: string): void {
   const { map } = context
   stopDebugTicker(context, tickerName)
   const layer = map.getChildByLabel?.(layerLabel)
@@ -166,10 +159,10 @@ export function removeDebugLayer(context: DevConsoleContext, layerLabel: string,
   }
 }
 
-export function addDebugTicker(
-  context: DevConsoleContext,
+export function addDebugTicker<TContext extends DevConsoleRuntimeContext>(
+  context: TContext,
   tickerName: string,
-  draw: (context: DevConsoleContext) => void
+  draw: (context: TContext) => void
 ): void {
   const { app, map } = context
   stopDebugTicker(context, tickerName)
@@ -184,7 +177,7 @@ export function addDebugTicker(
   app?.ticker.add(map[tickerKey])
 }
 
-export function cleanupDebugArtifacts(context: DevConsoleContext): void {
+export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
   const tickerNames = [
     '_debugSolidTicker',
     '_debugPathTicker',
@@ -211,7 +204,11 @@ export function cleanupDebugArtifacts(context: DevConsoleContext): void {
   document.getElementById('debug-ai-info')?.remove()
 }
 
-export function getInstancesByCategory(context: DevConsoleContext, category: string, typeName: string): DevEntity[] | null {
+export function getInstancesByCategory(
+  context: DevConsoleContext,
+  category: string,
+  typeName: string
+): DevEntity[] | null {
   const { map, player, players } = context
   const wantedType = normalize(typeName)
   const matchesType = (instance: DevEntity) => !wantedType || normalize(instance.type) === wantedType
