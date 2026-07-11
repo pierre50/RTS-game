@@ -4,6 +4,8 @@ import {
   getCellsAroundPoint,
   getDeterministicCellVariant,
   getPlainCellsAroundPoint,
+  getTexture,
+  textureRefToString,
 } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 import {
@@ -17,22 +19,27 @@ import {
 } from '../../lib/terrain/topology'
 import type { GridPosition } from '../../types/grid'
 import type * as MapTypes from '../../types/map'
+import type { TextureRef } from '../../lib'
 
 type TerrainDefinition = {
   category?: string
   color?: string | number
-  assets?: string[]
-  [key: string]: string | string[] | number | boolean | undefined
+  assets?: TextureRef[]
+  [key: string]: string | TextureRef[] | number | boolean | undefined
 }
 
 type TerrainConfig = {
   cells?: Record<string, TerrainDefinition>
 }
 
+const BORDER_SHEETS = {
+  waterDesert: 'water-borders/desert',
+} as const
+
 type TerrainCell = MapTypes.RuntimeCell & {
   category?: string
   color?: string | number
-  assets?: string[]
+  assets?: TextureRef[]
   terrainTextureName?: string
   has?: MapTypes.RuntimeCell['has']
   sprite?: Sprite | null
@@ -549,10 +556,9 @@ export class MapTerrain {
         const assets = config?.cells?.[cell.type]?.assets || []
         if (!assets.length) continue
 
-        const textureName = getDeterministicCellVariant(assets, i, j, this.map.seed)
-        if (!textureName) continue
-        const resourceName = textureName.split('_')[1]
-        const texture = Assets.cache.get(resourceName)?.textures?.[textureName + '.png']
+        const textureRef = getDeterministicCellVariant(assets, i, j, this.map.seed)
+        if (!textureRef) continue
+        const texture = getTexture(textureRef, Assets)
         if (!texture) continue
 
         const [x, y] = cartesianToIsometric(i, j)
@@ -892,7 +898,7 @@ export class MapTerrain {
           isAnyWater(neighbor?.type)
         )
         const frame = getWaterBorderFrame(flags)
-        if (frame) cell.setWaterBorder?.('20000', frame)
+        if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesert, frame)
       }
     }
   }
@@ -1026,15 +1032,13 @@ export class MapTerrain {
           if (typeof def.color === 'string') cell.color = def.color
           cell.assets = def.assets
         }
-        const textureName = getDeterministicCellVariant(def?.assets, i, j, this.map.seed)
-        if (textureName) cell.terrainTextureName = textureName
+        const textureRef = getDeterministicCellVariant(def?.assets, i, j, this.map.seed)
+        if (textureRef) cell.terrainTextureName = textureRefToString(textureRef)
         if (!cell.sprite) {
           continue
         }
-        if (!textureName) continue
-        const resourceName = textureName.split('_')[1]
-        const spritesheet = Assets.cache.get(resourceName)
-        const texture = spritesheet?.textures?.[textureName + '.png']
+        if (!textureRef) continue
+        const texture = getTexture(textureRef, Assets)
         if (!texture) continue
         cell.sprite.texture = texture
         cell.sprite.anchor.set(

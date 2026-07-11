@@ -4,37 +4,55 @@
       "TownCenter": {
         "icon": "033_50706",
         "images": {
-          "final": "000_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Barracks": {
         "icon": "003_50706",
         "images": {
-          "final": "000_254"
+          "final": {
+            "sheet": "buildings/shared/barracks/age-0",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "015_50706",
         "images": {
-          "final": "000_218"
+          "final": {
+            "sheet": "buildings/shared/house/age-0",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "011_50706",
         "images": {
-          "final": "000_164"
+          "final": {
+            "sheet": "buildings/babylonian/granary/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "028_50706",
         "images": {
-          "final": "000_527"
+          "final": {
+            "sheet": "buildings/shared/storage-pit/age-0",
+            "frame": 0
+          }
         }
       },
       "Dock": {
         "icon": "006_50706",
         "images": {
-          "final": "000_355"
+          "final": {
+            "sheet": "buildings/shared/dock/age-0",
+            "frame": 0
+          }
         }
       }
     },
@@ -42,49 +60,73 @@
       "TownCenter": {
         "icon": "035_50706",
         "images": {
-          "final": "001_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "SmallWall": {
         "icon": "042_50706",
         "images": {
-          "final": "000_532"
+          "final": {
+            "sheet": "environment/ground/stone-set-2",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "016_50706",
         "images": {
-          "final": "000_165"
+          "final": {
+            "sheet": "buildings/babylonian/house/multi-age",
+            "frame": 0
+          }
         }
       },
       "Farm": {
         "icon": "010_50706",
         "images": {
-          "final": "000_447"
+          "final": {
+            "sheet": "buildings/shared/farm/age-1",
+            "frame": 0
+          }
         }
       },
       "WatchTower": {
         "icon": "026_50706",
         "images": {
-          "final": "000_688"
+          "final": {
+            "sheet": "buildings/shared/watch-tower/age-1",
+            "frame": 0
+          }
         }
       },
       "Market": {
         "icon": "021_50706",
         "images": {
-          "final": "000_500"
+          "final": {
+            "sheet": "buildings/shared/market/age-1",
+            "frame": 0
+          }
         }
       },
       "Stable": {
-        "icon": "024_50706",
+        "icon": "025_50706",
         "images": {
-          "final": "000_172"
+          "final": {
+            "sheet": "buildings/shared/stable/age-1",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "001_50706",
         "images": {
-          "final": "000_171"
+          "final": {
+            "sheet": "buildings/babylonian/archery-range/multi-age",
+            "frame": 0
+          }
         }
       }
     },
@@ -92,61 +134,100 @@
       "Barracks": {
         "icon": "004_50706",
         "images": {
-          "final": "000_161"
+          "final": {
+            "sheet": "buildings/babylonian/barracks/multi-age",
+            "frame": 0
+          }
         }
       },
       "TownCenter": {
         "icon": "036_50706",
         "images": {
-          "final": "000_162"
+          "final": {
+            "sheet": "buildings/babylonian/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "017_50706",
         "images": {
-          "final": "001_165"
+          "final": {
+            "sheet": "buildings/babylonian/house/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "022_50706",
         "images": {
-          "final": "000_168"
+          "final": {
+            "sheet": "buildings/babylonian/market/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "029_50706",
         "images": {
-          "final": "000_170"
+          "final": {
+            "sheet": "buildings/babylonian/storage-pit/multi-age",
+            "frame": 0
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "019_50706",
         "images": {
-          "final": "000_166"
+          "final": {
+            "sheet": "buildings/babylonian/government-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Academy": {
         "icon": "000_50706",
         "images": {
-          "final": "000_160"
+          "final": {
+            "sheet": "buildings/babylonian/academy/age-2",
+            "frame": 0
+          }
         }
       },
       "SiegeWorkshop": {
         "icon": "009_50706",
         "images": {
-          "final": "000_163"
+          "final": {
+            "sheet": "buildings/babylonian/siege-workshop/age-2",
+            "frame": 0
+          }
         }
       },
       "Temple": {
         "icon": "031_50706",
         "images": {
-          "final": "000_173"
+          "final": {
+            "sheet": "buildings/babylonian/temple/multi-age",
+            "frame": 0
+          }
         }
       },
       "SentryTower": {
         "icon": "014_50706",
         "images": {
-          "final": "000_593"
+          "final": {
+            "sheet": "buildings/shared/sentry-tower/age-2",
+            "frame": 0
+          }
+        }
+      },
+      "Dock": {
+        "icon": "007_50706",
+        "images": {
+          "final": {
+            "sheet": "buildings/babylonian/dock/age-2",
+            "frame": 0
+          }
         }
       }
     },
@@ -154,73 +235,118 @@
       "GuardTower": {
         "icon": "049_50706",
         "images": {
-          "final": "000_175"
+          "final": {
+            "sheet": "buildings/babylonian/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "BallistaTower": {
         "icon": "049_50706",
         "images": {
-          "final": "000_175"
+          "final": {
+            "sheet": "buildings/babylonian/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "012_50706",
         "images": {
-          "final": "001_164"
+          "final": {
+            "sheet": "buildings/babylonian/granary/multi-age",
+            "frame": 1
+          }
         }
       },
       "Barracks": {
         "icon": "005_50706",
         "images": {
-          "final": "001_161"
+          "final": {
+            "sheet": "buildings/babylonian/barracks/multi-age",
+            "frame": 1
+          }
         }
       },
       "TownCenter": {
         "icon": "038_50706",
         "images": {
-          "final": "002_162"
+          "final": {
+            "sheet": "buildings/babylonian/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "House": {
         "icon": "018_50706",
         "images": {
-          "final": "002_165"
+          "final": {
+            "sheet": "buildings/babylonian/house/multi-age",
+            "frame": 2
+          }
         }
       },
       "Stable": {
         "icon": "024_50706",
         "images": {
-          "final": "000_172"
+          "final": {
+            "sheet": "buildings/babylonian/stable/multi-age",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "002_50706",
         "images": {
-          "final": "001_171"
+          "final": {
+            "sheet": "buildings/babylonian/archery-range/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "023_50706",
         "images": {
-          "final": "001_168"
+          "final": {
+            "sheet": "buildings/babylonian/market/multi-age",
+            "frame": 1
+          }
         }
       },
       "StoragePit": {
         "icon": "030_50706",
         "images": {
-          "final": "001_170"
+          "final": {
+            "sheet": "buildings/babylonian/storage-pit/multi-age",
+            "frame": 1
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "020_50706",
         "images": {
-          "final": "001_166"
+          "final": {
+            "sheet": "buildings/babylonian/government-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "Temple": {
         "icon": "032_50706",
         "images": {
-          "final": "001_173"
+          "final": {
+            "sheet": "buildings/babylonian/temple/multi-age",
+            "frame": 1
+          }
+        }
+      },
+      "Dock": {
+        "icon": "008_50706",
+        "images": {
+          "final": {
+            "sheet": "buildings/babylonian/dock/age-2",
+            "frame": 1
+          }
         }
       }
     }

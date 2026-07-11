@@ -1,12 +1,13 @@
 import type { AssetAge } from '../../types/pixi'
 import type { ConfigValue } from '../../types/config'
+import type { TextureRef } from './textures'
 
 export type BuildingAsset = {
   images?: {
-    final?: string
-    [key: string]: string | undefined
+    final?: TextureRef
+    [key: string]: TextureRef | undefined
   }
-  [key: string]: ConfigValue | { final?: string; [key: string]: string | undefined }
+  [key: string]: ConfigValue | { final?: TextureRef; [key: string]: TextureRef | undefined }
 }
 
 type CivAssets = {
@@ -24,6 +25,19 @@ export type AssetOwner = {
   civ?: string
 }
 
+const INTERFACE_ICON_SHEETS: Record<string, string> = {
+  '50704': 'building-icons/egyptian',
+  '50705': 'building-icons/greek',
+  '50706': 'building-icons/babylonian',
+  '50707': 'building-icons/asian',
+  '50721': 'command-icons',
+  '50729': 'technology-icons',
+  '50730': 'unit-icons',
+  '50731': 'attribute-icons',
+  '50732': 'commodity-icons',
+  '51000': 'pointers/main',
+}
+
 export type BuildingWithAssetOwner = {
   assetAge?: AssetAge
   assetCiv?: string
@@ -36,28 +50,29 @@ export type BuildingWithAssetOwner = {
 export function getIconPath(name: string): string {
   const id = name.split('_')[1]
   const index = name.split('_')[0]
-  return `assets/interface/${id}/${index}_${id}.png`
+  const sheet = INTERFACE_ICON_SHEETS[id] || id
+  return `assets/interface/${sheet}/${index}.png`
 }
 
-export function getBuildingTextureNameWithSize(size: number): string | undefined {
+export function getBuildingTextureNameWithSize(size: number): TextureRef | undefined {
   switch (size) {
     case 1:
-      return '000_256'
+      return { sheet: 'buildings/construction/size-1', frame: 0 }
     case 2:
-      return '000_258'
+      return { sheet: 'buildings/construction/size-2', frame: 0 }
     case 3:
-      return '000_261'
+      return { sheet: 'buildings/construction/size-3', frame: 0 }
   }
 }
 
-export function getBuildingRubbleTextureNameWithSize(size: number): string | undefined {
+export function getBuildingRubbleTextureNameWithSize(size: number): TextureRef | undefined {
   switch (size) {
     case 1:
-      return '000_153'
+      return { sheet: 'buildings/rubble/size-1', frame: 0 }
     case 2:
-      return '000_154'
+      return { sheet: 'buildings/rubble/size-2', frame: 0 }
     case 3:
-      return '000_155'
+      return { sheet: 'buildings/rubble/size-3', frame: 0 }
   }
 }
 

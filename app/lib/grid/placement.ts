@@ -39,8 +39,8 @@ export function clearCellTerrainSet(cell?: TerrainCell | null): void {
     cell.removeChild(set)
   }
   if ('parent' in set && set.parent && typeof set.parent === 'object' && 'removeChild' in set.parent) {
-    const removeFromParent = set.parent.removeChild
-    if (typeof removeFromParent === 'function') removeFromParent(set)
+    const parent = set.parent
+    if (typeof parent.removeChild === 'function') parent.removeChild(set)
   }
   if ('destroy' in set && typeof set.destroy === 'function') {
     set.destroy()

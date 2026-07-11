@@ -136,9 +136,9 @@ export class Building extends Instance implements BuildingEntity {
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.dock) {
-      spriteSheet = '000_356'
+      spriteSheet = { sheet: 'buildings/construction/dock', frame: 0 }
     }
-    const texture = getTexture(spriteSheet as string, Assets) as BuildingTexture
+    const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
     this.sprite = Sprite.from(texture)
     const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
     interactiveSprite.updateAnchor = true

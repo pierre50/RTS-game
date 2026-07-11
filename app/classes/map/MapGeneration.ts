@@ -7,6 +7,7 @@ import {
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   getGaiaAnimals,
+  getTextureByFrame,
 } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
 import {
@@ -37,6 +38,7 @@ import type { RuntimeEntity, ResourceEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { MapEditorControlsLike } from '../../types/mapEditor'
 import type { AnimalConfig } from '../../types/config'
+import type { TextureRef } from '../../lib'
 import {
   processUnit,
   restoreAIState,
@@ -136,8 +138,8 @@ type GameConfig = {
   cells: Record<string, CellDefinition>
 }
 export type CellDefinition = {
-  assets: string[]
-  [key: string]: string | string[] | number | boolean | undefined
+  assets: TextureRef[]
+  [key: string]: string | TextureRef[] | number | boolean | undefined
 }
 export type GenerateMapOptions = {
   onProgress?: ProgressCallback
@@ -1299,7 +1301,7 @@ export class MapGeneration {
     const nearLand = this._hasLandNeighborInRange(cell.i, cell.j, WATER_SET_DEEP_LAND_MIN_DIST)
     const pool = nearLand ? WATER_SETS : [...WATER_SETS, ...WATER_SETS_DEEP]
     const sheet = this.map.randomItem(pool)
-    const texture = Assets.cache.get(sheet)?.textures?.[`000_${sheet}.png`]
+    const texture = getTextureByFrame(sheet, 0, Assets)
     if (!texture) return
     const set: SetSprite = Sprite.from(texture)
     set.label = LABEL_TYPES.set
@@ -1340,14 +1342,7 @@ export class MapGeneration {
                 break
             }
             const randomSpritesheet = this.map.randomItem(floorSpritesheets)
-            const spritesheet = Assets.cache.get(randomSpritesheet)
-            if (!spritesheet) {
-              continue
-            }
-            const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
-            if (!texture) {
-              continue
-            }
+            const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
             const floor: SetSprite = Sprite.from(texture)
             floor.label = LABEL_TYPES.floor
             floor.roundPixels = true
@@ -1362,8 +1357,7 @@ export class MapGeneration {
               switch (type) {
                 case 'rock': {
                   const randomSpritesheet = this.map.randomItem(GROUND_SETS)
-                  const spritesheet = Assets.cache.get(randomSpritesheet)
-                  const texture = spritesheet.textures['000_' + randomSpritesheet + '.png']
+                  const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
                   const rock: SetSprite = Sprite.from(texture)
                   rock.label = LABEL_TYPES.set
                   rock.roundPixels = true
@@ -1416,7 +1410,7 @@ export class MapGeneration {
           const sheets =
             cell.type === 'Desert' ? FLOOR_SETS_DESERT : cell.type === 'Jungle' ? FLOOR_SETS_JUNGLE : FLOOR_SETS_GRASS
           const randomSpritesheet = this.map.randomItem(sheets)
-          const texture = Assets.cache.get(randomSpritesheet)?.textures?.[`000_${randomSpritesheet}.png`]
+          const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
           if (texture) {
             const floor: SetSprite = Sprite.from(texture)
             floor.label = LABEL_TYPES.floor
@@ -1431,7 +1425,7 @@ export class MapGeneration {
           const type = this.map.randomItem(['tree', 'rock', 'animal'])
           if (type === 'rock') {
             const sheet = this.map.randomItem(GROUND_SETS)
-            const texture = Assets.cache.get(sheet)?.textures?.[`000_${sheet}.png`]
+            const texture = getTextureByFrame(sheet, 0, Assets)
             if (texture) {
               const rock: SetSprite = Sprite.from(texture)
               rock.label = LABEL_TYPES.set

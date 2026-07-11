@@ -8,9 +8,12 @@ import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getDeterministicCellVariant,
+  getTexture,
+  getTextureSheet,
   getTextureByFrame,
   playSoundCue,
   playSelectionSound,
+  textureRefToString,
 } from '../lib'
 import {
   TYPE_ACTION,
@@ -30,10 +33,11 @@ import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
 import type { EntityInterfaceLike, ResourceEntity, UnitEntity, UnitSounds } from '../types/entities'
 import type { PlayerLike } from '../types/player'
+import type { TextureRef } from '../lib'
 
-type ResourceAssetList = string[]
+type ResourceAssetList = TextureRef[]
 type ResourceAssetsByTerrain = Record<string, ResourceAssetList>
-type ResourceAssets = string | ResourceAssetList | ResourceAssetsByTerrain
+type ResourceAssets = string | TextureRef | ResourceAssetList | ResourceAssetsByTerrain
 type ResourceDefinition = ResourceConfig & {
   assets: ResourceAssets
   lifecycleAssets?: {
@@ -53,6 +57,7 @@ type ResourceConfigCache = {
 }
 type UnitWithResourceCommands = UnitEntity & Record<string, ((target: RuntimeEntity) => void) | undefined>
 type PlayerWithResourceMemory = PlayerLike & Record<string, Set<RuntimeEntity> | undefined>
+type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
 
 export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string }
 
@@ -63,9 +68,12 @@ function getResourceConfig(): ResourceConfigCache {
 function getTerrainAssets(
   assets: ResourceAssets | undefined,
   terrainType: string
-): string | ResourceAssetList | undefined {
+): string | TextureRef | ResourceAssetList | undefined {
+  if (!assets) return undefined
   if (typeof assets === 'string' || Array.isArray(assets)) return assets
-  return assets?.[terrainType] || Object.values(assets || {}).find(value => Array.isArray(value))
+  if ('sheet' in assets) return assets as TextureRef
+  const terrainAssets = assets as ResourceAssetsByTerrain
+  return terrainAssets[terrainType] || Object.values(terrainAssets).find(value => Array.isArray(value))
 }
 
 export class Resource extends Instance implements ResourceEntity {
@@ -126,19 +134,23 @@ export class Resource extends Instance implements ResourceEntity {
       this.sprite = animatedSprite
     } else {
       const terrainAssets = getTerrainAssets(this.assets, cell.type)
-      this.textureName =
+      const textureRef =
         this.textureName ||
-        (typeof terrainAssets === 'string' ? `000_${terrainAssets}` : map.randomItem((terrainAssets as string[]) || []))
-      if (!this.textureName) {
+        (typeof terrainAssets === 'string'
+          ? { sheet: terrainAssets, frame: 0 }
+          : Array.isArray(terrainAssets)
+            ? map.randomItem(terrainAssets)
+            : terrainAssets)
+      if (!textureRef) {
         throw new Error(`Missing texture for resource ${this.type} on ${cell.type}`)
       }
-      const resourceName = this.textureName.split('_')[1]
-      const textureFile = this.textureName + '.png'
-      const spritesheet = Assets.cache.get(resourceName)
-      const texture = spritesheet.textures[textureFile]
+      const texture = getTexture(textureRef, Assets)
+      const textureFile = (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(textureRef)}.png`
+      const spritesheet = Assets.cache.get(getTextureSheet(textureRef))
+      this.textureName = textureRefToString(textureRef)
       this.sprite = Sprite.from(texture)
       this.sprite.hitArea =
-        spritesheet.data.frames[textureFile].hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
+        spritesheet?.data?.frames?.[textureFile]?.hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
     }
 
     const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
@@ -245,11 +257,13 @@ export class Resource extends Instance implements ResourceEntity {
     if (!sheetId) return
     const frameIndex = randomRange(0, 3)
     const texture = getTextureByFrame(sheetId, frameIndex, Assets)
-    this.textureName = texture.textureCacheIds?.[0] || ''
+    this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
     sprite.texture = texture
     const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
     sprite.hitArea = new Polygon(points)
-    sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    if (texture.defaultAnchor) {
+      sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    }
   }
 
   onTreeDie() {
@@ -260,7 +274,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (!sheetId) return this.clear()
     const frameIndex = randomRange(0, 3)
     const texture = getTextureByFrame(sheetId, frameIndex, Assets)
-    this.textureName = texture.textureCacheIds?.[0] || ''
+    this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
     const { sprite } = this
     sprite.texture = texture
     sprite.eventMode = 'none'
@@ -303,17 +317,16 @@ export class Resource extends Instance implements ResourceEntity {
     const terrainAssets = getTerrainAssets(this.assets, cell?.type ?? '')
     if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
 
-    const textureName = getDeterministicCellVariant(terrainAssets, this.i, this.j, map.seed)
-    if (!textureName) return
-    const resourceName = textureName.split('_')[1]
-    const textureFile = textureName + '.png'
-    const spritesheet = Assets.cache.get(resourceName)
-    const texture = spritesheet?.textures?.[textureFile]
+    const textureRef = getDeterministicCellVariant(terrainAssets, this.i, this.j, map.seed)
+    if (!textureRef) return
+    const texture = getTexture(textureRef, Assets)
     if (!texture) return
 
-    this.textureName = textureName
+    this.textureName = textureRefToString(textureRef)
     this.sprite.texture = texture
-    this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    if (texture.defaultAnchor) {
+      this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    }
   }
 
   syncWithCell() {

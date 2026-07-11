@@ -4,6 +4,7 @@ import { FAMILY_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
+import type { TextureRef } from '../../lib'
 import { CellFog } from './CellFog'
 
 export type RuntimeCellContext = {
@@ -33,7 +34,7 @@ export type RuntimeCellSource = {
   type: string
   category?: string
   color?: string | number
-  assets?: string[]
+  assets?: TextureRef[]
   terrainTextureName?: string
   solid?: boolean
   visible?: boolean
@@ -63,7 +64,7 @@ export class RuntimeCell {
   type: string
   category?: string
   color?: string | number
-  assets: string[]
+  assets: TextureRef[]
   terrainTextureName: string
   solid: boolean
   visible: boolean

@@ -33,6 +33,7 @@ import {
   getTransportLoad,
   canUnloadTransport,
   unloadTransport,
+  getIconPath,
 } from '../../lib'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
@@ -263,7 +264,7 @@ export class Unit extends Instance implements UnitEntity {
                 ? [
                     {
                       id: 'build',
-                      icon: 'assets/interface/50721/002_50721.png',
+                      icon: getIconPath('002_50721'),
                       tooltip: () => ({
                         title: t('buildMenu'),
                         description: t('buildMenuDescription'),
@@ -278,7 +279,7 @@ export class Unit extends Instance implements UnitEntity {
                 ? [
                     {
                       id: 'unload',
-                      icon: 'assets/interface/50721/001_50721.png',
+                      icon: getIconPath('001_50721'),
                       hide: () => !getTransportLoad(this),
                       tooltip: () => ({
                         title: t('unloadTransport'),

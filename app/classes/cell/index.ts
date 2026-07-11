@@ -1,9 +1,10 @@
 import { Container, Assets, Sprite } from 'pixi.js'
-import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
+import { cartesianToIsometric, getTexture, textureRefToString, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
+import type { TextureRef } from '../../lib'
 import { CellFog, type FogCellLike } from './CellFog'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
 export { GenerationCell } from './GenerationCell'
@@ -28,7 +29,7 @@ type CellOptions = {
   j: number
   z?: number
   type: string
-  textureName?: string
+  textureName?: TextureRef
   skipFog?: boolean
   fogSprites?: FogSpriteMemory[]
 }
@@ -36,7 +37,7 @@ type CellOptions = {
 type CellConfig = {
   category?: string
   color?: string | number
-  assets?: string[]
+  assets?: TextureRef[]
 }
 
 type SavedFogSprite = FogSpriteMemory & {
@@ -54,7 +55,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   type: string
   category?: string
   color?: string | number
-  assets: string[]
+  assets: TextureRef[]
   solid: boolean
   inclined: boolean
   border: boolean
@@ -113,12 +114,9 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.zIndex = this.i + this.j
     this.sortableChildren = true
 
-    const textureName = options.textureName || map.randomItem(this.assets)
-    this.terrainTextureName = textureName
-    const resourceName = textureName.split('_')[1]
-    const textureFile = textureName + '.png'
-    const spritesheet = Assets.cache.get(resourceName)
-    const texture = spritesheet.textures[textureFile]
+    const textureRef = options.textureName || map.randomItem(this.assets)
+    this.terrainTextureName = textureRefToString(textureRef)
+    const texture = getTexture(textureRef, Assets)
     this.sprite = new Sprite(texture) as CellSprite
     this.sprite.zIndex = 0
     this.sprite.label = LABEL_TYPES.sprite

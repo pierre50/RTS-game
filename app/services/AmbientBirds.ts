@@ -13,6 +13,7 @@ import {
   AMBIENT_BIRD_SHADOW_ALPHA,
   AMBIENT_BIRD_SHADOW_OFFSET_X,
   AMBIENT_BIRD_SHADOW_OFFSET_Y,
+  AMBIENT_BIRD_SHADOW_TINT,
   AMBIENT_BIRD_SPEED_MAX,
   AMBIENT_BIRD_SPEED_MIN,
 } from '../constants'
@@ -133,7 +134,7 @@ export class AmbientBirds extends Container {
     const birdConfig = AMBIENT_BIRD_ASSETS[Math.floor(this.random() * AMBIENT_BIRD_ASSETS.length)]
     const path = createBirdPath(this.getViewportBounds(), this.random)
     const bird = this.createAnimatedSprite(birdConfig.spriteSheet, path.degree, birdConfig.frameCount)
-    const shadow = this.createAnimatedSprite(birdConfig.shadowSheet, path.degree, birdConfig.frameCount)
+    const shadow = this.createAnimatedSprite(birdConfig.spriteSheet, path.degree, birdConfig.frameCount)
     if (!bird || !shadow) {
       bird?.destroy()
       shadow?.destroy()
@@ -143,6 +144,7 @@ export class AmbientBirds extends Container {
 
     const group = new Container()
     const scale = randomBetween(birdConfig.minScale, birdConfig.maxScale, this.random)
+    shadow.tint = AMBIENT_BIRD_SHADOW_TINT
     shadow.alpha = AMBIENT_BIRD_SHADOW_ALPHA
     shadow.position.set(AMBIENT_BIRD_SHADOW_OFFSET_X, AMBIENT_BIRD_SHADOW_OFFSET_Y)
     group.scale.set(scale)

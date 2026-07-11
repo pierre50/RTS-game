@@ -182,7 +182,7 @@ export class BottombarManager {
   renderBackButton(selection: RuntimeEntity, element: HTMLElement, parent?: MenuButtonSpec[]): void {
     const { player } = this.menu.context
     const back = this.createMenuBox('interfaceBackBtn')
-    back.appendChild(this.createMenuIcon('assets/interface/50721/010_50721.png'))
+    back.appendChild(this.createMenuIcon(getIconPath('010_50721')))
     this.menu.menuTooltip.bind(back, () => ({
       title: t('back'),
       description: t('backMenuDescription'),
@@ -254,7 +254,7 @@ export class BottombarManager {
     if (building.technology) {
       return [
         {
-          icon: 'assets/interface/50721/003_50721.png',
+          icon: getIconPath('003_50721'),
           id: `${building.technology}-cancel`,
           tooltip: () => ({
             title: t('cancel'),
@@ -281,11 +281,11 @@ export class BottombarManager {
     const preload = (src: string) => {
       new Image().src = src
     }
-    preload('assets/interface/50721/010_50721.png')
-    preload('assets/interface/50721/001_50721.png')
-    preload('assets/interface/50721/003_50721.png')
-    preload('assets/interface/50721/002_50721.png')
-    preload('assets/interface/50721/006_50721.png')
+    preload(getIconPath('010_50721'))
+    preload(getIconPath('001_50721'))
+    preload(getIconPath('003_50721'))
+    preload(getIconPath('002_50721'))
+    preload(getIconPath('006_50721'))
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
@@ -405,7 +405,7 @@ export class BottombarManager {
         const unitSelection = selection
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'
-        const cancel = this.createMenuIcon('assets/interface/50721/003_50721.png')
+        const cancel = this.createMenuIcon(getIconPath('003_50721'))
         cancel.id = `${type}-cancel`
         if (!unitSelection.queue?.some(q => q === type)) {
           cancel.classList.add('hidden')
@@ -443,7 +443,7 @@ export class BottombarManager {
   getRallyPointButton(): MenuButtonSpec {
     return {
       id: 'rallyPoint',
-      icon: 'assets/interface/50721/006_50721.png',
+      icon: getIconPath('006_50721'),
       tooltip: () => ({
         title: t('rallyPoint'),
         description: t('rallyPointDescription'),

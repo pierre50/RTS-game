@@ -4,37 +4,55 @@
       "TownCenter": {
         "icon": "033_50704",
         "images": {
-          "final": "000_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Barracks": {
         "icon": "003_50704",
         "images": {
-          "final": "000_254"
+          "final": {
+            "sheet": "buildings/shared/barracks/age-0",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "015_50704",
         "images": {
-          "final": "000_218"
+          "final": {
+            "sheet": "buildings/shared/house/age-0",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "011_50704",
         "images": {
-          "final": "000_20"
+          "final": {
+            "sheet": "buildings/egyptian/granary/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "028_50704",
         "images": {
-          "final": "000_527"
+          "final": {
+            "sheet": "buildings/shared/storage-pit/age-0",
+            "frame": 0
+          }
         }
       },
       "Dock": {
         "icon": "006_50704",
         "images": {
-          "final": "000_355"
+          "final": {
+            "sheet": "buildings/shared/dock/age-0",
+            "frame": 0
+          }
         }
       }
     },
@@ -42,49 +60,73 @@
       "TownCenter": {
         "icon": "035_50704",
         "images": {
-          "final": "001_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "SmallWall": {
         "icon": "042_50704",
         "images": {
-          "final": "000_532"
+          "final": {
+            "sheet": "environment/ground/stone-set-2",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "016_50704",
         "images": {
-          "final": "000_21"
+          "final": {
+            "sheet": "buildings/egyptian/house/multi-age",
+            "frame": 0
+          }
         }
       },
       "Farm": {
         "icon": "010_50704",
         "images": {
-          "final": "000_447"
+          "final": {
+            "sheet": "buildings/shared/farm/age-1",
+            "frame": 0
+          }
         }
       },
       "WatchTower": {
         "icon": "026_50704",
         "images": {
-          "final": "000_688"
+          "final": {
+            "sheet": "buildings/shared/watch-tower/age-1",
+            "frame": 0
+          }
         }
       },
       "Market": {
         "icon": "021_50704",
         "images": {
-          "final": "000_500"
+          "final": {
+            "sheet": "buildings/shared/market/age-1",
+            "frame": 0
+          }
         }
       },
       "Stable": {
-        "icon": "024_50704",
+        "icon": "025_50704",
         "images": {
-          "final": "000_28"
+          "final": {
+            "sheet": "buildings/shared/stable/age-1",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "001_50704",
         "images": {
-          "final": "000_27"
+          "final": {
+            "sheet": "buildings/egyptian/archery-range/multi-age",
+            "frame": 0
+          }
         }
       }
     },
@@ -92,61 +134,100 @@
       "Barracks": {
         "icon": "004_50704",
         "images": {
-          "final": "000_17"
+          "final": {
+            "sheet": "buildings/egyptian/barracks/multi-age",
+            "frame": 0
+          }
         }
       },
       "TownCenter": {
         "icon": "036_50704",
         "images": {
-          "final": "000_18"
+          "final": {
+            "sheet": "buildings/egyptian/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "017_50704",
         "images": {
-          "final": "001_21"
+          "final": {
+            "sheet": "buildings/egyptian/house/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "022_50704",
         "images": {
-          "final": "000_24"
+          "final": {
+            "sheet": "buildings/egyptian/market/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "029_50704",
         "images": {
-          "final": "000_26"
+          "final": {
+            "sheet": "buildings/egyptian/storage-pit/multi-age",
+            "frame": 0
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "019_50704",
         "images": {
-          "final": "000_22"
+          "final": {
+            "sheet": "buildings/egyptian/government-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Academy": {
         "icon": "000_50704",
         "images": {
-          "final": "000_16"
+          "final": {
+            "sheet": "buildings/egyptian/academy/age-2",
+            "frame": 0
+          }
         }
       },
       "SiegeWorkshop": {
         "icon": "009_50704",
         "images": {
-          "final": "000_19"
+          "final": {
+            "sheet": "buildings/egyptian/siege-workshop/age-2",
+            "frame": 0
+          }
         }
       },
       "Temple": {
         "icon": "031_50704",
         "images": {
-          "final": "000_29"
+          "final": {
+            "sheet": "buildings/egyptian/temple/multi-age",
+            "frame": 0
+          }
         }
       },
       "SentryTower": {
         "icon": "014_50704",
         "images": {
-          "final": "000_593"
+          "final": {
+            "sheet": "buildings/shared/sentry-tower/age-2",
+            "frame": 0
+          }
+        }
+      },
+      "Dock": {
+        "icon": "007_50704",
+        "images": {
+          "final": {
+            "sheet": "buildings/egyptian/dock/age-2",
+            "frame": 0
+          }
         }
       }
     },
@@ -154,73 +235,118 @@
       "GuardTower": {
         "icon": "049_50704",
         "images": {
-          "final": "000_31"
+          "final": {
+            "sheet": "buildings/egyptian/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "BallistaTower": {
         "icon": "049_50704",
         "images": {
-          "final": "000_31"
+          "final": {
+            "sheet": "buildings/egyptian/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "012_50704",
         "images": {
-          "final": "001_20"
+          "final": {
+            "sheet": "buildings/egyptian/granary/multi-age",
+            "frame": 1
+          }
         }
       },
       "Barracks": {
         "icon": "005_50704",
         "images": {
-          "final": "001_17"
+          "final": {
+            "sheet": "buildings/egyptian/barracks/multi-age",
+            "frame": 1
+          }
         }
       },
       "TownCenter": {
         "icon": "038_50704",
         "images": {
-          "final": "002_18"
+          "final": {
+            "sheet": "buildings/egyptian/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "House": {
         "icon": "018_50704",
         "images": {
-          "final": "002_21"
+          "final": {
+            "sheet": "buildings/egyptian/house/multi-age",
+            "frame": 2
+          }
         }
       },
       "Stable": {
         "icon": "024_50704",
         "images": {
-          "final": "000_28"
+          "final": {
+            "sheet": "buildings/egyptian/stable/multi-age",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "002_50704",
         "images": {
-          "final": "001_27"
+          "final": {
+            "sheet": "buildings/egyptian/archery-range/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "023_50704",
         "images": {
-          "final": "001_24"
+          "final": {
+            "sheet": "buildings/egyptian/market/multi-age",
+            "frame": 1
+          }
         }
       },
       "StoragePit": {
         "icon": "030_50704",
         "images": {
-          "final": "001_26"
+          "final": {
+            "sheet": "buildings/egyptian/storage-pit/multi-age",
+            "frame": 1
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "020_50704",
         "images": {
-          "final": "001_22"
+          "final": {
+            "sheet": "buildings/egyptian/government-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "Temple": {
         "icon": "032_50704",
         "images": {
-          "final": "001_29"
+          "final": {
+            "sheet": "buildings/egyptian/temple/multi-age",
+            "frame": 1
+          }
+        }
+      },
+      "Dock": {
+        "icon": "008_50704",
+        "images": {
+          "final": {
+            "sheet": "buildings/egyptian/dock/age-2",
+            "frame": 1
+          }
         }
       }
     }

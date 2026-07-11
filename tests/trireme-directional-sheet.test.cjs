@@ -95,10 +95,10 @@ test('Boat wreck sheets stay non-directional and use sinking animations', () => 
     'Greek'
   )
 
-  assert.equal(config.units.FishingShip.assets.dyingSheet, '263')
-  assert.equal(config.units.ScoutShip.assets.dyingSheet, '263')
-  assert.equal(config.units.WarGalley.assets.dyingSheet, '264')
-  assert.equal(config.units.Trireme.assets.dyingSheet, '264')
+  assert.equal(config.units.FishingShip.assets.dyingSheet, 'boats/wreck-small')
+  assert.equal(config.units.ScoutShip.assets.dyingSheet, 'boats/wreck-small')
+  assert.equal(config.units.WarGalley.assets.dyingSheet, 'boats/wreck-large')
+  assert.equal(config.units.Trireme.assets.dyingSheet, 'boats/wreck-large')
   assert.deepEqual(config.units.FishingShip.sounds.die, [5113, 5177, 5181])
   assert.deepEqual(config.units.ScoutShip.sounds.die, [5113, 5177, 5181])
   assert.deepEqual(config.units.WarGalley.sounds.die, [5113, 5177, 5181])
@@ -109,9 +109,15 @@ test('Boat wreck sheets stay non-directional and use sinking animations', () => 
 
 test('Asset manifest preloads the sinking sheets used by boats', () => {
   const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.ts', {})
-  assert.equal(ASSET_BUNDLES.graphics[262], 'assets/graphics/262/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics[263], 'assets/graphics/263/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics[264], 'assets/graphics/264/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics[697], 'assets/graphics/697/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics[700], 'assets/graphics/700/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/fishing-boat/dying'], 'assets/graphics/boats/fishing-boat/dying/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/wreck-small'], 'assets/graphics/boats/wreck-small/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/wreck-large'], 'assets/graphics/boats/wreck-large/texture.json')
+  assert.equal(
+    ASSET_BUNDLES.graphics['boats/fishing-boat/fishing-overlay'],
+    'assets/graphics/boats/fishing-boat/fishing-overlay/texture.json'
+  )
+  assert.equal(
+    ASSET_BUNDLES.graphics['boats/fishing-ship/fishing-overlay'],
+    'assets/graphics/boats/fishing-ship/fishing-overlay/texture.json'
+  )
 })

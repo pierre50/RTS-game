@@ -1,10 +1,11 @@
 import { Assets } from 'pixi.js'
 import type { ContainerChild } from 'pixi.js'
-import { cartesianToIsometric, getDeterministicCellVariant, updateInstanceRenderVisibility } from '../../lib'
+import { cartesianToIsometric, getDeterministicCellVariant, textureRefToString, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
+import type { TextureRef } from '../../lib'
 import { CellFog } from './CellFog'
 
 type GenerationCellContext = {
@@ -22,15 +23,15 @@ type GenerationCellOptions = {
   j: number
   z?: number
   type: string
-  textureName?: string
+  textureName?: TextureRef
   definition?: CellDefinition
 }
 
 type CellDefinition = {
   category?: string
   color?: string | number
-  assets: string[]
-  [key: string]: string | string[] | number | boolean | undefined
+  assets: TextureRef[]
+  [key: string]: string | TextureRef | TextureRef[] | number | boolean | undefined
 }
 
 type TerrainAppearance = {
@@ -69,7 +70,7 @@ export class GenerationCell implements RuntimeCell {
   _terrainAppearance: TerrainAppearance
   category?: string
   color?: string | number
-  assets: string[]
+  assets: TextureRef[]
   terrainTextureName: string
   x: number
   y: number
@@ -105,8 +106,9 @@ export class GenerationCell implements RuntimeCell {
     this.category = definition.category
     this.color = definition.color
     this.assets = definition.assets
-    this.terrainTextureName =
+    this.terrainTextureName = textureRefToString(
       options.textureName || getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) || this.assets[0]
+    )
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH
@@ -174,7 +176,7 @@ export class GenerationCell implements RuntimeCell {
     const wasWater = this.category === 'Water'
     this.type = type
     Object.assign(this, definition)
-    this.terrainTextureName = this.map.randomItem(this.assets)
+    this.terrainTextureName = textureRefToString(this.map.randomItem(this.assets))
     if (wasWater !== (this.category === 'Water')) this.map.invalidateReliefCoastDistances()
   }
 

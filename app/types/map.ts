@@ -5,6 +5,7 @@ import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
+import type { TextureRef } from '../lib'
 
 export interface FogSpriteMemory {
   textureSheet: string
@@ -20,6 +21,7 @@ export interface RuntimeCell extends GridCell {
   type: string
   category?: string
   color?: string | number
+  assets?: TextureRef[]
   solid: boolean
   visible: boolean
   inclined?: boolean

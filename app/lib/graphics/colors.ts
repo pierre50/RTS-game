@@ -58,12 +58,10 @@ function isPlayerColor(color: string): color is PlayerColor {
 function getDirectColorTextureKey(sprite: RecolorableSprite): string {
   const { texture } = sprite
   const frame = texture.frame
-  return (
-    texture.label ||
-    texture.textureCacheIds?.[0] ||
-    texture.source?.label ||
-    [texture.source?.uid ?? 'unknown-source', frame.x, frame.y, frame.width, frame.height].join('_')
-  )
+  // Frame names ("000.png") repeat across spritesheets, so the key must
+  // include the source, not just the texture label.
+  const source = texture.source?.label || texture.source?.uid || 'unknown-source'
+  return [source, frame.x, frame.y, frame.width, frame.height].join('_')
 }
 
 export function getHexColor(name: string): string {

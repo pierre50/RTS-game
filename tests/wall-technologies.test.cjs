@@ -32,22 +32,22 @@ const { getWallFrameAt, getWallIcon, getWallLevel, getWallSheet } = loadWalls()
 test('wall technology levels progress independently from player age', () => {
   const owner = { age: 3, civ: 'Greek', technologies: [] }
   assert.equal(getWallLevel(owner), 1)
-  assert.equal(getWallSheet(owner), '599')
+  assert.equal(getWallSheet(owner), 'buildings/walls/level-1/default')
 
   owner.technologies.push('UpgradeMediumWall')
   assert.equal(getWallLevel(owner), 2)
-  assert.equal(getWallSheet(owner), '69')
+  assert.equal(getWallSheet(owner), 'buildings/walls/level-2/greek')
 
   owner.technologies.push('UpgradeFortification')
   assert.equal(getWallLevel(owner), 3)
-  assert.equal(getWallSheet(owner), '67')
+  assert.equal(getWallSheet(owner), 'buildings/walls/level-3/greek')
 })
 
 test('each architecture uses its own upgraded wall sheets', () => {
   const technologies = ['UpgradeMediumWall']
-  assert.equal(getWallSheet({ civ: 'Egyptian', technologies }), '25')
-  assert.equal(getWallSheet({ civ: 'Asian', technologies }), '113')
-  assert.equal(getWallSheet({ civ: 'Babylonian', technologies }), '169')
+  assert.equal(getWallSheet({ civ: 'Egyptian', technologies }), 'buildings/walls/level-2/egyptian')
+  assert.equal(getWallSheet({ civ: 'Asian', technologies }), 'buildings/walls/level-2/asian')
+  assert.equal(getWallSheet({ civ: 'Babylonian', technologies }), 'buildings/walls/level-2/babylonian')
 })
 
 test('wall construction icons follow the researched wall level', () => {

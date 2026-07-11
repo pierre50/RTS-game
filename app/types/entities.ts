@@ -7,6 +7,7 @@ import type { GameContextLike } from './context'
 import type { ConfigValue, TechnologyConfig } from './config'
 import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
+import type { TextureRef } from '../lib'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitCreationExtra = {
@@ -283,7 +284,7 @@ export type RuntimeEntity = UnitEntity | BuildingEntity | ResourceEntity | Anima
 export interface PlaceableBuildingConfig {
   type: string
   images?: {
-    final?: string
+    final?: TextureRef
   }
-  [key: string]: ConfigValue | { final?: string } | undefined
+  [key: string]: ConfigValue | { final?: TextureRef } | undefined
 }

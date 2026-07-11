@@ -21,6 +21,7 @@ import {
   getPlainCellsAroundPoint,
   getTexture,
   getTextureByFrame,
+  getTextureSheet,
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
@@ -39,9 +40,9 @@ type RuntimeContainer = Container
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 
 const BUILDING_FIRE_SHEETS = {
-  light: '347',
-  medium: '452',
-  heavy: '450',
+  light: 'effects/fire/light',
+  medium: 'effects/fire/medium',
+  heavy: 'effects/fire/heavy',
 } as const
 
 export class BuildingLifecycle {
@@ -58,7 +59,9 @@ export class BuildingLifecycle {
     } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
     const buildSpritesheetId =
-      building.type === BUILDING_TYPES.dock ? '356' : getBuildingTextureNameWithSize(building.size)!.split('_')[1]
+      building.type === BUILDING_TYPES.dock
+        ? 'buildings/construction/dock'
+        : getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
 
     if (percentage >= 25 && percentage < 50) {
       building.sprite.texture = getTextureByFrame(buildSpritesheetId, 1, Assets)
@@ -302,11 +305,11 @@ export class BuildingLifecycle {
 
     let rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
     if (building.type === BUILDING_TYPES.farm) {
-      rubbleSheet = '000_239'
+      rubbleSheet = { sheet: 'buildings/rubble/farm-depleted', frame: 0 }
     } else if (building.type === BUILDING_TYPES.dock) {
-      rubbleSheet = '000_358'
+      rubbleSheet = { sheet: 'buildings/rubble/dock', frame: 0 }
     }
-    building.sprite.texture = getTexture(rubbleSheet as string, Assets)
+    building.sprite.texture = getTexture(rubbleSheet!, Assets)
     building.sprite.eventMode = 'none'
     building.zIndex--
     if (building.type === BUILDING_TYPES.farm) {

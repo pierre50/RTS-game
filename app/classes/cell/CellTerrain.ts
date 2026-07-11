@@ -7,19 +7,33 @@ import {
   formatNumber,
   cartesianToIsometric,
   getDeterministicCellVariant,
+  getTexture,
+  getTextureByFrame,
+  parseTextureRef,
 } from '../../lib'
 import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
+import type { TextureRef } from '../../lib'
 
 type ZIndexedPoint = { x: number; y: number; z?: number | null }
 
 type Direction = 'west' | 'north' | 'south' | 'east'
 type BorderVariantMap = Record<number, number[]>
+
+const TERRAIN_SHEETS = {
+  water: 'terrain/water',
+} as const
+
+const BORDER_SHEETS = {
+  desertRelief: 'relief-borders/desert',
+  waterRelief: 'relief-borders/water',
+} as const
+
 type TerrainDefinition = {
   category?: string
   color?: string | number
-  assets?: string[]
-  [key: string]: string | string[] | number | boolean | undefined
+  assets?: TextureRef[]
+  [key: string]: string | TextureRef[] | number | boolean | undefined
 }
 
 type TerrainConfig = {
@@ -69,7 +83,7 @@ export type TerrainCellLike = {
   type: string
   category?: string
   color?: string | number
-  assets?: string[]
+  assets?: TextureRef[]
   terrainTextureName?: string
   children: TerrainChild[]
   sprite: TerrainSprite | null
@@ -89,7 +103,7 @@ function asTerrainParent(parent: Container | TerrainParentLike | null | undefine
   return null
 }
 
-// Border 20002 exposes dedicated slope variants. Some relief tiles intentionally reuse the same
+// Desert relief borders expose dedicated slope variants. Some relief tiles intentionally reuse the same
 // silhouette (009/017, 010/018, 011/019, 012/020) but still have duplicated border frames in the atlas.
 const DESERT_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
   0: [0, 1, 2, 3],
@@ -123,7 +137,7 @@ function getDesertBorderVariants(cellSpriteIndex: number): number[] {
   return DESERT_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? DESERT_BORDER_VARIANTS_BY_TILE_INDEX[0]
 }
 
-// Border 20006 mirrors 20002 exactly: same 68-frame layout, same tile-index-to-frame mapping.
+// Water relief borders mirror desert relief borders: same 68-frame layout, same tile-index-to-frame mapping.
 const DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
   0: [0, 1, 2, 3],
   1: [0, 1, 2, 3],
@@ -168,11 +182,8 @@ export class CellTerrain {
     const definition = config?.cells?.[type]
     const assets = definition?.assets || []
     if (!assets.length) return null
-    const textureName = getDeterministicCellVariant(assets, this.cell.i, this.cell.j, this.cell.map?.seed)
-    if (!textureName) return null
-    const resourceName = textureName.split('_')[1]
-    const spritesheet = Assets.cache.get(resourceName)
-    return spritesheet?.textures?.[textureName + '.png'] || null
+    const textureRef = getDeterministicCellVariant(assets, this.cell.i, this.cell.j, this.cell.map?.seed)
+    return textureRef ? getTexture(textureRef, Assets) : null
   }
 
   resetTerrainAppearance(): void {
@@ -225,19 +236,18 @@ export class CellTerrain {
     if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
     if (alreadySet) return
-    const resourceName = '20002'
-    const cellSpriteTextureName = cell.sprite.texture.label
+    const resourceName = BORDER_SHEETS.desertRelief
+    const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
-    const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
+    const cellSpriteIndex = parseTextureRef(cellSpriteTextureName).frame
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
     const variants = getDesertBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
-    const spritesheet = Assets.cache.get(resourceName)
-    const textureName = formatNumber(index) + '_' + resourceName + '.png'
-    const texture = spritesheet?.textures?.[textureName]
+    const textureName = formatNumber(index) + '.png'
+    const texture = getTextureByFrame(resourceName, index, Assets)
     if (!texture) {
       console.log(
         `[desert-border] Missing texture "${textureName}" for tile ${cellSpriteTextureName} at [${cell.i},${cell.j}]`
@@ -257,19 +267,17 @@ export class CellTerrain {
     if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'deepWaterBorder' && c.direction === direction)
     if (alreadySet) return
-    const resourceName = '20006'
-    const cellSpriteTextureName = cell.sprite.texture.label
+    const resourceName = BORDER_SHEETS.waterRelief
+    const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
-    const cellSpriteIndex = +cellSpriteTextureName.split('_')[0]
+    const cellSpriteIndex = parseTextureRef(cellSpriteTextureName).frame
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
     const variants = getDeepWaterBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
-    const spritesheet = Assets.cache.get(resourceName)
-    const textureName = formatNumber(index) + '_' + resourceName + '.png'
-    const texture = spritesheet?.textures?.[textureName]
+    const texture = getTextureByFrame(resourceName, index, Assets)
     if (!texture) return
     const sprite = new Sprite(texture) as TerrainSprite
     sprite.direction = direction as Direction
@@ -283,8 +291,7 @@ export class CellTerrain {
     const { cell } = this
     const { sprite } = cell
     if (!sprite) return
-    const spritesheet = Assets.cache.get(resourceName)
-    const texture = spritesheet.textures[index + '_' + resourceName + '.png']
+    const texture = getTextureByFrame(resourceName, Number(index), Assets)
     cell.border = true
     cell.waterBorder = true
     if (cell.has && typeof cell.has.die === 'function') {
@@ -298,22 +305,13 @@ export class CellTerrain {
     const { sprite } = cell
     if (!sprite) return
     const baseTexture = sprite.texture
-    const label = sprite.texture.label
-    if (!label || !label.includes('_')) {
-      console.log(`[relief] BAD LABEL at [${cell.i},${cell.j}]: "${label}"`)
+    const label = cell.terrainTextureName
+    if (!label) {
+      console.log(`[relief] BAD TERRAIN TEXTURE REF at [${cell.i},${cell.j}]: "${label}"`)
       return
     }
-    const resourceName = label.split('_')[1].split('.')[0]
-    const spritesheet = Assets.cache.get(resourceName)
-    if (!spritesheet) {
-      console.log(`[relief] NO SPRITESHEET "${resourceName}" at [${cell.i},${cell.j}]`)
-      return
-    }
-    const texture = spritesheet.textures[index + '_' + resourceName + '.png']
-    if (!texture) {
-      console.log(`[relief] MISSING TEXTURE "${index}_${resourceName}.png" at [${cell.i},${cell.j}]`)
-      return
-    }
+    const resourceName = parseTextureRef(label).sheet
+    const texture = getTextureByFrame(resourceName, index, Assets)
 
     // Relief frames are intentionally transparent. Keep the original flat tile
     // inside the cell so fog baking and container sorting can never expose the scene.
@@ -345,9 +343,8 @@ export class CellTerrain {
     const { cell } = this
     if (!cell.sprite) return
     const index = formatNumber(cell.context.map.randomRange(0, 3))
-    const resourceName = '15002'
-    const spritesheet = Assets.cache.get(resourceName)
-    cell.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
+    const resourceName = TERRAIN_SHEETS.water
+    cell.sprite.texture = getTextureByFrame(resourceName, Number(index), Assets)
     cell.type = 'Water'
     cell.category = 'Water'
     asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()

@@ -1,16 +1,15 @@
 {
   "summary": {
     "filesOnDisk": 1325,
-    "pathsInManifest": 923,
-    "unusedCount": 402,
+    "pathsInManifest": 221,
+    "unusedCount": 1104,
     "missingCount": 0,
-    "recoverableMb": 2.9
+    "recoverableMb": 19
   },
   "unused": {
     "border": [
-      "border/20000",
-      "border/20002",
-      "border/20006"
+      "border/relief-borders",
+      "border/water-borders"
     ],
     "data": [
       "data/README.md"
@@ -19,30 +18,33 @@
       "fonts/VT323-Regular.ttf"
     ],
     "graphics": [
-      "graphics/693",
-      "graphics/695"
+      "graphics/animals",
+      "graphics/boats",
+      "graphics/buildings",
+      "graphics/effects",
+      "graphics/environment",
+      "graphics/projectiles",
+      "graphics/resources",
+      "graphics/ui",
+      "graphics/units"
     ],
     "interface": [
-      "interface/50405",
-      "interface/50704",
-      "interface/50705",
-      "interface/50706",
-      "interface/50707",
-      "interface/50721",
-      "interface/50729",
-      "interface/50730",
-      "interface/50731",
-      "interface/50732",
-      "interface/51000"
+      "interface/attribute-icons",
+      "interface/building-icons",
+      "interface/command-icons",
+      "interface/commodity-icons",
+      "interface/pointers",
+      "interface/technology-icons",
+      "interface/unit-icons"
     ],
     "logo.png": [
       "logo.png"
     ],
     "terrain": [
-      "terrain/15000",
-      "terrain/15001",
-      "terrain/15002",
-      "terrain/15003"
+      "terrain/deep-water",
+      "terrain/desert",
+      "terrain/grass",
+      "terrain/water"
     ]
   },
   "missing": {}

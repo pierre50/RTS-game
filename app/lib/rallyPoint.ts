@@ -1,4 +1,4 @@
-export const RALLY_POINT_SHEET_ID = '459'
+export const RALLY_POINT_SHEET_ID = 'ui/rally-point-flag'
 
 const RALLY_POINT_FRAME_COUNT = 6
 

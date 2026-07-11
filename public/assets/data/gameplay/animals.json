@@ -8,11 +8,11 @@
     "icon": "037_50730",
     "totalQuantity": 150,
     "assets": {
-      "standingSheet": "479",
-      "walkingSheet": "478",
-      "runningSheet": "480",
-      "dyingSheet": "331",
-      "corpseSheet": "392"
+      "standingSheet": "animals/gazelle/standing",
+      "walkingSheet": "animals/gazelle/walking",
+      "runningSheet": "animals/gazelle/running",
+      "dyingSheet": "animals/gazelle/dying",
+      "corpseSheet": "animals/gazelle/corpse"
     },
     "sounds": {
       "fall": 5003
@@ -27,11 +27,11 @@
     "rateOfFire": 1,
     "totalQuantity": 300,
     "assets": {
-      "actionSheet": "215",
-      "standingSheet": "428",
-      "walkingSheet": "667",
-      "dyingSheet": "324",
-      "corpseSheet": "386"
+      "actionSheet": "animals/elephant/action",
+      "standingSheet": "animals/elephant/standing",
+      "walkingSheet": "animals/elephant/walking",
+      "dyingSheet": "animals/elephant/dying",
+      "corpseSheet": "animals/elephant/corpse"
     },
     "sounds": {
       "fall": 5239,
@@ -48,11 +48,11 @@
     "rateOfFire": 2,
     "totalQuantity": 100,
     "assets": {
-      "actionSheet": "217",
-      "standingSheet": "433",
-      "walkingSheet": "673",
-      "dyingSheet": "330",
-      "corpseSheet": "391"
+      "actionSheet": "animals/crocodile/action",
+      "standingSheet": "animals/crocodile/standing",
+      "walkingSheet": "animals/crocodile/walking",
+      "dyingSheet": "animals/crocodile/dying",
+      "corpseSheet": "animals/crocodile/corpse"
     },
     "sounds": {
       "fall": 5239
@@ -68,11 +68,11 @@
     "rateOfFire": 2,
     "totalQuantity": 100,
     "assets": {
-      "actionSheet": "217",
-      "standingSheet": "433",
-      "walkingSheet": "673",
-      "dyingSheet": "330",
-      "corpseSheet": "391"
+      "actionSheet": "animals/crocodile/action",
+      "standingSheet": "animals/crocodile/standing",
+      "walkingSheet": "animals/crocodile/walking",
+      "dyingSheet": "animals/crocodile/dying",
+      "corpseSheet": "animals/crocodile/corpse"
     },
     "sounds": {
       "fall": 5239
@@ -88,15 +88,20 @@
     "icon": "040_50730",
     "totalQuantity": 100,
     "assets": {
-      "actionSheet": "222",
-      "standingSheet": "497",
-      "walkingSheet": "680",
-      "dyingSheet": "336",
-      "corpseSheet": "397"
+      "actionSheet": "animals/lion/action",
+      "standingSheet": "animals/lion/standing",
+      "walkingSheet": "animals/lion/walking",
+      "dyingSheet": "animals/lion/dying",
+      "corpseSheet": "animals/lion/corpse"
     },
     "sounds": {
       "fall": 5003,
-      "hit": [5132, 5133, 5134, 5135]
+      "hit": [
+        5132,
+        5133,
+        5134,
+        5135
+      ]
     }
   }
 }

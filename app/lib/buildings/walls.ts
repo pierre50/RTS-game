@@ -10,23 +10,23 @@ import type { RecolorableSprite } from '../graphics/colors'
 
 const WALL_SHEETS = {
   1: {
-    default: '599',
+    default: 'buildings/shared/wall/level-1',
   },
   2: {
-    Egyptian: '25',
-    Greek: '69',
-    Asian: '113',
-    Babylonian: '169',
+    Egyptian: 'buildings/egyptian/wall/level-2',
+    Greek: 'buildings/greek/wall/level-2',
+    Asian: 'buildings/asian/wall/level-2',
+    Babylonian: 'buildings/babylonian/wall/level-2',
   },
   3: {
-    Egyptian: '23',
-    Greek: '67',
-    Asian: '111',
-    Babylonian: '167',
+    Egyptian: 'buildings/egyptian/wall/level-3',
+    Greek: 'buildings/greek/wall/level-3',
+    Asian: 'buildings/asian/wall/level-3',
+    Babylonian: 'buildings/babylonian/wall/level-3',
   },
 } as const
 
-export const WALL_CONSTRUCTION_FLAG_SHEET_ID = '598'
+export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/shared/wall/construction-flag'
 
 export type WallOwner = {
   age?: number
@@ -92,7 +92,7 @@ export function getWallSheet(owner?: WallOwner | null): string {
 }
 
 export function getWallTexture(owner: WallOwner | null, frame: number, assets = Assets) {
-  return getTexture(`${String(frame).padStart(3, '0')}_${getWallSheet(owner)}`, assets)
+  return getTexture({ sheet: getWallSheet(owner), frame }, assets)
 }
 
 export function getWallIcon(owner: WallOwner | null, baseIcon: string): string {
@@ -132,7 +132,9 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     const frames = Array.from({ length: 6 }, (_, i) => getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets))
     const flagSprite = new AnimatedSprite(frames)
     flagSprite.label = LABEL_TYPES.deco
-    flagSprite.anchor.copyFrom(frames[0].defaultAnchor)
+    if (frames[0].defaultAnchor) {
+      flagSprite.anchor.copyFrom(frames[0].defaultAnchor)
+    }
     flagSprite.x = -6
     flagSprite.y = -20
     flagSprite.eventMode = 'none'

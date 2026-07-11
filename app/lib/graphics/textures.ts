@@ -3,10 +3,16 @@ import type { HitAreaLike, SpritesheetLike } from '../../types/pixi'
 
 type TextureWithHitArea = Texture & { hitArea?: HitAreaLike; textureCacheIds?: string[] }
 
+export type TextureRef = string | { sheet: string; frame: number }
+
 type AssetCacheLike = {
   cache: {
     get: (id: string) => SpritesheetLike<TextureWithHitArea> | undefined
   }
+}
+
+function padFrame(frame: number): string {
+  return String(frame).padStart(3, '0')
 }
 
 function getFrameIndex(textureName: string): number {
@@ -19,16 +25,17 @@ function getSortedTextureNames(textures: Record<string, TextureWithHitArea>): st
 
 export function getTextureByFrame(
   sheetId: string,
-  frameIndex: number,
+  frameIndex: number | string,
   assets: AssetCacheLike
 ): TextureWithHitArea {
   const spritesheet = assets.cache.get(sheetId)
+  const normalizedFrameIndex = typeof frameIndex === 'string' ? parseInt(frameIndex, 10) : frameIndex
 
   if (!spritesheet || !spritesheet.textures) {
     throw new Error(`Spritesheet for ID "${sheetId}" not found in assets.`)
   }
 
-  const textureName = getSortedTextureNames(spritesheet.textures).find(name => getFrameIndex(name) === frameIndex)
+  const textureName = getSortedTextureNames(spritesheet.textures).find(name => getFrameIndex(name) === normalizedFrameIndex)
   const texture = textureName ? spritesheet.textures[textureName] : undefined
 
   if (!texture || !textureName) {
@@ -40,9 +47,27 @@ export function getTextureByFrame(
   return texture
 }
 
-export function getTexture(name: string, assets: AssetCacheLike): Texture {
-  const [index, id] = name.split('_')
-  return getTextureByFrame(id, parseInt(index, 10), assets)
+export function parseTextureRef(ref: TextureRef): { sheet: string; frame: number } {
+  if (typeof ref !== 'string') return ref
+  const [index, ...sheetParts] = ref.split('_')
+  return {
+    sheet: sheetParts.join('_'),
+    frame: parseInt(index, 10),
+  }
+}
+
+export function textureRefToString(ref: TextureRef): string {
+  if (typeof ref === 'string') return ref
+  return `${padFrame(ref.frame)}_${ref.sheet}`
+}
+
+export function getTextureSheet(ref: TextureRef): string {
+  return parseTextureRef(ref).sheet
+}
+
+export function getTexture(ref: TextureRef, assets: AssetCacheLike): Texture {
+  const { sheet, frame } = parseTextureRef(ref)
+  return getTextureByFrame(sheet, frame, assets)
 }
 
 export { Texture }

@@ -55,7 +55,7 @@ export function hasUnsupportedTransition({ n, ne, e, se, s, sw, w, nw }: Neighbo
   return ne || se
 }
 
-// BOR20000 contains one flat shoreline frame for each visible edge/corner.
+// The water/desert border atlas contains one flat shoreline frame for each visible edge/corner.
 // A concave shoreline has two cardinal water neighbours but no diagonal water
 // neighbour; it still needs the matching corner frame, not an isolated
 // diagonal frame.
