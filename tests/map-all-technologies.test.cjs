@@ -15,17 +15,38 @@ function loadMapGeneration() {
   const module = { exports: {} }
   const localRequire = request => {
     if (request === 'pixi.js') return { Assets: {}, Sprite: class {} }
-    if (request === '../resource') return { Resource: class {} }
+    if (request === '../Resource') return { Resource: class {} }
     if (request === '../players') return { Human: class {}, AI: class {}, Gaia: class {} }
+    if (request === './MapBlueprintGeneration') {
+      return {
+        MapBlueprintGeneration: class {
+          generateFromBlueprint() {}
+          generateEditableFromBlueprint() {}
+          applyBlueprintMetadata() {}
+          loadBlueprintResources() {}
+        },
+      }
+    }
+    if (request === './MapSaveRestore') {
+      return {
+        processUnit: () => {},
+        restoreAIState: () => {},
+        restoreBuildingAssignments: () => {},
+        restorePlayerEntitiesFromSave: () => {},
+        restorePlayerViewsAndFog: () => {},
+        restoreSelection: () => {},
+        restoreTransportCargo: () => {},
+      }
+    }
     if (request === '../../lib') {
       return {
         colors: [],
         getCellsAroundPoint: () => [],
         getZoneInGridWithCondition: () => [],
         updateInstanceVisibility: () => {},
-        rehydrateAIKnowledge: () => {},
       }
     }
+    if (request === '../../services/FogOfWar') return { rehydrateAIKnowledge: () => {} }
     if (request === '../../constants') {
       return {
         BUILDING_TYPES: {},

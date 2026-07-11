@@ -1,6 +1,6 @@
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import type Menu from '../classes/menu'
+import type Menu from '../classes/Menu'
 
 const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
 const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const

@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadPlayer() {
-  const filename = path.join(__dirname, '../app/classes/players/player.ts')
+  const filename = path.join(__dirname, '../app/classes/players/Player.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,

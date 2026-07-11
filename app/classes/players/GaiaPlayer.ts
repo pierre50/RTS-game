@@ -1,7 +1,7 @@
 import { PLAYER_TYPES } from '../../constants'
 import { Animal } from '../animal'
 import type { AnimalOptions } from '../animal'
-import { Player } from './player'
+import { Player } from './Player'
 import type { GameContextLike } from '../../types/context'
 import type { AnimalEntity } from '../../types/entities'
 

@@ -8,6 +8,7 @@ import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getDeterministicCellVariant,
+  getTextureByFrame,
   playSoundCue,
   playSelectionSound,
 } from '../lib'
@@ -242,9 +243,9 @@ export class Resource extends Instance implements ResourceEntity {
     const { sprite } = this
     const sheetId = this.lifecycleAssets?.cut
     if (!sheetId) return
-    const spritesheet = Assets.cache.get(sheetId)
-    this.textureName = `00${randomRange(0, 3)}_${sheetId}.png`
-    const texture = spritesheet.textures[this.textureName]
+    const frameIndex = randomRange(0, 3)
+    const texture = getTextureByFrame(sheetId, frameIndex, Assets)
+    this.textureName = texture.textureCacheIds?.[0] || ''
     sprite.texture = texture
     const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
     sprite.hitArea = new Polygon(points)
@@ -257,9 +258,9 @@ export class Resource extends Instance implements ResourceEntity {
     } = this
     const sheetId = this.lifecycleAssets?.fallen
     if (!sheetId) return this.clear()
-    const spritesheet = Assets.cache.get(sheetId)
-    this.textureName = `00${randomRange(0, 3)}_${sheetId}.png`
-    const texture = spritesheet.textures[this.textureName]
+    const frameIndex = randomRange(0, 3)
+    const texture = getTextureByFrame(sheetId, frameIndex, Assets)
+    this.textureName = texture.textureCacheIds?.[0] || ''
     const { sprite } = this
     sprite.texture = texture
     sprite.eventMode = 'none'

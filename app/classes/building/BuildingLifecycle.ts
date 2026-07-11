@@ -20,6 +20,7 @@ import {
   getPercentage,
   getPlainCellsAroundPoint,
   getTexture,
+  getTextureByFrame,
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
@@ -58,14 +59,13 @@ export class BuildingLifecycle {
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
     const buildSpritesheetId =
       building.type === BUILDING_TYPES.dock ? '356' : getBuildingTextureNameWithSize(building.size)!.split('_')[1]
-    const buildSpritesheet = Assets.cache.get(buildSpritesheetId)
 
     if (percentage >= 25 && percentage < 50) {
-      building.sprite.texture = buildSpritesheet.textures[`001_${buildSpritesheetId}.png`]
+      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 1, Assets)
     } else if (percentage >= 50 && percentage < 75) {
-      building.sprite.texture = buildSpritesheet.textures[`002_${buildSpritesheetId}.png`]
+      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 2, Assets)
     } else if (percentage >= 75 && percentage < 99) {
-      building.sprite.texture = buildSpritesheet.textures[`003_${buildSpritesheetId}.png`]
+      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 3, Assets)
     } else if (percentage >= 100) {
       const wasBuilt = building.isBuilt
       building.isBuilt = true

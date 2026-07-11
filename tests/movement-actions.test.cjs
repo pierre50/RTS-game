@@ -162,7 +162,7 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       playSoundCue: () => {},
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.owner.color]),
     },
-    '../projectile': { Projectile: class {} },
+    '../Projectile': { Projectile: class {} },
     '../../lib/buildings/towers': {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
@@ -250,7 +250,7 @@ test('converted buildings keep their source civilization and age assets', () => 
       playSoundCue: () => {},
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetAge]),
     },
-    '../projectile': { Projectile: class {} },
+    '../Projectile': { Projectile: class {} },
     '../../lib/buildings/towers': {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
@@ -911,7 +911,7 @@ test('a farmer returns to the same farm after delivering food', () => {
       playSoundCue: () => {},
       updateInstanceVisibility: () => {},
     },
-    '../projectile': { Projectile: class {} },
+    '../Projectile': { Projectile: class {} },
     '../../lib/buildings/towers': {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,

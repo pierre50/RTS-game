@@ -1,3 +1,3 @@
-export * from './ai'
-export * from './gaia'
-export * from './human'
+export * from './AIPlayer'
+export * from './GaiaPlayer'
+export * from './HumanPlayer'

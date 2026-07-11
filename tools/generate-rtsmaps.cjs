@@ -218,7 +218,7 @@ function loadRuntimeGenerators() {
   Module._load = function (request, parent, isMain) {
     if (parent && isMapRuntime(parent.filename)) {
       if (request === 'pixi.js') return pixi
-      if (request === '../resource') return { Resource: HeadlessResource }
+      if (request === '../Resource') return { Resource: HeadlessResource }
       if (request === '../../lib') {
         return {
           getCellsAroundPoint,

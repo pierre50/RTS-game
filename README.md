@@ -77,3 +77,10 @@ pnpm clean
 - `public/assets/data/` : JSON organisés par domaine (`gameplay/`, `civilizations/`, `technologies/`)
 - `webpack.config.js` et `webpack.env.js` : configuration et résolution d’environnement du build
 - `main.js` : point d’entrée Electron
+
+## Conventions de nommage
+
+- `PascalCase.ts` : classes, écrans, services, contrôleurs et composants UI principaux.
+- `camelCase.ts` : helpers, factories, configurations et utilitaires.
+- `kebab-case.test.cjs` : tests Node.
+- `index.ts` : point d’entrée public d’un dossier, sans y cacher des dépendances hors domaine.

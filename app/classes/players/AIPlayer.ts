@@ -1,5 +1,5 @@
-import { Player } from './player'
-import type { PlayerOptions } from './player'
+import { Player } from './Player'
+import type { PlayerOptions } from './Player'
 
 import {
   getPositionInGridAroundInstance,

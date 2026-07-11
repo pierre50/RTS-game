@@ -3,7 +3,7 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { buildSettingsContent } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
-import type Menu from '../classes/menu'
+import type Menu from '../classes/Menu'
 
 export class PauseMenu {
   menu: Menu

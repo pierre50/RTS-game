@@ -1,7 +1,7 @@
 import type { Texture, Ticker } from 'pixi.js'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
-import { getTexture } from '../graphics/textures'
+import { getTexture, getTextureByFrame } from '../graphics/textures'
 import { changeSpriteColor } from '../graphics/colors'
 import { bindAnimatedSpriteToTicker } from '../extra'
 import { getWallFrame } from '../grid/wallPath'
@@ -129,11 +129,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
   if (existingFill) existingFill.destroy()
 
   if (getWallLevel(wall.owner) === 1 && frame === 2) {
-    const spritesheet = Assets.cache.get(WALL_CONSTRUCTION_FLAG_SHEET_ID)
-    const frames = Array.from(
-      { length: 6 },
-      (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_${WALL_CONSTRUCTION_FLAG_SHEET_ID}.png`]
-    )
+    const frames = Array.from({ length: 6 }, (_, i) => getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets))
     const flagSprite = new AnimatedSprite(frames)
     flagSprite.label = LABEL_TYPES.deco
     flagSprite.anchor.copyFrom(frames[0].defaultAnchor)

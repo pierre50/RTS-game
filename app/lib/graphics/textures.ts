@@ -1,7 +1,7 @@
 import { Texture } from 'pixi.js'
 import type { HitAreaLike, SpritesheetLike } from '../../types/pixi'
 
-type TextureWithHitArea = Texture & { hitArea?: HitAreaLike }
+type TextureWithHitArea = Texture & { hitArea?: HitAreaLike; textureCacheIds?: string[] }
 
 type AssetCacheLike = {
   cache: {
@@ -9,23 +9,40 @@ type AssetCacheLike = {
   }
 }
 
-export function getTexture(name: string, assets: AssetCacheLike): Texture {
-  const [index, id] = name.split('_')
-  const spritesheet = assets.cache.get(id)
+function getFrameIndex(textureName: string): number {
+  return parseInt(textureName.split('_')[0], 10)
+}
+
+function getSortedTextureNames(textures: Record<string, TextureWithHitArea>): string[] {
+  return Object.keys(textures).sort((a, b) => getFrameIndex(a) - getFrameIndex(b))
+}
+
+export function getTextureByFrame(
+  sheetId: string,
+  frameIndex: number,
+  assets: AssetCacheLike
+): TextureWithHitArea {
+  const spritesheet = assets.cache.get(sheetId)
 
   if (!spritesheet || !spritesheet.textures) {
-    throw new Error(`Spritesheet for ID "${id}" not found in assets.`)
+    throw new Error(`Spritesheet for ID "${sheetId}" not found in assets.`)
   }
 
-  const textureName = `${index}_${id}.png`
-  const texture = spritesheet.textures[textureName]
+  const textureName = getSortedTextureNames(spritesheet.textures).find(name => getFrameIndex(name) === frameIndex)
+  const texture = textureName ? spritesheet.textures[textureName] : undefined
 
-  if (!texture) {
-    throw new Error(`Texture "${textureName}" not found in spritesheet.`)
+  if (!texture || !textureName) {
+    throw new Error(`Frame "${frameIndex}" not found in spritesheet "${sheetId}".`)
   }
 
+  texture.textureCacheIds = texture.textureCacheIds ?? [textureName]
   texture.hitArea = spritesheet.data?.frames?.[textureName]?.hitArea
   return texture
+}
+
+export function getTexture(name: string, assets: AssetCacheLike): Texture {
+  const [index, id] = name.split('_')
+  return getTextureByFrame(id, parseInt(index, 10), assets)
 }
 
 export { Texture }

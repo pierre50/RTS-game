@@ -1,6 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { getActionCondition, instancesDistance } from '../../lib'
-import { Projectile } from '../projectile'
+import { Projectile } from '../Projectile'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Building } from './index'
 

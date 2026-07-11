@@ -1,6 +1,6 @@
 import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
-import { Player } from './player'
-import type { PlayerOptions } from './player'
+import { Player } from './Player'
+import type { PlayerOptions } from './Player'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 

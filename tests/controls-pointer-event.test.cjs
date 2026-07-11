@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadControls() {
-  const filename = path.join(__dirname, '../app/classes/controls.ts')
+  const filename = path.join(__dirname, '../app/classes/Controls.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,

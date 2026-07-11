@@ -21,7 +21,7 @@ import {
   playerCanSeeInstance,
   boardTransport,
 } from '../../lib'
-import { Projectile } from '../projectile'
+import { Projectile } from '../Projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'

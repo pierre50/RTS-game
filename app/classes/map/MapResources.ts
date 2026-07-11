@@ -1,4 +1,4 @@
-import { Resource } from '../resource'
+import { Resource } from '../Resource'
 import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'

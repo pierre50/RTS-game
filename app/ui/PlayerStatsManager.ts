@@ -1,6 +1,6 @@
 import type { Ticker } from 'pixi.js'
 import { canPlayerStillAct, isPlayerEliminated } from '../lib'
-import type Menu from '../classes/menu'
+import type Menu from '../classes/Menu'
 import type { PlayerLike } from '../types/player'
 
 type PlayerStatRow = {

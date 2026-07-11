@@ -132,7 +132,7 @@ test('fishing boats gather silently', () => {
       playSoundCue: sound => playedSounds.push(sound),
       playerCanSeeInstance: () => false,
     },
-    '../projectile': {
+    '../Projectile': {
       Projectile: class {},
     },
     '../../lib/buildings/towers': {
@@ -230,7 +230,7 @@ test('depleted fish are cleared immediately after gathering', () => {
       playSoundCue: () => {},
       playerCanSeeInstance: () => false,
     },
-    '../projectile': {
+    '../Projectile': {
       Projectile: class {},
     },
     '../../lib/buildings/towers': {

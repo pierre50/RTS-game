@@ -9,7 +9,7 @@ import {
   instanceContactInstance,
   playAudibleSoundCue,
 } from '../../lib'
-import { Projectile } from '../projectile'
+import { Projectile } from '../Projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
