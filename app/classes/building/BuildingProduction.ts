@@ -11,16 +11,18 @@ import {
   refundCost,
 } from '../../lib'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
+import type { ConfigValue } from '../../types/config'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 
 type DynamicUnitCommand = (target: RuntimeEntity) => void
-type DynamicBuildingState = Building & Record<string, unknown>
+type DynamicBuildingState = Building & Record<string, ConfigValue | object | undefined>
+type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | undefined>
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
     const sendToFunc = `sendTo${target.category || target.type}`
-    const command = (unit as unknown as Record<string, DynamicUnitCommand | undefined>)[sendToFunc]
+    const command = (unit as UnitWithDynamicCommands)[sendToFunc]
     if (typeof command === 'function') return command(target)
     return unit.sendTo(target)
   }
@@ -228,7 +230,7 @@ export class BuildingProduction {
     for (const [key, value] of Object.entries(data)) {
       ;(building as DynamicBuildingState)[key] = value
     }
-    const assets = getBuildingAsset(building.type, building.owner as Parameters<typeof getBuildingAsset>[1], Assets)
+    const assets = getBuildingAsset(building.type, building.owner, Assets)
     building.sprite.texture = getTexture(assets.images!.final as string, Assets)
     building.sprite.anchor.set(building.sprite.texture.defaultAnchor!.x, building.sprite.texture.defaultAnchor!.y)
     const color = building.getChildByLabel(LABEL_TYPES.color)

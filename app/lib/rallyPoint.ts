@@ -1,3 +1,5 @@
+export const RALLY_POINT_SHEET_ID = '459'
+
 const RALLY_POINT_FRAME_COUNT = 6
 
 export function getRallyPointFrames<TTexture>(textures: Record<string, TTexture>, direction = 0): TTexture[] {

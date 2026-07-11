@@ -6,7 +6,7 @@ import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { RESOURCE_NAMES, findKey } from './shared'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
 import type { ResourceAmount } from '../../types/common'
-import type { TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
+import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
@@ -14,20 +14,22 @@ type TechnologyAction =
   | { type: 'upgradeUnit'; source: string; target: string }
   | { type: 'upgradeBuilding'; source: string; target: string }
   | { type: 'refreshTowers' }
-  | { type: 'improve'; operations: Array<Record<string, unknown> & { value: unknown }> }
+  | { type: 'improve'; operations: ConfigOperation[] }
 
 type DevTechnologyConfig = BaseTechnologyConfig & {
   key: string
   action?: TechnologyAction
 }
 
+type DevTechnologyCallback = (value?: ConfigValue) => void
+
 type DevTechnologyPlayer = DevPlayer & {
-  [key: string]: unknown
+  [key: string]: ConfigValue | object | DevTechnologyCallback | undefined
   autoTechnologyByAge?: boolean
   enemyPlayers?: () => DevTechnologyPlayer[]
   onAgeChange?: () => void
   populationMax?: number
-  updateConfig?: (operations: Array<Record<string, unknown> & { value: number }>) => void
+  updateConfig?: (operations: Array<ConfigOperation & { value: number }>) => void
 }
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
@@ -99,7 +101,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
 
   const config = getTechConfig(player, type)
   if (!config) return { ok: false, message: `Unknown technology: ${typeName}` }
-  const dynamicPlayer: Record<string, unknown> = player
+  const dynamicPlayer: Record<string, ConfigValue | object | DevTechnologyCallback | undefined> = player
   const currentValue = dynamicPlayer[config.key]
   if (Array.isArray(currentValue)) {
     currentValue.push(config.value || type)
@@ -123,11 +125,11 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
         })
         break
       case 'refreshTowers':
-        refreshOwnerTowers(player as Parameters<typeof refreshOwnerTowers>[0])
+        refreshOwnerTowers(player)
         break
       case 'improve':
         player.updateConfig?.(
-          action.operations.map((operation: Record<string, unknown> & { value: unknown }) => ({
+          action.operations.map(operation => ({
             ...operation,
             value: Number(operation.value),
           }))
@@ -139,7 +141,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
   const handler = `on${capitalizeFirstLetter(config.key)}Change`
   const changeHandler = dynamicPlayer[handler]
   if (typeof changeHandler === 'function') {
-    ;(changeHandler as (value: unknown) => void)(config.value)
+    ;(changeHandler as (value: ConfigValue) => void)(config.value)
   }
   if (config.key === 'age' && player.autoTechnologyByAge) {
     applyEligibleTechnologies(context)

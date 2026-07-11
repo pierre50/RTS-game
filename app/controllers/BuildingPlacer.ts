@@ -14,7 +14,6 @@ import type { ResourceLedger } from '../lib'
 type MouseBuilding = Container &
   PlaceableBuildingConfig & {
     isFree?: boolean
-    [key: string]: unknown
   }
 
 export class BuildingPlacer {
@@ -166,7 +165,7 @@ export class BuildingPlacer {
     return canPlaceBuildingAt(map.grid, cell.i, cell.j, mouseBuilding, {
       requireVisible: true,
       requireExplored: true,
-      isExplored: candidate => this.isExploredForPlacement(candidate as RuntimeCell, player),
+      isExplored: candidate => this.isExploredForPlacement(candidate, player),
     })
   }
 

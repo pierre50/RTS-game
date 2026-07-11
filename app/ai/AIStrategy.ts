@@ -17,6 +17,7 @@ import {
 } from './config'
 import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
 import type { RuntimeCell } from '../types/map'
+import type { UnitCreationExtra } from '../types/entities'
 import type {
   AIAge,
   AIBuildingLike,
@@ -294,7 +295,7 @@ export class AIStrategy {
     maxCount: number,
     buildingList: AIBuildingLike[],
     unitType: string,
-    extra: unknown,
+    extra: UnitCreationExtra | undefined,
     reserve: AIResourceAmount = {},
     debug: boolean = false
   ): number {
@@ -474,7 +475,20 @@ export class AIStrategy {
     })
   }
 
-  getNavalDebugInfo(): Record<string, unknown> {
+  getNavalDebugInfo(): {
+    land: AILandAccessDiagnostic
+    needsTransport: boolean
+    dock: AIGridPosition | null
+    docks: number
+    builtDocks: number
+    fish: number
+    scout: boolean
+    desiredFishingBoats: number
+    transports: number
+    operationStage: string
+    cargo: number
+    failure: string | null
+  } {
     const opportunity = this.getNavalOpportunity()
     const home = typeof this.ai.getHomeAnchor === 'function' ? this.ai.getHomeAnchor() : null
     const enemyAnchor = this.getPrimaryEnemyAnchor()

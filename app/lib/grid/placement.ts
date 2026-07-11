@@ -1,3 +1,4 @@
+import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { LABEL_TYPES } from '../../constants'
 import { getPlainCellsAroundPoint, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
@@ -11,9 +12,9 @@ type TerrainCell = GridCell & {
       }
     }
   }
-  getChildByLabel?: (label: string) => unknown
-  removeChild?: unknown
-  terrainSet?: unknown
+  getChildByLabel?: (label: string) => ContainerChild | null
+  removeChild?: (child: ContainerChild) => void
+  terrainSet?: ContainerChild | null
 }
 
 type BuildingPlacement = {
@@ -178,17 +179,17 @@ export function getPositionInGridAroundInstance(
     : getZoneInGridWithCondition(zone, grid, size, cellCondition) || null
 }
 
-export function canPlaceBuildingAt(
-  grid: Grid,
+export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
+  grid: Grid<TCell>,
   i: number,
   j: number,
   building: BuildingPlacement,
-  { requireVisible = false, requireExplored = false, isExplored = null }: Partial<PlacementVisibility<GridCell>> = {}
+  { requireVisible = false, requireExplored = false, isExplored = null }: Partial<PlacementVisibility<TCell>> = {}
 ): boolean {
   const { cells, expectedCells } = getBuildingFootprintCells(grid, i, j, building)
   if (cells.length !== expectedCells) return false
 
-  const visibility = { requireVisible, requireExplored, isExplored }
+  const visibility: PlacementVisibility<TCell> = { requireVisible, requireExplored, isExplored }
   return building.buildOnWater
     ? canPlaceWaterBuilding(grid, i, j, cells, building, visibility)
     : canPlaceGroundBuilding(cells, visibility)

@@ -21,6 +21,7 @@ function loadSaveSerializer() {
             return result
           }, {})
         },
+        getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
       }
     }
     return require(id)

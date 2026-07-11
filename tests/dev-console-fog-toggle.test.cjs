@@ -14,7 +14,9 @@ function loadMapActions() {
 
   const module = { exports: {} }
   const localRequire = request => {
-    if (request === '../../lib') return { drawInstanceBlinkingSelection: () => {} }
+    if (request === '../../lib') {
+      return { drawInstanceBlinkingSelection: () => {}, getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [] }
+    }
     if (request === './shared') {
       return {
         getInstancesByCategory: () => [],

@@ -1,14 +1,18 @@
 import type { ResourceAmount } from './common'
+import type { AnimalConfig, BuildingConfig, ResourceConfig, TechnologyConfig, UnitConfig } from './config'
 import type { FogSpriteMemory } from './map'
+import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
 export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; label: string }>
+export type SaveRallyPoint = SaveGridPoint & { direction: number }
+export type SaveTechnologyState = { type?: string; config?: TechnologyConfig } | null
 
 export type SaveEntityState = {
   action?: string | null
-  assetAge?: unknown
+  assetAge?: AssetAge
   assetCiv?: string
   assetType?: string
   blockedGatherApproach?: { target: SaveReference; action: string } | null
@@ -37,10 +41,10 @@ export type SaveEntityState = {
   previousWork?: string | null
   quantity?: number
   queue?: string[]
-  rallyPoint?: unknown
+  rallyPoint?: SaveRallyPoint | null
   realDest?: SaveDestination | null
   size?: number
-  technology?: { type?: string; config?: unknown } | null
+  technology?: SaveTechnologyState
   textureName?: string
   totalHitPoints?: number
   type: string
@@ -63,8 +67,8 @@ export type SaveCellState = {
 }
 
 export type SavedThreatState = {
-  target?: unknown
-  attacker?: unknown
+  target?: SaveReference | null
+  attacker?: SaveReference | null
   lastSeenAgo?: number
   lastSeenAt?: number
   attackerFamily?: string | null
@@ -73,7 +77,7 @@ export type SavedThreatState = {
 }
 
 export type SavedEnemyMemoryState = {
-  instance?: unknown
+  instance?: SaveReference | null
   lastSeenAgo?: number
 }
 
@@ -154,10 +158,10 @@ export type PlayerSetupConfig = {
 }
 
 export type LoadedGameConfig = {
-  animals?: Record<string, { totalHitPoints?: number; totalQuantity?: number }>
-  buildings?: Record<string, unknown>
-  resources?: Record<string, unknown>
-  units?: Record<string, unknown>
+  animals?: Record<string, AnimalConfig>
+  buildings?: Record<string, BuildingConfig>
+  resources?: Record<string, ResourceConfig>
+  units?: Record<string, UnitConfig>
 }
 
 export type SerializedSave = {

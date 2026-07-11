@@ -2,7 +2,7 @@ import type { Container, Texture } from 'pixi.js'
 import { Assets, Sprite, AnimatedSprite } from 'pixi.js'
 import { COLOR_GREEN } from '../constants'
 import { findWallPath, getWallFrame } from '../lib/grid/wallPath'
-import { getWallLevel, getWallTexture, isWall } from '../lib/buildings/walls'
+import { getWallLevel, getWallTexture, isWall, WALL_CONSTRUCTION_FLAG_SHEET_ID } from '../lib/buildings/walls'
 import { bindAnimatedSpriteToTicker, changeSpriteColor } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
@@ -114,10 +114,10 @@ export class WallPlacementController {
       draft.preview.push(sprite)
 
       if (getWallLevel(draft.owner) === 1 && wallFrame === 2) {
-        const spritesheet = Assets.cache.get('598') as { textures: Record<string, Texture> }
+        const spritesheet = Assets.cache.get(WALL_CONSTRUCTION_FLAG_SHEET_ID) as { textures: Record<string, Texture> }
         const frames = Array.from(
           { length: 6 },
-          (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_598.png`]
+          (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_${WALL_CONSTRUCTION_FLAG_SHEET_ID}.png`]
         )
         const flagSprite = new AnimatedSprite(frames)
         if (frames[0].defaultAnchor) flagSprite.anchor.copyFrom(frames[0].defaultAnchor)

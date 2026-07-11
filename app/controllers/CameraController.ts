@@ -3,6 +3,7 @@ import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/settings'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Viewport } from '../types/geometry'
+import type { VisionGridLike } from '../types/player'
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'
@@ -18,8 +19,8 @@ type CameraContext = {
     updateCameraMiniMap?(): void
   } | null
   player?: {
-    views?: unknown
-    unselectAll?: unknown
+    views?: VisionGridLike
+    unselectAll?: () => void
   } | null
   performance?: {
     record(name: string, value: number): void

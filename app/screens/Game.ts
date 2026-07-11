@@ -3,9 +3,10 @@ import { Container, type ContainerChild } from 'pixi.js'
 import { sound } from '@pixi/sound'
 import { t } from '../lib/lang'
 import Map from '../classes/map'
+import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/menu'
 import Controls from '../classes/controls'
-import { Modal, canPlayerStillAct, debounce, isPlayerEliminated } from '../lib'
+import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayerEliminated } from '../lib'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
@@ -20,7 +21,7 @@ import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
-import type { GameConfig, PlayerSetupConfig, SaveCellState, SerializedSave } from '../types/save'
+import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeMap } from '../types/map'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
@@ -56,6 +57,18 @@ type GameRuntimeContext = Omit<
   devConsole: DevConsole | null
   checkVictory: () => boolean
   checkDefeat: () => boolean
+}
+
+function saveConfig(config: SerializedSave['config'] | SerializedSave['world'] | undefined): GameConfig {
+  return config || {}
+}
+
+function hasSerializedGrid(save: SerializedSave): boolean {
+  return Array.isArray(save.map)
+}
+
+function savedRuntimeState(save: SerializedSave): SavedGameData {
+  return save as SavedGameData
 }
 
 /**
@@ -107,7 +120,7 @@ export default class Game extends Container {
       scheduler: null,
       performance: null,
       save: () => this.save(),
-      load: (evt: unknown) => this.load(evt as SerializedSave),
+      load: (evt: object) => this.load(evt as SerializedSave),
       pause: () => this.togglePause(true),
       resume: () => {
         if (!this.context.victory && !this.context.defeat) this.togglePause(false)
@@ -396,15 +409,15 @@ export default class Game extends Container {
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
-    this._restartSaveData = structuredClone(serializeGame(this._gameContext())) as SerializedSave
+    this._restartSaveData = structuredClone(serializeGame(this._gameContext()))
   }
 
   async _bootFromSeedSave(json: SerializedSave): Promise<void> {
     this.context.performance?.setPhase?.('load')
     this._createRuntime()
     const map = this._map()
-    const world = (json.world || {}) as GameConfig
-    const savedConfig = (json.config || {}) as GameConfig
+    const world = saveConfig(json.world)
+    const savedConfig = saveConfig(json.config)
     const seedConfig = {
       ...savedConfig,
       seed: world.seed ?? savedConfig.seed,
@@ -439,7 +452,7 @@ export default class Game extends Container {
     await map.prepareTerrainForSavedState({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
-    map.mapGeneration.applySavedStateToGeneratedMap(json as SerializedSave & { map: SaveCellState[][] })
+    map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -447,7 +460,7 @@ export default class Game extends Container {
 
   async _bootFromSave(json: SerializedSave): Promise<void> {
     this.context.performance?.setPhase?.('load')
-    if (!Array.isArray(json.map)) {
+    if (!hasSerializedGrid(json)) {
       await this._bootFromSeedSave(json)
       return
     }
@@ -455,9 +468,9 @@ export default class Game extends Container {
     const map = this._map()
     const savedMap = json.map
     map.size = Math.max(0, (savedMap?.length || 1) - 1)
-    this._applyMapConfig(map, (json.config as GameConfig) || {})
+    this._applyMapConfig(map, saveConfig(json.config))
     this._createUiRuntime()
-    map.generateFromJSON(json as SerializedSave & { map: SaveCellState[][] })
+    map.generateFromJSON(savedRuntimeState(json))
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -588,7 +601,7 @@ export default class Game extends Container {
     } else {
       document.getElementById('pause')?.remove()
     }
-    const gaiaUnits = map.gaia?.units ?? []
+    const gaiaUnits = getGaiaAnimals(map.gaia)
     for (let i = 0; i < gaiaUnits.length; i++) {
       pause ? gaiaUnits[i].pause?.() : gaiaUnits[i].resume?.()
     }

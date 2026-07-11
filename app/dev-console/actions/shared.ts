@@ -14,20 +14,20 @@ export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
 type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
 
-export function normalizeToggle(value: unknown, currently: boolean): boolean {
+export function normalizeToggle(value: string | undefined, currently: boolean): boolean {
   return value === 'on' ? true : value === 'off' ? false : !currently
 }
 
-export function normalize(value: unknown): string {
+export function normalize(value: string | number | boolean | null | undefined): string {
   return String(value || '').toLowerCase()
 }
 
-export function findKey(source: Record<string, unknown>, value: unknown): string | undefined {
+export function findKey(source: object, value: string | number | boolean | null | undefined): string | undefined {
   const wanted = normalize(value)
   return Object.keys(source).find(key => normalize(key) === wanted)
 }
 
-export function getAmount(value: unknown, fallback = 1): number {
+export function getAmount(value: string | number | undefined, fallback = 1): number {
   const amount = Number(value ?? fallback)
   return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
 }
@@ -45,7 +45,7 @@ export function getSpawnCell(
   if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
   if (
     buildingConfig &&
-    canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig as Parameters<typeof canPlaceBuildingAt>[3])
+    canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig)
   )
     return cursorCell
 
@@ -57,7 +57,7 @@ export function getSpawnCell(
         const cell = map.grid[cursorCell.i + di]?.[cursorCell.j + dj]
         if (!cell) continue
         if (buildingConfig) {
-          if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig as Parameters<typeof canPlaceBuildingAt>[3]))
+          if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig))
             return cell
         } else if (!cellCondition || cellCondition(cell)) {
           return cell

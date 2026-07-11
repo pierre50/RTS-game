@@ -1,7 +1,8 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import type { ConfigValue } from '../types/config'
 import type { PlayerLike } from '../types/player'
 
-type CombatEntity = {
+export type CombatEntity = {
   allowAction?: string[]
   category?: string
   family?: string
@@ -9,7 +10,7 @@ type CombatEntity = {
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
-  isUsedBy?: unknown
+  isUsedBy?: CombatEntity | null
   loading?: number | null
   meleeArmor?: number
   meleeAttack?: number
@@ -26,7 +27,7 @@ type CombatEntity = {
 export type Condition = {
   key: string
   op: '=' | '!=' | '<' | '<=' | '>=' | '>' | 'includes' | 'notincludes'
-  value: unknown
+  value: ConfigValue
 }
 
 export type ActionProps = {
@@ -78,8 +79,7 @@ export function getHitPointsWithDamage(source: CombatEntity, target: CombatEntit
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
 
-const arraysEqual = (a: unknown, b: unknown): boolean => {
-  if (!Array.isArray(a) || !Array.isArray(b)) return false
+const arraysEqual = (a: readonly ConfigValue[], b: readonly ConfigValue[]): boolean => {
   if (a.length !== b.length) return false
   const sortedA = a.slice().sort()
   const sortedB = b.slice().sort()
@@ -90,7 +90,7 @@ export const isValidCondition = (condition: Condition | null | undefined, values
   if (!condition) return true
 
   const { op, key, value } = condition
-  const expectedValue = (values as Record<string, unknown>)[key]
+  const expectedValue = (values as Record<string, ConfigValue>)[key]
 
   if (expectedValue === undefined) {
     throw new Error(`Key not found in values: ${key}`)
@@ -99,7 +99,7 @@ export const isValidCondition = (condition: Condition | null | undefined, values
   switch (op) {
     case '=':
     case '!=': {
-      const result = Array.isArray(value) ? arraysEqual(value, expectedValue) : value === expectedValue
+      const result = Array.isArray(value) && Array.isArray(expectedValue) ? arraysEqual(value, expectedValue) : value === expectedValue
       return op === '!=' ? !result : result
     }
     case '<':

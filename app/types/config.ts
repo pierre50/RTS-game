@@ -1,12 +1,21 @@
 import type { ResourceAmount } from './common'
 import type { Condition } from '../lib/combat'
-import type { UnitSounds } from './entities'
+import type { CommandSound, UnitSounds } from './entities'
+
+export type ConfigValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | ConfigValue[]
+  | { [key: string]: ConfigValue | TechnologyConfig }
 
 interface EntityConfig {
   icon: string
   cost?: ResourceAmount
   conditions?: Condition[]
-  [key: string]: unknown
+  [key: string]: ConfigValue | ResourceAmount | Condition[] | UnitSounds | TechnologyAction | undefined
 }
 
 export interface UnitConfig extends EntityConfig {
@@ -33,14 +42,14 @@ interface TechnologyAction {
 
 export interface ConfigOperation {
   type: string | string[]
-  value?: unknown
-  [key: string]: unknown
+  value?: ConfigValue
+  [key: string]: ConfigValue | string[] | undefined
 }
 
 export interface TechnologyConfig extends EntityConfig {
   researchTime?: number
   key?: string
-  value?: unknown
+  value?: ConfigValue
   action?: TechnologyAction
 }
 
@@ -76,10 +85,11 @@ export interface ProjectileConfig {
   directionalFrames?: number
   directionalFrameOrder?: string[]
   directionalAnimationFrames?: number
+  scale?: number
   spawnOffsetY?: number
   fullCircleStartDegree?: number
   trajectory?: ProjectileTrajectory
   impactEffect?: ProjectileImpactEffect
-  sounds?: { launch?: unknown; impact?: unknown }
-  [key: string]: unknown
+  sounds?: { launch?: CommandSound; impact?: CommandSound }
+  [key: string]: ConfigValue | ProjectileTrajectory | ProjectileImpactEffect | { launch?: CommandSound; impact?: CommandSound } | undefined
 }

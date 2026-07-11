@@ -1,28 +1,29 @@
 import { Resource } from '../resource'
 import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
+import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 
-type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
+export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
 type ResourceType = string
 type ResourceRange = [min: number, max: number]
 type ResourceGroupEntry = [type: ResourceType, baseCount: number, quantity: number, clusterRadius: number]
 type ResourceCenter = GridPosition
 type MapResourcesMap = {
-  context: unknown
+  context: object
   grid: RuntimeCell[][]
   size: number
   mapType?: string
   resourceDensity?: ResourceDensity
   resources: Set<ResourceEntity>
   gaia?: {
-    createAnimal(options: { i: number; j: number; type: string }): RuntimeEntity
+    createAnimal?(options: { i: number; j: number; type: string }): RuntimeEntity
   } | null
   random(): number
   randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
-  addChild<T>(child: T): T
+  addChild<T extends ContainerChild>(child: T): T
   placeAnimalHerd(player: GridPosition, quantity: number, range: ResourceRange): void
   placeResourceGroup(player: GridPosition, type: ResourceType, quantity: number, range: ResourceRange): boolean
   placeResourceGroupAt(center: GridPosition, type: ResourceType, quantity: number, clusterRadius?: number): boolean
@@ -299,7 +300,7 @@ export class MapResources {
     for (let i = 0; i < toPlace; i++) {
       const idx = Math.floor(this.map.random() * validCells.length)
       const cell = validCells.splice(idx, 1)[0]
-      this.map.gaia?.createAnimal({ i: cell.i, j: cell.j, type: 'Gazelle' })
+      this.map.gaia?.createAnimal?.({ i: cell.i, j: cell.j, type: 'Gazelle' })
     }
   }
 

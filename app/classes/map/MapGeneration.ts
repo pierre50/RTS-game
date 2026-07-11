@@ -1,4 +1,4 @@
-import { Assets, Sprite } from 'pixi.js'
+import { Assets, Sprite, type ContainerChild } from 'pixi.js'
 import { Resource } from '../resource'
 import { Human, AI, Gaia } from '../players'
 import {
@@ -8,6 +8,7 @@ import {
   updateInstanceVisibility,
   rehydrateAIKnowledge,
   boardTransport,
+  getGaiaAnimals,
 } from '../../lib'
 import {
   BUILDING_TYPES,
@@ -33,11 +34,14 @@ import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/player'
 import type { ResourceOptions } from '../resource'
 import type { AnimalOptions } from '../animal'
-import type { RuntimeEntity, UnitEntity, BuildingEntity, ResourceEntity } from '../../types/entities'
+import type { AnimalEntity, RuntimeEntity, UnitEntity, BuildingEntity, ResourceEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
+import type { MapEditorControlsLike } from '../../types/mapEditor'
+import type { AnimalConfig } from '../../types/config'
 import type {
   SaveCellState,
   SaveEntityState,
+  SaveReference,
   SavedAIState,
   SavedEnemyMemoryState,
   SerializedSave,
@@ -47,12 +51,23 @@ type TerrainValue = 0 | 1 | 2 | 3 | 4
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
+type MapGenerationContext = Omit<
+  Partial<GameContextLike>,
+  'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
+> & {
+  controls?: GameContextLike['controls'] | MapEditorControlsLike | null
+  map?: GameContextLike['map'] | null
+  menu?: GameContextLike['menu'] | null
+  performance?: GameContextLike['performance'] | null
+  player?: PlayerLike | null
+  players: PlayerLike[]
+  scheduler?: GameContextLike['scheduler'] | null
+}
 // Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
 // that MapGeneration relies on. Map can't be imported directly here: it imports
 // MapGeneration itself, so importing it back would create a circular dependency.
-type NullablePlayerContext = Omit<GameContextLike, 'player'> & { player: PlayerLike | null }
-type MapGenerationMap = RuntimeMap & {
-  context: GameContextLike
+export type MapGenerationMap = RuntimeMap & {
+  context: MapGenerationContext
   playersPos: GeneratedPosition[]
   positionsCount: number
   noAI?: boolean
@@ -76,9 +91,9 @@ type MapGenerationMap = RuntimeMap & {
   _fogInitComplete?: boolean
   terrainChunkManager?: { destroy(): void }
   mapFog?: { destroyFogResources(): void }
-  children: RuntimeEntity[]
-  removeChildren(): RuntimeEntity[]
-  getChildByLabel(label: string): RuntimeEntity | null
+  children: GeneratedMapChild[]
+  removeChildren(): GeneratedMapChild[]
+  getChildByLabel(label: string): ContainerChild | null
   clearRenderChunks(): void
   resetRandom(stream?: number | string): void
   findPlayerPlaces(): GeneratedPosition[]
@@ -104,7 +119,8 @@ type MapGenerationMap = RuntimeMap & {
   _indexFogChunkCells(): void
   _flushFogQueue(): void
   bakeTerrainToChunks(): void
-  getChildByLabel(label: string): RuntimeEntity | null
+  getChildByLabel(label: string): ContainerChild | null
+  removeChild(child: ContainerChild): ContainerChild
 }
 type SetSprite = Sprite & {
   updateAnchor?: boolean
@@ -116,13 +132,13 @@ type ResourceDefinition = {
   isAnimated?: boolean
 }
 type GameConfig = {
-  animals: Record<string, unknown>
+  animals: Record<string, AnimalConfig>
   resources: Record<string, ResourceDefinition>
-  cells: Record<string, unknown>
+  cells: Record<string, CellDefinition>
 }
 type CellDefinition = {
   assets: string[]
-  [key: string]: unknown
+  [key: string]: string | string[] | number | boolean | undefined
 }
 export type GenerateMapOptions = {
   onProgress?: ProgressCallback
@@ -151,11 +167,11 @@ type SavedPlayer = {
   corpses?: SaveEntityState[]
   aiState?: SavedAIState
   selectedUnitLabels?: string[]
-  selectedUnitLabel?: unknown
-  selectedBuildingLabel?: unknown
-  selectedOtherLabel?: unknown
+  selectedUnitLabel?: string | null
+  selectedBuildingLabel?: string | null
+  selectedOtherLabel?: string | null
 }
-type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals'> & {
+export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals'> & {
   map: SaveCellState[][]
   players: SavedPlayer[]
   camera: { x: number; y: number }
@@ -217,17 +233,58 @@ type AIPlayerMemoryState = PlayerLike & {
   enemyBuildingMemory: Map<string, AIEnemyMemoryRuntime>
   threatenedTargets: Map<string, AIThreatRuntime>
 }
-type RestoringUnitEntity = Omit<UnitEntity, 'blockedGatherApproach' | 'buildQueue'> & {
-  blockedGatherApproach?: { target: unknown; action: string } | null
+type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
+  action?: string | null
+  blockedGatherApproach?: { target: SaveReference | RuntimeEntity; action: string } | null
   buildQueue?: Array<string | BuildingEntity>
+  commonSendTo?: UnitEntity['commonSendTo']
+  getAction?: (name: string) => void
+  loadedInTransport?: UnitEntity['loadedInTransport']
+  path?: RuntimeCell[]
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  sendTo?: UnitEntity['sendTo']
+  setDest?: UnitEntity['setDest']
+  setPath?: UnitEntity['setPath']
+  stop?: UnitEntity['stop']
+  work?: string | null
 }
+type GeneratedMapChild = ContainerChild & Partial<RuntimeEntity>
 
 function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record<string, string[]> {
   return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets))
 }
 
+function isRuntimeEntity(value: ContainerChild | null): value is RuntimeEntity & ContainerChild {
+  return Boolean(value && typeof (value as Partial<RuntimeEntity>).family === 'string')
+}
+
+function isRuntimeDestination(value: RuntimeEntity | RuntimeCell | null): value is RuntimeEntity {
+  return Boolean(value && 'family' in value)
+}
+
+function gameContext(context: MapGenerationContext): GameContextLike {
+  if (!context.app || !context.gamebox || !context.map || !context.menu || !context.controls || !context.scheduler) {
+    throw new Error('Map generation requires a complete game context')
+  }
+  if (!context.player) {
+    throw new Error('Map generation requires an active player')
+  }
+  return context as GameContextLike
+}
+
+function runtimeContext(context: MapGenerationContext): GameContextLike {
+  if (!context.app || !context.gamebox || !context.map || !context.scheduler) {
+    throw new Error('Map generation requires a runtime context')
+  }
+  return context as GameContextLike
+}
+
+function gameConfig(): GameConfig {
+  return Assets.cache.get('config') as GameConfig
+}
+
 function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
-  return map.addChild(new Resource(resource, map.context))
+  return map.addChild(new Resource(resource, runtimeContext(map.context)))
 }
 
 // --- Saved-game restore helpers -------------------------------------------------
@@ -237,25 +294,52 @@ function createResourceFromState(resource: ResourceOptions, map: MapGenerationMa
 
 // A saved reference is either a [i, j] grid coordinate, a [i, j, label] tuple (an
 // entity currently standing on a cell), or a bare label string (entity lookup).
-function getDest(val: unknown, map: MapGenerationMap): RuntimeEntity | RuntimeCell | null {
+function getDest(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): RuntimeEntity | RuntimeCell | null {
   if (val) {
     if (Array.isArray(val)) {
-      return val[2] ? map.getChildByLabel(val[2]) : map.grid[val[0]][val[1]]
+      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : map.grid[val[0]][val[1]]
     } else {
-      return map.getChildByLabel(val as string)
+      return getRuntimeEntityByLabel(map, val as string)
     }
   }
   return null
 }
 
-// Saved references used for unit/building ownership links and AI memory always
-// encode an entity label, never a bare grid cell, so this narrows the lookup above.
-function getDestEntity(val: unknown, map: MapGenerationMap): RuntimeEntity | null {
-  return getDest(val, map) as RuntimeEntity | null
+function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeEntity | null {
+  const child = map.getChildByLabel(label)
+  return isRuntimeEntity(child) ? child : null
 }
 
-function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
-  const restoringUnit = unit as RestoringUnitEntity
+function isUnitEntity(entity: RuntimeEntity | null | undefined): entity is UnitEntity {
+  return entity?.family === FAMILY_TYPES.unit
+}
+
+function isBuildingEntity(entity: RuntimeEntity | null | undefined): entity is BuildingEntity {
+  return entity?.family === FAMILY_TYPES.building
+}
+
+// Saved references used for unit/building ownership links and AI memory always
+// encode an entity label, never a bare grid cell, so this narrows the lookup above.
+function getDestEntity(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): RuntimeEntity | null {
+  const dest = getDest(val, map)
+  return isRuntimeDestination(dest) ? dest : null
+}
+
+function getDestUnit(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): UnitEntity | null {
+  const dest = getDestEntity(val, map)
+  return isUnitEntity(dest) ? dest : null
+}
+
+function getDestBuilding(
+  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
+  map: MapGenerationMap
+): BuildingEntity | null {
+  const dest = getDestEntity(val, map)
+  return isBuildingEntity(dest) ? dest : null
+}
+
+function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap): void {
+  const restoringUnit = unit as RestoringMobileEntity
   if (unit.loadedInTransport) return
   const savedPath: RuntimeCell[] = Array.isArray(unit.path) ? unit.path : []
   const savedAction = unit.action
@@ -276,9 +360,10 @@ function processUnit(unit: UnitEntity, context: MapGenerationMap): void {
       } else if (savedAction && unit.getAction) {
         unit.getAction(savedAction)
       } else {
-        unit.commonSendTo
-          ? unit.commonSendTo(dest as RuntimeEntity, unit.work ?? '', savedAction ?? null, true, true, true)
-          : unit.sendTo(dest, savedAction ?? undefined)
+        const destEntity = isRuntimeDestination(dest) ? dest : null
+        unit.commonSendTo && destEntity
+          ? unit.commonSendTo(destEntity, unit.work ?? '', savedAction ?? null, true, true, true)
+          : unit.sendTo?.(dest, savedAction ?? undefined)
       }
     } else {
       unit.stop?.()
@@ -345,13 +430,12 @@ function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context:
     )
   selectedUnits.forEach(unit => unit.select?.())
   player.selectedUnits = selectedUnits
-  player.selectedUnit =
-    (getDestEntity(savedPlayer.selectedUnitLabel, context) as UnitEntity | null) ?? selectedUnits[0] ?? null
+  player.selectedUnit = getDestUnit(savedPlayer.selectedUnitLabel, context) ?? selectedUnits[0] ?? null
 
-  const selectedBuilding = getDestEntity(savedPlayer.selectedBuildingLabel, context)
+  const selectedBuilding = getDestBuilding(savedPlayer.selectedBuildingLabel, context)
   if (selectedBuilding && !selectedBuilding.isDead && !selectedBuilding.isDestroyed) {
     selectedBuilding.select?.()
-    player.selectedBuilding = selectedBuilding as BuildingEntity
+    player.selectedBuilding = selectedBuilding
   }
 
   const selectedOther = getDestEntity(savedPlayer.selectedOtherLabel, context)
@@ -362,11 +446,11 @@ function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context:
 
   const { menu } = context.context
   if (player.selectedUnits.length) {
-    menu.setBottombar?.(player.selectedUnit ?? player.selectedUnits[0])
+    menu?.setBottombar?.(player.selectedUnit ?? player.selectedUnits[0])
   } else if (player.selectedBuilding) {
-    menu.setBottombar?.(player.selectedBuilding)
+    menu?.setBottombar?.(player.selectedBuilding)
   } else if (player.selectedOther) {
-    menu.setBottombar?.(player.selectedOther)
+    menu?.setBottombar?.(player.selectedOther)
   }
 }
 
@@ -546,7 +630,7 @@ export class MapGeneration {
   }
 
   pickAmbientAnimalType(i: number, j: number): string {
-    const animals = (Assets.cache.get('config') as GameConfig).animals
+    const animals = gameConfig().animals
     const dangerousAnimalTypes = new Set(['Lion', 'Crocodile', 'Alligator', 'Elephant'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
@@ -557,7 +641,7 @@ export class MapGeneration {
   }
 
   pickFishResourceType(i: number, j: number): string {
-    const resources = (Assets.cache.get('config') as GameConfig).resources
+    const resources = gameConfig().resources
     const fishTypes = Object.entries(resources)
       .filter(([, definition]) => definition.category === 'Fish')
       .map(([type]) => type)
@@ -567,9 +651,10 @@ export class MapGeneration {
   }
 
   generateFromJSON(data: SavedGameData): void {
-    const { map, players, camera, resources, animals, runtime } = data as SavedGameData
+    const { map, players, camera, resources, animals, runtime } = data
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
-    const { menu, controls } = this.map.context
+    const context = runtimeContext(this.map.context)
+    const { menu, controls } = context
     this.map.removeChildren()
     this.map.clearRenderChunks()
     this.map.resetRandom()
@@ -577,7 +662,7 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, context)
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -588,7 +673,7 @@ export class MapGeneration {
     }
 
     this.map._initFogChunks()
-    const gaia = new Gaia(this.map.context)
+    const gaia = new Gaia(context)
     this.map.gaia = gaia
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -600,10 +685,10 @@ export class MapGeneration {
         const cell = line[j]
         const newCell = new Cell(
           { i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] },
-          this.map.context
+          context
         )
         this.map.addChild(newCell)
-        this.map.grid[i][j] = newCell as unknown as RuntimeCell
+        this.map.grid[i][j] = newCell
       }
     }
     this.map._indexFogChunkCells()
@@ -622,14 +707,14 @@ export class MapGeneration {
       }
     }
 
-    controls.setCamera?.(camera.x, camera.y, true)
-    menu.init?.()
-    menu.updateResourcesMiniMap()
+    controls?.setCamera?.(camera.x, camera.y, true)
+    menu?.init?.()
+    menu?.updateResourcesMiniMap()
 
     this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
     animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
 
-    gaia.units.forEach(animal => processUnit(animal, this.map))
+    getGaiaAnimals(gaia).forEach(animal => processUnit(animal, this.map))
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]
@@ -675,19 +760,20 @@ export class MapGeneration {
     this.map.resources = new Set()
     this.map.instanceBuckets = null
     this.map.context.players = []
-    ;(this.map.context as NullablePlayerContext).player = null
-    this.map.gaia = new Gaia(this.map.context)
+    this.map.context.player = null
+    this.map.gaia = new Gaia(runtimeContext(this.map.context))
   }
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
-    const { players, camera, resources, animals, runtime } = data as SavedGameData
+    const { players, camera, resources, animals, runtime } = data
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
-    const { menu, controls } = this.map.context
+    const context = runtimeContext(this.map.context)
+    const { menu, controls } = context
 
     this.clearGeneratedGameplayState()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, this.map.context)
+      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, context)
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -699,15 +785,15 @@ export class MapGeneration {
 
     this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
 
-    controls.setCamera?.(camera.x, camera.y, true)
-    menu.init?.()
-    menu.updateResourcesMiniMap()
+    controls?.setCamera?.(camera.x, camera.y, true)
+    menu?.init?.()
+    menu?.updateResourcesMiniMap()
 
     this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
     const gaia = this.map.gaia instanceof Gaia ? this.map.gaia : null
     animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia?.createAnimal(animal))
 
-    gaia?.units.forEach(animal => processUnit(animal, this.map))
+    getGaiaAnimals(gaia).forEach(animal => processUnit(animal, this.map))
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]
@@ -827,9 +913,8 @@ export class MapGeneration {
   async stylishMap({
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
-    const {
-      context: { menu, player },
-    } = this.map
+    const context = gameContext(this.map.context)
+    const { menu, player } = context
 
     const timings: Record<string, number> = this.map.generationTimings || {}
     const measure = <T>(name: string, callback: () => T): T => {
@@ -845,7 +930,7 @@ export class MapGeneration {
       return result
     }
 
-    this.map.gaia = new Gaia(this.map.context)
+    this.map.gaia = new Gaia(context)
     if (this.map.pregeneratedBlueprintId) {
       timings.relief = 0
     } else {
@@ -913,6 +998,7 @@ export class MapGeneration {
   async prepareTerrainForSavedState({
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
+    const context = runtimeContext(this.map.context)
     const timings: Record<string, number> = this.map.generationTimings || {}
     const measure = <T>(name: string, callback: () => T): T => {
       const startedAt = performance.now()
@@ -927,7 +1013,7 @@ export class MapGeneration {
       return result
     }
 
-    this.map.gaia = new Gaia(this.map.context)
+    this.map.gaia = new Gaia(context)
     if (this.map.pregeneratedBlueprintId) {
       timings.relief = 0
     } else {
@@ -971,7 +1057,7 @@ export class MapGeneration {
   }
 
   generatePlayers(playersConfig: Array<PlayerOptions> | null = null): PlayerLike[] {
-    const { context } = this.map
+    const context = runtimeContext(this.map.context)
 
     const players: PlayerLike[] = []
     const poses: number[] = []
@@ -1025,6 +1111,7 @@ export class MapGeneration {
   }
 
   generateCells(): void {
+    const context = runtimeContext(this.map.context)
     const z = 0
     this.map.grid = []
     this.map.invalidateReliefCoastDistances()
@@ -1047,9 +1134,9 @@ export class MapGeneration {
       if (!this.map.grid[i]) this.map.grid[i] = []
       for (let j = 0; j <= this.map.size; j++) {
         const type = terrainMap[terrain[i][j]]
-        const cell = new Cell({ i, j, z, type }, this.map.context)
+        const cell = new Cell({ i, j, z, type }, context)
         this.map.addChild(cell)
-        this.map.grid[i][j] = cell as unknown as RuntimeCell
+        this.map.grid[i][j] = cell
       }
     }
 
@@ -1077,6 +1164,7 @@ export class MapGeneration {
     onProgress = async (_stage: string, _progress: number) => {},
     terrain: preparedTerrain = null,
   }: GenerateMapOptions = {}): Promise<void> {
+    const context = runtimeContext(this.map.context)
     const z = 0
     this.map.grid = []
     this.map.invalidateReliefCoastDistances()
@@ -1095,8 +1183,8 @@ export class MapGeneration {
       const row: RuntimeCell[] = []
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
-        const cell = new GenerationCell({ i, j, z, type: terrainMap[terrain[i][j]] }, this.map.context)
-        row[j] = cell as unknown as RuntimeCell
+        const cell = new GenerationCell({ i, j, z, type: terrainMap[terrain[i][j]] }, context)
+        row[j] = cell
       }
       if (i % 8 === 0) {
         await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
@@ -1116,14 +1204,15 @@ export class MapGeneration {
     blueprintData: MapBlueprint,
     { onProgress = async (_stage: string, _progress: number) => {} }: { onProgress?: ProgressCallback } = {}
   ): Promise<void> {
-    const blueprint = blueprintData as MapBlueprint
+    const context = runtimeContext(this.map.context)
+    const blueprint = blueprintData
     const destroyStartedAt = performance.now()
     this.destroyGeneratedChildren()
     this.map.blueprintDestroyMs = performance.now() - destroyStartedAt
     this._applyBlueprintMetadata(blueprint)
 
     const startedAt = performance.now()
-    const cellDefinitions = (Assets.cache.get('config') as GameConfig).cells
+    const cellDefinitions = gameConfig().cells
     const relief = blueprint.relief ?? []
     for (let i = 0; i <= this.map.size; i++) {
       const row: RuntimeCell[] = []
@@ -1138,9 +1227,9 @@ export class MapGeneration {
             type: String(type),
             definition: cellDefinitions[type] as CellDefinition,
           },
-          this.map.context
+          context
         )
-        row[j] = cell as unknown as RuntimeCell
+        row[j] = cell
       }
       if (i % 32 === 0) {
         await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
@@ -1168,7 +1257,8 @@ export class MapGeneration {
   }
 
   generateEditableFromBlueprint(blueprintData: MapBlueprint): void {
-    const blueprint = blueprintData as MapBlueprint
+    const context = runtimeContext(this.map.context)
+    const blueprint = blueprintData
     this.destroyGeneratedChildren()
     this._applyBlueprintMetadata(blueprint)
 
@@ -1184,10 +1274,10 @@ export class MapGeneration {
             z: relief[i]?.[j] || 0,
             type: String(blueprint.terrain[i][j]),
           },
-          this.map.context
+          context
         )
         this.map.addChild(cell)
-        row[j] = cell as unknown as RuntimeCell
+        row[j] = cell
       }
     }
 
@@ -1217,7 +1307,7 @@ export class MapGeneration {
 
     const startedAt = performance.now()
     this.map.resources = new Set()
-    const resourcesConfig = (Assets.cache.get('config') as GameConfig).resources
+    const resourcesConfig = gameConfig().resources
     for (const resource of blueprint.resources) {
       const cell = this.map.grid[resource.i]?.[resource.j]
       if (!cell || cell.has || cell.solid) continue
@@ -1637,6 +1727,7 @@ export class MapGeneration {
   }
 
   generateSets() {
+    const context = runtimeContext(this.map.context)
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -1712,7 +1803,7 @@ export class MapGeneration {
           if (cell.category === 'Water') {
             if (this.map.random() < this.map.chanceOfSets) {
               const fishType = this.pickFishResourceType(i, j)
-              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
             } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
               this._placeWaterSet(cell)
             }
@@ -1723,6 +1814,7 @@ export class MapGeneration {
   }
 
   async generateSetsAsync() {
+    const context = runtimeContext(this.map.context)
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -1771,7 +1863,7 @@ export class MapGeneration {
         if (cell.category === 'Water') {
           if (this.map.random() < this.map.chanceOfSets) {
             const fishType = this.pickFishResourceType(i, j)
-            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, this.map.context)))
+            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
           } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
             this._placeWaterSet(cell)
           }

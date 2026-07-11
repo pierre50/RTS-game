@@ -14,7 +14,7 @@ type VisibilityContext = {
     revealEverything?: boolean
   }
   player?: PlayerLike
-  editor?: unknown
+  editor?: object
 }
 
 type VisibilityOwner = Partial<PlayerLike> & {
@@ -22,7 +22,7 @@ type VisibilityOwner = Partial<PlayerLike> & {
   visiblePlayers?: () => PlayerLike[]
 }
 
-type VisibilityEntity = {
+export type VisibilityEntity = {
   i: number
   j: number
   label: string
@@ -40,7 +40,7 @@ type DetectingEntity = RuntimeEntity & {
 }
 
 function canDetect(entity: RuntimeEntity): entity is DetectingEntity {
-  return typeof (entity as { detect?: unknown }).detect === 'function'
+  return typeof (entity as { detect?: DetectingEntity['detect'] }).detect === 'function'
 }
 
 function syncVisibleSet(target: ViewerSet, source: ReadonlySet<VisionViewerRef>): void {

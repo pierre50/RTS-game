@@ -13,6 +13,10 @@ import { Projectile } from '../projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
+function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
+  return Boolean(value && !('has' in value && 'corpses' in value))
+}
+
 export class UnitCombat {
   unit: UnitEntity
 
@@ -58,7 +62,7 @@ export class UnitCombat {
     const unit = this.unit
 
     if (!unit.getActionCondition?.(unit.dest)) {
-      const dest = unit.dest as RuntimeEntity | null | undefined
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (dest && (dest.hitPoints ?? 0) <= 0) {
         dest.die?.()
       }
@@ -142,7 +146,7 @@ export class UnitCombat {
 
   syncMovingTargetDirection() {
     const unit = this.unit
-    const dest = unit.dest as RuntimeEntity | null | undefined
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (unit.destHasMoved?.() && dest && unit.realDest) {
       unit.realDest.i = dest.i
       unit.realDest.j = dest.j
@@ -169,7 +173,7 @@ export class UnitCombat {
     if (unit.range && unit.type !== UNIT_TYPES.villager) {
       this.setStandingPose()
       const launchProjectile = () => {
-        const dest = unit.dest as RuntimeEntity | null | undefined
+        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
         if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
         playAudibleSoundCue(unit, unit.sounds?.attack)
         const projectile = new Projectile(
@@ -198,7 +202,7 @@ export class UnitCombat {
       unit.setTextures?.(SHEET_TYPES.action)
       unit.startInterval?.(
         () => {
-          const dest = unit.dest as RuntimeEntity | null | undefined
+          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             if (dest && (dest.hitPoints ?? 0) <= 0) {
               dest.die?.()

@@ -12,14 +12,14 @@ export interface FogSpriteMemory {
 }
 
 export interface RuntimeCell extends GridCell {
-  map?: RuntimeMap
+  map?: object
   x: number
   y: number
   z: number
   zIndex?: number
   type: string
   category?: string
-  color?: string
+  color?: string | number
   solid: boolean
   visible: boolean
   inclined?: boolean
@@ -34,8 +34,8 @@ export interface RuntimeCell extends GridCell {
   // lightweight Container for terrain decorations before the real Cell/Container
   // tree is built, so they also expose these Container-shaped members.
   isGenerationCell?: boolean
-  children?: Array<{ label?: string; destroy?: (options?: unknown) => void }>
-  addChild?<T>(child: T): T
+  children?: ContainerChild[]
+  addChild?<T extends ContainerChild>(child: T): T
   getChildByLabel?(label: string): ContainerChild | null
   updateVisible(): void
   place(entity: RuntimeEntity): void
@@ -81,5 +81,5 @@ export interface RuntimeMap {
   removeFromInstanceBucket(instance: RuntimeEntity): void
   updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void
   addChild: Container['addChild']
-  removeChild(child: RuntimeEntity | Container): unknown
+  removeChild(child: RuntimeEntity | Container): ContainerChild
 }

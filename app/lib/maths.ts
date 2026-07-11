@@ -10,7 +10,7 @@ type ArcTrajectory = {
   maxArcHeight?: number
 }
 
-type PositionLike = GridPosition & Partial<Point>
+export type PositionLike = GridPosition & Partial<Point>
 
 const HALF_CELL_WIDTH = CELL_WIDTH / 2
 const HALF_CELL_HEIGHT = CELL_HEIGHT / 2

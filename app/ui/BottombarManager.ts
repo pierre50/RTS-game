@@ -2,8 +2,8 @@ import { Assets } from 'pixi.js'
 import { getIconPath, canAfford, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { getWallIcon } from '../lib/buildings/walls'
-import { getTowerType } from '../lib/buildings/towers'
+import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
+import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { syncHitPointsInfo } from './BaseEntityInterface'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/menu'
@@ -13,6 +13,14 @@ import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { LoadedGameConfig } from '../types/save'
+
+function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
+  return selection?.family === FAMILY_TYPES.building
+}
+
+function isUnitEntity(selection: RuntimeEntity | null | undefined): selection is UnitEntity {
+  return selection?.family === FAMILY_TYPES.unit
+}
 
 export class BottombarManager {
   menu: Menu
@@ -240,8 +248,8 @@ export class BottombarManager {
 
   getSelectionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     if (!selection.interface) return []
-    if (selection.family !== FAMILY_TYPES.building) return selection.interface.menu || []
-    const building = selection as BuildingEntity
+    if (!isBuildingEntity(selection)) return selection.interface.menu || []
+    const building = selection
     if (!building.isBuilt) return []
     if (building.technology) {
       return [
@@ -253,7 +261,7 @@ export class BottombarManager {
             description: t('cancelTechnologyDescription'),
           }),
           onClick: (sel: RuntimeEntity) => {
-            ;(sel as BuildingEntity).cancelTechnology?.()
+            if (isBuildingEntity(sel)) sel.cancelTechnology?.()
           },
         },
       ]
@@ -289,7 +297,7 @@ export class BottombarManager {
     })
     Object.keys(player.config.buildings).forEach(type => {
       try {
-        const asset = getBuildingAsset(type, player as Parameters<typeof getBuildingAsset>[1], Assets)
+        const asset = getBuildingAsset(type, player, Assets)
         if (asset?.icon) preload(getIconPath(asset.icon as string))
       } catch {}
     })
@@ -335,7 +343,7 @@ export class BottombarManager {
 
   getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
     const displayType =
-      type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
+      type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
     return {
       title: t(displayType),
       description: t(`${displayType}Description`),
@@ -380,19 +388,21 @@ export class BottombarManager {
       tooltip: () => this.getUnitTooltip(type, unit),
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: (selection: RuntimeEntity) => {
+        if (!isUnitEntity(selection)) return
         if (canAfford(player, unit.cost)) {
           if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
             return
           }
           this.toggleButtonCancel(type, true)
-          ;(selection as UnitEntity).buyUnit?.(type)
+          selection.buyUnit?.(type)
         } else {
           menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
         }
       },
       onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
-        const unitSelection = selection as UnitEntity
+        if (!isUnitEntity(selection)) return
+        const unitSelection = selection
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'
         const cancel = this.createMenuIcon('assets/interface/50721/003_50721.png')
@@ -456,19 +466,19 @@ export class BottombarManager {
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       icon: () => {
         const displayType =
-          type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
-        const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
+          type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
+        const assets = getBuildingAsset(displayType, owner, Assets)
         return getIconPath(
           type === BUILDING_TYPES.smallWall
-            ? getWallIcon(owner as Parameters<typeof getWallIcon>[0], assets.icon as string)
+            ? getWallIcon(owner as WallOwner, assets.icon as string)
             : (assets.icon as string)
         )
       },
       hide: () => !owner.isBuildingEligible?.(type),
       onClick: () => {
         const displayType =
-          type === BUILDING_TYPES.watchTower ? getTowerType(owner as Parameters<typeof getTowerType>[0]) : type
-        const assets = getBuildingAsset(displayType, owner as Parameters<typeof getBuildingAsset>[1], Assets)
+          type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
+        const assets = getBuildingAsset(displayType, owner, Assets)
         controls.removeMouseBuilding()
         if (canAfford(owner, config.cost)) {
           const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
@@ -495,9 +505,10 @@ export class BottombarManager {
           condition => player.technologies.includes(type) || !isValidCondition(condition, player)
         ),
       onClick: (selection: RuntimeEntity) => {
+        if (!isBuildingEntity(selection)) return
         controls.removeMouseBuilding()
         if (canAfford(player, config.cost)) {
-          ;(selection as BuildingEntity).buyTechnology?.(type)
+          selection.buyTechnology?.(type)
         } else {
           menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
         }

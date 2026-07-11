@@ -25,10 +25,19 @@ type FogRendererMap = {
   addChild<T extends Container>(child: T): T
   context: {
     app?: { renderer?: PixiRendererLike }
-    player?: { views?: Pick<VisionGridLike, 'isViewed' | 'isVisible'> }
-    controls?: { cameraController?: { getViewportRect(): Viewport } }
+    player?: { views?: Pick<VisionGridLike, 'isViewed' | 'isVisible'> } | null
+    controls?: object | null
     performance?: FogPerformanceMonitor | null
   }
+}
+
+function getFogViewport(controls: FogRendererMap['context']['controls']): Viewport | undefined {
+  if (!controls || typeof controls !== 'object') return undefined
+  const cameraController = (controls as { cameraController?: { getViewportRect?: () => Viewport } }).cameraController
+  if (!cameraController || typeof cameraController !== 'object') return undefined
+  const getViewportRect = cameraController.getViewportRect
+  if (typeof getViewportRect !== 'function') return undefined
+  return getViewportRect.call(cameraController) as Viewport
 }
 
 const VIEWPORT_MARGIN = CELL_WIDTH * 2
@@ -93,7 +102,7 @@ export class ViewportFogRenderer {
       return
     }
 
-    this.update(map.context.controls?.cameraController?.getViewportRect(), true)
+    this.update(getFogViewport(map.context.controls), true)
   }
 
   invalidate(): void {

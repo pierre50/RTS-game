@@ -24,12 +24,12 @@ import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { InteractiveSprite } from '../../types/pixi'
+import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
+import type { SelectableInstance } from '../../lib'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
-type AnimalAssetTarget = Animal & Record<string, unknown>
 export type AnimalMoveOptions = {
   forceRepath?: boolean
   movementSheet?: string
@@ -61,13 +61,13 @@ export class Animal extends Instance implements AnimalEntity {
   quantity!: number
   totalQuantity!: number
   assets!: Record<string, string>
-  standingSheet!: unknown
+  standingSheet!: SpritesheetLike
   interface!: { info: (element: HTMLElement) => void }
   loop?: boolean
   huntRange?: number
   speed!: number
   sight!: number
-  runningSheet?: unknown
+  runningSheet?: SpritesheetLike
   strategy?: string
   ambientMovement?: boolean
   ambientWalkRange?: number
@@ -111,7 +111,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.x = animalConfig.x ?? numberCoordinate(options.x) ?? spawnCell.x
     this.y = animalConfig.y ?? numberCoordinate(options.y) ?? spawnCell.y
     this.z = animalConfig.z ?? numberCoordinate(options.z) ?? spawnCell.z
-    this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this)
 
     this.currentCell = map.grid[this.i][this.j]
     this.currentCell.place(this)
@@ -121,9 +121,8 @@ export class Animal extends Instance implements AnimalEntity {
     this.quantity = this.quantity ?? this.totalQuantity
     map.addToInstanceBucket(this)
 
-    const dynamicAnimal = this as AnimalAssetTarget
     for (const [key, value] of Object.entries(this.assets)) {
-      dynamicAnimal[key] = Assets.cache.get(value)
+      Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
     }
 
     this.interface = {
@@ -189,7 +188,7 @@ export class Animal extends Instance implements AnimalEntity {
       } else if (player.selectedBuilding && player.selectedBuilding.range) {
         if (
           getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
-          instancesDistance(player.selectedBuilding, this as Parameters<typeof instancesDistance>[1]) <=
+          instancesDistance(player.selectedBuilding, this) <=
             player.selectedBuilding.range
         ) {
           player.selectedBuilding.attackAction?.(this)
@@ -210,7 +209,7 @@ export class Animal extends Instance implements AnimalEntity {
         playSoundCue(voice)
       }
       if (drawDestinationRectangle) {
-        drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+        drawInstanceBlinkingSelection(this as SelectableInstance)
       }
     })
 

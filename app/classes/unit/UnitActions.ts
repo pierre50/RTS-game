@@ -40,9 +40,28 @@ const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEnti
 
 type OwnerListKey = 'units' | 'buildings'
 type PlayerResourceKey = 'food' | 'wood' | 'stone' | 'gold'
+type ConvertibleEntity = (UnitEntity | BuildingEntity) & Partial<UnitEntity & BuildingEntity>
 
-const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined =>
-  owner?.[key] as RuntimeEntity[] | undefined
+function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
+  return Boolean(value && !('has' in value && 'corpses' in value))
+}
+
+function isUnitEntity(value: UnitEntity['dest'] | null | undefined): value is UnitEntity {
+  return isRuntimeEntity(value) && value.family === FAMILY_TYPES.unit
+}
+
+function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity {
+  return isRuntimeEntity(value) && value.family === FAMILY_TYPES.building
+}
+
+function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value is ResourceEntity {
+  return isRuntimeEntity(value) && value.family === FAMILY_TYPES.resource
+}
+
+const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined => {
+  if (!owner) return undefined
+  return key === 'units' ? owner.units : owner.buildings
+}
 
 function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
   if (!loadingType) return null
@@ -70,6 +89,10 @@ function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'bu
   list.push(instance)
 }
 
+function isConvertibleEntity(target: RuntimeEntity): target is ConvertibleEntity {
+  return isUnitEntity(target) || isBuildingEntity(target)
+}
+
 export class UnitActions {
   unit: UnitEntity
 
@@ -86,7 +109,7 @@ export class UnitActions {
 
   clearInvalidPreviousTask(): boolean {
     const unit = this.unit
-    const previousDest = unit.previousDest as RuntimeEntity | null | undefined
+    const previousDest = isRuntimeEntity(unit.previousDest) ? unit.previousDest : null
     if (!previousDest) return false
     if (previousDest.family === FAMILY_TYPES.animal) return false
 
@@ -137,7 +160,8 @@ export class UnitActions {
     const unit = this.unit
     const menu = unit.context?.menu
     const player = unit.owner
-    const t = target as UnitEntity & BuildingEntity
+    if (!isConvertibleEntity(target)) return false
+    const t = target
     const oldOwner = t.owner
     const newOwner = unit.owner
     if (!oldOwner || !newOwner || oldOwner.label === newOwner.label) return false
@@ -175,7 +199,7 @@ export class UnitActions {
       t.setTextures?.(SHEET_TYPES.standing)
       changeSpriteColor(t.sprite!, newOwner.color ?? '')
     } else if (t.family === FAMILY_TYPES.building) {
-      t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner as Parameters<typeof getTowerType>[0]) : t.type)
+      t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner) : t.type)
       removeFromOwnerList(oldOwner, 'buildings', t)
       addToOwnerList(newOwner, 'buildings', t)
       if (t.increasePopulation && t.populationCapacityApplied) {
@@ -221,7 +245,13 @@ export class UnitActions {
       unit.stop?.()
       return
     }
-    const dest = unit.previousDest as RuntimeEntity
+    const dest = isRuntimeEntity(unit.previousDest) ? unit.previousDest : null
+    if (!dest) {
+      unit.previousDest = null
+      this.restorePreviousWork()
+      unit.stop?.()
+      return true
+    }
     const type = dest.category || dest.type
     unit.previousDest = null
     this.restorePreviousWork()
@@ -233,7 +263,7 @@ export class UnitActions {
       }
     } else if (dest.family === FAMILY_TYPES.building) {
       if (unit.getActionCondition?.(dest, ACTION_TYPES.build)) {
-        unit.sendToBuilding?.(dest as BuildingEntity)
+        if (isBuildingEntity(dest)) unit.sendToBuilding?.(dest)
       } else if (unit.getActionCondition?.(dest, ACTION_TYPES.farm)) {
         unit.sendToFarm?.(dest, true)
       } else if (map) {
@@ -270,7 +300,7 @@ export class UnitActions {
     unit.setTextures?.(SHEET_TYPES.action)
     unit.startInterval?.(
       () => {
-        const dest = unit.dest as RuntimeEntity | null | undefined
+        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
         if (!unit.getActionCondition?.(dest)) {
           if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
             dest.die?.()
@@ -316,13 +346,11 @@ export class UnitActions {
     if (!data) return
     unit.type = type
     unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
-    const dynamicUnit = unit as UnitEntity & Record<string, unknown>
-    for (const [key, value] of Object.entries(data)) {
-      dynamicUnit[key] = value
-    }
-    for (const [key, value] of Object.entries(unit.assets ?? {})) {
-      dynamicUnit[key] = Assets.cache.get(value)
-    }
+    Object.assign(unit, data)
+    Object.assign(
+      unit,
+      Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
+    )
     if (unit.action && !unit.path?.length) {
       unit.getAction?.(unit.action)
     } else {
@@ -373,12 +401,13 @@ export class UnitActions {
           unit.affectNewDest?.()
           return
         }
-        const dest = unit.dest as BuildingEntity
+        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+        if (!dest) return
         dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
         unit.startInterval?.(
           () => {
-            const d = unit.dest as BuildingEntity | null | undefined
+            const d = isBuildingEntity(unit.dest) ? unit.dest : null
             if (!unit.getActionCondition?.(d)) {
               if ((d?.quantity ?? 0) <= 0) {
                 d?.die?.()
@@ -426,7 +455,7 @@ export class UnitActions {
         unit.setTextures?.(SHEET_TYPES.action)
         unit.startInterval?.(
           () => {
-            const dest = unit.dest as ResourceEntity | null | undefined
+            const dest = isResourceEntity(unit.dest) ? unit.dest : null
             if (!unit.getActionCondition?.(dest)) {
               if ((dest?.quantity ?? 0) <= 0) {
                 dest?.die?.()
@@ -496,7 +525,7 @@ export class UnitActions {
         unit.setTextures?.(SHEET_TYPES.action)
         unit.startInterval?.(
           () => {
-            const dest = unit.dest as BuildingEntity | null | undefined
+            const dest = isBuildingEntity(unit.dest) ? unit.dest : null
             if (!unit.getActionCondition?.(dest)) {
               if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
               if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
@@ -549,7 +578,7 @@ export class UnitActions {
         }
         unit.setTextures?.(SHEET_TYPES.action)
         sprite.onLoop = () => {
-          const dest = unit.dest as RuntimeEntity | null | undefined
+          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             unit.affectNewDest?.()
             return
@@ -589,7 +618,7 @@ export class UnitActions {
         unit.conversionChants = 0
         unit.setTextures?.(SHEET_TYPES.action)
         sprite.onLoop = () => {
-          const dest = unit.dest as RuntimeEntity | null | undefined
+          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             unit.affectNewDest?.()
             return
@@ -624,7 +653,8 @@ export class UnitActions {
           return
         }
         {
-          const transport = unit.dest as UnitEntity
+          const transport = isUnitEntity(unit.dest) ? unit.dest : null
+          if (!transport) return
           boardTransport(unit, transport)
           if (transport.owner?.isPlayed && transport.selected) {
             menu?.setBottombar(transport)
@@ -655,14 +685,18 @@ export class UnitActions {
           unit.affectNewDest?.()
           return
         }
-        const huntDest = unit.dest as RuntimeEntity
+        const huntDest = isRuntimeEntity(unit.dest) ? unit.dest : null
+        if (!huntDest) {
+          unit.affectNewDest?.()
+          return
+        }
         if (huntDest.isDead) {
           unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
           return
         }
         unit.setTextures?.(SHEET_TYPES.action)
         sprite.onLoop = () => {
-          const dest = unit.dest as RuntimeEntity | null | undefined
+          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             if (dest && (dest.hitPoints ?? 0) <= 0) {
               dest.die?.()
@@ -694,7 +728,7 @@ export class UnitActions {
         }
         if (unit.sprite) {
           onSpriteLoopAtFrame(unit.sprite, 6, () => {
-            const dest = unit.dest as RuntimeEntity | null | undefined
+            const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
             if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
             const projectile = new Projectile(
               {

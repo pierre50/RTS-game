@@ -1,6 +1,7 @@
+import type { Container } from 'pixi.js'
 import type { PlayerLike } from './player'
 import type { RuntimeEntity } from './entities'
-import type { RuntimeCell } from './map'
+import type { RuntimeCell, RuntimeMap } from './map'
 import type { PlayerSetupConfig } from './save'
 import type { GameContextLike, MenuLike } from './context'
 
@@ -57,9 +58,27 @@ interface MapEditorHudLike extends MenuLike {
   destroy(): void
 }
 
-export interface MapEditorContextLike extends GameContextLike {
+export interface MapEditorControlsLike extends Container {
+  entityPreview?: { set(selection: MapEditorPlacementSelection | null): void }
+  getViewportMetrics?(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }
+}
+
+export interface MapEditorContextLike
+  extends Omit<GameContextLike, 'controls' | 'editor' | 'map' | 'menu' | 'player'> {
   editor: MapEditorLike
   editorConfig: { players: EditorPlayerConfig[] }
   editorState: MapEditorUiState
+  map: RuntimeMap | null
+  menu: MapEditorHudLike | null
   hud: MapEditorHudLike | null
+  controls: MapEditorControlsLike | null
+  player: PlayerLike | null
+}
+
+export interface MapEditorReadyContext extends MapEditorContextLike {
+  map: RuntimeMap
+  menu: MapEditorHudLike
+  hud: MapEditorHudLike
+  controls: MapEditorControlsLike
+  player: PlayerLike
 }

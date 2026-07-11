@@ -59,6 +59,7 @@ function loadAIEconomy() {
           return cells
         },
         getClosestInstance: (_source, targets) => [...targets][0] || false,
+        getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
         getInstancePath: (unit, i, j) => (unit.reachableCells?.has(`${i}:${j}`) ? [{ i, j }] : []),
         instancesDistance: () => 100,
       }

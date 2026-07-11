@@ -2,15 +2,20 @@ import { Container, Assets, Sprite } from 'pixi.js'
 import { cartesianToIsometric, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory } from '../../types/map'
+import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
-import { CellFog } from './CellFog'
-import { CellTerrain } from './CellTerrain'
+import { CellFog, type FogCellLike } from './CellFog'
+import { CellTerrain, type TerrainCellLike } from './CellTerrain'
 export { GenerationCell } from './GenerationCell'
 
 type CellMap = {
+  grid: RuntimeCell[][]
+  size: number
   revealEverything?: boolean
+  seed?: string | number
+  randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
+  invalidateReliefCoastDistances?: () => void
 }
 
 type CellContext = {
@@ -30,7 +35,7 @@ type CellOptions = {
 
 type CellConfig = {
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
 }
 
@@ -40,7 +45,7 @@ type SavedFogSprite = FogSpriteMemory & {
 
 type CellSprite = Sprite
 
-export class Cell extends Container {
+export class Cell extends Container implements RuntimeCell, FogCellLike, TerrainCellLike {
   context: CellContext
   family: string
   map: CellMap
@@ -48,7 +53,7 @@ export class Cell extends Container {
   j: number
   type: string
   category?: string
-  color?: unknown
+  color?: string | number
   assets: string[]
   solid: boolean
   inclined: boolean
@@ -126,7 +131,7 @@ export class Cell extends Container {
     this.addChild(this.sprite)
 
     this.cellFog = options.skipFog ? null : new CellFog(this)
-    this.cellTerrain = new CellTerrain(this as unknown as ConstructorParameters<typeof CellTerrain>[0])
+    this.cellTerrain = new CellTerrain(this)
 
     // Replay last-seen building snapshots loaded from a save.
     const savedFogSprites = this.fogSprites

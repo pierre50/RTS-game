@@ -1,12 +1,23 @@
+import type { RuntimeEntity } from '../types/entities'
+
 type UnitState = {
   hitPoints?: number
   isDead?: boolean
 }
 
+type GaiaState = {
+  animals?: RuntimeEntity[]
+  units?: RuntimeEntity[]
+}
+
+export function getGaiaAnimals(gaia?: GaiaState | null): RuntimeEntity[] {
+  return gaia?.animals ?? gaia?.units ?? []
+}
+
 type BuildingState = UnitState & {
   isBuilt?: boolean
   range?: number
-  units?: unknown[]
+  units?: string[]
 }
 
 type PlayerState = {

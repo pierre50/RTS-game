@@ -4,11 +4,12 @@ import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '
 import { getTerrainSetZIndex } from '../../lib'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Bounds, Viewport } from '../../types/geometry'
-import type { RuntimeCell as RuntimeCellLike } from '../../types/map'
+import type * as MapTypes from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import { _DW, _DH } from '../cell/CellFog'
 import { Cell } from '../cell'
-import { RuntimeCell as RuntimeCellClass } from '../cell/RuntimeCell'
+import { RuntimeCell, type RuntimeCellContext, type RuntimeCellSource } from '../cell/RuntimeCell'
+import { getGaiaAnimals } from '../../lib'
 import { ViewportFogRenderer } from './ViewportFogRenderer'
 
 type PixiRendererLike = {
@@ -31,12 +32,25 @@ type FogMapContext = {
       remove(callback: TickerCallback): void
     }
   }
-  controls?: { cameraController?: { getViewportRect(): Viewport; visibleCells?: { clear(): void } } }
-  editor?: unknown
-  map?: unknown
+  controls?: object | null
+  editor?: object | null
+  map?: object | null
   performance?: FogPerformanceMonitor | null
-  player?: PlayerLike
+  player?: PlayerLike | null
   players?: PlayerLike[]
+}
+
+type FogCameraController = {
+  getViewportRect(): Viewport
+  visibleCells?: { clear(): void }
+}
+
+function getFogCameraController(controls: FogMapContext['controls']): FogCameraController | null {
+  if (!controls || typeof controls !== 'object') return null
+  const cameraController = (controls as { cameraController?: FogCameraController }).cameraController
+  if (!cameraController || typeof cameraController !== 'object') return null
+  if (typeof (cameraController as FogCameraController).getViewportRect !== 'function') return null
+  return cameraController as FogCameraController
 }
 
 type TerrainAppearance = {
@@ -54,7 +68,8 @@ type TerrainDecoration = {
   zIndex: number
 }
 
-type FogGridCell = RuntimeCellLike & {
+type FogGridCell = MapTypes.RuntimeCell & {
+  context?: RuntimeCellContext
   family?: string
   isGenerationCell?: boolean
   terrainTextureName?: string
@@ -62,7 +77,7 @@ type FogGridCell = RuntimeCellLike & {
   _terrainAppearance?: TerrainAppearance
   _hasFog?: boolean
   getChildByLabel?(label: string): ContainerChild | null
-  removeChild?(child: ContainerChild): ContainerChild
+  removeChild?(child: ContainerChild): ContainerChild | void
   addChild?(child: ContainerChild): ContainerChild
   getTerrainDecorations?(): TerrainDecoration[]
   setWaterBorder?(resourceName: string, index: number): void
@@ -70,6 +85,8 @@ type FogGridCell = RuntimeCellLike & {
   setDesertBorder?(direction: string): void
   setDeepWaterBorder?(direction: string): void
 }
+
+type FogContainerCell = FogGridCell & ContainerChild
 
 type RelinkableInstance = RuntimeEntity & {
   currentCell?: FogGridCell | null
@@ -99,13 +116,13 @@ type FogRuntimeMap = {
   fogMemoryLayer?: Container | null
   fogLayer?: Container | null
   _fogQueue?: Map<FogGridCell, string>
-  _pendingFogChunkUpdates?: Map<unknown, unknown>
+  _pendingFogChunkUpdates?: Map<FogGridCell, string>
   _fogInitComplete?: boolean
-  _fogChunks?: unknown[]
+  _fogChunks?: Array<{ cells?: FogGridCell[]; bounds?: Bounds }>
   _fogTickerCb?: TickerCallback | null
   _fogScratchEraseContainer?: Container | null
   addChild<T extends ContainerChild>(child: T): T
-  registerRenderChunk(displayObjects: ContainerChild | ContainerChild[], bounds: Bounds): unknown
+  registerRenderChunk(displayObjects: ContainerChild | ContainerChild[], bounds: Bounds): object
 }
 
 type BackfillSpriteSource = ContainerChild & {
@@ -116,6 +133,14 @@ type BackfillSpriteSource = ContainerChild & {
 
 function isBackfillSpriteSource(source: ContainerChild): source is BackfillSpriteSource {
   return 'texture' in source && 'anchor' in source && 'roundPixels' in source
+}
+
+function isFogContainerCell(cell: FogGridCell): cell is FogContainerCell {
+  return 'parent' in cell && 'destroy' in cell
+}
+
+function isRuntimeCellSource(cell: FogGridCell): cell is FogGridCell & RuntimeCellSource {
+  return Boolean(cell.context?.map)
 }
 
 const FOG_VIEWPORT_UPDATE_MARGIN = CELL_WIDTH * 3
@@ -191,7 +216,7 @@ export class MapFog {
           cell.terrainSet = set
           terrainSets.push(set)
         }
-        terrainContainer.addChild(cell as unknown as ContainerChild)
+        if (isFogContainerCell(cell)) terrainContainer.addChild(cell)
       }
     }
     this.map.context.performance?.record?.('terrainBake.collectCells', performance.now() - collectStartedAt)
@@ -235,14 +260,15 @@ export class MapFog {
 
     if (!this.map.context.editor) {
       const compactStartedAt = performance.now()
-      const replacements = new globalThis.Map<FogGridCell, RuntimeCellClass>()
+      const replacements = new globalThis.Map<FogGridCell, RuntimeCell>()
       const runtimeCellsStartedAt = performance.now()
       for (let i = 0; i <= this.map.size; i++) {
         for (let j = 0; j <= this.map.size; j++) {
           const cell = this.map.grid[i][j]
-          const runtimeCell = new RuntimeCellClass(cell as unknown as ConstructorParameters<typeof RuntimeCellClass>[0])
+          if (!isRuntimeCellSource(cell)) continue
+          const runtimeCell = new RuntimeCell(cell)
           replacements.set(cell, runtimeCell)
-          this.map.grid[i][j] = runtimeCell as unknown as FogGridCell
+          this.map.grid[i][j] = runtimeCell
         }
       }
       this.map.context.performance?.record?.('cellCompaction.runtimeCells', performance.now() - runtimeCellsStartedAt)
@@ -255,12 +281,11 @@ export class MapFog {
       )
 
       const instances = [
-        ...(this.map.gaia?.units || []),
+        ...getGaiaAnimals(this.map.gaia),
         ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
         ...this.map.resources,
       ] as RelinkableInstance[]
-      const replaceCell = (cell: FogGridCell): FogGridCell =>
-        (replacements.get(cell) as unknown as FogGridCell | undefined) || cell
+      const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
       const relinkStartedAt = performance.now()
       for (const instance of instances) {
         if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
@@ -272,7 +297,7 @@ export class MapFog {
       this.map.context.performance?.record?.('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
 
       const indexStartedAt = performance.now()
-      this.map.context.controls?.cameraController?.visibleCells?.clear()
+      getFogCameraController(this.map.context.controls)?.visibleCells?.clear()
       this._indexFogChunkCells()
       this.map.context.performance?.record?.('cellCompaction.reindexFog', performance.now() - indexStartedAt)
       this.map.context.performance?.record?.('cellCompaction', performance.now() - compactStartedAt)
@@ -326,7 +351,7 @@ export class MapFog {
         cell._hasFog = source._hasFog ?? false
 
         replacements.set(source, cell)
-        this.map.grid[i][j] = cell as unknown as FogGridCell
+        this.map.grid[i][j] = cell
       }
     }
     this.map.context.performance?.record?.('generationCellMaterialization.cells', performance.now() - cellsStartedAt)
@@ -363,10 +388,9 @@ export class MapFog {
     )
 
     const relinkStartedAt = performance.now()
-    const replaceCell = (cell: FogGridCell): FogGridCell =>
-      (replacements.get(cell) as unknown as FogGridCell | undefined) || cell
+    const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
     const instances = [
-      ...(this.map.gaia?.units || []),
+      ...getGaiaAnimals(this.map.gaia),
       ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
       ...this.map.resources,
     ] as RelinkableInstance[]
@@ -458,7 +482,7 @@ export class MapFog {
       return
     }
 
-    const viewport = this.map.context.controls?.cameraController?.getViewportRect()
+    const viewport = getFogCameraController(this.map.context.controls)?.getViewportRect()
     const updateViewportFog = this._fogQueueTouchesViewport(fogQueue, viewport)
     fogQueue.clear()
     this.map._pendingFogChunkUpdates?.clear()

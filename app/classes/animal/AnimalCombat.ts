@@ -70,7 +70,7 @@ export class AnimalCombat {
           animal.getAction(animal.action ?? '')
           return
         }
-        animal.setPath(target.path as RuntimeCell[])
+        animal.setPath(target.path)
         return
       }
     }

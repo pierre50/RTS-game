@@ -37,6 +37,12 @@ type RuntimeAnimatedSprite = AnimatedSprite
 type RuntimeContainer = Container
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 
+const BUILDING_FIRE_SHEETS = {
+  light: '347',
+  medium: '452',
+  heavy: '450',
+} as const
+
 export class BuildingLifecycle {
   building: Building
 
@@ -103,7 +109,7 @@ export class BuildingLifecycle {
 
     if (building.type === BUILDING_TYPES.house) {
       if (assetOwner.age === 0) {
-        const spritesheetFire = Assets.cache.get('347')
+        const spritesheetFire = Assets.cache.get(BUILDING_FIRE_SHEETS.light)
         const spriteFire = new AnimatedSprite(
           getAnimationFrames(spritesheetFire.textures) as Texture[]
         ) as RuntimeAnimatedSprite
@@ -201,13 +207,13 @@ export class BuildingLifecycle {
     ) {
       if (percentage > 0 && percentage < 25) {
         this.playBurningSound()
-        building.generateFire('450')
+        building.generateFire(BUILDING_FIRE_SHEETS.heavy)
       } else if (percentage >= 25 && percentage < 50) {
         this.playBurningSound()
-        building.generateFire('452')
+        building.generateFire(BUILDING_FIRE_SHEETS.medium)
       } else if (percentage >= 50 && percentage < 75) {
         this.playBurningSound()
-        building.generateFire('347')
+        building.generateFire(BUILDING_FIRE_SHEETS.light)
       } else if (percentage >= 75) {
         const fire = building.getChildByLabel(LABEL_TYPES.fire)
         if (fire) building.removeChild(fire)
@@ -226,7 +232,7 @@ export class BuildingLifecycle {
   pause(): void {
     const building = this.building
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).stop())
+    if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const stoppableDeco = deco as { stop?: () => void } | null
     stoppableDeco?.stop?.()
@@ -235,7 +241,7 @@ export class BuildingLifecycle {
   resume(): void {
     const building = this.building
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach((s: unknown) => (s as AnimatedSprite).play())
+    if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const playableDeco = deco as { play?: () => void } | null
     playableDeco?.play?.()
@@ -247,10 +253,8 @@ export class BuildingLifecycle {
     const {
       context: { map, player, players, menu },
     } = building
-    const adjacentWalls = isWall(building)
-      ? getAdjacentWalls(map.grid as Parameters<typeof getAdjacentWalls>[0], building.i, building.j, building.owner)
-      : []
-    clearTimeout(building.visibilityTimeout as ReturnType<typeof setTimeout> | undefined)
+    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid, building.i, building.j, building.owner) : []
+    clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.clearRallyPoint()
     if (building.context.controls.rallyPointController?.building === building) {
@@ -317,7 +321,8 @@ export class BuildingLifecycle {
         cell.solid = false
         cell.corpses.add(building)
       }
-    }) as Parameters<typeof getPlainCellsAroundPoint>[4])
+      return true
+    }))
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
@@ -328,7 +333,7 @@ export class BuildingLifecycle {
   clear(): void {
     const building = this.building
     if (building.isDestroyed) return
-    clearTimeout(building.visibilityTimeout as ReturnType<typeof setTimeout> | undefined)
+    clearTimeout(building.visibilityTimeout)
     building.clearRallyPoint()
     const {
       context: { map },
@@ -336,7 +341,8 @@ export class BuildingLifecycle {
     const dist = building.size === 3 ? 1 : 0
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
       cell.corpses.delete(building)
-    }) as Parameters<typeof getPlainCellsAroundPoint>[4])
+      return true
+    }))
     building.isDestroyed = true
     building.destroy({ children: true, texture: false })
   }

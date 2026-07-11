@@ -52,7 +52,7 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   target: GridInstanceLike | TCell,
   map: GameMap<TCell>
 ): TCell[] {
-  const occupiedInstance = (target as { has?: unknown }).has as InstanceLike | undefined
+  const occupiedInstance = (target as { has?: InstanceLike | null }).has ?? undefined
   const targetSize = 'size' in target && typeof target.size === 'number' ? target.size : 0
   const size = targetSize || occupiedInstance?.size || 1
   const distance = size === 3 ? 2 : 1

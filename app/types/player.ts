@@ -1,7 +1,8 @@
 import type { RuntimeCell } from './map'
-import type { RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
+import type { AnimalEntity, RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
 import type { AnimalConfig, BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from './config'
+import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 
 export interface VisionGridLike {
@@ -31,7 +32,7 @@ export interface PlayerConfigLike {
 }
 
 type UnitRestoreReferences = {
-  assetAge?: unknown
+  assetAge?: AssetAge
   dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   realDest?: UnitEntity['realDest'] | SaveDestination | null
@@ -72,6 +73,7 @@ export interface PlayerLike {
   selectedBuilding?: BuildingEntity | null
   selectedOther?: RuntimeEntity | null
   units: UnitEntity[]
+  animals?: AnimalEntity[]
   buildings: BuildingEntity[]
   corpses: UnitEntity[]
   visiblePlayers?: () => PlayerLike[]
@@ -88,6 +90,7 @@ export interface PlayerLike {
     }
   ) => BuildingEntity
   createUnit?: (options: PlayerUnitCreationOptions) => UnitEntity
+  createAnimal?: (options: { i: number; j: number; type: string }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void
   spawnBuilding?: (

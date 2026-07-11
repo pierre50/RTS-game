@@ -5,13 +5,15 @@ import type { RuntimeEntity, PlaceableBuildingConfig } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 
+export type SchedulerTaskId = number
+
 export interface SchedulerLike {
   elapsedMs: number
   timeScale?: number
-  add(callback: () => void, time: number, name?: string): unknown
-  remove(id: unknown): void
-  update(id: unknown, time: number): void
-  addOneShot(callback: () => void, time: number, name?: string): unknown
+  add(callback: () => void, time: number, name?: string): SchedulerTaskId
+  remove(id: SchedulerTaskId): void
+  update(id: SchedulerTaskId, time: number): void
+  addOneShot(callback: () => void, time: number, name?: string): SchedulerTaskId
   clear?(): void
   destroy?(): void
 }
@@ -52,7 +54,7 @@ export interface MenuLike {
 }
 
 interface EntityPreviewLike {
-  set(selection: unknown): void
+  set(selection: RuntimeEntity | PlaceableBuildingConfig | null): void
 }
 
 interface MinimapManagerLike {
@@ -100,9 +102,9 @@ export interface ControlsLike extends Container {
   setCamera?(x: number, y: number, direct?: boolean): void
   sendUnits?(cell: RuntimeCell): void
   updateVisibleCells?(): void
-  instanceInCamera(instance: unknown): boolean
-  instanceIsAudible(instance: unknown): boolean
-  isMouseInApp(evt: unknown): boolean
+  instanceInCamera(instance: { x: number; y: number }): boolean
+  instanceIsAudible(instance: AudibleInstanceLike): boolean
+  isMouseInApp(evt: ControlPointerEvent): boolean
   isInteractionBlocked(): boolean
   doubleClicked?: boolean
   consumeUnitDoubleClick?(unit: RuntimeEntity): boolean
@@ -117,6 +119,18 @@ export interface SelectionRectangle {
   width: number
   height: number
   graph: Graphics
+}
+
+export type ControlPointerEvent = {
+  clientX?: number
+  clientY?: number
+  target?: EventTarget | null
+  type?: string
+  nativeEvent?: {
+    clientX?: number
+    clientY?: number
+    target?: EventTarget | null
+  } | null
 }
 
 export interface GameContextLike {
@@ -136,11 +150,19 @@ export interface GameContextLike {
   defeat?: boolean
   checkVictory?: () => boolean
   checkDefeat?: () => boolean
-  save: () => unknown
-  load: (event: unknown) => void
+  save: () => object | void
+  load: (event: object) => void
   pause: () => void
   resume: () => void
   restart: () => void
   quit: () => void
   applyZoom: () => void
+}
+
+export type AudibleInstanceLike = {
+  x?: number
+  y?: number
+  owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
+  target?: { visible?: boolean }
+  visible?: boolean
 }

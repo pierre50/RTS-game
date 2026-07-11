@@ -23,7 +23,7 @@ function getNeighbourCells(
   startY: number,
   grid: PathGrid,
   dist: number,
-  callback?: (cell: PathCell) => unknown
+  callback?: (cell: PathCell) => boolean | void
 ): PathCell[] {
   const result: PathCell[] = []
   const startCell = grid[startX]?.[startY]

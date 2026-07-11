@@ -22,7 +22,7 @@ import type {
   EnemyMemoryOptions,
 } from '../../ai/types'
 import type { RenderableInstance } from '../../lib/grid/visibility'
-import type { GameContextLike } from '../../types/context'
+import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -125,7 +125,7 @@ export class AI extends Player {
   maxCavalryByAge!: AIStrategyPlayerLike['maxCavalryByAge']
   maxHopliteByAge!: AIStrategyPlayerLike['maxHopliteByAge']
   techPriorityByBuilding!: AIStrategyPlayerLike['techPriorityByBuilding']
-  _stepTaskId!: unknown
+  _stepTaskId!: SchedulerTaskId | null
   lastNavalConnectivity?: AIStrategyPlayerLike['lastNavalConnectivity']
 
   constructor({ ...props }: PlayerOptions, context: GameContextLike) {
@@ -282,25 +282,26 @@ export class AI extends Player {
       sight: radius,
       context: this.context,
     }
-    return findInstancesInSight(sightOrigin, ((instance: AIEntityLike) => {
+    return findInstancesInSight(sightOrigin, instance => {
+      const candidate = instance as AIEntityLike
       if (
-        !instance ||
-        instance === target ||
-        instance.isDead ||
-        instance.isDestroyed ||
-        (instance.hitPoints ?? 0) <= 0
+        !candidate ||
+        candidate === target ||
+        candidate.isDead ||
+        candidate.isDestroyed ||
+        (candidate.hitPoints ?? 0) <= 0
       ) {
         return false
       }
-      if (instance.family === FAMILY_TYPES.animal) {
-        return (
-          instance.strategy === 'attack' ||
-          instance.action === ACTION_TYPES.attack ||
-          (instance.dest && 'owner' in instance.dest && instance.dest.owner?.label === this.label)
+      if (candidate.family === FAMILY_TYPES.animal) {
+        return Boolean(
+          candidate.strategy === 'attack' ||
+            candidate.action === ACTION_TYPES.attack ||
+            (candidate.dest && 'owner' in candidate.dest && candidate.dest.owner?.label === this.label)
         )
       }
-      return this.isEnemy(instance.owner)
-    }) as Parameters<typeof findInstancesInSight>[1]) as AIEntityLike[]
+      return this.isEnemy(candidate.owner)
+    }) as AIEntityLike[]
   }
 
   isBuildingThreatened(building: AIEntityLike) {
@@ -630,7 +631,7 @@ export class AI extends Player {
           actions > 0 ? this.difficultyConfig.stepDelayBase : Math.min(Math.round(this.stepDelay * 1.5), 5000)
         if (newDelay !== this.stepDelay) {
           this.stepDelay = newDelay
-          this.context.scheduler.update(this._stepTaskId, newDelay)
+          if (this._stepTaskId != null) this.context.scheduler.update(this._stepTaskId, newDelay)
         }
       },
       this.stepDelay,
@@ -948,7 +949,8 @@ export class AI extends Player {
     const {
       context: { players },
     } = this
-    this.context.scheduler.remove(this._stepTaskId)
+    if (this._stepTaskId != null) this.context.scheduler.remove(this._stepTaskId)
+    this._stepTaskId = null
     players.splice(players.indexOf(this), 1)
   }
 }

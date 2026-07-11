@@ -1,15 +1,11 @@
 import { Texture } from 'pixi.js'
+import type { HitAreaLike, SpritesheetLike } from '../../types/pixi'
 
-type SpritesheetLike = {
-  data: {
-    frames: Record<string, { hitArea?: unknown }>
-  }
-  textures: Record<string, Texture & { hitArea?: unknown }>
-}
+type TextureWithHitArea = Texture & { hitArea?: HitAreaLike }
 
 type AssetCacheLike = {
   cache: {
-    get: (id: string) => SpritesheetLike | undefined
+    get: (id: string) => SpritesheetLike<TextureWithHitArea> | undefined
   }
 }
 
@@ -28,7 +24,7 @@ export function getTexture(name: string, assets: AssetCacheLike): Texture {
     throw new Error(`Texture "${textureName}" not found in spritesheet.`)
   }
 
-  texture.hitArea = spritesheet.data.frames[textureName].hitArea
+  texture.hitArea = spritesheet.data?.frames?.[textureName]?.hitArea
   return texture
 }
 

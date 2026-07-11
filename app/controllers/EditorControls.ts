@@ -3,6 +3,7 @@ import { isometricToCartesian } from '../lib'
 import { CameraController } from './CameraController'
 import { getCameraZoom } from '../lib/settings'
 import { EditorEntityPreview, type EditorPreviewControls } from './EditorEntityPreview'
+import type { SelectionRectangle } from '../types/context'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlaceableBuildingConfig } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -72,7 +73,7 @@ export class EditorControls extends Container {
   cameraController: CameraController
   mouse: { x: number; y: number; prevent: boolean }
   mouseBuilding: PlaceableBuildingConfig | null
-  mouseRectangle: unknown | false
+  mouseRectangle: SelectionRectangle | false
   clicked: boolean
   doubleClicked: boolean
   double: CameraPoint | null
@@ -299,7 +300,7 @@ export class EditorControls extends Container {
     this.hoveredCell = cell
     this.context.hud.updateStatus(cell)
     this.context.editor.updateWallDraft?.(cell)
-    this.entityPreview.update(cell as RuntimeCell | null)
+    this.entityPreview.update(cell)
     if (!this.pointerDown || !cell || !this.context.editor.canPaintTerrain()) return
     this.paint(cell)
   }
@@ -342,7 +343,7 @@ export class EditorControls extends Container {
   _refreshHover(): void {
     if (!this.hoveredCell) return
     this.context.hud.updateStatus(this.hoveredCell)
-    this.entityPreview.update(this.hoveredCell as RuntimeCell)
+    this.entityPreview.update(this.hoveredCell)
   }
 
   removeMouseBuilding(): void {

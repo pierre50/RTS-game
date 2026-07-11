@@ -1,12 +1,13 @@
 import { sound } from '@pixi/sound'
+import type { AudibleInstanceLike } from '../types/context'
 
 type SoundCue = string | number
 type MaybeSoundCue = SoundCue | SoundCue[] | null | undefined
 
-type AudibleInstance = {
+export type AudibleInstance = {
   context?: {
     controls?: {
-      instanceIsAudible?: (instance: unknown) => boolean
+      instanceIsAudible?: (instance: AudibleInstanceLike) => boolean
     }
   }
   sounds?: {
@@ -14,7 +15,7 @@ type AudibleInstance = {
     hit?: MaybeSoundCue
     select?: MaybeSoundCue
   }
-}
+} & AudibleInstanceLike
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]

@@ -1,4 +1,4 @@
-import { drawInstanceBlinkingSelection } from '../../lib'
+import { drawInstanceBlinkingSelection, getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
@@ -6,7 +6,7 @@ import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
 function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
   const { map, player, controls } = context
 
-  map.gaia?.units.forEach(animal => {
+  getGaiaAnimals(map.gaia).forEach(animal => {
     const cell = map.grid[animal.i]?.[animal.j]
     if (!map.revealEverything && !player.views.isViewed(animal.i, animal.j)) {
       animal.visible = false

@@ -1,6 +1,7 @@
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
-import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { SchedulerTaskId } from '../../types/context'
+import type { UnitEntity } from '../../types/entities'
 import type { Animal } from './index'
 
 const BEHAVIOR_CHECK_INTERVAL = 250
@@ -10,7 +11,7 @@ const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
   animal: Animal
-  taskId: unknown
+  taskId: SchedulerTaskId | null
   nextAmbientWalkAt: number
 
   constructor(animal: Animal) {
@@ -73,7 +74,7 @@ export class AnimalBehavior {
 
     const villager = this.findNearbyVillager()
     if (villager && !animal.isFleeing) {
-      animal.runaway(villager as RuntimeEntity)
+      animal.runaway(villager)
       return
     }
 

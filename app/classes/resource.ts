@@ -27,13 +27,18 @@ import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
-import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
+import type { EntityInterfaceLike, ResourceEntity, UnitEntity, UnitSounds } from '../types/entities'
+import type { PlayerLike } from '../types/player'
 
 type ResourceAssetList = string[]
 type ResourceAssetsByTerrain = Record<string, ResourceAssetList>
 type ResourceAssets = string | ResourceAssetList | ResourceAssetsByTerrain
 type ResourceDefinition = ResourceConfig & {
   assets: ResourceAssets
+  lifecycleAssets?: {
+    fallen?: string
+    cut?: string
+  }
   isAnimated?: boolean
   sounds?: UnitSounds
 }
@@ -45,6 +50,8 @@ type ResourceConfigCache = {
     }
   }
 }
+type UnitWithResourceCommands = UnitEntity & Record<string, ((target: RuntimeEntity) => void) | undefined>
+type PlayerWithResourceMemory = PlayerLike & Record<string, Set<RuntimeEntity> | undefined>
 
 export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string }
 
@@ -68,6 +75,7 @@ export class Resource extends Instance implements ResourceEntity {
   totalQuantity!: number
   isAnimated?: boolean
   assets!: ResourceAssets
+  lifecycleAssets?: ResourceDefinition['lifecycleAssets']
   textureName!: string
   category?: string
   sounds?: UnitSounds
@@ -83,14 +91,9 @@ export class Resource extends Instance implements ResourceEntity {
     this.resourceInterface = new ResourceInterface(this)
     this.size = 1
 
-    const dynamicResource = this as unknown as Record<string, unknown>
-    Object.keys(options).forEach(prop => {
-      dynamicResource[prop] = options[prop]
-    })
+    Object.assign(this, options)
     const config = getResourceConfig()
-    Object.keys(config.resources[this.type]).forEach(prop => {
-      dynamicResource[prop] = config.resources[this.type][prop]
-    })
+    Object.assign(this, config.resources[this.type])
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
@@ -183,7 +186,7 @@ export class Resource extends Instance implements ResourceEntity {
               hasSilentCommandOrder = true
             }
             const sendToFunc = `sendTo${this.category || this.type}`
-            const dynamicUnit = unit as unknown as Record<string, ((target: unknown) => void) | undefined>
+            const dynamicUnit = unit as UnitWithResourceCommands
             typeof dynamicUnit[sendToFunc] === 'function' ? dynamicUnit[sendToFunc]?.(this) : unit.sendTo(this)
           } else {
             hasFallbackOrder = true
@@ -218,7 +221,7 @@ export class Resource extends Instance implements ResourceEntity {
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
       if (players[i].type === PLAYER_TYPES.ai) {
-        const list = (players[i] as unknown as Record<string, Set<RuntimeEntity> | undefined>)[listName]
+        const list = (players[i] as PlayerWithResourceMemory)[listName]
         if (list) {
           list.delete(this)
         }
@@ -237,8 +240,10 @@ export class Resource extends Instance implements ResourceEntity {
 
   setCuttedTreeTexture() {
     const { sprite } = this
-    const spritesheet = Assets.cache.get('636')
-    this.textureName = `00${randomRange(0, 3)}_636.png`
+    const sheetId = this.lifecycleAssets?.cut
+    if (!sheetId) return
+    const spritesheet = Assets.cache.get(sheetId)
+    this.textureName = `00${randomRange(0, 3)}_${sheetId}.png`
     const texture = spritesheet.textures[this.textureName]
     sprite.texture = texture
     const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
@@ -250,8 +255,10 @@ export class Resource extends Instance implements ResourceEntity {
     const {
       context: { map },
     } = this
-    const spritesheet = Assets.cache.get('623')
-    this.textureName = `00${randomRange(0, 3)}_623.png`
+    const sheetId = this.lifecycleAssets?.fallen
+    if (!sheetId) return this.clear()
+    const spritesheet = Assets.cache.get(sheetId)
+    this.textureName = `00${randomRange(0, 3)}_${sheetId}.png`
     const texture = spritesheet.textures[this.textureName]
     const { sprite } = this
     sprite.texture = texture

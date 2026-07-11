@@ -1,8 +1,10 @@
 import type { GridInstanceLike } from '../types/grid'
-import type { TransportCell } from '../lib'
+import type { TransportBoat, TransportCell } from '../lib'
+import type { Point } from '../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { RuntimeEntity } from '../types/entities'
+import type { RuntimeEntity, UnitCreationExtra } from '../types/entities'
+import type { ConfigValue } from '../types/config'
 
 export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
@@ -42,20 +44,20 @@ export type AIEntityLike = {
   dest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
   previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
   currentCell?: RuntimeCell | null
-  context?: { map: RuntimeMap; player?: unknown }
+  context?: { map: RuntimeMap; player?: PlayerLike | null }
   parent?: { removeChild?: (unit: AIEntityLike) => void } | null
   path?: RuntimeCell[]
   quantity?: number
   totalQuantity?: number
-  loading?: unknown
-  isUsedBy?: unknown
-  loadedInTransport?: unknown
+  loading?: number | null
+  isUsedBy?: AIEntityLike | RuntimeEntity | null
+  loadedInTransport?: AIEntityLike | RuntimeEntity | TransportBoat | string | null
   transportedUnits?: AIEntityLike[]
   transportCapacity?: number
   transportLoadCoastCell?: RuntimeCell | TransportCell | null
   transportLoadShoreCell?: RuntimeCell | TransportCell | null
   assault?: boolean
-  realDest?: unknown
+  realDest?: (GridInstanceLike & Partial<Point>) | RuntimeCell | RuntimeEntity | AIEntityLike | null
   eventMode?: string
   selected?: boolean
   visible?: boolean
@@ -70,18 +72,18 @@ export type AIEntityLike = {
   meleeArmor?: number
   pierceArmor?: number
   sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell, action?: string): void
-  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell | TransportCell, action?: string): unknown
-  sendToFish?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToTree?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToStone?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToGold?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToBerrybush?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToHunt?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToTakeMeat?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToFarm?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToBuilding?(target: AIEntityLike | RuntimeEntity): unknown
-  sendToAttack?(target: AIEntityLike | RuntimeEntity): unknown
-  runaway?(target: AIEntityLike | RuntimeEntity): unknown
+  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell | TransportCell, action?: string): boolean | void
+  sendToFish?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToTree?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToStone?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToGold?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToBerrybush?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToHunt?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToTakeMeat?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToFarm?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToBuilding?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToAttack?(target: AIEntityLike | RuntimeEntity): boolean | void
+  runaway?(target: AIEntityLike | RuntimeEntity): boolean | void
   stop?(): void
   explore?(): boolean
   die?(immediate?: boolean): void
@@ -90,7 +92,7 @@ export type AIEntityLike = {
   getActionCondition?(
     target: AIEntityLike | RuntimeEntity | RuntimeCell | null | undefined,
     action?: string,
-    extra?: Record<string, unknown>
+    extra?: UnitCreationExtra
   ): boolean
   handleChangeDest?(): void
   setTextures?(sheet: string): void
@@ -100,13 +102,13 @@ export type AIEntityLike = {
 
 export type AIBuildingLike = AIEntityLike & {
   queue?: string[]
-  loading?: unknown
+  loading?: number | null
   technology?: { type?: string } | null
-  buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: unknown): boolean | void
+  buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: UnitCreationExtra): boolean | void
   buyTechnology?(technology: string): boolean | void
 }
 
-export type AIEntityConfig = Record<string, unknown> & {
+export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | undefined> & {
   cost?: AIResourceAmount
   totalHitPoints?: number
   meleeAttack?: number
@@ -121,7 +123,7 @@ export type AIEntityConfig = Record<string, unknown> & {
 export type AITechCondition = {
   key: 'age' | 'technologies' | string
   op: '>=' | '=' | 'includes' | 'notincludes' | string
-  value: unknown
+  value: ConfigValue
 }
 
 type AITechConfig = {
@@ -220,7 +222,7 @@ export type AIStrategyPlayerLike = {
   foundedBerrybushs: Set<RuntimeEntity>
   navalOperation?: AINavalOperation | null
   lastNavalConnectivity?: AILandAccessDiagnostic
-  lastNavalOperationFailure?: unknown
+  lastNavalOperationFailure?: string | null
   lastNavalOperationEndedAt?: number
   lastAttackWaveAt?: number
   scout?: AIEntityLike | null

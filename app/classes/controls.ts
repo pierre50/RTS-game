@@ -6,23 +6,20 @@ import { SelectionManager } from '../controllers/SelectionManager'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { getCameraZoom } from '../lib/settings'
 import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
-import type { ControlsLike, GameContextLike, SelectionRectangle } from '../types/context'
+import type {
+  AudibleInstanceLike,
+  ControlPointerEvent,
+  ControlsLike,
+  GameContextLike,
+  SelectionRectangle,
+} from '../types/context'
 import type { PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 
 type PointerPoint = { x: number; y: number }
-type PointerPageEvent = {
+type PointerPageEvent = ControlPointerEvent & {
   pageX: number
   pageY: number
-  clientX?: number
-  clientY?: number
-  target?: EventTarget | null
-  type?: string
-  nativeEvent?: {
-    clientX?: number
-    clientY?: number
-    target?: EventTarget | null
-  } | null
 }
 type TouchInteraction = {
   mode: 'pan' | 'tap' | 'select'
@@ -33,11 +30,7 @@ type TouchInteraction = {
   moved: boolean
 }
 type TickerLike = { elapsedMS?: number; deltaTime: number }
-type AudibleEntity = {
-  owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }
-  target?: { visible?: boolean }
-  visible?: boolean
-}
+type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
 
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
@@ -667,8 +660,8 @@ export default class Controls extends Container implements ControlsLike {
     }, 600)
   }
 
-  instanceInCamera(instance: unknown): boolean {
-    return this.cameraController.instanceInCamera(instance as { x: number; y: number })
+  instanceInCamera(instance: { x: number; y: number }): boolean {
+    return this.cameraController.instanceInCamera(instance)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {

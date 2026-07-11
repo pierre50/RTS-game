@@ -1,6 +1,7 @@
 import { Text } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
+import { getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
 import {
@@ -181,7 +182,7 @@ function ensureDebugOverlay(id: string): HTMLElement {
 function ensurePerfOverlay(context: DevConsoleContext): void {
   const overlay = ensureDebugOverlay('debug-perf')
   const { app, map, players } = context
-  const units = players.reduce((sum: number, player) => sum + player.units.length, 0) + (map.gaia?.units.length || 0)
+  const units = players.reduce((sum: number, player) => sum + player.units.length, 0) + getGaiaAnimals(map.gaia).length
   const buildings = players.reduce((sum: number, player) => sum + player.buildings.length, 0)
   const schedulerTasks = context.scheduler?._tasks?.size ?? 0
   const speed = context.app?.ticker?.speed ?? context.scheduler?.timeScale ?? 1
@@ -240,10 +241,8 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
   for (const ai of targets) {
     const idx = aiPlayers.indexOf(ai)
     const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
-    const aliveUnits = ai.units.filter(u => isAliveUnit(u as Parameters<typeof isAliveUnit>[0]))
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(
-      aliveUnits as Parameters<typeof classifyMilitaryUnits>[0]
-    ) as Record<'infantry' | 'archers' | 'cavalry' | 'hoplites', DevEntity[]>
+    const aliveUnits = ai.units.filter(isAliveUnit)
+    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(aliveUnits)
     const military = [...infantry, ...archers, ...cavalry, ...hoplites]
     const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
     const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())

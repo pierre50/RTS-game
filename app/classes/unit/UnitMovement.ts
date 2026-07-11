@@ -17,6 +17,14 @@ import {
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
+function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
+  return Boolean(value && !('has' in value && 'corpses' in value))
+}
+
+function isDestroyedEntity(value: RuntimeEntity | RuntimeCell | null | undefined): boolean {
+  return isRuntimeEntity(value) && Boolean(value.isDestroyed)
+}
+
 function isBoatNavigationCell(cell: RuntimeCell | null | undefined) {
   return cell?.category === 'Water' || cell?.waterBorder
 }
@@ -85,7 +93,7 @@ export class UnitMovement {
 
   sendToPostBuildResource(): boolean {
     const unit = this.unit
-    const dest = unit.dest as RuntimeEntity | null | undefined
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     const actions = dest?.type ? POST_BUILD_GATHER_ACTIONS[dest.type] : undefined
     if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed)
       return false
@@ -105,7 +113,7 @@ export class UnitMovement {
   }
 
   findClosestReachableCellNearTarget(
-    target: RuntimeEntity,
+    target: RuntimeEntity | RuntimeCell,
     minDistance = 2,
     allowCurrentCell = false
   ): { cell: RuntimeCell; path: RuntimeCell[] } | null {
@@ -199,11 +207,13 @@ export class UnitMovement {
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
-    const currentDest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
+    const currentDest = unit.dest
     if (
       !forceRepath &&
       dest &&
-      (currentDest as RuntimeEntity | undefined)?.label === (dest as RuntimeEntity).label &&
+      isRuntimeEntity(currentDest) &&
+      isRuntimeEntity(dest) &&
+      currentDest.label === dest.label &&
       unit.action === action &&
       ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
     ) {
@@ -213,12 +223,11 @@ export class UnitMovement {
     unit.stopInterval?.()
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []
-    if (!dest || (dest as RuntimeEntity).isDestroyed || unit.isDead || !map) return
+    if (!dest || isDestroyedEntity(dest) || unit.isDead || !map) return
     if (!action) {
       unit.previousDest = null
       unit.previousWork = null
     }
-    const destEntity = dest as RuntimeEntity
     if (
       unit.isUnitAtDest?.(action, dest) &&
       (!map.grid[unit.i][unit.j].solid ||
@@ -230,14 +239,15 @@ export class UnitMovement {
       unit.getAction?.(action ?? '')
       return
     }
-    if (map.grid[destEntity.i] && map.grid[destEntity.i][destEntity.j]) {
+    if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
       const allowWaterCellCategory = unit.category === 'Boat'
-      const destCell = map.grid[destEntity.i][destEntity.j]
+      const destCell = map.grid[dest.i][dest.j]
       if (destCell.solid) {
-        path = getInstanceClosestFreeCellPath(unit, destEntity, map) as RuntimeCell[]
+        path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map)
         if (!path.length && unit.work) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
+          if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+            return
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
           } else {
@@ -246,10 +256,11 @@ export class UnitMovement {
           return
         }
       } else if (!allowWaterCellCategory && destCell.category === 'Water') {
-        const approach = this.findClosestReachableCellNearTarget(destEntity, 1, true)
+        const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
         if (!approach) {
           unit.action = action
-          if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
+          if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+            return
           action ? unit.affectNewDest?.() : unit.stop?.()
           return
         }
@@ -269,7 +280,7 @@ export class UnitMovement {
       }
     }
     if (!path.length) {
-      path = getInstancePath(unit, destEntity.i, destEntity.j, map)
+      path = getInstancePath(unit, dest.i, dest.j, map)
     }
     if (path.length) {
       unit.setDest?.(dest)
@@ -277,7 +288,8 @@ export class UnitMovement {
       unit.setPath?.(path)
     } else {
       unit.action = action
-      if (allowBlockedGatherApproach && this.approachBlockedGatherTarget(destEntity, action ?? '')) return
+      if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+        return
       if (action === ACTION_TYPES.delivery) {
         unit.stop?.()
       } else {
@@ -303,7 +315,7 @@ export class UnitMovement {
 
   destHasMoved(): boolean {
     const unit = this.unit
-    const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
+    const dest = unit.dest
     if (!dest || !unit.realDest) return false
     return (
       (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) && instancesDistance(unit, dest) <= (unit.sight ?? 0)
@@ -322,8 +334,8 @@ export class UnitMovement {
     if (!map || !unit.path?.length) return
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
-    const dest = unit.dest as RuntimeEntity | RuntimeCell | null | undefined
-    if (!dest || (dest as RuntimeEntity).isDestroyed) {
+    const dest = unit.dest
+    if (!dest || isDestroyedEntity(dest)) {
       unit.affectNewDest?.()
       return
     }
@@ -408,7 +420,7 @@ export class UnitMovement {
       unit.stop?.()
       return
     }
-    const dest = unit.dest as RuntimeEntity | null | undefined
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     const queuedBuildInterrupted =
       unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && (unit.buildQueue?.length ?? 0) > 0
     if (queuedBuildInterrupted) {
@@ -447,7 +459,7 @@ export class UnitMovement {
         const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
         if (target) {
           unit.setDest?.(target.instance)
-          unit.setPath?.(target.path as RuntimeCell[])
+          unit.setPath?.(target.path)
           return
         }
       }
@@ -521,7 +533,7 @@ export class UnitMovement {
             unit.getAction?.(unit.action)
             return
           }
-          unit.setPath?.(target.path as RuntimeCell[])
+          unit.setPath?.(target.path)
           return
         }
       }

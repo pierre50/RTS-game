@@ -4,15 +4,20 @@ import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
 import { t } from './lang'
 import type { GridPosition } from '../types/grid'
-import type { Ticker } from 'pixi.js'
+import type { AnimatedSprite, Ticker } from 'pixi.js'
+import type { ConfigValue } from '../types/config'
+import type { RenderableInstance } from './grid/visibility'
 
 type Direction = 'south' | 'southwest' | 'west' | 'northwest' | 'north' | 'northeast' | 'east' | 'southeast'
 type DirectionOrder = Direction[]
-type TextureMap<TTexture = unknown> = Record<string, TTexture>
-type MutableConfigObject = { [key: string]: unknown }
+type TextureMap<TTexture = AnimatedSprite['textures'][number]> = Record<string, TTexture>
+type MutableConfigObject = { [key: string]: ConfigValue | SheetLike | object }
 type TimeoutId = ReturnType<typeof window.setTimeout> | null
 type DestroyOption = boolean | { children?: boolean; texture?: boolean; textureSource?: boolean; context?: boolean }
 type DefaultAnchor = { x: number; y: number }
+type AnimationCallback = (() => void) | null
+type TimerArg = string | number | boolean | object | null | undefined
+type TimerThis = object | void
 
 const FIVE_DIRECTION_ORDER: DirectionOrder = ['south', 'southwest', 'west', 'northwest', 'north']
 const EIGHT_DIRECTION_ORDER: DirectionOrder = [
@@ -187,41 +192,41 @@ export function getSailAnimationFrames<TTexture>(
   }
 }
 
-type AnimatedSpriteLike<TTexture = unknown> = {
+type AnimatedSpriteLike<TTexture = AnimatedSprite['textures'][number]> = {
   _usesAppTicker?: boolean
   anchor: { set: (x: number, y: number) => void }
   animationSpeed?: number
   autoUpdate?: boolean
   currentFrame: number
   destroyed?: boolean
-  destroy: (options?: DestroyOption) => unknown
+  destroy: (options?: DestroyOption) => void
   gotoAndPlay: (frame: number) => void
-  onComplete?: unknown
+  onComplete?: AnimationCallback
   onFrameChange?: ((frame: number) => void) | null
-  onLoop?: unknown
+  onLoop?: AnimationCallback
   parent?: DisplayObjectLike | null
   play: () => void
   playing?: boolean
   renderable?: boolean
   scale: { x: number }
   stop: () => void
-  textures: TTexture[]
+  textures: TTexture[] | AnimatedSprite['textures']
   update: (ticker: Ticker) => void
   visible?: boolean
 }
 
 type DisplayObjectLike = {
   destroyed?: boolean
-  onComplete?: unknown
-  onFrameChange?: unknown
-  onLoop?: unknown
+  onComplete?: AnimationCallback
+  onFrameChange?: ((frame: number) => void) | null
+  onLoop?: AnimationCallback
   parent?: DisplayObjectLike | null
   playing?: boolean
   renderable?: boolean
   visible?: boolean
 }
 
-type SheetLike<TTexture = unknown> = {
+type SheetLike<TTexture = AnimatedSprite['textures'][number]> = {
   data: { animationSpeed?: number }
   textures: TextureMap<TTexture>
 }
@@ -243,7 +248,7 @@ function isDefaultAnchor(value: unknown): value is DefaultAnchor {
   )
 }
 
-type UnitTextureInstance = MutableConfigObject & {
+export type UnitTextureInstance = {
   context: { paused?: boolean }
   currentSheet?: string
   degree: number
@@ -254,6 +259,7 @@ type UnitTextureInstance = MutableConfigObject & {
 }
 
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
+  const sheets = instance as UnitTextureInstance & MutableConfigObject
   const animationSpeed: Record<string, number> = {
     standingSheet: 0.15,
     corpseSheet: 0,
@@ -263,7 +269,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     return
   }
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
-  if (!instance[sheet]) {
+  if (!sheets[sheet]) {
     if (instance.currentSheet !== SHEET_TYPES.walking && instance.walkingSheet) {
       instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]]
     } else {
@@ -278,7 +284,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     }
     return
   }
-  const selectedSheet = instance[sheet] as SheetLike
+  const selectedSheet = sheets[sheet] as SheetLike
   if (!sheetToReset.includes(sheet)) {
     instance.sprite.onLoop = null
     instance.sprite.onFrameChange = null
@@ -556,18 +562,18 @@ export class Modal {
   }
 }
 
-export function throttle<TArgs extends unknown[]>(
-  callback: (this: unknown, ...args: TArgs) => void,
+export function throttle<TArgs extends TimerArg[]>(
+  callback: (this: TimerThis, ...args: TArgs) => void,
   wait: number,
   immediate = false
-): (this: unknown, ...args: TArgs) => void {
+): (this: TimerThis, ...args: TArgs) => void {
   if (typeof callback !== 'function' || typeof wait !== 'number') {
     throw new Error('Invalid arguments: callback must be a function and wait must be a number.')
   }
 
   let timeout: ReturnType<typeof setTimeout> | null = null
   let pendingArgs: TArgs | null = null
-  let pendingThis: unknown = null
+  let pendingThis: TimerThis = undefined
 
   const schedule = () => {
     timeout = setTimeout(() => {
@@ -579,7 +585,7 @@ export function throttle<TArgs extends unknown[]>(
       const args = pendingArgs
       const context = pendingThis
       pendingArgs = null
-      pendingThis = null
+      pendingThis = undefined
       callback.apply(context, args)
 
       if (immediate || pendingArgs) {
@@ -604,16 +610,16 @@ export function throttle<TArgs extends unknown[]>(
   }
 }
 
-export function throttleByKey<TArgs extends unknown[]>(
-  callback: (this: unknown, ...args: TArgs) => void,
+export function throttleByKey<TArgs extends TimerArg[]>(
+  callback: (this: TimerThis, ...args: TArgs) => void,
   wait: number,
-  getKey: (...args: TArgs) => unknown
-): (this: unknown, ...args: TArgs) => void {
+  getKey: (...args: TArgs) => PropertyKey
+): (this: TimerThis, ...args: TArgs) => void {
   if (typeof callback !== 'function' || typeof wait !== 'number' || typeof getKey !== 'function') {
     throw new Error('Invalid arguments: callback and getKey must be functions and wait must be a number.')
   }
 
-  const throttledCallbacks = new Map()
+  const throttledCallbacks = new Map<PropertyKey, (this: TimerThis, ...args: TArgs) => void>()
 
   return function (...args) {
     const key = getKey(...args)
@@ -626,10 +632,10 @@ export function throttleByKey<TArgs extends unknown[]>(
   }
 }
 
-export const debounce = <TArgs extends unknown[]>(
-  callback: (this: unknown, ...args: TArgs) => void,
+export const debounce = <TArgs extends TimerArg[]>(
+  callback: (this: TimerThis, ...args: TArgs) => void,
   wait: number
-): ((this: unknown, ...args: TArgs) => void) => {
+): ((this: TimerThis, ...args: TArgs) => void) => {
   if (typeof callback !== 'function' || typeof wait !== 'number') {
     throw new Error('Invalid arguments: callback must be a function and wait must be a number.')
   }
@@ -678,7 +684,7 @@ export const updateObject = (target: MutableConfigObject, operation: NumericOper
     throw new Error('Invalid operation: key, op, and value are required.')
   }
 
-  function isRecord(value: unknown): value is MutableConfigObject {
+  function isRecord(value: object | ConfigValue): value is MutableConfigObject {
     return typeof value === 'object' && value !== null
   }
 
@@ -700,7 +706,7 @@ export const updateObject = (target: MutableConfigObject, operation: NumericOper
       : operation.key
 
   const keys = resolvedKey.split('.')
-  let result: unknown = target
+  let result: ConfigValue | MutableConfigObject | object = target
 
   for (const key of keys) {
     if (!isRecord(result)) {
@@ -756,9 +762,6 @@ export const playerCanSeeInstance = (instance?: VisibleInstance | null, player?:
   if (!instance || !player) return false
   return (
     instance.owner?.label === player.label ||
-    instanceIsInPlayerSight(
-      instance as Parameters<typeof instanceIsInPlayerSight>[0],
-      player as Parameters<typeof instanceIsInPlayerSight>[1]
-    )
+    instanceIsInPlayerSight(instance as RenderableInstance, player)
   )
 }

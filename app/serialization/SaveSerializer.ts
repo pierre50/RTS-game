@@ -1,15 +1,24 @@
-import { filterObject } from '../lib'
+import { filterObject, getGaiaAnimals } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
+import type { AssetAge } from '../types/pixi'
 import type { RuntimeEntityBase } from '../types/entities'
-import type { SaveEntityState, SavePlayerState, SaveReference, SerializedSave } from '../types/save'
+import type {
+  SavedAIState,
+  SaveEntityState,
+  SavePlayerState,
+  SaveRallyPoint,
+  SaveReference,
+  SaveTechnologyState,
+  SerializedSave,
+} from '../types/save'
 
 type GridPoint = { i: number; j: number }
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
   action?: string | null
-  assetAge?: unknown
+  assetAge?: AssetAge
   assetCiv?: string
   assetType?: string
   blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
@@ -29,26 +38,26 @@ type SerializableEntity = RuntimeEntityBase & {
   previousDest?: Destination | null
   previousWork?: string | null
   queue?: string[]
-  rallyPoint?: unknown
+  rallyPoint?: SaveRallyPoint | null
   realDest?: Destination | null
   isFleeing?: boolean
   sprite?: SpriteState | null
-  technology?: { type?: string; config?: unknown } | null
+  technology?: SaveTechnologyState
   textureName?: string
   work?: string | null
 }
 type SerializablePlayer = PlayerLike & {
-  aiState?: unknown
+  aiState?: SavedAIState
   difficulty?: string
-  enemyBuildingMemory?: Map<unknown, ThreatMemory>
-  enemyUnitMemory?: Map<unknown, ThreatMemory>
+  enemyBuildingMemory?: Map<string, ThreatMemory>
+  enemyUnitMemory?: Map<string, ThreatMemory>
   getNow?: () => number
-  hasBuilt?: unknown
+  hasBuilt?: string[]
   lastAttackWaveAt?: number
   phase?: string
   population?: number
   populationMax?: number
-  threatenedTargets?: Map<unknown, ThreatTargetMemory>
+  threatenedTargets?: Map<string, ThreatTargetMemory>
   views: VisionGridLike
 }
 type ThreatMemory = {
@@ -271,7 +280,7 @@ function playerData(player: SerializablePlayer) {
   return data
 }
 
-export function serializeGame(context: SerializableContext) {
+export function serializeGame(context: SerializableContext): SerializedSave {
   const world = {
     seed: context.map.seed,
     size: context.map.size,
@@ -301,7 +310,7 @@ export function serializeGame(context: SerializableContext) {
     },
     players: (context.players ?? []).map(playerData),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
-    animals: (context.map.gaia?.units ?? [])
+    animals: getGaiaAnimals(context.map.gaia)
       .filter(animal => !animal.isDestroyed)
       .map(animal => animalData(animal as SerializableEntity)),
   }

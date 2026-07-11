@@ -1,25 +1,39 @@
 import { Container, type ContainerChild } from 'pixi.js'
 import { BUCKET_SIZE, CELL_WIDTH } from '../../constants'
-import { MapGeneration, type GenerateMapOptions, type MapBlueprint, type TerrainGrid } from './MapGeneration'
-import { MapResources } from './MapResources'
+import {
+  MapGeneration,
+  type GenerateMapOptions,
+  type MapBlueprint,
+  type SavedGameData,
+  type TerrainGrid,
+} from './MapGeneration'
+import { MapResources, type ResourceDensity } from './MapResources'
 import { MapTerrain, type ReliefLevelBounds } from './MapTerrain'
 import { MapFog } from './MapFog'
 import { createSeededRandom } from '../../lib/random'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
-import { TerrainChunkManager } from './TerrainChunkManager'
+import { TerrainChunkManager, type ChunkedTerrainMap } from './TerrainChunkManager'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RenderChunk } from '../../types/map'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
-import type { SaveCellState, SerializedSave, PlayerSetupConfig } from '../../types/save'
+import type { PlayerSetupConfig } from '../../types/save'
+import type { GameContextLike } from '../../types/context'
+import type { MapEditorControlsLike } from '../../types/mapEditor'
 
-type MapContext = {
-  performance?: {
-    measure?<T>(name: string, callback: () => T): T
-    record?(name: string, value: number): void
-  } | null
+export type MapContext = Omit<
+  Partial<GameContextLike>,
+  'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
+> & {
+  controls?: GameContextLike['controls'] | MapEditorControlsLike | null
+  map?: GameContextLike['map'] | null
+  menu?: GameContextLike['menu'] | null
+  performance?: GameContextLike['performance'] | null
+  player?: PlayerLike | null
+  players: PlayerLike[]
+  scheduler?: GameContextLike['scheduler'] | null
 }
 type InstanceBuckets = Array<Array<Set<RuntimeEntity>>>
 type GeneratedPosition = GridPosition | null
@@ -46,7 +60,7 @@ export default class Map extends Container {
   instantMode: boolean
   difficulty: string
   startingResources: ResourceAmount
-  resourceDensity: string
+  resourceDensity: ResourceDensity
   revealEverything: boolean
   revealTerrain: boolean
   showResources: boolean
@@ -122,13 +136,11 @@ export default class Map extends Container {
     this.eventMode = 'auto'
     this.totalCells = 0
 
-    this.mapGeneration = new MapGeneration(this as unknown as ConstructorParameters<typeof MapGeneration>[0])
-    this.mapResources = new MapResources(this as unknown as ConstructorParameters<typeof MapResources>[0])
+    this.mapGeneration = new MapGeneration(this)
+    this.mapResources = new MapResources(this)
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
-    this.terrainChunkManager = new TerrainChunkManager(
-      this as unknown as ConstructorParameters<typeof TerrainChunkManager>[0]
-    )
+    this.terrainChunkManager = new TerrainChunkManager(this as ChunkedTerrainMap)
   }
 
   resetRandom(stream: number | string = 0): void {
@@ -229,7 +241,7 @@ export default class Map extends Container {
   }
 
   // MapGeneration
-  generateFromJSON(data: SerializedSave & { map: SaveCellState[][] }): void {
+  generateFromJSON(data: SavedGameData): void {
     return this.mapGeneration.generateFromJSON(data)
   }
 
@@ -262,7 +274,7 @@ export default class Map extends Container {
   }
 
   generatePlayers(playersConfig?: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[] {
-    return this.mapGeneration.generatePlayers(playersConfig) as PlayerLike[]
+    return this.mapGeneration.generatePlayers(playersConfig)
   }
 
   placePlayers(): void {

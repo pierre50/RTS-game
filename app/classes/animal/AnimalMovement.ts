@@ -101,7 +101,7 @@ export class AnimalMovement {
     }
     let path: RuntimeCell[] = []
     if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-      path = getInstanceClosestFreeCellPath<RuntimeCell>(animal, dest as RuntimeCell, map)
+      path = getInstanceClosestFreeCellPath<RuntimeCell>(animal, dest, map)
     } else {
       path = getInstancePath<RuntimeCell>(animal, dest.i, dest.j, map)
     }

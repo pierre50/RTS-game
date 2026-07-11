@@ -1,6 +1,7 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { updateVisibility } from '../../services/FogOfWar'
 import type { GridPosition, Point } from '../../types/grid'
+import type { VisibilityEntity } from '../../services/FogOfWar'
 
 type PlayerVisibility = {
   views?: {
@@ -8,9 +9,9 @@ type PlayerVisibility = {
   }
 }
 
-export type RenderableInstance = GridPosition &
+export type RenderableInstance = VisibilityEntity &
+  GridPosition &
   Point & {
-    label: string
     context?: {
       controls?: {
         instanceInCamera: (instance: RenderableInstance) => boolean
@@ -25,13 +26,11 @@ export type RenderableInstance = GridPosition &
     }
     family?: string
     type?: string
-    owner?: {
+    owner?: VisibilityEntity['owner'] & {
       isPlayed?: boolean
     } | null
     isDestroyed?: boolean
-    sight?: number
     size?: number
-    visible?: boolean
   }
 
 export function findInstancesInSight<
@@ -66,8 +65,8 @@ export function findInstancesInSight<
   return instances
 }
 
-export function updateInstanceVisibility(instance: RenderableInstance): unknown {
-  return updateVisibility(instance as Parameters<typeof updateVisibility>[0])
+export function updateInstanceVisibility(instance: RenderableInstance): void {
+  return updateVisibility(instance)
 }
 
 export function instanceShouldRender(instance?: RenderableInstance | null): boolean {

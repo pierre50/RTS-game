@@ -11,6 +11,14 @@ import type { MinimapHostLike } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 
+function terrainColor(value: string | number | undefined): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function isResourceEntity(instance: RuntimeEntity | null | undefined): instance is ResourceEntity {
+  return instance?.family === FAMILY_TYPES.resource
+}
+
 export class MinimapManager {
   menu: MinimapHostLike
   miniMapAlpha: number
@@ -85,7 +93,7 @@ export class MinimapManager {
           cell.y / factor,
           CELL_WIDTH / factor + 1,
           CELL_HEIGHT / factor + 1,
-          cell.color ?? ''
+          terrainColor(cell.color)
         )
       }
     }
@@ -111,7 +119,7 @@ export class MinimapManager {
           cell.y / factor,
           CELL_WIDTH / factor + 1,
           CELL_HEIGHT / factor + 1,
-          cell.color ?? ''
+          terrainColor(cell.color)
         )
       }
     }
@@ -131,10 +139,10 @@ export class MinimapManager {
       cell.y / factor,
       CELL_WIDTH / factor + 1,
       CELL_HEIGHT / factor + 1,
-      cell.color ?? ''
+      terrainColor(cell.color)
     )
-    if (cell.has && cell.has.family === FAMILY_TYPES.resource) {
-      this.updateResourceMiniMap(cell.has as ResourceEntity)
+    if (isResourceEntity(cell.has)) {
+      this.updateResourceMiniMap(cell.has)
     }
   }
 

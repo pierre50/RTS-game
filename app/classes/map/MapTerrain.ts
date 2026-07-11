@@ -16,25 +16,25 @@ import {
   hasUnsupportedTransition,
 } from '../../lib/terrain/topology'
 import type { GridPosition } from '../../types/grid'
-import type { RuntimeCell as RuntimeCellLike } from '../../types/map'
+import type * as MapTypes from '../../types/map'
 
 type TerrainDefinition = {
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
-  [key: string]: unknown
+  [key: string]: string | string[] | number | boolean | undefined
 }
 
 type TerrainConfig = {
   cells?: Record<string, TerrainDefinition>
 }
 
-type TerrainCell = RuntimeCellLike & {
+type TerrainCell = MapTypes.RuntimeCell & {
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
   terrainTextureName?: string
-  has?: unknown
+  has?: MapTypes.RuntimeCell['has']
   sprite?: Sprite | null
   setTerrainType?(type: string): void
   setWater?(): void

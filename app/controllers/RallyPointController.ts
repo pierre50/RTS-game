@@ -1,7 +1,7 @@
 import type { Texture } from 'pixi.js'
 import { AnimatedSprite, Assets } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED } from '../constants'
-import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames } from '../lib'
+import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames, RALLY_POINT_SHEET_ID } from '../lib'
 import type { ControlsLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -46,7 +46,7 @@ export class RallyPointController {
   }
 
   createFlag(): AnimatedSprite {
-    const sheet = Assets.cache.get('459') as RallyPointSheet
+    const sheet = Assets.cache.get(RALLY_POINT_SHEET_ID) as RallyPointSheet
     const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, this.direction)) as InteractiveSprite
     bindAnimatedSpriteToTicker(flag, this.controls.context.app)
     flag.animationSpeed = sheet.data.animationSpeed ?? 0.2

@@ -116,7 +116,18 @@ export class PerformanceMonitor {
     const sortedFrames = [...this.frameTimes].sort((a, b) => a - b)
     const percentile = (ratio: number) =>
       sortedFrames[Math.min(sortedFrames.length - 1, Math.floor(sortedFrames.length * ratio))] || 0
-    const metrics: Record<string, unknown> = {}
+    const metrics: Record<
+      string,
+      {
+        count: number
+        totalMs: number
+        averageMs: number
+        maxMs: number
+        lastMs: number
+        slowCount: number
+        slowSamples: Array<{ at: number; duration: number }>
+      }
+    > = {}
     for (const [name, metric] of this.metrics) {
       metrics[name] = {
         count: metric.count,

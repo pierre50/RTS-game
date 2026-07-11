@@ -1,8 +1,10 @@
 import type { AnimatedSprite, Container, DestroyOptions, Sprite } from 'pixi.js'
+import type { AssetAge, SpritesheetLike } from './pixi'
 import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
+import type { ConfigValue, TechnologyConfig } from './config'
 import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
 
@@ -11,6 +13,7 @@ export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
 }
+export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
 
 export interface EntityInterfaceLike {
   info?: (element: HTMLElement) => void
@@ -47,7 +50,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   die?: (immediate?: boolean) => void
   pause?: () => void
   resume?: () => void
-  getChildByLabel?: (label: string) => unknown
+  getChildByLabel?: (label: string) => Container | Sprite | AnimatedSprite | null
   addChildAt: Container['addChildAt']
   removeChild: Container['removeChild']
   updateTexture?: () => void
@@ -135,18 +138,18 @@ export interface UnitEntity extends RuntimeEntityBase {
   actionLocked?: boolean
   currentSheet?: string
   currentFrame?: number
-  actionSheet?: unknown
-  walkingSheet?: unknown
-  standingSheet?: unknown
-  corpseSheet?: unknown
-  dyingSheet?: unknown
+  actionSheet?: SpritesheetLike | null
+  walkingSheet?: SpritesheetLike | null
+  standingSheet?: SpritesheetLike | null
+  corpseSheet?: SpritesheetLike | null
+  dyingSheet?: SpritesheetLike | null
   loop?: boolean
   eventMode?: string
   sailSheet?: string
-  sailSpritesheet?: { textures: Record<string, unknown>; data: { animationSpeed?: number } }
+  sailSpritesheet?: SpritesheetLike
   sailSprite?: AnimatedSprite | null
   sailAnimationSpeed?: number
-  fishingOverlaySheet?: { textures: Record<string, unknown>; data?: { animationSpeed?: number } }
+  fishingOverlaySheet?: SpritesheetLike
   fishingOverlaySprite?: AnimatedSprite | null
   showLoading?: boolean
   showBuildings?: boolean
@@ -185,10 +188,10 @@ export interface UnitEntity extends RuntimeEntityBase {
     target: RuntimeEntity,
     work: string,
     action: string | null,
-    keepPrevious: boolean | Record<string, unknown>,
+    keepPrevious: boolean | UnitCommandOptions,
     immediate?: boolean,
     preserveBuildQueue?: boolean
-  ) => unknown
+  ) => void
   sendToEvt?: (
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
@@ -214,9 +217,9 @@ export interface UnitEntity extends RuntimeEntityBase {
   moveToPath?: () => void
   getAction?: (name: string) => void
   getActionCondition?: (
-    target: RuntimeEntity | RuntimeCell | null | undefined,
+    target: object | null | undefined,
     action?: string,
-    extra?: Record<string, unknown>
+    extra?: UnitCreationExtra
   ) => boolean
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
@@ -236,7 +239,7 @@ export interface UnitEntity extends RuntimeEntityBase {
 export interface BuildingEntity extends RuntimeEntityBase {
   isBuilt?: boolean
   queue?: string[]
-  technology?: { type?: string; config?: unknown } | null
+  technology?: { type?: string; config?: TechnologyConfig } | null
   isUsedBy?: RuntimeEntity | null
   addChild?: Container['addChild']
   setRallyPoint?: (cell: RuntimeCell, direction: number) => void
@@ -245,6 +248,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   loading?: number | null
   buyTechnology?: (type: string) => void
   cancelTechnology?: () => void
+  upgrade?: (target: string) => void
   assetType?: string
   finalTexture?: () => void
   increasePopulation?: number
@@ -258,7 +262,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   attackAction?: (target: RuntimeEntity) => void
   visibleCells?: Set<number>
   assetCiv?: string
-  assetAge?: unknown
+  assetAge?: AssetAge
 }
 
 export interface ResourceEntity extends RuntimeEntityBase {
@@ -281,5 +285,5 @@ export interface PlaceableBuildingConfig {
   images?: {
     final?: string
   }
-  [key: string]: unknown
+  [key: string]: ConfigValue | { final?: string } | undefined
 }

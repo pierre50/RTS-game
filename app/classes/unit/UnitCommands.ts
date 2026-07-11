@@ -16,9 +16,13 @@ import {
   getWorkWithLoadingType,
 } from '../../lib'
 import { t } from '../../lib/lang'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { ActionProps } from '../../lib/combat'
+
+function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
+  return Boolean(value && !('has' in value && 'corpses' in value))
+}
 
 function getActionSheet(work: string | null | undefined, action: string | null | undefined, unit: UnitEntity) {
   if (!work) {
@@ -51,7 +55,7 @@ export class UnitCommands {
     action: string | null | undefined
   ): boolean {
     const unit = this.unit
-    const dest = unit.dest as RuntimeEntity | null | undefined
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (!target || dest?.label !== target.label) return false
     if (unit.work !== work || unit.action !== action) return false
     return (unit.path?.length ?? 0) > 0 || Boolean(unit.isUnitAtDest?.(action, target))
@@ -61,7 +65,7 @@ export class UnitCommands {
     target: RuntimeEntity,
     work: string,
     action: string | null,
-    keepPrevious: boolean | Record<string, unknown>,
+    keepPrevious: boolean | UnitCommandOptions,
     immediate = false,
     preserveBuildQueue = false
   ) {

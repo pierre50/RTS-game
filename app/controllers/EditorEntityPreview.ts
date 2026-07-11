@@ -165,7 +165,7 @@ export class EditorEntityPreview {
       return container
     }
 
-    const assets = getBuildingAsset(type, owner as Parameters<typeof getBuildingAsset>[1], Assets)
+    const assets = getBuildingAsset(type, owner, Assets)
     const texture = getTexture(assets.images?.final ?? '', Assets)
     const container = new Container()
 

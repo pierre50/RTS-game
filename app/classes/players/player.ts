@@ -25,24 +25,35 @@ import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
 import type { GameContextLike } from '../../types/context'
-import type { ConfigOperation, TechnologyConfig } from '../../types/config'
+import type { ConfigOperation, ConfigValue, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
 import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
 import type { Condition } from '../../lib/combat'
-import type { ResourceAmount } from '../../types/common'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
-type PlayerDynamicState = ResourceAmount &
-  Record<string, unknown> & {
-    age: number
-    technologies: string[]
-  }
+type NumericConfigOperation = ConfigOperation & {
+  key: string
+  op: '*' | '+'
+  value: number
+}
 
-export type PlayerOptions = Omit<Partial<PlayerLike>, 'views'> & {
+type PlayerTechnologyValue = ConfigValue | ConfigValue[]
+type PlayerTechnologyHandler = (value?: ConfigValue) => void
+
+function isNumericConfigOperation(operation: ConfigOperation): operation is NumericConfigOperation {
+  return (
+    typeof operation.key === 'string' &&
+    (operation.op === '*' || operation.op === '+') &&
+    typeof operation.value === 'number'
+  )
+}
+
+export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
   difficulty?: string
+  team?: number | string | null
   views?: VisionGridLike | SerializedVisionGrid
 }
 
@@ -105,7 +116,7 @@ export class Player implements PlayerLike {
     this.age = 0
     this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
-    const rawTeam = this.team as unknown
+    const rawTeam = options.team
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
 
@@ -188,9 +199,7 @@ export class Player implements PlayerLike {
     const config = this.techs?.[type]
     if (!config) return false
 
-    return (config.conditions || []).every((condition: Condition) =>
-      isValidCondition(condition, this as PlayerDynamicState)
-    )
+    return (config.conditions || []).every((condition: Condition) => isValidCondition(condition, this))
   }
 
   unlockTechnology(type: string) {
@@ -199,12 +208,12 @@ export class Player implements PlayerLike {
     const config = this.techs?.[type]
     if (!config) return false
 
-    const dynamicPlayer = this as PlayerDynamicState
     const key = config.key || type
-    if (Array.isArray(dynamicPlayer[key])) {
-      dynamicPlayer[key].push(config.value || type)
+    const currentValue = Reflect.get(this, key) as PlayerTechnologyValue | undefined
+    if (Array.isArray(currentValue)) {
+      currentValue.push(config.value || type)
     } else {
-      dynamicPlayer[key] = config.value || type
+      Reflect.set(this, key, config.value || type)
     }
 
     const action = config.action
@@ -218,7 +227,7 @@ export class Player implements PlayerLike {
         case 'upgradeBuilding':
           this.buildings.forEach((building: BuildingEntity) => {
             if (building.type === action.source && action.target) {
-              ;(building as BuildingEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
+              building.upgrade?.(action.target)
             }
           })
           break
@@ -240,8 +249,8 @@ export class Player implements PlayerLike {
     }
 
     const handler = `on${capitalizeFirstLetter(config.key || '')}Change`
-    const handlerFn = dynamicPlayer[handler]
-    typeof handlerFn === 'function' && (handlerFn as (value: unknown) => void)(config.value)
+    const handlerFn = Reflect.get(this, handler) as PlayerTechnologyHandler | undefined
+    typeof handlerFn === 'function' && handlerFn(config.value)
     return true
   }
 
@@ -350,15 +359,14 @@ export class Player implements PlayerLike {
   updateConfig(operations: ConfigOperation[]) {
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
+      if (!isNumericConfigOperation(operation)) continue
       const types = Array.isArray(operation.type) ? operation.type : [operation.type]
       for (let j = 0; j < types.length; j++) {
         const type = types[j] as string
         if (Object.keys(this.config.buildings).includes(type)) {
-          this.config.buildings[type] &&
-            updateObject(this.config.buildings[type], operation as unknown as Parameters<typeof updateObject>[1])
+          this.config.buildings[type] && updateObject(this.config.buildings[type], operation)
         } else if (Object.keys(this.config.units).includes(type)) {
-          this.config.units[type] &&
-            updateObject(this.config.units[type], operation as unknown as Parameters<typeof updateObject>[1])
+          this.config.units[type] && updateObject(this.config.units[type], operation)
         }
       }
     }
@@ -370,7 +378,7 @@ export class Player implements PlayerLike {
 
     return (config.conditions || []).every(
       (condition: Condition) =>
-        (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition, this as PlayerDynamicState)
+        (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition, this)
     )
   }
 

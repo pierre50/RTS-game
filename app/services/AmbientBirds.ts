@@ -1,4 +1,4 @@
-import type { Texture } from 'pixi.js'
+import type { Texture, Ticker } from 'pixi.js'
 import { AnimatedSprite, Assets, Container } from 'pixi.js'
 import {
   AMBIENT_BIRD_ANIMATION_SPEED,
@@ -187,8 +187,8 @@ export class AmbientBirds extends Container {
         pass.path.start.x + (pass.path.end.x - pass.path.start.x) * progress,
         pass.path.start.y + (pass.path.end.y - pass.path.start.y) * progress
       )
-      pass.bird.update(tick as Parameters<typeof pass.bird.update>[0])
-      pass.shadow.update(tick as Parameters<typeof pass.shadow.update>[0])
+      pass.bird.update(tick as Ticker)
+      pass.shadow.update(tick as Ticker)
       if (progress >= 1) this.finishPass(pass)
     }
   }

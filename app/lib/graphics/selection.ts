@@ -1,7 +1,7 @@
 import { Graphics } from 'pixi.js'
 import { COLOR_GREEN, LABEL_TYPES } from '../../constants'
 
-type SelectableInstance = {
+export type SelectableInstance = {
   addChildAt: (child: Graphics, index: number) => void
   removeChild: (child: Graphics) => void
   selectionFactor?: number

@@ -1,9 +1,12 @@
-type BuildingAsset = {
+import type { AssetAge } from '../../types/pixi'
+import type { ConfigValue } from '../../types/config'
+
+export type BuildingAsset = {
   images?: {
     final?: string
-    [key: string]: unknown
+    [key: string]: string | undefined
   }
-  [key: string]: unknown
+  [key: string]: ConfigValue | { final?: string; [key: string]: string | undefined }
 }
 
 type CivAssets = {
@@ -16,13 +19,13 @@ type AssetCacheLike = {
   }
 }
 
-type AssetOwner = {
+export type AssetOwner = {
   age: number
-  civ: string
+  civ?: string
 }
 
 export type BuildingWithAssetOwner = {
-  assetAge?: unknown
+  assetAge?: AssetAge
   assetCiv?: string
   owner: {
     age: number
@@ -59,7 +62,7 @@ export function getBuildingRubbleTextureNameWithSize(size: number): string | und
 }
 
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
-  const path = assets.cache.get(owner.civ.toLowerCase()).buildings
+  const path = assets.cache.get((owner.civ || '').toLowerCase()).buildings
   const assetAt = (age: number) => path[age]?.[type]
   const fallbackAges = [owner.age, owner.age - 1, owner.age - 2, 0, owner.age + 1, owner.age + 2, owner.age + 3]
 
@@ -69,7 +72,7 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
     if (asset) return asset
   }
 
-  throw new Error(`Missing building asset for ${owner.civ} ${type} at age ${owner.age}`)
+  throw new Error(`Missing building asset for ${owner.civ || 'default'} ${type} at age ${owner.age}`)
 }
 
 export function getBuildingAssetOwner(building: BuildingWithAssetOwner): AssetOwner {

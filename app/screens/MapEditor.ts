@@ -8,17 +8,18 @@ import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../co
 import { getPlainCellsAroundPoint, randomItem } from '../lib'
 import { getCameraZoom } from '../lib/settings'
 import { canPlaceBuildingAt } from '../lib/grid/placement'
-import { getAdjacentWalls, isWall, updateWallTexture } from '../lib/buildings/walls'
+import { getAdjacentWalls, isWall, updateWallTexture, type WallBuilding } from '../lib/buildings/walls'
 import { EditorControls } from '../controllers/EditorControls'
 import { WallPlacementController } from '../controllers/WallPlacementController'
 import { MapEditorHud } from '../ui/MapEditorHud'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
-import type { SchedulerLike } from '../types/context'
+import type { GameContextLike, SchedulerLike } from '../types/context'
 import type {
   EditorConfig,
   EditorPlayerConfig,
   MapEditorContextLike,
   MapEditorPlacementSelection,
+  MapEditorReadyContext,
 } from '../types/mapEditor'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -41,8 +42,35 @@ type DestroyableEditorEntity = RuntimeEntity & {
   visibilityTimeout?: ReturnType<typeof setTimeout>
 }
 
+type MutableEditorEntity = RuntimeEntity &
+  Partial<UnitEntity> &
+  Partial<BuildingEntity> &
+  Partial<AnimalEntity> &
+  DestroyableEditorEntity
+
+type EditorUnitListEntity = UnitEntity | (AnimalEntity & UnitEntity)
+
+type RuntimeEditorContext = MapEditorContextLike & GameContextLike
+
+function runtimeEditorContext(context: MapEditorContextLike): RuntimeEditorContext {
+  if (!context.map) throw new Error('Map editor runtime context requires a map')
+  return context as RuntimeEditorContext
+}
+
 function isResourceEntity(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
   return entity?.family === FAMILY_TYPES.resource
+}
+
+function isUnitEntity(entity: RuntimeEntity | null | undefined): entity is UnitEntity {
+  return entity?.family === FAMILY_TYPES.unit
+}
+
+function isBuildingEntity(entity: RuntimeEntity | null | undefined): entity is BuildingEntity {
+  return entity?.family === FAMILY_TYPES.building
+}
+
+function isEditorUnitListEntity(entity: RuntimeEntity | null | undefined): entity is EditorUnitListEntity {
+  return entity?.family === FAMILY_TYPES.unit || entity?.family === FAMILY_TYPES.animal
 }
 
 const DEFAULT_MAP_SIZE = 120
@@ -86,7 +114,7 @@ export default class MapEditor extends Container {
       app,
       gamebox,
       editor: this,
-      editorConfig: this.config as { players: EditorPlayerConfig[] },
+      editorConfig: { players: this.config.players ?? [] },
       editorState: this.editorState,
       hud: null,
       map: null,
@@ -100,21 +128,22 @@ export default class MapEditor extends Container {
       restart() {},
       save() {},
       load() {},
+      quit() {},
       applyZoom: () => this.applyZoom(),
       scheduler: {
         elapsedMs: 0,
         add() {
-          return null
+          return 0
         },
         update() {},
         addOneShot() {
-          return null
+          return 0
         },
         remove() {},
         clear() {},
         destroy() {},
       } as SchedulerLike,
-    } as unknown as MapEditorContextLike
+    }
 
     this.start().catch(error => {
       console.error('Unable to start map editor', error)
@@ -125,6 +154,14 @@ export default class MapEditor extends Container {
     return this.context.map as MapInstance
   }
 
+  get _readyContext(): MapEditorReadyContext {
+    const { context } = this
+    if (!context.map || !context.hud || !context.menu || !context.controls || !context.player) {
+      throw new Error('Map editor context is not ready')
+    }
+    return context as MapEditorReadyContext
+  }
+
   async start(): Promise<void> {
     this.context.map = new Map(this.context) as RuntimeMap
     const map = this._map
@@ -133,11 +170,11 @@ export default class MapEditor extends Container {
     map.revealEverything = true
     map.revealTerrain = true
     map.showResources = true
-    map.gaia = new Gaia(this.context)
+    map.gaia = new Gaia(runtimeEditorContext(this.context))
     await this._createInitialMap()
 
     const hud = new MapEditorHud({
-      context: this.context as ConstructorParameters<typeof MapEditorHud>[0]['context'],
+      context: runtimeEditorContext(this.context),
       state: this.editorState,
       onQuit: () => this.quit(),
       onChange: () => this.context.hud?.sync(),
@@ -145,10 +182,10 @@ export default class MapEditor extends Container {
     this.context.hud = hud
     this.context.menu = hud
 
-    const controls = new EditorControls({ ...this.context, hud })
-    this.context.controls = controls as unknown as typeof this.context.controls
+    const controls = new EditorControls({ ...runtimeEditorContext(this.context), hud })
+    this.context.controls = controls
     this.wallPlacementController = new WallPlacementController({
-      context: this.context,
+      context: runtimeEditorContext(this.context),
       parent: map,
       getPreviewPosition: (cell: RuntimeCell) => ({ x: cell.x, y: cell.y }),
       canUseCell: (cell: RuntimeCell, owner: PlayerLike, allowExistingWall: boolean = false) =>
@@ -223,7 +260,7 @@ export default class MapEditor extends Container {
         const cell = new Cell({ i, j, z: 0, type: 'Grass' }, this.context as ConstructorParameters<typeof Cell>[1])
         cell.visible = true
         map.addChild(cell)
-        map.grid[i][j] = cell as unknown as RuntimeCell
+        map.grid[i][j] = cell
       }
     }
 
@@ -236,6 +273,7 @@ export default class MapEditor extends Container {
 
   _initializeEditorPlayers(): void {
     const map = this._map
+    const runtimeContext = runtimeEditorContext(this.context)
     const configuredPlayers: EditorPlayerConfig[] = this.config.players?.length
       ? this.config.players
       : [{ name: 'Player 1', color: 'blue', civ: 'Greek', team: null, isHuman: true }]
@@ -255,14 +293,14 @@ export default class MapEditor extends Container {
       }
       const player =
         index === 0 || config.isHuman
-          ? new Human({ ...baseOptions, isPlayed: index === 0 }, this.context)
-          : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, this.context)
+          ? new Human({ ...baseOptions, isPlayed: index === 0 }, runtimeContext)
+          : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, runtimeContext)
       players.push(player)
     })
 
     this.context.player = players.find(player => player.isPlayed) || players[0]
     this.context.players = players
-    const gaia = new Gaia(this.context)
+    const gaia = new Gaia(runtimeContext)
     map.gaia = gaia
     gaia.name = 'Gaia'
   }
@@ -509,9 +547,10 @@ export default class MapEditor extends Container {
       ) & {
         isHuman?: boolean
         difficulty?: string
+        isPlayed?: boolean
       })[]
     ).map(player => {
-      const isHuman = Boolean(player.isHuman ?? (player as PlayerLike).isPlayed)
+      const isHuman = Boolean(player.isHuman ?? player.isPlayed)
       return {
         name: player.name,
         color: player.color,
@@ -523,21 +562,22 @@ export default class MapEditor extends Container {
       }
     })
 
+    const map = this._map
     const payload = {
       format: 'rts-map',
       version: 1,
       name: this.config.name || 'map',
-      size: this.context.map.size,
+      size: map.size,
       mapType: this.config.mapType || 'blank',
-      seed: this.context.map.seed,
+      seed: map.seed,
       players: exportedPlayers,
-      cells: this.context.map.grid.map((line: RuntimeCell[]) =>
+      cells: map.grid.map((line: RuntimeCell[]) =>
         line.map(cell => ({
           type: cell.type,
           z: cell.z,
         }))
       ),
-      resources: [...this.context.map.resources].map((resource: RuntimeEntity) => ({
+      resources: [...map.resources].map((resource: RuntimeEntity) => ({
         type: resource.type,
         i: resource.i,
         j: resource.j,
@@ -559,7 +599,7 @@ export default class MapEditor extends Container {
 
   updatePlayersConfig(players: EditorPlayerConfig[]): void {
     const previousPlayers = [...(this.context.players ?? [])]
-    const previousGaia = this.context.map.gaia
+    const previousGaia = this._map.gaia
     this.config.players = players.map(player => ({ ...player }))
     this.context.editorConfig.players = this.config.players
     this.context.player?.unselectAll?.()
@@ -584,19 +624,21 @@ export default class MapEditor extends Container {
       }
     }
 
-    if (previousGaia && this.context.map.gaia && previousGaia !== this.context.map.gaia) {
-      this._transferOwnedInstances(previousGaia, this.context.map.gaia)
+    const map = this._map
+    if (previousGaia && map.gaia && previousGaia !== map.gaia) {
+      this._transferOwnedInstances(previousGaia, map.gaia)
     }
   }
 
   _collectOwnedInstances(owner: PlayerLike | null | undefined): RuntimeEntity[] {
     const instances = new Set<RuntimeEntity>([
       ...(owner?.units || []),
+      ...(owner?.animals || []),
       ...(owner?.buildings || []),
       ...(owner?.corpses || []),
     ])
 
-    for (const row of this.context.map.grid) {
+    for (const row of this._map.grid) {
       if (!row) continue
       for (const cell of row) {
         if (!cell?.corpses?.size) continue
@@ -619,14 +661,14 @@ export default class MapEditor extends Container {
     nextOwner.population = 0
 
     for (const instance of instances) {
-      const entity = instance as UnitEntity & BuildingEntity & AnimalEntity
+      const entity = instance as MutableEditorEntity
       if (!entity || entity.isDestroyed) continue
       entity.owner = nextOwner
-      if (entity.family === FAMILY_TYPES.building && !entity.isDead) {
+      if (isBuildingEntity(entity) && !entity.isDead) {
         nextOwner.buildings.push(entity)
       } else if (entity.isDead || entity.currentSheet === 'corpseSheet') {
-        nextOwner.corpses.push(entity)
-      } else {
+        if (isEditorUnitListEntity(entity)) nextOwner.corpses.push(entity)
+      } else if (isEditorUnitListEntity(entity)) {
         nextOwner.units.push(entity)
         nextOwner.population++
       }
@@ -642,13 +684,13 @@ export default class MapEditor extends Container {
 
   _hardRemoveInstance(instance: RuntimeEntity | null | undefined): void {
     if (!instance || instance.isDestroyed) return
-    const entity = instance as UnitEntity & BuildingEntity & AnimalEntity
+    const entity = instance as MutableEditorEntity
 
     const map = this._map
     entity.stopInterval?.()
     entity.stopAttackInterval?.()
     entity.stopTimeout?.()
-    clearTimeout((entity as DestroyableEditorEntity).visibilityTimeout)
+    clearTimeout(entity.visibilityTimeout)
     entity.unselect?.()
     entity.path = []
     entity.dest = null
@@ -659,7 +701,7 @@ export default class MapEditor extends Container {
     entity.isDestroyed = true
     map.removeFromInstanceBucket(entity)
 
-    if (entity.family === FAMILY_TYPES.building) {
+    if (isBuildingEntity(entity)) {
       const dist = entity.size === 3 ? 1 : 0
       getPlainCellsAroundPoint(entity.i, entity.j, map.grid, dist, (cell: RuntimeCell) => {
         if (cell.has === entity) {
@@ -670,7 +712,7 @@ export default class MapEditor extends Container {
         return true
       })
     } else {
-      const cell = map.grid[entity.i]?.[entity.j]
+      const cell = map.grid[instance.i]?.[instance.j]
       if (cell?.has === entity) {
         cell.has = null
         cell.solid = false
@@ -678,19 +720,19 @@ export default class MapEditor extends Container {
       cell?.corpses?.delete(entity)
     }
 
-    if (entity.family === FAMILY_TYPES.animal || entity.family === FAMILY_TYPES.unit) {
+    if (entity.family === FAMILY_TYPES.animal || isUnitEntity(entity)) {
       const ownerList =
         entity.isDead || entity.currentSheet === 'corpseSheet' ? entity.owner?.corpses : entity.owner?.units
-      const index = ownerList?.indexOf(entity as UnitEntity) ?? -1
+      const index = isEditorUnitListEntity(entity) ? ownerList?.indexOf(entity) ?? -1 : -1
       if (index >= 0) ownerList?.splice(index, 1)
     }
 
-    if (entity.family === FAMILY_TYPES.building) {
+    if (isBuildingEntity(entity)) {
       const index = entity.owner?.buildings?.indexOf(entity) ?? -1
       if (index >= 0) entity.owner?.buildings.splice(index, 1)
     }
 
-    ;(entity as DestroyableEditorEntity).parent?.removeChild?.(entity)
+    entity.parent?.removeChild?.(entity)
     entity.destroy?.({
       children: true,
       texture: entity.family !== FAMILY_TYPES.building,
@@ -700,9 +742,8 @@ export default class MapEditor extends Container {
   removeEntity(instance: RuntimeEntity): boolean {
     if (!instance || instance.isDestroyed) return false
     const removedWall = this._isWall(instance)
-    const building = instance as BuildingEntity
     const adjacentWalls =
-      removedWall && building.owner ? this._getAdjacentWalls(building.i, building.j, building.owner) : []
+      removedWall && instance.owner ? this._getAdjacentWalls(instance.i, instance.j, instance.owner) : []
     this.context.player?.unselectAll?.()
     this._hardRemoveInstance(instance)
     adjacentWalls.forEach(wall => this._updateWallTexture(wall))
@@ -712,7 +753,7 @@ export default class MapEditor extends Container {
   }
 
   getPlacementOwners(): PlayerLike[] {
-    return [...(this.context.players ?? []), this.context.map.gaia].filter((owner): owner is PlayerLike =>
+    return [...(this.context.players ?? []), this._map.gaia].filter((owner): owner is PlayerLike =>
       Boolean(owner)
     )
   }
@@ -739,7 +780,10 @@ export default class MapEditor extends Container {
     return selection?.kind === 'building' && selection.type === BUILDING_TYPES.smallWall
   }
 
-  _isWall(instance: RuntimeEntity | null | undefined, owner: PlayerLike | null = null): boolean {
+  _isWall(
+    instance: RuntimeEntity | null | undefined,
+    owner: PlayerLike | null = null
+  ): instance is BuildingEntity & WallBuilding {
     return instance?.family === FAMILY_TYPES.building && isWall(instance, owner)
   }
 
@@ -768,11 +812,11 @@ export default class MapEditor extends Container {
 
   _commitWallPath(path: RuntimeCell[], owner: PlayerLike): boolean {
     if (!path.length) return false
-    const affected = new Set<BuildingEntity>()
+    const affected = new Set<WallBuilding>()
 
     path.forEach(cell => {
       if (this._isWall(cell.has, owner)) {
-        affected.add(cell.has as BuildingEntity)
+        affected.add(cell.has)
         return
       }
       if (!this._canWallUseCell(cell, owner)) return
@@ -781,12 +825,12 @@ export default class MapEditor extends Container {
         j: cell.j,
         type: BUILDING_TYPES.smallWall,
         isBuilt: true,
-      }) as BuildingEntity
-      affected.add(wall)
+      })
+      if (this._isWall(wall, owner)) affected.add(wall)
     })
 
     for (const wall of affected) {
-      if (wall.owner) this._getAdjacentWalls(wall.i, wall.j, wall.owner).forEach(neighbour => affected.add(neighbour))
+      this._getAdjacentWalls(wall.i, wall.j, owner).forEach(neighbour => affected.add(neighbour))
     }
     affected.forEach(wall => this._updateWallTexture(wall))
     this.context.hud?.updateResourcesMiniMap()
@@ -794,17 +838,12 @@ export default class MapEditor extends Container {
     return affected.size > 0
   }
 
-  _getAdjacentWalls(i: number, j: number, owner: PlayerLike): BuildingEntity[] {
-    return getAdjacentWalls(
-      this.context.map.grid as Parameters<typeof getAdjacentWalls>[0],
-      i,
-      j,
-      owner as Parameters<typeof getAdjacentWalls>[3]
-    ) as BuildingEntity[]
+  _getAdjacentWalls(i: number, j: number, owner: PlayerLike): WallBuilding[] {
+    return getAdjacentWalls(this._map.grid, i, j, owner)
   }
 
-  _updateWallTexture(wall: BuildingEntity): void {
-    updateWallTexture(wall as Parameters<typeof updateWallTexture>[0])
+  _updateWallTexture(wall: WallBuilding): void {
+    updateWallTexture(wall)
   }
 
   cancelWallDraft(): boolean {
@@ -837,16 +876,16 @@ export default class MapEditor extends Container {
 
     switch (instance.family) {
       case FAMILY_TYPES.unit:
-        if (instance.owner?.isPlayed) {
-          player.selectedUnit = instance as UnitEntity
-          player.selectedUnits = [instance as UnitEntity]
+        if (isUnitEntity(instance) && instance.owner?.isPlayed) {
+          player.selectedUnit = instance
+          player.selectedUnits = [instance]
         } else {
           player.selectedOther = instance
         }
         break
       case FAMILY_TYPES.building:
-        if (instance.owner?.isPlayed) {
-          player.selectedBuilding = instance as BuildingEntity
+        if (isBuildingEntity(instance) && instance.owner?.isPlayed) {
+          player.selectedBuilding = instance
         } else {
           player.selectedOther = instance
         }
@@ -898,12 +937,7 @@ export default class MapEditor extends Container {
     const config = owner.config?.buildings?.[type]
     if (
       !config ||
-      !canPlaceBuildingAt(
-        this.context.map.grid as Parameters<typeof canPlaceBuildingAt>[0],
-        cell.i,
-        cell.j,
-        config as Parameters<typeof canPlaceBuildingAt>[3]
-      )
+      !canPlaceBuildingAt(this._map.grid, cell.i, cell.j, { ...config, type })
     ) {
       return false
     }
@@ -924,8 +958,9 @@ export default class MapEditor extends Container {
 
   _spawnAnimalAt(cell: RuntimeCell, type: string, onSpawn: (() => void) | null = null): boolean {
     if (!this._canSpawnMobileAt(cell, false)) return false
-    if (this.context.map.gaia instanceof Gaia) {
-      this.context.map.gaia.createAnimal({ i: cell.i, j: cell.j, type })
+    const { gaia } = this._map
+    if (gaia instanceof Gaia) {
+      gaia.createAnimal({ i: cell.i, j: cell.j, type })
     }
     onSpawn?.()
     this.context.hud?.updateResourcesMiniMap()
@@ -946,7 +981,7 @@ export default class MapEditor extends Container {
     for (let di = -radius; di <= radius; di++) {
       for (let dj = -radius; dj <= radius; dj++) {
         if (di * di + dj * dj > radius * radius) continue
-        const cell = this.context.map.grid[centerCell.i + di]?.[centerCell.j + dj]
+        const cell = this._map.grid[centerCell.i + di]?.[centerCell.j + dj]
         if (cell) cells.push(cell)
       }
     }
@@ -1088,14 +1123,15 @@ export default class MapEditor extends Container {
   placeForest(cell: RuntimeCell): boolean {
     if (!cell || cell.type === 'Water' || cell.waterBorder || cell.has) return false
 
-    const resource = new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, this.context)
+    const map = this._map
+    const resource = new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, runtimeEditorContext(this.context))
     resource.eventMode = 'none'
     if (resource.sprite) {
       resource.sprite.eventMode = 'none'
     }
     resource.visible = true
-    this.context.map.addChild(resource)
-    this.context.map.resources.add(resource)
+    map.addChild(resource)
+    map.resources.add(resource)
     resource.syncWithCell()
     return true
   }
@@ -1103,8 +1139,9 @@ export default class MapEditor extends Container {
   eraseEntity(cell: RuntimeCell): boolean {
     if (!cell?.has) return false
     const resource = cell.has
-    this.context.map.resources.delete(resource)
-    this.context.map.removeFromInstanceBucket(resource)
+    const map = this._map
+    map.resources.delete(resource)
+    map.removeFromInstanceBucket(resource)
     resource.clear?.()
     return true
   }
@@ -1121,7 +1158,7 @@ export default class MapEditor extends Container {
   refreshTerrainSets(changedCells: RuntimeCell[] | null = null): void {
     const targetCells: RuntimeCell[] = changedCells?.length
       ? [...new Set(changedCells.filter(Boolean))]
-      : this.context.map.grid.flat().filter(Boolean)
+      : this._map.grid.flat().filter(Boolean)
 
     for (const cell of targetCells) {
       this._clearTerrainSetDecorations(cell)
@@ -1163,19 +1200,20 @@ export default class MapEditor extends Container {
     for (let di = -1; di <= 1; di++) {
       for (let dj = -1; dj <= 1; dj++) {
         if (Math.abs(di) + Math.abs(dj) > 1) continue
-        if (this.context.map.grid[cell.i + di]?.[cell.j + dj]?.solid) return false
+        if (this._map.grid[cell.i + di]?.[cell.j + dj]?.solid) return false
       }
     }
 
     for (let di = -2; di <= 2; di++) {
       const maxDj = 2 - Math.abs(di)
       for (let dj = -maxDj; dj <= maxDj; dj++) {
-        const neighbor = this.context.map.grid[cell.i + di]?.[cell.j + dj]
+        const neighbor = this._map.grid[cell.i + di]?.[cell.j + dj]
         if (neighbor?.category === 'Water' || neighbor?.waterBorder) return false
       }
     }
 
-    return cell.i > 1 && cell.j > 1 && cell.i < this.context.map.size && cell.j < this.context.map.size
+    const { size } = this._map
+    return cell.i > 1 && cell.j > 1 && cell.i < size && cell.j < size
   }
 
   _addFloorDecoration(cell: RuntimeCell): void {
@@ -1210,7 +1248,7 @@ export default class MapEditor extends Container {
   }
 
   syncResourceSprites(): void {
-    for (const resource of this.context.map.resources) {
+    for (const resource of this._map.resources) {
       resource.syncWithCell?.()
     }
   }

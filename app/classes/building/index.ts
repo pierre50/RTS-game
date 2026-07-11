@@ -26,6 +26,7 @@ import {
   playSelectionSound,
   bindAnimatedSpriteToTicker,
   getRallyPointFrames,
+  RALLY_POINT_SHEET_ID,
 } from '../../lib'
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
@@ -34,7 +35,7 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
-import type { GameContextLike } from '../../types/context'
+import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
   BuildingEntity,
   CommandSound,
@@ -70,8 +71,8 @@ export class Building extends Instance implements BuildingEntity {
   isUsedBy: RuntimeEntity | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
-  intervalId: unknown
-  attackIntervalId: unknown
+  intervalId: SchedulerTaskId | null
+  attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
   populationCapacityApplied!: boolean
   isBuilt?: boolean
@@ -82,7 +83,7 @@ export class Building extends Instance implements BuildingEntity {
   interface!: EntityInterfaceLike
   assetType?: string
   accept?: string[]
-  visibilityTimeout?: unknown
+  visibilityTimeout?: ReturnType<typeof setTimeout>
   sounds?: BuildingSounds
   projectile?: string
   rateOfFire!: number
@@ -96,7 +97,7 @@ export class Building extends Instance implements BuildingEntity {
     const { map, controls } = context
 
     this.family = FAMILY_TYPES.building
-    this.buildingInterface = new BuildingInterface(this as BuildingEntity)
+    this.buildingInterface = new BuildingInterface(this)
     this.buildingLifecycle = new BuildingLifecycle(this)
     this.buildingProduction = new BuildingProduction(this)
     this.buildingCombat = new BuildingCombat(this)
@@ -109,8 +110,8 @@ export class Building extends Instance implements BuildingEntity {
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
-    if (isTower(this as Parameters<typeof isTower>[0])) {
-      const effectiveType = getTowerType(this.owner as Parameters<typeof getTowerType>[0])
+    if (isTower(this)) {
+      const effectiveType = getTowerType(this.owner)
       if (effectiveType !== this.type) Object.assign(this, this.owner.config.buildings[effectiveType])
     }
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
@@ -131,7 +132,7 @@ export class Building extends Instance implements BuildingEntity {
     this.x = map.grid[this.i][this.j].x
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
-    this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this)
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.dock) {
@@ -153,12 +154,12 @@ export class Building extends Instance implements BuildingEntity {
       info: (element: HTMLElement) => {
         const displayType =
           this.assetType ||
-          (isTower(this as Parameters<typeof isTower>[0])
-            ? getTowerType(this.owner as Parameters<typeof getTowerType>[0])
+          (isTower(this)
+            ? getTowerType(this.owner)
             : this.type)
         const assets = getBuildingAsset(
           displayType,
-          getBuildingAssetOwner(this as Parameters<typeof getBuildingAssetOwner>[0]),
+          getBuildingAssetOwner(this),
           Assets
         )
         this.buildingInterface.renderInfo(element, assets as BuildingConfig)
@@ -189,7 +190,8 @@ export class Building extends Instance implements BuildingEntity {
       if (this.context.player.views.hasViewer(cell.i, cell.j, this) && !map.revealEverything) {
         cell.removeFog()
       }
-    }) as Parameters<typeof getPlainCellsAroundPoint>[4])
+      return true
+    }))
 
     if (this.sprite) {
       this.sprite.eventMode = 'static'
@@ -202,7 +204,7 @@ export class Building extends Instance implements BuildingEntity {
         if (editor?.handleEntityInteraction(this)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
-          drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+          drawInstanceBlinkingSelection(this)
           controls.rallyPointController.cancel({ clear: true })
           return
         }
@@ -222,7 +224,7 @@ export class Building extends Instance implements BuildingEntity {
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               if (unit.type === UNIT_TYPES.villager) {
-                if (getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)) {
+                if (getActionCondition(unit, this, ACTION_TYPES.build)) {
                   hasSentVillager = true
                   unit.sendToBuilding(this)
                 }
@@ -232,7 +234,7 @@ export class Building extends Instance implements BuildingEntity {
               }
             }
             if (hasSentVillager) {
-              drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+              drawInstanceBlinkingSelection(this)
             }
             if (hasSentOther) {
               playSoundCue(SOUND_CUES.unit.militaryCommand)
@@ -252,20 +254,20 @@ export class Building extends Instance implements BuildingEntity {
                     (this.accept && this.accept.includes(unit.loadingType ?? ''))
               if (
                 unit.type === UNIT_TYPES.villager &&
-                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.build)
+                getActionCondition(unit, this, ACTION_TYPES.build)
               ) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
               } else if (
                 unit.type === UNIT_TYPES.villager &&
-                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.farm)
+                getActionCondition(unit, this, ACTION_TYPES.farm)
               ) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
               } else if (
                 accept &&
-                getActionCondition(unit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.delivery, {
+                getActionCondition(unit, this, ACTION_TYPES.delivery, {
                   buildingTypes: [this.type],
                 })
               ) {
@@ -275,7 +277,7 @@ export class Building extends Instance implements BuildingEntity {
               }
             }
             if (hasSentVillager) {
-              drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+              drawInstanceBlinkingSelection(this)
               const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
               playSoundCue(voice)
               return
@@ -294,13 +296,13 @@ export class Building extends Instance implements BuildingEntity {
             const playerUnit = player.selectedUnits[i]
             if (
               playerUnit.work === WORK_TYPES.healer &&
-              getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.convert)
+              getActionCondition(playerUnit, this, ACTION_TYPES.convert)
             ) {
               hasSentConverter = true
-              playerUnit.sendToConvert(this as RuntimeEntity)
+              playerUnit.sendToConvert(this)
               continue
             }
-            if (!getActionCondition(playerUnit, this as Parameters<typeof getActionCondition>[1], ACTION_TYPES.attack))
+            if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack))
               continue
             hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
@@ -310,7 +312,7 @@ export class Building extends Instance implements BuildingEntity {
             }
           }
           if (hasSentConverter || hasSentAttacker) {
-            drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+            drawInstanceBlinkingSelection(this)
           } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
             player.unselectAll()
             this.select()
@@ -348,8 +350,6 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingCombat.attackAction(target)
   }
 
-  override startInterval(callback: () => void, time: number, name?: string): void
-  override startInterval(callback: (...args: unknown[]) => void, time: number, immediate?: boolean, name?: string): void
   override startInterval(
     callback: () => void,
     time: number,
@@ -420,7 +420,7 @@ export class Building extends Instance implements BuildingEntity {
     if (!cell) return false
     this.clearRallyPoint()
     this.rallyPoint = { i: cell.i, j: cell.j, direction }
-    const sheet = Assets.cache.get('459')
+    const sheet = Assets.cache.get(RALLY_POINT_SHEET_ID)
     const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction) as Texture[])
     bindAnimatedSpriteToTicker(flag, this.context.app)
     flag.animationSpeed = sheet.data.animationSpeed ?? 0.2

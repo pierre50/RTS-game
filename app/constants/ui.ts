@@ -31,3 +31,5 @@ export const LABEL_TYPES = {
 export const COLOR_WHITE = 0xffffff
 export const COLOR_RED = 0xff0000
 export const COLOR_GREEN = 0x00ff00
+
+export const COMMAND_POINTER_SHEET_ID = '50405'

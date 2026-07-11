@@ -6,7 +6,7 @@ import type { FogSpriteMemory } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import { CellFog } from './CellFog'
 
-type RuntimeCellContext = {
+export type RuntimeCellContext = {
   map: {
     fogMemoryLayer?: { addChild<T extends ContainerChild>(child: T): T }
     revealEverything?: boolean
@@ -21,9 +21,9 @@ type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
 }
 
-type RuntimeCellSource = {
+export type RuntimeCellSource = {
   context: RuntimeCellContext
-  map: RuntimeCellContext['map']
+  map?: RuntimeCellContext['map']
   i: number
   j: number
   x: number
@@ -32,7 +32,7 @@ type RuntimeCellSource = {
   zIndex: number
   type: string
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
   terrainTextureName?: string
   solid?: boolean
@@ -62,7 +62,7 @@ export class RuntimeCell {
   zIndex: number
   type: string
   category?: string
-  color?: unknown
+  color?: string | number
   assets: string[]
   terrainTextureName: string
   solid: boolean
@@ -78,13 +78,13 @@ export class RuntimeCell {
   _hasFog: boolean
   _terrainAppearance: TerrainAppearance
   terrainSet: ContainerChild | null
-  _fogChunks: unknown
+  _fogChunks: Array<object> | null
   cellFog: CellFog | null
 
   constructor(source: RuntimeCellSource) {
     this.context = source.context
     this.family = FAMILY_TYPES.cell
-    this.map = source.map
+    this.map = source.map ?? source.context.map
     this.i = source.i
     this.j = source.j
     this.x = source.x

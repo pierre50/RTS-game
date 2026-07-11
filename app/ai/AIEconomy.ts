@@ -1,5 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getCellsAroundPoint, getClosestInstance, getInstancePath, instancesDistance } from '../lib'
+import { getCellsAroundPoint, getClosestInstance, getGaiaAnimals, getInstancePath, instancesDistance } from '../lib'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
@@ -477,7 +477,7 @@ export class AIEconomy {
 
   discoverDeadAnimals(map: RuntimeMap): void {
     const { ai } = this
-    for (const animal of map.gaia?.units || []) {
+    for (const animal of getGaiaAnimals(map.gaia)) {
       if (animal.isDead && !animal.isDestroyed && (animal.quantity || 0) > 0) {
         if (ai.views?.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal)
       }

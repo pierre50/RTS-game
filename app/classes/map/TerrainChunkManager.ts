@@ -21,7 +21,7 @@ type TerrainAppearance = {
   desertBorders?: string[]
   deepWaterBorders?: string[]
 }
-type TerrainSourceCell = RuntimeCell & {
+export type TerrainSourceCell = RuntimeCell & {
   _terrainAppearance: TerrainAppearance
   getTerrainDecorations(): TerrainDecoration[]
   terrainSet?: TerrainDecoration | null
@@ -38,12 +38,16 @@ type TerrainChunk = {
   visualCells: Map<string, Cell> | null
   lastUsed: number
 }
-type ChunkedTerrainMap = {
-  context: unknown
+export type ChunkedTerrainMap = {
+  context: object
   size: number
-  grid: TerrainSourceCell[][]
+  grid: RuntimeCell[][]
   visibleRenderChunkCount?: number
   addChild(child: Container): Container
+}
+
+function terrainSource(cell: RuntimeCell): Partial<TerrainSourceCell> {
+  return cell as Partial<TerrainSourceCell>
 }
 
 export class TerrainChunkManager {
@@ -145,7 +149,7 @@ export class TerrainChunkManager {
     if (wasRenderable) this._mountChunk(chunk)
   }
 
-  refreshCell(cell: TerrainSourceCell): void {
+  refreshCell(cell: RuntimeCell): void {
     const key = `${Math.floor(cell.i / TERRAIN_CHUNK_SIZE)}:${Math.floor(cell.j / TERRAIN_CHUNK_SIZE)}`
     const chunk = this.chunks.get(key)
     if (!chunk?.mounted) return
@@ -180,20 +184,21 @@ export class TerrainChunkManager {
     }
   }
 
-  _createTerrainCell(source: TerrainSourceCell): Cell {
+  _createTerrainCell(source: RuntimeCell): Cell {
     const cell = new Cell(
       {
         i: source.i,
         j: source.j,
         z: source.z,
         type: source.type,
-        textureName: source.terrainTextureName,
+        textureName: terrainSource(source).terrainTextureName,
       },
       this.map.context as ConstructorParameters<typeof Cell>[1]
     )
     cell.visible = true
 
-    const appearance = source._terrainAppearance
+    const sourceTerrain = terrainSource(source)
+    const appearance = sourceTerrain._terrainAppearance ?? {}
     if (appearance.waterBorder) {
       cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
     }
@@ -202,7 +207,7 @@ export class TerrainChunkManager {
     }
     for (const direction of appearance.desertBorders ?? []) cell.setDesertBorder(direction)
     for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
-    for (const decoration of source.getTerrainDecorations()) {
+    for (const decoration of sourceTerrain.getTerrainDecorations?.() ?? []) {
       const sprite = new Sprite(decoration.texture)
       sprite.label = decoration.label
       sprite.position.copyFrom(decoration.position)
@@ -213,14 +218,14 @@ export class TerrainChunkManager {
       cell.addChild(sprite)
     }
 
-    if (source.terrainSet?.texture) {
-      const set = new Sprite(source.terrainSet.texture)
+    if (sourceTerrain.terrainSet?.texture) {
+      const set = new Sprite(sourceTerrain.terrainSet.texture)
       set.label = LABEL_TYPES.set
-      set.position.copyFrom(source.terrainSet.position)
-      set.anchor.copyFrom(source.terrainSet.anchor)
+      set.position.copyFrom(sourceTerrain.terrainSet.position)
+      set.anchor.copyFrom(sourceTerrain.terrainSet.anchor)
       set.roundPixels = true
       set.eventMode = 'none'
-      set.zIndex = source.terrainSet.zIndex
+      set.zIndex = sourceTerrain.terrainSet.zIndex
       cell.addChild(set)
     }
     return cell

@@ -7,7 +7,7 @@ import type { RecolorableSprite } from '../graphics/colors'
 
 type TowerBuildingConfig = BuildingConfig & Partial<TowerBuilding>
 
-type TowerOwner = {
+export type TowerOwner = {
   age: number
   civ?: string
   color?: string
@@ -17,8 +17,8 @@ type TowerOwner = {
   technologies?: string[]
 }
 
-type TowerBuilding = {
-  getChildByLabel?: (label: string) => { destroy?: () => void } | null | unknown
+export type TowerBuilding = {
+  getChildByLabel?: (label: string) => { destroy?: () => void } | null
   hitPoints: number
   isBuilt?: boolean
   isDestroyed?: boolean
@@ -32,7 +32,7 @@ type TowerBuilding = {
     anchor: { set: (x: number, y: number) => void }
     filters: readonly Filter[] | null
     texture: Texture
-    [key: string]: unknown
+    [key: string]: Texture | readonly Filter[] | { set: (x: number, y: number) => void } | null | undefined
   }
   totalHitPoints: number
   type?: string
@@ -81,7 +81,7 @@ function refreshTower(tower?: TowerBuilding | null): void {
   changeSpriteColorDirectly(tower.sprite as RecolorableSprite, tower.owner.color ?? 'blue')
 }
 
-export function refreshOwnerTowers(owner?: (TowerOwner & { buildings?: unknown[] }) | null): void {
+export function refreshOwnerTowers(owner?: (TowerOwner & { buildings?: Array<TowerBuilding | { type?: string }> }) | null): void {
   owner?.buildings
     ?.filter((building): building is TowerBuilding => isTowerCandidate(building) && isTower(building))
     .forEach(refreshTower)

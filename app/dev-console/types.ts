@@ -1,9 +1,9 @@
-import type { Container } from 'pixi.js'
+import type { Container, ContainerChild } from 'pixi.js'
 import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { TechnologyConfig } from '../types/config'
+import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
 
 export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
@@ -18,7 +18,7 @@ export type DevMapLike = {
   showResources?: boolean
   fogLayer?: { visible: boolean } | null
   fogMemoryLayer?: { visible: boolean } | null
-  mapFog?: { viewportRenderer: { invalidate(): void; update(viewport?: unknown): void } }
+  mapFog?: { viewportRenderer: { invalidate(): void; update(viewport?: DevViewportRect): void } }
   terrainChunkManager?: { invalidateAll(): void }
   debugSolidVisible?: boolean
   debugPathVisible?: boolean
@@ -35,13 +35,18 @@ export type DevMapLike = {
   _debugGridTicker?: DebugTickerCallback | null
   _debugCoordsTicker?: DebugTickerCallback | null
   _fogQueue?: Map<RuntimeCell, string>
-  _pendingFogChunkUpdates?: Map<unknown, unknown>
-  viewportRenderer?: { invalidate(): void; update(viewport?: unknown): void }
+  _pendingFogChunkUpdates?: Map<RuntimeCell, string>
+  viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }
   addChild<T extends Container>(child: T): T
   removeChild<T extends Container>(child: T): T
   getChildByLabel?(label: string): Container | null
-  registerRenderChunk?(displayObjects: unknown, bounds: unknown): unknown
+  registerRenderChunk?(
+    displayObjects: ContainerChild | ContainerChild[],
+    bounds: { minX: number; minY: number; width: number; height: number }
+  ): object
 }
+
+type DevViewportRect = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
 
 type DevMenuLike = {
   updateTopbar(): void
@@ -128,7 +133,7 @@ export type DevEntity = RuntimeEntity & {
   assetType?: string
   children?: Array<{ destroy?: () => void }>
   currentCell?: RuntimeCell | null
-  dest?: unknown
+  dest?: RuntimeCell | RuntimeEntity | null
   hitPoints?: number
   inactif?: boolean
   name?: string
@@ -139,8 +144,8 @@ export type DevEntity = RuntimeEntity & {
 
 export type DevPlayer = PlayerLike & {
   config: {
-    units: Record<string, unknown>
-    buildings: Record<string, unknown>
+    units: Record<string, UnitConfig>
+    buildings: Record<string, BuildingConfig>
   }
   buildings: BuildingEntity[]
   units: UnitEntity[]

@@ -3,7 +3,7 @@ import type { ContainerChild } from 'pixi.js'
 import { cartesianToIsometric, getDeterministicCellVariant, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory } from '../../types/map'
+import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import { CellFog } from './CellFog'
 
@@ -28,9 +28,9 @@ type GenerationCellOptions = {
 
 type CellDefinition = {
   category?: string
-  color?: unknown
+  color?: string | number
   assets: string[]
-  [key: string]: unknown
+  [key: string]: string | string[] | number | boolean | undefined
 }
 
 type TerrainAppearance = {
@@ -44,7 +44,7 @@ type TerrainDecoration = ContainerChild & {
   label?: string
 }
 
-export class GenerationCell {
+export class GenerationCell implements RuntimeCell {
   context: GenerationCellContext
   map: GenerationCellContext['map']
   family: string
@@ -65,10 +65,10 @@ export class GenerationCell {
   children: TerrainDecoration[]
   terrainSet: ContainerChild | null
   _hasFog: boolean
-  _fogChunks: unknown
+  _fogChunks: Array<object> | null
   _terrainAppearance: TerrainAppearance
   category?: string
-  color?: unknown
+  color?: string | number
   assets: string[]
   terrainTextureName: string
   x: number

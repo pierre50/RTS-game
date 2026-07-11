@@ -1,4 +1,4 @@
-import type { Texture } from 'pixi.js'
+import type { Texture, Ticker } from 'pixi.js'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
 import { getTexture } from '../graphics/textures'
@@ -26,7 +26,9 @@ const WALL_SHEETS = {
   },
 } as const
 
-type WallOwner = {
+export const WALL_CONSTRUCTION_FLAG_SHEET_ID = '598'
+
+export type WallOwner = {
   age?: number
   civ?: keyof (typeof WALL_SHEETS)[2] | keyof (typeof WALL_SHEETS)[3] | string
   color?: string
@@ -34,14 +36,21 @@ type WallOwner = {
   buildings?: Array<{ owner?: WallOwner; type?: string }>
 }
 
-type WallCell = GridCell & {
-  has?: unknown | null
+export type WallCell = GridCell & {
+  has?: { owner?: WallOwner; type?: string } | null
 }
 
-type WallBuilding = {
+type WallTickerApp = {
+  ticker?: {
+    add: (tick: (ticker: Ticker) => void) => void
+    remove: (tick: (ticker: Ticker) => void) => void
+  }
+}
+
+export type WallBuilding = {
   addChild: (child: AnimatedSprite) => void
   context: {
-    app?: unknown
+    app?: WallTickerApp
     map: {
       grid: Grid<WallCell>
     }
@@ -120,10 +129,10 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
   if (existingFill) existingFill.destroy()
 
   if (getWallLevel(wall.owner) === 1 && frame === 2) {
-    const spritesheet = Assets.cache.get('598')
+    const spritesheet = Assets.cache.get(WALL_CONSTRUCTION_FLAG_SHEET_ID)
     const frames = Array.from(
       { length: 6 },
-      (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_598.png`]
+      (_, i) => spritesheet.textures[`${String(i + 12).padStart(3, '0')}_${WALL_CONSTRUCTION_FLAG_SHEET_ID}.png`]
     )
     const flagSprite = new AnimatedSprite(frames)
     flagSprite.label = LABEL_TYPES.deco
@@ -134,10 +143,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     flagSprite.roundPixels = true
     flagSprite.animationSpeed = 0.15
     changeSpriteColor(flagSprite as RecolorableSprite, wall.owner.color ?? 'blue')
-    bindAnimatedSpriteToTicker(
-      flagSprite as Parameters<typeof bindAnimatedSpriteToTicker>[0],
-      wall.context.app as Parameters<typeof bindAnimatedSpriteToTicker>[1]
-    )
+    bindAnimatedSpriteToTicker(flagSprite, wall.context.app)
     flagSprite.play()
     wall.addChild(flagSprite)
   }

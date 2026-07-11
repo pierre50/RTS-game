@@ -42,14 +42,16 @@ import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
+import type { AssetAge, SpritesheetLike } from '../../types/pixi'
+import type { UnitConfig } from '../../types/config'
 import type { SaveDestination, SaveGridPoint, SaveReference } from '../../types/save'
 
 type UnitRestoreReferences = {
-  assetAge?: unknown
+  assetAge?: AssetAge
   dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   realDest?: UnitEntity['realDest'] | SaveDestination | null
@@ -60,7 +62,6 @@ type UnitRestoreReferences = {
 }
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
-type UnitAssetTarget = Unit & Record<string, unknown>
 
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
@@ -78,7 +79,7 @@ function getActionSheet(
   return AssetsRef.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
 }
 
-function getFishingOverlayFrames(spritesheet: { textures: Record<string, unknown> }, unit: UnitEntity) {
+function getFishingOverlayFrames(spritesheet: SpritesheetLike, unit: UnitEntity) {
   const direction = degreeToDirection(unit.degree ?? 0)
   switch (direction) {
     case 'southeast':
@@ -90,6 +91,18 @@ function getFishingOverlayFrames(spritesheet: { textures: Record<string, unknown
     default:
       return { textures: getAnimationFrames(spritesheet.textures, direction), mirrored: false }
   }
+}
+
+function isEntityDestination(dest: RuntimeEntity | RuntimeCell | null | undefined): dest is RuntimeEntity {
+  return Boolean(dest && 'label' in dest)
+}
+
+function isDestroyedDestination(dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
+  return isEntityDestination(dest) && Boolean(dest.isDestroyed)
+}
+
+function isUnitEntity(instance: RuntimeEntity | null | undefined): instance is UnitEntity {
+  return instance?.family === FAMILY_TYPES.unit
 }
 
 export class Unit extends Instance implements UnitEntity {
@@ -159,12 +172,12 @@ export class Unit extends Instance implements UnitEntity {
       context: { map, menu },
     } = this
     this.family = FAMILY_TYPES.unit
-    this.unitInterface = new UnitInterface(this as UnitEntity)
-    this.unitCommands = new UnitCommands(this as UnitEntity)
-    this.unitLifecycle = new UnitLifecycle(this as UnitEntity)
-    this.unitCombat = new UnitCombat(this as UnitEntity)
-    this.unitActions = new UnitActions(this as UnitEntity)
-    this.unitMovement = new UnitMovement(this as UnitEntity)
+    this.unitInterface = new UnitInterface(this)
+    this.unitCommands = new UnitCommands(this)
+    this.unitLifecycle = new UnitLifecycle(this)
+    this.unitCombat = new UnitCombat(this)
+    this.unitActions = new UnitActions(this)
+    this.unitMovement = new UnitMovement(this)
 
     this.dest = null
     this.realDest = null
@@ -192,7 +205,7 @@ export class Unit extends Instance implements UnitEntity {
     this.x = unitConfig.x ?? options.x ?? spawnCell.x
     this.y = unitConfig.y ?? options.y ?? spawnCell.y
     this.z = unitConfig.z ?? options.z ?? spawnCell.z
-    this.zIndex = getInstanceZIndex(this as Parameters<typeof getInstanceZIndex>[0])
+    this.zIndex = getInstanceZIndex(this)
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
@@ -218,14 +231,13 @@ export class Unit extends Instance implements UnitEntity {
         this.work = WORK_TYPES.attacker
     }
 
-    const dynamicUnit = this as UnitAssetTarget
     if (this.assets) {
       for (const [key, value] of Object.entries(this.assets)) {
-        dynamicUnit[key] = Assets.cache.get(value)
+        Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
       }
     } else if (this.allAssets) {
       for (const [key, value] of Object.entries(this.allAssets.default)) {
-        dynamicUnit[key] = Assets.cache.get(value)
+        Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
       }
     }
     if (this.sailSheet) {
@@ -291,7 +303,7 @@ export class Unit extends Instance implements UnitEntity {
     }
 
     this.eventMode = 'static'
-    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this as UnitEntity)
+    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
     this.sprite = new AnimatedSprite(
       getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
     )
@@ -336,15 +348,15 @@ export class Unit extends Instance implements UnitEntity {
         controls.rallyPointController?.active ||
         controls.mouseBuilding ||
         controls.mouseRectangle ||
-        !controls.isMouseInApp?.(evt as Parameters<NonNullable<typeof controls.isMouseInApp>>[0])
+        !controls.isMouseInApp?.(evt)
       ) {
         return
       }
-      if (controls.consumeUnitDoubleClick?.(this as RuntimeEntity)) {
+      if (controls.consumeUnitDoubleClick?.(this)) {
         if (this.owner.isPlayed) {
           const selectedUnits = new Set(player.selectedUnits)
           controls.getCellOnCamera?.((cell: RuntimeCell) => {
-            const has = cell.has as UnitEntity | null
+            const has = isUnitEntity(cell.has) ? cell.has : null
             if (
               player.selectedUnits.length < MAX_SELECT_UNITS &&
               has &&
@@ -366,23 +378,23 @@ export class Unit extends Instance implements UnitEntity {
       const {
         context: { controls, player, menu, editor },
       } = this
-      if (editor?.handleEntityInteraction?.(this as RuntimeEntity)) return
+      if (editor?.handleEntityInteraction?.(this)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
-        controls.rallyPointController.handleMouseUpOnEntity(this as RuntimeEntity)
+        controls.rallyPointController.handleMouseUpOnEntity(this)
         return
       }
       if (
         controls.doubleClicked ||
         controls.mouseBuilding ||
         controls.mouseRectangle ||
-        !controls.isMouseInApp?.(evt as Parameters<NonNullable<typeof controls.isMouseInApp>>[0])
+        !controls.isMouseInApp?.(evt)
       ) {
         return
       }
 
       controls.mouse.prevent = true
-      controls.registerUnitClick?.(this as RuntimeEntity)
+      controls.registerUnitClick?.(this)
 
       if (this.owner.isPlayed) {
         if (isTransportBoat(this) && player.selectedUnits.length) {
@@ -394,7 +406,7 @@ export class Unit extends Instance implements UnitEntity {
             if (sendUnitToTransport(playerUnit, this)) hasSentTransportLoad = true
           }
           if (hasSentTransportLoad || hasTransportLoadCandidate) {
-            drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+            drawInstanceBlinkingSelection(this)
             return
           }
         }
@@ -404,21 +416,21 @@ export class Unit extends Instance implements UnitEntity {
             const playerUnit = player.selectedUnits[i]
             if (
               playerUnit.work === WORK_TYPES.healer &&
-              playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.heal)
+              playerUnit.getActionCondition?.(this, ACTION_TYPES.heal)
             ) {
               hasSentHealer = true
-              playerUnit.sendTo?.(this as RuntimeEntity, ACTION_TYPES.heal)
+              playerUnit.sendTo?.(this, ACTION_TYPES.heal)
             }
           }
         }
         if (hasSentHealer) {
-          drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
-        } else if (player.selectedUnit !== (this as UnitEntity)) {
+          drawInstanceBlinkingSelection(this)
+        } else if (player.selectedUnit !== this) {
           this.owner.unselectAll()
           this.select()
-          menu.setBottombar(this as RuntimeEntity)
-          player.selectedUnit = this as UnitEntity
-          player.selectedUnits = [this as UnitEntity]
+          menu.setBottombar(this)
+          player.selectedUnit = this
+          player.selectedUnits = [this]
         }
       } else {
         let hasSentConverter = false
@@ -428,33 +440,33 @@ export class Unit extends Instance implements UnitEntity {
             const playerUnit = player.selectedUnits[i]
             if (
               playerUnit.work === WORK_TYPES.healer &&
-              playerUnit.getActionCondition?.(this as RuntimeEntity, ACTION_TYPES.convert)
+              playerUnit.getActionCondition?.(this, ACTION_TYPES.convert)
             ) {
               hasSentConverter = true
-              playerUnit.sendToConvert?.(this as RuntimeEntity)
+              playerUnit.sendToConvert?.(this)
               continue
             }
             if (this.getActionCondition(playerUnit, ACTION_TYPES.attack))
               if (playerUnit.type === UNIT_TYPES.villager) {
                 hasSentAttacker = true
-                playerUnit.sendToAttack?.(this as RuntimeEntity)
+                playerUnit.sendToAttack?.(this)
               } else if (playerUnit.work === WORK_TYPES.attacker) {
                 hasSentAttacker = true
-                playerUnit.sendTo?.(this as RuntimeEntity, ACTION_TYPES.attack)
+                playerUnit.sendTo?.(this, ACTION_TYPES.attack)
               }
           }
         }
         if (hasSentConverter || hasSentAttacker) {
-          drawInstanceBlinkingSelection(this as Parameters<typeof drawInstanceBlinkingSelection>[0])
+          drawInstanceBlinkingSelection(this)
         } else if (
-          (player.selectedOther !== (this as RuntimeEntity) && playerCanSeeInstance(this, player)) ||
+          (player.selectedOther !== this && playerCanSeeInstance(this, player)) ||
           map.revealEverything
         ) {
           player.unselectAll()
           this.select()
-          menu.setBottombar(this as RuntimeEntity)
-          player.selectedOther = this as RuntimeEntity
-          playSelectionSound(this as Parameters<typeof playSelectionSound>[0])
+          menu.setBottombar(this)
+          player.selectedOther = this
+          playSelectionSound(this)
         }
       }
     })
@@ -471,7 +483,7 @@ export class Unit extends Instance implements UnitEntity {
 
     const { textures, mirrored } = getSailAnimationFrames(
       this.sailSpritesheet.textures,
-      this as Parameters<typeof getSailAnimationFrames>[1]
+      this
     )
     if (!textures.length) return
 
@@ -482,7 +494,7 @@ export class Unit extends Instance implements UnitEntity {
     this.sailSprite.roundPixels = true
     this.sailSprite.loop = true
     this.sailSprite.updateAnchor = true
-    this.sailSprite.animationSpeed = this.sailSpritesheet.data.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
+    this.sailSprite.animationSpeed = this.sailSpritesheet.data?.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
     this.sailSprite.scale.x = mirrored ? -1 : 1
     this.sailSprite.play()
     this.addChild(this.sailSprite)
@@ -496,7 +508,7 @@ export class Unit extends Instance implements UnitEntity {
 
     const { textures, mirrored } = getSailAnimationFrames(
       this.sailSpritesheet.textures,
-      this as Parameters<typeof getSailAnimationFrames>[1]
+      this
     )
     if (!textures.length) {
       this.sailSprite.visible = false
@@ -506,14 +518,14 @@ export class Unit extends Instance implements UnitEntity {
     this.sailSprite.visible = true
     this.sailSprite.textures = textures as Texture[]
     this.sailSprite.scale.x = mirrored ? -1 : 1
-    this.sailSprite.animationSpeed = this.sailSpritesheet.data.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
+    this.sailSprite.animationSpeed = this.sailSpritesheet.data?.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
     goto && goto < this.sailSprite.textures.length ? this.sailSprite.gotoAndPlay(goto) : this.sailSprite.play()
   }
 
   setupFishingOverlaySprite() {
     if (!this.fishingOverlaySheet?.textures || this.fishingOverlaySprite) return
 
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this as UnitEntity)
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
     if (!textures.length) return
 
     this.fishingOverlaySprite = new AnimatedSprite(textures as Texture[])
@@ -552,7 +564,7 @@ export class Unit extends Instance implements UnitEntity {
     this.setupFishingOverlaySprite()
     if (!this.fishingOverlaySprite || !this.fishingOverlaySheet) return
 
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this as UnitEntity)
+    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
     if (!textures.length) {
       this.removeFishingOverlaySprite()
       return
@@ -592,7 +604,7 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   setDest(dest: RuntimeEntity | RuntimeCell | null) {
-    if (!dest || (dest as RuntimeEntity).isDestroyed) {
+    if (!dest || isDestroyedDestination(dest)) {
       this.stop()
       return
     }
@@ -603,7 +615,7 @@ export class Unit extends Instance implements UnitEntity {
       j: dest.j,
       x: dest.x,
       y: dest.y,
-      label: (dest as RuntimeEntity).label,
+      label: isEntityDestination(dest) ? dest.label : '',
     }
   }
 
@@ -625,7 +637,7 @@ export class Unit extends Instance implements UnitEntity {
     }
 
     const dest = orderOrDest
-    if (!dest || (dest as RuntimeEntity).isDestroyed) return false
+    if (!dest || isDestroyedDestination(dest)) return false
     this.pendingOrder = { dest, action }
     return true
   }
@@ -639,7 +651,7 @@ export class Unit extends Instance implements UnitEntity {
       return true
     }
     const { dest, action } = pendingOrder
-    if (!dest || (dest as RuntimeEntity).isDestroyed) return false
+    if (!dest || isDestroyedDestination(dest)) return false
     this.sendToEvt(dest, action ?? null)
     return true
   }
@@ -710,8 +722,8 @@ export class Unit extends Instance implements UnitEntity {
     if (!instance || this.isDead) {
       return
     }
-    this.owner.reportThreat?.(this as RuntimeEntity, instance)
-    if (shouldFleeWhenAttacked(this as Parameters<typeof shouldFleeWhenAttacked>[0])) {
+    this.owner.reportThreat?.(this, instance)
+    if (shouldFleeWhenAttacked(this)) {
       this.runaway(instance)
       return
     }
@@ -802,7 +814,7 @@ export class Unit extends Instance implements UnitEntity {
     target: RuntimeEntity,
     work: string,
     action: string | null,
-    keepPrevious: boolean | Record<string, unknown>,
+    keepPrevious: boolean | UnitCommandOptions,
     immediate = false,
     preserveBuildQueue = false
   ) {
@@ -872,7 +884,7 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToGold(target, immediate)
   }
 
-  setDefaultInterface(element: HTMLElement, data: unknown) {
-    this.unitInterface.setDefaultInterface(element, data as Parameters<UnitInterface['setDefaultInterface']>[1])
+  setDefaultInterface(element: HTMLElement, data: UnitConfig) {
+    this.unitInterface.setDefaultInterface(element, data)
   }
 }

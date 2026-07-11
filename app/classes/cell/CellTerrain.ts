@@ -1,4 +1,4 @@
-import type { Texture } from 'pixi.js'
+import type { Container, ContainerChild, Texture } from 'pixi.js'
 import { Assets, Sprite } from 'pixi.js'
 import {
   instancesDistance,
@@ -11,13 +11,15 @@ import {
 import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 
+type ZIndexedPoint = { x: number; y: number; z?: number | null }
+
 type Direction = 'west' | 'north' | 'south' | 'east'
 type BorderVariantMap = Record<number, number[]>
 type TerrainDefinition = {
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
-  [key: string]: unknown
+  [key: string]: string | string[] | number | boolean | undefined
 }
 
 type TerrainConfig = {
@@ -28,22 +30,37 @@ type TerrainSprite = Sprite & {
   direction?: Direction
   type?: string
 }
+type TerrainChild = ContainerChild & {
+  direction?: Direction
+  type?: string
+}
 
-type TerrainMapLike = {
+export type TerrainMapLike = {
   seed?: string | number
   size: number
   grid: TerrainCellLike[][]
   randomRange(min: number, max: number): number
 }
 
-type TerrainParentLike = TerrainMapLike & {
+export type TerrainParentLike = {
+  size?: number
+  grid?: TerrainCellLike[][]
+  randomRange?(min: number, max: number): number
   invalidateReliefCoastDistances?: () => void
 }
 
-type TerrainCellLike = {
-  context: { map: TerrainMapLike }
-  parent?: TerrainParentLike | null
-  map?: TerrainMapLike
+type TerrainContextMapLike = {
+  randomRange(min: number, max: number): number
+}
+
+type TerrainVariantMapLike = {
+  seed?: string | number
+}
+
+export type TerrainCellLike = {
+  context: { map: TerrainContextMapLike }
+  parent?: Container | TerrainParentLike | null
+  map?: TerrainVariantMapLike
   i: number
   j: number
   x: number
@@ -51,19 +68,25 @@ type TerrainCellLike = {
   z: number
   type: string
   category?: string
-  color?: unknown
+  color?: string | number
   assets?: string[]
   terrainTextureName?: string
-  children: TerrainSprite[]
-  sprite: TerrainSprite
+  children: TerrainChild[]
+  sprite: TerrainSprite | null
   has: RuntimeEntity | null
   inclined: boolean
   border: boolean
   waterBorder: boolean
-  addChild(child: TerrainSprite): unknown
-  removeChild(child: TerrainSprite): unknown
+  addChild(child: TerrainSprite): TerrainSprite
+  removeChild(child: TerrainChild): TerrainChild
   setCellLevel(level: number, cpt?: number): void
   fillReliefCellsAroundCell(): void
+}
+
+function asTerrainParent(parent: Container | TerrainParentLike | null | undefined): TerrainParentLike | null {
+  if (!parent) return null
+  if ('grid' in parent || 'invalidateReliefCoastDistances' in parent) return parent
+  return null
 }
 
 // Border 20002 exposes dedicated slope variants. Some relief tiles intentionally reuse the same
@@ -154,6 +177,7 @@ export class CellTerrain {
 
   resetTerrainAppearance(): void {
     const { cell } = this
+    if (!cell.sprite) return
     const [x, y] = cartesianToIsometric(cell.i, cell.j)
 
     for (let index = cell.children.length - 1; index >= 0; index--) {
@@ -191,13 +215,14 @@ export class CellTerrain {
     cell.type = type
     Object.assign(cell, definition)
     if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
-      cell.parent?.invalidateReliefCoastDistances?.()
+      asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
     }
     this.resetTerrainAppearance()
   }
 
   setDesertBorder(direction: string): void {
     const { cell } = this
+    if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
     if (alreadySet) return
     const resourceName = '20002'
@@ -229,6 +254,7 @@ export class CellTerrain {
 
   setDeepWaterBorder(direction: string): void {
     const { cell } = this
+    if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'deepWaterBorder' && c.direction === direction)
     if (alreadySet) return
     const resourceName = '20006'
@@ -256,6 +282,7 @@ export class CellTerrain {
   setWaterBorder(resourceName: string, index: number): void {
     const { cell } = this
     const { sprite } = cell
+    if (!sprite) return
     const spritesheet = Assets.cache.get(resourceName)
     const texture = spritesheet.textures[index + '_' + resourceName + '.png']
     cell.border = true
@@ -269,6 +296,7 @@ export class CellTerrain {
   setReliefBorder(index: number, elevation: number = 0): void {
     const { cell } = this
     const { sprite } = cell
+    if (!sprite) return
     const baseTexture = sprite.texture
     const label = sprite.texture.label
     if (!label || !label.includes('_')) {
@@ -306,7 +334,7 @@ export class CellTerrain {
     }
     cell.inclined = true
     if (cell.has) {
-      cell.has.zIndex = getInstanceZIndex(cell.has as Parameters<typeof getInstanceZIndex>[0])
+      cell.has.zIndex = getInstanceZIndex(cell.has as ZIndexedPoint)
     }
     sprite.label = LABEL_TYPES.sprite
     sprite.texture = texture
@@ -315,18 +343,19 @@ export class CellTerrain {
 
   setWater(): void {
     const { cell } = this
+    if (!cell.sprite) return
     const index = formatNumber(cell.context.map.randomRange(0, 3))
     const resourceName = '15002'
     const spritesheet = Assets.cache.get(resourceName)
     cell.sprite.texture = spritesheet.textures[index + '_' + resourceName + '.png']
     cell.type = 'Water'
     cell.category = 'Water'
-    cell.parent?.invalidateReliefCoastDistances?.()
+    asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
   }
 
   fillReliefCellsAroundCell(): void {
     const { cell } = this
-    const grid = cell.parent?.grid
+    const grid = asTerrainParent(cell.parent)?.grid
     if (!grid) return
     getCellsAroundPoint(cell.i, cell.j, grid, 2, (neighbor: TerrainCellLike) => {
       if (neighbor.z === cell.z) {
@@ -360,7 +389,7 @@ export class CellTerrain {
       cell.y += CELL_DEPTH
       return
     }
-    const grid = cell.parent?.grid
+    const grid = asTerrainParent(cell.parent)?.grid
     if (!grid) return
     getCellsAroundPoint(cell.i, cell.j, grid, level - cpt, (neighbor: TerrainCellLike) => {
       if (neighbor.z < cpt && !neighbor.has) {
@@ -374,7 +403,7 @@ export class CellTerrain {
       cell.setCellLevel(level, cpt + 1)
     }
     if (cell.has) {
-      cell.has.zIndex = getInstanceZIndex(cell.has as Parameters<typeof getInstanceZIndex>[0])
+      cell.has.zIndex = getInstanceZIndex(cell.has as ZIndexedPoint)
     }
   }
 }

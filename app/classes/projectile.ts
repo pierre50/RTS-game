@@ -20,10 +20,10 @@ import {
 } from '../lib'
 import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
 import type { Texture } from 'pixi.js'
-import type { GameContextLike } from '../types/context'
+import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { CommandSound, RuntimeEntity } from '../types/entities'
-import type { PlayerLike } from '../types/player'
 import type { Point } from '../types/grid'
+import type { AudibleInstance } from '../lib'
 
 const PROJECTILE_Z_OFFSET = 1000000
 
@@ -122,7 +122,7 @@ function getDirectionalAnimation(projectile: RuntimeProjectile, textures: Textur
 export class Projectile extends Container {
   context: GameContextLike
   family: string
-  interval: unknown
+  interval: SchedulerTaskId | null
   sprite?: ProjectileSprite
 
   owner!: RuntimeEntity
@@ -151,6 +151,7 @@ export class Projectile extends Container {
   directionalFrames?: number
   directionalFrameOrder?: string[]
   directionalAnimationFrames?: number
+  projectileScale?: number
   spawnOffsetX?: number
   spawnOffsetY?: number
   fullCircleStartDegree?: number
@@ -164,12 +165,19 @@ export class Projectile extends Container {
     this.context = context
     this.label = uuidv4()
     this.family = FAMILY_TYPES.projectile
+    this.interval = null
 
     Object.assign(this, options)
-    const player = this.owner.owner as PlayerLike
+    const player = this.owner.owner
+    if (!player) throw new Error('Projectile owner must belong to a player')
     this.type = getEffectiveProjectileType(this.type, player)
     this.tracksTarget = projectileTracksTarget(this.type, player)
-    Object.assign(this, player.config.projectiles?.[this.type])
+    const projectileDefinition = player.config.projectiles?.[this.type]
+    if (projectileDefinition) {
+      const { scale, ...projectileConfig } = projectileDefinition
+      Object.assign(this, projectileConfig)
+      this.projectileScale = scale
+    }
 
     const ownerSpriteHeight = this.owner.sprite?.height ?? 0
     this.x = this.owner.x + (this.spawnOffsetX ?? 0)
@@ -183,7 +191,7 @@ export class Projectile extends Container {
     }
     let { x: targetX, y: targetY } = targetPoint
 
-    playAudibleSoundCue(this as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.launch)
+    playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
 
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     const sprite = this.createSprite(degree)
@@ -385,8 +393,7 @@ export class Projectile extends Container {
   }
 
   getProjectileScale(): number {
-    const dynamicScale = (this as unknown as Record<string, unknown>).scale
-    return typeof dynamicScale === 'number' ? dynamicScale : 1
+    return this.projectileScale ?? 1
   }
 
   onHit(instance: RuntimeEntity) {
@@ -394,7 +401,7 @@ export class Projectile extends Container {
       context: { menu, player },
     } = this
     if (instance.family === FAMILY_TYPES.building) {
-      playAudibleSoundCue(this as Parameters<typeof playAudibleSoundCue>[0], this.sounds?.impact)
+      playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact)
     }
     instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
     if (instance.selected) {
@@ -413,7 +420,7 @@ export class Projectile extends Container {
   die() {
     this.createImpactEffect(this.x, this.y)
     this.isDead = true
-    this.context.scheduler.remove(this.interval)
+    if (this.interval != null) this.context.scheduler.remove(this.interval)
     this.interval = null
     this.destroy({ children: true, texture: false })
   }

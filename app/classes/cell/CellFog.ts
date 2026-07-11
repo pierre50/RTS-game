@@ -10,23 +10,23 @@ import {
 } from '../../lib'
 import { COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory } from '../../types/map'
+import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { BuildingWithAssetOwner, RecolorableSprite } from '../../lib'
 
 type FogMemorySprite = FogSpriteMemory & {
   sprite?: Sprite
 }
 
-type FogMapLike = {
+export type FogMapLike = {
   revealTerrain?: boolean
   revealEverything?: boolean
-  fogMemoryLayer?: { addChild(child: Sprite): unknown } | null
-  grid?: FogCellLike[][]
+  fogMemoryLayer?: { addChild(child: Sprite): Sprite } | null
+  grid?: RuntimeCell[][]
   _fogQueue?: Map<FogCellLike, string>
   _fogInitComplete?: boolean
 }
 
-type FogCellContext = {
+export type FogCellContext = {
   map: FogMapLike
   player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
 }
@@ -38,7 +38,11 @@ type FogInstance = RuntimeEntity & {
   visible?: boolean
 }
 
-type FogCellLike = {
+type FogGridCell = RuntimeCell & {
+  addFogBuilding?(textureSheet: string, colorName?: string): void
+}
+
+export type FogCellLike = {
   context: FogCellContext
   i: number
   j: number
@@ -50,7 +54,7 @@ type FogCellLike = {
   has: FogInstance | null
   corpses: Set<FogInstance>
   fogSprites: FogMemorySprite[]
-  addChild(child: Sprite): unknown
+  addChild(child: Sprite): Sprite
   addFogBuilding(textureSheet: string, colorName?: string): void
 }
 
@@ -114,7 +118,7 @@ export class CellFog {
     const { cell } = this
     const targetCell = instance ? cell.context.map.grid?.[instance.i]?.[instance.j] : cell
     if (!targetCell) return
-    targetCell.fogSprites.forEach(s => s.sprite?.destroy())
+    ;(targetCell.fogSprites as FogMemorySprite[]).forEach(s => s.sprite?.destroy())
     targetCell.fogSprites = []
   }
 
@@ -130,8 +134,8 @@ export class CellFog {
               getBuildingAssetOwner(instance as BuildingWithAssetOwner),
               Assets
             ) as BuildingAssetWithFinalImage
-            const localCell = map.grid?.[instance.i]?.[instance.j]
-            if (!localCell) return
+            const localCell = map.grid?.[instance.i]?.[instance.j] as FogGridCell | undefined
+            if (!localCell?.addFogBuilding) return
             localCell.addFogBuilding(assets.images.final, instance.owner.color)
           }
         }
