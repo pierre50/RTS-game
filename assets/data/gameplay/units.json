@@ -27,81 +27,81 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "418",
-        "walkingSheet": "657",
-        "dyingSheet": "314",
-        "corpseSheet": "373"
+        "standingSheet": "units/villager/default/standing",
+        "walkingSheet": "units/villager/default/walking",
+        "dyingSheet": "units/villager/default/dying",
+        "corpseSheet": "units/villager/default/corpse"
       },
       "attacker": {
-        "actionSheet": "224",
-        "standingSheet": "418",
-        "dyingSheet": "314",
-        "walkingSheet": "657",
-        "corpseSheet": "373"
+        "actionSheet": "units/villager/attacker/action",
+        "standingSheet": "units/villager/default/standing",
+        "dyingSheet": "units/villager/default/dying",
+        "walkingSheet": "units/villager/default/walking",
+        "corpseSheet": "units/villager/default/corpse"
       },
       "hunter": {
-        "actionSheet": "624",
-        "harvestSheet": "626",
-        "standingSheet": "435",
-        "walkingSheet": "676",
-        "dyingSheet": "332",
-        "corpseSheet": "389",
-        "loadedSheet": "272"
+        "actionSheet": "units/villager/hunter/action",
+        "harvestSheet": "units/villager/hunter/harvest",
+        "standingSheet": "units/villager/hunter/standing",
+        "walkingSheet": "units/villager/hunter/walking",
+        "dyingSheet": "units/villager/hunter/dying",
+        "corpseSheet": "units/villager/hunter/corpse",
+        "loadedSheet": "units/villager/hunter/loaded"
       },
       "fisher": {
-        "actionSheet": "631",
-        "standingSheet": "431",
-        "walkingSheet": "676",
-        "dyingSheet": "332",
-        "corpseSheet": "389",
-        "loadedSheet": "271"
+        "actionSheet": "units/villager/fisher/action",
+        "standingSheet": "units/villager/fisher/standing",
+        "walkingSheet": "units/villager/hunter/walking",
+        "dyingSheet": "units/villager/hunter/dying",
+        "corpseSheet": "units/villager/hunter/corpse",
+        "loadedSheet": "units/villager/fisher/loaded"
       },
       "farmer": {
-        "actionSheet": "630",
-        "standingSheet": "430",
-        "walkingSheet": "670",
-        "dyingSheet": "326",
-        "corpseSheet": "388",
-        "loadedSheet": "672"
+        "actionSheet": "units/villager/farmer/action",
+        "standingSheet": "units/villager/farmer/standing",
+        "walkingSheet": "units/villager/farmer/walking",
+        "dyingSheet": "units/villager/farmer/dying",
+        "corpseSheet": "units/villager/farmer/corpse",
+        "loadedSheet": "units/villager/farmer/loaded"
       },
       "forager": {
-        "actionSheet": "632",
-        "standingSheet": "432",
-        "walkingSheet": "672",
-        "dyingSheet": "328",
-        "corpseSheet": "390",
-        "loadedSheet": "672"
+        "actionSheet": "units/villager/forager/action",
+        "standingSheet": "units/villager/forager/standing",
+        "walkingSheet": "units/villager/farmer/loaded",
+        "dyingSheet": "units/villager/forager/dying",
+        "corpseSheet": "units/villager/forager/corpse",
+        "loadedSheet": "units/villager/farmer/loaded"
       },
       "stoneminer": {
-        "actionSheet": "633",
-        "standingSheet": "441",
-        "walkingSheet": "683",
-        "dyingSheet": "315",
-        "corpseSheet": "400",
-        "loadedSheet": "274"
+        "actionSheet": "units/villager/stoneminer/action",
+        "standingSheet": "units/villager/stoneminer/standing",
+        "walkingSheet": "units/villager/stoneminer/walking",
+        "dyingSheet": "units/villager/stoneminer/dying",
+        "corpseSheet": "units/villager/stoneminer/corpse",
+        "loadedSheet": "units/villager/stoneminer/loaded"
       },
       "goldminer": {
-        "actionSheet": "633",
-        "standingSheet": "441",
-        "walkingSheet": "683",
-        "dyingSheet": "315",
-        "corpseSheet": "400",
-        "loadedSheet": "281"
+        "actionSheet": "units/villager/stoneminer/action",
+        "standingSheet": "units/villager/stoneminer/standing",
+        "walkingSheet": "units/villager/stoneminer/walking",
+        "dyingSheet": "units/villager/stoneminer/dying",
+        "corpseSheet": "units/villager/stoneminer/corpse",
+        "loadedSheet": "units/villager/goldminer/loaded"
       },
       "woodcutter": {
-        "actionSheet": "625",
-        "standingSheet": "440",
-        "walkingSheet": "682",
-        "dyingSheet": "315",
-        "corpseSheet": "399",
-        "loadedSheet": "273"
+        "actionSheet": "units/villager/woodcutter/action",
+        "standingSheet": "units/villager/woodcutter/standing",
+        "walkingSheet": "units/villager/woodcutter/walking",
+        "dyingSheet": "units/villager/stoneminer/dying",
+        "corpseSheet": "units/villager/woodcutter/corpse",
+        "loadedSheet": "units/villager/woodcutter/loaded"
       },
       "builder": {
-        "actionSheet": "628",
-        "standingSheet": "419",
-        "walkingSheet": "658",
-        "dyingSheet": "315",
-        "corpseSheet": "374"
+        "actionSheet": "units/villager/builder/action",
+        "standingSheet": "units/villager/builder/standing",
+        "walkingSheet": "units/villager/builder/walking",
+        "dyingSheet": "units/villager/stoneminer/dying",
+        "corpseSheet": "units/villager/builder/corpse"
       }
     },
     "gatheringRate": {
@@ -114,30 +114,30 @@
       "goldminer": 0.5175
     },
     "sounds": {
-      "create": 5166,
+      "create": "villager-completed",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ],
-      "command": 5006,
-      "buildCommand": 5118,
-      "huntCommand": 5005,
+      "command": "olmars",
+      "buildCommand": "homis",
+      "huntCommand": "isay",
       "work": {
-        "gatherFood": 5178,
-        "chopWood": 5048,
-        "forageBerry": 5085,
-        "mineStone": 5159,
-        "mineGold": 5159,
-        "build": 5107,
-        "throwSpear": 5125
+        "gatherFood": "farming-3",
+        "chopWood": "wood-chopping",
+        "forageBerry": "berry-gathering",
+        "mineStone": "mining-2",
+        "mineGold": "mining-2",
+        "build": "building",
+        "throwSpear": "arrow-shot"
       }
     }
   },
@@ -163,30 +163,30 @@
       }
     ],
     "assets": {
-      "standingSheet": "425",
-      "walkingSheet": "664",
-      "actionSheet": "212",
-      "dyingSheet": "321",
-      "corpseSheet": "380"
+      "standingSheet": "units/clubman/standing",
+      "walkingSheet": "units/clubman/walking",
+      "actionSheet": "units/clubman/action",
+      "dyingSheet": "units/clubman/dying",
+      "corpseSheet": "units/clubman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -205,25 +205,25 @@
       "food": 100
     },
     "assets": {
-      "standingSheet": "445",
-      "walkingSheet": "651",
-      "actionSheet": "227",
-      "dyingSheet": "343",
-      "corpseSheet": "403"
+      "standingSheet": "units/scout/standing",
+      "walkingSheet": "units/scout/walking",
+      "actionSheet": "units/scout/action",
+      "dyingSheet": "units/scout/dying",
+      "corpseSheet": "units/scout/corpse"
     },
     "sounds": {
       "command": [
-        5120,
-        5121,
-        5122,
-        5123
+        "horse",
+        "horse-2",
+        "horse-3",
+        "horse-4"
       ],
-      "die": 5108,
-      "move": 5092,
+      "die": "horse-unit-die",
+      "move": "horse-moving",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ]
     }
   },
@@ -245,30 +245,30 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "413",
-      "walkingSheet": "652",
-      "actionSheet": "203",
-      "dyingSheet": "308",
-      "corpseSheet": "367"
+      "standingSheet": "units/bowman/standing",
+      "walkingSheet": "units/bowman/walking",
+      "actionSheet": "units/bowman/action",
+      "dyingSheet": "units/bowman/dying",
+      "corpseSheet": "units/bowman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -287,37 +287,37 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "443",
-      "walkingSheet": "685",
-      "actionSheet": "634",
-      "dyingSheet": "341",
-      "corpseSheet": "402"
+      "standingSheet": "units/priest/standing",
+      "walkingSheet": "units/priest/walking",
+      "actionSheet": "units/priest/action",
+      "dyingSheet": "units/priest/dying",
+      "corpseSheet": "units/priest/corpse"
     },
     "sounds": {
-      "create": 5165,
+      "create": "priest-completed",
       "command": [
-        5050,
-        5051,
-        5109
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
       ],
       "move": [
-        5050,
-        5051,
-        5109
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
       ],
-      "heal": 5050,
-      "convert": 5051,
+      "heal": "ayohoyohoyo",
+      "convert": "wololo",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -348,31 +348,31 @@
       }
     ],
     "assets": {
-      "standingSheet": "415",
-      "walkingSheet": "654",
-      "actionSheet": "205",
-      "dyingSheet": "311",
-      "corpseSheet": "370"
+      "standingSheet": "units/axeman/standing",
+      "walkingSheet": "units/axeman/walking",
+      "actionSheet": "units/axeman/action",
+      "dyingSheet": "units/axeman/dying",
+      "corpseSheet": "units/axeman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -404,31 +404,31 @@
       }
     ],
     "assets": {
-      "standingSheet": "416",
-      "walkingSheet": "655",
-      "actionSheet": "206",
-      "dyingSheet": "312",
-      "corpseSheet": "371"
+      "standingSheet": "units/short-swordsman/standing",
+      "walkingSheet": "units/short-swordsman/walking",
+      "actionSheet": "units/short-swordsman/action",
+      "dyingSheet": "units/short-swordsman/dying",
+      "corpseSheet": "units/short-swordsman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -460,31 +460,31 @@
       }
     ],
     "assets": {
-      "standingSheet": "437",
-      "walkingSheet": "678",
-      "actionSheet": "220",
-      "dyingSheet": "334",
-      "corpseSheet": "395"
+      "standingSheet": "units/broad-swordsman/standing",
+      "walkingSheet": "units/broad-swordsman/walking",
+      "actionSheet": "units/broad-swordsman/action",
+      "dyingSheet": "units/broad-swordsman/dying",
+      "corpseSheet": "units/broad-swordsman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -511,31 +511,31 @@
       }
     ],
     "assets": {
-      "standingSheet": "436",
-      "walkingSheet": "677",
-      "actionSheet": "219",
-      "dyingSheet": "333",
-      "corpseSheet": "394"
+      "standingSheet": "units/long-swordsman/standing",
+      "walkingSheet": "units/long-swordsman/walking",
+      "actionSheet": "units/long-swordsman/action",
+      "dyingSheet": "units/long-swordsman/dying",
+      "corpseSheet": "units/long-swordsman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -569,30 +569,30 @@
       }
     ],
     "assets": {
-      "standingSheet": "414",
-      "walkingSheet": "653",
-      "actionSheet": "204",
-      "dyingSheet": "309",
-      "corpseSheet": "368"
+      "standingSheet": "units/improved-bowman/standing",
+      "walkingSheet": "units/improved-bowman/walking",
+      "actionSheet": "units/improved-bowman/action",
+      "dyingSheet": "units/improved-bowman/dying",
+      "corpseSheet": "units/improved-bowman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -612,31 +612,31 @@
       "gold": 40
     },
     "assets": {
-      "standingSheet": "442",
-      "walkingSheet": "684",
-      "actionSheet": "225",
-      "dyingSheet": "340",
-      "corpseSheet": "401"
+      "standingSheet": "units/hoplite/standing",
+      "walkingSheet": "units/hoplite/walking",
+      "actionSheet": "units/hoplite/action",
+      "dyingSheet": "units/hoplite/dying",
+      "corpseSheet": "units/hoplite/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -665,30 +665,30 @@
       }
     ],
     "assets": {
-      "standingSheet": "439",
-      "walkingSheet": "681",
-      "actionSheet": "223",
-      "dyingSheet": "337",
-      "corpseSheet": "398"
+      "standingSheet": "units/composite-bowman/standing",
+      "walkingSheet": "units/composite-bowman/walking",
+      "actionSheet": "units/composite-bowman/action",
+      "dyingSheet": "units/composite-bowman/dying",
+      "corpseSheet": "units/composite-bowman/corpse"
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -717,26 +717,26 @@
       }
     ],
     "assets": {
-      "standingSheet": "412",
-      "walkingSheet": "650",
-      "actionSheet": "202",
-      "dyingSheet": "310",
-      "corpseSheet": "369"
+      "standingSheet": "units/chariot-archer/standing",
+      "walkingSheet": "units/chariot-archer/walking",
+      "actionSheet": "units/chariot-archer/action",
+      "dyingSheet": "units/chariot-archer/dying",
+      "corpseSheet": "units/chariot-archer/corpse"
     },
     "sounds": {
       "command": [
-        5120,
-        5121,
-        5122,
-        5123
+        "horse",
+        "horse-2",
+        "horse-3",
+        "horse-4"
       ],
-      "move": 5092,
+      "move": "horse-moving",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
-      "die": 5108
+      "die": "horse-unit-die"
     }
   },
   "FishingBoat": {
@@ -766,27 +766,27 @@
       "corpseSheet": 1
     },
     "assets": {
-      "standingSheet": "473",
-      "walkingSheet": "473",
-      "actionSheet": "473",
-      "fishingOverlaySheet": "697",
-      "dyingSheet": "262",
-      "corpseSheet": "262"
+      "standingSheet": "boats/fishing-boat",
+      "walkingSheet": "boats/fishing-boat",
+      "actionSheet": "boats/fishing-boat",
+      "fishingOverlaySheet": "boats/fishing-boat/fishing-overlay",
+      "dyingSheet": "boats/wrecks/small",
+      "corpseSheet": "boats/wrecks/small"
     },
     "sounds": {
-      "create": 5030,
-      "command": 5027,
-      "move": 5027,
+      "create": "non-military-ship-completed",
+      "command": "dock-completed-selected",
+      "move": "dock-completed-selected",
       "die": [
-        5113,
-        5177,
-        5181
+        "ship-sunk",
+        "ship-sunk-2",
+        "ship-sunk-3"
       ],
       "work": {
         "fishing": [
-          5182,
-          5183,
-          5184
+          "fish",
+          "fish-2",
+          "fish-3"
         ]
       }
     }

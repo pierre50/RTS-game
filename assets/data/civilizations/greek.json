@@ -4,37 +4,55 @@
       "TownCenter": {
         "icon": "033_50705",
         "images": {
-          "final": "000_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Barracks": {
         "icon": "003_50705",
         "images": {
-          "final": "000_254"
+          "final": {
+            "sheet": "buildings/shared/barracks/age-0",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "015_50705",
         "images": {
-          "final": "000_218"
+          "final": {
+            "sheet": "buildings/shared/house/age-0",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "011_50705",
         "images": {
-          "final": "000_64"
+          "final": {
+            "sheet": "buildings/greek/granary/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "028_50705",
         "images": {
-          "final": "000_527"
+          "final": {
+            "sheet": "buildings/shared/storage-pit/age-0",
+            "frame": 0
+          }
         }
       },
       "Dock": {
         "icon": "006_50705",
         "images": {
-          "final": "000_355"
+          "final": {
+            "sheet": "buildings/shared/dock/age-0",
+            "frame": 0
+          }
         }
       }
     },
@@ -42,49 +60,73 @@
       "TownCenter": {
         "icon": "035_50705",
         "images": {
-          "final": "001_280"
+          "final": {
+            "sheet": "buildings/shared/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "SmallWall": {
         "icon": "042_50705",
         "images": {
-          "final": "000_532"
+          "final": {
+            "sheet": "environment/ground/stone-set-2",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "016_50705",
         "images": {
-          "final": "000_65"
+          "final": {
+            "sheet": "buildings/greek/house/multi-age",
+            "frame": 0
+          }
         }
       },
       "Farm": {
         "icon": "010_50705",
         "images": {
-          "final": "000_447"
+          "final": {
+            "sheet": "buildings/shared/farm/age-1",
+            "frame": 0
+          }
         }
       },
       "WatchTower": {
         "icon": "026_50705",
         "images": {
-          "final": "000_688"
+          "final": {
+            "sheet": "buildings/shared/watch-tower/age-1",
+            "frame": 0
+          }
         }
       },
       "Market": {
         "icon": "021_50705",
         "images": {
-          "final": "000_500"
+          "final": {
+            "sheet": "buildings/shared/market/age-1",
+            "frame": 0
+          }
         }
       },
       "Stable": {
-        "icon": "024_50705",
+        "icon": "025_50705",
         "images": {
-          "final": "000_72"
+          "final": {
+            "sheet": "buildings/shared/stable/age-1",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "001_50705",
         "images": {
-          "final": "000_71"
+          "final": {
+            "sheet": "buildings/greek/archery-range/multi-age",
+            "frame": 0
+          }
         }
       }
     },
@@ -92,61 +134,100 @@
       "Barracks": {
         "icon": "004_50705",
         "images": {
-          "final": "000_61"
+          "final": {
+            "sheet": "buildings/greek/barracks/multi-age",
+            "frame": 0
+          }
         }
       },
       "TownCenter": {
         "icon": "036_50705",
         "images": {
-          "final": "000_62"
+          "final": {
+            "sheet": "buildings/greek/town-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "House": {
         "icon": "017_50705",
         "images": {
-          "final": "001_65"
+          "final": {
+            "sheet": "buildings/greek/house/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "022_50705",
         "images": {
-          "final": "000_68"
+          "final": {
+            "sheet": "buildings/greek/market/multi-age",
+            "frame": 0
+          }
         }
       },
       "StoragePit": {
         "icon": "029_50705",
         "images": {
-          "final": "000_70"
+          "final": {
+            "sheet": "buildings/greek/storage-pit/multi-age",
+            "frame": 0
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "019_50705",
         "images": {
-          "final": "000_66"
+          "final": {
+            "sheet": "buildings/greek/government-center/multi-age",
+            "frame": 0
+          }
         }
       },
       "Academy": {
         "icon": "000_50705",
         "images": {
-          "final": "000_60"
+          "final": {
+            "sheet": "buildings/greek/academy/age-2",
+            "frame": 0
+          }
         }
       },
       "SiegeWorkshop": {
         "icon": "009_50705",
         "images": {
-          "final": "000_63"
+          "final": {
+            "sheet": "buildings/greek/siege-workshop/age-2",
+            "frame": 0
+          }
         }
       },
       "Temple": {
         "icon": "031_50705",
         "images": {
-          "final": "000_73"
+          "final": {
+            "sheet": "buildings/greek/temple/multi-age",
+            "frame": 0
+          }
         }
       },
       "SentryTower": {
         "icon": "014_50705",
         "images": {
-          "final": "000_593"
+          "final": {
+            "sheet": "buildings/shared/sentry-tower/age-2",
+            "frame": 0
+          }
+        }
+      },
+      "Dock": {
+        "icon": "007_50705",
+        "images": {
+          "final": {
+            "sheet": "buildings/greek/dock/age-2",
+            "frame": 0
+          }
         }
       }
     },
@@ -154,73 +235,118 @@
       "GuardTower": {
         "icon": "049_50705",
         "images": {
-          "final": "000_75"
+          "final": {
+            "sheet": "buildings/greek/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "BallistaTower": {
         "icon": "049_50705",
         "images": {
-          "final": "000_75"
+          "final": {
+            "sheet": "buildings/greek/guard-tower/age-3",
+            "frame": 0
+          }
         }
       },
       "Granary": {
         "icon": "012_50705",
         "images": {
-          "final": "001_64"
+          "final": {
+            "sheet": "buildings/greek/granary/multi-age",
+            "frame": 1
+          }
         }
       },
       "Barracks": {
         "icon": "005_50705",
         "images": {
-          "final": "001_61"
+          "final": {
+            "sheet": "buildings/greek/barracks/multi-age",
+            "frame": 1
+          }
         }
       },
       "TownCenter": {
         "icon": "038_50705",
         "images": {
-          "final": "002_62"
+          "final": {
+            "sheet": "buildings/greek/town-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "House": {
         "icon": "018_50705",
         "images": {
-          "final": "002_65"
+          "final": {
+            "sheet": "buildings/greek/house/multi-age",
+            "frame": 2
+          }
         }
       },
       "Stable": {
         "icon": "024_50705",
         "images": {
-          "final": "000_72"
+          "final": {
+            "sheet": "buildings/greek/stable/multi-age",
+            "frame": 0
+          }
         }
       },
       "ArcheryRange": {
         "icon": "002_50705",
         "images": {
-          "final": "001_71"
+          "final": {
+            "sheet": "buildings/greek/archery-range/multi-age",
+            "frame": 1
+          }
         }
       },
       "Market": {
         "icon": "023_50705",
         "images": {
-          "final": "001_68"
+          "final": {
+            "sheet": "buildings/greek/market/multi-age",
+            "frame": 1
+          }
         }
       },
       "StoragePit": {
         "icon": "030_50705",
         "images": {
-          "final": "001_70"
+          "final": {
+            "sheet": "buildings/greek/storage-pit/multi-age",
+            "frame": 1
+          }
         }
       },
       "GovernmentCenter": {
         "icon": "020_50705",
         "images": {
-          "final": "001_66"
+          "final": {
+            "sheet": "buildings/greek/government-center/multi-age",
+            "frame": 1
+          }
         }
       },
       "Temple": {
         "icon": "032_50705",
         "images": {
-          "final": "001_73"
+          "final": {
+            "sheet": "buildings/greek/temple/multi-age",
+            "frame": 1
+          }
+        }
+      },
+      "Dock": {
+        "icon": "008_50705",
+        "images": {
+          "final": {
+            "sheet": "buildings/greek/dock/age-2",
+            "frame": 1
+          }
         }
       }
     }

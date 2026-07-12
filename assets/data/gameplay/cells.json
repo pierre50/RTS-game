@@ -3,80 +3,212 @@
     "category": "Ground",
     "color": "#CFA443",
     "assets": [
-      "000_15000",
-      "001_15000",
-      "002_15000",
-      "003_15000",
-      "004_15000",
-      "005_15000",
-      "006_15000",
-      "007_15000",
-      "008_15000"
+      {
+        "sheet": "terrain/desert",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 3
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 4
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 5
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 6
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 7
+      },
+      {
+        "sheet": "terrain/desert",
+        "frame": 8
+      }
     ]
   },
   "Grass": {
     "category": "Ground",
     "color": "#647B2F",
     "assets": [
-      "000_15001",
-      "001_15001",
-      "002_15001",
-      "003_15001",
-      "004_15001",
-      "005_15001",
-      "006_15001",
-      "007_15001",
-      "008_15001"
+      {
+        "sheet": "terrain/grass",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 3
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 4
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 5
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 6
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 7
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 8
+      }
     ]
   },
   "Jungle": {
     "category": "Ground",
     "color": "#647B2F",
     "assets": [
-      "000_15001",
-      "001_15001",
-      "002_15001",
-      "003_15001",
-      "004_15001",
-      "005_15001",
-      "006_15001",
-      "007_15001",
-      "008_15001"
+      {
+        "sheet": "terrain/grass",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 3
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 4
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 5
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 6
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 7
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 8
+      }
     ]
   },
   "DarkForest": {
     "category": "Ground",
     "color": "#0F1F0A",
     "assets": [
-      "000_15001",
-      "001_15001",
-      "002_15001",
-      "003_15001",
-      "004_15001",
-      "005_15001",
-      "006_15001",
-      "007_15001",
-      "008_15001"
+      {
+        "sheet": "terrain/grass",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 3
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 4
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 5
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 6
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 7
+      },
+      {
+        "sheet": "terrain/grass",
+        "frame": 8
+      }
     ]
   },
   "Water": {
     "category": "Water",
-    "color": "#17277B",
+    "color": "#2C46A0",
     "assets": [
-      "000_15002",
-      "001_15002",
-      "002_15002",
-      "003_15002"
+      {
+        "sheet": "terrain/water",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/water",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/water",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/water",
+        "frame": 3
+      }
     ]
   },
   "DeepWater": {
     "category": "Water",
-    "color": "#0A1260",
+    "color": "#17277B",
     "assets": [
-      "000_15003",
-      "001_15003",
-      "002_15003",
-      "003_15003"
+      {
+        "sheet": "terrain/deep-water",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/deep-water",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/deep-water",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/deep-water",
+        "frame": 3
+      }
     ]
   }
 }
