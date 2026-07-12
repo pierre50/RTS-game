@@ -111,9 +111,9 @@ const mappings = [
   ['202', 'units/chariot-archer/action'],
   ['310', 'units/chariot-archer/dying'],
   ['369', 'units/chariot-archer/corpse'],
-  ['473', 'boats/fishing-boat/standing'],
+  ['473', 'boats/fishing-boat'],
   ['697', 'boats/fishing-boat/fishing-overlay'],
-  ['262', 'boats/fishing-boat/dying'],
+  ['262', 'boats/wrecks/small'],
 ]
 
 const renameMap = new Map(mappings)

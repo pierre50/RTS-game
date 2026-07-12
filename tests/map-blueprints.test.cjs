@@ -54,12 +54,39 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     let deepWaterBorderCandidates = 0
     let shoreLevelViolations = 0
     let reliefStepViolations = 0
+    let waterBufferViolations = 0
+    let spawnPlateauViolations = 0
 
     const isWater = (i, j) => {
       const type = TERRAIN_TYPES[terrain[i * width + j]]
       return type === 'Water' || type === 'DeepWater'
     }
     const getRelief = (i, j) => relief.readInt8(i * width + j)
+
+    const waterDistances = new Int16Array(width * width).fill(32767)
+    const waterQueue = []
+    for (let i = 0; i <= blueprint.size; i++) {
+      for (let j = 0; j <= blueprint.size; j++) {
+        if (!isWater(i, j)) continue
+        const index = i * width + j
+        waterDistances[index] = 0
+        waterQueue.push(index)
+      }
+    }
+    for (let cursor = 0; cursor < waterQueue.length; cursor++) {
+      const index = waterQueue[cursor]
+      const i = Math.floor(index / width)
+      const j = index % width
+      for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const ni = i + di
+        const nj = j + dj
+        if (ni < 0 || ni > blueprint.size || nj < 0 || nj > blueprint.size) continue
+        const next = ni * width + nj
+        if (waterDistances[next] <= waterDistances[index] + 1) continue
+        waterDistances[next] = waterDistances[index] + 1
+        waterQueue.push(next)
+      }
+    }
 
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
@@ -80,6 +107,7 @@ test('pregenerated map blueprints persist deep water terrain', () => {
 
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
+        if (waterDistances[i * width + j] <= 3 && getRelief(i, j) !== 0) waterBufferViolations++
         if (isWater(i, j)) continue
         const flags = {
           n: i > 0 && isWater(i - 1, j),
@@ -115,6 +143,14 @@ test('pregenerated map blueprints persist deep water terrain', () => {
       }
     }
 
+    for (const spawn of blueprint.spawns || []) {
+      for (let i = Math.max(0, spawn.i - 6); i <= Math.min(blueprint.size, spawn.i + 6); i++) {
+        for (let j = Math.max(0, spawn.j - 6); j <= Math.min(blueprint.size, spawn.j + 6); j++) {
+          if (getRelief(i, j) !== 0) spawnPlateauViolations++
+        }
+      }
+    }
+
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
         if (isWater(i, j)) continue
@@ -135,6 +171,8 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     assert.ok(terrain.includes(5), 'blueprint terrain should include DeepWater cells')
     assert.ok(deepWaterBorderCandidates > 0, 'blueprint terrain should include DeepWater border candidates')
     assert.equal(shoreLevelViolations, 0, 'blueprint relief should keep shore cells at water level')
+    assert.equal(waterBufferViolations, 0, 'blueprint relief should keep a three-cell water buffer at z=0')
+    assert.equal(spawnPlateauViolations, 0, 'blueprint relief should keep Town Center spawn zones at z=0')
     assert.equal(reliefStepViolations, 0, 'blueprint relief should not contain unsupported height jumps')
     assert.equal(
       (blueprint.resources || []).some(resource => resource.type === 'Whale'),

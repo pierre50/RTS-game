@@ -358,8 +358,8 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
   }
   map.flattenPlayerStartZones = () => {
     for (const pos of playersPos) {
-      for (let i = Math.max(0, pos.i - 4); i <= Math.min(size, pos.i + 4); i++) {
-        for (let j = Math.max(0, pos.j - 4); j <= Math.min(size, pos.j + 4); j++) {
+      for (let i = Math.max(0, pos.i - 6); i <= Math.min(size, pos.i + 6); i++) {
+        for (let j = Math.max(0, pos.j - 6); j <= Math.min(size, pos.j + 6); j++) {
           if (map.grid[i][j].category !== 'Water') map.grid[i][j].z = 0
         }
       }
@@ -469,6 +469,82 @@ function enforceGeneratedReliefContinuity(map, protectedCells = new Set()) {
   }
 }
 
+function flattenFinalProtectedZones(map, spawns, waterRadius = 3, spawnRadius = 6) {
+  const protectedCells = new Set()
+  const distances = coastDistances(map)
+  const n = map.size + 1
+
+  for (let i = 0; i <= map.size; i++) {
+    for (let j = 0; j <= map.size; j++) {
+      const cell = map.grid[i][j]
+      if (distances[i * n + j] <= waterRadius) {
+        map.setCellReliefLevelDirect(cell, 0)
+        protectedCells.add(cell)
+      }
+    }
+  }
+
+  for (const spawn of spawns) {
+    for (let i = Math.max(0, spawn.i - spawnRadius); i <= Math.min(map.size, spawn.i + spawnRadius); i++) {
+      for (let j = Math.max(0, spawn.j - spawnRadius); j <= Math.min(map.size, spawn.j + spawnRadius); j++) {
+        const cell = map.grid[i][j]
+        if (cell.category === 'Water') continue
+        map.setCellReliefLevelDirect(cell, 0)
+        protectedCells.add(cell)
+      }
+    }
+  }
+
+  const distancesFromFlat = new Int16Array(n * n).fill(32767)
+  const queue = []
+  for (const cell of protectedCells) {
+    const index = cell.i * n + cell.j
+    distancesFromFlat[index] = 0
+    queue.push(index)
+  }
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const index = queue[cursor]
+    const i = Math.floor(index / n)
+    const j = index % n
+    for (const [di, dj] of EIGHT_NEIGHBOR_OFFSETS) {
+      const ni = i + di
+      const nj = j + dj
+      if (ni < 0 || ni > map.size || nj < 0 || nj > map.size) continue
+      const next = ni * n + nj
+      if (distancesFromFlat[next] <= distancesFromFlat[index] + 1) continue
+      distancesFromFlat[next] = distancesFromFlat[index] + 1
+      queue.push(next)
+    }
+  }
+
+  for (let i = 0; i <= map.size; i++) {
+    for (let j = 0; j <= map.size; j++) {
+      const cell = map.grid[i][j]
+      if (protectedCells.has(cell)) continue
+      const maxMagnitude = distancesFromFlat[i * n + j]
+      const level = Math.max(-maxMagnitude, Math.min(maxMagnitude, cell.z))
+      if (level !== cell.z) map.setCellReliefLevelDirect(cell, level)
+    }
+  }
+
+  return protectedCells
+}
+
+// Mirrors the formatCellsRelief predicate: cells whose higher-neighbor layout the
+// relief atlas cannot represent get approximated at render time, leaving visible holes.
+function unsupportedReliefCells(map) {
+  const cells = []
+  for (let i = 0; i <= map.size; i++) {
+    for (let j = 0; j <= map.size; j++) {
+      const cell = map.grid[i][j]
+      if (cell.category === 'Water' || cell.waterBorder) continue
+      const flags = getNeighborFlags(map.grid, i, j, neighbor => Boolean(neighbor && neighbor.z > cell.z))
+      if (hasUnsupportedTransition(flags)) cells.push(cell)
+    }
+  }
+  return cells
+}
+
 function blueprint(size, mapType, seed) {
   const playerCount = maxPlayersForSize(size)
   const context = { map: { seed, positionsCount: playerCount } }
@@ -485,6 +561,17 @@ function blueprint(size, mapType, seed) {
   map.formatCellsWaterBorder()
   const protectedShoreCells = normalizeShoreRelief(map)
   enforceGeneratedReliefContinuity(map, protectedShoreCells)
+  const flattenedCells = flattenFinalProtectedZones(map, spawns)
+  // The runtime skips relief sanitization for pregenerated blueprints, so nothing
+  // may mutate relief after this final atlas-aware continuity pass.
+  map.enforceReliefStepContinuity(unrestrictedReliefDistances, flattenedCells, waterLevelBounds)
+  const invalidReliefCells = unsupportedReliefCells(map)
+  if (invalidReliefCells.length) {
+    const [first] = invalidReliefCells
+    console.warn(
+      `  ! ${size}/${mapType} seed ${seed}: ${invalidReliefCells.length} atlas-unsupported relief cell(s) remain (first at [${first.i},${first.j}])`
+    )
+  }
   runtimePlayerResources.call({ map }, spawns)
   runtimeNeutralResources.call({ map }, spawns)
   runtimeBiomeTrees.call({ map }, spawns)

@@ -69,6 +69,8 @@
     linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
   --menu-title-shadow: rgba(0, 0, 0, 0.3);
   --home-button-bg: rgba(0, 0, 0, 0.45);
+  --home-button-focus-color: #ffe27a;
+  --home-button-focus-scale: var(--ui-hover-scale);
 
   --orientation-guard-glow: rgba(255, 219, 167, 0.12);
   --orientation-guard-backdrop: rgba(8, 6, 4, 0.94);

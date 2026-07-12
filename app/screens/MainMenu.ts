@@ -10,6 +10,7 @@ export default class MainMenu {
   onLoad: (save: SaveRecord) => void
   onMapEditor: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
+  _activeHomeButton: HTMLButtonElement | null
   el: HTMLDivElement
 
   constructor({
@@ -25,12 +26,14 @@ export default class MainMenu {
     this.onLoad = onLoad
     this.onMapEditor = onMapEditor
     this._onKeyDown = this._handleKeyDown.bind(this)
+    this._activeHomeButton = null
 
     this.el = document.createElement('div')
     this.el.id = 'main-menu'
 
     this._showMain()
     document.body.appendChild(this.el)
+    this._focusFirstHomeButton()
     document.addEventListener('keydown', this._onKeyDown)
   }
 
@@ -38,12 +41,16 @@ export default class MainMenu {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
+    if (className === 'home-btn') {
+      button.addEventListener('focus', () => this._setActiveHomeButton(button))
+    }
     button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', onClick)
     return button
   }
 
   _showMain(): void {
+    this._activeHomeButton = null
     this.el.innerHTML = ''
 
     const panel = document.createElement('div')
@@ -89,18 +96,56 @@ export default class MainMenu {
     this.el.appendChild(copyright)
   }
 
+  _getHomeButtons(): HTMLButtonElement[] {
+    return Array.from(this.el.querySelectorAll<HTMLButtonElement>('.menu-panel--home .home-btn'))
+  }
+
+  _focusFirstHomeButton(): void {
+    const firstButton = this._getHomeButtons()[0]
+    if (!firstButton) return
+
+    this._setActiveHomeButton(firstButton)
+    firstButton.focus()
+  }
+
+  _setActiveHomeButton(button: HTMLButtonElement): void {
+    this._activeHomeButton?.classList.remove('is-menu-focused')
+    this._activeHomeButton = button
+    button.classList.add('is-menu-focused')
+  }
+
   _handleKeyDown(evt: KeyboardEvent): void {
-    if (evt.key !== 'Enter' || evt.repeat) return
-    if (document.querySelector('.modal')) return
+    if (evt.repeat || document.querySelector('.modal')) return
+
+    const buttons = this._getHomeButtons()
+    if (!buttons.length) return
+
+    if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+      const focusedIndex = buttons.indexOf(this._activeHomeButton || (document.activeElement as HTMLButtonElement))
+      const currentIndex = focusedIndex === -1 ? 0 : focusedIndex
+      const direction = evt.key === 'ArrowDown' ? 1 : -1
+      const nextIndex = (currentIndex + direction + buttons.length) % buttons.length
+
+      evt.preventDefault()
+      this._setActiveHomeButton(buttons[nextIndex])
+      buttons[nextIndex].focus()
+      return
+    }
+
+    if (evt.key !== 'Enter') return
 
     evt.preventDefault()
     playClickSound()
-    this.onStart()
+    const focusedButton = this._activeHomeButton || buttons[0]
+    focusedButton.click()
   }
 
   _openSettings(): void {
     const content = buildSettingsContent({
-      onLangChange: () => this._showMain(),
+      onLangChange: () => {
+        this._showMain()
+        this._focusFirstHomeButton()
+      },
     })
     new Modal({ title: t('settings'), content })
   }

@@ -229,7 +229,7 @@ export class MapTerrain {
     this.map.clampReliefAroundWater(dist)
   }
 
-  flattenPlayerStartZones(radius: number = 4): void {
+  flattenPlayerStartZones(radius: number = 6): void {
     for (const pos of this.map.playersPos) {
       if (!isGridPosition(pos)) continue
       const cells = getPlainCellsAroundPoint(pos.i, pos.j, this.map.grid, radius).filter(

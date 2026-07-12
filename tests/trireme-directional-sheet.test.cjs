@@ -95,10 +95,10 @@ test('Boat wreck sheets stay non-directional and use sinking animations', () => 
     'Greek'
   )
 
-  assert.equal(config.units.FishingShip.assets.dyingSheet, 'boats/wreck-small')
-  assert.equal(config.units.ScoutShip.assets.dyingSheet, 'boats/wreck-small')
-  assert.equal(config.units.WarGalley.assets.dyingSheet, 'boats/wreck-large')
-  assert.equal(config.units.Trireme.assets.dyingSheet, 'boats/wreck-large')
+  assert.equal(config.units.FishingShip.assets.dyingSheet, 'boats/wrecks/medium')
+  assert.equal(config.units.ScoutShip.assets.dyingSheet, 'boats/wrecks/medium')
+  assert.equal(config.units.WarGalley.assets.dyingSheet, 'boats/wrecks/large')
+  assert.equal(config.units.Trireme.assets.dyingSheet, 'boats/wrecks/large')
   assert.deepEqual(config.units.FishingShip.sounds.die, ['ship-sunk', 'ship-sunk-2', 'ship-sunk-3'])
   assert.deepEqual(config.units.ScoutShip.sounds.die, ['ship-sunk', 'ship-sunk-2', 'ship-sunk-3'])
   assert.deepEqual(config.units.WarGalley.sounds.die, ['ship-sunk', 'ship-sunk-2', 'ship-sunk-3'])
@@ -130,9 +130,9 @@ test('Chariot uses its own dying and corpse sheets', () => {
 
 test('Asset manifest preloads the sinking sheets used by boats', () => {
   const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.ts', {})
-  assert.equal(ASSET_BUNDLES.graphics['boats/fishing-boat/dying'], 'assets/graphics/boats/fishing-boat/dying/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics['boats/wreck-small'], 'assets/graphics/boats/wreck-small/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics['boats/wreck-large'], 'assets/graphics/boats/wreck-large/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/wrecks/small'], 'assets/graphics/boats/wrecks/small/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/wrecks/medium'], 'assets/graphics/boats/wrecks/medium/texture.json')
+  assert.equal(ASSET_BUNDLES.graphics['boats/wrecks/large'], 'assets/graphics/boats/wrecks/large/texture.json')
   assert.equal(
     ASSET_BUNDLES.graphics['boats/fishing-boat/fishing-overlay'],
     'assets/graphics/boats/fishing-boat/fishing-overlay/texture.json'

@@ -42,8 +42,7 @@ img {
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--focus-outline-color);
-  outline-offset: 2px;
+  outline: none;
 }
 
 @keyframes ui-panel-enter {

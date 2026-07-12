@@ -361,7 +361,7 @@ export class AIStrategy {
     return { ...this.ai.config.buildings[BUILDING_TYPES.dock], type: BUILDING_TYPES.dock }
   }
 
-  getCoastalDockOpportunity(): AIDockOpportunity {
+  getCoastalDockOpportunity(requireTransportRoute = false): AIDockOpportunity {
     const { ai } = this
     const map = ai.context.map
     const anchor = typeof ai.getHomeAnchor === 'function' ? ai.getHomeAnchor() : null
@@ -384,6 +384,7 @@ export class AIStrategy {
           const cell = row[j]
           const waterClusterSize = this.getWaterClusterSize(cell, map.grid)
           if (waterClusterSize < NAVAL_STRONG_WATER_CLUSTER_CELLS) continue
+          if (requireTransportRoute && !this.hasUsableTransportDock(cell)) continue
           foundAtDistance = true
           const score = distance - waterClusterSize * 0.05
           if (score < bestScore) {
@@ -475,6 +476,67 @@ export class AIStrategy {
     })
   }
 
+  hasLandingRoomNear(target: AIGridPosition): boolean {
+    const { grid } = this.ai.context.map
+    const radius = 18
+    const minI = Math.max(0, target.i - radius)
+    const maxI = Math.min(this.ai.context.map.size - 1, target.i + radius)
+    const minJ = Math.max(0, target.j - radius)
+    const maxJ = Math.min(this.ai.context.map.size - 1, target.j + radius)
+
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const cell = grid[i]?.[j]
+        if (!cell?.waterBorder || cell.solid || cell.border) continue
+        const landNeighbors = [
+          grid[i - 1]?.[j],
+          grid[i + 1]?.[j],
+          grid[i]?.[j - 1],
+          grid[i]?.[j + 1],
+        ]
+        if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) return true
+      }
+    }
+    return false
+  }
+
+  isTransportDockUsable(dock: AIGridPosition, target: AIGridPosition): boolean {
+    const start = this.ai.context.map.grid[dock.i]?.[dock.j]
+    if (!this.isOpenWaterCell(start) || !this.hasLandingRoomNear(target)) return false
+
+    const { grid } = this.ai.context.map
+    const radius = 18
+    const minI = Math.max(0, target.i - radius)
+    const maxI = Math.min(this.ai.context.map.size - 1, target.i + radius)
+    const minJ = Math.max(0, target.j - radius)
+    const maxJ = Math.min(this.ai.context.map.size - 1, target.j + radius)
+    const landingCells: AIGridPosition[] = []
+
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const cell = grid[i]?.[j]
+        if (!cell?.waterBorder || cell.solid || cell.border) continue
+        const landNeighbors = [
+          grid[i - 1]?.[j],
+          grid[i + 1]?.[j],
+          grid[i]?.[j - 1],
+          grid[i]?.[j + 1],
+        ]
+        if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) landingCells.push(cell)
+      }
+    }
+
+    return landingCells.some(cell => this.isReachableWaterTarget(dock, cell))
+  }
+
+  getPrimaryTransportTarget(): AIGridPosition | null {
+    return this.getPrimaryEnemyAnchor()
+  }
+
+  hasUsableTransportDock(dock: AIGridPosition, target: AIGridPosition | null = this.getPrimaryTransportTarget()): boolean {
+    return !!target && this.isTransportDockUsable(dock, target)
+  }
+
   getNavalDebugInfo(): {
     land: AILandAccessDiagnostic
     needsTransport: boolean
@@ -539,7 +601,11 @@ export class AIStrategy {
       (unit: AIEntityLike) =>
         unit && unit.type !== UNIT_TYPES.villager && unit.category !== 'Boat' && (unit.hitPoints || 0) > 0
     ).length
-    const needsTransport = this.needsNavalTransport(militaryCount)
+    const transportNeeded = this.needsNavalTransport(militaryCount)
+    const hasUsableDock = this.getHealthyDocks().some(dock => this.hasUsableTransportDock(dock))
+    const transportDockOpportunity =
+      transportNeeded && !hasUsableDock ? this.getCoastalDockOpportunity(true) : coastalOpportunity
+    const needsTransport = transportNeeded
     const shouldScoutCoast = !hasEnoughFish && coastalOpportunity.waterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS
     const desiredFishingBoats = hasEnoughFish
       ? Math.min(
@@ -553,7 +619,7 @@ export class AIStrategy {
     return {
       fish: fish.map(candidate => candidate.node),
       maxWaterClusterSize: Math.max(maxWaterClusterSize, coastalOpportunity.waterClusterSize),
-      dockPosition: coastalOpportunity.position,
+      dockPosition: transportDockOpportunity.position || coastalOpportunity.position,
       shouldScoutCoast,
       needsTransport,
       desiredFishingBoats,
@@ -561,8 +627,8 @@ export class AIStrategy {
   }
 
   getHealthyDocks(): AIBuildingLike[] {
-    return this.ai
-      .buildingsByTypes([BUILDING_TYPES.dock])
+    const docks = typeof this.ai.buildingsByTypes === 'function' ? this.ai.buildingsByTypes([BUILDING_TYPES.dock]) : []
+    return docks
       .filter((building: AIBuildingLike) => building && !building.isDead && !building.isDestroyed)
   }
 
@@ -638,13 +704,24 @@ export class AIStrategy {
 
   shouldBuildDock(opportunity: AINavalOpportunity): boolean {
     if (!opportunity?.desiredFishingBoats && !opportunity?.needsTransport) return false
-    return this.getHealthyDocks().length === 0
+    if (this.getHealthyDocks().length === 0) return true
+    if (!opportunity.needsTransport) return false
+    if (this.getHealthyDocks().some(dock => this.hasUsableTransportDock(dock))) return false
+    return !!opportunity.dockPosition && this.hasUsableTransportDock(opportunity.dockPosition)
   }
 
   findDockPosition(snapshot: AIStrategySnapshot, opportunity: AINavalOpportunity): RuntimeCell | AIGridPosition | null {
     const { ai } = this
     const { map } = snapshot
-    if (!opportunity.fish.length && opportunity.dockPosition) return opportunity.dockPosition
+    if (!opportunity.fish.length && opportunity.dockPosition) {
+      return !opportunity.needsTransport || this.hasUsableTransportDock(opportunity.dockPosition)
+        ? opportunity.dockPosition
+        : null
+    }
+
+    if (opportunity.needsTransport && opportunity.dockPosition && this.hasUsableTransportDock(opportunity.dockPosition)) {
+      return opportunity.dockPosition
+    }
 
     const dockConfig = this.getDockPlacementConfig()
     const anchor = snapshot.towncenters[0] || ai.getHomeAnchor()
@@ -733,20 +810,23 @@ export class AIStrategy {
 
     if (opportunity.needsTransport) {
       const transports = ai.getLivingUnitsByType(UNIT_TYPES.lightTransport)
-      const transportLoad = builtDocks.reduce((total: number, dock: AIBuildingLike) => {
+      const transportDocks = builtDocks.filter(dock => this.hasUsableTransportDock(dock))
+      const transportLoad = transportDocks.reduce((total: number, dock: AIBuildingLike) => {
         const queued = (dock.queue || []).filter((type: string) => type === UNIT_TYPES.lightTransport).length
         const loading = dock.loading != null && dock.queue?.[0] === UNIT_TYPES.lightTransport ? 1 : 0
         return total + queued + loading
       }, 0)
-      actions += this.buyUnits(
-        transports.length + transportLoad,
-        1,
-        builtDocks,
-        UNIT_TYPES.lightTransport,
-        undefined,
-        reserve,
-        debug
-      )
+      if (transportDocks.length > 0) {
+        actions += this.buyUnits(
+          transports.length + transportLoad,
+          1,
+          transportDocks,
+          UNIT_TYPES.lightTransport,
+          undefined,
+          reserve,
+          debug
+        )
+      }
     }
 
     return actions

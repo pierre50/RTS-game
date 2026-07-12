@@ -10,6 +10,7 @@ import {
   getTexture,
   getTextureByFrame,
   parseTextureRef,
+  textureRefToString,
 } from '../../lib'
 import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
@@ -85,6 +86,11 @@ export type TerrainCellLike = {
   color?: string | number
   assets?: TextureRef[]
   terrainTextureName?: string
+  _terrainAppearance?: {
+    desertBorders?: Set<string> | null
+    deepWaterBorders?: Set<string> | null
+    relief?: { index: number; elevation: number } | null
+  }
   children: TerrainChild[]
   sprite: TerrainSprite | null
   has: RuntimeEntity | null
@@ -214,6 +220,11 @@ export class CellTerrain {
     cell.inclined = false
     cell.border = false
     cell.waterBorder = false
+    if (cell._terrainAppearance) {
+      cell._terrainAppearance.desertBorders = null
+      cell._terrainAppearance.deepWaterBorders = null
+      cell._terrainAppearance.relief = null
+    }
   }
 
   setTerrainType(type: string): void {
@@ -225,6 +236,8 @@ export class CellTerrain {
     const previousType = cell.type
     cell.type = type
     Object.assign(cell, definition)
+    const textureRef = getDeterministicCellVariant(definition.assets || [], cell.i, cell.j, cell.map?.seed)
+    if (textureRef) cell.terrainTextureName = textureRefToString(textureRef)
     if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
       asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
     }
@@ -239,7 +252,10 @@ export class CellTerrain {
     const resourceName = BORDER_SHEETS.desertRelief
     const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
-    const cellSpriteIndex = parseTextureRef(cellSpriteTextureName).frame
+    // Relief formatting runs before biome borders. The base terrain reference is
+    // still the original flat tile, while the sprite may already display a
+    // relief frame (013..024). Use the frame that was actually applied.
+    const cellSpriteIndex = cell._terrainAppearance?.relief?.index ?? parseTextureRef(cellSpriteTextureName).frame
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
@@ -260,6 +276,10 @@ export class CellTerrain {
     sprite.type = 'border'
     sprite.zIndex = 10
     cell.addChild(sprite)
+    if (cell._terrainAppearance) {
+      if (!cell._terrainAppearance.desertBorders) cell._terrainAppearance.desertBorders = new Set()
+      cell._terrainAppearance.desertBorders.add(direction)
+    }
   }
 
   setDeepWaterBorder(direction: string): void {
@@ -270,7 +290,7 @@ export class CellTerrain {
     const resourceName = BORDER_SHEETS.waterRelief
     const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
-    const cellSpriteIndex = parseTextureRef(cellSpriteTextureName).frame
+    const cellSpriteIndex = cell._terrainAppearance?.relief?.index ?? parseTextureRef(cellSpriteTextureName).frame
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
@@ -285,6 +305,10 @@ export class CellTerrain {
     sprite.type = 'deepWaterBorder'
     sprite.zIndex = 10
     cell.addChild(sprite)
+    if (cell._terrainAppearance) {
+      if (!cell._terrainAppearance.deepWaterBorders) cell._terrainAppearance.deepWaterBorders = new Set()
+      cell._terrainAppearance.deepWaterBorders.add(direction)
+    }
   }
 
   setWaterBorder(resourceName: string, index: number): void {
@@ -304,6 +328,7 @@ export class CellTerrain {
     const { cell } = this
     const { sprite } = cell
     if (!sprite) return
+    const reliefIndex = Number(index)
     const baseTexture = sprite.texture
     const label = cell.terrainTextureName
     if (!label) {
@@ -311,7 +336,7 @@ export class CellTerrain {
       return
     }
     const resourceName = parseTextureRef(label).sheet
-    const texture = getTextureByFrame(resourceName, index, Assets)
+    const texture = getTextureByFrame(resourceName, reliefIndex, Assets)
 
     // Relief frames are intentionally transparent. Keep the original flat tile
     // inside the cell so fog baking and container sorting can never expose the scene.
@@ -331,6 +356,7 @@ export class CellTerrain {
       cell.y -= elevation
     }
     cell.inclined = true
+    if (cell._terrainAppearance) cell._terrainAppearance.relief = { index: reliefIndex, elevation }
     if (cell.has) {
       cell.has.zIndex = getInstanceZIndex(cell.has as ZIndexedPoint)
     }

@@ -766,12 +766,12 @@
       "corpseSheet": 1
     },
     "assets": {
-      "standingSheet": "boats/fishing-boat/standing",
-      "walkingSheet": "boats/fishing-boat/standing",
-      "actionSheet": "boats/fishing-boat/standing",
+      "standingSheet": "boats/fishing-boat",
+      "walkingSheet": "boats/fishing-boat",
+      "actionSheet": "boats/fishing-boat",
       "fishingOverlaySheet": "boats/fishing-boat/fishing-overlay",
-      "dyingSheet": "boats/fishing-boat/dying",
-      "corpseSheet": "boats/fishing-boat/dying"
+      "dyingSheet": "boats/wrecks/small",
+      "corpseSheet": "boats/wrecks/small"
     },
     "sounds": {
       "create": "non-military-ship-completed",
