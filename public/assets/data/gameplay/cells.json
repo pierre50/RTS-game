@@ -169,7 +169,7 @@
   },
   "Water": {
     "category": "Water",
-    "color": "#17277B",
+    "color": "#2C46A0",
     "assets": [
       {
         "sheet": "terrain/water",
@@ -191,7 +191,7 @@
   },
   "DeepWater": {
     "category": "Water",
-    "color": "#0A1260",
+    "color": "#17277B",
     "assets": [
       {
         "sheet": "terrain/deep-water",

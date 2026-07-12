@@ -55,6 +55,9 @@ type TerrainValue = 0 | 1 | 2 | 3 | 4
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
+const WHALE_RESOURCE_TYPE = 'Whale'
+const DEFAULT_FISH_SPAWN_WEIGHT = 9
+const WHALE_SPAWN_WEIGHT = 1
 export type MapGenerationContext = Omit<
   Partial<GameContextLike>,
   'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
@@ -131,6 +134,7 @@ type SetSprite = Sprite & {
 }
 type ResourceDefinition = {
   category?: string
+  habitat?: string
 }
 type GameConfig = {
   animals: Record<string, AnimalConfig>
@@ -340,12 +344,15 @@ export class MapGeneration {
 
   pickFishResourceType(i: number, j: number): string {
     const resources = gameConfig().resources
-    const fishTypes = Object.entries(resources)
-      .filter(([, definition]) => definition.category === 'Fish')
-      .map(([type]) => type)
     const cell = this.map.grid[i]?.[j]
-    const available = cell?.type === 'DeepWater' ? fishTypes : fishTypes.filter((type: string) => type !== 'Whale')
-    return this.map.randomItem(available.length ? available : [RESOURCE_TYPES.salmon])
+    const habitat = cell?.type === 'DeepWater' ? 'DeepWater' : 'Water'
+    const available = Object.entries(resources)
+      .filter(([, definition]) => definition.category === 'Fish' && (definition.habitat ?? 'Water') === habitat)
+      .map(([type]) => type)
+    const weighted = (available.length ? available : [RESOURCE_TYPES.salmon]).flatMap(type =>
+      Array(type === WHALE_RESOURCE_TYPE ? WHALE_SPAWN_WEIGHT : DEFAULT_FISH_SPAWN_WEIGHT).fill(type)
+    )
+    return this.map.randomItem(weighted)
   }
 
   generateFromJSON(data: SavedGameData): void {
@@ -1136,7 +1143,7 @@ export class MapGeneration {
       return terrainMap
     }
 
-    const thresholds: Record<string, number> = { plain: 0.3, continent: 0.4, lac: 0.42, ilot: 0.52 }
+    const thresholds: Record<string, number> = { plain: 0.3, continent: 0.28, lac: 0.42, ilot: 0.52 }
     const waterThreshold = thresholds[mapType] ?? 0.3
 
     const terrainMap: TerrainGrid = []

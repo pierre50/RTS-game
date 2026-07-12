@@ -178,6 +178,7 @@
   },
   "Salmon": {
     "category": "Fish",
+    "habitat": "DeepWater",
     "totalQuantity": 250,
     "icon": "034_50730",
     "allowAction": [
@@ -197,7 +198,8 @@
   },
   "Fish": {
     "category": "Fish",
-    "totalQuantity": 250,
+    "habitat": "Water",
+    "totalQuantity": 200,
     "icon": "034_50730",
     "allowAction": [
       "Villager",
@@ -216,7 +218,8 @@
   },
   "RiverFish": {
     "category": "Fish",
-    "totalQuantity": 250,
+    "habitat": "Water",
+    "totalQuantity": 200,
     "icon": "034_50730",
     "allowAction": [
       "Villager",
@@ -235,7 +238,8 @@
   },
   "ShoreFish": {
     "category": "Fish",
-    "totalQuantity": 250,
+    "habitat": "Water",
+    "totalQuantity": 200,
     "icon": "034_50730",
     "allowAction": [
       "Villager",
@@ -254,6 +258,7 @@
   },
   "Whale": {
     "category": "Fish",
+    "habitat": "DeepWater",
     "totalQuantity": 300,
     "icon": "034_50730",
     "allowAction": [

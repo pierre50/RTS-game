@@ -83,7 +83,6 @@ export default class MainMenu {
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
     buttons.appendChild(this._btn(t('newGame'), this.onStart))
-    buttons.appendChild(this._btn(t('mapEditor'), this.onMapEditor))
     buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList()))
     buttons.appendChild(this._btn(t('settings'), () => this._openSettings()))
     panel.appendChild(buttons)
