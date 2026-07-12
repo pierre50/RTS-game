@@ -1,27 +1,27 @@
 export const SOUND_CUES = {
   ui: {
-    buttonPress: '5035',
-    menuClick: '5036',
-    underAttack: '5014',
+    buttonPress: 'button-selected',
+    menuClick: 'completed-unknown',
+    underAttack: 'attack-warning',
   },
   player: {
-    ageAdvance: '5169',
+    ageAdvance: 'next-age-reached',
   },
   unit: {
-    fallbackCreate: '5144',
-    militaryCommand: ['5075', '5076', '5128', '5164'],
+    fallbackCreate: 'human-unit-completed',
+    militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],
   },
   villager: {
-    command: '5006',
-    gatherFood: '5178',
-    chopWood: '5048',
-    forageBerry: '5085',
-    mineOre: '5159',
-    buildLoop: '5107',
-    throwSpear: '5125',
+    command: 'olmars',
+    gatherFood: 'farming-3',
+    chopWood: 'wood-chopping',
+    forageBerry: 'berry-gathering',
+    mineOre: 'mining-2',
+    buildLoop: 'building',
+    throwSpear: 'arrow-shot',
   },
   building: {
-    burning: ['5000', '5081', '5082'],
-    collapse: ['5077', '5078', '5079'],
+    burning: ['building-burning', 'building-burning-2', 'building-burning-3'],
+    collapse: ['building-destroyed', 'building-destroyed-2', 'building-destroyed-3'],
   },
 }

@@ -250,7 +250,7 @@ export class Player implements PlayerLike {
 
     const handler = `on${capitalizeFirstLetter(config.key || '')}Change`
     const handlerFn = Reflect.get(this, handler) as PlayerTechnologyHandler | undefined
-    typeof handlerFn === 'function' && handlerFn(config.value)
+    typeof handlerFn === 'function' && handlerFn.call(this, config.value)
     return true
   }
 

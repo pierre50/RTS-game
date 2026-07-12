@@ -29,7 +29,7 @@ function extractManifestPaths() {
   const textureBundleMatch = src.match(/toTextureBundle\('([^']+)',\s*\[([^\]]+)\]/s)
   if (textureBundleMatch) {
     const basePath = textureBundleMatch[1]
-    const ids = textureBundleMatch[2].matchAll(/'(\d+)'/g)
+    const ids = textureBundleMatch[2].matchAll(/'([^']+)'/g)
     for (const m of ids) {
       paths.add(`${basePath}/${m[1]}/texture.json`)
       paths.add(`${basePath}/${m[1]}/texture.png`)
@@ -39,7 +39,7 @@ function extractManifestPaths() {
   // toSoundBundle([...ids...]) → assets/sounds/{id}.wav
   const soundBundleMatch = src.match(/toSoundBundle\(\s*\[([^\]]+)\]/s)
   if (soundBundleMatch) {
-    const ids = soundBundleMatch[1].matchAll(/'(\d+)'/g)
+    const ids = soundBundleMatch[1].matchAll(/'([^']+)'/g)
     for (const m of ids) {
       paths.add(`assets/sounds/${m[1]}.wav`)
     }

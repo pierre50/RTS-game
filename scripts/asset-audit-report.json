@@ -1,10 +1,10 @@
 {
   "summary": {
-    "filesOnDisk": 1325,
-    "pathsInManifest": 221,
-    "unusedCount": 1104,
+    "filesOnDisk": 1281,
+    "pathsInManifest": 881,
+    "unusedCount": 400,
     "missingCount": 0,
-    "recoverableMb": 19
+    "recoverableMb": 2.8
   },
   "unused": {
     "border": [
@@ -18,15 +18,7 @@
       "fonts/VT323-Regular.ttf"
     ],
     "graphics": [
-      "graphics/animals",
-      "graphics/boats",
-      "graphics/buildings",
-      "graphics/effects",
-      "graphics/environment",
-      "graphics/projectiles",
-      "graphics/resources",
-      "graphics/ui",
-      "graphics/units"
+      "graphics/boats"
     ],
     "interface": [
       "interface/attribute-icons",

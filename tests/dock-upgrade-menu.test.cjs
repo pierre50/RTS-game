@@ -126,6 +126,8 @@ test('Dock only shows the current boat in each upgrade chain', () => {
 })
 
 test('upgraded fishing ships can still fish every fish resource', () => {
+  assert.equal(resources.Salmon.assets, 'resources/fish/salmon')
+
   for (const [type, resource] of Object.entries(resources)) {
     if (resource.category !== 'Fish') continue
     assert.ok(resource.allowAction.includes('FishingBoat'), `${type} should allow FishingBoat`)

@@ -186,12 +186,12 @@
       "FishingShip"
     ],
     "isAnimated": true,
-    "assets": "resources/fish/small",
+    "assets": "resources/fish/salmon",
     "sounds": {
       "command": [
-        5182,
-        5183,
-        5184
+        "fish",
+        "fish-2",
+        "fish-3"
       ]
     }
   },
@@ -208,9 +208,9 @@
     "assets": "resources/fish/small",
     "sounds": {
       "command": [
-        5182,
-        5183,
-        5184
+        "fish",
+        "fish-2",
+        "fish-3"
       ]
     }
   },
@@ -227,9 +227,9 @@
     "assets": "resources/fish/small",
     "sounds": {
       "command": [
-        5182,
-        5183,
-        5184
+        "fish",
+        "fish-2",
+        "fish-3"
       ]
     }
   },
@@ -246,9 +246,9 @@
     "assets": "resources/fish/small",
     "sounds": {
       "command": [
-        5182,
-        5183,
-        5184
+        "fish",
+        "fish-2",
+        "fish-3"
       ]
     }
   },
@@ -265,8 +265,8 @@
     "assets": "resources/fish/whale",
     "sounds": {
       "command": [
-        5210,
-        5211
+        "whale",
+        "whale-2"
       ]
     }
   }

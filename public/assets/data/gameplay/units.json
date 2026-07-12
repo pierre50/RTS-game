@@ -114,30 +114,30 @@
       "goldminer": 0.5175
     },
     "sounds": {
-      "create": 5166,
+      "create": "villager-completed",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ],
-      "command": 5006,
-      "buildCommand": 5118,
-      "huntCommand": 5005,
+      "command": "olmars",
+      "buildCommand": "homis",
+      "huntCommand": "isay",
       "work": {
-        "gatherFood": 5178,
-        "chopWood": 5048,
-        "forageBerry": 5085,
-        "mineStone": 5159,
-        "mineGold": 5159,
-        "build": 5107,
-        "throwSpear": 5125
+        "gatherFood": "farming-3",
+        "chopWood": "wood-chopping",
+        "forageBerry": "berry-gathering",
+        "mineStone": "mining-2",
+        "mineGold": "mining-2",
+        "build": "building",
+        "throwSpear": "arrow-shot"
       }
     }
   },
@@ -171,22 +171,22 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -213,17 +213,17 @@
     },
     "sounds": {
       "command": [
-        5120,
-        5121,
-        5122,
-        5123
+        "horse",
+        "horse-2",
+        "horse-3",
+        "horse-4"
       ],
-      "die": 5108,
-      "move": 5092,
+      "die": "horse-unit-die",
+      "move": "horse-moving",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ]
     }
   },
@@ -253,22 +253,22 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -294,30 +294,30 @@
       "corpseSheet": "units/priest/corpse"
     },
     "sounds": {
-      "create": 5165,
+      "create": "priest-completed",
       "command": [
-        5050,
-        5051,
-        5109
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
       ],
       "move": [
-        5050,
-        5051,
-        5109
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
       ],
-      "heal": 5050,
-      "convert": 5051,
+      "heal": "ayohoyohoyo",
+      "convert": "wololo",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -356,23 +356,23 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -412,23 +412,23 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -468,23 +468,23 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -519,23 +519,23 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -577,22 +577,22 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -620,23 +620,23 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5190,
-        5191,
-        5192,
-        5193
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
-        5060,
-        5061,
-        5062,
-        5063,
-        5064
+        "human-unit-killed-6",
+        "human-unit-killed-7",
+        "human-unit-killed-8",
+        "human-unit-killed-9",
+        "human-unit-killed-10"
       ]
     }
   },
@@ -673,22 +673,22 @@
     },
     "sounds": {
       "command": [
-        5075,
-        5076,
-        5128,
-        5164
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
       ],
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
       "die": [
-        5055,
-        5056,
-        5057,
-        5058,
-        5059
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3",
+        "human-unit-killed-4",
+        "human-unit-killed-5"
       ]
     }
   },
@@ -725,18 +725,18 @@
     },
     "sounds": {
       "command": [
-        5120,
-        5121,
-        5122,
-        5123
+        "horse",
+        "horse-2",
+        "horse-3",
+        "horse-4"
       ],
-      "move": 5092,
+      "move": "horse-moving",
       "hit": [
-        5138,
-        5139,
-        5140
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
       ],
-      "die": 5108
+      "die": "horse-unit-die"
     }
   },
   "FishingBoat": {
@@ -774,19 +774,19 @@
       "corpseSheet": "boats/fishing-boat/dying"
     },
     "sounds": {
-      "create": 5030,
-      "command": 5027,
-      "move": 5027,
+      "create": "non-military-ship-completed",
+      "command": "dock-completed-selected",
+      "move": "dock-completed-selected",
       "die": [
-        5113,
-        5177,
-        5181
+        "ship-sunk",
+        "ship-sunk-2",
+        "ship-sunk-3"
       ],
       "work": {
         "fishing": [
-          5182,
-          5183,
-          5184
+          "fish",
+          "fish-2",
+          "fish-3"
         ]
       }
     }

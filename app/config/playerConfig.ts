@@ -8,14 +8,14 @@ function deepClone<T>(value: T): T {
 }
 
 const MELEE_SOUNDS = {
-  hit: [5190, 5191, 5192, 5193],
-  die: [5060, 5061, 5062, 5063, 5064],
+  hit: ['sword-attack', 'swing-sword-attack', 'tinkle-sword-attack', 'sword-attack-2'],
+  die: ['human-unit-killed-6', 'human-unit-killed-7', 'human-unit-killed-8', 'human-unit-killed-9', 'human-unit-killed-10'],
 }
 
-const HUMAN_HIT_SOUNDS = [5138, 5139, 5140]
-const SHIP_DESTROYED_SOUNDS = [5113, 5177, 5181]
+const HUMAN_HIT_SOUNDS = ['attack-class-2', 'attack-class-2-2', 'attack-class-2-3']
+const SHIP_DESTROYED_SOUNDS = ['ship-sunk', 'ship-sunk-2', 'ship-sunk-3']
 const STONE_START_SOUND = null
-const FISHING_SOUNDS = [5182, 5183, 5184]
+const FISHING_SOUNDS = ['fish', 'fish-2', 'fish-3']
 
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   Trooper: {
@@ -65,8 +65,8 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       },
     },
     sounds: {
-      hit: [5009, 5010],
-      die: [5055, 5056, 5057],
+      hit: ['archer-attack', 'archer-attack-2'],
+      die: ['human-unit-killed', 'human-unit-killed-2', 'human-unit-killed-3'],
     },
   },
   Supercar: {
@@ -107,11 +107,11 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       },
     },
     sounds: {
-      create: 5240,
-      command: 5240,
-      move: 5240,
-      hit: [5009, 5010],
-      die: 5108,
+      create: 'winsetts-z',
+      command: 'winsetts-z',
+      move: 'winsetts-z',
+      hit: ['archer-attack', 'archer-attack-2'],
+      die: 'horse-unit-die',
     },
   },
   Legion: {
@@ -254,10 +254,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/horse-archer/corpse',
     },
     sounds: {
-      command: [5120, 5121, 5122, 5123],
-      move: 5092,
+      command: ['horse', 'horse-2', 'horse-3', 'horse-4'],
+      move: 'horse-moving',
       hit: HUMAN_HIT_SOUNDS,
-      die: 5108,
+      die: 'horse-unit-die',
     },
   },
   HeavyHorseArcher: {
@@ -292,10 +292,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/horse-archer/corpse',
     },
     sounds: {
-      command: [5120, 5121, 5122, 5123],
-      move: 5092,
+      command: ['horse', 'horse-2', 'horse-3', 'horse-4'],
+      move: 'horse-moving',
       hit: HUMAN_HIT_SOUNDS,
-      die: 5108,
+      die: 'horse-unit-die',
     },
   },
   Chariot: {
@@ -330,13 +330,13 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       standingSheet: 'units/chariot/standing',
       walkingSheet: 'units/chariot/walking',
       actionSheet: 'units/chariot/action',
-      dyingSheet: 'units/supercar/dying',
-      corpseSheet: 'units/supercar/corpse',
+      dyingSheet: 'units/chariot/dying',
+      corpseSheet: 'units/chariot/corpse',
     },
     sounds: {
-      command: [5120, 5121, 5122, 5123],
-      move: 5092,
-      die: 5108,
+      command: ['horse', 'horse-2', 'horse-3', 'horse-4'],
+      move: 'horse-moving',
+      die: 'horse-unit-die',
       hit: HUMAN_HIT_SOUNDS,
     },
   },
@@ -375,9 +375,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/cavalry/corpse',
     },
     sounds: {
-      command: [5120, 5121, 5122, 5123],
-      move: 5092,
-      die: 5108,
+      command: ['horse', 'horse-2', 'horse-3', 'horse-4'],
+      move: 'horse-moving',
+      die: 'horse-unit-die',
       hit: HUMAN_HIT_SOUNDS,
     },
   },
@@ -416,9 +416,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/cataphract/corpse',
     },
     sounds: {
-      command: [5120, 5121, 5122, 5123],
-      move: 5092,
-      die: 5108,
+      command: ['horse', 'horse-2', 'horse-3', 'horse-4'],
+      move: 'horse-moving',
+      die: 'horse-unit-die',
       hit: HUMAN_HIT_SOUNDS,
     },
   },
@@ -460,10 +460,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/elephant-archer/corpse',
     },
     sounds: {
-      command: [5071, 5072],
-      move: 5216,
-      die: 5239,
-      hit: 5070,
+      command: ['elephant-selected', 'elephant-selected-2'],
+      move: 'elephant-unit-moving',
+      die: 'elephant-alligator-killed',
+      hit: 'target-hit-2',
     },
   },
   WarElephant: {
@@ -507,10 +507,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/war-elephant/corpse',
     },
     sounds: {
-      command: [5071, 5072],
-      move: 5216,
-      die: 5239,
-      hit: 5070,
+      command: ['elephant-selected', 'elephant-selected-2'],
+      move: 'elephant-unit-moving',
+      die: 'elephant-alligator-killed',
+      hit: 'target-hit-2',
     },
   },
   ArmoredElephant: {
@@ -544,10 +544,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/war-elephant/corpse',
     },
     sounds: {
-      command: [5071, 5072],
-      move: 5216,
-      die: 5239,
-      hit: 5070,
+      command: ['elephant-selected', 'elephant-selected-2'],
+      move: 'elephant-unit-moving',
+      die: 'elephant-alligator-killed',
+      hit: 'target-hit-2',
     },
   },
   StoneThrower: {
@@ -583,11 +583,11 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/stone-thrower/corpse',
     },
     sounds: {
-      create: 5041,
-      command: 5043,
-      move: 5043,
-      die: 5016,
-      attack: [5038, 5039, 5040],
+      create: 'catapult-weapon-completed-selected',
+      command: 'siege-weapon-moving',
+      move: 'siege-weapon-moving',
+      die: 'siege-weapon-destroyed',
+      attack: ['catapult-stone-shot', 'catapult-stone-shot-2', 'catapult-stone-shot-3'],
     },
   },
   Catapult: {
@@ -623,11 +623,11 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/catapult/corpse',
     },
     sounds: {
-      create: 5041,
-      command: 5043,
-      move: 5043,
-      die: 5016,
-      attack: [5038, 5039, 5040],
+      create: 'catapult-weapon-completed-selected',
+      command: 'siege-weapon-moving',
+      move: 'siege-weapon-moving',
+      die: 'siege-weapon-destroyed',
+      attack: ['catapult-stone-shot', 'catapult-stone-shot-2', 'catapult-stone-shot-3'],
     },
   },
   Ballista: {
@@ -663,10 +663,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'units/ballista/corpse',
     },
     sounds: {
-      create: 5017,
-      command: 5043,
-      move: 5043,
-      die: 5042,
+      create: 'ballista-weapon-completed-selected',
+      command: 'siege-weapon-moving',
+      move: 'siege-weapon-moving',
+      die: 'catapult-weapon-destroyed',
     },
   },
   FishingShip: {
@@ -709,9 +709,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
       corpseSheet: 'boats/wreck-small',
     },
     sounds: {
-      create: 5030,
-      command: 5027,
-      move: 5027,
+      create: 'non-military-ship-completed',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       die: SHIP_DESTROYED_SOUNDS,
       work: {
         fishing: FISHING_SOUNDS,
@@ -754,9 +754,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-5-direction',
     sailDirectionCount: 5,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       die: SHIP_DESTROYED_SOUNDS,
     },
   },
@@ -796,9 +796,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-5-direction',
     sailDirectionCount: 5,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       die: SHIP_DESTROYED_SOUNDS,
     },
   },
@@ -839,9 +839,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-5-direction',
     sailDirectionCount: 5,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       hit: HUMAN_HIT_SOUNDS,
       die: SHIP_DESTROYED_SOUNDS,
     },
@@ -884,9 +884,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-5-direction',
     sailDirectionCount: 5,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       hit: HUMAN_HIT_SOUNDS,
       die: SHIP_DESTROYED_SOUNDS,
     },
@@ -932,9 +932,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-9-direction',
     sailDirectionCount: 9,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
       hit: HUMAN_HIT_SOUNDS,
       die: SHIP_DESTROYED_SOUNDS,
     },
@@ -980,10 +980,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-9-direction',
     sailDirectionCount: 9,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
-      attack: 5040,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
+      attack: 'catapult-stone-shot-3',
       hit: HUMAN_HIT_SOUNDS,
       die: SHIP_DESTROYED_SOUNDS,
     },
@@ -1029,10 +1029,10 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sailSheet: 'boats/sail-9-direction',
     sailDirectionCount: 9,
     sounds: {
-      create: 5208,
-      command: 5027,
-      move: 5027,
-      attack: 5040,
+      create: 'military-ship-completed-selected',
+      command: 'dock-completed-selected',
+      move: 'dock-completed-selected',
+      attack: 'catapult-stone-shot-3',
       hit: HUMAN_HIT_SOUNDS,
       die: SHIP_DESTROYED_SOUNDS,
     },
@@ -1225,7 +1225,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     },
     sounds: {
       launch: STONE_START_SOUND,
-      impact: 5070,
+      impact: 'target-hit-2',
     },
   },
   FireStone: {
@@ -1242,7 +1242,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     },
     sounds: {
       launch: STONE_START_SOUND,
-      impact: 5070,
+      impact: 'target-hit-2',
     },
   },
   Arrow: {
@@ -1254,7 +1254,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     staticFrame: 18,
     spriteBaseAngle: 0,
     sounds: {
-      launch: [5009, 5010, 5011, 5012],
+      launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
     },
   },
   FireArrow: {
@@ -1266,7 +1266,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     staticFrame: 1,
     spriteBaseAngle: 0,
     sounds: {
-      launch: [5009, 5010, 5011, 5012],
+      launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
     },
   },
   Bolt: {
@@ -1277,8 +1277,8 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     directionalFrames: 8,
     directionalFrameOrder: ['east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'north', 'northeast'],
     sounds: {
-      launch: [5018, 5019, 5020, 5021, 5052],
-      impact: 5028,
+      launch: ['ballista-bolt-shot', 'ballista-bolt-shot-2', 'ballista-bolt-shot-3', 'ballista-bolt-shot-4', 'ballista-bolt-shot-5'],
+      impact: 'target-hit',
     },
   },
   FireBolt: {
@@ -1289,8 +1289,8 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     directionalAnimationFrames: 3,
     animationSpeed: 0.35,
     sounds: {
-      launch: [5018, 5019, 5020, 5021, 5052],
-      impact: 5028,
+      launch: ['ballista-bolt-shot', 'ballista-bolt-shot-2', 'ballista-bolt-shot-3', 'ballista-bolt-shot-4', 'ballista-bolt-shot-5'],
+      impact: 'target-hit',
     },
   },
   Bullet: {
@@ -1306,8 +1306,8 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
       scale: 0.65,
     },
     sounds: {
-      launch: [5009, 5010],
-      impact: 5028,
+      launch: ['archer-attack', 'archer-attack-2'],
+      impact: 'target-hit',
     },
   },
   SupercarMissile: {
@@ -1325,8 +1325,8 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
       scale: 1,
     },
     sounds: {
-      launch: [5009, 5010],
-      impact: 5028,
+      launch: ['archer-attack', 'archer-attack-2'],
+      impact: 'target-hit',
     },
   },
   Spear: {
@@ -1337,7 +1337,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     directionalFrames: 32,
     fullCircleStartDegree: 191.25,
     sounds: {
-      launch: 5125,
+      launch: 'arrow-shot',
     },
   },
 }

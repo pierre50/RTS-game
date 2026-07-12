@@ -3,7 +3,7 @@
     "size": 10,
     "speed": 8,
     "sounds": {
-      "launch": 5125
+      "launch": "arrow-shot"
     }
   },
   "Arrow": {
@@ -11,10 +11,10 @@
     "speed": 14,
     "sounds": {
       "launch": [
-        5009,
-        5010,
-        5011,
-        5012
+        "archer-attack",
+        "archer-attack-2",
+        "archer-attack-3",
+        "archer-attack-4"
       ]
     }
   },
@@ -23,13 +23,13 @@
     "speed": 12,
     "sounds": {
       "launch": [
-        5018,
-        5019,
-        5020,
-        5021,
-        5052
+        "ballista-bolt-shot",
+        "ballista-bolt-shot-2",
+        "ballista-bolt-shot-3",
+        "ballista-bolt-shot-4",
+        "ballista-bolt-shot-5"
       ],
-      "impact": 5028
+      "impact": "target-hit"
     }
   }
 }

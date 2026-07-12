@@ -10,16 +10,16 @@
       "wood": 30
     },
     "sounds": {
-      "create": 5126,
+      "create": "house-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -46,16 +46,16 @@
       "Legion"
     ],
     "sounds": {
-      "create": 5022,
+      "create": "barracks-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -81,16 +81,16 @@
       "ResearchBallistaTower"
     ],
     "sounds": {
-      "create": 5096,
+      "create": "granary-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -127,16 +127,16 @@
       "TowerShield"
     ],
     "sounds": {
-      "create": 5186,
+      "create": "storage-pit-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -153,16 +153,16 @@
       "wood": 100
     },
     "sounds": {
-      "create": 5027,
+      "create": "dock-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -198,16 +198,16 @@
       "HeavyHorseArcher"
     ],
     "sounds": {
-      "create": 5008,
+      "create": "archery-range-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -238,16 +238,16 @@
       "ArmoredElephant"
     ],
     "sounds": {
-      "create": 5123,
+      "create": "horse-4",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -273,16 +273,16 @@
       }
     ],
     "sounds": {
-      "create": 5176,
+      "create": "farm-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -311,16 +311,16 @@
       }
     ],
     "sounds": {
-      "create": 5201,
+      "create": "tower-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -344,16 +344,16 @@
       }
     ],
     "sounds": {
-      "create": 5201,
+      "create": "tower-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -378,16 +378,16 @@
       }
     ],
     "sounds": {
-      "create": 5207,
+      "create": "wall-fortification-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -423,16 +423,16 @@
       "Coinage"
     ],
     "sounds": {
-      "create": 5142,
+      "create": "market-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -464,16 +464,16 @@
       "Monotheism"
     ],
     "sounds": {
-      "create": 5196,
+      "create": "temple-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -506,16 +506,16 @@
       "Aristocracy"
     ],
     "sounds": {
-      "create": 5129,
+      "create": "government-center-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -549,16 +549,16 @@
       "IronAge"
     ],
     "sounds": {
-      "create": 5044,
+      "create": "town-center-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -583,16 +583,16 @@
       }
     ],
     "sounds": {
-      "create": 5074,
+      "create": "siege-workshop-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -624,16 +624,16 @@
       "Centurion"
     ],
     "sounds": {
-      "create": 5002,
+      "create": "academy-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -657,16 +657,16 @@
       }
     ],
     "sounds": {
-      "create": 5201,
+      "create": "tower-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   },
@@ -690,16 +690,16 @@
       }
     ],
     "sounds": {
-      "create": 5201,
+      "create": "tower-completed-selected",
       "burning": [
-        5000,
-        5081,
-        5082
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
       ],
       "collapse": [
-        5077,
-        5078,
-        5079
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
       ]
     }
   }

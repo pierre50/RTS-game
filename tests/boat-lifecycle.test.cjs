@@ -159,7 +159,7 @@ test('fishing boats gather silently', () => {
     },
     sounds: {
       work: {
-        fishing: [5182, 5183, 5184],
+        fishing: ['fish', 'fish-2', 'fish-3'],
       },
     },
     silentWorkSounds: ['fishing'],

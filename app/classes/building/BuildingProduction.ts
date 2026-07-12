@@ -23,7 +23,7 @@ function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
     const sendToFunc = `sendTo${target.category || target.type}`
     const command = (unit as UnitWithDynamicCommands)[sendToFunc]
-    if (typeof command === 'function') return command(target)
+    if (typeof command === 'function') return command.call(unit, target)
     return unit.sendTo(target)
   }
   if (target.family === FAMILY_TYPES.animal) {

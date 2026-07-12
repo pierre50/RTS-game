@@ -30,7 +30,7 @@ const mappings = [
   ['407', 'environment/birds/eagle/shadow'],
   ['520', 'environment/birds/hawk/shadow'],
   ['521', 'environment/birds/hawk/body'],
-  ['458', 'resources/fish/salmon/leaping'],
+  ['458', 'resources/fish/salmon'],
 ]
 
 function renameDirectory(fromId, toId) {

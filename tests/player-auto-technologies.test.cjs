@@ -209,3 +209,37 @@ test('captured buildings keep their civ but advance visual age on owner age chan
     ['native', undefined, undefined],
   ])
 })
+
+test('unlocking age technology calls age change handler with player context', () => {
+  const Player = loadPlayer()
+  const calls = []
+  const player = {
+    age: 0,
+    technologies: [],
+    techs: {
+      ToolAge: { key: 'age', value: 1 },
+    },
+    buildings: [
+      {
+        finalTexture() {
+          calls.push(['building', this.assetAge])
+        },
+        isBuilt: true,
+        isDead: false,
+      },
+    ],
+    context: {
+      menu: {},
+      players: [],
+    },
+    isPlayed: false,
+  }
+  player.context.players = [player]
+  Object.setPrototypeOf(player, Player.prototype)
+
+  assert.equal(player.unlockTechnology('ToolAge'), true)
+
+  assert.equal(player.age, 1)
+  assert.equal(player.buildings[0].assetAge, undefined)
+  assert.deepEqual(calls, [['building', undefined]])
+})

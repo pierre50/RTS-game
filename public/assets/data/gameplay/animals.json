@@ -15,7 +15,7 @@
       "corpseSheet": "animals/gazelle/corpse"
     },
     "sounds": {
-      "fall": 5003
+      "fall": "gazelle-lion-killed"
     }
   },
   "Elephant": {
@@ -34,8 +34,8 @@
       "corpseSheet": "animals/elephant/corpse"
     },
     "sounds": {
-      "fall": 5239,
-      "hit": 5070
+      "fall": "elephant-alligator-killed",
+      "hit": "target-hit-2"
     }
   },
   "Crocodile": {
@@ -55,7 +55,7 @@
       "corpseSheet": "animals/crocodile/corpse"
     },
     "sounds": {
-      "fall": 5239
+      "fall": "elephant-alligator-killed"
     }
   },
   "Alligator": {
@@ -75,7 +75,7 @@
       "corpseSheet": "animals/crocodile/corpse"
     },
     "sounds": {
-      "fall": 5239
+      "fall": "elephant-alligator-killed"
     }
   },
   "Lion": {
@@ -95,12 +95,12 @@
       "corpseSheet": "animals/lion/corpse"
     },
     "sounds": {
-      "fall": 5003,
+      "fall": "gazelle-lion-killed",
       "hit": [
-        5132,
-        5133,
-        5134,
-        5135
+        "lion-attacking",
+        "lion-attacking-2",
+        "lion-attacking-3",
+        "lion-attacking-4"
       ]
     }
   }
