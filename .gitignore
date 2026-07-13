@@ -9,3 +9,6 @@ tools/
 !tools/
 tools/*
 !tools/generate-rtsmaps.cjs
+/scripts/lpc/spritesheets/
+/scripts/lpc/palette_definitions/
+/scripts/lpc/sheet_definitions/

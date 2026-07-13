@@ -11,11 +11,42 @@ export type ConfigValue =
   | ConfigValue[]
   | { [key: string]: ConfigValue | TechnologyConfig }
 
+export type UnitAppearanceLayerConfig = {
+  zIndex: number
+  workTypes?: string[]
+  workSheetOverrides?: Record<string, Partial<Record<string, string>>>
+  actionWorkSheetOverrides?: Record<string, Partial<Record<string, string>>>
+  playerColorVariants?: Record<string, string>
+  appearanceVariantKey?: string
+  sheetDirectionCounts?: Record<string, number>
+  sheetDirectionOrders?: Record<string, string[]>
+  palette?: string
+  paletteSize?: number
+  standingSheet?: string
+  walkingSheet?: string
+  actionSheet?: string
+  harvestSheet?: string
+  loadedSheet?: string
+  dyingSheet?: string
+  corpseSheet?: string
+}
+
+export interface UnitAppearanceConfig {
+  layers: UnitAppearanceLayerConfig[]
+}
+
 interface EntityConfig {
   icon: string
   cost?: ResourceAmount
   conditions?: Condition[]
-  [key: string]: ConfigValue | ResourceAmount | Condition[] | UnitSounds | TechnologyAction | undefined
+  [key: string]:
+    | ConfigValue
+    | ResourceAmount
+    | Condition[]
+    | UnitSounds
+    | TechnologyAction
+    | UnitAppearanceConfig
+    | undefined
 }
 
 export interface UnitConfig extends EntityConfig {
@@ -25,6 +56,8 @@ export interface UnitConfig extends EntityConfig {
   meleeArmor?: number
   pierceArmor?: number
   sounds?: UnitSounds
+  appearance?: UnitAppearanceConfig
+  spriteScale?: number
 }
 
 export interface BuildingConfig extends EntityConfig {

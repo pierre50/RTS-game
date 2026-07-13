@@ -34,7 +34,9 @@ import {
   canUnloadTransport,
   unloadTransport,
   getIconPath,
+  getSpriteFrameSelection,
 } from '../../lib'
+import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
 import { UnitCommands } from './UnitCommands'
@@ -48,7 +50,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { AssetAge, SpritesheetLike } from '../../types/pixi'
-import type { UnitConfig } from '../../types/config'
+import type { UnitAppearanceLayerConfig, UnitConfig } from '../../types/config'
 import type { SaveDestination, SaveGridPoint, SaveReference } from '../../types/save'
 
 type UnitRestoreReferences = {
@@ -63,6 +65,47 @@ type UnitRestoreReferences = {
 }
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
+type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
+  sprite?: AnimatedSprite
+}
+const MAIN_SPRITE_LAYER_Z_INDEX = 10
+
+function applyAppearanceVariantsToAssetMap(
+  allAssets: UnitEntity['allAssets'],
+  variants: Record<string, string> | undefined
+): UnitEntity['allAssets'] {
+  if (!allAssets || !variants?.skin) return allAssets
+
+  return Object.fromEntries(
+    Object.entries(allAssets).map(([work, sheets]) => [
+      work,
+      Object.fromEntries(
+        Object.entries(sheets).map(([sheet, asset]) => [
+          sheet,
+          /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.get(`${asset}/${variants.skin}`)
+            ? `${asset}/${variants.skin}`
+            : asset,
+        ])
+      ),
+    ])
+  )
+}
+
+function applyAppearanceVariantsToAssets(
+  assets: UnitEntity['assets'],
+  variants: Record<string, string> | undefined
+): UnitEntity['assets'] {
+  if (!assets || !variants?.skin) return assets
+
+  return Object.fromEntries(
+    Object.entries(assets).map(([sheet, asset]) => [
+      sheet,
+      /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.get(`${asset}/${variants.skin}`)
+        ? `${asset}/${variants.skin}`
+        : asset,
+    ])
+  )
+}
 
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
@@ -116,6 +159,10 @@ export class Unit extends Instance implements UnitEntity {
   sendTo!: (target: RuntimeCell | RuntimeEntity, action?: string) => void
 
   declare sprite: AnimatedSprite
+  appearanceLayerSprites: Map<number, AnimatedSprite>
+  sheetDirectionCounts?: Record<string, number>
+  sheetDirectionOrders?: Record<string, string[]>
+  spriteScale?: number
   loadedInTransport: UnitEntity['loadedInTransport']
   inactif!: boolean
   sounds?: UnitEntity['sounds']
@@ -157,6 +204,8 @@ export class Unit extends Instance implements UnitEntity {
 
   assets?: UnitEntity['assets']
   allAssets?: UnitEntity['allAssets']
+  appearance?: UnitEntity['appearance']
+  appearanceVariants?: UnitEntity['appearanceVariants']
 
   totalQuantity?: UnitEntity['totalQuantity']
   quantity!: number
@@ -179,6 +228,7 @@ export class Unit extends Instance implements UnitEntity {
     this.unitCombat = new UnitCombat(this)
     this.unitActions = new UnitActions(this)
     this.unitMovement = new UnitMovement(this)
+    this.appearanceLayerSprites = new Map()
 
     this.dest = null
     this.realDest = null
@@ -199,6 +249,15 @@ export class Unit extends Instance implements UnitEntity {
     Object.assign(this, options)
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     Object.assign(this, unitConfig)
+    if (this.appearance) {
+      this.appearance = { ...this.appearance, layers: this.appearance.layers.map(layer => ({ ...layer })) }
+      this.appearanceVariants =
+        this.appearanceVariants ??
+        resolveLpcAppearanceVariants(this.owner.civ, `${this.owner.label}:${this.label}:${this.i}:${this.j}`)
+      this.assets = applyAppearanceVariantsToAssets(this.assets, this.appearanceVariants)
+      this.allAssets = applyAppearanceVariantsToAssetMap(this.allAssets, this.appearanceVariants)
+    }
+    applyBakedLpcUnitAssets(this)
     this.size = 1
     this.visible = false
     this.visibleCells = new Set()
@@ -313,6 +372,8 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.eventMode = 'auto'
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
+    this.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
+    this.addChild(this.sprite)
     if (this.isDead) {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
     } else if ((this.loading ?? 0) > 0) {
@@ -323,8 +384,8 @@ export class Unit extends Instance implements UnitEntity {
     this.setTextures(this.currentSheet)
 
     this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
+    this.syncAppearanceLayers(this.currentSheet)
     this.sprite.updateAnchor = true
-    this.addChild(this.sprite)
     this.setupSailSprite()
     this.syncFishingOverlaySprite()
 
@@ -575,10 +636,142 @@ export class Unit extends Instance implements UnitEntity {
     this.fishingOverlaySprite.gotoAndStop(0)
   }
 
+  syncAppearanceLayers(sheet: string) {
+    const layers = this.appearance?.layers
+    if (!layers?.length) {
+      for (const sprite of this.appearanceLayerSprites.values()) {
+        sprite.parent?.removeChild(sprite)
+        sprite.destroy({ children: true, texture: false })
+      }
+      this.appearanceLayerSprites.clear()
+      return
+    }
+
+    const liveLayers = new Set<number>()
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i] as RuntimeAppearanceLayer
+      const isLayerEnabledForWork = !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
+      const loadedSheetOverride =
+        this.loading && sheet === SHEET_TYPES.walking ? (layer.loadedSheet as string | undefined) : undefined
+      const actionWorkSheetOverride =
+        this.work && this.action ? layer.actionWorkSheetOverrides?.[`${this.work}:${this.action}`]?.[sheet] : undefined
+      const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[sheet] : undefined
+      const baseSheetId =
+        loadedSheetOverride ??
+        actionWorkSheetOverride ??
+        workSheetOverride ??
+        (layer[sheet as keyof RuntimeAppearanceLayer] as string | undefined)
+      const playerColorVariant = this.owner.color ? layer.playerColorVariants?.[this.owner.color] : undefined
+      const appearanceVariant = layer.appearanceVariantKey
+        ? this.appearanceVariants?.[layer.appearanceVariantKey]
+        : undefined
+      const variantSheetId =
+        baseSheetId && appearanceVariant
+          ? `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
+          : null
+      const basePlayerColorSheetId = baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
+      const sheetId = variantSheetId && Assets.cache.get(variantSheetId)
+        ? variantSheetId
+        : basePlayerColorSheetId
+      const spritesheet = sheetId ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
+      const spriteKey = i
+      liveLayers.add(spriteKey)
+
+      if (!isLayerEnabledForWork || !sheetId || !spritesheet?.textures) {
+        const existing = this.appearanceLayerSprites.get(spriteKey)
+        if (existing) {
+          existing.parent?.removeChild(existing)
+          existing.destroy({ children: true, texture: false })
+          this.appearanceLayerSprites.delete(spriteKey)
+        }
+        continue
+      }
+
+      const directionCount = layer.sheetDirectionCounts?.[sheet] ?? this.sheetDirectionCounts?.[sheet] ?? null
+      const directionOrderOverride = (layer.sheetDirectionOrders?.[sheet] ?? this.sheetDirectionOrders?.[sheet] ?? null) as
+        | string[]
+        | null
+      const { textures, mirrored } = getSpriteFrameSelection(
+        spritesheet.textures,
+        this.degree,
+        directionCount,
+        directionOrderOverride
+      )
+
+      let layerSprite = this.appearanceLayerSprites.get(spriteKey)
+      const frameIndex = Math.min(this.sprite.currentFrame, Math.max(textures.length - 1, 0))
+
+      if (!layerSprite) {
+        layerSprite = new AnimatedSprite(textures as Texture[])
+        bindAnimatedSpriteToTicker(layerSprite, this.context.app)
+        layerSprite.label = `${LABEL_TYPES.sprite}-layer-${spriteKey}`
+        layerSprite.eventMode = 'none'
+        layerSprite.roundPixels = true
+        layerSprite.loop = this.loop ?? true
+        layerSprite.updateAnchor = true
+        layerSprite.zIndex = layer.zIndex
+        if (layer.zIndex < MAIN_SPRITE_LAYER_Z_INDEX) {
+          this.addChildAt(layerSprite, Math.max(0, this.getChildIndex(this.sprite)))
+        } else {
+          this.addChild(layerSprite)
+        }
+        this.appearanceLayerSprites.set(spriteKey, layerSprite)
+      }
+
+      layerSprite.visible = true
+      layerSprite.zIndex = layer.zIndex
+      layerSprite.textures = textures as Texture[]
+      const spriteScale = this.spriteScale ?? 1
+      layerSprite.scale.x = mirrored ? -spriteScale : spriteScale
+      layerSprite.scale.y = spriteScale
+      const defaultAnchor = (layerSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
+        .defaultAnchor
+      if (defaultAnchor) {
+        layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+      }
+      layerSprite.animationSpeed = spritesheet.data?.animationSpeed ?? 0.18
+      layerSprite.currentFrame = frameIndex
+      if (this.sprite.playing) {
+        layerSprite.gotoAndPlay(frameIndex)
+      } else {
+        layerSprite.gotoAndStop(frameIndex)
+      }
+    }
+
+    for (const [spriteKey, sprite] of this.appearanceLayerSprites.entries()) {
+      if (liveLayers.has(spriteKey)) continue
+      sprite.parent?.removeChild(sprite)
+      sprite.destroy({ children: true, texture: false })
+      this.appearanceLayerSprites.delete(spriteKey)
+    }
+  }
+
   override setTextures(sheet: string) {
     super.setTextures(sheet)
+    this.syncAppearanceLayers(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
     this.syncFishingOverlaySprite()
+  }
+
+  override pause() {
+    super.pause()
+    for (const sprite of this.appearanceLayerSprites.values()) {
+      sprite.stop()
+    }
+  }
+
+  override resume() {
+    if (this.currentSheet === SHEET_TYPES.standing) {
+      this.sprite.gotoAndStop(this.sprite.currentFrame)
+      for (const sprite of this.appearanceLayerSprites.values()) {
+        sprite.gotoAndStop(sprite.currentFrame)
+      }
+      return
+    }
+    super.resume()
+    for (const sprite of this.appearanceLayerSprites.values()) {
+      sprite.play()
+    }
   }
 
   override select() {

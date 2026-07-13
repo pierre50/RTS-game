@@ -7,6 +7,7 @@ import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
 import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayerEliminated } from '../lib'
+import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
@@ -400,6 +401,7 @@ export default class Game extends Container {
     )
     this.context.player = this.context.players[0]
     this.context.menu?.init?.()
+    await preloadBakedLpcUnitsForPlayers(this.context.players)
     await map.stylishMap({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })

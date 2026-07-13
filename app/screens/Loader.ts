@@ -1,6 +1,7 @@
 import { Assets, Container } from 'pixi.js'
 import { t } from '../lib/lang'
 import { ASSET_BUNDLES, ASSET_LOAD_SEQUENCE } from '../config/assetManifest'
+import type { UnitConfig } from '../types/config'
 
 /**
  * Loading Screen
@@ -31,14 +32,23 @@ export default class LoaderScreen extends Container {
       await Assets.loadBundle(bundle)
     }
 
-    Assets.cache.set('config', {
+    const gameConfig: {
+      buildings: unknown
+      units: Record<string, UnitConfig>
+      resources: unknown
+      animals: unknown
+      projectiles: unknown
+      cells: unknown
+    } = {
       buildings: Assets.cache.get('buildingsData'),
       units: Assets.cache.get('unitsData'),
       resources: Assets.cache.get('resourcesData'),
       animals: Assets.cache.get('animalsData'),
       projectiles: Assets.cache.get('projectilesData'),
       cells: Assets.cache.get('cellsData'),
-    })
+    }
+
+    Assets.cache.set('config', gameConfig)
 
     this.loadingDiv.remove()
   }

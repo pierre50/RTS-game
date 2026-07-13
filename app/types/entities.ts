@@ -4,7 +4,7 @@ import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
-import type { ConfigValue, TechnologyConfig } from './config'
+import type { ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './config'
 import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
@@ -139,6 +139,8 @@ export interface UnitEntity extends RuntimeEntityBase {
   actionLocked?: boolean
   currentSheet?: string
   currentFrame?: number
+  sheetDirectionCounts?: Record<string, number>
+  sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
   standingSheet?: SpritesheetLike | null
@@ -178,6 +180,9 @@ export interface UnitEntity extends RuntimeEntityBase {
   assetAge?: number
   totalQuantity?: number
   category?: string
+  appearance?: UnitAppearanceConfig
+  appearanceVariants?: Record<string, string>
+  spriteScale?: number
 
   // Delegate methods called across the 5 composition classes
   unitCombat?: { handleAttackAction: () => void }

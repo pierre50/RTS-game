@@ -72,7 +72,11 @@ module.exports = (_env, argv = {}) => {
       minimize: env.isProduction,
     },
     devServer: {
-      static: [{ directory: env.buildDir }, { directory: env.staticMapsDir, publicPath: '/maps', watch: true }],
+      static: [
+        { directory: env.buildDir },
+        { directory: env.staticAssetsDir, publicPath: '/assets', watch: true },
+        { directory: env.staticMapsDir, publicPath: '/maps', watch: true },
+      ],
       compress: true,
       port: env.devServerPort,
       hot: true,

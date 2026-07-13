@@ -727,7 +727,7 @@ export class UnitActions {
           }
         }
         if (unit.sprite) {
-          onSpriteLoopAtFrame(unit.sprite, 6, () => {
+          onSpriteLoopAtFrame(unit.sprite, 2, () => {
             const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
             if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
             const projectile = new Projectile(

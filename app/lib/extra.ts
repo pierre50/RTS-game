@@ -20,6 +20,7 @@ type TimerArg = string | number | boolean | object | null | undefined
 type TimerThis = object | void
 
 const FIVE_DIRECTION_ORDER: DirectionOrder = ['south', 'southwest', 'west', 'northwest', 'north']
+const FOUR_DIRECTION_ORDER: DirectionOrder = ['north', 'west', 'south', 'east']
 const EIGHT_DIRECTION_ORDER: DirectionOrder = [
   'south',
   'southwest',
@@ -44,12 +45,12 @@ const EAST_FIRST_EIGHT_DIRECTION_ORDER: DirectionOrder = [
 function getSheetDirectionOrder<TTexture>(
   textures: TextureMap<TTexture>,
   directionCount: number | null,
-  explicitOrder: DirectionOrder | null = null
+  explicitOrder: DirectionOrder | string[] | null = null
 ): DirectionOrder | null {
   const frameCount = Object.keys(textures).length
 
   if (explicitOrder?.length) {
-    return explicitOrder
+    return explicitOrder as DirectionOrder
   }
   if (directionCount === 1) {
     return null
@@ -59,6 +60,9 @@ function getSheetDirectionOrder<TTexture>(
   }
   if (directionCount === 5) {
     return FIVE_DIRECTION_ORDER
+  }
+  if (directionCount === 4) {
+    return FOUR_DIRECTION_ORDER
   }
   if (frameCount % 5 === 0) {
     return FIVE_DIRECTION_ORDER
@@ -73,7 +77,7 @@ export function getAnimationFrames<TTexture>(
   textures: TextureMap<TTexture>,
   direction?: Direction,
   directionCount: number | null = null,
-  directionOrderOverride: DirectionOrder | null = null
+  directionOrderOverride: DirectionOrder | string[] | null = null
 ): TTexture[] {
   const names = Object.keys(textures).sort((a, b) => {
     const na = parseInt(a.split('_')[0], 10)
@@ -101,6 +105,67 @@ export function getAnimationFrames<TTexture>(
   const end = start + framesPerDirection
 
   return names.slice(start, end).map(name => textures[name])
+}
+
+export function getSpriteFrameSelection<TTexture>(
+  textures: TextureMap<TTexture>,
+  degree: number,
+  directionCount: number | null = null,
+  directionOrderOverride: DirectionOrder | string[] | null = null
+): { textures: TTexture[]; mirrored: boolean } {
+  const names = getSortedTextureNames(textures)
+  const direction = (degreeToDirection(degree) ?? 'south') as Direction
+
+  if (directionCount === 9) {
+    const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(degree, directionCount)
+    const framesPerDirection = Math.max(1, Math.floor(names.length / directionCount))
+    const start = frameIndex * framesPerDirection
+    return {
+      textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
+      mirrored,
+    }
+  }
+
+  const directionOrder = getSheetDirectionOrder(textures, directionCount, directionOrderOverride)
+
+  if (directionOrder?.length === 4) {
+    const cardinalDirection =
+      direction === 'northwest' || direction === 'northeast'
+        ? 'north'
+        : direction === 'southwest' || direction === 'southeast'
+          ? 'south'
+          : direction
+
+    return {
+      textures: getAnimationFrames(textures, cardinalDirection, directionCount, directionOrderOverride),
+      mirrored: false,
+    }
+  }
+
+  if (directionOrder?.length === 8) {
+    return {
+      textures: getAnimationFrames(textures, direction, directionCount, directionOrderOverride),
+      mirrored: false,
+    }
+  }
+
+  let spriteDirection = direction
+  let mirrored = false
+  if (direction === 'southeast') {
+    spriteDirection = 'southwest'
+    mirrored = true
+  } else if (direction === 'northeast') {
+    spriteDirection = 'northwest'
+    mirrored = true
+  } else if (direction === 'east') {
+    spriteDirection = 'west'
+    mirrored = true
+  }
+
+  return {
+    textures: getAnimationFrames(textures, spriteDirection, directionCount, directionOrderOverride),
+    mirrored,
+  }
 }
 
 export function getMirroredHalfArcFrameIndex(
@@ -208,7 +273,7 @@ type AnimatedSpriteLike<TTexture = AnimatedSprite['textures'][number]> = {
   play: () => void
   playing?: boolean
   renderable?: boolean
-  scale: { x: number }
+  scale: { x: number; y: number }
   stop: () => void
   textures: TTexture[] | AnimatedSprite['textures']
   update: (ticker: Ticker) => void
@@ -254,6 +319,7 @@ export type UnitTextureInstance = {
   degree: number
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, DirectionOrder>
+  spriteScale?: number
   sprite: AnimatedSpriteLike
   walkingSheet?: SheetLike
 }
@@ -291,76 +357,28 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   }
   const goto = instance.currentSheet === sheet && instance.sprite.currentFrame
   instance.currentSheet = sheet
-  const direction = (degreeToDirection(instance.degree) ?? 'south') as Direction
   const directionCount = instance.sheetDirectionCounts?.[sheet] ?? null
   const directionOrderOverride = instance.sheetDirectionOrders?.[sheet] ?? null
-  if (directionCount === 9) {
-    const names = Object.keys(selectedSheet.textures).sort((a, b) => {
-      const na = parseInt(a.split('_')[0], 10)
-      const nb = parseInt(b.split('_')[0], 10)
-      return na - nb
-    })
-    const framesPerDirection = Math.floor(names.length / directionCount)
-    const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(instance.degree, directionCount)
-    const start = frameIndex * framesPerDirection
-    const end = start + framesPerDirection
-
-    instance.sprite.scale.x = mirrored ? -1 : 1
-    instance.sprite.textures = names.slice(start, end).map(name => selectedSheet.textures[name])
-    instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
-    goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
-    return
-  }
-  const directionOrder = getSheetDirectionOrder(selectedSheet.textures, directionCount, directionOrderOverride)
-
-  if (directionOrder?.length === 8) {
-    instance.sprite.scale.x = 1
-    instance.sprite.textures = getAnimationFrames(
-      selectedSheet.textures,
-      direction,
-      directionCount,
-      directionOrderOverride
-    )
-  } else {
-    switch (direction) {
-      case 'southeast':
-        instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(
-          selectedSheet.textures,
-          'southwest',
-          directionCount,
-          directionOrderOverride
-        )
-        break
-      case 'northeast':
-        instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(
-          selectedSheet.textures,
-          'northwest',
-          directionCount,
-          directionOrderOverride
-        )
-        break
-      case 'east':
-        instance.sprite.scale.x = -1
-        instance.sprite.textures = getAnimationFrames(
-          selectedSheet.textures,
-          'west',
-          directionCount,
-          directionOrderOverride
-        )
-        break
-      default:
-        instance.sprite.scale.x = 1
-        instance.sprite.textures = getAnimationFrames(
-          selectedSheet.textures,
-          direction,
-          directionCount,
-          directionOrderOverride
-        )
-    }
+  const { textures, mirrored } = getSpriteFrameSelection(
+    selectedSheet.textures,
+    instance.degree,
+    directionCount,
+    directionOrderOverride
+  )
+  const spriteScale = instance.spriteScale ?? 1
+  instance.sprite.scale.x = mirrored ? -spriteScale : spriteScale
+  instance.sprite.scale.y = spriteScale
+  instance.sprite.textures = textures
+  const defaultAnchor = getDefaultAnchor(instance.sprite.textures[0])
+  if (defaultAnchor) {
+    instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
   instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
+  if (sheet === SHEET_TYPES.standing) {
+    instance.sprite.textures = [instance.sprite.textures[0]]
+    instance.sprite.stop()
+    return
+  }
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 

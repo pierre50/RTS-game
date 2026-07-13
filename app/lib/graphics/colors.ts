@@ -4,7 +4,7 @@ import { MultiColorReplaceFilter } from 'pixi-filters'
 export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'] as const
 type PlayerColor = (typeof colors)[number]
 
-const SOURCE_COLORS = [0x93bbd7, 0x739bc7, 0x577bb3, 0x3f5f9f, 0x273f8f, 0x17277b, 0x070f67, 0x000057]
+const SOURCE_COLORS = [0x75b4ff, 0x61a0ef, 0x466ac9, 0x3c49ad, 0x322d6a, 0x281e41, 0x180716, 0x0a0a0f]
 
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
   red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
@@ -17,7 +17,7 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 }
 
 const HEX_COLOR_MAP: Record<PlayerColor, string> = {
-  blue: '#3f5f9f',
+  blue: '#466ac9',
   red: '#e30b00',
   yellow: '#c3a31b',
   brown: '#8b5b37',
@@ -122,7 +122,12 @@ export function changeSpriteColor(sprite: RecolorableSprite, color: string): voi
 
   if (!colorFilterCache.has(color)) {
     const replacements = SOURCE_COLORS.map((src, i) => [src, COLOR_PALETTES[color]![i]] as [number, number])
-    colorFilterCache.set(color, new MultiColorReplaceFilter({ replacements, tolerance: 0.1 }))
+    // Tolerance is a normalized RGB distance (0-1). 0.1 was catching near-black shades
+    // from hair/shading palettes (e.g. #0A0A0A, distance ~0.02 from the darkest blue
+    // source shade #0A0A0F) and tinting them with the team color. Since source sprites
+    // are exact-palette pixel art with no color blending, a tight tolerance still
+    // matches genuine blue pixels while excluding unrelated dark tones.
+    colorFilterCache.set(color, new MultiColorReplaceFilter({ replacements, tolerance: 0.01 }))
   }
 
   sprite.filters = [colorFilterCache.get(color)!]

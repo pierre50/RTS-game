@@ -1,0 +1,225 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+
+SCRIPT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_ROOT.parents[1]
+DEFAULT_SOURCE_ROOT = SCRIPT_ROOT / "spritesheets"
+DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/lpc-baked"
+
+FRAME_SIZE = 64
+OUTPUT_SCALE = 1.0
+LPC_ANIMATION_SPEED = 0.10
+ANCHOR = {"x": 0.5, "y": 0.86}
+ANCHORS_BY_OUTPUT_SIZE = {
+    32: {"x": 0.5, "y": 0.86},
+    64: {"x": 0.5, "y": 0.86},
+    96: {"x": 0.5, "y": 0.74},
+    128: {"x": 0.5, "y": 0.68},
+    192: {"x": 0.5, "y": 0.62},
+}
+
+PALETTES: dict[str, list[str]] = {
+    "fair": ["#2A1817", "#4A2C26", "#765044", "#A87962", "#D2A081", "#EDC0A0"],
+    "olive": ["#271920", "#442725", "#7F4C31", "#AE6B3F", "#D38B59", "#E4A47C"],
+    "brown": ["#23110E", "#432015", "#6F3A22", "#98562F", "#BC7543", "#D99559"],
+    "golden": ["#2E2013", "#59401F", "#84612E", "#B38445", "#D4A75B", "#EBCB80"],
+    "black": ["#020202", "#050505", "#0A0A0A", "#121212", "#1B1B1B", "#242424"],
+    "dark_brown": ["#050100", "#160701", "#290E02", "#421603", "#5F1F04", "#792806"],
+    "brown_hair": ["#080302", "#1B0B04", "#36190A", "#5A2D13", "#7C431F", "#A45D2E"],
+    "navy": ["#180716", "#20102B", "#281E41", "#322D6A", "#3C49AD", "#466AC9"],
+    "player_blue": ["#180716", "#281E41", "#322D6A", "#3C49AD", "#466AC9", "#61A0EF"],
+    "player_red": ["#530B00", "#6F0B07", "#8F1F00", "#C71700", "#E30B00", "#FF2F2F"],
+    "player_yellow": ["#4F3723", "#6B4B27", "#876727", "#A37317", "#C3A31B", "#DFCF0F"],
+    "player_green": ["#0B1B0B", "#133313", "#1B431B", "#375F27", "#4B6B2B", "#637B2F"],
+    "player_orange": ["#6F2300", "#872B00", "#9F3300", "#CF4300", "#F3770F", "#F78B17"],
+    "player_grey": ["#232323", "#373737", "#474747", "#6B6B6B", "#8F8F8F", "#B3B3B3"],
+    "player_cyan": ["#002327", "#003F43", "#004F4F", "#006F6B", "#00837B", "#00AB93"],
+    "player_brown": ["#23231F", "#3F3723", "#5F331B", "#734727", "#8B5B37", "#A3734F"],
+    # Metal tones for hats/armour pieces (helmets, bracers, ...) that ship as a single
+    # undyed texture rather than pre-made color variants.
+    "brass": ["#1B1313", "#3F371E", "#60492C", "#B08A36", "#FCD081", "#FCF6CB"],
+    "copper": ["#1B1313", "#462825", "#603429", "#794118", "#A26118", "#E19D4D"],
+    "bronze": ["#1B1313", "#6B1D16", "#94381D", "#B54936", "#EB7129", "#FFB187"],
+    "iron": ["#000000", "#252025", "#392B34", "#52414A", "#6F6563", "#948081"],
+    "steel": ["#1B192B", "#484152", "#726B7E", "#867E7F", "#A8B3B8", "#E3E7D3"],
+    "silver": ["#182039", "#4A4C60", "#6B7588", "#A8B3B8", "#EBEDEB", "#E1F3F4"],
+    "gold": ["#291821", "#794118", "#A26118", "#D19529", "#EFCD8C", "#FCF6CB"],
+    # Undyed linen/cloth tone, sampled from the hand-colored "white" sash variant, for
+    # cloth pieces (like cuffs) that only ship as a single undyed texture.
+    "white": ["#281820", "#4D4A5D", "#958080", "#C4B59F", "#E5E6C7", "#FFFFFF"],
+}
+
+SKIN_TONES = {
+    "fair": "Light skin used by Babylonian variants.",
+    "olive": "Mediterranean olive skin used by Greek variants.",
+    "brown": "Brown skin used by Egyptian variants.",
+    "golden": "Golden skin used by Asian variants.",
+}
+
+CIVS = {
+    "greek": {"skin": "olive", "hair": "dark_brown"},
+    "egyptian": {"skin": "brown", "hair": "black"},
+    "babylonian": {"skin": "fair", "hair": "black"},
+    "asian": {"skin": "golden", "hair": "black"},
+}
+
+PLAYER_SHORTS = {
+    "blue": "blue",
+    "red": "red",
+    "yellow": "yellow",
+    "green": "forest",
+    "orange": "orange",
+    "grey": "gray",
+    "cyan": "teal",
+    "brown": "walnut",
+}
+
+
+# Layer templates for dress/hat/hair-extension items, resolved per-frame with
+# `{animation}` (walk/slash/shoot/hurt/...) and, for filename-colored items,
+# `{color}` (this unit's player-color LPC name). `dress` order is z-order: later
+# entries draw on top.
+@dataclass(frozen=True)
+class DressItem:
+    path: str
+    # Pixel-recolor to the unit's player-color palette at bake time. Use this for
+    # assets that don't ship pre-made color variants (unlike shorts/tabard, which use
+    # `{color}` in `path` to pick an already hand-colored file).
+    team_colored: bool = False
+    # Or pixel-recolor to a fixed named palette (e.g. "bronze", "steel", see the metal
+    # tones in PALETTES above) — for hat/armour pieces where the team color doesn't
+    # apply but the source art is still a single undyed texture.
+    palette: str | None = None
+
+
+SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png")
+SANDALS = DressItem("feet/sandals/male/{animation}/brown.png")
+BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
+BRACERS_PATH = "arms/bracers/male/{animation}.png"
+BRACERS_BRASS = DressItem(BRACERS_PATH, palette="brass")
+BRACERS_SILVER = DressItem(BRACERS_PATH, palette="silver")
+HEADBAND = DressItem("hat/headband/tied", team_colored=True)
+APRON_BROWN = DressItem("torso/aprons/suspenders/male/{animation}/brown.png")
+CUFFS_WHITE = DressItem("arms/wrists/cuffs/male/{animation}.png", palette="white")
+SASH_WHITE = DressItem("torso/waist/sash_narrow/male/{animation}/white.png")
+# plain/legion skirts have no pre-made color variants, so they're pixel-recolored to
+# the player palette instead of picking a hand-colored file.
+SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", team_colored=True)
+SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", team_colored=True)
+
+# Baked output/asset variant key. Every unit ships one deterministic look per
+# civilization, so this is a fixed constant rather than per-unit data.
+VARIANT_KEY = "01"
+
+
+@dataclass(frozen=True)
+class UnitLook:
+    """The single source of truth for one unit type's appearance: body/face shape
+    are the only things shared across units by default; hair, beard, hat and dress
+    are what actually distinguish a villager from a clubman from an axeman, etc."""
+
+    hair: str | None = None
+    # Some hairstyles (e.g. ponytails) ship as separate bg/fg halves: bg tucks behind
+    # the body/shoulders, fg sits at the normal in-front hair position.
+    hair_split: bool = False
+    beard: str | None = None
+    head: str = "human/male"
+    eyebrows: bool = True
+    # Defaults to the civilization's hair color if neither team_colored nor palette is set.
+    hair_extension: DressItem | None = None
+    hat: DressItem | None = None
+    # Drawn after hat (e.g. a plume attached to a helmet).
+    hat_accessory: DressItem | None = None
+    dress: tuple[DressItem, ...] = ()
+
+
+UNIT_LOOKS: dict[str, UnitLook] = {
+    "villager": UnitLook(hair="plain", head="human/male_gaunt", dress=(SHORTS,)),
+    "clubman": UnitLook(hair="long", hat=HEADBAND, dress=(SHORTS,)),
+    "axeman": UnitLook(
+        hair="long",
+        hat=HEADBAND,
+        dress=(
+            SHORTS,
+            SANDALS,
+            DressItem("torso/jacket/tabard/male/{animation}/{color}.png"),
+            BELT,
+            DressItem(BRACERS_PATH, palette="copper"),
+        ),
+    ),
+    "bowman": UnitLook(
+        hair="plain",
+        hair_extension=DressItem("hair/extensions/ponytails/topknot_short"),
+        dress=(SHORTS,),
+    ),
+    "shortswordman": UnitLook(
+        hat=DressItem("hat/helmet/pointed", palette="brass"),
+        dress=(
+            SKIRT_LEGION_TEAM,
+            SANDALS,
+            APRON_BROWN,
+            BELT,
+            BRACERS_BRASS,
+        ),
+    ),
+    "improvedbowman": UnitLook(
+        hair="high_ponytail",
+        hair_split=True,
+        dress=(SKIRT_PLAIN, APRON_BROWN, CUFFS_WHITE),
+    ),
+    "compositebowman": UnitLook(
+        hair="high_ponytail",
+        hair_split=True,
+        dress=(
+            SKIRT_PLAIN,
+            DressItem("torso/clothes/sleeveless/sleeveless/male/{animation}/{color}.png"),
+            SASH_WHITE,
+            CUFFS_WHITE,
+        ),
+    ),
+    "broadswordman": UnitLook(
+        hat=DressItem("hat/helmet/pointed", palette="brass"),
+        hat_accessory=DressItem("hat/accessory/plumage_legion", team_colored=True),
+        dress=(
+            SKIRT_LEGION_TEAM,
+            SANDALS,
+            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
+            DressItem("torso/armour/legion/male/{animation}.png", palette="brass"),
+            BRACERS_BRASS,
+        ),
+    ),
+    "longswordman": UnitLook(
+        hat=DressItem("hat/helmet/pointed", palette="silver"),
+        hat_accessory=DressItem("hat/accessory/plumage_legion", team_colored=True),
+        dress=(
+            SKIRT_LEGION_TEAM,
+            SANDALS,
+            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
+            DressItem("torso/armour/legion/male/{animation}.png", palette="silver"),
+            BRACERS_SILVER,
+        ),
+    ),
+}
+
+
+@dataclass(frozen=True)
+class Sheet:
+    key: str
+    source_animation: str
+    columns: int
+    rows: int
+    keep_every_other_frame: bool = True
+    frame_indices: tuple[int, ...] | None = None
+
+
+SHEETS: tuple[Sheet, ...] = (
+    Sheet("walking", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26, 27, 29, 32, 35)),
+    Sheet("action", "slash", 6, 4, frame_indices=(0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23)),
+    Sheet("shoot", "shoot", 13, 4, frame_indices=(0, 4, 9, 12, 13, 17, 22, 25, 26, 30, 35, 38, 39, 43, 48, 51)),
+    Sheet("thrust", "thrust", 8, 4, frame_indices=(0, 2, 5, 7, 8, 10, 13, 15, 16, 18, 21, 23, 24, 26, 29, 31)),
+    Sheet("dying", "hurt", 6, 1),
+    Sheet("corpse", "hurt", 6, 1, False, (5,)),
+)
