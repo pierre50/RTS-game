@@ -19,6 +19,7 @@ type AnimationCallback = (() => void) | null
 type TimerArg = string | number | boolean | object | null | undefined
 type TimerThis = object | void
 
+const THREE_DIRECTION_ORDER: DirectionOrder = ['north', 'west', 'south']
 const FIVE_DIRECTION_ORDER: DirectionOrder = ['south', 'southwest', 'west', 'northwest', 'north']
 const FOUR_DIRECTION_ORDER: DirectionOrder = ['north', 'west', 'south', 'east']
 const EIGHT_DIRECTION_ORDER: DirectionOrder = [
@@ -63,6 +64,9 @@ function getSheetDirectionOrder<TTexture>(
   }
   if (directionCount === 4) {
     return FOUR_DIRECTION_ORDER
+  }
+  if (directionCount === 3) {
+    return THREE_DIRECTION_ORDER
   }
   if (frameCount % 5 === 0) {
     return FIVE_DIRECTION_ORDER
@@ -139,6 +143,22 @@ export function getSpriteFrameSelection<TTexture>(
     return {
       textures: getAnimationFrames(textures, cardinalDirection, directionCount, directionOrderOverride),
       mirrored: false,
+    }
+  }
+
+  if (directionOrder?.length === 3) {
+    const cardinalDirection =
+      direction === 'northwest' || direction === 'northeast'
+        ? 'north'
+        : direction === 'southwest' || direction === 'southeast'
+          ? 'south'
+          : direction
+
+    const spriteDirection = cardinalDirection === 'east' ? 'west' : cardinalDirection
+
+    return {
+      textures: getAnimationFrames(textures, spriteDirection, directionCount, directionOrderOverride),
+      mirrored: cardinalDirection === 'east',
     }
   }
 

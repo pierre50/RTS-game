@@ -32,6 +32,9 @@ type BakedUnitType =
   | 'compositebowman'
   | 'broadswordman'
   | 'longswordman'
+  | 'hoplite'
+  | 'phalanx'
+  | 'priest'
 type VillagerJob = (typeof VILLAGER_JOBS)[number]
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
@@ -44,6 +47,9 @@ const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   CompositeBowman: 'compositebowman',
   BroadSwordsman: 'broadswordman',
   LongSwordsman: 'longswordman',
+  Hoplite: 'hoplite',
+  Phalanx: 'phalanx',
+  Priest: 'priest',
 }
 
 function civKey(civilization: string | null | undefined): string {
@@ -58,9 +64,8 @@ function variantIndex(seed: string): string {
   return BAKED_VARIANT_KEYS[Math.abs(hashLpcAppearanceSeed(seed)) % BAKED_VARIANT_KEYS.length]
 }
 
-function bakedVariantKey(unit: BakedUnitType, owner: Pick<PlayerLike, 'civ' | 'color' | 'label'>, seed: string): string {
-  const base = `${civKey(owner.civ)}_${variantIndex(seed)}`
-  return unit === 'villager' ? `${base}_${playerColorKey(owner.color)}` : base
+function bakedVariantKey(owner: Pick<PlayerLike, 'civ' | 'color' | 'label'>, seed: string): string {
+  return `${civKey(owner.civ)}_${variantIndex(seed)}_${playerColorKey(owner.color)}`
 }
 
 function bakedAlias(unit: BakedUnitType, variant: string, job: string, sheet: string): string {
@@ -86,19 +91,15 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
   }
 }
 
+const BAKED_UNITS: readonly BakedUnitType[] = [...new Set(Object.values(UNIT_TYPE_TO_BAKED_UNIT))] as BakedUnitType[]
+
 export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'color' | 'label'>[]): Promise<void> {
   const variants = new Set<string>()
   for (const player of players) {
     for (const variantKey of BAKED_VARIANT_KEYS) {
-      variants.add(`villager:${civKey(player.civ)}_${variantKey}_${playerColorKey(player.color)}`)
-      variants.add(`clubman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`axeman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`bowman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`shortswordman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`improvedbowman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`compositebowman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`broadswordman:${civKey(player.civ)}_${variantKey}`)
-      variants.add(`longswordman:${civKey(player.civ)}_${variantKey}`)
+      for (const bakedUnit of BAKED_UNITS) {
+        variants.add(`${bakedUnit}:${civKey(player.civ)}_${variantKey}_${playerColorKey(player.color)}`)
+      }
     }
   }
 
@@ -114,7 +115,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   const bakedUnit = UNIT_TYPE_TO_BAKED_UNIT[unit.type]
   if (!bakedUnit || !unit.owner) return false
 
-  const variant = bakedVariantKey(bakedUnit, unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
+  const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
   const walking = bakedAlias(bakedUnit, variant, 'default', 'walking')
   if (!Assets.cache.get(walking)) return false
 
@@ -122,11 +123,11 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   unit.appearanceVariants = undefined
   unit.spriteScale = 0.5
   unit.sheetDirectionCounts = {
-    standingSheet: 4,
-    walkingSheet: 4,
-    actionSheet: 4,
-    harvestSheet: 4,
-    loadedSheet: 4,
+    standingSheet: 3,
+    walkingSheet: 3,
+    actionSheet: 3,
+    harvestSheet: 3,
+    loadedSheet: 3,
     dyingSheet: 1,
     corpseSheet: 1,
   }
@@ -156,7 +157,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   unit.allAssets = {
     default: villagerSheets('default'),
     attacker: villagerSheets('attacker'),
-    hunter: { ...villagerSheets('hunter'), harvestSheet: bakedAlias(bakedUnit, variant, 'hunter', 'action') },
+    hunter: { ...villagerSheets('hunter'), harvestSheet: bakedAlias(bakedUnit, variant, 'forager', 'action') },
     fisher: { ...villagerSheets('fisher'), loadedSheet: bakedAlias(bakedUnit, variant, 'fisher', 'walking') },
     farmer: { ...villagerSheets('farmer'), loadedSheet: bakedAlias(bakedUnit, variant, 'farmer', 'walking') },
     forager: { ...villagerSheets('forager'), loadedSheet: bakedAlias(bakedUnit, variant, 'forager', 'walking') },

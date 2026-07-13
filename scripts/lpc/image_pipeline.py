@@ -20,6 +20,7 @@ class LoadedLayer:
     offset_x: int = 0
     offset_y: int = 0
     direct_columns: bool = False
+    behind_rows: tuple[int, ...] = ()
 
 
 def rgb(hex_color: str) -> tuple[int, int, int]:
@@ -82,14 +83,33 @@ def open_layer_cached(
     return recolor(image, palette, source_palette_name=source_palette) if palette else image
 
 
+# LPC sheets are either 4 rows (one per direction) or, for animations like "hurt"
+# that have no directional variants, a single row. A frame size is only valid if
+# it's one of these standard LPC canvas sizes, so height alone disambiguates which
+# row count applies without needing to know the animation name.
+KNOWN_FRAME_SIZES = (64, 128, 192)
+
+
+def detect_frame_size(image: Image.Image) -> int:
+    height = image.height
+    if height % 4 == 0 and height // 4 in KNOWN_FRAME_SIZES:
+        return height // 4
+    if height in KNOWN_FRAME_SIZES:
+        return height
+    raise ValueError(f"cannot infer frame size from image height {height}")
+
+
 def open_layer(source_root: Path, layer: LayerSpec) -> LoadedLayer:
+    image = open_layer_cached(str(source_root), layer.path, layer.palette, layer.source_palette)
+    frame_size = layer.frame_size if layer.frame_size is not None else detect_frame_size(image)
     return LoadedLayer(
-        open_layer_cached(str(source_root), layer.path, layer.palette, layer.source_palette),
-        layer.frame_size,
+        image,
+        frame_size,
         layer.fallback_group,
         layer.offset_x,
         layer.offset_y,
         layer.direct_columns,
+        layer.behind_rows,
     )
 
 
@@ -123,25 +143,31 @@ def layer_paths(
         *equipment_spec.background,
         LayerSpec(f"body/bodies/male/{animation}.png", civ["skin"]),
     ]
+    if look.cape:
+        palette = resolve_palette(look.cape, team_color)
+        paths.append(LayerSpec(f"{look.cape.path}/bg/{animation}.png", palette))
     if look.hair and look.hair_split:
-        paths.append(LayerSpec(f"hair/{look.hair}/adult/bg/{animation}.png", civ["hair"]))
+        paths.append(LayerSpec(f"hair/{look.hair}/adult/bg/{animation}.png", look.hair_palette or civ["hair"]))
     paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", civ["skin"]))
     paths.append(LayerSpec(f"head/nose/elderly/adult/{animation}.png", civ["skin"]))
     if look.eyebrows:
         paths.append(LayerSpec(f"eyes/eyebrows/thick/adult/{animation}.png", civ["hair"]))
     if look.hair:
         hair_path = f"hair/{look.hair}/adult/fg/{animation}.png" if look.hair_split else f"hair/{look.hair}/adult/{animation}.png"
-        paths.append(LayerSpec(hair_path, civ["hair"]))
+        paths.append(LayerSpec(hair_path, look.hair_palette or civ["hair"]))
     if look.hair_extension:
         palette = resolve_palette(look.hair_extension, team_color, default=civ["hair"])
         paths.append(LayerSpec(f"{look.hair_extension.path}/adult/{animation}.png", palette))
     if look.beard:
-        paths.append(LayerSpec(f"beards/{look.beard}/{animation}.png", civ["hair"]))
+        paths.append(LayerSpec(f"beards/{look.beard}/{animation}.png", look.beard_palette or civ["hair"]))
 
     lpc_color = PLAYER_SHORTS[team_color]
     for dress_item in look.dress:
         path = dress_item.path.format(animation=animation, color=lpc_color)
         paths.append(LayerSpec(path, resolve_palette(dress_item, team_color)))
+    if look.cape:
+        palette = resolve_palette(look.cape, team_color)
+        paths.append(LayerSpec(f"{look.cape.path}/fg/{animation}.png", palette))
     if look.hat:
         palette = resolve_palette(look.hat, team_color)
         paths.append(LayerSpec(f"{look.hat.path}/adult/{animation}.png", palette))
@@ -212,7 +238,17 @@ def compose_frame(layers: Iterable[LoadedLayer], source_index: int, source_colum
             if fallback_column is not None:
                 group_fallback_columns[group] = fallback_column
 
-    for layer in loaded_layers:
+    # A layer flagged behind_rows swaps paste order with whoever immediately
+    # precedes it, on those rows only, e.g. a shield with no per-direction bg/fg
+    # split that must stay in front overall but behind the weapon drawn right
+    # before it when facing south.
+    paste_order = list(range(len(loaded_layers)))
+    for index, layer in enumerate(loaded_layers):
+        if index > 0 and source_row in layer.behind_rows:
+            paste_order[index - 1], paste_order[index] = paste_order[index], paste_order[index - 1]
+
+    for index in paste_order:
+        layer = loaded_layers[index]
         crop_column = group_fallback_columns.get(layer.fallback_group or "", source_column)
         crop = crop_layer_frame(layer, source_row, crop_column, source_columns)
         if crop is None:

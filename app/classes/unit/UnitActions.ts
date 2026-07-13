@@ -23,6 +23,7 @@ import {
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
+import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
@@ -347,6 +348,7 @@ export class UnitActions {
     unit.type = type
     unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
     Object.assign(unit, data)
+    applyBakedLpcUnitAssets(unit)
     Object.assign(
       unit,
       Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))

@@ -15,7 +15,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
-EQUIPPED_WALK_SOURCE_SHEET = Sheet("walking_equipped", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26, 27, 29, 32, 35))
+EQUIPPED_WALK_SOURCE_SHEET = Sheet("walking_equipped", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26))
 
 
 def animation_speed_for(output_sheet: str) -> float:
@@ -28,11 +28,8 @@ def build(source_root: Path, output_root: Path) -> None:
     generated = []
     for civ_key, civ in CIVS.items():
         for unit, look in UNIT_LOOKS.items():
-            player_colors = tuple(PLAYER_SHORTS.keys()) if unit == "villager" else ("neutral",)
-            for player_color in player_colors:
-                variant_key = f"{civ_key}_{VARIANT_KEY}"
-                if unit == "villager":
-                    variant_key = f"{variant_key}_{player_color}"
+            for player_color in PLAYER_SHORTS.keys():
+                variant_key = f"{civ_key}_{VARIANT_KEY}_{player_color}"
                 for job in UNIT_JOBS[unit]:
                     walking_source_sheet = SHEET_BY_KEY["walking"]
                     if job.walking_equipment:

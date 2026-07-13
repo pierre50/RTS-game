@@ -82,6 +82,34 @@ LONGSWORDMAN_JOBS: tuple[Job, ...] = (
     ),
 )
 
+# The longspear has no hurt-pose art at all, so hurt_equipment is left unset (the
+# weapon and shield are simply dropped for that pose, like the axe).
+HOPLITE_JOBS: tuple[Job, ...] = (
+    Job(
+        "default",
+        walking_equipment="longspear",
+        action_animation="thrust",
+        action_equipment="longspear",
+    ),
+)
+
+# Same as HOPLITE_JOBS, but the silver longspear/shield bundle (see "phalanx" in
+# config.py and "longspear_silver" in equipment.py).
+PHALANX_JOBS: tuple[Job, ...] = (
+    Job(
+        "default",
+        walking_equipment="longspear_silver",
+        action_animation="thrust",
+        action_equipment="longspear_silver",
+    ),
+)
+
+# The cane has no spellcast-pose art, so action_equipment is left unset — the
+# priest's hands perform the cast gesture unarmed; the cane only shows while walking.
+PRIEST_JOBS: tuple[Job, ...] = (
+    Job("default", walking_equipment="cane", action_animation="spellcast"),
+)
+
 UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "villager": VILLAGER_JOBS,
     "clubman": CLUBMAN_JOBS,
@@ -92,4 +120,7 @@ UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "compositebowman": COMPOSITEBOWMAN_JOBS,
     "broadswordman": BROADSWORDMAN_JOBS,
     "longswordman": LONGSWORDMAN_JOBS,
+    "hoplite": HOPLITE_JOBS,
+    "phalanx": PHALANX_JOBS,
+    "priest": PRIEST_JOBS,
 }

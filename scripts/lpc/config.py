@@ -125,7 +125,10 @@ class UnitLook:
     # Some hairstyles (e.g. ponytails) ship as separate bg/fg halves: bg tucks behind
     # the body/shoulders, fg sits at the normal in-front hair position.
     hair_split: bool = False
+    # Overrides the civilization's hair color (e.g. "white" for a gray-haired elder).
+    hair_palette: str | None = None
     beard: str | None = None
+    beard_palette: str | None = None
     head: str = "human/male"
     eyebrows: bool = True
     # Defaults to the civilization's hair color if neither team_colored nor palette is set.
@@ -133,6 +136,9 @@ class UnitLook:
     hat: DressItem | None = None
     # Drawn after hat (e.g. a plume attached to a helmet).
     hat_accessory: DressItem | None = None
+    # Ships as separate bg/fg halves, like a split hairstyle: bg drapes behind the
+    # body/shoulders, fg drapes over the front, above the dress items.
+    cape: DressItem | None = None
     dress: tuple[DressItem, ...] = ()
 
 
@@ -202,6 +208,43 @@ UNIT_LOOKS: dict[str, UnitLook] = {
             BRACERS_SILVER,
         ),
     ),
+    "hoplite": UnitLook(
+        hat=DressItem("hat/helmet/barbuta_simple", palette="brass"),
+        hat_accessory=DressItem("hat/accessory/plumage_centurion", team_colored=True),
+        dress=(
+            SKIRT_LEGION_TEAM,
+            SANDALS,
+            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
+            DressItem("torso/armour/legion/male/{animation}.png", palette="brass"),
+            BRACERS_BRASS,
+        ),
+    ),
+    # Same as "hoplite", but silver instead of brass, like "longswordman" vs
+    # "broadswordman".
+    "phalanx": UnitLook(
+        hat=DressItem("hat/helmet/barbuta_simple", palette="silver"),
+        hat_accessory=DressItem("hat/accessory/plumage_centurion", team_colored=True),
+        dress=(
+            SKIRT_LEGION_TEAM,
+            SANDALS,
+            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
+            DressItem("torso/armour/legion/male/{animation}.png", palette="silver"),
+            BRACERS_SILVER,
+        ),
+    ),
+    "priest": UnitLook(
+        hair="long",
+        hair_palette="white",
+        beard="beard/winter/male",
+        beard_palette="white",
+        head="human/male_elderly",
+        cape=DressItem("cape/solid", team_colored=True),
+        dress=(
+            DressItem("legs/skirts/plain/male/{animation}.png", palette="white"),
+            DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white"),
+            DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True),
+        ),
+    ),
 }
 
 
@@ -215,11 +258,15 @@ class Sheet:
     frame_indices: tuple[int, ...] | None = None
 
 
+# Rows are up/left/down in source-row order; the LPC source's 4th row (right) is
+# dropped here since it's a near-mirror of left — the runtime mirrors left frames
+# for east-facing sprites instead (see getSpriteFrameSelection in app/lib/extra.ts).
 SHEETS: tuple[Sheet, ...] = (
-    Sheet("walking", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26, 27, 29, 32, 35)),
-    Sheet("action", "slash", 6, 4, frame_indices=(0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23)),
-    Sheet("shoot", "shoot", 13, 4, frame_indices=(0, 4, 9, 12, 13, 17, 22, 25, 26, 30, 35, 38, 39, 43, 48, 51)),
-    Sheet("thrust", "thrust", 8, 4, frame_indices=(0, 2, 5, 7, 8, 10, 13, 15, 16, 18, 21, 23, 24, 26, 29, 31)),
+    Sheet("walking", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26)),
+    Sheet("action", "slash", 6, 4, frame_indices=(0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17)),
+    Sheet("shoot", "shoot", 13, 4, frame_indices=(0, 4, 9, 12, 13, 17, 22, 25, 26, 30, 35, 38)),
+    Sheet("thrust", "thrust", 8, 4, frame_indices=(0, 2, 5, 7, 8, 10, 13, 15, 16, 18, 21, 23)),
+    Sheet("spellcast", "spellcast", 7, 4, frame_indices=(0, 2, 4, 6, 7, 9, 11, 13, 14, 16, 18, 20)),
     Sheet("dying", "hurt", 6, 1),
     Sheet("corpse", "hurt", 6, 1, False, (5,)),
 )

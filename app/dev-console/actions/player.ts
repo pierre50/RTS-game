@@ -5,6 +5,7 @@ import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { RESOURCE_NAMES, findKey } from './shared'
 import { refreshOwnerTowers } from '../../lib/buildings/towers'
+import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { ResourceAmount } from '../../types/common'
 import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
 
@@ -170,6 +171,7 @@ export function setCiv(context: DevConsoleContext, value: string): CommandResult
   const civ = value ? capitalizeFirstLetter(value.toLowerCase()) : ''
   if (!civ) return { ok: false, message: 'Usage: civ <name>' }
   context.player.civ = civ
+  void preloadBakedLpcUnitsForPlayers([context.player])
   ;(context.player as DevTechnologyPlayer).onAgeChange?.()
   context.menu.updateBottombar?.()
   return { ok: true, message: `Civilization set to ${civ}` }
