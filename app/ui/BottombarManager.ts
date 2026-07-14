@@ -7,7 +7,7 @@ import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { syncHitPointsInfo } from './BaseEntityInterface'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
-import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
@@ -16,10 +16,6 @@ import type { LoadedGameConfig } from '../types/save'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
   return selection?.family === FAMILY_TYPES.building
-}
-
-function isUnitEntity(selection: RuntimeEntity | null | undefined): selection is UnitEntity {
-  return selection?.family === FAMILY_TYPES.unit
 }
 
 export class BottombarManager {
@@ -388,7 +384,7 @@ export class BottombarManager {
       tooltip: () => this.getUnitTooltip(type, unit),
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: (selection: RuntimeEntity) => {
-        if (!isUnitEntity(selection)) return
+        if (!isBuildingEntity(selection)) return
         if (canAfford(player, unit.cost)) {
           if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
@@ -401,7 +397,7 @@ export class BottombarManager {
         }
       },
       onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
-        if (!isUnitEntity(selection)) return
+        if (!isBuildingEntity(selection)) return
         const unitSelection = selection
         const div = document.createElement('div')
         div.className = 'bottombar-menu-column'

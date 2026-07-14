@@ -22,6 +22,15 @@ class LayerSpec:
     # a foreground layer that must sit in front of everything on most facings but
     # behind the one immediately before it (e.g. a weapon) on a specific facing.
     behind_rows: tuple[int, ...] = ()
+    # Rows on which this layer is repositioned to paste immediately behind the body
+    # layer, regardless of where it sits in the layer list. Used for a carried item
+    # held in front of the character that must instead be hidden behind their back
+    # when they're facing away (e.g. north), which a single-swap behind_rows can't
+    # express since the item isn't adjacent to the body in the layer list.
+    behind_body_rows: tuple[int, ...] = ()
+    # Marks the single layer in the list that behind_body_rows repositions others
+    # relative to. Only ever set on the body LayerSpec built in layer_paths.
+    is_body: bool = False
 
 
 @dataclass(frozen=True)
@@ -31,6 +40,7 @@ class Equipment:
 
 
 # LPC universal sheets always order directional rows north/west/south/east.
+NORTH_ROW = 0
 SOUTH_ROW = 2
 
 
@@ -54,6 +64,40 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
         "slash": Equipment(
             background=(LayerSpec("tools/smash/background/hammer.png", fallback_group="hammer_slash"),),
             foreground=(LayerSpec("tools/smash/foreground/hammer.png", fallback_group="hammer_slash"),),
+        ),
+    },
+    # Carried in hand for the "loaded" walk (bringing a gathered resource home), not
+    # equipped during any combat pose, so each only defines "walk". Held in front on
+    # west/south, but hidden behind the body when facing north (away from camera),
+    # since the character's back would otherwise occlude it anyway.
+    "meat": {
+        "walk": Equipment(
+            foreground=(
+                LayerSpec(
+                    "tools/carry/universal/male/walk/meat.png",
+                    behind_body_rows=(NORTH_ROW,),
+                ),
+            )
+        ),
+    },
+    "stone": {
+        "walk": Equipment(
+            foreground=(
+                LayerSpec(
+                    "tools/carry/universal/male/walk/stone.png",
+                    behind_body_rows=(NORTH_ROW,),
+                ),
+            )
+        ),
+    },
+    "gold": {
+        "walk": Equipment(
+            foreground=(
+                LayerSpec(
+                    "tools/carry/universal/male/walk/gold.png",
+                    behind_body_rows=(NORTH_ROW,),
+                ),
+            )
         ),
     },
     "scythe": {

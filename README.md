@@ -1,8 +1,8 @@
 # Dawn of Empires
 
-RTS isométrique en PixiJS avec build web via Webpack et packaging desktop via Electron.
+Isometric RTS in PixiJS, with a web build via Webpack and desktop packaging via Electron.
 
-## Prérequis
+## Requirements
 
 - Node.js `>= 20`
 - `pnpm`
@@ -13,74 +13,74 @@ RTS isométrique en PixiJS avec build web via Webpack et packaging desktop via E
 pnpm install
 ```
 
-## Développement
+## Development
 
 ```bash
 pnpm start
 ```
 
-Alias disponible :
+Available alias:
 
 ```bash
 pnpm dev
 ```
 
-## Build web
+## Web build
 
 ```bash
 pnpm build
 ```
 
-Pour un build de développement :
+For a development build:
 
 ```bash
 pnpm build:dev
 ```
 
-## Package desktop
+## Desktop package
 
 ```bash
 pnpm dist
 ```
 
-Alias historique conservé :
+Historical alias kept for compatibility:
 
 ```bash
 pnpm compile
 ```
 
-## Déploiement GitHub Pages
+## GitHub Pages deployment
 
 ```bash
 pnpm deploy
 ```
 
-## Outils
+## Tools
 
-Formater le code :
+Format the code:
 
 ```bash
 pnpm format
 ```
 
-Nettoyer le dossier de build :
+Clean the build folder:
 
 ```bash
 pnpm clean
 ```
 
-## Structure utile
+## Useful structure
 
-- `app/` : code source du jeu
-- `app/config/assetManifest.ts` : manifest des bundles chargés au démarrage
-- `public/assets/` : assets statiques copiés au build
-- `public/assets/data/` : JSON organisés par domaine (`gameplay/`, `civilizations/`, `technologies/`)
-- `webpack.config.js` et `webpack.env.js` : configuration et résolution d’environnement du build
-- `main.js` : point d’entrée Electron
+- `app/`: game source code
+- `app/config/assetManifest.ts`: manifest of bundles loaded at startup
+- `public/assets/`: static assets copied at build time
+- `public/assets/data/`: JSON organized by domain (`gameplay/`, `civilizations/`, `technologies/`)
+- `webpack.config.js` and `webpack.env.js`: build configuration and environment resolution
+- `main.js`: Electron entry point
 
-## Conventions de nommage
+## Naming conventions
 
-- `PascalCase.ts` : classes, écrans, services, contrôleurs et composants UI principaux.
-- `camelCase.ts` : helpers, factories, configurations et utilitaires.
-- `kebab-case.test.cjs` : tests Node.
-- `index.ts` : point d’entrée public d’un dossier, sans y cacher des dépendances hors domaine.
+- `PascalCase.ts`: classes, screens, services, controllers, and main UI components.
+- `camelCase.ts`: helpers, factories, configs, and utilities.
+- `kebab-case.test.cjs`: Node tests.
+- `index.ts`: a folder's public entry point, without hiding out-of-domain dependencies in it.

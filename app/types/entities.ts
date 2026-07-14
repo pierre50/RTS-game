@@ -252,6 +252,8 @@ export interface BuildingEntity extends RuntimeEntityBase {
   clearRallyPoint?: () => void
   displayPopulation?: boolean
   loading?: number | null
+  buyUnit?: (type: string) => void
+  cancelUnits?: (type: string) => void
   buyTechnology?: (type: string) => void
   cancelTechnology?: () => void
   upgrade?: (target: string) => void

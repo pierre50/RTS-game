@@ -21,6 +21,14 @@ const VILLAGER_JOBS = [
 ] as const
 
 const JOB_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+// Jobs whose "loaded" pose is its own bake (carrying a resource-specific item) rather
+// than a reuse of another job's "walking" bake — see hunter's `loaded_equipment` in
+// scripts/lpc/jobs.py.
+const EXTRA_JOB_SHEETS: Partial<Record<VillagerJob, readonly string[]>> = {
+  hunter: ['loaded'],
+  stoneminer: ['loaded'],
+  goldminer: ['loaded'],
+}
 
 type BakedUnitType =
   | 'villager'
@@ -56,16 +64,15 @@ function civKey(civilization: string | null | undefined): string {
   return (civilization || 'Greek').toLowerCase()
 }
 
-function playerColorKey(color: string | null | undefined): string {
-  return color || 'blue'
-}
-
 function variantIndex(seed: string): string {
   return BAKED_VARIANT_KEYS[Math.abs(hashLpcAppearanceSeed(seed)) % BAKED_VARIANT_KEYS.length]
 }
 
-function bakedVariantKey(owner: Pick<PlayerLike, 'civ' | 'color' | 'label'>, seed: string): string {
-  return `${civKey(owner.civ)}_${variantIndex(seed)}_${playerColorKey(owner.color)}`
+// Every recolorable piece is baked in the same "blue" team-color convention (see
+// scripts/lpc/build.py) and repainted at runtime by changeSpriteColor, so the baked
+// variant only depends on civ, never on the player's color.
+function bakedVariantKey(owner: Pick<PlayerLike, 'civ' | 'label'>, seed: string): string {
+  return `${civKey(owner.civ)}_${variantIndex(seed)}`
 }
 
 function bakedAlias(unit: BakedUnitType, variant: string, job: string, sheet: string): string {
@@ -79,7 +86,10 @@ function bakedSrc(unit: BakedUnitType, variant: string, job: string, sheet: stri
 async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
   const jobs = unit === 'villager' ? VILLAGER_JOBS : (['default'] as const)
   const assets = jobs
-    .flatMap(job => JOB_SHEETS.map(sheet => ({ job, sheet })))
+    .flatMap(job => [
+      ...JOB_SHEETS.map(sheet => ({ job, sheet })),
+      ...(EXTRA_JOB_SHEETS[job as VillagerJob] ?? []).map(sheet => ({ job, sheet })),
+    ])
     .map(({ job, sheet }) => ({
       alias: bakedAlias(unit, variant, job, sheet),
       src: bakedSrc(unit, variant, job, sheet),
@@ -93,12 +103,13 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
 
 const BAKED_UNITS: readonly BakedUnitType[] = [...new Set(Object.values(UNIT_TYPE_TO_BAKED_UNIT))] as BakedUnitType[]
 
-export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'color' | 'label'>[]): Promise<void> {
+export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'label'>[]): Promise<void> {
   const variants = new Set<string>()
   for (const player of players) {
     for (const variantKey of BAKED_VARIANT_KEYS) {
+      const variant = `${civKey(player.civ)}_${variantKey}`
       for (const bakedUnit of BAKED_UNITS) {
-        variants.add(`${bakedUnit}:${civKey(player.civ)}_${variantKey}_${playerColorKey(player.color)}`)
+        variants.add(`${bakedUnit}:${variant}`)
       }
     }
   }
@@ -121,7 +132,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
   unit.appearance = undefined
   unit.appearanceVariants = undefined
-  unit.spriteScale = 0.5
   unit.sheetDirectionCounts = {
     standingSheet: 3,
     walkingSheet: 3,
@@ -157,12 +167,16 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   unit.allAssets = {
     default: villagerSheets('default'),
     attacker: villagerSheets('attacker'),
-    hunter: { ...villagerSheets('hunter'), harvestSheet: bakedAlias(bakedUnit, variant, 'forager', 'action') },
+    hunter: {
+      ...villagerSheets('hunter'),
+      harvestSheet: bakedAlias(bakedUnit, variant, 'forager', 'action'),
+      loadedSheet: bakedAlias(bakedUnit, variant, 'hunter', 'loaded'),
+    },
     fisher: { ...villagerSheets('fisher'), loadedSheet: bakedAlias(bakedUnit, variant, 'fisher', 'walking') },
     farmer: { ...villagerSheets('farmer'), loadedSheet: bakedAlias(bakedUnit, variant, 'farmer', 'walking') },
     forager: { ...villagerSheets('forager'), loadedSheet: bakedAlias(bakedUnit, variant, 'forager', 'walking') },
-    stoneminer: { ...villagerSheets('stoneminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'stoneminer', 'walking') },
-    goldminer: { ...villagerSheets('goldminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'goldminer', 'walking') },
+    stoneminer: { ...villagerSheets('stoneminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'stoneminer', 'loaded') },
+    goldminer: { ...villagerSheets('goldminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'goldminer', 'loaded') },
     woodcutter: { ...villagerSheets('woodcutter'), loadedSheet: bakedAlias(bakedUnit, variant, 'woodcutter', 'walking') },
     builder: villagerSheets('builder'),
   }

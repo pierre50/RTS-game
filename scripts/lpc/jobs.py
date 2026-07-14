@@ -18,11 +18,18 @@ VILLAGER_JOBS: tuple[Job, ...] = (
     Job("attacker"),
     Job("forager"),
     Job("woodcutter", walking_equipment="axe", action_equipment="axe"),
-    Job("stoneminer", walking_equipment="pickaxe", action_equipment="pickaxe"),
-    Job("goldminer", walking_equipment="pickaxe", action_equipment="pickaxe"),
+    Job("stoneminer", walking_equipment="pickaxe", action_equipment="pickaxe", loaded_equipment="stone"),
+    Job("goldminer", walking_equipment="pickaxe", action_equipment="pickaxe", loaded_equipment="gold"),
     Job("builder", walking_equipment="hammer", action_equipment="hammer"),
     Job("farmer", walking_equipment="scythe", action_equipment="scythe", hurt_equipment="scythe"),
-    Job("hunter", walking_equipment="bow", action_animation="shoot", action_equipment="bow", hurt_equipment="bow"),
+    Job(
+        "hunter",
+        walking_equipment="bow",
+        action_animation="shoot",
+        action_equipment="bow",
+        hurt_equipment="bow",
+        loaded_equipment="meat",
+    ),
     Job("fisher", action_animation="thrust"),
 )
 

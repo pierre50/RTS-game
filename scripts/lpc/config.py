@@ -11,7 +11,7 @@ DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/lpc-baked"
 
 FRAME_SIZE = 64
 OUTPUT_SCALE = 1.0
-LPC_ANIMATION_SPEED = 0.10
+LPC_ANIMATION_SPEED = 0.20
 ANCHOR = {"x": 0.5, "y": 0.86}
 ANCHORS_BY_OUTPUT_SIZE = {
     32: {"x": 0.5, "y": 0.86},
@@ -262,11 +262,23 @@ class Sheet:
 # dropped here since it's a near-mirror of left — the runtime mirrors left frames
 # for east-facing sprites instead (see getSpriteFrameSelection in app/lib/extra.ts).
 SHEETS: tuple[Sheet, ...] = (
-    Sheet("walking", "walk", 9, 4, frame_indices=(0, 2, 5, 8, 9, 11, 14, 17, 18, 20, 23, 26)),
-    Sheet("action", "slash", 6, 4, frame_indices=(0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17)),
-    Sheet("shoot", "shoot", 13, 4, frame_indices=(0, 4, 9, 12, 13, 17, 22, 25, 26, 30, 35, 38)),
-    Sheet("thrust", "thrust", 8, 4, frame_indices=(0, 2, 5, 7, 8, 10, 13, 15, 16, 18, 21, 23)),
-    Sheet("spellcast", "spellcast", 7, 4, frame_indices=(0, 2, 4, 6, 7, 9, 11, 13, 14, 16, 18, 20)),
-    Sheet("dying", "hurt", 6, 1),
+    Sheet(
+        "walking",
+        "walk",
+        9,
+        4,
+        frame_indices=(0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26),
+    ),
+    Sheet("action", "slash", 6, 3, keep_every_other_frame=False),
+    Sheet(
+        "shoot",
+        "shoot",
+        13,
+        4,
+        frame_indices=(0, 2, 3, 5, 7, 9, 10, 12, 13, 15, 16, 18, 20, 22, 23, 25, 26, 28, 29, 31, 33, 35, 36, 38),
+    ),
+    Sheet("thrust", "thrust", 8, 3, keep_every_other_frame=False),
+    Sheet("spellcast", "spellcast", 7, 3, keep_every_other_frame=False),
+    Sheet("dying", "hurt", 6, 1, keep_every_other_frame=False),
     Sheet("corpse", "hurt", 6, 1, False, (5,)),
 )
