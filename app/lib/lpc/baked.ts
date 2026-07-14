@@ -131,6 +131,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   if (!Assets.cache.get(walking)) return false
 
   unit.appearance = undefined
+  unit.spriteScale = 0.5
   unit.appearanceVariants = undefined
   unit.sheetDirectionCounts = {
     standingSheet: 3,
