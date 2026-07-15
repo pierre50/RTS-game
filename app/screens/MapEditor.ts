@@ -5,7 +5,7 @@ import { Cell } from '../classes/cell'
 import { Resource } from '../classes/Resource'
 import { AI, Gaia, Human } from '../classes/players'
 import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
-import { getPlainCellsAroundPoint, getTextureByFrame, randomItem } from '../lib'
+import { getPlainCellsAroundPoint, getBuildingFootprintRadius, getTextureByFrame, randomItem } from '../lib'
 import { getCameraZoom } from '../lib/settings'
 import { canPlaceBuildingAt } from '../lib/grid/placement'
 import { getAdjacentWalls, isWall, updateWallTexture, type WallBuilding } from '../lib/buildings/walls'
@@ -702,7 +702,7 @@ export default class MapEditor extends Container {
     map.removeFromInstanceBucket(entity)
 
     if (isBuildingEntity(entity)) {
-      const dist = entity.size === 3 ? 1 : 0
+      const dist = getBuildingFootprintRadius(entity.size ?? 1)
       getPlainCellsAroundPoint(entity.i, entity.j, map.grid, dist, (cell: RuntimeCell) => {
         if (cell.has === entity) {
           cell.has = null

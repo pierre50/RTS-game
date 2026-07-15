@@ -1,4 +1,5 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
+import { getBuildingFootprintRadius } from './cells'
 import { updateVisibility } from '../../services/FogOfWar'
 import type { GridPosition, Point } from '../../types/grid'
 import type { VisibilityEntity } from '../../services/FogOfWar'
@@ -93,7 +94,7 @@ export function updateInstanceRenderVisibility(instance?: RenderableInstance | n
 
 export function instanceIsInPlayerSight(instance: RenderableInstance, player?: PlayerVisibility): boolean {
   if (!player?.views) return false
-  const dist = instance.size === 3 ? 1 : 0
+  const dist = getBuildingFootprintRadius(instance.size ?? 1)
   for (let i = instance.i - dist; i <= instance.i + dist; i++) {
     for (let j = instance.j - dist; j <= instance.j + dist; j++) {
       if (player.views.isVisible(i, j)) return true

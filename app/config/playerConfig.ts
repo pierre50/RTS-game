@@ -1251,8 +1251,14 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     assets: 'projectiles/arrow',
     isAnimated: true,
     rotateSprite: true,
-    staticFrame: 18,
     spriteBaseAngle: 0,
+    spawnOffsetY: 10,
+    trajectory: {
+      kind: 'arc',
+      minArcHeight: 4,
+      arcHeightFactor: 0.06,
+      maxArcHeight: 16,
+    },
     sounds: {
       launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
     },
@@ -1265,6 +1271,13 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     rotateSprite: true,
     staticFrame: 1,
     spriteBaseAngle: 0,
+    spawnOffsetY: 10,
+    trajectory: {
+      kind: 'arc',
+      minArcHeight: 4,
+      arcHeightFactor: 0.06,
+      maxArcHeight: 16,
+    },
     sounds: {
       launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
     },

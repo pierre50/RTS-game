@@ -280,6 +280,8 @@ def bake_retro_style(image_path: Path, palette: np.ndarray, bg_tolerance: int = 
     validé manuellement via `retro_palette.py texture.png --remove-bg`.
     """
     img = Image.open(image_path)
+    if img.mode not in ("RGBA", "LA", "PA"):
+        img = img.convert("RGBA")
     original_alpha = img.split()[-1]
     bg_canvas = Image.new("RGB", img.size, (255, 0, 255))
     bg_canvas.paste(img, mask=original_alpha)
@@ -362,8 +364,10 @@ def main():
     print(f"\n→ {input_path.name}")
     img = Image.open(input_path)
 
-    has_alpha = img.mode in ("RGBA", "LA", "PA")
+    has_alpha = img.mode in ("RGBA", "LA", "PA") or (img.mode == "P" and "transparency" in img.info)
     if has_alpha:
+        if img.mode not in ("RGBA", "LA", "PA"):
+            img = img.convert("RGBA")
         original_alpha = img.split()[-1]
         # Colle sur magenta pour éviter la confusion avec pixels clairs du sprite
         bg_canvas = Image.new("RGB", img.size, (255, 0, 255))

@@ -20,6 +20,9 @@ import {
   playSoundCue,
   playerCanSeeInstance,
   boardTransport,
+  SHOOT_RELEASE_FRAME,
+  THRUST_RELEASE_FRAME,
+  SLASH_IMPACT_FRAME,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
@@ -92,6 +95,14 @@ function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'bu
 
 function isConvertibleEntity(target: RuntimeEntity): target is ConvertibleEntity {
   return isUnitEntity(target) || isBuildingEntity(target)
+}
+
+// Resources gained per swing (chop/farm/mine/forage/...), separate from
+// `gatheringRate` which is now only an AI food-source scoring heuristic
+// (app/ai/AIEconomy.ts) — technologies bump this flat amount instead of
+// speeding up the animation.
+function getGatherAmount(unit: UnitEntity): number {
+  return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1))
 }
 
 export class UnitActions {
@@ -290,7 +301,15 @@ export class UnitActions {
       dieOnEmpty = false,
       checkOwner = false,
       updateTexture = false,
-    }: { dieOnEmpty?: boolean; checkOwner?: boolean; updateTexture?: boolean } = {}
+      releaseFrame = SLASH_IMPACT_FRAME,
+      onRelease,
+    }: {
+      dieOnEmpty?: boolean
+      checkOwner?: boolean
+      updateTexture?: boolean
+      releaseFrame?: number
+      onRelease?: () => void
+    } = {}
   ) {
     const unit = this.unit
     const menu = unit.context?.menu
@@ -299,45 +318,45 @@ export class UnitActions {
       return
     }
     unit.setTextures?.(SHEET_TYPES.action)
-    unit.startInterval?.(
-      () => {
-        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-        if (!unit.getActionCondition?.(dest)) {
-          if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
-            dest.die?.()
-          }
-          unit.affectNewDest?.()
-          return
+    if (!unit.sprite) return
+    onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
+      onRelease?.()
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
+          dest.die?.()
         }
-        if (!dest || unit.loading === unit.loadingMax?.[unit.loadingType ?? '']) {
-          unit.sendToDelivery?.()
-          return
+        unit.affectNewDest?.()
+        return
+      }
+      const maxLoad = unit.loadingMax?.[loadingType] ?? Infinity
+      const wasEmpty = (unit.loading ?? 0) === 0
+      const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
+      if (!dest || gain <= 0) {
+        unit.sendToDelivery?.()
+        return
+      }
+      unit.loading = (unit.loading ?? 0) + gain
+      unit.loadingType = loadingType
+      unit.updateInterfaceLoading?.()
+      this.playSound(soundId)
+      if (updateTexture) dest.updateTexture?.()
+      dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+      if (dest.selected && (!checkOwner || unit.owner?.isPlayed)) {
+        menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
+      }
+      if ((dest.quantity ?? 0) <= 0) {
+        if (dieOnEmpty) dest.die?.()
+        unit.affectNewDest?.()
+      }
+      if (wasEmpty) {
+        const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
+        if (workAssets) {
+          unit.walkingSheet = Assets.cache.get(workAssets.loadedSheet)
+          unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
         }
-        unit.loading = (unit.loading ?? 0) + 1
-        unit.loadingType = loadingType
-        unit.updateInterfaceLoading?.()
-        this.playSound(soundId)
-        if (updateTexture) dest.updateTexture?.()
-        dest.quantity = Math.max((dest.quantity ?? 0) - 1, 0)
-        if (dest.selected && (!checkOwner || unit.owner?.isPlayed)) {
-          menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
-        }
-        if ((dest.quantity ?? 0) <= 0) {
-          if (dieOnEmpty) dest.die?.()
-          unit.affectNewDest?.()
-        }
-        if (unit.loading === 1) {
-          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
-          if (workAssets) {
-            unit.walkingSheet = Assets.cache.get(workAssets.loadedSheet)
-            unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
-          }
-        }
-      },
-      (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
-      false,
-      `unit.gather.${loadingType}`
-    )
+      }
+    })
   }
 
   upgrade(type: string) {
@@ -407,46 +426,45 @@ export class UnitActions {
         if (!dest) return
         dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
-        unit.startInterval?.(
-          () => {
-            const d = isBuildingEntity(unit.dest) ? unit.dest : null
-            if (!unit.getActionCondition?.(d)) {
-              if ((d?.quantity ?? 0) <= 0) {
-                d?.die?.()
-              }
-              unit.affectNewDest?.()
-              return
+        if (!unit.sprite) return
+        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
+          const d = isBuildingEntity(unit.dest) ? unit.dest : null
+          if (!unit.getActionCondition?.(d)) {
+            if ((d?.quantity ?? 0) <= 0) {
+              d?.die?.()
             }
-            if (d) d.isUsedBy = unit
-            if (!d || unit.loading === unit.loadingMax?.[unit.loadingType ?? '']) {
-              unit.sendToDelivery?.()
-              if (d) d.isUsedBy = null
-              return
+            unit.affectNewDest?.()
+            return
+          }
+          if (d) d.isUsedBy = unit
+          const maxLoad = unit.loadingMax?.[LOADING_TYPES.wheat] ?? Infinity
+          const wasEmpty = (unit.loading ?? 0) === 0
+          const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
+          if (!d || gain <= 0) {
+            unit.sendToDelivery?.()
+            if (d) d.isUsedBy = null
+            return
+          }
+          unit.loading = (unit.loading ?? 0) + gain
+          unit.loadingType = LOADING_TYPES.wheat
+          unit.updateInterfaceLoading?.()
+          this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
+          d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
+          if (d.selected) {
+            menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
+          }
+          if ((d.quantity ?? 0) <= 0) {
+            d.die?.()
+            unit.affectNewDest?.()
+          }
+          if (wasEmpty) {
+            const workAssets2 = unit.work ? unit.allAssets?.[unit.work] : undefined
+            if (workAssets2) {
+              unit.walkingSheet = Assets.cache.get(workAssets2.loadedSheet)
             }
-            unit.loading = (unit.loading ?? 0) + 1
-            unit.loadingType = LOADING_TYPES.wheat
-            unit.updateInterfaceLoading?.()
-            this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
-            d.quantity = Math.max((d.quantity ?? 0) - 1, 0)
-            if (d.selected) {
-              menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
-            }
-            if ((d.quantity ?? 0) <= 0) {
-              d.die?.()
-              unit.affectNewDest?.()
-            }
-            if (unit.loading === 1) {
-              const workAssets2 = unit.work ? unit.allAssets?.[unit.work] : undefined
-              if (workAssets2) {
-                unit.walkingSheet = Assets.cache.get(workAssets2.loadedSheet)
-              }
-              unit.standingSheet = null
-            }
-          },
-          (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
-          false,
-          'unit.gather.farm'
-        )
+            unit.standingSheet = null
+          }
+        })
         break
       }
       case ACTION_TYPES.chopwood: {
@@ -455,55 +473,59 @@ export class UnitActions {
           return
         }
         unit.setTextures?.(SHEET_TYPES.action)
-        unit.startInterval?.(
-          () => {
-            const dest = isResourceEntity(unit.dest) ? unit.dest : null
-            if (!unit.getActionCondition?.(dest)) {
-              if ((dest?.quantity ?? 0) <= 0) {
-                dest?.die?.()
-              }
+        if (!unit.sprite) return
+        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
+          const dest = isResourceEntity(unit.dest) ? unit.dest : null
+          if (!unit.getActionCondition?.(dest)) {
+            if ((dest?.quantity ?? 0) <= 0) {
+              dest?.die?.()
+            }
+            unit.affectNewDest?.()
+            return
+          }
+          if (!dest) return
+          const maxLoad = unit.loadingMax?.[LOADING_TYPES.wood] ?? Infinity
+          if ((unit.loading ?? 0) >= maxLoad) {
+            unit.sendToDelivery?.()
+            return
+          }
+          this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
+          if ((dest.hitPoints ?? 0) > 0) {
+            dest.hitPoints = Math.max((dest.hitPoints ?? 0) - 1, 0)
+            if (dest.selected) {
+              dest.drawHealthBar?.()
+              menu?.updateInfo?.(
+                MENU_INFO_IDS.hitPoints,
+                (dest.hitPoints ?? 0) > 0 ? dest.hitPoints + '/' + dest.totalHitPoints : ''
+              )
+            }
+            if ((dest.hitPoints ?? 0) <= 0) {
+              dest.hitPoints = 0
+              dest.setCuttedTreeTexture?.()
+            }
+          } else {
+            const wasEmpty = (unit.loading ?? 0) === 0
+            const gain = Math.min(getGatherAmount(unit), maxLoad - (unit.loading ?? 0))
+            unit.loading = (unit.loading ?? 0) + gain
+            unit.loadingType = LOADING_TYPES.wood
+            unit.updateInterfaceLoading?.()
+            dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+            if (dest.selected) {
+              menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
+            }
+            if ((dest.quantity ?? 0) <= 0) {
+              dest.die?.()
               unit.affectNewDest?.()
-              return
             }
-            if (!dest) return
-            if ((dest.hitPoints ?? 0) > 0) {
-              dest.hitPoints = Math.max((dest.hitPoints ?? 0) - 1, 0)
-              if (dest.selected) {
-                dest.drawHealthBar?.()
-                menu?.updateInfo?.(
-                  MENU_INFO_IDS.hitPoints,
-                  (dest.hitPoints ?? 0) > 0 ? dest.hitPoints + '/' + dest.totalHitPoints : ''
-                )
+            if (wasEmpty) {
+              const workAssets3 = unit.work ? unit.allAssets?.[unit.work] : undefined
+              if (workAssets3) {
+                unit.walkingSheet = Assets.cache.get(workAssets3.loadedSheet)
               }
-              if ((dest.hitPoints ?? 0) <= 0) {
-                dest.hitPoints = 0
-                dest.setCuttedTreeTexture?.()
-              }
-            } else {
-              unit.loading = (unit.loading ?? 0) + 1
-              unit.loadingType = LOADING_TYPES.wood
-              unit.updateInterfaceLoading?.()
-              dest.quantity = Math.max((dest.quantity ?? 0) - 1, 0)
-              if (dest.selected) {
-                menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
-              }
-              if ((dest.quantity ?? 0) <= 0) {
-                dest.die?.()
-                unit.affectNewDest?.()
-              }
-              if (unit.loading === 1) {
-                const workAssets3 = unit.work ? unit.allAssets?.[unit.work] : undefined
-                if (workAssets3) {
-                  unit.walkingSheet = Assets.cache.get(workAssets3.loadedSheet)
-                }
-                unit.standingSheet = null
-              }
+              unit.standingSheet = null
             }
-          },
-          (1 / (unit.gatheringRate?.[unit.work ?? ''] ?? 1)) * 1000,
-          false,
-          'unit.gather.wood'
-        )
+          }
+        })
         break
       }
       case ACTION_TYPES.forageberry:
@@ -525,49 +547,45 @@ export class UnitActions {
           return
         }
         unit.setTextures?.(SHEET_TYPES.action)
-        unit.startInterval?.(
-          () => {
-            const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-            if (!unit.getActionCondition?.(dest)) {
-              if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
-              if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+        if (!unit.sprite) return
+        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
+          const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+          if (!unit.getActionCondition?.(dest)) {
+            if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
+            if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+              unit.sendToFarm?.(dest, true)
+              return
+            }
+            unit.affectNewDest?.()
+            return
+          }
+          if (!dest) return
+          if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+            this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
+            dest.hitPoints = Math.min(
+              Math.round((dest.hitPoints ?? 0) + (dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)),
+              dest.totalHitPoints ?? 0
+            )
+            if (dest.selected) {
+              dest.drawHealthBar?.()
+              if (unit.owner?.isPlayed) {
+                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
+              }
+            }
+            dest.updateHitPoints?.(unit.action ?? '')
+          } else {
+            if (!dest.isBuilt) {
+              dest.updateHitPoints?.(unit.action ?? '')
+              dest.isBuilt = true
+              if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
                 unit.sendToFarm?.(dest, true)
                 return
               }
-              unit.affectNewDest?.()
-              return
             }
-            if (!dest) return
-            if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
-              this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-              dest.hitPoints = Math.min(
-                Math.round((dest.hitPoints ?? 0) + (dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)),
-                dest.totalHitPoints ?? 0
-              )
-              if (dest.selected) {
-                dest.drawHealthBar?.()
-                if (unit.owner?.isPlayed) {
-                  menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
-                }
-              }
-              dest.updateHitPoints?.(unit.action ?? '')
-            } else {
-              if (!dest.isBuilt) {
-                dest.updateHitPoints?.(unit.action ?? '')
-                dest.isBuilt = true
-                if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
-                  unit.sendToFarm?.(dest, true)
-                  return
-                }
-              }
-              if (unit.continueBuildingQueue?.()) return
-              unit.affectNewDest?.()
-            }
-          },
-          1000,
-          false,
-          'unit.build'
-        )
+            if (unit.continueBuildingQueue?.()) return
+            unit.affectNewDest?.()
+          }
+        })
         break
       }
       case ACTION_TYPES.attack:
@@ -673,14 +691,12 @@ export class UnitActions {
         this.startGathering(LOADING_TYPES.fish, this.getAudibleWorkSound('fishing'), {
           checkOwner: true,
           dieOnEmpty: true,
+          releaseFrame: THRUST_RELEASE_FRAME,
+          onRelease:
+            unit.category !== 'Boat'
+              ? () => this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
+              : undefined,
         })
-        if (unit.category !== 'Boat') {
-          if (unit.sprite) {
-            onSpriteLoopAtFrame(unit.sprite, 6, () => {
-              this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
-            })
-          }
-        }
         break
       case ACTION_TYPES.hunt: {
         if (!unit.getActionCondition?.(unit.dest)) {
@@ -729,7 +745,7 @@ export class UnitActions {
           }
         }
         if (unit.sprite) {
-          onSpriteLoopAtFrame(unit.sprite, 2, () => {
+          onSpriteLoopAtFrame(unit.sprite, SHOOT_RELEASE_FRAME, () => {
             const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
             if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
             const projectile = new Projectile(

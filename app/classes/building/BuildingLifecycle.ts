@@ -19,6 +19,7 @@ import {
   getBuildingRubbleTextureNameWithSize,
   getPercentage,
   getPlainCellsAroundPoint,
+  getBuildingFootprintRadius,
   getTexture,
   getTextureByFrame,
   getTextureSheet,
@@ -110,7 +111,7 @@ export class BuildingLifecycle {
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     if (isWall(building)) updateWallAndNeighbours(building)
 
-    if (building.type === BUILDING_TYPES.house) {
+    if (building.type === BUILDING_TYPES.townCenter) {
       if (assetOwner.age === 0) {
         const spritesheetFire = Assets.cache.get(BUILDING_FIRE_SHEETS.light)
         const spriteFire = new AnimatedSprite(
@@ -120,8 +121,8 @@ export class BuildingLifecycle {
         spriteFire.label = LABEL_TYPES.deco
         spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
-        spriteFire.x = 10
-        spriteFire.y = 5
+        spriteFire.x = 12
+        spriteFire.y = 25
         spriteFire.play()
         spriteFire.animationSpeed = 0.2
         building.addChild(spriteFire)
@@ -147,12 +148,13 @@ export class BuildingLifecycle {
       newFire.label = LABEL_TYPES.fire
       newFire.eventMode = 'none'
       let poses: number[][] = [[0, 0]]
-      if (building.size === 3) {
+      const radius = getBuildingFootprintRadius(building.size)
+      if (radius > 0) {
         poses = [
-          [0, -32],
-          [-64, 0],
-          [0, 32],
-          [64, 0],
+          [0, -32 * radius],
+          [-64 * radius, 0],
+          [0, 32 * radius],
+          [64 * radius, 0],
         ]
       }
       for (let i = 0; i < poses.length; i++) {
@@ -317,7 +319,7 @@ export class BuildingLifecycle {
     }
 
     updateInstanceVisibility(building)
-    const dist = building.size === 3 ? 1 : 0
+    const dist = getBuildingFootprintRadius(building.size)
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
@@ -341,7 +343,7 @@ export class BuildingLifecycle {
     const {
       context: { map },
     } = building
-    const dist = building.size === 3 ? 1 : 0
+    const dist = getBuildingFootprintRadius(building.size)
     getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
       cell.corpses.delete(building)
       return true

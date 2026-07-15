@@ -7,7 +7,11 @@ import {
   getHitPointsWithDamage,
   getInstanceDegree,
   instanceContactInstance,
+  onSpriteLoopAtFrame,
   playAudibleSoundCue,
+  SHOOT_RELEASE_FRAME,
+  SLASH_IMPACT_FRAME,
+  syncAnimationSpeedToRate,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -33,7 +37,7 @@ export class UnitCombat {
     unit.setTextures?.(SHEET_TYPES.standing)
   }
 
-  playSingleAttackAnimation(onFire: () => void) {
+  playSingleAttackAnimation(onFire: () => void, releaseFrame: number | null = null) {
     const unit = this.unit
     const sprite = unit.sprite
     if (!sprite) return
@@ -55,7 +59,14 @@ export class UnitCombat {
       }
     }
     unit.setTextures?.(SHEET_TYPES.action)
-    onFire()
+    if (releaseFrame == null) {
+      sprite.onFrameChange = undefined
+      onFire()
+    } else {
+      sprite.onFrameChange = currentFrame => {
+        if (currentFrame === releaseFrame) onFire()
+      }
+    }
   }
 
   performRangedAttackCycle(launchProjectile: () => void) {
@@ -74,7 +85,7 @@ export class UnitCombat {
       unit.sendToEvt?.(unit.dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
       return
     }
-    this.playSingleAttackAnimation(() => launchProjectile())
+    this.playSingleAttackAnimation(() => launchProjectile(), SHOOT_RELEASE_FRAME)
   }
 
   detect(instance: RuntimeEntity | null) {
@@ -200,47 +211,43 @@ export class UnitCombat {
       sprite.loop = true
       sprite.onComplete = undefined
       unit.setTextures?.(SHEET_TYPES.action)
-      unit.startInterval?.(
-        () => {
-          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            if (dest && (dest.hitPoints ?? 0) <= 0) {
-              dest.die?.()
+      syncAnimationSpeedToRate(sprite, 1 / (unit.rateOfFire ?? 1))
+      onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+        if (!unit.getActionCondition?.(dest)) {
+          if (dest && (dest.hitPoints ?? 0) <= 0) {
+            dest.die?.()
+          }
+          unit.affectNewDest?.()
+          return
+        }
+        this.syncMovingTargetDirection()
+        // syncMovingTargetDirection may have re-run setTextures(action) on a
+        // direction change, which resets animationSpeed to the sheet's static
+        // default — reassert the rate-synced speed every tick.
+        syncAnimationSpeedToRate(sprite, 1 / (unit.rateOfFire ?? 1))
+        if (!unit.isUnitAtDest?.(unit.action, dest)) {
+          unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
+          return
+        }
+        if (unit.sounds && unit.sounds.hit) {
+          playAudibleSoundCue(unit, unit.sounds.hit)
+        }
+        if (dest && (dest.hitPoints ?? 0) > 0) {
+          dest.hitPoints = getHitPointsWithDamage(unit, dest)
+          if (dest.selected) {
+            dest.drawHealthBar?.()
+            if (player?.selectedUnit === dest || player?.selectedBuilding === dest || player?.selectedOther === dest) {
+              menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
             }
+          }
+          dest.isAttacked?.(unit)
+          if ((dest.hitPoints ?? 0) <= 0) {
+            dest.die?.()
             unit.affectNewDest?.()
-            return
           }
-          this.syncMovingTargetDirection()
-          if (!unit.isUnitAtDest?.(unit.action, dest)) {
-            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
-            return
-          }
-          if (unit.sounds && unit.sounds.hit) {
-            playAudibleSoundCue(unit, unit.sounds.hit)
-          }
-          if (dest && (dest.hitPoints ?? 0) > 0) {
-            dest.hitPoints = getHitPointsWithDamage(unit, dest)
-            if (dest.selected) {
-              dest.drawHealthBar?.()
-              if (
-                player?.selectedUnit === dest ||
-                player?.selectedBuilding === dest ||
-                player?.selectedOther === dest
-              ) {
-                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
-              }
-            }
-            dest.isAttacked?.(unit)
-            if ((dest.hitPoints ?? 0) <= 0) {
-              dest.die?.()
-              unit.affectNewDest?.()
-            }
-          }
-        },
-        (unit.rateOfFire ?? 1) * 1000,
-        false,
-        'unit.meleeAttack'
-      )
+        }
+      })
     }
   }
 }

@@ -170,6 +170,7 @@ export interface UnitEntity extends RuntimeEntityBase {
 
   // Gathering
   gatheringRate?: Record<string, number>
+  gatherAmount?: Record<string, number>
   loadingMax?: Record<string, number>
   assets?: Record<string, string>
   allAssets?: Record<string, Record<string, string>>

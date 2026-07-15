@@ -13,6 +13,7 @@ import {
   getTexture,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
+  getBuildingFootprintRadius,
   clearCellTerrainSet,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -133,6 +134,9 @@ export class Building extends Instance implements BuildingEntity {
     this.y = map.grid[this.i][this.j].y
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
+    if (this.type === BUILDING_TYPES.farm) {
+      this.zIndex -= 0.1
+    }
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.dock) {
@@ -171,7 +175,7 @@ export class Building extends Instance implements BuildingEntity {
     }
 
     // Set solid zone
-    const dist = this.size === 3 ? 1 : 0
+    const dist = getBuildingFootprintRadius(this.size)
     getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, ((cell: RuntimeCell) => {
       clearCellTerrainSet(cell)
       for (const corpse of cell.corpses) {

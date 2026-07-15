@@ -1,6 +1,6 @@
 import { findInstancePath } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
-import { getCellsAroundPoint } from './cells'
+import { getCellsAroundPoint, getBuildingContactDistance } from './cells'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, InstanceLike, Point } from '../../types/grid'
 
 export type GameMap<TCell extends GridCell = GridCell> = {
@@ -10,7 +10,7 @@ export type GameMap<TCell extends GridCell = GridCell> = {
 type PathInstanceLike = GridPosition & Partial<Point> & { category?: string }
 
 export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boolean {
-  return Math.floor(instancesDistance(a, b)) <= ((b.size ?? 1) - 1 || 1) && !b.isDestroyed
+  return Math.floor(instancesDistance(a, b)) <= getBuildingContactDistance(b.size ?? 1) && !b.isDestroyed
 }
 
 type MovableInstance = Point & { degree?: number }
@@ -55,7 +55,7 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   const occupiedInstance = (target as { has?: InstanceLike | null }).has ?? undefined
   const targetSize = 'size' in target && typeof target.size === 'number' ? target.size : 0
   const size = targetSize || occupiedInstance?.size || 1
-  const distance = size === 3 ? 2 : 1
+  const distance = getBuildingContactDistance(size)
 
   const candidates = getCellsAroundPoint(target.i, target.j, map.grid, distance)
   candidates.sort(

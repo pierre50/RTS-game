@@ -113,6 +113,15 @@
       "stoneminer": 0.5175,
       "goldminer": 0.5175
     },
+    "gatherAmount": {
+      "forager": 1,
+      "hunter": 1,
+      "fisher": 1,
+      "farmer": 1,
+      "woodcutter": 1,
+      "stoneminer": 1,
+      "goldminer": 1
+    },
     "sounds": {
       "create": "villager-completed",
       "hit": [

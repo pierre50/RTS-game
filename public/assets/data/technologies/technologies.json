@@ -641,9 +641,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.woodcutter",
-          "op": "*",
-          "value": "1.2",
+          "key": "gatherAmount.woodcutter",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {
@@ -695,9 +695,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.stoneminer",
-          "op": "*",
-          "value": "1.3",
+          "key": "gatherAmount.stoneminer",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {
@@ -728,9 +728,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.goldminer",
-          "op": "*",
-          "value": "1.3",
+          "key": "gatherAmount.goldminer",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {
@@ -1203,9 +1203,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.woodcutter",
-          "op": "*",
-          "value": "1.2",
+          "key": "gatherAmount.woodcutter",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {
@@ -1262,9 +1262,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.woodcutter",
-          "op": "*",
-          "value": "1.2",
+          "key": "gatherAmount.woodcutter",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {
@@ -1668,9 +1668,9 @@
       "type": "improve",
       "operations": [
         {
-          "key": "gatheringRate.goldminer",
-          "op": "*",
-          "value": "1.25",
+          "key": "gatherAmount.goldminer",
+          "op": "+",
+          "value": "1",
           "type": "Villager"
         },
         {

@@ -1,6 +1,6 @@
 {
   "House": {
-    "size": 1,
+    "size": 3,
     "sight": 3,
     "totalHitPoints": 75,
     "constructionTime": 20,
@@ -24,7 +24,7 @@
     }
   },
   "Barracks": {
-    "size": 3,
+    "size": 5,
     "sight": 5,
     "totalHitPoints": 350,
     "constructionTime": 30,
@@ -167,25 +167,13 @@
     }
   },
   "ArcheryRange": {
-    "size": 3,
+    "size": 5,
     "sight": 4,
     "totalHitPoints": 350,
     "constructionTime": 40,
     "cost": {
       "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Barracks"
-      }
-    ],
     "units": [
       "Bowman",
       "ImprovedBowman",
@@ -219,18 +207,6 @@
     "cost": {
       "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Barracks"
-      }
-    ],
     "units": [
       "Scout"
     ],
@@ -260,18 +236,6 @@
     "cost": {
       "wood": 75
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
-      }
-    ],
     "sounds": {
       "create": "farm-completed-selected",
       "burning": [
@@ -279,11 +243,7 @@
         "building-burning-2",
         "building-burning-3"
       ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "collapse": []
     }
   },
   "WatchTower": {
@@ -399,18 +359,6 @@
     "cost": {
       "wood": 150
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Granary"
-      }
-    ],
     "technologies": [
       "Woodworking",
       "Artisanship",
@@ -444,18 +392,6 @@
     "cost": {
       "wood": 200
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
-      }
-    ],
     "units": [
       "Priest"
     ],
@@ -520,7 +456,7 @@
     }
   },
   "TownCenter": {
-    "size": 3,
+    "size": 5,
     "sight": 7,
     "totalHitPoints": 600,
     "constructionTime": 60,
@@ -528,18 +464,6 @@
     "cost": {
       "wood": 200
     },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "GovernmentCenter"
-      }
-    ],
     "units": [
       "Villager"
     ],

@@ -3,6 +3,7 @@ import {
   findLoadShoreCell,
   findTransportCoastCell,
   getCellsAroundPoint,
+  getBuildingContactDistance,
   getInstancePath,
   getTransportLoad,
   unloadTransport,
@@ -67,7 +68,7 @@ export class AIMilitary {
 
     if (soldiers.length > 1 && targetCell?.solid) {
       const size = target.size || targetCell.has?.size || 1
-      const dist = size === 3 ? 2 : 1
+      const dist = getBuildingContactDistance(size)
       const candidates = getCellsAroundPoint(
         target.i,
         target.j,

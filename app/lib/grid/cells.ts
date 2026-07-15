@@ -90,6 +90,17 @@ export function getPlainCellsAroundPoint<TCell extends GridCell>(
   return result
 }
 
+// Buildings are anchored on a single center cell, so only odd footprints (1, 3, 5...) have
+// a symmetric center; radius is how many cells the footprint extends on each side of it.
+export function getBuildingFootprintRadius(size: number): number {
+  return Math.floor((size - 1) / 2)
+}
+
+// Distance from a building's center cell at which something is considered touching its edge.
+export function getBuildingContactDistance(size: number): number {
+  return getBuildingFootprintRadius(size) + 1
+}
+
 export function getCellsAroundPoint<TCell extends GridCell>(
   startX: number,
   startY: number,

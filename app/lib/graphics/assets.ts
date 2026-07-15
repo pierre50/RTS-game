@@ -60,7 +60,8 @@ export function getBuildingTextureNameWithSize(size: number): TextureRef | undef
       return { sheet: 'buildings/construction/size-1', frame: 0 }
     case 2:
       return { sheet: 'buildings/construction/size-2', frame: 0 }
-    case 3:
+    default:
+      // No dedicated construction art beyond a 3-cell footprint yet; reuse the largest available.
       return { sheet: 'buildings/construction/size-3', frame: 0 }
   }
 }
@@ -71,7 +72,8 @@ export function getBuildingRubbleTextureNameWithSize(size: number): TextureRef |
       return { sheet: 'buildings/rubble/size-1', frame: 0 }
     case 2:
       return { sheet: 'buildings/rubble/size-2', frame: 0 }
-    case 3:
+    default:
+      // No dedicated rubble art beyond a 3-cell footprint yet; reuse the largest available.
       return { sheet: 'buildings/rubble/size-3', frame: 0 }
   }
 }

@@ -1,7 +1,12 @@
 import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { LABEL_TYPES } from '../../constants'
-import { getPlainCellsAroundPoint, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
+import {
+  getPlainCellsAroundPoint,
+  getBuildingFootprintRadius,
+  getRandomZoneInGridWithCondition,
+  getZoneInGridWithCondition,
+} from './cells'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, GridZone } from '../../types/grid'
 
 type TerrainCell = GridCell & {
@@ -86,7 +91,7 @@ function getBuildingFootprintCells<TCell extends GridCell>(
   j: number,
   building: BuildingPlacement
 ): { cells: TCell[]; expectedCells: number } {
-  const dist = building.size === 3 ? 1 : 0
+  const dist = getBuildingFootprintRadius(building.size ?? 1)
   const cells = getPlainCellsAroundPoint(i, j, grid, dist)
   const expectedCells = dist === 0 ? 1 : (dist * 2 + 1) ** 2
   return { cells, expectedCells }
