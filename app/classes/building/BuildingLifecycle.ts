@@ -110,27 +110,6 @@ export class BuildingLifecycle {
     if (color) color.destroy()
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     if (isWall(building)) updateWallAndNeighbours(building)
-
-    if (building.type === BUILDING_TYPES.townCenter) {
-      if (assetOwner.age === 0) {
-        const spritesheetFire = Assets.cache.get(BUILDING_FIRE_SHEETS.light)
-        const spriteFire = new AnimatedSprite(
-          getAnimationFrames(spritesheetFire.textures) as Texture[]
-        ) as RuntimeAnimatedSprite
-        bindAnimatedSpriteToTicker(spriteFire, building.context.app)
-        spriteFire.label = LABEL_TYPES.deco
-        spriteFire.eventMode = 'none'
-        spriteFire.roundPixels = true
-        spriteFire.x = 12
-        spriteFire.y = 25
-        spriteFire.play()
-        spriteFire.animationSpeed = 0.2
-        building.addChild(spriteFire)
-      } else {
-        const fire = building.getChildByLabel(LABEL_TYPES.deco)
-        if (fire) fire.destroy()
-      }
-    }
   }
 
   generateFire(spriteId: string): void {
