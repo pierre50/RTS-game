@@ -10,7 +10,7 @@ import sys
 import warnings
 from pathlib import Path
 
-from config import CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, VARIANT_KEY
+from config import CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, VARIANT_KEY, unit_look_for_civ
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
 
@@ -207,7 +207,8 @@ def build(source_root: Path, output_root: Path, *, clean: bool = False, civ_keys
     skipped = 0
     rebuilt = 0
     for civ_key, civ in selected_civs.items():
-        for unit, look in UNIT_LOOKS.items():
+        for unit in UNIT_LOOKS:
+            look = unit_look_for_civ(unit, civ_key)
             variant_key = f"{civ_key}_{VARIANT_KEY}"
             for job in UNIT_JOBS[unit]:
                 for output_sheet, (source_sheet, animation, equipment) in build_sheet_plan(unit, job).items():

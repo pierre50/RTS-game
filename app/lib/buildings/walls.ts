@@ -15,6 +15,7 @@ const WALL_SHEETS = {
   2: {
     Egyptian: 'buildings/egyptian/wall/level-2',
     Greek: 'buildings/greek/wall/level-2',
+    Roman: 'buildings/greek/wall/level-2',
     Asian: 'buildings/asian/wall/level-2',
     Babylonian: 'buildings/babylonian/wall/level-2',
     Celtic: 'buildings/greek/wall/level-2',
@@ -23,6 +24,7 @@ const WALL_SHEETS = {
   3: {
     Egyptian: 'buildings/egyptian/wall/level-3',
     Greek: 'buildings/greek/wall/level-3',
+    Roman: 'buildings/greek/wall/level-3',
     Asian: 'buildings/asian/wall/level-3',
     Babylonian: 'buildings/babylonian/wall/level-3',
     Celtic: 'buildings/greek/wall/level-3',

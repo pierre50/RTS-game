@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -63,6 +63,7 @@ SKIN_TONES = {
 
 CIVS = {
     "greek": {"skin": "olive", "hair": "dark_brown"},
+    "roman": {"skin": "olive", "hair": "dark_brown"},
     "egyptian": {"skin": "brown", "hair": "black"},
     "babylonian": {"skin": "fair", "hair": "black"},
     "asian": {"skin": "golden", "hair": "black"},
@@ -100,7 +101,7 @@ class DressItem:
 
 
 SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png")
-SANDALS = DressItem("feet/sandals/male/{animation}/brown.png")
+SANDALS = DressItem("feet/sandals/male/{animation}.png")
 BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
 BRACERS_PATH = "arms/bracers/male/{animation}.png"
 BRACERS_BRASS = DressItem(BRACERS_PATH, palette="brass")
@@ -147,8 +148,8 @@ class UnitLook:
 
 
 UNIT_LOOKS: dict[str, UnitLook] = {
-    "villager": UnitLook(hair="plain", dress=(SHORTS,)),
-    "clubman": UnitLook(hair="long", hat=HEADBAND, dress=(SHORTS,)),
+    "villager": UnitLook(hair="plain", dress=(SHORTS, SANDALS)),
+    "clubman": UnitLook(hair="long", hat=HEADBAND, dress=(SHORTS, SANDALS)),
     "axeman": UnitLook(
         hair="long",
         hat=HEADBAND,
@@ -161,9 +162,9 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         ),
     ),
     "bowman": UnitLook(
-        hair="plain",
-        hair_extension=DressItem("hair/extensions/ponytails/topknot_short"),
-        dress=(SHORTS,),
+        hair="high_ponytail",
+        hair_split=True,
+        dress=(SHORTS, SANDALS),
     ),
     "shortswordman": UnitLook(
         hat=DressItem("hat/helmet/pointed", palette="brass"),
@@ -178,13 +179,14 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     "improvedbowman": UnitLook(
         hair="high_ponytail",
         hair_split=True,
-        dress=(SKIRT_PLAIN, APRON_BROWN, CUFFS_WHITE),
+        dress=(SKIRT_PLAIN, SANDALS, APRON_BROWN, CUFFS_WHITE),
     ),
     "compositebowman": UnitLook(
         hair="high_ponytail",
         hair_split=True,
         dress=(
             SKIRT_PLAIN,
+            SANDALS,
             DressItem("torso/clothes/sleeveless/sleeveless/male/{animation}/{color}.png"),
             SASH_WHITE,
             CUFFS_WHITE,
@@ -245,11 +247,90 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         cape=DressItem("cape/solid", team_colored=True),
         dress=(
             DressItem("legs/skirts/plain/male/{animation}.png", palette="white"),
+            SANDALS,
             DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white"),
             DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True),
         ),
     ),
 }
+
+CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
+    "greek": {
+        "villager": {"hair": "page2", "beard": "beard/medium"},
+        "clubman": {"hair": "long_messy", "beard": "beard/winter/male"},
+        "axeman": {"hair": "long_messy", "beard": "beard/winter/male"},
+        "bowman": {"hair": "curtains_long", "hair_split": False, "hair_extension": None, "beard": "beard/medium"},
+        "improvedbowman": {"hair": "curtains_long", "hair_split": False, "beard": "beard/medium"},
+        "compositebowman": {"hair": "curtains_long", "hair_split": False, "beard": "beard/medium"},
+    },
+    "roman": {
+        "villager": {"hair": "plain"},
+        "clubman": {"hair": "parted2"},
+        "axeman": {"hair": "parted2"},
+        "bowman": {"hair": "buzzcut", "hair_split": False, "hair_extension": None},
+        "improvedbowman": {"hair": "buzzcut", "hair_split": False},
+        "compositebowman": {"hair": "buzzcut", "hair_split": False},
+    },
+    "babylonian": {
+        "villager": {"hair": "jewfro", "beard": "beard/winter/male"},
+        "bowman": {"hair": "long_center_part", "hair_split": True, "hair_extension": None, "beard": "beard/winter/male"},
+        "clubman": {"hair": "curly_short", "beard": "beard/winter/male"},
+        "axeman": {"hair": "curly_short", "beard": "beard/winter/male"},
+        "shortswordman": {"beard": "beard/winter/male"},
+        "improvedbowman": {"hair": "long_center_part", "hair_split": True, "beard": "beard/winter/male"},
+        "compositebowman": {"hair": "long_center_part", "hair_split": True, "beard": "beard/winter/male"},
+        "broadswordman": {"beard": "beard/winter/male"},
+        "longswordman": {"beard": "beard/winter/male"},
+        "hoplite": {"beard": "beard/winter/male"},
+        "phalanx": {"beard": "beard/winter/male"},
+    },
+    "asian": {
+        "villager": {"hair": "ponytail", "hair_split": True},
+        "clubman": {"hair": "ponytail2", "hair_split": True},
+        "axeman": {"hair": "ponytail2", "hair_split": True},
+        "bowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
+        "improvedbowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
+        "compositebowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
+    },
+    "celtic": {
+        "villager": {"hair": "swoop", "beard": "beard/basic"},
+        "bowman": {"hair": "loose", "hair_split": False, "hair_extension": None, "beard": "beard/basic"},
+        "clubman": {"hair": "bangslong", "beard": "beard/basic"},
+        "axeman": {"hair": "bangslong", "beard": "beard/basic"},
+        "shortswordman": {"beard": "beard/basic"},
+        "improvedbowman": {"hair": "loose", "hair_split": False, "beard": "beard/basic"},
+        "compositebowman": {"hair": "loose", "hair_split": False, "beard": "beard/basic"},
+        "broadswordman": {"beard": "beard/basic"},
+        "longswordman": {"beard": "beard/basic"},
+        "hoplite": {"beard": "beard/basic"},
+        "phalanx": {"beard": "beard/basic"},
+        "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
+    },
+    "egyptian": {
+        "villager": {"hair": "bob"},
+        "bowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
+        "clubman": {"hair": "buzzcut"},
+        "axeman": {"hair": "buzzcut"},
+        "improvedbowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
+        "compositebowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
+        "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
+    },
+    "nubian": {
+        "villager": {"hair": "cornrows"},
+        "bowman": {"hair": "dreadlocks_long", "hair_split": False, "hair_extension": None},
+        "clubman": {"hair": "dreadlocks_short"},
+        "axeman": {"hair": "dreadlocks_short"},
+        "improvedbowman": {"hair": "dreadlocks_long", "hair_split": False},
+        "compositebowman": {"hair": "dreadlocks_long", "hair_split": False},
+        "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
+    },
+}
+
+
+def unit_look_for_civ(unit: str, civ_key: str) -> UnitLook:
+    look = UNIT_LOOKS[unit]
+    overrides = CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(unit)
+    return replace(look, **overrides) if overrides else look
 
 
 @dataclass(frozen=True)

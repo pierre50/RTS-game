@@ -7,6 +7,7 @@ export interface Civilization {
 
 export const CIVILIZATIONS: Civilization[] = [
   { labelKey: 'civGreek', value: 'Greek', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civRoman', value: 'Roman', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civEgyptian', value: 'Egyptian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civBabylonian', value: 'Babylonian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civAsian', value: 'Asian', disabledUnits: [], disabledTechnologies: [] },

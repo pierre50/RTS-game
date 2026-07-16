@@ -19,6 +19,12 @@ export const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProf
     hairstyles: ['messy3', 'curtains', 'parted', 'long'],
     beardStyles: ['beard/basic', 'beard/trimmed', 'mustache/basic', 'mustache/chevron'],
   },
+  Roman: {
+    skinPalettes: ['olive'],
+    hairPalettes: ['dark_brown'],
+    hairstyles: ['page2', 'parted', 'curtains_long', 'long_messy'],
+    beardStyles: ['beard/basic', 'beard/medium', 'beard/trimmed', 'mustache/chevron'],
+  },
   Egyptian: {
     skinPalettes: ['brown'],
     hairPalettes: ['black'],

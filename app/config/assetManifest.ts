@@ -23,6 +23,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     projectilesData: 'assets/data/gameplay/projectiles.json',
     cellsData: 'assets/data/gameplay/cells.json',
     greek: 'assets/data/civilizations/greek.json',
+    roman: 'assets/data/civilizations/roman.json',
     egyptian: 'assets/data/civilizations/egyptian.json',
     asian: 'assets/data/civilizations/asian.json',
     babylonian: 'assets/data/civilizations/babylonian.json',
