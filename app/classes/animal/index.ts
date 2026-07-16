@@ -26,14 +26,20 @@ import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import type { SelectableInstance } from '../../lib'
+import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
+type AnimalShadow = AnimatedSprite
 export type AnimalMoveOptions = {
   forceRepath?: boolean
   movementSheet?: string
 }
+
+const SHADOW_ALPHA = 0.42
+const SHADOW_SCALE_X = 1.05
+const SHADOW_SCALE_Y = -0.42
 
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
@@ -46,6 +52,8 @@ export class Animal extends Instance implements AnimalEntity {
   animalCombat: AnimalCombat
   animalBehavior: AnimalBehavior
   declare sprite: InteractiveSprite
+  shadow: AnimalShadow | null
+  visualSettingsCleanup: (() => void) | null
 
   dest: AnimalDestination | null
   realDest: Pick<AnimalDestination, 'i' | 'j'> | null
@@ -87,6 +95,8 @@ export class Animal extends Instance implements AnimalEntity {
     this.animalMovement = new AnimalMovement(this)
     this.animalCombat = new AnimalCombat(this)
     this.animalBehavior = new AnimalBehavior(this)
+    this.shadow = null
+    this.visualSettingsCleanup = null
 
     this.dest = null
     this.realDest = null
@@ -214,7 +224,9 @@ export class Animal extends Instance implements AnimalEntity {
     })
 
     this.sprite.updateAnchor = true
-    this.addChild(this.sprite)
+    this.shadow = this.createShadow()
+    this.addChild(this.shadow, this.sprite)
+    this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 
     setTimeout(() => {
       if (this.isDestroyed) return
@@ -242,6 +254,60 @@ export class Animal extends Instance implements AnimalEntity {
 
   setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
     return this.animalInterface.setDefaultInterface(element, data)
+  }
+
+  createShadow(): AnimalShadow {
+    const shadow = new AnimatedSprite(this.sprite.textures as Texture[])
+    bindAnimatedSpriteToTicker(shadow, this.context.app)
+    shadow.label = LABEL_TYPES.shadow
+    shadow.eventMode = 'none'
+    shadow.roundPixels = true
+    shadow.tint = 0x000000
+    shadow.alpha = SHADOW_ALPHA
+    shadow.zIndex = -2
+    this.syncShadow(shadow)
+    return shadow
+  }
+
+  syncShadow(shadow = this.shadow): void {
+    if (!shadow || !this.sprite) return
+    const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
+    shadow.textures = this.sprite.textures
+    shadow.animationSpeed = this.sprite.animationSpeed
+    shadow.loop = this.sprite.loop
+    shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
+    shadow.alpha = SHADOW_ALPHA
+    shadow.visible = getShadowsEnabled()
+    shadow.rotation = 0
+    shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X
+    shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y
+    shadow.position.set(0, 0)
+    if (this.sprite.playing) {
+      shadow.gotoAndPlay(frame)
+    } else {
+      shadow.gotoAndStop(frame)
+    }
+  }
+
+  syncVisualSettings(): void {
+    if (this.shadow) {
+      this.shadow.visible = getShadowsEnabled()
+    }
+  }
+
+  override setTextures(sheet: string): void {
+    super.setTextures(sheet)
+    this.syncShadow()
+  }
+
+  override pause(): void {
+    super.pause()
+    this.shadow?.stop()
+  }
+
+  override resume(): void {
+    super.resume()
+    this.shadow?.play()
   }
 
   // AnimalLifecycle
@@ -302,5 +368,11 @@ export class Animal extends Instance implements AnimalEntity {
   }
   getAction(name: string): void {
     return this.animalCombat.getAction(name)
+  }
+
+  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    this.visualSettingsCleanup?.()
+    this.visualSettingsCleanup = null
+    super.destroy(options)
   }
 }

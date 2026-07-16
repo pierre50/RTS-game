@@ -27,6 +27,7 @@ import {
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
+import { getResourceWindAnimationEnabled, getShadowsEnabled, onVisualSettingsChange } from '../lib/settings'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
@@ -58,6 +59,15 @@ type ResourceConfigCache = {
 type UnitWithResourceCommands = UnitEntity & Record<string, ((target: RuntimeEntity) => void) | undefined>
 type PlayerWithResourceMemory = PlayerLike & Record<string, Set<RuntimeEntity> | undefined>
 type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
+type ResourceShadow = Sprite | AnimatedSprite
+type WindTick = (ticker: { deltaMS?: number; elapsedMS?: number }) => void
+
+const SHADOW_ALPHA = 0.42
+const SHADOW_SCALE_X = 1.02
+const SHADOW_SCALE_Y = -0.5
+const WIND_AMPLITUDE = 0.018
+const WIND_ROTATION = 0.006
+const WIND_SPEED = 0.0018
 
 export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string }
 
@@ -81,6 +91,11 @@ export class Resource extends Instance implements ResourceEntity {
   quantity!: number
   interface: EntityInterfaceLike
   declare sprite: Sprite | AnimatedSprite
+  shadow: ResourceShadow | null
+  windTick: WindTick | null
+  windTime: number
+  windPhase: number
+  visualSettingsCleanup: (() => void) | null
   totalQuantity!: number
   isAnimated?: boolean
   assets!: ResourceAssets
@@ -99,6 +114,11 @@ export class Resource extends Instance implements ResourceEntity {
     this.family = FAMILY_TYPES.resource
     this.resourceInterface = new ResourceInterface(this)
     this.size = 1
+    this.shadow = null
+    this.windTick = null
+    this.windTime = 0
+    this.windPhase = 0
+    this.visualSettingsCleanup = null
 
     Object.assign(this, options)
     const config = getResourceConfig()
@@ -216,8 +236,15 @@ export class Resource extends Instance implements ResourceEntity {
         }
       })
 
-      this.addChild(this.sprite)
+      this.shadow = this.createShadow()
+      if (this.shadow) {
+        this.addChild(this.shadow, this.sprite)
+      } else {
+        this.addChild(this.sprite)
+      }
+      this.startWindMotion()
     }
+    this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     map.addToInstanceBucket(this)
   }
 
@@ -244,6 +271,7 @@ export class Resource extends Instance implements ResourceEntity {
     menu.updateResourcesMiniMap()
     map.removeFromInstanceBucket(this)
     this.isDead = true
+    this.stopWindMotion()
     if (this.type === RESOURCE_TYPES.tree && !immediate) {
       this.onTreeDie()
     } else {
@@ -264,6 +292,8 @@ export class Resource extends Instance implements ResourceEntity {
     if (texture.defaultAnchor) {
       sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     }
+    this.syncShadow()
+    this.stopWindMotion()
   }
 
   onTreeDie() {
@@ -279,6 +309,7 @@ export class Resource extends Instance implements ResourceEntity {
     sprite.texture = texture
     sprite.eventMode = 'none'
     this.zIndex--
+    this.syncShadow()
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].corpses.add(this)
@@ -294,6 +325,7 @@ export class Resource extends Instance implements ResourceEntity {
       context: { map },
     } = this
     this.isDestroyed = true
+    this.stopWindMotion()
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].solid = false
@@ -327,6 +359,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (texture.defaultAnchor) {
       this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     }
+    this.syncShadow()
   }
 
   syncWithCell() {
@@ -341,5 +374,139 @@ export class Resource extends Instance implements ResourceEntity {
     this.zIndex = getInstanceZIndex(this)
     this.visible = true
     this.refreshTextureForTerrain()
+  }
+
+  shouldUseWindMotion(): boolean {
+    return this.isWindMotionEligible() && getResourceWindAnimationEnabled()
+  }
+
+  isWindMotionEligible(): boolean {
+    return (
+      !this.isDead &&
+      !this.isCutOrFallenTree() &&
+      (this.type === RESOURCE_TYPES.tree || this.type === RESOURCE_TYPES.berrybush)
+    )
+  }
+
+  isCutOrFallenTree(): boolean {
+    if (this.type !== RESOURCE_TYPES.tree || !this.textureName) return false
+    const sheet = getTextureSheet(this.textureName)
+    return sheet === this.lifecycleAssets?.cut || sheet === this.lifecycleAssets?.fallen
+  }
+
+  startWindMotion(): void {
+    if (!this.shouldUseWindMotion() || this.windTick) return
+    this.windPhase = ((this.i * 37 + this.j * 17) % 360) * (Math.PI / 180)
+    this.windTick = ticker => this.updateWindMotion(ticker.deltaMS ?? ticker.elapsedMS ?? 16.67)
+    this.context.app.ticker.add(this.windTick)
+  }
+
+  stopWindMotion(): void {
+    if (this.windTick) {
+      this.context.app.ticker.remove(this.windTick)
+      this.windTick = null
+    }
+    this.resetWindMotion()
+  }
+
+  resetWindMotion(): void {
+    if (!this.sprite) return
+    this.sprite.skew.x = 0
+    this.sprite.rotation = 0
+    if (this.shadow) {
+      this.shadow.skew.x = 0
+      this.shadow.rotation = 0
+    }
+  }
+
+  updateWindMotion(deltaMS: number): void {
+    if (this.context.paused) return
+    if (!this.shouldUseWindMotion()) {
+      this.resetWindMotion()
+      return
+    }
+    this.windTime += deltaMS
+    const sway = Math.sin(this.windPhase + this.windTime * WIND_SPEED)
+    const secondary = Math.sin(this.windPhase * 0.7 + this.windTime * WIND_SPEED * 0.47)
+    this.sprite.skew.x = sway * WIND_AMPLITUDE
+    this.sprite.rotation = secondary * WIND_ROTATION
+    if (this.shadow) {
+      this.shadow.skew.x = this.sprite.skew.x * 0.45
+    }
+  }
+
+  shouldShowShadow(): boolean {
+    return this.category !== 'Fish' && this.type !== RESOURCE_TYPES.salmon
+  }
+
+  createShadow(): ResourceShadow | null {
+    if (!this.shouldShowShadow()) return null
+    const shadow =
+      this.sprite instanceof AnimatedSprite
+        ? new AnimatedSprite(this.sprite.textures as Texture[])
+        : new Sprite(this.sprite.texture)
+    if (shadow instanceof AnimatedSprite) {
+      bindAnimatedSpriteToTicker(shadow, this.context.app)
+    }
+    shadow.label = LABEL_TYPES.shadow
+    shadow.eventMode = 'none'
+    shadow.roundPixels = true
+    shadow.tint = 0x000000
+    shadow.alpha = SHADOW_ALPHA
+    shadow.zIndex = -2
+    this.syncShadow(shadow)
+    return shadow
+  }
+
+  syncShadow(shadow = this.shadow): void {
+    if (!shadow || !this.sprite || !this.shouldShowShadow()) return
+    shadow.visible = getShadowsEnabled()
+    if (this.sprite instanceof AnimatedSprite && shadow instanceof AnimatedSprite) {
+      const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
+      shadow.textures = this.sprite.textures
+      shadow.animationSpeed = this.sprite.animationSpeed
+      shadow.loop = this.sprite.loop
+      shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
+      if (this.sprite.playing) {
+        shadow.gotoAndPlay(frame)
+      } else {
+        shadow.gotoAndStop(frame)
+      }
+    } else if (this.sprite instanceof Sprite && shadow instanceof Sprite) {
+      shadow.texture = this.sprite.texture
+      shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
+    }
+    shadow.alpha = SHADOW_ALPHA
+    shadow.rotation = 0
+    shadow.scale.set(Math.abs(this.sprite.scale.x) * SHADOW_SCALE_X, Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y)
+    shadow.position.set(0, 0)
+  }
+
+  syncVisualSettings(): void {
+    if (this.shadow) {
+      this.shadow.visible = getShadowsEnabled() && this.shouldShowShadow()
+    }
+    if (getResourceWindAnimationEnabled()) {
+      this.startWindMotion()
+    } else {
+      this.stopWindMotion()
+    }
+  }
+
+  override pause(): void {
+    super.pause()
+    ;(this.shadow as AnimatedSprite | null)?.stop?.()
+  }
+
+  override resume(): void {
+    super.resume()
+    ;(this.shadow as AnimatedSprite | null)?.play?.()
+  }
+
+  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    this.visualSettingsCleanup?.()
+    this.visualSettingsCleanup = null
+    this.stopWindMotion()
+    super.destroy(options)
   }
 }

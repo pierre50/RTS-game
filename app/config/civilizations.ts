@@ -10,6 +10,8 @@ export const CIVILIZATIONS: Civilization[] = [
   { labelKey: 'civEgyptian', value: 'Egyptian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civBabylonian', value: 'Babylonian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civAsian', value: 'Asian', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civCeltic', value: 'Celtic', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civNubian', value: 'Nubian', disabledUnits: [], disabledTechnologies: [] },
 ]
 
 const CIVILIZATION_BY_NAME: Record<string, Civilization> = CIVILIZATIONS.reduce(

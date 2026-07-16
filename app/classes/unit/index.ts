@@ -13,7 +13,7 @@ import {
 } from '../../constants'
 import {
   getInstanceZIndex,
-  changeSpriteColor,
+  changeSpriteTexturesColorDirectly,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   throttle,
@@ -45,6 +45,7 @@ import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
+import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
@@ -69,6 +70,9 @@ type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
 }
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
+const SHADOW_ALPHA = 0.42
+const SHADOW_SCALE_X = 1.05
+const SHADOW_SCALE_Y = -0.42
 
 function applyAppearanceVariantsToAssetMap(
   allAssets: UnitEntity['allAssets'],
@@ -159,6 +163,7 @@ export class Unit extends Instance implements UnitEntity {
   sendTo!: (target: RuntimeCell | RuntimeEntity, action?: string) => void
 
   declare sprite: AnimatedSprite
+  shadow: AnimatedSprite | null
   appearanceLayerSprites: Map<number, AnimatedSprite>
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
@@ -201,6 +206,7 @@ export class Unit extends Instance implements UnitEntity {
   fishingOverlaySprite?: UnitEntity['fishingOverlaySprite']
   showLoading?: UnitEntity['showLoading']
   showBuildings?: UnitEntity['showBuildings']
+  visualSettingsCleanup: (() => void) | null
 
   assets?: UnitEntity['assets']
   allAssets?: UnitEntity['allAssets']
@@ -228,6 +234,8 @@ export class Unit extends Instance implements UnitEntity {
     this.unitCombat = new UnitCombat(this)
     this.unitActions = new UnitActions(this)
     this.unitMovement = new UnitMovement(this)
+    this.shadow = null
+    this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
 
     this.dest = null
@@ -373,7 +381,9 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.roundPixels = true
     this.sprite.loop = this.loop ?? true
     this.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
-    this.addChild(this.sprite)
+    this.shadow = this.createShadow()
+    this.addChild(this.shadow, this.sprite)
+    this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     if (this.isDead) {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
     } else if ((this.loading ?? 0) > 0) {
@@ -384,6 +394,7 @@ export class Unit extends Instance implements UnitEntity {
     this.setTextures(this.currentSheet)
 
     this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
+    this.syncShadow()
     this.syncAppearanceLayers(this.currentSheet)
     this.sprite.updateAnchor = true
     this.setupSailSprite()
@@ -533,8 +544,6 @@ export class Unit extends Instance implements UnitEntity {
       }
     })
 
-    changeSpriteColor(this.sprite!, this.owner.color ?? '')
-
     this.visibilityTimeout = setTimeout(() => {
       if (!this.isDestroyed) updateInstanceVisibility(this)
     })
@@ -634,6 +643,45 @@ export class Unit extends Instance implements UnitEntity {
     this.fishingOverlaySprite.textures = textures as Texture[]
     this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
     this.fishingOverlaySprite.gotoAndStop(0)
+  }
+
+  createShadow() {
+    const shadow = new AnimatedSprite(this.sprite.textures as Texture[])
+    bindAnimatedSpriteToTicker(shadow, this.context.app)
+    shadow.label = LABEL_TYPES.shadow
+    shadow.eventMode = 'none'
+    shadow.roundPixels = true
+    shadow.tint = 0x000000
+    shadow.alpha = SHADOW_ALPHA
+    shadow.zIndex = -2
+    this.syncShadow(shadow)
+    return shadow
+  }
+
+  syncShadow(shadow = this.shadow) {
+    if (!shadow || !this.sprite) return
+    const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
+    shadow.visible = getShadowsEnabled() && !this.loadedInTransport
+    shadow.textures = this.sprite.textures
+    shadow.animationSpeed = this.sprite.animationSpeed
+    shadow.loop = this.sprite.loop
+    shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
+    shadow.alpha = SHADOW_ALPHA
+    shadow.rotation = 0
+    shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X
+    shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y
+    shadow.position.set(0, 0)
+    if (this.sprite.playing) {
+      shadow.gotoAndPlay(frame)
+    } else {
+      shadow.gotoAndStop(frame)
+    }
+  }
+
+  syncVisualSettings(): void {
+    if (this.shadow) {
+      this.shadow.visible = getShadowsEnabled() && !this.loadedInTransport
+    }
   }
 
   syncAppearanceLayers(sheet: string) {
@@ -748,13 +796,33 @@ export class Unit extends Instance implements UnitEntity {
 
   override setTextures(sheet: string) {
     super.setTextures(sheet)
+    this.applyOwnerColorToSprite()
+    this.syncShadow()
     this.syncAppearanceLayers(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
     this.syncFishingOverlaySprite()
   }
 
+  applyOwnerColorToSprite() {
+    if (!this.sprite?.textures?.length) return
+
+    const frame = this.sprite.currentFrame
+    const playing = this.sprite.playing
+    const textures = changeSpriteTexturesColorDirectly(this.sprite.textures as Texture[], this.owner.color ?? '')
+    this.sprite.filters = null
+    this.sprite.textures = textures as Texture[]
+
+    const restoredFrame = Math.min(frame, Math.max(textures.length - 1, 0))
+    if (playing) {
+      this.sprite.gotoAndPlay(restoredFrame)
+    } else {
+      this.sprite.gotoAndStop(restoredFrame)
+    }
+  }
+
   override pause() {
     super.pause()
+    this.shadow?.stop()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.stop()
     }
@@ -763,12 +831,14 @@ export class Unit extends Instance implements UnitEntity {
   override resume() {
     if (this.currentSheet === SHEET_TYPES.standing) {
       this.sprite.gotoAndStop(this.sprite.currentFrame)
+      this.shadow?.gotoAndStop(this.shadow.currentFrame)
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.gotoAndStop(sprite.currentFrame)
       }
       return
     }
     super.resume()
+    this.shadow?.play()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.play()
     }
@@ -1080,5 +1150,11 @@ export class Unit extends Instance implements UnitEntity {
 
   setDefaultInterface(element: HTMLElement, data: UnitConfig) {
     this.unitInterface.setDefaultInterface(element, data)
+  }
+
+  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    this.visualSettingsCleanup?.()
+    this.visualSettingsCleanup = null
+    super.destroy(options)
   }
 }

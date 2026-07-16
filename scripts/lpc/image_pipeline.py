@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from config import ANCHORS_BY_OUTPUT_SIZE, ANCHOR, DressItem, FRAME_SIZE, OUTPUT_SCALE, PALETTES, PLAYER_SHORTS, Sheet, UnitLook
 from equipment import LayerSpec, equipment_layers
@@ -276,65 +276,6 @@ def compose_frame(layers: Iterable[LoadedLayer], source_index: int, source_colum
         frame.alpha_composite(crop, (offset + layer.offset_x, offset + layer.offset_y))
     output_size = int(canvas_size * OUTPUT_SCALE)
     return frame.resize((output_size, output_size), Image.Resampling.NEAREST)
-
-
-def add_ground_shadow(
-    frame: Image.Image,
-    anchor: dict[str, float],
-    offset: tuple[int, int],
-    alpha: float,
-    radius: tuple[float, float],
-    color: tuple[int, int, int] = (0, 0, 0),
-) -> Image.Image:
-    """Composite a flat ground-contact ellipse behind an already-baked frame.
-
-    Centered on the sprite's anchor point — the same point Pixi uses to place
-    the unit on the iso grid — so it reads as a shadow cast on the ground
-    rather than a silhouette halo. Meant to run after retro-palette
-    quantization (see build.py), so the flat shadow color is never snapped to
-    the retro palette alongside the character.
-
-    Radius is sized off the base FRAME_SIZE rather than this frame's own
-    canvas width: some animations (e.g. action sheets with a raised weapon)
-    compose onto a taller/wider canvas than the walking sheet, and scaling
-    off the local width made the shadow visibly balloon on those frames.
-    """
-    width, height = frame.size
-    cx = width * anchor["x"] + offset[0]
-    cy = height * anchor["y"] + offset[1]
-    rx = FRAME_SIZE * radius[0]
-    ry = FRAME_SIZE * radius[1]
-
-    shadow = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=(*color, round(255 * alpha)))
-
-    canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    canvas.alpha_composite(shadow)
-    canvas.alpha_composite(frame)
-    return canvas
-
-
-def apply_shadow_to_atlas(
-    output_dir: Path,
-    offset: tuple[int, int],
-    alpha: float,
-    radius: tuple[float, float],
-    color: tuple[int, int, int] = (0, 0, 0),
-) -> None:
-    texture_path = output_dir / "texture.png"
-    json_path = output_dir / "texture.json"
-    atlas = Image.open(texture_path).convert("RGBA")
-    with json_path.open(encoding="utf8") as file:
-        data = json.load(file)
-
-    for frame_info in data["frames"].values():
-        rect = frame_info["frame"]
-        box = (rect["x"], rect["y"], rect["x"] + rect["w"], rect["y"] + rect["h"])
-        anchor = frame_info.get("anchor", ANCHOR)
-        shadowed = add_ground_shadow(atlas.crop(box), anchor, offset, alpha, radius, color)
-        atlas.paste(shadowed, box[:2])
-
-    atlas.save(texture_path, optimize=True)
 
 
 def write_sheet(output_dir: Path, frames: list[Image.Image], animation_speed: float | None = None) -> None:

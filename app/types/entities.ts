@@ -102,6 +102,8 @@ export interface UnitSounds {
 
 export interface UnitEntity extends RuntimeEntityBase {
   sprite?: AnimatedSprite
+  shadow?: AnimatedSprite | null
+  syncShadow?: () => void
   loadedInTransport?: TransportBoat | null
   inactif?: boolean
   sounds?: UnitSounds

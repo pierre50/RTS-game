@@ -19,6 +19,7 @@ import {
   playAudibleSoundCue,
 } from '../lib'
 import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
+import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { CommandSound, RuntimeEntity } from '../types/entities'
@@ -54,6 +55,11 @@ type RuntimeProjectile = ProjectileOptions & {
 }
 type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
 type ProjectileSprite = AnimatedSprite
+
+const PROJECTILE_SHADOW_ALPHA = 0.42
+const PROJECTILE_SHADOW_MAX_ALTITUDE_FADE = 0.28
+const PROJECTILE_SHADOW_MAX_ALTITUDE_SCALE = 0.35
+const PROJECTILE_SHADOW_SCALE_Y = 0.48
 
 function getDirectionalFrameIndex(projectile: RuntimeProjectile, direction: string) {
   if (Array.isArray(projectile.directionalFrameOrder)) {
@@ -124,6 +130,7 @@ export class Projectile extends Container {
   family: string
   interval: SchedulerTaskId | null
   sprite?: ProjectileSprite
+  shadow?: ProjectileSprite
 
   owner!: RuntimeEntity
   type!: string
@@ -135,6 +142,7 @@ export class Projectile extends Container {
   isDead!: boolean
   z!: number
   destinationPoint!: Point
+  groundOrigin!: Point
   totalDistance!: number
   spawnOrigin!: Point
   trajectoryState: { kind: string; arcHeight: number } | null = null
@@ -197,13 +205,15 @@ export class Projectile extends Container {
     const sprite = this.createSprite(degree)
     this.sprite = sprite
     this.spawnOrigin = { x: this.x, y: this.y }
+    this.groundOrigin = { x: this.owner.x, y: this.owner.y }
     this.destinationPoint = { x: targetX, y: targetY }
     this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
     this.trajectoryState = this.createTrajectoryState()
+    this.shadow = this.createShadowSprite(sprite)
     sprite.label = LABEL_TYPES.sprite
     sprite.eventMode = 'none'
     sprite.roundPixels = true
-    this.addChild(sprite)
+    this.addChild(this.shadow, sprite)
     this.updateTrajectoryVisual()
 
     this.interval = this.context.scheduler.add(
@@ -234,6 +244,28 @@ export class Projectile extends Container {
       STEP_TIME,
       'projectile.step'
     )
+  }
+
+  createShadowSprite(source: ProjectileSprite): ProjectileSprite {
+    const shadow = new AnimatedSprite(source.textures as Texture[]) as ProjectileSprite
+    bindAnimatedSpriteToTicker(shadow, this.context.app)
+    shadow.label = LABEL_TYPES.shadow
+    shadow.eventMode = 'none'
+    shadow.roundPixels = true
+    shadow.tint = 0x000000
+    shadow.alpha = PROJECTILE_SHADOW_ALPHA
+    shadow.visible = getShadowsEnabled()
+    shadow.animationSpeed = source.animationSpeed
+    shadow.loop = source.loop
+    shadow.anchor.set(source.anchor.x, source.anchor.y)
+    shadow.rotation = source.rotation
+    shadow.scale.set(source.scale.x, source.scale.y * PROJECTILE_SHADOW_SCALE_Y)
+    if (source.playing) {
+      shadow.gotoAndPlay(source.currentFrame)
+    } else {
+      shadow.gotoAndStop(source.currentFrame)
+    }
+    return shadow
   }
 
   createSprite(degree: number): ProjectileSprite {
@@ -355,14 +387,37 @@ export class Projectile extends Container {
   }
 
   updateTrajectoryVisual() {
-    if (!this.sprite || !this.trajectoryState) {
+    if (!this.sprite) {
       return
     }
 
     const { spawnOrigin } = this
     const traveledDistance = pointsDistance(spawnOrigin.x, spawnOrigin.y, this.x, this.y)
     const progress = Math.max(0, Math.min(1, traveledDistance / this.totalDistance))
-    this.sprite.y = -getArcProgressOffset(progress, this.trajectoryState.arcHeight)
+    this.sprite.y = this.trajectoryState ? -getArcProgressOffset(progress, this.trajectoryState.arcHeight) : 0
+    this.updateShadowVisual(progress)
+  }
+
+  updateShadowVisual(progress: number) {
+    if (!this.shadow || !this.sprite) return
+    this.shadow.visible = getShadowsEnabled()
+    if (!this.shadow.visible) return
+
+    const groundX = this.groundOrigin.x + (this.destinationPoint.x - this.groundOrigin.x) * progress
+    const groundY = this.groundOrigin.y + (this.destinationPoint.y - this.groundOrigin.y) * progress
+    const visualY = this.y + this.sprite.y
+    const altitude = Math.max(0, groundY - visualY)
+    const altitudeRatio = Math.max(0, Math.min(1, altitude / 180))
+    const scaleBoost = 1 + altitudeRatio * PROJECTILE_SHADOW_MAX_ALTITUDE_SCALE
+
+    this.shadow.x = groundX - this.x
+    this.shadow.y = groundY - this.y
+    this.shadow.alpha = PROJECTILE_SHADOW_ALPHA - altitudeRatio * PROJECTILE_SHADOW_MAX_ALTITUDE_FADE
+    this.shadow.rotation = this.sprite.rotation
+    this.shadow.scale.set(
+      this.sprite.scale.x * scaleBoost,
+      this.sprite.scale.y * PROJECTILE_SHADOW_SCALE_Y * scaleBoost
+    )
   }
 
   createImpactEffect(x: number, y: number) {

@@ -20,7 +20,8 @@ const VILLAGER_JOBS = [
   'fisher',
 ] as const
 
-const JOB_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+const VILLAGER_JOB_SHEETS = ['walking', 'action'] as const
 // Jobs whose "loaded" pose is its own bake (carrying a resource-specific item) rather
 // than a reuse of another job's "walking" bake — see hunter's `loaded_equipment` in
 // scripts/lpc/jobs.py.
@@ -55,8 +56,10 @@ const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   CompositeBowman: 'compositebowman',
   BroadSwordsman: 'broadswordman',
   LongSwordsman: 'longswordman',
+  Legion: 'longswordman',
   Hoplite: 'hoplite',
   Phalanx: 'phalanx',
+  Centurion: 'phalanx',
   Priest: 'priest',
 }
 
@@ -87,7 +90,7 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
   const jobs = unit === 'villager' ? VILLAGER_JOBS : (['default'] as const)
   const assets = jobs
     .flatMap(job => [
-      ...JOB_SHEETS.map(sheet => ({ job, sheet })),
+      ...(unit === 'villager' && job !== 'default' ? VILLAGER_JOB_SHEETS : UNIT_SHEETS).map(sheet => ({ job, sheet })),
       ...(EXTRA_JOB_SHEETS[job as VillagerJob] ?? []).map(sheet => ({ job, sheet })),
     ])
     .map(({ job, sheet }) => ({
@@ -156,12 +159,14 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
   const villagerSheets = (job: VillagerJob) => {
     const jobWalking = bakedAlias(bakedUnit, variant, job, 'walking')
+    const defaultDying = bakedAlias(bakedUnit, variant, 'default', 'dying')
+    const defaultCorpse = bakedAlias(bakedUnit, variant, 'default', 'corpse')
     return {
       standingSheet: jobWalking,
       walkingSheet: jobWalking,
       actionSheet: bakedAlias(bakedUnit, variant, job, 'action'),
-      dyingSheet: bakedAlias(bakedUnit, variant, job, 'dying'),
-      corpseSheet: bakedAlias(bakedUnit, variant, job, 'corpse'),
+      dyingSheet: defaultDying,
+      corpseSheet: defaultCorpse,
     }
   }
 

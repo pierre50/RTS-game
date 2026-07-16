@@ -3,10 +3,15 @@ import { sound } from '@pixi/sound'
 const VOLUME_KEY = 'sfx_volume'
 const SPEED_KEY = 'game_speed'
 const CAMERA_ZOOM_KEY = 'camera_zoom'
+const SHADOWS_KEY = 'graphics_shadows'
+const RESOURCE_WIND_KEY = 'graphics_resource_wind'
 
 const DEFAULT_VOLUME = 0.6
 const DEFAULT_SPEED = 1.5
 const DEFAULT_CAMERA_ZOOM = 1
+const DEFAULT_SHADOWS_ENABLED = true
+const DEFAULT_RESOURCE_WIND_ENABLED = true
+const SETTINGS_CHANGE_EVENT = 'dawn-settings-change'
 
 export const SPEED_PRESETS = [
   { key: 'speedSlow', value: 1 },
@@ -28,6 +33,13 @@ function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v))
 }
 
+function getStoredBoolean(key: string, fallback: boolean): boolean {
+  const stored = localStorage.getItem(key)
+  if (stored === 'true') return true
+  if (stored === 'false') return false
+  return fallback
+}
+
 let _volume = (() => {
   const stored = parseFloat(localStorage.getItem(VOLUME_KEY) ?? '')
   return isFinite(stored) ? clamp(stored, 0, 1) : DEFAULT_VOLUME
@@ -43,7 +55,14 @@ let _cameraZoom = (() => {
   return isVisibleCameraZoomPreset(stored) ? stored : DEFAULT_CAMERA_ZOOM
 })()
 
+let _shadowsEnabled = getStoredBoolean(SHADOWS_KEY, DEFAULT_SHADOWS_ENABLED)
+let _resourceWindEnabled = getStoredBoolean(RESOURCE_WIND_KEY, DEFAULT_RESOURCE_WIND_ENABLED)
+
 sound.volumeAll = _volume
+
+function notifySettingsChanged(): void {
+  window.dispatchEvent(new Event(SETTINGS_CHANGE_EVENT))
+}
 
 export function getVolume(): number {
   return _volume
@@ -77,6 +96,31 @@ export function setCameraZoom(v: number | string): boolean {
   _cameraZoom = zoom
   localStorage.setItem(CAMERA_ZOOM_KEY, String(zoom))
   return true
+}
+
+export function getShadowsEnabled(): boolean {
+  return _shadowsEnabled
+}
+
+export function setShadowsEnabled(value: boolean): void {
+  _shadowsEnabled = value
+  localStorage.setItem(SHADOWS_KEY, String(value))
+  notifySettingsChanged()
+}
+
+export function getResourceWindAnimationEnabled(): boolean {
+  return _resourceWindEnabled
+}
+
+export function setResourceWindAnimationEnabled(value: boolean): void {
+  _resourceWindEnabled = value
+  localStorage.setItem(RESOURCE_WIND_KEY, String(value))
+  notifySettingsChanged()
+}
+
+export function onVisualSettingsChange(callback: () => void): () => void {
+  window.addEventListener(SETTINGS_CHANGE_EVENT, callback)
+  return () => window.removeEventListener(SETTINGS_CHANGE_EVENT, callback)
 }
 
 function isVisibleGameSpeedPreset(v: number | string): boolean {

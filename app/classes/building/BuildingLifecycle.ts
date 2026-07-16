@@ -92,6 +92,7 @@ export class BuildingLifecycle {
       }
       updateInstanceVisibility(building)
     }
+    building.updateShadow()
   }
 
   finalTexture(): void {
@@ -105,6 +106,7 @@ export class BuildingLifecycle {
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
     building.sprite.anchor.set(texture.defaultAnchor!.x, texture.defaultAnchor!.y)
+    building.updateShadow()
 
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()

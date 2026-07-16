@@ -33,6 +33,7 @@ export class AnimalLifecycle {
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.sprite.loop = false
+    animal.syncShadow()
     animal.sprite.onComplete = () => animal.decompose()
   }
 
@@ -43,6 +44,7 @@ export class AnimalLifecycle {
     } = animal
     animal.setTextures(SHEET_TYPES.corpse)
     animal.sprite.animationSpeed = 0
+    animal.syncShadow()
     animal.startInterval(() => {
       if (animal.quantity > 0) {
         animal.quantity--
@@ -75,6 +77,7 @@ export class AnimalLifecycle {
         player.unselectAll()
       }
       animal.sprite.currentFrame = 3
+      animal.syncShadow()
       animal.timeoutId = animal.context.scheduler.addOneShot(
         () => animal.clear(),
         CORPSE_TIME * 1000,

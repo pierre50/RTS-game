@@ -37,6 +37,18 @@ export const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProf
     hairstyles: ['plain', 'long', 'bangs', 'parted'],
     beardStyles: ['beard/5oclock_shadow', 'beard/trimmed', 'mustache/basic'],
   },
+  Celtic: {
+    skinPalettes: ['fair'],
+    hairPalettes: ['brown_hair', 'dark_brown'],
+    hairstyles: ['long', 'messy3', 'curtains', 'parted'],
+    beardStyles: ['beard/basic', 'beard/medium', 'beard/trimmed', 'mustache/chevron'],
+  },
+  Nubian: {
+    skinPalettes: ['deep_brown'],
+    hairPalettes: ['black'],
+    hairstyles: ['plain', 'bangs', 'messy3', 'balding'],
+    beardStyles: ['beard/trimmed', 'beard/5oclock_shadow', 'mustache/basic', 'mustache/chevron'],
+  },
 }
 
 export function getLpcCivilizationProfile(civilization: string | null | undefined): LpcCivilizationVisualProfile {

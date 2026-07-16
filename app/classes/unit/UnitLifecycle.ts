@@ -26,6 +26,7 @@ export class UnitLifecycle {
     if (unit.sailSprite) unit.sailSprite.visible = false
     const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
+    unit.syncShadow?.()
     const corpseTime = unit.category === BOAT_CATEGORY ? BOAT_CORPSE_TIME : CORPSE_TIME
     sprite.animationSpeed = sprite.textures.length / (corpseTime * 60)
     sprite.onComplete = () => unit.clear?.()
@@ -56,6 +57,7 @@ export class UnitLifecycle {
     unit.zIndex = (unit.zIndex ?? 0) - 1
     const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
+    unit.syncShadow?.()
     sprite.onComplete = () => {
       updateInstanceVisibility(unit)
       const corpses = unit.owner?.corpses

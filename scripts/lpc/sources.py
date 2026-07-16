@@ -15,9 +15,12 @@ def required_source_paths() -> list[str]:
                     sheet_plan = {
                         "walking": ("walk", job.walking_equipment),
                         "action": (job.action_animation, job.action_equipment),
-                        "dying": ("hurt", job.hurt_equipment),
-                        "corpse": ("hurt", job.hurt_equipment),
                     }
+                    if unit != "villager" or job.key == "default":
+                        sheet_plan["dying"] = ("hurt", job.hurt_equipment)
+                        sheet_plan["corpse"] = ("hurt", job.hurt_equipment)
+                    if job.loaded_equipment:
+                        sheet_plan["loaded"] = ("walk", job.loaded_equipment)
                     for animation, equipment in sheet_plan.values():
                         for layer in layer_paths(look, animation, civ, player_color, equipment):
                             paths.add(layer.path)

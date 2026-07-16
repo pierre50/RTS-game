@@ -92,6 +92,47 @@ test('switching a recolored sprite back to blue clears its color filter', () => 
   assert.equal(sprite.filters, null)
 })
 
+test('direct texture recoloring bakes and caches animation frames', () => {
+  const previousDocument = global.document
+  const imageData = { data: new Uint8ClampedArray([0x28, 0x5c, 0xc4, 255, 0x4a, 0x54, 0x62, 255]) }
+  let bakedData = null
+  let fromCalls = 0
+  global.document = {
+    createElement: () => ({
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: () => {},
+        getImageData: () => imageData,
+        putImageData: data => {
+          bakedData = new Uint8ClampedArray(data.data)
+        },
+      }),
+    }),
+  }
+
+  try {
+    const { changeSpriteTexturesColorDirectly } = loadModule('app/lib/graphics/colors.ts', {
+      'pixi.js': { Texture: { from: () => ({ recolored: ++fromCalls }) } },
+      'pixi-filters': { MultiColorReplaceFilter: class {} },
+    })
+    const sourceTexture = {
+      frame: { x: 0, y: 0, width: 1, height: 1 },
+      source: { resource: {}, uid: 'unit-sheet' },
+    }
+
+    const first = changeSpriteTexturesColorDirectly([sourceTexture], 'red')
+    const second = changeSpriteTexturesColorDirectly([sourceTexture], 'red')
+
+    assert.equal(fromCalls, 1)
+    assert.notEqual(first[0], sourceTexture)
+    assert.equal(second[0], first[0])
+    assert.deepEqual(Array.from(bakedData.slice(4, 7)), [0x4a, 0x54, 0x62])
+  } finally {
+    global.document = previousDocument
+  }
+})
+
 test('sets an automatically selected destination before starting its action', () => {
   const oldTarget = { label: 'empty-tree', family: 'resource' }
   const newTarget = { label: 'tree-2', family: 'resource', x: 10, y: 12 }
@@ -154,7 +195,6 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     '../../lib': {
       boardTransport: () => {},
       canUpdateMinimap: () => false,
-      changeSpriteColor: (_sprite, color) => calls.push(['changeSpriteColor', color]),
       degreeToDirection: () => 'south',
       getInstanceDegree: () => 0,
       onSpriteLoopAtFrame: () => {},
@@ -167,6 +207,7 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = { color: 'red', label: 'enemy', population: 1, units: [] }
   const newOwner = { color: 'blue', isPlayed: true, label: 'player', population: 0, units: [], technologies: [] }
@@ -220,11 +261,8 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
   assert.equal(target.inactif, true)
   assert.deepEqual(target.path, [])
   assert.deepEqual(
-    calls.filter(([name]) => name === 'setTextures' || name === 'changeSpriteColor'),
-    [
-      ['setTextures', constants.SHEET_TYPES.standing],
-      ['changeSpriteColor', 'blue'],
-    ]
+    calls.filter(([name]) => name === 'setTextures'),
+    [['setTextures', constants.SHEET_TYPES.standing]]
   )
 })
 
@@ -255,6 +293,7 @@ test('converted buildings keep their source civilization and age assets', () => 
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = {
     age: 1,
@@ -916,6 +955,7 @@ test('a farmer returns to the same farm after delivering food', () => {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const unit = {
     context: { map: { grid: [] } },

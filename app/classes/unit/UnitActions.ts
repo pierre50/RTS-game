@@ -13,7 +13,6 @@ import {
 import {
   degreeToDirection,
   canUpdateMinimap,
-  changeSpriteColor,
   getInstanceDegree,
   onSpriteLoopAtFrame,
   updateInstanceVisibility,
@@ -209,7 +208,6 @@ export class UnitActions {
       oldOwner.population = Math.max(0, oldOwner.population - 1)
       newOwner.population += 1
       t.setTextures?.(SHEET_TYPES.standing)
-      changeSpriteColor(t.sprite!, newOwner.color ?? '')
     } else if (t.family === FAMILY_TYPES.building) {
       t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner) : t.type)
       removeFromOwnerList(oldOwner, 'buildings', t)

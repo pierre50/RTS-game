@@ -44,18 +44,21 @@ export class UnitCombat {
 
     unit.actionLocked = true
     sprite.loop = false
+    unit.syncShadow?.()
     sprite.onComplete = () => {
       sprite.onComplete = undefined
       unit.actionLocked = false
       const hadPendingOrder = unit.flushPendingOrder?.()
       if (hadPendingOrder) {
         sprite.loop = true
+        unit.syncShadow?.()
         return
       }
       if (!unit.isDead && unit.action === ACTION_TYPES.attack) {
         this.setStandingPose()
       } else {
         sprite.loop = true
+        unit.syncShadow?.()
       }
     }
     unit.setTextures?.(SHEET_TYPES.action)

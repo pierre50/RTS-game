@@ -27,81 +27,81 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "units/villager/default/standing",
-        "walkingSheet": "units/villager/default/walking",
-        "dyingSheet": "units/villager/default/dying",
-        "corpseSheet": "units/villager/default/corpse"
+        "standingSheet": "lpc-baked/villager/greek_01/default/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/default/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
       },
       "attacker": {
-        "actionSheet": "units/villager/attacker/action",
-        "standingSheet": "units/villager/default/standing",
-        "dyingSheet": "units/villager/default/dying",
-        "walkingSheet": "units/villager/default/walking",
-        "corpseSheet": "units/villager/default/corpse"
+        "actionSheet": "lpc-baked/villager/greek_01/attacker/action",
+        "standingSheet": "lpc-baked/villager/greek_01/default/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "walkingSheet": "lpc-baked/villager/greek_01/default/walking",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
       },
       "hunter": {
-        "actionSheet": "units/villager/hunter/action",
-        "harvestSheet": "units/villager/hunter/harvest",
-        "standingSheet": "units/villager/hunter/standing",
-        "walkingSheet": "units/villager/hunter/walking",
-        "dyingSheet": "units/villager/hunter/dying",
-        "corpseSheet": "units/villager/hunter/corpse",
-        "loadedSheet": "units/villager/hunter/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/hunter/action",
+        "harvestSheet": "lpc-baked/villager/greek_01/forager/action",
+        "standingSheet": "lpc-baked/villager/greek_01/hunter/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/hunter/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/hunter/loaded"
       },
       "fisher": {
-        "actionSheet": "units/villager/fisher/action",
-        "standingSheet": "units/villager/fisher/standing",
-        "walkingSheet": "units/villager/hunter/walking",
-        "dyingSheet": "units/villager/hunter/dying",
-        "corpseSheet": "units/villager/hunter/corpse",
-        "loadedSheet": "units/villager/fisher/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/fisher/action",
+        "standingSheet": "lpc-baked/villager/greek_01/fisher/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/hunter/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/fisher/walking"
       },
       "farmer": {
-        "actionSheet": "units/villager/farmer/action",
-        "standingSheet": "units/villager/farmer/standing",
-        "walkingSheet": "units/villager/farmer/walking",
-        "dyingSheet": "units/villager/farmer/dying",
-        "corpseSheet": "units/villager/farmer/corpse",
-        "loadedSheet": "units/villager/farmer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/farmer/action",
+        "standingSheet": "lpc-baked/villager/greek_01/farmer/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/farmer/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/farmer/walking"
       },
       "forager": {
-        "actionSheet": "units/villager/forager/action",
-        "standingSheet": "units/villager/forager/standing",
-        "walkingSheet": "units/villager/farmer/loaded",
-        "dyingSheet": "units/villager/forager/dying",
-        "corpseSheet": "units/villager/forager/corpse",
-        "loadedSheet": "units/villager/farmer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/forager/action",
+        "standingSheet": "lpc-baked/villager/greek_01/forager/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/farmer/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/farmer/walking"
       },
       "stoneminer": {
-        "actionSheet": "units/villager/stoneminer/action",
-        "standingSheet": "units/villager/stoneminer/standing",
-        "walkingSheet": "units/villager/stoneminer/walking",
-        "dyingSheet": "units/villager/stoneminer/dying",
-        "corpseSheet": "units/villager/stoneminer/corpse",
-        "loadedSheet": "units/villager/stoneminer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/stoneminer/action",
+        "standingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/stoneminer/loaded"
       },
       "goldminer": {
-        "actionSheet": "units/villager/stoneminer/action",
-        "standingSheet": "units/villager/stoneminer/standing",
-        "walkingSheet": "units/villager/stoneminer/walking",
-        "dyingSheet": "units/villager/stoneminer/dying",
-        "corpseSheet": "units/villager/stoneminer/corpse",
-        "loadedSheet": "units/villager/goldminer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/stoneminer/action",
+        "standingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/goldminer/loaded"
       },
       "woodcutter": {
-        "actionSheet": "units/villager/woodcutter/action",
-        "standingSheet": "units/villager/woodcutter/standing",
-        "walkingSheet": "units/villager/woodcutter/walking",
-        "dyingSheet": "units/villager/stoneminer/dying",
-        "corpseSheet": "units/villager/woodcutter/corpse",
-        "loadedSheet": "units/villager/woodcutter/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/woodcutter/action",
+        "standingSheet": "lpc-baked/villager/greek_01/woodcutter/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/woodcutter/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/woodcutter/walking"
       },
       "builder": {
-        "actionSheet": "units/villager/builder/action",
-        "standingSheet": "units/villager/builder/standing",
-        "walkingSheet": "units/villager/builder/walking",
-        "dyingSheet": "units/villager/stoneminer/dying",
-        "corpseSheet": "units/villager/builder/corpse"
+        "actionSheet": "lpc-baked/villager/greek_01/builder/action",
+        "standingSheet": "lpc-baked/villager/greek_01/builder/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/builder/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
       }
     },
     "gatheringRate": {
@@ -172,11 +172,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/clubman/standing",
-      "walkingSheet": "units/clubman/walking",
-      "actionSheet": "units/clubman/action",
-      "dyingSheet": "units/clubman/dying",
-      "corpseSheet": "units/clubman/corpse"
+      "standingSheet": "lpc-baked/clubman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/clubman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/clubman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/clubman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/clubman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -254,11 +254,11 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "units/bowman/standing",
-      "walkingSheet": "units/bowman/walking",
-      "actionSheet": "units/bowman/action",
-      "dyingSheet": "units/bowman/dying",
-      "corpseSheet": "units/bowman/corpse"
+      "standingSheet": "lpc-baked/bowman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/bowman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/bowman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/bowman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/bowman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -296,11 +296,11 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "units/priest/standing",
-      "walkingSheet": "units/priest/walking",
-      "actionSheet": "units/priest/action",
-      "dyingSheet": "units/priest/dying",
-      "corpseSheet": "units/priest/corpse"
+      "standingSheet": "lpc-baked/priest/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/priest/greek_01/default/walking",
+      "actionSheet": "lpc-baked/priest/greek_01/default/action",
+      "dyingSheet": "lpc-baked/priest/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/priest/greek_01/default/corpse"
     },
     "sounds": {
       "create": "priest-completed",
@@ -357,11 +357,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/axeman/standing",
-      "walkingSheet": "units/axeman/walking",
-      "actionSheet": "units/axeman/action",
-      "dyingSheet": "units/axeman/dying",
-      "corpseSheet": "units/axeman/corpse"
+      "standingSheet": "lpc-baked/axeman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/axeman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/axeman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/axeman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/axeman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -413,11 +413,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/short-swordsman/standing",
-      "walkingSheet": "units/short-swordsman/walking",
-      "actionSheet": "units/short-swordsman/action",
-      "dyingSheet": "units/short-swordsman/dying",
-      "corpseSheet": "units/short-swordsman/corpse"
+      "standingSheet": "lpc-baked/shortswordman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/shortswordman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/shortswordman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/shortswordman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/shortswordman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -469,11 +469,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/broad-swordsman/standing",
-      "walkingSheet": "units/broad-swordsman/walking",
-      "actionSheet": "units/broad-swordsman/action",
-      "dyingSheet": "units/broad-swordsman/dying",
-      "corpseSheet": "units/broad-swordsman/corpse"
+      "standingSheet": "lpc-baked/broadswordman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/broadswordman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/broadswordman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/broadswordman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/broadswordman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -520,11 +520,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/long-swordsman/standing",
-      "walkingSheet": "units/long-swordsman/walking",
-      "actionSheet": "units/long-swordsman/action",
-      "dyingSheet": "units/long-swordsman/dying",
-      "corpseSheet": "units/long-swordsman/corpse"
+      "standingSheet": "lpc-baked/longswordman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/longswordman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/longswordman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/longswordman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/longswordman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -578,11 +578,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/improved-bowman/standing",
-      "walkingSheet": "units/improved-bowman/walking",
-      "actionSheet": "units/improved-bowman/action",
-      "dyingSheet": "units/improved-bowman/dying",
-      "corpseSheet": "units/improved-bowman/corpse"
+      "standingSheet": "lpc-baked/improvedbowman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/improvedbowman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/improvedbowman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/improvedbowman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/improvedbowman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -621,11 +621,11 @@
       "gold": 40
     },
     "assets": {
-      "standingSheet": "units/hoplite/standing",
-      "walkingSheet": "units/hoplite/walking",
-      "actionSheet": "units/hoplite/action",
-      "dyingSheet": "units/hoplite/dying",
-      "corpseSheet": "units/hoplite/corpse"
+      "standingSheet": "lpc-baked/hoplite/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/hoplite/greek_01/default/walking",
+      "actionSheet": "lpc-baked/hoplite/greek_01/default/action",
+      "dyingSheet": "lpc-baked/hoplite/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/hoplite/greek_01/default/corpse"
     },
     "sounds": {
       "command": [
@@ -674,11 +674,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "units/composite-bowman/standing",
-      "walkingSheet": "units/composite-bowman/walking",
-      "actionSheet": "units/composite-bowman/action",
-      "dyingSheet": "units/composite-bowman/dying",
-      "corpseSheet": "units/composite-bowman/corpse"
+      "standingSheet": "lpc-baked/compositebowman/greek_01/default/walking",
+      "walkingSheet": "lpc-baked/compositebowman/greek_01/default/walking",
+      "actionSheet": "lpc-baked/compositebowman/greek_01/default/action",
+      "dyingSheet": "lpc-baked/compositebowman/greek_01/default/dying",
+      "corpseSheet": "lpc-baked/compositebowman/greek_01/default/corpse"
     },
     "sounds": {
       "command": [

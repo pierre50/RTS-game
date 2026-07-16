@@ -1,4 +1,4 @@
-import { buildSelectRow, buildRangeRow } from './formUtils'
+import { buildSelectRow, buildRangeRow, buildCheckboxRow } from './formUtils'
 import { getLang, setLang, SUPPORTED_LANGS, t } from '../lib/lang'
 import {
   getVolume,
@@ -7,6 +7,10 @@ import {
   setGameSpeed,
   getCameraZoom,
   setCameraZoom,
+  getShadowsEnabled,
+  setShadowsEnabled,
+  getResourceWindAnimationEnabled,
+  setResourceWindAnimationEnabled,
   SPEED_PRESETS,
   CAMERA_ZOOM_PRESETS,
 } from '../lib/settings'
@@ -56,6 +60,12 @@ export function buildSettingsContent({
   )
 
   content.appendChild(buildRangeRow(t('sfxVolume'), { min: 0, max: 1, step: 0.05, value: getVolume() }, setVolume))
+
+  content.appendChild(buildCheckboxRow(t('graphicsShadows'), getShadowsEnabled(), setShadowsEnabled))
+
+  content.appendChild(
+    buildCheckboxRow(t('resourceWindAnimation'), getResourceWindAnimationEnabled(), setResourceWindAnimationEnabled)
+  )
 
   content.appendChild(
     buildSelectRow(

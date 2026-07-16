@@ -16,6 +16,7 @@ export const LABEL_TYPES = {
   sail: 'sail',
   fishingNet: 'fishingNet',
   color: 'color',
+  shadow: 'shadow',
   deco: 'deco',
   fire: 'fire',
   selection: 'selection',

@@ -4,7 +4,14 @@ import { MultiColorReplaceFilter } from 'pixi-filters'
 export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'] as const
 type PlayerColor = (typeof colors)[number]
 
-const SOURCE_COLORS = [0x75b4ff, 0x61a0ef, 0x466ac9, 0x3c49ad, 0x322d6a, 0x281e41, 0x180716, 0x0a0a0f]
+// These are NOT the `player_blue` values from scripts/lpc/config.py — the bake
+// pipeline (scripts/lpc/build.py) recolors to player_blue and then snaps every
+// pixel to the nearest of 64 fixed colors in scripts/retro_palette/aap-64.hex,
+// which remaps player_blue's shades to a different set of hex values (e.g.
+// #3C49AD and #466AC9 both collapse to #285CC4). These are that post-snap set,
+// verified against the actual lpc-baked and buildings/shared textures.
+const SOURCE_COLORS = [0xb3b9d1, 0x849be4, 0x8b93af, 0x588dbe, 0x6d758d, 0x285cc4, 0x4a5462, 0x143464, 0x242234]
+const UNIT_SOURCE_COLORS = [0x849be4, 0x588dbe, 0x285cc4, 0x143464]
 
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
   red: [0xff8f8f, 0xff5f5f, 0xff2f2f, 0xe30b00, 0xc71700, 0x8f1f00, 0x6f0b07, 0x530b00],
@@ -27,7 +34,7 @@ const HEX_COLOR_MAP: Record<PlayerColor, string> = {
   cyan: '#00837b',
 }
 
-type RecolorableTexture = Texture & {
+export type RecolorableTexture = Texture & {
   frame: {
     x: number
     y: number
@@ -55,8 +62,29 @@ function isPlayerColor(color: string): color is PlayerColor {
   return colors.includes(color as PlayerColor)
 }
 
-function getDirectColorTextureKey(sprite: RecolorableSprite): string {
-  const { texture } = sprite
+function luminance(color: number): number {
+  const r = (color >> 16) & 0xff
+  const g = (color >> 8) & 0xff
+  const b = color & 0xff
+  return 0.299 * r + 0.587 * g + 0.114 * b
+}
+
+// SOURCE_COLORS and a given team palette aren't guaranteed to be the same length
+// (SOURCE_COLORS has 9 real baked shades; palettes are hand-tuned 8-shade
+// gradients), so pair them by luminance rank instead of by index — same bucketing
+// approach as the non-source-palette branch of scripts/lpc/image_pipeline.py's
+// recolor(). Multiple source shades can land in the same target bucket. Ranked
+// light-to-dark to match COLOR_PALETTES' light-to-dark ordering.
+function buildReplacements(sourceColors: readonly number[], targetColors: readonly number[]): [number, number][] {
+  const rankedIndices = sourceColors.map((_, i) => i).sort((a, b) => luminance(sourceColors[b]) - luminance(sourceColors[a]))
+
+  return rankedIndices.map((sourceIndex, rank) => {
+    const targetIndex = Math.min(Math.floor((rank * targetColors.length) / sourceColors.length), targetColors.length - 1)
+    return [sourceColors[sourceIndex], targetColors[targetIndex]]
+  })
+}
+
+function getTextureColorKey(texture: RecolorableTexture): string {
   const frame = texture.frame
   // Frame names ("000.png") repeat across spritesheets, so the key must
   // include the source, not just the texture label.
@@ -64,37 +92,36 @@ function getDirectColorTextureKey(sprite: RecolorableSprite): string {
   return [source, frame.x, frame.y, frame.width, frame.height].join('_')
 }
 
-export function getHexColor(name: string): string {
-  return isPlayerColor(name) ? HEX_COLOR_MAP[name] : '#ffffff'
-}
+function recolorTextureDirectly(
+  texture: RecolorableTexture,
+  color: PlayerColor,
+  sourceColors: readonly number[] = SOURCE_COLORS
+): Texture {
+  if (color === 'blue') return texture
 
-export function changeSpriteColorDirectly(sprite: RecolorableSprite, color: string): void {
-  if (color === 'blue') return
-
-  const targetColors = isPlayerColor(color) ? COLOR_PALETTES[color] : undefined
+  const targetColors = COLOR_PALETTES[color]
   if (!targetColors) throw new Error('Invalid color selected.')
 
-  const frame = sprite.texture.frame
-  const cacheKey = `${getDirectColorTextureKey(sprite)}_${color}`
+  const frame = texture.frame
+  const cacheKey = `${getTextureColorKey(texture)}_${color}_${sourceColors.join('-')}`
 
   if (recoloredTextureCache.has(cacheKey)) {
-    sprite.texture = recoloredTextureCache.get(cacheKey)! as RecolorableTexture
-    return
+    return recoloredTextureCache.get(cacheKey)!
   }
 
-  const baseTexture = sprite.texture.source.resource
+  const baseTexture = texture.source.resource
   const canvas = document.createElement('canvas')
   canvas.width = frame.width
   canvas.height = frame.height
 
   const ctx = canvas.getContext('2d')
-  if (!baseTexture || !ctx) return
+  if (!baseTexture || !ctx) return texture
 
   ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
-  const sourceColorMap = new Map(SOURCE_COLORS.map((src, i) => [src, targetColors[i]]))
+  const sourceColorMap = new Map(buildReplacements(sourceColors, targetColors))
 
   for (let i = 0; i < data.length; i += 4) {
     const rgb = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
@@ -110,7 +137,28 @@ export function changeSpriteColorDirectly(sprite: RecolorableSprite, color: stri
 
   const newTexture = Texture.from(canvas)
   recoloredTextureCache.set(cacheKey, newTexture)
-  sprite.texture = newTexture
+  return newTexture
+}
+
+export function getHexColor(name: string): string {
+  return isPlayerColor(name) ? HEX_COLOR_MAP[name] : '#ffffff'
+}
+
+export function changeSpriteColorDirectly(sprite: RecolorableSprite, color: string): void {
+  if (color === 'blue') return
+  if (!isPlayerColor(color)) throw new Error('Invalid color selected.')
+
+  sprite.texture = recolorTextureDirectly(sprite.texture, color) as RecolorableTexture
+}
+
+export function changeSpriteTexturesColorDirectly<TTexture extends RecolorableTexture>(
+  textures: readonly TTexture[],
+  color: string
+): Texture[] {
+  if (color === 'blue') return [...textures]
+  if (!isPlayerColor(color)) return [...textures]
+
+  return textures.map(texture => recolorTextureDirectly(texture, color, UNIT_SOURCE_COLORS))
 }
 
 export function changeSpriteColor(sprite: RecolorableSprite, color: string): void {
@@ -121,12 +169,11 @@ export function changeSpriteColor(sprite: RecolorableSprite, color: string): voi
   if (!isPlayerColor(color) || !COLOR_PALETTES[color]) return
 
   if (!colorFilterCache.has(color)) {
-    const replacements = SOURCE_COLORS.map((src, i) => [src, COLOR_PALETTES[color]![i]] as [number, number])
+    const replacements = buildReplacements(SOURCE_COLORS, COLOR_PALETTES[color]!)
     // Tolerance is a normalized RGB distance (0-1). 0.1 was catching near-black shades
-    // from hair/shading palettes (e.g. #0A0A0A, distance ~0.02 from the darkest blue
-    // source shade #0A0A0F) and tinting them with the team color. Since source sprites
-    // are exact-palette pixel art with no color blending, a tight tolerance still
-    // matches genuine blue pixels while excluding unrelated dark tones.
+    // from hair/shading palettes and tinting them with the team color. Since source
+    // sprites are exact-palette pixel art with no color blending, a tight tolerance
+    // still matches genuine blue pixels while excluding unrelated dark tones.
     colorFilterCache.set(color, new MultiColorReplaceFilter({ replacements, tolerance: 0.01 }))
   }
 

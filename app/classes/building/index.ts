@@ -35,6 +35,7 @@ import { BuildingProduction } from './BuildingProduction'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
+import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -50,8 +51,13 @@ import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
 type BuildingSprite = Sprite
+type BuildingShadow = Sprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
+
+const SHADOW_ALPHA = 0.42
+const SHADOW_SCALE_X = 1.02
+const SHADOW_SCALE_Y = -0.5
 
 export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
@@ -72,6 +78,7 @@ export class Building extends Instance implements BuildingEntity {
   isUsedBy: RuntimeEntity | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
+  shadow: BuildingShadow | null
   intervalId: SchedulerTaskId | null
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
@@ -91,6 +98,7 @@ export class Building extends Instance implements BuildingEntity {
   range?: number
   hasActiveBurningSound?: boolean
   increasePopulation?: number
+  visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {
     super(context)
@@ -108,6 +116,8 @@ export class Building extends Instance implements BuildingEntity {
     this.isUsedBy = null
     this.rallyPoint = null
     this.rallyPointFlag = null
+    this.shadow = null
+    this.visualSettingsCleanup = null
 
     Object.assign(this, options)
     Object.assign(this, this.owner.config.buildings[this.type])
@@ -150,6 +160,7 @@ export class Building extends Instance implements BuildingEntity {
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    this.shadow = this.createShadow()
     const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getUnitButton(key))
     const technologies = context.editor
       ? []
@@ -333,8 +344,9 @@ export class Building extends Instance implements BuildingEntity {
         }
       })
 
-      this.addChild(this.sprite)
+      this.addChild(this.shadow, this.sprite)
     }
+    this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 
     if (this.isBuilt) {
       this.visibilityTimeout = setTimeout(() => {
@@ -445,6 +457,44 @@ export class Building extends Instance implements BuildingEntity {
     this.rallyPointFlag?.destroy()
     this.rallyPointFlag = null
     this.rallyPoint = null
+  }
+
+  createShadow(): BuildingShadow {
+    const shadow = new Sprite()
+    shadow.label = LABEL_TYPES.shadow
+    shadow.eventMode = 'none'
+    shadow.roundPixels = true
+    shadow.alpha = SHADOW_ALPHA
+    shadow.tint = 0x000000
+    this.updateShadow(shadow)
+    return shadow
+  }
+
+  updateShadow(shadow: BuildingShadow = this.shadow as BuildingShadow): void {
+    if (!shadow) return
+    const sprite = this.sprite
+    shadow.texture = sprite.texture
+    if (sprite.anchor) {
+      shadow.anchor.set(sprite.anchor.x, sprite.anchor.y)
+    }
+    shadow.zIndex = -2
+    shadow.alpha = SHADOW_ALPHA
+    shadow.visible = getShadowsEnabled()
+    shadow.rotation = 0
+    shadow.scale.set(Math.abs(sprite.scale.x) * SHADOW_SCALE_X, Math.abs(sprite.scale.y) * SHADOW_SCALE_Y)
+    shadow.position.set(0, 0)
+  }
+
+  syncVisualSettings(): void {
+    if (this.shadow) {
+      this.shadow.visible = getShadowsEnabled()
+    }
+  }
+
+  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    this.visualSettingsCleanup?.()
+    this.visualSettingsCleanup = null
+    super.destroy(options)
   }
 
   // BuildingLifecycle

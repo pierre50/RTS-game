@@ -79,7 +79,7 @@ export function getBuildingRubbleTextureNameWithSize(size: number): TextureRef |
 }
 
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
-  const path = assets.cache.get((owner.civ || '').toLowerCase()).buildings
+  const path = assets.cache.get((owner.civ || '').toLowerCase())?.buildings ?? assets.cache.get('greek').buildings
   const assetAt = (age: number) => path[age]?.[type]
   const fallbackAges = [owner.age, owner.age - 1, owner.age - 2, 0, owner.age + 1, owner.age + 2, owner.age + 3]
 

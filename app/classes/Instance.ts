@@ -78,7 +78,8 @@ export class Instance extends Container {
     selection.zIndex = -1
     selection.poly([-32 * f, 0, 0, -16 * f, 32 * f, 0, 0, 16 * f])
     selection.stroke(COLOR_WHITE)
-    this.addChildAt(selection, 0)
+    const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
+    this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()
   }
 
