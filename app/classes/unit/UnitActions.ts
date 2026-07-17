@@ -296,6 +296,9 @@ export class UnitActions {
     const type = dest.category || dest.type
     unit.previousDest = null
     this.restorePreviousWork()
+    unit.handleChangeDest?.()
+    unit.dest = null
+    unit.path = []
     if (dest.family === FAMILY_TYPES.animal) {
       if (unit.getActionCondition?.(dest, ACTION_TYPES.takemeat)) {
         unit.sendToTakeMeat?.(dest, true)

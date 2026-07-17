@@ -38,6 +38,12 @@ function canAttack(source?: CombatEntity | null): boolean {
   return Boolean(source && ((source.meleeAttack || 0) > 0 || (source.pierceAttack || 0) > 0))
 }
 
+export function isFriendlyTarget(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
+  if (!source?.owner || !target?.owner) return false
+  if (source.owner.label === target.owner.label) return true
+  return source.owner.isEnemy?.(target.owner) === false
+}
+
 export function shouldFleeWhenAttacked(source?: CombatEntity | null): boolean {
   return source?.category === 'Boat' && !canAttack(source)
 }
@@ -75,6 +81,7 @@ function getDamage(source: CombatEntity, target: CombatEntity): number {
 }
 
 export function getHitPointsWithDamage(source: CombatEntity, target: CombatEntity, defaultDamage?: number): number {
+  if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
   const damage = defaultDamage || getDamage(source, target)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
@@ -193,6 +200,7 @@ export const getActionCondition = (
       Boolean(
         canAttack(source) &&
           target &&
+          !isFriendlyTarget(source, target) &&
           source.owner?.isEnemy?.(target.owner) &&
           [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
           (target.hitPoints ?? 0) > 0 &&

@@ -399,6 +399,72 @@ test('destination checks stay pure when no destination exists', () => {
   assert.equal(redispatched, false)
 })
 
+test('direct movement advances even when subpixel steps would be ignored by path helper', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 2 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+    }))
+  )
+  const currentCell = grid[0][0]
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: () => [0, 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell,
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: -0.5060000000002401,
+    y: 704,
+  }
+
+  const moved = new UnitMovement(unit).moveDirect(-1, 0, 0.45649999999975993)
+
+  assert.equal(moved, true)
+  assert.equal(unit.x, -0.9625000000000001)
+  assert.equal(unit.y, 704)
+})
+
 test('a blocked gather target sends the villager near it before retrying', () => {
   const target = { label: 'berries-1', i: 3, j: 3, isDestroyed: false }
   const approachCell = { i: 1, j: 3, solid: false, border: false, category: 'Grass' }
@@ -982,6 +1048,63 @@ test('a farmer returns to the same farm after delivering food', () => {
 
   assert.deepEqual(calls, [['sendToFarm', 'farm-1', true]])
   assert.equal(unit.previousDest, null)
+})
+
+test('resuming previous animal work does not remember the interrupted target again', () => {
+  const interruptedTarget = { label: 'blocked-tree', isUsedBy: null }
+  const animal = {
+    label: 'gazelle-1',
+    family: constants.FAMILY_TYPES.animal,
+    category: 'Animal',
+  }
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      changeSpriteColor: () => {},
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const unit = {
+    dest: interruptedTarget,
+    path: [{ label: 'old-path-cell' }],
+    previousDest: animal,
+    previousWork: constants.WORK_TYPES.hunter,
+    work: constants.WORK_TYPES.hunter,
+    getActionCondition: (target, action) => target === animal && action === constants.ACTION_TYPES.takemeat,
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    sendToTakeMeat: target => {
+      calls.push(['sendToTakeMeat', target.label, unit.dest])
+      if (unit.dest && !unit.previousDest) unit.previousDest = unit.dest
+    },
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitActions(unit).goBackToPrevious()
+
+  assert.deepEqual(calls, [['handleChangeDest'], ['sendToTakeMeat', 'gazelle-1', null]])
+  assert.equal(unit.previousDest, null)
+  assert.deepEqual(unit.path, [])
 })
 
 test('delivery orders bypass the human command throttle', () => {

@@ -98,6 +98,54 @@ test('units with attack stats can attack enemies', () => {
   assert.equal(getActionCondition(scoutShip, target, 'attack'), true)
 })
 
+test('units cannot attack or damage friendly units', () => {
+  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const friendlyOwner = { label: 'player' }
+  const scoutShip = {
+    hitPoints: 120,
+    isDead: false,
+    owner: { label: 'player', isEnemy: targetOwner => targetOwner?.label === 'enemy' },
+    pierceAttack: 5,
+    type: 'ScoutShip',
+  }
+  const friendlyTarget = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: friendlyOwner,
+  }
+
+  assert.equal(isFriendlyTarget(scoutShip, friendlyTarget), true)
+  assert.equal(getActionCondition(scoutShip, friendlyTarget, 'attack'), false)
+  assert.equal(getHitPointsWithDamage(scoutShip, friendlyTarget), 20)
+})
+
+test('units cannot attack or damage allied-team units', () => {
+  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const alliedOwner = { label: 'ally', team: 1 }
+  const scoutShip = {
+    hitPoints: 120,
+    isDead: false,
+    owner: { label: 'player', team: 1, isEnemy: targetOwner => targetOwner?.team !== 1 },
+    pierceAttack: 5,
+    type: 'ScoutShip',
+  }
+  const alliedTarget = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: alliedOwner,
+  }
+
+  assert.equal(isFriendlyTarget(scoutShip, alliedTarget), true)
+  assert.equal(getActionCondition(scoutShip, alliedTarget, 'attack'), false)
+  assert.equal(getHitPointsWithDamage(scoutShip, alliedTarget), 20)
+})
+
 test('land ranged units can target enemy boats', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
@@ -222,6 +270,7 @@ test('unit control policy disables automatic reactions for the active ARPG hero'
 
 test('damage feedback can be cleared before its timer fires', () => {
   let scheduled = null
+  const texts = []
   class ColorMatrixFilter {
     constructor() {
       this.matrix = []
@@ -231,9 +280,11 @@ test('damage feedback can be cleared before its timer fires', () => {
     'pixi.js': {
       ColorMatrixFilter,
       Text: class {
-        constructor() {
+        constructor(options) {
+          this.text = options.text
           this.anchor = { set: () => {} }
           this.destroyed = false
+          texts.push(this)
         }
         destroy() {
           this.destroyed = true
@@ -270,4 +321,20 @@ test('damage feedback can be cleared before its timer fires', () => {
   assert.equal(typeof scheduled, 'function')
   scheduled()
   assert.deepEqual(sprite.filters, originalFilters)
+
+  const buildingSprite = { anchor: { y: 0 }, destroyed: false, filters: originalFilters, height: 60 }
+  const building = {
+    addChild: text => {
+      building.child = text
+    },
+    context: target.context,
+    family: constants.FAMILY_TYPES.building,
+    isDestroyed: false,
+    sprite: buildingSprite,
+  }
+
+  showDamageFeedback(building, 7)
+
+  assert.equal(building.child.text, '-7')
+  assert.deepEqual(buildingSprite.filters, originalFilters)
 })

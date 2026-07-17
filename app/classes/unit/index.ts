@@ -35,6 +35,7 @@ import {
   unloadTransport,
   getIconPath,
   getSpriteFrameSelection,
+  updateInstanceRenderVisibility,
 } from '../../lib'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { Instance } from '../Instance'
@@ -46,7 +47,12 @@ import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import { canAutoReactToAttack, canSelectUnitWithRts, canUseRtsEntityPointer } from '../../lib/unitControl'
+import {
+  canAutoReactToAttack,
+  canSelectUnitWithRts,
+  canUseRtsEntityPointer,
+  isHeroControlled,
+} from '../../lib/unitControl'
 import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
@@ -1025,7 +1031,8 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   stop() {
-    if (this.currentCell.has?.label !== this.label && this.currentCell.solid) {
+    const heroControlled = isHeroControlled(this)
+    if (!heroControlled && this.currentCell.has?.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return
     }
@@ -1039,8 +1046,17 @@ export class Unit extends Instance implements UnitEntity {
     this.realDest = null
     this.transportLoadShoreCell = null
     this.transportLoadCoastCell = null
-    this.currentCell.place(this)
-    this.currentCell.solid = true
+    if (heroControlled) {
+      if (this.currentCell.has === this) {
+        this.currentCell.has = null
+        this.currentCell.solid = false
+      }
+      updateInstanceRenderVisibility(this)
+      this.visible = true
+    } else if (!this.currentCell.has || this.currentCell.has === this || this.currentCell.has.isDestroyed) {
+      this.currentCell.place(this)
+      this.currentCell.solid = true
+    }
     this.path = []
     this.stopInterval()
     this.setTextures(SHEET_TYPES.standing)

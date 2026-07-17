@@ -1,4 +1,4 @@
-import { getInstanceDegree } from '../lib'
+import { getInstanceDegree, updateInstanceRenderVisibility } from '../lib'
 import { ARPG_DIRECTIONS, ARPG_KEYS, HERO_ACTION_MOVE_SPEED_FACTOR, SHEET_TYPES, STEP_TIME } from '../constants'
 import { applyToolAppearance, triggerToolAction, triggerToolAttackAt, type HeroTool } from '../lib/heroTools'
 import { setUnitControlMode } from '../lib/unitControl'
@@ -6,6 +6,42 @@ import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
 const TARGET_FRAME_MS = 1000 / 60
+const HERO_MOVE_DEBUG_THROTTLE_MS = 250
+
+let lastHeroMoveDebugAt = 0
+
+function debugHeroMove(message: string, unit: UnitEntity, details: Record<string, unknown>): void {
+  const now = performance.now()
+  if (now - lastHeroMoveDebugAt < HERO_MOVE_DEBUG_THROTTLE_MS) return
+  lastHeroMoveDebugAt = now
+  console.debug('[ARPG hero move]', {
+    message,
+    details,
+    unit: {
+      controlMode: unit.controlMode,
+      actionLocked: unit.actionLocked,
+      isDead: unit.isDead,
+      isDestroyed: unit.isDestroyed,
+      currentSheet: unit.currentSheet,
+      speed: unit.speed,
+      i: unit.i,
+      j: unit.j,
+      x: Math.round(unit.x),
+      y: Math.round(unit.y),
+      visible: unit.visible,
+      currentCell: {
+        i: unit.currentCell?.i,
+        j: unit.currentCell?.j,
+        solid: unit.currentCell?.solid,
+        border: unit.currentCell?.border,
+        category: unit.currentCell?.category,
+        has: unit.currentCell?.has
+          ? { type: unit.currentCell.has.type, family: unit.currentCell.has.family, label: unit.currentCell.has.label }
+          : null,
+      },
+    },
+  })
+}
 
 export class HeroController {
   controls: Controls
@@ -86,7 +122,24 @@ export class HeroController {
       const len = Math.hypot(dx, dy)
       const speedFactor = attacking ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
+      const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       moved = unit.moveDirect?.(dx / len, dy / len, distance) ?? false
+      const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
+      if (!moved || delta < 0.01) {
+        debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {
+          keys: [...this.keysPressed],
+          input: { dx, dy, len },
+          normalized: { dx: dx / len, dy: dy / len },
+          distance,
+          frameScale,
+          speedFactor,
+          attacking,
+          hasMoveDirect: Boolean(unit.moveDirect),
+          before,
+          after: { x: unit.x, y: unit.y, i: unit.i, j: unit.j },
+          delta,
+        })
+      }
     }
     if (moved) {
       if (!attacking && unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
@@ -169,6 +222,8 @@ export class HeroController {
     this.setEquippedTool('unarmed')
     this.controls.context.menu?.setBottombar?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)
+    updateInstanceRenderVisibility(this.heroUnit)
+    this.heroUnit.visible = true
     return true
   }
 }

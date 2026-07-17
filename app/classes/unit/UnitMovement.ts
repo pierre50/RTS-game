@@ -13,6 +13,7 @@ import {
   instancesDistance,
   isometricToCartesian,
   moveTowardPoint,
+  updateInstanceRenderVisibility,
   updateInstanceVisibility,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
@@ -33,6 +34,11 @@ function isBoatNavigationCell(cell: RuntimeCell | null | undefined) {
 
 function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity {
   return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
+}
+
+function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
+  if (!entity || entity.isDestroyed) return false
+  return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 
 type TransportLoadTarget = RuntimeEntity & {
@@ -83,8 +89,44 @@ const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
 ])
 
 const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
+const DIRECT_MOVE_DEBUG_THROTTLE_MS = 250
 
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+let lastDirectMoveDebugAt = 0
+
+function debugBlockedDirectMove(
+  unit: UnitEntity,
+  reason: string,
+  details: Record<string, unknown>,
+  dirX: number,
+  dirY: number
+): void {
+  if (!isHeroControlled(unit)) return
+  const now = performance.now()
+  if (now - lastDirectMoveDebugAt < DIRECT_MOVE_DEBUG_THROTTLE_MS) return
+  lastDirectMoveDebugAt = now
+  console.debug('[ARPG direct blocked]', {
+    reason,
+    details,
+    dir: { x: Number(dirX.toFixed(3)), y: Number(dirY.toFixed(3)) },
+    unit: {
+      i: unit.i,
+      j: unit.j,
+      x: Math.round(unit.x),
+      y: Math.round(unit.y),
+      currentCell: {
+        i: unit.currentCell?.i,
+        j: unit.currentCell?.j,
+        solid: unit.currentCell?.solid,
+        border: unit.currentCell?.border,
+        category: unit.currentCell?.category,
+        has: unit.currentCell?.has
+          ? { type: unit.currentCell.has.type, family: unit.currentCell.has.family, label: unit.currentCell.has.label }
+          : null,
+      },
+    },
+  })
+}
 
 export class UnitMovement {
   unit: UnitEntity
@@ -248,7 +290,11 @@ export class UnitMovement {
         path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map)
         if (!path.length && unit.work) {
           unit.action = action
-          if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+          if (
+            allowBlockedGatherApproach &&
+            isRuntimeEntity(dest) &&
+            this.approachBlockedGatherTarget(dest, action ?? '')
+          )
             return
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
@@ -261,7 +307,11 @@ export class UnitMovement {
         const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
         if (!approach) {
           unit.action = action
-          if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+          if (
+            allowBlockedGatherApproach &&
+            isRuntimeEntity(dest) &&
+            this.approachBlockedGatherTarget(dest, action ?? '')
+          )
             return
           action ? unit.affectNewDest?.() : unit.stop?.()
           return
@@ -418,7 +468,16 @@ export class UnitMovement {
   moveDirect(dirX: number, dirY: number, distance: number): boolean {
     const unit = this.unit
     const map = unit.context?.map
-    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
+    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) {
+      debugBlockedDirectMove(
+        unit,
+        'precondition',
+        { hasMap: Boolean(map), hasSprite: Boolean(unit.sprite), distance },
+        dirX,
+        dirY
+      )
+      return false
+    }
 
     if (this.attemptMoveDirect(dirX, dirY, distance)) return true
     // Diagonal step blocked by a solid corner — slide along a single axis instead of
@@ -444,15 +503,61 @@ export class UnitMovement {
     const targetCell = crossingCell ? map.grid[newI]?.[newJ] : unit.currentCell
 
     if (crossingCell) {
-      if (!targetCell || targetCell.solid || targetCell.border) return false
-      const categoryAllowed = unit.category === 'Boat' ? isBoatNavigationCell(targetCell) : targetCell.category !== 'Water'
-      if (!categoryAllowed) return false
+      if (!targetCell) {
+        debugBlockedDirectMove(unit, 'missing-target-cell', { rawI, rawJ, newI, newJ }, dirX, dirY)
+        return false
+      }
+      if (targetCell.border) {
+        debugBlockedDirectMove(unit, 'target-border', { rawI, rawJ, newI, newJ, targetCell }, dirX, dirY)
+        return false
+      }
+      const heroControlled = isHeroControlled(unit)
+      if (heroControlled) {
+        if (targetCell.solid && targetCell.has !== unit && blocksHeroDirectMove(targetCell.has)) {
+          debugBlockedDirectMove(
+            unit,
+            'target-occupied',
+            {
+              rawI,
+              rawJ,
+              newI,
+              newJ,
+              target: {
+                solid: targetCell.solid,
+                category: targetCell.category,
+                has: targetCell.has
+                  ? { type: targetCell.has.type, family: targetCell.has.family, label: targetCell.has.label }
+                  : null,
+              },
+            },
+            dirX,
+            dirY
+          )
+          return false
+        }
+      } else if (targetCell.solid) {
+        return false
+      }
+      const categoryAllowed =
+        unit.category === 'Boat' ? isBoatNavigationCell(targetCell) : targetCell.category !== 'Water'
+      if (!categoryAllowed) {
+        debugBlockedDirectMove(
+          unit,
+          'target-category',
+          { rawI, rawJ, newI, newJ, category: targetCell.category },
+          dirX,
+          dirY
+        )
+        return false
+      }
     }
 
     const oldI = unit.i
     const oldJ = unit.j
     const oldDeg = unit.degree ?? 0
-    moveTowardPoint(unit, unit.x + dirX, unit.y + dirY, distance)
+    unit.degree = getInstanceDegree(unit, unit.x + dirX, unit.y + dirY)
+    unit.x = candidateX
+    unit.y = candidateY
 
     if (crossingCell && targetCell) {
       unit.z = targetCell.z
@@ -465,9 +570,15 @@ export class UnitMovement {
         currentCell.solid = false
       }
       unit.currentCell = targetCell
-      if (targetCell.has === null) {
+      if (isHeroControlled(unit) && targetCell.solid && !targetCell.has) {
+        targetCell.solid = false
+      }
+      if (!isHeroControlled(unit) && (targetCell.has === null || targetCell.has?.isDestroyed)) {
         targetCell.place(unit)
         targetCell.solid = true
+      } else if (isHeroControlled(unit)) {
+        updateInstanceRenderVisibility(unit)
+        unit.visible = true
       }
       map.updateInstanceBucket(unit, oldI, oldJ)
     }

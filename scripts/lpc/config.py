@@ -23,6 +23,7 @@ ANCHORS_BY_OUTPUT_SIZE = {
 
 PALETTES: dict[str, list[str]] = {
     "fair": ["#2A1817", "#4A2C26", "#765044", "#A87962", "#D2A081", "#EDC0A0"],
+    "celtic_fair": ["#422433", "#5B3138", "#8E5252", "#BA756A", "#E9B5A3", "#FAD6B8"],
     "olive": ["#271920", "#442725", "#7F4C31", "#AE6B3F", "#D38B59", "#E4A47C"],
     "brown": ["#23110E", "#432015", "#6F3A22", "#98562F", "#BC7543", "#D99559"],
     "deep_brown": ["#060608", "#141013", "#221C1A", "#322B28", "#423934", "#5A4E44"],
@@ -55,6 +56,7 @@ PALETTES: dict[str, list[str]] = {
 
 SKIN_TONES = {
     "fair": "Light skin used by Babylonian variants.",
+    "celtic_fair": "Warm fair skin used by Celtic variants.",
     "olive": "Mediterranean olive skin used by Greek variants.",
     "brown": "Brown skin used by Egyptian variants.",
     "deep_brown": "Deep brown skin used by Nubian variants.",
@@ -67,7 +69,7 @@ CIVS = {
     "egyptian": {"skin": "brown", "hair": "black"},
     "babylonian": {"skin": "fair", "hair": "black"},
     "asian": {"skin": "golden", "hair": "black"},
-    "celtic": {"skin": "fair", "hair": "brown_hair"},
+    "celtic": {"skin": "celtic_fair", "hair": "brown_hair"},
     "nubian": {"skin": "deep_brown", "hair": "black"},
 }
 

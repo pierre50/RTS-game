@@ -23,6 +23,14 @@ const FLOAT_RISE = 18
 const flashStates = new WeakMap<DamageSprite, FlashState>()
 
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
+  return (
+    target.family === FAMILY_TYPES.unit ||
+    target.family === FAMILY_TYPES.animal ||
+    target.family === FAMILY_TYPES.building
+  )
+}
+
+function canFlashDamage(target: RuntimeEntity): boolean {
   return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
 }
 
@@ -115,7 +123,7 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
 
 export function showDamageFeedback(target: RuntimeEntity, damage: number): void {
   if (!canShowCombatFeedback(target) || damage <= 0) return
-  flashWhite(target)
+  if (canFlashDamage(target)) flashWhite(target)
   showFloatingText(target, {
     text: `-${damage}`,
     fill: 0xffffff,

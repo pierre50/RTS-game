@@ -1,7 +1,7 @@
 {
   "House": {
     "size": 3,
-    "sight": 3,
+    "sight": 6,
     "totalHitPoints": 75,
     "constructionTime": 20,
     "displayPopulation": true,
@@ -25,7 +25,7 @@
   },
   "Barracks": {
     "size": 5,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 30,
     "cost": {
@@ -61,7 +61,7 @@
   },
   "Granary": {
     "size": 3,
-    "sight": 4,
+    "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 30,
     "cost": {
@@ -96,7 +96,7 @@
   },
   "StoragePit": {
     "size": 3,
-    "sight": 4,
+    "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 30,
     "cost": {
@@ -142,7 +142,7 @@
   },
   "Dock": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 50,
     "buildOnWater": true,
@@ -168,7 +168,7 @@
   },
   "ArcheryRange": {
     "size": 5,
-    "sight": 4,
+    "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 40,
     "cost": {
@@ -201,7 +201,7 @@
   },
   "Stable": {
     "size": 3,
-    "sight": 4,
+    "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 40,
     "cost": {
@@ -229,7 +229,7 @@
   },
   "Farm": {
     "size": 3,
-    "sight": 3,
+    "sight": 6,
     "totalHitPoints": 50,
     "constructionTime": 30,
     "totalQuantity": 250,
@@ -248,7 +248,7 @@
   },
   "WatchTower": {
     "size": 2,
-    "sight": 8,
+    "sight": 16,
     "totalHitPoints": 100,
     "constructionTime": 80,
     "range": 5,
@@ -286,7 +286,7 @@
   },
   "SentryTower": {
     "size": 2,
-    "sight": 9,
+    "sight": 18,
     "totalHitPoints": 150,
     "constructionTime": 80,
     "range": 6,
@@ -319,7 +319,7 @@
   },
   "SmallWall": {
     "size": 1,
-    "sight": 3,
+    "sight": 6,
     "totalHitPoints": 200,
     "constructionTime": 8,
     "cost": {
@@ -353,7 +353,7 @@
   },
   "Market": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 40,
     "cost": {
@@ -386,7 +386,7 @@
   },
   "Temple": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 60,
     "cost": {
@@ -415,7 +415,7 @@
   },
   "GovernmentCenter": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 60,
     "cost": {
@@ -457,7 +457,7 @@
   },
   "TownCenter": {
     "size": 5,
-    "sight": 7,
+    "sight": 14,
     "totalHitPoints": 600,
     "constructionTime": 60,
     "increasePopulation": 4,
@@ -488,7 +488,7 @@
   },
   "SiegeWorkshop": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 60,
     "cost": {
@@ -522,7 +522,7 @@
   },
   "Academy": {
     "size": 3,
-    "sight": 5,
+    "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 60,
     "cost": {
@@ -563,7 +563,7 @@
   },
   "GuardTower": {
     "size": 2,
-    "sight": 10,
+    "sight": 20,
     "totalHitPoints": 200,
     "constructionTime": 80,
     "range": 7,
@@ -596,7 +596,7 @@
   },
   "BallistaTower": {
     "size": 2,
-    "sight": 11,
+    "sight": 22,
     "totalHitPoints": 200,
     "constructionTime": 80,
     "range": 7,

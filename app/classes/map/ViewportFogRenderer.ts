@@ -31,6 +31,19 @@ type FogRendererMap = {
   }
 }
 
+type FogRevealCell = RuntimeCell & {
+  _terrainAppearance?: {
+    relief?: { elevation?: number | null } | null
+  }
+}
+
+type FogRevealShape = {
+  x: number
+  y: number
+  rx: number
+  ry: number
+}
+
 function getFogViewport(controls: FogRendererMap['context']['controls']): Viewport | undefined {
   if (!controls || typeof controls !== 'object') return undefined
   const cameraController = (controls as { cameraController?: { getViewportRect?: () => Viewport } }).cameraController
@@ -50,6 +63,16 @@ const FOG_BAND = 20
 const CORNER_RADIUS = 10
 const OVERLAP = 14
 const DIRTY_REDRAW_INTERVAL_MS = 80
+
+export function getFogRevealShape(cell: FogRevealCell, rx: number, ry: number): FogRevealShape {
+  const reliefElevation = Math.max(0, cell._terrainAppearance?.relief?.elevation ?? 0)
+  return {
+    x: cell.x,
+    y: cell.y + reliefElevation / 2,
+    rx,
+    ry: ry + reliefElevation / 2,
+  }
+}
 
 export class ViewportFogRenderer {
   map: FogRendererMap
@@ -249,10 +272,16 @@ export class ViewportFogRenderer {
         const cell = this.map.grid[i]?.[j]
         if (!cell) continue
 
-        const x = cell.x - left
-        const y = cell.y - top
-        this._drawShape(exploredErase, x, y, REVEAL_RX + FOG_BAND + OVERLAP, REVEAL_RY + FOG_BAND / 2 + OVERLAP / 2)
-        if (visible) this._drawShape(visibleErase, x, y, REVEAL_RX + OVERLAP, REVEAL_RY + OVERLAP / 2)
+        const exploredShape = getFogRevealShape(
+          cell as FogRevealCell,
+          REVEAL_RX + FOG_BAND + OVERLAP,
+          REVEAL_RY + FOG_BAND / 2 + OVERLAP / 2
+        )
+        this._drawShape(exploredErase, exploredShape.x - left, exploredShape.y - top, exploredShape.rx, exploredShape.ry)
+        if (visible) {
+          const visibleShape = getFogRevealShape(cell as FogRevealCell, REVEAL_RX + OVERLAP, REVEAL_RY + OVERLAP / 2)
+          this._drawShape(visibleErase, visibleShape.x - left, visibleShape.y - top, visibleShape.rx, visibleShape.ry)
+        }
       }
     }
 

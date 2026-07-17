@@ -3,6 +3,7 @@ import {
   degreesToRadians,
   getHitPointsWithDamage,
   getInstanceZIndex,
+  isFriendlyTarget,
   moveTowardPoint,
   pointsDistance,
   average,
@@ -548,7 +549,13 @@ export class Projectile extends Container {
   }
 
   canCollideWith(instance: RuntimeEntity): boolean {
-    if (instance === this.owner || instance.isDead || instance.isDestroyed || (instance.hitPoints ?? 0) <= 0) {
+    if (
+      instance === this.owner ||
+      isFriendlyTarget(this.owner, instance) ||
+      instance.isDead ||
+      instance.isDestroyed ||
+      (instance.hitPoints ?? 0) <= 0
+    ) {
       return false
     }
     return instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.animal

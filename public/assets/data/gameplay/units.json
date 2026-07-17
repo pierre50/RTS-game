@@ -2,7 +2,7 @@
   "Villager": {
     "category": "Civilian",
     "totalHitPoints": 25,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.1,
     "rateOfFire": 1.5,
     "trainingTime": 20,
@@ -153,7 +153,7 @@
   "Clubman": {
     "category": "Infantry",
     "totalHitPoints": 40,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "rateOfFire": 1.5,
     "trainingTime": 27,
@@ -202,7 +202,7 @@
   "Scout": {
     "category": "Cavalery",
     "totalHitPoints": 60,
-    "sight": 7,
+    "sight": 14,
     "speed": 2,
     "rateOfFire": 0.9,
     "trainingTime": 30,
@@ -239,7 +239,7 @@
   "Bowman": {
     "category": "Archer",
     "totalHitPoints": 35,
-    "sight": 7,
+    "sight": 14,
     "speed": 1.2,
     "rateOfFire": 1.4,
     "trainingTime": 30,
@@ -284,7 +284,7 @@
   "Priest": {
     "category": "Civilian",
     "totalHitPoints": 25,
-    "sight": 12,
+    "sight": 24,
     "speed": 0.8,
     "trainingTime": 50,
     "icon": "001_50730",
@@ -333,7 +333,7 @@
   "Axeman": {
     "category": "Infantry",
     "totalHitPoints": 50,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "rateOfFire": 1.5,
     "trainingTime": 27,
@@ -388,7 +388,7 @@
   "ShortSwordsman": {
     "category": "Infantry",
     "totalHitPoints": 60,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "rateOfFire": 1.5,
     "trainingTime": 27,
@@ -444,7 +444,7 @@
   "BroadSwordsman": {
     "category": "Infantry",
     "totalHitPoints": 70,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "rateOfFire": 1.5,
     "trainingTime": 27,
@@ -500,7 +500,7 @@
   "LongSwordsman": {
     "category": "Infantry",
     "totalHitPoints": 80,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "rateOfFire": 1.5,
     "trainingTime": 27,
@@ -551,7 +551,7 @@
   "ImprovedBowman": {
     "category": "Archer",
     "totalHitPoints": 40,
-    "sight": 8,
+    "sight": 16,
     "speed": 1.2,
     "rateOfFire": 1.4,
     "trainingTime": 30,
@@ -608,7 +608,7 @@
   "Hoplite": {
     "category": "Infantry",
     "totalHitPoints": 120,
-    "sight": 4,
+    "sight": 8,
     "speed": 0.9,
     "rateOfFire": 1.5,
     "trainingTime": 36,
@@ -652,7 +652,7 @@
   "CompositeBowman": {
     "category": "Archer",
     "totalHitPoints": 45,
-    "sight": 9,
+    "sight": 18,
     "speed": 1.2,
     "rateOfFire": 1.4,
     "trainingTime": 30,
@@ -704,7 +704,7 @@
   "ChariotArcher": {
     "category": "Archer",
     "totalHitPoints": 70,
-    "sight": 9,
+    "sight": 18,
     "speed": 2,
     "rateOfFire": 1.5,
     "trainingTime": 40,
@@ -751,7 +751,7 @@
   "FishingBoat": {
     "category": "Boat",
     "totalHitPoints": 45,
-    "sight": 6,
+    "sight": 12,
     "speed": 1.45,
     "trainingTime": 20,
     "showLoading": true,
