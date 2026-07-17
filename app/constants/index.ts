@@ -3,6 +3,7 @@ export * from './entities'
 export * from './sounds'
 export * from './ui'
 export * from './ambient'
+export * from './arpg'
 
 export const SHEET_TYPES = {
   walking: 'walkingSheet',

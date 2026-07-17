@@ -36,6 +36,7 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { canUseRtsEntityPointer } from '../../lib/unitControl'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -217,6 +218,7 @@ export class Building extends Instance implements BuildingEntity {
           context: { controls, player, menu, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
+        if (!canUseRtsEntityPointer(controls)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
           drawInstanceBlinkingSelection(this)

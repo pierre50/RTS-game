@@ -1,5 +1,6 @@
 import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+import { clearDamageFeedback } from '../../lib/combatFeedback'
 import type { Animal } from './index'
 
 export class AnimalLifecycle {
@@ -21,6 +22,7 @@ export class AnimalLifecycle {
     animal.stopInterval()
     animal.stopTimeout()
     animal.animalBehavior.stop()
+    clearDamageFeedback(animal)
     animal.isDead = true
     animal.zIndex--
     animal.path = []
@@ -30,6 +32,7 @@ export class AnimalLifecycle {
 
   death(): void {
     const animal = this.animal
+    clearDamageFeedback(animal)
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.sprite.loop = false
@@ -39,6 +42,7 @@ export class AnimalLifecycle {
 
   decompose(): void {
     const animal = this.animal
+    clearDamageFeedback(animal)
     const {
       context: { player, menu },
     } = animal

@@ -1,9 +1,10 @@
 import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity, PlaceableBuildingConfig } from './entities'
+import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
+import type { HeroTool } from '../lib/heroTools'
 
 export type SchedulerTaskId = number
 
@@ -51,6 +52,9 @@ export interface MenuLike {
   updatePlayerStats(): void
   init?(): void
   destroy?(): void
+  toggleInventory?(): void
+  isInventoryOpen?(): boolean
+  setEquippedTool?(tool: HeroTool | null): void
 }
 
 interface EntityPreviewLike {
@@ -111,6 +115,11 @@ export interface ControlsLike extends Container {
   registerUnitClick?(unit: RuntimeEntity): void
   getCellOnCamera?(callback: (cell: RuntimeCell) => void): void
   init?(): void
+  heroUnit?: UnitEntity | null
+  equippedTool?: HeroTool | null
+  heroActionHeld?: boolean
+  setEquippedTool?(tool: HeroTool | null): void
+  isArpgActive?(): boolean
 }
 
 export interface SelectionRectangle {

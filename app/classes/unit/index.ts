@@ -46,6 +46,7 @@ import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { canAutoReactToAttack, canSelectUnitWithRts, canUseRtsEntityPointer } from '../../lib/unitControl'
 import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
@@ -169,6 +170,7 @@ export class Unit extends Instance implements UnitEntity {
   sheetDirectionOrders?: Record<string, string[]>
   spriteScale?: number
   loadedInTransport: UnitEntity['loadedInTransport']
+  controlMode!: NonNullable<UnitEntity['controlMode']>
   inactif!: boolean
   sounds?: UnitEntity['sounds']
   work: UnitEntity['work']
@@ -248,6 +250,7 @@ export class Unit extends Instance implements UnitEntity {
     this.degree = map.randomRange(1, 360)
     this.currentFrame = map.randomRange(0, 4)
     this.action = null
+    this.controlMode = 'rts'
     this.actionLocked = false
     this.pendingOrder = null
     this.loading = 0
@@ -417,6 +420,7 @@ export class Unit extends Instance implements UnitEntity {
         context: { controls, player, editor },
       } = this
       if (editor) return
+      if (!canUseRtsEntityPointer(controls)) return
       if (
         controls.rallyPointController?.active ||
         controls.mouseBuilding ||
@@ -437,6 +441,7 @@ export class Unit extends Instance implements UnitEntity {
               has.owner.label === this.owner.label &&
               has.type === this.type &&
               !has.loadedInTransport &&
+              canSelectUnitWithRts(has) &&
               !selectedUnits.has(has)
             ) {
               selectedUnits.add(has)
@@ -452,6 +457,7 @@ export class Unit extends Instance implements UnitEntity {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction?.(this)) return
+      if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)
@@ -979,11 +985,18 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitMovement.moveToPath()
   }
 
+  moveDirect(dirX: number, dirY: number, distance: number): boolean {
+    return this.unitMovement.moveDirect(dirX, dirY, distance)
+  }
+
   isAttacked(instance: RuntimeEntity | null) {
     if (this.context.editor) {
       return
     }
     if (!instance || this.isDead) {
+      return
+    }
+    if (!canAutoReactToAttack(this)) {
       return
     }
     this.owner.reportThreat?.(this, instance)

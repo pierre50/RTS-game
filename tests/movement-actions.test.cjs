@@ -21,6 +21,17 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
+    if (request === '../../lib/unitControl') {
+      return {
+        canAutoAcquireTarget: () => true,
+        canAutoReactToAttack: () => true,
+        isHeroControlled: () => false,
+        isManualHeroActionReleased: () => false,
+        setUnitControlMode: (unit, controlMode) => {
+          unit.controlMode = controlMode
+        },
+      }
+    }
     if (Object.hasOwn(mocks, request)) return mocks[request]
     return require(request)
   }

@@ -11,9 +11,11 @@ import {
   getInstanceZIndex,
   instanceContactInstance,
   instancesDistance,
+  isometricToCartesian,
   moveTowardPoint,
   updateInstanceVisibility,
 } from '../../lib'
+import { isHeroControlled } from '../../lib/unitControl'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -413,6 +415,72 @@ export class UnitMovement {
     }
   }
 
+  moveDirect(dirX: number, dirY: number, distance: number): boolean {
+    const unit = this.unit
+    const map = unit.context?.map
+    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
+
+    if (this.attemptMoveDirect(dirX, dirY, distance)) return true
+    // Diagonal step blocked by a solid corner — slide along a single axis instead of
+    // stopping dead, matching cardinal movement's ability to hug an obstacle's edge.
+    if (dirX !== 0 && dirY !== 0) {
+      if (this.attemptMoveDirect(dirX, 0, distance)) return true
+      if (this.attemptMoveDirect(0, dirY, distance)) return true
+    }
+    return false
+  }
+
+  attemptMoveDirect(dirX: number, dirY: number, distance: number): boolean {
+    const unit = this.unit
+    const map = unit.context?.map
+    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
+
+    const candidateX = unit.x + dirX * distance
+    const candidateY = unit.y + dirY * distance
+    const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
+    const newI = Math.min(Math.max(rawI, 0), map.size)
+    const newJ = Math.min(Math.max(rawJ, 0), map.size)
+    const crossingCell = newI !== unit.i || newJ !== unit.j
+    const targetCell = crossingCell ? map.grid[newI]?.[newJ] : unit.currentCell
+
+    if (crossingCell) {
+      if (!targetCell || targetCell.solid || targetCell.border) return false
+      const categoryAllowed = unit.category === 'Boat' ? isBoatNavigationCell(targetCell) : targetCell.category !== 'Water'
+      if (!categoryAllowed) return false
+    }
+
+    const oldI = unit.i
+    const oldJ = unit.j
+    const oldDeg = unit.degree ?? 0
+    moveTowardPoint(unit, unit.x + dirX, unit.y + dirY, distance)
+
+    if (crossingCell && targetCell) {
+      unit.z = targetCell.z
+      unit.i = newI
+      unit.j = newJ
+      unit.zIndex = getInstanceZIndex(unit)
+      const currentCell = unit.currentCell
+      if (currentCell?.has === unit) {
+        currentCell.has = null
+        currentCell.solid = false
+      }
+      unit.currentCell = targetCell
+      if (targetCell.has === null) {
+        targetCell.place(unit)
+        targetCell.solid = true
+      }
+      map.updateInstanceBucket(unit, oldI, oldJ)
+    }
+    updateInstanceVisibility(unit)
+    if (!unit.actionLocked) {
+      if (!unit.sprite.playing) unit.sprite.play()
+      if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {
+        unit.setTextures?.(SHEET_TYPES.walking)
+      }
+    }
+    return true
+  }
+
   affectNewDest() {
     const unit = this.unit
     unit.stopInterval?.()
@@ -506,6 +574,13 @@ export class UnitMovement {
         true,
         'unit.waitTransport'
       )
+      return
+    }
+
+    if (isHeroControlled(unit)) {
+      unit.previousDest = null
+      unit.previousWork = null
+      unit.stop?.()
       return
     }
 

@@ -44,11 +44,40 @@ function loadControls() {
         }
       },
     },
+    '../controllers/HeroController': {
+      HeroController: class {
+        constructor() {
+          this.heroUnit = null
+          this.equippedTool = null
+          this.active = false
+          this.lastUpdateFrameScale = null
+        }
+        isActive() {
+          return this.active
+        }
+        handleKeyDown() {
+          return false
+        }
+        handleKeyUp() {}
+        update(frameScale) {
+          this.lastUpdateFrameScale = frameScale
+        }
+        handlePrimaryPointerDown() {}
+        handlePointerUp() {}
+        setEquippedTool() {}
+        stopKeyboardMove() {}
+        cancelActiveInteraction() {}
+        initFromPlayerStart() {
+          return false
+        }
+      },
+    },
     '../lib': {
       isometricToCartesian: () => [0, 0],
       pointsDistance: () => 0,
     },
     '../lib/settings': { getCameraZoom: () => 1 },
+    '../lib/unitControl': { hasRtsCommandableUnits: units => Boolean(units?.length) },
     '../constants': {
       IS_MOBILE: false,
       TOUCH_DRAG_THRESHOLD: 10,
@@ -157,6 +186,24 @@ test('falls back to native pointer coordinates when no DOM target is available',
       }),
       false
     )
+  } finally {
+    restore()
+  }
+})
+
+test('uses uncapped speed-scaled ticker delta for ARPG hero movement', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+    controls.heroController.heroUnit = { x: 12, y: 34 }
+
+    controls.onTick({
+      elapsedMS: 1000 / 60,
+      deltaMS: (1000 / 60) * 8,
+      deltaTime: 8,
+    })
+
+    assert.equal(controls.heroController.lastUpdateFrameScale, 8)
   } finally {
     restore()
   }

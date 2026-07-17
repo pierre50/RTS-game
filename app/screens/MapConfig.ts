@@ -49,10 +49,11 @@ export default class MapConfig {
     this._onKeyDown = this._handleKeyDown.bind(this)
 
     this.config = {
-      size: 256,
+      size: 144,
       mapType: 'plain',
       startingAge: 0,
       allTechnologies: false,
+      arpgMode: true,
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
@@ -101,7 +102,7 @@ export default class MapConfig {
     settingsForm.className = 'config-form lobby-settings-form'
 
     settingsForm.appendChild(
-      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 256, val => {
+      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 144, val => {
         this.config.size = parseInt(val)
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
         this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
@@ -142,6 +143,12 @@ export default class MapConfig {
     settingsForm.appendChild(
       buildCheckboxRow(t('revealTerrain'), false, val => {
         this.config.revealTerrain = val
+      })
+    )
+
+    settingsForm.appendChild(
+      buildCheckboxRow(t('arpgModeLabel'), true, val => {
+        this.config.arpgMode = val
       })
     )
 

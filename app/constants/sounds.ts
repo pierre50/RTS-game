@@ -7,6 +7,9 @@ export const SOUND_CUES = {
   player: {
     ageAdvance: 'next-age-reached',
   },
+  hero: {
+    meleeWhiff: 'attack-swipe',
+  },
   unit: {
     fallbackCreate: 'human-unit-completed',
     militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],

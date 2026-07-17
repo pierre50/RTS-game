@@ -14,6 +14,8 @@ import {
   syncAnimationSpeedToRate,
 } from '../../lib'
 import { Projectile } from '../Projectile'
+import { showDamageFeedback } from '../../lib/combatFeedback'
+import { canAutoAcquireTarget } from '../../lib/unitControl'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -94,6 +96,7 @@ export class UnitCombat {
   detect(instance: RuntimeEntity | null) {
     const unit = this.unit
     if (unit.context?.editor) return
+    if (!canAutoAcquireTarget(unit)) return
     if (
       unit.work === WORK_TYPES.attacker &&
       instance &&
@@ -237,7 +240,9 @@ export class UnitCombat {
           playAudibleSoundCue(unit, unit.sounds.hit)
         }
         if (dest && (dest.hitPoints ?? 0) > 0) {
+          const beforeHitPoints = dest.hitPoints ?? 0
           dest.hitPoints = getHitPointsWithDamage(unit, dest)
+          showDamageFeedback(dest, beforeHitPoints - (dest.hitPoints ?? 0))
           if (dest.selected) {
             dest.drawHealthBar?.()
             if (player?.selectedUnit === dest || player?.selectedBuilding === dest || player?.selectedOther === dest) {

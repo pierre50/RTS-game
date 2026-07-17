@@ -28,6 +28,7 @@ import {
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
 import { getResourceWindAnimationEnabled, getShadowsEnabled, onVisualSettingsChange } from '../lib/settings'
+import { canUseRtsEntityPointer } from '../lib/unitControl'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
@@ -184,7 +185,7 @@ export class Resource extends Instance implements ResourceEntity {
         const {
           context: { player, menu, controls, editor },
         } = this
-        if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked()) return
+        if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked() || !canUseRtsEntityPointer(controls)) return
         if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
@@ -197,7 +198,7 @@ export class Resource extends Instance implements ResourceEntity {
         const {
           context: { player, controls, editor },
         } = this
-        if (editor?.handleEntityInteraction(this)) return
+        if (editor?.handleEntityInteraction(this) || !canUseRtsEntityPointer(controls)) return
         const action = (TYPE_ACTION as Record<string, string>)[this.category || this.type]
         if (controls.rallyPointController?.active) {
           controls.mouse.prevent = true

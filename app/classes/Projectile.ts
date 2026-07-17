@@ -18,7 +18,8 @@ import {
   projectileTracksTarget,
   playAudibleSoundCue,
 } from '../lib'
-import { FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME } from '../constants'
+import { showDamageFeedback } from '../lib/combatFeedback'
+import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME, UNIT_TYPES } from '../constants'
 import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -44,8 +45,10 @@ type ProjectileOptions = {
   type: string
   target?: RuntimeEntity
   destination?: Point
+  spawnPoint?: Point
   degree?: number
   damage?: number
+  maxDistance?: number
 }
 
 type RuntimeProjectile = ProjectileOptions & {
@@ -60,6 +63,11 @@ const PROJECTILE_SHADOW_ALPHA = 0.42
 const PROJECTILE_SHADOW_MAX_ALTITUDE_FADE = 0.28
 const PROJECTILE_SHADOW_MAX_ALTITUDE_SCALE = 0.35
 const PROJECTILE_SHADOW_SCALE_Y = 0.48
+const PROJECTILE_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
+const PROJECTILE_SLOWDOWN_START = 0.65
+const PROJECTILE_MIN_SPEED_FACTOR = 0.18
+const PROJECTILE_MIN_DAMAGE_FACTOR = 0.35
+const PROJECTILE_COLLISION_SCALE = 0.35
 
 function getDirectionalFrameIndex(projectile: RuntimeProjectile, direction: string) {
   if (Array.isArray(projectile.directionalFrameOrder)) {
@@ -136,7 +144,9 @@ export class Projectile extends Container {
   type!: string
   target?: RuntimeEntity
   destination?: Point
+  spawnPoint?: Point
   degree?: number
+  direction?: string
   damage?: number
   tracksTarget!: boolean
   isDead!: boolean
@@ -145,6 +155,10 @@ export class Projectile extends Container {
   groundOrigin!: Point
   totalDistance!: number
   spawnOrigin!: Point
+  maxDistance?: number
+  slowDownStart?: number
+  minSpeedFactor?: number
+  minDamageFactor?: number
   trajectoryState: { kind: string; arcHeight: number } | null = null
 
   size!: number
@@ -186,12 +200,12 @@ export class Projectile extends Container {
       Object.assign(this, projectileConfig)
       this.projectileScale = scale
     }
+    this.maxDistance = options.maxDistance ?? this.maxDistance ?? this.getOwnerProjectileMaxDistance()
 
     const ownerSpriteHeight = this.owner.sprite?.height ?? 0
-    this.x = this.owner.x + (this.spawnOffsetX ?? 0)
-    this.y = this.owner.y - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
+    this.x = this.spawnPoint?.x ?? this.owner.x + (this.spawnOffsetX ?? 0)
+    this.y = this.spawnPoint?.y ?? this.owner.y - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     this.z = this.owner.z ?? 0
-    this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
       this.isDead = true
@@ -202,12 +216,17 @@ export class Projectile extends Container {
     playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
 
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
+    this.direction = degreeToDirection(degree)
+    this.zIndex = this.getProjectileZIndex()
     const sprite = this.createSprite(degree)
     this.sprite = sprite
     this.spawnOrigin = { x: this.x, y: this.y }
     this.groundOrigin = { x: this.owner.x, y: this.owner.y }
-    this.destinationPoint = { x: targetX, y: targetY }
-    this.totalDistance = Math.max(pointsDistance(this.x, this.y, targetX, targetY), 1)
+    this.destinationPoint = this.getVisualDestinationPoint(targetX, targetY)
+    this.totalDistance = Math.max(
+      pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.destinationPoint.x, this.destinationPoint.y),
+      1
+    )
     this.trajectoryState = this.createTrajectoryState()
     this.shadow = this.createShadowSprite(sprite)
     sprite.label = LABEL_TYPES.sprite
@@ -221,10 +240,23 @@ export class Projectile extends Container {
         if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
           targetX = this.target.x
           targetY = this.target.y
-          this.destinationPoint.x = targetX
-          this.destinationPoint.y = targetY
+          this.destinationPoint = this.getVisualDestinationPoint(targetX, targetY)
+          this.totalDistance = Math.max(
+            pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.destinationPoint.x, this.destinationPoint.y),
+            1
+          )
+          this.trajectoryState = this.createTrajectoryState()
         }
-        if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(this.speed, this.size)) {
+        let currentSpeed = this.getCurrentSpeed()
+        const traveledDistance = this.getTraveledDistance()
+        if (this.maxDistance && traveledDistance >= this.maxDistance) {
+          this.die()
+          return
+        }
+        if (this.maxDistance) {
+          currentSpeed = Math.min(currentSpeed, this.maxDistance - traveledDistance)
+        }
+        if (pointsDistance(this.x, this.y, targetX, targetY) <= Math.max(currentSpeed, this.size)) {
           if (
             this.target &&
             !this.target.isDead &&
@@ -237,9 +269,15 @@ export class Projectile extends Container {
           this.die()
           return
         }
-        moveTowardPoint(this, targetX, targetY, this.speed)
+        moveTowardPoint(this, targetX, targetY, currentSpeed)
+        const collisionTarget = this.findCollisionTarget()
+        if (collisionTarget) {
+          this.onHit(collisionTarget)
+          this.die()
+          return
+        }
         this.updateTrajectoryVisual()
-        this.zIndex = getInstanceZIndex(this) + PROJECTILE_Z_OFFSET
+        this.zIndex = this.getProjectileZIndex()
       },
       STEP_TIME,
       'projectile.step'
@@ -386,6 +424,57 @@ export class Projectile extends Container {
     }
   }
 
+  getOwnerProjectileMaxDistance(): number | undefined {
+    const ownerRange =
+      this.owner.type === UNIT_TYPES.villager && this.type === 'Spear'
+        ? (this.owner as { huntRange?: number }).huntRange || 4
+        : (this.owner as { range?: number }).range
+    return ownerRange ? ownerRange * PROJECTILE_CELL_DISTANCE : undefined
+  }
+
+  getVisualDestinationPoint(targetX: number, targetY: number): Point {
+    if (!this.maxDistance) return { x: targetX, y: targetY }
+
+    const origin = this.spawnOrigin ?? { x: this.x, y: this.y }
+    const distance = pointsDistance(origin.x, origin.y, targetX, targetY)
+    if (distance <= this.maxDistance) return { x: targetX, y: targetY }
+
+    const ratio = this.maxDistance / distance
+    return {
+      x: origin.x + (targetX - origin.x) * ratio,
+      y: origin.y + (targetY - origin.y) * ratio,
+    }
+  }
+
+  getTraveledDistance(): number {
+    return pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.x, this.y)
+  }
+
+  getRangeProgress(): number {
+    if (!this.maxDistance) return 0
+    return Math.max(0, Math.min(1, this.getTraveledDistance() / this.maxDistance))
+  }
+
+  getFalloffProgress(): number {
+    const slowDownStart = this.slowDownStart ?? PROJECTILE_SLOWDOWN_START
+    if (!this.maxDistance || slowDownStart >= 1) return 0
+    return Math.max(0, Math.min(1, (this.getRangeProgress() - slowDownStart) / (1 - slowDownStart)))
+  }
+
+  getCurrentSpeed(): number {
+    const falloffProgress = this.getFalloffProgress()
+    if (falloffProgress <= 0) return this.speed
+    const minSpeedFactor = this.minSpeedFactor ?? PROJECTILE_MIN_SPEED_FACTOR
+    return Math.max(this.size, this.speed * (1 - falloffProgress * (1 - minSpeedFactor)))
+  }
+
+  getDamageFactor(): number {
+    const falloffProgress = this.getFalloffProgress()
+    if (falloffProgress <= 0) return 1
+    const minDamageFactor = this.minDamageFactor ?? PROJECTILE_MIN_DAMAGE_FACTOR
+    return 1 - falloffProgress * (1 - minDamageFactor)
+  }
+
   updateTrajectoryVisual() {
     if (!this.sprite) {
       return
@@ -451,6 +540,48 @@ export class Projectile extends Container {
     return this.projectileScale ?? 1
   }
 
+  getProjectileZIndex(): number {
+    const zIndex = getInstanceZIndex(this)
+    // Firing north means the arrow travels away from the camera behind the shooter's
+    // back, so it must not win the depth sort over the unit it was just fired from.
+    return this.direction === 'north' ? zIndex : zIndex + PROJECTILE_Z_OFFSET
+  }
+
+  canCollideWith(instance: RuntimeEntity): boolean {
+    if (instance === this.owner || instance.isDead || instance.isDestroyed || (instance.hitPoints ?? 0) <= 0) {
+      return false
+    }
+    return instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.animal
+  }
+
+  getCollisionCandidates(): RuntimeEntity[] {
+    const candidates = new Set<RuntimeEntity>()
+    if (this.target) candidates.add(this.target)
+    for (const player of this.context.players ?? []) {
+      for (const unit of player.units ?? []) candidates.add(unit)
+      for (const animal of player.animals ?? []) candidates.add(animal)
+    }
+    const gaia = this.context.map.gaia
+    for (const animal of gaia?.animals ?? []) candidates.add(animal)
+    return [...candidates].filter(instance => this.canCollideWith(instance))
+  }
+
+  findCollisionTarget(): RuntimeEntity | null {
+    let closest: RuntimeEntity | null = null
+    let closestDistance = Infinity
+    for (const candidate of this.getCollisionCandidates()) {
+      const collisionRadius = Math.max(
+        this.size,
+        average(candidate.width || CELL_WIDTH, candidate.height || CELL_HEIGHT) * PROJECTILE_COLLISION_SCALE
+      )
+      const distance = pointsDistance(this.x, this.y, candidate.x, candidate.y)
+      if (distance > collisionRadius || distance >= closestDistance) continue
+      closest = candidate
+      closestDistance = distance
+    }
+    return closest
+  }
+
   onHit(instance: RuntimeEntity) {
     const {
       context: { menu, player },
@@ -458,7 +589,25 @@ export class Projectile extends Container {
     if (instance.family === FAMILY_TYPES.building) {
       playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact)
     }
-    instance.hitPoints = getHitPointsWithDamage(this.owner, instance, this.damage)
+    const damageFactor = this.getDamageFactor()
+    const damage = this.damage == null ? undefined : Math.max(1, Math.round(this.damage * damageFactor))
+    const source =
+      damageFactor >= 1
+        ? this.owner
+        : {
+            ...this.owner,
+            meleeAttack: Math.max(
+              0,
+              Math.round(((this.owner as { meleeAttack?: number }).meleeAttack ?? 0) * damageFactor)
+            ),
+            pierceAttack: Math.max(
+              0,
+              Math.round(((this.owner as { pierceAttack?: number }).pierceAttack ?? 0) * damageFactor)
+            ),
+          }
+    const beforeHitPoints = instance.hitPoints ?? 0
+    instance.hitPoints = getHitPointsWithDamage(source, instance, damage)
+    showDamageFeedback(instance, beforeHitPoints - (instance.hitPoints ?? 0))
     if (instance.selected) {
       instance.drawHealthBar?.()
       if (player.selectedOther === instance) {

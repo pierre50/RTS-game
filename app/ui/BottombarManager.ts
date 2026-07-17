@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import { getIconPath, canAfford, isValidCondition, getBuildingAsset } from '../lib'
 import { t } from '../lib/lang'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { ARPG_RESERVED_HOTKEYS, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { syncHitPointsInfo } from './BaseEntityInterface'
@@ -78,6 +78,7 @@ export class BottombarManager {
       return
     }
     action(targetElement)
+    menu._infoCache = null
   }
 
   updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
@@ -209,7 +210,7 @@ export class BottombarManager {
     parent?: MenuButtonSpec[]
   ): void {
     this.activeHotkeys.clear()
-    const usedKeys = new Set<string>()
+    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? ARPG_RESERVED_HOTKEYS : [])
 
     items
       .filter(btn => !btn.hide || !btn.hide())

@@ -10,6 +10,7 @@ import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
+export type UnitControlMode = 'rts' | 'arpg' | 'ai'
 export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
@@ -127,6 +128,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   previousWork?: string | null
   path?: RuntimeCell[]
   hasPath?: () => boolean
+  moveDirect?: (dirX: number, dirY: number, distance: number) => boolean
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]
@@ -179,6 +181,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   silentWorkSounds?: string[]
 
   // Identity
+  controlMode?: UnitControlMode
   assetCiv?: string
   assetAge?: number
   totalQuantity?: number
@@ -188,7 +191,10 @@ export interface UnitEntity extends RuntimeEntityBase {
   spriteScale?: number
 
   // Delegate methods called across the 5 composition classes
-  unitCombat?: { handleAttackAction: () => void }
+  unitCombat?: {
+    handleAttackAction: () => void
+    playSingleAttackAnimation: (onFire: () => void, releaseFrame?: number | null) => void
+  }
   stop?: () => void
   setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
   setPath?: (path: RuntimeCell[]) => void
@@ -247,6 +253,7 @@ export interface UnitEntity extends RuntimeEntityBase {
 
 export interface BuildingEntity extends RuntimeEntityBase {
   isBuilt?: boolean
+  accept?: string[]
   queue?: string[]
   technology?: { type?: string; config?: TechnologyConfig } | null
   isUsedBy?: RuntimeEntity | null

@@ -5,11 +5,13 @@ import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
 import { MenuTooltip } from '../ui/MenuTooltip'
+import { InventoryManager } from '../ui/InventoryManager'
 import type { GameContextLike, MenuLike } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
 import type { ResourceAmount } from '../types/common'
+import type { HeroTool } from '../lib/heroTools'
 
 export default class Menu implements MenuLike {
   context: GameContextLike
@@ -29,6 +31,7 @@ export default class Menu implements MenuLike {
   topbarView: TopbarView
   minimapInputController: MinimapInputController
   menuTooltip: MenuTooltip
+  inventoryManager: InventoryManager
   toggle?: HTMLButtonElement
   toggled: boolean
   icons!: Record<string, string>
@@ -80,6 +83,7 @@ export default class Menu implements MenuLike {
     this.topbarView = new TopbarView(this)
     this.minimapInputController = new MinimapInputController(this)
     this.menuTooltip = new MenuTooltip()
+    this.inventoryManager = new InventoryManager(this)
     this.toggled = false
 
     this.topbarView.build()
@@ -99,6 +103,7 @@ export default class Menu implements MenuLike {
     this.menuTooltip.destroy()
     this.minimapInputController.destroy()
     this.playerStatsManager.destroy()
+    this.inventoryManager.destroy()
     this.gameHud.remove()
     this.topbarView.destroy()
   }
@@ -208,5 +213,16 @@ export default class Menu implements MenuLike {
   }
   handleHotkey(key: string): void {
     return this.bottombarManager.handleHotkey(key)
+  }
+
+  // Inventory delegates
+  toggleInventory(): void {
+    return this.inventoryManager.toggle()
+  }
+  isInventoryOpen(): boolean {
+    return this.inventoryManager.isOpen()
+  }
+  setEquippedTool(tool: HeroTool | null): void {
+    return this.inventoryManager.render(tool)
   }
 }

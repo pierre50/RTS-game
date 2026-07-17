@@ -250,6 +250,54 @@
   z-index: 1;
 }
 
+.inventory-panel {
+  position: fixed;
+  bottom: 132px;
+  left: 50%;
+  z-index: 500;
+  display: flex;
+  gap: var(--ui-gap-10);
+  padding: 8px;
+  transform: translateX(-50%);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: var(--surface-dark-solid);
+  box-shadow: var(--main-box-shadow);
+}
+
+.inventory-panel.hidden {
+  display: none;
+}
+
+.inventory-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: var(--ui-slot-size);
+  padding: 4px 10px;
+  color: var(--text-color-inverse);
+  text-shadow: var(--text-shadow-dark-ui);
+  text-align: center;
+  cursor: pointer;
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: var(--surface-black-soft);
+  transition:
+    border-color var(--ui-transition-panel),
+    background-color var(--ui-transition-panel);
+}
+
+.inventory-slot:focus-visible {
+  outline: 2px solid var(--focus-outline-color);
+  outline-offset: 2px;
+}
+
+.inventory-slot.active {
+  border-color: var(--main-primary-color);
+  background: var(--surface-black-solid);
+}
+
 .resource {
   display: flex;
   align-items: center;

@@ -1251,7 +1251,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     assets: 'projectiles/arrow',
     isAnimated: true,
     rotateSprite: true,
-    spriteBaseAngle: 0,
+    spriteBaseAngle: 180,
     spawnOffsetY: 10,
     trajectory: {
       kind: 'arc',
@@ -1270,7 +1270,7 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
     isAnimated: true,
     rotateSprite: true,
     staticFrame: 1,
-    spriteBaseAngle: 0,
+    spriteBaseAngle: 180,
     spawnOffsetY: 10,
     trajectory: {
       kind: 'arc',

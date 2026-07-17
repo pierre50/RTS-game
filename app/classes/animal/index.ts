@@ -27,6 +27,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import type { SelectableInstance } from '../../lib'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { canUseRtsEntityPointer } from '../../lib/unitControl'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
@@ -163,6 +164,7 @@ export class Animal extends Instance implements AnimalEntity {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
+      if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)

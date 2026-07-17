@@ -4,8 +4,11 @@ import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
 import { RallyPointController } from '../controllers/RallyPointController'
+import { HeroController } from '../controllers/HeroController'
 import { getCameraZoom } from '../lib/settings'
+import { hasRtsCommandableUnits } from '../lib/unitControl'
 import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
+import type { HeroTool } from '../lib/heroTools'
 import type {
   AudibleInstanceLike,
   ControlPointerEvent,
@@ -13,13 +16,15 @@ import type {
   GameContextLike,
   SelectionRectangle,
 } from '../types/context'
-import type { PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
+import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 
 type PointerPoint = { x: number; y: number }
 type PointerPageEvent = ControlPointerEvent & {
   pageX: number
   pageY: number
+  button?: number
+  preventDefault?: () => void
 }
 type TouchInteraction = {
   mode: 'pan' | 'tap' | 'select'
@@ -29,9 +34,8 @@ type TouchInteraction = {
   lastY: number
   moved: boolean
 }
-type TickerLike = { elapsedMS?: number; deltaTime: number }
+type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
-
 const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
@@ -48,6 +52,7 @@ export default class Controls extends Container implements ControlsLike {
   keysPressed: Record<string, boolean>
   keyPressedCount: number
   keySpeed: number
+  heroController: HeroController
   mouseBuilding: ControlsLike['mouseBuilding']
   mouseRectangle: SelectionRectangle | null | undefined
   mouseTouch: PointerPoint | null | undefined
@@ -73,6 +78,7 @@ export default class Controls extends Container implements ControlsLike {
   _onMouseMove: (evt: MouseEvent) => void
   _onMouseDown: (evt: MouseEvent) => void
   _onMouseUp: (evt: MouseEvent) => void
+  _onContextMenu: (evt: MouseEvent) => void
   _onTouchCancel: () => void
   _onWindowBlur: () => void
   _onTick: (ticker: TickerLike) => void
@@ -99,6 +105,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.heroController = new HeroController(this)
     this.eventMode = 'auto'
     this.mouseRectangle = undefined
     this.mouseTouch = undefined
@@ -126,6 +133,9 @@ export default class Controls extends Container implements ControlsLike {
     this._onMouseMove = (evt: MouseEvent) => this.onMouseMove(evt)
     this._onMouseDown = (evt: MouseEvent) => this.onMouseDown(evt)
     this._onMouseUp = (evt: MouseEvent) => this.onMouseUp(evt)
+    this._onContextMenu = (evt: MouseEvent) => {
+      if (this.isArpgActive()) evt.preventDefault()
+    }
     this._onTouchCancel = () => this.cancelActiveInteraction()
     this._onWindowBlur = () => this.cancelActiveInteraction()
     this._onTick = (ticker: TickerLike) => this.onTick(ticker)
@@ -140,6 +150,7 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.addEventListener('touchcancel', this._onTouchCancel)
     gamebox.addEventListener('mousemove', this._onMouseMove)
     gamebox.addEventListener('mousedown', this._onMouseDown)
+    gamebox.addEventListener('contextmenu', this._onContextMenu)
     document.addEventListener('mouseup', this._onMouseUp)
     window.addEventListener('blur', this._onWindowBlur)
     context.app.ticker.add(this._onTick)
@@ -160,6 +171,7 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.removeEventListener('touchcancel', this._onTouchCancel)
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
+    gamebox.removeEventListener('contextmenu', this._onContextMenu)
     document.removeEventListener('mouseup', this._onMouseUp)
     window.removeEventListener('blur', this._onWindowBlur)
     this.context.app.ticker.remove(this._onTick)
@@ -170,6 +182,18 @@ export default class Controls extends Container implements ControlsLike {
 
   get camera(): { x: number; y: number } {
     return this.cameraController.camera
+  }
+
+  get heroUnit(): UnitEntity | null {
+    return this.heroController.heroUnit
+  }
+
+  get equippedTool(): HeroTool | null {
+    return this.heroController.equippedTool
+  }
+
+  get heroActionHeld(): boolean {
+    return this.heroController.mouseHeld
   }
 
   getViewportMetrics(): {
@@ -236,6 +260,11 @@ export default class Controls extends Container implements ControlsLike {
       this.rallyPointController.cancel()
       return
     }
+    if (evt.key === 'Escape' && this.isArpgActive() && this.context.menu?.isInventoryOpen?.()) {
+      evt.preventDefault()
+      this.context.menu.toggleInventory?.()
+      return
+    }
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -261,7 +290,10 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    this.context.menu?.handleHotkey?.(evt.key.toLowerCase())
+    const key = evt.key.toLowerCase()
+    if (this.heroController.handleKeyDown(key)) return
+
+    this.context.menu?.handleHotkey?.(key)
   }
 
   onKeyUp(evt: KeyboardEvent): void {
@@ -269,6 +301,9 @@ export default class Controls extends Container implements ControlsLike {
       this.stopKeyboardMove()
       return
     }
+
+    const key = evt.key.toLowerCase()
+    this.heroController.handleKeyUp(key)
 
     if (!ARROW_KEYS.has(evt.key)) return
 
@@ -292,6 +327,14 @@ export default class Controls extends Container implements ControlsLike {
       (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
       MAX_CAMERA_FRAME_SCALE
     )
+    const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
+
+    if (this.isArpgActive()) {
+      this.heroController.update(gameFrameScale)
+      this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y)
+      return
+    }
+
     this.cameraController.updateMouseMove(frameScale)
 
     if (this.keyPressedCount > 0) {
@@ -481,6 +524,15 @@ export default class Controls extends Container implements ControlsLike {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
     if (!this.isMouseInApp(evt)) return
+
+    if (this.isArpgActive() && evt.button === 0) {
+      evt.preventDefault?.()
+      this.heroController.handlePrimaryPointerDown()
+      this.pointerStart = null
+      this.mouse.prevent = true
+      return
+    }
+
     this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
   }
 
@@ -500,6 +552,7 @@ export default class Controls extends Container implements ControlsLike {
 
   onMouseUp(evt: PointerPageEvent): void {
     if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
+    this.heroController.handlePointerUp()
     if (this.isInteractionBlocked()) {
       this.cancelActiveInteraction()
       return
@@ -508,6 +561,8 @@ export default class Controls extends Container implements ControlsLike {
     const {
       context: { map, player },
     } = this
+    this.mouse.x = evt.pageX
+    this.mouse.y = evt.pageY
     this.pointerStart = null
     clearTimeout(this.mouseHoldTimeout)
     if (!this.isMouseInApp(evt)) {
@@ -539,7 +594,7 @@ export default class Controls extends Container implements ControlsLike {
           this.buildingPlacer.handleMouseUp(cell)
         } else if (this.rallyPointController.active) {
           this.rallyPointController.handleMouseUp(cell)
-        } else if (player?.selectedUnits.length) {
+        } else if (hasRtsCommandableUnits(player?.selectedUnits)) {
           if ((cell.solid || cell.has) && cell.visible) return
           this.selectionManager.handleClick(cell)
         }
@@ -552,12 +607,23 @@ export default class Controls extends Container implements ControlsLike {
     return this.selectionManager.sendUnits(cell)
   }
 
-  getCellUnderCursor(): RuntimeCell | null {
+  getWorldPointUnderCursor(): PointerPoint {
     const {
       context: { map },
     } = this
     const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
-    const pos = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
+    return {
+      x: pointer.x - map.x,
+      y: pointer.y - map.y,
+    }
+  }
+
+  getCellUnderCursor(): RuntimeCell | null {
+    const {
+      context: { map },
+    } = this
+    const pointer = this.getWorldPointUnderCursor()
+    const pos = isometricToCartesian(pointer.x, pointer.y)
     const i = Math.min(Math.max(pos[0], 0), map.size)
     const j = Math.min(Math.max(pos[1], 0), map.size)
     return map.grid[i]?.[j] || null
@@ -618,6 +684,15 @@ export default class Controls extends Container implements ControlsLike {
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.heroController.stopKeyboardMove()
+  }
+
+  isArpgActive(): boolean {
+    return this.heroController.isActive()
+  }
+
+  setEquippedTool(tool: HeroTool | null): void {
+    this.heroController.setEquippedTool(tool)
   }
 
   cancelMouseRectangle(): void {
@@ -635,6 +710,7 @@ export default class Controls extends Container implements ControlsLike {
     this.mouseDrag = false
     this.touchInteraction = null
     this.touchPanActive = false
+    this.heroController.cancelActiveInteraction()
     this.mouse.prevent = false
     this.rallyPointController.cancel()
   }
@@ -688,6 +764,8 @@ export default class Controls extends Container implements ControlsLike {
     const {
       context: { player, map },
     } = this
+
+    if (this.heroController.initFromPlayerStart()) return
 
     if (player?.buildings?.length) {
       this.setCamera(player.buildings[0].x, player.buildings[0].y)

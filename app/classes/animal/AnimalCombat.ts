@@ -9,6 +9,7 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
+import { showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Animal } from './index'
@@ -141,7 +142,9 @@ export class AnimalCombat {
               animal.context.controls.instanceIsAudible(animal) &&
               playAudibleSoundCue(animal, animal.sounds.hit)
             if ((target.hitPoints ?? 0) > 0) {
+              const beforeHitPoints = target.hitPoints ?? 0
               target.hitPoints = getHitPointsWithDamage(animal, target)
+              showDamageFeedback(target, beforeHitPoints - (target.hitPoints ?? 0))
               if (target.selected) {
                 target.drawHealthBar?.()
                 if (player && (player.selectedUnit === target || player.selectedBuilding === target)) {

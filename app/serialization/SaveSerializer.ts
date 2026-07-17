@@ -301,6 +301,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       mapType: context.map.mapType || 'plain',
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
+      arpgMode: context.map.arpgMode,
       startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,

@@ -1,6 +1,7 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, getAnimationFrames, playSoundCue } from '../lib'
+import { canSelectUnitWithRts, canUseRtsSelection, getRtsCommandableUnits } from '../lib/unitControl'
 import { COLOR_WHITE, COMMAND_POINTER_SHEET_ID, MAX_SELECT_UNITS, SOUND_CUES, UNIT_TYPES } from '../constants'
 import type { ControlsLike, SelectionRectangle } from '../types/context'
 import type { CommandSound, UnitEntity } from '../types/entities'
@@ -16,6 +17,7 @@ export class SelectionManager {
 
   handleMouseMove(): void {
     const { controls } = this
+    if (!canUseRtsSelection(controls)) return
     const {
       context: { player, app },
     } = controls
@@ -56,6 +58,7 @@ export class SelectionManager {
 
   handleMouseUp(): void {
     const { controls } = this
+    if (!canUseRtsSelection(controls)) return
     const {
       context: { menu, player },
     } = controls
@@ -95,7 +98,14 @@ export class SelectionManager {
   }
 
   isUnitSelectable(unit: UnitEntity): boolean {
-    return Boolean(unit && !unit.loadedInTransport && !unit.isDead && !unit.isDestroyed && unit.visible !== false)
+    return Boolean(
+      unit &&
+        !unit.loadedInTransport &&
+        !unit.isDead &&
+        !unit.isDestroyed &&
+        unit.visible !== false &&
+        canSelectUnitWithRts(unit)
+    )
   }
 
   handleClick(cell: RuntimeCell): void {
@@ -124,24 +134,26 @@ export class SelectionManager {
     const {
       context: { player, map },
     } = controls
-    const { minX, minY, maxX, maxY } = this.getSelectionGridBounds(player.selectedUnits)
+    const commandableUnits = getRtsCommandableUnits(player.selectedUnits)
+    if (!commandableUnits.length) return
+    const { minX, minY, maxX, maxY } = this.getSelectionGridBounds(commandableUnits)
     const centerX = minX + Math.round((maxX - minX) / 2)
     const centerY = minY + Math.round((maxY - minY) / 2)
     let hasSentVillager = false
     let hasSentSoldier = false
-    for (let u = 0; u < player.selectedUnits.length; u++) {
-      const unit = player.selectedUnits[u]
+    for (let u = 0; u < commandableUnits.length; u++) {
+      const unit = commandableUnits[u]
       const finalX = cell.i + (unit.i - centerX)
       const finalY = cell.j + (unit.j - centerY)
       if (unit.type === UNIT_TYPES.villager) hasSentVillager = true
       else hasSentSoldier = true
       if (map.grid[finalX] && map.grid[finalX][finalY]) {
-        player.selectedUnits[u].sendTo?.(map.grid[finalX][finalY])
+        unit.sendTo?.(map.grid[finalX][finalY])
       } else {
-        player.selectedUnits[u].sendTo?.(cell)
+        unit.sendTo?.(cell)
       }
     }
-    const selectedCommandSound = this.getSelectionCommandSound(player.selectedUnits)
+    const selectedCommandSound = this.getSelectionCommandSound(commandableUnits)
     if (selectedCommandSound) {
       playSoundCue(selectedCommandSound)
       return
@@ -149,7 +161,7 @@ export class SelectionManager {
     if (hasSentSoldier) {
       playSoundCue(SOUND_CUES.unit.militaryCommand)
     } else if (hasSentVillager) {
-      playSoundCue(player.selectedUnits.find((unit: UnitEntity) => unit.type === UNIT_TYPES.villager)?.sounds?.command)
+      playSoundCue(commandableUnits.find((unit: UnitEntity) => unit.type === UNIT_TYPES.villager)?.sounds?.command)
     }
   }
 

@@ -22,10 +22,12 @@ import {
   SHOOT_RELEASE_FRAME,
   THRUST_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
+  showResourceGainFeedback,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
+import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
@@ -73,6 +75,35 @@ function getPlayerResourceKey(loadingType: string | null | undefined): PlayerRes
   if (loadingType === LOADING_TYPES.stone) return 'stone'
   if (loadingType === LOADING_TYPES.gold) return 'gold'
   return null
+}
+
+function stopManualHeroAction(unit: UnitEntity): void {
+  unit.previousDest = null
+  unit.stop?.()
+}
+
+function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
+  const sprite = unit.sprite
+  if (!sprite) {
+    stopManualHeroAction(unit)
+    return
+  }
+  sprite.onLoop = () => {
+    sprite.onLoop = undefined
+    unit.actionLocked = false
+    stopManualHeroAction(unit)
+  }
+}
+
+function lockManualHeroActionUntilLoop(unit: UnitEntity): void {
+  if (!isHeroControlled(unit)) return
+  const sprite = unit.sprite
+  if (!sprite) return
+  unit.actionLocked = true
+  sprite.onLoop = () => {
+    sprite.onLoop = undefined
+    unit.actionLocked = false
+  }
 }
 
 function removeFromOwnerList(
@@ -317,6 +348,7 @@ export class UnitActions {
     }
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
+    lockManualHeroActionUntilLoop(unit)
     onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
       onRelease?.()
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
@@ -331,6 +363,10 @@ export class UnitActions {
       const wasEmpty = (unit.loading ?? 0) === 0
       const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
       if (!dest || gain <= 0) {
+        if (isHeroControlled(unit)) {
+          stopManualHeroAction(unit)
+          return
+        }
         unit.sendToDelivery?.()
         return
       }
@@ -340,6 +376,7 @@ export class UnitActions {
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+      showResourceGainFeedback(dest, gain)
       if (dest.selected && (!checkOwner || unit.owner?.isPlayed)) {
         menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
       }
@@ -354,6 +391,7 @@ export class UnitActions {
           unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
         }
       }
+      if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
     })
   }
 
@@ -401,6 +439,7 @@ export class UnitActions {
         }
         unit.owner?.isPlayed && menu?.updateTopbar()
         unit.loading = 0
+        unit.loadingType = null
         unit.updateInterfaceLoading?.()
         const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
         if (workAssets) {
@@ -425,6 +464,7 @@ export class UnitActions {
         dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
+        lockManualHeroActionUntilLoop(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
           const d = isBuildingEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(d)) {
@@ -439,6 +479,11 @@ export class UnitActions {
           const wasEmpty = (unit.loading ?? 0) === 0
           const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
           if (!d || gain <= 0) {
+            if (isHeroControlled(unit)) {
+              if (d) d.isUsedBy = null
+              stopManualHeroAction(unit)
+              return
+            }
             unit.sendToDelivery?.()
             if (d) d.isUsedBy = null
             return
@@ -448,6 +493,7 @@ export class UnitActions {
           unit.updateInterfaceLoading?.()
           this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
           d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
+          showResourceGainFeedback(d, gain)
           if (d.selected) {
             menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
           }
@@ -462,6 +508,7 @@ export class UnitActions {
             }
             unit.standingSheet = null
           }
+          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
         })
         break
       }
@@ -472,6 +519,7 @@ export class UnitActions {
         }
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
+        lockManualHeroActionUntilLoop(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
           const dest = isResourceEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
@@ -484,6 +532,10 @@ export class UnitActions {
           if (!dest) return
           const maxLoad = unit.loadingMax?.[LOADING_TYPES.wood] ?? Infinity
           if ((unit.loading ?? 0) >= maxLoad) {
+            if (isHeroControlled(unit)) {
+              stopManualHeroAction(unit)
+              return
+            }
             unit.sendToDelivery?.()
             return
           }
@@ -508,6 +560,7 @@ export class UnitActions {
             unit.loadingType = LOADING_TYPES.wood
             unit.updateInterfaceLoading?.()
             dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+            showResourceGainFeedback(dest, gain)
             if (dest.selected) {
               menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
             }
@@ -523,6 +576,7 @@ export class UnitActions {
               unit.standingSheet = null
             }
           }
+          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
         })
         break
       }

@@ -21,6 +21,9 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  ACTION_TYPES: {
+    attack: 'attack',
+  },
   BUILDING_TYPES: {},
   FAMILY_TYPES: {
     animal: 'animal',
@@ -30,6 +33,9 @@ const constants = {
   RESOURCE_TYPES: {},
   UNIT_TYPES: {
     villager: 'Villager',
+  },
+  WORK_TYPES: {
+    attacker: 'attacker',
   },
 }
 
@@ -137,4 +143,131 @@ test('attacking boats can target enemy land units', () => {
   }
 
   assert.equal(getActionCondition(scoutShip, enemyArcher, 'attack'), true)
+})
+
+test('ARPG heroes do not use unit auto-detection attacks', () => {
+  const calls = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getHitPointsWithDamage: () => 0,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => false,
+      onSpriteLoopAtFrame: () => {},
+      playAudibleSoundCue: () => {},
+      SHOOT_RELEASE_FRAME: 5,
+      SLASH_IMPACT_FRAME: 3,
+      syncAnimationSpeedToRate: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/unitControl': { canAutoAcquireTarget: () => false },
+  })
+  const unit = {
+    context: { editor: null },
+    dest: null,
+    getActionCondition: () => true,
+    path: [],
+    sendTo: () => calls.push('sendTo'),
+    work: constants.WORK_TYPES.attacker,
+  }
+
+  new UnitCombat(unit).detect({ family: constants.FAMILY_TYPES.unit })
+
+  assert.deepEqual(calls, [])
+})
+
+test('unit control policy disables automatic reactions for the active ARPG hero', () => {
+  const hero = {}
+  const {
+    canAutoAcquireTarget,
+    canAutoReactToAttack,
+    getRtsCommandableUnits,
+    hasRtsCommandableUnits,
+    isHeroControlled,
+    setUnitControlMode,
+  } = loadModule('app/lib/unitControl.ts', {})
+
+  const unit = {
+    context: {
+      controls: {
+        heroUnit: hero,
+        isArpgActive: () => true,
+      },
+    },
+  }
+  Object.assign(hero, unit)
+
+  assert.equal(isHeroControlled(hero), true)
+  assert.equal(canAutoAcquireTarget(hero), false)
+  assert.equal(canAutoReactToAttack(hero), false)
+
+  const explicitHero = {}
+  setUnitControlMode(explicitHero, 'arpg')
+  assert.equal(isHeroControlled(explicitHero), true)
+  assert.equal(canAutoAcquireTarget(explicitHero), false)
+  assert.equal(hasRtsCommandableUnits([explicitHero]), false)
+
+  const explicitRtsUnit = {
+    context: unit.context,
+  }
+  setUnitControlMode(explicitRtsUnit, 'rts')
+  assert.equal(isHeroControlled(explicitRtsUnit), false)
+  assert.equal(canAutoReactToAttack(explicitRtsUnit), true)
+  assert.deepEqual(getRtsCommandableUnits([explicitHero, explicitRtsUnit]), [explicitRtsUnit])
+})
+
+test('damage feedback can be cleared before its timer fires', () => {
+  let scheduled = null
+  class ColorMatrixFilter {
+    constructor() {
+      this.matrix = []
+    }
+  }
+  const { showDamageFeedback, clearDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+    'pixi.js': {
+      ColorMatrixFilter,
+      Text: class {
+        constructor() {
+          this.anchor = { set: () => {} }
+          this.destroyed = false
+        }
+        destroy() {
+          this.destroyed = true
+        }
+      },
+    },
+    '../constants': constants,
+  })
+  const originalFilters = ['original-filter']
+  const sprite = { anchor: { y: 0 }, destroyed: false, filters: originalFilters, height: 20 }
+  const target = {
+    addChild: () => {},
+    context: {
+      scheduler: {
+        add: () => 2,
+        addOneShot: callback => {
+          scheduled = callback
+          return 1
+        },
+        remove: () => {},
+      },
+    },
+    family: constants.FAMILY_TYPES.animal,
+    isDestroyed: false,
+    sprite,
+  }
+
+  showDamageFeedback(target, 4)
+  assert.equal(sprite.filters.length, 2)
+
+  clearDamageFeedback(target)
+
+  assert.deepEqual(sprite.filters, originalFilters)
+  assert.equal(typeof scheduled, 'function')
+  scheduled()
+  assert.deepEqual(sprite.filters, originalFilters)
 })

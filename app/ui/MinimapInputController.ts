@@ -1,4 +1,5 @@
 import { isometricToCartesian } from '../lib'
+import { hasRtsCommandableUnits } from '../lib/unitControl'
 import { LONG_CLICK_DURATION, IS_MOBILE, MINIMAP_DRAG_THRESHOLD } from '../constants'
 import type { ControlsLike, MinimapHostLike } from '../types/context'
 
@@ -103,7 +104,7 @@ export class MinimapInputController {
       return
     }
 
-    if (player?.selectedUnits?.length) {
+    if (hasRtsCommandableUnits(player?.selectedUnits)) {
       const pos = isometricToCartesian(x, y)
       const i = Math.min(Math.max(pos[0], 0), map.size)
       const j = Math.min(Math.max(pos[1], 0), map.size)

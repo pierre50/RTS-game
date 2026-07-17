@@ -37,18 +37,19 @@ export type RenderableInstance = VisibilityEntity &
 export function findInstancesInSight<
   TInstance extends RenderableInstance,
   TTarget extends RenderableInstance = RenderableInstance,
->(instance: TInstance, condition: (target: TTarget) => boolean): TTarget[] {
+>(instance: TInstance, condition: (target: TTarget) => boolean, range?: number): TTarget[] {
   const { i: instX, j: instY, sight = 0 } = instance
+  const searchRadius = range ?? sight
   const { instanceBuckets } = instance.context?.map || {}
   if (!instanceBuckets) return []
 
-  const sightSq = sight * sight
+  const searchRadiusSq = searchRadius * searchRadius
   const instances: TTarget[] = []
 
-  const minBi = Math.max(Math.floor((instX - sight) / BUCKET_SIZE), 0)
-  const maxBi = Math.min(Math.floor((instX + sight) / BUCKET_SIZE), instanceBuckets.length - 1)
-  const minBj = Math.max(Math.floor((instY - sight) / BUCKET_SIZE), 0)
-  const maxBj = Math.min(Math.floor((instY + sight) / BUCKET_SIZE), instanceBuckets[0].length - 1)
+  const minBi = Math.max(Math.floor((instX - searchRadius) / BUCKET_SIZE), 0)
+  const maxBi = Math.min(Math.floor((instX + searchRadius) / BUCKET_SIZE), instanceBuckets.length - 1)
+  const minBj = Math.max(Math.floor((instY - searchRadius) / BUCKET_SIZE), 0)
+  const maxBj = Math.min(Math.floor((instY + searchRadius) / BUCKET_SIZE), instanceBuckets[0].length - 1)
 
   for (let bi = minBi; bi <= maxBi; bi++) {
     for (let bj = minBj; bj <= maxBj; bj++) {
@@ -56,7 +57,7 @@ export function findInstancesInSight<
         const dx = target.i - instX
         const dy = target.j - instY
         const typedTarget = target as TTarget
-        if (dx * dx + dy * dy <= sightSq && condition(typedTarget)) {
+        if (dx * dx + dy * dy <= searchRadiusSq && condition(typedTarget)) {
           instances.push(typedTarget)
         }
       }

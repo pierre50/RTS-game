@@ -7,6 +7,7 @@ import {
   playAudibleSoundCue,
   updateInstanceVisibility,
 } from '../../lib'
+import { clearDamageFeedback } from '../../lib/combatFeedback'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -22,6 +23,7 @@ export class UnitLifecycle {
   decompose() {
     const unit = this.unit
     const map = unit.context?.map
+    clearDamageFeedback(unit)
     unit.setTextures?.(SHEET_TYPES.corpse)
     if (unit.sailSprite) unit.sailSprite.visible = false
     const sprite = unit.sprite as AnimatedSprite
@@ -42,6 +44,7 @@ export class UnitLifecycle {
 
   death() {
     const unit = this.unit
+    clearDamageFeedback(unit)
     if (unit.category === BOAT_CATEGORY) {
       const corpses = unit.owner?.corpses
       const index = corpses?.indexOf(unit) ?? -1
@@ -81,6 +84,7 @@ export class UnitLifecycle {
 
     unit.stopInterval?.()
     clearTimeout(unit.visibilityTimeout as number | undefined)
+    clearDamageFeedback(unit)
     if (unit.selected && unit.owner?.isPlayed) {
       player?.unselectUnit?.(unit)
     }
