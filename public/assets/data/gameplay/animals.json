@@ -1,18 +1,49 @@
 {
   "Gazelle": {
     "totalHitPoints": 8,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.2,
     "strategy": "runaway",
     "ambientMovement": true,
     "icon": "037_50730",
     "totalQuantity": 150,
+    "spriteScale": 0.7,
     "assets": {
-      "standingSheet": "animals/gazelle/standing",
       "walkingSheet": "animals/gazelle/walking",
       "runningSheet": "animals/gazelle/running",
       "dyingSheet": "animals/gazelle/dying",
       "corpseSheet": "animals/gazelle/corpse"
+    },
+    "sheetDirectionCounts": {
+      "walkingSheet": 3,
+      "runningSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
+    },
+    "sounds": {
+      "fall": "gazelle-lion-killed"
+    }
+  },
+  "Hare": {
+    "totalHitPoints": 3,
+    "sight": 6,
+    "speed": 1.4,
+    "strategy": "runaway",
+    "ambientMovement": true,
+    "icon": "000_50733",
+    "totalQuantity": 40,
+    "spriteScale": 0.7,
+    "assets": {
+      "walkingSheet": "animals/hare/walking",
+      "runningSheet": "animals/hare/running",
+      "dyingSheet": "animals/hare/dying",
+      "corpseSheet": "animals/hare/corpse"
+    },
+    "sheetDirectionCounts": {
+      "walkingSheet": 3,
+      "runningSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
     },
     "sounds": {
       "fall": "gazelle-lion-killed"
@@ -20,7 +51,7 @@
   },
   "Elephant": {
     "totalHitPoints": 45,
-    "sight": 4,
+    "sight": 8,
     "speed": 1,
     "meleeAttack": 10,
     "icon": "033_50730",
@@ -40,7 +71,7 @@
   },
   "Crocodile": {
     "totalHitPoints": 20,
-    "sight": 5,
+    "sight": 10,
     "speed": 0.5,
     "meleeAttack": 4,
     "strategy": "attack",
@@ -60,7 +91,7 @@
   },
   "Alligator": {
     "totalHitPoints": 20,
-    "sight": 5,
+    "sight": 10,
     "speed": 0.5,
     "meleeAttack": 4,
     "strategy": "attack",
@@ -80,7 +111,7 @@
   },
   "Lion": {
     "totalHitPoints": 20,
-    "sight": 4,
+    "sight": 8,
     "speed": 1.1,
     "meleeAttack": 2,
     "strategy": "attack",

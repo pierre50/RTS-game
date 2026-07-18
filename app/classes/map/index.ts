@@ -324,8 +324,8 @@ export default class Map extends Container {
     )
   }
 
-  placeAnimalHerd(player: PlayerLike, quantity: number, range: [number, number]): void {
-    return this.mapResources.placeAnimalHerd(player, quantity, range)
+  placeAnimalHerd(player: PlayerLike, type: string, quantity: number, range: [number, number]): void {
+    return this.mapResources.placeAnimalHerd(player, type, quantity, range)
   }
 
   generateAnimalsAroundPlayers(playersPos: GeneratedPosition[]): void {

@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
 import { hashLpcAppearanceSeed } from './appearance'
+import { dynamicEquipmentAssets, dynamicEquipmentLayersForUnit, dynamicEquipmentLayersForVillager } from './equipment'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
@@ -21,15 +22,8 @@ const VILLAGER_JOBS = [
 ] as const
 
 const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
-const VILLAGER_JOB_SHEETS = ['walking', 'action'] as const
-// Jobs whose "loaded" pose is its own bake (carrying a resource-specific item) rather
-// than a reuse of another job's "walking" bake — see hunter's `loaded_equipment` in
-// scripts/lpc/jobs.py.
-const EXTRA_JOB_SHEETS: Partial<Record<VillagerJob, readonly string[]>> = {
-  hunter: ['loaded'],
-  stoneminer: ['loaded'],
-  goldminer: ['loaded'],
-}
+const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
+const VILLAGER_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
 
 type BakedUnitType =
   | 'villager'
@@ -86,13 +80,35 @@ function bakedSrc(unit: BakedUnitType, variant: string, job: string, sheet: stri
   return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${job}/${sheet}/texture.json`
 }
 
+function villagerBodyAlias(variant: string, sheet: string): string {
+  return bakedAlias('villager', variant, 'body', sheet)
+}
+
+function villagerActionAlias(variant: string, animation: string): string {
+  return bakedAlias('villager', variant, 'action', animation)
+}
+
 async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
-  const jobs = unit === 'villager' ? VILLAGER_JOBS : (['default'] as const)
-  const assets = jobs
-    .flatMap(job => [
-      ...(unit === 'villager' && job !== 'default' ? VILLAGER_JOB_SHEETS : UNIT_SHEETS).map(sheet => ({ job, sheet })),
-      ...(EXTRA_JOB_SHEETS[job as VillagerJob] ?? []).map(sheet => ({ job, sheet })),
-    ])
+  if (unit === 'villager') {
+    const assets = [
+      ...VILLAGER_BODY_SHEETS.map(sheet => ({
+        alias: villagerBodyAlias(variant, sheet),
+        src: bakedSrc(unit, variant, 'body', sheet),
+      })),
+      ...VILLAGER_ACTION_SHEETS.map(sheet => ({
+        alias: villagerActionAlias(variant, sheet),
+        src: bakedSrc(unit, variant, 'action', sheet),
+      })),
+    ].filter(asset => !Assets.cache.get(asset.alias))
+
+    if (assets.length) {
+      await Assets.load(assets)
+    }
+    return
+  }
+
+  const assets = (['default'] as const)
+    .flatMap(job => UNIT_SHEETS.map(sheet => ({ job, sheet })))
     .map(({ job, sheet }) => ({
       alias: bakedAlias(unit, variant, job, sheet),
       src: bakedSrc(unit, variant, job, sheet),
@@ -123,6 +139,11 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
       return loadBakedUnitVariant(unit, variant)
     })
   )
+
+  const equipmentAssets = dynamicEquipmentAssets().filter(asset => !Assets.cache.get(asset.alias))
+  if (equipmentAssets.length) {
+    await Assets.load(equipmentAssets)
+  }
 }
 
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
@@ -130,7 +151,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   if (!bakedUnit || !unit.owner) return false
 
   const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
-  const walking = bakedAlias(bakedUnit, variant, 'default', 'walking')
+  const walking = bakedUnit === 'villager' ? villagerBodyAlias(variant, 'walking') : bakedAlias(bakedUnit, variant, 'default', 'walking')
   if (!Assets.cache.get(walking)) return false
 
   unit.appearance = undefined
@@ -146,6 +167,9 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     corpseSheet: 1,
   }
 
+  const dynamicLayers = bakedUnit === 'villager' ? dynamicEquipmentLayersForVillager() : dynamicEquipmentLayersForUnit(unit.type)
+  unit.appearance = dynamicLayers.length ? { layers: dynamicLayers } : undefined
+
   if (bakedUnit !== 'villager') {
     unit.assets = {
       standingSheet: walking,
@@ -157,34 +181,34 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     return true
   }
 
-  const villagerSheets = (job: VillagerJob) => {
-    const jobWalking = bakedAlias(bakedUnit, variant, job, 'walking')
-    const defaultDying = bakedAlias(bakedUnit, variant, 'default', 'dying')
-    const defaultCorpse = bakedAlias(bakedUnit, variant, 'default', 'corpse')
+  const villagerSheets = (actionAnimation: 'slash' | 'thrust' | 'shoot') => {
+    const bodyWalking = villagerBodyAlias(variant, 'walking')
+    const bodyDying = villagerBodyAlias(variant, 'dying')
+    const bodyCorpse = villagerBodyAlias(variant, 'corpse')
     return {
-      standingSheet: jobWalking,
-      walkingSheet: jobWalking,
-      actionSheet: bakedAlias(bakedUnit, variant, job, 'action'),
-      dyingSheet: defaultDying,
-      corpseSheet: defaultCorpse,
+      standingSheet: bodyWalking,
+      walkingSheet: bodyWalking,
+      actionSheet: villagerActionAlias(variant, actionAnimation),
+      dyingSheet: bodyDying,
+      corpseSheet: bodyCorpse,
     }
   }
 
   unit.allAssets = {
-    default: villagerSheets('default'),
-    attacker: villagerSheets('attacker'),
+    default: villagerSheets('slash'),
+    attacker: villagerSheets('slash'),
     hunter: {
-      ...villagerSheets('hunter'),
-      harvestSheet: bakedAlias(bakedUnit, variant, 'forager', 'action'),
-      loadedSheet: bakedAlias(bakedUnit, variant, 'hunter', 'loaded'),
+      ...villagerSheets('shoot'),
+      harvestSheet: villagerActionAlias(variant, 'slash'),
+      loadedSheet: villagerBodyAlias(variant, 'walking'),
     },
-    fisher: { ...villagerSheets('fisher'), loadedSheet: bakedAlias(bakedUnit, variant, 'fisher', 'walking') },
-    farmer: { ...villagerSheets('farmer'), loadedSheet: bakedAlias(bakedUnit, variant, 'farmer', 'walking') },
-    forager: { ...villagerSheets('forager'), loadedSheet: bakedAlias(bakedUnit, variant, 'forager', 'walking') },
-    stoneminer: { ...villagerSheets('stoneminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'stoneminer', 'loaded') },
-    goldminer: { ...villagerSheets('goldminer'), loadedSheet: bakedAlias(bakedUnit, variant, 'goldminer', 'loaded') },
-    woodcutter: { ...villagerSheets('woodcutter'), loadedSheet: bakedAlias(bakedUnit, variant, 'woodcutter', 'walking') },
-    builder: villagerSheets('builder'),
+    fisher: { ...villagerSheets('thrust'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    farmer: { ...villagerSheets('slash'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    forager: { ...villagerSheets('slash'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    stoneminer: { ...villagerSheets('slash'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    goldminer: { ...villagerSheets('slash'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    woodcutter: { ...villagerSheets('slash'), loadedSheet: villagerBodyAlias(variant, 'walking') },
+    builder: villagerSheets('slash'),
   }
   unit.assets = unit.allAssets.default
   return true

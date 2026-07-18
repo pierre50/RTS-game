@@ -70,7 +70,8 @@ export class Animal extends Instance implements AnimalEntity {
   quantity!: number
   totalQuantity!: number
   assets!: Record<string, string>
-  standingSheet!: SpritesheetLike
+  standingSheet?: SpritesheetLike
+  walkingSheet!: SpritesheetLike
   interface!: { info: (element: HTMLElement) => void }
   loop?: boolean
   huntRange?: number
@@ -144,9 +145,8 @@ export class Animal extends Instance implements AnimalEntity {
     }
 
     this.eventMode = 'static'
-    this.sprite = new AnimatedSprite(
-      getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
-    )
+    const initialSheet = (this.standingSheet ?? this.walkingSheet) as { textures: Record<string, Texture> }
+    this.sprite = new AnimatedSprite(getAnimationFrames(initialSheet.textures, 'south') as Texture[])
     bindAnimatedSpriteToTicker(this.sprite, this.context.app)
     this.sprite.label = LABEL_TYPES.sprite
     this.sprite.eventMode = 'auto'

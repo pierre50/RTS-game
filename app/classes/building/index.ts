@@ -218,6 +218,12 @@ export class Building extends Instance implements BuildingEntity {
           context: { controls, player, menu, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
+        if (controls.isArpgActive?.() && this.owner.isPlayed) {
+          controls.mouse.prevent = true
+          if (menu.openArpgBuildingMenu?.(this)) return
+          this.selectForPlayedOwner()
+          return
+        }
         if (!canUseRtsEntityPointer(controls)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
@@ -300,12 +306,7 @@ export class Building extends Instance implements BuildingEntity {
               return
             }
           }
-          if (this.owner.selectedBuilding !== this) {
-            this.owner.unselectAll()
-            this.select()
-            menu.setBottombar(this)
-            this.owner.selectedBuilding = this
-          }
+          this.selectForPlayedOwner()
         } else if (player.selectedUnits.length) {
           let hasSentConverter = false
           let hasSentAttacker = false
@@ -347,6 +348,7 @@ export class Building extends Instance implements BuildingEntity {
       })
 
       this.addChild(this.shadow, this.sprite)
+      if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
     }
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 
@@ -362,6 +364,15 @@ export class Building extends Instance implements BuildingEntity {
       this.setRallyPoint(map.grid[rallyPoint.i]?.[rallyPoint.j], rallyPoint.direction)
     }
     map.addToInstanceBucket(this)
+  }
+
+  selectForPlayedOwner(): void {
+    if (this.owner.selectedBuilding !== this) {
+      this.owner.unselectAll()
+      this.select()
+      this.owner.selectedBuilding = this
+    }
+    this.context.menu.setBottombar(this)
   }
 
   attackAction(target: RuntimeEntity): void {

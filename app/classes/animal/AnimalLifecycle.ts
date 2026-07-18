@@ -10,6 +10,12 @@ export class AnimalLifecycle {
     this.animal = animal
   }
 
+  setCorpseFrame(frame: number): void {
+    const { sprite } = this.animal
+    const lastFrame = Math.max(sprite.textures.length - 1, 0)
+    sprite.currentFrame = Math.min(frame, lastFrame)
+  }
+
   die(): void {
     const animal = this.animal
     if (animal.isDead) return
@@ -67,9 +73,11 @@ export class AnimalLifecycle {
     } = animal
     const percentage = getPercentage(animal.quantity, animal.totalQuantity)
     if (percentage > 25 && percentage < 50) {
-      animal.sprite.currentFrame = 1
+      this.setCorpseFrame(1)
+      animal.syncShadow()
     } else if (percentage > 0 && percentage <= 25) {
-      animal.sprite.currentFrame = 2
+      this.setCorpseFrame(2)
+      animal.syncShadow()
     } else if (percentage <= 0) {
       animal.stopInterval()
       if (map.grid[animal.i][animal.j].has === animal) {
@@ -80,7 +88,7 @@ export class AnimalLifecycle {
       if (animal.selected && player.selectedOther === animal) {
         player.unselectAll()
       }
-      animal.sprite.currentFrame = 3
+      this.setCorpseFrame(3)
       animal.syncShadow()
       animal.timeoutId = animal.context.scheduler.addOneShot(
         () => animal.clear(),

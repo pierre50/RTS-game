@@ -3,6 +3,7 @@ export {
   performanceReport,
   toggleCoordsDebug,
   toggleGridDebug,
+  toggleHeroCollisionDebug,
   togglePathDebug,
   togglePerfDebug,
   toggleSolidDebug,

@@ -13,6 +13,9 @@ export type ConfigValue =
 
 export type UnitAppearanceLayerConfig = {
   zIndex: number
+  hideWhenLoading?: boolean
+  showWhenLoading?: boolean
+  hideForActions?: string[]
   workTypes?: string[]
   workSheetOverrides?: Record<string, Partial<Record<string, string>>>
   actionWorkSheetOverrides?: Record<string, Partial<Record<string, string>>>

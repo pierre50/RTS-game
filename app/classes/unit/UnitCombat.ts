@@ -243,7 +243,7 @@ export class UnitCombat {
           const beforeHitPoints = dest.hitPoints ?? 0
           dest.hitPoints = getHitPointsWithDamage(unit, dest)
           showDamageFeedback(dest, beforeHitPoints - (dest.hitPoints ?? 0))
-          if (dest.selected) {
+          if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
             dest.drawHealthBar?.()
             if (player?.selectedUnit === dest || player?.selectedBuilding === dest || player?.selectedOther === dest) {
               menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)

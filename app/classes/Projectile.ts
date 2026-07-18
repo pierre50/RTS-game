@@ -615,7 +615,7 @@ export class Projectile extends Container {
     const beforeHitPoints = instance.hitPoints ?? 0
     instance.hitPoints = getHitPointsWithDamage(source, instance, damage)
     showDamageFeedback(instance, beforeHitPoints - (instance.hitPoints ?? 0))
-    if (instance.selected) {
+    if (instance.selected || instance.shouldKeepHealthBarVisible?.()) {
       instance.drawHealthBar?.()
       if (player.selectedOther === instance) {
         menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)

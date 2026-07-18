@@ -28,6 +28,7 @@ import {
   toggleTerrainReveal,
   toggleVisionDebug,
 } from './DevCommandActions'
+import { toggleHeroCollisionDebug } from './actions/debug'
 import type { DevEntity, DevPlayer } from './types'
 
 const RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold']
@@ -233,6 +234,15 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Toggle cell coordinate labels',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleCoordsDebug(context, value),
+  })
+
+  registry.register({
+    name: 'hero-collision',
+    aliases: ['hcol'],
+    usage: 'hero-collision [on|off]',
+    describe: 'Toggle ARPG hero collision shape debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleHeroCollisionDebug(context, value),
   })
 
   registry.register({

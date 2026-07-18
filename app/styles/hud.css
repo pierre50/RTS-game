@@ -65,6 +65,10 @@
   display: none;
 }
 
+.game-hud--arpg .bottombar {
+  display: none;
+}
+
 .bottombar-info {
   position: relative;
   display: flex;
@@ -201,7 +205,6 @@
   width: var(--ui-slot-size);
   height: var(--ui-slot-size);
   object-fit: none;
-  cursor: pointer;
   border: var(--ui-slot-border);
   border-radius: var(--main-border-radius);
   background: var(--surface-dark-solid);
@@ -255,18 +258,53 @@
   bottom: 132px;
   left: 50%;
   z-index: 500;
-  display: flex;
-  gap: var(--ui-gap-10);
-  padding: 8px;
+}
+
+.action-menu {
+  width: min(620px, calc(100vw - 24px));
+  max-height: min(430px, calc(100vh - 170px));
   transform: translateX(-50%);
-  border: var(--ui-slot-border);
-  border-radius: var(--main-border-radius);
-  background: var(--surface-dark-solid);
-  box-shadow: var(--main-box-shadow);
 }
 
 .inventory-panel.hidden {
   display: none;
+}
+
+.inventory-title {
+  flex: 1;
+  text-align: left;
+}
+
+.action-menu-page {
+  min-height: 126px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.action-menu-page.hidden {
+  display: none;
+}
+
+.inventory-tools-page,
+.action-menu-construction-page {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-8);
+  align-content: flex-start;
+}
+
+.action-menu-minimap-page {
+  display: flex;
+  justify-content: center;
+  min-height: 260px;
+  overflow: hidden;
+}
+
+.bottombar-map-wrap.is-in-action-menu {
+  width: min(260px, calc(100vw - 64px));
+  height: min(260px, calc(100vw - 64px));
+  min-width: 180px;
+  min-height: 180px;
 }
 
 .inventory-slot {
@@ -279,7 +317,6 @@
   color: var(--text-color-inverse);
   text-shadow: var(--text-shadow-dark-ui);
   text-align: center;
-  cursor: pointer;
   border: var(--ui-slot-border);
   border-radius: var(--main-border-radius);
   background: var(--surface-black-soft);
@@ -296,6 +333,231 @@
 .inventory-slot.active {
   border-color: var(--main-primary-color);
   background: var(--surface-black-solid);
+}
+
+.npc-orders-panel {
+  position: fixed;
+  bottom: 220px;
+  left: 50%;
+  z-index: 500;
+  width: min(280px, calc(100vw - 24px));
+  min-width: 0;
+  padding: 12px;
+  transform: translateX(-50%);
+  box-shadow: var(--main-box-shadow);
+}
+
+.npc-orders-panel.hidden {
+  display: none;
+}
+
+.npc-orders-title {
+  flex: 1;
+  text-align: left;
+}
+
+.npc-orders-option {
+  min-height: var(--ui-slot-size);
+  width: 100%;
+}
+
+.npc-orders-option.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.arpg-building-menu {
+  position: fixed;
+  left: 50%;
+  bottom: 156px;
+  z-index: 520;
+  width: min(620px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 190px));
+  transform: translateX(-50%);
+  padding: 12px;
+}
+
+.arpg-building-menu.hidden {
+  display: none;
+}
+
+.arpg-building-menu-header {
+  gap: var(--ui-gap-10);
+}
+
+.arpg-building-menu-title {
+  overflow: hidden;
+  flex: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arpg-building-menu-nav {
+  flex-shrink: 0;
+}
+
+.arpg-building-menu-nav:not(.is-visible):first-child {
+  visibility: hidden;
+}
+
+.arpg-building-menu-info {
+  min-height: 76px;
+  margin-bottom: var(--ui-gap-10);
+}
+
+.arpg-building-menu-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--ui-gap-10);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.arpg-building-menu-body.is-empty {
+  display: none;
+}
+
+.arpg-building-menu-button {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-items: center;
+  gap: 2px var(--ui-gap-10);
+  min-height: 76px;
+  padding: 8px;
+  color: var(--text-color-inverse);
+  text-align: left;
+  text-shadow: var(--text-shadow-dark-ui);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: var(--surface-black-soft);
+  box-shadow: var(--ui-button-shadow-raised);
+  touch-action: manipulation;
+}
+
+.arpg-building-menu-button:focus-visible {
+  outline: 2px solid var(--focus-outline-color);
+  outline-offset: 2px;
+}
+
+.arpg-building-menu-button:active {
+  box-shadow: var(--ui-button-shadow-pressed);
+  transform: translateY(var(--ui-press-offset));
+}
+
+.arpg-building-menu-icon {
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 52px;
+  position: relative;
+}
+
+.arpg-building-menu-icon .img {
+  width: var(--ui-slot-size);
+  height: var(--ui-slot-size);
+  object-fit: none;
+}
+
+.arpg-building-menu-icon .content {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 18px;
+  padding: 1px 3px;
+  color: white;
+  text-align: center;
+  text-shadow: var(--text-shadow-none);
+  border-radius: 3px;
+  background: var(--surface-black-solid);
+}
+
+.arpg-building-menu-label {
+  overflow: hidden;
+  font-weight: bold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arpg-building-menu-meta {
+  overflow: hidden;
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-sm);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arpg-building-menu-status {
+  grid-column: 2;
+  display: none;
+  align-items: center;
+  gap: var(--ui-gap-5);
+  min-width: 0;
+}
+
+.arpg-building-menu-status.is-visible {
+  display: flex;
+}
+
+.arpg-building-menu-progress {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid var(--status-health-border);
+  border-radius: 3px;
+  background: var(--status-health-background);
+  box-shadow: var(--status-health-inset-shadow);
+}
+
+.arpg-building-menu-progress-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--main-primary-color);
+  transition: width var(--ui-transition-fast);
+}
+
+.arpg-building-menu-status-text {
+  min-width: 42px;
+  color: white;
+  font-size: var(--font-size-sm);
+  text-align: right;
+  text-shadow: var(--text-shadow-none);
+}
+
+body {
+  cursor: auto;
+}
+
+body.arpg-game-cursor {
+  cursor: url('../../public/assets/interface/pointers/main/005.png') 27 14, auto;
+}
+
+body.arpg-game-cursor.arpg-cursor-pointer {
+  cursor: url('../../public/assets/interface/pointers/main/000.png') 2 2, auto;
+}
+
+body.arpg-game-cursor.arpg-cursor-resource {
+  cursor: url('../../public/assets/interface/pointers/main/003.png') 4 4, auto;
+}
+
+body.arpg-game-cursor.arpg-cursor-combat {
+  cursor: url('../../public/assets/interface/pointers/main/004.png') 12 12, auto;
+}
+
+body.arpg-game-cursor.arpg-cursor-move {
+  cursor: url('../../public/assets/interface/pointers/main/002.png') 21 11, auto;
+}
+
+body.arpg-game-cursor.arpg-cursor-bow {
+  cursor: url('../../public/assets/interface/pointers/main/005.png') 27 14, auto;
 }
 
 .resource {

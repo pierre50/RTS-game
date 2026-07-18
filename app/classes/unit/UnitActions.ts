@@ -95,15 +95,12 @@ function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
   }
 }
 
-function lockManualHeroActionUntilLoop(unit: UnitEntity): void {
+// Stays locked for the whole ongoing action (every swing loop), not just the
+// first one — release is explicit, via stopManualHeroAction/AfterLoop once
+// the target is gone or the player releases the action key/button.
+function lockManualHeroAction(unit: UnitEntity): void {
   if (!isHeroControlled(unit)) return
-  const sprite = unit.sprite
-  if (!sprite) return
   unit.actionLocked = true
-  sprite.onLoop = () => {
-    sprite.onLoop = undefined
-    unit.actionLocked = false
-  }
 }
 
 function removeFromOwnerList(
@@ -351,7 +348,7 @@ export class UnitActions {
     }
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
-    lockManualHeroActionUntilLoop(unit)
+    lockManualHeroAction(unit)
     onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
       onRelease?.()
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
@@ -467,7 +464,7 @@ export class UnitActions {
         dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
-        lockManualHeroActionUntilLoop(unit)
+        lockManualHeroAction(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
           const d = isBuildingEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(d)) {
@@ -522,7 +519,7 @@ export class UnitActions {
         }
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
-        lockManualHeroActionUntilLoop(unit)
+        lockManualHeroAction(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
           const dest = isResourceEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
@@ -603,6 +600,7 @@ export class UnitActions {
         }
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
+        lockManualHeroAction(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
           const dest = isBuildingEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
@@ -621,7 +619,7 @@ export class UnitActions {
               Math.round((dest.hitPoints ?? 0) + (dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)),
               dest.totalHitPoints ?? 0
             )
-            if (dest.selected) {
+            if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
               dest.drawHealthBar?.()
               if (unit.owner?.isPlayed) {
                 menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
@@ -640,6 +638,7 @@ export class UnitActions {
             if (unit.continueBuildingQueue?.()) return
             unit.affectNewDest?.()
           }
+          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
         })
         break
       }
@@ -676,7 +675,7 @@ export class UnitActions {
           if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
             this.playSound(unit.sounds?.heal)
             dest.hitPoints = Math.min((dest.hitPoints ?? 0) + (unit.healing ?? 0), dest.totalHitPoints ?? 0)
-            if (dest.selected) {
+            if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
               dest.drawHealthBar?.()
               if (player?.selectedUnit === dest) {
                 menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)

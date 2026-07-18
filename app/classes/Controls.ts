@@ -6,8 +6,9 @@ import { SelectionManager } from '../controllers/SelectionManager'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
 import { getCameraZoom } from '../lib/settings'
+import { setHeroGameCursorEnabled } from '../lib/heroCursor'
 import { hasRtsCommandableUnits } from '../lib/unitControl'
-import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
+import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { HeroTool } from '../lib/heroTools'
 import type {
   AudibleInstanceLike,
@@ -243,28 +244,69 @@ export default class Controls extends Container implements ControlsLike {
     return Boolean(this.context.devConsoleOpen || this.context.paused || this.context.victory || this.context.defeat)
   }
 
+  isInGameMenuOpen(): boolean {
+    const menu = this.context.menu
+    return Boolean(
+      this.context.devConsoleOpen ||
+        this.context.paused ||
+        this.context.victory ||
+        this.context.defeat ||
+        menu?.isInventoryOpen?.() ||
+        menu?.isNpcOrdersOpen?.() ||
+        menu?.isArpgBuildingMenuOpen?.() ||
+        document.querySelector?.('.modal')
+    )
+  }
+
   isEditableTarget(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false
     return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
   }
 
-  onKeyDown(evt: KeyboardEvent): void {
-    if (this.isInteractionBlocked() || this.isEditableTarget(evt.target)) return
-    if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
-    if (evt.key === 'Escape' && this.buildingPlacer.cancelWallDraft()) {
+  handleEscapeKey(evt: KeyboardEvent): boolean {
+    if (this.buildingPlacer.cancelWallDraft()) {
       evt.preventDefault()
-      return
+      return true
     }
-    if (evt.key === 'Escape' && this.rallyPointController.active) {
+    if (this.mouseBuilding) {
+      evt.preventDefault()
+      this.removeMouseBuilding()
+      this.context.menu?.updateBottombar?.()
+      return true
+    }
+    if (this.rallyPointController.active) {
       evt.preventDefault()
       this.rallyPointController.cancel()
-      return
+      return true
     }
-    if (evt.key === 'Escape' && this.isArpgActive() && this.context.menu?.isInventoryOpen?.()) {
+    if (this.isArpgActive() && this.heroController.pendingGoToNpcs) {
       evt.preventDefault()
-      this.context.menu.toggleInventory?.()
-      return
+      this.heroController.cancelGoToPicking()
+      return true
     }
+    if (this.isArpgActive() && this.context.menu?.isInventoryOpen?.()) {
+      evt.preventDefault()
+      this.context.menu.closeInventory?.()
+      return true
+    }
+    if (this.isArpgActive() && this.context.menu?.isNpcOrdersOpen?.()) {
+      evt.preventDefault()
+      this.context.menu.closeNpcOrders?.()
+      return true
+    }
+    if (this.isArpgActive() && this.context.menu?.isArpgBuildingMenuOpen?.()) {
+      evt.preventDefault()
+      this.context.menu.closeArpgBuildingMenu?.()
+      return true
+    }
+    return false
+  }
+
+  onKeyDown(evt: KeyboardEvent): void {
+    if (this.isEditableTarget(evt.target)) return
+    if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
+    if (this.isInteractionBlocked()) return
+    if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       const {
@@ -318,6 +360,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   onTick(ticker: TickerLike): void {
+    setHeroGameCursorEnabled(this.isArpgActive() && !this.isInGameMenuOpen())
     if (this.isInteractionBlocked()) {
       this.cancelActiveInteraction()
       return
@@ -525,8 +568,24 @@ export default class Controls extends Container implements ControlsLike {
     this.mouse.y = evt.pageY
     if (!this.isMouseInApp(evt)) return
 
+    if (this.mouseBuilding || this.rallyPointController.active) {
+      this.pointerStart = null
+      this.mouse.prevent = false
+      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
+      return
+    }
+
     if (this.isArpgActive() && evt.button === 0) {
       evt.preventDefault?.()
+      const target = this.getCellUnderCursor()?.has
+      if (
+        target?.family === FAMILY_TYPES.building &&
+        this.context.menu?.openArpgBuildingMenu?.(target)
+      ) {
+        this.pointerStart = null
+        this.mouse.prevent = true
+        return
+      }
       this.heroController.handlePrimaryPointerDown()
       this.pointerStart = null
       this.mouse.prevent = true
@@ -669,7 +728,7 @@ export default class Controls extends Container implements ControlsLike {
       this.stopMouseCameraMove()
       return
     }
-    if (evt.target instanceof Element && evt.target.closest('button, .topbar-options-menu')) {
+    if (evt.target instanceof Element && evt.target.closest('button, .topbar-options-menu, .action-menu')) {
       this.cameraController.stopMouseMove()
       return
     }
@@ -693,6 +752,10 @@ export default class Controls extends Container implements ControlsLike {
 
   setEquippedTool(tool: HeroTool | null): void {
     this.heroController.setEquippedTool(tool)
+  }
+
+  beginNpcGoTo(npcs: UnitEntity[]): void {
+    this.heroController.beginGoToPicking(npcs)
   }
 
   cancelMouseRectangle(): void {

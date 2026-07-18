@@ -1,5 +1,5 @@
 import { Text } from 'pixi.js'
-import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import { getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
@@ -7,6 +7,7 @@ import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } fr
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
+  DEBUG_HERO_COLLISION_LAYER,
   DEBUG_OVERLAY_Z,
   DEBUG_PATH_LAYER,
   DEBUG_SOLID_LAYER,
@@ -22,6 +23,9 @@ import {
   removeDebugLayer,
   stopDebugTicker,
 } from './shared'
+
+const HERO_COLLISION_SCAN_RADIUS = 8
+const HERO_BUILDING_COLLISION_CORNER_RATIO = 0.22
 
 type AiDebugPlayer = DevPlayer & {
   difficulty?: string
@@ -164,6 +168,146 @@ function drawVisionDebug(context: DevConsoleContext): void {
       drawCellDiamond(layer, cell, 0x5da9ff, 0.24)
     }
   }
+}
+
+function getHeroDebugUnit(context: DevConsoleContext): DevEntity | null {
+  const controlsHero = context.controls && 'heroUnit' in context.controls ? (context.controls.heroUnit as DevEntity | null) : null
+  if (controlsHero) return controlsHero
+  return (context.player.units.find(unit => unit.controlMode === 'arpg') as DevEntity | undefined) ?? null
+}
+
+function getNearbyHeroCollisionBuildings(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
+  const buildings = new Set<DevEntity>()
+  const { map } = context
+  for (let i = hero.i - HERO_COLLISION_SCAN_RADIUS; i <= hero.i + HERO_COLLISION_SCAN_RADIUS; i++) {
+    const row = map.grid[i]
+    if (!row) continue
+    for (let j = hero.j - HERO_COLLISION_SCAN_RADIUS; j <= hero.j + HERO_COLLISION_SCAN_RADIUS; j++) {
+      const entity = row[j]?.has as DevEntity | null
+      if (entity && entity.family === FAMILY_TYPES.building && !entity.isDestroyed) buildings.add(entity)
+    }
+  }
+  return [...buildings]
+}
+
+function getRoundedIsoFootprintPoints(building: DevEntity): Array<{ x: number; y: number }> {
+  const size = Math.max(1, building.size ?? 1)
+  const radiusX = 32 * size
+  const radiusY = 16 * size
+  const vertices = [
+    { x: building.x, y: building.y - radiusY },
+    { x: building.x + radiusX, y: building.y },
+    { x: building.x, y: building.y + radiusY },
+    { x: building.x - radiusX, y: building.y },
+  ]
+  const points: Array<{ x: number; y: number }> = []
+  const curveSteps = 6
+
+  for (let index = 0; index < vertices.length; index++) {
+    const previous = vertices[(index + vertices.length - 1) % vertices.length]
+    const vertex = vertices[index]
+    const next = vertices[(index + 1) % vertices.length]
+    const start = {
+      x: vertex.x + (previous.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      y: vertex.y + (previous.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+    }
+    const end = {
+      x: vertex.x + (next.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      y: vertex.y + (next.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+    }
+
+    if (index === 0) points.push(start)
+    for (let step = 1; step <= curveSteps; step++) {
+      const t = step / curveSteps
+      const inv = 1 - t
+      points.push({
+        x: inv * inv * start.x + 2 * inv * t * vertex.x + t * t * end.x,
+        y: inv * inv * start.y + 2 * inv * t * vertex.y + t * t * end.y,
+      })
+    }
+  }
+
+  return points
+}
+
+function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
+  let inside = false
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const a = points[i]
+    const b = points[j]
+    const cross = (x - a.x) * (b.y - a.y) - (y - a.y) * (b.x - a.x)
+    const dot = (x - a.x) * (b.x - a.x) + (y - a.y) * (b.y - a.y)
+    const lenSq = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
+    if (Math.abs(cross) < 0.001 && dot >= 0 && dot <= lenSq) return true
+    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
+function getBuildingCollisionInfo(hero: DevEntity, building: DevEntity) {
+  const points = getRoundedIsoFootprintPoints(building)
+  const inside = pointIsInsidePolygon(points, hero.x, hero.y)
+  const centerDistance = Math.hypot(hero.x - building.x, hero.y - building.y)
+  return { points, value: centerDistance, inside }
+}
+
+function drawRoundedIsoFootprint(
+  layer: { moveTo(x: number, y: number): void; lineTo(x: number, y: number): void; closePath(): void },
+  points: Array<{ x: number; y: number }>
+): void {
+  points.forEach((point, index) => {
+    if (index === 0) layer.moveTo(point.x, point.y)
+    else layer.lineTo(point.x, point.y)
+  })
+  layer.closePath()
+}
+
+function drawHeroCollisionDebug(context: DevConsoleContext): void {
+  const { map } = context
+  const layer = getDebugLayer(map, DEBUG_HERO_COLLISION_LAYER, DEBUG_OVERLAY_Z + 6)
+  layer.clear()
+
+  const hero = getHeroDebugUnit(context)
+  if (!hero) {
+    document.getElementById('debug-hero-collision')?.remove()
+    return
+  }
+
+  const buildings = getNearbyHeroCollisionBuildings(context, hero)
+  const infos = buildings
+    .map(building => ({ building, ...getBuildingCollisionInfo(hero, building) }))
+    .sort((a, b) => a.value - b.value)
+
+  for (const info of infos) {
+    const color = info.inside ? 0xff3050 : 0x35e0ff
+    drawRoundedIsoFootprint(layer, info.points)
+    layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
+    layer.circle(info.building.x, info.building.y, 3)
+    layer.fill({ color, alpha: 0.85 })
+  }
+
+  const cell = context.map.grid[hero.i]?.[hero.j]
+  if (cell) {
+    drawCellStroke(layer, cell, 0xffffff, 0.9, 2)
+  }
+  layer.circle(hero.x, hero.y, 7)
+  layer.fill({ color: infos[0]?.inside ? 0xff3050 : 0x54ff7a, alpha: 0.95 })
+  layer.circle(hero.x, hero.y, 11)
+  layer.stroke({ color: 0xffffff, alpha: 0.95, width: 2 })
+
+  const nearest = infos[0]
+  const overlay = ensureDebugOverlay('debug-hero-collision')
+  overlay.textContent = [
+    `Hero collision`,
+    `hero ${Math.round(hero.x)},${Math.round(hero.y)} cell ${hero.i},${hero.j}`,
+    `cell solid=${Boolean(cell?.solid)} has=${cell?.has?.family || 'none'}:${cell?.has?.type || ''}`,
+    nearest
+      ? `nearest ${nearest.building.type} ${nearest.building.i},${nearest.building.j} roundedIso=${nearest.value.toFixed(3)} ${
+          nearest.inside ? 'INSIDE' : 'outside'
+        }`
+      : 'nearest none',
+    `cyan=rounded iso red=blocking white=current cell green/red=hero`,
+  ].join('\n')
 }
 
 function ensureDebugOverlay(id: string): HTMLElement {
@@ -392,6 +536,24 @@ export function toggleCoordsDebug(context: DevConsoleContext, value: string): Co
   }
 
   return { ok: true, message: `Coords debug: ${showCoords ? 'on' : 'off'}` }
+}
+
+export function toggleHeroCollisionDebug(context: DevConsoleContext, value: string): CommandResult {
+  const { app, map } = context
+  const showHeroCollision = normalizeToggle(value, Boolean(map.debugHeroCollisionVisible))
+  map.debugHeroCollisionVisible = showHeroCollision
+
+  if (!showHeroCollision) {
+    removeDebugLayer(context, DEBUG_HERO_COLLISION_LAYER, '_debugHeroCollisionTicker')
+    document.getElementById('debug-hero-collision')?.remove()
+    return { ok: true, message: 'Hero collision debug: off' }
+  }
+
+  drawHeroCollisionDebug(context)
+  stopDebugTicker(context, '_debugHeroCollisionTicker')
+  map._debugHeroCollisionTicker = () => drawHeroCollisionDebug(context)
+  app?.ticker.add(map._debugHeroCollisionTicker)
+  return { ok: true, message: 'Hero collision debug: on' }
 }
 
 export function togglePerfDebug(context: DevConsoleContext, value: string): CommandResult {

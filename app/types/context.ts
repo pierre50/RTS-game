@@ -1,7 +1,7 @@
 import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity } from './entities'
+import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroTool } from '../lib/heroTools'
@@ -53,8 +53,20 @@ export interface MenuLike {
   init?(): void
   destroy?(): void
   toggleInventory?(): void
+  closeInventory?(): void
   isInventoryOpen?(): boolean
   setEquippedTool?(tool: HeroTool | null): void
+  toggleNpcOrders?(npcs: UnitEntity[]): void
+  openNpcOrders?(npcs: UnitEntity[]): void
+  isNpcOrdersOpen?(): boolean
+  closeNpcOrders?(): void
+  getNpcOrdersTarget?(): UnitEntity[]
+  openArpgBuildingMenu?(building: BuildingEntity): boolean
+  isArpgBuildingMenuOpen?(): boolean
+  closeArpgBuildingMenu?(): void
+  getArpgBuildingMenuTarget?(): BuildingEntity | null
+  refreshArpgBuildingMenu?(): void
+  closeArpgBuildingMenuIfInvalid?(): void
 }
 
 interface EntityPreviewLike {
@@ -120,6 +132,7 @@ export interface ControlsLike extends Container {
   heroActionHeld?: boolean
   setEquippedTool?(tool: HeroTool | null): void
   isArpgActive?(): boolean
+  beginNpcGoTo?(npcs: UnitEntity[]): void
 }
 
 export interface SelectionRectangle {

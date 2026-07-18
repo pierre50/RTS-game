@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from config import CIVS, PLAYER_SHORTS, UNIT_LOOKS, unit_look_for_civ
+from dynamic_equipment import required_dynamic_equipment_source_paths
 from image_pipeline import layer_paths
 from jobs import UNIT_JOBS
+
+
+VILLAGER_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
 
 
 def required_source_paths() -> list[str]:
@@ -12,6 +16,11 @@ def required_source_paths() -> list[str]:
             look = unit_look_for_civ(unit, civ_key)
             player_colors = PLAYER_SHORTS.keys() if unit == "villager" else ("neutral",)
             for player_color in player_colors:
+                if unit == "villager":
+                    for animation in VILLAGER_BODY_ANIMATIONS:
+                        for layer in layer_paths(look, animation, civ, player_color):
+                            paths.add(layer.path)
+                    continue
                 for job in UNIT_JOBS[unit]:
                     sheet_plan = {
                         "walking": ("walk", job.walking_equipment),
@@ -22,7 +31,8 @@ def required_source_paths() -> list[str]:
                         sheet_plan["corpse"] = ("hurt", job.hurt_equipment)
                     if job.loaded_equipment:
                         sheet_plan["loaded"] = ("walk", job.loaded_equipment)
-                    for animation, equipment in sheet_plan.values():
-                        for layer in layer_paths(look, animation, civ, player_color, equipment):
+                    for animation, _equipment in sheet_plan.values():
+                        for layer in layer_paths(look, animation, civ, player_color):
                             paths.add(layer.path)
+    paths.update(required_dynamic_equipment_source_paths())
     return sorted(paths)

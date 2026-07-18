@@ -10,6 +10,7 @@ export const DEBUG_PATH_LAYER = 'debugPathLayer'
 export const DEBUG_VISION_LAYER = 'debugVisionLayer'
 export const DEBUG_GRID_LAYER = 'debugGridLayer'
 export const DEBUG_COORDS_LAYER = 'debugCoordsLayer'
+export const DEBUG_HERO_COLLISION_LAYER = 'debugHeroCollisionLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
 type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
@@ -184,13 +185,21 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     '_debugVisionTicker',
     '_debugGridTicker',
     '_debugCoordsTicker',
+    '_debugHeroCollisionTicker',
     '_debugPerfTicker',
     '_debugAiInfoTicker',
   ]
 
   tickerNames.forEach(tickerName => stopDebugTicker(context, tickerName))
 
-  const layerLabels = [DEBUG_SOLID_LAYER, DEBUG_PATH_LAYER, DEBUG_VISION_LAYER, DEBUG_GRID_LAYER, DEBUG_COORDS_LAYER]
+  const layerLabels = [
+    DEBUG_SOLID_LAYER,
+    DEBUG_PATH_LAYER,
+    DEBUG_VISION_LAYER,
+    DEBUG_GRID_LAYER,
+    DEBUG_COORDS_LAYER,
+    DEBUG_HERO_COLLISION_LAYER,
+  ]
 
   layerLabels.forEach(label => {
     const layer = context.map?.getChildByLabel?.(label)
@@ -202,6 +211,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
 
   document.getElementById('debug-perf')?.remove()
   document.getElementById('debug-ai-info')?.remove()
+  document.getElementById('debug-hero-collision')?.remove()
 }
 
 export function getInstancesByCategory(

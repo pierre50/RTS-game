@@ -356,13 +356,16 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   }
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheets[sheet]) {
-    if (instance.currentSheet !== SHEET_TYPES.walking && instance.walkingSheet) {
+    if (instance.walkingSheet) {
       instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]]
     } else {
       instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
     }
     instance.currentSheet = SHEET_TYPES.walking
     instance.sprite.stop()
+    const fallbackSpriteScale = instance.spriteScale ?? 1
+    instance.sprite.scale.x = fallbackSpriteScale
+    instance.sprite.scale.y = fallbackSpriteScale
     const currentTexture = instance.sprite.textures[instance.sprite.currentFrame]
     const defaultAnchor = getDefaultAnchor(currentTexture)
     if (defaultAnchor) {

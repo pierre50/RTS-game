@@ -27,81 +27,81 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/villager/greek_01/default/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/default/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek_01/attacker/action",
-        "standingSheet": "lpc-baked/villager/greek_01/default/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "walkingSheet": "lpc-baked/villager/greek_01/default/walking",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
       },
       "hunter": {
-        "actionSheet": "lpc-baked/villager/greek_01/hunter/action",
-        "harvestSheet": "lpc-baked/villager/greek_01/forager/action",
-        "standingSheet": "lpc-baked/villager/greek_01/hunter/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/hunter/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/hunter/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/action/shoot",
+        "harvestSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "fisher": {
-        "actionSheet": "lpc-baked/villager/greek_01/fisher/action",
-        "standingSheet": "lpc-baked/villager/greek_01/fisher/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/hunter/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/fisher/walking"
+        "actionSheet": "lpc-baked/villager/greek_01/action/thrust",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "farmer": {
-        "actionSheet": "lpc-baked/villager/greek_01/farmer/action",
-        "standingSheet": "lpc-baked/villager/greek_01/farmer/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/farmer/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/farmer/walking"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "forager": {
-        "actionSheet": "lpc-baked/villager/greek_01/forager/action",
-        "standingSheet": "lpc-baked/villager/greek_01/forager/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/farmer/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/farmer/walking"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "lpc-baked/villager/greek_01/stoneminer/action",
-        "standingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/stoneminer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "goldminer": {
-        "actionSheet": "lpc-baked/villager/greek_01/stoneminer/action",
-        "standingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/stoneminer/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/goldminer/loaded"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "lpc-baked/villager/greek_01/woodcutter/action",
-        "standingSheet": "lpc-baked/villager/greek_01/woodcutter/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/woodcutter/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/woodcutter/walking"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
       },
       "builder": {
-        "actionSheet": "lpc-baked/villager/greek_01/builder/action",
-        "standingSheet": "lpc-baked/villager/greek_01/builder/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/builder/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/default/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/default/corpse"
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
       }
     },
     "gatheringRate": {

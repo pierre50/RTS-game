@@ -14,3 +14,27 @@
   background: var(--status-progress-background);
   box-shadow: var(--status-progress-inset-shadow);
 }
+
+.ui-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ui-gap-5);
+}
+
+.ui-tab {
+  min-height: 34px;
+  padding: 4px 8px;
+  overflow: hidden;
+  color: var(--text-color-inverse);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: var(--text-shadow-dark-ui);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: var(--surface-black-soft);
+}
+
+.ui-tab.active {
+  color: var(--main-primary-color);
+  background: var(--surface-black-solid);
+}

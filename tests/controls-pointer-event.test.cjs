@@ -16,6 +16,7 @@ function loadControls() {
     'pixi.js': {
       Container: class {
         addChild() {}
+        removeChild() {}
         destroy() {}
       },
       Graphics: class {},
@@ -34,6 +35,7 @@ function loadControls() {
         cancelWallDraft() {
           return false
         }
+        removeMouseBuilding() {}
       },
     },
     '../controllers/SelectionManager': { SelectionManager: class {} },
@@ -77,6 +79,7 @@ function loadControls() {
       pointsDistance: () => 0,
     },
     '../lib/settings': { getCameraZoom: () => 1 },
+    '../lib/heroCursor': { setHeroGameCursorEnabled: () => {} },
     '../lib/unitControl': { hasRtsCommandableUnits: units => Boolean(units?.length) },
     '../constants': {
       IS_MOBILE: false,
@@ -132,6 +135,9 @@ function createControls() {
     },
     player: {
       selectedUnits: [],
+    },
+    menu: {
+      updateBottombar() {},
     },
   })
 
@@ -204,6 +210,58 @@ test('uses uncapped speed-scaled ticker delta for ARPG hero movement', () => {
     })
 
     assert.equal(controls.heroController.lastUpdateFrameScale, 8)
+  } finally {
+    restore()
+  }
+})
+
+test('Escape closes ARPG menus even while the game is paused', () => {
+  const { controls, restore } = createControls()
+  try {
+    const calls = []
+    controls.context.paused = true
+    controls.heroController.active = true
+    controls.context.menu = {
+      isInventoryOpen: () => true,
+      closeInventory: () => calls.push('closeInventory'),
+      isNpcOrdersOpen: () => false,
+      isArpgBuildingMenuOpen: () => false,
+      updateBottombar() {},
+    }
+
+    controls.onKeyDown({
+      key: 'Escape',
+      target: new MockElement(),
+      preventDefault: () => calls.push('preventDefault'),
+    })
+
+    assert.deepEqual(calls, ['preventDefault', 'closeInventory'])
+  } finally {
+    restore()
+  }
+})
+
+test('Escape cancels active building placement', () => {
+  const { controls, restore } = createControls()
+  try {
+    const calls = []
+    controls.mouseBuilding = { type: 'house' }
+    controls.removeMouseBuilding = () => {
+      calls.push('removeMouseBuilding')
+      controls.mouseBuilding = null
+    }
+    controls.context.menu = {
+      updateBottombar: () => calls.push('updateBottombar'),
+    }
+
+    controls.onKeyDown({
+      key: 'Escape',
+      target: new MockElement(),
+      preventDefault: () => calls.push('preventDefault'),
+    })
+
+    assert.deepEqual(calls, ['preventDefault', 'removeMouseBuilding', 'updateBottombar'])
+    assert.equal(controls.mouseBuilding, null)
   } finally {
     restore()
   }

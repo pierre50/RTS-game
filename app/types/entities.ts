@@ -57,6 +57,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   removeChild: Container['removeChild']
   updateTexture?: () => void
   drawHealthBar?: () => void
+  removeHealthBar?: () => void
+  shouldKeepHealthBarVisible?: () => boolean
   isAttacked?: (attacker: RuntimeEntity) => void
   stopAttackInterval?: () => void
   stopInterval?: () => void
@@ -141,6 +143,8 @@ export interface UnitEntity extends RuntimeEntityBase {
   // Animation / action state
   action?: string | null
   actionLocked?: boolean
+  lookingAtHero?: boolean
+  followingHero?: boolean
   currentSheet?: string
   currentFrame?: number
   sheetDirectionCounts?: Record<string, number>

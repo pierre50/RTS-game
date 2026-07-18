@@ -297,6 +297,12 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "cane": {
         "walk": Equipment(foreground=(LayerSpec("weapon/polearm/cane/male/walk/cane.png"),)),
     },
+    "fishing_rod": {
+        "tool_rod": Equipment(
+            background=(LayerSpec("tools/fishing/rod-bg.png"),),
+            foreground=(LayerSpec("tools/fishing/rod-fg.png"),),
+        ),
+    },
     # Same longspear + round shield as "longspear", but both parts ship pre-made
     # "silver" textures like "longsword" vs "broadsword", so no palette recolor is
     # needed. Same south-facing occlusion fix as the other round-shield combos.

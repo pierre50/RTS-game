@@ -6,8 +6,11 @@ import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
 import { MenuTooltip } from '../ui/MenuTooltip'
 import { InventoryManager } from '../ui/InventoryManager'
+import { NpcOrdersManager } from '../ui/NpcOrdersManager'
+import { ArpgBuildingMenuManager } from '../ui/ArpgBuildingMenuManager'
+import { resetHeroCursor } from '../lib/heroCursor'
 import type { GameContextLike, MenuLike } from '../types/context'
-import type { ResourceEntity, RuntimeEntity } from '../types/entities'
+import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
 import type { ResourceAmount } from '../types/common'
@@ -19,6 +22,7 @@ export default class Menu implements MenuLike {
   bottombar: HTMLDivElement
   bottombarInfo: HTMLDivElement
   bottombarMenu: HTMLDivElement
+  bottombarMapWrap: HTMLDivElement
   bottombarMap: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
@@ -32,6 +36,8 @@ export default class Menu implements MenuLike {
   minimapInputController: MinimapInputController
   menuTooltip: MenuTooltip
   inventoryManager: InventoryManager
+  npcOrdersManager: NpcOrdersManager
+  arpgBuildingMenuManager: ArpgBuildingMenuManager
   toggle?: HTMLButtonElement
   toggled: boolean
   icons!: Record<string, string>
@@ -49,17 +55,18 @@ export default class Menu implements MenuLike {
     this.context = context
     this.gameHud = document.createElement('div')
     this.gameHud.className = 'game-hud'
+    this.gameHud.classList.toggle('game-hud--arpg', Boolean(context.map.arpgMode))
     this.bottombar = document.createElement('div')
     this.bottombar.className = 'bottombar bar'
     this.bottombarInfo = document.createElement('div')
     this.bottombarInfo.className = 'bottombar-info'
     this.bottombarMenu = document.createElement('div')
     this.bottombarMenu.className = 'bottombar-menu'
-    const bottombarMapWrap = document.createElement('div')
-    bottombarMapWrap.className = 'bottombar-map-wrap'
+    this.bottombarMapWrap = document.createElement('div')
+    this.bottombarMapWrap.className = 'bottombar-map-wrap'
     this.bottombarMap = document.createElement('div')
     this.bottombarMap.className = 'bottombar-map'
-    bottombarMapWrap.appendChild(this.bottombarMap)
+    this.bottombarMapWrap.appendChild(this.bottombarMap)
 
     this.terrainMinimap = document.createElement('canvas')
     this.playersMinimap = []
@@ -72,7 +79,7 @@ export default class Menu implements MenuLike {
     this.bottombarMap.appendChild(this.cameraMinimap)
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
-    this.bottombar.appendChild(bottombarMapWrap)
+    this.bottombar.appendChild(this.bottombarMapWrap)
     this.gameHud.appendChild(this.bottombar)
     document.body.appendChild(this.gameHud)
 
@@ -84,6 +91,8 @@ export default class Menu implements MenuLike {
     this.minimapInputController = new MinimapInputController(this)
     this.menuTooltip = new MenuTooltip()
     this.inventoryManager = new InventoryManager(this)
+    this.npcOrdersManager = new NpcOrdersManager(this)
+    this.arpgBuildingMenuManager = new ArpgBuildingMenuManager(this)
     this.toggled = false
 
     this.topbarView.build()
@@ -104,6 +113,9 @@ export default class Menu implements MenuLike {
     this.minimapInputController.destroy()
     this.playerStatsManager.destroy()
     this.inventoryManager.destroy()
+    this.npcOrdersManager.destroy()
+    this.arpgBuildingMenuManager.destroy()
+    resetHeroCursor()
     this.gameHud.remove()
     this.topbarView.destroy()
   }
@@ -219,10 +231,50 @@ export default class Menu implements MenuLike {
   toggleInventory(): void {
     return this.inventoryManager.toggle()
   }
+  closeInventory(): void {
+    return this.inventoryManager.close()
+  }
   isInventoryOpen(): boolean {
     return this.inventoryManager.isOpen()
   }
   setEquippedTool(tool: HeroTool | null): void {
     return this.inventoryManager.render(tool)
+  }
+
+  // NPC orders delegates
+  toggleNpcOrders(npcs: UnitEntity[]): void {
+    return this.npcOrdersManager.toggle(npcs)
+  }
+  openNpcOrders(npcs: UnitEntity[]): void {
+    return this.npcOrdersManager.open(npcs)
+  }
+  isNpcOrdersOpen(): boolean {
+    return this.npcOrdersManager.isOpen()
+  }
+  closeNpcOrders(): void {
+    return this.npcOrdersManager.close()
+  }
+  getNpcOrdersTarget(): UnitEntity[] {
+    return this.npcOrdersManager.getTarget()
+  }
+
+  // ARPG building menu delegates
+  openArpgBuildingMenu(building: BuildingEntity): boolean {
+    return this.arpgBuildingMenuManager.open(building)
+  }
+  isArpgBuildingMenuOpen(): boolean {
+    return this.arpgBuildingMenuManager.isOpen()
+  }
+  closeArpgBuildingMenu(): void {
+    return this.arpgBuildingMenuManager.close()
+  }
+  getArpgBuildingMenuTarget(): BuildingEntity | null {
+    return this.arpgBuildingMenuManager.getTarget()
+  }
+  refreshArpgBuildingMenu(): void {
+    return this.arpgBuildingMenuManager.refresh()
+  }
+  closeArpgBuildingMenuIfInvalid(): void {
+    return this.arpgBuildingMenuManager.syncLiveState()
   }
 }

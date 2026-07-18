@@ -225,16 +225,29 @@ def nearest_non_empty_group_column(
     return None
 
 
-def compose_frame(layers: Iterable[LoadedLayer], source_index: int, source_columns: int) -> Image.Image:
+def compose_frame(
+    layers: Iterable[LoadedLayer],
+    source_index: int,
+    source_columns: int,
+    context_layers: Iterable[LoadedLayer] = (),
+) -> Image.Image:
     loaded_layers = list(layers)
+    # Layers that participate in fallback-group emptiness checks without being
+    # pasted. A fallback group spans back+front equipment layers: a frame is only
+    # "missing" (and worth borrowing from a neighboring column) when the weapon is
+    # absent from BOTH — not when it merely lives in the other layer this frame,
+    # which is normal mid-swing (weapon passes behind the body). Standalone
+    # per-layer bakes (build_equipment.py) must pass the other layer here or every
+    # weapon-is-behind frame gets wrongly backfilled, duplicating the weapon.
+    scan_layers = loaded_layers + list(context_layers)
     canvas_size = max((layer.frame_size for layer in loaded_layers), default=FRAME_SIZE)
     source_row = source_index // source_columns
     source_column = source_index % source_columns
     frame = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
 
     group_fallback_columns: dict[str, int] = {}
-    for group in {layer.fallback_group for layer in loaded_layers if layer.fallback_group}:
-        group_layers = [layer for layer in loaded_layers if layer.fallback_group == group]
+    for group in {layer.fallback_group for layer in scan_layers if layer.fallback_group}:
+        group_layers = [layer for layer in scan_layers if layer.fallback_group == group]
         crops = [crop_layer_frame(layer, source_row, source_column, source_columns) for layer in group_layers]
         if not group_has_pixels(crops):
             fallback_column = nearest_non_empty_group_column(group_layers, source_row, source_column, source_columns)

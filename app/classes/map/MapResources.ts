@@ -24,7 +24,7 @@ type MapResourcesMap = {
   randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
   addChild<T extends ContainerChild>(child: T): T
-  placeAnimalHerd(player: GridPosition, quantity: number, range: ResourceRange): void
+  placeAnimalHerd(player: GridPosition, type: string, quantity: number, range: ResourceRange): void
   placeResourceGroup(player: GridPosition, type: ResourceType, quantity: number, range: ResourceRange): boolean
   placeResourceGroupAt(center: GridPosition, type: ResourceType, quantity: number, clusterRadius?: number): boolean
   generateForestAroundPlayer(player: GridPosition, treeCount: number): void
@@ -276,7 +276,7 @@ export class MapResources {
     }
   }
 
-  placeAnimalHerd(player: GridPosition, quantity: number, range: ResourceRange): void {
+  placeAnimalHerd(player: GridPosition, type: string, quantity: number, range: ResourceRange): void {
     const { grid } = this.map
     const randomDistance = this.map.randomRange(range[0], range[1])
     const centerI = player.i + this.map.randomItem([-randomDistance, randomDistance])
@@ -300,14 +300,15 @@ export class MapResources {
     for (let i = 0; i < toPlace; i++) {
       const idx = Math.floor(this.map.random() * validCells.length)
       const cell = validCells.splice(idx, 1)[0]
-      this.map.gaia?.createAnimal?.({ i: cell.i, j: cell.j, type: 'Gazelle' })
+      this.map.gaia?.createAnimal?.({ i: cell.i, j: cell.j, type })
     }
   }
 
   generateAnimalsAroundPlayers(playersPos: GridPosition[]): void {
     for (let i = 0; i < playersPos.length; i++) {
-      this.map.placeAnimalHerd(playersPos[i], 5, [8, 14])
-      this.map.placeAnimalHerd(playersPos[i], 4, [16, 24])
+      this.map.placeAnimalHerd(playersPos[i], 'Gazelle', 5, [8, 14])
+      this.map.placeAnimalHerd(playersPos[i], 'Gazelle', 4, [16, 24])
+      this.map.placeAnimalHerd(playersPos[i], 'Hare', 6, [6, 12])
     }
   }
 

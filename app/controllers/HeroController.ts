@@ -1,12 +1,36 @@
+import { Graphics } from 'pixi.js'
 import { getInstanceDegree, updateInstanceRenderVisibility } from '../lib'
-import { ARPG_DIRECTIONS, ARPG_KEYS, HERO_ACTION_MOVE_SPEED_FACTOR, SHEET_TYPES, STEP_TIME } from '../constants'
-import { applyToolAppearance, triggerToolAction, triggerToolAttackAt, type HeroTool } from '../lib/heroTools'
+import {
+  ARPG_DIRECTIONS,
+  ARPG_KEYS,
+  COLOR_GOLD,
+  HERO_ACTION_MOVE_SPEED_FACTOR,
+  LABEL_TYPES,
+  SHEET_TYPES,
+  STEP_TIME,
+} from '../constants'
+import { applyToolAppearance, triggerToolAttackAt, type HeroTool } from '../lib/heroTools'
+import { updateHeroCursor } from '../lib/heroCursor'
+import {
+  COMM_BASE_RANGE,
+  findCommGroup,
+  getCommRadiusForHold,
+  isAnyNpcNear,
+  releaseIfStillLooking,
+  resolveCommGroup,
+  resolveHoverTarget,
+  sendNpcGroupToTarget,
+  updateNpcFollow,
+} from '../lib/npcInteraction'
 import { setUnitControlMode } from '../lib/unitControl'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
+const COMM_RADIUS_PIXEL_SCALE_X = 32
+const COMM_RADIUS_PIXEL_SCALE_Y = 16
+type HeroAimPoint = { x: number; y: number }
 
 let lastHeroMoveDebugAt = 0
 
@@ -50,6 +74,11 @@ export class HeroController {
   keysPressed: Set<string>
   wasMoving: boolean
   mouseHeld: boolean
+  commCharging: boolean
+  commChargeStart: number
+  commIndicator: Graphics | null
+  pendingGoToNpcs: UnitEntity[] | null
+  primaryClickPoint: HeroAimPoint | null
 
   constructor(controls: Controls) {
     this.controls = controls
@@ -58,6 +87,21 @@ export class HeroController {
     this.keysPressed = new Set()
     this.wasMoving = false
     this.mouseHeld = false
+    this.commCharging = false
+    this.commChargeStart = 0
+    this.commIndicator = null
+    this.pendingGoToNpcs = null
+    this.primaryClickPoint = null
+  }
+
+  facePoint(point: HeroAimPoint): void {
+    const unit = this.heroUnit
+    if (!unit || unit.actionLocked) return
+    const aimDegree = getInstanceDegree(unit, point.x, point.y)
+    if (unit.degree !== aimDegree) {
+      unit.degree = aimDegree
+      unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
+    }
   }
 
   isActive(): boolean {
@@ -73,7 +117,9 @@ export class HeroController {
     }
 
     if (key === 'e') {
-      if (this.heroUnit) triggerToolAction(this.heroUnit, this.equippedTool)
+      if (this.commCharging) return true
+      const hero = this.heroUnit
+      if (hero && findCommGroup(hero, COMM_BASE_RANGE).length) this.beginCommCharge()
       return true
     }
 
@@ -88,12 +134,26 @@ export class HeroController {
 
   handleKeyUp(key: string): void {
     if (ARPG_KEYS.has(key)) this.keysPressed.delete(key)
-    if (key === 'e') this.heroUnit?.stop?.()
+    if (key === 'e' && this.commCharging) this.endCommCharge()
   }
 
   update(frameScale: number): void {
     const unit = this.heroUnit
     if (!unit) return
+    updateNpcFollow(unit)
+    if (this.commCharging) this.updateCommIndicator()
+    // Keep the hover-based cursor live even while picking a "go to" target — it already tells
+    // the player what a click will do here (gather hand, move icon, combat icon, plain pointer).
+    const hoverTarget = resolveHoverTarget(unit, this.controls.getWorldPointUnderCursor(), this.controls.getCellUnderCursor())
+    updateHeroCursor(this.equippedTool, hoverTarget, Boolean(this.pendingGoToNpcs))
+    const menu = this.controls.context.menu
+    if (menu?.isNpcOrdersOpen?.()) {
+      const targets = menu.getNpcOrdersTarget?.() ?? []
+      if (!isAnyNpcNear(unit, targets)) menu.closeNpcOrders?.()
+    }
+    if (menu?.isArpgBuildingMenuOpen?.()) {
+      menu.closeArpgBuildingMenuIfInvalid?.()
+    }
     if (this.mouseHeld && !unit.actionLocked && unit.currentSheet !== SHEET_TYPES.action) this.attackTowardCursor()
     const attacking = Boolean(unit.actionLocked)
 
@@ -106,16 +166,6 @@ export class HeroController {
       dy += dir.dy
     }
     const isMoving = dx !== 0 || dy !== 0
-
-    // Gather/build actions own the action sheet callback; idle aiming must not reset it.
-    if (!attacking && !isMoving && unit.currentSheet !== SHEET_TYPES.action) {
-      const aimPoint = this.controls.getWorldPointUnderCursor()
-      const aimDegree = getInstanceDegree(unit, aimPoint.x, aimPoint.y)
-      if (unit.degree !== aimDegree) {
-        unit.degree = aimDegree
-        unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
-      }
-    }
 
     let moved = false
     if (isMoving) {
@@ -155,23 +205,35 @@ export class HeroController {
   }
 
   attackTowardCursor(): boolean {
+    return this.attackTowardPoint(this.primaryClickPoint ?? this.controls.getWorldPointUnderCursor())
+  }
+
+  attackTowardPoint(point: HeroAimPoint): boolean {
     const hero = this.heroUnit
     if (!hero) return false
     if (hero.actionLocked) return false
+    this.facePoint(point)
     hero.stop?.()
-    return triggerToolAttackAt(hero, this.equippedTool, this.controls.getWorldPointUnderCursor())
+    return triggerToolAttackAt(hero, this.equippedTool, point)
   }
 
   handlePrimaryPointerDown(): void {
+    if (this.pendingGoToNpcs) {
+      this.resolveGoTo()
+      return
+    }
+    this.primaryClickPoint = this.controls.getWorldPointUnderCursor()
     const beforeLoad = this.heroUnit?.loading ?? 0
-    const triggered = this.attackTowardCursor()
+    const triggered = this.attackTowardPoint(this.primaryClickPoint)
     const unit = this.heroUnit
     const deliveredLoad = beforeLoad > 0 && (unit?.loading ?? 0) <= 0
     this.mouseHeld = triggered && !deliveredLoad
+    if (!this.mouseHeld) this.primaryClickPoint = null
   }
 
   handlePointerUp(): void {
     this.mouseHeld = false
+    this.primaryClickPoint = null
     const unit = this.heroUnit
     if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
     const sprite = unit.sprite
@@ -187,6 +249,66 @@ export class HeroController {
     }
   }
 
+  beginCommCharge(): void {
+    const hero = this.heroUnit
+    if (!hero || this.commCharging) return
+    this.commCharging = true
+    this.commChargeStart = performance.now()
+    const indicator = new Graphics()
+    indicator.label = LABEL_TYPES.commRadius
+    indicator.zIndex = -1
+    hero.addChildAt(indicator, 0)
+    this.commIndicator = indicator
+  }
+
+  updateCommIndicator(): void {
+    const indicator = this.commIndicator
+    if (!indicator) return
+    const elapsed = performance.now() - this.commChargeStart
+    const radius = getCommRadiusForHold(elapsed)
+    indicator.clear()
+    indicator.ellipse(0, 0, COMM_RADIUS_PIXEL_SCALE_X * radius, COMM_RADIUS_PIXEL_SCALE_Y * radius)
+    indicator.stroke({ color: COLOR_GOLD, width: 2, alpha: 0.85 })
+  }
+
+  endCommCharge(): void {
+    const hero = this.heroUnit
+    const elapsed = performance.now() - this.commChargeStart
+    this.cancelCommCharge()
+    if (!hero) return
+    const radius = getCommRadiusForHold(elapsed)
+    const group = resolveCommGroup(hero, radius)
+    if (group.length) this.controls.context.menu?.openNpcOrders?.(group)
+  }
+
+  cancelCommCharge(): void {
+    this.commCharging = false
+    if (this.commIndicator) {
+      this.commIndicator.parent?.removeChild(this.commIndicator)
+      this.commIndicator.destroy(true)
+      this.commIndicator = null
+    }
+  }
+
+  beginGoToPicking(npcs: UnitEntity[]): void {
+    this.pendingGoToNpcs = npcs
+  }
+
+  cancelGoToPicking(): void {
+    const npcs = this.pendingGoToNpcs
+    this.pendingGoToNpcs = null
+    if (npcs?.length) releaseIfStillLooking(npcs)
+  }
+
+  resolveGoTo(): void {
+    const npcs = this.pendingGoToNpcs
+    this.pendingGoToNpcs = null
+    if (!npcs?.length) return
+    const cell = this.controls.getCellUnderCursor()
+    if (cell) sendNpcGroupToTarget(npcs, cell, this.controls.getWorldPointUnderCursor())
+    else releaseIfStillLooking(npcs)
+  }
+
   setEquippedTool(tool: HeroTool | null): void {
     this.equippedTool = tool
     if (tool && this.heroUnit) applyToolAppearance(this.heroUnit, tool)
@@ -200,6 +322,9 @@ export class HeroController {
   cancelActiveInteraction(): void {
     this.stopKeyboardMove()
     this.mouseHeld = false
+    this.primaryClickPoint = null
+    if (this.commCharging) this.cancelCommCharge()
+    if (this.pendingGoToNpcs) this.cancelGoToPicking()
   }
 
   initFromPlayerStart(): boolean {
@@ -216,9 +341,6 @@ export class HeroController {
     setUnitControlMode(this.heroUnit, 'arpg')
     this.heroUnit.stop?.()
     player.unselectAll?.()
-    this.heroUnit.select?.()
-    player.selectedUnit = this.heroUnit
-    player.selectedUnits = [this.heroUnit]
     this.setEquippedTool('unarmed')
     this.controls.context.menu?.setBottombar?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)

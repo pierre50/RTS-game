@@ -145,7 +145,7 @@ export class AnimalCombat {
               const beforeHitPoints = target.hitPoints ?? 0
               target.hitPoints = getHitPointsWithDamage(animal, target)
               showDamageFeedback(target, beforeHitPoints - (target.hitPoints ?? 0))
-              if (target.selected) {
+              if (target.selected || target.shouldKeepHealthBarVisible?.()) {
                 target.drawHealthBar?.()
                 if (player && (player.selectedUnit === target || player.selectedBuilding === target)) {
                   menu.updateInfo(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)

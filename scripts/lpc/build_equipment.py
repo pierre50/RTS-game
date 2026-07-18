@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
+from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS, Sheet
+from dynamic_equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER
+from image_pipeline import compose_frame, open_layer, source_frames
+from retro_palette import find_hex_palette, load_hex_palette
+
+
+SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
+SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
+CUSTOM_SHEETS = {
+    "tool_rod": Sheet("tool_rod", "tool_rod", 13, 4, keep_every_other_frame=False),
+}
+OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "lpc-equipment"
+
+
+def sheet_plan(action_animation: str) -> dict[str, tuple[str, object]]:
+    action_sheet = SHEET_BY_ANIMATION.get(action_animation)
+    if action_sheet is None:
+        action_sheet = CUSTOM_SHEETS[action_animation]
+    return {
+        "walking": ("walk", SHEET_BY_KEY["walking"]),
+        "action": (action_animation, action_sheet),
+        "dying": ("hurt", SHEET_BY_KEY["dying"]),
+        "corpse": ("hurt", SHEET_BY_KEY["corpse"]),
+    }
+
+
+def build_equipment(source_root: Path, output_root: Path) -> None:
+    retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
+    if retro_palette_hex is None:
+        raise RuntimeError(f"no .hex palette found in {RETRO_PALETTE_ROOT}")
+    retro_palette = load_hex_palette(retro_palette_hex)
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    built = 0
+    for equipment in DYNAMIC_EQUIPMENT.values():
+        for output_sheet, (animation, source_sheet) in sheet_plan(equipment.action_animation).items():
+            layers_by_key = {layer.key: layer for layer in equipment.layers_by_animation.get(animation, ())}
+            # "Hurt" sheets (dying/corpse) are a single generic row with no per-direction
+            # variants, so row 0 there isn't "north" -- only apply the behind_body_rows
+            # swap below on sheets that actually have directional rows.
+            is_directional = source_sheet.rows > 1
+            for layer_key, _z_index in EQUIPMENT_LAYER_ORDER:
+                other_key = "front" if layer_key == "back" else "back"
+                own_layer = layers_by_key.get(layer_key)
+                other_layer = layers_by_key.get(other_key)
+                own_specs = own_layer.layers if own_layer else ()
+                other_specs = other_layer.layers if other_layer else ()
+                all_specs = (*own_specs, *other_specs)
+                frames = []
+                for frame_index in source_frames(source_sheet):
+                    source_row = frame_index // source_sheet.columns if is_directional else None
+                    # A spec flagged behind_body_rows belongs to the *other* named
+                    # layer on those rows (see LayerSpec.behind_body_rows): a carried
+                    # item held in front everywhere except when facing away, where it
+                    # must paste behind the body instead. There's no body layer in
+                    # this standalone equipment bake to swap paste order against, so
+                    # the swap happens here, at the back/front sheet level.
+                    specs = [spec for spec in own_specs if not is_directional or source_row not in spec.behind_body_rows]
+                    specs += [spec for spec in other_specs if is_directional and source_row in spec.behind_body_rows]
+                    loaded_layers = [open_layer(source_root, spec) for spec in specs]
+                    # The other layer's specs must still take part in fallback-group
+                    # scans (see compose_frame): a weapon living in the other layer
+                    # this frame is present, not missing.
+                    context_layers = [open_layer(source_root, spec) for spec in all_specs if spec not in specs]
+                    frames.append(
+                        compose_frame(loaded_layers, frame_index, source_sheet.columns, context_layers=context_layers)
+                    )
+                output_dir = output_root / equipment.key / layer_key / output_sheet
+                bake_sheet(output_dir, frames, animation_speed_for(output_sheet), retro_palette)
+                built += 1
+
+    print(f"Generated {built} dynamic LPC equipment sheets into {output_root.relative_to(PROJECT_ROOT)}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build dynamic LPC equipment overlay spritesheets.")
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE_ROOT)
+    parser.add_argument("--out", type=Path, default=OUTPUT_ROOT)
+    args = parser.parse_args()
+    build_equipment(args.source, args.out)
+
+
+if __name__ == "__main__":
+    main()

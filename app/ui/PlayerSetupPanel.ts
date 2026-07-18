@@ -34,6 +34,7 @@ const AGES = [
 
 const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
+const MIN_PLAYERS = 1
 
 const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
 
@@ -61,7 +62,7 @@ export class PlayerSetupPanel {
   constructor({ players, maxPlayers, onChange = null, showAge = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
     this.showAge = showAge
-    this.maxPlayers = Math.max(2, Math.min(maxPlayers || 2, MAX_PLAYERS))
+    this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
     this.players = (players?.length ? players : this._createDefaultPlayers()).map(player =>
       this._normalizePlayer(player)
     )
@@ -119,7 +120,7 @@ export class PlayerSetupPanel {
   }
 
   setMaxPlayers(maxPlayers: number): void {
-    this.maxPlayers = Math.max(2, Math.min(maxPlayers || 2, MAX_PLAYERS))
+    this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
     this._clampPlayers()
     this._refreshPlayerCountSelect()
     this._refreshPlayerTable()
@@ -154,7 +155,7 @@ export class PlayerSetupPanel {
     while (this.players.length > this.maxPlayers) {
       this.players.pop()
     }
-    while (this.players.length < 2) {
+    while (this.players.length < MIN_PLAYERS) {
       this._addBot()
     }
 
@@ -181,7 +182,7 @@ export class PlayerSetupPanel {
   }
 
   _setPlayerCount(count: string | number): void {
-    const playerCount = Math.max(2, Math.min(parseInt(String(count)), this.maxPlayers, MAX_PLAYERS))
+    const playerCount = Math.max(MIN_PLAYERS, Math.min(parseInt(String(count)), this.maxPlayers, MAX_PLAYERS))
 
     while (this.players.length < playerCount) {
       this._addBot()
@@ -351,7 +352,7 @@ export class PlayerSetupPanel {
     if (!this.playerCountSelect) return
 
     this.playerCountSelect.innerHTML = ''
-    for (let count = 2; count <= this.maxPlayers; count++) {
+    for (let count = MIN_PLAYERS; count <= this.maxPlayers; count++) {
       const option = document.createElement('option')
       option.value = String(count)
       option.textContent = String(count)

@@ -195,9 +195,11 @@ export class EditorEntityPreview {
 
   _buildAnimalContainer(type: string): Container | null {
     const animalConfig = (
-      Assets.cache.get('config') as { animals?: Record<string, { assets?: { standingSheet?: string } }> }
+      Assets.cache.get('config') as {
+        animals?: Record<string, { assets?: { standingSheet?: string; walkingSheet?: string } }>
+      }
     )?.animals?.[type]
-    const sheetId = animalConfig?.assets?.standingSheet
+    const sheetId = animalConfig?.assets?.standingSheet ?? animalConfig?.assets?.walkingSheet
     if (!sheetId) return null
     const texture = this._getFirstSheetFrame(sheetId)
     if (!texture) return null

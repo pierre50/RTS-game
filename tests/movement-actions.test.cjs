@@ -21,6 +21,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
+    if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitControl') {
       return {
         canAutoAcquireTarget: () => true,
@@ -32,7 +33,6 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
-    if (Object.hasOwn(mocks, request)) return mocks[request]
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -463,6 +463,268 @@ test('direct movement advances even when subpixel steps would be ignored by path
   assert.equal(moved, true)
   assert.equal(unit.x, -0.9625000000000001)
   assert.equal(unit.y, 704)
+})
+
+test('a direct move blocked head-on slides along the obstacle contour', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 2 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  grid[1][0].solid = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.4 ? 1 : 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+  const movement = new UnitMovement(unit)
+
+  // Head-on (1, 0) lands in solid (1, 0); the ±22.5° probes still resolve to that
+  // cell, so the slide settles on the +45° deflection into the free (1, 1) cell.
+  const moved = movement.moveDirect(1, 0, 1)
+
+  assert.equal(moved, true)
+  assert.equal(unit.i, 1)
+  assert.equal(unit.j, 1)
+  assert.ok(Math.abs(unit.x - 0.5) < 1e-9)
+  assert.ok(Math.abs(unit.y - 0.5) < 1e-9)
+  assert.equal(movement.slideBias, 1)
+  assert.equal(grid[1][1].has, unit)
+
+  // An undeflected follow-up move clears the slide bias.
+  const movedFree = movement.moveDirect(0, 1, 0.1)
+
+  assert.equal(movedFree, true)
+  assert.equal(movement.slideBias, 0)
+})
+
+test('hero direct movement rounds building footprint corners', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 2 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+    }))
+  )
+  const building = {
+    family: 'building',
+    isDestroyed: false,
+    label: 'house-1',
+    size: 1,
+    x: 0,
+    y: 0,
+  }
+  grid[1][1].solid = true
+  grid[1][1].has = building
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.5 ? 1 : 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const createUnit = () => ({
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  })
+
+  const blockedUnit = createUnit()
+  const blocked = new UnitMovement(blockedUnit).attemptMoveDirect(12, 6, 1)
+
+  assert.equal(blocked, false)
+  assert.equal(blockedUnit.i, 0)
+  assert.equal(blockedUnit.j, 0)
+
+  const slimSideUnit = createUnit()
+  const movedThroughSlimIsoSide = new UnitMovement(slimSideUnit).attemptMoveDirect(24, 8, 1)
+
+  assert.equal(movedThroughSlimIsoSide, true)
+  assert.equal(slimSideUnit.i, 1)
+  assert.equal(slimSideUnit.j, 1)
+
+  const roundedCornerUnit = createUnit()
+  const movedThroughRoundedCorner = new UnitMovement(roundedCornerUnit).attemptMoveDirect(31, 16, 1)
+
+  assert.equal(movedThroughRoundedCorner, true)
+  assert.equal(roundedCornerUnit.i, 1)
+  assert.equal(roundedCornerUnit.j, 1)
+  assert.equal(roundedCornerUnit.visible, true)
+
+  const movedDeeperIntoBuilding = new UnitMovement(roundedCornerUnit).attemptMoveDirect(-19, -10, 1)
+
+  assert.equal(movedDeeperIntoBuilding, false)
+  assert.equal(roundedCornerUnit.x, 31)
+  assert.equal(roundedCornerUnit.y, 16)
+})
+
+test('hero direct movement slides along rounded building collision instead of iso cell edges', () => {
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+    }))
+  )
+  const building = {
+    family: 'building',
+    isDestroyed: false,
+    label: 'house-1',
+    size: 1,
+    x: 0,
+    y: 0,
+  }
+  grid[1][0].solid = true
+  grid[1][0].has = building
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.5 ? 1 : 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 2,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 16,
+    y: 8,
+  }
+  const movement = new UnitMovement(unit)
+
+  const moved = movement.moveDirect(-1, -0.5, 1)
+
+  assert.equal(moved, true)
+  assert.notEqual(unit.x, 16)
+  assert.notEqual(unit.y, 8)
+  assert.equal(movement.directMoveBlocker, building)
 })
 
 test('a blocked gather target sends the villager near it before retrying', () => {
@@ -998,6 +1260,71 @@ test('a villager builds a town center then starts gathering any nearby compatibl
   new UnitMovement(unit).affectNewDest()
 
   assert.deepEqual(calls, [['sendToTree', 'tree-1', true]])
+})
+
+test('ARPG building health bar refreshes while construction progresses', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, hitPoints: 'hitPoints' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { buildLoop: 'build-loop' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      changeSpriteColor: () => {},
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: () => {},
+      SLASH_IMPACT_FRAME: 3,
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 1,
+    totalHitPoints: 10,
+    constructionTime: 10,
+    selected: false,
+    isBuilt: false,
+    shouldKeepHealthBarVisible: () => true,
+    drawHealthBar: () => calls.push(['drawHealthBar']),
+    updateHitPoints: action => calls.push(['updateHitPoints', action]),
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.build,
+    context: { menu: {} },
+    dest: building,
+    owner: { isPlayed: true },
+    sprite: {},
+    getActionCondition: target => target === building,
+    getWorkSound: () => 'build-loop',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.build)
+
+  assert.equal(building.hitPoints, 2)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['drawHealthBar'],
+    ['updateHitPoints', constants.ACTION_TYPES.build],
+  ])
 })
 
 test('a farmer returns to the same farm after delivering food', () => {

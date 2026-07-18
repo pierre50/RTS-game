@@ -207,7 +207,7 @@ export default class Game extends Container {
       if (this.context.devConsoleOpen) return
       if (evt.key.toLowerCase() === 'p') {
         if (this.context.victory || this.context.defeat) return
-        if (document.querySelector('.modal')) return
+        if (document.querySelector('.modal, .arpg-building-menu:not(.hidden)')) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
     }
@@ -318,6 +318,7 @@ export default class Game extends Container {
     context.controls = new Controls(gameContext)
     context.menu = new Menu(gameContext)
     context.devConsole = new DevConsole(context as DevConsoleRuntimeContext)
+    ;(window as unknown as { __debugContext?: unknown }).__debugContext = context
   }
 
   _mountRuntime(): void {

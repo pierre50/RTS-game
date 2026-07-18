@@ -35,6 +35,7 @@ const INTERFACE_ICON_SHEETS: Record<string, string> = {
   '50730': 'unit-icons',
   '50731': 'attribute-icons',
   '50732': 'commodity-icons',
+  '50733': 'animal-icons',
   '51000': 'pointers/main',
 }
 

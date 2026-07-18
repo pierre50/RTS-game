@@ -31,16 +31,17 @@ RETRO_LIGHTNESS_WEIGHT = 4.0
 
 # Directional lighting pass applied before the retro palette snap. Tuned to add
 # contrast without washing out the smaller LPC details too aggressively.
-LIGHTING_TOP = 1.30
-LIGHTING_BOTTOM = 0.55
-LIGHTING_LEFT = 1.10
-LIGHTING_RIGHT = 0.88
-LIGHTING_CONTRAST = 1.20
+LIGHTING_TOP = 1.16
+LIGHTING_BOTTOM = 0.74
+LIGHTING_LEFT = 1.05
+LIGHTING_RIGHT = 0.95
+LIGHTING_CONTRAST = 1.08
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
 CACHE_FILENAME = ".build-cache.json"
 SheetPlan = dict[str, tuple[Sheet, str, str | None]]
+BuildTask = tuple[str, Sheet, str]
 
 
 def animation_speed_for(output_sheet: str) -> float:
@@ -176,7 +177,25 @@ def build_sheet_plan(unit: str, job: Job) -> SheetPlan:
     return plan
 
 
-def build(source_root: Path, output_root: Path, *, clean: bool = False, civ_keys: set[str] | None = None) -> None:
+def villager_build_tasks() -> list[BuildTask]:
+    return [
+        ("body/walking", SHEET_BY_KEY["walking"], "walk"),
+        ("body/dying", SHEET_BY_KEY["dying"], "hurt"),
+        ("body/corpse", SHEET_BY_KEY["corpse"], "hurt"),
+        ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
+        ("action/thrust", SHEET_BY_ANIMATION["thrust"], "thrust"),
+        ("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
+    ]
+
+
+def build(
+    source_root: Path,
+    output_root: Path,
+    *,
+    clean: bool = False,
+    civ_keys: set[str] | None = None,
+    unit_keys: set[str] | None = None,
+) -> None:
     retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
     if retro_palette_hex is None:
         print(f"Error: no .hex palette found in {RETRO_PALETTE_ROOT}", file=sys.stderr)
@@ -200,51 +219,68 @@ def build(source_root: Path, output_root: Path, *, clean: bool = False, civ_keys
         if not selected_civs:
             print("Error: no civilizations selected", file=sys.stderr)
             sys.exit(1)
+    selected_units = UNIT_LOOKS if unit_keys is None else {key: look for key, look in UNIT_LOOKS.items() if key in unit_keys}
+    if unit_keys is not None:
+        unknown_units = sorted(unit_keys - set(UNIT_LOOKS))
+        if unknown_units:
+            print(f"Error: unknown unit(s): {', '.join(unknown_units)}", file=sys.stderr)
+            sys.exit(1)
+        if not selected_units:
+            print("Error: no units selected", file=sys.stderr)
+            sys.exit(1)
 
-    next_cache: dict[str, str] = dict(previous_cache) if civ_keys is not None else {}
-    generated = sorted(previous_manifest_assets) if civ_keys is not None else []
+    partial_build = civ_keys is not None or unit_keys is not None
+    next_cache: dict[str, str] = dict(previous_cache) if partial_build else {}
+    generated = sorted(previous_manifest_assets) if partial_build else []
     generated_set = set(generated)
     skipped = 0
     rebuilt = 0
     for civ_key, civ in selected_civs.items():
-        for unit in UNIT_LOOKS:
+        for unit in selected_units:
             look = unit_look_for_civ(unit, civ_key)
             variant_key = f"{civ_key}_{VARIANT_KEY}"
-            for job in UNIT_JOBS[unit]:
-                for output_sheet, (source_sheet, animation, equipment) in build_sheet_plan(unit, job).items():
-                    # "neutral" isn't a real player color, so this always resolves to the
-                    # "blue" team-color convention (image_pipeline.layer_paths) — every
-                    # recolorable piece, whether pixel-recolored or picked by filename, is
-                    # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
-                    # matches at runtime, so one bake per civ covers every player color.
-                    paths = layer_paths(look, animation, civ, "neutral", equipment)
-                    relative_path = f"{unit}/{variant_key}/{job.key}/{output_sheet}"
-                    animation_speed = animation_speed_for(output_sheet)
-                    signature = sheet_signature(
-                        source_root=source_root,
-                        relative_path=relative_path,
-                        source_sheet=source_sheet,
-                        animation=animation,
-                        equipment=equipment,
-                        paths=paths,
-                        animation_speed=animation_speed,
-                        dependencies=dependencies,
-                    )
-                    if relative_path not in generated_set:
-                        generated.append(relative_path)
-                        generated_set.add(relative_path)
-                    next_cache[relative_path] = signature
-                    if previous_cache.get(relative_path) == signature and sheet_outputs_exist(output_root, relative_path):
-                        skipped += 1
-                        continue
+            if unit == "villager":
+                tasks = villager_build_tasks()
+            else:
+                tasks = [
+                    (f"default/{output_sheet}", source_sheet, animation)
+                    for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
+                ]
+            for relative_suffix, source_sheet, animation in tasks:
+                # "neutral" isn't a real player color, so this always resolves to the
+                # "blue" team-color convention (image_pipeline.layer_paths) — every
+                # recolorable piece, whether pixel-recolored or picked by filename, is
+                # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
+                # matches at runtime, so one bake per civ covers every player color.
+                paths = layer_paths(look, animation, civ, "neutral")
+                relative_path = f"{unit}/{variant_key}/{relative_suffix}"
+                output_sheet = relative_suffix.rsplit("/", 1)[-1]
+                animation_speed = animation_speed_for(output_sheet)
+                signature = sheet_signature(
+                    source_root=source_root,
+                    relative_path=relative_path,
+                    source_sheet=source_sheet,
+                    animation=animation,
+                    equipment=None,
+                    paths=paths,
+                    animation_speed=animation_speed,
+                    dependencies=dependencies,
+                )
+                if relative_path not in generated_set:
+                    generated.append(relative_path)
+                    generated_set.add(relative_path)
+                next_cache[relative_path] = signature
+                if previous_cache.get(relative_path) == signature and sheet_outputs_exist(output_root, relative_path):
+                    skipped += 1
+                    continue
 
-                    layers = [open_layer(source_root, layer) for layer in paths]
-                    frames = [
-                        compose_frame(layers, frame_index, source_sheet.columns)
-                        for frame_index in source_frames(source_sheet)
-                    ]
-                    bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette)
-                    rebuilt += 1
+                layers = [open_layer(source_root, layer) for layer in paths]
+                frames = [
+                    compose_frame(layers, frame_index, source_sheet.columns)
+                    for frame_index in source_frames(source_sheet)
+                ]
+                bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette)
+                rebuilt += 1
             print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")
 
@@ -252,7 +288,7 @@ def build(source_root: Path, output_root: Path, *, clean: bool = False, civ_keys
         json.dump({"skinTones": SKIN_TONES, "civilizations": CIVS, "assets": generated}, file, indent=2)
         file.write("\n")
     write_cache(output_root, next_cache)
-    if civ_keys is None:
+    if not partial_build:
         prune_stale_outputs(output_root, previous_manifest_assets, set(generated))
     print(f"Generated {len(generated)} baked LPC sheets into {output_root.relative_to(PROJECT_ROOT)}")
 
@@ -263,8 +299,15 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--clean", action="store_true", help="Delete the output folder before baking.")
     parser.add_argument("--civ", action="append", help="Bake only one civilization key. Can be passed multiple times.")
+    parser.add_argument("--unit", action="append", help="Bake only one LPC unit key. Can be passed multiple times.")
     args = parser.parse_args()
-    build(args.source, args.out, clean=args.clean, civ_keys=set(args.civ) if args.civ else None)
+    build(
+        args.source,
+        args.out,
+        clean=args.clean,
+        civ_keys=set(args.civ) if args.civ else None,
+        unit_keys=set(args.unit) if args.unit else None,
+    )
 
 
 if __name__ == "__main__":

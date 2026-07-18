@@ -408,6 +408,7 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.updateAnchor = true
     this.setupSailSprite()
     this.syncFishingOverlaySprite()
+    if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
 
     this.sendTo = this.owner.isPlayed
       ? throttle(
@@ -711,6 +712,10 @@ export class Unit extends Instance implements UnitEntity {
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i] as RuntimeAppearanceLayer
       const isLayerEnabledForWork = !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
+      const isLoading = (this.loading ?? 0) > 0
+      const isLayerHiddenByLoading =
+        Boolean(layer.hideWhenLoading && isLoading) || Boolean(layer.showWhenLoading && !isLoading)
+      const isLayerHiddenByAction = Boolean(this.action && layer.hideForActions?.includes(this.action))
       const loadedSheetOverride =
         this.loading && sheet === SHEET_TYPES.walking ? (layer.loadedSheet as string | undefined) : undefined
       const actionWorkSheetOverride =
@@ -737,7 +742,7 @@ export class Unit extends Instance implements UnitEntity {
       const spriteKey = i
       liveLayers.add(spriteKey)
 
-      if (!isLayerEnabledForWork || !sheetId || !spritesheet?.textures) {
+      if (!isLayerEnabledForWork || isLayerHiddenByLoading || isLayerHiddenByAction || !sheetId || !spritesheet?.textures) {
         const existing = this.appearanceLayerSprites.get(spriteKey)
         if (existing) {
           existing.parent?.removeChild(existing)

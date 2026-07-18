@@ -1,9 +1,27 @@
 button,
+select,
+input,
+textarea {
+  /* Browsers give form controls their own default cursor (overriding the custom one on body) —
+     force them back to inheriting it so the game's cursor stays consistent everywhere. */
+  cursor: inherit;
+}
+
+#main-menu,
+.game-hud,
+.modal,
+.game-overlay,
+.orientation-guard,
+.menu-tooltip,
+#dev-console {
+  cursor: default;
+}
+
+button,
 .input-file {
   box-sizing: border-box;
   position: relative;
   border-radius: var(--main-border-radius);
-  cursor: pointer;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -46,7 +64,6 @@ button,
   border: var(--border-slot);
   border-radius: var(--main-border-radius);
   box-shadow: var(--ui-inset-shadow);
-  cursor: pointer;
 }
 
 .ui-range::-webkit-slider-thumb {
@@ -58,7 +75,6 @@ button,
   border: var(--border-btn);
   border-radius: var(--main-border-radius);
   box-shadow: var(--ui-button-shadow-raised);
-  cursor: pointer;
 }
 
 .ui-range::-moz-range-thumb {
@@ -70,7 +86,6 @@ button,
   border: var(--border-btn);
   border-radius: var(--main-border-radius);
   box-shadow: var(--ui-button-shadow-raised);
-  cursor: pointer;
 }
 
 .ui-range::-moz-range-track {
@@ -114,7 +129,6 @@ button,
   background-repeat: no-repeat;
   border: var(--border-btn);
   box-shadow: var(--ui-outset-shadow);
-  cursor: pointer;
 }
 
 .ui-select:focus,
@@ -203,7 +217,6 @@ button,
   z-index: 99;
   width: 200px;
   height: 100%;
-  cursor: pointer;
   opacity: 0;
 }
 
@@ -218,7 +231,6 @@ button,
   background: var(--form-surface-color);
   border: var(--border-slot);
   box-shadow: var(--ui-inset-shadow);
-  cursor: pointer;
 }
 
 .ui-checkbox::before {

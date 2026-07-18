@@ -24,9 +24,7 @@ VILLAGER_JOBS: tuple[Job, ...] = (
     Job("farmer", walking_equipment="scythe", action_equipment="scythe"),
     Job(
         "hunter",
-        walking_equipment="bow",
         action_animation="shoot",
-        action_equipment="bow",
         loaded_equipment="meat",
     ),
     Job("fisher", action_animation="thrust"),
@@ -40,9 +38,7 @@ AXEMAN_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="axe", action_animation="slash", action_equipment="axe"),
 )
 
-BOWMAN_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="bow", action_animation="shoot", action_equipment="bow", hurt_equipment="bow"),
-)
+BOWMAN_JOBS: tuple[Job, ...] = (Job("default", action_animation="shoot"),)
 
 SHORTSWORDMAN_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="dagger", action_animation="slash", action_equipment="dagger", hurt_equipment="dagger"),
@@ -51,20 +47,14 @@ SHORTSWORDMAN_JOBS: tuple[Job, ...] = (
 IMPROVEDBOWMAN_JOBS: tuple[Job, ...] = (
     Job(
         "default",
-        walking_equipment="bow_great",
         action_animation="shoot",
-        action_equipment="bow_great",
-        hurt_equipment="bow_great",
     ),
 )
 
 COMPOSITEBOWMAN_JOBS: tuple[Job, ...] = (
     Job(
         "default",
-        walking_equipment="bow_recurve",
         action_animation="shoot",
-        action_equipment="bow_recurve",
-        hurt_equipment="bow_recurve",
     ),
 )
 

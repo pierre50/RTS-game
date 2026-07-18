@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import argparse
+from io import BytesIO
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
+from zipfile import ZipFile
 
 from config import DEFAULT_SOURCE_ROOT, PROJECT_ROOT
 from sources import required_source_paths
@@ -14,6 +16,18 @@ SOURCE_BASE_URL = (
     "https://raw.githubusercontent.com/"
     "LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/master/spritesheets"
 )
+HAND_TOOLS_URL = "https://opengameart.org/sites/default/files/lpc-hand-tools.zip"
+HAND_TOOLS_SOURCES = {
+    "tools/fishing/rod-bg.png": "lpc-hand-tools/tools/fishing/rod-bg.png",
+    "tools/fishing/rod-fg.png": "lpc-hand-tools/tools/fishing/rod-fg.png",
+}
+
+
+def download_from_zip(url: str, archive_path: str, destination: Path) -> None:
+    with urlopen(url) as response:
+        archive = ZipFile(BytesIO(response.read()))
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(archive.read(archive_path))
 
 
 def download(path: str, destination_root: Path, force: bool) -> str:
@@ -22,6 +36,10 @@ def download(path: str, destination_root: Path, force: bool) -> str:
         return "skipped"
 
     destination.parent.mkdir(parents=True, exist_ok=True)
+    if path in HAND_TOOLS_SOURCES:
+        download_from_zip(HAND_TOOLS_URL, HAND_TOOLS_SOURCES[path], destination)
+        return "downloaded"
+
     try:
         with urlopen(f"{SOURCE_BASE_URL}/{path}") as response:
             destination.write_bytes(response.read())

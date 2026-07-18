@@ -25,6 +25,7 @@ export type DevMapLike = {
   debugVisionVisible?: boolean
   debugGridVisible?: boolean
   debugCoordsVisible?: boolean
+  debugHeroCollisionVisible?: boolean
   debugPerfVisible?: boolean
   debugAiInfoVisible?: boolean
   _debugPathTicker?: DebugTickerCallback | null
@@ -34,6 +35,7 @@ export type DevMapLike = {
   _debugVisionTicker?: DebugTickerCallback | null
   _debugGridTicker?: DebugTickerCallback | null
   _debugCoordsTicker?: DebugTickerCallback | null
+  _debugHeroCollisionTicker?: DebugTickerCallback | null
   _fogQueue?: Map<RuntimeCell, string>
   _pendingFogChunkUpdates?: Map<RuntimeCell, string>
   viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }

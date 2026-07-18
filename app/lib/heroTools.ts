@@ -69,9 +69,15 @@ type HeroToolConfig = {
 
 const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
   unarmed: {
-    matches: target => resourceKind(target) === 'Berrybush',
-    resolve: (hero, target) =>
-      getActionCondition(hero, target, ACTION_TYPES.forageberry) ? () => hero.sendToBerrybush?.(target) : null,
+    matches: target => resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
+    resolve: (hero, target) => {
+      if (resourceKind(target) === 'Berrybush') {
+        return getActionCondition(hero, target, ACTION_TYPES.forageberry) ? () => hero.sendToBerrybush?.(target) : null
+      }
+      // Bare hands can only collect meat off an already-dead carcass, not hunt — killing the
+      // animal still requires the bow (see the `bow` config below for the hunt+takemeat combo).
+      return getActionCondition(hero, target, ACTION_TYPES.takemeat) ? () => hero.sendToTakeMeat(target, true) : null
+    },
   },
   axe: {
     matches: target => resourceKind(target) === 'Tree',
@@ -235,6 +241,7 @@ function findArrowTargetInAim(hero: UnitEntity): RuntimeEntity | null {
 
 function getToolActionForTarget(tool: HeroTool, target: RuntimeEntity): string | null {
   if (tool === 'unarmed' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
+  if (tool === 'unarmed' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (tool === 'axe' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
   if (tool === 'pickaxe' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
   if (tool === 'pickaxe' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
@@ -335,7 +342,7 @@ function swingToolInPlace(hero: UnitEntity): void {
       const beforeHitPoints = target.hitPoints ?? 0
       target.hitPoints = getHitPointsWithDamage(hero, target)
       showDamageFeedback(target, beforeHitPoints - (target.hitPoints ?? 0))
-      if (target.selected) target.drawHealthBar?.()
+      if (target.selected || target.shouldKeepHealthBarVisible?.()) target.drawHealthBar?.()
       target.isAttacked?.(hero)
       if ((target.hitPoints ?? 0) <= 0) target.die?.()
     },

@@ -30,6 +30,21 @@ export class Instance extends Container {
   hasPath?(): boolean
   moveToPath?(): void
 
+  shouldKeepHealthBarVisible(): boolean {
+    return Boolean(
+      this.context?.map?.arpgMode &&
+        (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
+        this.owner?.isPlayed &&
+        !this.isDead &&
+        !this.isDestroyed
+    )
+  }
+
+  removeHealthBar(): void {
+    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
+    if (healthBar) this.removeChild(healthBar)
+  }
+
   constructor(context: GameContextLike) {
     super()
     this.context = context
@@ -88,8 +103,11 @@ export class Instance extends Container {
     this.selected = false
     const selection = this.getChildByLabel(LABEL_TYPES.selection)
     if (selection) this.removeChild(selection)
-    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
-    if (healthBar) this.removeChild(healthBar)
+    if (this.shouldKeepHealthBarVisible()) {
+      this.drawHealthBar()
+    } else {
+      this.removeHealthBar()
+    }
   }
 
   drawHealthBar(): void {

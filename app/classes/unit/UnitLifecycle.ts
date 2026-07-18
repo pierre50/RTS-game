@@ -105,6 +105,7 @@ export class UnitLifecycle {
     }
     unit.eventMode = 'none'
     unit.isDead = true
+    unit.removeHealthBar?.()
     unit.context?.map.removeFromInstanceBucket(unit)
     unit.unselect?.()
     if (unit.owner) {

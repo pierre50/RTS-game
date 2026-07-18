@@ -30,6 +30,8 @@ function loadInstance() {
         }
       },
       Graphics: class {
+        rect() {}
+        fill() {}
         poly() {}
         stroke() {}
       },
@@ -72,4 +74,34 @@ test('selection is inserted above building shadows', () => {
   Instance.prototype.select.call(instance)
 
   assert.equal(inserted[0], 1)
+})
+
+test('unselect keeps played unit and building health bars visible in ARPG mode', () => {
+  const { Instance } = loadInstance()
+  for (const family of ['unit', 'building']) {
+    const instance = Object.create(Instance.prototype)
+    const children = [{ label: 'selection' }, { label: 'healthBar' }]
+    instance.context = { map: { arpgMode: true } }
+    instance.family = family
+    instance.owner = { isPlayed: true }
+    instance.selected = true
+    instance.isDead = false
+    instance.isDestroyed = false
+    instance.hitPoints = 7
+    instance.totalHitPoints = 10
+    instance.sprite = { height: 40, anchor: { y: 1 } }
+    instance.children = children
+    instance.getChildByLabel = label => children.find(child => child.label === label) || null
+    instance.removeChild = child => {
+      const index = children.indexOf(child)
+      if (index >= 0) children.splice(index, 1)
+    }
+    instance.addChild = child => children.push(child)
+
+    Instance.prototype.unselect.call(instance)
+
+    assert.equal(instance.selected, false)
+    assert.equal(children.some(child => child.label === 'selection'), false)
+    assert.equal(children.some(child => child.label === 'healthBar'), true)
+  }
 })
