@@ -344,6 +344,21 @@ export type UnitTextureInstance = {
   walkingSheet?: SheetLike
 }
 
+function getWalkingFallbackTexture(instance: UnitTextureInstance): AnimatedSprite['textures'][number] | undefined {
+  const walkingSheet = instance.walkingSheet
+  if (!walkingSheet) return undefined
+
+  const directionCount = instance.sheetDirectionCounts?.[SHEET_TYPES.walking] ?? null
+  const { textures } = getSpriteFrameSelection(
+    walkingSheet.textures,
+    instance.degree,
+    directionCount,
+    instance.sheetDirectionOrders?.[SHEET_TYPES.walking] ?? null
+  )
+
+  return textures[0]
+}
+
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   const sheets = instance as UnitTextureInstance & MutableConfigObject
   const animationSpeed: Record<string, number> = {
@@ -357,7 +372,8 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheets[sheet]) {
     if (instance.walkingSheet) {
-      instance.sprite.textures = [instance.walkingSheet.textures[Object.keys(instance.walkingSheet.textures)[0]]]
+      const fallbackTexture = getWalkingFallbackTexture(instance)
+      if (fallbackTexture) instance.sprite.textures = [fallbackTexture]
     } else {
       instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
     }

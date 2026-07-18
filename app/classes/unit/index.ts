@@ -223,6 +223,7 @@ export class Unit extends Instance implements UnitEntity {
 
   totalQuantity?: UnitEntity['totalQuantity']
   quantity!: number
+  experience!: NonNullable<UnitEntity['experience']>
 
   interface!: UnitEntity['interface']
   handleSetDest?: UnitEntity['handleSetDest']
@@ -263,6 +264,7 @@ export class Unit extends Instance implements UnitEntity {
     this.loadingType = null
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
+    this.experience = {}
     Object.assign(this, options)
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     Object.assign(this, unitConfig)
@@ -346,7 +348,7 @@ export class Unit extends Instance implements UnitEntity {
                         description: t('buildMenuDescription'),
                       }),
                       children: Object.keys(this.owner.config.buildings)
-                        .map(key => menu.getBuildingButton?.(key, this.owner))
+                        .map(key => menu.getActionBuildingButton?.(key, this.owner))
                         .filter((item): item is NonNullable<typeof item> => Boolean(item)),
                     },
                   ]
@@ -500,10 +502,7 @@ export class Unit extends Instance implements UnitEntity {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (
-              playerUnit.work === WORK_TYPES.healer &&
-              playerUnit.getActionCondition?.(this, ACTION_TYPES.heal)
-            ) {
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this, ACTION_TYPES.heal)) {
               hasSentHealer = true
               playerUnit.sendTo?.(this, ACTION_TYPES.heal)
             }
@@ -524,10 +523,7 @@ export class Unit extends Instance implements UnitEntity {
         if (player.selectedUnits.length) {
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (
-              playerUnit.work === WORK_TYPES.healer &&
-              playerUnit.getActionCondition?.(this, ACTION_TYPES.convert)
-            ) {
+            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this, ACTION_TYPES.convert)) {
               hasSentConverter = true
               playerUnit.sendToConvert?.(this)
               continue
@@ -544,10 +540,7 @@ export class Unit extends Instance implements UnitEntity {
         }
         if (hasSentConverter || hasSentAttacker) {
           drawInstanceBlinkingSelection(this)
-        } else if (
-          (player.selectedOther !== this && playerCanSeeInstance(this, player)) ||
-          map.revealEverything
-        ) {
+        } else if ((player.selectedOther !== this && playerCanSeeInstance(this, player)) || map.revealEverything) {
           player.unselectAll()
           this.select()
           menu.setBottombar(this)
@@ -565,10 +558,7 @@ export class Unit extends Instance implements UnitEntity {
   setupSailSprite() {
     if (!this.sailSpritesheet?.textures) return
 
-    const { textures, mirrored } = getSailAnimationFrames(
-      this.sailSpritesheet.textures,
-      this
-    )
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
     if (!textures.length) return
 
     this.sailSprite = new AnimatedSprite(textures as Texture[])
@@ -590,10 +580,7 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
 
-    const { textures, mirrored } = getSailAnimationFrames(
-      this.sailSpritesheet.textures,
-      this
-    )
+    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
     if (!textures.length) {
       this.sailSprite.visible = false
       return
@@ -699,7 +686,8 @@ export class Unit extends Instance implements UnitEntity {
 
   syncAppearanceLayers(sheet: string) {
     const layers = this.appearance?.layers
-    if (!layers?.length) {
+    const hideEquipment = sheet === SHEET_TYPES.dying || sheet === SHEET_TYPES.corpse
+    if (!layers?.length || hideEquipment) {
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.parent?.removeChild(sprite)
         sprite.destroy({ children: true, texture: false })
@@ -711,7 +699,8 @@ export class Unit extends Instance implements UnitEntity {
     const liveLayers = new Set<number>()
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i] as RuntimeAppearanceLayer
-      const isLayerEnabledForWork = !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
+      const isLayerEnabledForWork =
+        !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
       const isLoading = (this.loading ?? 0) > 0
       const isLayerHiddenByLoading =
         Boolean(layer.hideWhenLoading && isLoading) || Boolean(layer.showWhenLoading && !isLoading)
@@ -734,15 +723,20 @@ export class Unit extends Instance implements UnitEntity {
         baseSheetId && appearanceVariant
           ? `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
           : null
-      const basePlayerColorSheetId = baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
-      const sheetId = variantSheetId && Assets.cache.get(variantSheetId)
-        ? variantSheetId
-        : basePlayerColorSheetId
+      const basePlayerColorSheetId =
+        baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
+      const sheetId = variantSheetId && Assets.cache.get(variantSheetId) ? variantSheetId : basePlayerColorSheetId
       const spritesheet = sheetId ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
       const spriteKey = i
       liveLayers.add(spriteKey)
 
-      if (!isLayerEnabledForWork || isLayerHiddenByLoading || isLayerHiddenByAction || !sheetId || !spritesheet?.textures) {
+      if (
+        !isLayerEnabledForWork ||
+        isLayerHiddenByLoading ||
+        isLayerHiddenByAction ||
+        !sheetId ||
+        !spritesheet?.textures
+      ) {
         const existing = this.appearanceLayerSprites.get(spriteKey)
         if (existing) {
           existing.parent?.removeChild(existing)
@@ -753,9 +747,9 @@ export class Unit extends Instance implements UnitEntity {
       }
 
       const directionCount = layer.sheetDirectionCounts?.[sheet] ?? this.sheetDirectionCounts?.[sheet] ?? null
-      const directionOrderOverride = (layer.sheetDirectionOrders?.[sheet] ?? this.sheetDirectionOrders?.[sheet] ?? null) as
-        | string[]
-        | null
+      const directionOrderOverride = (layer.sheetDirectionOrders?.[sheet] ??
+        this.sheetDirectionOrders?.[sheet] ??
+        null) as string[] | null
       const { textures, mirrored } = getSpriteFrameSelection(
         spritesheet.textures,
         this.degree,

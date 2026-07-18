@@ -145,7 +145,7 @@ export class BuildingProduction {
               if (building.selected && building.owner.isPlayed) {
                 const still = building.queue.filter((q: string) => q === type).length
                 menu.updateButtonContent(type, still || '')
-                if (still === 0) menu.toggleButtonCancel(type, false)
+                if (still === 0) menu.toggleQueuedActionCancel(type, false)
                 building.updateInterfaceLoading()
               }
             } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
@@ -160,7 +160,7 @@ export class BuildingProduction {
               if (building.selected && building.owner.isPlayed) {
                 const still = building.queue.filter((q: string) => q === type).length
                 menu.updateButtonContent(type, still || '')
-                if (still === 0) menu.toggleButtonCancel(type, false)
+                if (still === 0) menu.toggleQueuedActionCancel(type, false)
                 building.updateInterfaceLoading()
               }
             } else if ((building.loading ?? 0) < 100) {
@@ -200,7 +200,7 @@ export class BuildingProduction {
       const { menu } = building.context
       menu.updateTopbar()
       menu.updateButtonContent(type, '')
-      menu.toggleButtonCancel(type, false)
+      menu.toggleQueuedActionCancel(type, false)
     }
     return true
   }

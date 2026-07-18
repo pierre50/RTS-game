@@ -141,3 +141,12 @@ export function showResourceGainFeedback(target: RuntimeEntity, amount: number):
     taskLabel: 'resource.gainText',
   })
 }
+
+export function showLevelUpFeedback(target: RuntimeEntity, text: string): void {
+  showFloatingText(target, {
+    text,
+    fill: 0xffcc33,
+    stroke: 0x5c3d00,
+    taskLabel: 'experience.levelUpText',
+  })
+}

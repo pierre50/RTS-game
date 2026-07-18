@@ -22,7 +22,7 @@ const constants = {
   UNIT_TYPES: { villager: 'Villager' },
 }
 
-function createBehavior({ nearby = [], elapsedMs = 0 } = {}) {
+function createBehavior({ nearby = [], elapsedMs = 0, altitude = 0 } = {}) {
   const calls = []
   const cells = [
     { i: 4, j: 5, solid: false },
@@ -47,6 +47,7 @@ function createBehavior({ nearby = [], elapsedMs = 0 } = {}) {
     isDead: false,
     isDestroyed: false,
     isFleeing: false,
+    altitude,
     context: { map, scheduler, editor: null },
     runaway: villager => calls.push(['runaway', villager.label]),
     sendTo: cell => calls.push(['sendTo', cell.i, cell.j]),
@@ -59,6 +60,7 @@ function createBehavior({ nearby = [], elapsedMs = 0 } = {}) {
   const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
   })
   return { behavior: new AnimalBehavior(animal), calls, scheduler }
 }
@@ -80,4 +82,13 @@ test('an idle animal occasionally walks to a nearby free cell', () => {
 
   assert.deepEqual(calls, [['sendTo', 4, 5]])
   assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 5000)
+})
+
+test('an animal still in the air does not start an ambient walk', () => {
+  const { behavior, calls } = createBehavior({ elapsedMs: 10000, altitude: 5 })
+  behavior.nextAmbientWalkAt = 5000
+
+  behavior.update()
+
+  assert.deepEqual(calls, [])
 })

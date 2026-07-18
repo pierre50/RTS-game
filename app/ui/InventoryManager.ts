@@ -96,6 +96,7 @@ export class InventoryManager {
     this.panel.appendChild(this.toolsPanel)
     this.panel.appendChild(this.minimapPanel)
     this.panel.appendChild(this.constructionPanel)
+    this.minimapPanel.appendChild(menu.minimapWrap)
 
     menu.gameHud.appendChild(this.panel)
   }
@@ -139,45 +140,38 @@ export class InventoryManager {
     this.constructionPanel.classList.toggle('hidden', tab !== 'construction')
 
     if (tab === 'minimap') {
-      this.menu.bottombarMapWrap.classList.add('is-in-action-menu')
-      this.minimapPanel.appendChild(this.menu.bottombarMapWrap)
       this.menu.updateCameraMiniMap()
-      this.menu.bottombarManager.activeHotkeys.clear()
+      this.menu.clearActionHotkeys()
       return
     }
 
-    this.restoreMinimap()
     if (tab === 'construction') {
       this.renderConstruction()
     } else {
-      this.menu.bottombarManager.activeHotkeys.clear()
+      this.menu.clearActionHotkeys()
     }
   }
 
   restoreMinimap(): void {
-    this.menu.bottombarMapWrap.classList.remove('is-in-action-menu')
-    if (this.menu.bottombarMapWrap.parentElement === this.menu.bottombar) return
-    this.menu.bottombar.appendChild(this.menu.bottombarMapWrap)
-    this.menu.updateCameraMiniMap()
+    this.minimapPanel.appendChild(this.menu.minimapWrap)
   }
 
   getConstructionButtons(): MenuButtonSpec[] {
     const { player } = this.menu.context
-    return Object.keys(player.config.buildings).map(type => this.menu.getBuildingButton(type))
+    return Object.keys(player.config.buildings).map(type => this.menu.getActionBuildingButton(type))
   }
 
   renderConstruction(): void {
-    const { bottombarManager } = this.menu
     const selection = this.menu.context.controls.heroUnit || this.menu.selection
     this.constructionPanel.textContent = ''
-    bottombarManager.activeHotkeys.clear()
+    this.menu.clearActionHotkeys()
     if (!selection) return
 
     const usedKeys = new Set<string>()
     this.getConstructionButtons()
       .filter(button => !button.hide || !button.hide())
       .forEach((button, index) => {
-        const hotkey = bottombarManager.assignHotkey(button.id || '', usedKeys)
+        const hotkey = this.menu.assignActionHotkey(button.id || '', usedKeys)
         const actionButton: MenuButtonSpec = {
           ...button,
           onClick: (target, evt) => {
@@ -187,11 +181,11 @@ export class InventoryManager {
             if (this.menu.context.controls.mouseBuilding) this.close()
           },
         }
-        const element = bottombarManager.createMenuButton(selection, actionButton, index, hotkey, () => {})
+        const element = this.menu.createActionMenuButton(selection, actionButton, index, hotkey, () => {})
         this.constructionPanel.appendChild(element)
         if (hotkey && typeof button.onClick === 'function') {
-          bottombarManager.activeHotkeys.set(hotkey, () => {
-            bottombarManager.playUiClick()
+          this.menu.setActionHotkey(hotkey, () => {
+            this.menu.playUiClick()
             button.onClick!(selection, null)
             if (this.menu.context.controls.mouseBuilding) this.close()
           })

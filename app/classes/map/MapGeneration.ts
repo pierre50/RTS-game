@@ -25,6 +25,7 @@ import {
   WATER_SETS_DEEP,
   WATER_SET_CHANCE,
   WATER_SET_DEEP_LAND_MIN_DIST,
+  ANIMAL_PLAYER_SAFE_DIST,
 } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import { MapBlueprintGeneration } from './MapBlueprintGeneration'
@@ -333,7 +334,7 @@ export class MapGeneration {
 
   pickAmbientAnimalType(i: number, j: number): string {
     const animals = gameConfig().animals
-    const dangerousAnimalTypes = new Set(['Lion', 'Crocodile', 'Alligator', 'Elephant'])
+    const dangerousAnimalTypes = new Set(['Alligator', 'Boar'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
@@ -1375,7 +1376,14 @@ export class MapGeneration {
                   break
                 }
                 case 'animal': {
-                  if (cell.solid || cell.has || cell.border || cell.waterBorder || cell.inclined) {
+                  if (
+                    cell.solid ||
+                    cell.has ||
+                    cell.border ||
+                    cell.waterBorder ||
+                    cell.inclined ||
+                    this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)
+                  ) {
                     break
                   }
                   const animalType = this.pickAmbientAnimalType(i, j)
@@ -1441,7 +1449,7 @@ export class MapGeneration {
               rock.zIndex = 2
               cell.addChild?.(rock)
             }
-          } else if (type === 'animal') {
+          } else if (type === 'animal' && !this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)) {
             this._gaiaCreateAnimal({ i, j, type: this.pickAmbientAnimalType(i, j) })
           }
         }

@@ -68,6 +68,33 @@ HARE_SHEETS: tuple[AnimalSheet, ...] = (
 )
 
 
+# Same source-row convention and row_y_shift purpose as DEER_SHEETS above. This
+# one is "attack" strategy, not "runaway" — it has an action (attack) sheet
+# instead of fleeing, and charges at spotted villagers using its running sheet
+# (see AnimalCombat.affectNewDest in the runtime).
+BOAR_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Boar_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
+    AnimalSheet("Boar_Run-2x.png", "running", 5, (1, 2, 0), row_y_shift={0: 6, 1: 4, 2: 4}),
+    AnimalSheet("Boar_Attack-2x.png", "action", 5, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
+    AnimalSheet("Boar_Death-2x.png", "dying", 6, (0,)),
+    AnimalSheet("Boar_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0),
+)
+
+
+# Same source-row convention and row_y_shift purpose as DEER_SHEETS above. This
+# one has no "running" sheet — it flees by flight instead, so "flying" stands
+# in for the running slot (see SHEET_TYPES.flying / Animal.setAltitude in the
+# runtime, which renders it above its shadow instead of on the ground).
+BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Black_grouse_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 6}),
+    AnimalSheet("Black_grouse_Flight-2x.png", "flying", 6, (1, 2, 0), row_y_shift={0: 2, 2: 4}),
+    AnimalSheet("Black_grouse_Death-2x.png", "dying", 6, (0,), row_y_shift={0: 4}),
+    AnimalSheet(
+        "Black_grouse_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0, row_y_shift={0: 4}
+    ),
+)
+
+
 HORSE_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet(
         "horse.png",
@@ -118,13 +145,23 @@ HORSE_SHEETS: tuple[AnimalSheet, ...] = (
 ANIMALS = {
     "deer": {
         "source_dir": "Deer",
-        "output_dir": "gazelle",
+        "output_dir": "deer",
         "sheets": DEER_SHEETS,
     },
     "hare": {
         "source_dir": "Hare",
         "output_dir": "hare",
         "sheets": HARE_SHEETS,
+    },
+    "black_grouse": {
+        "source_dir": "Black_grouse",
+        "output_dir": "black-grouse",
+        "sheets": BLACK_GROUSE_SHEETS,
+    },
+    "boar": {
+        "source_dir": "Boar",
+        "output_dir": "boar",
+        "sheets": BOAR_SHEETS,
     },
     "horse": {
         "source_dir": ".",

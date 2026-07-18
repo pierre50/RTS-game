@@ -20,11 +20,12 @@ import {
   playAudibleSoundCue,
 } from '../lib'
 import { showDamageFeedback } from '../lib/combatFeedback'
+import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../lib/unitExperience'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME, UNIT_TYPES } from '../constants'
 import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
-import type { CommandSound, RuntimeEntity } from '../types/entities'
+import type { CommandSound, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'
 import type { AudibleInstance } from '../lib'
 
@@ -589,6 +590,14 @@ export class Projectile extends Container {
     return closest
   }
 
+  // Hunting spears train the hunting skill; every other unit-fired projectile
+  // (archers, war boats, the ARPG hero's bow) trains the ranged-weapon skill.
+  // Buildings (towers) fire projectiles too but never earn experience.
+  getXpCategory(): string | null {
+    if (this.owner.family !== FAMILY_TYPES.unit) return null
+    return this.owner.type === UNIT_TYPES.villager && this.type === 'Spear' ? XP_CATEGORIES.hunting : XP_CATEGORIES.ranged
+  }
+
   onHit(instance: RuntimeEntity) {
     const {
       context: { menu, player },
@@ -596,6 +605,8 @@ export class Projectile extends Container {
     if (instance.family === FAMILY_TYPES.building) {
       playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact)
     }
+    const xpCategory = this.getXpCategory()
+    const xpBonusDamage = xpCategory ? getCombatXpBonus(this.owner as UnitEntity, xpCategory) : 0
     const damageFactor = this.getDamageFactor()
     const damage = this.damage == null ? undefined : Math.max(1, Math.round(this.damage * damageFactor))
     const source =
@@ -613,8 +624,10 @@ export class Projectile extends Container {
             ),
           }
     const beforeHitPoints = instance.hitPoints ?? 0
-    instance.hitPoints = getHitPointsWithDamage(source, instance, damage)
-    showDamageFeedback(instance, beforeHitPoints - (instance.hitPoints ?? 0))
+    instance.hitPoints = getHitPointsWithDamage(source, instance, damage, xpBonusDamage)
+    const damageDealt = beforeHitPoints - (instance.hitPoints ?? 0)
+    showDamageFeedback(instance, damageDealt)
+    if (xpCategory) grantUnitXp(this.owner as UnitEntity, xpCategory, damageDealt)
     if (instance.selected || instance.shouldKeepHealthBarVisible?.()) {
       instance.drawHealthBar?.()
       if (player.selectedOther === instance) {
@@ -622,6 +635,7 @@ export class Projectile extends Container {
       }
     }
     if (instance.hitPoints <= 0) {
+      if (xpCategory) grantUnitXp(this.owner as UnitEntity, xpCategory, XP_KILL_BONUS)
       instance.die?.()
     } else {
       typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)

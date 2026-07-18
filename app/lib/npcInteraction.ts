@@ -1,7 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
 import { getInstanceDegree } from './maths'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
 
@@ -24,6 +24,10 @@ export const COMM_MAX_RANGE = 7
 export const COMM_CHARGE_MS = 1200
 
 const FOLLOW_SLACK = 2
+// Escort behavior for followers: hostiles inside the engage radius around the hero get
+// attacked; a follower whose fight drags it past the leash radius breaks off and comes back.
+const ESCORT_ENGAGE_RANGE = 7
+const ESCORT_LEASH_RANGE = 12
 
 const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: RuntimeEntity) => void>> = {
   Tree: (npc, target) => npc.sendToTree?.(target),
@@ -35,7 +39,7 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Salmon: (npc, target) => npc.sendToFish?.(target),
 }
 
-function cellDistance(a: UnitEntity, b: UnitEntity): number {
+function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
   return Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0))
 }
 
@@ -175,16 +179,83 @@ export function startFollowingHero(target: UnitEntity): void {
   target.stop?.()
 }
 
-// Re-issues a move order toward the hero's current cell for any unit following it, throttled by
-// distance so it doesn't spam pathfinding every tick.
+function hasCombatOrder(target: RuntimeEntity): target is (UnitEntity | AnimalEntity) & {
+  action?: string | null
+  dest?: RuntimeCell | RuntimeEntity | null
+} {
+  return (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal) && 'action' in target && 'dest' in target
+}
+
+// Something mid-swing against one of ours — an enemy soldier on a villager, a wild predator
+// on the hero — regardless of its own allegiance.
+function isAttackingAlly(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (!hasCombatOrder(target)) return false
+  return target.action === ACTION_TYPES.attack && isRuntimeEntityDest(target.dest) && target.dest?.owner === hero.owner
+}
+
+// A threat worth engaging: anything actively attacking one of ours, or any enemy unit near
+// the hero. Idle animals don't qualify — escorts must not hunt every passing gazelle.
+function isEscortThreat(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (target === hero || target.isDead || target.isDestroyed || (target.hitPoints ?? 0) <= 0) return false
+  if (isAttackingAlly(hero, target)) return true
+  return target.family === FAMILY_TYPES.unit && Boolean(target.owner && hero.owner?.isEnemy?.(target.owner))
+}
+
+function findEscortThreats(hero: UnitEntity): RuntimeEntity[] {
+  return findInstancesInSight<UnitEntity, RuntimeEntity>(
+    hero,
+    target => isEscortThreat(hero, target),
+    ESCORT_ENGAGE_RANGE
+  )
+}
+
+// Closest threat this follower can actually fight; active attackers outrank enemies that
+// are merely close.
+function pickEscortTarget(hero: UnitEntity, unit: UnitEntity, threats: RuntimeEntity[]): RuntimeEntity | null {
+  let best: RuntimeEntity | null = null
+  let bestAttacking = false
+  let bestDist = Infinity
+  for (const threat of threats) {
+    if (!unit.getActionCondition?.(threat, ACTION_TYPES.attack)) continue
+    const attacking = isAttackingAlly(hero, threat)
+    if (best && bestAttacking && !attacking) continue
+    const dist = cellDistance(unit, threat)
+    if (best && bestAttacking === attacking && dist >= bestDist) continue
+    best = threat
+    bestAttacking = attacking
+    bestDist = dist
+  }
+  return best
+}
+
+function isEscortFighting(unit: UnitEntity): boolean {
+  if (unit.action !== ACTION_TYPES.attack) return false
+  return isRuntimeEntityDest(unit.dest) && !unit.dest?.isDead && !unit.dest?.isDestroyed
+}
+
+// Escort update for every unit following the hero: engage threats near the hero, break off a
+// fight that drags past the leash radius, otherwise trail the hero's cell (move orders
+// throttled by distance so it doesn't spam pathfinding every tick).
 export function updateNpcFollow(hero: UnitEntity): void {
   const units = hero.owner?.units
   const map = hero.context?.map
   if (!units || !map) return
   const heroCell = map.grid[hero.i]?.[hero.j]
   if (!heroCell) return
+  let threats: RuntimeEntity[] | null = null
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
+    if (unit.lookingAtHero) continue
+    if (isEscortFighting(unit)) {
+      if (cellDistance(hero, unit) > ESCORT_LEASH_RANGE) unit.sendTo?.(heroCell)
+      continue
+    }
+    threats ??= findEscortThreats(hero)
+    const target = pickEscortTarget(hero, unit, threats)
+    if (target) {
+      unit.sendToAttack?.(target)
+      continue
+    }
     if (cellDistance(hero, unit) <= FOLLOW_SLACK) continue
     if (unit.dest === heroCell) continue
     unit.sendTo?.(heroCell)

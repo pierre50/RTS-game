@@ -27,6 +27,7 @@ type SerializableEntity = RuntimeEntityBase & {
   degree?: number
   dest?: Destination | null
   direction?: number
+  experience?: Record<string, number>
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: { label?: string } | null
@@ -173,6 +174,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'isDestroyed',
       'assetCiv',
       'assetAge',
+      'experience',
     ]),
     loadedInTransport: unit.loadedInTransport?.label,
     currentFrame: unit.sprite?.currentFrame,
@@ -219,7 +221,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
   }
 }
 
-function playerData(player: SerializablePlayer) {
+function playerData(player: SerializablePlayer, isArpgSave = false) {
   const data: SavePlayerState = {
     ...filterObject(player, [
       'label',
@@ -244,10 +246,15 @@ function playerData(player: SerializablePlayer) {
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
     views: player.views.toJSON(),
-    selectedUnitLabels: player.selectedUnits?.length ? player.selectedUnits.map(unit => unit.label) : undefined,
-    selectedUnitLabel: player.selectedUnit?.label,
-    selectedBuildingLabel: player.selectedBuilding?.label,
-    selectedOtherLabel: player.selectedOther?.label,
+    selectedUnitLabels:
+      !player.isPlayed || !isArpgSave
+        ? player.selectedUnits?.length
+          ? player.selectedUnits.map(unit => unit.label)
+          : undefined
+        : undefined,
+    selectedUnitLabel: !player.isPlayed || !isArpgSave ? player.selectedUnit?.label : undefined,
+    selectedBuildingLabel: !player.isPlayed || !isArpgSave ? player.selectedBuilding?.label : undefined,
+    selectedOtherLabel: !player.isPlayed || !isArpgSave ? player.selectedOther?.label : undefined,
   }
 
   if (player.type === 'AI') {
@@ -309,7 +316,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       resourceDensity: context.map.resourceDensity,
       difficulty: context.map.difficulty,
     },
-    players: (context.players ?? []).map(playerData),
+    players: (context.players ?? []).map(player => playerData(player, Boolean(context.map.arpgMode))),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
     animals: getGaiaAnimals(context.map.gaia)
       .filter(animal => !animal.isDestroyed)

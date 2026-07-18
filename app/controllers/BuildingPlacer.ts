@@ -98,7 +98,9 @@ export class BuildingPlacer {
     if (this.canPlaceMouseBuilding(cell)) {
       if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
         controls.removeMouseBuilding()
-        if (menu.selection) {
+        if (controls.isArpgActive?.()) {
+          menu.setBottombar(controls.heroUnit ?? null)
+        } else if (menu.selection) {
           menu.setBottombar(menu.selection)
         }
       }
@@ -238,7 +240,11 @@ export class BuildingPlacer {
 
     owner.isPlayed && menu.updateTopbar()
     controls.removeMouseBuilding()
-    if (owner.selectedUnit) menu.setBottombar(owner.selectedUnit)
+    if (controls.isArpgActive?.()) {
+      menu.setBottombar(controls.heroUnit ?? null)
+    } else if (owner.selectedUnit) {
+      menu.setBottombar(owner.selectedUnit)
+    }
     return true
   }
 }

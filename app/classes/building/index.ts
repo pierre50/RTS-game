@@ -162,10 +162,10 @@ export class Building extends Instance implements BuildingEntity {
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     this.shadow = this.createShadow()
-    const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getUnitButton(key))
+    const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key))
     const technologies = context.editor
       ? []
-      : (this.technologies || []).map((key: string) => context.menu.getTechnologyButton(key))
+      : (this.technologies || []).map((key: string) => context.menu.getActionTechnologyButton(key))
     this.interface = {
       info: (element: HTMLElement) => {
         const displayType =
@@ -182,7 +182,7 @@ export class Building extends Instance implements BuildingEntity {
       },
       menu:
         this.owner.isPlayed || map.instantMode
-          ? [...units, ...technologies, ...(units.length ? [context.menu.getRallyPointButton()] : [])]
+          ? [...units, ...technologies, ...(units.length ? [context.menu.getActionRallyPointButton()] : [])]
           : [],
     }
 

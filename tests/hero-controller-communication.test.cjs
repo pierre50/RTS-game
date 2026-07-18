@@ -137,6 +137,21 @@ test('E owns villager communication and opens orders on key release', () => {
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 
+test('E shows communication radius even when no villagers are nearby', () => {
+  const { calls, controller } = createController({ nearbyGroup: [] })
+
+  assert.equal(controller.handleKeyDown('e'), true)
+  assert.equal(controller.commCharging, true)
+
+  controller.updateCommIndicator()
+  assert.deepEqual(controller.commIndicator.ellipses, [{ x: 0, y: 0, halfWidth: 80, halfHeight: 40 }])
+
+  controller.handleKeyUp('e')
+
+  assert.equal(controller.commCharging, false)
+  assert.deepEqual(calls, ['removeIndicator'])
+})
+
 test('communication charge indicator is drawn as a ground-projected ellipse', () => {
   const group = [{ label: 'villager' }]
   const { controller } = createController({ nearbyGroup: group })
@@ -149,7 +164,7 @@ test('communication charge indicator is drawn as a ground-projected ellipse', ()
   assert.deepEqual(controller.commIndicator.polys, [])
 })
 
-test('idle hero keeps facing direction until the next primary click', () => {
+test('held primary attack re-aims at the current cursor on the next swing', () => {
   const degreeCalls = []
   const { calls, controller, hero, setCursorPoint } = createController({
     getInstanceDegree: (_hero, x, y) => {
@@ -174,10 +189,10 @@ test('idle hero keeps facing direction until the next primary click', () => {
   hero.currentSheet = 'standing'
   controller.update(1)
 
-  assert.equal(hero.degree, 10)
+  assert.equal(hero.degree, 40)
   assert.deepEqual(degreeCalls, [
     { x: 10, y: 20 },
-    { x: 10, y: 20 },
+    { x: 40, y: 50 },
   ])
-  assert.deepEqual(calls.slice(-2), ['stop', ['attack', { x: 10, y: 20 }]])
+  assert.deepEqual(calls.slice(-2), ['stop', ['attack', { x: 40, y: 50 }]])
 })

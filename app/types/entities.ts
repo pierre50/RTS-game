@@ -69,6 +69,13 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   setTextures?: (sheet: string) => void
 }
 
+export interface FloatingItemEntity extends RuntimeEntityBase {
+  family: 'floatingItem'
+  resourceType: string
+  amount: number
+  clear?: () => void
+}
+
 export interface UnitPendingOrder {
   execute?: () => void
   dest?: RuntimeEntity | RuntimeCell | null
@@ -176,6 +183,9 @@ export interface UnitEntity extends RuntimeEntityBase {
   healing?: number
   conversionChants?: number
 
+  // Experience — accumulated XP per skill category (see lib/unitExperience)
+  experience?: Record<string, number>
+
   // Gathering
   gatheringRate?: Record<string, number>
   gatherAmount?: Record<string, number>
@@ -235,11 +245,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   destHasMoved?: () => boolean
   moveToPath?: () => void
   getAction?: (name: string) => void
-  getActionCondition?: (
-    target: object | null | undefined,
-    action?: string,
-    extra?: UnitCreationExtra
-  ) => boolean
+  getActionCondition?: (target: object | null | undefined, action?: string, extra?: UnitCreationExtra) => boolean
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
   handleChangeDest?: () => void
@@ -297,6 +303,7 @@ export interface ResourceEntity extends RuntimeEntityBase {
 
 export interface AnimalEntity extends RuntimeEntityBase {
   dest?: RuntimeCell | RuntimeEntity | null
+  action?: string | null
   isFleeing?: boolean
 }
 

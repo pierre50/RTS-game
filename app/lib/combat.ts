@@ -80,9 +80,14 @@ function getDamage(source: CombatEntity, target: CombatEntity): number {
   return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor))
 }
 
-export function getHitPointsWithDamage(source: CombatEntity, target: CombatEntity, defaultDamage?: number): number {
+export function getHitPointsWithDamage(
+  source: CombatEntity,
+  target: CombatEntity,
+  defaultDamage?: number,
+  bonusDamage = 0
+): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
-  const damage = defaultDamage || getDamage(source, target)
+  const damage = (defaultDamage || getDamage(source, target)) + Math.max(0, bonusDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
 

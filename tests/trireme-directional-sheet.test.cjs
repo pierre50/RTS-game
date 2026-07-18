@@ -45,6 +45,63 @@ test('direction count 1 keeps every wreck frame instead of slicing it as a 5-dir
   )
 })
 
+test('missing standing sheet idles on the first walking frame from the current direction', () => {
+  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './grid': { instanceIsInPlayerSight: () => false },
+    './maths': {
+      degreeToDirection: degree => (degree === 0 ? 'north' : 'south'),
+    },
+    './uiSound': {},
+    './lang': {},
+  })
+
+  const textures = {
+    '000.png': { id: 0 },
+    '001.png': { id: 1 },
+    '002.png': { id: 2 },
+    '003.png': { id: 3 },
+    '004.png': { id: 4 },
+    '005.png': { id: 5 },
+  }
+  const sprite = {
+    currentFrame: 0,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    stop: () => {},
+  }
+
+  setUnitTexture('standingSheet', {
+    context: {},
+    degree: 180,
+    sheetDirectionCounts: { walkingSheet: 3 },
+    sprite,
+    walkingSheet: { data: {}, textures },
+  })
+
+  assert.deepEqual(sprite.textures, [{ id: 4 }])
+
+  setUnitTexture('standingSheet', {
+    context: {},
+    degree: 0,
+    sheetDirectionCounts: { walkingSheet: 3 },
+    sprite,
+    walkingSheet: { data: {}, textures },
+  })
+
+  assert.deepEqual(sprite.textures, [{ id: 0 }])
+})
+
 test('Trireme declares its 9-direction sheets so it does not animate through headings while idle', () => {
   const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },

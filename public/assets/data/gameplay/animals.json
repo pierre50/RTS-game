@@ -1,5 +1,5 @@
 {
-  "Gazelle": {
+  "Deer": {
     "totalHitPoints": 8,
     "sight": 8,
     "speed": 1.2,
@@ -9,10 +9,10 @@
     "totalQuantity": 150,
     "spriteScale": 0.7,
     "assets": {
-      "walkingSheet": "animals/gazelle/walking",
-      "runningSheet": "animals/gazelle/running",
-      "dyingSheet": "animals/gazelle/dying",
-      "corpseSheet": "animals/gazelle/corpse"
+      "walkingSheet": "animals/deer/walking",
+      "runningSheet": "animals/deer/running",
+      "dyingSheet": "animals/deer/dying",
+      "corpseSheet": "animals/deer/corpse"
     },
     "sheetDirectionCounts": {
       "walkingSheet": 3,
@@ -21,7 +21,7 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "gazelle-lion-killed"
+      "fall": "deer-lion-killed"
     }
   },
   "Hare": {
@@ -46,47 +46,32 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "gazelle-lion-killed"
+      "fall": "deer-lion-killed"
     }
   },
-  "Elephant": {
-    "totalHitPoints": 45,
-    "sight": 8,
-    "speed": 1,
-    "meleeAttack": 10,
-    "icon": "033_50730",
-    "rateOfFire": 1,
-    "totalQuantity": 300,
+  "BlackGrouse": {
+    "totalHitPoints": 2,
+    "sight": 6,
+    "speed": 1.3,
+    "strategy": "runaway",
+    "ambientMovement": true,
+    "icon": "039_50730",
+    "totalQuantity": 30,
+    "spriteScale": 0.7,
     "assets": {
-      "actionSheet": "animals/elephant/action",
-      "standingSheet": "animals/elephant/standing",
-      "walkingSheet": "animals/elephant/walking",
-      "dyingSheet": "animals/elephant/dying",
-      "corpseSheet": "animals/elephant/corpse"
+      "walkingSheet": "animals/black-grouse/walking",
+      "flyingSheet": "animals/black-grouse/flying",
+      "dyingSheet": "animals/black-grouse/dying",
+      "corpseSheet": "animals/black-grouse/corpse"
+    },
+    "sheetDirectionCounts": {
+      "walkingSheet": 3,
+      "flyingSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
     },
     "sounds": {
-      "fall": "elephant-alligator-killed",
-      "hit": "target-hit-2"
-    }
-  },
-  "Crocodile": {
-    "totalHitPoints": 20,
-    "sight": 10,
-    "speed": 0.5,
-    "meleeAttack": 4,
-    "strategy": "attack",
-    "icon": "041_50730",
-    "rateOfFire": 2,
-    "totalQuantity": 100,
-    "assets": {
-      "actionSheet": "animals/crocodile/action",
-      "standingSheet": "animals/crocodile/standing",
-      "walkingSheet": "animals/crocodile/walking",
-      "dyingSheet": "animals/crocodile/dying",
-      "corpseSheet": "animals/crocodile/corpse"
-    },
-    "sounds": {
-      "fall": "elephant-alligator-killed"
+      "fall": "deer-lion-killed"
     }
   },
   "Alligator": {
@@ -109,30 +94,32 @@
       "fall": "elephant-alligator-killed"
     }
   },
-  "Lion": {
-    "totalHitPoints": 20,
+  "Boar": {
+    "totalHitPoints": 15,
     "sight": 8,
-    "speed": 1.1,
-    "meleeAttack": 2,
+    "speed": 0.9,
+    "meleeAttack": 3,
     "strategy": "attack",
+    "icon": "042_50730",
     "rateOfFire": 1,
-    "icon": "040_50730",
-    "totalQuantity": 100,
+    "totalQuantity": 80,
+    "spriteScale": 0.7,
     "assets": {
-      "actionSheet": "animals/lion/action",
-      "standingSheet": "animals/lion/standing",
-      "walkingSheet": "animals/lion/walking",
-      "dyingSheet": "animals/lion/dying",
-      "corpseSheet": "animals/lion/corpse"
+      "actionSheet": "animals/boar/action",
+      "walkingSheet": "animals/boar/walking",
+      "runningSheet": "animals/boar/running",
+      "dyingSheet": "animals/boar/dying",
+      "corpseSheet": "animals/boar/corpse"
+    },
+    "sheetDirectionCounts": {
+      "actionSheet": 3,
+      "walkingSheet": 3,
+      "runningSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
     },
     "sounds": {
-      "fall": "gazelle-lion-killed",
-      "hit": [
-        "lion-attacking",
-        "lion-attacking-2",
-        "lion-attacking-3",
-        "lion-attacking-4"
-      ]
+      "fall": "elephant-alligator-killed"
     }
   }
 }

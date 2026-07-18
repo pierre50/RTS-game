@@ -39,6 +39,7 @@ export class AnimalLifecycle {
   death(): void {
     const animal = this.animal
     clearDamageFeedback(animal)
+    if (animal.altitude) animal.setAltitude(0)
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.sprite.loop = false

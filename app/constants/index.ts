@@ -8,6 +8,7 @@ export * from './arpg'
 export const SHEET_TYPES = {
   walking: 'walkingSheet',
   running: 'runningSheet',
+  flying: 'flyingSheet',
   action: 'actionSheet',
   standing: 'standingSheet',
   corpse: 'corpseSheet',

@@ -11,6 +11,21 @@ const runtimeTypesMock = new Proxy(
   }
 )
 
+const unitExperienceMock = {
+  LOADING_XP_CATEGORY: {},
+  WORK_XP_CATEGORY: {},
+  XP_BUILD_TICK: 2,
+  XP_CATEGORIES: {},
+  XP_CONVERT_SUCCESS: 30,
+  XP_FELL_TREE_TICK: 1,
+  XP_KILL_BONUS: 15,
+  getBuildRateXpMultiplier: () => 1,
+  getCombatXpBonus: () => 0,
+  getGatherXpBonus: () => 0,
+  getHealingXpBonus: () => 0,
+  grantUnitXp: () => {},
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -22,6 +37,7 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/unitControl') {
       return {
         canAutoAcquireTarget: () => true,
@@ -343,7 +359,7 @@ test('converted buildings keep their source civilization and age assets', () => 
   const priest = {
     context: {
       menu: {
-        getRallyPointButton: () => ({}),
+        getActionRallyPointButton: () => ({}),
         updatePlayerMiniMapEvt: () => {},
         updateTopbar: () => calls.push(['updateTopbar']),
       },
@@ -1380,7 +1396,7 @@ test('a farmer returns to the same farm after delivering food', () => {
 test('resuming previous animal work does not remember the interrupted target again', () => {
   const interruptedTarget = { label: 'blocked-tree', isUsedBy: null }
   const animal = {
-    label: 'gazelle-1',
+    label: 'deer-1',
     family: constants.FAMILY_TYPES.animal,
     category: 'Animal',
   }
@@ -1429,7 +1445,7 @@ test('resuming previous animal work does not remember the interrupted target aga
 
   new UnitActions(unit).goBackToPrevious()
 
-  assert.deepEqual(calls, [['handleChangeDest'], ['sendToTakeMeat', 'gazelle-1', null]])
+  assert.deepEqual(calls, [['handleChangeDest'], ['sendToTakeMeat', 'deer-1', null]])
   assert.equal(unit.previousDest, null)
   assert.deepEqual(unit.path, [])
 })

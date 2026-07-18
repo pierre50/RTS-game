@@ -96,7 +96,7 @@ export class ArpgBuildingMenuManager {
 
   open(building: BuildingEntity): boolean {
     if (!this.canOpenFor(building)) return false
-    const items = this.menu.bottombarManager.getSelectionMenuItems(building)
+    const items = this.menu.getActionMenuItems(building)
     this.building = building
     this.stack = [items]
     this.opened = true
@@ -135,7 +135,7 @@ export class ArpgBuildingMenuManager {
       this.close()
       return
     }
-    this.stack[0] = this.menu.bottombarManager.getSelectionMenuItems(this.building)
+    this.stack[0] = this.menu.getActionMenuItems(this.building)
     this.structureSignature = this.getStructureSignature()
     this.render()
   }
@@ -211,9 +211,7 @@ export class ArpgBuildingMenuManager {
         })
       })
     } else {
-      const image = this.menu.bottombarManager.createMenuIcon(
-        typeof button.icon === 'function' ? button.icon() : (button.icon ?? '')
-      )
+      const image = this.menu.createActionIcon(typeof button.icon === 'function' ? button.icon() : (button.icon ?? ''))
       icon.appendChild(image)
     }
 

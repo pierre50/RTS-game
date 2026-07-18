@@ -11,6 +11,21 @@ const runtimeTypesMock = new Proxy(
   }
 )
 
+const unitExperienceMock = {
+  LOADING_XP_CATEGORY: {},
+  WORK_XP_CATEGORY: {},
+  XP_BUILD_TICK: 2,
+  XP_CATEGORIES: {},
+  XP_CONVERT_SUCCESS: 30,
+  XP_FELL_TREE_TICK: 1,
+  XP_KILL_BONUS: 15,
+  getBuildRateXpMultiplier: () => 1,
+  getCombatXpBonus: () => 0,
+  getGatherXpBonus: () => 0,
+  getHealingXpBonus: () => 0,
+  grantUnitXp: () => {},
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -22,6 +37,7 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../../lib/unitExperience') return unitExperienceMock
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

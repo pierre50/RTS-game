@@ -41,6 +41,9 @@ export type AnimalMoveOptions = {
 const SHADOW_ALPHA = 0.42
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
+export const FLYING_ALTITUDE = 20
+const LANDING_STEPS = 8
+const LANDING_STEP_MS = 40
 
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
@@ -78,6 +81,9 @@ export class Animal extends Instance implements AnimalEntity {
   speed!: number
   sight!: number
   runningSheet?: SpritesheetLike
+  flyingSheet?: SpritesheetLike
+  flyingAltitude?: number
+  altitude!: number
   strategy?: string
   ambientMovement?: boolean
   ambientWalkRange?: number
@@ -110,6 +116,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.isFleeing = false
+    this.altitude = 0
 
     Object.assign(this, options)
     const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
@@ -251,7 +258,30 @@ export class Animal extends Instance implements AnimalEntity {
     this.currentCell.solid = true
     this.path = []
     this.stopInterval()
+    if (this.altitude) {
+      this.land()
+      return
+    }
     this.setTextures(SHEET_TYPES.standing)
+  }
+
+  land(): void {
+    const startAltitude = this.altitude
+    const steps = LANDING_STEPS
+    let step = 0
+    this.startInterval(
+      () => {
+        step++
+        this.setAltitude(step >= steps ? 0 : startAltitude * (1 - step / steps))
+        if (step >= steps) {
+          this.stopInterval()
+          this.setTextures(SHEET_TYPES.standing)
+        }
+      },
+      LANDING_STEP_MS,
+      false,
+      'animal.land'
+    )
   }
 
   setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
@@ -274,21 +304,31 @@ export class Animal extends Instance implements AnimalEntity {
   syncShadow(shadow = this.shadow): void {
     if (!shadow || !this.sprite) return
     const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
+    // The shadow stays pinned to the ground (position always (0, 0)) even while
+    // this.sprite is offset upward by setAltitude, so a flying animal's shadow
+    // is left behind on the ground below it instead of following it into the air.
+    const altitudeFactor = 1 - (Math.min(this.altitude ?? 0, FLYING_ALTITUDE) / FLYING_ALTITUDE) * 0.25
     shadow.textures = this.sprite.textures
     shadow.animationSpeed = this.sprite.animationSpeed
     shadow.loop = this.sprite.loop
     shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_ALPHA * altitudeFactor
     shadow.visible = getShadowsEnabled()
     shadow.rotation = 0
-    shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X
-    shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y
+    shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
+    shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
     shadow.position.set(0, 0)
     if (this.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
       shadow.gotoAndStop(frame)
     }
+  }
+
+  setAltitude(altitude: number): void {
+    this.altitude = altitude
+    this.sprite.position.y = -altitude
+    this.syncShadow()
   }
 
   syncVisualSettings(): void {

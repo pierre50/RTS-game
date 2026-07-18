@@ -1,5 +1,6 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath, getTransportLoad } from '../lib'
+import { formatXpProgressText, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { UnitEntity } from '../types/entities'
@@ -87,6 +88,21 @@ export class UnitInterface {
     }
 
     element.appendChild(infosDiv)
+
+    const xpEntries = getUnitExperienceEntries(unit)
+    if (xpEntries.length) {
+      const xpDiv = document.createElement('div')
+      xpDiv.classList.add('unit-xp')
+      for (const entry of xpEntries) {
+        const row = document.createElement('div')
+        row.classList.add('info')
+        const labelKey = `xp${entry.category.charAt(0).toUpperCase()}${entry.category.slice(1)}`
+        row.appendChild(createInfoText('unit-xp-label', t(labelKey)))
+        row.appendChild(createInfoText(getXpInfoId(entry.category), formatXpProgressText(unit, entry.category)))
+        xpDiv.appendChild(row)
+      }
+      element.appendChild(xpDiv)
+    }
 
     if (unit.showTransportCapacity && unit.transportCapacity) {
       const capacityDiv = document.createElement('div')

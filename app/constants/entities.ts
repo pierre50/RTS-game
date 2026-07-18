@@ -53,6 +53,7 @@ export const FAMILY_TYPES = {
   animal: 'animal',
   building: 'building',
   cell: 'cell',
+  floatingItem: 'floatingItem',
   projectile: 'projectile',
   resource: 'resource',
   unit: 'unit',

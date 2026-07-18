@@ -5,8 +5,10 @@ export function setUnitControlMode(unit: UnitEntity, controlMode: UnitControlMod
   unit.controlMode = controlMode
 }
 
-export function isArpgModeActive(controls: Pick<ControlsLike, 'isArpgActive'> | null | undefined): boolean {
-  return Boolean(controls?.isArpgActive?.())
+export function isArpgModeActive(
+  controls: (Pick<ControlsLike, 'isArpgActive'> & { context?: { map?: { arpgMode?: boolean } } }) | null | undefined
+): boolean {
+  return Boolean(controls?.isArpgActive?.() || controls?.context?.map?.arpgMode)
 }
 
 export function isHeroControlled(unit: UnitEntity): boolean {

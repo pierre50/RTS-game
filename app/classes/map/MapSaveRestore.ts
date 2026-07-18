@@ -197,6 +197,16 @@ export function restoreBuildingAssignments(
 
 export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
   if (!savedPlayer?.isPlayed) return
+  if (context.arpgMode) {
+    const controls = context.context.controls
+    const heroUnit = controls && 'heroUnit' in controls ? controls.heroUnit : null
+    player.selectedUnits = []
+    player.selectedUnit = null
+    player.selectedBuilding = null
+    player.selectedOther = null
+    context.context.menu?.setBottombar?.(heroUnit ?? null)
+    return
+  }
 
   const savedUnitLabels = savedPlayer.selectedUnitLabels ?? []
   const selectedUnits = savedUnitLabels

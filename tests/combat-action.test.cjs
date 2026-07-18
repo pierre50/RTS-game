@@ -4,6 +4,13 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
+const unitExperienceMock = {
+  XP_CATEGORIES: {},
+  XP_KILL_BONUS: 15,
+  getCombatXpBonus: () => 0,
+  grantUnitXp: () => {},
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -14,6 +21,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../../lib/unitExperience') return unitExperienceMock
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -233,6 +241,8 @@ test('unit control policy disables automatic reactions for the active ARPG hero'
   const {
     canAutoAcquireTarget,
     canAutoReactToAttack,
+    canUseRtsEntityPointer,
+    canUseRtsSelection,
     getRtsCommandableUnits,
     hasRtsCommandableUnits,
     isHeroControlled,
@@ -252,6 +262,8 @@ test('unit control policy disables automatic reactions for the active ARPG hero'
   assert.equal(isHeroControlled(hero), true)
   assert.equal(canAutoAcquireTarget(hero), false)
   assert.equal(canAutoReactToAttack(hero), false)
+  assert.equal(canUseRtsEntityPointer({ context: { map: { arpgMode: true } }, isArpgActive: () => false }), false)
+  assert.equal(canUseRtsSelection({ context: { map: { arpgMode: true } }, isArpgActive: () => false }), false)
 
   const explicitHero = {}
   setUnitControlMode(explicitHero, 'arpg')

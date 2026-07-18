@@ -1,5 +1,6 @@
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
+import { isAirborne } from './locomotion'
 import type { SchedulerTaskId } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import type { Animal } from './index'
@@ -83,6 +84,9 @@ export class AnimalBehavior {
       animal.isFleeing ||
       animal.path.length ||
       animal.dest ||
+      // Still in the air (e.g. mid-landing): starting an ambient walk now would
+      // kill the landing interval and strand the animal at a partial altitude.
+      isAirborne(animal) ||
       animal.context.scheduler.elapsedMs < this.nextAmbientWalkAt
     ) {
       return

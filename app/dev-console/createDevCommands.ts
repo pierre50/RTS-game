@@ -17,6 +17,7 @@ import {
   setAge,
   setCiv,
   spawnBuilding,
+  spawnFloatingItem,
   spawnUnits,
   toggleFog,
   toggleCoordsDebug,
@@ -98,6 +99,15 @@ export function createDevCommands(): DevCommandRegistry {
       if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
       return spawnBuilding(context, type, playerIndex)
     },
+  })
+
+  registry.register({
+    name: 'item',
+    aliases: ['drop'],
+    usage: 'item [Gold] [amount]',
+    describe: 'Spawn a floating dropped item near cursor',
+    complete: () => ['Gold'],
+    run: ([type = 'Gold', amount], context) => spawnFloatingItem(context, type, amount),
   })
 
   registry.register({

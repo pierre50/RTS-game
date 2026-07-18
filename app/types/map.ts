@@ -1,6 +1,6 @@
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid } from './grid'
-import type { ResourceEntity, RuntimeEntity } from './entities'
+import type { FloatingItemEntity, ResourceEntity, RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
 import type { VisionViewerRef } from './vision'
@@ -72,6 +72,7 @@ export interface RuntimeMap {
   pregeneratedBlueprintId?: string | number | null
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>
+  floatingItems?: Set<FloatingItemEntity>
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container
   randomRange(min: number, max: number): number

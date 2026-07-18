@@ -388,7 +388,6 @@ export class AIEconomy {
     for (const farm of sources.farms) addSlots('farm', farm, 1, sources.plantDrops)
     for (const fish of sources.fish) addSlots('fish', fish, 1, sources.meatDrops)
     for (const animal of sources.animals) {
-      if (animal.type === 'Elephant') continue
       const hunters =
         (animal.totalHitPoints || 0) >= 20 ? Math.min(4, Math.max(1, Math.ceil((animal.hitPoints || 0) / 4))) : 1
       addSlots('hunt', animal, hunters, sources.meatDrops, hunters)
@@ -418,7 +417,7 @@ export class AIEconomy {
     }
   }
 
-  // Group-aware hunting for non-elephant prey: large animals need several hunters on the same target.
+  // Group-aware hunting: large animals need several hunters on the same target.
   // Small animals get 1 hunter each. Returns count of new hunters assigned.
   assignHunters(availableVillagers: AIEntityLike[], villagersHunting: AIEntityLike[], maxTotalHunters: number): number {
     const { ai } = this
@@ -442,7 +441,7 @@ export class AIEconomy {
     // Large animals: send a pack — enough hunters to kill before losing too many villagers
     // Prefer animals already being hunted (finish them first) to not waste effort
     const large = safeAnimals
-      .filter((a: AIEntityLike) => (a.totalHitPoints || 0) >= LARGE_HP && a.type !== 'Elephant')
+      .filter((a: AIEntityLike) => (a.totalHitPoints || 0) >= LARGE_HP)
       .sort((a, b) => (huntersByAnimal.get(b) || 0) - (huntersByAnimal.get(a) || 0))
 
     for (const animal of large) {

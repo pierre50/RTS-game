@@ -25,6 +25,17 @@ import {
   showResourceGainFeedback,
 } from '../../lib'
 import { Projectile } from '../Projectile'
+import {
+  getBuildRateXpMultiplier,
+  getGatherXpBonus,
+  getHealingXpBonus,
+  grantUnitXp,
+  LOADING_XP_CATEGORY,
+  XP_BUILD_TICK,
+  XP_CATEGORIES,
+  XP_CONVERT_SUCCESS,
+  XP_FELL_TREE_TICK,
+} from '../../lib/unitExperience'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
@@ -129,7 +140,7 @@ function isConvertibleEntity(target: RuntimeEntity): target is ConvertibleEntity
 // (app/ai/AIEconomy.ts) — technologies bump this flat amount instead of
 // speeding up the animation.
 function getGatherAmount(unit: UnitEntity): number {
-  return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1))
+  return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
 }
 
 export class UnitActions {
@@ -250,11 +261,11 @@ export class UnitActions {
       t.loading = null
       t.finalTexture?.()
       if (t.interface) {
-        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getUnitButton?.(key)) : []
+        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getActionUnitButton?.(key)) : []
         const technologies =
-          newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getTechnologyButton?.(key)) : []
+          newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getActionTechnologyButton?.(key)) : []
         t.interface.menu = newOwner.isPlayed
-          ? [...units, ...technologies, ...(units.length && menu ? [menu.getRallyPointButton?.()] : [])].filter(
+          ? [...units, ...technologies, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
               (item): item is NonNullable<typeof item> => Boolean(item)
             )
           : []
@@ -270,6 +281,7 @@ export class UnitActions {
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
     if (newOwner.isPlayed) menu?.updateTopbar()
+    grantUnitXp(unit, XP_CATEGORIES.healing, XP_CONVERT_SUCCESS)
     unit.stop?.()
     return true
   }
@@ -372,6 +384,7 @@ export class UnitActions {
       }
       unit.loading = (unit.loading ?? 0) + gain
       unit.loadingType = loadingType
+      grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       unit.updateInterfaceLoading?.()
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
@@ -490,6 +503,7 @@ export class UnitActions {
           }
           unit.loading = (unit.loading ?? 0) + gain
           unit.loadingType = LOADING_TYPES.wheat
+          grantUnitXp(unit, XP_CATEGORIES.farming, gain)
           unit.updateInterfaceLoading?.()
           this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
           d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
@@ -542,6 +556,7 @@ export class UnitActions {
           this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
           if ((dest.hitPoints ?? 0) > 0) {
             dest.hitPoints = Math.max((dest.hitPoints ?? 0) - 1, 0)
+            grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
             if (dest.selected) {
               dest.drawHealthBar?.()
               menu?.updateInfo?.(
@@ -558,6 +573,7 @@ export class UnitActions {
             const gain = Math.min(getGatherAmount(unit), maxLoad - (unit.loading ?? 0))
             unit.loading = (unit.loading ?? 0) + gain
             unit.loadingType = LOADING_TYPES.wood
+            grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
             unit.updateInterfaceLoading?.()
             dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
             showResourceGainFeedback(dest, gain)
@@ -616,9 +632,13 @@ export class UnitActions {
           if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
             this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
             dest.hitPoints = Math.min(
-              Math.round((dest.hitPoints ?? 0) + (dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)),
+              Math.round(
+                (dest.hitPoints ?? 0) +
+                  ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
+              ),
               dest.totalHitPoints ?? 0
             )
+            grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
             if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
               dest.drawHealthBar?.()
               if (unit.owner?.isPlayed) {
@@ -674,7 +694,12 @@ export class UnitActions {
           }
           if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
             this.playSound(unit.sounds?.heal)
-            dest.hitPoints = Math.min((dest.hitPoints ?? 0) + (unit.healing ?? 0), dest.totalHitPoints ?? 0)
+            const beforeHitPoints = dest.hitPoints ?? 0
+            dest.hitPoints = Math.min(
+              beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit),
+              dest.totalHitPoints ?? 0
+            )
+            grantUnitXp(unit, XP_CATEGORIES.healing, (dest.hitPoints ?? 0) - beforeHitPoints)
             if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
               dest.drawHealthBar?.()
               if (player?.selectedUnit === dest) {

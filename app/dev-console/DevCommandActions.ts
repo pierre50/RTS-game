@@ -31,4 +31,4 @@ export {
   toggleInstantMode,
 } from './actions/player'
 
-export { spawnBuilding, spawnUnits } from './actions/spawn'
+export { spawnBuilding, spawnFloatingItem, spawnUnits } from './actions/spawn'

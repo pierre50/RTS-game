@@ -73,7 +73,7 @@ function loadAIEconomy() {
 test('moves excess live hunters to berries when hunting occupies every food slot', () => {
   const { AIEconomy, constants } = loadAIEconomy()
   const berry = { i: 2, j: 2, quantity: 100 }
-  const animal = { i: 6, j: 6, hitPoints: 8, totalHitPoints: 8, isDead: false, type: 'Gazelle' }
+  const animal = { i: 6, j: 6, hitPoints: 8, totalHitPoints: 8, isDead: false, type: 'Deer' }
   const assignments = []
   const ai = {
     buildingsByTypes: () => [],

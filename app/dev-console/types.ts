@@ -11,6 +11,7 @@ export type DevMapLike = {
   size: number
   grid: RuntimeCell[][]
   resources: Set<DevEntity>
+  floatingItems?: Set<DevEntity>
   gaia?: { units: DevEntity[] } | null
   instantMode?: boolean
   revealEverything?: boolean
@@ -41,6 +42,8 @@ export type DevMapLike = {
   viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }
   addChild<T extends Container>(child: T): T
   removeChild<T extends Container>(child: T): T
+  addToInstanceBucket?(instance: RuntimeEntity): void
+  removeFromInstanceBucket?(instance: RuntimeEntity): void
   getChildByLabel?(label: string): Container | null
   registerRenderChunk?(
     displayObjects: ContainerChild | ContainerChild[],

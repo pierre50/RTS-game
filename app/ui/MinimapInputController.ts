@@ -23,12 +23,19 @@ export class MinimapInputController {
     this.pointerSession = null
   }
 
+  getElement(): HTMLDivElement {
+    const element = this.menu.minimapMap ?? this.menu.bottombarMap
+    if (!element) throw new Error('Minimap host is missing a minimap element')
+    return element
+  }
+
   bind(): void {
     const { menu } = this
-    menu.bottombarMap.addEventListener('pointerdown', this.onPointerDown)
-    menu.bottombarMap.addEventListener('pointermove', this.onPointerMove)
-    menu.bottombarMap.addEventListener('pointerup', this.onPointerUp)
-    menu.bottombarMap.addEventListener('pointercancel', this.onPointerCancel)
+    const minimap = this.getElement()
+    minimap.addEventListener('pointerdown', this.onPointerDown)
+    minimap.addEventListener('pointermove', this.onPointerMove)
+    minimap.addEventListener('pointerup', this.onPointerUp)
+    minimap.addEventListener('pointercancel', this.onPointerCancel)
 
     menu.toggle = document.createElement('button')
     menu.toggle.type = 'button'
@@ -151,10 +158,11 @@ export class MinimapInputController {
 
   destroy(): void {
     clearTimeout(this.mouseHoldTimeout ?? undefined)
-    this.menu.bottombarMap?.removeEventListener('pointerdown', this.onPointerDown)
-    this.menu.bottombarMap?.removeEventListener('pointermove', this.onPointerMove)
-    this.menu.bottombarMap?.removeEventListener('pointerup', this.onPointerUp)
-    this.menu.bottombarMap?.removeEventListener('pointercancel', this.onPointerCancel)
+    const minimap = this.menu.minimapMap ?? this.menu.bottombarMap
+    minimap?.removeEventListener('pointerdown', this.onPointerDown)
+    minimap?.removeEventListener('pointermove', this.onPointerMove)
+    minimap?.removeEventListener('pointerup', this.onPointerUp)
+    minimap?.removeEventListener('pointercancel', this.onPointerCancel)
     this.menu.toggle?.removeEventListener('pointerdown', this.onTogglePointerDown)
     this.menu.toggle?.remove()
   }

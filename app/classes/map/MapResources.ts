@@ -1,5 +1,10 @@
 import { Resource } from '../Resource'
-import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
+import {
+  RESOURCE_TYPES,
+  BIOME_TREE_CHANCE,
+  BIOME_TREE_PLAYER_SAFE_DIST,
+  ANIMAL_PLAYER_SAFE_DIST,
+} from '../../constants'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -282,11 +287,13 @@ export class MapResources {
     const centerI = player.i + this.map.randomItem([-randomDistance, randomDistance])
     const centerJ = player.j + this.map.randomItem([-randomDistance, randomDistance])
 
+    const safeDistSq = ANIMAL_PLAYER_SAFE_DIST ** 2
     const validCells: ResourceCenter[] = []
     for (let dx = -3; dx <= 3; dx++) {
       for (let dy = -3; dy <= 3; dy++) {
         const newI = centerI + dx
         const newJ = centerJ + dy
+        if ((newI - player.i) ** 2 + (newJ - player.j) ** 2 < safeDistSq) continue
         if (grid[newI]?.[newJ]) {
           const cell = grid[newI][newJ]
           if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
@@ -306,9 +313,10 @@ export class MapResources {
 
   generateAnimalsAroundPlayers(playersPos: GridPosition[]): void {
     for (let i = 0; i < playersPos.length; i++) {
-      this.map.placeAnimalHerd(playersPos[i], 'Gazelle', 5, [8, 14])
-      this.map.placeAnimalHerd(playersPos[i], 'Gazelle', 4, [16, 24])
-      this.map.placeAnimalHerd(playersPos[i], 'Hare', 6, [6, 12])
+      this.map.placeAnimalHerd(playersPos[i], 'Deer', 5, [12, 18])
+      this.map.placeAnimalHerd(playersPos[i], 'Deer', 4, [18, 26])
+      this.map.placeAnimalHerd(playersPos[i], 'Hare', 6, [11, 16])
+      this.map.placeAnimalHerd(playersPos[i], 'BlackGrouse', 5, [11, 16])
     }
   }
 

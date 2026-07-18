@@ -16,6 +16,7 @@ import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './
 import { getInstanceDegree } from './maths'
 import { playAudibleSoundCue } from './sound'
 import { showDamageFeedback } from './combatFeedback'
+import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from './unitExperience'
 import { Projectile } from '../classes/Projectile'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -340,11 +341,16 @@ function swingToolInPlace(hero: UnitEntity): void {
         return
       }
       const beforeHitPoints = target.hitPoints ?? 0
-      target.hitPoints = getHitPointsWithDamage(hero, target)
-      showDamageFeedback(target, beforeHitPoints - (target.hitPoints ?? 0))
+      target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
+      const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
+      showDamageFeedback(target, damageDealt)
+      grantUnitXp(hero, XP_CATEGORIES.melee, damageDealt)
       if (target.selected || target.shouldKeepHealthBarVisible?.()) target.drawHealthBar?.()
       target.isAttacked?.(hero)
-      if ((target.hitPoints ?? 0) <= 0) target.die?.()
+      if ((target.hitPoints ?? 0) <= 0) {
+        grantUnitXp(hero, XP_CATEGORIES.melee, XP_KILL_BONUS)
+        target.die?.()
+      }
     },
     SLASH_IMPACT_FRAME
   )

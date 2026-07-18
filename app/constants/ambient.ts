@@ -10,6 +10,9 @@ export const BIOME_TREE_CHANCE = {
 }
 // Player safe radius (cells) — no biome trees placed within this distance of any spawn
 export const BIOME_TREE_PLAYER_SAFE_DIST = 22
+// Player safe radius (cells) — no animals spawned within this distance of any spawn,
+// above the highest runaway sight (Deer: 8) so the camp start isn't a stampede
+export const ANIMAL_PLAYER_SAFE_DIST = 14
 
 // Ground floor decorations (LABEL_TYPES.floor, zIndex 1)
 export const FLOOR_SETS_GRASS = ['environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10']

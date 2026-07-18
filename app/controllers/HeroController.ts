@@ -12,8 +12,6 @@ import {
 import { applyToolAppearance, triggerToolAttackAt, type HeroTool } from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
 import {
-  COMM_BASE_RANGE,
-  findCommGroup,
   getCommRadiusForHold,
   isAnyNpcNear,
   releaseIfStillLooking,
@@ -118,8 +116,7 @@ export class HeroController {
 
     if (key === 'e') {
       if (this.commCharging) return true
-      const hero = this.heroUnit
-      if (hero && findCommGroup(hero, COMM_BASE_RANGE).length) this.beginCommCharge()
+      this.beginCommCharge()
       return true
     }
 
@@ -140,6 +137,7 @@ export class HeroController {
   update(frameScale: number): void {
     const unit = this.heroUnit
     if (!unit) return
+    this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
     // Keep the hover-based cursor live even while picking a "go to" target — it already tells
@@ -205,7 +203,7 @@ export class HeroController {
   }
 
   attackTowardCursor(): boolean {
-    return this.attackTowardPoint(this.primaryClickPoint ?? this.controls.getWorldPointUnderCursor())
+    return this.attackTowardPoint(this.controls.getWorldPointUnderCursor())
   }
 
   attackTowardPoint(point: HeroAimPoint): boolean {
@@ -340,8 +338,10 @@ export class HeroController {
     this.heroUnit = player.units[0]
     setUnitControlMode(this.heroUnit, 'arpg')
     this.heroUnit.stop?.()
+    this.heroUnit.removeHealthBar?.()
     player.unselectAll?.()
     this.setEquippedTool('unarmed')
+    this.controls.context.menu?.setHeroStatusTarget?.(this.heroUnit)
     this.controls.context.menu?.setBottombar?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)
     updateInstanceRenderVisibility(this.heroUnit)

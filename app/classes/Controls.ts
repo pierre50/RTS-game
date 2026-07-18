@@ -309,6 +309,7 @@ export default class Controls extends Container implements ControlsLike {
     if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
+      if (this.isArpgActive()) return
       const {
         context: { player },
       } = this
@@ -634,7 +635,7 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
     if (!this.rallyPointController.active) {
-      player?.selectedBuilding && player.unselectAll()
+      !this.isArpgActive() && player?.selectedBuilding && player.unselectAll()
     }
 
     if (this.mouseRectangle) {

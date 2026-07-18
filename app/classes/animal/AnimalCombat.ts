@@ -12,6 +12,8 @@ import {
 import { showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import { FLYING_ALTITUDE } from './index'
+import { resolveMovementSheet } from './locomotion'
 import type { Animal } from './index'
 
 export class AnimalCombat {
@@ -71,7 +73,10 @@ export class AnimalCombat {
           animal.getAction(animal.action ?? '')
           return
         }
-        animal.setPath(target.path)
+        animal.setPath(
+          target.path,
+          resolveMovementSheet(animal, animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking)
+        )
         return
       }
     }
@@ -97,9 +102,11 @@ export class AnimalCombat {
     })
     if (dest) {
       animal.isFleeing = true
+      const flying = Boolean(animal.flyingSheet)
       animal.sendTo(dest, null, {
-        movementSheet: animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking,
+        movementSheet: flying ? SHEET_TYPES.flying : animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking,
       })
+      if (flying) animal.setAltitude(animal.flyingAltitude ?? FLYING_ALTITUDE)
     } else {
       animal.stop()
     }

@@ -14,6 +14,7 @@ import {
   syncAnimationSpeedToRate,
 } from '../../lib'
 import { Projectile } from '../Projectile'
+import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../../lib/unitExperience'
 import { showDamageFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -241,8 +242,10 @@ export class UnitCombat {
         }
         if (dest && (dest.hitPoints ?? 0) > 0) {
           const beforeHitPoints = dest.hitPoints ?? 0
-          dest.hitPoints = getHitPointsWithDamage(unit, dest)
-          showDamageFeedback(dest, beforeHitPoints - (dest.hitPoints ?? 0))
+          dest.hitPoints = getHitPointsWithDamage(unit, dest, undefined, getCombatXpBonus(unit, XP_CATEGORIES.melee))
+          const damageDealt = beforeHitPoints - (dest.hitPoints ?? 0)
+          showDamageFeedback(dest, damageDealt)
+          grantUnitXp(unit, XP_CATEGORIES.melee, damageDealt)
           if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
             dest.drawHealthBar?.()
             if (player?.selectedUnit === dest || player?.selectedBuilding === dest || player?.selectedOther === dest) {
@@ -251,6 +254,7 @@ export class UnitCombat {
           }
           dest.isAttacked?.(unit)
           if ((dest.hitPoints ?? 0) <= 0) {
+            grantUnitXp(unit, XP_CATEGORIES.melee, XP_KILL_BONUS)
             dest.die?.()
             unit.affectNewDest?.()
           }

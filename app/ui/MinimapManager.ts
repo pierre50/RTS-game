@@ -19,6 +19,12 @@ function isResourceEntity(instance: RuntimeEntity | null | undefined): instance 
   return instance?.family === FAMILY_TYPES.resource
 }
 
+function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
+  const element = menu.minimapMap ?? menu.bottombarMap
+  if (!element) throw new Error('Minimap host is missing a minimap element')
+  return element
+}
+
 export class MinimapManager {
   menu: MinimapHostLike
   miniMapAlpha: number
@@ -69,7 +75,7 @@ export class MinimapManager {
     const px = (v: number) => `${((v / canvasW) * 100).toFixed(2)}%`
     const py = (v: number) => `${((v / canvasH) * 100).toFixed(2)}%`
 
-    menu.bottombarMap.style.clipPath = `polygon(${px(centerX)} 0%, ${px(centerX + halfW)} ${py(halfH)}, ${px(centerX)} ${py(halfH * 2)}, ${px(centerX - halfW)} ${py(halfH)})`
+    getMinimapElement(menu).style.clipPath = `polygon(${px(centerX)} 0%, ${px(centerX + halfW)} ${py(halfH)}, ${px(centerX)} ${py(halfH * 2)}, ${px(centerX - halfW)} ${py(halfH)})`
 
     if (map.revealEverything || map.revealTerrain) {
       this.revealTerrainMinimap()
@@ -229,7 +235,7 @@ export class MinimapManager {
       context = canvas.getContext('2d')!
       context.translate(translate, 0)
       menu.playersMinimap.push({ id, canvas, context })
-      menu.bottombarMap.appendChild(canvas)
+      getMinimapElement(menu).appendChild(canvas)
     }
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)

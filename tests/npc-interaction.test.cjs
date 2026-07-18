@@ -205,3 +205,161 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
     delete global.document
   }
 })
+
+function loadNpcFollowModule(instances) {
+  return loadModule('app/lib/npcInteraction.ts', {
+    '../constants': constants,
+    './grid/visibility': {
+      findInstancesInSight: (instance, condition) => instances.filter(condition),
+    },
+    './maths': {
+      getInstanceDegree: () => 0,
+    },
+  })
+}
+
+function makeEscortWorld(followerProps) {
+  const heroCell = { i: 0, j: 0, has: null, corpses: [] }
+  const owner = { label: 'player', units: [] }
+  owner.isEnemy = other => Boolean(other) && other !== owner
+  const hero = { i: 0, j: 0, owner, context: { map: { grid: [[heroCell]] } } }
+  const calls = []
+  const follower = {
+    followingHero: true,
+    isDead: false,
+    isDestroyed: false,
+    owner,
+    sendTo: dest => calls.push(['move', dest]),
+    sendToAttack: target => calls.push(['attack', target]),
+    ...followerProps,
+  }
+  owner.units = [hero, follower]
+  return { hero, follower, heroCell, calls }
+}
+
+test('followers engage an enemy unit passing near the hero', () => {
+  const enemyOwner = { label: 'enemy' }
+  const enemy = { family: 'unit', owner: enemyOwner, hitPoints: 20, isDead: false, isDestroyed: false, i: 3, j: 0 }
+  const { updateNpcFollow } = loadNpcFollowModule([enemy])
+  const { hero, calls } = makeEscortWorld({
+    i: 1,
+    j: 0,
+    getActionCondition: (target, action) => target === enemy && action === constants.ACTION_TYPES.attack,
+  })
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['attack', enemy]])
+})
+
+test('followers ignore idle animals and keep trailing the hero', () => {
+  const gaia = { label: 'gaia' }
+  const gazelle = {
+    family: constants.FAMILY_TYPES.animal,
+    owner: gaia,
+    hitPoints: 8,
+    isDead: false,
+    isDestroyed: false,
+    action: null,
+    dest: null,
+    i: 2,
+    j: 0,
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([gazelle])
+  const { hero, heroCell, calls } = makeEscortWorld({
+    i: 4,
+    j: 0,
+    getActionCondition: () => true,
+  })
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['move', heroCell]])
+})
+
+test('followers defend the hero from an attacking predator', () => {
+  const gaia = { label: 'gaia' }
+  const lion = {
+    family: constants.FAMILY_TYPES.animal,
+    owner: gaia,
+    hitPoints: 30,
+    isDead: false,
+    isDestroyed: false,
+    action: constants.ACTION_TYPES.attack,
+    dest: null,
+    i: 2,
+    j: 0,
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([lion])
+  const { hero, calls } = makeEscortWorld({
+    i: 1,
+    j: 0,
+    getActionCondition: (target, action) => target === lion && action === constants.ACTION_TYPES.attack,
+  })
+  lion.dest = hero
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['attack', lion]])
+})
+
+test('followers prefer an active attacker over a closer passer-by', () => {
+  const enemyOwner = { label: 'enemy' }
+  const passing = { family: 'unit', owner: enemyOwner, hitPoints: 20, isDead: false, isDestroyed: false, i: 1, j: 0 }
+  const attacker = {
+    family: 'unit',
+    owner: enemyOwner,
+    hitPoints: 20,
+    isDead: false,
+    isDestroyed: false,
+    action: constants.ACTION_TYPES.attack,
+    dest: null,
+    i: 3,
+    j: 0,
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([passing, attacker])
+  const { hero, calls } = makeEscortWorld({
+    i: 0,
+    j: 1,
+    getActionCondition: (target, action) => action === constants.ACTION_TYPES.attack,
+  })
+  attacker.dest = hero
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['attack', attacker]])
+})
+
+test('a fighting follower is left alone inside the leash', () => {
+  const enemyOwner = { label: 'enemy' }
+  const enemy = { family: 'unit', owner: enemyOwner, hitPoints: 20, isDead: false, isDestroyed: false, i: 6, j: 0 }
+  const { updateNpcFollow } = loadNpcFollowModule([enemy])
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 5,
+    j: 0,
+    action: constants.ACTION_TYPES.attack,
+    getActionCondition: () => true,
+  })
+  follower.dest = enemy
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [])
+})
+
+test('a follower dragged past the leash breaks off and returns to the hero', () => {
+  const enemyOwner = { label: 'enemy' }
+  const enemy = { family: 'unit', owner: enemyOwner, hitPoints: 20, isDead: false, isDestroyed: false, i: 21, j: 0 }
+  const { updateNpcFollow } = loadNpcFollowModule([enemy])
+  const { hero, follower, heroCell, calls } = makeEscortWorld({
+    i: 20,
+    j: 0,
+    action: constants.ACTION_TYPES.attack,
+    getActionCondition: () => true,
+  })
+  follower.dest = enemy
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['move', heroCell]])
+})

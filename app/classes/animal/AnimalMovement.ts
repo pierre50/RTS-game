@@ -11,6 +11,7 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import type { RuntimeCell } from '../../types/map'
+import { isAirborne, resolveMovementSheet } from './locomotion'
 import type { Animal, AnimalDestination, AnimalMoveOptions } from './index'
 
 export class AnimalMovement {
@@ -65,7 +66,7 @@ export class AnimalMovement {
   sendTo(
     dest: AnimalDestination | null,
     action: string | null,
-    { forceRepath = false, movementSheet = SHEET_TYPES.walking }: AnimalMoveOptions = {}
+    { forceRepath = false, movementSheet }: AnimalMoveOptions = {}
   ): void {
     const animal = this.animal
     const {
@@ -108,7 +109,7 @@ export class AnimalMovement {
     if (path.length) {
       animal.setDest(dest)
       animal.action = action
-      animal.setPath(path, movementSheet as string)
+      animal.setPath(path, resolveMovementSheet(animal, movementSheet))
     } else {
       animal.stop()
     }
@@ -137,7 +138,13 @@ export class AnimalMovement {
       'playing' in nextCell.has.sprite &&
       nextCell.has.sprite.playing
     ) {
-      animal.sprite.stop()
+      // An airborne animal hovers in place while it waits: freezing the
+      // animation mid-air reads as a glitch, unlike a ground animal standing still.
+      if (isAirborne(animal)) {
+        if (!animal.sprite.playing) animal.sprite.play()
+      } else {
+        animal.sprite.stop()
+      }
       return
     }
     if (nextCell.solid && animal.dest) {

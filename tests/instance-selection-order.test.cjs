@@ -81,7 +81,8 @@ test('unselect keeps played unit and building health bars visible in ARPG mode',
   for (const family of ['unit', 'building']) {
     const instance = Object.create(Instance.prototype)
     const children = [{ label: 'selection' }, { label: 'healthBar' }]
-    instance.context = { map: { arpgMode: true } }
+    instance.label = `${family}-1`
+    instance.context = { map: { arpgMode: true }, controls: { heroUnit: { label: 'hero-1' } } }
     instance.family = family
     instance.owner = { isPlayed: true }
     instance.selected = true
@@ -104,4 +105,29 @@ test('unselect keeps played unit and building health bars visible in ARPG mode',
     assert.equal(children.some(child => child.label === 'selection'), false)
     assert.equal(children.some(child => child.label === 'healthBar'), true)
   }
+})
+
+test('unselect removes the active hero world health bar in ARPG mode', () => {
+  const { Instance } = loadInstance()
+  const instance = Object.create(Instance.prototype)
+  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  instance.label = 'hero-1'
+  instance.context = { map: { arpgMode: true }, controls: { heroUnit: { label: 'hero-1' } } }
+  instance.family = 'unit'
+  instance.owner = { isPlayed: true }
+  instance.selected = true
+  instance.isDead = false
+  instance.isDestroyed = false
+  instance.children = children
+  instance.getChildByLabel = label => children.find(child => child.label === label) || null
+  instance.removeChild = child => {
+    const index = children.indexOf(child)
+    if (index >= 0) children.splice(index, 1)
+  }
+
+  Instance.prototype.unselect.call(instance)
+
+  assert.equal(instance.selected, false)
+  assert.equal(children.some(child => child.label === 'selection'), false)
+  assert.equal(children.some(child => child.label === 'healthBar'), false)
 })

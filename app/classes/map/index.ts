@@ -16,7 +16,7 @@ import { TerrainChunkManager, type ChunkedTerrainMap } from './TerrainChunkManag
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RenderChunk } from '../../types/map'
-import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
+import type { FloatingItemEntity, ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
 import type { PlayerSetupConfig } from '../../types/save'
@@ -76,6 +76,7 @@ export default class Map extends Container {
   positionsCount: number
   gaia: PlayerLike | null
   resources: Set<ResourceEntity>
+  floatingItems: Set<FloatingItemEntity>
   instanceBuckets: InstanceBuckets | null
   renderChunks: RenderChunk[]
   _random: () => number
@@ -131,6 +132,7 @@ export default class Map extends Container {
     this.positionsCount = 2
     this.gaia = null
     this.resources = new Set()
+    this.floatingItems = new Set()
     this.instanceBuckets = null
     this.renderChunks = []
     this._random = Math.random

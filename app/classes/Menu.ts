@@ -8,7 +8,13 @@ import { MenuTooltip } from '../ui/MenuTooltip'
 import { InventoryManager } from '../ui/InventoryManager'
 import { NpcOrdersManager } from '../ui/NpcOrdersManager'
 import { ArpgBuildingMenuManager } from '../ui/ArpgBuildingMenuManager'
+import { HeroStatusHud } from '../ui/HeroStatusHud'
+import { MinimapView } from '../ui/MinimapView'
+import { ActionMenuRenderer } from '../ui/ActionMenuRenderer'
+import { ActionSpecFactory } from '../ui/ActionSpecFactory'
 import { resetHeroCursor } from '../lib/heroCursor'
+import { playUiSound } from '../lib/uiSound'
+import { SOUND_CUES } from '../constants'
 import type { GameContextLike, MenuLike } from '../types/context'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -22,13 +28,16 @@ export default class Menu implements MenuLike {
   bottombar: HTMLDivElement
   bottombarInfo: HTMLDivElement
   bottombarMenu: HTMLDivElement
-  bottombarMapWrap: HTMLDivElement
-  bottombarMap: HTMLDivElement
+  minimapView: MinimapView
+  minimapWrap: HTMLDivElement
+  minimapMap: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
   resourcesMinimap: HTMLCanvasElement
   cameraMinimap: HTMLCanvasElement
   minimapManager: MinimapManager
+  actionSpecs: ActionSpecFactory
+  actionRenderer: ActionMenuRenderer
   bottombarManager: BottombarManager
   playerStatsManager: PlayerStatsManager
   pauseMenu: PauseMenu
@@ -38,6 +47,7 @@ export default class Menu implements MenuLike {
   inventoryManager: InventoryManager
   npcOrdersManager: NpcOrdersManager
   arpgBuildingMenuManager: ArpgBuildingMenuManager
+  heroStatusHud: HeroStatusHud
   toggle?: HTMLButtonElement
   toggled: boolean
   icons!: Record<string, string>
@@ -62,28 +72,21 @@ export default class Menu implements MenuLike {
     this.bottombarInfo.className = 'bottombar-info'
     this.bottombarMenu = document.createElement('div')
     this.bottombarMenu.className = 'bottombar-menu'
-    this.bottombarMapWrap = document.createElement('div')
-    this.bottombarMapWrap.className = 'bottombar-map-wrap'
-    this.bottombarMap = document.createElement('div')
-    this.bottombarMap.className = 'bottombar-map'
-    this.bottombarMapWrap.appendChild(this.bottombarMap)
-
-    this.terrainMinimap = document.createElement('canvas')
-    this.playersMinimap = []
-    this.resourcesMinimap = document.createElement('canvas')
-    this.cameraMinimap = document.createElement('canvas')
-    this.cameraMinimap.classList.add('minimap-camera')
-
-    this.bottombarMap.appendChild(this.terrainMinimap)
-    this.bottombarMap.appendChild(this.resourcesMinimap)
-    this.bottombarMap.appendChild(this.cameraMinimap)
+    this.minimapView = new MinimapView(this)
+    this.minimapWrap = this.minimapView.wrap
+    this.minimapMap = this.minimapView.element
+    this.terrainMinimap = this.minimapView.terrain
+    this.playersMinimap = this.minimapView.players
+    this.resourcesMinimap = this.minimapView.resources
+    this.cameraMinimap = this.minimapView.camera
     this.bottombar.appendChild(this.bottombarInfo)
     this.bottombar.appendChild(this.bottombarMenu)
-    this.bottombar.appendChild(this.bottombarMapWrap)
     this.gameHud.appendChild(this.bottombar)
     document.body.appendChild(this.gameHud)
 
     this.minimapManager = new MinimapManager(this)
+    this.actionSpecs = new ActionSpecFactory(this)
+    this.actionRenderer = new ActionMenuRenderer(this)
     this.bottombarManager = new BottombarManager(this)
     this.playerStatsManager = new PlayerStatsManager(this)
     this.pauseMenu = new PauseMenu(this)
@@ -93,6 +96,7 @@ export default class Menu implements MenuLike {
     this.inventoryManager = new InventoryManager(this)
     this.npcOrdersManager = new NpcOrdersManager(this)
     this.arpgBuildingMenuManager = new ArpgBuildingMenuManager(this)
+    this.heroStatusHud = new HeroStatusHud(this)
     this.toggled = false
 
     this.topbarView.build()
@@ -115,6 +119,8 @@ export default class Menu implements MenuLike {
     this.inventoryManager.destroy()
     this.npcOrdersManager.destroy()
     this.arpgBuildingMenuManager.destroy()
+    this.heroStatusHud.destroy()
+    this.minimapView.destroy()
     resetHeroCursor()
     this.gameHud.remove()
     this.topbarView.destroy()
@@ -123,7 +129,7 @@ export default class Menu implements MenuLike {
   init(): void {
     this.minimapManager.initMiniMap()
     this.updateTopbar()
-    this.bottombarManager.preloadIcons(this.context.player)
+    this.actionSpecs.preloadIcons(this.context.player)
   }
 
   updateTopbar(): void {
@@ -199,8 +205,8 @@ export default class Menu implements MenuLike {
   updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
     this.bottombarManager.updateButtonContent(target, action)
   }
-  toggleButtonCancel(target: string, value: boolean): void {
-    return this.bottombarManager.toggleButtonCancel(target, value)
+  toggleQueuedActionCancel(target: string, value: boolean): void {
+    return this.bottombarManager.toggleQueuedActionCancel(target, value)
   }
   updateBottombar(): void {
     return this.bottombarManager.updateBottombar()
@@ -209,19 +215,46 @@ export default class Menu implements MenuLike {
     return this.bottombarManager.setBottombar(selection)
   }
   getMessage(cost: ResourceAmount): string {
-    return this.bottombarManager.getMessage(cost)
+    return this.actionSpecs.getMessage(cost)
   }
-  getUnitButton(type: string): MenuButtonSpec {
-    return this.bottombarManager.getUnitButton(type)
+  getActionUnitButton(type: string): MenuButtonSpec {
+    return this.actionSpecs.getActionUnitButton(type)
   }
-  getRallyPointButton(): MenuButtonSpec {
-    return this.bottombarManager.getRallyPointButton()
+  getActionRallyPointButton(): MenuButtonSpec {
+    return this.actionSpecs.getActionRallyPointButton()
   }
-  getBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
-    return this.bottombarManager.getBuildingButton(type, ownerOverride)
+  getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
+    return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
   }
-  getTechnologyButton(type: string): MenuButtonSpec {
-    return this.bottombarManager.getTechnologyButton(type)
+  getActionTechnologyButton(type: string): MenuButtonSpec {
+    return this.actionSpecs.getActionTechnologyButton(type)
+  }
+  getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
+    return this.actionSpecs.getActionMenuItems(selection)
+  }
+  createActionIcon(src: string): HTMLImageElement {
+    return this.actionSpecs.createActionIcon(src)
+  }
+  playUiClick(): void {
+    playUiSound(SOUND_CUES.ui.menuClick)
+  }
+  clearActionHotkeys(): void {
+    return this.actionRenderer.clearHotkeys()
+  }
+  assignActionHotkey(id: string, usedKeys: Set<string>): string | null {
+    return this.actionRenderer.assignHotkey(id, usedKeys)
+  }
+  createActionMenuButton(
+    selection: RuntimeEntity,
+    button: MenuButtonSpec,
+    index: number,
+    hotkey: string | null,
+    onNavigate: (children: MenuButtonSpec[]) => void
+  ): HTMLDivElement {
+    return this.actionRenderer.createMenuButton(selection, button, index, hotkey, onNavigate)
+  }
+  setActionHotkey(key: string, action: () => void): void {
+    this.actionRenderer.activeHotkeys.set(key, action)
   }
   handleHotkey(key: string): void {
     return this.bottombarManager.handleHotkey(key)
@@ -239,6 +272,12 @@ export default class Menu implements MenuLike {
   }
   setEquippedTool(tool: HeroTool | null): void {
     return this.inventoryManager.render(tool)
+  }
+  setHeroStatusTarget(hero: UnitEntity | null): void {
+    return this.heroStatusHud.setHero(hero)
+  }
+  updateHeroStatus(hero?: UnitEntity | null): void {
+    return this.heroStatusHud.update(hero)
   }
 
   // NPC orders delegates

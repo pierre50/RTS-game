@@ -573,21 +573,21 @@ export class MapEditorHud {
 
   updateButtonContent(): void {}
 
-  toggleButtonCancel(): void {}
+  toggleQueuedActionCancel(): void {}
 
-  getUnitButton(): MenuButtonSpec {
+  getActionUnitButton(): MenuButtonSpec {
     return { id: 'editor-unit-placeholder' }
   }
 
-  getTechnologyButton(): MenuButtonSpec {
+  getActionTechnologyButton(): MenuButtonSpec {
     return { id: 'editor-technology-placeholder' }
   }
 
-  getRallyPointButton(): MenuButtonSpec {
+  getActionRallyPointButton(): MenuButtonSpec {
     return { id: 'editor-rally-placeholder' }
   }
 
-  getBuildingButton(): MenuButtonSpec {
+  getActionBuildingButton(): MenuButtonSpec {
     return { id: 'editor-building-placeholder' }
   }
 

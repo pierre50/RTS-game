@@ -44,11 +44,11 @@ export interface MenuLike {
   updatePlayerMiniMapEvt(player: PlayerLike): void
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
-  toggleButtonCancel(id: string, enabled: boolean): void
-  getUnitButton(type: string): MenuButtonSpec
-  getTechnologyButton(type: string): MenuButtonSpec
-  getRallyPointButton(): MenuButtonSpec
-  getBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
+  toggleQueuedActionCancel(id: string, enabled: boolean): void
+  getActionUnitButton(type: string): MenuButtonSpec
+  getActionTechnologyButton(type: string): MenuButtonSpec
+  getActionRallyPointButton(): MenuButtonSpec
+  getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   updatePlayerStats(): void
   init?(): void
   destroy?(): void
@@ -56,6 +56,8 @@ export interface MenuLike {
   closeInventory?(): void
   isInventoryOpen?(): boolean
   setEquippedTool?(tool: HeroTool | null): void
+  setHeroStatusTarget?(hero: UnitEntity | null): void
+  updateHeroStatus?(hero?: UnitEntity | null): void
   toggleNpcOrders?(npcs: UnitEntity[]): void
   openNpcOrders?(npcs: UnitEntity[]): void
   isNpcOrdersOpen?(): boolean
@@ -81,7 +83,8 @@ export interface MinimapHostLike {
   context: GameContextLike
   gameHud: HTMLDivElement
   bottombar: HTMLDivElement
-  bottombarMap: HTMLDivElement
+  bottombarMap?: HTMLDivElement
+  minimapMap?: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   resourcesMinimap: HTMLCanvasElement
   cameraMinimap: HTMLCanvasElement
