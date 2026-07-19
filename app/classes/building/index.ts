@@ -10,10 +10,13 @@ import {
   WORK_TYPES,
 } from '../../constants'
 import {
+  cartesianToIsometric,
+  getGroundReliefLevel,
   getTexture,
   getInstanceZIndex,
   getPlainCellsAroundPoint,
   getBuildingFootprintRadius,
+  getReliefLiftPixels,
   clearCellTerrainSet,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -141,13 +144,16 @@ export class Building extends Instance implements BuildingEntity {
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
 
-    this.x = map.grid[this.i][this.j].x
-    this.y = map.grid[this.i][this.j].y
-    this.z = map.grid[this.i][this.j].z
+    const anchorCell = map.grid[this.i][this.j]
+    const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
+    this.x = flatX
+    this.y = flatY
+    this.z = anchorCell.z
     this.zIndex = getInstanceZIndex(this)
     if (this.type === BUILDING_TYPES.farm) {
       this.zIndex -= 0.1
     }
+    this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(anchorCell))
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     let spriteSheet = getBuildingTextureNameWithSize(this.size)
     if (this.type === BUILDING_TYPES.dock) {
@@ -161,6 +167,7 @@ export class Building extends Instance implements BuildingEntity {
     this.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
+    this.sprite.position.y = this.reliefLift
     this.shadow = this.createShadow()
     const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key))
     const technologies = context.editor
@@ -457,7 +464,7 @@ export class Building extends Instance implements BuildingEntity {
     flag.anchor.set(flag.texture.defaultAnchor!.x, flag.texture.defaultAnchor!.y)
     flag.x = cell.x
     flag.y = cell.y
-    flag.zIndex = getInstanceZIndex({ x: cell.x, y: cell.y, z: cell.z })
+    flag.zIndex = cell.i + cell.j
     flag.visible = this.selected
     flag.eventMode = 'none'
     flag.roundPixels = true
@@ -496,7 +503,7 @@ export class Building extends Instance implements BuildingEntity {
     shadow.visible = getShadowsEnabled()
     shadow.rotation = 0
     shadow.scale.set(Math.abs(sprite.scale.x) * SHADOW_SCALE_X, Math.abs(sprite.scale.y) * SHADOW_SCALE_Y)
-    shadow.position.set(0, 0)
+    shadow.position.set(0, this.reliefLift ?? 0)
   }
 
   syncVisualSettings(): void {

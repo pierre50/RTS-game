@@ -138,6 +138,7 @@ export default class Game extends Container {
       () => this.context.paused ?? false,
       () => this.context.performance ?? null
     )
+    ;(window as unknown as { __debugContext?: unknown }).__debugContext = this.context // TEMP-VERIFY-DEBUG
     if (config !== null) {
       this.start().catch(error => {
         this._loadingScreen?.destroy()

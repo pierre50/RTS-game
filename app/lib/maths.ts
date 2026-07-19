@@ -145,11 +145,12 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
 }
 
 /**
- * Get the instance zIndex according to his position
+ * Get the instance zIndex according to his position. Instance x/y are always flat (relief is a
+ * render-only offset applied to child sprites, never to x/y) so this is a pure i+j sort key.
  * @param {object} instance
  */
-export function getInstanceZIndex(instance: Point & { z?: number | null }): number {
-  const pos = isometricToCartesian(instance.x, instance.y + (instance.z ?? 0) * CELL_DEPTH)
+export function getInstanceZIndex(instance: Point): number {
+  const pos = isometricToCartesian(instance.x, instance.y)
   return pos[0] + pos[1]
 }
 

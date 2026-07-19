@@ -1,6 +1,9 @@
 import { Sprite, Assets, Polygon, AnimatedSprite } from 'pixi.js'
 import {
+  cartesianToIsometric,
+  getGroundReliefLevel,
   getInstanceZIndex,
+  getReliefLiftPixels,
   playerCanSeeInstance,
   randomRange,
   drawInstanceBlinkingSelection,
@@ -127,8 +130,9 @@ export class Resource extends Instance implements ResourceEntity {
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
-    this.x = map.grid[this.i][this.j].x
-    this.y = map.grid[this.i][this.j].y
+    const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
+    this.x = flatX
+    this.y = flatY
     this.z = map.grid[this.i][this.j].z
     this.zIndex = getInstanceZIndex(this)
     this.visible = false
@@ -137,6 +141,7 @@ export class Resource extends Instance implements ResourceEntity {
     const cell = map.grid[this.i][this.j]
     cell.solid = true
     cell.has = this
+    this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
 
     this.eventMode = 'auto'
 
@@ -177,6 +182,7 @@ export class Resource extends Instance implements ResourceEntity {
     const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
     interactiveSprite.updateAnchor = true
     interactiveSprite.label = LABEL_TYPES.sprite
+    this.sprite.position.y = this.reliefLift
     if (this.sprite) {
       interactiveSprite.eventMode = 'static'
       interactiveSprite.roundPixels = true
@@ -369,10 +375,13 @@ export class Resource extends Instance implements ResourceEntity {
     } = this
     const cell = map.grid[this.i]?.[this.j]
     if (!cell) return
-    this.x = cell.x
-    this.y = cell.y
+    const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
+    this.x = flatX
+    this.y = flatY
     this.z = cell.z
     this.zIndex = getInstanceZIndex(this)
+    this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
+    this.sprite.position.y = this.reliefLift
     this.visible = true
     this.refreshTextureForTerrain()
   }
@@ -480,7 +489,7 @@ export class Resource extends Instance implements ResourceEntity {
     shadow.alpha = SHADOW_ALPHA
     shadow.rotation = 0
     shadow.scale.set(Math.abs(this.sprite.scale.x) * SHADOW_SCALE_X, Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y)
-    shadow.position.set(0, 0)
+    shadow.position.set(0, this.reliefLift ?? 0)
   }
 
   syncVisualSettings(): void {

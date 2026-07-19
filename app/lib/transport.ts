@@ -1,7 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint } from './grid/cells'
 import { getInstancePath } from './grid/movement'
-import { getInstanceZIndex, instancesDistance } from './maths'
+import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex, instancesDistance } from './maths'
 import { updateInstanceVisibility, type RenderableInstance } from './grid/visibility'
 import type { Grid, GridPosition, Point } from '../types/grid'
 import type { RuntimeEntity } from '../types/entities'
@@ -40,6 +40,7 @@ type TransportAIContext = {
 export type TransportUnit = GridPosition &
   Partial<Point> & {
     action?: string | null
+    applyReliefLift?: (level: number, immediate?: boolean) => void
     category?: string
     context?: GameContextLike | TransportContext | TransportAIContext
     currentCell?: RuntimeCell | null
@@ -299,10 +300,12 @@ export function unloadTransport(transport?: TransportUnit | null): number {
     unit.loadedInTransport = null
     unit.i = cell.i
     unit.j = cell.j
-    unit.x = cell.x ?? unit.x
-    unit.y = cell.y ?? unit.y
+    const [flatX, flatY] = cartesianToIsometric(cell.i, cell.j)
+    unit.x = flatX
+    unit.y = flatY
     unit.z = cell.z ?? unit.z ?? 0
-    unit.zIndex = getInstanceZIndex({ x: unit.x ?? 0, y: unit.y ?? 0, z: unit.z })
+    unit.zIndex = getInstanceZIndex({ x: unit.x ?? 0, y: unit.y ?? 0 })
+    unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
     unit.currentCell = cell
     placeTransportUnit(cell, unit)
     cell.solid = true

@@ -13,6 +13,7 @@ import {
   UNIT_TYPES,
 } from '../../constants'
 import {
+  cartesianToIsometric,
   getInstanceZIndex,
   getGroundReliefLevel,
   getReliefLiftPixels,
@@ -286,8 +287,9 @@ export class Unit extends Instance implements UnitEntity {
     this.visible = false
     this.visibleCells = new Set()
     const spawnCell = map.grid[this.i][this.j]
-    this.x = unitConfig.x ?? options.x ?? spawnCell.x
-    this.y = unitConfig.y ?? options.y ?? spawnCell.y
+    const [flatSpawnX, flatSpawnY] = cartesianToIsometric(this.i, this.j)
+    this.x = unitConfig.x ?? options.x ?? flatSpawnX
+    this.y = unitConfig.y ?? options.y ?? flatSpawnY
     this.z = unitConfig.z ?? options.z ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this)
     this.quantity = this.quantity ?? this.totalQuantity
@@ -692,10 +694,11 @@ export class Unit extends Instance implements UnitEntity {
     }
   }
 
-  // Cosmetic-only: offsets the sprite, shadow and equipment layers to exaggerate the relief
-  // already baked into cell.y (level is fractional on slopes — see getGroundReliefLevel).
+  // Render-only: this is the SOLE source of visual relief for the unit — this.x/y stay flat
+  // (pathing/collision/zIndex), so this offsets the sprite, shadow and equipment layers to
+  // represent the ground relief level (fractional on slopes — see getGroundReliefLevel).
   // Eased toward the target unless immediate, since the underfoot sampling can step at tile
-  // boundaries. Never touches this.x/y (pathing/collision) or zIndex.
+  // boundaries. Never touches this.x/y or zIndex.
   applyReliefLift(level: number, immediate = false): void {
     const target = -getReliefLiftPixels(level)
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING

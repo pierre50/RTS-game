@@ -1,7 +1,14 @@
 import { Assets, Graphics, Sprite } from 'pixi.js'
 import type { Container, Ticker } from 'pixi.js'
 import { FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
-import { getInstanceZIndex, getTexture, updateInstanceRenderVisibility } from '../lib'
+import {
+  cartesianToIsometric,
+  getGroundReliefLevel,
+  getInstanceZIndex,
+  getReliefLiftPixels,
+  getTexture,
+  updateInstanceRenderVisibility,
+} from '../lib'
 import { Instance } from './Instance'
 import type { GameContextLike } from '../types/context'
 import type { FloatingItemEntity } from '../types/entities'
@@ -54,16 +61,19 @@ export class FloatingItem extends Instance implements FloatingItemEntity {
     this.size = 1
     this.i = options.i
     this.j = options.j
-    this.x = options.x ?? cell.x
-    this.y = options.y ?? cell.y
+    const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
+    this.x = options.x ?? flatX
+    this.y = options.y ?? flatY
     this.z = options.z ?? cell.z
     this.zIndex = getInstanceZIndex(this)
+    this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
     this.eventMode = 'none'
     this.sortableChildren = true
     this.floatPhase = ((this.i * 29 + this.j * 17) % 360) * (Math.PI / 180)
 
     this.shadow = this.createShadow()
     this.sprite = this.createSprite()
+    this.shadow.position.y = this.reliefLift
     this.addChild(this.shadow, this.sprite)
 
     map.floatingItems?.add(this)
@@ -80,7 +90,7 @@ export class FloatingItem extends Instance implements FloatingItemEntity {
     sprite.eventMode = 'none'
     sprite.roundPixels = true
     sprite.scale.set(SPRITE_SCALE)
-    sprite.y = SPRITE_BASE_Y
+    sprite.y = SPRITE_BASE_Y + (this.reliefLift ?? 0)
     return sprite
   }
 
@@ -110,7 +120,7 @@ export class FloatingItem extends Instance implements FloatingItemEntity {
     if (this.context.paused) return
     this.floatPhase += deltaMS * FLOAT_SPEED
     const bob = Math.sin(this.floatPhase) * FLOAT_AMPLITUDE
-    this.sprite.y = SPRITE_BASE_Y + bob
+    this.sprite.y = SPRITE_BASE_Y + bob + (this.reliefLift ?? 0)
     this.shadow.scale.set(1 + Math.abs(bob) * 0.018)
   }
 

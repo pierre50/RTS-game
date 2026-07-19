@@ -10,6 +10,7 @@ import {
 } from '../../constants'
 import {
   canUpdateMinimap,
+  cartesianToIsometric,
   degreeToDirection,
   getCellsAroundPoint,
   findInstancesInSight,
@@ -525,6 +526,10 @@ export class UnitMovement {
     if (!map || !unit.path?.length) return
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
+    // unit.x/y are always flat; nextCell.x/y carry the terrain's baked relief offset, so any
+    // distance/target math mixing the two must go through this flat equivalent of nextCell.
+    const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
+    const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
     if (unit.currentCell) {
       // The relief border is a slope, not a step: blend the lift continuously along the walk
       // between the two cells' ground levels, so a low→border→high climb reads as one single
@@ -532,7 +537,7 @@ export class UnitMovement {
       const from = getGroundReliefLevel(unit.currentCell)
       const to = getGroundReliefLevel(nextCell)
       const total = instancesDistance(unit.currentCell, nextCell, false) || 1
-      const remaining = Math.min(instancesDistance(unit, nextCell, false), total)
+      const remaining = Math.min(instancesDistance(unit, nextFlatPoint, false), total)
       unit.applyReliefLift?.(to + (from - to) * (remaining / total))
     }
     const dest = unit.dest
@@ -562,7 +567,7 @@ export class UnitMovement {
     if (!sprite.playing) {
       sprite.play()
     }
-    if (instancesDistance(unit, nextCell, false) <= (unit.speed ?? 0)) {
+    if (instancesDistance(unit, nextFlatPoint, false) <= (unit.speed ?? 0)) {
       const oldI = unit.i,
         oldJ = unit.j
       unit.z = nextCell.z
@@ -608,7 +613,7 @@ export class UnitMovement {
       let speed = unit.speed ?? 0
       if ((unit.loading ?? 0) > 0) speed *= 0.8
       if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-      moveTowardPoint(unit, nextCell.x, nextCell.y, speed)
+      moveTowardPoint(unit, nextFlatX, nextFlatY, speed)
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
       if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)

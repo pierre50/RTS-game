@@ -9,6 +9,7 @@ import {
   UNIT_TYPES,
 } from '../../constants'
 import {
+  cartesianToIsometric,
   getInstanceZIndex,
   getGroundReliefLevel,
   getReliefLiftPixels,
@@ -139,8 +140,9 @@ export class Animal extends Instance implements AnimalEntity {
     this.visible = false
     this.visibleCells = new Set()
     const spawnCell = map.grid[this.i][this.j]
-    this.x = animalConfig.x ?? numberCoordinate(options.x) ?? spawnCell.x
-    this.y = animalConfig.y ?? numberCoordinate(options.y) ?? spawnCell.y
+    const [flatSpawnX, flatSpawnY] = cartesianToIsometric(this.i, this.j)
+    this.x = animalConfig.x ?? numberCoordinate(options.x) ?? flatSpawnX
+    this.y = animalConfig.y ?? numberCoordinate(options.y) ?? flatSpawnY
     this.z = animalConfig.z ?? numberCoordinate(options.z) ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this)
 
@@ -344,12 +346,13 @@ export class Animal extends Instance implements AnimalEntity {
     this.syncShadow()
   }
 
-  // Cosmetic-only: offsets the sprite (on top of the flying altitude, if any) to exaggerate
-  // the relief already baked into cell.y (level is fractional on slopes — see
-  // getGroundReliefLevel). Eased toward the target unless immediate, since the underfoot
-  // sampling can step at tile boundaries. Never touches this.x/y or zIndex. Sign matches
-  // Unit.reliefLift: negative when raised, directly usable as a Pixi position.y offset —
-  // see getReliefOffset for the shared "instance.y + offset = visual y" accessor.
+  // Render-only: this is the SOLE source of visual relief for the animal — this.x/y stay flat
+  // (pathing/collision/zIndex), so this offsets the sprite (on top of the flying altitude, if
+  // any) to represent the ground relief level (fractional on slopes — see getGroundReliefLevel).
+  // Eased toward the target unless immediate, since the underfoot sampling can step at tile
+  // boundaries. Never touches this.x/y or zIndex. Sign matches Unit.reliefLift: negative when
+  // raised, directly usable as a Pixi position.y offset — see getReliefOffset for the shared
+  // "instance.y + offset = visual y" accessor.
   applyReliefLift(level: number, immediate = false): void {
     const target = -getReliefLiftPixels(level)
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING

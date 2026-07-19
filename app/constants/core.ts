@@ -2,13 +2,12 @@ export const CELL_WIDTH = 64
 export const CELL_HEIGHT = 32
 export const CELL_DEPTH = 16
 
-// Cosmetic exaggeration on top of the relief offset already baked into cell.y, so units/animals
-// visibly rise/sink when they cross a relief step instead of it reading as flat terrain. The
-// baked offset alone (-z*CELL_DEPTH) is smoothed across the whole tile-to-tile walk, so it barely
-// registers — checking terrain/*/texture.png confirms the border tile's own art (the lighter/
-// darker riser band between the flat top and the ground in front of it) is a full CELL_DEPTH-tall
-// cliff face, not a gradual ramp. Matching that height here (rather than a smaller fraction of it)
-// makes the cosmetic pop read as "climbing that cliff" instead of a faint nudge.
+// Sole visual elevation offset per relief step. Entity x/y are always flat (relief never affects
+// pathing/collision/zIndex) — this is the only place relief becomes visible, applied to sprite/
+// shadow/equipment layers only. Matches the terrain border art (checking terrain/*/texture.png:
+// the lighter/darker riser band between the flat top and the ground in front of it is a full
+// CELL_DEPTH-tall cliff face, not a gradual ramp), so the lift reads as "climbing that cliff"
+// instead of a faint nudge.
 export const RELIEF_SPRITE_LIFT_PER_STEP = CELL_DEPTH
 export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.6
 // Per-update easing toward the target lift (and the hero's slope slowdown). Path movement

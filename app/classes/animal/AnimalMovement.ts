@@ -1,5 +1,6 @@
 import { FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
+  cartesianToIsometric,
   degreeToDirection,
   getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
@@ -123,13 +124,17 @@ export class AnimalMovement {
     } = animal
     const next = animal.path[animal.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
+    // animal.x/y are always flat; nextCell.x/y carry the terrain's baked relief offset, so any
+    // distance/target math mixing the two must go through this flat equivalent of nextCell.
+    const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
+    const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
     if (animal.currentCell) {
       // See UnitMovement._moveToPath: the relief border is a slope, so blend the lift
       // continuously along the walk between the two cells' ground levels.
       const from = getGroundReliefLevel(animal.currentCell)
       const to = getGroundReliefLevel(nextCell)
       const total = instancesDistance(animal.currentCell, nextCell, false) || 1
-      const remaining = Math.min(instancesDistance(animal, nextCell, false), total)
+      const remaining = Math.min(instancesDistance(animal, nextFlatPoint, false), total)
       animal.applyReliefLift(to + (from - to) * (remaining / total))
     }
     if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
@@ -164,7 +169,7 @@ export class AnimalMovement {
     if (!animal.sprite.playing) {
       animal.sprite.play()
     }
-    if (instancesDistance(animal, nextCell, false) < animal.speed) {
+    if (instancesDistance(animal, nextFlatPoint, false) < animal.speed) {
       const oldI = animal.i,
         oldJ = animal.j
       animal.z = nextCell.z
@@ -201,7 +206,7 @@ export class AnimalMovement {
       const oldDeg = animal.degree
       let speed = animal.speed
       if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-      moveTowardPoint(animal, nextCell.x, nextCell.y, speed)
+      moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
         animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
       }
