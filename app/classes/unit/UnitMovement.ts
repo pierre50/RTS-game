@@ -602,7 +602,7 @@ export class UnitMovement {
       const wasWalking = unit.currentSheet === SHEET_TYPES.walking
       let speed = unit.speed ?? 0
       if ((unit.loading ?? 0) > 0) speed *= 0.8
-      if ((nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
+      if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(unit, nextCell.x, nextCell.y, speed)
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
       if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
@@ -704,8 +704,10 @@ export class UnitMovement {
     const map = unit.context?.map
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
 
-    const pendingClimb = this.directMoveClimb
-    const isClimbing = Boolean(pendingClimb && pendingClimb.toZ > pendingClimb.fromZ)
+    // Driven purely by the cell the unit is actually standing on (stable, no lookahead) —
+    // the relief-border tile IS the cliff edge (see RELIEF_CLIMB_TRANSITION_DISTANCE), so
+    // slowing down while on it covers both the approach and the step up/down through it.
+    const isClimbing = Boolean(unit.currentCell?.inclined)
     const effectiveDistance = isClimbing ? distance * RELIEF_CLIMB_SPEED_MULTIPLIER : distance
 
     const candidateX = unit.x + dirX * effectiveDistance

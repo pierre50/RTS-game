@@ -173,6 +173,7 @@ export class Unit extends Instance implements UnitEntity {
   declare sprite: AnimatedSprite
   shadow: AnimatedSprite | null
   appearanceLayerSprites: Map<number, AnimatedSprite>
+  declare reliefLift: number
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   spriteScale?: number
@@ -247,6 +248,7 @@ export class Unit extends Instance implements UnitEntity {
     this.shadow = null
     this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
+    this.reliefLift = 0
 
     this.dest = null
     this.realDest = null
@@ -672,7 +674,9 @@ export class Unit extends Instance implements UnitEntity {
     shadow.rotation = 0
     shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X
     shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y
-    shadow.position.set(0, 0)
+    // The shadow rises/sinks with the sprite on relief (both stand on the same raised
+    // ground) — unlike a flying animal's shadow, which stays pinned to the ground.
+    shadow.position.set(0, this.reliefLift)
     if (this.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -686,14 +690,17 @@ export class Unit extends Instance implements UnitEntity {
     }
   }
 
-  // Cosmetic-only: offsets the sprite and its equipment layers to exaggerate the relief
+  // Cosmetic-only: offsets the sprite, shadow and equipment layers to exaggerate the relief
   // step already baked into cell.y. Never touches this.x/y (pathing/collision) or zIndex.
   applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
-    const offset = -getReliefLiftPixels(z, fromZ, progress)
-    this.sprite.position.y = offset
+    this.reliefLift = -getReliefLiftPixels(z, fromZ, progress)
+    this.sprite.position.y = this.reliefLift
+    if (this.shadow) this.shadow.position.y = this.reliefLift
     for (const layerSprite of this.appearanceLayerSprites.values()) {
-      layerSprite.position.y = offset
+      layerSprite.position.y = this.reliefLift
     }
+    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
+    if (healthBar) healthBar.position.y = this.reliefLift
   }
 
   syncAppearanceLayers(sheet: string) {

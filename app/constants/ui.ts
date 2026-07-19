@@ -36,4 +36,12 @@ export const COLOR_RED = 0xff0000
 export const COLOR_GREEN = 0x00ff00
 export const COLOR_GOLD = 0xffcc33
 
+// Mirrors the --status-health-* / --status-progress-* gradient tokens in app/styles/tokens.css,
+// so the in-game health bar reads as the same "chiseled stone/metal" style as the menu HP bars.
+export const HEALTH_BAR_BORDER_COLOR = 0x1f0c09
+export const HEALTH_BAR_TRACK_GRADIENT_TOP = 0x9c2e1b
+export const HEALTH_BAR_TRACK_GRADIENT_BOTTOM = 0x701d12
+export const HEALTH_BAR_FILL_GRADIENT_TOP = 0x52c44f
+export const HEALTH_BAR_FILL_GRADIENT_BOTTOM = 0x24822b
+
 export const COMMAND_POINTER_SHEET_ID = 'pointers/move-target'

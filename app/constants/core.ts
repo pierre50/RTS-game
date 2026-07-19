@@ -6,9 +6,11 @@ export const CELL_DEPTH = 16
 // visibly rise/sink when they cross a relief step instead of it reading as flat terrain.
 export const RELIEF_SPRITE_LIFT_PER_STEP = 8
 export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.7
-// Free (hero) movement has no discrete path step to key the slowdown/lift blend off of, so
-// instead it decays over this many px of travel following a relief crossing.
-export const RELIEF_CLIMB_TRANSITION_DISTANCE = 40
+// Free (hero) movement has no discrete path step to key the lift blend off of, so instead it
+// decays over this many px of travel following a relief crossing. Kept short: the terrain art
+// itself is a hard cliff edge (a full-CELL_DEPTH riser baked into the border tile), not a ramp,
+// so the sprite should catch up quickly rather than visibly lag behind the ground it's on.
+export const RELIEF_CLIMB_TRANSITION_DISTANCE = 14
 
 export const STEP_TIME = 20
 export const BUCKET_SIZE = 8

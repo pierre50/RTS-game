@@ -1,10 +1,52 @@
-import { Container, Graphics } from 'pixi.js'
+import { Container, FillGradient, Graphics } from 'pixi.js'
 import type { AnimatedSprite, Sprite } from 'pixi.js'
-import { COLOR_WHITE, COLOR_GREEN, COLOR_RED, FAMILY_TYPES, LABEL_TYPES } from '../constants'
+import {
+  COLOR_WHITE,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  HEALTH_BAR_BORDER_COLOR,
+  HEALTH_BAR_TRACK_GRADIENT_TOP,
+  HEALTH_BAR_TRACK_GRADIENT_BOTTOM,
+  HEALTH_BAR_FILL_GRADIENT_TOP,
+  HEALTH_BAR_FILL_GRADIENT_BOTTOM,
+} from '../constants'
 import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { CombatEntity, UnitTextureInstance } from '../lib'
+
+let healthBarTrackGradient: FillGradient | null = null
+let healthBarFillGradient: FillGradient | null = null
+
+function getHealthBarTrackGradient(): FillGradient {
+  if (!healthBarTrackGradient) {
+    healthBarTrackGradient = new FillGradient({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: [
+        { offset: 0, color: HEALTH_BAR_TRACK_GRADIENT_TOP },
+        { offset: 1, color: HEALTH_BAR_TRACK_GRADIENT_BOTTOM },
+      ],
+    })
+  }
+  return healthBarTrackGradient
+}
+
+function getHealthBarFillGradient(): FillGradient {
+  if (!healthBarFillGradient) {
+    healthBarFillGradient = new FillGradient({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: [
+        { offset: 0, color: HEALTH_BAR_FILL_GRADIENT_TOP },
+        { offset: 1, color: HEALTH_BAR_FILL_GRADIENT_BOTTOM },
+      ],
+    })
+  }
+  return healthBarFillGradient
+}
 
 export class Instance extends Container {
   context: GameContextLike
@@ -25,6 +67,7 @@ export class Instance extends Container {
   hitPoints!: number
   totalHitPoints!: number
   sprite?: Sprite | AnimatedSprite
+  reliefLift?: number
   action?: string | null
   die?(immediate?: boolean): void
   hasPath?(): boolean
@@ -117,21 +160,30 @@ export class Instance extends Container {
     if (!this.totalHitPoints) return
     if (this.family !== FAMILY_TYPES.unit && this.family !== FAMILY_TYPES.building) return
     if (!this.owner?.isPlayed) return
-    const barWidth = 20
-    const barHeight = 2
+    const barWidth = 22
+    const barHeight = 6
+    const borderWidth = 1
     const x = -barWidth / 2
     const spriteTop = this.sprite ? -(this.sprite.height * this.sprite.anchor.y) : -40
     const y = spriteTop - 10
+    const innerX = x + borderWidth
+    const innerY = y + borderWidth
+    const innerWidth = barWidth - borderWidth * 2
+    const innerHeight = barHeight - borderWidth * 2
     const ratio = Math.max(0, Math.min(1, this.hitPoints / this.totalHitPoints))
     const bar = new Graphics()
     bar.label = LABEL_TYPES.healthBar
     bar.zIndex = 4
     bar.rect(x, y, barWidth, barHeight)
-    bar.fill(COLOR_RED)
+    bar.fill(HEALTH_BAR_BORDER_COLOR)
+    bar.rect(innerX, innerY, innerWidth, innerHeight)
+    bar.fill(getHealthBarTrackGradient())
     if (ratio > 0) {
-      bar.rect(x, y, Math.round(barWidth * ratio), barHeight)
-      bar.fill(COLOR_GREEN)
+      bar.rect(innerX, innerY, Math.round(innerWidth * ratio), innerHeight)
+      bar.fill(getHealthBarFillGradient())
     }
+    // Tracks relief the same way the shadow does — see Unit.applyReliefLift.
+    bar.position.y = this.reliefLift ?? 0
     this.addChild(bar)
   }
 

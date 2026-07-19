@@ -196,7 +196,7 @@ export class AnimalMovement {
     } else {
       const oldDeg = animal.degree
       let speed = animal.speed
-      if ((nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
+      if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(animal, nextCell.x, nextCell.y, speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
         animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)

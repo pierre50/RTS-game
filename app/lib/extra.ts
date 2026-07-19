@@ -367,11 +367,15 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     standingSheet: 0.15,
     corpseSheet: 0,
   }
+  const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
+  if (!sheetToReset.includes(sheet)) {
+    instance.sprite.onLoop = null
+    instance.sprite.onFrameChange = null
+  }
   const { paused } = instance.context
   if (paused) {
     return
   }
-  const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheets[sheet]) {
     const fallbackSpriteScale = instance.spriteScale ?? 1
     let mirrored = false
@@ -397,10 +401,6 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     return
   }
   const selectedSheet = sheets[sheet] as SheetLike
-  if (!sheetToReset.includes(sheet)) {
-    instance.sprite.onLoop = null
-    instance.sprite.onFrameChange = null
-  }
   const goto = instance.currentSheet === sheet && instance.sprite.currentFrame
   instance.currentSheet = sheet
   const directionCount = instance.sheetDirectionCounts?.[sheet] ?? null

@@ -85,7 +85,7 @@ export class Animal extends Instance implements AnimalEntity {
   flyingSheet?: SpritesheetLike
   flyingAltitude?: number
   altitude!: number
-  reliefLift!: number
+  declare reliefLift: number
   strategy?: string
   ambientMovement?: boolean
   ambientWalkRange?: number
@@ -308,9 +308,9 @@ export class Animal extends Instance implements AnimalEntity {
   syncShadow(shadow = this.shadow): void {
     if (!shadow || !this.sprite) return
     const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
-    // The shadow stays pinned to the ground (position always (0, 0)) even while
-    // this.sprite is offset upward by setAltitude, so a flying animal's shadow
-    // is left behind on the ground below it instead of following it into the air.
+    // The shadow tracks relief (it sits on the same raised/lowered ground as the sprite)
+    // but ignores flying altitude, so a flying animal's shadow is left behind on the
+    // ground below it instead of following it into the air.
     const altitudeFactor = 1 - (Math.min(this.altitude ?? 0, FLYING_ALTITUDE) / FLYING_ALTITUDE) * 0.25
     shadow.textures = this.sprite.textures
     shadow.animationSpeed = this.sprite.animationSpeed
@@ -321,7 +321,7 @@ export class Animal extends Instance implements AnimalEntity {
     shadow.rotation = 0
     shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
     shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
-    shadow.position.set(0, 0)
+    shadow.position.set(0, -this.reliefLift)
     if (this.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -340,6 +340,7 @@ export class Animal extends Instance implements AnimalEntity {
   applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
     this.reliefLift = getReliefLiftPixels(z, fromZ, progress)
     this.sprite.position.y = -(this.altitude + this.reliefLift)
+    if (this.shadow) this.shadow.position.y = -this.reliefLift
   }
 
   syncVisualSettings(): void {
