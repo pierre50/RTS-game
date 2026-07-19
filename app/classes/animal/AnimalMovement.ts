@@ -164,13 +164,13 @@ export class AnimalMovement {
     if (!animal.sprite.playing) {
       animal.sprite.play()
     }
-    animal.zIndex = getInstanceZIndex(animal)
     if (instancesDistance(animal, nextCell, false) < animal.speed) {
       const oldI = animal.i,
         oldJ = animal.j
       animal.z = nextCell.z
       animal.i = nextCell.i
       animal.j = nextCell.j
+      animal.zIndex = getInstanceZIndex(animal)
       if (animal.currentCell.has === animal) {
         animal.currentCell.has = null
         animal.currentCell.solid = false

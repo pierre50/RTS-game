@@ -20,6 +20,13 @@ OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "animals"
 ANIMAL_SOURCE_ROOT = DEFAULT_SOURCE_ROOT / "animals"
 ANIMAL_ANIMATION_SPEED = 0.20
 
+# Every source sheet is a universal 4-direction template (front/back/left/right,
+# see the row convention note below), even sheets like dying/corpse that only ever
+# extract row 0. Frames are tightly cropped with no padding between rows, so the
+# per-row height must come from dividing the actual canvas height by this row
+# count rather than assumed to be square with the frame width.
+SOURCE_ROW_COUNT = 4
+
 
 @dataclass(frozen=True)
 class AnimalSheet:
@@ -41,10 +48,8 @@ class AnimalSheet:
 # Source rows are 0=front(south/toward-camera), 1=back(north/away), 2=left,
 # 3=right. Output order must be north/west/south (see THREE_DIRECTION_ORDER in
 # app/lib/extra.ts), so row_order is (1, 2, 0). Row 3 (right) is dropped since
-# the runtime mirrors the left frames for east-facing sprites. There's no
-# standing sheet: with no standingSheet asset configured, the runtime falls
-# back to the walking sheet's first frame (see setUnitTexture in
-# app/lib/extra.ts). Dying/corpse keep only the front-facing row.
+# the runtime mirrors the left frames for east-facing sprites. Dying/corpse
+# keep only the front-facing row.
 #
 # The source art's feet baseline isn't consistent across rows: front/back rows
 # sit a few pixels higher within the frame than the left/right rows. The baked
@@ -53,22 +58,24 @@ class AnimalSheet:
 # whichever rows sit higher. row_y_shift nudges those rows down so every row's
 # feet land on the same pixel row before baking.
 DEER_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Deer_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04, row_y_shift={0: 4, 1: 4}),
     AnimalSheet("Deer_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 2, 1: 2}),
     AnimalSheet("Deer_Run-2x.png", "running", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4}),
-    AnimalSheet("Deer_Death-2x.png", "dying", 7, (0,), row_y_shift={0: 2}),
+    AnimalSheet("Deer_Death-2x.png", "dying", 5, (0,), row_y_shift={0: 2}),
     AnimalSheet(
-        "Deer_Death-2x.png", "corpse", 7, (0,), frame_indices=(6,), animation_speed=0, row_y_shift={0: 2}
+        "Deer_Death-2x.png", "corpse", 5, (0,), frame_indices=(4,), animation_speed=0, row_y_shift={0: 2}
     ),
 )
 
 
 # Same source-row convention and row_y_shift purpose as DEER_SHEETS above.
 HARE_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Hare_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04, row_y_shift={2: 2}),
     AnimalSheet("Hare_Walk-2x.png", "walking", 5, (1, 2, 0), row_y_shift={2: 2}),
     AnimalSheet("Hare_Run-2x.png", "running", 6, (1, 2, 0)),
-    AnimalSheet("Hare_Death-2x.png", "dying", 6, (0,), row_y_shift={0: -2}),
+    AnimalSheet("Hare_Death-2x.png", "dying", 4, (0,), row_y_shift={0: -2}),
     AnimalSheet(
-        "Hare_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0, row_y_shift={0: -2}
+        "Hare_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0, row_y_shift={0: -2}
     ),
 )
 
@@ -78,11 +85,12 @@ HARE_SHEETS: tuple[AnimalSheet, ...] = (
 # instead of fleeing, and charges at spotted villagers using its running sheet
 # (see AnimalCombat.affectNewDest in the runtime).
 BOAR_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Boar_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
     AnimalSheet("Boar_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
     AnimalSheet("Boar_Run-2x.png", "running", 5, (1, 2, 0), row_y_shift={0: 6, 1: 4, 2: 4}),
     AnimalSheet("Boar_Attack-2x.png", "action", 5, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
-    AnimalSheet("Boar_Death-2x.png", "dying", 6, (0,)),
-    AnimalSheet("Boar_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0),
+    AnimalSheet("Boar_Death-2x.png", "dying", 4, (0,)),
+    AnimalSheet("Boar_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
@@ -91,11 +99,12 @@ BOAR_SHEETS: tuple[AnimalSheet, ...] = (
 # in for the running slot (see SHEET_TYPES.flying / Animal.setAltitude in the
 # runtime, which renders it above its shadow instead of on the ground).
 BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet("Black_grouse_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
     AnimalSheet("Black_grouse_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 6}),
     AnimalSheet("Black_grouse_Flight-2x.png", "flying", 6, (1, 2, 0), row_y_shift={0: 2, 2: 4}),
-    AnimalSheet("Black_grouse_Death-2x.png", "dying", 6, (0,), row_y_shift={0: 4}),
+    AnimalSheet("Black_grouse_Death-2x.png", "dying", 4, (0,), row_y_shift={0: 4}),
     AnimalSheet(
-        "Black_grouse_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0, row_y_shift={0: 4}
+        "Black_grouse_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0, row_y_shift={0: 4}
     ),
 )
 
@@ -105,12 +114,19 @@ BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
 # let the runtime mirror it for east-facing sprites.
 FOX_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet(
+        "Fox_Idle-2x.png",
+        "standing",
+        4,
+        (1, 2, 0),
+        animation_speed=0.04,
+        row_y_shift={1: -6},
+    ),
+    AnimalSheet(
         "Fox_walk-2x.png",
         "walking",
         6,
         (1, 2, 0),
         row_y_shift={1: -6},
-        darken_border_factor=DARKEN_FACTOR,
     ),
     AnimalSheet(
         "Fox_Run-2x.png",
@@ -118,63 +134,14 @@ FOX_SHEETS: tuple[AnimalSheet, ...] = (
         6,
         (1, 3, 0),
         row_y_shift={1: -6},
-        darken_border_factor=DARKEN_FACTOR,
     ),
-    AnimalSheet("Fox_Death-2x.png", "dying", 6, (0,), darken_border_factor=DARKEN_FACTOR),
+    AnimalSheet("Fox_Death-2x.png", "dying", 4, (0,), darken_border_factor=DARKEN_FACTOR),
     AnimalSheet(
         "Fox_Death-2x.png",
         "corpse",
-        6,
+        4,
         (0,),
-        frame_indices=(5,),
-        animation_speed=0,
-        darken_border_factor=DARKEN_FACTOR,
-    ),
-)
-
-
-HORSE_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet(
-        "horse.png",
-        "standing",
-        3,
-        (7, 10, 6),
-        frame_width=64,
-        frame_height=128,
-        row_stride=64,
-        clear_top=18,
-        clear_top_rows=(7,),
-    ),
-    AnimalSheet(
-        "horse.png",
-        "walking",
-        6,
-        (1, 4, 0),
-        frame_width=64,
-        frame_height=128,
-        row_stride=64,
-        clear_top=18,
-        clear_top_rows=(1, 4),
-    ),
-    AnimalSheet(
-        "horse.png",
-        "dying",
-        3,
-        (10, 10, 10),
-        frame_width=64,
-        frame_height=128,
-        row_stride=64,
-        animation_speed=0.12,
-    ),
-    AnimalSheet(
-        "horse.png",
-        "corpse",
-        3,
-        (10, 10, 10),
-        frame_indices=(2,),
-        frame_width=64,
-        frame_height=128,
-        row_stride=64,
+        frame_indices=(3,),
         animation_speed=0,
     ),
 )
@@ -206,17 +173,12 @@ ANIMALS = {
         "output_dir": "fox",
         "sheets": FOX_SHEETS,
     },
-    "horse": {
-        "source_dir": ".",
-        "output_dir": "horse",
-        "sheets": HORSE_SHEETS,
-    },
 }
 
 
 def crop_frames(source: Image.Image, sheet: AnimalSheet) -> list[Image.Image]:
     frame_width = sheet.frame_width or source.width // sheet.columns
-    frame_height = sheet.frame_height or frame_width
+    frame_height = sheet.frame_height or source.height // SOURCE_ROW_COUNT
     row_stride = sheet.row_stride or frame_height
     if frame_width <= 0 or frame_height <= 0:
         raise ValueError(f"invalid animal sheet size {source.size} for {sheet.source}")

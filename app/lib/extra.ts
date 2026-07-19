@@ -420,7 +420,10 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
   instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
-  if (sheet === SHEET_TYPES.standing) {
+  // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
+  // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
+  // (e.g. wildlife idle animations) is real art and should play normally.
+  if (sheet === SHEET_TYPES.standing && selectedSheet === instance.walkingSheet) {
     instance.sprite.textures = [instance.sprite.textures[0]]
     instance.sprite.stop()
     return

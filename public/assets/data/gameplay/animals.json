@@ -9,12 +9,14 @@
     "totalQuantity": 150,
     "spriteScale": 0.7,
     "assets": {
+      "standingSheet": "animals/deer/standing",
       "walkingSheet": "animals/deer/walking",
       "runningSheet": "animals/deer/running",
       "dyingSheet": "animals/deer/dying",
       "corpseSheet": "animals/deer/corpse"
     },
     "sheetDirectionCounts": {
+      "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
       "dyingSheet": 1,
@@ -35,12 +37,14 @@
     "totalQuantity": 40,
     "spriteScale": 0.7,
     "assets": {
+      "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
       "runningSheet": "animals/hare/running",
       "dyingSheet": "animals/hare/dying",
       "corpseSheet": "animals/hare/corpse"
     },
     "sheetDirectionCounts": {
+      "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
       "dyingSheet": 1,
@@ -61,12 +65,14 @@
     "totalQuantity": 30,
     "spriteScale": 0.7,
     "assets": {
+      "standingSheet": "animals/black-grouse/standing",
       "walkingSheet": "animals/black-grouse/walking",
       "flyingSheet": "animals/black-grouse/flying",
       "dyingSheet": "animals/black-grouse/dying",
       "corpseSheet": "animals/black-grouse/corpse"
     },
     "sheetDirectionCounts": {
+      "standingSheet": 3,
       "walkingSheet": 3,
       "flyingSheet": 3,
       "dyingSheet": 1,
@@ -87,12 +93,14 @@
     "totalQuantity": 50,
     "spriteScale": 0.7,
     "assets": {
+      "standingSheet": "animals/fox/standing",
       "walkingSheet": "animals/fox/walking",
       "runningSheet": "animals/fox/running",
       "dyingSheet": "animals/fox/dying",
       "corpseSheet": "animals/fox/corpse"
     },
     "sheetDirectionCounts": {
+      "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
       "dyingSheet": 1,
@@ -114,6 +122,7 @@
     "totalQuantity": 80,
     "spriteScale": 0.7,
     "assets": {
+      "standingSheet": "animals/boar/standing",
       "actionSheet": "animals/boar/action",
       "walkingSheet": "animals/boar/walking",
       "runningSheet": "animals/boar/running",
@@ -121,6 +130,7 @@
       "corpseSheet": "animals/boar/corpse"
     },
     "sheetDirectionCounts": {
+      "standingSheet": 3,
       "actionSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
