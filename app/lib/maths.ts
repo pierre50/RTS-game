@@ -154,17 +154,41 @@ export function getInstanceZIndex(instance: Point & { z?: number | null }): numb
 }
 
 /**
- * Get the cosmetic sprite lift (in px) for a given relief level, blended between two
- * levels when `progress` (0-1) is given to smoothly ramp the lift while crossing a step.
- * @param {number} z
- * @param {number} fromZ
- * @param {number} progress
+ * Get the cosmetic sprite lift (in px) for a ground relief level (fractional on slopes).
+ * @param {number} level
  */
-export function getReliefLiftPixels(z: number | null | undefined, fromZ: number | null | undefined = z, progress = 1): number {
-  const from = fromZ ?? 0
-  const to = z ?? 0
-  const blended = from + (to - from) * Math.min(1, Math.max(0, progress))
-  return blended * RELIEF_SPRITE_LIFT_PER_STEP
+export function getReliefLiftPixels(level: number | null | undefined): number {
+  return (level ?? 0) * RELIEF_SPRITE_LIFT_PER_STEP
+}
+
+/**
+ * Ground relief level of a cell. Cell y already includes the terrain formatter's exact
+ * elevation offset, including half-height and full-height relief border variants.
+ * @param {object} cell
+ */
+export function getGroundReliefLevel(
+  cell:
+    | ({ z?: number | null; inclined?: boolean | null } & Partial<GridPosition & Point>)
+    | null
+    | undefined
+): number {
+  if (!cell) return 0
+  if (isFiniteNumber(cell.i) && isFiniteNumber(cell.j) && isFiniteNumber(cell.y)) {
+    return ((cell.i + cell.j) * CELL_DEPTH - cell.y) / CELL_DEPTH
+  }
+  return (cell.z ?? 0) + (cell.inclined ? 0.5 : 0)
+}
+
+/**
+ * Effective visual y-offset of a unit/animal's cosmetic relief lift (0 if it has none). Add
+ * this to `instance.y` — never read `instance.reliefLift` directly — to get the on-screen
+ * height anything spawned from the instance (projectiles, floating combat text, ...) should
+ * actually appear at, since the lift only moves the instance's child sprite/shadow, not
+ * instance.x/y itself (those stay flat for pathing/collision/zIndex).
+ * @param {object} instance
+ */
+export function getReliefOffset(instance: { reliefLift?: number | null } | null | undefined): number {
+  return instance?.reliefLift ?? 0
 }
 
 /**

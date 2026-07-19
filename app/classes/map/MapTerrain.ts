@@ -310,28 +310,6 @@ export class MapTerrain {
     cell.z = level
   }
 
-  flattenWaterComponents(seeds: TerrainCell[], level: number): void {
-    const visited = new Set()
-    const queue = [...seeds]
-
-    for (let index = 0; index < queue.length; index++) {
-      const cell = queue[index]
-      if (!cell || visited.has(cell) || cell.category !== 'Water') continue
-      visited.add(cell)
-      this.map.setCellReliefLevelDirect(cell, level)
-
-      for (const [di, dj] of [
-        [-1, 0],
-        [1, 0],
-        [0, -1],
-        [0, 1],
-      ]) {
-        const neighbor = this.map.grid[cell.i + di]?.[cell.j + dj]
-        if (neighbor?.category === 'Water' && !visited.has(neighbor)) queue.push(neighbor)
-      }
-    }
-  }
-
   fillWaterGaps(level: number | null = null): Set<TerrainCell> {
     const filledCells = new Set<TerrainCell>()
     const queue: TerrainCell[] = []

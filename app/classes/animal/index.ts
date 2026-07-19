@@ -1,7 +1,16 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  RELIEF_LIFT_SMOOTHING,
+  SHEET_TYPES,
+  LABEL_TYPES,
+  SOUND_CUES,
+  UNIT_TYPES,
+} from '../../constants'
 import {
   getInstanceZIndex,
+  getGroundReliefLevel,
   getReliefLiftPixels,
   instancesDistance,
   drawInstanceBlinkingSelection,
@@ -168,7 +177,7 @@ export class Animal extends Instance implements AnimalEntity {
       this.setTextures(this.currentSheet)
     }
     this.sprite.currentFrame = this.currentFrame
-    this.applyReliefLift(this.z ?? 0)
+    this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
 
     this.on('pointerup', (evt: FederatedPointerEvent) => {
       const {
@@ -321,7 +330,7 @@ export class Animal extends Instance implements AnimalEntity {
     shadow.rotation = 0
     shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
     shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
-    shadow.position.set(0, -this.reliefLift)
+    shadow.position.set(0, this.reliefLift)
     if (this.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -331,16 +340,21 @@ export class Animal extends Instance implements AnimalEntity {
 
   setAltitude(altitude: number): void {
     this.altitude = altitude
-    this.sprite.position.y = -(altitude + this.reliefLift)
+    this.sprite.position.y = -altitude + this.reliefLift
     this.syncShadow()
   }
 
   // Cosmetic-only: offsets the sprite (on top of the flying altitude, if any) to exaggerate
-  // the relief step already baked into cell.y. Never touches this.x/y or zIndex.
-  applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
-    this.reliefLift = getReliefLiftPixels(z, fromZ, progress)
-    this.sprite.position.y = -(this.altitude + this.reliefLift)
-    if (this.shadow) this.shadow.position.y = -this.reliefLift
+  // the relief already baked into cell.y (level is fractional on slopes — see
+  // getGroundReliefLevel). Eased toward the target unless immediate, since the underfoot
+  // sampling can step at tile boundaries. Never touches this.x/y or zIndex. Sign matches
+  // Unit.reliefLift: negative when raised, directly usable as a Pixi position.y offset —
+  // see getReliefOffset for the shared "instance.y + offset = visual y" accessor.
+  applyReliefLift(level: number, immediate = false): void {
+    const target = -getReliefLiftPixels(level)
+    this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
+    this.sprite.position.y = -this.altitude + this.reliefLift
+    if (this.shadow) this.shadow.position.y = this.reliefLift
   }
 
   syncVisualSettings(): void {

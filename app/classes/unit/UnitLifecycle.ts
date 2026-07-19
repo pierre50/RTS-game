@@ -44,6 +44,10 @@ export class UnitLifecycle {
   death() {
     const unit = this.unit
     clearDamageFeedback(unit)
+    // dying/corpse are exempt from setUnitTexture's onFrameChange reset (kept for mid-attack direction changes), so a stale attack/gather callback must be cleared here or it hijacks the death animation back to standing.
+    const sprite = unit.sprite as AnimatedSprite
+    sprite.onFrameChange = undefined
+    sprite.onLoop = undefined
     if (unit.category === BOAT_CATEGORY) {
       const corpses = unit.owner?.corpses
       const index = corpses?.indexOf(unit) ?? -1
@@ -57,7 +61,6 @@ export class UnitLifecycle {
     unit.setTextures?.(SHEET_TYPES.dying)
     if (unit.sailSprite) unit.sailSprite.visible = false
     unit.zIndex = (unit.zIndex ?? 0) - 1
-    const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     unit.syncShadow?.()
     sprite.onComplete = () => {

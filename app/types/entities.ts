@@ -46,6 +46,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   isDead?: boolean
   isDestroyed?: boolean
   sprite?: Sprite | AnimatedSprite
+  reliefLift?: number
   context?: GameContextLike
   interface?: EntityInterfaceLike
   select?: () => void
@@ -139,7 +140,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   path?: RuntimeCell[]
   hasPath?: () => boolean
   moveDirect?: (dirX: number, dirY: number, distance: number) => boolean
-  applyReliefLift?: (z: number, fromZ?: number, progress?: number) => void
+  applyReliefLift?: (level: number, immediate?: boolean) => void
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]

@@ -3,7 +3,7 @@ import {
   BUILDING_TYPES,
   FAMILY_TYPES,
   RELIEF_CLIMB_SPEED_MULTIPLIER,
-  RELIEF_CLIMB_TRANSITION_DISTANCE,
+  RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
   UNIT_TYPES,
   WORK_TYPES,
@@ -14,6 +14,7 @@ import {
   getCellsAroundPoint,
   findInstancesInSight,
   getClosestInstanceWithPath,
+  getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
@@ -262,15 +263,15 @@ export class UnitMovement {
   // both sides are free; cleared as soon as a direct move succeeds undeflected.
   slideBias: number
   directMoveBlocker: RuntimeEntity | null
-  // Set right after a direct-move relief crossing; decays over distance traveled so the
-  // climb slowdown and the sprite lift blend smoothly instead of snapping in one frame.
-  directMoveClimb: { fromZ: number; toZ: number; remainingPx: number } | null
+  // Eased slope-slowdown factor for direct (hero) movement — a hard 1.0↔0.7 toggle when the
+  // underfoot cell flips at a tile boundary reads as stutter at 60Hz.
+  directMoveClimbFactor: number
 
   constructor(unit: UnitEntity) {
     this.unit = unit
     this.slideBias = 0
     this.directMoveBlocker = null
-    this.directMoveClimb = null
+    this.directMoveClimbFactor = 1
   }
 
   sendToPostBuildResource(): boolean {
@@ -525,10 +526,14 @@ export class UnitMovement {
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
     if (unit.currentCell) {
-      const totalDistance = instancesDistance(unit.currentCell, nextCell, false) || 1
-      const remaining = instancesDistance(unit, nextCell, false)
-      const progress = 1 - remaining / totalDistance
-      unit.applyReliefLift?.(nextCell.z ?? 0, unit.currentCell.z ?? 0, progress)
+      // The relief border is a slope, not a step: blend the lift continuously along the walk
+      // between the two cells' ground levels, so a low→border→high climb reads as one single
+      // ramp centered on the slope tile instead of two half-steps with a plateau between.
+      const from = getGroundReliefLevel(unit.currentCell)
+      const to = getGroundReliefLevel(nextCell)
+      const total = instancesDistance(unit.currentCell, nextCell, false) || 1
+      const remaining = Math.min(instancesDistance(unit, nextCell, false), total)
+      unit.applyReliefLift?.(to + (from - to) * (remaining / total))
     }
     const dest = unit.dest
     if (!dest || isDestroyedEntity(dest)) {
@@ -705,10 +710,10 @@ export class UnitMovement {
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
 
     // Driven purely by the cell the unit is actually standing on (stable, no lookahead) —
-    // the relief-border tile IS the cliff edge (see RELIEF_CLIMB_TRANSITION_DISTANCE), so
-    // slowing down while on it covers both the approach and the step up/down through it.
-    const isClimbing = Boolean(unit.currentCell?.inclined)
-    const effectiveDistance = isClimbing ? distance * RELIEF_CLIMB_SPEED_MULTIPLIER : distance
+    // the relief-border tile IS the slope, so slowing down while on it covers the whole climb.
+    const targetClimbFactor = unit.currentCell?.inclined ? RELIEF_CLIMB_SPEED_MULTIPLIER : 1
+    this.directMoveClimbFactor += (targetClimbFactor - this.directMoveClimbFactor) * RELIEF_LIFT_SMOOTHING
+    const effectiveDistance = distance * this.directMoveClimbFactor
 
     const candidateX = unit.x + dirX * effectiveDistance
     const candidateY = unit.y + dirY * effectiveDistance
@@ -772,7 +777,6 @@ export class UnitMovement {
     const oldJ = unit.j
     const oldDeg = unit.degree ?? 0
     const wasWalking = unit.currentSheet === SHEET_TYPES.walking
-    const departureZ = unit.currentCell?.z ?? 0
     unit.degree = getInstanceDegree(unit, unit.x + facingDirX, unit.y + facingDirY)
     unit.x = candidateX
     unit.y = candidateY
@@ -799,22 +803,9 @@ export class UnitMovement {
         unit.visible = true
       }
       map.updateInstanceBucket(unit, oldI, oldJ)
-      if ((targetCell.z ?? 0) !== departureZ) {
-        this.directMoveClimb = { fromZ: departureZ, toZ: targetCell.z ?? 0, remainingPx: RELIEF_CLIMB_TRANSITION_DISTANCE }
-      }
     }
-    if (this.directMoveClimb) {
-      this.directMoveClimb.remainingPx -= effectiveDistance
-      if (this.directMoveClimb.remainingPx <= 0) this.directMoveClimb = null
-    }
-
     updateInstanceVisibility(unit)
-    if (this.directMoveClimb) {
-      const { fromZ, toZ, remainingPx } = this.directMoveClimb
-      unit.applyReliefLift?.(toZ, fromZ, 1 - Math.max(0, remainingPx) / RELIEF_CLIMB_TRANSITION_DISTANCE)
-    } else {
-      unit.applyReliefLift?.(targetCell?.z ?? unit.currentCell?.z ?? 0)
-    }
+    unit.applyReliefLift?.(getGroundReliefLevel(unit.currentCell))
     if (!unit.actionLocked) {
       if (!unit.sprite.playing) unit.sprite.play()
       if (!wasWalking || degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {

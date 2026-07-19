@@ -1,5 +1,5 @@
 import { Container, type ContainerChild } from 'pixi.js'
-import { BUCKET_SIZE, CELL_WIDTH } from '../../constants'
+import { BUCKET_SIZE, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
 import {
   MapGeneration,
   type GenerateMapOptions,
@@ -49,8 +49,6 @@ export default class Map extends Container {
   size: number
   seed?: string | number
   mapType?: string
-  reliefRange: number[]
-  chanceOfRelief: number
   chanceOfSets: number
   ready: boolean
   grid: RuntimeCell[][]
@@ -80,7 +78,6 @@ export default class Map extends Container {
   instanceBuckets: InstanceBuckets | null
   renderChunks: RenderChunk[]
   _random: () => number
-  totalCells: number
   mapGeneration: MapGeneration
   mapResources: MapResources
   mapTerrain: MapTerrain
@@ -94,12 +91,7 @@ export default class Map extends Container {
 
     this.context = context
     this.size = 0
-    this.reliefRange = [
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,
-      3,
-    ]
-    this.chanceOfRelief = 0.06
-    this.chanceOfSets = 0.02
+    this.chanceOfSets = GROUND_SET_CHANCE
 
     this.ready = false
     this.grid = []
@@ -138,7 +130,6 @@ export default class Map extends Container {
     this._random = Math.random
 
     this.eventMode = 'auto'
-    this.totalCells = 0
 
     this.mapGeneration = new MapGeneration(this)
     this.mapResources = new MapResources(this)
@@ -249,10 +240,6 @@ export default class Map extends Container {
     return this.mapGeneration.generateFromJSON(data)
   }
 
-  generateMap(positionsCountOverride: number | null = null, repeat: number = 0): void {
-    return this.mapGeneration.generateMap(positionsCountOverride, repeat)
-  }
-
   generateMapAsync(
     positionsCountOverride: number | null = null,
     repeat: number = 0,
@@ -334,24 +321,12 @@ export default class Map extends Container {
     return this.mapResources.generateAnimalsAroundPlayers(compactPositions(playersPos))
   }
 
-  generateResourcesAroundPlayers(playersPos: GeneratedPosition[]): void {
-    return this.mapResources.generateResourcesAroundPlayers(compactPositions(playersPos))
-  }
-
   generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void> {
     return this.mapResources.generateResourcesAroundPlayersAsync(compactPositions(playersPos))
   }
 
-  generateNeutralResourceGroups(playersPos: GeneratedPosition[]): void {
-    return this.mapResources.generateNeutralResourceGroups(compactPositions(playersPos))
-  }
-
   generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void> {
     return this.mapResources.generateNeutralResourceGroupsAsync(compactPositions(playersPos))
-  }
-
-  generateBiomeTrees(playersPos: GeneratedPosition[]): void {
-    return this.mapResources.generateBiomeTrees(compactPositions(playersPos))
   }
 
   generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void> {
@@ -407,10 +382,6 @@ export default class Map extends Container {
 
   setCellReliefLevelDirect(cell: RuntimeCell, level: number): void {
     return this.mapTerrain.setCellReliefLevelDirect(cell, level)
-  }
-
-  flattenWaterComponents(seeds: RuntimeCell[], level: number): void {
-    return this.mapTerrain.flattenWaterComponents(seeds, level)
   }
 
   fillWaterGaps(level?: number | null): Set<RuntimeCell> {

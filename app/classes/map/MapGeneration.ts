@@ -3,7 +3,6 @@ import { Resource } from '../Resource'
 import { Human, AI, Gaia } from '../players'
 import {
   colors,
-  getCellsAroundPoint,
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   getGaiaAnimals,
@@ -85,7 +84,6 @@ export type MapGenerationMap = RuntimeMap & {
   chanceOfSets: number
   allTechnologies: boolean
   startingAge: number
-  totalCells: number
   instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
   pregeneratedBlueprintId?: string | null
   pregeneratedResourcesLoaded?: boolean
@@ -106,7 +104,6 @@ export type MapGenerationMap = RuntimeMap & {
   resetRandom(stream?: number | string): void
   findPlayerPlaces(): GeneratedPosition[]
   generateCells(): void
-  generateMap(positionsCountOverride?: number | null, repeat?: number): void
   generateTerrain(gridSize?: number, mapType?: string, seed?: number): TerrainGrid
   fillWaterGaps(level?: number | null): Set<RuntimeCell>
   normalizeWaterTopology(
@@ -316,17 +313,6 @@ export class MapGeneration {
     })
   }
 
-  isFarEnoughFromCoast(i: number, j: number, minDistance: number = 6): boolean {
-    const coastCells = getCellsAroundPoint(
-      i,
-      j,
-      this.map.grid,
-      minDistance,
-      (cell: RuntimeCell) => cell.category !== 'Water'
-    )
-    return coastCells.length === 0
-  }
-
   isInPlayerStartSafeZone(i: number, j: number, radius: number = 20): boolean {
     const safeDistanceSq = radius ** 2
     return this.map.playersPos.some(pos => Boolean(pos && (pos.i - i) ** 2 + (pos.j - j) ** 2 < safeDistanceSq))
@@ -517,57 +503,6 @@ export class MapGeneration {
     this.map.ready = true
   }
 
-  generateMap(positionsCountOverride: number | null = null, repeat: number = 0): void {
-    this.map.removeChildren()
-    this.map.clearRenderChunks()
-    if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
-    this.map.resetRandom(repeat)
-
-    switch (this.map.size) {
-      case 120:
-        this.map.positionsCount = 2
-        break
-      case 144:
-        this.map.positionsCount = 3
-        break
-      case 168:
-        this.map.positionsCount = 4
-        break
-      case 200:
-        this.map.positionsCount = 5
-        break
-      case 220:
-        this.map.positionsCount = 5
-        break
-      case 384:
-        this.map.positionsCount = 5
-        break
-      case 512:
-        this.map.positionsCount = 5
-        break
-      default:
-        this.map.positionsCount = 2
-    }
-
-    if (positionsCountOverride !== null) {
-      this.map.positionsCount = positionsCountOverride
-    }
-
-    this.map.generateCells()
-
-    this.map.totalCells = (this.map.size + 1) ** 2
-    this.map.playersPos = this.map.findPlayerPlaces()
-
-    if (this.map.playersPos.length < this.map.positionsCount) {
-      if (repeat >= 10) {
-        alert('Error while generating the map')
-        return
-      }
-      this.map.generateMap(positionsCountOverride, repeat + 1)
-      return
-    }
-  }
-
   async generateMapAsync(
     positionsCountOverride: number | null = null,
     repeat: number = 0,
@@ -613,7 +548,6 @@ export class MapGeneration {
     }
 
     await this.generateCellsAsync({ ...options, terrain })
-    this.map.totalCells = (this.map.size + 1) ** 2
   }
 
   async stylishMap({
@@ -915,14 +849,6 @@ export class MapGeneration {
 
   generateEditableFromBlueprint(blueprintData: MapBlueprint): void {
     return this.mapBlueprintGeneration.generateEditableFromBlueprint(blueprintData)
-  }
-
-  _applyBlueprintMetadata(blueprint: MapBlueprint): void {
-    return this.mapBlueprintGeneration.applyBlueprintMetadata(blueprint)
-  }
-
-  _loadBlueprintResources(blueprint: MapBlueprint): void {
-    return this.mapBlueprintGeneration.loadBlueprintResources(blueprint)
   }
 
   generateTerrain(gridSize: number = 120, mapType: string = 'plain', seed?: number): TerrainGrid {

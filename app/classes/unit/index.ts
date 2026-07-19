@@ -6,6 +6,7 @@ import {
   WORK_TYPES,
   ACTION_TYPES,
   FAMILY_TYPES,
+  RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
   LABEL_TYPES,
   SOUND_CUES,
@@ -13,6 +14,7 @@ import {
 } from '../../constants'
 import {
   getInstanceZIndex,
+  getGroundReliefLevel,
   getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
   drawInstanceBlinkingSelection,
@@ -410,7 +412,7 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
     this.syncShadow()
     this.syncAppearanceLayers(this.currentSheet)
-    this.applyReliefLift(this.z ?? 0)
+    this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
     this.sprite.updateAnchor = true
     this.setupSailSprite()
     this.syncFishingOverlaySprite()
@@ -691,9 +693,12 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   // Cosmetic-only: offsets the sprite, shadow and equipment layers to exaggerate the relief
-  // step already baked into cell.y. Never touches this.x/y (pathing/collision) or zIndex.
-  applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
-    this.reliefLift = -getReliefLiftPixels(z, fromZ, progress)
+  // already baked into cell.y (level is fractional on slopes — see getGroundReliefLevel).
+  // Eased toward the target unless immediate, since the underfoot sampling can step at tile
+  // boundaries. Never touches this.x/y (pathing/collision) or zIndex.
+  applyReliefLift(level: number, immediate = false): void {
+    const target = -getReliefLiftPixels(level)
+    this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
     this.sprite.position.y = this.reliefLift
     if (this.shadow) this.shadow.position.y = this.reliefLift
     for (const layerSprite of this.appearanceLayerSprites.values()) {

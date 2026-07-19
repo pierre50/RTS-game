@@ -32,18 +32,6 @@
         {
           "sheet": "resources/tree/grass-4",
           "frame": 0
-        },
-        {
-          "sheet": "resources/tree/grass-5",
-          "frame": 0
-        },
-        {
-          "sheet": "resources/tree/grass-6",
-          "frame": 0
-        },
-        {
-          "sheet": "resources/tree/grass-7",
-          "frame": 0
         }
       ],
       "Desert": [

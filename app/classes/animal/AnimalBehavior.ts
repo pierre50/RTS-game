@@ -2,8 +2,10 @@ import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
 import { isAirborne } from './locomotion'
 import type { SchedulerTaskId } from '../../types/context'
-import type { UnitEntity } from '../../types/entities'
+import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { Animal } from './index'
+
+type AnimalThreat = UnitEntity | BuildingEntity
 
 const BEHAVIOR_CHECK_INTERVAL = 250
 const AMBIENT_WALK_DELAY_MIN = 4000
@@ -49,19 +51,21 @@ export class AnimalBehavior {
     this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(AMBIENT_WALK_DELAY_MIN, AMBIENT_WALK_DELAY_MAX)
   }
 
-  findNearbyVillager(): UnitEntity | null {
+  // Runaway animals spook at villagers (about to be hunted) and at buildings
+  // (a camp encroaching on their territory), but not at military units.
+  findNearbyThreat(): AnimalThreat | null {
     const animal = this.animal
-    const villagers = findInstancesInSight<Animal, UnitEntity>(
+    const threats = findInstancesInSight<Animal, AnimalThreat>(
       animal,
-      (instance: UnitEntity) =>
-        instance.family === FAMILY_TYPES.unit &&
-        instance.type === UNIT_TYPES.villager &&
+      (instance: AnimalThreat) =>
         !instance.isDead &&
-        !instance.isDestroyed
+        !instance.isDestroyed &&
+        ((instance.family === FAMILY_TYPES.unit && instance.type === UNIT_TYPES.villager) ||
+          instance.family === FAMILY_TYPES.building)
     )
-    return villagers.reduce(
-      (closest: UnitEntity | null, villager: UnitEntity) =>
-        !closest || instancesDistance(animal, villager) < instancesDistance(animal, closest) ? villager : closest,
+    return threats.reduce(
+      (closest: AnimalThreat | null, threat: AnimalThreat) =>
+        !closest || instancesDistance(animal, threat) < instancesDistance(animal, closest) ? threat : closest,
       null
     )
   }
@@ -73,14 +77,14 @@ export class AnimalBehavior {
       return
     }
 
-    const villager = this.findNearbyVillager()
-    if (villager && !animal.isFleeing) {
-      animal.runaway(villager)
+    const threat = this.findNearbyThreat()
+    if (threat && !animal.isFleeing) {
+      animal.runaway(threat)
       return
     }
 
     if (
-      villager ||
+      threat ||
       animal.isFleeing ||
       animal.path.length ||
       animal.dest ||

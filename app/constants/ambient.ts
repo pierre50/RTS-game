@@ -18,10 +18,11 @@ export const ANIMAL_PLAYER_SAFE_DIST = 14
 export const FLOOR_SETS_GRASS = ['environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10']
 export const FLOOR_SETS_DESERT = ['environment/floor/desert-1', 'environment/floor/desert-2', 'environment/floor/desert-3', 'environment/floor/desert-4', 'environment/floor/desert-5', 'environment/floor/desert-6', 'environment/floor/desert-7', 'environment/floor/desert-8', 'environment/floor/desert-9', 'environment/floor/desert-10', 'environment/floor/desert-11', 'environment/floor/desert-12']
 export const FLOOR_SETS_JUNGLE = [...FLOOR_SETS_DESERT, ...FLOOR_SETS_GRASS]
-export const FLOOR_SET_CHANCE = 0.03
+export const FLOOR_SET_CHANCE = 0//0.03
 
 // Ground decorative sets (LABEL_TYPES.set, zIndex 2)
 export const GROUND_SETS = ['environment/ground/stone-set-1', 'environment/ground/stone-set-2', 'environment/ground/stone-set-3', 'environment/ground/stone-set-4']
+export const GROUND_SET_CHANCE = 0//0.02
 
 // Water decorative sets (LABEL_TYPES.set, zIndex 2)
 // Small/medium sprites (width ≤ 57px): safe near any water cell

@@ -13,7 +13,7 @@ import { getActionCondition, getHitPointsWithDamage } from './combat'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
-import { getInstanceDegree } from './maths'
+import { getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue } from './sound'
 import { showDamageFeedback } from './combatFeedback'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from './unitExperience'
@@ -284,7 +284,7 @@ function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
   const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
   return {
     x: hero.x + Math.cos(rad) * HERO_ARROW_FORWARD_OFFSET,
-    y: hero.y - HERO_ARROW_HEIGHT_OFFSET,
+    y: hero.y + getReliefOffset(hero) - HERO_ARROW_HEIGHT_OFFSET,
   }
 }
 

@@ -1,6 +1,7 @@
 import { FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   degreeToDirection,
+  getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
@@ -123,10 +124,13 @@ export class AnimalMovement {
     const next = animal.path[animal.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
     if (animal.currentCell) {
-      const totalDistance = instancesDistance(animal.currentCell, nextCell, false) || 1
-      const remaining = instancesDistance(animal, nextCell, false)
-      const progress = 1 - remaining / totalDistance
-      animal.applyReliefLift(nextCell.z ?? 0, animal.currentCell.z ?? 0, progress)
+      // See UnitMovement._moveToPath: the relief border is a slope, so blend the lift
+      // continuously along the walk between the two cells' ground levels.
+      const from = getGroundReliefLevel(animal.currentCell)
+      const to = getGroundReliefLevel(nextCell)
+      const total = instancesDistance(animal.currentCell, nextCell, false) || 1
+      const remaining = Math.min(instancesDistance(animal, nextCell, false), total)
+      animal.applyReliefLift(to + (from - to) * (remaining / total))
     }
     if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
       animal.affectNewDest()

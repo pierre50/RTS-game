@@ -1,5 +1,6 @@
 import { ColorMatrixFilter, Text } from 'pixi.js'
 import { FAMILY_TYPES } from '../constants'
+import { getReliefOffset } from './maths'
 import type { RuntimeEntity } from '../types/entities'
 import type { SchedulerTaskId } from '../types/context'
 import type { AnimatedSprite, Container, Filter, Sprite } from 'pixi.js'
@@ -77,7 +78,7 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
   const scheduler = target.context?.scheduler
   if (!scheduler || target.isDestroyed) return
 
-  const spriteTop = target.sprite ? -(target.sprite.height * target.sprite.anchor.y) : -40
+  const spriteTop = (target.sprite ? -(target.sprite.height * target.sprite.anchor.y) : -40) + getReliefOffset(target)
   const text = new Text({
     text: options.text,
     style: {

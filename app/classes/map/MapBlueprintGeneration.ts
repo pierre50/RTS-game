@@ -100,7 +100,6 @@ export class MapBlueprintGeneration {
     this.map.formatCellsWaterBorder()
     this.map.blueprintWaterBorderReady = true
     this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
-    this.map.totalCells = (this.map.size + 1) ** 2
 
     this.loadBlueprintResources(blueprint)
   }
@@ -133,7 +132,6 @@ export class MapBlueprintGeneration {
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
     this.map.formatCellsWaterBorder()
-    this.map.totalCells = (this.map.size + 1) ** 2
     this.loadBlueprintResources(blueprint)
   }
 

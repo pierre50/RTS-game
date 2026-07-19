@@ -321,21 +321,6 @@ export class MapResources {
     }
   }
 
-  generateResourcesAroundPlayers(playersPos: GridPosition[]): void {
-    for (let i = 0; i < playersPos.length; i++) {
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [7, 14])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [14, 22])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.berrybush, 8, [22, 29])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [7, 14])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [14, 22])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.stone, 7, [22, 29])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [7, 14])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [14, 22])
-      this.map.placeResourceGroup(playersPos[i], RESOURCE_TYPES.gold, 7, [22, 29])
-      this.map.generateForestAroundPlayer(playersPos[i], this.map.size * 4)
-    }
-  }
-
   async generateResourcesAroundPlayersAsync(playersPos: GridPosition[]): Promise<void> {
     const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     for (const player of playersPos) {
@@ -356,35 +341,6 @@ export class MapResources {
       }
       this.map.generateForestAroundPlayer(player, this.map.size * 4)
       await yieldFrame()
-    }
-  }
-
-  generateNeutralResourceGroups(playersPos: GridPosition[]): void {
-    const profile =
-      RESOURCE_DENSITY_PROFILES[this.map.resourceDensity as ResourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
-    const placedCenters: GridPosition[] = []
-    const sizeScale = Math.max(1, Math.round((this.map.size / 120) ** 2))
-    const groupEntries: ResourceGroupEntry[] = [
-      [RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2],
-      [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2],
-      [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2],
-      [RESOURCE_TYPES.tree, profile.neutralGroups.tree, 14, 4],
-    ]
-
-    for (const [type, baseCount, quantity, radius] of groupEntries) {
-      const targetCount = baseCount * sizeScale
-      for (let i = 0; i < targetCount; i++) {
-        const center = this.map.findNeutralResourceCenter(
-          playersPos,
-          placedCenters,
-          profile.playerSafeDistance,
-          profile.minNeutralDistance
-        )
-        if (!center) break
-        if (this.map.placeResourceGroupAt(center, type, quantity, radius)) {
-          placedCenters.push(center)
-        }
-      }
     }
   }
 
@@ -500,23 +456,6 @@ export class MapResources {
       this.map.resources.add(createResource(this.map, cell.i, cell.j, instance))
     }
     return true
-  }
-
-  generateBiomeTrees(playersPos: GridPosition[]): void {
-    const { grid, size } = this.map
-    const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
-    for (let i = 1; i < size; i++) {
-      for (let j = 1; j < size; j++) {
-        const cell = grid[i][j]
-        if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
-        const chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
-        if (chance === 0) continue
-        if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
-        if (this.map.random() < chance) {
-          this.map.resources.add(createResource(this.map, i, j, RESOURCE_TYPES.tree))
-        }
-      }
-    }
   }
 
   async generateBiomeTreesAsync(playersPos: GridPosition[]): Promise<void> {
