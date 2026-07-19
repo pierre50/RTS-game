@@ -2,6 +2,7 @@ import { Assets, AnimatedSprite } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
 import {
   getInstanceZIndex,
+  getReliefLiftPixels,
   instancesDistance,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -84,6 +85,7 @@ export class Animal extends Instance implements AnimalEntity {
   flyingSheet?: SpritesheetLike
   flyingAltitude?: number
   altitude!: number
+  reliefLift!: number
   strategy?: string
   ambientMovement?: boolean
   ambientWalkRange?: number
@@ -117,6 +119,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.inactif = true
     this.isFleeing = false
     this.altitude = 0
+    this.reliefLift = 0
 
     Object.assign(this, options)
     const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
@@ -165,6 +168,7 @@ export class Animal extends Instance implements AnimalEntity {
       this.setTextures(this.currentSheet)
     }
     this.sprite.currentFrame = this.currentFrame
+    this.applyReliefLift(this.z ?? 0)
 
     this.on('pointerup', (evt: FederatedPointerEvent) => {
       const {
@@ -327,8 +331,15 @@ export class Animal extends Instance implements AnimalEntity {
 
   setAltitude(altitude: number): void {
     this.altitude = altitude
-    this.sprite.position.y = -altitude
+    this.sprite.position.y = -(altitude + this.reliefLift)
     this.syncShadow()
+  }
+
+  // Cosmetic-only: offsets the sprite (on top of the flying altitude, if any) to exaggerate
+  // the relief step already baked into cell.y. Never touches this.x/y or zIndex.
+  applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
+    this.reliefLift = getReliefLiftPixels(z, fromZ, progress)
+    this.sprite.position.y = -(this.altitude + this.reliefLift)
   }
 
   syncVisualSettings(): void {

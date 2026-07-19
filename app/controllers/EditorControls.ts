@@ -7,6 +7,7 @@ import type { SelectionRectangle } from '../types/context'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlaceableBuildingConfig } from '../types/entities'
 import type { PlayerLike } from '../types/player'
+import type { Bounds } from '../types/geometry'
 
 type TickerLike = { elapsedMS?: number; deltaTime: number }
 type ViewportMetrics = {
@@ -217,8 +218,8 @@ export class EditorControls extends Container {
     this.cameraController.stopMouseMove()
   }
 
-  instanceInCamera(instance: CameraPoint): boolean {
-    return this.cameraController.instanceInCamera(instance)
+  instanceInCamera(instance: CameraPoint, bounds?: Bounds): boolean {
+    return this.cameraController.instanceInCamera(instance, bounds)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {

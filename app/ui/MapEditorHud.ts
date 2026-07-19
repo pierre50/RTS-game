@@ -565,10 +565,6 @@ export class MapEditorHud {
     this.setBottombar(this.selection)
   }
 
-  updatePlayerStats(): void {
-    this.sync()
-  }
-
   updateInfo(): void {}
 
   updateButtonContent(): void {}

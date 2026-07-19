@@ -206,6 +206,66 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
   }
 })
 
+function loadCommModule(instances, getInstanceDegree) {
+  return loadModule('app/lib/npcInteraction.ts', {
+    '../constants': constants,
+    './grid/visibility': {
+      findInstancesInSight: (instance, condition) => instances.filter(condition),
+    },
+    './maths': {
+      getInstanceDegree,
+    },
+  })
+}
+
+function makeCommAlly(props) {
+  return {
+    family: constants.FAMILY_TYPES.unit,
+    isDead: false,
+    isDestroyed: false,
+    action: null,
+    ...props,
+  }
+}
+
+test('a quick tap (radius 0) resolves to the ally the hero is facing, ignoring one to the side', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const facingAlly = makeCommAlly({ owner, i: 1, j: 0, x: 10, y: 0 })
+  const sideAlly = makeCommAlly({ owner, i: 0, j: 1, x: 0, y: 10 })
+  const getInstanceDegree = (_instance, x) => (x === facingAlly.x ? 0 : 150)
+  const { resolveCommGroup } = loadCommModule([facingAlly, sideAlly], getInstanceDegree)
+
+  const group = resolveCommGroup(hero, 0)
+
+  assert.deepEqual(group, [facingAlly])
+})
+
+test('a quick tap finds nothing when no ally is within the facing cone', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const sideAlly = makeCommAlly({ owner, i: 0, j: 1, x: 0, y: 10 })
+  const getInstanceDegree = () => 150
+  const { resolveCommGroup } = loadCommModule([sideAlly], getInstanceDegree)
+
+  const group = resolveCommGroup(hero, 0)
+
+  assert.deepEqual(group, [])
+})
+
+test('holding past the precision zone nets every eligible ally in the charged radius', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const facingAlly = makeCommAlly({ owner, i: 1, j: 0, x: 10, y: 0 })
+  const sideAlly = makeCommAlly({ owner, i: 0, j: 1, x: 0, y: 10 })
+  const getInstanceDegree = (_instance, x) => (x === facingAlly.x ? 0 : 150)
+  const { resolveCommGroup } = loadCommModule([facingAlly, sideAlly], getInstanceDegree)
+
+  const group = resolveCommGroup(hero, 7)
+
+  assert.deepEqual(group, [facingAlly, sideAlly])
+})
+
 function loadNpcFollowModule(instances) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,

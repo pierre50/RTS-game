@@ -57,6 +57,7 @@ export type RecolorableSprite = {
 
 const recoloredTextureCache = new Map<string, Texture>()
 const colorFilterCache = new Map<PlayerColor, Filter>()
+const replacementCache = new Map<string, [number, number][]>()
 
 function isPlayerColor(color: string): color is PlayerColor {
   return colors.includes(color as PlayerColor)
@@ -82,6 +83,18 @@ function buildReplacements(sourceColors: readonly number[], targetColors: readon
     const targetIndex = Math.min(Math.floor((rank * targetColors.length) / sourceColors.length), targetColors.length - 1)
     return [sourceColors[sourceIndex], targetColors[targetIndex]]
   })
+}
+
+function getReplacements(
+  color: PlayerColor,
+  sourceColors: readonly number[],
+  targetColors: readonly number[]
+): [number, number][] {
+  const cacheKey = `${color}_${sourceColors.join('-')}_${targetColors.join('-')}`
+  if (!replacementCache.has(cacheKey)) {
+    replacementCache.set(cacheKey, buildReplacements(sourceColors, targetColors))
+  }
+  return replacementCache.get(cacheKey)!
 }
 
 function getTextureColorKey(texture: RecolorableTexture): string {
@@ -121,7 +134,7 @@ function recolorTextureDirectly(
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
-  const sourceColorMap = new Map(buildReplacements(sourceColors, targetColors))
+  const sourceColorMap = new Map(getReplacements(color, sourceColors, targetColors))
 
   for (let i = 0; i < data.length; i += 4) {
     const rgb = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
@@ -169,7 +182,7 @@ export function changeSpriteColor(sprite: RecolorableSprite, color: string): voi
   if (!isPlayerColor(color) || !COLOR_PALETTES[color]) return
 
   if (!colorFilterCache.has(color)) {
-    const replacements = buildReplacements(SOURCE_COLORS, COLOR_PALETTES[color]!)
+    const replacements = getReplacements(color, SOURCE_COLORS, COLOR_PALETTES[color]!)
     // Tolerance is a normalized RGB distance (0-1). 0.1 was catching near-black shades
     // from hair/shading palettes and tinting them with the team color. Since source
     // sprites are exact-palette pixel art with no color blending, a tight tolerance

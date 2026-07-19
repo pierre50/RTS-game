@@ -334,7 +334,7 @@ export class MapGeneration {
 
   pickAmbientAnimalType(i: number, j: number): string {
     const animals = gameConfig().animals
-    const dangerousAnimalTypes = new Set(['Alligator', 'Boar'])
+    const dangerousAnimalTypes = new Set(['Boar'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)

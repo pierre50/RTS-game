@@ -33,6 +33,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   z?: number | null
   zIndex?: number
   size?: number
+  selectionFactor?: number
   width: number
   height: number
   visible?: boolean
@@ -138,6 +139,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   path?: RuntimeCell[]
   hasPath?: () => boolean
   moveDirect?: (dirX: number, dirY: number, distance: number) => boolean
+  applyReliefLift?: (z: number, fromZ?: number, progress?: number) => void
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]

@@ -5,6 +5,7 @@ import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroTool } from '../lib/heroTools'
+import type { Bounds } from './geometry'
 
 export type SchedulerTaskId = number
 
@@ -49,7 +50,6 @@ export interface MenuLike {
   getActionTechnologyButton(type: string): MenuButtonSpec
   getActionRallyPointButton(): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
-  updatePlayerStats(): void
   init?(): void
   destroy?(): void
   toggleInventory?(): void
@@ -121,7 +121,7 @@ export interface ControlsLike extends Container {
   setCamera?(x: number, y: number, direct?: boolean): void
   sendUnits?(cell: RuntimeCell): void
   updateVisibleCells?(): void
-  instanceInCamera(instance: { x: number; y: number }): boolean
+  instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean
   instanceIsAudible(instance: AudibleInstanceLike): boolean
   isMouseInApp(evt: ControlPointerEvent): boolean
   isInteractionBlocked(): boolean
@@ -136,6 +136,8 @@ export interface ControlsLike extends Container {
   setEquippedTool?(tool: HeroTool | null): void
   isArpgActive?(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void
+  freeCameraActive?: boolean
+  setFreeCamera?(enabled: boolean): void
 }
 
 export interface SelectionRectangle {

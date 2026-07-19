@@ -2,6 +2,12 @@ import { Application } from 'pixi.js'
 import './styles.css'
 import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
+
+// Default V8 stack traces are capped at 10 frames, which hides the actual
+// recursive entry point of deep "Maximum call stack size exceeded" errors
+// behind whatever happens to be on top of the stack when it overflows.
+Error.stackTraceLimit = Infinity
+
 ;(async () => {
   const app = new Application()
 

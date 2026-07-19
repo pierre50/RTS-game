@@ -1,10 +1,18 @@
 import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
+import type { SchedulerTaskId } from '../../types/context'
 import type { Animal } from './index'
+
+const DEATH_FALL_STEPS = 8
+const DEATH_FALL_STEP_MS = 40
 
 export class AnimalLifecycle {
   animal: Animal
+  // Runs on its own scheduler task (not animal.interval): decompose() starts the
+  // corpse interval via startInterval, which would kill a fall stored there and
+  // strand the corpse mid-air.
+  fallTaskId: SchedulerTaskId | null = null
 
   constructor(animal: Animal) {
     this.animal = animal
@@ -39,12 +47,39 @@ export class AnimalLifecycle {
   death(): void {
     const animal = this.animal
     clearDamageFeedback(animal)
-    if (animal.altitude) animal.setAltitude(0)
+    if (animal.altitude) this.startDeathFall()
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.sprite.loop = false
     animal.syncShadow()
     animal.sprite.onComplete = () => animal.decompose()
+  }
+
+  startDeathFall(): void {
+    const animal = this.animal
+    const startAltitude = animal.altitude
+    let step = 0
+    this.stopDeathFall()
+    this.fallTaskId = animal.context.scheduler.add(
+      () => {
+        if (animal.isDestroyed) {
+          this.stopDeathFall()
+          return
+        }
+        step++
+        animal.setAltitude(step >= DEATH_FALL_STEPS ? 0 : startAltitude * (1 - step / DEATH_FALL_STEPS))
+        if (step >= DEATH_FALL_STEPS) this.stopDeathFall()
+      },
+      DEATH_FALL_STEP_MS,
+      'animal.deathFall'
+    )
+  }
+
+  stopDeathFall(): void {
+    if (this.fallTaskId != null) {
+      this.animal.context.scheduler.remove(this.fallTaskId)
+      this.fallTaskId = null
+    }
   }
 
   decompose(): void {
@@ -107,6 +142,7 @@ export class AnimalLifecycle {
     } = animal
     animal.stopTimeout()
     animal.stopInterval()
+    this.stopDeathFall()
     animal.animalBehavior.stop()
     animal.isDestroyed = true
     map.removeFromInstanceBucket(animal)

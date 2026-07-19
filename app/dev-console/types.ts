@@ -15,7 +15,6 @@ export type DevMapLike = {
   gaia?: { units: DevEntity[] } | null
   instantMode?: boolean
   revealEverything?: boolean
-  revealTerrain?: boolean
   showResources?: boolean
   fogLayer?: { visible: boolean } | null
   fogMemoryLayer?: { visible: boolean } | null
@@ -29,14 +28,18 @@ export type DevMapLike = {
   debugHeroCollisionVisible?: boolean
   debugPerfVisible?: boolean
   debugAiInfoVisible?: boolean
+  debugPlayerStatsVisible?: boolean
+  debugTerrainFrameVisible?: boolean
   _debugPathTicker?: DebugTickerCallback | null
   _debugPerfTicker?: DebugTickerCallback | null
   _debugAiInfoTicker?: DebugTickerCallback | null
+  _debugPlayerStatsTicker?: DebugTickerCallback | null
   _debugSolidTicker?: DebugTickerCallback | null
   _debugVisionTicker?: DebugTickerCallback | null
   _debugGridTicker?: DebugTickerCallback | null
   _debugCoordsTicker?: DebugTickerCallback | null
   _debugHeroCollisionTicker?: DebugTickerCallback | null
+  _debugTerrainFrameTicker?: DebugTickerCallback | null
   _fogQueue?: Map<RuntimeCell, string>
   _pendingFogChunkUpdates?: Map<RuntimeCell, string>
   viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }
@@ -74,6 +77,9 @@ type DevControlsLike = {
     visibleCells?: Set<RuntimeCell>
   }
   stopKeyboardMove?(): void
+  isArpgActive?(): boolean
+  freeCameraActive?: boolean
+  setFreeCamera?(enabled: boolean): void
 }
 
 export type DevPerformanceMetric = {

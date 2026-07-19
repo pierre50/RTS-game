@@ -11,6 +11,7 @@ export const DEBUG_VISION_LAYER = 'debugVisionLayer'
 export const DEBUG_GRID_LAYER = 'debugGridLayer'
 export const DEBUG_COORDS_LAYER = 'debugCoordsLayer'
 export const DEBUG_HERO_COLLISION_LAYER = 'debugHeroCollisionLayer'
+export const DEBUG_TERRAIN_FRAME_LAYER = 'debugTerrainFrameLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
 type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
@@ -188,6 +189,8 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     '_debugHeroCollisionTicker',
     '_debugPerfTicker',
     '_debugAiInfoTicker',
+    '_debugPlayerStatsTicker',
+    '_debugTerrainFrameTicker',
   ]
 
   tickerNames.forEach(tickerName => stopDebugTicker(context, tickerName))
@@ -199,6 +202,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     DEBUG_GRID_LAYER,
     DEBUG_COORDS_LAYER,
     DEBUG_HERO_COLLISION_LAYER,
+    DEBUG_TERRAIN_FRAME_LAYER,
   ]
 
   layerLabels.forEach(label => {
@@ -212,6 +216,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
   document.getElementById('debug-perf')?.remove()
   document.getElementById('debug-ai-info')?.remove()
   document.getElementById('debug-hero-collision')?.remove()
+  document.getElementById('debug-player-stats')?.remove()
 }
 
 export function getInstancesByCategory(

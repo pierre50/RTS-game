@@ -5,16 +5,16 @@
   --menu-panel-width: min(100%, 960px);
   --menu-panel-max-width: calc(100vw - 32px);
   --menu-panel-min-height: auto;
-  --menu-panel-padding: 44px 64px;
+  --menu-panel-padding: 48px 68px;
   --menu-home-gap: var(--ui-gap-24);
-  --menu-home-padding: 0 64px 44px;
+  --menu-home-padding: 0 68px 48px;
   --menu-logo-width: min(620px, 88vw);
   --menu-logo-max-height: none;
   --menu-logo-margin: 0;
   --menu-buttons-width: auto;
-  --menu-buttons-gap: var(--ui-gap-8);
+  --menu-buttons-gap: var(--ui-gap-12);
   --menu-buttons-margin: 0;
-  --menu-home-button-padding: 8px 20px;
+  --menu-home-button-padding: 12px 24px;
   --menu-home-button-font-size: var(--font-size-lg);
 
   position: fixed;
@@ -25,10 +25,10 @@
   justify-content: center;
   padding: var(--menu-page-padding);
   overflow-y: var(--menu-page-overflow);
-  background: var(--menu-backdrop);
+  background: 
+    linear-gradient(rgba(10, 8, 7, 0.45), rgba(10, 8, 7, 0.72)),
+    url('../../public/assets/graphics/ui/menu-bg.jpg') no-repeat center center;
   background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
 }
 
 .menu-panel {
@@ -40,9 +40,10 @@
   max-width: var(--menu-panel-max-width);
   min-height: var(--menu-panel-min-height);
   padding: var(--menu-panel-padding);
-  background: var(--main-primary-color);
+  background: linear-gradient(135deg, rgba(26, 21, 18, 0.96) 0%, rgba(15, 12, 10, 0.98) 100%);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
+  box-shadow: var(--main-box-shadow);
 }
 
 .menu-panel--home {
@@ -50,6 +51,7 @@
   padding: var(--menu-home-padding);
   background: transparent;
   border: 0;
+  box-shadow: none;
 }
 
 img.menu-title {
@@ -70,36 +72,25 @@ img.menu-title {
 .menu-panel--home img.menu-title {
   width: 100%;
   opacity: 0;
-  transform: translateY(8px) scale(0.985);
-  filter: drop-shadow(0 10px 18px var(--menu-title-shadow));
+  transform: translateY(6px);
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.7));
   transition:
-    opacity 360ms ease,
-    transform 420ms ease;
+    opacity 200ms steps(4, end),
+    transform 200ms steps(4, end);
 }
 
 .menu-title-shell.is-loaded img.menu-title {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  animation: menu-title-breathe 4.8s ease-in-out 420ms infinite;
-}
-
-@keyframes menu-title-breathe {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-
-  50% {
-    transform: translateY(-4px) scale(1.012);
-  }
+  transform: translateY(0);
 }
 
 div.menu-title {
   margin: 0;
   color: var(--main-accent-color);
-  font-size: var(--font-size-lg);
-  font-weight: bold;
+  font-size: calc(var(--font-size-lg) + 4px);
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
 .button-group,
@@ -107,7 +98,7 @@ div.menu-title {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--ui-gap-8);
+  gap: var(--ui-gap-10);
 }
 
 .menu-panel--home .button-group {
@@ -138,8 +129,9 @@ div.menu-title {
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  color: var(--text-color-white);
+  color: rgba(234, 221, 202, 0.5);
   font-size: var(--font-size-sm);
+  letter-spacing: 1.5px;
   text-shadow: var(--text-shadow-dark-ui);
   white-space: nowrap;
 }
@@ -147,8 +139,8 @@ div.menu-title {
 .config-form {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-gap-10);
-  width: min(100%, 300px);
+  gap: var(--ui-gap-12);
+  width: min(100%, 320px);
 }
 
 .config-row {
@@ -161,13 +153,14 @@ div.menu-title {
 
 .config-row label {
   font-size: var(--font-size-base);
-  font-weight: bold;
+  font-weight: 500;
+  color: rgba(234, 221, 202, 0.95);
 }
 
 .config-row .ui-select,
 .config-row .ui-input,
 .config-row .ui-range {
-  width: 160px;
+  width: 170px;
   flex-shrink: 0;
 }
 
@@ -181,7 +174,7 @@ div.menu-title {
   grid-template-columns: 1fr 1fr;
   align-items: start;
   gap: var(--ui-gap-40);
-  width: min(82vw, 840px);
+  width: min(82vw, 880px);
   max-width: 100%;
 }
 
@@ -206,7 +199,7 @@ div.menu-title {
 .lobby-col {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-gap-8);
+  gap: var(--ui-gap-10);
   min-width: 0;
 }
 
@@ -214,6 +207,9 @@ div.menu-title {
   width: 100%;
   min-width: 0;
   overflow-x: auto;
+  border: 1px solid rgba(223, 177, 91, 0.15);
+  border-radius: var(--main-border-radius);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .player-table-header {
@@ -222,10 +218,13 @@ div.menu-title {
   grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
-  padding: 5px 10px;
+  padding: 8px 12px;
   font-size: var(--font-size-sm);
-  font-weight: bold;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--main-accent-color);
+  border-bottom: 2px solid rgba(223, 177, 91, 0.25);
 }
 
 .player-row {
@@ -234,8 +233,10 @@ div.menu-title {
   grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
-  padding: 5px 10px;
+  padding: 8px 12px;
   align-items: center;
+  border-bottom: 1px solid rgba(223, 177, 91, 0.08);
+  transition: background-color var(--ui-transition-fast);
 }
 
 .player-table--with-age .player-table-header,
@@ -247,13 +248,19 @@ div.menu-title {
   background: var(--surface-row-subtle);
 }
 
+.player-row:hover {
+  background: rgba(223, 177, 91, 0.05);
+}
+
 .player-name {
   color: var(--main-text-color);
   font-size: var(--font-size-sm);
+  font-weight: 500;
 }
 
 .player-name.human {
-  color: var(--main-accent-color);
+  color: var(--main-accent-hover);
+  font-weight: 600;
 }
 
 .player-civ .ui-select {
@@ -276,12 +283,15 @@ div.menu-title {
 
 .team-cycle,
 .color-swatch {
-  min-width: var(--ui-control-height);
-  min-height: var(--ui-control-height);
+  min-width: var(--ui-control-height-compact);
+  min-height: var(--ui-control-height-compact);
+  border: var(--border-slot);
+  border-radius: var(--main-border-radius);
 }
 
 .color-swatch {
   background-image: none;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
 .team-cycle {
@@ -291,6 +301,11 @@ div.menu-title {
   justify-content: center;
   padding: 0 var(--ui-control-padding-x);
   font-size: var(--ui-control-font-size);
+  background: var(--form-surface-color);
+  color: var(--main-accent-color);
+  font-weight: bold;
+  cursor: pointer;
+  transition: border-color var(--ui-transition-fast), background-color var(--ui-transition-fast);
 }
 
 .player-color-cell {
@@ -300,8 +315,11 @@ div.menu-title {
 }
 
 .team-cycle:active,
-.team-cycle:focus {
-  background-color: var(--main-accent-hover);
+.team-cycle:focus,
+.team-cycle:hover {
+  background-color: rgba(223, 177, 91, 0.12);
+  border-color: var(--main-accent-color);
+  outline: none;
 }
 
 .player-count-row {
@@ -309,7 +327,7 @@ div.menu-title {
 }
 
 .player-count-row .ui-select {
-  width: 160px;
+  width: 170px;
 }
 
 .lobby-settings-form {
@@ -326,7 +344,7 @@ div.menu-title {
 .save-list {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-gap-6);
+  gap: var(--ui-gap-8);
   width: 100%;
   max-height: min(60vh, 420px);
   overflow-y: auto;
@@ -334,10 +352,10 @@ div.menu-title {
 }
 
 .save-list-empty {
-  padding: 20px 0;
+  padding: 24px 0;
   text-align: center;
   color: var(--main-accent-color);
-  opacity: 0.6;
+  opacity: 0.65;
   font-style: italic;
 }
 
@@ -345,27 +363,40 @@ div.menu-title {
   display: flex;
   align-items: center;
   gap: var(--ui-gap-8);
-  padding: 7px 10px;
+  padding: 10px 14px;
   background: var(--surface-row-dark);
   border: 1px solid var(--border-row-subtle);
+  border-radius: var(--main-border-radius);
+  transition:
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+.save-list-row:hover {
+  background: rgba(223, 177, 91, 0.05);
+  border-color: rgba(223, 177, 91, 0.35);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
 .save-list-name {
   flex: 1;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--main-accent-color);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.5px;
 }
 
 .save-list-row .ui-btn {
   width: auto;
-  min-width: 44px;
-  padding: 8px 12px;
+  min-width: 46px;
+  padding: 6px 12px;
   font-size: var(--font-size-sm);
 }
 
 .save-list-export-btn {
-  opacity: 0.72;
+  opacity: 0.75;
+  transition: opacity var(--ui-transition-fast);
 }
 
 .save-list-export-btn:hover {
@@ -377,7 +408,7 @@ div.menu-title {
   flex-direction: column;
   align-items: stretch;
   gap: var(--ui-gap-8);
-  padding-top: var(--ui-gap-10);
+  padding-top: var(--ui-gap-12);
   border-top: 1px solid var(--border-divider-subtle);
 }
 
@@ -386,7 +417,7 @@ div.menu-title {
   min-height: var(--ui-button-height);
   padding: 8px 14px;
   font-size: var(--font-size-sm);
-  opacity: 0.85;
+  opacity: 0.88;
 }
 
 .save-list-import-btn:hover {
@@ -396,13 +427,13 @@ div.menu-title {
 .save-list-import-status {
   font-size: var(--font-size-sm);
   font-style: italic;
-  opacity: 0.8;
+  opacity: 0.85;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .save-list-import-status--ok {
-  color: var(--main-accent-color);
+  color: var(--main-accent-hover);
   opacity: 1;
 }
 
@@ -413,8 +444,9 @@ div.menu-title {
 
 .save-list-confirm-message {
   max-width: 360px;
-  margin: 0 0 var(--ui-gap-8);
+  margin: 0 0 var(--ui-gap-10);
   text-align: center;
+  line-height: 1.45;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -434,15 +466,15 @@ div.menu-title {
     --menu-panel-width: 100%;
     --menu-panel-max-width: none;
     --menu-panel-min-height: calc(100dvh - 32px);
-    --menu-panel-padding: 24px 16px;
-    --menu-home-gap: 18px;
-    --menu-home-padding: 12px 16px 20px;
+    --menu-panel-padding: 28px 20px;
+    --menu-home-gap: 20px;
+    --menu-home-padding: 16px 20px 24px;
     --menu-logo-width: min(100%, 420px);
     --menu-logo-max-height: min(34dvh, 280px);
     --menu-logo-margin: auto 0;
     --menu-buttons-width: 100%;
-    --menu-buttons-gap: 10px;
-    --menu-home-button-padding: 10px 20px;
+    --menu-buttons-gap: 12px;
+    --menu-home-button-padding: 12px 20px;
   }
 
   .menu-panel {
@@ -456,7 +488,7 @@ div.menu-title {
   .menu-copyright {
     position: static;
     transform: none;
-    margin-top: 20px;
+    margin-top: 24px;
     text-align: center;
     white-space: normal;
   }
@@ -535,15 +567,15 @@ div.menu-title {
   #main-menu {
     --menu-page-padding: 12px;
     --menu-panel-min-height: calc(100dvh - 24px);
-    --menu-panel-padding: 18px 12px;
-    --menu-home-gap: 14px;
+    --menu-panel-padding: 20px 14px;
+    --menu-home-gap: 16px;
     --menu-logo-width: min(100%, 360px);
     --menu-logo-max-height: min(28dvh, 220px);
     --menu-home-button-font-size: var(--font-size-base);
   }
 
   .menu-copyright {
-    margin-top: 12px;
+    margin-top: 16px;
     font-size: var(--font-size-sm);
   }
 }
@@ -554,13 +586,13 @@ div.menu-title {
     --menu-page-align: flex-start;
     --menu-page-overflow: auto;
     --menu-panel-min-height: auto;
-    --menu-home-gap: 16px;
-    --menu-home-padding: 12px 16px 20px;
+    --menu-home-gap: 18px;
+    --menu-home-padding: 16px 20px 24px;
     --menu-logo-width: min(100%, 560px);
     --menu-logo-max-height: min(34vh, 220px);
     --menu-logo-margin: 0 auto;
     --menu-buttons-width: min(100%, 420px);
-    --menu-buttons-gap: 10px;
+    --menu-buttons-gap: 12px;
     --menu-buttons-margin: 0 auto;
     --menu-home-button-padding: 10px 20px;
     --menu-home-button-font-size: var(--font-size-lg);
@@ -579,7 +611,7 @@ div.menu-title {
     position: static;
     transform: none;
     width: 100%;
-    margin-top: 12px;
+    margin-top: 16px;
     text-align: center;
     white-space: normal;
   }
@@ -587,13 +619,13 @@ div.menu-title {
 
 @media (max-width: 900px) and (max-height: 520px) {
   #main-menu {
-    --menu-home-padding: 12px 16px;
+    --menu-home-padding: 12px 20px;
     --menu-logo-width: min(100%, 500px);
     --menu-logo-max-height: min(36vh, 220px);
     --menu-logo-margin: auto 0;
     --menu-buttons-width: min(100%, 320px);
     --menu-buttons-margin: auto 0 auto auto;
-    --menu-home-button-padding: 9px 18px;
+    --menu-home-button-padding: 10px 18px;
     --menu-home-button-font-size: var(--font-size-base);
   }
 
@@ -622,3 +654,4 @@ div.menu-title {
     text-align: right;
   }
 }
+

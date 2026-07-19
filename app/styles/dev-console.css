@@ -32,6 +32,20 @@
   left: 10px;
 }
 
+#debug-player-stats {
+  bottom: 10px;
+  right: 10px;
+}
+
+.debug-player-stats-row {
+  white-space: nowrap;
+}
+
+.debug-player-stats-row--dead {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
 .dev-console-panel {
   position: absolute;
   right: 14px;

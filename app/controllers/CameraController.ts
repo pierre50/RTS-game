@@ -1,9 +1,16 @@
-import { pointInRectangle, pointIsBetweenTwoPoint } from '../lib'
+import { pointInRectangle, pointIsBetweenTwoPoint, updateInstanceRenderVisibility } from '../lib'
+import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/settings'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { Viewport } from '../types/geometry'
+import type { Bounds, Viewport } from '../types/geometry'
 import type { VisionGridLike } from '../types/player'
+
+// Generous halo around the viewport used to decide which cells are worth tracking for camera
+// culling. Must comfortably exceed the largest building sprite's extent beyond its footprint tile
+// (biggest observed sprite is ~220x170px) so an entity's bounding box is always re-checked against
+// the true viewport before it visually enters or leaves the screen.
+const CAMERA_CULL_MARGIN = CELL_WIDTH * 4
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'
@@ -241,8 +248,10 @@ export class CameraController {
     })
   }
 
-  instanceInCamera(instance: Point): boolean {
-    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
+  instanceInCamera(instance: Point, bounds?: Bounds): boolean {
+    const viewport = this.getViewportRect()
+    if (bounds) return rectangleIntersectsViewport(bounds, viewport)
+    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
     return pointInRectangle(instance.x, instance.y, visibleLeft, visibleTop, visibleWidth, visibleHeight)
   }
 
@@ -282,7 +291,7 @@ export class CameraController {
       if (!player?.views) return
       const newVisible = this._nextVisibleCells ?? new Set()
       newVisible.clear()
-      const margin = CELL_WIDTH
+      const margin = CAMERA_CULL_MARGIN
       const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
 
       const startX = Math.floor(visibleLeft - margin)
@@ -305,8 +314,8 @@ export class CameraController {
 
       for (let cell of this.visibleCells) {
         if (!newVisible.has(cell)) {
-          if (cell.has) cell.has.visible = false
-          for (const corpse of cell.corpses) corpse.visible = false
+          if (cell.has) updateInstanceRenderVisibility(cell.has)
+          for (const corpse of cell.corpses) updateInstanceRenderVisibility(corpse)
         }
       }
 

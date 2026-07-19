@@ -17,6 +17,26 @@ function loadCameraController() {
       isometricToCartesian: () => [0, 0],
       pointInRectangle: () => true,
       pointIsBetweenTwoPoint: () => true,
+      updateInstanceRenderVisibility: instance => {
+        if (!instance) return false
+        instance.visible = false
+        instance.__renderRecomputed = true
+        return false
+      },
+    },
+    '../lib/graphics/chunkCulling': {
+      rectangleIntersectsViewport: (bounds, viewport, margin = 0) => {
+        const left = viewport.visibleLeft - margin
+        const top = viewport.visibleTop - margin
+        const right = viewport.visibleLeft + viewport.visibleWidth + margin
+        const bottom = viewport.visibleTop + viewport.visibleHeight + margin
+        return (
+          bounds.minX + bounds.width >= left &&
+          bounds.minX <= right &&
+          bounds.minY + bounds.height >= top &&
+          bounds.minY <= bottom
+        )
+      },
     },
     '../constants': { CELL_HEIGHT: 32, CELL_WIDTH: 64 },
     '../lib/settings': { getCameraZoom: () => 1 },
@@ -55,4 +75,40 @@ test('refreshes camera-culled entities when their cell remains in the preload ar
   controller.updateVisibleCells()
 
   assert.equal(updates, 2)
+})
+
+test('recomputes render visibility instead of blindly hiding when a cell drops out of the tracked halo', () => {
+  const CameraController = loadCameraController()
+  const cell = {
+    has: { label: 'building', visible: true },
+    corpses: new Set(),
+    updateVisible: () => {},
+  }
+  const otherCell = { has: null, corpses: new Set(), updateVisible: () => {} }
+  const map = {
+    grid: [[cell]],
+    size: 0,
+    updateRenderChunks: () => {},
+  }
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map,
+    player: { views: {} },
+  })
+  controller.getViewportRect = () => ({
+    visibleLeft: 0,
+    visibleTop: 0,
+    visibleWidth: 0,
+    visibleHeight: 0,
+  })
+
+  controller.updateVisibleCells()
+  assert.equal(controller.visibleCells.has(cell), true)
+
+  // The cell drops out of the tracked halo (e.g. the camera panned far away).
+  map.grid = [[otherCell]]
+  controller.updateVisibleCells()
+
+  assert.equal(cell.has.visible, false)
+  assert.equal(cell.has.__renderRecomputed, true)
 })

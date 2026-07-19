@@ -13,6 +13,7 @@ import {
 } from '../../constants'
 import {
   getInstanceZIndex,
+  getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
@@ -407,6 +408,7 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.currentFrame = Math.min(this.currentFrame, this.sprite.textures.length - 1)
     this.syncShadow()
     this.syncAppearanceLayers(this.currentSheet)
+    this.applyReliefLift(this.z ?? 0)
     this.sprite.updateAnchor = true
     this.setupSailSprite()
     this.syncFishingOverlaySprite()
@@ -684,6 +686,16 @@ export class Unit extends Instance implements UnitEntity {
     }
   }
 
+  // Cosmetic-only: offsets the sprite and its equipment layers to exaggerate the relief
+  // step already baked into cell.y. Never touches this.x/y (pathing/collision) or zIndex.
+  applyReliefLift(z: number, fromZ: number = z, progress = 1): void {
+    const offset = -getReliefLiftPixels(z, fromZ, progress)
+    this.sprite.position.y = offset
+    for (const layerSprite of this.appearanceLayerSprites.values()) {
+      layerSprite.position.y = offset
+    }
+  }
+
   syncAppearanceLayers(sheet: string) {
     const layers = this.appearance?.layers
     const hideEquipment = sheet === SHEET_TYPES.dying || sheet === SHEET_TYPES.corpse
@@ -765,6 +777,7 @@ export class Unit extends Instance implements UnitEntity {
         bindAnimatedSpriteToTicker(layerSprite, this.context.app)
         layerSprite.label = `${LABEL_TYPES.sprite}-layer-${spriteKey}`
         layerSprite.eventMode = 'none'
+        layerSprite.position.y = this.sprite.position.y
         layerSprite.roundPixels = true
         layerSprite.loop = this.loop ?? true
         layerSprite.updateAnchor = true

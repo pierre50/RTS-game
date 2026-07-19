@@ -1,4 +1,4 @@
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, RELIEF_SPRITE_LIFT_PER_STEP } from '../constants'
 import type { GridPosition, Point } from '../types/grid'
 
 type Direction = 'north' | 'south' | 'west' | 'northwest' | 'southwest' | 'east' | 'northeast' | 'southeast'
@@ -151,6 +151,20 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
 export function getInstanceZIndex(instance: Point & { z?: number | null }): number {
   const pos = isometricToCartesian(instance.x, instance.y + (instance.z ?? 0) * CELL_DEPTH)
   return pos[0] + pos[1]
+}
+
+/**
+ * Get the cosmetic sprite lift (in px) for a given relief level, blended between two
+ * levels when `progress` (0-1) is given to smoothly ramp the lift while crossing a step.
+ * @param {number} z
+ * @param {number} fromZ
+ * @param {number} progress
+ */
+export function getReliefLiftPixels(z: number | null | undefined, fromZ: number | null | undefined = z, progress = 1): number {
+  const from = fromZ ?? 0
+  const to = z ?? 0
+  const blended = from + (to - from) * Math.min(1, Math.max(0, progress))
+  return blended * RELIEF_SPRITE_LIFT_PER_STEP
 }
 
 /**

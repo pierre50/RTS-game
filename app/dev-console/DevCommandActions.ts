@@ -2,18 +2,20 @@ export {
   aiInfo,
   performanceReport,
   toggleCoordsDebug,
+  toggleFreeCamera,
   toggleGridDebug,
   toggleHeroCollisionDebug,
   togglePathDebug,
   togglePerfDebug,
+  togglePlayerStatsDebug,
   toggleSolidDebug,
+  toggleTerrainFrameDebug,
   toggleVisionDebug,
 } from './actions/debug'
 
 export {
   toggleFog,
   toggleResourcesVisibility,
-  toggleTerrainReveal,
   highlightInstances,
   killResources,
 } from './actions/map'

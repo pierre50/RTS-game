@@ -28,6 +28,7 @@ export const LABEL_TYPES = {
   dither: 'dither',
   fogOverlay: 'fogOverlay',
   commRadius: 'commRadius',
+  commSelection: 'commSelection',
 }
 
 export const COLOR_WHITE = 0xffffff

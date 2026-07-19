@@ -1,6 +1,5 @@
 import { MinimapManager } from '../ui/MinimapManager'
 import { BottombarManager } from '../ui/BottombarManager'
-import { PlayerStatsManager } from '../ui/PlayerStatsManager'
 import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
@@ -39,7 +38,6 @@ export default class Menu implements MenuLike {
   actionSpecs: ActionSpecFactory
   actionRenderer: ActionMenuRenderer
   bottombarManager: BottombarManager
-  playerStatsManager: PlayerStatsManager
   pauseMenu: PauseMenu
   topbarView: TopbarView
   minimapInputController: MinimapInputController
@@ -65,9 +63,8 @@ export default class Menu implements MenuLike {
     this.context = context
     this.gameHud = document.createElement('div')
     this.gameHud.className = 'game-hud'
-    this.gameHud.classList.toggle('game-hud--arpg', Boolean(context.map.arpgMode))
     this.bottombar = document.createElement('div')
-    this.bottombar.className = 'bottombar bar'
+    this.bottombar.className = 'bottombar bar bottombar--rts'
     this.bottombarInfo = document.createElement('div')
     this.bottombarInfo.className = 'bottombar-info'
     this.bottombarMenu = document.createElement('div')
@@ -88,7 +85,6 @@ export default class Menu implements MenuLike {
     this.actionSpecs = new ActionSpecFactory(this)
     this.actionRenderer = new ActionMenuRenderer(this)
     this.bottombarManager = new BottombarManager(this)
-    this.playerStatsManager = new PlayerStatsManager(this)
     this.pauseMenu = new PauseMenu(this)
     this.topbarView = new TopbarView(this)
     this.minimapInputController = new MinimapInputController(this)
@@ -115,7 +111,6 @@ export default class Menu implements MenuLike {
   destroy(): void {
     this.menuTooltip.destroy()
     this.minimapInputController.destroy()
-    this.playerStatsManager.destroy()
     this.inventoryManager.destroy()
     this.npcOrdersManager.destroy()
     this.arpgBuildingMenuManager.destroy()
@@ -185,11 +180,6 @@ export default class Menu implements MenuLike {
   }
   updateCameraMiniMapEvt(): void {
     return this.minimapManager.updateCameraMiniMapEvt()
-  }
-
-  // PlayerStats delegate
-  updatePlayerStats(): void {
-    return this.playerStatsManager.update()
   }
 
   // Bottombar delegates

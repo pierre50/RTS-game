@@ -172,6 +172,7 @@ export class HeroController {
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       moved = unit.moveDirect?.(dx / len, dy / len, distance) ?? false
+      if (moved && menu?.isArpgBuildingMenuOpen?.()) menu.closeArpgBuildingMenu?.()
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
       if (!moved || delta < 0.01) {
         debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {

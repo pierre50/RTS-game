@@ -220,8 +220,9 @@ export class Building extends Instance implements BuildingEntity {
         if (editor?.handleEntityInteraction(this)) return
         if (controls.isArpgActive?.() && this.owner.isPlayed) {
           controls.mouse.prevent = true
-          if (menu.openArpgBuildingMenu?.(this)) return
-          this.selectForPlayedOwner()
+          if (menu.openArpgBuildingMenu?.(this)) {
+            this.selectForPlayedOwner()
+          }
           return
         }
         if (!canUseRtsEntityPointer(controls)) return

@@ -185,7 +185,7 @@
   gap: 14px;
   padding: 28px 24px;
   text-align: center;
-  color: var(--main-primary-color);
+  color: var(--main-text-color);
   background: var(--surface-black-light);
   border: var(--panel-border);
   box-shadow: var(--main-box-shadow);
@@ -200,8 +200,6 @@
   font-size: var(--font-size-display);
   line-height: 1;
   border: var(--border-btn);
-  border-color: var(--main-primary-color);
-  border-radius: 18px;
   background: var(--surface-white-faint);
 }
 

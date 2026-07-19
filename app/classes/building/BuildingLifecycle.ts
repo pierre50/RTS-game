@@ -26,7 +26,6 @@ import {
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
-  isPlayerEliminated,
   playAudibleSoundCue,
   playSoundCue,
 } from '../../lib'
@@ -269,9 +268,6 @@ export class BuildingLifecycle {
     const index = building.owner.buildings.indexOf(building)
     if (index >= 0) {
       building.owner.buildings.splice(index, 1)
-      if (isPlayerEliminated(building.owner)) {
-        menu.updatePlayerStats()
-      }
     }
 
     for (let i = 0; i < players.length; i++) {
@@ -294,14 +290,15 @@ export class BuildingLifecycle {
     }
     building.sprite.texture = getTexture(rubbleSheet!, Assets)
     building.sprite.eventMode = 'none'
-    building.zIndex--
+    const footprintRadius = getBuildingFootprintRadius(building.size)
+    building.zIndex = building.i + building.j - footprintRadius * 2 - 0.1
     if (building.type === BUILDING_TYPES.farm) {
       changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
     }
+    building.updateShadow()
 
     updateInstanceVisibility(building)
-    const dist = getBuildingFootprintRadius(building.size)
-    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
+    getPlainCellsAroundPoint(building.i, building.j, map.grid, footprintRadius, ((cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false

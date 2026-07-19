@@ -111,6 +111,7 @@ export class ArpgBuildingMenuManager {
   close(): void {
     document.removeEventListener('keydown', this.onKeyDown)
     this.menu.menuTooltip.hide()
+    const building = this.building
     this.building = null
     this.stack = []
     this.opened = false
@@ -118,6 +119,11 @@ export class ArpgBuildingMenuManager {
     this.panel.classList.add('hidden')
     this.info.textContent = ''
     this.body.textContent = ''
+    const player = this.menu.context.player
+    if (building && player?.selectedBuilding === building) {
+      building.unselect?.()
+      player.selectedBuilding = null
+    }
   }
 
   back(): void {

@@ -131,6 +131,28 @@ export const MAX_BUILDING_BY_AGE = {
   },
 }
 
+// Utilisé quand AGE_UP_ENABLED est false : l'IA reste bloquée à l'âge 0 pour toujours, donc on lui
+// donne le plafond le plus haut défini pour chaque type de bâtiment (tous âges confondus) plutôt que
+// de la brider à 1 baraque/1 dépôt/etc. à vie.
+const MERGED_MAX_BUILDING_CAPS = Array.from(
+  new Set(Object.values(MAX_BUILDING_BY_AGE).flatMap(ageConfig => Object.keys(ageConfig)))
+).reduce(
+  (acc, type) => {
+    acc[type] = Math.max(
+      ...Object.values(MAX_BUILDING_BY_AGE).map(ageConfig => (ageConfig as Record<string, number>)[type] || 0)
+    )
+    return acc
+  },
+  {} as Record<string, number>
+)
+
+export const MAX_BUILDING_BY_AGE_FROZEN = {
+  0: MERGED_MAX_BUILDING_CAPS,
+  1: MERGED_MAX_BUILDING_CAPS,
+  2: MERGED_MAX_BUILDING_CAPS,
+  3: MERGED_MAX_BUILDING_CAPS,
+}
+
 export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 8, 2: 10, 3: 12 }
 export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 4, 2: 6, 3: 8 }
 export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 3, 2: 4, 3: 5 }

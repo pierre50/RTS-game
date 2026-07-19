@@ -28,6 +28,7 @@ const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.ts', {
 const { instanceShouldRender } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
+  './cells': { getBuildingFootprintRadius: () => 0 },
 })
 
 test('skips animation updates when the entity container is hidden', () => {
@@ -67,4 +68,27 @@ test('renders an explored resource only while it is inside the camera', () => {
   assert.equal(instanceShouldRender(resource), false)
   inCamera = true
   assert.equal(instanceShouldRender(resource), true)
+})
+
+test('culls a sprite-based entity by its full bounding box, not just its anchor point', () => {
+  let receivedBounds
+  const building = {
+    family: 'building',
+    x: 100,
+    y: 200,
+    sprite: { width: 80, height: 120, anchor: { x: 0.5, y: 1 } },
+    context: {
+      map: { revealEverything: true },
+      player: {},
+      controls: {
+        instanceInCamera: (_instance, bounds) => {
+          receivedBounds = bounds
+          return true
+        },
+      },
+    },
+  }
+
+  assert.equal(instanceShouldRender(building), true)
+  assert.deepEqual(receivedBounds, { minX: 60, minY: 80, width: 80, height: 120 })
 })

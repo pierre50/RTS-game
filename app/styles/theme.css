@@ -1,39 +1,44 @@
 .game-hud.ui-age-0 {
-  --ui-bar-bg: #b89169;
-  --ui-bar-border: 2px outset #d8b38c;
-  --ui-slot-border: 2px inset #d8b38c;
-  --ui-text-color: #3f2816;
-  --ui-map-shadow-dark: #72563f;
-  --ui-map-shadow-light: #d8b38c;
+  /* Stone Age: Granite, Bone, Slate */
+  --ui-bar-bg: #221e1c;
+  --ui-bar-border: 1px solid rgba(234, 221, 202, 0.25);
+  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
+  --ui-text-color: #eaddca;
+  --ui-map-shadow-dark: #12100e;
+  --ui-map-shadow-light: rgba(234, 221, 202, 0.08);
 }
 
 .game-hud.ui-age-1 {
-  --ui-bar-bg: #797067;
-  --ui-bar-border: 2px outset #b7ada1;
-  --ui-slot-border: 2px inset #b7ada1;
+  /* Tool Age: Chiseled Grey Flint & Dark Wood */
+  --ui-bar-bg: #292624;
+  --ui-bar-border: 1px solid rgba(183, 173, 161, 0.3);
+  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
   --ui-text-color: #f6ead8;
-  --ui-text-shadow: 1px 1px rgba(0, 0, 0, 0.55);
-  --ui-plain-text-shadow: var(--text-shadow-light-ui);
-  --ui-map-shadow-dark: #554d46;
-  --ui-map-shadow-light: #b7ada1;
+  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.85);
+  --ui-plain-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.85);
+  --ui-map-shadow-dark: #141312;
+  --ui-map-shadow-light: rgba(183, 173, 161, 0.1);
 }
 
 .game-hud.ui-age-2 {
-  --ui-bar-bg: #b27649;
-  --ui-bar-border: 2px outset #d8a06f;
-  --ui-slot-border: 2px inset #d8a06f;
-  --ui-text-color: #4d2414;
-  --ui-text-shadow: 1px 1px rgba(255, 245, 232, 0.65);
-  --ui-map-shadow-dark: #6f4025;
-  --ui-map-shadow-light: #d8a06f;
+  /* Bronze Age: Warm Copper Bronze & Patina Gold */
+  --ui-bar-bg: #35251c;
+  --ui-bar-border: 1px solid rgba(223, 177, 91, 0.45);
+  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
+  --ui-text-color: #dfb15b;
+  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+  --ui-map-shadow-dark: #1b100a;
+  --ui-map-shadow-light: rgba(223, 177, 91, 0.16);
 }
 
 .game-hud.ui-age-3 {
-  --ui-bar-bg: #ddd5c9;
-  --ui-bar-border: 2px outset #f5efe4;
-  --ui-slot-border: 2px inset #f5efe4;
-  --ui-text-color: #5a4a3f;
-  --ui-text-shadow: 1px 1px rgba(255, 255, 255, 0.9);
-  --ui-map-shadow-dark: #9d9184;
-  --ui-map-shadow-light: #f5efe4;
+  /* Iron Age: Burnished Steel & Dark Charcoal */
+  --ui-bar-bg: #202022;
+  --ui-bar-border: 1px solid rgba(255, 255, 255, 0.22);
+  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.6);
+  --ui-text-color: #e2e8f0;
+  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.95);
+  --ui-map-shadow-dark: #0f0f10;
+  --ui-map-shadow-light: rgba(255, 255, 255, 0.12);
 }
+

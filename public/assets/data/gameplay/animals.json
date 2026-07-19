@@ -21,7 +21,8 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "deer-lion-killed"
+      "fall": "deer-lion-killed",
+      "hit": "target-hit"
     }
   },
   "Hare": {
@@ -46,7 +47,8 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "deer-lion-killed"
+      "fall": "deer-lion-killed",
+      "hit": "target-hit"
     }
   },
   "BlackGrouse": {
@@ -71,27 +73,34 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "deer-lion-killed"
+      "fall": "deer-lion-killed",
+      "hit": "target-hit"
     }
   },
-  "Alligator": {
-    "totalHitPoints": 20,
-    "sight": 10,
-    "speed": 0.5,
-    "meleeAttack": 4,
-    "strategy": "attack",
-    "icon": "041_50730",
-    "rateOfFire": 2,
-    "totalQuantity": 100,
+  "Fox": {
+    "totalHitPoints": 5,
+    "sight": 7,
+    "speed": 1.3,
+    "strategy": "runaway",
+    "ambientMovement": true,
+    "icon": "040_50730",
+    "totalQuantity": 50,
+    "spriteScale": 0.7,
     "assets": {
-      "actionSheet": "animals/crocodile/action",
-      "standingSheet": "animals/crocodile/standing",
-      "walkingSheet": "animals/crocodile/walking",
-      "dyingSheet": "animals/crocodile/dying",
-      "corpseSheet": "animals/crocodile/corpse"
+      "walkingSheet": "animals/fox/walking",
+      "runningSheet": "animals/fox/running",
+      "dyingSheet": "animals/fox/dying",
+      "corpseSheet": "animals/fox/corpse"
+    },
+    "sheetDirectionCounts": {
+      "walkingSheet": 3,
+      "runningSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
     },
     "sounds": {
-      "fall": "elephant-alligator-killed"
+      "fall": "deer-lion-killed",
+      "hit": "target-hit"
     }
   },
   "Boar": {
@@ -119,7 +128,8 @@
       "corpseSheet": 1
     },
     "sounds": {
-      "fall": "elephant-alligator-killed"
+      "fall": "elephant-alligator-killed",
+      "hit": "target-hit-2"
     }
   }
 }

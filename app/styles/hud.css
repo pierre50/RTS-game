@@ -2,6 +2,7 @@
   position: absolute;
   top: 0;
   display: grid;
+  padding: 5px 0;
   grid-template-columns: 33% 33% 33%;
   align-items: center;
   justify-content: center;
@@ -34,14 +35,6 @@
   justify-content: end;
 }
 
-.topbar-options-menu {
-  position: relative;
-  margin-right: -5px;
-  margin-bottom: -2px;
-  padding: 1px 10px;
-  min-height: initial;
-}
-
 .bottombar {
   position: absolute;
   bottom: 0;
@@ -65,7 +58,7 @@
   display: none;
 }
 
-.game-hud--arpg .bottombar {
+.bottombar--rts {
   display: none;
 }
 
@@ -86,15 +79,10 @@
 
 .hero-status-frame {
   padding: 10px 12px 12px;
-  border: 2px solid var(--status-health-border);
-  border-radius: 6px;
-  background:
-    linear-gradient(180deg, rgba(22, 20, 18, 0.92), rgba(10, 9, 8, 0.94)),
-    var(--surface-black-solid);
-  box-shadow:
-    0 4px 0 rgba(0, 0, 0, 0.45),
-    0 0 18px rgba(0, 0, 0, 0.35),
-    inset 1px 1px 0 rgba(255, 240, 210, 0.16);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: var(--surface-dark-solid);
+  box-shadow: var(--main-box-shadow);
 }
 
 .hero-status-header {
@@ -107,7 +95,7 @@
 
 .hero-status-title {
   overflow: hidden;
-  color: var(--main-primary-color);
+  color: var(--main-text-color);
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -124,8 +112,7 @@
   position: relative;
   height: 20px;
   overflow: hidden;
-  border: 1px solid var(--status-health-border);
-  border-radius: 5px;
+  border: 2px solid var(--status-health-border);
   background: var(--status-health-background);
   box-shadow: var(--status-health-inset-shadow);
 }
@@ -133,11 +120,8 @@
 .hero-status-fill {
   width: 100%;
   height: 100%;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #66d16c 0%, #2d9c45 48%, #1f7133 100%);
-  box-shadow:
-    inset 1px 1px 0 rgba(236, 255, 224, 0.4),
-    inset -1px -1px 0 rgba(16, 50, 24, 0.55);
+  background: var(--status-progress-background);
+  box-shadow: var(--status-progress-inset-shadow);
   transition: width var(--ui-transition-fast);
 }
 
@@ -197,7 +181,7 @@
 }
 
 .bottombar-info .unit-xp .unit-xp-label {
-  color: #ffcc33;
+  color: var(--main-accent-hover);
   white-space: nowrap;
 }
 
@@ -214,13 +198,8 @@
   height: 10px;
   overflow: hidden;
   border: 1px solid var(--status-health-border);
-  border-radius: 3px;
   background: var(--status-health-background);
   box-shadow: var(--status-health-inset-shadow);
-}
-
-.bottombar-info .hit-points-fill {
-  border-radius: 2px;
 }
 
 .bottombar-menu {
@@ -269,7 +248,7 @@
 }
 
 .menu-tooltip-title {
-  color: var(--main-primary-color);
+  color: var(--main-accent-color);
   font-weight: 700;
 }
 
@@ -363,15 +342,33 @@
   display: none;
 }
 
-.inventory-title {
-  flex: 1;
-  text-align: left;
+.inventory-panel {
+  gap: 0;
+}
+
+.inventory-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin: -24px -32px -2px;
+}
+
+.inventory-topbar .ui-tabs {
+  flex: 1 1 auto;
+  top: -2px;
+  left: -2px;
 }
 
 .action-menu-page {
+  position: relative;
+  z-index: 0;
   min-height: 126px;
+  padding: 16px 14px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  background: var(--main-primary-color);
 }
 
 .action-menu-page.hidden {
@@ -426,7 +423,7 @@
 }
 
 .inventory-slot.active {
-  border-color: var(--main-primary-color);
+  border-color: var(--main-accent-color);
   background: var(--surface-black-solid);
 }
 
@@ -567,7 +564,6 @@
   color: white;
   text-align: center;
   text-shadow: var(--text-shadow-none);
-  border-radius: 3px;
   background: var(--surface-black-solid);
 }
 
@@ -604,18 +600,17 @@
   flex: 1;
   height: 8px;
   overflow: hidden;
-  border: 1px solid var(--status-health-border);
-  border-radius: 3px;
-  background: var(--status-health-background);
-  box-shadow: var(--status-health-inset-shadow);
+  border: var(--border-slot);
+  background: var(--form-surface-color);
+  box-shadow: var(--ui-inset-shadow);
 }
 
 .arpg-building-menu-progress-fill {
   display: block;
   width: 0%;
   height: 100%;
-  border-radius: 2px;
-  background: var(--main-primary-color);
+  background: var(--status-progress-background);
+  box-shadow: var(--status-progress-inset-shadow);
   transition: width var(--ui-transition-fast);
 }
 
@@ -632,27 +627,39 @@ body {
 }
 
 body.arpg-game-cursor {
-  cursor: url('../../public/assets/interface/pointers/main/005.png') 27 14, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/005.png') 27 14,
+    auto;
 }
 
 body.arpg-game-cursor.arpg-cursor-pointer {
-  cursor: url('../../public/assets/interface/pointers/main/000.png') 2 2, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/000.png') 2 2,
+    auto;
 }
 
 body.arpg-game-cursor.arpg-cursor-resource {
-  cursor: url('../../public/assets/interface/pointers/main/003.png') 4 4, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/003.png') 4 4,
+    auto;
 }
 
 body.arpg-game-cursor.arpg-cursor-combat {
-  cursor: url('../../public/assets/interface/pointers/main/004.png') 12 12, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/004.png') 12 12,
+    auto;
 }
 
 body.arpg-game-cursor.arpg-cursor-move {
-  cursor: url('../../public/assets/interface/pointers/main/002.png') 21 11, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/002.png') 21 11,
+    auto;
 }
 
 body.arpg-game-cursor.arpg-cursor-bow {
-  cursor: url('../../public/assets/interface/pointers/main/005.png') 27 14, auto;
+  cursor:
+    url('../../public/assets/interface/pointers/main/005.png') 27 14,
+    auto;
 }
 
 .resource {
@@ -857,6 +864,10 @@ body.arpg-game-cursor.arpg-cursor-bow {
   .map-editor-columns {
     grid-template-columns: 1fr;
   }
+
+  .inventory-topbar {
+    margin: -18px -16px -2px;
+  }
 }
 
 .message-content--success {
@@ -938,54 +949,4 @@ body.arpg-game-cursor.arpg-cursor-bow {
   font-size: var(--font-size-lg);
   line-height: 1;
   text-align: center;
-}
-
-.player-stats-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 12;
-}
-
-.player-stats {
-  position: fixed;
-  right: 5px;
-  bottom: 134px;
-  z-index: 11;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  padding: 4px 6px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  background: var(--surface-dark-weak);
-  transform: translateY(8px);
-  transition:
-    opacity var(--ui-transition-panel),
-    transform var(--ui-transition-panel),
-    visibility 0s linear var(--ui-transition-panel);
-}
-
-.player-stats--open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition:
-    opacity var(--ui-transition-panel),
-    transform var(--ui-transition-panel),
-    visibility 0s linear 0s;
-}
-
-.player-stats-name {
-  font-size: var(--font-size-sm);
-  font-weight: bold;
-  text-shadow: var(--text-shadow-dark-ui);
-  white-space: nowrap;
-}
-
-.player-stats-name--dead {
-  opacity: 0.45;
-  text-decoration: line-through;
 }

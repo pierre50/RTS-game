@@ -74,20 +74,6 @@ export function toggleResourcesVisibility(context: DevConsoleContext, value: str
   return { ok: true, message: `Resources: ${showResources ? 'on' : 'off'}` }
 }
 
-export function toggleTerrainReveal(context: DevConsoleContext, value: string): CommandResult {
-  const { map, menu } = context
-  const revealTerrain = normalizeToggle(value, Boolean(map.revealTerrain))
-  map.revealTerrain = revealTerrain
-  map.mapFog?.viewportRenderer.invalidate()
-  map.mapFog?.viewportRenderer.update(context.controls?.cameraController?.getViewportRect())
-  if (revealTerrain) {
-    menu.revealTerrainMinimap?.()
-  } else {
-    menu.updateResourcesMiniMapEvt?.()
-  }
-  return { ok: true, message: `Reveal terrain: ${revealTerrain ? 'on' : 'off'}` }
-}
-
 export function highlightInstances(context: DevConsoleContext, category: string, typeName = ''): CommandResult {
   if (!category) return { ok: false, message: 'Usage: highlight <units|buildings|resources|enemies> [type]' }
   const instances = getInstancesByCategory(context, normalize(category), typeName)

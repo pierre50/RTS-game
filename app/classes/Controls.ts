@@ -19,6 +19,7 @@ import type {
 } from '../types/context'
 import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
+import type { Bounds } from '../types/geometry'
 
 type PointerPoint = { x: number; y: number }
 type PointerPageEvent = ControlPointerEvent & {
@@ -53,6 +54,7 @@ export default class Controls extends Container implements ControlsLike {
   keysPressed: Record<string, boolean>
   keyPressedCount: number
   keySpeed: number
+  freeCameraActive: boolean
   heroController: HeroController
   mouseBuilding: ControlsLike['mouseBuilding']
   mouseRectangle: SelectionRectangle | null | undefined
@@ -106,6 +108,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.freeCameraActive = false
     this.heroController = new HeroController(this)
     this.eventMode = 'auto'
     this.mouseRectangle = undefined
@@ -375,22 +378,28 @@ export default class Controls extends Container implements ControlsLike {
 
     if (this.isArpgActive()) {
       this.heroController.update(gameFrameScale)
-      this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y)
+      if (this.freeCameraActive) {
+        this.panCameraWithArrowKeys(frameScale)
+      } else {
+        this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y)
+      }
       return
     }
 
     this.cameraController.updateMouseMove(frameScale)
+    this.panCameraWithArrowKeys(frameScale)
+  }
 
-    if (this.keyPressedCount > 0) {
-      const double = this.keyPressedCount > 1
-      if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-        this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
-      }
-      if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double, frameScale)
-      if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double, frameScale)
-      if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double, frameScale)
-      if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double, frameScale)
+  panCameraWithArrowKeys(frameScale: number): void {
+    if (this.keyPressedCount <= 0) return
+    const double = this.keyPressedCount > 1
+    if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
+      this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
     }
+    if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double, frameScale)
+    if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double, frameScale)
+    if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double, frameScale)
+    if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double, frameScale)
   }
 
   onTouchStart(evt: TouchEvent): void {
@@ -751,6 +760,16 @@ export default class Controls extends Container implements ControlsLike {
     return this.heroController.isActive()
   }
 
+  setFreeCamera(enabled: boolean): void {
+    this.freeCameraActive = enabled
+    this.keysPressed = {}
+    this.keyPressedCount = 0
+    this.keySpeed = 0
+    if (!enabled && this.heroUnit) {
+      this.cameraController.set(this.heroUnit.x, this.heroUnit.y)
+    }
+  }
+
   setEquippedTool(tool: HeroTool | null): void {
     this.heroController.setEquippedTool(tool)
   }
@@ -800,8 +819,8 @@ export default class Controls extends Container implements ControlsLike {
     }, 600)
   }
 
-  instanceInCamera(instance: { x: number; y: number }): boolean {
-    return this.cameraController.instanceInCamera(instance)
+  instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean {
+    return this.cameraController.instanceInCamera(instance, bounds)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {

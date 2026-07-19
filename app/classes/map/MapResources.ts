@@ -317,6 +317,7 @@ export class MapResources {
       this.map.placeAnimalHerd(playersPos[i], 'Deer', 4, [18, 26])
       this.map.placeAnimalHerd(playersPos[i], 'Hare', 6, [11, 16])
       this.map.placeAnimalHerd(playersPos[i], 'BlackGrouse', 5, [11, 16])
+      this.map.placeAnimalHerd(playersPos[i], 'Fox', 4, [14, 20])
     }
   }
 

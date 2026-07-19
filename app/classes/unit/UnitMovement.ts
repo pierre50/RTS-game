@@ -1,4 +1,13 @@
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  RELIEF_CLIMB_SPEED_MULTIPLIER,
+  RELIEF_CLIMB_TRANSITION_DISTANCE,
+  SHEET_TYPES,
+  UNIT_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import {
   canUpdateMinimap,
   degreeToDirection,
@@ -38,26 +47,31 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
-  return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
+  return (
+    entity.family === FAMILY_TYPES.building ||
+    entity.family === FAMILY_TYPES.resource ||
+    entity.family === FAMILY_TYPES.unit ||
+    entity.family === FAMILY_TYPES.animal
+  )
 }
 
-const HERO_BUILDING_COLLISION_CORNER_RATIO = 0.22
+const HERO_COLLISION_CORNER_RATIO = 0.22
 
-function getRoundedBuildingFootprintRadii(building: RuntimeEntity): { radiusX: number; radiusY: number } {
-  const size = Math.max(1, building.size ?? 1)
+function getRoundedFootprintRadii(entity: RuntimeEntity): { radiusX: number; radiusY: number } {
+  const size = Math.max(1, entity.size ?? 1)
   return {
     radiusX: 32 * size,
     radiusY: 16 * size,
   }
 }
 
-function getRoundedIsoFootprintPoints(building: RuntimeEntity): Array<{ x: number; y: number }> {
-  const { radiusX, radiusY } = getRoundedBuildingFootprintRadii(building)
+function getRoundedIsoFootprintPoints(entity: RuntimeEntity): Array<{ x: number; y: number }> {
+  const { radiusX, radiusY } = getRoundedFootprintRadii(entity)
   const vertices = [
-    { x: building.x, y: building.y - radiusY },
-    { x: building.x + radiusX, y: building.y },
-    { x: building.x, y: building.y + radiusY },
-    { x: building.x - radiusX, y: building.y },
+    { x: entity.x, y: entity.y - radiusY },
+    { x: entity.x + radiusX, y: entity.y },
+    { x: entity.x, y: entity.y + radiusY },
+    { x: entity.x - radiusX, y: entity.y },
   ]
   const points: Array<{ x: number; y: number }> = []
   const curveSteps = 6
@@ -67,12 +81,12 @@ function getRoundedIsoFootprintPoints(building: RuntimeEntity): Array<{ x: numbe
     const vertex = vertices[index]
     const next = vertices[(index + 1) % vertices.length]
     const start = {
-      x: vertex.x + (previous.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
-      y: vertex.y + (previous.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      x: vertex.x + (previous.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
+      y: vertex.y + (previous.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
     }
     const end = {
-      x: vertex.x + (next.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
-      y: vertex.y + (next.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      x: vertex.x + (next.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
+      y: vertex.y + (next.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
     }
 
     if (index === 0) points.push(start)
@@ -103,17 +117,16 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
-function isHeroInsideRoundedBuildingFootprint(building: RuntimeEntity, x: number, y: number): boolean {
-  return pointIsInsidePolygon(getRoundedIsoFootprintPoints(building), x, y)
+function isHeroInsideRoundedFootprint(entity: RuntimeEntity, x: number, y: number): boolean {
+  return pointIsInsidePolygon(getRoundedIsoFootprintPoints(entity), x, y)
 }
 
 function blocksHeroDirectMoveAtPoint(entity: RuntimeEntity | null | undefined, x: number, y: number): boolean {
-  if (!blocksHeroDirectMove(entity)) return false
-  if (entity?.family !== FAMILY_TYPES.building) return true
-  return isHeroInsideRoundedBuildingFootprint(entity, x, y)
+  if (!entity || !blocksHeroDirectMove(entity)) return false
+  return isHeroInsideRoundedFootprint(entity, x, y)
 }
 
-function getNearbyBuildingEntities(cell: RuntimeCell | null | undefined, map: RuntimeMap | null | undefined): RuntimeEntity[] {
+function getNearbyHeroCollisionEntities(cell: RuntimeCell | null | undefined, map: RuntimeMap | null | undefined): RuntimeEntity[] {
   const entities = new Set<RuntimeEntity>()
   if (!cell || !map) return []
 
@@ -123,7 +136,13 @@ function getNearbyBuildingEntities(cell: RuntimeCell | null | undefined, map: Ru
     if (!row) continue
     for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
       const entity = row[j]?.has
-      if (entity?.family === FAMILY_TYPES.building) entities.add(entity)
+      if (
+        entity?.family === FAMILY_TYPES.building ||
+        entity?.family === FAMILY_TYPES.resource ||
+        entity?.family === FAMILY_TYPES.unit ||
+        entity?.family === FAMILY_TYPES.animal
+      )
+        entities.add(entity)
     }
   }
 
@@ -138,11 +157,10 @@ function getHeroDirectMoveBlockerAtPoint(
 ): RuntimeEntity | null {
   if (!cell) return null
   const map = unit.context?.map
-  for (const entity of getNearbyBuildingEntities(cell, map)) {
+  for (const entity of getNearbyHeroCollisionEntities(cell, map)) {
     if (entity === unit) continue
     if (blocksHeroDirectMoveAtPoint(entity, x, y)) return entity
   }
-  if (cell.solid && cell.has !== unit && cell.has?.family === FAMILY_TYPES.resource) return cell.has
   return null
 }
 
@@ -244,11 +262,15 @@ export class UnitMovement {
   // both sides are free; cleared as soon as a direct move succeeds undeflected.
   slideBias: number
   directMoveBlocker: RuntimeEntity | null
+  // Set right after a direct-move relief crossing; decays over distance traveled so the
+  // climb slowdown and the sprite lift blend smoothly instead of snapping in one frame.
+  directMoveClimb: { fromZ: number; toZ: number; remainingPx: number } | null
 
   constructor(unit: UnitEntity) {
     this.unit = unit
     this.slideBias = 0
     this.directMoveBlocker = null
+    this.directMoveClimb = null
   }
 
   sendToPostBuildResource(): boolean {
@@ -502,6 +524,12 @@ export class UnitMovement {
     if (!map || !unit.path?.length) return
     const next = unit.path[unit.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
+    if (unit.currentCell) {
+      const totalDistance = instancesDistance(unit.currentCell, nextCell, false) || 1
+      const remaining = instancesDistance(unit, nextCell, false)
+      const progress = 1 - remaining / totalDistance
+      unit.applyReliefLift?.(nextCell.z ?? 0, unit.currentCell.z ?? 0, progress)
+    }
     const dest = unit.dest
     if (!dest || isDestroyedEntity(dest)) {
       unit.affectNewDest?.()
@@ -571,11 +599,13 @@ export class UnitMovement {
       const menu = unit.context?.menu
       const player = unit.owner
       const oldDeg = unit.degree
+      const wasWalking = unit.currentSheet === SHEET_TYPES.walking
       let speed = unit.speed ?? 0
       if ((unit.loading ?? 0) > 0) speed *= 0.8
+      if ((nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(unit, nextCell.x, nextCell.y, speed)
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
-      if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+      if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)
       }
     }
@@ -601,10 +631,10 @@ export class UnitMovement {
       return true
     }
     const blocker = this.directMoveBlocker as unknown as RuntimeEntity | null
-    if (blocker && blocker.family === FAMILY_TYPES.building && this.attemptSlideAlongRoundedBuilding(blocker, dirX, dirY, distance)) {
+    if (blocker && this.attemptSlideAlongRoundedFootprint(blocker, dirX, dirY, distance)) {
       return true
     }
-    if (blocker?.family === FAMILY_TYPES.building) return false
+    if (blocker) return false
     // Blocked head-on — slide along the obstacle's contour instead of stopping dead:
     // probe directions fanning out from the input, nearest deflection first. Distance
     // is scaled by cos(deflection) so hugging a wall is slower than moving freely.
@@ -626,7 +656,7 @@ export class UnitMovement {
     return false
   }
 
-  attemptSlideAlongRoundedBuilding(blocker: RuntimeEntity, dirX: number, dirY: number, distance: number): boolean {
+  attemptSlideAlongRoundedFootprint(blocker: RuntimeEntity, dirX: number, dirY: number, distance: number): boolean {
     const unit = this.unit
     const points = getRoundedIsoFootprintPoints(blocker)
     let tangentX = 0
@@ -674,8 +704,12 @@ export class UnitMovement {
     const map = unit.context?.map
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
 
-    const candidateX = unit.x + dirX * distance
-    const candidateY = unit.y + dirY * distance
+    const pendingClimb = this.directMoveClimb
+    const isClimbing = Boolean(pendingClimb && pendingClimb.toZ > pendingClimb.fromZ)
+    const effectiveDistance = isClimbing ? distance * RELIEF_CLIMB_SPEED_MULTIPLIER : distance
+
+    const candidateX = unit.x + dirX * effectiveDistance
+    const candidateY = unit.y + dirY * effectiveDistance
     const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
     const newI = Math.min(Math.max(rawI, 0), map.size)
     const newJ = Math.min(Math.max(rawJ, 0), map.size)
@@ -735,6 +769,8 @@ export class UnitMovement {
     const oldI = unit.i
     const oldJ = unit.j
     const oldDeg = unit.degree ?? 0
+    const wasWalking = unit.currentSheet === SHEET_TYPES.walking
+    const departureZ = unit.currentCell?.z ?? 0
     unit.degree = getInstanceDegree(unit, unit.x + facingDirX, unit.y + facingDirY)
     unit.x = candidateX
     unit.y = candidateY
@@ -761,11 +797,25 @@ export class UnitMovement {
         unit.visible = true
       }
       map.updateInstanceBucket(unit, oldI, oldJ)
+      if ((targetCell.z ?? 0) !== departureZ) {
+        this.directMoveClimb = { fromZ: departureZ, toZ: targetCell.z ?? 0, remainingPx: RELIEF_CLIMB_TRANSITION_DISTANCE }
+      }
     }
+    if (this.directMoveClimb) {
+      this.directMoveClimb.remainingPx -= effectiveDistance
+      if (this.directMoveClimb.remainingPx <= 0) this.directMoveClimb = null
+    }
+
     updateInstanceVisibility(unit)
+    if (this.directMoveClimb) {
+      const { fromZ, toZ, remainingPx } = this.directMoveClimb
+      unit.applyReliefLift?.(toZ, fromZ, 1 - Math.max(0, remainingPx) / RELIEF_CLIMB_TRANSITION_DISTANCE)
+    } else {
+      unit.applyReliefLift?.(targetCell?.z ?? unit.currentCell?.z ?? 0)
+    }
     if (!unit.actionLocked) {
       if (!unit.sprite.playing) unit.sprite.play()
-      if (degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {
+      if (!wasWalking || degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)
       }
     }

@@ -13,7 +13,7 @@ import { showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
-import { resolveMovementSheet } from './locomotion'
+import { isAirborne, resolveMovementSheet } from './locomotion'
 import type { Animal } from './index'
 
 export class AnimalCombat {
@@ -41,7 +41,11 @@ export class AnimalCombat {
       instance.family === FAMILY_TYPES.unit &&
       !animal.isDead &&
       !animal.path.length &&
-      !animal.dest
+      !animal.dest &&
+      // Still in the air (e.g. mid-landing): re-triggering a reaction now would
+      // kill the landing interval via sendTo's stopInterval() and strand/reset
+      // the animal's altitude mid-animation.
+      !isAirborne(animal)
     ) {
       this.getReaction(instance)
     }
@@ -106,7 +110,12 @@ export class AnimalCombat {
       animal.sendTo(dest, null, {
         movementSheet: flying ? SHEET_TYPES.flying : animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking,
       })
-      if (flying) animal.setAltitude(animal.flyingAltitude ?? FLYING_ALTITUDE)
+      // sendTo can synchronously abort the flee (no path to dest, or a
+      // single-cell path consumed within this same tick) and call
+      // animal.stop(), which resets isFleeing to false. Only lift off if
+      // the flee is still actually in progress — otherwise the animal
+      // pops into the air and then has to land again immediately.
+      if (flying && animal.isFleeing) animal.setAltitude(animal.flyingAltitude ?? FLYING_ALTITUDE)
     } else {
       animal.stop()
     }

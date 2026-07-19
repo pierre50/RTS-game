@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../lib'
 import { t } from '../lib/lang'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { playUiSound } from '../lib/uiSound'
@@ -238,6 +238,7 @@ export class ActionSpecFactory {
       id: type,
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
+        (!AGE_UP_ENABLED && AGE_TECHNOLOGIES.has(type)) ||
         (config.conditions || []).some(
           condition => player.technologies.includes(type) || !isValidCondition(condition, player)
         ),

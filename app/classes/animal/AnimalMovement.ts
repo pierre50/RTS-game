@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
+import { FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   degreeToDirection,
   getInstanceClosestFreeCellPath,
@@ -122,6 +122,12 @@ export class AnimalMovement {
     } = animal
     const next = animal.path[animal.path.length - 1]
     const nextCell = map.grid[next.i][next.j]
+    if (animal.currentCell) {
+      const totalDistance = instancesDistance(animal.currentCell, nextCell, false) || 1
+      const remaining = instancesDistance(animal, nextCell, false)
+      const progress = 1 - remaining / totalDistance
+      animal.applyReliefLift(nextCell.z ?? 0, animal.currentCell.z ?? 0, progress)
+    }
     if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
       animal.affectNewDest()
       return
@@ -189,7 +195,9 @@ export class AnimalMovement {
       }
     } else {
       const oldDeg = animal.degree
-      moveTowardPoint(animal, nextCell.x, nextCell.y, animal.speed)
+      let speed = animal.speed
+      if ((nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
+      moveTowardPoint(animal, nextCell.x, nextCell.y, speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
         animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
       }

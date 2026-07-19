@@ -1,7 +1,8 @@
 import { Text } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
-import { getGaiaAnimals } from '../../lib'
+import { canPlayerStillAct, getGaiaAnimals, isPlayerEliminated, parseTextureRef } from '../../lib'
+import type { TerrainSourceCell } from '../../classes/map/TerrainChunkManager'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
 import {
@@ -11,6 +12,7 @@ import {
   DEBUG_OVERLAY_Z,
   DEBUG_PATH_LAYER,
   DEBUG_SOLID_LAYER,
+  DEBUG_TERRAIN_FRAME_LAYER,
   DEBUG_VISION_LAYER,
   addDebugTicker,
   drawCellDiamond,
@@ -25,7 +27,12 @@ import {
 } from './shared'
 
 const HERO_COLLISION_SCAN_RADIUS = 8
-const HERO_BUILDING_COLLISION_CORNER_RATIO = 0.22
+const HERO_COLLISION_CORNER_RATIO = 0.22
+const HERO_COLLISION_FAMILY_COLORS: Record<string, number> = {
+  [FAMILY_TYPES.resource]: 0xffa500,
+  [FAMILY_TYPES.unit]: 0xb46bff,
+  [FAMILY_TYPES.animal]: 0xd4ff35,
+}
 
 type AiDebugPlayer = DevPlayer & {
   difficulty?: string
@@ -176,29 +183,38 @@ function getHeroDebugUnit(context: DevConsoleContext): DevEntity | null {
   return (context.player.units.find(unit => unit.controlMode === 'arpg') as DevEntity | undefined) ?? null
 }
 
-function getNearbyHeroCollisionBuildings(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
-  const buildings = new Set<DevEntity>()
+function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
+  const entities = new Set<DevEntity>()
   const { map } = context
   for (let i = hero.i - HERO_COLLISION_SCAN_RADIUS; i <= hero.i + HERO_COLLISION_SCAN_RADIUS; i++) {
     const row = map.grid[i]
     if (!row) continue
     for (let j = hero.j - HERO_COLLISION_SCAN_RADIUS; j <= hero.j + HERO_COLLISION_SCAN_RADIUS; j++) {
       const entity = row[j]?.has as DevEntity | null
-      if (entity && entity.family === FAMILY_TYPES.building && !entity.isDestroyed) buildings.add(entity)
+      if (
+        entity &&
+        entity !== hero &&
+        (entity.family === FAMILY_TYPES.building ||
+          entity.family === FAMILY_TYPES.resource ||
+          entity.family === FAMILY_TYPES.unit ||
+          entity.family === FAMILY_TYPES.animal) &&
+        !entity.isDestroyed
+      )
+        entities.add(entity)
     }
   }
-  return [...buildings]
+  return [...entities]
 }
 
-function getRoundedIsoFootprintPoints(building: DevEntity): Array<{ x: number; y: number }> {
-  const size = Math.max(1, building.size ?? 1)
+function getRoundedIsoFootprintPoints(entity: DevEntity): Array<{ x: number; y: number }> {
+  const size = Math.max(1, entity.size ?? 1)
   const radiusX = 32 * size
   const radiusY = 16 * size
   const vertices = [
-    { x: building.x, y: building.y - radiusY },
-    { x: building.x + radiusX, y: building.y },
-    { x: building.x, y: building.y + radiusY },
-    { x: building.x - radiusX, y: building.y },
+    { x: entity.x, y: entity.y - radiusY },
+    { x: entity.x + radiusX, y: entity.y },
+    { x: entity.x, y: entity.y + radiusY },
+    { x: entity.x - radiusX, y: entity.y },
   ]
   const points: Array<{ x: number; y: number }> = []
   const curveSteps = 6
@@ -208,12 +224,12 @@ function getRoundedIsoFootprintPoints(building: DevEntity): Array<{ x: number; y
     const vertex = vertices[index]
     const next = vertices[(index + 1) % vertices.length]
     const start = {
-      x: vertex.x + (previous.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
-      y: vertex.y + (previous.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      x: vertex.x + (previous.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
+      y: vertex.y + (previous.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
     }
     const end = {
-      x: vertex.x + (next.x - vertex.x) * HERO_BUILDING_COLLISION_CORNER_RATIO,
-      y: vertex.y + (next.y - vertex.y) * HERO_BUILDING_COLLISION_CORNER_RATIO,
+      x: vertex.x + (next.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
+      y: vertex.y + (next.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
     }
 
     if (index === 0) points.push(start)
@@ -244,10 +260,10 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
-function getBuildingCollisionInfo(hero: DevEntity, building: DevEntity) {
-  const points = getRoundedIsoFootprintPoints(building)
+function getEntityCollisionInfo(hero: DevEntity, entity: DevEntity) {
+  const points = getRoundedIsoFootprintPoints(entity)
   const inside = pointIsInsidePolygon(points, hero.x, hero.y)
-  const centerDistance = Math.hypot(hero.x - building.x, hero.y - building.y)
+  const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }
 }
 
@@ -273,16 +289,16 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
     return
   }
 
-  const buildings = getNearbyHeroCollisionBuildings(context, hero)
-  const infos = buildings
-    .map(building => ({ building, ...getBuildingCollisionInfo(hero, building) }))
+  const entities = getNearbyHeroCollisionEntities(context, hero)
+  const infos = entities
+    .map(entity => ({ entity, ...getEntityCollisionInfo(hero, entity) }))
     .sort((a, b) => a.value - b.value)
 
   for (const info of infos) {
-    const color = info.inside ? 0xff3050 : 0x35e0ff
+    const color = info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff
     drawRoundedIsoFootprint(layer, info.points)
     layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
-    layer.circle(info.building.x, info.building.y, 3)
+    layer.circle(info.entity.x, info.entity.y, 3)
     layer.fill({ color, alpha: 0.85 })
   }
 
@@ -302,12 +318,51 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
     `hero ${Math.round(hero.x)},${Math.round(hero.y)} cell ${hero.i},${hero.j}`,
     `cell solid=${Boolean(cell?.solid)} has=${cell?.has?.family || 'none'}:${cell?.has?.type || ''}`,
     nearest
-      ? `nearest ${nearest.building.type} ${nearest.building.i},${nearest.building.j} roundedIso=${nearest.value.toFixed(3)} ${
+      ? `nearest ${nearest.entity.family}:${nearest.entity.type} ${nearest.entity.i},${nearest.entity.j} roundedIso=${nearest.value.toFixed(3)} ${
           nearest.inside ? 'INSIDE' : 'outside'
         }`
       : 'nearest none',
-    `cyan=rounded iso red=blocking white=current cell green/red=hero`,
+    `cyan=building orange=resource purple=unit lime=animal red=blocking white=current cell green/red=hero`,
   ].join('\n')
+}
+
+function resolveTerrainFrame(cell: TerrainSourceCell): { sheet: string; frame: number; source: string } {
+  const appearance = cell._terrainAppearance
+  if (appearance?.waterBorder) {
+    return { sheet: appearance.waterBorder.resourceName, frame: appearance.waterBorder.index, source: 'water border' }
+  }
+  const base = parseTextureRef(cell.terrainTextureName || '')
+  if (appearance?.relief) {
+    return { sheet: base.sheet, frame: appearance.relief.index, source: 'relief' }
+  }
+  return { ...base, source: 'base' }
+}
+
+function drawTerrainFrameDebug(context: DevConsoleContext): void {
+  const { map } = context
+  const layer = getDebugContainer(map, DEBUG_TERRAIN_FRAME_LAYER, DEBUG_OVERLAY_Z + 5)
+  layer.removeChildren().forEach(child => child.destroy())
+
+  for (const cell of getCameraCells(context)) {
+    if (!cell) continue
+    const { frame } = resolveTerrainFrame(cell as TerrainSourceCell)
+    const text = new Text({
+      text: Number.isNaN(frame) ? '?' : String(frame),
+      style: {
+        fontFamily: 'monospace',
+        fontSize: 10,
+        fontWeight: '700',
+        fill: 0x66ffcc,
+        stroke: { color: 0x000000, width: 3 },
+        align: 'center',
+      },
+    })
+    text.anchor.set(0.5, 0.5)
+    text.x = cell.x
+    text.y = cell.y
+    text.eventMode = 'none'
+    layer.addChild(text)
+  }
 }
 
 function ensureDebugOverlay(id: string): HTMLElement {
@@ -556,6 +611,31 @@ export function toggleHeroCollisionDebug(context: DevConsoleContext, value: stri
   return { ok: true, message: 'Hero collision debug: on' }
 }
 
+export function toggleTerrainFrameDebug(context: DevConsoleContext, value: string): CommandResult {
+  const { map } = context
+  const showTerrainFrame = normalizeToggle(value, Boolean(map.debugTerrainFrameVisible))
+  map.debugTerrainFrameVisible = showTerrainFrame
+
+  if (showTerrainFrame) {
+    drawTerrainFrameDebug(context)
+    addDebugTicker(context, '_debugTerrainFrameTicker', drawTerrainFrameDebug)
+  } else {
+    removeDebugLayer(context, DEBUG_TERRAIN_FRAME_LAYER, '_debugTerrainFrameTicker')
+  }
+
+  return { ok: true, message: `Terrain frame debug: ${showTerrainFrame ? 'on' : 'off'}` }
+}
+
+export function toggleFreeCamera(context: DevConsoleContext, value: string): CommandResult {
+  const { controls } = context
+  if (!controls?.setFreeCamera) return { ok: false, message: 'Free camera unavailable' }
+  if (!controls.isArpgActive?.()) return { ok: false, message: 'Free camera only applies in ARPG mode' }
+
+  const enabled = normalizeToggle(value, Boolean(controls.freeCameraActive))
+  controls.setFreeCamera(enabled)
+  return { ok: true, message: `Free camera: ${enabled ? 'on' : 'off'}` }
+}
+
 export function togglePerfDebug(context: DevConsoleContext, value: string): CommandResult {
   const { app, map } = context
   const showPerf = normalizeToggle(value, Boolean(map.debugPerfVisible))
@@ -572,6 +652,46 @@ export function togglePerfDebug(context: DevConsoleContext, value: string): Comm
   map._debugPerfTicker = () => ensurePerfOverlay(context)
   app?.ticker.add(map._debugPerfTicker)
   return { ok: true, message: 'Perf debug: on' }
+}
+
+function ensurePlayerStatsOverlay(context: DevConsoleContext): void {
+  const overlay = ensureDebugOverlay('debug-player-stats')
+  const { players = [], player: me } = context
+  const sorted = [...players].sort((a, b) => {
+    const activeDiff = Number(canPlayerStillAct(b)) - Number(canPlayerStillAct(a))
+    if (activeDiff !== 0) return activeDiff
+    return b.units.length + b.buildings.length - (a.units.length + a.buildings.length)
+  })
+
+  overlay.innerHTML = ''
+  sorted.forEach((p, rank) => {
+    const dead = isPlayerEliminated(p)
+    const isMe = p === me
+    const label = isMe ? 'You' : (p.color?.charAt(0).toUpperCase() ?? '') + p.color?.slice(1)
+    const row = document.createElement('div')
+    row.className = 'debug-player-stats-row' + (dead ? ' debug-player-stats-row--dead' : '')
+    row.style.color = p.colorHex
+    row.textContent = `${rank + 1}. ${label}: ${p.units.length}/${p.buildings.length}`
+    overlay.appendChild(row)
+  })
+}
+
+export function togglePlayerStatsDebug(context: DevConsoleContext, value: string): CommandResult {
+  const { app, map } = context
+  const showPlayerStats = normalizeToggle(value, Boolean(map.debugPlayerStatsVisible))
+
+  map.debugPlayerStatsVisible = showPlayerStats
+  if (!showPlayerStats) {
+    stopDebugTicker(context, '_debugPlayerStatsTicker')
+    document.getElementById('debug-player-stats')?.remove()
+    return { ok: true, message: 'Player stats debug: off' }
+  }
+
+  ensurePlayerStatsOverlay(context)
+  stopDebugTicker(context, '_debugPlayerStatsTicker')
+  map._debugPlayerStatsTicker = () => ensurePlayerStatsOverlay(context)
+  app?.ticker.add(map._debugPlayerStatsTicker)
+  return { ok: true, message: 'Player stats debug: on' }
 }
 
 export function aiInfo(context: DevConsoleContext, value: string): CommandResult {

@@ -9,10 +9,10 @@ input,
 textarea,
 select,
 button {
-  font-size: var(--font-size-sm);
-  font-family: sans-serif;
+  font-size: var(--font-size-base);
+  font-family: 'VT323', monospace;
   -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
   font-smoothing: none;
 }
 
@@ -48,7 +48,7 @@ input:focus-visible {
 @keyframes ui-panel-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
 
   to {
@@ -58,37 +58,35 @@ input:focus-visible {
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background-color: var(--surface-dark-heavy);
-  border: 1px solid var(--main-text-color);
-  box-shadow: inset 2px 2px 0 var(--surface-dark-medium);
+  border: 1px solid var(--border-divider-subtle);
 }
 
 ::-webkit-scrollbar-thumb {
   background-color: var(--form-surface-color);
-  background-image: var(--ui-control-sheen);
-  border: 1px solid var(--form-surface-color);
-  box-shadow:
-    inset 1px 1px 0 var(--text-color-white),
-    inset -1px -1px 0 var(--surface-dark-soft),
-    var(--main-box-shadow);
+  border: 1px solid rgba(223, 177, 91, 0.35);
+  border-radius: var(--main-border-radius);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 @media (hover: hover) and (pointer: fine) {
   ::-webkit-scrollbar-thumb:hover {
     filter: brightness(var(--ui-hover-brightness));
-    background-color: var(--main-accent-hover);
+    background-color: rgba(223, 177, 91, 0.5);
   }
 }
 
 ::-webkit-scrollbar-thumb:active {
+  background-color: var(--main-accent-color);
   box-shadow: var(--ui-scrollbar-active-shadow);
 }
 
 ::-webkit-scrollbar-corner {
   background-color: var(--surface-dark-solid);
 }
+

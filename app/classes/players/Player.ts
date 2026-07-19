@@ -17,7 +17,16 @@ import { Building } from '../building'
 import type { BuildingOptions } from '../building'
 import { Unit } from '../unit'
 import type { UnitSpawnOptions } from '../unit'
-import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES, UNIT_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  AGE_GATE_MAX_UNLOCKABLE_VALUE,
+  AGE_UP_ENABLED,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  POPULATION_MAX,
+  SOUND_CUES,
+  UNIT_TYPES,
+} from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { playUiSound } from '../../lib/uiSound'
 import { VisionGrid } from '../../services/VisionGrid'
@@ -376,9 +385,20 @@ export class Player implements PlayerLike {
     const config = this.config.buildings[type]
     if (!config) return false
 
+    // Tant que le passage d'âge est désactivé, l'IA reste bloquée à l'âge 0 : on ne lui ferme pas
+    // définitivement l'accès aux bâtiments dont la condition d'âge est atteignable (<=
+    // AGE_GATE_MAX_UNLOCKABLE_VALUE). Les conditions sentinelles (ex: "age > 99") restent bloquantes.
+    const isUnlockableAiAgeGate = (condition: Condition) =>
+      this.type === PLAYER_TYPES.ai &&
+      !AGE_UP_ENABLED &&
+      condition.key === 'age' &&
+      Number(condition.value) <= AGE_GATE_MAX_UNLOCKABLE_VALUE
+
     return (config.conditions || []).every(
       (condition: Condition) =>
-        (this.autoTechnologyByAge && condition.key !== 'age') || isValidCondition(condition, this)
+        (this.autoTechnologyByAge && condition.key !== 'age') ||
+        isUnlockableAiAgeGate(condition) ||
+        isValidCondition(condition, this)
     )
   }
 

@@ -16,25 +16,44 @@
 }
 
 .ui-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ui-gap-5);
+  position: relative;
+  z-index: 2;
+  display: flex;
 }
 
 .ui-tab {
-  min-height: 34px;
-  padding: 4px 8px;
+  flex: 1 1 0;
+  padding: 8px 12px;
   overflow: hidden;
   color: var(--text-color-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-shadow: var(--text-shadow-dark-ui);
-  border: var(--ui-slot-border);
-  border-radius: var(--main-border-radius);
-  background: var(--surface-black-soft);
+  border: var(--border-btn);
+  background: var(--ui-bar-bg);
+  box-shadow: var(--ui-button-shadow-raised);
+  transition: background-color var(--ui-transition-fast), color var(--ui-transition-panel);
+}
+
+.ui-tab + .ui-tab {
+  margin-left: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-tab:not(.active):hover {
+    filter: brightness(var(--ui-hover-brightness));
+  }
 }
 
 .ui-tab.active {
-  color: var(--main-primary-color);
-  background: var(--surface-black-solid);
+  position: relative;
+  z-index: 1;
+  color: var(--main-accent-color);
+  background: var(--main-primary-color);
+  border-bottom: none;
+  box-shadow: none;
+  padding-bottom: 10px;
 }

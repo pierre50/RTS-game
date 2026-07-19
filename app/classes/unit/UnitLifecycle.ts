@@ -2,7 +2,6 @@ import { BOAT_CORPSE_TIME, CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYP
 import {
   canUpdateMinimap,
   getTransportCargo,
-  isPlayerEliminated,
   isTransportBoat,
   playAudibleSoundCue,
   updateInstanceVisibility,
@@ -119,9 +118,6 @@ export class UnitLifecycle {
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {
         unit.owner.units.splice(index, 1)
-        if (isPlayerEliminated(unit.owner)) {
-          menu?.updatePlayerStats?.()
-        }
       }
       if (unit.owner.selectedUnit === unit) {
         menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, unit.hitPoints + '/' + unit.totalHitPoints)

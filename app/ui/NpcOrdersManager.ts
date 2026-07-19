@@ -1,7 +1,14 @@
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
-import { resumeNpcWork, sendNpcToStockpile, keepNpcHere, startFollowingHero, releaseIfStillLooking } from '../lib/npcInteraction'
+import {
+  resumeNpcWork,
+  sendNpcToStockpile,
+  keepNpcHere,
+  startFollowingHero,
+  releaseIfStillLooking,
+  playNpcOrderSound,
+} from '../lib/npcInteraction'
 import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
 
@@ -73,6 +80,7 @@ export class NpcOrdersManager {
           return
         }
         for (const npc of npcs) spec.run?.(npc)
+        playNpcOrderSound(npcs)
         this.close()
       })
       this.buttons.set(spec.id, button)

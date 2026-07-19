@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -10,6 +11,9 @@ from PIL import Image
 from build import RETRO_PALETTE_ROOT, bake_sheet
 from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT
 from retro_palette import find_hex_palette, load_hex_palette
+
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+from darken_border import DARKEN_FACTOR, apply_darken_border_to_atlas
 
 
 OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "animals"
@@ -31,6 +35,7 @@ class AnimalSheet:
     clear_top: int = 0
     clear_top_rows: tuple[int, ...] | None = None
     row_y_shift: dict[int, int] | None = None
+    darken_border_factor: float | None = None
 
 
 # Source rows are 0=front(south/toward-camera), 1=back(north/away), 2=left,
@@ -91,6 +96,39 @@ BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Black_grouse_Death-2x.png", "dying", 6, (0,), row_y_shift={0: 4}),
     AnimalSheet(
         "Black_grouse_Death-2x.png", "corpse", 6, (0,), frame_indices=(5,), animation_speed=0, row_y_shift={0: 4}
+    ),
+)
+
+
+# Same row_y_shift purpose as DEER_SHEETS above. This source swaps the horizontal
+# convention: row 2 faces right and row 3 faces left, so use row 3 for west and
+# let the runtime mirror it for east-facing sprites.
+FOX_SHEETS: tuple[AnimalSheet, ...] = (
+    AnimalSheet(
+        "Fox_walk-2x.png",
+        "walking",
+        6,
+        (1, 2, 0),
+        row_y_shift={1: -6},
+        darken_border_factor=DARKEN_FACTOR,
+    ),
+    AnimalSheet(
+        "Fox_Run-2x.png",
+        "running",
+        6,
+        (1, 3, 0),
+        row_y_shift={1: -6},
+        darken_border_factor=DARKEN_FACTOR,
+    ),
+    AnimalSheet("Fox_Death-2x.png", "dying", 6, (0,), darken_border_factor=DARKEN_FACTOR),
+    AnimalSheet(
+        "Fox_Death-2x.png",
+        "corpse",
+        6,
+        (0,),
+        frame_indices=(5,),
+        animation_speed=0,
+        darken_border_factor=DARKEN_FACTOR,
     ),
 )
 
@@ -163,6 +201,11 @@ ANIMALS = {
         "output_dir": "boar",
         "sheets": BOAR_SHEETS,
     },
+    "fox": {
+        "source_dir": "Fox",
+        "output_dir": "fox",
+        "sheets": FOX_SHEETS,
+    },
     "horse": {
         "source_dir": ".",
         "output_dir": "horse",
@@ -226,7 +269,10 @@ def build_animals(source_root: Path, output_root: Path, animal_keys: set[str] | 
         for sheet in animal["sheets"]:
             source = Image.open(source_dir / sheet.source).convert("RGBA")
             frames = crop_frames(source, sheet)
-            bake_sheet(output_dir / sheet.output, frames, sheet.animation_speed, retro_palette)
+            sheet_output_dir = output_dir / sheet.output
+            bake_sheet(sheet_output_dir, frames, sheet.animation_speed, retro_palette)
+            if sheet.darken_border_factor is not None:
+                apply_darken_border_to_atlas(sheet_output_dir, sheet.darken_border_factor)
             built += 1
 
     print(f"Generated {built} LPC animal sheets into {output_root.relative_to(PROJECT_ROOT)}")

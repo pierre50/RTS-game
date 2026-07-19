@@ -3,6 +3,7 @@ import { getBuildingFootprintRadius } from './cells'
 import { updateVisibility } from '../../services/FogOfWar'
 import type { GridPosition, Point } from '../../types/grid'
 import type { VisibilityEntity } from '../../services/FogOfWar'
+import type { Bounds } from '../../types/geometry'
 
 type PlayerVisibility = {
   views?: {
@@ -15,7 +16,7 @@ export type RenderableInstance = VisibilityEntity &
   Point & {
     context?: {
       controls?: {
-        instanceInCamera: (instance: RenderableInstance) => boolean
+        instanceInCamera: (instance: RenderableInstance, bounds?: Bounds) => boolean
       }
       map?: {
         instanceBuckets?: RenderableInstance[][][]
@@ -32,7 +33,27 @@ export type RenderableInstance = VisibilityEntity &
     } | null
     isDestroyed?: boolean
     size?: number
+    sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
   }
+
+// Buildings (and other sprite-based instances) are anchored on a single ground point but their
+// sprite typically extends well beyond it (upward especially, in this isometric projection), so
+// culling on the anchor point alone hides them while part of the sprite is still on screen. This
+// derives the instance's actual on-screen bounding box so camera culling can use it instead.
+function getInstanceScreenBounds(instance: RenderableInstance): Bounds | undefined {
+  const sprite = instance.sprite
+  if (!sprite) return undefined
+
+  const anchorX = sprite.anchor?.x ?? 0.5
+  const anchorY = sprite.anchor?.y ?? 1
+
+  return {
+    minX: instance.x - sprite.width * anchorX,
+    minY: instance.y - sprite.height * anchorY,
+    width: sprite.width,
+    height: sprite.height,
+  }
+}
 
 export function findInstancesInSight<
   TInstance extends RenderableInstance,
@@ -75,7 +96,7 @@ export function instanceShouldRender(instance?: RenderableInstance | null): bool
   const { map, player, controls } = instance?.context || {}
   if (!map || !controls || !instance || instance.isDestroyed) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
-  if (!controls.instanceInCamera(instance)) return false
+  if (!controls.instanceInCamera(instance, getInstanceScreenBounds(instance))) return false
 
   return (
     map.revealEverything ||

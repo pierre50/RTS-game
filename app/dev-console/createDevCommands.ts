@@ -21,12 +21,14 @@ import {
   spawnUnits,
   toggleFog,
   toggleCoordsDebug,
+  toggleFreeCamera,
   toggleGridDebug,
   togglePathDebug,
   togglePerfDebug,
+  togglePlayerStatsDebug,
   toggleResourcesVisibility,
   toggleSolidDebug,
-  toggleTerrainReveal,
+  toggleTerrainFrameDebug,
   toggleVisionDebug,
 } from './DevCommandActions'
 import { toggleHeroCollisionDebug } from './actions/debug'
@@ -256,6 +258,15 @@ export function createDevCommands(): DevCommandRegistry {
   })
 
   registry.register({
+    name: 'free-camera',
+    aliases: ['fcam'],
+    usage: 'free-camera [on|off]',
+    describe: 'Toggle ARPG free camera (arrow keys pan, off returns to hero)',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleFreeCamera(context, value),
+  })
+
+  registry.register({
     name: 'perf',
     usage: 'perf [on|off]',
     describe: 'Toggle performance debug overlay',
@@ -270,6 +281,15 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Print or reset frame, pathfinding, AI and fog timings',
     complete: () => ['reset'],
     run: ([value], context) => performanceReport(context, value),
+  })
+
+  registry.register({
+    name: 'player-stats',
+    aliases: ['pstats'],
+    usage: 'player-stats [on|off]',
+    describe: 'Toggle player stats debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => togglePlayerStatsDebug(context, value),
   })
 
   registry.register({
@@ -294,11 +314,12 @@ export function createDevCommands(): DevCommandRegistry {
   })
 
   registry.register({
-    name: 'terrain',
-    usage: 'terrain [on|off]',
-    describe: 'Toggle terrain reveal debug mode',
+    name: 'terrain-frame',
+    aliases: ['tframe'],
+    usage: 'terrain-frame [on|off]',
+    describe: 'Show the terrain sprite sheet/frame under the cursor',
     complete: () => ['on', 'off'],
-    run: ([value], context) => toggleTerrainReveal(context, value),
+    run: ([value], context) => toggleTerrainFrameDebug(context, value),
   })
 
   registry.register({

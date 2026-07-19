@@ -1,4 +1,11 @@
-import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import {
+  ACTION_TYPES,
+  AGE_GATE_MAX_UNLOCKABLE_VALUE,
+  AGE_UP_ENABLED,
+  BUILDING_TYPES,
+  UNIT_TYPES,
+  WORK_TYPES,
+} from '../constants'
 import { canAfford, canPlaceBuildingAt, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { AIMilitary } from './AIMilitary'
 import {
@@ -7,6 +14,7 @@ import {
   AI_DIFFICULTIES,
   MAX_ARCHER_BY_AGE,
   MAX_BUILDING_BY_AGE,
+  MAX_BUILDING_BY_AGE_FROZEN,
   MAX_CAVALRY_BY_AGE,
   MAX_HOPLITE_BY_AGE,
   MAX_INFANTRY_BY_AGE,
@@ -93,7 +101,7 @@ export class AIStrategy {
     this.nextAge = NEXT_AGE
     this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
     this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE
-    this.maxBuildingByAge = MAX_BUILDING_BY_AGE
+    this.maxBuildingByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
     this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
@@ -115,6 +123,14 @@ export class AIStrategy {
     target.techPriorityByBuilding = this.techPriorityByBuilding
   }
 
+  // Vrai si l'IA doit être considérée comme ayant atteint `requiredAge` : soit réellement (age-up
+  // actif), soit parce que ce palier est "atteignable" (<= AGE_GATE_MAX_UNLOCKABLE_VALUE) et qu'on
+  // ne veut pas la brider à vie pendant que le passage d'âge est désactivé.
+  hasReachedAge(requiredAge: number): boolean {
+    if (!AGE_UP_ENABLED) return requiredAge <= AGE_GATE_MAX_UNLOCKABLE_VALUE
+    return this.ai.age >= requiredAge
+  }
+
   canResearchTech(techKey: string): boolean {
     const { ai } = this
     const tech = ai.techs[techKey]
@@ -122,7 +138,7 @@ export class AIStrategy {
     return tech.conditions.every((cond: AITechCondition) => {
       if (cond.key === 'age') {
         const ageValue = typeof cond.value === 'number' ? cond.value : Number(cond.value)
-        if (cond.op === '>=') return ai.age >= ageValue
+        if (cond.op === '>=') return this.hasReachedAge(ageValue)
         if (cond.op === '=') return ai.age === ageValue
       }
       if (cond.key === 'technologies') {
@@ -220,7 +236,7 @@ export class AIStrategy {
     let desired = ai.phase !== 'economy' ? 1 : 0
 
     if (
-      ai.age >= 2 &&
+      this.hasReachedAge(2) &&
       ai.phase !== 'economy' &&
       (totalMilitary >= Math.max(8, difficultyConfig.attackThreshold * 2) ||
         this.getTrainingLoad(builtBarracks) >= Math.max(2, builtBarracks.length * 2))
@@ -246,7 +262,7 @@ export class AIStrategy {
     const demand: Record<keyof AIResourceAmount, number> = { food: 0, wood: 0, gold: 0, stone: 0 }
     const nextAgeKey = ai.age + 1
     const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[nextAgeKey]
-    if (nextAgeCost) {
+    if (AGE_UP_ENABLED && nextAgeCost) {
       const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
       const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
       for (const [resource, amount] of resourceEntries(nextAgeCost)) {
@@ -277,6 +293,7 @@ export class AIStrategy {
   }
 
   getAgeUpReserve(): AIResourceAmount {
+    if (!AGE_UP_ENABLED) return {}
     const { ai } = this
     const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[ai.age + 1]
     if (!nextAgeCost) return {}
@@ -1043,7 +1060,7 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(ai.age >= 2 && markets.some((m: AIBuildingLike) => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
+      buy(this.hasReachedAge(2) && markets.some((m: AIBuildingLike) => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
         getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
       )
     )
@@ -1051,7 +1068,7 @@ export class AIStrategy {
 
     if (
       buy(
-        ai.age >= 2 &&
+        this.hasReachedAge(2) &&
           towncenters.length < 2 &&
           governmentCenters.some((gc: AIBuildingLike) => gc.isBuilt) &&
           ai.populationMax >= 24 &&
@@ -1145,7 +1162,7 @@ export class AIStrategy {
     let actions = 0
 
     const nextAgeKey = (ai.age + 1) as 1 | 2 | 3
-    if (ai.nextAge[nextAgeKey]) {
+    if (AGE_UP_ENABLED && ai.nextAge[nextAgeKey]) {
       const cost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[nextAgeKey] || {}
       const buffer = (AGE_UP_BUFFERS as Record<number, AIResourceAmount>)[nextAgeKey] || {}
       const popReady = ai.population >= Math.floor(maxVillagers * 0.8)

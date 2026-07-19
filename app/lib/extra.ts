@@ -344,19 +344,21 @@ export type UnitTextureInstance = {
   walkingSheet?: SheetLike
 }
 
-function getWalkingFallbackTexture(instance: UnitTextureInstance): AnimatedSprite['textures'][number] | undefined {
+function getWalkingFallbackTexture(
+  instance: UnitTextureInstance
+): { texture: AnimatedSprite['textures'][number]; mirrored: boolean } | undefined {
   const walkingSheet = instance.walkingSheet
   if (!walkingSheet) return undefined
 
   const directionCount = instance.sheetDirectionCounts?.[SHEET_TYPES.walking] ?? null
-  const { textures } = getSpriteFrameSelection(
+  const { textures, mirrored } = getSpriteFrameSelection(
     walkingSheet.textures,
     instance.degree,
     directionCount,
     instance.sheetDirectionOrders?.[SHEET_TYPES.walking] ?? null
   )
 
-  return textures[0]
+  return textures[0] === undefined ? undefined : { texture: textures[0], mirrored }
 }
 
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
@@ -371,16 +373,21 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   }
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheets[sheet]) {
+    const fallbackSpriteScale = instance.spriteScale ?? 1
+    let mirrored = false
     if (instance.walkingSheet) {
-      const fallbackTexture = getWalkingFallbackTexture(instance)
-      if (fallbackTexture) instance.sprite.textures = [fallbackTexture]
+      const fallback = getWalkingFallbackTexture(instance)
+      if (fallback) {
+        instance.sprite.textures = [fallback.texture]
+        mirrored = fallback.mirrored
+      }
     } else {
       instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
+      mirrored = instance.sprite.scale.x < 0
     }
     instance.currentSheet = SHEET_TYPES.walking
     instance.sprite.stop()
-    const fallbackSpriteScale = instance.spriteScale ?? 1
-    instance.sprite.scale.x = fallbackSpriteScale
+    instance.sprite.scale.x = mirrored ? -fallbackSpriteScale : fallbackSpriteScale
     instance.sprite.scale.y = fallbackSpriteScale
     const currentTexture = instance.sprite.textures[instance.sprite.currentFrame]
     const defaultAnchor = getDefaultAnchor(currentTexture)

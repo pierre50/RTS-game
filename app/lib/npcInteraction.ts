@@ -1,6 +1,8 @@
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
+import { Graphics } from 'pixi.js'
+import { ACTION_TYPES, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
 import { getInstanceDegree } from './maths'
+import { playSelectionSound, playSoundCue } from './sound'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -17,11 +19,15 @@ const NPC_INTERACT_RANGE = 2.5
 // How far the hero can wander from an open orders panel's targets before it auto-closes.
 const NPC_MENU_KEEP_RANGE = 10
 
-// Hold-to-charge "communication zone" (left click): starts at the base range and grows
-// the longer the button is held, up to the max range.
-export const COMM_BASE_RANGE = 2.5
+// Hold-to-charge "communication zone" (left click): starts at 0 and grows the longer the
+// button is held, up to the max range. While still inside the precision zone (base range),
+// a release resolves to whichever ally the hero is actually facing rather than an area sweep —
+// a quick tap talks precisely to the unit standing face-to-face with the hero.
+export const COMM_BASE_RANGE = 0
 export const COMM_MAX_RANGE = 7
 export const COMM_CHARGE_MS = 1200
+const COMM_PRECISION_RANGE = 2.5
+const COMM_FACING_HALF_ANGLE = 60
 
 const FOLLOW_SLACK = 2
 // Escort behavior for followers: hostiles inside the engage radius around the hero get
@@ -41,6 +47,11 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
   return Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0))
+}
+
+function angleDelta(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
 }
 
 function isRuntimeEntityDest(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
@@ -65,6 +76,26 @@ function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
   return isFriendlyAvailable(hero, target)
 }
 
+// Marks a frozen comm target with the same selection lozenge as a regular unit selection, kept
+// on its own label so it never collides with (or gets cleared by) the player's actual drag-select
+// state — a comm target that also happens to be selected must stay selected once released.
+function setCommSelected(target: UnitEntity, selected: boolean): void {
+  if (!selected) {
+    const marker = target.getChildByLabel?.(LABEL_TYPES.commSelection)
+    if (marker) target.removeChild(marker)
+    return
+  }
+  if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
+  const factor = target.selectionFactor ?? target.size ?? 1
+  const marker = new Graphics()
+  marker.label = LABEL_TYPES.commSelection
+  marker.zIndex = -1
+  marker.poly([-32 * factor, 0, 0, -16 * factor, 32 * factor, 0, 0, 16 * factor])
+  marker.stroke(COLOR_WHITE)
+  const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
+  target.addChildAt(marker, shadowIndex)
+}
+
 function noticeNpc(target: UnitEntity, hero: UnitEntity): void {
   if (target.lookingAtHero) return
   const sprite = target.sprite
@@ -79,11 +110,32 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity): void {
   target.path = []
   target.degree = getInstanceDegree(target, hero.x, hero.y)
   target.setTextures?.(SHEET_TYPES.standing)
+  setCommSelected(target, true)
+  playSelectionSound(target)
+}
+
+// Mirrors SelectionManager.sendUnits' bark logic: a cue shared by the whole group plays once,
+// otherwise fall back to the villager/military default — never one bark per unit in the group.
+export function playNpcOrderSound(npcs: UnitEntity[]): void {
+  if (!npcs.length) return
+  const commandSound = npcs[0].sounds?.command
+  const sameCommandSound =
+    commandSound != null && npcs.every(npc => JSON.stringify(npc.sounds?.command) === JSON.stringify(commandSound))
+  if (sameCommandSound) {
+    playSoundCue(commandSound)
+    return
+  }
+  if (npcs.some(npc => npc.type !== UNIT_TYPES.villager)) {
+    playSoundCue(SOUND_CUES.unit.militaryCommand)
+    return
+  }
+  playSoundCue(npcs.find(npc => npc.type === UNIT_TYPES.villager)?.sounds?.command ?? SOUND_CUES.villager.command)
 }
 
 function releaseNpc(target: UnitEntity): void {
   if (!target.lookingAtHero) return
   target.lookingAtHero = false
+  setCommSelected(target, false)
   const dest = target.previousDest
   // goBackToPrevious() only knows how to resume a resource/building errand; a unit that was just
   // walking to empty ground (no entity dest) needs a plain move re-issued instead, or it'd just stop.
@@ -144,8 +196,32 @@ export function getCommRadiusForHold(elapsedMs: number): number {
   return COMM_BASE_RANGE + ratio * (COMM_MAX_RANGE - COMM_BASE_RANGE)
 }
 
-// Finalizes a hold-to-charge release: pauses+faces any newly-caught worker, returns the full group.
+// The ally the hero is most directly facing, within a fixed nearby range — independent of how
+// little the hold has charged so far, so a same-tick tap still finds whoever is standing in front.
+function findFacingNpc(hero: UnitEntity, range: number): UnitEntity | null {
+  const candidates = findCommGroup(hero, range)
+  let best: UnitEntity | null = null
+  let bestAngle = COMM_FACING_HALF_ANGLE
+  for (const candidate of candidates) {
+    const angle = angleDelta(getInstanceDegree(hero, candidate.x, candidate.y), hero.degree ?? 0)
+    if (angle > bestAngle) continue
+    best = candidate
+    bestAngle = angle
+  }
+  return best
+}
+
+// Finalizes a hold-to-charge release: pauses+faces any newly-caught worker(s), returns the group.
+// Still inside the precision zone (a quick tap): resolve to the single ally facing the hero
+// face-to-face rather than an area sweep. Past that, the charged radius nets everyone in range.
 export function resolveCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
+  if (radius <= COMM_PRECISION_RANGE) {
+    const npc = findFacingNpc(hero, COMM_PRECISION_RANGE)
+    if (npc) {
+      noticeNpc(npc, hero)
+      return [npc]
+    }
+  }
   const group = findCommGroup(hero, radius)
   for (const npc of group) noticeNpc(npc, hero)
   return group
@@ -154,6 +230,7 @@ export function resolveCommGroup(hero: UnitEntity, radius: number): UnitEntity[]
 function resetNpcDirectives(target: UnitEntity): void {
   target.lookingAtHero = false
   target.followingHero = false
+  setCommSelected(target, false)
 }
 
 export function resumeNpcWork(target: UnitEntity): void {
@@ -346,6 +423,7 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
 
 export function sendNpcGroupToTarget(npcs: UnitEntity[], cell: RuntimeCell, worldPoint: Point): void {
   if (!npcs.length) return
+  playNpcOrderSound(npcs)
   const target = resolveClickTarget(npcs[0], worldPoint, cell)
   if (target) {
     for (const npc of npcs) sendNpcToCell(npc, cell, target)

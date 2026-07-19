@@ -19,8 +19,7 @@ const TOOL_LABEL_KEYS: Record<HeroTool, string> = {
 export class InventoryManager {
   menu: Menu
   panel: HTMLDivElement
-  header: HTMLDivElement
-  title: HTMLDivElement
+  topBar: HTMLDivElement
   closeButton: HTMLButtonElement
   tabs: Tabs<ActionMenuTab>
   toolsPanel: HTMLDivElement
@@ -41,13 +40,10 @@ export class InventoryManager {
     this.panel = document.createElement('div')
     this.panel.className = 'inventory-panel modal-panel action-menu hidden'
     this.panel.setAttribute('role', 'dialog')
+    this.panel.setAttribute('aria-label', t('inventoryTabTools'))
 
-    this.header = document.createElement('div')
-    this.header.className = 'inventory-header modal-header'
-
-    this.title = document.createElement('div')
-    this.title.className = 'inventory-title modal-title'
-    this.title.textContent = t('inventoryTabTools')
+    this.topBar = document.createElement('div')
+    this.topBar.className = 'inventory-topbar'
 
     this.closeButton = document.createElement('button')
     this.closeButton.type = 'button'
@@ -89,10 +85,9 @@ export class InventoryManager {
       this.toolsPanel.appendChild(slot)
     }
 
-    this.header.appendChild(this.title)
-    this.header.appendChild(this.closeButton)
-    this.panel.appendChild(this.header)
-    this.panel.appendChild(this.tabs.element)
+    this.topBar.appendChild(this.tabs.element)
+    this.topBar.appendChild(this.closeButton)
+    this.panel.appendChild(this.topBar)
     this.panel.appendChild(this.toolsPanel)
     this.panel.appendChild(this.minimapPanel)
     this.panel.appendChild(this.constructionPanel)
@@ -121,7 +116,7 @@ export class InventoryManager {
     this.panel.classList.add('hidden')
     this.showTab('tools')
     this.menu.menuTooltip.hide()
-    this.menu.updateBottombar()
+    if (!this.menu.context.controls.mouseBuilding) this.menu.updateBottombar()
     if (this.pausedByMenu) {
       this.pausedByMenu = false
       this.menu.context.resume?.()
