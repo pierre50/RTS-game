@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 from build import RETRO_PALETTE_ROOT, bake_sheet
@@ -22,9 +23,10 @@ ANIMAL_ANIMATION_SPEED = 0.20
 
 # Every source sheet is a universal 4-direction template (front/back/left/right,
 # see the row convention note below), even sheets like dying/corpse that only ever
-# extract row 0. Frames are tightly cropped with no padding between rows, so the
-# per-row height must come from dividing the actual canvas height by this row
-# count rather than assumed to be square with the frame width.
+# extract row 0. Frames are packed tight with no blank row between directions, and
+# each direction's content isn't a fixed fraction of the canvas height (a rearing
+# front pose needs more headroom than a side view), so row boundaries are detected
+# per sheet (see detect_row_bounds) rather than assumed to be an even split.
 SOURCE_ROW_COUNT = 4
 
 
@@ -51,90 +53,64 @@ class AnimalSheet:
 # the runtime mirrors the left frames for east-facing sprites. Dying/corpse
 # keep only the front-facing row.
 #
-# The source art's feet baseline isn't consistent across rows: front/back rows
-# sit a few pixels higher within the frame than the left/right rows. The baked
-# anchor is a single fraction of frame height shared by every row (see ANCHOR
-# in config.py), so a mismatched baseline makes the shadow miss the feet on
-# whichever rows sit higher. row_y_shift nudges those rows down so every row's
-# feet land on the same pixel row before baking.
+# row_y_shift exists for source art whose feet baseline isn't consistent across
+# rows (some rows sitting a few pixels higher within the frame than others,
+# which throws off the shared per-frame anchor fraction — see ANCHOR in
+# config.py). The current sprite sheets don't need it: their baseline is
+# already aligned across rows.
 DEER_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet("Deer_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04, row_y_shift={0: 4, 1: 4}),
-    AnimalSheet("Deer_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 2, 1: 2}),
-    AnimalSheet("Deer_Run-2x.png", "running", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4}),
-    AnimalSheet("Deer_Death-2x.png", "dying", 5, (0,), row_y_shift={0: 2}),
-    AnimalSheet(
-        "Deer_Death-2x.png", "corpse", 5, (0,), frame_indices=(4,), animation_speed=0, row_y_shift={0: 2}
-    ),
+    AnimalSheet("Deer_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
+    AnimalSheet("Deer_Walk-2x.png", "walking", 6, (1, 2, 0)),
+    AnimalSheet("Deer_Run-2x.png", "running", 6, (1, 2, 0)),
+    AnimalSheet("Deer_Death-2x.png", "dying", 5, (0,)),
+    AnimalSheet("Deer_Death-2x.png", "corpse", 5, (0,), frame_indices=(4,), animation_speed=0),
 )
 
 
-# Same source-row convention and row_y_shift purpose as DEER_SHEETS above.
+# Same source-row convention as DEER_SHEETS above.
 HARE_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet("Hare_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04, row_y_shift={2: 2}),
-    AnimalSheet("Hare_Walk-2x.png", "walking", 5, (1, 2, 0), row_y_shift={2: 2}),
+    AnimalSheet("Hare_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
+    AnimalSheet("Hare_Walk-2x.png", "walking", 5, (1, 2, 0)),
     AnimalSheet("Hare_Run-2x.png", "running", 6, (1, 2, 0)),
-    AnimalSheet("Hare_Death-2x.png", "dying", 4, (0,), row_y_shift={0: -2}),
-    AnimalSheet(
-        "Hare_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0, row_y_shift={0: -2}
-    ),
+    AnimalSheet("Hare_Death-2x.png", "dying", 4, (0,)),
+    AnimalSheet("Hare_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
-# Same source-row convention and row_y_shift purpose as DEER_SHEETS above. This
-# one is "attack" strategy, not "runaway" — it has an action (attack) sheet
-# instead of fleeing, and charges at spotted villagers using its running sheet
-# (see AnimalCombat.affectNewDest in the runtime).
+# Same source-row convention as DEER_SHEETS above. This one is "attack"
+# strategy, not "runaway" — it has an action (attack) sheet instead of
+# fleeing, and charges at spotted villagers using its running sheet (see
+# AnimalCombat.affectNewDest in the runtime).
 BOAR_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Boar_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
-    AnimalSheet("Boar_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
-    AnimalSheet("Boar_Run-2x.png", "running", 5, (1, 2, 0), row_y_shift={0: 6, 1: 4, 2: 4}),
-    AnimalSheet("Boar_Attack-2x.png", "action", 5, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 4}),
+    AnimalSheet("Boar_Walk-2x.png", "walking", 6, (1, 2, 0)),
+    AnimalSheet("Boar_Run-2x.png", "running", 5, (1, 2, 0)),
+    AnimalSheet("Boar_Attack-2x.png", "action", 5, (1, 2, 0)),
     AnimalSheet("Boar_Death-2x.png", "dying", 4, (0,)),
     AnimalSheet("Boar_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
-# Same source-row convention and row_y_shift purpose as DEER_SHEETS above. This
-# one has no "running" sheet — it flees by flight instead, so "flying" stands
-# in for the running slot (see SHEET_TYPES.flying / Animal.setAltitude in the
-# runtime, which renders it above its shadow instead of on the ground).
+# Same source-row convention as DEER_SHEETS above. This one has no "running"
+# sheet — it flees by flight instead, so "flying" stands in for the running
+# slot (see SHEET_TYPES.flying / Animal.setAltitude in the runtime, which
+# renders it above its shadow instead of on the ground).
 BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Black_grouse_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
-    AnimalSheet("Black_grouse_Walk-2x.png", "walking", 6, (1, 2, 0), row_y_shift={0: 4, 1: 4, 2: 6}),
-    AnimalSheet("Black_grouse_Flight-2x.png", "flying", 6, (1, 2, 0), row_y_shift={0: 2, 2: 4}),
-    AnimalSheet("Black_grouse_Death-2x.png", "dying", 4, (0,), row_y_shift={0: 4}),
-    AnimalSheet(
-        "Black_grouse_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0, row_y_shift={0: 4}
-    ),
+    AnimalSheet("Black_grouse_Walk-2x.png", "walking", 6, (1, 2, 0)),
+    AnimalSheet("Black_grouse_Flight-2x.png", "flying", 6, (1, 2, 0)),
+    AnimalSheet("Black_grouse_Death-2x.png", "dying", 4, (0,)),
+    AnimalSheet("Black_grouse_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
-# Same row_y_shift purpose as DEER_SHEETS above. This source swaps the horizontal
-# convention: row 2 faces right and row 3 faces left, so use row 3 for west and
-# let the runtime mirror it for east-facing sprites.
+# This source swaps the horizontal convention: row 2 faces right and row 3
+# faces left, so use row 3 for west and let the runtime mirror it for
+# east-facing sprites.
 FOX_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet(
-        "Fox_Idle-2x.png",
-        "standing",
-        4,
-        (1, 2, 0),
-        animation_speed=0.04,
-        row_y_shift={1: -6},
-    ),
-    AnimalSheet(
-        "Fox_walk-2x.png",
-        "walking",
-        6,
-        (1, 2, 0),
-        row_y_shift={1: -6},
-    ),
-    AnimalSheet(
-        "Fox_Run-2x.png",
-        "running",
-        6,
-        (1, 3, 0),
-        row_y_shift={1: -6},
-    ),
+    AnimalSheet("Fox_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
+    AnimalSheet("Fox_walk-2x.png", "walking", 6, (1, 2, 0)),
+    AnimalSheet("Fox_Run-2x.png", "running", 6, (1, 3, 0)),
     AnimalSheet("Fox_Death-2x.png", "dying", 4, (0,), darken_border_factor=DARKEN_FACTOR),
     AnimalSheet(
         "Fox_Death-2x.png",
@@ -176,31 +152,120 @@ ANIMALS = {
 }
 
 
+def keep_largest_alpha_island(frame: Image.Image) -> Image.Image:
+    """Some source frames have a stray fragment of the neighboring row's ear or
+    tail (a few disconnected pixels) surviving right at the row boundary, left
+    over from the sheet's tight, gapless packing. A cropped animal frame is
+    always one connected silhouette, so drop every opaque blob except the
+    largest — those fragments are never part of it.
+    """
+    arr = np.array(frame)
+    alpha = arr[:, :, 3]
+    mask = alpha > 10
+    height, width = mask.shape
+    visited = np.zeros_like(mask, dtype=bool)
+    best_component: list[tuple[int, int]] | None = None
+    best_size = 0
+    for start_y in range(height):
+        for start_x in range(width):
+            if not mask[start_y, start_x] or visited[start_y, start_x]:
+                continue
+            stack = [(start_y, start_x)]
+            visited[start_y, start_x] = True
+            component = []
+            while stack:
+                y, x = stack.pop()
+                component.append((y, x))
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        ny, nx = y + dy, x + dx
+                        if 0 <= ny < height and 0 <= nx < width and mask[ny, nx] and not visited[ny, nx]:
+                            visited[ny, nx] = True
+                            stack.append((ny, nx))
+            if len(component) > best_size:
+                best_size = len(component)
+                best_component = component
+    if best_component is None or best_size == int(mask.sum()):
+        return frame
+
+    keep = np.zeros_like(mask, dtype=bool)
+    for y, x in best_component:
+        keep[y, x] = True
+    arr[:, :, 3] = np.where(keep, alpha, 0)
+    return Image.fromarray(arr, "RGBA")
+
+
+def detect_row_bounds(source: Image.Image, num_rows: int) -> tuple[int, ...]:
+    """Find the num_rows+1 row boundaries in a tightly-packed source sheet.
+
+    Frames are packed with no blank row between directions and each direction's
+    content isn't an even fraction of the canvas (a rearing front pose needs more
+    headroom than a side view lying down), so an even split cuts through content
+    on some rows. Instead, search a window around each expected even-split point
+    for the row with the fewest opaque pixels — the seam between two directions.
+    """
+    alpha = np.asarray(source.getchannel("A"))
+    height = alpha.shape[0]
+    opaque_count = (alpha > 0).sum(axis=1)
+    step = height / num_rows
+    window = max(3, round(step * 0.3))
+    bounds = [0]
+    for i in range(1, num_rows):
+        expected = round(step * i)
+        lo = max(bounds[-1] + 1, expected - window)
+        hi = min(height - 1, expected + window)
+        bounds.append(min(range(lo, hi + 1), key=lambda y: opaque_count[y]))
+    bounds.append(height)
+    return tuple(bounds)
+
+
 def crop_frames(source: Image.Image, sheet: AnimalSheet) -> list[Image.Image]:
     frame_width = sheet.frame_width or source.width // sheet.columns
-    frame_height = sheet.frame_height or source.height // SOURCE_ROW_COUNT
-    row_stride = sheet.row_stride or frame_height
-    if frame_width <= 0 or frame_height <= 0:
+    if frame_width <= 0:
         raise ValueError(f"invalid animal sheet size {source.size} for {sheet.source}")
 
+    if sheet.frame_height is not None:
+        frame_height = sheet.frame_height
+        row_stride = sheet.row_stride or frame_height
+        row_top = {row: row * row_stride for row in range(SOURCE_ROW_COUNT)}
+        row_bottom = {row: row * row_stride + frame_height for row in range(SOURCE_ROW_COUNT)}
+    else:
+        row_bounds = detect_row_bounds(source, SOURCE_ROW_COUNT)
+        frame_height = max(row_bounds[row + 1] - row_bounds[row] for row in sheet.row_order)
+        row_top = {row: row_bounds[row] for row in range(SOURCE_ROW_COUNT)}
+        row_bottom = {row: row_bounds[row + 1] for row in range(SOURCE_ROW_COUNT)}
+
     for row in sheet.row_order:
-        if row * row_stride + frame_height > source.height:
+        if row_bottom[row] > source.height:
             raise ValueError(f"row {row} does not exist in {sheet.source}")
 
     frame_indices = sheet.frame_indices or tuple(range(sheet.columns))
     frames: list[Image.Image] = []
     for row in sheet.row_order:
+        # Bottom-anchored: every row's crop ends exactly at that direction's
+        # detected content boundary, so feet land on the same pixel row across
+        # directions regardless of how much headroom each pose needs above. A
+        # row shorter than the sheet's tallest row (e.g. a side view under a
+        # rearing front pose) gets blank padding at the top instead of pulling
+        # in the row above.
+        top = max(row_top[row], row_bottom[row] - frame_height)
+        pad_top = frame_height - (row_bottom[row] - top)
         for column in frame_indices:
             if column >= sheet.columns:
                 raise ValueError(f"column {column} does not exist in {sheet.source}")
-            frame = source.crop(
+            cropped = source.crop(
                 (
                     column * frame_width,
-                    row * row_stride,
+                    top,
                     column * frame_width + frame_width,
-                    row * row_stride + frame_height,
+                    row_bottom[row],
                 )
             )
+            if pad_top:
+                frame = Image.new("RGBA", (frame_width, frame_height), (0, 0, 0, 0))
+                frame.paste(cropped, (0, pad_top))
+            else:
+                frame = cropped
             row_shift = sheet.row_y_shift.get(row, 0) if sheet.row_y_shift else 0
             if row_shift:
                 shifted = Image.new("RGBA", (frame_width, frame_height), (0, 0, 0, 0))
@@ -209,6 +274,7 @@ def crop_frames(source: Image.Image, sheet: AnimalSheet) -> list[Image.Image]:
             if sheet.clear_top and (sheet.clear_top_rows is None or row in sheet.clear_top_rows):
                 frame = frame.copy()
                 frame.paste((0, 0, 0, 0), (0, 0, frame_width, sheet.clear_top))
+            frame = keep_largest_alpha_island(frame)
             frames.append(frame)
     return frames
 
