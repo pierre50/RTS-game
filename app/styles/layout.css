@@ -44,7 +44,7 @@
 
 .game-loading__title.modal-title {
   color: var(--main-accent-color);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-title);
   letter-spacing: 0.04em;
   text-align: center;
 }
@@ -134,7 +134,7 @@
 }
 
 .modal-title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-title);
   font-weight: bold;
   text-transform: uppercase;
   color: var(--main-accent-color);
@@ -204,7 +204,7 @@
 }
 
 .orientation-guard-title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-title);
   font-weight: bold;
   text-transform: uppercase;
   text-shadow: var(--text-shadow-dark-ui);

@@ -21,6 +21,7 @@ export const LABEL_TYPES = {
   fire: 'fire',
   selection: 'selection',
   healthBar: 'healthBar',
+  powerBar: 'powerBar',
   buildingFog: 'building',
   mouseBuilding: 'mouseBuilding',
   floor: 'floor',

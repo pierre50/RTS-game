@@ -1,3 +1,4 @@
+import { LOADING_FOOD_TYPES } from '../constants'
 import { t } from '../lib/lang'
 import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
@@ -8,6 +9,9 @@ export class HeroStatusHud {
   title: HTMLDivElement
   value: HTMLDivElement
   fill: HTMLDivElement
+  carry: HTMLDivElement
+  carryIcon: HTMLImageElement
+  carryValue: HTMLDivElement
   hero: UnitEntity | null
 
   constructor(menu: Menu) {
@@ -35,11 +39,23 @@ export class HeroStatusHud {
     this.fill = document.createElement('div')
     this.fill.className = 'hero-status-fill'
 
+    this.carry = document.createElement('div')
+    this.carry.className = 'hero-status-carry hidden'
+
+    this.carryIcon = document.createElement('img')
+    this.carryIcon.className = 'hero-status-carry-icon'
+
+    this.carryValue = document.createElement('div')
+    this.carryValue.className = 'hero-status-carry-value'
+
     header.appendChild(this.title)
     header.appendChild(this.value)
     bar.appendChild(this.fill)
+    this.carry.appendChild(this.carryIcon)
+    this.carry.appendChild(this.carryValue)
     frame.appendChild(header)
     frame.appendChild(bar)
+    frame.appendChild(this.carry)
     this.element.appendChild(frame)
     menu.gameHud.appendChild(this.element)
   }
@@ -64,6 +80,16 @@ export class HeroStatusHud {
     this.value.textContent = `${current}/${max}`
     this.fill.style.width = `${Math.round(ratio * 100)}%`
     this.element.classList.remove('hidden')
+
+    const loading = hero.loading ?? 0
+    if (loading > 0 && hero.loadingType) {
+      const iconKey = LOADING_FOOD_TYPES.includes(hero.loadingType) ? 'food' : hero.loadingType
+      this.carryIcon.src = this.menu.infoIcons?.[iconKey] ?? ''
+      this.carryValue.textContent = String(loading)
+      this.carry.classList.remove('hidden')
+    } else {
+      this.carry.classList.add('hidden')
+    }
   }
 
   destroy(): void {

@@ -18,6 +18,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
         constructor() {
           this.circles = []
           this.ellipses = []
+          this.paths = []
           this.polys = []
         }
         clear() {}
@@ -31,12 +32,19 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
         poly(points) {
           this.polys.push(points)
         }
+        moveTo(x, y) {
+          this.paths.push({ type: 'moveTo', x, y })
+        }
+        lineTo(x, y) {
+          this.paths.push({ type: 'lineTo', x, y })
+        }
+        closePath() {
+          this.paths.push({ type: 'closePath' })
+        }
         stroke() {}
       },
     },
     '../constants': {
-      ARPG_DIRECTIONS: {},
-      ARPG_KEYS: new Set(),
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
       LABEL_TYPES: { commRadius: 'commRadius' },
@@ -44,7 +52,18 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       STEP_TIME: 100,
     },
     '../lib': {
+      drawRoundedIsoShape: (layer, points) => {
+        points.forEach((point, index) => {
+          if (index === 0) layer.moveTo(point.x, point.y)
+          else layer.lineTo(point.x, point.y)
+        })
+        layer.closePath()
+      },
       getInstanceDegree,
+      getRoundedIsoShapePoints: ({ factor = 1 } = {}) => [
+        { x: -32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
+        { x: 32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
+      ],
       updateInstanceRenderVisibility: () => {},
     },
     '../lib/heroTools': heroTools,
@@ -61,7 +80,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
   return module.exports.HeroController
 }
 
-function createController({ nearbyGroup = [], getInstanceDegree } = {}) {
+function createController({ nearbyGroup = [], getInstanceDegree, heroToolsOverride = {} } = {}) {
   const calls = []
   const hero = {
     addChildAt: child => {
@@ -86,11 +105,16 @@ function createController({ nearbyGroup = [], getInstanceDegree } = {}) {
     updateNpcFollow: () => {},
   }
   const heroTools = {
+    aimHeroBowChargeAt: () => false,
     applyToolAppearance: () => {},
+    cancelHeroBowCharge: () => {},
+    releaseHeroBowCharge: () => false,
     triggerToolAttackAt: (_hero, _tool, destination) => {
       calls.push(['attack', destination])
       return true
     },
+    updateHeroBowCharge: () => {},
+    ...heroToolsOverride,
   }
   const HeroController = loadHeroController({ npcInteraction, heroTools, getInstanceDegree })
   let cursorPoint = { x: 10, y: 20 }
@@ -102,6 +126,7 @@ function createController({ nearbyGroup = [], getInstanceDegree } = {}) {
     },
     getCellUnderCursor: () => null,
     getWorldPointUnderCursor: () => cursorPoint,
+    getGamepadMoveVector: () => ({ dx: 0, dy: 0 }),
   })
   controller.heroUnit = hero
   return {
@@ -124,14 +149,39 @@ test('primary ARPG click still attacks when communicable villagers are nearby', 
   assert.deepEqual(calls, [['setTextures', 'standing'], 'stop', ['attack', { x: 10, y: 20 }]])
 })
 
+test('keyboard movement during bow charge restores aim without resetting action textures', () => {
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      aimHeroBowChargeAt: unit => {
+        unit.degree = 40
+        return true
+      },
+    },
+  })
+  hero.actionLocked = true
+  hero.currentSheet = 'action'
+  hero.speed = 1
+  hero.degree = 40
+  hero.moveDirect = () => {
+    hero.degree = 270
+    return true
+  }
+
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.update(1)
+
+  assert.equal(hero.degree, 40)
+  assert.deepEqual(calls, [])
+})
+
 test('E owns villager communication and opens orders on key release', () => {
   const group = [{ label: 'villager-1' }, { label: 'villager-2' }]
   const { calls, controller } = createController({ nearbyGroup: group })
 
-  assert.equal(controller.handleKeyDown('e'), true)
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, true)
 
-  controller.handleKeyUp('e')
+  controller.handleKeyUp('heroInteract')
 
   assert.equal(controller.commCharging, false)
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
@@ -140,26 +190,33 @@ test('E owns villager communication and opens orders on key release', () => {
 test('E shows communication radius even when no villagers are nearby', () => {
   const { calls, controller } = createController({ nearbyGroup: [] })
 
-  assert.equal(controller.handleKeyDown('e'), true)
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, true)
 
   controller.updateCommIndicator()
-  assert.deepEqual(controller.commIndicator.ellipses, [{ x: 0, y: 0, halfWidth: 80, halfHeight: 40 }])
+  assert.deepEqual(controller.commIndicator.paths, [
+    { type: 'moveTo', x: -17.6, y: -31.200000000000003 },
+    { type: 'lineTo', x: 17.6, y: -31.200000000000003 },
+    { type: 'closePath' },
+  ])
+  assert.deepEqual(controller.commIndicator.ellipses, [])
 
-  controller.handleKeyUp('e')
+  controller.handleKeyUp('heroInteract')
 
   assert.equal(controller.commCharging, false)
   assert.deepEqual(calls, ['removeIndicator'])
 })
 
-test('communication charge indicator is drawn as a ground-projected ellipse', () => {
+test('communication charge indicator is drawn as a rounded isometric footprint', () => {
   const group = [{ label: 'villager' }]
   const { controller } = createController({ nearbyGroup: group })
 
-  controller.handleKeyDown('e')
+  controller.handleKeyDown('heroInteract')
   controller.updateCommIndicator()
 
-  assert.deepEqual(controller.commIndicator.ellipses, [{ x: 0, y: 0, halfWidth: 80, halfHeight: 40 }])
+  assert.deepEqual(controller.commIndicator.paths[0], { type: 'moveTo', x: -17.6, y: -31.200000000000003 })
+  assert.equal(controller.commIndicator.paths.at(-1).type, 'closePath')
+  assert.deepEqual(controller.commIndicator.ellipses, [])
   assert.deepEqual(controller.commIndicator.circles, [])
   assert.deepEqual(controller.commIndicator.polys, [])
 })

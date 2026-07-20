@@ -16,6 +16,7 @@ import {
   getWorkWithLoadingType,
 } from '../../lib'
 import { t } from '../../lib/lang'
+import { isHeroControlled } from '../../lib/unitControl'
 import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { ActionProps } from '../../lib/combat'
@@ -40,6 +41,44 @@ function checkActionCondition(
 ): boolean {
   if (!target) return false
   return getActionCondition(source, target, action ?? '', props)
+}
+
+// Applies the work/texture/cargo bookkeeping a work reassignment needs: drops mismatched
+// cargo when switching to an incompatible gather type, and swaps in the right animation
+// sheets. Extracted out of commonSendTo so hero-direct triggers (heroTools.ts) can reuse it
+// without going through the pathing/command-queue machinery meant for AI-controlled units.
+export function applyWorkForAction(unit: UnitEntity, work: string, action: string | null): void {
+  const menu = unit.context?.menu
+  const workFromLoading = getWorkWithLoadingType(unit.loadingType ?? '')
+  if (
+    work !== WORK_TYPES.builder &&
+    work !== workFromLoading &&
+    !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading ?? ''))
+  ) {
+    unit.loading = 0
+    unit.loadingType = null
+    unit.updateInterfaceLoading?.()
+  }
+  if (unit.work === work && unit.action === action) return
+  unit.work = work
+  if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
+    menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
+  }
+  const workAssets = unit.allAssets?.[work]
+  if (workAssets) {
+    unit.actionSheet = getActionSheet(work, action, unit)
+    if (!unit.loading) {
+      unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
+      unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
+      unit.dyingSheet = Assets.cache.get(workAssets[SHEET_TYPES.dying])
+      unit.corpseSheet = Assets.cache.get(workAssets[SHEET_TYPES.corpse])
+    }
+  }
+  // If the unit is already moving when AI/job assignment changes its role,
+  // refresh the walking animation immediately so the sprite matches the new work.
+  if (unit.path?.length) {
+    unit.setTextures?.(SHEET_TYPES.walking)
+  }
 }
 
 export class UnitCommands {
@@ -70,16 +109,19 @@ export class UnitCommands {
     preserveBuildQueue = false
   ) {
     const unit = this.unit
-    const menu = unit.context?.menu
     if (!target || target.isDestroyed || unit.isDead) return false
     if (!preserveBuildQueue) unit.buildQueue = []
     if (action && !checkActionCondition(unit, target, action)) return false
     if (unit.actionLocked) return unit.queueOrder?.(target, action)
     if (this.isRedundantOrder(target, work, action)) return false
 
+    // The hero never auto-resumes a previous job — it's player-controlled, not AI, and
+    // silently walking it back to a gather spot would be the same unwanted autonomy as
+    // pathing it there in the first place.
     const shouldRememberPreviousTask =
       keepPrevious &&
       unit.type === UNIT_TYPES.villager &&
+      !isHeroControlled(unit) &&
       unit.work !== WORK_TYPES.builder &&
       unit.action !== ACTION_TYPES.build &&
       unit.dest &&
@@ -92,40 +134,7 @@ export class UnitCommands {
       unit.previousWork = null
     }
 
-    const workFromLoading = getWorkWithLoadingType(unit.loadingType ?? '')
-    if (
-      work !== WORK_TYPES.builder &&
-      work !== workFromLoading &&
-      !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading ?? ''))
-    ) {
-      unit.loading = 0
-      unit.loadingType = null
-      unit.updateInterfaceLoading?.()
-    }
-    if (unit.work !== work || unit.action !== action) {
-      unit.work = work
-      if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-        menu?.updateInfo?.(
-          MENU_INFO_IDS.type,
-          t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-        )
-      }
-      const workAssets = unit.allAssets?.[work]
-      if (workAssets) {
-        unit.actionSheet = getActionSheet(work, action, unit)
-        if (!unit.loading) {
-          unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
-          unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
-          unit.dyingSheet = Assets.cache.get(workAssets[SHEET_TYPES.dying])
-          unit.corpseSheet = Assets.cache.get(workAssets[SHEET_TYPES.corpse])
-        }
-      }
-      // If the unit is already moving when AI/job assignment changes its role,
-      // refresh the walking animation immediately so the sprite matches the new work.
-      if (unit.path?.length) {
-        unit.setTextures?.(SHEET_TYPES.walking)
-      }
-    }
+    applyWorkForAction(unit, work, action)
     unit.previousDest = keepPrevious ? unit.previousDest : null
 
     // AI job switches must bypass the public command throttle, otherwise the villager

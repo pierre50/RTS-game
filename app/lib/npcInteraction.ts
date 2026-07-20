@@ -1,6 +1,6 @@
-import { Graphics } from 'pixi.js'
 import { ACTION_TYPES, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
+import { createIsoSelectionMarker } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -87,11 +87,7 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   }
   if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
   const factor = target.selectionFactor ?? target.size ?? 1
-  const marker = new Graphics()
-  marker.label = LABEL_TYPES.commSelection
-  marker.zIndex = -1
-  marker.poly([-32 * factor, 0, 0, -16 * factor, 32 * factor, 0, 0, 16 * factor])
-  marker.stroke(COLOR_WHITE)
+  const marker = createIsoSelectionMarker({ color: COLOR_WHITE, factor, label: LABEL_TYPES.commSelection, zIndex: -1 })
   const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
   target.addChildAt(marker, shadowIndex)
 }

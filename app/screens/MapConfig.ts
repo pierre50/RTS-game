@@ -1,32 +1,12 @@
 import { playClickSound } from '../lib/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
-import { buildSelectRow, buildCheckboxRow } from '../ui/formUtils'
+import { buildSelectRow } from '../ui/formUtils'
 import { MAP_SIZES } from '../config/mapSizes'
 import { MAP_TYPES } from '../config/mapTypes'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
 import type { ResourceAmount } from '../types/common'
 import type { GameConfig } from '../types/save'
-
-const STARTING_RESOURCES = [
-  { label: () => t('resLow'), value: 'low' },
-  { label: () => t('resStandard'), value: 'standard' },
-  { label: () => t('resHigh'), value: 'high' },
-  { label: () => t('resVeryHigh'), value: 'very_high' },
-]
-
-const MAP_RESOURCE_DENSITIES = [
-  { label: () => t('mapResourcesLow'), value: 'low' },
-  { label: () => t('mapResourcesModerate'), value: 'moderate' },
-  { label: () => t('mapResourcesHigh'), value: 'high' },
-]
-
-const STARTING_AGES = [
-  { label: () => t('stoneAge'), value: 0 },
-  { label: () => t('toolAge'), value: 1 },
-  { label: () => t('bronzeAge'), value: 2 },
-  { label: () => t('ironAge'), value: 3 },
-]
 
 const RESOURCES_MAP: Record<string, ResourceAmount> = {
   low: { wood: 100, food: 150, stone: 50, gold: 0 },
@@ -34,6 +14,12 @@ const RESOURCES_MAP: Record<string, ResourceAmount> = {
   high: { wood: 500, food: 500, stone: 300, gold: 0 },
   very_high: { wood: 1000, food: 1000, stone: 750, gold: 100 },
 }
+
+const DIFFICULTIES = [
+  { label: () => t('diffEasy'), value: 'easy' },
+  { label: () => t('diffMedium'), value: 'medium' },
+  { label: () => t('diffHard'), value: 'hard' },
+]
 
 export default class MapConfig {
   onPlay: (config: GameConfig) => void
@@ -59,6 +45,7 @@ export default class MapConfig {
       instantMode: false,
       startingResources: RESOURCES_MAP.standard,
       resourceDensity: 'moderate',
+      difficulty: 'medium',
     }
 
     this.maxPlayers = 2
@@ -87,14 +74,12 @@ export default class MapConfig {
     const layout = document.createElement('div')
     layout.className = 'lobby-layout'
 
-    // ── Left column: player table ──
     const leftCol = document.createElement('div')
     leftCol.className = 'lobby-col'
 
     this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers })
     leftCol.appendChild(this.playerSetupPanel.element)
 
-    // ── Right column: settings ──
     const rightCol = document.createElement('div')
     rightCol.className = 'lobby-col'
 
@@ -117,32 +102,8 @@ export default class MapConfig {
     )
 
     settingsForm.appendChild(
-      buildSelectRow(t('startingResourcesLabel'), STARTING_RESOURCES, 'standard', val => {
-        this.config.startingResources = RESOURCES_MAP[val]
-      })
-    )
-
-    settingsForm.appendChild(
-      buildSelectRow(t('mapResourcesLabel'), MAP_RESOURCE_DENSITIES, 'moderate', val => {
-        this.config.resourceDensity = val
-      })
-    )
-
-    settingsForm.appendChild(
-      buildSelectRow(t('startingAgeLabel'), STARTING_AGES, 0, val => {
-        this.config.startingAge = parseInt(val)
-      })
-    )
-
-    settingsForm.appendChild(
-      buildCheckboxRow(t('allTechnologiesLabel'), false, val => {
-        this.config.allTechnologies = val
-      })
-    )
-
-    settingsForm.appendChild(
-      buildCheckboxRow(t('revealTerrain'), false, val => {
-        this.config.revealTerrain = val
+      buildSelectRow(t('colDifficulty'), DIFFICULTIES, 'medium', val => {
+        this.config.difficulty = val
       })
     )
 

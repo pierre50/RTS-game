@@ -1,6 +1,7 @@
 @font-face {
   font-family: 'VT323';
   src: url('../../public/assets/fonts/VT323-Regular.ttf') format('truetype');
+  font-display: swap;
 }
 
 html,
@@ -10,10 +11,10 @@ textarea,
 select,
 button {
   font-size: var(--font-size-base);
-  font-family: 'VT323', monospace;
-  -webkit-font-smoothing: none;
+  font-family: var(--font-family-ui);
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-smoothing: none;
+  font-smoothing: antialiased;
 }
 
 body {
@@ -37,6 +38,15 @@ img {
 .modal-title {
   -webkit-user-select: text;
   user-select: text;
+}
+
+.modal-title,
+div.menu-title,
+.game-overlay,
+.orientation-guard-title,
+.game-loading__title,
+.map-editor-titlebar {
+  font-family: var(--font-family-display);
 }
 
 button:focus-visible,
@@ -89,4 +99,3 @@ input:focus-visible {
 ::-webkit-scrollbar-corner {
   background-color: var(--surface-dark-solid);
 }
-

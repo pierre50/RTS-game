@@ -152,7 +152,6 @@ def layer_paths(
     if look.hair and look.hair_split:
         paths.append(LayerSpec(f"hair/{look.hair}/adult/bg/{animation}.png", look.hair_palette or civ["hair"]))
     paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", civ["skin"]))
-    paths.append(LayerSpec(f"head/nose/straight/adult/{animation}.png", civ["skin"]))
     if look.eyebrows:
         paths.append(LayerSpec(f"eyes/eyebrows/thick/adult/{animation}.png", civ["hair"]))
     if look.hair:

@@ -189,7 +189,12 @@ export class Building extends Instance implements BuildingEntity {
       },
       menu:
         this.owner.isPlayed || map.instantMode
-          ? [...units, ...technologies, ...(units.length ? [context.menu.getActionRallyPointButton()] : [])]
+          ? [
+              ...units,
+              ...technologies,
+              ...(units.length ? [context.menu.getActionRallyPointButton()] : []),
+              context.menu.getActionDepositButton(this),
+            ]
           : [],
     }
 

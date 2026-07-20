@@ -1,12 +1,21 @@
 import { Assets } from 'pixi.js'
 import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../lib'
 import { t } from '../lib/lang'
-import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { canDeliverToBuilding, deliverToBuilding } from '../lib/heroTools'
+import {
+  AGE_TECHNOLOGIES,
+  AGE_UP_ENABLED,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  LOADING_FOOD_TYPES,
+  LOADING_TYPES,
+  SOUND_CUES,
+} from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
-import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
@@ -15,6 +24,27 @@ import type { LoadedGameConfig } from '../types/save'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
   return selection?.family === FAMILY_TYPES.building
+}
+
+const DEPOSIT_RESOURCE_ICONS: Record<string, string> = {
+  wood: '000_50732',
+  stone: '001_50732',
+  food: '002_50732',
+  gold: '003_50732',
+}
+
+function getCarriedResourceIcon(hero: UnitEntity | null | undefined): string {
+  const loadingType = hero?.loadingType
+  const key = loadingType && LOADING_FOOD_TYPES.includes(loadingType)
+    ? 'food'
+    : loadingType === LOADING_TYPES.wood
+      ? 'wood'
+      : loadingType === LOADING_TYPES.stone
+        ? 'stone'
+        : loadingType === LOADING_TYPES.gold
+          ? 'gold'
+          : 'wood'
+  return getIconPath(DEPOSIT_RESOURCE_ICONS[key])
 }
 
 export class ActionSpecFactory {
@@ -189,6 +219,26 @@ export class ActionSpecFactory {
       }),
       onClick: (selection: RuntimeEntity) => {
         this.menu.context.controls.rallyPointController?.start(selection)
+      },
+    }
+  }
+
+  getActionDepositButton(building: BuildingEntity): MenuButtonSpec {
+    const { controls } = this.menu.context
+    return {
+      id: 'depositResources',
+      icon: () => getCarriedResourceIcon(controls.heroUnit),
+      tooltip: () => ({
+        title: t('depositResources'),
+        description: t('depositResourcesDescription'),
+      }),
+      hide: () => {
+        const hero = controls.heroUnit
+        return !hero || !canDeliverToBuilding(hero, building)
+      },
+      onClick: () => {
+        const hero = controls.heroUnit
+        if (hero) deliverToBuilding(hero, building)
       },
     }
   }

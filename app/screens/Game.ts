@@ -6,7 +6,7 @@ import Map from '../classes/map'
 import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
-import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayerEliminated } from '../lib'
+import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayedHeroDefeated } from '../lib'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
@@ -17,7 +17,7 @@ import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoade
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
-import { getCameraZoom, getGameSpeed } from '../lib/settings'
+import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
@@ -206,9 +206,9 @@ export default class Game extends Container {
   _attachWindowListeners(): void {
     this._onKeydown = evt => {
       if (this.context.devConsoleOpen) return
-      if (evt.key.toLowerCase() === 'p') {
+      if (getControlActionForKeyboardEvent(evt) === 'pause') {
         if (this.context.victory || this.context.defeat) return
-        if (document.querySelector('.modal, .arpg-building-menu:not(.hidden)')) return
+        if (document.querySelector('.modal')) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
     }
@@ -578,7 +578,7 @@ export default class Game extends Container {
     const { player } = this.context
     if (this.context.defeat || this.context.victory || !player) return false
 
-    if (!isPlayerEliminated(player)) return false
+    if (!isPlayedHeroDefeated(player, this.context.controls?.heroUnit)) return false
 
     this.context.defeat = true
     this.togglePause(true, { silent: true })

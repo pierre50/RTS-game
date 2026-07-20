@@ -115,7 +115,9 @@ test('"aller vers" cursor shows combat feedback over combat targets', () => {
         add: className => classes.add(className),
         remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
       },
+      appendChild: () => {},
     },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
   }
 
   try {
@@ -139,7 +141,9 @@ test('"aller vers" cursor shows the resource hand over buildings', () => {
         add: className => classes.add(className),
         remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
       },
+      appendChild: () => {},
     },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
   }
 
   try {
@@ -163,7 +167,9 @@ test('"aller vers" cursor shows the pointer only while choosing an empty go-to t
         add: className => classes.add(className),
         remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
       },
+      appendChild: () => {},
     },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
   }
 
   try {
@@ -189,7 +195,9 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
         add: className => classes.add(className),
         remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
       },
+      appendChild: () => {},
     },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
   }
 
   try {

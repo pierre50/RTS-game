@@ -74,12 +74,26 @@ function loadControls() {
         }
       },
     },
+    '../controllers/GamepadHeroInput': {
+      GamepadHeroInput: class {
+        constructor() {
+          this.moveVector = { dx: 0, dy: 0 }
+          this.aimVector = null
+          this.connected = false
+        }
+        update() {}
+      },
+    },
     '../lib': {
       isometricToCartesian: () => [0, 0],
       pointsDistance: () => 0,
     },
-    '../lib/settings': { getCameraZoom: () => 1 },
-    '../lib/heroCursor': { setHeroGameCursorEnabled: () => {} },
+    '../lib/settings': { getCameraZoom: () => 1, getControlActionForKeyboardEvent: () => null },
+    '../lib/heroCursor': {
+      setHeroGameCursorEnabled: () => {},
+      setVirtualCursorVisible: () => {},
+      setVirtualCursorPosition: () => {},
+    },
     '../lib/unitControl': { hasRtsCommandableUnits: units => Boolean(units?.length) },
     '../constants': {
       IS_MOBILE: false,

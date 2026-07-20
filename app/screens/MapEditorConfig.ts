@@ -24,7 +24,7 @@ export default class MapEditorConfig {
       mapType: 'blank',
       players: [
         { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
-        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', team: null, isHuman: false, difficulty: 'medium' },
+        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', team: null, isHuman: false },
       ],
     }
 

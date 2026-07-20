@@ -16,11 +16,14 @@ from image_pipeline import compose_frame, layer_paths, open_layer, source_frames
 
 RETRO_PALETTE_ROOT = PROJECT_ROOT / "scripts" / "retro_palette"
 SPRITE_LIGHTING_ROOT = PROJECT_ROOT / "scripts" / "add_sprite_lighting"
+SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 sys.path.insert(0, str(RETRO_PALETTE_ROOT))
 sys.path.insert(0, str(SPRITE_LIGHTING_ROOT))
+sys.path.insert(0, str(SCRIPTS_ROOT))
 from retro_palette import bake_retro_style, find_hex_palette, load_hex_palette
 from add_sprite_lighting import process_sprite_file
 from outline_style import OUTLINE_MODE, apply_outline_style_to_atlas
+from simple_darken_border import darken_border as apply_simple_darken_border
 
 warnings.simplefilter("ignore", DeprecationWarning)
 
@@ -157,6 +160,7 @@ def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_pal
     )
     bake_retro_style(output_dir / "texture.png", retro_palette, lightness_weight=RETRO_LIGHTNESS_WEIGHT)
     apply_outline_style_to_atlas(output_dir, OUTLINE_MODE)
+    apply_simple_darken_border(output_dir / "texture.png")
 
 
 def prune_stale_outputs(output_root: Path, previous_assets: set[str], current_assets: set[str]) -> None:

@@ -1,7 +1,14 @@
 import { Text } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
-import { canPlayerStillAct, getGaiaAnimals, isPlayerEliminated, parseTextureRef } from '../../lib'
+import {
+  canPlayerStillAct,
+  drawRoundedIsoShape,
+  getGaiaAnimals,
+  getRoundedIsoShapePoints,
+  isPlayerEliminated,
+  parseTextureRef,
+} from '../../lib'
 import type { TerrainSourceCell } from '../../classes/map/TerrainChunkManager'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
@@ -27,7 +34,6 @@ import {
 } from './shared'
 
 const HERO_COLLISION_SCAN_RADIUS = 8
-const HERO_COLLISION_CORNER_RATIO = 0.22
 const HERO_COLLISION_FAMILY_COLORS: Record<string, number> = {
   [FAMILY_TYPES.resource]: 0xffa500,
   [FAMILY_TYPES.unit]: 0xb46bff,
@@ -207,43 +213,7 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
 }
 
 function getRoundedIsoFootprintPoints(entity: DevEntity): Array<{ x: number; y: number }> {
-  const size = Math.max(1, entity.size ?? 1)
-  const radiusX = 32 * size
-  const radiusY = 16 * size
-  const vertices = [
-    { x: entity.x, y: entity.y - radiusY },
-    { x: entity.x + radiusX, y: entity.y },
-    { x: entity.x, y: entity.y + radiusY },
-    { x: entity.x - radiusX, y: entity.y },
-  ]
-  const points: Array<{ x: number; y: number }> = []
-  const curveSteps = 6
-
-  for (let index = 0; index < vertices.length; index++) {
-    const previous = vertices[(index + vertices.length - 1) % vertices.length]
-    const vertex = vertices[index]
-    const next = vertices[(index + 1) % vertices.length]
-    const start = {
-      x: vertex.x + (previous.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
-      y: vertex.y + (previous.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
-    }
-    const end = {
-      x: vertex.x + (next.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
-      y: vertex.y + (next.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
-    }
-
-    if (index === 0) points.push(start)
-    for (let step = 1; step <= curveSteps; step++) {
-      const t = step / curveSteps
-      const inv = 1 - t
-      points.push({
-        x: inv * inv * start.x + 2 * inv * t * vertex.x + t * t * end.x,
-        y: inv * inv * start.y + 2 * inv * t * vertex.y + t * t * end.y,
-      })
-    }
-  }
-
-  return points
+  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: Math.max(1, entity.size ?? 1) })
 }
 
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
@@ -267,17 +237,6 @@ function getEntityCollisionInfo(hero: DevEntity, entity: DevEntity) {
   return { points, value: centerDistance, inside }
 }
 
-function drawRoundedIsoFootprint(
-  layer: { moveTo(x: number, y: number): void; lineTo(x: number, y: number): void; closePath(): void },
-  points: Array<{ x: number; y: number }>
-): void {
-  points.forEach((point, index) => {
-    if (index === 0) layer.moveTo(point.x, point.y)
-    else layer.lineTo(point.x, point.y)
-  })
-  layer.closePath()
-}
-
 function drawHeroCollisionDebug(context: DevConsoleContext): void {
   const { map } = context
   const layer = getDebugLayer(map, DEBUG_HERO_COLLISION_LAYER, DEBUG_OVERLAY_Z + 6)
@@ -296,7 +255,7 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
 
   for (const info of infos) {
     const color = info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff
-    drawRoundedIsoFootprint(layer, info.points)
+    drawRoundedIsoShape(layer, info.points)
     layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
     layer.circle(info.entity.x, info.entity.y, 3)
     layer.fill({ color, alpha: 0.85 })

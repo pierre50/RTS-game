@@ -1,15 +1,21 @@
 import { Graphics } from 'pixi.js'
-import { getInstanceDegree, updateInstanceRenderVisibility } from '../lib'
 import {
-  ARPG_DIRECTIONS,
-  ARPG_KEYS,
-  COLOR_GOLD,
-  HERO_ACTION_MOVE_SPEED_FACTOR,
-  LABEL_TYPES,
-  SHEET_TYPES,
-  STEP_TIME,
-} from '../constants'
-import { applyToolAppearance, triggerToolAttackAt, type HeroTool } from '../lib/heroTools'
+  drawRoundedIsoShape,
+  getInstanceDegree,
+  getRoundedIsoShapePoints,
+  updateInstanceRenderVisibility,
+} from '../lib'
+import { COLOR_GOLD, HERO_ACTION_MOVE_SPEED_FACTOR, LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
+import {
+  aimHeroBowChargeAt,
+  applyToolAppearance,
+  cancelHeroBowCharge,
+  releaseHeroBowCharge,
+  triggerToolAttackAt,
+  updateHeroBowCharge,
+  HERO_TOOL_ORDER,
+  type HeroTool,
+} from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
 import {
   getCommRadiusForHold,
@@ -20,15 +26,28 @@ import {
   sendNpcGroupToTarget,
   updateNpcFollow,
 } from '../lib/npcInteraction'
+import type { ControlBindingAction } from '../lib/settings'
 import { setUnitControlMode } from '../lib/unitControl'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
-const COMM_RADIUS_PIXEL_SCALE_X = 32
-const COMM_RADIUS_PIXEL_SCALE_Y = 16
 type HeroAimPoint = { x: number; y: number }
+const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; dy: number }>> = {
+  heroUp: { dx: 0, dy: -1 },
+  heroDown: { dx: 0, dy: 1 },
+  heroLeft: { dx: -1, dy: 0 },
+  heroRight: { dx: 1, dy: 0 },
+}
+const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
+  heroTool1: 0,
+  heroTool2: 1,
+  heroTool3: 2,
+  heroTool4: 3,
+  heroTool5: 4,
+  heroTool6: 5,
+}
 
 let lastHeroMoveDebugAt = 0
 
@@ -69,7 +88,7 @@ export class HeroController {
   controls: Controls
   heroUnit: UnitEntity | null
   equippedTool: HeroTool | null
-  keysPressed: Set<string>
+  keysPressed: Set<ControlBindingAction>
   wasMoving: boolean
   mouseHeld: boolean
   commCharging: boolean
@@ -106,32 +125,51 @@ export class HeroController {
     return Boolean(this.heroUnit && !this.heroUnit.isDead && !this.heroUnit.isDestroyed)
   }
 
-  handleKeyDown(key: string): boolean {
+  handleKeyDown(action: ControlBindingAction): boolean {
     if (!this.isActive()) return false
 
-    if (key === 'i') {
+    if (action === 'inventory') {
       this.controls.context.menu?.toggleInventory?.()
       return true
     }
 
-    if (key === 'e') {
+    if (action === 'heroInteract') {
       if (this.commCharging) return true
       this.beginCommCharge()
       return true
     }
 
-    if (ARPG_KEYS.has(key)) {
+    const toolIndex = HERO_TOOL_ACTIONS[action]
+    if (toolIndex != null) {
+      this.equipToolAt(toolIndex)
+      return true
+    }
+
+    if (HERO_MOVE_DIRECTIONS[action]) {
       if (this.keysPressed.size === 0 && !this.heroUnit?.actionLocked) this.heroUnit?.stop?.()
-      this.keysPressed.add(key)
+      this.keysPressed.add(action)
       return true
     }
 
     return false
   }
 
-  handleKeyUp(key: string): void {
-    if (ARPG_KEYS.has(key)) this.keysPressed.delete(key)
-    if (key === 'e' && this.commCharging) this.endCommCharge()
+  equipToolAt(index: number): boolean {
+    const tool = HERO_TOOL_ORDER[index]
+    if (!tool) return false
+    this.setEquippedTool(tool)
+    return true
+  }
+
+  cycleTool(direction: 1 | -1): boolean {
+    const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.equippedTool ?? 'unarmed'))
+    const nextIndex = (currentIndex + direction + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
+    return this.equipToolAt(nextIndex)
+  }
+
+  handleKeyUp(action: ControlBindingAction): void {
+    if (HERO_MOVE_DIRECTIONS[action]) this.keysPressed.delete(action)
+    if (action === 'heroInteract' && this.commCharging) this.endCommCharge()
   }
 
   update(frameScale: number): void {
@@ -140,9 +178,16 @@ export class HeroController {
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
+    const bowChargeAimPoint = this.controls.getWorldPointUnderCursor()
+    const bowChargeAiming = aimHeroBowChargeAt(unit, bowChargeAimPoint)
+    updateHeroBowCharge(unit)
     // Keep the hover-based cursor live even while picking a "go to" target — it already tells
     // the player what a click will do here (gather hand, move icon, combat icon, plain pointer).
-    const hoverTarget = resolveHoverTarget(unit, this.controls.getWorldPointUnderCursor(), this.controls.getCellUnderCursor())
+    const hoverTarget = resolveHoverTarget(
+      unit,
+      this.controls.getWorldPointUnderCursor(),
+      this.controls.getCellUnderCursor()
+    )
     updateHeroCursor(this.equippedTool, hoverTarget, Boolean(this.pendingGoToNpcs))
     const menu = this.controls.context.menu
     if (menu?.isNpcOrdersOpen?.()) {
@@ -157,12 +202,15 @@ export class HeroController {
 
     let dx = 0
     let dy = 0
-    for (const key of this.keysPressed) {
-      const dir = ARPG_DIRECTIONS[key]
+    for (const action of this.keysPressed) {
+      const dir = HERO_MOVE_DIRECTIONS[action]
       if (!dir) continue
       dx += dir.dx
       dy += dir.dy
     }
+    const gamepadMove = this.controls.getGamepadMoveVector()
+    dx += gamepadMove.dx
+    dy += gamepadMove.dy
     const isMoving = dx !== 0 || dy !== 0
 
     let moved = false
@@ -171,7 +219,11 @@ export class HeroController {
       const speedFactor = attacking ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
+      const bowChargeDegree = bowChargeAiming ? unit.degree : null
       moved = unit.moveDirect?.(dx / len, dy / len, distance) ?? false
+      if (bowChargeDegree != null && unit.degree !== bowChargeDegree) {
+        unit.degree = bowChargeDegree
+      }
       if (moved && menu?.isArpgBuildingMenuOpen?.()) menu.closeArpgBuildingMenu?.()
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
       if (!moved || delta < 0.01) {
@@ -231,9 +283,14 @@ export class HeroController {
   }
 
   handlePointerUp(): void {
+    const unit = this.heroUnit
+    if (unit && this.equippedTool === 'bow' && releaseHeroBowCharge(unit)) {
+      this.mouseHeld = false
+      this.primaryClickPoint = null
+      return
+    }
     this.mouseHeld = false
     this.primaryClickPoint = null
-    const unit = this.heroUnit
     if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
     const sprite = unit.sprite
     if (!sprite) {
@@ -266,7 +323,7 @@ export class HeroController {
     const elapsed = performance.now() - this.commChargeStart
     const radius = getCommRadiusForHold(elapsed)
     indicator.clear()
-    indicator.ellipse(0, 0, COMM_RADIUS_PIXEL_SCALE_X * radius, COMM_RADIUS_PIXEL_SCALE_Y * radius)
+    drawRoundedIsoShape(indicator, getRoundedIsoShapePoints({ factor: radius }))
     indicator.stroke({ color: COLOR_GOLD, width: 2, alpha: 0.85 })
   }
 
@@ -322,6 +379,7 @@ export class HeroController {
     this.stopKeyboardMove()
     this.mouseHeld = false
     this.primaryClickPoint = null
+    if (this.heroUnit) cancelHeroBowCharge(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()
     if (this.pendingGoToNpcs) this.cancelGoToPicking()
   }

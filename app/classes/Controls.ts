@@ -5,8 +5,9 @@ import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
-import { getCameraZoom } from '../lib/settings'
-import { setHeroGameCursorEnabled } from '../lib/heroCursor'
+import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
+import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
+import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { hasRtsCommandableUnits } from '../lib/unitControl'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { HeroTool } from '../lib/heroTools'
@@ -38,7 +39,7 @@ type TouchInteraction = {
 }
 type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
-const ARROW_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'])
+const CAMERA_ACTIONS = new Set<ControlBindingAction>(['cameraLeft', 'cameraRight', 'cameraDown', 'cameraUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
@@ -51,11 +52,12 @@ export default class Controls extends Container implements ControlsLike {
   mouse: { x: number; y: number; prevent: boolean }
   cameraController: CameraController
   mouseHoldTimeout: ReturnType<typeof setTimeout> | undefined
-  keysPressed: Record<string, boolean>
+  keysPressed: Partial<Record<ControlBindingAction, boolean>>
   keyPressedCount: number
   keySpeed: number
   freeCameraActive: boolean
   heroController: HeroController
+  gamepadInput: GamepadHeroInput
   mouseBuilding: ControlsLike['mouseBuilding']
   mouseRectangle: SelectionRectangle | null | undefined
   mouseTouch: PointerPoint | null | undefined
@@ -81,6 +83,7 @@ export default class Controls extends Container implements ControlsLike {
   _onMouseMove: (evt: MouseEvent) => void
   _onMouseDown: (evt: MouseEvent) => void
   _onMouseUp: (evt: MouseEvent) => void
+  _onWheel: (evt: WheelEvent) => void
   _onContextMenu: (evt: MouseEvent) => void
   _onTouchCancel: () => void
   _onWindowBlur: () => void
@@ -110,6 +113,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keySpeed = 0
     this.freeCameraActive = false
     this.heroController = new HeroController(this)
+    this.gamepadInput = new GamepadHeroInput(this)
     this.eventMode = 'auto'
     this.mouseRectangle = undefined
     this.mouseTouch = undefined
@@ -137,6 +141,7 @@ export default class Controls extends Container implements ControlsLike {
     this._onMouseMove = (evt: MouseEvent) => this.onMouseMove(evt)
     this._onMouseDown = (evt: MouseEvent) => this.onMouseDown(evt)
     this._onMouseUp = (evt: MouseEvent) => this.onMouseUp(evt)
+    this._onWheel = (evt: WheelEvent) => this.onWheel(evt)
     this._onContextMenu = (evt: MouseEvent) => {
       if (this.isArpgActive()) evt.preventDefault()
     }
@@ -154,6 +159,7 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.addEventListener('touchcancel', this._onTouchCancel)
     gamebox.addEventListener('mousemove', this._onMouseMove)
     gamebox.addEventListener('mousedown', this._onMouseDown)
+    gamebox.addEventListener('wheel', this._onWheel, { passive: false })
     gamebox.addEventListener('contextmenu', this._onContextMenu)
     document.addEventListener('mouseup', this._onMouseUp)
     window.addEventListener('blur', this._onWindowBlur)
@@ -175,6 +181,7 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.removeEventListener('touchcancel', this._onTouchCancel)
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
+    gamebox.removeEventListener('wheel', this._onWheel)
     gamebox.removeEventListener('contextmenu', this._onContextMenu)
     document.removeEventListener('mouseup', this._onMouseUp)
     window.removeEventListener('blur', this._onWindowBlur)
@@ -309,7 +316,22 @@ export default class Controls extends Container implements ControlsLike {
     if (this.isEditableTarget(evt.target)) return
     if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
     if (this.isInteractionBlocked()) return
-    if (evt.repeat && !ARROW_KEYS.has(evt.key)) return
+    const action = getControlActionForKeyboardEvent(evt)
+    const isCameraAction = Boolean(action && CAMERA_ACTIONS.has(action))
+    if (evt.repeat && !isCameraAction) return
+
+    if (action && isCameraAction) {
+      if (!evt.repeat) {
+        this.keysPressed[action] = true
+        this.keyPressedCount++
+        if (this.keyPressedCount === 1) {
+          this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
+        }
+      }
+      return
+    }
+
+    if (action && this.heroController.handleKeyDown(action)) return
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
       if (this.isArpgActive()) return
@@ -325,21 +347,7 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    if (ARROW_KEYS.has(evt.key)) {
-      if (!evt.repeat) {
-        this.keysPressed[evt.key] = true
-        this.keyPressedCount++
-        if (this.keyPressedCount === 1) {
-          this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
-        }
-      }
-      return
-    }
-
-    const key = evt.key.toLowerCase()
-    if (this.heroController.handleKeyDown(key)) return
-
-    this.context.menu?.handleHotkey?.(key)
+    this.context.menu?.handleHotkey?.(evt.key.toLowerCase())
   }
 
   onKeyUp(evt: KeyboardEvent): void {
@@ -348,13 +356,13 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    const key = evt.key.toLowerCase()
-    this.heroController.handleKeyUp(key)
+    const action = getControlActionForKeyboardEvent(evt)
+    if (action) this.heroController.handleKeyUp(action)
 
-    if (!ARROW_KEYS.has(evt.key)) return
+    if (!action || !CAMERA_ACTIONS.has(action)) return
 
-    if (!evt.repeat && this.keysPressed[evt.key]) {
-      delete this.keysPressed[evt.key]
+    if (!evt.repeat && this.keysPressed[action]) {
+      delete this.keysPressed[action]
       this.keyPressedCount--
     }
     if (this.keyPressedCount <= 0) {
@@ -377,6 +385,7 @@ export default class Controls extends Container implements ControlsLike {
     const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
 
     if (this.isArpgActive()) {
+      this.gamepadInput.update()
       this.heroController.update(gameFrameScale)
       if (this.freeCameraActive) {
         this.panCameraWithArrowKeys(frameScale)
@@ -396,10 +405,10 @@ export default class Controls extends Container implements ControlsLike {
     if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
       this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
     }
-    if (this.keysPressed['ArrowLeft']) this.moveCamera('left', this.keySpeed, double, frameScale)
-    if (this.keysPressed['ArrowUp']) this.moveCamera('up', this.keySpeed, double, frameScale)
-    if (this.keysPressed['ArrowDown']) this.moveCamera('down', this.keySpeed, double, frameScale)
-    if (this.keysPressed['ArrowRight']) this.moveCamera('right', this.keySpeed, double, frameScale)
+    if (this.keysPressed.cameraLeft) this.moveCamera('left', this.keySpeed, double, frameScale)
+    if (this.keysPressed.cameraUp) this.moveCamera('up', this.keySpeed, double, frameScale)
+    if (this.keysPressed.cameraDown) this.moveCamera('down', this.keySpeed, double, frameScale)
+    if (this.keysPressed.cameraRight) this.moveCamera('right', this.keySpeed, double, frameScale)
   }
 
   onTouchStart(evt: TouchEvent): void {
@@ -576,6 +585,7 @@ export default class Controls extends Container implements ControlsLike {
 
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
+    setVirtualCursorVisible(false)
     if (!this.isMouseInApp(evt)) return
 
     if (this.mouseBuilding || this.rallyPointController.active) {
@@ -588,10 +598,7 @@ export default class Controls extends Container implements ControlsLike {
     if (this.isArpgActive() && evt.button === 0) {
       evt.preventDefault?.()
       const target = this.getCellUnderCursor()?.has
-      if (
-        target?.family === FAMILY_TYPES.building &&
-        this.context.menu?.openArpgBuildingMenu?.(target)
-      ) {
+      if (target?.family === FAMILY_TYPES.building && this.context.menu?.openArpgBuildingMenu?.(target)) {
         this.pointerStart = null
         this.mouse.prevent = true
         return
@@ -609,6 +616,7 @@ export default class Controls extends Container implements ControlsLike {
     if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
+    setVirtualCursorVisible(false)
 
     if (this.isInteractionBlocked()) return
 
@@ -617,6 +625,24 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
     this.selectionManager.handleMouseMove()
+  }
+
+  onWheel(evt: WheelEvent): void {
+    if (this.isEditableTarget(evt.target)) return
+    if (this.isInteractionBlocked() || !this.isArpgActive() || this.isInGameMenuOpen()) return
+
+    this.mouse.x = evt.pageX
+    this.mouse.y = evt.pageY
+    setVirtualCursorVisible(false)
+    if (!this.isMouseInApp(evt)) return
+
+    const delta = evt.deltaY || evt.deltaX
+    if (delta === 0) return
+
+    if (this.heroController.cycleTool(delta > 0 ? 1 : -1)) {
+      evt.preventDefault()
+      evt.stopPropagation()
+    }
   }
 
   onMouseUp(evt: PointerPageEvent): void {
@@ -632,6 +658,7 @@ export default class Controls extends Container implements ControlsLike {
     } = this
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
+    setVirtualCursorVisible(false)
     this.pointerStart = null
     clearTimeout(this.mouseHoldTimeout)
     if (!this.isMouseInApp(evt)) {
@@ -696,6 +723,10 @@ export default class Controls extends Container implements ControlsLike {
     const i = Math.min(Math.max(pos[0], 0), map.size)
     const j = Math.min(Math.max(pos[1], 0), map.size)
     return map.grid[i]?.[j] || null
+  }
+
+  getGamepadMoveVector(): { dx: number; dy: number } {
+    return this.gamepadInput.moveVector
   }
 
   isMouseInApp(evt: PointerPageEvent): boolean {

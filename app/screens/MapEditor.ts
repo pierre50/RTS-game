@@ -294,7 +294,7 @@ export default class MapEditor extends Container {
       const player =
         index === 0 || config.isHuman
           ? new Human({ ...baseOptions, isPlayed: index === 0 }, runtimeContext)
-          : new AI({ ...baseOptions, difficulty: config.difficulty || 'medium' }, runtimeContext)
+          : new AI({ ...baseOptions, difficulty: map.difficulty }, runtimeContext)
       players.push(player)
     })
 
@@ -546,7 +546,6 @@ export default class MapEditor extends Container {
         | PlayerLike
       ) & {
         isHuman?: boolean
-        difficulty?: string
         isPlayed?: boolean
       })[]
     ).map(player => {
@@ -558,7 +557,6 @@ export default class MapEditor extends Container {
         age: Math.max(0, Math.min(Number((player as EditorPlayerConfig).age) || 0, 3)),
         team: player.team ?? null,
         isHuman,
-        difficulty: isHuman ? undefined : player.difficulty || 'medium',
       }
     })
 

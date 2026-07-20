@@ -52,3 +52,8 @@ export function canPlayerStillAct(player?: PlayerState | null): boolean {
 export function isPlayerEliminated(player?: PlayerState | null): boolean {
   return !canPlayerStillAct(player)
 }
+
+export function isPlayedHeroDefeated(player?: PlayerState | null, hero?: UnitState | null): boolean {
+  const playerHero = hero ?? player?.units?.[0] ?? null
+  return !playerHero || playerHero.isDead || (playerHero.hitPoints ?? 0) <= 0
+}

@@ -1,7 +1,6 @@
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
-import { Modal } from '../lib'
-import { buildSettingsContent } from '../ui/settingsPanel'
+import { openSettingsModal } from '../ui/settingsPanel'
 import { openSaveListModal } from '../ui/saveListModal'
 import type { SaveRecord } from '../types/save'
 
@@ -140,13 +139,12 @@ export default class MainMenu {
   }
 
   _openSettings(): void {
-    const content = buildSettingsContent({
+    openSettingsModal({
       onLangChange: () => {
         this._showMain()
         this._focusFirstHomeButton()
       },
     })
-    new Modal({ title: t('settings'), content })
   }
 
   _openSaveList(): void {

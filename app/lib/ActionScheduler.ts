@@ -107,10 +107,17 @@ export class ActionScheduler {
 
   _runTask(task: SchedulerTask): void {
     const performanceMonitor = this._getPerformance()
-    if (!performanceMonitor) {
-      task.callback()
-      return
+    try {
+      if (!performanceMonitor) {
+        task.callback()
+        return
+      }
+      performanceMonitor.measureSampled(task.name, task.callback)
+    } catch (error) {
+      // A throwing task must not stop the tick loop: _tasks is a Map, so an
+      // uncaught error here would silently freeze every task registered
+      // after this one (in insertion order) on every subsequent frame.
+      console.error(`[ActionScheduler] task "${task.name}" threw and was skipped`, error)
     }
-    performanceMonitor.measureSampled(task.name, task.callback)
   }
 }

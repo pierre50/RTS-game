@@ -50,6 +50,7 @@ import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
+import { applyToolAppearance } from '../../lib/heroTools'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import {
   canAutoReactToAttack,
@@ -709,6 +710,8 @@ export class Unit extends Instance implements UnitEntity {
     }
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = this.reliefLift
+    const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
+    if (powerBar) powerBar.position.y = this.reliefLift
   }
 
   syncAppearanceLayers(sheet: string) {
@@ -723,14 +726,18 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
 
+    const heroControlled = isHeroControlled(this)
     const liveLayers = new Set<number>()
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i] as RuntimeAppearanceLayer
       const isLayerEnabledForWork =
         !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
       const isLoading = (this.loading ?? 0) > 0
-      const isLayerHiddenByLoading =
-        Boolean(layer.hideWhenLoading && isLoading) || Boolean(layer.showWhenLoading && !isLoading)
+      // The hero never wears the carried-resource overlay (meat/stone/gold) — carried
+      // resources show up in the hero HUD instead — and keeps its tool equipped while loading.
+      const isLayerHiddenByLoading = heroControlled
+        ? Boolean(layer.showWhenLoading)
+        : Boolean(layer.hideWhenLoading && isLoading) || Boolean(layer.showWhenLoading && !isLoading)
       const isLayerHiddenByAction = Boolean(this.action && layer.hideForActions?.includes(this.action))
       const loadedSheetOverride =
         this.loading && sheet === SHEET_TYPES.walking ? (layer.loadedSheet as string | undefined) : undefined
@@ -1080,6 +1087,12 @@ export class Unit extends Instance implements UnitEntity {
       }
       updateInstanceRenderVisibility(this)
       this.visible = true
+      // Gather-style actions (takemeat, hunt, chopwood, ...) reassign `work` to a
+      // fixed economy bucket while running, e.g. bare-handed meat pickup goes through
+      // the hunter bucket. Nothing else restores it afterward, so the hero would keep
+      // showing that bucket's equipment (a bow) once idle. Snap back to whatever the
+      // equipped tool actually implies.
+      applyToolAppearance(this, this.context?.controls?.equippedTool ?? 'unarmed')
     } else if (!this.currentCell.has || this.currentCell.has === this || this.currentCell.has.isDestroyed) {
       this.currentCell.place(this)
       this.currentCell.solid = true

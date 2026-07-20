@@ -21,6 +21,12 @@
   display: flex;
 }
 
+.modal-tabs-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .ui-tab {
   flex: 1 1 0;
   padding: 8px 12px;
@@ -35,7 +41,9 @@
   border: var(--border-btn);
   background: var(--ui-bar-bg);
   box-shadow: var(--ui-button-shadow-raised);
-  transition: background-color var(--ui-transition-fast), color var(--ui-transition-panel);
+  transition:
+    background-color var(--ui-transition-fast),
+    color var(--ui-transition-panel);
 }
 
 .ui-tab + .ui-tab {

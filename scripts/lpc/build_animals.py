@@ -108,12 +108,12 @@ BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
 # faces left, so use row 3 for west and let the runtime mirror it for
 # east-facing sprites.
 FOX_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet("Fox_Idle-2x.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
-    AnimalSheet("Fox_walk-2x.png", "walking", 6, (1, 2, 0)),
-    AnimalSheet("Fox_Run-2x.png", "running", 6, (1, 3, 0)),
-    AnimalSheet("Fox_Death-2x.png", "dying", 4, (0,), darken_border_factor=DARKEN_FACTOR),
+    AnimalSheet("Fox_Idle.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
+    AnimalSheet("Fox_walk.png", "walking", 6, (1, 2, 0)),
+    AnimalSheet("Fox_Run.png", "running", 6, (1, 3, 0)),
+    AnimalSheet("Fox_Death.png", "dying", 4, (0,), darken_border_factor=DARKEN_FACTOR),
     AnimalSheet(
-        "Fox_Death-2x.png",
+        "Fox_Death.png",
         "corpse",
         4,
         (0,),

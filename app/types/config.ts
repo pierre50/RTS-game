@@ -94,6 +94,10 @@ export type ResourceConfig = EntityConfig
 export interface AnimalConfig extends EntityConfig {
   totalHitPoints?: number
   totalQuantity?: number
+  ambientMovement?: boolean
+  ambientWalkDelayMin?: number
+  ambientWalkDelayMax?: number
+  ambientWalkRange?: number
 }
 
 interface ProjectileTrajectory {

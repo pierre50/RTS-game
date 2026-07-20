@@ -13,6 +13,7 @@ import {
   BUILDING_TYPES,
   FAMILY_TYPES,
   LABEL_TYPES,
+  PLAYER_TYPES,
   RESOURCE_TYPES,
   UNIT_TYPES,
   FLOOR_SETS_GRASS,
@@ -130,6 +131,12 @@ export type MapGenerationMap = RuntimeMap & {
 type SetSprite = Sprite & {
   updateAnchor?: boolean
 }
+type AmbientAnimalProfile = {
+  weight: number
+  groupChance: number
+  groupSize: [min: number, max: number]
+  radius: number
+}
 type ResourceDefinition = {
   category?: string
   habitat?: string
@@ -170,6 +177,19 @@ export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources'
   animals: SaveEntityState[]
 }
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
+const DEFAULT_AMBIENT_ANIMAL_PROFILE: AmbientAnimalProfile = {
+  weight: 1,
+  groupChance: 0.35,
+  groupSize: [1, 2],
+  radius: 2,
+}
+const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
+  Deer: { weight: 4, groupChance: 0.9, groupSize: [3, 6], radius: 3 },
+  Hare: { weight: 3, groupChance: 0.55, groupSize: [1, 4], radius: 2 },
+  BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
+  Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
+  Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
+}
 function createSpawnSearchCell(i: number, j: number, terrainType: TerrainValue): RuntimeCell {
   return {
     i,
@@ -325,8 +345,58 @@ export class MapGeneration {
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
     })
+    const weightedTypes = (availableTypes.length ? availableTypes : Object.keys(animals)).flatMap(type =>
+      Array(Math.max(1, Math.round((AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE).weight))).fill(type)
+    )
 
-    return this.map.randomItem(availableTypes.length ? availableTypes : Object.keys(animals))
+    return this.map.randomItem(weightedTypes)
+  }
+
+  getAmbientAnimalProfile(type: string): AmbientAnimalProfile {
+    return AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE
+  }
+
+  canPlaceAmbientAnimalAt(i: number, j: number): boolean {
+    const cell = this.map.grid[i]?.[j]
+    return Boolean(
+      cell &&
+        !cell.solid &&
+        !cell.has &&
+        !cell.border &&
+        !cell.waterBorder &&
+        !cell.inclined &&
+        cell.category !== 'Water' &&
+        !this._hasWaterNeighbor(i, j) &&
+        !this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)
+    )
+  }
+
+  placeAmbientAnimalGroup(i: number, j: number, type: string): void {
+    if (!this.canPlaceAmbientAnimalAt(i, j)) return
+
+    const profile = this.getAmbientAnimalProfile(type)
+    const shouldGroup = this.map.random() < profile.groupChance
+    const targetSize = shouldGroup
+      ? this.map.randomRange(profile.groupSize[0], profile.groupSize[1])
+      : 1
+    const candidates: GridPosition[] = [{ i, j }]
+
+    for (let di = -profile.radius; di <= profile.radius; di++) {
+      for (let dj = -profile.radius; dj <= profile.radius; dj++) {
+        if (di === 0 && dj === 0) continue
+        if (di * di + dj * dj > profile.radius * profile.radius) continue
+        const ni = i + di
+        const nj = j + dj
+        if (this.canPlaceAmbientAnimalAt(ni, nj)) candidates.push({ i: ni, j: nj })
+      }
+    }
+
+    const toPlace = Math.min(targetSize, candidates.length)
+    for (let index = 0; index < toPlace; index++) {
+      const candidateIndex = index === 0 ? 0 : this.map.randomRange(0, candidates.length - 1)
+      const cell = candidates.splice(candidateIndex, 1)[0]
+      this._gaiaCreateAnimal({ i: cell.i, j: cell.j, type })
+    }
   }
 
   pickFishResourceType(i: number, j: number): string {
@@ -354,7 +424,16 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, context)
+      const p = new classMap[player.type](
+        {
+          ...player,
+          corpses: [],
+          buildings: [],
+          units: [],
+          ...(player.type === PLAYER_TYPES.ai ? { difficulty: this.map.difficulty } : {}),
+        },
+        context
+      )
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -465,7 +544,16 @@ export class MapGeneration {
     this.clearGeneratedGameplayState()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type]({ ...player, corpses: [], buildings: [], units: [] }, context)
+      const p = new classMap[player.type](
+        {
+          ...player,
+          corpses: [],
+          buildings: [],
+          units: [],
+          ...(player.type === PLAYER_TYPES.ai ? { difficulty: this.map.difficulty } : {}),
+        },
+        context
+      )
       if (player.isPlayed) {
         this.map.context.player = p
       }
@@ -716,7 +804,7 @@ export class MapGeneration {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
         const team = playersConfig?.[i]?.team ?? null
-        const difficulty = playersConfig?.[i]?.difficulty ?? this.map.difficulty
+        const difficulty = this.map.difficulty
         if (!i) {
           players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, isPlayed: true }, context))
         } else if (!this.map.noAI) {
@@ -1302,18 +1390,8 @@ export class MapGeneration {
                   break
                 }
                 case 'animal': {
-                  if (
-                    cell.solid ||
-                    cell.has ||
-                    cell.border ||
-                    cell.waterBorder ||
-                    cell.inclined ||
-                    this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)
-                  ) {
-                    break
-                  }
                   const animalType = this.pickAmbientAnimalType(i, j)
-                  this._gaiaCreateAnimal({ i, j, type: animalType })
+                  this.placeAmbientAnimalGroup(i, j, animalType)
                   break
                 }
               }
@@ -1375,8 +1453,8 @@ export class MapGeneration {
               rock.zIndex = 2
               cell.addChild?.(rock)
             }
-          } else if (type === 'animal' && !this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)) {
-            this._gaiaCreateAnimal({ i, j, type: this.pickAmbientAnimalType(i, j) })
+          } else if (type === 'animal') {
+            this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
         }
         if (cell.category === 'Water') {

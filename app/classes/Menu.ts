@@ -21,6 +21,11 @@ import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
 import type { ResourceAmount } from '../types/common'
 import type { HeroTool } from '../lib/heroTools'
 
+// Repeated triggers of the same blocked action (e.g. holding a key against a failing condition)
+// would otherwise re-show the same toast every frame — debounce so it only reappears once the
+// previous one has faded.
+const MESSAGE_REPEAT_DEBOUNCE_MS = 3000
+
 export default class Menu implements MenuLike {
   context: GameContextLike
   gameHud: HTMLDivElement
@@ -58,6 +63,8 @@ export default class Menu implements MenuLike {
   updateCameraMiniMap: () => void
   _infoCache: Map<string, HTMLElement> | null
   selection: RuntimeEntity | null
+  private lastMessageText: string | null = null
+  private lastMessageAt = 0
 
   constructor(context: GameContextLike) {
     this.context = context
@@ -136,6 +143,11 @@ export default class Menu implements MenuLike {
   }
 
   showMessage(message: string, type = 'error'): void {
+    const now = performance.now()
+    if (message === this.lastMessageText && now - this.lastMessageAt < MESSAGE_REPEAT_DEBOUNCE_MS) return
+    this.lastMessageText = message
+    this.lastMessageAt = now
+
     const {
       context: { gamebox },
     } = this
@@ -212,6 +224,9 @@ export default class Menu implements MenuLike {
   }
   getActionRallyPointButton(): MenuButtonSpec {
     return this.actionSpecs.getActionRallyPointButton()
+  }
+  getActionDepositButton(building: BuildingEntity): MenuButtonSpec {
+    return this.actionSpecs.getActionDepositButton(building)
   }
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)

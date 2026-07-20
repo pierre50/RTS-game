@@ -33,11 +33,16 @@
   --msg-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 45%);
   --msg-inset-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05), inset -1px -1px 0 rgba(0, 0, 0, 0.5);
 
-  --font-size-sm: 15px;
-  --font-size-base: 17px;
-  --font-size-lg: 22px;
-  --font-size-display: 42px;
-  --font-size-hero: 60px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 20px;
+  --font-size-title: 30px;
+  --font-size-display: 38px;
+  --font-size-hero: 54px;
+  --font-size-home-button: 20px;
+  --font-size-section-title: 16px;
+  --font-family-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-display: 'VT323', var(--font-family-ui);
 
   --text-color-inverse: #f5ead2; /* Light text for dark widget surfaces (slots, tooltips, tabs) */
   --text-color-white: #ffffff;
@@ -151,4 +156,3 @@
   --debug-overlay-border: rgba(223, 177, 91, 0.2);
   --debug-overlay-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
 }
-

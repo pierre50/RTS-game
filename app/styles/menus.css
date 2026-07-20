@@ -15,7 +15,7 @@
   --menu-buttons-gap: var(--ui-gap-12);
   --menu-buttons-margin: 0;
   --menu-home-button-padding: 12px 24px;
-  --menu-home-button-font-size: var(--font-size-lg);
+  --menu-home-button-font-size: var(--font-size-home-button);
 
   position: fixed;
   inset: 0;
@@ -25,9 +25,8 @@
   justify-content: center;
   padding: var(--menu-page-padding);
   overflow-y: var(--menu-page-overflow);
-  background: 
-    linear-gradient(rgba(10, 8, 7, 0.45), rgba(10, 8, 7, 0.72)),
-    url('../../public/assets/graphics/ui/menu-bg.jpg') no-repeat center center;
+  background:
+    url('../../public/assets/graphics/ui/menu-bg.png') no-repeat center center;
   background-size: cover;
 }
 
@@ -87,10 +86,10 @@ img.menu-title {
 div.menu-title {
   margin: 0;
   color: var(--main-accent-color);
-  font-size: calc(var(--font-size-lg) + 4px);
+  font-size: var(--font-size-title);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.04em;
 }
 
 .button-group,
@@ -130,8 +129,8 @@ div.menu-title {
   left: 50%;
   transform: translateX(-50%);
   color: rgba(234, 221, 202, 0.5);
-  font-size: var(--font-size-sm);
-  letter-spacing: 1.5px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
   text-shadow: var(--text-shadow-dark-ui);
   white-space: nowrap;
 }
@@ -141,6 +140,34 @@ div.menu-title {
   flex-direction: column;
   gap: var(--ui-gap-12);
   width: min(100%, 320px);
+}
+
+.settings-page {
+  width: min(100%, 420px);
+  max-height: min(58vh, 520px);
+  padding: 16px 14px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--main-primary-color);
+}
+
+.settings-page.hidden {
+  display: none;
+}
+
+.settings-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin: -24px -32px -2px;
+}
+
+.settings-topbar .ui-tabs {
+  flex: 1 1 auto;
+  top: -2px;
+  left: -2px;
 }
 
 .config-row {
@@ -162,6 +189,56 @@ div.menu-title {
 .config-row .ui-range {
   width: 170px;
   flex-shrink: 0;
+}
+
+.settings-controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+
+.settings-controls-group h3 {
+  margin: 4px 0 0;
+  color: var(--main-accent-color);
+  font-size: var(--font-size-section-title);
+  font-weight: bold;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
+.settings-key-row label {
+  flex: 1 1 160px;
+}
+
+.settings-key-button,
+.settings-reset-button {
+  min-width: 112px;
+  padding: 7px 10px;
+  color: var(--text-color-inverse);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-align: center;
+  border: var(--border-btn);
+  background: var(--ui-bar-bg);
+  box-shadow: var(--ui-button-shadow-raised);
+}
+
+.settings-key-button.is-listening {
+  color: var(--main-accent-color);
+}
+
+.settings-key-button.is-conflict {
+  color: var(--status-danger-color, #ffb09b);
+}
+
+.settings-controls-conflict {
+  min-height: 18px;
+  color: var(--status-danger-color, #ffb09b);
+  font-size: var(--font-size-sm);
+}
+
+.settings-reset-button {
+  align-self: flex-end;
 }
 
 .lobby-panel {
@@ -215,7 +292,7 @@ div.menu-title {
 .player-table-header {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
   padding: 8px 12px;
@@ -230,7 +307,7 @@ div.menu-title {
 .player-row {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) 100px 110px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
   padding: 8px 12px;
@@ -241,7 +318,7 @@ div.menu-title {
 
 .player-table--with-age .player-table-header,
 .player-table--with-age .player-row {
-  grid-template-columns: minmax(96px, 1fr) 100px 120px 110px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 120px 48px 48px;
 }
 
 .player-row--odd {
@@ -271,16 +348,6 @@ div.menu-title {
   width: 100%;
 }
 
-.player-difficulty {
-  min-width: 0;
-  font-size: var(--font-size-sm);
-  color: var(--main-text-color);
-}
-
-.player-difficulty .ui-select {
-  width: 100%;
-}
-
 .team-cycle,
 .color-swatch {
   min-width: var(--ui-control-height-compact);
@@ -305,7 +372,9 @@ div.menu-title {
   color: var(--main-accent-color);
   font-weight: bold;
   cursor: pointer;
-  transition: border-color var(--ui-transition-fast), background-color var(--ui-transition-fast);
+  transition:
+    border-color var(--ui-transition-fast),
+    background-color var(--ui-transition-fast);
 }
 
 .player-color-cell {
@@ -501,14 +570,14 @@ div.menu-title {
 
   .player-table-header,
   .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(112px, 1fr) 56px 56px;
-    min-width: 460px;
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) 56px 56px;
+    min-width: 360px;
   }
 
   .player-table--with-age .player-table-header,
   .player-table--with-age .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(132px, 1fr) minmax(112px, 1fr) 56px 56px;
-    min-width: 600px;
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(132px, 1fr) 56px 56px;
+    min-width: 480px;
   }
 
   .button-group,
@@ -530,6 +599,10 @@ div.menu-title {
   .config-form,
   .lobby-settings-form {
     width: 100%;
+  }
+
+  .settings-topbar {
+    margin: -18px -16px -2px;
   }
 
   .config-row {
@@ -654,4 +727,3 @@ div.menu-title {
     text-align: right;
   }
 }
-

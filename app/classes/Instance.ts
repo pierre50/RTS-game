@@ -2,6 +2,7 @@ import { Container, FillGradient, Graphics } from 'pixi.js'
 import type { AnimatedSprite, Sprite } from 'pixi.js'
 import {
   COLOR_WHITE,
+  COLOR_GOLD,
   FAMILY_TYPES,
   LABEL_TYPES,
   HEALTH_BAR_BORDER_COLOR,
@@ -10,7 +11,7 @@ import {
   HEALTH_BAR_FILL_GRADIENT_TOP,
   HEALTH_BAR_FILL_GRADIENT_BOTTOM,
 } from '../constants'
-import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
+import { createIsoSelectionMarker, getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { CombatEntity, UnitTextureInstance } from '../lib'
@@ -89,6 +90,11 @@ export class Instance extends Container {
     if (healthBar) this.removeChild(healthBar)
   }
 
+  removeHeroPowerBar(): void {
+    const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
+    if (powerBar) this.removeChild(powerBar)
+  }
+
   constructor(context: GameContextLike) {
     super()
     this.context = context
@@ -132,11 +138,7 @@ export class Instance extends Container {
     if (this.selected) return
     this.selected = true
     const f = this.selectionFactor ?? this.size
-    const selection = new Graphics()
-    selection.label = LABEL_TYPES.selection
-    selection.zIndex = -1
-    selection.poly([-32 * f, 0, 0, -16 * f, 32 * f, 0, 0, 16 * f])
-    selection.stroke(COLOR_WHITE)
+    const selection = createIsoSelectionMarker({ color: COLOR_WHITE, factor: f, zIndex: -1 })
     const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
     this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()
@@ -183,6 +185,36 @@ export class Instance extends Container {
       bar.fill(getHealthBarFillGradient())
     }
     // Tracks relief the same way the shadow does — see Unit.applyReliefLift.
+    bar.position.y = this.reliefLift ?? 0
+    this.addChild(bar)
+  }
+
+  drawHeroPowerBar(ratio: number): void {
+    const existing = this.getChildByLabel(LABEL_TYPES.powerBar)
+    if (existing) this.removeChild(existing)
+    if (this.isDead || this.isDestroyed || !this.owner?.isPlayed) return
+    const clampedRatio = Math.max(0, Math.min(1, ratio))
+    const barWidth = 26
+    const barHeight = 5
+    const borderWidth = 1
+    const x = -barWidth / 2
+    const spriteTop = this.sprite ? -(this.sprite.height * this.sprite.anchor.y) : -40
+    const y = spriteTop - 18
+    const innerX = x + borderWidth
+    const innerY = y + borderWidth
+    const innerWidth = barWidth - borderWidth * 2
+    const innerHeight = barHeight - borderWidth * 2
+    const bar = new Graphics()
+    bar.label = LABEL_TYPES.powerBar
+    bar.zIndex = 5
+    bar.rect(x, y, barWidth, barHeight)
+    bar.fill(HEALTH_BAR_BORDER_COLOR)
+    bar.rect(innerX, innerY, innerWidth, innerHeight)
+    bar.fill(0x312319)
+    if (clampedRatio > 0) {
+      bar.rect(innerX, innerY, Math.round(innerWidth * clampedRatio), innerHeight)
+      bar.fill(clampedRatio >= 1 ? COLOR_GOLD : 0xf28722)
+    }
     bar.position.y = this.reliefLift ?? 0
     this.addChild(bar)
   }

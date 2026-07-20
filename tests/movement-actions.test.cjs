@@ -26,6 +26,15 @@ const unitExperienceMock = {
   grantUnitXp: () => {},
 }
 
+function mockRoundedIsoShapePoints({ x, y }) {
+  return [
+    { x, y: y - 10 },
+    { x: x + 64, y },
+    { x, y: y + 10 },
+    { x: x - 64, y },
+  ]
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -88,6 +97,8 @@ const constants = {
   SHEET_TYPES: {
     walking: 'walking',
   },
+  RELIEF_CLIMB_SPEED_MULTIPLIER: 0.7,
+  RELIEF_LIFT_SMOOTHING: 1,
   STEP_TIME: 100,
   UNIT_TYPES: {
     priest: 'Priest',
@@ -440,6 +451,7 @@ test('direct movement advances even when subpixel steps would be ignored by path
     getInstanceDegree: () => 270,
     getInstancePath: () => [],
     getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
     instanceContactInstance: () => false,
     instancesDistance: () => Infinity,
     isometricToCartesian: () => [0, 0],
@@ -509,6 +521,7 @@ test('a direct move blocked head-on slides along the obstacle contour', () => {
     getInstanceDegree: () => 270,
     getInstancePath: () => [],
     getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
     instanceContactInstance: () => false,
     instancesDistance: () => Infinity,
     isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.4 ? 1 : 0],
@@ -597,6 +610,7 @@ test('hero direct movement rounds building footprint corners', () => {
     getInstanceDegree: () => 270,
     getInstancePath: () => [],
     getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
     instanceContactInstance: () => false,
     instancesDistance: () => Infinity,
     isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.5 ? 1 : 0],
@@ -663,6 +677,80 @@ test('hero direct movement rounds building footprint corners', () => {
   assert.equal(roundedCornerUnit.y, 16)
 })
 
+test('hero direct movement stops at the map edge without leaking world position', () => {
+  const grid = [
+    [
+      {
+        i: 0,
+        j: 0,
+        x: 0,
+        y: 0,
+        z: 0,
+        solid: false,
+        border: false,
+        category: 'Ground',
+        has: null,
+      },
+    ],
+  ]
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [Math.floor(x), Math.floor(y)],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 0,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+
+  const moved = new UnitMovement(unit).attemptMoveDirect(-1, 0, 1)
+
+  assert.equal(moved, false)
+  assert.equal(unit.i, 0)
+  assert.equal(unit.j, 0)
+  assert.equal(unit.x, 0)
+  assert.equal(unit.y, 0)
+})
+
 test('hero direct movement slides along rounded building collision instead of iso cell edges', () => {
   const grid = Array.from({ length: 3 }, (_, i) =>
     Array.from({ length: 3 }, (_, j) => ({
@@ -697,6 +785,7 @@ test('hero direct movement slides along rounded building collision instead of is
     getInstanceDegree: () => 270,
     getInstancePath: () => [],
     getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
     instanceContactInstance: () => false,
     instancesDistance: () => Infinity,
     isometricToCartesian: (x, y) => [x >= 0.5 ? 1 : 0, y >= 0.5 ? 1 : 0],

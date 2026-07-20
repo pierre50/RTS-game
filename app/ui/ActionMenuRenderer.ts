@@ -1,4 +1,4 @@
-import { ARPG_RESERVED_HOTKEYS } from '../constants'
+import { getReservedGameplayHotkeys } from '../lib/settings'
 import type Menu from '../classes/Menu'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
@@ -102,7 +102,7 @@ export class ActionMenuRenderer {
     } = {}
   ): void {
     this.clearHotkeys()
-    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? ARPG_RESERVED_HOTKEYS : [])
+    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? getReservedGameplayHotkeys() : [])
 
     items
       .filter(btn => !btn.hide || !btn.hide())

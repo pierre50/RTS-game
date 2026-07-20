@@ -1,9 +1,11 @@
+import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import type Menu from '../classes/Menu'
 import { HERO_TOOL_ORDER, type HeroTool } from '../lib/heroTools'
-import { Tabs } from './Tabs'
+import { getReservedGameplayHotkeys } from '../lib/settings'
+import { ModalTabs } from './Tabs'
 import type { MenuButtonSpec } from '../types/ui'
 
 type ActionMenuTab = 'tools' | 'minimap' | 'construction'
@@ -14,18 +16,18 @@ const TOOL_LABEL_KEYS: Record<HeroTool, string> = {
   pickaxe: 'heroToolPickaxe',
   hammer: 'heroToolHammer',
   bow: 'heroToolBow',
+  fishingRod: 'heroToolFishingRod',
 }
 
 export class InventoryManager {
   menu: Menu
   panel: HTMLDivElement
-  topBar: HTMLDivElement
-  closeButton: HTMLButtonElement
-  tabs: Tabs<ActionMenuTab>
+  modalTabs: ModalTabs<ActionMenuTab>
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   slots: Map<HeroTool, HTMLDivElement>
+  modal?: Modal
   activeTab: ActionMenuTab
   opened: boolean
   pausedByMenu: boolean
@@ -38,28 +40,20 @@ export class InventoryManager {
     this.slots = new Map()
 
     this.panel = document.createElement('div')
-    this.panel.className = 'inventory-panel modal-panel action-menu hidden'
-    this.panel.setAttribute('role', 'dialog')
-    this.panel.setAttribute('aria-label', t('inventoryTabTools'))
+    this.panel.className = 'inventory-content action-menu'
 
-    this.topBar = document.createElement('div')
-    this.topBar.className = 'inventory-topbar'
+    this.toolsPanel = document.createElement('div')
+    this.toolsPanel.className = 'action-menu-page inventory-tools-page'
+    this.minimapPanel = document.createElement('div')
+    this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
+    this.constructionPanel = document.createElement('div')
+    this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
 
-    this.closeButton = document.createElement('button')
-    this.closeButton.type = 'button'
-    this.closeButton.className = 'inventory-close modal-close ui-btn'
-    this.closeButton.textContent = '✕'
-    this.closeButton.setAttribute('aria-label', t('close'))
-    this.closeButton.addEventListener('click', () => {
-      playUiSound(SOUND_CUES.ui.menuClick)
-      this.close()
-    })
-
-    this.tabs = new Tabs<ActionMenuTab>(
+    this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
-        { id: 'tools', label: t('inventoryTabTools') },
-        { id: 'minimap', label: t('inventoryTabMinimap') },
-        { id: 'construction', label: t('inventoryTabConstruction') },
+        { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
+        { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
+        { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
       ],
       this.activeTab,
       tab => {
@@ -67,12 +61,6 @@ export class InventoryManager {
         this.showTab(tab)
       }
     )
-    this.toolsPanel = document.createElement('div')
-    this.toolsPanel.className = 'action-menu-page inventory-tools-page'
-    this.minimapPanel = document.createElement('div')
-    this.minimapPanel.className = 'action-menu-page action-menu-minimap-page hidden'
-    this.constructionPanel = document.createElement('div')
-    this.constructionPanel.className = 'action-menu-page action-menu-construction-page hidden'
 
     for (const tool of HERO_TOOL_ORDER) {
       const slot = document.createElement('div')
@@ -85,15 +73,8 @@ export class InventoryManager {
       this.toolsPanel.appendChild(slot)
     }
 
-    this.topBar.appendChild(this.tabs.element)
-    this.topBar.appendChild(this.closeButton)
-    this.panel.appendChild(this.topBar)
-    this.panel.appendChild(this.toolsPanel)
-    this.panel.appendChild(this.minimapPanel)
-    this.panel.appendChild(this.constructionPanel)
+    this.panel.appendChild(this.modalTabs.element)
     this.minimapPanel.appendChild(menu.minimapWrap)
-
-    menu.gameHud.appendChild(this.panel)
   }
 
   toggle(): void {
@@ -101,19 +82,35 @@ export class InventoryManager {
   }
 
   open(): void {
+    if (this.opened) {
+      this.showTab(this.activeTab)
+      return
+    }
     this.opened = true
     if (!this.menu.context.paused) {
       this.pausedByMenu = true
       this.menu.context.pause?.()
       document.getElementById('pause')?.remove()
     }
-    this.panel.classList.remove('hidden')
+    this.modal = new Modal({
+      content: this.panel,
+      onClose: () => this.close(),
+    })
+    this.modal._panel?.classList.add('inventory-panel', 'action-menu')
+    this.mountTabs()
     this.showTab(this.activeTab)
   }
 
+  mountTabs(): void {
+    this.modalTabs.mountHeader(this.modal?._panel, 'inventory-topbar')
+  }
+
   close(): void {
+    if (!this.opened && !this.modal) return
     this.opened = false
-    this.panel.classList.add('hidden')
+    const modal = this.modal
+    this.modal = undefined
+    modal?.close()
     this.showTab('tools')
     this.menu.menuTooltip.hide()
     if (!this.menu.context.controls.mouseBuilding) this.menu.updateBottombar()
@@ -129,10 +126,7 @@ export class InventoryManager {
 
   showTab(tab: ActionMenuTab): void {
     this.activeTab = tab
-    this.tabs.setActive(tab, { emit: false })
-    this.toolsPanel.classList.toggle('hidden', tab !== 'tools')
-    this.minimapPanel.classList.toggle('hidden', tab !== 'minimap')
-    this.constructionPanel.classList.toggle('hidden', tab !== 'construction')
+    this.modalTabs.setActive(tab, { emit: false })
 
     if (tab === 'minimap') {
       this.menu.updateCameraMiniMap()
@@ -162,7 +156,7 @@ export class InventoryManager {
     this.menu.clearActionHotkeys()
     if (!selection) return
 
-    const usedKeys = new Set<string>()
+    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? getReservedGameplayHotkeys() : [])
     this.getConstructionButtons()
       .filter(button => !button.hide || !button.hide())
       .forEach((button, index) => {
@@ -201,7 +195,8 @@ export class InventoryManager {
   }
 
   destroy(): void {
+    this.modal?.close()
+    this.modal = undefined
     this.restoreMinimap()
-    this.panel.remove()
   }
 }

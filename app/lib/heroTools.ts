@@ -13,22 +13,26 @@ import { getActionCondition, getHitPointsWithDamage } from './combat'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
-import { getInstanceDegree, getReliefOffset } from './maths'
+import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue } from './sound'
 import { showDamageFeedback } from './combatFeedback'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from './unitExperience'
 import { Projectile } from '../classes/Projectile'
+import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
 
-export type HeroTool = 'axe' | 'pickaxe' | 'bow' | 'hammer' | 'unarmed'
+export type HeroTool = 'axe' | 'pickaxe' | 'bow' | 'hammer' | 'fishingRod' | 'unarmed'
 
-export const HERO_TOOL_ORDER: HeroTool[] = ['unarmed', 'axe', 'pickaxe', 'hammer', 'bow']
+export const HERO_TOOL_ORDER: HeroTool[] = ['unarmed', 'axe', 'pickaxe', 'hammer', 'bow', 'fishingRod']
 
 const TOOL_ACTION_RANGE = 3
 const HUNTER_ARROW_RANGE = 4
 const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * Math.hypot(CELL_WIDTH, CELL_HEIGHT)
+const HERO_BOW_CHARGE_MS = 700
+const HERO_BOW_MIN_POWER = 0.2
+const HERO_BOW_HOLD_FRAME = Math.max(0, SHOOT_RELEASE_FRAME - 1)
 const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
@@ -42,13 +46,14 @@ const HERO_ARROW_HEIGHT_OFFSET = 18
 
 // Tools with no gather/hunt/build effect of their own — clicking/pressing e with nothing
 // valid nearby just plays the swing animation and does nothing else.
-const WHIFF_TOOLS = new Set<HeroTool>(['axe', 'pickaxe', 'hammer', 'unarmed'])
+const WHIFF_TOOLS = new Set<HeroTool>(['axe', 'pickaxe', 'hammer', 'fishingRod', 'unarmed'])
 
 const TOOL_WORK: Record<HeroTool, string> = {
   axe: WORK_TYPES.woodcutter,
   pickaxe: WORK_TYPES.stoneminer,
   bow: WORK_TYPES.hunter,
   hammer: WORK_TYPES.builder,
+  fishingRod: WORK_TYPES.fisher,
   unarmed: WORK_TYPES.attacker,
 }
 
@@ -56,7 +61,7 @@ function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
 }
 
-function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
+export function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
   if (target.family !== FAMILY_TYPES.building) return false
   const building = target as BuildingEntity
   if (hero.category === 'Boat') return building.type === BUILDING_TYPES.dock
@@ -68,41 +73,71 @@ type HeroToolConfig = {
   resolve: (hero: UnitEntity, target: RuntimeEntity) => (() => void) | null
 }
 
+// The hero is fully player-controlled and must never path or move on its own — every entry
+// point below (aimed click, plain "e" press, the building deposit button) only ever calls
+// this once the caller has already confirmed the hero is in range (isToolTargetReachable /
+// canDeliverToBuilding). This fires the action's effect directly instead of going through
+// hero.sendTo*/commonSendTo, which is built for AI-pathed units and can silently walk them.
+function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string): void {
+  if (hero.actionLocked) return
+  hero.setDest?.(target)
+  hero.action = action
+  hero.degree = getInstanceDegree(hero, target.x, target.y)
+  hero.getAction?.(action)
+}
+
+// Same as runHeroAction, but also runs the work/texture/cargo bookkeeping commonSendTo would
+// have applied for a gather-type action (correct animation sheet, dropping mismatched cargo
+// when switching gather types) — reused from the shared unit command logic, not duplicated.
+function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: string, work: string): void {
+  if (hero.actionLocked) return
+  applyWorkForAction(hero, work, action)
+  runHeroAction(hero, target, action)
+}
+
 const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
   unarmed: {
     matches: target => resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
       if (resourceKind(target) === 'Berrybush') {
-        return getActionCondition(hero, target, ACTION_TYPES.forageberry) ? () => hero.sendToBerrybush?.(target) : null
+        return getActionCondition(hero, target, ACTION_TYPES.forageberry)
+          ? () => runHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
+          : null
       }
       // Bare hands can only collect meat off an already-dead carcass, not hunt — killing the
-      // animal still requires the bow (see the `bow` config below for the hunt+takemeat combo).
-      return getActionCondition(hero, target, ACTION_TYPES.takemeat) ? () => hero.sendToTakeMeat(target, true) : null
+      // animal requires the bow. The bow itself never auto-collects meat (see below), so
+      // switching to unarmed is the only way to pick up a carcass.
+      return getActionCondition(hero, target, ACTION_TYPES.takemeat)
+        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.takemeat, WORK_TYPES.hunter)
+        : null
     },
   },
   axe: {
     matches: target => resourceKind(target) === 'Tree',
     resolve: (hero, target) =>
-      getActionCondition(hero, target, ACTION_TYPES.chopwood) ? () => hero.sendToTree?.(target) : null,
+      getActionCondition(hero, target, ACTION_TYPES.chopwood)
+        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.chopwood, WORK_TYPES.woodcutter)
+        : null,
   },
   pickaxe: {
     matches: target => resourceKind(target) === 'Stone' || resourceKind(target) === 'Gold',
     resolve: (hero, target) => {
-      const action = resourceKind(target) === 'Stone' ? ACTION_TYPES.minestone : ACTION_TYPES.minegold
+      const isStone = resourceKind(target) === 'Stone'
+      const action = isStone ? ACTION_TYPES.minestone : ACTION_TYPES.minegold
+      const work = isStone ? WORK_TYPES.stoneminer : WORK_TYPES.goldminer
       if (!getActionCondition(hero, target, action)) return null
-      return () => (resourceKind(target) === 'Stone' ? hero.sendToStone?.(target) : hero.sendToGold?.(target))
+      return () => runHeroGatherAction(hero, target, action, work)
     },
   },
   bow: {
-    matches: target => target.family === FAMILY_TYPES.animal,
-    resolve: (hero, target) => {
-      // A hunted-down animal is still `family === 'animal'` (a carcass), not a new entity —
-      // prefer collecting its meat over re-issuing a hunt order, mirroring the dispatch already
-      // used elsewhere for resuming an interrupted animal task (app/classes/unit/UnitActions.ts).
-      if (getActionCondition(hero, target, ACTION_TYPES.takemeat)) return () => hero.sendToTakeMeat(target, true)
-      if (getActionCondition(hero, target, ACTION_TYPES.hunt)) return () => hero.sendToHunt(target)
-      return null
-    },
+    // Bow never auto-collects meat, only hunts live game — otherwise hunting near a fresh
+    // carcass would keep switching the hero to takemeat instead of shooting the next animal.
+    // Switch to the unarmed tool to pick up carcasses.
+    matches: target => target.family === FAMILY_TYPES.animal && !target.isDead,
+    resolve: (hero, target) =>
+      getActionCondition(hero, target, ACTION_TYPES.hunt)
+        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.hunt, WORK_TYPES.hunter)
+        : null,
   },
   hammer: {
     matches: target => {
@@ -112,7 +147,17 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
     },
     resolve: (hero, target) =>
       getActionCondition(hero, target, ACTION_TYPES.build)
-        ? () => hero.sendToBuilding?.(target as BuildingEntity)
+        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.build, WORK_TYPES.builder)
+        : null,
+  },
+  fishingRod: {
+    matches: target => target.category === 'Fish',
+    resolve: (hero, target) =>
+      getActionCondition(hero, target, ACTION_TYPES.fishing)
+        ? () => {
+            playAudibleSoundCue(hero, (target as { sounds?: { command?: string | number | (string | number)[] | null } }).sounds?.command)
+            runHeroGatherAction(hero, target, ACTION_TYPES.fishing, WORK_TYPES.fisher)
+          }
         : null,
   },
 }
@@ -141,15 +186,7 @@ function playHeroToolAnimation(hero: UnitEntity, onImpact?: () => void, impactFr
   hero.setTextures?.(SHEET_TYPES.action)
   hero.syncShadow?.()
 
-  sprite.onComplete = () => {
-    sprite.onComplete = undefined
-    sprite.onFrameChange = undefined
-    sprite.loop = true
-    hero.actionLocked = false
-    const hadPendingOrder = hero.flushPendingOrder?.()
-    if (!hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
-    hero.syncShadow?.()
-  }
+  sprite.onComplete = () => finishHeroToolAnimation(hero)
 
   if (!onImpact) return
   if (impactFrame == null) {
@@ -159,7 +196,20 @@ function playHeroToolAnimation(hero: UnitEntity, onImpact?: () => void, impactFr
   onSpriteLoopAtFrame(sprite, impactFrame, onImpact)
 }
 
-function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
+function finishHeroToolAnimation(hero: UnitEntity): void {
+  const sprite = hero.sprite
+  if (sprite) {
+    sprite.onComplete = undefined
+    sprite.onFrameChange = undefined
+    sprite.loop = true
+  }
+  hero.actionLocked = false
+  const hadPendingOrder = hero.flushPendingOrder?.()
+  if (!hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
+  hero.syncShadow?.()
+}
+
+export function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (!((hero.loading ?? 0) > 0)) return false
   if (!buildingAcceptsCarriedResource(hero, target)) return false
   if (!getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })) return false
@@ -167,10 +217,9 @@ function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean 
   return true
 }
 
-function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
+export function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (!canDeliverToBuilding(hero, target)) return false
-  hero.previousDest = null
-  hero.sendToEvt?.(target, ACTION_TYPES.delivery)
+  runHeroAction(hero, target, ACTION_TYPES.delivery)
   return true
 }
 
@@ -209,8 +258,7 @@ function tryDeliver(hero: UnitEntity): boolean {
   )
   const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, nearBuilding)
   if (!closest || !hero.isUnitAtDest?.(ACTION_TYPES.delivery, closest.instance)) return false
-  hero.previousDest = null
-  hero.sendToEvt?.(closest.instance, ACTION_TYPES.delivery)
+  runHeroAction(hero, closest.instance, ACTION_TYPES.delivery)
   return true
 }
 
@@ -246,8 +294,18 @@ function getToolActionForTarget(tool: HeroTool, target: RuntimeEntity): string |
   if (tool === 'axe' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
   if (tool === 'pickaxe' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
   if (tool === 'pickaxe' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
+  if (tool === 'bow' && target.family === FAMILY_TYPES.animal && !target.isDead) return ACTION_TYPES.hunt
   if (tool === 'hammer' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
+  if (tool === 'fishingRod' && target.category === 'Fish') return ACTION_TYPES.fishing
   return null
+}
+
+// The hero is fully player-controlled and must never auto-path to a target — every tool
+// interaction (aimed click or plain "e" press) may only fire once the hero is already in
+// place, exactly like a real player standing next to what they're interacting with.
+function isToolTargetReachable(hero: UnitEntity, tool: HeroTool, target: RuntimeEntity): boolean {
+  const action = getToolActionForTarget(tool, target)
+  return Boolean(action && hero.isUnitAtDest?.(action, target))
 }
 
 function triggerToolActionAt(hero: UnitEntity, tool: HeroTool): boolean {
@@ -258,10 +316,7 @@ function triggerToolActionAt(hero: UnitEntity, tool: HeroTool): boolean {
     hero,
     target => config.matches(target) && config.resolve(hero, target) !== null,
     CLICK_TARGET_SEARCH_RANGE
-  ).filter(target => {
-    const action = getToolActionForTarget(tool, target)
-    return Boolean(action && hero.isUnitAtDest?.(action, target))
-  })
+  ).filter(target => isToolTargetReachable(hero, tool, target))
 
   const target = getDirectionalTarget(hero, candidates)
   if (target) {
@@ -288,9 +343,10 @@ function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
   }
 }
 
-function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null): void {
+function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null, power = 1): void {
   const map = hero.context?.map
   if (!map) return
+  const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
   playHeroToolAnimation(
     hero,
     () => {
@@ -302,7 +358,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
           damage: 4,
-          maxDistance: HERO_ARROW_MAX_DISTANCE,
+          maxDistance: HERO_ARROW_MAX_DISTANCE * rangePower,
         },
         hero.context!
       )
@@ -310,6 +366,167 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
     },
     SHOOT_RELEASE_FRAME
   )
+}
+
+function getHeroBowChargeRatio(hero: UnitEntity, now = performance.now()): number {
+  if (hero.heroBowChargeStart == null) return 0
+  return Math.max(0, Math.min(1, (now - hero.heroBowChargeStart) / HERO_BOW_CHARGE_MS))
+}
+
+function freezeHeroBowChargeFrame(hero: UnitEntity, frame?: number): void {
+  const sprite = hero.sprite
+  if (!sprite || hero.currentSheet !== SHEET_TYPES.action) return
+  const lastFrame = Math.max(0, sprite.textures.length - 1)
+  hero.heroBowChargeVisualLocked = true
+  sprite.loop = false
+  sprite.gotoAndStop(Math.max(0, Math.min(frame ?? HERO_BOW_HOLD_FRAME, lastFrame)))
+  hero.syncShadow?.()
+  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
+}
+
+function continueHeroBowChargeAnimation(hero: UnitEntity): void {
+  const sprite = hero.sprite
+  if (!sprite || hero.currentSheet !== SHEET_TYPES.action || hero.heroBowReleaseQueued) return
+  if (hero.heroBowChargeVisualLocked) {
+    freezeHeroBowChargeFrame(hero)
+    return
+  }
+  sprite.loop = false
+  sprite.onComplete = undefined
+  onSpriteLoopAtFrame(sprite, HERO_BOW_HOLD_FRAME, () => freezeHeroBowChargeFrame(hero))
+  if (!sprite.playing && sprite.currentFrame < HERO_BOW_HOLD_FRAME) sprite.play()
+  if (sprite.currentFrame >= HERO_BOW_HOLD_FRAME) freezeHeroBowChargeFrame(hero)
+  hero.syncShadow?.()
+  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
+}
+
+export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolean {
+  if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
+  const previousDirection = degreeToDirection(hero.degree ?? 0)
+  hero.degree = getInstanceDegree(hero, destination.x, destination.y)
+  const target = findArrowTargetInAim(hero)
+  hero.heroBowChargeDestination = target ? { x: target.x, y: target.y } : destination
+  hero.heroBowChargeTarget = target
+  if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
+    hero.setTextures?.(SHEET_TYPES.action)
+    if (hero.heroBowChargeVisualLocked) freezeHeroBowChargeFrame(hero)
+    updateHeroBowCharge(hero)
+  }
+  return true
+}
+
+export function updateHeroBowCharge(hero: UnitEntity, now = performance.now()): void {
+  if (hero.heroBowChargeStart == null) return
+  if (hero.heroBowReleaseQueued) return
+  const ratio = getHeroBowChargeRatio(hero, now)
+  hero.heroBowChargeRatio = ratio
+  hero.drawHeroPowerBar?.(ratio)
+  const sprite = hero.sprite
+  if (hero.heroBowChargeVisualLocked) {
+    freezeHeroBowChargeFrame(hero)
+    return
+  }
+  if (sprite && hero.currentSheet === SHEET_TYPES.action) {
+    continueHeroBowChargeAnimation(hero)
+  }
+}
+
+function clearHeroBowCharge(hero: UnitEntity): void {
+  hero.heroBowChargeStart = null
+  hero.heroBowChargeRatio = undefined
+  hero.heroBowChargeDestination = null
+  hero.heroBowChargeTarget = null
+  hero.heroBowReleaseQueued = false
+  hero.heroBowReleasePower = undefined
+  hero.heroBowChargeVisualLocked = false
+  hero.removeHeroPowerBar?.()
+}
+
+export function cancelHeroBowCharge(hero: UnitEntity): void {
+  if (hero.heroBowChargeStart == null) return
+  const sprite = hero.sprite
+  clearHeroBowCharge(hero)
+  if (sprite) {
+    sprite.onComplete = undefined
+    sprite.onFrameChange = undefined
+    sprite.loop = true
+  }
+  finishHeroToolAnimation(hero)
+}
+
+function finishHeroBowChargeShot(hero: UnitEntity): void {
+  const destination = hero.heroBowChargeDestination
+  if (!destination) {
+    cancelHeroBowCharge(hero)
+    return
+  }
+  const power = hero.heroBowReleasePower ?? getHeroBowChargeRatio(hero)
+  const target = hero.heroBowChargeTarget ?? undefined
+  clearHeroBowCharge(hero)
+  const map = hero.context?.map
+  const sprite = hero.sprite
+  if (map) {
+    const projectile = new Projectile(
+      {
+        owner: hero,
+        type: 'Arrow',
+        target,
+        destination,
+        spawnPoint: getHeroArrowSpawnPoint(hero),
+        damage: 4,
+        maxDistance: HERO_ARROW_MAX_DISTANCE * Math.max(HERO_BOW_MIN_POWER, Math.min(1, power)),
+      },
+      hero.context!
+    )
+    map.addChild(projectile)
+  }
+  if (!sprite) {
+    finishHeroToolAnimation(hero)
+    return
+  }
+  sprite.onFrameChange = undefined
+  sprite.onComplete = () => finishHeroToolAnimation(hero)
+  sprite.loop = false
+  if (sprite.currentFrame >= sprite.textures.length - 1) finishHeroToolAnimation(hero)
+  else sprite.play()
+}
+
+function beginHeroBowChargeAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null): boolean {
+  const sprite = hero.sprite
+  if (!sprite || hero.actionLocked) return false
+  hero.actionLocked = true
+  hero.heroBowChargeStart = performance.now()
+  hero.heroBowChargeRatio = 0
+  hero.heroBowChargeDestination = destination
+  hero.heroBowChargeTarget = target ?? null
+  hero.heroBowReleaseQueued = false
+  hero.heroBowReleasePower = undefined
+  hero.heroBowChargeVisualLocked = false
+  hero.setTextures?.(SHEET_TYPES.action)
+  sprite.loop = false
+  sprite.onComplete = undefined
+  hero.syncShadow?.()
+  hero.drawHeroPowerBar?.(0)
+  onSpriteLoopAtFrame(sprite, HERO_BOW_HOLD_FRAME, () => freezeHeroBowChargeFrame(hero))
+  return true
+}
+
+export function releaseHeroBowCharge(hero: UnitEntity): boolean {
+  if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
+  hero.heroBowReleasePower = getHeroBowChargeRatio(hero)
+  hero.heroBowChargeRatio = hero.heroBowReleasePower
+  hero.drawHeroPowerBar?.(hero.heroBowReleasePower)
+  const sprite = hero.sprite
+  hero.heroBowReleaseQueued = true
+  if (sprite && hero.currentSheet === SHEET_TYPES.action && sprite.currentFrame < SHOOT_RELEASE_FRAME) {
+    sprite.loop = false
+    sprite.onComplete = undefined
+    onSpriteLoopAtFrame(sprite, SHOOT_RELEASE_FRAME, () => finishHeroBowChargeShot(hero))
+    if (!sprite.playing) sprite.play()
+    return true
+  }
+  finishHeroBowChargeShot(hero)
+  return true
 }
 
 function findMeleeTarget(hero: UnitEntity): RuntimeEntity | null {
@@ -340,6 +557,9 @@ function swingToolInPlace(hero: UnitEntity): void {
         playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff)
         return
       }
+      if (hero.sounds?.hit) {
+        playAudibleSoundCue(hero, hero.sounds.hit)
+      }
       const beforeHitPoints = target.hitPoints ?? 0
       target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
       const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
@@ -362,8 +582,7 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroTool | null, des
   if (tryDeliverAt(hero)) return true
   if (tool === 'bow') {
     const target = findArrowTargetInAim(hero)
-    fireArrowAt(hero, target ? { x: target.x, y: target.y } : destination, target)
-    return true
+    return beginHeroBowChargeAt(hero, target ? { x: target.x, y: target.y } : destination, target)
   }
   if (triggerToolActionAt(hero, tool)) return true
   if (WHIFF_TOOLS.has(tool)) {
@@ -374,15 +593,17 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroTool | null, des
 }
 
 export function triggerToolAction(hero: UnitEntity, tool: HeroTool | null): boolean {
-  const config = tool ? HERO_TOOL_ACTIONS[tool] : undefined
-  if (config) {
-    const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE).filter(
-      target => config.resolve(hero, target) !== null
-    )
-    const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
-    if (closest) {
-      config.resolve(hero, closest.instance)?.()
-      return true
+  if (tool) {
+    const config = HERO_TOOL_ACTIONS[tool]
+    if (config) {
+      const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE).filter(
+        target => config.resolve(hero, target) !== null && isToolTargetReachable(hero, tool, target)
+      )
+      const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
+      if (closest) {
+        config.resolve(hero, closest.instance)?.()
+        return true
+      }
     }
   }
   if (tryDeliver(hero)) return true

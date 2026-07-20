@@ -98,6 +98,8 @@ export class Animal extends Instance implements AnimalEntity {
   declare reliefLift: number
   strategy?: string
   ambientMovement?: boolean
+  ambientWalkDelayMin?: number
+  ambientWalkDelayMax?: number
   ambientWalkRange?: number
   rateOfFire!: number
   sounds?: UnitSounds

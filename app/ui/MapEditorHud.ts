@@ -587,6 +587,10 @@ export class MapEditorHud {
     return { id: 'editor-building-placeholder' }
   }
 
+  getActionDepositButton(): MenuButtonSpec {
+    return { id: 'editor-deposit-placeholder' }
+  }
+
   updateStatus(cell: RuntimeCell | null): void {
     if (!cell) {
       this.age.textContent = t('editorStatusIdle')

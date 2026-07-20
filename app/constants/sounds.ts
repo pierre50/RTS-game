@@ -22,6 +22,7 @@ export const SOUND_CUES = {
     mineOre: 'mining-2',
     buildLoop: 'building',
     throwSpear: 'arrow-shot',
+    takeMeat: 'berry-gathering',
   },
   building: {
     burning: ['building-burning', 'building-burning-2', 'building-burning-3'],

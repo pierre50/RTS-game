@@ -153,7 +153,6 @@ export type GameConfig = {
 export type PlayerSetupConfig = {
   civ?: string
   color?: string
-  difficulty?: string
   isHuman?: boolean
   name?: string
   team?: number | null

@@ -1,0 +1,145 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+const babel = require('@babel/core')
+
+class MockGaia {}
+
+function loadModule(relativePath, mocks) {
+  const filename = path.join(__dirname, '..', relativePath)
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports
+}
+
+function loadMapGeneration() {
+  return loadModule('app/classes/map/MapGeneration.ts', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          get: key =>
+            key === 'config'
+              ? {
+                  animals: { Deer: {}, Hare: {}, BlackGrouse: {}, Fox: {}, Boar: {} },
+                  resources: {},
+                  cells: {},
+                }
+              : {},
+        },
+      },
+      Sprite: { from: () => ({}) },
+    },
+    '../Resource': { Resource: class {} },
+    '../players': {
+      Human: class {},
+      AI: class {},
+      Gaia: MockGaia,
+    },
+    '../../lib': {
+      colors: {},
+      getZoneInGridWithCondition: () => null,
+      updateInstanceVisibility: () => {},
+      getGaiaAnimals: () => [],
+      getTextureByFrame: () => null,
+    },
+    '../../services/FogOfWar': { rehydrateAIKnowledge: () => {} },
+    '../../constants': {
+      BUILDING_TYPES: {},
+      FAMILY_TYPES: {},
+      LABEL_TYPES: {},
+      RESOURCE_TYPES: { salmon: 'Salmon' },
+      UNIT_TYPES: {},
+      FLOOR_SETS_GRASS: [],
+      FLOOR_SETS_DESERT: [],
+      FLOOR_SETS_JUNGLE: [],
+      FLOOR_SET_CHANCE: 0,
+      GROUND_SETS: [],
+      WATER_SETS: [],
+      WATER_SETS_DEEP: [],
+      WATER_SET_CHANCE: 0,
+      WATER_SET_DEEP_LAND_MIN_DIST: 3,
+      ANIMAL_PLAYER_SAFE_DIST: 14,
+    },
+    '../cell': {
+      Cell: class {},
+      GenerationCell: class {},
+    },
+    './MapBlueprintGeneration': {
+      MapBlueprintGeneration: class {
+        constructor() {}
+      },
+    },
+    './MapSaveRestore': {
+      processUnit: () => {},
+      restoreAIState: () => {},
+      restoreBuildingAssignments: () => {},
+      restorePlayerEntitiesFromSave: () => {},
+      restorePlayerViewsAndFog: () => {},
+      restoreSelection: () => {},
+      restoreTransportCargo: () => {},
+    },
+  }).MapGeneration
+}
+
+function createGenerator({ random = () => 0, randomRange } = {}) {
+  const placed = []
+  const size = 20
+  const grid = Array.from({ length: size + 1 }, (_, i) =>
+    Array.from({ length: size + 1 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      has: null,
+      border: false,
+      waterBorder: false,
+      inclined: false,
+      category: 'Land',
+    }))
+  )
+  const map = {
+    grid,
+    size,
+    playersPos: [],
+    context: {},
+    random,
+    randomRange: randomRange || ((min, max) => Math.floor((min + max) / 2)),
+    randomItem: items => items[0],
+    gaia: Object.assign(new MockGaia(), {
+      createAnimal: animal => {
+        placed.push(animal)
+        grid[animal.i][animal.j].has = animal
+        grid[animal.i][animal.j].solid = true
+      },
+    }),
+  }
+  const MapGeneration = loadMapGeneration()
+  return { generation: new MapGeneration(map), placed, grid }
+}
+
+test('ambient deer spawn as a nearby group', () => {
+  const { generation, placed } = createGenerator({
+    random: () => 0,
+    randomRange: (min, max) => (min === 3 && max === 6 ? 4 : min),
+  })
+
+  generation.placeAmbientAnimalGroup(10, 10, 'Deer')
+
+  assert.equal(placed.length, 4)
+  assert.deepEqual(placed[0], { i: 10, j: 10, type: 'Deer' })
+  assert.ok(placed.every(animal => Math.hypot(animal.i - 10, animal.j - 10) <= 3))
+})
+
+test('ambient foxes usually spawn isolated', () => {
+  const { generation, placed } = createGenerator({ random: () => 0.9 })
+
+  generation.placeAmbientAnimalGroup(10, 10, 'Fox')
+
+  assert.deepEqual(placed, [{ i: 10, j: 10, type: 'Fox' }])
+})

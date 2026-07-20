@@ -20,6 +20,7 @@ import {
   getInstanceDegree,
   getInstancePath,
   getInstanceZIndex,
+  getRoundedIsoShapePoints,
   instanceContactInstance,
   instancesDistance,
   isometricToCartesian,
@@ -49,60 +50,11 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
-  return (
-    entity.family === FAMILY_TYPES.building ||
-    entity.family === FAMILY_TYPES.resource ||
-    entity.family === FAMILY_TYPES.unit ||
-    entity.family === FAMILY_TYPES.animal
-  )
-}
-
-const HERO_COLLISION_CORNER_RATIO = 0.22
-
-function getRoundedFootprintRadii(entity: RuntimeEntity): { radiusX: number; radiusY: number } {
-  const size = Math.max(1, entity.size ?? 1)
-  return {
-    radiusX: 32 * size,
-    radiusY: 16 * size,
-  }
+  return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 
 function getRoundedIsoFootprintPoints(entity: RuntimeEntity): Array<{ x: number; y: number }> {
-  const { radiusX, radiusY } = getRoundedFootprintRadii(entity)
-  const vertices = [
-    { x: entity.x, y: entity.y - radiusY },
-    { x: entity.x + radiusX, y: entity.y },
-    { x: entity.x, y: entity.y + radiusY },
-    { x: entity.x - radiusX, y: entity.y },
-  ]
-  const points: Array<{ x: number; y: number }> = []
-  const curveSteps = 6
-
-  for (let index = 0; index < vertices.length; index++) {
-    const previous = vertices[(index + vertices.length - 1) % vertices.length]
-    const vertex = vertices[index]
-    const next = vertices[(index + 1) % vertices.length]
-    const start = {
-      x: vertex.x + (previous.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
-      y: vertex.y + (previous.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
-    }
-    const end = {
-      x: vertex.x + (next.x - vertex.x) * HERO_COLLISION_CORNER_RATIO,
-      y: vertex.y + (next.y - vertex.y) * HERO_COLLISION_CORNER_RATIO,
-    }
-
-    if (index === 0) points.push(start)
-    for (let step = 1; step <= curveSteps; step++) {
-      const t = step / curveSteps
-      const inv = 1 - t
-      points.push({
-        x: inv * inv * start.x + 2 * inv * t * vertex.x + t * t * end.x,
-        y: inv * inv * start.y + 2 * inv * t * vertex.y + t * t * end.y,
-      })
-    }
-  }
-
-  return points
+  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: Math.max(1, entity.size ?? 1) })
 }
 
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
@@ -138,13 +90,7 @@ function getNearbyHeroCollisionEntities(cell: RuntimeCell | null | undefined, ma
     if (!row) continue
     for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
       const entity = row[j]?.has
-      if (
-        entity?.family === FAMILY_TYPES.building ||
-        entity?.family === FAMILY_TYPES.resource ||
-        entity?.family === FAMILY_TYPES.unit ||
-        entity?.family === FAMILY_TYPES.animal
-      )
-        entities.add(entity)
+      if (entity?.family === FAMILY_TYPES.building || entity?.family === FAMILY_TYPES.resource) entities.add(entity)
     }
   }
 
@@ -723,6 +669,10 @@ export class UnitMovement {
     const candidateX = unit.x + dirX * effectiveDistance
     const candidateY = unit.y + dirY * effectiveDistance
     const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
+    if (rawI < 0 || rawJ < 0 || rawI > map.size || rawJ > map.size) {
+      debugBlockedDirectMove(unit, 'target-out-of-map', { rawI, rawJ, mapSize: map.size }, dirX, dirY)
+      return false
+    }
     const newI = Math.min(Math.max(rawI, 0), map.size)
     const newJ = Math.min(Math.max(rawJ, 0), map.size)
     const crossingCell = newI !== unit.i || newJ !== unit.j
@@ -827,6 +777,16 @@ export class UnitMovement {
       unit.stop?.()
       return
     }
+    // Checked before any of the AI-oriented branches below (build-queue continuation, post-build
+    // auto-gather, transport loading, auto-hunt/auto-attack acquisition) — the hero must never
+    // auto-continue into a new job or path there on its own, no matter which branch would
+    // otherwise apply.
+    if (isHeroControlled(unit)) {
+      unit.previousDest = null
+      unit.previousWork = null
+      unit.stop?.()
+      return
+    }
     const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     const queuedBuildInterrupted =
       unit.work === WORK_TYPES.builder && unit.action === ACTION_TYPES.build && (unit.buildQueue?.length ?? 0) > 0
@@ -913,13 +873,6 @@ export class UnitMovement {
         true,
         'unit.waitTransport'
       )
-      return
-    }
-
-    if (isHeroControlled(unit)) {
-      unit.previousDest = null
-      unit.previousWork = null
-      unit.stop?.()
       return
     }
 

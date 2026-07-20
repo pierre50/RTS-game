@@ -38,6 +38,7 @@ import {
 } from '../../lib/unitExperience'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
+import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -376,6 +377,7 @@ export class UnitActions {
       const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
       if (!dest || gain <= 0) {
         if (isHeroControlled(unit)) {
+          if (dest) menu?.showMessage(t('heroInventoryFull'), 'warning')
           stopManualHeroAction(unit)
           return
         }
@@ -493,7 +495,10 @@ export class UnitActions {
           const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
           if (!d || gain <= 0) {
             if (isHeroControlled(unit)) {
-              if (d) d.isUsedBy = null
+              if (d) {
+                d.isUsedBy = null
+                menu?.showMessage(t('heroInventoryFull'), 'warning')
+              }
               stopManualHeroAction(unit)
               return
             }
@@ -547,6 +552,7 @@ export class UnitActions {
           const maxLoad = unit.loadingMax?.[LOADING_TYPES.wood] ?? Infinity
           if ((unit.loading ?? 0) >= maxLoad) {
             if (isHeroControlled(unit)) {
+              menu?.showMessage(t('heroInventoryFull'), 'warning')
               stopManualHeroAction(unit)
               return
             }
@@ -621,7 +627,7 @@ export class UnitActions {
           const dest = isBuildingEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
-            if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+            if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy && !isHeroControlled(unit)) {
               unit.sendToFarm?.(dest, true)
               return
             }
@@ -650,7 +656,7 @@ export class UnitActions {
             if (!dest.isBuilt) {
               dest.updateHitPoints?.(unit.action ?? '')
               dest.isBuilt = true
-              if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy) {
+              if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy && !isHeroControlled(unit)) {
                 unit.sendToFarm?.(dest, true)
                 return
               }
@@ -761,7 +767,7 @@ export class UnitActions {
         }
         break
       case ACTION_TYPES.takemeat:
-        this.startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', null), {
+        this.startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat), {
           checkOwner: true,
           updateTexture: true,
         })
@@ -788,6 +794,10 @@ export class UnitActions {
           return
         }
         if (huntDest.isDead) {
+          if (isHeroControlled(unit)) {
+            stopManualHeroAction(unit)
+            return
+          }
           unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
           return
         }
@@ -797,6 +807,10 @@ export class UnitActions {
           if (!unit.getActionCondition?.(dest)) {
             if (dest && (dest.hitPoints ?? 0) <= 0) {
               dest.die?.()
+              if (isHeroControlled(unit)) {
+                stopManualHeroAction(unit)
+                return
+              }
               unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)
               return
             }

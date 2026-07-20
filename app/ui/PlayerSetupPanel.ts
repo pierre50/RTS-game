@@ -19,12 +19,6 @@ type PlayerSetupConfigWithAge = PlayerSetupConfig & {
   age?: number
 }
 
-const DIFFICULTIES = [
-  { label: () => t('diffEasy'), value: 'easy' },
-  { label: () => t('diffMedium'), value: 'medium' },
-  { label: () => t('diffHard'), value: 'hard' },
-]
-
 const AGES = [
   { label: () => t('stoneAge'), value: 0 },
   { label: () => t('toolAge'), value: 1 },
@@ -94,7 +88,6 @@ export class PlayerSetupPanel {
         civ: this._randomCiv(),
         team: null,
         isHuman: false,
-        difficulty: 'medium',
       },
     ]
   }
@@ -106,7 +99,6 @@ export class PlayerSetupPanel {
       civ: player.civ || this._randomCiv(),
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
-      difficulty: player.difficulty || 'medium',
       ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 3)) } : {}),
     }
   }
@@ -176,7 +168,6 @@ export class PlayerSetupPanel {
       civ: this._randomCiv(),
       team: null,
       isHuman: false,
-      difficulty: 'medium',
       ...(this.showAge ? { age: 0 } : {}),
     })
   }
@@ -220,7 +211,7 @@ export class PlayerSetupPanel {
     header.className = 'player-table-header'
     const headers = [t('colName'), t('colCiv')]
     if (this.showAge) headers.push(t('colAge'))
-    headers.push(t('colDifficulty'), t('colTeam'), t('colColor'))
+    headers.push(t('colTeam'), t('colColor'))
     headers.forEach(text => {
       const cell = document.createElement('div')
       cell.textContent = text
@@ -274,28 +265,6 @@ export class PlayerSetupPanel {
         ageCell.appendChild(ageSelect)
         row.appendChild(ageCell)
       }
-
-      const difficultyCell = document.createElement('div')
-      difficultyCell.className = 'player-difficulty'
-      if (player.isHuman) {
-        difficultyCell.textContent = '-'
-      } else {
-        const difficultySelect = document.createElement('select')
-        difficultySelect.className = 'ui-select'
-        DIFFICULTIES.forEach(difficulty => {
-          const opt = document.createElement('option')
-          opt.value = difficulty.value
-          opt.textContent = typeof difficulty.label === 'function' ? difficulty.label() : difficulty.label
-          if (difficulty.value === (player.difficulty || 'medium')) opt.selected = true
-          difficultySelect.appendChild(opt)
-        })
-        difficultySelect.onchange = (evt: Event) => {
-          this.players[index].difficulty = (evt.target as HTMLSelectElement).value
-          this._emitChange()
-        }
-        difficultyCell.appendChild(difficultySelect)
-      }
-      row.appendChild(difficultyCell)
 
       const teamCell = document.createElement('div')
       teamCell.className = 'player-team'

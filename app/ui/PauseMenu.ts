@@ -1,7 +1,7 @@
 import { Modal } from '../lib'
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
-import { buildSettingsContent } from './settingsPanel'
+import { openSettingsModal } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
 import type Menu from '../classes/Menu'
 
@@ -84,7 +84,7 @@ export class PauseMenu {
 
   _openSettings(resumeIfNeeded: () => void): void {
     const { menu } = this
-    const content = buildSettingsContent({
+    openSettingsModal({
       onSpeedChange: v => {
         menu.context.app.ticker.speed = v
         if (menu.context.scheduler) {
@@ -96,11 +96,6 @@ export class PauseMenu {
         menu.context.controls?.updateVisibleCells?.()
         menu.updateCameraMiniMap()
       },
-    })
-
-    new Modal({
-      title: t('settings'),
-      content,
       onClose: resumeIfNeeded,
     })
   }

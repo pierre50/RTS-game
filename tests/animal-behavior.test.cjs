@@ -22,16 +22,29 @@ const constants = {
   UNIT_TYPES: { villager: 'Villager' },
 }
 
-function createBehavior({ nearby = [], elapsedMs = 0, altitude = 0 } = {}) {
+function createBehavior({
+  nearby = [],
+  elapsedMs = 0,
+  altitude = 0,
+  strategy = 'runaway',
+  ambientWalkDelayMin,
+  ambientWalkDelayMax,
+  ambientWalkRange,
+} = {}) {
   const calls = []
   const cells = [
     { i: 4, j: 5, solid: false },
     { i: 5, j: 4, solid: false },
+    { i: 7, j: 5, solid: false },
   ]
+  const randomRangeCalls = []
   const map = {
     grid: [],
     randomItem: items => items[0],
-    randomRange: () => 5000,
+    randomRange: (min, max) => {
+      randomRangeCalls.push([min, max])
+      return min
+    },
   }
   const scheduler = {
     elapsedMs,
@@ -47,14 +60,22 @@ function createBehavior({ nearby = [], elapsedMs = 0, altitude = 0 } = {}) {
     isDead: false,
     isDestroyed: false,
     isFleeing: false,
+    strategy,
+    ambientWalkDelayMin,
+    ambientWalkDelayMax,
+    ambientWalkRange,
     altitude,
     context: { map, scheduler, editor: null },
     runaway: villager => calls.push(['runaway', villager.label]),
+    getReaction: villager => calls.push(['reaction', villager.label]),
     sendTo: cell => calls.push(['sendTo', cell.i, cell.j]),
   }
   const lib = {
     findInstancesInSight: () => nearby,
-    getCellsAroundPoint: (_i, _j, _grid, _range, condition) => cells.filter(condition),
+    getCellsAroundPoint: (_i, _j, _grid, range, condition) =>
+      cells.filter(
+        cell => Math.abs(cell.i - animal.i) <= range && Math.abs(cell.j - animal.j) <= range && condition(cell)
+      ),
     instancesDistance: (_animal, instance) => instance.distance,
   }
   const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
@@ -62,7 +83,7 @@ function createBehavior({ nearby = [], elapsedMs = 0, altitude = 0 } = {}) {
     '../../lib': lib,
     './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
   })
-  return { behavior: new AnimalBehavior(animal), calls, scheduler }
+  return { behavior: new AnimalBehavior(animal), calls, randomRangeCalls, scheduler }
 }
 
 test('a nearby villager interrupts idle behavior immediately', () => {
@@ -71,7 +92,7 @@ test('a nearby villager interrupts idle behavior immediately', () => {
 
   behavior.update()
 
-  assert.deepEqual(calls, [['runaway', 'villager-1']])
+  assert.deepEqual(calls, [['reaction', 'villager-1']])
 })
 
 test('an idle animal occasionally walks to a nearby free cell', () => {
@@ -81,7 +102,33 @@ test('an idle animal occasionally walks to a nearby free cell', () => {
   behavior.update()
 
   assert.deepEqual(calls, [['sendTo', 4, 5]])
-  assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 5000)
+  assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 4000)
+})
+
+test('ambient walk timing and range can vary by animal species', () => {
+  const { behavior, calls, randomRangeCalls, scheduler } = createBehavior({
+    elapsedMs: 10000,
+    ambientWalkDelayMin: 9000,
+    ambientWalkDelayMax: 18000,
+    ambientWalkRange: 1,
+  })
+  behavior.nextAmbientWalkAt = 5000
+
+  behavior.update()
+
+  assert.deepEqual(calls, [['sendTo', 4, 5]])
+  assert.deepEqual(randomRangeCalls, [[9000, 18000]])
+  assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 9000)
+})
+
+test('an aggressive animal does not flee through ambient behavior', () => {
+  const villager = { label: 'villager-1', family: 'unit', type: 'Villager', distance: 2 }
+  const { behavior, calls } = createBehavior({ nearby: [villager], strategy: 'attack', elapsedMs: 10000 })
+  behavior.nextAmbientWalkAt = 5000
+
+  behavior.update()
+
+  assert.deepEqual(calls, [])
 })
 
 test('an animal still in the air does not start an ambient walk', () => {

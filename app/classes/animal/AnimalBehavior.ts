@@ -48,7 +48,9 @@ export class AnimalBehavior {
     const {
       context: { map, scheduler },
     } = this.animal
-    this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(AMBIENT_WALK_DELAY_MIN, AMBIENT_WALK_DELAY_MAX)
+    const minDelay = this.animal.ambientWalkDelayMin ?? AMBIENT_WALK_DELAY_MIN
+    const maxDelay = Math.max(minDelay, this.animal.ambientWalkDelayMax ?? AMBIENT_WALK_DELAY_MAX)
+    this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(minDelay, maxDelay)
   }
 
   // Runaway animals spook at villagers (about to be hunted) and at buildings
@@ -78,8 +80,8 @@ export class AnimalBehavior {
     }
 
     const threat = this.findNearbyThreat()
-    if (threat && !animal.isFleeing) {
-      animal.runaway(threat)
+    if (threat && !animal.isFleeing && animal.strategy === 'runaway') {
+      animal.getReaction(threat)
       return
     }
 

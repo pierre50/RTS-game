@@ -1,5 +1,5 @@
 import { FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { getBuildingContactDistance, instancesDistance } from '../lib'
+import { Modal, instanceContactInstance } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
@@ -23,17 +23,14 @@ function buttonMeta(button: MenuButtonSpec): string {
 export class ArpgBuildingMenuManager {
   menu: Menu
   panel: HTMLDivElement
-  header: HTMLDivElement
-  title: HTMLDivElement
   info: HTMLDivElement
   body: HTMLDivElement
   backButton: HTMLButtonElement
-  closeButton: HTMLButtonElement
+  modal?: Modal
   building: BuildingEntity | null
   stack: MenuButtonSpec[][]
   opened: boolean
   structureSignature: string
-  onKeyDown: (evt: KeyboardEvent) => void
 
   constructor(menu: Menu) {
     this.menu = menu
@@ -41,18 +38,9 @@ export class ArpgBuildingMenuManager {
     this.stack = []
     this.opened = false
     this.structureSignature = ''
-    this.onKeyDown = (evt: KeyboardEvent) => {
-      if (!this.opened || evt.key !== 'Escape') return
-      evt.preventDefault()
-      this.close()
-    }
 
     this.panel = document.createElement('div')
-    this.panel.className = 'arpg-building-menu modal-panel ui-panel-enter hidden'
-    this.panel.setAttribute('role', 'dialog')
-
-    this.header = document.createElement('div')
-    this.header.className = 'arpg-building-menu-header modal-header'
+    this.panel.className = 'arpg-building-menu'
 
     this.backButton = document.createElement('button')
     this.backButton.type = 'button'
@@ -60,29 +48,15 @@ export class ArpgBuildingMenuManager {
     this.backButton.textContent = '<'
     this.backButton.addEventListener('click', () => this.back())
 
-    this.title = document.createElement('div')
-    this.title.className = 'arpg-building-menu-title modal-title'
-
-    this.closeButton = document.createElement('button')
-    this.closeButton.type = 'button'
-    this.closeButton.className = 'arpg-building-menu-nav modal-close ui-btn'
-    this.closeButton.textContent = '✕'
-    this.closeButton.setAttribute('aria-label', t('close'))
-    this.closeButton.addEventListener('click', () => this.close())
-
     this.body = document.createElement('div')
     this.body.className = 'arpg-building-menu-body'
 
     this.info = document.createElement('div')
     this.info.className = 'arpg-building-menu-info bottombar-info active'
 
-    this.header.appendChild(this.backButton)
-    this.header.appendChild(this.title)
-    this.header.appendChild(this.closeButton)
-    this.panel.appendChild(this.header)
+    this.panel.appendChild(this.backButton)
     this.panel.appendChild(this.info)
     this.panel.appendChild(this.body)
-    this.menu.gameHud.appendChild(this.panel)
   }
 
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
@@ -90,35 +64,43 @@ export class ArpgBuildingMenuManager {
     const player = this.menu.context.player
     if (!hero || !building || building.isDestroyed || building.isDead || !building.isBuilt) return false
     if (building.owner !== player || !building.owner?.isPlayed) return false
-    const allowedDistance = getBuildingContactDistance(building.size ?? 1) + 1
-    return Math.floor(instancesDistance(hero, building)) <= allowedDistance
+    // Same contact check the hero's own interactions gate on (isUnitAtDest → instanceContactInstance
+    // for non-hunt actions) — using a different, more lenient distance here let the menu open
+    // while the deposit button stayed hidden because the hero wasn't quite close enough yet.
+    return instanceContactInstance(hero, building)
   }
 
   open(building: BuildingEntity): boolean {
     if (!this.canOpenFor(building)) return false
+    if (this.opened) this.close()
     const items = this.menu.getActionMenuItems(building)
     this.building = building
     this.stack = [items]
     this.opened = true
     this.structureSignature = this.getStructureSignature()
-    document.addEventListener('keydown', this.onKeyDown)
-    this.title.textContent = t(building.assetType || building.type)
-    this.panel.classList.remove('hidden')
+    this.modal = new Modal({
+      title: t(building.assetType || building.type),
+      content: this.panel,
+      onClose: () => this.close(),
+    })
+    this.modal._panel?.classList.add('arpg-building-menu-panel')
     this.render()
     return true
   }
 
   close(): void {
-    document.removeEventListener('keydown', this.onKeyDown)
+    if (!this.opened && !this.modal) return
     this.menu.menuTooltip.hide()
+    const modal = this.modal
+    this.modal = undefined
     const building = this.building
     this.building = null
     this.stack = []
     this.opened = false
     this.structureSignature = ''
-    this.panel.classList.add('hidden')
     this.info.textContent = ''
     this.body.textContent = ''
+    modal?.close()
     const player = this.menu.context.player
     if (building && player?.selectedBuilding === building) {
       building.unselect?.()
@@ -302,7 +284,7 @@ export class ArpgBuildingMenuManager {
   }
 
   destroy(): void {
-    document.removeEventListener('keydown', this.onKeyDown)
-    this.panel.remove()
+    this.modal?.close()
+    this.modal = undefined
   }
 }

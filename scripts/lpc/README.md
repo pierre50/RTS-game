@@ -65,6 +65,27 @@ python3 scripts/lpc/build.py --source <source_folder> --out <output_folder>
 python3 scripts/lpc/build.py --clean
 ```
 
+## Generate the animal sprites
+
+Bakes the wildlife spritesheets (`public/assets/graphics/animals/`) from the
+source sheets in `scripts/lpc/spritesheets/animals/` — separate from the unit
+build above, but reuses the same lighting/retro-palette/outline pipeline.
+
+```bash
+pnpm assets:lpc:build-animals
+# or directly:
+python3 scripts/lpc/build_animals.py
+```
+
+Options:
+
+```bash
+python3 scripts/lpc/build_animals.py --animal deer   # only one animal, repeatable
+python3 scripts/lpc/build_animals.py --source <source_folder> --out <output_folder>
+```
+
+`pnpm assets:lpc:build` runs the unit, equipment, and animal builds in sequence.
+
 ## Diagnose equipment combinations
 
 Lists, for every equipment and animation, any empty frames (layers that don't
@@ -83,5 +104,6 @@ python3 scripts/lpc/audit_equipment.py
 - `image_pipeline.py`: frame composition (recolor, cropping, layers, sheet writing).
 - `outline_style.py`: experimental outline softening/removal pass (see above).
 - `build.py`: orchestrates the full bake + calls the retro-style and outline passes.
+- `build_animals.py`: bakes the wildlife spritesheets (see above).
 - `sync.py`: downloads the sources from the Universal LPC repository.
 - `audit_equipment.py`: diagnoses empty layer/animation combinations.

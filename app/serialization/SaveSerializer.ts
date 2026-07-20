@@ -49,7 +49,6 @@ type SerializableEntity = RuntimeEntityBase & {
 }
 type SerializablePlayer = PlayerLike & {
   aiState?: SavedAIState
-  difficulty?: string
   enemyBuildingMemory?: Map<string, ThreatMemory>
   enemyUnitMemory?: Map<string, ThreatMemory>
   getNow?: () => number
@@ -233,7 +232,6 @@ function playerData(player: SerializablePlayer, isArpgSave = false) {
       'gold',
       'civ',
       'color',
-      'difficulty',
       'team',
       'population',
       'populationMax',

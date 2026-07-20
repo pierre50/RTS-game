@@ -125,6 +125,27 @@
   transition: width var(--ui-transition-fast);
 }
 
+.hero-status-carry {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-5);
+  margin-top: 7px;
+}
+
+.hero-status-carry.hidden {
+  display: none;
+}
+
+.hero-status-carry-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-status-carry-value {
+  color: var(--main-text-color);
+  font-weight: 700;
+}
+
 .bottombar-info {
   position: relative;
   display: flex;
@@ -326,24 +347,15 @@
 }
 
 .inventory-panel {
-  position: fixed;
-  bottom: 132px;
-  left: 50%;
-  z-index: 500;
-}
-
-.action-menu {
   width: min(620px, calc(100vw - 24px));
   max-height: min(430px, calc(100vh - 170px));
-  transform: translateX(-50%);
-}
-
-.inventory-panel.hidden {
-  display: none;
-}
-
-.inventory-panel {
   gap: 0;
+}
+
+.inventory-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
 }
 
 .inventory-topbar {
@@ -428,24 +440,15 @@
 }
 
 .npc-orders-panel {
-  position: fixed;
-  bottom: 220px;
-  left: 50%;
-  z-index: 500;
   width: min(280px, calc(100vw - 24px));
   min-width: 0;
-  padding: 12px;
-  transform: translateX(-50%);
-  box-shadow: var(--main-box-shadow);
+  padding: 16px;
 }
 
-.npc-orders-panel.hidden {
-  display: none;
-}
-
-.npc-orders-title {
-  flex: 1;
-  text-align: left;
+.npc-orders-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
 }
 
 .npc-orders-option {
@@ -460,38 +463,23 @@
 }
 
 .arpg-building-menu {
-  position: fixed;
-  left: 50%;
-  bottom: 156px;
-  z-index: 520;
-  width: min(620px, calc(100vw - 24px));
-  max-height: min(420px, calc(100vh - 190px));
-  transform: translateX(-50%);
-  padding: 12px;
-}
-
-.arpg-building-menu.hidden {
-  display: none;
-}
-
-.arpg-building-menu-header {
+  display: flex;
+  flex-direction: column;
   gap: var(--ui-gap-10);
 }
 
-.arpg-building-menu-title {
-  overflow: hidden;
-  flex: 1;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.arpg-building-menu-panel {
+  width: min(620px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 190px));
 }
 
 .arpg-building-menu-nav {
+  align-self: flex-start;
   flex-shrink: 0;
 }
 
-.arpg-building-menu-nav:not(.is-visible):first-child {
-  visibility: hidden;
+.arpg-building-menu-nav:not(.is-visible) {
+  display: none;
 }
 
 .arpg-building-menu-info {
@@ -662,6 +650,54 @@ body.arpg-game-cursor.arpg-cursor-bow {
     auto;
 }
 
+/* Gamepad aim reticle: a page can't move the real OS cursor, so this lookalike element
+   (same pointer images as above) stands in for it while the gamepad drives the aim point. */
+body.arpg-cursor-hidden {
+  cursor: none !important;
+}
+
+#arpg-virtual-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  background: url('../../public/assets/interface/pointers/main/005.png') no-repeat;
+  transform: translate(-27px, -14px);
+}
+
+#arpg-virtual-cursor.is-visible {
+  display: block;
+}
+
+#arpg-virtual-cursor.arpg-cursor-pointer {
+  background-image: url('../../public/assets/interface/pointers/main/000.png');
+  transform: translate(-2px, -2px);
+}
+
+#arpg-virtual-cursor.arpg-cursor-resource {
+  background-image: url('../../public/assets/interface/pointers/main/003.png');
+  transform: translate(-4px, -4px);
+}
+
+#arpg-virtual-cursor.arpg-cursor-combat {
+  background-image: url('../../public/assets/interface/pointers/main/004.png');
+  transform: translate(-12px, -12px);
+}
+
+#arpg-virtual-cursor.arpg-cursor-move {
+  background-image: url('../../public/assets/interface/pointers/main/002.png');
+  transform: translate(-21px, -11px);
+}
+
+#arpg-virtual-cursor.arpg-cursor-bow {
+  background-image: url('../../public/assets/interface/pointers/main/005.png');
+  transform: translate(-27px, -14px);
+}
+
 .resource {
   display: flex;
   align-items: center;
@@ -717,6 +753,7 @@ body.arpg-game-cursor.arpg-cursor-bow {
 
 .map-editor-titlebar {
   align-items: center;
+  font-size: var(--font-size-lg);
   font-weight: bold;
   text-transform: uppercase;
 }
@@ -768,6 +805,7 @@ body.arpg-game-cursor.arpg-cursor-bow {
 }
 
 .map-editor-section-title {
+  font-size: var(--font-size-section-title);
   font-weight: bold;
   text-transform: uppercase;
 }

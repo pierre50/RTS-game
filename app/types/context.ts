@@ -49,6 +49,7 @@ export interface MenuLike {
   getActionUnitButton(type: string): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getActionRallyPointButton(): MenuButtonSpec
+  getActionDepositButton(building: BuildingEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
   destroy?(): void

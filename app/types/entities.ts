@@ -60,6 +60,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   updateTexture?: () => void
   drawHealthBar?: () => void
   removeHealthBar?: () => void
+  drawHeroPowerBar?: (ratio: number) => void
+  removeHeroPowerBar?: () => void
   shouldKeepHealthBarVisible?: () => boolean
   isAttacked?: (attacker: RuntimeEntity) => void
   stopAttackInterval?: () => void
@@ -116,6 +118,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   sprite?: AnimatedSprite
   shadow?: AnimatedSprite | null
   syncShadow?: () => void
+  syncAppearanceLayers?: (sheet: string) => void
   loadedInTransport?: TransportBoat | null
   inactif?: boolean
   sounds?: UnitSounds
@@ -157,6 +160,13 @@ export interface UnitEntity extends RuntimeEntityBase {
   followingHero?: boolean
   currentSheet?: string
   currentFrame?: number
+  heroBowChargeStart?: number | null
+  heroBowChargeRatio?: number
+  heroBowChargeDestination?: Point | null
+  heroBowChargeTarget?: RuntimeEntity | null
+  heroBowReleaseQueued?: boolean
+  heroBowReleasePower?: number
+  heroBowChargeVisualLocked?: boolean
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
