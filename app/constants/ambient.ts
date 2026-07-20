@@ -13,6 +13,10 @@ export const BIOME_TREE_PLAYER_SAFE_DIST = 22
 // Player safe radius (cells) — no animals spawned within this distance of any spawn,
 // above the highest runaway sight (Deer: 8) so the camp start isn't a stampede
 export const ANIMAL_PLAYER_SAFE_DIST = 14
+// Per-cell chance of rolling an ambient wildlife group outside the player safe zone.
+// Kept independent from GROUND_SET_CHANCE/FLOOR_SET_CHANCE so disabling ground clutter
+// (rocks/floor variants) never silently kills wildlife spawning, and vice versa.
+export const AMBIENT_ANIMAL_CHANCE = 0.008
 
 // Ground floor decorations (LABEL_TYPES.floor, zIndex 1)
 export const FLOOR_SETS_GRASS = ['environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10']

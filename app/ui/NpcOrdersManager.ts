@@ -3,7 +3,6 @@ import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import {
-  resumeNpcWork,
   sendNpcToStockpile,
   keepNpcHere,
   startFollowingHero,
@@ -13,7 +12,7 @@ import {
 import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
 
-type NpcOrderId = 'resume' | 'stockpile' | 'stay' | 'follow' | 'goto'
+type NpcOrderId = 'stockpile' | 'stay' | 'follow' | 'goto'
 
 const NPC_ORDER_SPECS: {
   id: NpcOrderId
@@ -24,7 +23,6 @@ const NPC_ORDER_SPECS: {
   { id: 'goto', labelKey: 'npcOrderGoTo', startsPicking: true },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
-  { id: 'resume', labelKey: 'npcOrderResume', run: resumeNpcWork },
   { id: 'stockpile', labelKey: 'npcOrderStockpile', run: sendNpcToStockpile },
 ]
 

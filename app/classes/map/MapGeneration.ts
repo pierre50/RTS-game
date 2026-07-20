@@ -26,6 +26,7 @@ import {
   WATER_SET_CHANCE,
   WATER_SET_DEEP_LAND_MIN_DIST,
   ANIMAL_PLAYER_SAFE_DIST,
+  AMBIENT_ANIMAL_CHANCE,
 } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import { MapBlueprintGeneration } from './MapBlueprintGeneration'
@@ -116,7 +117,6 @@ export type MapGenerationMap = RuntimeMap & {
   rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
   classifyDeepWater(): void
   generateMapRelief(): void
-  generateAnimalsAroundPlayers(playersPos: GeneratedPosition[]): void
   generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
   generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
   generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void>
@@ -189,6 +189,25 @@ const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
   BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
   Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
   Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
+}
+// Multipliers applied on top of the base weight above, per terrain biome (cell.type).
+// Biome patches can be smaller than a camp's ambient-spawn radius, so multipliers are kept
+// close to 1 (never below ~0.45) - a lean per biome, never a hard species cutoff at the border.
+const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
+  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75 },
+  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4 },
+  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15 },
+  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45 },
+}
+function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {
+  const total = entries.reduce((sum, [, weight]) => sum + Math.max(weight, 0), 0)
+  if (total <= 0) return entries[0][0]
+  let roll = random() * total
+  for (const [item, weight] of entries) {
+    roll -= Math.max(weight, 0)
+    if (roll <= 0) return item
+  }
+  return entries[entries.length - 1][0]
 }
 function createSpawnSearchCell(i: number, j: number, terrainType: TerrainValue): RuntimeCell {
   return {
@@ -345,11 +364,15 @@ export class MapGeneration {
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
     })
-    const weightedTypes = (availableTypes.length ? availableTypes : Object.keys(animals)).flatMap(type =>
-      Array(Math.max(1, Math.round((AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE).weight))).fill(type)
-    )
+    const types = availableTypes.length ? availableTypes : Object.keys(animals)
+    const biome = this.map.grid[i]?.[j]?.type ?? ''
+    const habitatMultipliers = ANIMAL_HABITAT_WEIGHTS[biome] ?? {}
+    const weightedEntries: Array<[string, number]> = types.map(type => [
+      type,
+      (AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE).weight * (habitatMultipliers[type] ?? 1),
+    ])
 
-    return this.map.randomItem(weightedTypes)
+    return pickWeightedItem(() => this.map.random(), weightedEntries)
   }
 
   getAmbientAnimalProfile(type: string): AmbientAnimalProfile {
@@ -680,7 +703,6 @@ export class MapGeneration {
       await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
       await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
     }
-    measure('animals', () => this.map.generateAnimalsAroundPlayers(this.map.playersPos))
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
     for (const viewer of this.map.context.players || []) {
@@ -1373,29 +1395,19 @@ export class MapGeneration {
             floor.zIndex = 1
             cell.addChild?.(floor)
           }
-          if (!hasWaterNeighbour && this.map.random() < this.map.chanceOfSets) {
-            if (cell.category !== 'Water') {
-              const type = this.map.randomItem(['tree', 'rock', 'animal'])
-              switch (type) {
-                case 'rock': {
-                  const randomSpritesheet = this.map.randomItem(GROUND_SETS)
-                  const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-                  const rock: SetSprite = Sprite.from(texture)
-                  rock.label = LABEL_TYPES.set
-                  rock.roundPixels = true
-                  rock.eventMode = 'none'
-                  rock.updateAnchor = true
-                  rock.zIndex = 2
-                  cell.addChild?.(rock)
-                  break
-                }
-                case 'animal': {
-                  const animalType = this.pickAmbientAnimalType(i, j)
-                  this.placeAmbientAnimalGroup(i, j, animalType)
-                  break
-                }
-              }
-            }
+          if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
+            const randomSpritesheet = this.map.randomItem(GROUND_SETS)
+            const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
+            const rock: SetSprite = Sprite.from(texture)
+            rock.label = LABEL_TYPES.set
+            rock.roundPixels = true
+            rock.eventMode = 'none'
+            rock.updateAnchor = true
+            rock.zIndex = 2
+            cell.addChild?.(rock)
+          }
+          if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
+            this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
           if (cell.category === 'Water') {
             if (this.map.random() < this.map.chanceOfSets) {
@@ -1441,21 +1453,19 @@ export class MapGeneration {
           }
         }
         if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
-          const type = this.map.randomItem(['tree', 'rock', 'animal'])
-          if (type === 'rock') {
-            const sheet = this.map.randomItem(GROUND_SETS)
-            const texture = getTextureByFrame(sheet, 0, Assets)
-            if (texture) {
-              const rock: SetSprite = Sprite.from(texture)
-              rock.label = LABEL_TYPES.set
-              rock.roundPixels = true
-              rock.eventMode = 'none'
-              rock.zIndex = 2
-              cell.addChild?.(rock)
-            }
-          } else if (type === 'animal') {
-            this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
+          const sheet = this.map.randomItem(GROUND_SETS)
+          const texture = getTextureByFrame(sheet, 0, Assets)
+          if (texture) {
+            const rock: SetSprite = Sprite.from(texture)
+            rock.label = LABEL_TYPES.set
+            rock.roundPixels = true
+            rock.eventMode = 'none'
+            rock.zIndex = 2
+            cell.addChild?.(rock)
           }
+        }
+        if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
+          this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
         if (cell.category === 'Water') {
           if (this.map.random() < this.map.chanceOfSets) {

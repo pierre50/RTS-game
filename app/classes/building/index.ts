@@ -368,6 +368,7 @@ export class Building extends Instance implements BuildingEntity {
     if (this.isBuilt) {
       this.visibilityTimeout = setTimeout(() => {
         updateInstanceVisibility(this)
+        this.scanForInitialTarget()
       })
       this.finalTexture()
       this.onBuilt()
@@ -434,6 +435,10 @@ export class Building extends Instance implements BuildingEntity {
 
   detect(instance: RuntimeEntity): void {
     return this.buildingCombat.detect(instance)
+  }
+
+  scanForInitialTarget(): void {
+    return this.buildingCombat.scanForInitialTarget()
   }
 
   override select(): void {

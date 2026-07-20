@@ -1,14 +1,9 @@
 import { Resource } from '../Resource'
-import {
-  RESOURCE_TYPES,
-  BIOME_TREE_CHANCE,
-  BIOME_TREE_PLAYER_SAFE_DIST,
-  ANIMAL_PLAYER_SAFE_DIST,
-} from '../../constants'
+import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
-import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
+import type { ResourceEntity } from '../../types/entities'
 
 export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
 type ResourceType = string
@@ -22,14 +17,10 @@ type MapResourcesMap = {
   mapType?: string
   resourceDensity?: ResourceDensity
   resources: Set<ResourceEntity>
-  gaia?: {
-    createAnimal?(options: { i: number; j: number; type: string }): RuntimeEntity
-  } | null
   random(): number
   randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
   addChild<T extends ContainerChild>(child: T): T
-  placeAnimalHerd(player: GridPosition, type: string, quantity: number, range: ResourceRange): void
   placeResourceGroup(player: GridPosition, type: ResourceType, quantity: number, range: ResourceRange): boolean
   placeResourceGroupAt(center: GridPosition, type: ResourceType, quantity: number, clusterRadius?: number): boolean
   generateForestAroundPlayer(player: GridPosition, treeCount: number): void
@@ -278,46 +269,6 @@ export class MapResources {
         !hasSpacedResourceAround(grid, cell.i, cell.j) &&
           this.map.resources.add(createResource(this.map, cell.i, cell.j, RESOURCE_TYPES.tree))
       }
-    }
-  }
-
-  placeAnimalHerd(player: GridPosition, type: string, quantity: number, range: ResourceRange): void {
-    const { grid } = this.map
-    const randomDistance = this.map.randomRange(range[0], range[1])
-    const centerI = player.i + this.map.randomItem([-randomDistance, randomDistance])
-    const centerJ = player.j + this.map.randomItem([-randomDistance, randomDistance])
-
-    const safeDistSq = ANIMAL_PLAYER_SAFE_DIST ** 2
-    const validCells: ResourceCenter[] = []
-    for (let dx = -3; dx <= 3; dx++) {
-      for (let dy = -3; dy <= 3; dy++) {
-        const newI = centerI + dx
-        const newJ = centerJ + dy
-        if ((newI - player.i) ** 2 + (newJ - player.j) ** 2 < safeDistSq) continue
-        if (grid[newI]?.[newJ]) {
-          const cell = grid[newI][newJ]
-          if (!cell.solid && cell.category !== 'Water' && !cell.has && !cell.border && !cell.inclined) {
-            validCells.push({ i: newI, j: newJ })
-          }
-        }
-      }
-    }
-
-    const toPlace = Math.min(quantity, validCells.length)
-    for (let i = 0; i < toPlace; i++) {
-      const idx = Math.floor(this.map.random() * validCells.length)
-      const cell = validCells.splice(idx, 1)[0]
-      this.map.gaia?.createAnimal?.({ i: cell.i, j: cell.j, type })
-    }
-  }
-
-  generateAnimalsAroundPlayers(playersPos: GridPosition[]): void {
-    for (let i = 0; i < playersPos.length; i++) {
-      this.map.placeAnimalHerd(playersPos[i], 'Deer', 5, [12, 18])
-      this.map.placeAnimalHerd(playersPos[i], 'Deer', 4, [18, 26])
-      this.map.placeAnimalHerd(playersPos[i], 'Hare', 6, [11, 16])
-      this.map.placeAnimalHerd(playersPos[i], 'BlackGrouse', 5, [11, 16])
-      this.map.placeAnimalHerd(playersPos[i], 'Fox', 4, [14, 20])
     }
   }
 

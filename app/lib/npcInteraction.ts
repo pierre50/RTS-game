@@ -229,11 +229,6 @@ function resetNpcDirectives(target: UnitEntity): void {
   setCommSelected(target, false)
 }
 
-export function resumeNpcWork(target: UnitEntity): void {
-  target.followingHero = false
-  releaseNpc(target)
-}
-
 export function sendNpcToStockpile(target: UnitEntity): void {
   resetNpcDirectives(target)
   target.sendToDelivery?.()

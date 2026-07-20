@@ -13,8 +13,6 @@ import {
 import {
   canUpdateMinimap,
   changeSpriteColorDirectly,
-  findInstancesInSight,
-  getActionCondition,
   getBuildingAsset,
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
@@ -33,7 +31,6 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 import type { Texture } from 'pixi.js'
@@ -93,17 +90,7 @@ export class BuildingLifecycle {
         menu.setBottombar(building)
       }
       updateInstanceVisibility(building)
-      // Vision-driven aggro (see FogOfWar.updateVisibility) only fires when a mover's own
-      // sight newly reveals this building, so a tower finishing construction surrounded by
-      // already-stationary enemies would otherwise never take its first shot. Scan once here.
-      if (!wasBuilt && building.range && building.projectile) {
-        const target = findInstancesInSight<Building, RuntimeEntity>(
-          building,
-          candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
-          building.range
-        )[0]
-        if (target) building.detect(target)
-      }
+      if (!wasBuilt) building.scanForInitialTarget()
     }
     building.updateShadow()
   }

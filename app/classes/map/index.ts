@@ -313,14 +313,6 @@ export default class Map extends Container {
     )
   }
 
-  placeAnimalHerd(player: PlayerLike, type: string, quantity: number, range: [number, number]): void {
-    return this.mapResources.placeAnimalHerd(player, type, quantity, range)
-  }
-
-  generateAnimalsAroundPlayers(playersPos: GeneratedPosition[]): void {
-    return this.mapResources.generateAnimalsAroundPlayers(compactPositions(playersPos))
-  }
-
   generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void> {
     return this.mapResources.generateResourcesAroundPlayersAsync(compactPositions(playersPos))
   }
