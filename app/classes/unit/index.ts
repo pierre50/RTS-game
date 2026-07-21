@@ -51,6 +51,7 @@ import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { applyToolAppearance } from '../../lib/heroTools'
+import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import {
   canAutoReactToAttack,
@@ -231,6 +232,13 @@ export class Unit extends Instance implements UnitEntity {
   allAssets?: UnitEntity['allAssets']
   energy?: UnitEntity['energy']
   totalEnergy?: UnitEntity['totalEnergy']
+  energyRegenRate?: UnitEntity['energyRegenRate']
+  energyRegenDelay?: UnitEntity['energyRegenDelay']
+  energyRegenMultiplier?: UnitEntity['energyRegenMultiplier']
+  lastEnergySpentAt?: UnitEntity['lastEnergySpentAt']
+  energyCosts?: UnitEntity['energyCosts']
+  waitingForEnergyAction?: UnitEntity['waitingForEnergyAction']
+  waitingForEnergyTarget?: UnitEntity['waitingForEnergyTarget']
   contextActionEnergyCosts?: UnitEntity['contextActionEnergyCosts']
   toolLevels?: UnitEntity['toolLevels']
   appearance?: UnitEntity['appearance']
@@ -304,6 +312,7 @@ export class Unit extends Instance implements UnitEntity {
     this.zIndex = getInstanceZIndex(this)
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
+    ensureUnitEnergy(this)
     if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
 
     this.currentCell = map.grid[this.i][this.j]
@@ -1043,6 +1052,12 @@ export class Unit extends Instance implements UnitEntity {
 
   override moveToPath() {
     return this.unitMovement.moveToPath()
+  }
+
+  override step(): void {
+    updateUnitEnergy(this)
+    if (resumeEnergyWaitIfReady(this)) return
+    super.step()
   }
 
   moveDirect(dirX: number, dirY: number, distance: number): boolean {

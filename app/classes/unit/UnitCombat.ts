@@ -17,6 +17,7 @@ import { Projectile } from '../Projectile'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../../lib/unitExperience'
 import { showDamageFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
+import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -91,6 +92,8 @@ export class UnitCombat {
       unit.sendToEvt?.(unit.dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
       return
     }
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
     this.playSingleAttackAnimation(() => launchProjectile(), SHOOT_RELEASE_FRAME)
   }
 
@@ -237,6 +240,7 @@ export class UnitCombat {
           unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
           return
         }
+        if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
         if (unit.sounds && unit.sounds.hit) {
           playAudibleSoundCue(unit, unit.sounds.hit)
         }

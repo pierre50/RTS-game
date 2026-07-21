@@ -23,6 +23,9 @@ export type SaveEntityState = {
   dest?: SaveReference | SaveDestination | null
   direction?: number
   experience?: Record<string, number>
+  energy?: number
+  totalEnergy?: number
+  lastEnergySpentAt?: number
   hitPoints?: number
   i: number
   inactif?: boolean

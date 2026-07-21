@@ -20,6 +20,13 @@ import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME } from './graphics'
 import { t } from './lang'
 import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
+import {
+  drainEnergyAmount,
+  ensureUnitEnergy,
+  getActionEnergyCost,
+  hasEnergyForAction,
+  spendEnergyForAction,
+} from './unitEnergy'
 import { Projectile } from '../classes/Projectile'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -66,17 +73,8 @@ const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   bow: WORK_TYPES.hunter,
 }
 
-const DEFAULT_CONTEXT_ACTION_ENERGY_COST: Record<HeroContextAction, number> = {
-  chop: 1,
-  mine: 1,
-  build: 1,
-  fish: 1,
-  gather: 0,
-  pickup: 0,
-  interact: 0,
-}
-
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
+type DeliveryAimResult = 'delivered' | 'blocked' | 'none'
 
 function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
@@ -226,33 +224,30 @@ export function getHeroToolLevel(hero: UnitEntity, tool: HeroCivilTool): number 
   return Math.max(0, Math.floor(hero.toolLevels?.[tool] ?? DEFAULT_HERO_TOOL_LEVELS[tool] ?? 0))
 }
 
-function getContextActionEnergyCost(hero: UnitEntity, contextAction: HeroContextAction): number {
-  const override = hero.contextActionEnergyCosts?.[contextAction]
-  const base = override ?? DEFAULT_CONTEXT_ACTION_ENERGY_COST[contextAction]
-  const tool = contextualToolByAction[contextAction]
-  const level = tool ? getHeroToolLevel(hero, tool) : 1
-  return Math.max(0, Math.ceil(base / Math.max(1, level)))
-}
-
-function hasEnergyForContextAction(hero: UnitEntity, contextAction: HeroContextAction): boolean {
-  const cost = getContextActionEnergyCost(hero, contextAction)
-  if (cost <= 0 || hero.energy == null) return true
-  return hero.energy >= cost
-}
-
-function consumeEnergyForContextAction(hero: UnitEntity, contextAction: HeroContextAction): void {
-  const cost = getContextActionEnergyCost(hero, contextAction)
-  if (cost <= 0 || hero.energy == null) return
-  hero.energy = Math.max(0, hero.energy - cost)
-}
-
-function runContextAction(hero: UnitEntity, contextAction: HeroContextAction, effect: () => void): boolean {
-  if (!hasEnergyForContextAction(hero, contextAction)) {
+function spendHeroEnergy(hero: UnitEntity, action: string): boolean {
+  if (spendEnergyForAction(hero, action)) return true
+  if (hero.owner?.isPlayed) {
     hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
-    return false
   }
+  return false
+}
+
+function checkHeroEnergy(hero: UnitEntity, action: string): boolean {
+  if (hasEnergyForAction(hero, action)) return true
+  if (hero.owner?.isPlayed) {
+    hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
+  }
+  return false
+}
+
+function runContextAction(
+  hero: UnitEntity,
+  contextAction: HeroContextAction,
+  unitAction: string,
+  effect: () => void
+): boolean {
+  if (!checkHeroEnergy(hero, unitAction)) return false
   hero.contextAction = contextAction
-  consumeEnergyForContextAction(hero, contextAction)
   effect()
   return true
 }
@@ -322,6 +317,12 @@ export function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): bool
   return true
 }
 
+function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (!((hero.loading ?? 0) > 0)) return false
+  if (!buildingAcceptsCarriedResource(hero, target)) return false
+  return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
+}
+
 function angleDelta(a: number, b: number): number {
   const diff = Math.abs(a - b) % 360
   return diff > 180 ? 360 - diff : diff
@@ -368,16 +369,17 @@ function tryDeliver(hero: UnitEntity): boolean {
   return true
 }
 
-function tryDeliverAt(hero: UnitEntity): boolean {
-  if (!((hero.loading ?? 0) > 0)) return false
+function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
+  if (!((hero.loading ?? 0) > 0)) return 'none'
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
-    target => canDeliverToBuilding(hero, target),
+    target => canAimDeliveryAtBuilding(hero, target),
     CLICK_TARGET_SEARCH_RANGE
   )
 
   const target = getDirectionalTarget(hero, candidates)
-  return target ? deliverToBuilding(hero, target) : false
+  if (!target) return 'none'
+  return deliverToBuilding(hero, target) ? 'delivered' : 'blocked'
 }
 
 function canBeArrowTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
@@ -427,8 +429,10 @@ function performContextActionAt(hero: UnitEntity): ToolActionResult {
     const config = HERO_CONTEXT_ACTIONS.find(candidate => candidate.matches(target))
     if (!config) continue
     if (!isContextActionTargetReachable(hero, config.action, target)) continue
+    const unitAction = getContextActionForTarget(config.action, target)
+    if (!unitAction) continue
     const action = config.resolve(hero, target)
-    if (action) return runContextAction(hero, config.action, action) ? 'triggered' : 'blocked'
+    if (action) return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
     return 'blocked'
   }
 
@@ -481,6 +485,25 @@ function getHeroBowChargeRatio(hero: UnitEntity, now = performance.now()): numbe
   return Math.max(0, Math.min(1, (now - hero.heroBowChargeStart) / HERO_BOW_CHARGE_MS))
 }
 
+function hasEnergyToStartBowCharge(hero: UnitEntity): boolean {
+  ensureUnitEnergy(hero)
+  if (getActionEnergyCost(hero, 'heroBowCharge') <= 0) return true
+  if ((hero.energy ?? 0) > 0) return true
+  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
+  return false
+}
+
+function drainHeroBowChargeEnergy(hero: UnitEntity, now = performance.now()): boolean {
+  if (hero.heroBowChargeStart == null) return true
+  const totalCost = getActionEnergyCost(hero, 'heroBowCharge')
+  if (totalCost <= 0) return true
+  const previous = hero.heroBowChargeLastEnergyAt ?? hero.heroBowChargeStart
+  const elapsed = Math.max(0, now - previous)
+  hero.heroBowChargeLastEnergyAt = now
+  if (elapsed <= 0) return true
+  return drainEnergyAmount(hero, (totalCost * elapsed) / HERO_BOW_CHARGE_MS)
+}
+
 function freezeHeroBowChargeFrame(hero: UnitEntity, frame?: number): void {
   const sprite = hero.sprite
   if (!sprite || hero.currentSheet !== SHEET_TYPES.action) return
@@ -526,6 +549,10 @@ export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolea
 export function updateHeroBowCharge(hero: UnitEntity, now = performance.now()): void {
   if (hero.heroBowChargeStart == null) return
   if (hero.heroBowReleaseQueued) return
+  if (!drainHeroBowChargeEnergy(hero, now)) {
+    releaseHeroBowCharge(hero)
+    return
+  }
   const ratio = getHeroBowChargeRatio(hero, now)
   hero.heroBowChargeRatio = ratio
   hero.drawHeroPowerBar?.(ratio)
@@ -547,6 +574,7 @@ function clearHeroBowCharge(hero: UnitEntity): void {
   hero.heroBowReleaseQueued = false
   hero.heroBowReleasePower = undefined
   hero.heroBowChargeVisualLocked = false
+  hero.heroBowChargeLastEnergyAt = undefined
   hero.removeHeroPowerBar?.()
 }
 
@@ -602,9 +630,12 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
 function beginHeroBowChargeAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null): boolean {
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked) return false
+  if (!hasEnergyToStartBowCharge(hero)) return false
   hero.actionLocked = true
-  hero.heroBowChargeStart = performance.now()
+  const now = performance.now()
+  hero.heroBowChargeStart = now
   hero.heroBowChargeRatio = 0
+  hero.heroBowChargeLastEnergyAt = now
   hero.heroBowChargeDestination = destination
   hero.heroBowChargeTarget = target ?? null
   hero.heroBowReleaseQueued = false
@@ -637,8 +668,10 @@ export function releaseHeroBowCharge(hero: UnitEntity): boolean {
   return true
 }
 
-function playEmptyHandWhiff(hero: UnitEntity): void {
+function playEmptyHandWhiff(hero: UnitEntity): boolean {
+  if (!spendHeroEnergy(hero, 'heroWhiff')) return false
   playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff))
+  return true
 }
 
 export function triggerEquippedItemActionAt(
@@ -648,17 +681,18 @@ export function triggerEquippedItemActionAt(
 ): boolean {
   if (!tool || hero.actionLocked) return false
   hero.degree = getInstanceDegree(hero, destination.x, destination.y)
-  if (tryDeliverAt(hero)) return true
+  const deliveryResult = tryDeliverAt(hero)
+  if (deliveryResult === 'delivered') return true
   if (tool === 'bow') {
     const target = findArrowTargetInAim(hero)
     return beginHeroBowChargeAt(hero, target ? { x: target.x, y: target.y } : destination, target)
   }
   if (tool !== 'interact') return false
+  if (deliveryResult === 'blocked') return false
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
   if (actionResult === 'miss') {
-    playEmptyHandWhiff(hero)
-    return true
+    return playEmptyHandWhiff(hero)
   }
   return false
 }
@@ -670,7 +704,9 @@ function performNearestContextAction(hero: UnitEntity): ToolActionResult {
     if (closest) {
       const action = config.resolve(hero, closest.instance)
       if (action && isContextActionTargetReachable(hero, config.action, closest.instance)) {
-        return runContextAction(hero, config.action, action) ? 'triggered' : 'blocked'
+        const unitAction = getContextActionForTarget(config.action, closest.instance)
+        if (!unitAction) return 'blocked'
+        return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
       }
       return 'blocked'
     }
@@ -688,8 +724,7 @@ export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedIt
     const actionResult = performNearestContextAction(hero)
     if (actionResult === 'triggered') return true
     if (actionResult === 'miss') {
-      playEmptyHandWhiff(hero)
-      return true
+      return playEmptyHandWhiff(hero)
     }
     return false
   }

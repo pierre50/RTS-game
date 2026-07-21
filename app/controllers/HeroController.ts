@@ -28,6 +28,7 @@ import {
 } from '../lib/npcInteraction'
 import type { ControlBindingAction } from '../lib/settings'
 import { setUnitControlMode } from '../lib/unitControl'
+import { updateUnitEnergy } from '../lib/unitEnergy'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
@@ -212,6 +213,7 @@ export class HeroController {
   update(frameScale: number): void {
     const unit = this.heroUnit
     if (!unit) return
+    updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()

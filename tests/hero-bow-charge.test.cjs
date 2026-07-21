@@ -95,6 +95,50 @@ function loadHeroTools(overrides = {}) {
     },
     './lang': { t: key => key },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
+    './unitEnergy': {
+      hasEnergyForAction: (unit, action) => {
+        const costs = {
+          chopwood: 1,
+          minestone: 1,
+          fishing: 1,
+          takemeat: 1,
+          heroBowCharge: 2,
+          heroWhiff: 1,
+        }
+        const cost = costs[action] ?? 0
+        if (unit.energy == null) unit.energy = unit.totalEnergy ?? 10
+        if (unit.totalEnergy == null) unit.totalEnergy = 10
+        return unit.energy >= cost
+      },
+      spendEnergyForAction: (unit, action) => {
+        const costs = {
+          chopwood: 1,
+          minestone: 1,
+          fishing: 1,
+          takemeat: 1,
+          heroBowCharge: 2,
+          heroWhiff: 1,
+        }
+        const cost = costs[action] ?? 0
+        if (unit.energy == null) unit.energy = unit.totalEnergy ?? 10
+        if (unit.totalEnergy == null) unit.totalEnergy = 10
+        if (unit.energy < cost) return false
+        unit.energy -= cost
+        return true
+      },
+      drainEnergyAmount: (unit, amount) => {
+        if (unit.energy == null) unit.energy = unit.totalEnergy ?? 10
+        if (unit.totalEnergy == null) unit.totalEnergy = 10
+        const current = unit.energy
+        unit.energy = Math.max(0, unit.energy - amount)
+        return current >= amount
+      },
+      ensureUnitEnergy: unit => {
+        if (unit.totalEnergy == null) unit.totalEnergy = 10
+        if (unit.energy == null) unit.energy = unit.totalEnergy
+      },
+      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroWhiff: 1 }[action] ?? 0),
+    },
     './combatFeedback': { showDamageFeedback: () => {} },
     './unitExperience': {
       getCombatXpBonus: () => 0,
@@ -185,6 +229,7 @@ test('bow charge plays the action animation once while power keeps charging', ()
 
   try {
     assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 }), true)
+    assert.equal(hero.energy, 10)
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.onComplete, undefined)
 
@@ -194,6 +239,7 @@ test('bow charge plays the action animation once while power keeps charging', ()
     now += 100
     updateHeroBowCharge(hero)
 
+    assert.ok(hero.energy < 10)
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 4)
@@ -204,6 +250,28 @@ test('bow charge plays the action animation once while power keeps charging', ()
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 4)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('bow charge drains energy while held and releases when energy is empty', () => {
+  const { triggerToolAttackAt, updateHeroBowCharge } = loadHeroTools()
+  const { hero } = makeHero()
+  let now = 3000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    hero.energy = 0.1
+    hero.totalEnergy = 10
+
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 }), true)
+    now += 100
+    updateHeroBowCharge(hero)
+
+    assert.equal(hero.energy, 0)
+    assert.equal(hero.heroBowReleaseQueued, true)
   } finally {
     global.performance = originalPerformance
   }
@@ -319,6 +387,41 @@ test('full hero inventory blocks fishing without playing a whiff animation', () 
   assert.deepEqual(messages, [['heroInventoryFull', 'warning']])
 })
 
+test('free-hand interact does not whiff when aiming at a delivery building out of reach', () => {
+  const townCenter = {
+    family: 'building',
+    i: 4,
+    isDestroyed: false,
+    j: 0,
+    type: 'TownCenter',
+    x: 10,
+    y: 0,
+  }
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_hero, target, action) => target === townCenter && action === 'delivery',
+      getHitPointsWithDamage: () => 0,
+    },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [townCenter].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    i: 0,
+    j: 0,
+    loading: 10,
+    loadingType: 'fish',
+    isUnitAtDest: () => false,
+    getAction: action => {
+      hero.startedAction = action
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
+  assert.equal(hero.startedAction, undefined)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+})
+
 test('civil tools are no longer equipped combat weapons', () => {
   const enemy = {
     family: 'unit',
@@ -346,7 +449,7 @@ test('civil tools are no longer equipped combat weapons', () => {
   assert.equal(hero.actionLocked, false)
 })
 
-test('context actions consume energy from the action, not an equipped tool', () => {
+test('context actions check energy from the action, not an equipped tool', () => {
   const tree = {
     category: 'Tree',
     family: 'resource',
@@ -377,7 +480,7 @@ test('context actions consume energy from the action, not an equipped tool', () 
   })
 
   assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.equal(hero.energy, 1)
+  assert.equal(hero.energy, 2)
   assert.equal(hero.contextAction, 'chop')
   assert.deepEqual(calls, [
     ['setDest', tree],
@@ -439,6 +542,42 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
   assert.equal(hero.startedAction, undefined)
   assert.equal(hero.actionLocked, true)
   assert.equal(hero.currentSheet, 'actionSheet')
+})
+
+test('free-hand interact does not whiff without energy', () => {
+  const messages = []
+  const { triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    energy: 0,
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+})
+
+test('bow charge does not start without energy', () => {
+  const messages = []
+  const { triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    energy: 0,
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), false)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.heroBowChargeStart, undefined)
+  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 
 test('free-hand interact still whiffs when a contextual target is aimed but out of reach', () => {

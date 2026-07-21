@@ -15,19 +15,24 @@ type FloatingTextOptions = {
   fill: number
   stroke: number
   taskLabel: string
+  fontSize?: number
+  yOffset?: number
 }
 
 const FLASH_MS = 90
 const FLOAT_STEP_MS = 35
 const FLOAT_STEPS = 14
 const FLOAT_RISE = 18
+const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
 const flashStates = new WeakMap<DamageSprite, FlashState>()
+const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
   return (
     target.family === FAMILY_TYPES.unit ||
     target.family === FAMILY_TYPES.animal ||
-    target.family === FAMILY_TYPES.building
+    target.family === FAMILY_TYPES.building ||
+    target.family === FAMILY_TYPES.resource
   )
 }
 
@@ -84,14 +89,14 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
     style: {
       fill: options.fill,
       fontFamily: 'Arial, sans-serif',
-      fontSize: 13,
+      fontSize: options.fontSize ?? 13,
       fontWeight: '700',
       stroke: { color: options.stroke, width: 3 },
     },
   })
   text.anchor.set(0.5, 0.5)
   text.x = 0
-  text.y = spriteTop - 12
+  text.y = spriteTop - (options.yOffset ?? 12)
   text.alpha = 1
   text.zIndex = 100
   ;(target as unknown as Container).addChild(text)
@@ -112,7 +117,7 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
         return
       }
       step += 1
-      text.y = spriteTop - 12 - (FLOAT_RISE * step) / FLOAT_STEPS
+      text.y = spriteTop - (options.yOffset ?? 12) - (FLOAT_RISE * step) / FLOAT_STEPS
       text.alpha = Math.max(0, 1 - step / FLOAT_STEPS)
       if (step < FLOAT_STEPS || taskId == null) return
       stopFloatingText()
@@ -149,5 +154,21 @@ export function showLevelUpFeedback(target: RuntimeEntity, text: string): void {
     fill: 0xffcc33,
     stroke: 0x5c3d00,
     taskLabel: 'experience.levelUpText',
+  })
+}
+
+export function showFatigueFeedback(target: RuntimeEntity): void {
+  const scheduler = target.context?.scheduler
+  const now = scheduler?.elapsedMs ?? performance.now()
+  const previous = fatigueFeedbackTimes.get(target) ?? -Infinity
+  if (now - previous < FATIGUE_FEEDBACK_COOLDOWN_MS) return
+  fatigueFeedbackTimes.set(target, now)
+  showFloatingText(target, {
+    text: '💤',
+    fill: 0x7ec8ff,
+    stroke: 0x163d66,
+    fontSize: 18,
+    yOffset: 18,
+    taskLabel: 'unit.fatigueText',
   })
 }

@@ -47,6 +47,8 @@ function loadModule(relativePath, mocks) {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === '../../lib/lang') return { t: value => value }
+    if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/heroActionRange') {
       return {
         isHeroActionInRange: () => false,
@@ -94,6 +96,7 @@ const constants = {
   FAMILY_TYPES: {
     animal: 'animal',
     building: 'building',
+    resource: 'resource',
     unit: 'unit',
   },
   MENU_INFO_IDS: {
@@ -1397,6 +1400,72 @@ test('a villager builds a town center then starts gathering any nearby compatibl
   new UnitMovement(unit).affectNewDest()
 
   assert.deepEqual(calls, [['sendToTree', 'tree-1', true]])
+})
+
+test('chopping wood shows damage before wood is gathered', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wood: 'wood' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, hitPoints: 'hitPoints' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { chopWood: 'chop-wood' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showDamageFeedback: (target, amount) => calls.push(['damage', target.label, amount]),
+      showResourceGainFeedback: (target, amount) => calls.push(['gain', target.label, amount]),
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 3,
+    label: 'tree-1',
+    selected: true,
+    totalHitPoints: 5,
+    drawHealthBar: () => calls.push(['drawHealthBar']),
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: { menu: { updateInfo: (id, value) => calls.push(['updateInfo', id, value]) } },
+    dest: tree,
+    loading: 0,
+    loadingMax: { wood: 10 },
+    owner: { isPlayed: true },
+    sprite: {},
+    getActionCondition: target => target === tree,
+    getWorkSound: () => 'chop-wood',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
+
+  assert.equal(tree.hitPoints, 2)
+  assert.equal(unit.loading, 0)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['damage', 'tree-1', 1],
+    ['drawHealthBar'],
+    ['updateInfo', 'hitPoints', '2/5'],
+  ])
 })
 
 test('hero building health bar refreshes while construction progresses', () => {

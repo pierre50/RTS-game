@@ -169,6 +169,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   heroBowReleaseQueued?: boolean
   heroBowReleasePower?: number
   heroBowChargeVisualLocked?: boolean
+  heroBowChargeLastEnergyAt?: number
   contextAction?: HeroContextAction | null
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
@@ -208,6 +209,13 @@ export interface UnitEntity extends RuntimeEntityBase {
   loadingMax?: Record<string, number>
   energy?: number
   totalEnergy?: number
+  energyRegenRate?: number
+  energyRegenDelay?: number
+  energyRegenMultiplier?: number
+  lastEnergySpentAt?: number
+  energyCosts?: Partial<Record<string, number>>
+  waitingForEnergyAction?: string | null
+  waitingForEnergyTarget?: RuntimeEntity | null
   contextActionEnergyCosts?: Partial<Record<HeroContextAction, number>>
   toolLevels?: Partial<Record<HeroCivilTool, number>>
   assets?: Record<string, string>

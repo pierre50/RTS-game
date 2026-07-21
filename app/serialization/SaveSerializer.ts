@@ -28,6 +28,9 @@ type SerializableEntity = RuntimeEntityBase & {
   dest?: Destination | null
   direction?: number
   experience?: Record<string, number>
+  energy?: number
+  totalEnergy?: number
+  lastEnergySpentAt?: number
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: { label?: string } | null
@@ -158,6 +161,9 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'y',
       'z',
       'hitPoints',
+      'energy',
+      'totalEnergy',
+      'lastEnergySpentAt',
       'path',
       'work',
       'previousWork',

@@ -1,5 +1,6 @@
 import { LOADING_FOOD_TYPES } from '../constants'
 import { t } from '../lib/lang'
+import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
 import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
 
@@ -9,6 +10,8 @@ export class HeroStatusHud {
   title: HTMLDivElement
   value: HTMLDivElement
   fill: HTMLDivElement
+  energyValue: HTMLDivElement
+  energyFill: HTMLDivElement
   carry: HTMLDivElement
   carryIcon: HTMLImageElement
   carryValue: HTMLDivElement
@@ -39,6 +42,23 @@ export class HeroStatusHud {
     this.fill = document.createElement('div')
     this.fill.className = 'hero-status-fill'
 
+    const energyHeader = document.createElement('div')
+    energyHeader.className = 'hero-status-header hero-status-energy-header'
+
+    const energyTitle = document.createElement('div')
+    energyTitle.className = 'hero-status-title'
+    energyTitle.textContent = t('heroEnergyTitle')
+
+    this.energyValue = document.createElement('div')
+    this.energyValue.className = 'hero-status-value'
+
+    const energyBar = document.createElement('div')
+    energyBar.className = 'hero-status-bar hero-status-energy-bar'
+
+    this.energyFill = document.createElement('div')
+    this.energyFill.className = 'hero-status-fill hero-status-energy-fill'
+    this.energyFill.style.background = HERO_ENERGY_COLOR
+
     this.carry = document.createElement('div')
     this.carry.className = 'hero-status-carry hidden'
 
@@ -51,10 +71,15 @@ export class HeroStatusHud {
     header.appendChild(this.title)
     header.appendChild(this.value)
     bar.appendChild(this.fill)
+    energyHeader.appendChild(energyTitle)
+    energyHeader.appendChild(this.energyValue)
+    energyBar.appendChild(this.energyFill)
     this.carry.appendChild(this.carryIcon)
     this.carry.appendChild(this.carryValue)
     frame.appendChild(header)
     frame.appendChild(bar)
+    frame.appendChild(energyHeader)
+    frame.appendChild(energyBar)
     frame.appendChild(this.carry)
     this.element.appendChild(frame)
     menu.gameHud.appendChild(this.element)
@@ -79,6 +104,14 @@ export class HeroStatusHud {
     this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
     this.value.textContent = `${current}/${max}`
     this.fill.style.width = `${Math.round(ratio * 100)}%`
+
+    const rawEnergy = Math.max(0, hero.energy ?? hero.totalEnergy ?? 0)
+    const rawTotalEnergy = Math.max(0, hero.totalEnergy ?? 0)
+    const energy = Math.ceil(rawEnergy)
+    const totalEnergy = Math.ceil(rawTotalEnergy)
+    const energyRatio = rawTotalEnergy > 0 ? Math.max(0, Math.min(1, rawEnergy / rawTotalEnergy)) : 0
+    this.energyValue.textContent = `${energy}/${totalEnergy}`
+    this.energyFill.style.width = `${Math.round(energyRatio * 100)}%`
     this.element.classList.remove('hidden')
 
     const loading = hero.loading ?? 0

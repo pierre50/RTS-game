@@ -22,6 +22,7 @@ import {
   SHOOT_RELEASE_FRAME,
   THRUST_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
+  showDamageFeedback,
   showResourceGainFeedback,
 } from '../../lib'
 import { Projectile } from '../Projectile'
@@ -40,6 +41,7 @@ import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
+import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
@@ -424,6 +426,10 @@ export class UnitActions {
         unit.sendToDelivery?.()
         return
       }
+      if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+        if (isHeroControlled(unit)) stopManualHeroAction(unit)
+        return
+      }
       unit.loading = (unit.loading ?? 0) + gain
       unit.loadingType = loadingType
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
@@ -570,6 +576,10 @@ export class UnitActions {
             if (d) d.isUsedBy = null
             return
           }
+          if (!spendOrWaitForEnergy(unit, unit.action, d)) {
+            if (isHeroControlled(unit)) stopManualHeroAction(unit)
+            return
+          }
           unit.loading = (unit.loading ?? 0) + gain
           unit.loadingType = LOADING_TYPES.wheat
           grantUnitXp(unit, XP_CATEGORIES.farming, gain)
@@ -623,9 +633,15 @@ export class UnitActions {
             unit.sendToDelivery?.()
             return
           }
+          if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+            if (isHeroControlled(unit)) stopManualHeroAction(unit)
+            return
+          }
           this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
           if ((dest.hitPoints ?? 0) > 0) {
-            dest.hitPoints = Math.max((dest.hitPoints ?? 0) - 1, 0)
+            const previousHitPoints = dest.hitPoints ?? 0
+            dest.hitPoints = Math.max(previousHitPoints - 1, 0)
+            showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
             grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
             if (dest.selected) {
               dest.drawHealthBar?.()
@@ -700,6 +716,10 @@ export class UnitActions {
           }
           if (!dest) return
           if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+            if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+              if (isHeroControlled(unit)) stopManualHeroAction(unit)
+              return
+            }
             this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
             dest.hitPoints = Math.min(
               Math.round(
@@ -763,6 +783,7 @@ export class UnitActions {
             return
           }
           if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+            if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
             this.playSound(unit.sounds?.heal)
             const beforeHitPoints = dest.hitPoints ?? 0
             dest.hitPoints = Math.min(
@@ -808,6 +829,7 @@ export class UnitActions {
             return
           }
 
+          if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
           this.playSound(unit.sounds?.convert)
           unit.conversionChants = (unit.conversionChants || 0) + 1
           const { minChants, chance } = this.getConversionRules()
@@ -906,6 +928,7 @@ export class UnitActions {
           onSpriteLoopAtFrame(unit.sprite, SHOOT_RELEASE_FRAME, () => {
             const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
             if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
+            if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
             const projectile = new Projectile(
               {
                 owner: unit,
