@@ -349,6 +349,13 @@ export class UnitMovement {
       isRuntimeEntity(dest) &&
       currentDest.label === dest.label &&
       unit.action === action &&
+      !(
+        action === ACTION_TYPES.fishing &&
+        unit.category !== 'Boat' &&
+        unit.currentSheet === SHEET_TYPES.action &&
+        unit.sprite &&
+        !unit.sprite.playing
+      ) &&
       ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
     ) {
       return

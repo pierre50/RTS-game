@@ -46,6 +46,8 @@ import type { CommandSound } from '../../types/entities'
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
 const ASTROLOGY_CONVERSION_CHANCE = 0.39
+const SHORE_FISHING_GATHER_INTERVAL_MS = 4000
+const SHORE_FISHING_HOLD_FRAME = 5
 
 const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
   Stone: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
@@ -113,6 +115,43 @@ function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
 function lockManualHeroAction(unit: UnitEntity): void {
   if (!isHeroControlled(unit)) return
   unit.actionLocked = true
+}
+
+function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
+  if (unit.sprite) unit.sprite.loop = loop
+  if (unit.shadow) unit.shadow.loop = loop
+  const layers = (unit as UnitEntity & { appearanceLayerSprites?: Map<number, { loop: boolean }> })
+    .appearanceLayerSprites
+  for (const sprite of layers?.values() ?? []) {
+    sprite.loop = loop
+  }
+}
+
+function getActionLayerSprites(unit: UnitEntity): Iterable<{ gotoAndStop: (frame: number) => void; stop: () => void }> {
+  return (
+    (unit as UnitEntity & {
+      appearanceLayerSprites?: Map<number, { gotoAndStop: (frame: number) => void; stop: () => void }>
+    }).appearanceLayerSprites?.values() ?? []
+  )
+}
+
+function isFinishingShoreFishing(unit: UnitEntity): boolean {
+  return Boolean((unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing)
+}
+
+function holdSingleCycleGatherPose(unit: UnitEntity, frame: number): void {
+  if (unit.sprite) {
+    const holdFrame = Math.min(frame, Math.max(unit.sprite.textures.length - 1, 0))
+    unit.sprite.onComplete = undefined
+    unit.sprite.onFrameChange = undefined
+    unit.sprite.onLoop = undefined
+    unit.sprite.gotoAndStop(holdFrame)
+    unit.shadow?.gotoAndStop?.(holdFrame)
+    for (const sprite of getActionLayerSprites(unit)) {
+      sprite.gotoAndStop(holdFrame)
+    }
+  }
+  unit.fishingOverlaySprite?.stop()
 }
 
 function removeFromOwnerList(
@@ -345,12 +384,14 @@ export class UnitActions {
       updateTexture = false,
       releaseFrame = SLASH_IMPACT_FRAME,
       onRelease,
+      singleCycle = false,
     }: {
       dieOnEmpty?: boolean
       checkOwner?: boolean
       updateTexture?: boolean
       releaseFrame?: number
       onRelease?: () => void
+      singleCycle?: boolean
     } = {}
   ) {
     const unit = this.unit
@@ -362,8 +403,7 @@ export class UnitActions {
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
     lockManualHeroAction(unit)
-    onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
-      onRelease?.()
+    const gatherTick = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
         if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
@@ -388,7 +428,7 @@ export class UnitActions {
       unit.loadingType = loadingType
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       unit.updateInterfaceLoading?.()
-      this.playSound(soundId)
+      if (!singleCycle) this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
       showResourceGainFeedback(dest, gain)
@@ -406,7 +446,28 @@ export class UnitActions {
           unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
         }
       }
-      if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+      if (!singleCycle && isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+    }
+    if (singleCycle) {
+      ;(unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing = false
+      setActionSpriteLoop(unit, false)
+      let released = false
+      unit.sprite.onFrameChange = currentFrame => {
+        if (!released && currentFrame >= releaseFrame) {
+          released = true
+          onRelease?.()
+        }
+        if (!isFinishingShoreFishing(unit) && currentFrame >= SHORE_FISHING_HOLD_FRAME) {
+          holdSingleCycleGatherPose(unit, SHORE_FISHING_HOLD_FRAME)
+        }
+      }
+      unit.fishingOverlaySprite?.gotoAndPlay(0)
+      unit.startInterval?.(gatherTick, SHORE_FISHING_GATHER_INTERVAL_MS, false, 'unit.shoreFishing')
+      return
+    }
+    onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
+      onRelease?.()
+      gatherTick()
     })
   }
 
@@ -440,6 +501,7 @@ export class UnitActions {
     const map = unit.context?.map
     const sprite = unit.sprite
     if (!sprite) return
+    setActionSpriteLoop(unit, true)
     sprite.onLoop = undefined
     sprite.onFrameChange = undefined
     switch (name) {
@@ -448,10 +510,12 @@ export class UnitActions {
           unit.stop?.()
           return
         }
+        const deliveredAmount = unit.loading ?? 0
         const resourceKey = getPlayerResourceKey(unit.loadingType)
         if (resourceKey && unit.owner) {
-          unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + (unit.loading ?? 0)
+          unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + deliveredAmount
         }
+        if (unit.dest && 'family' in unit.dest) showResourceGainFeedback(unit.dest, deliveredAmount)
         unit.owner?.isPlayed && menu?.updateTopbar()
         unit.loading = 0
         unit.loadingType = null
@@ -777,6 +841,7 @@ export class UnitActions {
           checkOwner: true,
           dieOnEmpty: true,
           releaseFrame: THRUST_RELEASE_FRAME,
+          singleCycle: unit.category !== 'Boat',
           onRelease:
             unit.category !== 'Boat'
               ? () => this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))

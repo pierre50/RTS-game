@@ -97,6 +97,15 @@ export class UnitCommands {
     const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (!target || dest?.label !== target.label) return false
     if (unit.work !== work || unit.action !== action) return false
+    if (
+      action === ACTION_TYPES.fishing &&
+      unit.category !== 'Boat' &&
+      unit.currentSheet === SHEET_TYPES.action &&
+      unit.sprite &&
+      !unit.sprite.playing
+    ) {
+      return false
+    }
     return (unit.path?.length ?? 0) > 0 || Boolean(unit.isUnitAtDest?.(action, target))
   }
 

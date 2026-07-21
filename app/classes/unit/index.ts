@@ -949,6 +949,11 @@ export class Unit extends Instance implements UnitEntity {
       this.stop()
       return
     }
+    this.sprite.loop = this.loop ?? true
+    if (this.shadow) this.shadow.loop = this.sprite.loop
+    for (const sprite of this.appearanceLayerSprites.values()) {
+      sprite.loop = this.loop ?? true
+    }
     this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
@@ -1095,6 +1100,11 @@ export class Unit extends Instance implements UnitEntity {
     this.realDest = null
     this.transportLoadShoreCell = null
     this.transportLoadCoastCell = null
+    this.sprite.loop = this.loop ?? true
+    if (this.shadow) this.shadow.loop = this.sprite.loop
+    for (const sprite of this.appearanceLayerSprites.values()) {
+      sprite.loop = this.loop ?? true
+    }
     if (heroControlled) {
       if (this.currentCell.has === this) {
         this.currentCell.has = null

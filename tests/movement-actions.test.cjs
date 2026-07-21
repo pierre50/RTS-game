@@ -1616,6 +1616,69 @@ test('delivery orders bypass the human command throttle', () => {
   assert.equal(unit.previousDest, resource)
 })
 
+test('delivery shows a resource gain over the target building', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: ['fish'],
+      LOADING_TYPES: {},
+      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      boardTransport: () => {},
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
+  const player = {
+    food: 10,
+    isPlayed: true,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.delivery,
+    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
+    dest: forum,
+    loading: 7,
+    loadingType: 'fish',
+    owner: player,
+    previousDest: null,
+    sprite: {},
+    getActionCondition: target => target === forum,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    stop: () => calls.push(['stop']),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
+
+  assert.equal(player.food, 17)
+  assert.equal(unit.loading, 0)
+  assert.deepEqual(calls, [
+    ['feedback', 'forum-1', 7],
+    ['topbar'],
+    ['updateInterfaceLoading'],
+    ['setTextures', 'standing'],
+    ['stop'],
+  ])
+})
+
 test('immediate farm orders bypass the human command throttle', () => {
   const farm = { label: 'farm-1', type: constants.BUILDING_TYPES.farm }
   const calls = []

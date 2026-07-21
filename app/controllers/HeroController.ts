@@ -5,7 +5,7 @@ import {
   getRoundedIsoShapePoints,
   updateInstanceRenderVisibility,
 } from '../lib'
-import { COLOR_GOLD, HERO_ACTION_MOVE_SPEED_FACTOR, LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
+import { ACTION_TYPES, COLOR_GOLD, HERO_ACTION_MOVE_SPEED_FACTOR, LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
 import {
   aimHeroBowChargeAt,
   applyToolAppearance,
@@ -34,6 +34,14 @@ import type { UnitEntity } from '../types/entities'
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
 type HeroAimPoint = { x: number; y: number }
+type AnimationLayer = {
+  loop: boolean
+  onComplete?: () => void
+  onFrameChange?: (frame: number) => void
+  onLoop?: () => void
+  play: () => void
+  stop: () => void
+}
 const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; dy: number }>> = {
   heroUp: { dx: 0, dy: -1 },
   heroDown: { dx: 0, dy: 1 },
@@ -46,6 +54,39 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
 }
 
 let lastHeroMoveDebugAt = 0
+
+function getAnimationLayers(unit: UnitEntity): Iterable<AnimationLayer> {
+  return (
+    (unit as UnitEntity & { appearanceLayerSprites?: Map<number, AnimationLayer> }).appearanceLayerSprites?.values() ??
+    []
+  )
+}
+
+function finishHeldFishingAnimation(unit: UnitEntity): void {
+  const sprite = unit.sprite
+  if (!sprite) {
+    unit.previousDest = null
+    unit.stop?.()
+    return
+  }
+  ;(unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing = true
+  unit.stopInterval?.()
+  sprite.onLoop = undefined
+  sprite.loop = false
+  unit.shadow && (unit.shadow.loop = false)
+  for (const layer of getAnimationLayers(unit)) {
+    layer.loop = false
+    layer.play()
+  }
+  sprite.onComplete = () => {
+    sprite.onComplete = undefined
+    ;(unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing = false
+    unit.previousDest = null
+    unit.stop?.()
+  }
+  if (unit.shadow) unit.shadow.play()
+  sprite.play()
+}
 
 function debugHeroMove(message: string, unit: UnitEntity, details: Record<string, unknown>): void {
   const now = performance.now()
@@ -295,6 +336,10 @@ export class HeroController {
     }
     this.mouseHeld = false
     this.primaryClickPoint = null
+    if (unit?.action === ACTION_TYPES.fishing && unit.currentSheet === SHEET_TYPES.action) {
+      finishHeldFishingAnimation(unit)
+      return
+    }
     if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
     const sprite = unit.sprite
     if (!sprite) {
