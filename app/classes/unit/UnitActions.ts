@@ -131,9 +131,11 @@ function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
 
 function getActionLayerSprites(unit: UnitEntity): Iterable<{ gotoAndStop: (frame: number) => void; stop: () => void }> {
   return (
-    (unit as UnitEntity & {
-      appearanceLayerSprites?: Map<number, { gotoAndStop: (frame: number) => void; stop: () => void }>
-    }).appearanceLayerSprites?.values() ?? []
+    (
+      unit as UnitEntity & {
+        appearanceLayerSprites?: Map<number, { gotoAndStop: (frame: number) => void; stop: () => void }>
+      }
+    ).appearanceLayerSprites?.values() ?? []
   )
 }
 
@@ -755,6 +757,21 @@ export class UnitActions {
       case ACTION_TYPES.attack:
         unit.unitCombat?.handleAttackAction()
         break
+      case ACTION_TYPES.train: {
+        if (
+          !unit.getActionCondition?.(unit.dest, ACTION_TYPES.train, { trainingType: unit.trainingTargetType ?? '' })
+        ) {
+          unit.affectNewDest?.()
+          return
+        }
+        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+        if (!dest?.startTrainingWithVillager?.(unit)) {
+          if (unit.owner?.isPlayed)
+            menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
+          unit.affectNewDest?.()
+        }
+        break
+      }
       case ACTION_TYPES.heal:
         if (!unit.getActionCondition?.(unit.dest)) {
           unit.affectNewDest?.()

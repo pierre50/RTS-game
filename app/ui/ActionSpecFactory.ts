@@ -1,13 +1,7 @@
 import { Assets } from 'pixi.js'
 import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../lib'
 import { t } from '../lib/lang'
-import {
-  AGE_TECHNOLOGIES,
-  AGE_UP_ENABLED,
-  BUILDING_TYPES,
-  FAMILY_TYPES,
-  SOUND_CUES,
-} from '../constants'
+import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { playUiSound } from '../lib/uiSound'
@@ -21,6 +15,10 @@ import type { LoadedGameConfig } from '../types/save'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
   return selection?.family === FAMILY_TYPES.building
+}
+
+function requiresVillagerTraining(config: UnitConfig): boolean {
+  return config.category !== 'Civilian' && config.category !== 'Boat'
 }
 
 export class ActionSpecFactory {
@@ -135,11 +133,11 @@ export class ActionSpecFactory {
       onClick: (selection: RuntimeEntity) => {
         if (!isBuildingEntity(selection)) return
         if (canAfford(player, unit.cost)) {
-          if (player.population >= player.populationMax) {
+          if (!requiresVillagerTraining(unit) && player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
             return
           }
-          menu.toggleQueuedActionCancel(type, true)
+          if (!requiresVillagerTraining(unit)) menu.toggleQueuedActionCancel(type, true)
           selection.buyUnit?.(type)
         } else {
           menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
@@ -152,22 +150,23 @@ export class ActionSpecFactory {
         div.className = 'bottombar-menu-column'
         const cancel = this.createActionIcon(getIconPath('003_50721'))
         cancel.id = `${type}-cancel`
-        if (!unitSelection.queue?.some(q => q === type)) {
+        if (requiresVillagerTraining(unit) || !unitSelection.queue?.some(q => q === type)) {
           cancel.classList.add('hidden')
         }
         cancel.addEventListener('pointerup', () => {
           this.playUiClick()
+          if (requiresVillagerTraining(unit)) return
           unitSelection.cancelUnits?.(type)
         })
         const img = this.createActionIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
           this.playUiClick()
           if (canAfford(player, unit.cost)) {
-            if (player.population >= player.populationMax) {
+            if (!requiresVillagerTraining(unit) && player.population >= player.populationMax) {
               menu.showMessage(t('needHouses'), 'warning')
               return
             }
-            menu.toggleQueuedActionCancel(type, true)
+            if (!requiresVillagerTraining(unit)) menu.toggleQueuedActionCancel(type, true)
             unitSelection.buyUnit?.(type)
           } else {
             menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')

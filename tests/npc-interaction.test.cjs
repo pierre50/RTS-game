@@ -20,6 +20,12 @@ function loadModule(relativePath, mocks) {
       playSelectionSound: () => {},
       playSoundCue: () => {},
     },
+    './combat': {
+      isValidCondition: () => true,
+    },
+    './lang': {
+      t: key => key,
+    },
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
@@ -36,6 +42,7 @@ const constants = {
     build: 'build',
     hunt: 'hunt',
     takemeat: 'takemeat',
+    train: 'train',
   },
   FAMILY_TYPES: {
     animal: 'animal',
@@ -127,6 +134,95 @@ test('"aller vers" sends villagers to hunt a live animal under the cursor', () =
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['hunt', target]])
+})
+
+test('"aller vers" sends a communicated villager into a training building', () => {
+  const owner = {
+    config: {
+      units: {
+        Clubman: { category: 'Infantry' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Barracks',
+    units: ['Clubman'],
+    x: 100,
+    y: 100,
+    requestVillagerTraining(type, extra, villager) {
+      calls.push(['train', type, extra, villager])
+      return true
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: { map: { grid: [] } },
+    i: 1,
+    j: 1,
+    owner,
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['train', 'Clubman', undefined, npc]])
+})
+
+test('"aller vers" rejects specialized units sent to a training building', () => {
+  const calls = []
+  const owner = {
+    config: {
+      units: {
+        Clubman: { category: 'Infantry' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Barracks',
+    units: ['Clubman'],
+    x: 100,
+    y: 100,
+    requestVillagerTraining() {
+      throw new Error('specialized units must not enter training')
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const npc = {
+    context: {
+      map: { grid: [] },
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+      },
+    },
+    i: 1,
+    j: 1,
+    owner,
+    sendTo() {
+      calls.push(['move'])
+    },
+    type: 'Axeman',
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['message', 'onlyVillagersCanTrain', 'warning']])
 })
 
 test('"aller vers" cursor shows combat feedback over combat targets', () => {

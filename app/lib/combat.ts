@@ -22,6 +22,9 @@ export type CombatEntity = {
   transportCapacity?: number
   transportedUnits?: CombatEntity[]
   type?: string
+  units?: string[]
+  trainingType?: string | null
+  trainingUnit?: CombatEntity | null
 }
 
 export type Condition = {
@@ -32,6 +35,7 @@ export type Condition = {
 
 export type ActionProps = {
   buildingTypes?: string[]
+  trainingType?: string
 }
 
 function canAttack(source?: CombatEntity | null): boolean {
@@ -111,7 +115,10 @@ export const isValidCondition = (condition: Condition | null | undefined, values
   switch (op) {
     case '=':
     case '!=': {
-      const result = Array.isArray(value) && Array.isArray(expectedValue) ? arraysEqual(value, expectedValue) : value === expectedValue
+      const result =
+        Array.isArray(value) && Array.isArray(expectedValue)
+          ? arraysEqual(value, expectedValue)
+          : value === expectedValue
       return op === '!=' ? !result : result
     }
     case '<':
@@ -210,6 +217,19 @@ export const getActionCondition = (
           [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead
+      ),
+    train: props =>
+      Boolean(
+        source.type === UNIT_TYPES.villager &&
+          target.family === FAMILY_TYPES.building &&
+          target.owner?.label === source.owner?.label &&
+          target.isBuilt &&
+          (target.hitPoints ?? 0) > 0 &&
+          !target.isDead &&
+          Array.isArray(target.units) &&
+          !!props?.trainingType &&
+          target.units.includes(props.trainingType) &&
+          (!target.trainingUnit || target.trainingUnit === source)
       ),
     heal: () =>
       target &&

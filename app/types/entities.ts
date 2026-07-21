@@ -9,6 +9,7 @@ import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
 import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
+import type { ActionProps } from '../lib/combat'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitControlMode = 'rts' | 'hero' | 'ai'
@@ -136,6 +137,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
   upgrade?: (target: string) => void
+  trainingTargetType?: string | null
 
   // Movement / order state
   dest?: RuntimeEntity | RuntimeCell | null
@@ -273,7 +275,11 @@ export interface UnitEntity extends RuntimeEntityBase {
   destHasMoved?: () => boolean
   moveToPath?: () => void
   getAction?: (name: string) => void
-  getActionCondition?: (target: object | null | undefined, action?: string, extra?: UnitCreationExtra) => boolean
+  getActionCondition?: (
+    target: object | null | undefined,
+    action?: string,
+    props?: ActionProps | UnitCreationExtra
+  ) => boolean
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
   handleChangeDest?: () => void
@@ -295,13 +301,19 @@ export interface BuildingEntity extends RuntimeEntityBase {
   queue?: string[]
   technology?: { type?: string; config?: TechnologyConfig } | null
   isUsedBy?: RuntimeEntity | null
+  trainingUnit?: UnitEntity | null
+  trainingType?: string | null
+  trainingExtra?: UnitCreationExtra | null
   addChild?: Container['addChild']
   setRallyPoint?: (cell: RuntimeCell, direction: number) => void
   clearRallyPoint?: () => void
   displayPopulation?: boolean
   loading?: number | null
-  buyUnit?: (type: string) => void
+  buyUnit?: (type: string, alreadyPaid?: boolean, force?: boolean, extra?: UnitCreationExtra) => boolean | void
+  requestVillagerTraining?: (type: string, extra?: UnitCreationExtra, villager?: UnitEntity | null) => boolean
   cancelUnits?: (type: string) => void
+  startTrainingWithVillager?: (villager: UnitEntity) => boolean
+  cancelTrainingForVillager?: (villager: UnitEntity) => boolean
   buyTechnology?: (type: string) => void
   cancelTechnology?: () => void
   upgrade?: (target: string) => void
@@ -313,7 +325,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]
-  placeUnit?: (type: string, extra?: UnitCreationExtra) => boolean
+  placeUnit?: (type: string, extra?: UnitCreationExtra, options?: { consumePopulationSlot?: boolean }) => boolean
   range?: number
   attackAction?: (target: RuntimeEntity) => void
   visibleCells?: Set<number>

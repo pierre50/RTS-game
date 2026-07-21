@@ -3,6 +3,8 @@ import { findInstancesInSight } from './grid/visibility'
 import { createIsoSelectionMarker } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
+import { isValidCondition } from './combat'
+import { t } from './lang'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -26,7 +28,7 @@ const NPC_MENU_KEEP_RANGE = 10
 export const COMM_BASE_RANGE = 0
 export const COMM_MAX_RANGE = 7
 export const COMM_CHARGE_MS = 1200
-const COMM_CHARGE_EXPONENT = 2.4
+const COMM_CHARGE_EXPONENT: number = 2.4
 const COMM_PRECISION_RANGE = 2.5
 const COMM_FACING_HALF_ANGLE = 60
 
@@ -44,6 +46,18 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Fish: (npc, target) => npc.sendToFish?.(target),
   ShoreFish: (npc, target) => npc.sendToFish?.(target),
   Salmon: (npc, target) => npc.sendToFish?.(target),
+}
+
+function getDefaultTrainingType(building: BuildingEntity): string | null {
+  const units = building.units || []
+  for (const type of units) {
+    const config = building.owner?.config.units[type]
+    if (!config || config.category === 'Civilian' || config.category === 'Boat') continue
+    if (!building.owner || (config.conditions || []).some(condition => !isValidCondition(condition, building.owner!)))
+      continue
+    return type
+  }
+  return null
 }
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -397,6 +411,20 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
       npc.sendToBuilding?.(target as BuildingEntity)
       return
+    }
+    if (target.family === FAMILY_TYPES.building) {
+      const building = target as BuildingEntity
+      if (building.owner === npc.owner && building.isBuilt) {
+        const trainingType = getDefaultTrainingType(building)
+        if (trainingType && npc.type !== UNIT_TYPES.villager) {
+          npc.context?.menu?.showMessage(t('onlyVillagersCanTrain'), 'warning')
+          return
+        }
+        if (trainingType) {
+          building.requestVillagerTraining?.(trainingType, undefined, npc)
+          return
+        }
+      }
     }
     if (target.family === FAMILY_TYPES.animal) {
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {

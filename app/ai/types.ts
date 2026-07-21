@@ -72,7 +72,11 @@ export type AIEntityLike = {
   meleeArmor?: number
   pierceArmor?: number
   sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell, action?: string): void
-  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell | TransportCell, action?: string): boolean | void
+  sendToWithCell?(
+    target: AIEntityLike | RuntimeEntity,
+    cell: RuntimeCell | TransportCell,
+    action?: string
+  ): boolean | void
   sendToFish?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToTree?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToStone?(target: AIEntityLike | RuntimeEntity): boolean | void
@@ -98,12 +102,15 @@ export type AIEntityLike = {
   setTextures?(sheet: string): void
   stopInterval?(): void
   unselect?(): void
+  trainingTargetType?: string | null
 }
 
 export type AIBuildingLike = AIEntityLike & {
   queue?: string[]
   loading?: number | null
   technology?: { type?: string } | null
+  trainingUnit?: AIEntityLike | RuntimeEntity | null
+  trainingType?: string | null
   buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: UnitCreationExtra): boolean | void
   buyTechnology?(technology: string): boolean | void
 }

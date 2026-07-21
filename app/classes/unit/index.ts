@@ -59,13 +59,20 @@ import {
   canUseRtsEntityPointer,
   isHeroControlled,
 } from '../../lib/unitControl'
-import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
+import type {
+  BuildingEntity,
+  RuntimeEntity,
+  UnitCommandOptions,
+  UnitCreationExtra,
+  UnitEntity,
+} from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { AssetAge, SpritesheetLike } from '../../types/pixi'
 import type { UnitAppearanceLayerConfig, UnitConfig } from '../../types/config'
 import type { SaveDestination, SaveGridPoint, SaveReference } from '../../types/save'
+import type { ActionProps } from '../../lib/combat'
 
 type UnitRestoreReferences = {
   assetAge?: AssetAge
@@ -997,6 +1004,9 @@ export class Unit extends Instance implements UnitEntity {
 
   handleChangeDest() {
     const dest = this.dest
+    if (dest && 'cancelTrainingForVillager' in dest) {
+      dest.cancelTrainingForVillager?.(this)
+    }
     if (dest && 'isUsedBy' in dest && dest.isUsedBy === this) {
       dest.isUsedBy = null
     }
@@ -1024,6 +1034,14 @@ export class Unit extends Instance implements UnitEntity {
 
   getAction(name: string) {
     return this.unitActions.getAction(name)
+  }
+
+  override getActionCondition(
+    target: object | null | undefined,
+    action = this.action ?? undefined,
+    props?: ActionProps | UnitCreationExtra
+  ) {
+    return this.unitCommands.getActionCondition(target, action, props)
   }
 
   detect(instance: RuntimeEntity | null) {

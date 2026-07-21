@@ -17,7 +17,13 @@ import {
 } from '../../lib'
 import { t } from '../../lib/lang'
 import { isHeroControlled } from '../../lib/unitControl'
-import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
+import type {
+  BuildingEntity,
+  RuntimeEntity,
+  UnitCommandOptions,
+  UnitCreationExtra,
+  UnitEntity,
+} from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { ActionProps } from '../../lib/combat'
 
@@ -35,12 +41,14 @@ function getActionSheet(work: string | null | undefined, action: string | null |
 
 function checkActionCondition(
   source: UnitEntity,
-  target: RuntimeEntity | null | undefined,
+  target: object | null | undefined,
   action?: string,
-  props?: ActionProps
+  props?: ActionProps | UnitCreationExtra
 ): boolean {
   if (!target) return false
-  return getActionCondition(source, target, action ?? '', props)
+  const actionProps =
+    action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
+  return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
 }
 
 // Applies the work/texture/cargo bookkeeping a work reassignment needs: drops mismatched
@@ -86,6 +94,10 @@ export class UnitCommands {
 
   constructor(unit: UnitEntity) {
     this.unit = unit
+  }
+
+  getActionCondition(target: object | null | undefined, action?: string, props?: ActionProps | UnitCreationExtra) {
+    return checkActionCondition(this.unit, target, action, props)
   }
 
   isRedundantOrder(

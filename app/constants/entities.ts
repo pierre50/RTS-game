@@ -78,6 +78,7 @@ export const ACTION_TYPES = {
   takemeat: 'takemeat',
   hunt: 'hunt',
   attack: 'attack',
+  train: 'train',
   fishing: 'fishing',
   build: 'build',
   farm: 'farm',

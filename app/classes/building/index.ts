@@ -48,6 +48,7 @@ import type {
   EntityInterfaceLike,
   RuntimeEntity,
   UnitCreationExtra,
+  UnitEntity,
   UnitSounds,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -84,6 +85,9 @@ export class Building extends Instance implements BuildingEntity {
   technology: QueuedTechnology | null
   loading: number | null
   isUsedBy: RuntimeEntity | null
+  trainingUnit: UnitEntity | null
+  trainingType: string | null
+  trainingExtra: UnitCreationExtra | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
   shadow: BuildingShadow | null
@@ -122,6 +126,9 @@ export class Building extends Instance implements BuildingEntity {
     this.technology = null
     this.loading = null
     this.isUsedBy = null
+    this.trainingUnit = null
+    this.trainingType = null
+    this.trainingExtra = null
     this.rallyPoint = null
     this.rallyPointFlag = null
     this.shadow = null
@@ -577,12 +584,24 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   // BuildingProduction
-  placeUnit(type: string, extra?: UnitCreationExtra): boolean {
-    return this.buildingProduction.placeUnit(type, extra)
+  placeUnit(type: string, extra?: UnitCreationExtra, options?: { consumePopulationSlot?: boolean }): boolean {
+    return this.buildingProduction.placeUnit(type, extra, options)
   }
 
   buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnitCreationExtra): boolean | undefined {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
+  }
+
+  requestVillagerTraining(type: string, extra?: UnitCreationExtra, villager?: UnitEntity | null): boolean {
+    return this.buildingProduction.requestVillagerTraining(type, extra, villager)
+  }
+
+  startTrainingWithVillager(villager: UnitEntity): boolean {
+    return this.buildingProduction.startTrainingWithVillager(villager)
+  }
+
+  cancelTrainingForVillager(villager: UnitEntity): boolean {
+    return this.buildingProduction.cancelTrainingForVillager(villager)
   }
 
   cancelUnits(type: string): boolean {

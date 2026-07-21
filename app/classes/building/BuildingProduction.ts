@@ -1,5 +1,13 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import {
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
+  PLAYER_TYPES,
+  POPULATION_MAX,
+  UNIT_TYPES,
+} from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
@@ -18,6 +26,34 @@ import type { Building } from './index'
 type DynamicUnitCommand = (target: RuntimeEntity) => void
 type DynamicBuildingState = Building & Record<string, ConfigValue | object | undefined>
 type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | undefined>
+type TrainingBuilding = Building & {
+  trainingUnit?: UnitEntity | null
+  trainingType?: string | null
+  trainingExtra?: UnitCreationExtra | null
+}
+
+const DIRECT_TRAINING_CATEGORIES = new Set(['Civilian', 'Boat'])
+
+function requiresVillagerTraining(building: Building, type: string): boolean {
+  const unit = building.owner.config.units[type]
+  return Boolean(unit && !DIRECT_TRAINING_CATEGORIES.has(String(unit.category ?? '')))
+}
+
+function getTrainingBuilding(building: Building): TrainingBuilding {
+  return building as TrainingBuilding
+}
+
+function isAvailableVillager(unit: UnitEntity): boolean {
+  return Boolean(
+    unit.type === UNIT_TYPES.villager &&
+      !unit.isDead &&
+      !unit.isDestroyed &&
+      !unit.loadedInTransport &&
+      !unit.actionLocked &&
+      unit.controlMode !== 'hero' &&
+      !unit.trainingTargetType
+  )
+}
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
@@ -50,7 +86,7 @@ export class BuildingProduction {
     this.building = building
   }
 
-  placeUnit(type: string, extra?: UnitCreationExtra): boolean {
+  placeUnit(type: string, extra?: UnitCreationExtra, options: { consumePopulationSlot?: boolean } = {}): boolean {
     const building = this.building
     const {
       context: { map, menu },
@@ -76,8 +112,13 @@ export class BuildingProduction {
         (items: RuntimeCell[]) => map.randomItem(items)
       )
     }
-    if (!spawnCell || building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax)) return false
-    building.owner.population++
+    const consumePopulationSlot = options.consumePopulationSlot ?? true
+    if (
+      !spawnCell ||
+      (consumePopulationSlot && building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax))
+    )
+      return false
+    if (consumePopulationSlot) building.owner.population++
 
     const unitExtra = extra || building.owner.getUnitExtraOptions?.(type) || {}
     const unit = building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
@@ -102,13 +143,139 @@ export class BuildingProduction {
     return true
   }
 
-  buyUnit(type: string, alreadyPaid = false, force = false, extra?: UnitCreationExtra): boolean | undefined {
+  removeVillagerForTraining(villager: UnitEntity): void {
+    const map = villager.context?.map
+    const owner = villager.owner
+    villager.stopInterval?.()
+    villager.stopTimeout?.()
+    villager.path = []
+    villager.dest = null
+    villager.realDest = null
+    villager.previousDest = null
+    villager.previousWork = null
+    villager.pendingOrder = null
+    villager.blockedGatherApproach = null
+    villager.inactif = false
+    villager.trainingTargetType = null
+    if (villager.selected && owner?.isPlayed) owner.unselectUnit?.(villager)
+    villager.unselect?.()
+    if (villager.currentCell?.has === villager) {
+      villager.currentCell.has = null
+      villager.currentCell.solid = false
+    }
+    map?.removeFromInstanceBucket?.(villager)
+    const index = owner?.units.indexOf(villager) ?? -1
+    if (index >= 0) owner?.units.splice(index, 1)
+    map?.removeChild?.(villager)
+    villager.destroy?.({ children: true, texture: false })
+  }
+
+  findTrainingVillager(): UnitEntity | null {
+    const { owner } = this.building
+    const selectedVillager = owner.selectedUnits?.find(isAvailableVillager)
+    if (selectedVillager) return selectedVillager
+    return (
+      owner.units.find(unit => isAvailableVillager(unit) && unit.inactif) ||
+      owner.units.find(isAvailableVillager) ||
+      null
+    )
+  }
+
+  clearTrainingReservation(villager?: UnitEntity | null): void {
+    const building = getTrainingBuilding(this.building)
+    if (villager && building.trainingUnit && building.trainingUnit !== villager) return
+    building.trainingUnit = null
+    building.trainingType = null
+    building.trainingExtra = null
+    if (!villager || building.isUsedBy === villager) building.isUsedBy = null
+  }
+
+  cancelTrainingForVillager(villager: UnitEntity): boolean {
+    const building = getTrainingBuilding(this.building)
+    if (building.trainingUnit !== villager || !building.trainingType) return false
+    const unit = building.owner.config.units[building.trainingType]
+    refundCost(building.owner, unit.cost)
+    villager.trainingTargetType = null
+    this.clearTrainingReservation(villager)
+    if (building.owner.isPlayed) {
+      building.context.menu.updateTopbar()
+      building.context.menu.updateBottombar()
+    }
+    return true
+  }
+
+  startTrainingWithVillager(villager: UnitEntity): boolean {
+    const building = getTrainingBuilding(this.building)
+    const type = building.trainingUnit === villager ? building.trainingType : villager.trainingTargetType
+    if (!type || !requiresVillagerTraining(building, type)) return false
+    if (building.trainingUnit && building.trainingUnit !== villager) return false
+    if (building.loading !== null || building.queue.length || building.technology) return false
+    building.trainingUnit = villager
+    building.trainingType = type
+    building.isUsedBy = villager
+    this.removeVillagerForTraining(villager)
+    return Boolean(this.buyUnit(type, true, false, building.trainingExtra || undefined, villager))
+  }
+
+  requestVillagerTraining(type: string, extra?: UnitCreationExtra, villagerOverride?: UnitEntity | null): boolean {
+    const building = getTrainingBuilding(this.building)
+    const {
+      context: { menu },
+    } = building
+    const unit = building.owner.config.units[type]
+    if (!unit || !building.units?.includes(type)) return false
+    if (!building.isBuilt || building.isDead) return false
+    if (building.loading !== null || building.queue.length || building.technology || building.trainingUnit) {
+      if (building.owner.isPlayed)
+        menu.showMessage(t('buildingAlreadyTraining', { building: t(building.type) }), 'warning')
+      return false
+    }
+    if (!canAfford(building.owner, unit.cost)) {
+      if (building.owner.isPlayed) menu.showMessage(t('needMore', { resource: '' }), 'warning')
+      return false
+    }
+    const selectedUnits = building.owner.selectedUnits || []
+    if (!villagerOverride && selectedUnits.length && !selectedUnits.some(isAvailableVillager)) {
+      if (building.owner.isPlayed) menu.showMessage(t('onlyVillagersCanTrain'), 'warning')
+      return false
+    }
+    const villager = villagerOverride || this.findTrainingVillager()
+    if (!villager) {
+      if (building.owner.isPlayed) menu.showMessage(t('noVillagerToTrain'), 'warning')
+      return false
+    }
+    if (!isAvailableVillager(villager)) {
+      if (building.owner.isPlayed) menu.showMessage(t('onlyVillagersCanTrain'), 'warning')
+      return false
+    }
+    payCost(building.owner, unit.cost)
+    building.trainingUnit = villager
+    building.trainingType = type
+    building.trainingExtra = extra || null
+    building.isUsedBy = villager
+    villager.trainingTargetType = type
+    if (building.owner.isPlayed) menu.updateTopbar()
+    villager.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
+    return true
+  }
+
+  buyUnit(
+    type: string,
+    alreadyPaid = false,
+    force = false,
+    extra?: UnitCreationExtra,
+    trainee?: UnitEntity | null
+  ): boolean | undefined {
     const building = this.building
     const {
       context: { menu, map },
     } = building
     let success = false
     const unit = building.owner.config.units[type]
+    const villagerTraining = requiresVillagerTraining(building, type)
+    if (villagerTraining && !alreadyPaid && !force) {
+      return this.requestVillagerTraining(type, extra)
+    }
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (building.owner.type === PLAYER_TYPES.ai) {
@@ -126,6 +293,9 @@ export class BuildingProduction {
           building.owner.isPlayed && menu.updateTopbar()
           success = true
         }
+      } else if (villagerTraining && trainee && !building.queue.length) {
+        building.queue.push(type)
+        success = true
       }
       if ((building.loading === null && building.queue[0]) || force) {
         let hasShowedMessage = false
@@ -149,10 +319,14 @@ export class BuildingProduction {
                 building.updateInterfaceLoading()
               }
             } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
-              if (!building.placeUnit(type, extra)) return
+              if (!this.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
+                if (trainee) this.clearTrainingReservation(trainee)
+                return
+              }
               building.stopInterval()
               building.loading = null
               building.queue.shift()
+              if (trainee) this.clearTrainingReservation(trainee)
               if (building.queue.length) {
                 building.buyUnit(building.queue[0], true)
               }
@@ -187,6 +361,7 @@ export class BuildingProduction {
     const building = this.building
     const unit = building.owner.config.units[type]
     if (!unit) return false
+    if (requiresVillagerTraining(building, type) && getTrainingBuilding(building).trainingUnit) return false
 
     const cancelled = building.queue.filter((queuedType: string) => queuedType === type).length
     if (!cancelled) return false
