@@ -40,6 +40,9 @@ function loadPlacementModule() {
 
           return result
         },
+        getBuildingFootprintRadius(size) {
+          return Math.floor((size - 1) / 2)
+        },
         getRandomZoneInGridWithCondition() {
           return null
         },

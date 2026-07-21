@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadHeroTools() {
+function loadHeroTools(overrides = {}) {
   const filename = path.join(__dirname, '../app/lib/heroTools.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -20,13 +20,33 @@ function loadHeroTools() {
   const mocks = {
     'pixi.js': { Assets: { cache: { get: id => ({ id, textures: [], data: {} }) } } },
     '../constants': {
-      ACTION_TYPES: { delivery: 'delivery', attack: 'attack' },
+      ACTION_TYPES: {
+        attack: 'attack',
+        build: 'build',
+        chopwood: 'chopwood',
+        delivery: 'delivery',
+        fishing: 'fishing',
+        forageberry: 'forageberry',
+        hunt: 'hunt',
+        minegold: 'minegold',
+        minestone: 'minestone',
+        takemeat: 'takemeat',
+      },
       BUILDING_TYPES: { dock: 'Dock', townCenter: 'TownCenter' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
+      LOADING_TYPES: {
+        berry: 'berry',
+        fish: 'fish',
+        gold: 'gold',
+        meat: 'meat',
+        stone: 'stone',
+        wood: 'wood',
+      },
       SHEET_TYPES: { action: 'actionSheet', standing: 'standingSheet', walking: 'walkingSheet' },
       SOUND_CUES: { hero: { meleeWhiff: 'meleeWhiff' } },
+      WORK_FOOD_TYPES: ['fisher', 'hunter', 'farmer', 'forager'],
       WORK_TYPES: {
         attacker: 'attacker',
         builder: 'builder',
@@ -37,7 +57,25 @@ function loadHeroTools() {
         woodcutter: 'woodcutter',
       },
     },
+    './arpg': {
+      isArpgHeroActionInRange: (_hero, action, target) => {
+        if (action !== 'fishing' && action !== 'takemeat') return false
+        return Math.hypot(target.i, target.j) <= 2.5
+      },
+    },
     './combat': { getActionCondition: () => false, getHitPointsWithDamage: () => 0 },
+    './extra': {
+      getWorkWithLoadingType: loadingType =>
+        ({
+          berry: 'forager',
+          fish: 'fisher',
+          gold: 'goldminer',
+          meat: 'hunter',
+          stone: 'stoneminer',
+          wood: 'woodcutter',
+        })[loadingType] ?? 'default',
+    },
+    './grid/cells': { getBuildingContactDistance: () => 1 },
     './grid/visibility': { findInstancesInSight: () => [] },
     './grid/queries': { getClosestInstanceWithPath: () => null },
     './graphics': {
@@ -53,7 +91,9 @@ function loadHeroTools() {
       degreeToDirection: degree => (degree < 180 ? 'north' : 'south'),
       getInstanceDegree: (_hero, x) => x,
       getReliefOffset: () => 0,
+      instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
     },
+    './lang': { t: key => key },
     './sound': { playAudibleSoundCue: () => {} },
     './combatFeedback': { showDamageFeedback: () => {} },
     './unitExperience': {
@@ -63,7 +103,11 @@ function loadHeroTools() {
       XP_KILL_BONUS: 0,
     },
     '../classes/Projectile': { Projectile },
+    '../classes/unit/UnitCommands': {
+      applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
+    },
   }
+  Object.assign(mocks, overrides)
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -194,4 +238,117 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
   } finally {
     global.performance = originalPerformance
   }
+})
+
+test('hero resource tools get a small ARPG contact forgiveness band', () => {
+  const fish = {
+    category: 'Fish',
+    family: 'resource',
+    i: 2.4,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 10,
+    y: 0,
+  }
+  const calls = []
+  const { triggerToolAction } = loadHeroTools({
+    './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
+    './grid/visibility': { findInstancesInSight: () => [fish] },
+    './grid/queries': { getClosestInstanceWithPath: (_hero, candidates) => ({ instance: candidates[0], path: [] }) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => false,
+    getAction: action => calls.push(['getAction', action]),
+    setDest: target => calls.push(['setDest', target]),
+  })
+
+  assert.equal(triggerToolAction(hero, 'fishingRod'), true)
+  assert.deepEqual(calls, [
+    ['setDest', fish],
+    ['getAction', 'fishing'],
+  ])
+})
+
+test('full hero inventory blocks fishing without playing a whiff animation', () => {
+  const fish = {
+    category: 'Fish',
+    family: 'resource',
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 10,
+    y: 0,
+  }
+  const messages = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
+    './grid/visibility': { findInstancesInSight: () => [fish] },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    i: 0,
+    j: 0,
+    loading: 10,
+    loadingMax: { fish: 10 },
+    loadingType: 'fish',
+    isUnitAtDest: () => true,
+    getAction: action => {
+      hero.startedAction = action
+    },
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'fishingRod', { x: 10, y: 0 }), false)
+  assert.equal(hero.startedAction, undefined)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.deepEqual(messages, [['heroInventoryFull', 'warning']])
+})
+
+test('hero unarmed tool can take meat with the ARPG food forgiveness band', () => {
+  const carcass = {
+    family: 'animal',
+    hitPoints: 0,
+    i: 2.4,
+    isDead: true,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 5,
+    y: 0,
+  }
+  const calls = []
+  const { triggerToolAction } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_hero, target, action) => target === carcass && action === 'takemeat',
+      getHitPointsWithDamage: () => 0,
+    },
+    './grid/visibility': { findInstancesInSight: () => [carcass] },
+    './grid/queries': { getClosestInstanceWithPath: (_hero, candidates) => ({ instance: candidates[0], path: [] }) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => false,
+    getAction: action => calls.push(['getAction', action]),
+    setDest: target => calls.push(['setDest', target]),
+  })
+
+  assert.equal(triggerToolAction(hero, 'unarmed'), true)
+  assert.deepEqual(calls, [
+    ['setDest', carcass],
+    ['getAction', 'takemeat'],
+  ])
 })

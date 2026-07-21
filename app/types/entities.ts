@@ -26,6 +26,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   label: string
   family: string
   type: string
+  name?: string
   category?: string
   owner?: PlayerLike
   x: number

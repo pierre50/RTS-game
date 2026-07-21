@@ -197,7 +197,15 @@ export class HeroController {
     if (menu?.isArpgBuildingMenuOpen?.()) {
       menu.closeArpgBuildingMenuIfInvalid?.()
     }
-    if (this.mouseHeld && !unit.actionLocked && unit.currentSheet !== SHEET_TYPES.action) this.attackTowardCursor()
+    if (
+      this.mouseHeld &&
+      !unit.actionLocked &&
+      unit.currentSheet !== SHEET_TYPES.action &&
+      !this.attackTowardCursor()
+    ) {
+      this.mouseHeld = false
+      this.primaryClickPoint = null
+    }
     const attacking = Boolean(unit.actionLocked)
 
     let dx = 0

@@ -26,6 +26,7 @@ const NPC_MENU_KEEP_RANGE = 10
 export const COMM_BASE_RANGE = 0
 export const COMM_MAX_RANGE = 7
 export const COMM_CHARGE_MS = 1200
+const COMM_CHARGE_EXPONENT = 2.4
 const COMM_PRECISION_RANGE = 2.5
 const COMM_FACING_HALF_ANGLE = 60
 
@@ -189,7 +190,11 @@ export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
 
 export function getCommRadiusForHold(elapsedMs: number): number {
   const ratio = Math.max(0, Math.min(1, elapsedMs / COMM_CHARGE_MS))
-  return COMM_BASE_RANGE + ratio * (COMM_MAX_RANGE - COMM_BASE_RANGE)
+  const easedRatio =
+    COMM_CHARGE_EXPONENT === 0
+      ? ratio
+      : (Math.exp(COMM_CHARGE_EXPONENT * ratio) - 1) / (Math.exp(COMM_CHARGE_EXPONENT) - 1)
+  return COMM_BASE_RANGE + easedRatio * (COMM_MAX_RANGE - COMM_BASE_RANGE)
 }
 
 // The ally the hero is most directly facing, within a fixed nearby range — independent of how

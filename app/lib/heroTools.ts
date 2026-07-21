@@ -5,14 +5,19 @@ import {
   CELL_HEIGHT,
   CELL_WIDTH,
   FAMILY_TYPES,
+  LOADING_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
+  WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
+import { isArpgHeroActionInRange } from './arpg'
 import { getActionCondition, getHitPointsWithDamage } from './combat'
+import { getWorkWithLoadingType } from './extra'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
+import { t } from './lang'
 import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue } from './sound'
 import { showDamageFeedback } from './combatFeedback'
@@ -29,7 +34,6 @@ export const HERO_TOOL_ORDER: HeroTool[] = ['unarmed', 'axe', 'pickaxe', 'hammer
 
 const TOOL_ACTION_RANGE = 3
 const HUNTER_ARROW_RANGE = 4
-const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 const HERO_BOW_CHARGE_MS = 700
 const HERO_BOW_MIN_POWER = 0.2
 const HERO_BOW_HOLD_FRAME = Math.max(0, SHOOT_RELEASE_FRAME - 1)
@@ -43,6 +47,8 @@ const MELEE_ATTACK_RANGE = 70
 const MELEE_CONE_HALF_ANGLE = 22.5
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
+const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
+const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * HERO_ARROW_CELL_DISTANCE
 
 // Tools with no gather/hunt/build effect of their own — clicking/pressing e with nothing
 // valid nearby just plays the swing animation and does nothing else.
@@ -56,6 +62,8 @@ const TOOL_WORK: Record<HeroTool, string> = {
   fishingRod: WORK_TYPES.fisher,
   unarmed: WORK_TYPES.attacker,
 }
+
+type ToolActionResult = 'triggered' | 'blocked' | 'miss'
 
 function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
@@ -95,29 +103,69 @@ function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: st
   runHeroAction(hero, target, action)
 }
 
+function getLoadingTypeForAction(action: string): string | null {
+  switch (action) {
+    case ACTION_TYPES.chopwood:
+      return LOADING_TYPES.wood
+    case ACTION_TYPES.forageberry:
+      return LOADING_TYPES.berry
+    case ACTION_TYPES.minegold:
+      return LOADING_TYPES.gold
+    case ACTION_TYPES.minestone:
+      return LOADING_TYPES.stone
+    case ACTION_TYPES.takemeat:
+      return LOADING_TYPES.meat
+    case ACTION_TYPES.fishing:
+      return LOADING_TYPES.fish
+    default:
+      return null
+  }
+}
+
+function heroHasGatherSpace(hero: UnitEntity, action: string, work: string): boolean {
+  const loadingType = getLoadingTypeForAction(action)
+  if (!loadingType) return true
+  const maxLoad = hero.loadingMax?.[loadingType] ?? Infinity
+  const currentWork = getWorkWithLoadingType(hero.loadingType ?? '')
+  const keepsCurrentLoad =
+    work === currentWork || (WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(currentWork))
+  const effectiveLoad = keepsCurrentLoad ? (hero.loading ?? 0) : 0
+  return effectiveLoad < maxLoad
+}
+
+function resolveHeroGatherAction(
+  hero: UnitEntity,
+  target: RuntimeEntity,
+  action: string,
+  work: string
+): (() => void) | null {
+  if (!getActionCondition(hero, target, action)) return null
+  if (!heroHasGatherSpace(hero, action, work)) {
+    hero.context?.menu?.showMessage(t('heroInventoryFull'), 'warning')
+    return null
+  }
+  return () => runHeroGatherAction(hero, target, action, work)
+}
+
 const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
   unarmed: {
-    matches: target => resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
+    matches: target =>
+      resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
       if (resourceKind(target) === 'Berrybush') {
         return getActionCondition(hero, target, ACTION_TYPES.forageberry)
-          ? () => runHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
+          ? resolveHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
           : null
       }
       // Bare hands can only collect meat off an already-dead carcass, not hunt — killing the
       // animal requires the bow. The bow itself never auto-collects meat (see below), so
       // switching to unarmed is the only way to pick up a carcass.
-      return getActionCondition(hero, target, ACTION_TYPES.takemeat)
-        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.takemeat, WORK_TYPES.hunter)
-        : null
+      return resolveHeroGatherAction(hero, target, ACTION_TYPES.takemeat, WORK_TYPES.hunter)
     },
   },
   axe: {
     matches: target => resourceKind(target) === 'Tree',
-    resolve: (hero, target) =>
-      getActionCondition(hero, target, ACTION_TYPES.chopwood)
-        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.chopwood, WORK_TYPES.woodcutter)
-        : null,
+    resolve: (hero, target) => resolveHeroGatherAction(hero, target, ACTION_TYPES.chopwood, WORK_TYPES.woodcutter),
   },
   pickaxe: {
     matches: target => resourceKind(target) === 'Stone' || resourceKind(target) === 'Gold',
@@ -125,8 +173,7 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
       const isStone = resourceKind(target) === 'Stone'
       const action = isStone ? ACTION_TYPES.minestone : ACTION_TYPES.minegold
       const work = isStone ? WORK_TYPES.stoneminer : WORK_TYPES.goldminer
-      if (!getActionCondition(hero, target, action)) return null
-      return () => runHeroGatherAction(hero, target, action, work)
+      return resolveHeroGatherAction(hero, target, action, work)
     },
   },
   bow: {
@@ -152,13 +199,17 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
   },
   fishingRod: {
     matches: target => target.category === 'Fish',
-    resolve: (hero, target) =>
-      getActionCondition(hero, target, ACTION_TYPES.fishing)
-        ? () => {
-            playAudibleSoundCue(hero, (target as { sounds?: { command?: string | number | (string | number)[] | null } }).sounds?.command)
-            runHeroGatherAction(hero, target, ACTION_TYPES.fishing, WORK_TYPES.fisher)
-          }
-        : null,
+    resolve: (hero, target) => {
+      const action = resolveHeroGatherAction(hero, target, ACTION_TYPES.fishing, WORK_TYPES.fisher)
+      if (!action) return null
+      return () => {
+        playAudibleSoundCue(
+          hero,
+          (target as { sounds?: { command?: string | number | (string | number)[] | null } }).sounds?.command
+        )
+        action()
+      }
+    },
   },
 }
 
@@ -302,29 +353,36 @@ function getToolActionForTarget(tool: HeroTool, target: RuntimeEntity): string |
 
 // The hero is fully player-controlled and must never auto-path to a target — every tool
 // interaction (aimed click or plain "e" press) may only fire once the hero is already in
-// place, exactly like a real player standing next to what they're interacting with.
+// place. ARPG contact tools get a small forgiveness band because the player positions the
+// hero by hand while resource sprites often extend beyond their grid cell.
 function isToolTargetReachable(hero: UnitEntity, tool: HeroTool, target: RuntimeEntity): boolean {
   const action = getToolActionForTarget(tool, target)
-  return Boolean(action && hero.isUnitAtDest?.(action, target))
+  if (!action) return false
+  if (isArpgHeroActionInRange(hero, action, target)) return true
+  return Boolean(hero.isUnitAtDest?.(action, target))
 }
 
-function triggerToolActionAt(hero: UnitEntity, tool: HeroTool): boolean {
+function triggerToolActionAt(hero: UnitEntity, tool: HeroTool): ToolActionResult {
   const config = HERO_TOOL_ACTIONS[tool]
-  if (!config) return false
+  if (!config) return 'miss'
 
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
-    target => config.matches(target) && config.resolve(hero, target) !== null,
+    target => config.matches(target),
     CLICK_TARGET_SEARCH_RANGE
-  ).filter(target => isToolTargetReachable(hero, tool, target))
+  )
 
   const target = getDirectionalTarget(hero, candidates)
   if (target) {
-    config.resolve(hero, target)?.()
-    return true
+    const action = config.resolve(hero, target)
+    if (action && isToolTargetReachable(hero, tool, target)) {
+      action()
+      return 'triggered'
+    }
+    return 'blocked'
   }
 
-  return false
+  return 'miss'
 }
 
 function fireBlindArrow(hero: UnitEntity): void {
@@ -584,7 +642,9 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroTool | null, des
     const target = findArrowTargetInAim(hero)
     return beginHeroBowChargeAt(hero, target ? { x: target.x, y: target.y } : destination, target)
   }
-  if (triggerToolActionAt(hero, tool)) return true
+  const actionResult = triggerToolActionAt(hero, tool)
+  if (actionResult === 'triggered') return true
+  if (actionResult === 'blocked') return false
   if (WHIFF_TOOLS.has(tool)) {
     swingToolInPlace(hero)
     return true
@@ -596,13 +656,15 @@ export function triggerToolAction(hero: UnitEntity, tool: HeroTool | null): bool
   if (tool) {
     const config = HERO_TOOL_ACTIONS[tool]
     if (config) {
-      const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE).filter(
-        target => config.resolve(hero, target) !== null && isToolTargetReachable(hero, tool, target)
-      )
+      const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE)
       const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
       if (closest) {
-        config.resolve(hero, closest.instance)?.()
-        return true
+        const action = config.resolve(hero, closest.instance)
+        if (action && isToolTargetReachable(hero, tool, closest.instance)) {
+          action()
+          return true
+        }
+        return false
       }
     }
   }

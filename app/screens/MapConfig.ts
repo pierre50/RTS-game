@@ -130,6 +130,7 @@ export default class MapConfig {
   _handleKeyDown(evt: KeyboardEvent): void {
     if (evt.key !== 'Enter' || evt.repeat) return
     if (!document.getElementById(this._modal?._id)) return
+    if (evt.target instanceof HTMLElement && evt.target.closest('input, select, textarea')) return
 
     evt.preventDefault()
     playClickSound()

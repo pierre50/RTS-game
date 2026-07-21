@@ -47,6 +47,11 @@ function loadModule(relativePath, mocks) {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === '../../lib/arpg') {
+      return {
+        isArpgHeroActionInRange: () => false,
+      }
+    }
     if (request === '../../lib/unitControl') {
       return {
         canAutoAcquireTarget: () => true,
@@ -217,6 +222,33 @@ test('sets an automatically selected destination before starting its action', ()
     ['setDest', 'tree-2'],
     ['getAction', 'tree-2'],
   ])
+})
+
+test('ARPG hero action range can satisfy destination checks before strict contact', () => {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      instanceContactInstance: () => false,
+      instancesDistance: () => 2.4,
+    },
+    '../../lib/arpg': {
+      isArpgHeroActionInRange: (_unit, action, dest) =>
+        action === constants.ACTION_TYPES.fishing && dest.category === 'Fish',
+    },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.fishing,
+    controlMode: 'arpg',
+    type: constants.UNIT_TYPES.villager,
+  }
+  const fish = {
+    category: 'Fish',
+    i: 2,
+    isDestroyed: false,
+    j: 0,
+  }
+
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.fishing, fish), true)
 })
 
 test('converted units stop old orders, switch owner, and refresh idle color', () => {

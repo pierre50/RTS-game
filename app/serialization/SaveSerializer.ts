@@ -150,6 +150,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(unit, [
       'label',
+      'name',
       'type',
       'i',
       'j',
@@ -231,6 +232,7 @@ function playerData(player: SerializablePlayer, isArpgSave = false) {
       'stone',
       'gold',
       'civ',
+      'name',
       'color',
       'team',
       'population',

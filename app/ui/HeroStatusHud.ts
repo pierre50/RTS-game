@@ -76,7 +76,7 @@ export class HeroStatusHud {
     const max = Math.max(0, Math.ceil(hero.totalHitPoints ?? 0))
     const ratio = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0
 
-    this.title.textContent = t(hero.type || 'heroStatusTitle')
+    this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
     this.value.textContent = `${current}/${max}`
     this.fill.style.width = `${Math.round(ratio * 100)}%`
     this.element.classList.remove('hidden')

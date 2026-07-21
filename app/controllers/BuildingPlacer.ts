@@ -1,5 +1,14 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import { isometricToCartesian, canAfford, canPlaceBuildingAt, changeSpriteColor, getTexture, payCost } from '../lib'
+import {
+  isometricToCartesian,
+  canAfford,
+  canPlaceBuildingAt,
+  changeSpriteColor,
+  getBuildingFootprintRadius,
+  getPlainCellsAroundPoint,
+  getTexture,
+  payCost,
+} from '../lib'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { WallPlacementController } from './WallPlacementController'
@@ -164,6 +173,7 @@ export class BuildingPlacer {
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
     if (!cell) return false
+    if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     return canPlaceBuildingAt(map.grid, cell.i, cell.j, mouseBuilding, {
       requireVisible: true,
       requireExplored: true,
@@ -171,9 +181,20 @@ export class BuildingPlacer {
     })
   }
 
+  doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
+    const hero = this.controls.isArpgActive?.() ? this.controls.heroUnit : null
+    if (!hero || hero.isDead || hero.isDestroyed) return false
+    const size = typeof building.size === 'number' ? building.size : 1
+    const radius = getBuildingFootprintRadius(size)
+    return getPlainCellsAroundPoint(cell.i, cell.j, this.controls.context.map.grid, radius).some(
+      footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
+    )
+  }
+
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (
       !cell ||
+      this.isHeroOnCell(cell) ||
       !cell.visible ||
       !this.isExploredForPlacement(cell, owner) ||
       cell.category === 'Water' ||
@@ -185,6 +206,11 @@ export class BuildingPlacer {
     }
     if (!cell.has && !cell.solid) return true
     return allowExistingWall && isWall(cell.has, owner)
+  }
+
+  isHeroOnCell(cell: RuntimeCell): boolean {
+    const hero = this.controls.isArpgActive?.() ? this.controls.heroUnit : null
+    return Boolean(hero && !hero.isDead && !hero.isDestroyed && hero.i === cell.i && hero.j === cell.j)
   }
 
   commitWallPath(path: RuntimeCell[], owner: PlacementOwner): boolean {

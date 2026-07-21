@@ -37,6 +37,7 @@ export type SaveEntityState = {
   loading?: number | null
   loadingType?: string | null
   loop?: boolean
+  name?: string
   path?: SaveGridPoint[]
   previousDest?: SaveReference | SaveDestination | null
   previousWork?: string | null

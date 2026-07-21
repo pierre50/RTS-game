@@ -392,6 +392,9 @@ export default class Controls extends Container implements ControlsLike {
       } else {
         this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y)
       }
+      if (this.mouseBuilding || this.rallyPointController.active) {
+        this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
+      }
       return
     }
 

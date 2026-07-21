@@ -1,0 +1,28 @@
+const names = [
+  'Amani',
+  'Akinidad',
+  'Aktisanes',
+  'Arakamani',
+  'Arikankharor',
+  'Aspelta',
+  'Atlanersa',
+  'Harsiotef',
+  'Karkamani',
+  'Kash',
+  'Malewiebamani',
+  'Malonaqen',
+  'Nasakhma',
+  'Natakamani',
+  'Piye',
+  'Sabrakamani',
+  'Senkamanisken',
+  'Shabaka',
+  'Shabataka',
+  'Talakhamani',
+  'Tanwetamani',
+  'Tanyidamani',
+  'Terkamani',
+  'Yesebokheamani',
+]
+
+export default names

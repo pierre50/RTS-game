@@ -12,8 +12,18 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
+  const defaultMocks = {
+    './graphics/selection': {
+      createIsoSelectionMarker: options => ({ ...options, label: options.label }),
+    },
+    './sound': {
+      playSelectionSound: () => {},
+      playSoundCue: () => {},
+    },
+  }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (Object.hasOwn(defaultMocks, request)) return defaultMocks[request]
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -33,8 +43,20 @@ const constants = {
     resource: 'resource',
     unit: 'unit',
   },
+  COLOR_WHITE: 0xffffff,
+  LABEL_TYPES: {
+    commSelection: 'commSelection',
+    shadow: 'shadow',
+  },
   SHEET_TYPES: {
     standing: 'standing',
+  },
+  SOUND_CUES: {
+    unit: { militaryCommand: 'militaryCommand' },
+    villager: { command: 'villagerCommand' },
+  },
+  UNIT_TYPES: {
+    villager: 'Villager',
   },
 }
 
@@ -232,6 +254,9 @@ function makeCommAlly(props) {
     isDead: false,
     isDestroyed: false,
     action: null,
+    addChildAt: () => {},
+    getChildByLabel: () => null,
+    setTextures: () => {},
     ...props,
   }
 }
@@ -259,6 +284,16 @@ test('a quick tap finds nothing when no ally is within the facing cone', () => {
   const group = resolveCommGroup(hero, 0)
 
   assert.deepEqual(group, [])
+})
+
+test('communication radius grows exponentially while staying capped at max range', () => {
+  const { COMM_CHARGE_MS, COMM_MAX_RANGE, getCommRadiusForHold } = loadNpcInteraction(null)
+
+  assert.equal(getCommRadiusForHold(-100), 0)
+  assert.equal(getCommRadiusForHold(0), 0)
+  assert.ok(getCommRadiusForHold(COMM_CHARGE_MS / 2) < COMM_MAX_RANGE / 2)
+  assert.equal(getCommRadiusForHold(COMM_CHARGE_MS), COMM_MAX_RANGE)
+  assert.equal(getCommRadiusForHold(COMM_CHARGE_MS * 2), COMM_MAX_RANGE)
 })
 
 test('holding past the precision zone nets every eligible ally in the charged radius', () => {

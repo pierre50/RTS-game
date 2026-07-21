@@ -28,6 +28,7 @@ import {
   UNIT_TYPES,
 } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
+import { getRandomUnitName } from '../../config/name'
 import { playUiSound } from '../../lib/uiSound'
 import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
@@ -423,7 +424,9 @@ export class Player implements PlayerLike {
 
   createUnit(options: UnitSpawnOptions) {
     const { context } = this
-    let unit = context.map.addChild(new Unit({ ...options, owner: this }, context))
+    const isHeroUnit = this.isPlayed && !this.units.length
+    const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, () => context.map.random()))
+    let unit = context.map.addChild(new Unit({ ...options, name, owner: this }, context))
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }

@@ -32,8 +32,14 @@ function loadControls() {
     },
     '../controllers/BuildingPlacer': {
       BuildingPlacer: class {
+        constructor() {
+          this.moveCalls = 0
+        }
         cancelWallDraft() {
           return false
+        }
+        handleMouseMove() {
+          this.moveCalls++
         }
         removeMouseBuilding() {}
       },
@@ -224,6 +230,25 @@ test('uses uncapped speed-scaled ticker delta for ARPG hero movement', () => {
     })
 
     assert.equal(controls.heroController.lastUpdateFrameScale, 8)
+  } finally {
+    restore()
+  }
+})
+
+test('refreshes building preview while ARPG camera follows the moving hero', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+    controls.heroController.heroUnit = { x: 12, y: 34 }
+    controls.mouseBuilding = { type: 'house' }
+
+    controls.onTick({
+      elapsedMS: 1000 / 60,
+      deltaMS: 1000 / 60,
+      deltaTime: 1,
+    })
+
+    assert.equal(controls.buildingPlacer.moveCalls, 1)
   } finally {
     restore()
   }

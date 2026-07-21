@@ -29,6 +29,7 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
+import { isArpgHeroActionInRange } from '../../lib/arpg'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
@@ -80,7 +81,10 @@ function blocksHeroDirectMoveAtPoint(entity: RuntimeEntity | null | undefined, x
   return isHeroInsideRoundedFootprint(entity, x, y)
 }
 
-function getNearbyHeroCollisionEntities(cell: RuntimeCell | null | undefined, map: RuntimeMap | null | undefined): RuntimeEntity[] {
+function getNearbyHeroCollisionEntities(
+  cell: RuntimeCell | null | undefined,
+  map: RuntimeMap | null | undefined
+): RuntimeEntity[] {
   const entities = new Set<RuntimeEntity>()
   if (!cell || !map) return []
 
@@ -439,6 +443,7 @@ export class UnitMovement {
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!action || !dest) return false
+    if (isRuntimeEntity(dest) && isArpgHeroActionInRange(unit, action, dest)) return true
     const effectiveRange =
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
     if (

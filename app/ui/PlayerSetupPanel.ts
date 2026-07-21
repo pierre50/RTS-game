@@ -325,6 +325,23 @@ export class PlayerSetupPanel {
     this.humanControlsEl.innerHTML = ''
     const human = this.players[0]
 
+    const nameRow = document.createElement('div')
+    nameRow.className = 'config-row'
+    const nameLabel = document.createElement('label')
+    nameLabel.textContent = t('playerNameLabel')
+    nameRow.appendChild(nameLabel)
+    const nameInput = document.createElement('input')
+    nameInput.className = 'ui-input'
+    nameInput.type = 'text'
+    nameInput.maxLength = 24
+    nameInput.value = human.name
+    nameInput.addEventListener('input', (evt: Event) => {
+      human.name = (evt.target as HTMLInputElement).value
+      this._emitChange()
+    })
+    nameRow.appendChild(nameInput)
+    this.humanControlsEl.appendChild(nameRow)
+
     const civRow = document.createElement('div')
     civRow.className = 'config-row'
     const civLabel = document.createElement('label')
