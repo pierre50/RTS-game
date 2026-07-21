@@ -11,26 +11,28 @@ import {
   WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
-import { isArpgHeroActionInRange } from './arpg'
-import { getActionCondition, getHitPointsWithDamage } from './combat'
+import { isHeroActionInRange } from './heroActionRange'
+import { getActionCondition } from './combat'
 import { getWorkWithLoadingType } from './extra'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
-import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
+import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME } from './graphics'
 import { t } from './lang'
 import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
-import { playAudibleSoundCue } from './sound'
-import { showDamageFeedback } from './combatFeedback'
-import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from './unitExperience'
+import { playAudibleSoundCue, playSoundCue } from './sound'
 import { Projectile } from '../classes/Projectile'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
 
-export type HeroTool = 'axe' | 'pickaxe' | 'bow' | 'hammer' | 'fishingRod' | 'unarmed'
+export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer' | 'fishingRod'
+export type HeroContextAction = 'chop' | 'mine' | 'build' | 'fish' | 'gather' | 'pickup' | 'interact'
+export type HeroEquippedItem = 'interact' | 'bow'
+export type HeroTool = HeroEquippedItem
 
-export const HERO_TOOL_ORDER: HeroTool[] = ['unarmed', 'axe', 'pickaxe', 'hammer', 'bow', 'fishingRod']
+export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'bow']
+export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
 const TOOL_ACTION_RANGE = 3
 const HUNTER_ARROW_RANGE = 4
@@ -40,27 +42,38 @@ const HERO_BOW_HOLD_FRAME = Math.max(0, SHOOT_RELEASE_FRAME - 1)
 const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
-// Melee swing hit-zone: a cone in front of the hero rather than a pinpoint check, so a
-// mouse aimed roughly at an enemy still connects. Capped range keeps a far-off cursor from
-// extending reach indefinitely.
-const MELEE_ATTACK_RANGE = 70
-const MELEE_CONE_HALF_ANGLE = 22.5
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * HERO_ARROW_CELL_DISTANCE
 
-// Tools with no gather/hunt/build effect of their own — clicking/pressing e with nothing
-// valid nearby just plays the swing animation and does nothing else.
-const WHIFF_TOOLS = new Set<HeroTool>(['axe', 'pickaxe', 'hammer', 'fishingRod', 'unarmed'])
+export const contextualToolByAction: Partial<Record<HeroContextAction, HeroCivilTool>> = {
+  chop: 'axe',
+  mine: 'pickaxe',
+  build: 'hammer',
+  fish: 'fishingRod',
+}
 
-const TOOL_WORK: Record<HeroTool, string> = {
-  axe: WORK_TYPES.woodcutter,
-  pickaxe: WORK_TYPES.stoneminer,
+export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
+  axe: 1,
+  pickaxe: 1,
+  hammer: 1,
+  fishingRod: 1,
+}
+
+const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
+  interact: WORK_TYPES.attacker,
   bow: WORK_TYPES.hunter,
-  hammer: WORK_TYPES.builder,
-  fishingRod: WORK_TYPES.fisher,
-  unarmed: WORK_TYPES.attacker,
+}
+
+const DEFAULT_CONTEXT_ACTION_ENERGY_COST: Record<HeroContextAction, number> = {
+  chop: 1,
+  mine: 1,
+  build: 1,
+  fish: 1,
+  gather: 0,
+  pickup: 0,
+  interact: 0,
 }
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
@@ -76,15 +89,16 @@ export function buildingAcceptsCarriedResource(hero: UnitEntity, target: Runtime
   return building.type === BUILDING_TYPES.townCenter || Boolean(building.accept?.includes(hero.loadingType ?? ''))
 }
 
-type HeroToolConfig = {
+type HeroContextActionConfig = {
+  action: HeroContextAction
   matches: (target: RuntimeEntity) => boolean
   resolve: (hero: UnitEntity, target: RuntimeEntity) => (() => void) | null
 }
 
 // The hero is fully player-controlled and must never path or move on its own — every entry
 // point below (aimed click, plain "e" press, the building deposit button) only ever calls
-// this once the caller has already confirmed the hero is in range (isToolTargetReachable /
-// canDeliverToBuilding). This fires the action's effect directly instead of going through
+// this once the caller has already confirmed the hero is in range
+// (isContextActionTargetReachable / canDeliverToBuilding). This fires the action's effect directly instead of going through
 // hero.sendTo*/commonSendTo, which is built for AI-pathed units and can silently walk them.
 function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string): void {
   if (hero.actionLocked) return
@@ -147,8 +161,9 @@ function resolveHeroGatherAction(
   return () => runHeroGatherAction(hero, target, action, work)
 }
 
-const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
-  unarmed: {
+const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
+  {
+    action: 'gather',
     matches: target =>
       resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
@@ -163,11 +178,13 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
       return resolveHeroGatherAction(hero, target, ACTION_TYPES.takemeat, WORK_TYPES.hunter)
     },
   },
-  axe: {
+  {
+    action: 'chop',
     matches: target => resourceKind(target) === 'Tree',
     resolve: (hero, target) => resolveHeroGatherAction(hero, target, ACTION_TYPES.chopwood, WORK_TYPES.woodcutter),
   },
-  pickaxe: {
+  {
+    action: 'mine',
     matches: target => resourceKind(target) === 'Stone' || resourceKind(target) === 'Gold',
     resolve: (hero, target) => {
       const isStone = resourceKind(target) === 'Stone'
@@ -176,17 +193,8 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
       return resolveHeroGatherAction(hero, target, action, work)
     },
   },
-  bow: {
-    // Bow never auto-collects meat, only hunts live game — otherwise hunting near a fresh
-    // carcass would keep switching the hero to takemeat instead of shooting the next animal.
-    // Switch to the unarmed tool to pick up carcasses.
-    matches: target => target.family === FAMILY_TYPES.animal && !target.isDead,
-    resolve: (hero, target) =>
-      getActionCondition(hero, target, ACTION_TYPES.hunt)
-        ? () => runHeroGatherAction(hero, target, ACTION_TYPES.hunt, WORK_TYPES.hunter)
-        : null,
-  },
-  hammer: {
+  {
+    action: 'build',
     matches: target => {
       if (target.family !== FAMILY_TYPES.building) return false
       const building = target as BuildingEntity
@@ -197,7 +205,8 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
         ? () => runHeroGatherAction(hero, target, ACTION_TYPES.build, WORK_TYPES.builder)
         : null,
   },
-  fishingRod: {
+  {
+    action: 'fish',
     matches: target => target.category === 'Fish',
     resolve: (hero, target) => {
       const action = resolveHeroGatherAction(hero, target, ACTION_TYPES.fishing, WORK_TYPES.fisher)
@@ -211,10 +220,45 @@ const HERO_TOOL_ACTIONS: Partial<Record<HeroTool, HeroToolConfig>> = {
       }
     },
   },
+]
+
+export function getHeroToolLevel(hero: UnitEntity, tool: HeroCivilTool): number {
+  return Math.max(0, Math.floor(hero.toolLevels?.[tool] ?? DEFAULT_HERO_TOOL_LEVELS[tool] ?? 0))
 }
 
-export function applyToolAppearance(hero: UnitEntity, tool: HeroTool): void {
-  const work = TOOL_WORK[tool]
+function getContextActionEnergyCost(hero: UnitEntity, contextAction: HeroContextAction): number {
+  const override = hero.contextActionEnergyCosts?.[contextAction]
+  const base = override ?? DEFAULT_CONTEXT_ACTION_ENERGY_COST[contextAction]
+  const tool = contextualToolByAction[contextAction]
+  const level = tool ? getHeroToolLevel(hero, tool) : 1
+  return Math.max(0, Math.ceil(base / Math.max(1, level)))
+}
+
+function hasEnergyForContextAction(hero: UnitEntity, contextAction: HeroContextAction): boolean {
+  const cost = getContextActionEnergyCost(hero, contextAction)
+  if (cost <= 0 || hero.energy == null) return true
+  return hero.energy >= cost
+}
+
+function consumeEnergyForContextAction(hero: UnitEntity, contextAction: HeroContextAction): void {
+  const cost = getContextActionEnergyCost(hero, contextAction)
+  if (cost <= 0 || hero.energy == null) return
+  hero.energy = Math.max(0, hero.energy - cost)
+}
+
+function runContextAction(hero: UnitEntity, contextAction: HeroContextAction, effect: () => void): boolean {
+  if (!hasEnergyForContextAction(hero, contextAction)) {
+    hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
+    return false
+  }
+  hero.contextAction = contextAction
+  consumeEnergyForContextAction(hero, contextAction)
+  effect()
+  return true
+}
+
+export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
+  const work = EQUIPPED_ITEM_WORK[tool]
   if (hero.work === work) return
   hero.work = work
   const workAssets = hero.allAssets?.[work]
@@ -228,6 +272,8 @@ export function applyToolAppearance(hero: UnitEntity, tool: HeroTool): void {
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
 
+export const applyToolAppearance = applyEquippedItemAppearance
+
 function playHeroToolAnimation(hero: UnitEntity, onImpact?: () => void, impactFrame: number | null = null): void {
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked) return
@@ -235,6 +281,7 @@ function playHeroToolAnimation(hero: UnitEntity, onImpact?: () => void, impactFr
   hero.actionLocked = true
   sprite.loop = false
   hero.setTextures?.(SHEET_TYPES.action)
+  sprite.gotoAndPlay(0)
   hero.syncShadow?.()
 
   sprite.onComplete = () => finishHeroToolAnimation(hero)
@@ -255,6 +302,7 @@ function finishHeroToolAnimation(hero: UnitEntity): void {
     sprite.loop = true
   }
   hero.actionLocked = false
+  hero.contextAction = null
   const hadPendingOrder = hero.flushPendingOrder?.()
   if (!hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
   hero.syncShadow?.()
@@ -288,16 +336,23 @@ function getDirectionalTarget<T extends RuntimeEntity>(
   candidates: T[],
   halfAngle = CLICK_DIRECTION_HALF_ANGLE
 ): T | null {
-  return (
-    candidates
-      .map(target => ({
-        target,
-        angle: getAimDelta(hero, target),
-        dist: Math.hypot(target.x - hero.x, target.y - hero.y),
-      }))
-      .filter(candidate => candidate.angle <= halfAngle)
-      .sort((a, b) => a.angle - b.angle || a.dist - b.dist)[0]?.target ?? null
-  )
+  return getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null
+}
+
+function getDirectionalTargets<T extends RuntimeEntity>(
+  hero: UnitEntity,
+  candidates: T[],
+  halfAngle = CLICK_DIRECTION_HALF_ANGLE
+): T[] {
+  return candidates
+    .map(target => ({
+      target,
+      angle: getAimDelta(hero, target),
+      dist: Math.hypot(target.x - hero.x, target.y - hero.y),
+    }))
+    .filter(candidate => candidate.angle <= halfAngle)
+    .sort((a, b) => a.angle - b.angle || a.dist - b.dist)
+    .map(candidate => candidate.target)
 }
 
 function tryDeliver(hero: UnitEntity): boolean {
@@ -339,46 +394,41 @@ function findArrowTargetInAim(hero: UnitEntity): RuntimeEntity | null {
   return getDirectionalTarget(hero, candidates)
 }
 
-function getToolActionForTarget(tool: HeroTool, target: RuntimeEntity): string | null {
-  if (tool === 'unarmed' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
-  if (tool === 'unarmed' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
-  if (tool === 'axe' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
-  if (tool === 'pickaxe' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
-  if (tool === 'pickaxe' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
-  if (tool === 'bow' && target.family === FAMILY_TYPES.animal && !target.isDead) return ACTION_TYPES.hunt
-  if (tool === 'hammer' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
-  if (tool === 'fishingRod' && target.category === 'Fish') return ACTION_TYPES.fishing
+function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {
+  if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
+  if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
+  if (contextAction === 'chop' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
+  if (contextAction === 'mine' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
+  if (contextAction === 'mine' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
+  if (contextAction === 'build' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
+  if (contextAction === 'fish' && target.category === 'Fish') return ACTION_TYPES.fishing
   return null
 }
 
 // The hero is fully player-controlled and must never auto-path to a target — every tool
 // interaction (aimed click or plain "e" press) may only fire once the hero is already in
-// place. ARPG contact tools get a small forgiveness band because the player positions the
+// place. hero contact tools get a small forgiveness band because the player positions the
 // hero by hand while resource sprites often extend beyond their grid cell.
-function isToolTargetReachable(hero: UnitEntity, tool: HeroTool, target: RuntimeEntity): boolean {
-  const action = getToolActionForTarget(tool, target)
+function isContextActionTargetReachable(hero: UnitEntity, contextAction: HeroContextAction, target: RuntimeEntity): boolean {
+  const action = getContextActionForTarget(contextAction, target)
   if (!action) return false
-  if (isArpgHeroActionInRange(hero, action, target)) return true
+  if (isHeroActionInRange(hero, action, target)) return true
   return Boolean(hero.isUnitAtDest?.(action, target))
 }
 
-function triggerToolActionAt(hero: UnitEntity, tool: HeroTool): ToolActionResult {
-  const config = HERO_TOOL_ACTIONS[tool]
-  if (!config) return 'miss'
-
+function performContextActionAt(hero: UnitEntity): ToolActionResult {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
-    target => config.matches(target),
+    target => HERO_CONTEXT_ACTIONS.some(config => config.matches(target)),
     CLICK_TARGET_SEARCH_RANGE
   )
 
-  const target = getDirectionalTarget(hero, candidates)
-  if (target) {
+  for (const target of getDirectionalTargets(hero, candidates)) {
+    const config = HERO_CONTEXT_ACTIONS.find(candidate => candidate.matches(target))
+    if (!config) continue
+    if (!isContextActionTargetReachable(hero, config.action, target)) continue
     const action = config.resolve(hero, target)
-    if (action && isToolTargetReachable(hero, tool, target)) {
-      action()
-      return 'triggered'
-    }
+    if (action) return runContextAction(hero, config.action, action) ? 'triggered' : 'blocked'
     return 'blocked'
   }
 
@@ -587,54 +637,15 @@ export function releaseHeroBowCharge(hero: UnitEntity): boolean {
   return true
 }
 
-function findMeleeTarget(hero: UnitEntity): RuntimeEntity | null {
-  const aimDegree = hero.degree ?? 0
-  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
-    hero,
-    target => getActionCondition(hero, target, ACTION_TYPES.attack),
-    TOOL_ACTION_RANGE
-  )
-  let best: RuntimeEntity | null = null
-  let bestDist = MELEE_ATTACK_RANGE
-  for (const candidate of candidates) {
-    const dist = Math.hypot(candidate.x - hero.x, candidate.y - hero.y)
-    if (dist > bestDist) continue
-    if (angleDelta(getInstanceDegree(hero, candidate.x, candidate.y), aimDegree) > MELEE_CONE_HALF_ANGLE) continue
-    best = candidate
-    bestDist = dist
-  }
-  return best
+function playEmptyHandWhiff(hero: UnitEntity): void {
+  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff))
 }
 
-function swingToolInPlace(hero: UnitEntity): void {
-  playHeroToolAnimation(
-    hero,
-    () => {
-      const target = findMeleeTarget(hero)
-      if (!target) {
-        playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff)
-        return
-      }
-      if (hero.sounds?.hit) {
-        playAudibleSoundCue(hero, hero.sounds.hit)
-      }
-      const beforeHitPoints = target.hitPoints ?? 0
-      target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
-      const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
-      showDamageFeedback(target, damageDealt)
-      grantUnitXp(hero, XP_CATEGORIES.melee, damageDealt)
-      if (target.selected || target.shouldKeepHealthBarVisible?.()) target.drawHealthBar?.()
-      target.isAttacked?.(hero)
-      if ((target.hitPoints ?? 0) <= 0) {
-        grantUnitXp(hero, XP_CATEGORIES.melee, XP_KILL_BONUS)
-        target.die?.()
-      }
-    },
-    SLASH_IMPACT_FRAME
-  )
-}
-
-export function triggerToolAttackAt(hero: UnitEntity, tool: HeroTool | null, destination: Point): boolean {
+export function triggerEquippedItemActionAt(
+  hero: UnitEntity,
+  tool: HeroEquippedItem | null,
+  destination: Point
+): boolean {
   if (!tool || hero.actionLocked) return false
   hero.degree = getInstanceDegree(hero, destination.x, destination.y)
   if (tryDeliverAt(hero)) return true
@@ -642,40 +653,52 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroTool | null, des
     const target = findArrowTargetInAim(hero)
     return beginHeroBowChargeAt(hero, target ? { x: target.x, y: target.y } : destination, target)
   }
-  const actionResult = triggerToolActionAt(hero, tool)
+  if (tool !== 'interact') return false
+  const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
-  if (actionResult === 'blocked') return false
-  if (WHIFF_TOOLS.has(tool)) {
-    swingToolInPlace(hero)
+  if (actionResult === 'miss') {
+    playEmptyHandWhiff(hero)
     return true
   }
   return false
 }
 
-export function triggerToolAction(hero: UnitEntity, tool: HeroTool | null): boolean {
-  if (tool) {
-    const config = HERO_TOOL_ACTIONS[tool]
-    if (config) {
-      const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE)
-      const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
-      if (closest) {
-        const action = config.resolve(hero, closest.instance)
-        if (action && isToolTargetReachable(hero, tool, closest.instance)) {
-          action()
-          return true
-        }
-        return false
+function performNearestContextAction(hero: UnitEntity): ToolActionResult {
+  for (const config of HERO_CONTEXT_ACTIONS) {
+    const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE)
+    const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
+    if (closest) {
+      const action = config.resolve(hero, closest.instance)
+      if (action && isContextActionTargetReachable(hero, config.action, closest.instance)) {
+        return runContextAction(hero, config.action, action) ? 'triggered' : 'blocked'
       }
+      return 'blocked'
     }
   }
-  if (tryDeliver(hero)) return true
+  if (tryDeliver(hero)) return 'triggered'
+  return 'miss'
+}
+
+export function performContextAction(hero: UnitEntity): boolean {
+  return performNearestContextAction(hero) === 'triggered'
+}
+
+export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
+  if (tool === 'interact') {
+    const actionResult = performNearestContextAction(hero)
+    if (actionResult === 'triggered') return true
+    if (actionResult === 'miss') {
+      playEmptyHandWhiff(hero)
+      return true
+    }
+    return false
+  }
   if (tool === 'bow') {
     fireBlindArrow(hero)
     return true
   }
-  if (tool && WHIFF_TOOLS.has(tool)) {
-    swingToolInPlace(hero)
-    return true
-  }
   return false
 }
+
+export const triggerToolAttackAt = triggerEquippedItemActionAt
+export const triggerToolAction = triggerEquippedItemAction

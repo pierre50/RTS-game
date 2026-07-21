@@ -64,6 +64,11 @@ export class UnitInterface {
       unit.hitPoints,
       unit.totalHitPoints
     )
+    if (unit.name) {
+      const nameElement = createInfoText(MENU_INFO_IDS.name, unit.name)
+      const typeElement = element.querySelector(`.${MENU_INFO_IDS.type}`)
+      element.insertBefore(nameElement, typeElement)
+    }
 
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')

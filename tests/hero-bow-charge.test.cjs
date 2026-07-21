@@ -57,8 +57,8 @@ function loadHeroTools(overrides = {}) {
         woodcutter: 'woodcutter',
       },
     },
-    './arpg': {
-      isArpgHeroActionInRange: (_hero, action, target) => {
+    './heroActionRange': {
+      isHeroActionInRange: (_hero, action, target) => {
         if (action !== 'fishing' && action !== 'takemeat') return false
         return Math.hypot(target.i, target.j) <= 2.5
       },
@@ -94,7 +94,7 @@ function loadHeroTools(overrides = {}) {
       instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
     },
     './lang': { t: key => key },
-    './sound': { playAudibleSoundCue: () => {} },
+    './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
     './combatFeedback': { showDamageFeedback: () => {} },
     './unitExperience': {
       getCombatXpBonus: () => 0,
@@ -240,7 +240,7 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
   }
 })
 
-test('hero resource tools get a small ARPG contact forgiveness band', () => {
+test('hero resource tools get a small hero contact forgiveness band', () => {
   const fish = {
     category: 'Fish',
     family: 'resource',
@@ -254,8 +254,11 @@ test('hero resource tools get a small ARPG contact forgiveness band', () => {
   const calls = []
   const { triggerToolAction } = loadHeroTools({
     './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
-    './grid/visibility': { findInstancesInSight: () => [fish] },
-    './grid/queries': { getClosestInstanceWithPath: (_hero, candidates) => ({ instance: candidates[0], path: [] }) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [fish].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -266,7 +269,7 @@ test('hero resource tools get a small ARPG contact forgiveness band', () => {
     setDest: target => calls.push(['setDest', target]),
   })
 
-  assert.equal(triggerToolAction(hero, 'fishingRod'), true)
+  assert.equal(triggerToolAction(hero, 'interact'), true)
   assert.deepEqual(calls, [
     ['setDest', fish],
     ['getAction', 'fishing'],
@@ -287,7 +290,7 @@ test('full hero inventory blocks fishing without playing a whiff animation', () 
   const messages = []
   const { triggerToolAttackAt } = loadHeroTools({
     './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
-    './grid/visibility': { findInstancesInSight: () => [fish] },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [fish].filter(predicate) },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -309,14 +312,167 @@ test('full hero inventory blocks fishing without playing a whiff animation', () 
     },
   })
 
-  assert.equal(triggerToolAttackAt(hero, 'fishingRod', { x: 10, y: 0 }), false)
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
   assert.equal(hero.startedAction, undefined)
   assert.equal(hero.actionLocked, false)
   assert.equal(hero.currentSheet, 'standingSheet')
   assert.deepEqual(messages, [['heroInventoryFull', 'warning']])
 })
 
-test('hero unarmed tool can take meat with the ARPG food forgiveness band', () => {
+test('civil tools are no longer equipped combat weapons', () => {
+  const enemy = {
+    family: 'unit',
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    x: 10,
+    y: 0,
+  }
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+      getHitPointsWithDamage: () => 0,
+    },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+  })
+  const { hero } = makeHero()
+
+  assert.equal(triggerToolAttackAt(hero, 'pickaxe', { x: 10, y: 0 }), false)
+  assert.equal(triggerToolAttackAt(hero, 'hammer', { x: 10, y: 0 }), false)
+  assert.equal(triggerToolAttackAt(hero, 'fishingRod', { x: 10, y: 0 }), false)
+  assert.equal(enemy.hitPoints, 10)
+  assert.equal(hero.actionLocked, false)
+})
+
+test('context actions consume energy from the action, not an equipped tool', () => {
+  const tree = {
+    category: 'Tree',
+    family: 'resource',
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 10,
+    y: 0,
+  }
+  const calls = []
+  const { triggerToolAction } = loadHeroTools({
+    './combat': { getActionCondition: (_hero, target, action) => target === tree && action === 'chopwood' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [tree].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 2,
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => true,
+    getAction: action => calls.push(['getAction', action]),
+    setDest: target => calls.push(['setDest', target]),
+  })
+
+  assert.equal(triggerToolAction(hero, 'interact'), true)
+  assert.equal(hero.energy, 1)
+  assert.equal(hero.contextAction, 'chop')
+  assert.deepEqual(calls, [
+    ['setDest', tree],
+    ['getAction', 'chopwood'],
+  ])
+})
+
+test('context actions are blocked when hero energy is too low', () => {
+  const rock = {
+    category: 'Stone',
+    family: 'resource',
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 10,
+    y: 0,
+  }
+  const messages = []
+  const { triggerToolAction } = loadHeroTools({
+    './combat': { getActionCondition: (_hero, target, action) => target === rock && action === 'minestone' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [rock].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    energy: 0,
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => true,
+    getAction: action => {
+      hero.startedAction = action
+    },
+  })
+
+  assert.equal(triggerToolAction(hero, 'interact'), false)
+  assert.equal(hero.startedAction, undefined)
+  assert.equal(hero.contextAction, undefined)
+  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+})
+
+test('free-hand interact plays an empty swing when no target is aimed', () => {
+  const { triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    getAction: action => {
+      hero.startedAction = action
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.startedAction, undefined)
+  assert.equal(hero.actionLocked, true)
+  assert.equal(hero.currentSheet, 'actionSheet')
+})
+
+test('free-hand interact still whiffs when a contextual target is aimed but out of reach', () => {
+  const tree = {
+    category: 'Tree',
+    family: 'resource',
+    i: 20,
+    isDestroyed: false,
+    j: 0,
+    quantity: 100,
+    x: 10,
+    y: 0,
+  }
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': { getActionCondition: (_hero, target, action) => target === tree && action === 'chopwood' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [tree].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => false,
+    getAction: action => {
+      hero.startedAction = action
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.startedAction, undefined)
+  assert.equal(hero.actionLocked, true)
+  assert.equal(hero.currentSheet, 'actionSheet')
+})
+
+test('hero free-hand context action can take meat with the hero food forgiveness band', () => {
   const carcass = {
     family: 'animal',
     hitPoints: 0,
@@ -334,8 +490,11 @@ test('hero unarmed tool can take meat with the ARPG food forgiveness band', () =
       getActionCondition: (_hero, target, action) => target === carcass && action === 'takemeat',
       getHitPointsWithDamage: () => 0,
     },
-    './grid/visibility': { findInstancesInSight: () => [carcass] },
-    './grid/queries': { getClosestInstanceWithPath: (_hero, candidates) => ({ instance: candidates[0], path: [] }) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -346,7 +505,7 @@ test('hero unarmed tool can take meat with the ARPG food forgiveness band', () =
     setDest: target => calls.push(['setDest', target]),
   })
 
-  assert.equal(triggerToolAction(hero, 'unarmed'), true)
+  assert.equal(triggerToolAction(hero, 'interact'), true)
   assert.deepEqual(calls, [
     ['setDest', carcass],
     ['getAction', 'takemeat'],

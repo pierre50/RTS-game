@@ -6,6 +6,7 @@ export const MENU_INFO_IDS = {
   quantity: 'quantity',
   quantityText: 'quantity-text',
   loadingText: 'loading-text',
+  name: 'name',
   type: 'type',
   civ: 'civ',
   icon: 'icon',

@@ -186,7 +186,7 @@ function drawVisionDebug(context: DevConsoleContext): void {
 function getHeroDebugUnit(context: DevConsoleContext): DevEntity | null {
   const controlsHero = context.controls && 'heroUnit' in context.controls ? (context.controls.heroUnit as DevEntity | null) : null
   if (controlsHero) return controlsHero
-  return (context.player.units.find(unit => unit.controlMode === 'arpg') as DevEntity | undefined) ?? null
+  return (context.player.units.find(unit => unit.controlMode === 'hero') as DevEntity | undefined) ?? null
 }
 
 function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
@@ -588,7 +588,7 @@ export function toggleTerrainFrameDebug(context: DevConsoleContext, value: strin
 export function toggleFreeCamera(context: DevConsoleContext, value: string): CommandResult {
   const { controls } = context
   if (!controls?.setFreeCamera) return { ok: false, message: 'Free camera unavailable' }
-  if (!controls.isArpgActive?.()) return { ok: false, message: 'Free camera only applies in ARPG mode' }
+  if (!controls.isHeroControlActive?.()) return { ok: false, message: 'Free camera only applies in hero gameplay' }
 
   const enabled = normalizeToggle(value, Boolean(controls.freeCameraActive))
   controls.setFreeCamera(enabled)

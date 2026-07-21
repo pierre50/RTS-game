@@ -197,48 +197,13 @@ export function restoreBuildingAssignments(
 
 export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
   if (!savedPlayer?.isPlayed) return
-  if (context.arpgMode) {
-    const controls = context.context.controls
-    const heroUnit = controls && 'heroUnit' in controls ? controls.heroUnit : null
-    player.selectedUnits = []
-    player.selectedUnit = null
-    player.selectedBuilding = null
-    player.selectedOther = null
-    context.context.menu?.setBottombar?.(heroUnit ?? null)
-    return
-  }
-
-  const savedUnitLabels = savedPlayer.selectedUnitLabels ?? []
-  const selectedUnits = savedUnitLabels
-    .map(label => getDestEntity(label, context))
-    .filter(
-      (unit): unit is UnitEntity =>
-        Boolean(unit) && unit!.family === FAMILY_TYPES.unit && !unit!.isDead && !unit!.isDestroyed
-    )
-  selectedUnits.forEach(unit => unit.select?.())
-  player.selectedUnits = selectedUnits
-  player.selectedUnit = getDestUnit(savedPlayer.selectedUnitLabel, context) ?? selectedUnits[0] ?? null
-
-  const selectedBuilding = getDestBuilding(savedPlayer.selectedBuildingLabel, context)
-  if (selectedBuilding && !selectedBuilding.isDead && !selectedBuilding.isDestroyed) {
-    selectedBuilding.select?.()
-    player.selectedBuilding = selectedBuilding
-  }
-
-  const selectedOther = getDestEntity(savedPlayer.selectedOtherLabel, context)
-  if (selectedOther && !selectedOther.isDead && !selectedOther.isDestroyed) {
-    selectedOther.select?.()
-    player.selectedOther = selectedOther
-  }
-
-  const { menu } = context.context
-  if (player.selectedUnits.length) {
-    menu?.setBottombar?.(player.selectedUnit ?? player.selectedUnits[0])
-  } else if (player.selectedBuilding) {
-    menu?.setBottombar?.(player.selectedBuilding)
-  } else if (player.selectedOther) {
-    menu?.setBottombar?.(player.selectedOther)
-  }
+  const controls = context.context.controls
+  const heroUnit = controls && 'heroUnit' in controls ? controls.heroUnit : null
+  player.selectedUnits = []
+  player.selectedUnit = null
+  player.selectedBuilding = null
+  player.selectedOther = null
+  context.context.menu?.setBottombar?.(heroUnit ?? null)
 }
 
 export function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {

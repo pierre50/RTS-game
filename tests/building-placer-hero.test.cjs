@@ -81,13 +81,13 @@ function createGrid(size) {
   )
 }
 
-test('ARPG building preview rejects footprints overlapping the hero cell', () => {
+test('hero building preview rejects footprints overlapping the hero cell', () => {
   const BuildingPlacer = loadBuildingPlacer()
   const grid = createGrid(5)
   const controls = {
     context: { map: { grid } },
     mouseBuilding: { type: 'House', size: 3 },
-    isArpgActive: () => true,
+    isHeroControlActive: () => true,
     heroUnit: { i: 2, j: 2 },
   }
   const placer = new BuildingPlacer(controls)
@@ -96,12 +96,12 @@ test('ARPG building preview rejects footprints overlapping the hero cell', () =>
   assert.equal(placer.canPlaceMouseBuilding(grid[0][0]), true)
 })
 
-test('ARPG wall preview rejects the hero cell', () => {
+test('hero wall preview rejects the hero cell', () => {
   const BuildingPlacer = loadBuildingPlacer()
   const grid = createGrid(5)
   const controls = {
     context: { map: { grid, revealEverything: true } },
-    isArpgActive: () => true,
+    isHeroControlActive: () => true,
     heroUnit: { i: 2, j: 2 },
   }
   const placer = new BuildingPlacer(controls)

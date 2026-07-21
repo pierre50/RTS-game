@@ -10,7 +10,7 @@ import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAct
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { hasRtsCommandableUnits } from '../lib/unitControl'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
-import type { HeroTool } from '../lib/heroTools'
+import type { HeroEquippedItem } from '../lib/heroTools'
 import type {
   AudibleInstanceLike,
   ControlPointerEvent,
@@ -18,7 +18,7 @@ import type {
   GameContextLike,
   SelectionRectangle,
 } from '../types/context'
-import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
 
@@ -27,6 +27,7 @@ type PointerPageEvent = ControlPointerEvent & {
   pageX: number
   pageY: number
   button?: number
+  ctrlKey?: boolean
   preventDefault?: () => void
 }
 type TouchInteraction = {
@@ -46,6 +47,11 @@ const KEYBOARD_CAMERA_ACCELERATION = 0.24
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
 const COMPATIBILITY_MOUSE_EVENT_DELAY = 800
+const SECONDARY_CLICK_CONTEXT_MENU_SUPPRESS_MS = 1000
+
+function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
+  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
+}
 
 export default class Controls extends Container implements ControlsLike {
   context: GameContextLike
@@ -53,6 +59,7 @@ export default class Controls extends Container implements ControlsLike {
   cameraController: CameraController
   mouseHoldTimeout: ReturnType<typeof setTimeout> | undefined
   keysPressed: Partial<Record<ControlBindingAction, boolean>>
+  keyActionsByCode: Partial<Record<string, ControlBindingAction>>
   keyPressedCount: number
   keySpeed: number
   freeCameraActive: boolean
@@ -65,6 +72,7 @@ export default class Controls extends Container implements ControlsLike {
   touchInteraction: TouchInteraction | null
   touchPanActive: boolean
   ignoreMouseEventsUntil: number
+  suppressContextMenuUntil: number
   lastClickedUnit: RuntimeEntity | null
   unitClickTimeout: ReturnType<typeof setTimeout> | null
   doubleClicked: boolean
@@ -109,6 +117,7 @@ export default class Controls extends Container implements ControlsLike {
 
     this.mouseHoldTimeout = undefined
     this.keysPressed = {}
+    this.keyActionsByCode = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
     this.freeCameraActive = false
@@ -121,6 +130,7 @@ export default class Controls extends Container implements ControlsLike {
     this.touchInteraction = null
     this.touchPanActive = false
     this.ignoreMouseEventsUntil = 0
+    this.suppressContextMenuUntil = 0
     this.lastClickedUnit = null
     this.unitClickTimeout = null
     this.doubleClicked = false
@@ -142,9 +152,7 @@ export default class Controls extends Container implements ControlsLike {
     this._onMouseDown = (evt: MouseEvent) => this.onMouseDown(evt)
     this._onMouseUp = (evt: MouseEvent) => this.onMouseUp(evt)
     this._onWheel = (evt: WheelEvent) => this.onWheel(evt)
-    this._onContextMenu = (evt: MouseEvent) => {
-      if (this.isArpgActive()) evt.preventDefault()
-    }
+    this._onContextMenu = (evt: MouseEvent) => this.onContextMenu(evt)
     this._onTouchCancel = () => this.cancelActiveInteraction()
     this._onWindowBlur = () => this.cancelActiveInteraction()
     this._onTick = (ticker: TickerLike) => this.onTick(ticker)
@@ -160,7 +168,8 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.addEventListener('mousemove', this._onMouseMove)
     gamebox.addEventListener('mousedown', this._onMouseDown)
     gamebox.addEventListener('wheel', this._onWheel, { passive: false })
-    gamebox.addEventListener('contextmenu', this._onContextMenu)
+    gamebox.addEventListener('contextmenu', this._onContextMenu, true)
+    document.addEventListener('contextmenu', this._onContextMenu, true)
     document.addEventListener('mouseup', this._onMouseUp)
     window.addEventListener('blur', this._onWindowBlur)
     context.app.ticker.add(this._onTick)
@@ -182,7 +191,8 @@ export default class Controls extends Container implements ControlsLike {
     gamebox.removeEventListener('mousemove', this._onMouseMove)
     gamebox.removeEventListener('mousedown', this._onMouseDown)
     gamebox.removeEventListener('wheel', this._onWheel)
-    gamebox.removeEventListener('contextmenu', this._onContextMenu)
+    gamebox.removeEventListener('contextmenu', this._onContextMenu, true)
+    document.removeEventListener('contextmenu', this._onContextMenu, true)
     document.removeEventListener('mouseup', this._onMouseUp)
     window.removeEventListener('blur', this._onWindowBlur)
     this.context.app.ticker.remove(this._onTick)
@@ -199,8 +209,12 @@ export default class Controls extends Container implements ControlsLike {
     return this.heroController.heroUnit
   }
 
-  get equippedTool(): HeroTool | null {
-    return this.heroController.equippedTool
+  get equippedItem(): HeroEquippedItem | null {
+    return this.heroController.equippedItem
+  }
+
+  get equippedTool(): HeroEquippedItem | null {
+    return this.equippedItem
   }
 
   get heroActionHeld(): boolean {
@@ -263,7 +277,7 @@ export default class Controls extends Container implements ControlsLike {
         this.context.defeat ||
         menu?.isInventoryOpen?.() ||
         menu?.isNpcOrdersOpen?.() ||
-        menu?.isArpgBuildingMenuOpen?.() ||
+        menu?.isHeroBuildingMenuOpen?.() ||
         document.querySelector?.('.modal')
     )
   }
@@ -289,24 +303,24 @@ export default class Controls extends Container implements ControlsLike {
       this.rallyPointController.cancel()
       return true
     }
-    if (this.isArpgActive() && this.heroController.pendingGoToNpcs) {
+    if (this.isHeroControlActive() && this.heroController.pendingGoToNpcs) {
       evt.preventDefault()
       this.heroController.cancelGoToPicking()
       return true
     }
-    if (this.isArpgActive() && this.context.menu?.isInventoryOpen?.()) {
+    if (this.isHeroControlActive() && this.context.menu?.isInventoryOpen?.()) {
       evt.preventDefault()
       this.context.menu.closeInventory?.()
       return true
     }
-    if (this.isArpgActive() && this.context.menu?.isNpcOrdersOpen?.()) {
+    if (this.isHeroControlActive() && this.context.menu?.isNpcOrdersOpen?.()) {
       evt.preventDefault()
       this.context.menu.closeNpcOrders?.()
       return true
     }
-    if (this.isArpgActive() && this.context.menu?.isArpgBuildingMenuOpen?.()) {
+    if (this.isHeroControlActive() && this.context.menu?.isHeroBuildingMenuOpen?.()) {
       evt.preventDefault()
-      this.context.menu.closeArpgBuildingMenu?.()
+      this.context.menu.closeHeroBuildingMenu?.()
       return true
     }
     return false
@@ -314,6 +328,10 @@ export default class Controls extends Container implements ControlsLike {
 
   onKeyDown(evt: KeyboardEvent): void {
     if (this.isEditableTarget(evt.target)) return
+    if (evt.key === 'Alt' || evt.altKey) {
+      this.stopKeyboardMove()
+      return
+    }
     if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
     if (this.isInteractionBlocked()) return
     const action = getControlActionForKeyboardEvent(evt)
@@ -321,6 +339,7 @@ export default class Controls extends Container implements ControlsLike {
     if (evt.repeat && !isCameraAction) return
 
     if (action && isCameraAction) {
+      if (evt.code) this.keyActionsByCode[evt.code] = action
       if (!evt.repeat) {
         this.keysPressed[action] = true
         this.keyPressedCount++
@@ -331,10 +350,13 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    if (action && this.heroController.handleKeyDown(action)) return
+    if (action && this.heroController.handleKeyDown(action)) {
+      if (evt.code) this.keyActionsByCode[evt.code] = action
+      return
+    }
 
     if (evt.key === 'Delete' || evt.keyCode === 8) {
-      if (this.isArpgActive()) return
+      if (this.isHeroControlActive()) return
       const {
         context: { player },
       } = this
@@ -356,7 +378,13 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    const action = getControlActionForKeyboardEvent(evt)
+    if (evt.key === 'Alt') {
+      this.stopKeyboardMove()
+      return
+    }
+
+    const action = getControlActionForKeyboardEvent(evt) || (evt.code ? this.keyActionsByCode[evt.code] : null)
+    if (evt.code) delete this.keyActionsByCode[evt.code]
     if (action) this.heroController.handleKeyUp(action)
 
     if (!action || !CAMERA_ACTIONS.has(action)) return
@@ -372,7 +400,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   onTick(ticker: TickerLike): void {
-    setHeroGameCursorEnabled(this.isArpgActive() && !this.isInGameMenuOpen())
+    setHeroGameCursorEnabled(this.isHeroControlActive() && !this.isInGameMenuOpen())
     if (this.isInteractionBlocked()) {
       this.cancelActiveInteraction()
       return
@@ -384,7 +412,7 @@ export default class Controls extends Container implements ControlsLike {
     )
     const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
 
-    if (this.isArpgActive()) {
+    if (this.isHeroControlActive()) {
       this.gamepadInput.update()
       this.heroController.update(gameFrameScale)
       if (this.freeCameraActive) {
@@ -585,6 +613,7 @@ export default class Controls extends Container implements ControlsLike {
   onMouseDown(evt: PointerPageEvent): void {
     if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
     if (this.isInteractionBlocked()) return
+    if (evt.altKey) this.stopKeyboardMove()
 
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
@@ -598,14 +627,17 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    if (this.isArpgActive() && evt.button === 0) {
+    if (this.isHeroControlActive() && isSecondaryPointerButton(evt)) {
       evt.preventDefault?.()
-      const target = this.getCellUnderCursor()?.has
-      if (target?.family === FAMILY_TYPES.building && this.context.menu?.openArpgBuildingMenu?.(target)) {
-        this.pointerStart = null
-        this.mouse.prevent = true
-        return
-      }
+      this.suppressContextMenuUntil = performance.now() + SECONDARY_CLICK_CONTEXT_MENU_SUPPRESS_MS
+      this.openHeroEntityInteraction()
+      this.pointerStart = null
+      this.mouse.prevent = true
+      return
+    }
+
+    if (this.isHeroControlActive() && evt.button === 0) {
+      evt.preventDefault?.()
       this.heroController.handlePrimaryPointerDown()
       this.pointerStart = null
       this.mouse.prevent = true
@@ -632,7 +664,7 @@ export default class Controls extends Container implements ControlsLike {
 
   onWheel(evt: WheelEvent): void {
     if (this.isEditableTarget(evt.target)) return
-    if (this.isInteractionBlocked() || !this.isArpgActive() || this.isInGameMenuOpen()) return
+    if (this.isInteractionBlocked() || !this.isHeroControlActive() || this.isInGameMenuOpen()) return
 
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
@@ -646,6 +678,16 @@ export default class Controls extends Container implements ControlsLike {
       evt.preventDefault()
       evt.stopPropagation()
     }
+  }
+
+  onContextMenu(evt: MouseEvent): void {
+    const shouldSuppress =
+      performance.now() < this.suppressContextMenuUntil ||
+      (this.isHeroControlActive() && (this.isMouseInApp(evt) || Boolean(document.querySelector?.('.modal'))))
+    if (!shouldSuppress) return
+    evt.preventDefault()
+    evt.stopPropagation()
+    evt.stopImmediatePropagation?.()
   }
 
   onMouseUp(evt: PointerPageEvent): void {
@@ -674,7 +716,7 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
     if (!this.rallyPointController.active) {
-      !this.isArpgActive() && player?.selectedBuilding && player.unselectAll()
+      !this.isHeroControlActive() && player?.selectedBuilding && player.unselectAll()
     }
 
     if (this.mouseRectangle) {
@@ -726,6 +768,18 @@ export default class Controls extends Container implements ControlsLike {
     const i = Math.min(Math.max(pos[0], 0), map.size)
     const j = Math.min(Math.max(pos[1], 0), map.size)
     return map.grid[i]?.[j] || null
+  }
+
+  openHeroEntityInteraction(target: RuntimeEntity | null = this.getCellUnderCursor()?.has ?? null): boolean {
+    if (!this.isHeroControlActive() || !target) return false
+    if (target.family === FAMILY_TYPES.building && this.context.menu?.openHeroBuildingMenu?.(target as BuildingEntity)) {
+      const player = this.context.player
+      player?.unselectAll?.()
+      target.select?.()
+      player.selectedBuilding = target as BuildingEntity
+      return true
+    }
+    return Boolean(this.context.menu?.openEntityInfoModal?.(target))
   }
 
   getGamepadMoveVector(): { dx: number; dy: number } {
@@ -785,12 +839,13 @@ export default class Controls extends Container implements ControlsLike {
 
   stopKeyboardMove(): void {
     this.keysPressed = {}
+    this.keyActionsByCode = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
     this.heroController.stopKeyboardMove()
   }
 
-  isArpgActive(): boolean {
+  isHeroControlActive(): boolean {
     return this.heroController.isActive()
   }
 
@@ -804,8 +859,12 @@ export default class Controls extends Container implements ControlsLike {
     }
   }
 
-  setEquippedTool(tool: HeroTool | null): void {
-    this.heroController.setEquippedTool(tool)
+  setEquippedItem(item: HeroEquippedItem | null): void {
+    this.heroController.setEquippedItem(item)
+  }
+
+  setEquippedTool(tool: HeroEquippedItem | null): void {
+    this.setEquippedItem(tool)
   }
 
   beginNpcGoTo(npcs: UnitEntity[]): void {

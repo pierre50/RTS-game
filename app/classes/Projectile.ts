@@ -595,7 +595,7 @@ export class Projectile extends Container {
   }
 
   // Hunting spears train the hunting skill; every other unit-fired projectile
-  // (archers, war boats, the ARPG hero's bow) trains the ranged-weapon skill.
+  // (archers, war boats, the hero-controlled unit's bow) trains the ranged-weapon skill.
   // Buildings (towers) fire projectiles too but never earn experience.
   getXpCategory(): string | null {
     if (this.owner.family !== FAMILY_TYPES.unit) return null

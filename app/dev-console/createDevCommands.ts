@@ -252,7 +252,7 @@ export function createDevCommands(): DevCommandRegistry {
     name: 'hero-collision',
     aliases: ['hcol'],
     usage: 'hero-collision [on|off]',
-    describe: 'Toggle ARPG hero collision shape debug overlay',
+    describe: 'Toggle hero-controlled unit collision shape debug overlay',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleHeroCollisionDebug(context, value),
   })
@@ -261,7 +261,7 @@ export function createDevCommands(): DevCommandRegistry {
     name: 'free-camera',
     aliases: ['fcam'],
     usage: 'free-camera [on|off]',
-    describe: 'Toggle ARPG free camera (arrow keys pan, off returns to hero)',
+    describe: 'Toggle hero free camera (arrow keys pan, off returns to hero)',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleFreeCamera(context, value),
   })

@@ -14,7 +14,7 @@ import {
   triggerToolAttackAt,
   updateHeroBowCharge,
   HERO_TOOL_ORDER,
-  type HeroTool,
+  type HeroEquippedItem,
 } from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
 import {
@@ -43,10 +43,6 @@ const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; d
 const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool1: 0,
   heroTool2: 1,
-  heroTool3: 2,
-  heroTool4: 3,
-  heroTool5: 4,
-  heroTool6: 5,
 }
 
 let lastHeroMoveDebugAt = 0
@@ -55,7 +51,7 @@ function debugHeroMove(message: string, unit: UnitEntity, details: Record<string
   const now = performance.now()
   if (now - lastHeroMoveDebugAt < HERO_MOVE_DEBUG_THROTTLE_MS) return
   lastHeroMoveDebugAt = now
-  console.debug('[ARPG hero move]', {
+  console.debug('[hero-controlled unit move]', {
     message,
     details,
     unit: {
@@ -87,7 +83,7 @@ function debugHeroMove(message: string, unit: UnitEntity, details: Record<string
 export class HeroController {
   controls: Controls
   heroUnit: UnitEntity | null
-  equippedTool: HeroTool | null
+  equippedItem: HeroEquippedItem | null
   keysPressed: Set<ControlBindingAction>
   wasMoving: boolean
   mouseHeld: boolean
@@ -100,7 +96,7 @@ export class HeroController {
   constructor(controls: Controls) {
     this.controls = controls
     this.heroUnit = null
-    this.equippedTool = null
+    this.equippedItem = null
     this.keysPressed = new Set()
     this.wasMoving = false
     this.mouseHeld = false
@@ -162,7 +158,7 @@ export class HeroController {
   }
 
   cycleTool(direction: 1 | -1): boolean {
-    const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.equippedTool ?? 'unarmed'))
+    const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.equippedItem ?? 'interact'))
     const nextIndex = (currentIndex + direction + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
     return this.equipToolAt(nextIndex)
   }
@@ -188,14 +184,14 @@ export class HeroController {
       this.controls.getWorldPointUnderCursor(),
       this.controls.getCellUnderCursor()
     )
-    updateHeroCursor(this.equippedTool, hoverTarget, Boolean(this.pendingGoToNpcs))
+    updateHeroCursor(this.equippedItem, hoverTarget, Boolean(this.pendingGoToNpcs))
     const menu = this.controls.context.menu
     if (menu?.isNpcOrdersOpen?.()) {
       const targets = menu.getNpcOrdersTarget?.() ?? []
       if (!isAnyNpcNear(unit, targets)) menu.closeNpcOrders?.()
     }
-    if (menu?.isArpgBuildingMenuOpen?.()) {
-      menu.closeArpgBuildingMenuIfInvalid?.()
+    if (menu?.isHeroBuildingMenuOpen?.()) {
+      menu.closeHeroBuildingMenuIfInvalid?.()
     }
     if (
       this.mouseHeld &&
@@ -232,7 +228,7 @@ export class HeroController {
       if (bowChargeDegree != null && unit.degree !== bowChargeDegree) {
         unit.degree = bowChargeDegree
       }
-      if (moved && menu?.isArpgBuildingMenuOpen?.()) menu.closeArpgBuildingMenu?.()
+      if (moved && menu?.isHeroBuildingMenuOpen?.()) menu.closeHeroBuildingMenu?.()
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
       if (!moved || delta < 0.01) {
         debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {
@@ -273,7 +269,7 @@ export class HeroController {
     if (hero.actionLocked) return false
     this.facePoint(point)
     hero.stop?.()
-    return triggerToolAttackAt(hero, this.equippedTool, point)
+    return triggerToolAttackAt(hero, this.equippedItem, point)
   }
 
   handlePrimaryPointerDown(): void {
@@ -292,7 +288,7 @@ export class HeroController {
 
   handlePointerUp(): void {
     const unit = this.heroUnit
-    if (unit && this.equippedTool === 'bow' && releaseHeroBowCharge(unit)) {
+    if (unit && this.equippedItem === 'bow' && releaseHeroBowCharge(unit)) {
       this.mouseHeld = false
       this.primaryClickPoint = null
       return
@@ -373,10 +369,15 @@ export class HeroController {
     else releaseIfStillLooking(npcs)
   }
 
-  setEquippedTool(tool: HeroTool | null): void {
-    this.equippedTool = tool
-    if (tool && this.heroUnit) applyToolAppearance(this.heroUnit, tool)
-    this.controls.context.menu?.setEquippedTool?.(tool)
+  setEquippedItem(item: HeroEquippedItem | null): void {
+    this.equippedItem = item
+    if (item && this.heroUnit) applyToolAppearance(this.heroUnit, item)
+    this.controls.context.menu?.setEquippedItem?.(item)
+    this.controls.context.menu?.setEquippedTool?.(item)
+  }
+
+  setEquippedTool(tool: HeroEquippedItem | null): void {
+    this.setEquippedItem(tool)
   }
 
   stopKeyboardMove(): void {
@@ -394,20 +395,20 @@ export class HeroController {
 
   initFromPlayerStart(): boolean {
     const {
-      context: { map, player },
+      context: { player },
     } = this.controls
 
-    if (!map.arpgMode || !player?.units?.length) return false
+    if (!player?.units?.length) return false
 
     if (this.heroUnit && this.heroUnit !== player.units[0]) {
       setUnitControlMode(this.heroUnit, 'rts')
     }
     this.heroUnit = player.units[0]
-    setUnitControlMode(this.heroUnit, 'arpg')
+    setUnitControlMode(this.heroUnit, 'hero')
     this.heroUnit.stop?.()
     this.heroUnit.removeHealthBar?.()
     player.unselectAll?.()
-    this.setEquippedTool('unarmed')
+    this.setEquippedTool('interact')
     this.controls.context.menu?.setHeroStatusTarget?.(this.heroUnit)
     this.controls.context.menu?.setBottombar?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)

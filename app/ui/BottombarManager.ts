@@ -162,7 +162,7 @@ export class BottombarManager {
   updateBottombar(): void {
     const { menu } = this
     const { controls, player } = menu.context
-    if (controls.isArpgActive?.()) {
+    if (controls.isHeroControlActive?.()) {
       this.setBottombar(controls.heroUnit ?? null)
       return
     }
@@ -184,7 +184,7 @@ export class BottombarManager {
     if (controls.mouseBuilding) {
       controls.removeMouseBuilding()
     }
-    if (controls.isArpgActive?.()) {
+    if (controls.isHeroControlActive?.()) {
       const hero = controls.heroUnit ?? selection
       menu.selection = hero ?? null
       return

@@ -65,7 +65,6 @@ export interface RuntimeMap {
   showResources?: boolean
   startingAge?: number
   allTechnologies?: boolean
-  arpgMode?: boolean
   resourceDensity?: string
   difficulty?: string
   positionsCount?: number

@@ -77,7 +77,7 @@ type DevControlsLike = {
     visibleCells?: Set<RuntimeCell>
   }
   stopKeyboardMove?(): void
-  isArpgActive?(): boolean
+  isHeroControlActive?(): boolean
   freeCameraActive?: boolean
   setFreeCamera?(enabled: boolean): void
 }

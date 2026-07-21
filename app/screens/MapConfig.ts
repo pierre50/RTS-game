@@ -39,7 +39,6 @@ export default class MapConfig {
       mapType: 'plain',
       startingAge: 0,
       allTechnologies: false,
-      arpgMode: true,
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
@@ -124,7 +123,7 @@ export default class MapConfig {
 
   _startGame(): void {
     this.destroy()
-    this.onPlay({ ...this.config, arpgMode: true, players: this.playerSetupPanel.getPlayers() })
+    this.onPlay({ ...this.config, players: this.playerSetupPanel.getPlayers() })
   }
 
   _handleKeyDown(evt: KeyboardEvent): void {

@@ -4,7 +4,7 @@ import type { PlayerLike } from './player'
 import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
-import type { HeroTool } from '../lib/heroTools'
+import type { HeroEquippedItem } from '../lib/heroTools'
 import type { Bounds } from './geometry'
 
 export type SchedulerTaskId = number
@@ -49,14 +49,14 @@ export interface MenuLike {
   getActionUnitButton(type: string): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getActionRallyPointButton(): MenuButtonSpec
-  getActionDepositButton(building: BuildingEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
   destroy?(): void
   toggleInventory?(): void
   closeInventory?(): void
   isInventoryOpen?(): boolean
-  setEquippedTool?(tool: HeroTool | null): void
+  setEquippedItem?(item: HeroEquippedItem | null): void
+  setEquippedTool?(tool: HeroEquippedItem | null): void
   setHeroStatusTarget?(hero: UnitEntity | null): void
   updateHeroStatus?(hero?: UnitEntity | null): void
   toggleNpcOrders?(npcs: UnitEntity[]): void
@@ -64,12 +64,13 @@ export interface MenuLike {
   isNpcOrdersOpen?(): boolean
   closeNpcOrders?(): void
   getNpcOrdersTarget?(): UnitEntity[]
-  openArpgBuildingMenu?(building: BuildingEntity): boolean
-  isArpgBuildingMenuOpen?(): boolean
-  closeArpgBuildingMenu?(): void
-  getArpgBuildingMenuTarget?(): BuildingEntity | null
-  refreshArpgBuildingMenu?(): void
-  closeArpgBuildingMenuIfInvalid?(): void
+  openHeroBuildingMenu?(building: BuildingEntity): boolean
+  openEntityInfoModal?(entity: RuntimeEntity): boolean
+  isHeroBuildingMenuOpen?(): boolean
+  closeHeroBuildingMenu?(): void
+  getHeroBuildingMenuTarget?(): BuildingEntity | null
+  refreshHeroBuildingMenu?(): void
+  closeHeroBuildingMenuIfInvalid?(): void
 }
 
 interface EntityPreviewLike {
@@ -132,11 +133,14 @@ export interface ControlsLike extends Container {
   getCellOnCamera?(callback: (cell: RuntimeCell) => void): void
   init?(): void
   heroUnit?: UnitEntity | null
-  equippedTool?: HeroTool | null
+  equippedItem?: HeroEquippedItem | null
+  equippedTool?: HeroEquippedItem | null
   heroActionHeld?: boolean
-  setEquippedTool?(tool: HeroTool | null): void
-  isArpgActive?(): boolean
+  setEquippedItem?(item: HeroEquippedItem | null): void
+  setEquippedTool?(tool: HeroEquippedItem | null): void
+  isHeroControlActive?(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void
+  openHeroEntityInteraction?(target?: RuntimeEntity | null): boolean
   freeCameraActive?: boolean
   setFreeCamera?(enabled: boolean): void
 }
@@ -152,6 +156,8 @@ export interface SelectionRectangle {
 export type ControlPointerEvent = {
   clientX?: number
   clientY?: number
+  ctrlKey?: boolean
+  altKey?: boolean
   target?: EventTarget | null
   type?: string
   nativeEvent?: {

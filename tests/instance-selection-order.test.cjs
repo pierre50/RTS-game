@@ -76,13 +76,13 @@ test('selection is inserted above building shadows', () => {
   assert.equal(inserted[0], 1)
 })
 
-test('unselect keeps played unit and building health bars visible in ARPG mode', () => {
+test('unselect keeps played unit and building health bars visible in hero gameplay', () => {
   const { Instance } = loadInstance()
   for (const family of ['unit', 'building']) {
     const instance = Object.create(Instance.prototype)
     const children = [{ label: 'selection' }, { label: 'healthBar' }]
     instance.label = `${family}-1`
-    instance.context = { map: { arpgMode: true }, controls: { heroUnit: { label: 'hero-1' } } }
+    instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
     instance.family = family
     instance.owner = { isPlayed: true }
     instance.selected = true
@@ -107,12 +107,12 @@ test('unselect keeps played unit and building health bars visible in ARPG mode',
   }
 })
 
-test('unselect removes the active hero world health bar in ARPG mode', () => {
+test('unselect removes the active hero world health bar in hero gameplay', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   const children = [{ label: 'selection' }, { label: 'healthBar' }]
   instance.label = 'hero-1'
-  instance.context = { map: { arpgMode: true }, controls: { heroUnit: { label: 'hero-1' } } }
+  instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
   instance.family = 'unit'
   instance.owner = { isPlayed: true }
   instance.selected = true

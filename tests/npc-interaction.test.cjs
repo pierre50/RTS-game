@@ -148,7 +148,7 @@ test('"aller vers" cursor shows combat feedback over combat targets', () => {
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, true)
 
-    assert.equal(classes.has('arpg-cursor-combat'), true)
+    assert.equal(classes.has('hero-cursor-combat'), true)
     resetHeroCursor()
   } finally {
     delete global.document
@@ -174,7 +174,7 @@ test('"aller vers" cursor shows the resource hand over buildings', () => {
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.building }, true)
 
-    assert.equal(classes.has('arpg-cursor-resource'), true)
+    assert.equal(classes.has('hero-cursor-resource'), true)
     resetHeroCursor()
   } finally {
     delete global.document
@@ -199,10 +199,10 @@ test('"aller vers" cursor shows the pointer only while choosing an empty go-to t
       '../constants': constants,
     })
     updateHeroCursor(null, null, false)
-    assert.equal(classes.has('arpg-cursor-pointer'), false)
+    assert.equal(classes.has('hero-cursor-pointer'), false)
 
     updateHeroCursor(null, null, true)
-    assert.equal(classes.has('arpg-cursor-pointer'), true)
+    assert.equal(classes.has('hero-cursor-pointer'), true)
     resetHeroCursor()
   } finally {
     delete global.document
@@ -228,8 +228,8 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, false)
 
-    assert.equal(classes.has('arpg-cursor-combat'), false)
-    assert.equal(classes.has('arpg-cursor-pointer'), false)
+    assert.equal(classes.has('hero-cursor-combat'), false)
+    assert.equal(classes.has('hero-cursor-pointer'), false)
     resetHeroCursor()
   } finally {
     delete global.document

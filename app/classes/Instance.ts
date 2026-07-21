@@ -76,8 +76,7 @@ export class Instance extends Container {
 
   shouldKeepHealthBarVisible(): boolean {
     return Boolean(
-      this.context?.map?.arpgMode &&
-        (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
+      (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
         this.owner?.isPlayed &&
         this.context?.controls?.heroUnit?.label !== this.label &&
         !this.isDead &&

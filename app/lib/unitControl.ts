@@ -5,16 +5,14 @@ export function setUnitControlMode(unit: UnitEntity, controlMode: UnitControlMod
   unit.controlMode = controlMode
 }
 
-export function isArpgModeActive(
-  controls: (Pick<ControlsLike, 'isArpgActive'> & { context?: { map?: { arpgMode?: boolean } } }) | null | undefined
-): boolean {
-  return Boolean(controls?.isArpgActive?.() || controls?.context?.map?.arpgMode)
+export function isHeroGameplayActive(_controls?: Pick<ControlsLike, 'isHeroControlActive'> | null): boolean {
+  return true
 }
 
 export function isHeroControlled(unit: UnitEntity): boolean {
-  if (unit.controlMode === 'arpg') return true
+  if (unit.controlMode === 'hero') return true
   if (unit.controlMode) return false
-  return unit.context?.controls?.heroUnit === unit && Boolean(unit.context.controls.isArpgActive?.())
+  return unit.context?.controls?.heroUnit === unit && Boolean(unit.context.controls.isHeroControlActive?.())
 }
 
 export function canAutoAcquireTarget(unit: UnitEntity): boolean {
@@ -25,12 +23,12 @@ export function canAutoReactToAttack(unit: UnitEntity): boolean {
   return !isHeroControlled(unit)
 }
 
-export function canUseRtsEntityPointer(controls: Pick<ControlsLike, 'isArpgActive'> | null | undefined): boolean {
-  return !isArpgModeActive(controls)
+export function canUseRtsEntityPointer(controls: Pick<ControlsLike, 'isHeroControlActive'> | null | undefined): boolean {
+  return !isHeroGameplayActive(controls)
 }
 
-export function canUseRtsSelection(controls: Pick<ControlsLike, 'isArpgActive'> | null | undefined): boolean {
-  return !isArpgModeActive(controls)
+export function canUseRtsSelection(controls: Pick<ControlsLike, 'isHeroControlActive'> | null | undefined): boolean {
+  return !isHeroGameplayActive(controls)
 }
 
 export function canSelectUnitWithRts(unit: UnitEntity): boolean {

@@ -102,7 +102,7 @@ export class ActionMenuRenderer {
     } = {}
   ): void {
     this.clearHotkeys()
-    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? getReservedGameplayHotkeys() : [])
+    const usedKeys = new Set<string>(getReservedGameplayHotkeys())
 
     items
       .filter(btn => !btn.hide || !btn.hide())

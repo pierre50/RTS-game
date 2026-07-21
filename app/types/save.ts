@@ -133,7 +133,6 @@ export type SaveWorldState = {
 
 export type GameConfig = {
   allTechnologies?: boolean
-  arpgMode?: boolean
   bots?: number
   difficulty?: string
   instantMode?: boolean

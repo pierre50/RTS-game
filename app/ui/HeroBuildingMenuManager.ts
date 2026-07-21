@@ -20,7 +20,7 @@ function buttonMeta(button: MenuButtonSpec): string {
   return tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
 }
 
-export class ArpgBuildingMenuManager {
+export class HeroBuildingMenuManager {
   menu: Menu
   panel: HTMLDivElement
   info: HTMLDivElement
@@ -40,19 +40,19 @@ export class ArpgBuildingMenuManager {
     this.structureSignature = ''
 
     this.panel = document.createElement('div')
-    this.panel.className = 'arpg-building-menu'
+    this.panel.className = 'hero-building-menu'
 
     this.backButton = document.createElement('button')
     this.backButton.type = 'button'
-    this.backButton.className = 'arpg-building-menu-nav ui-btn'
+    this.backButton.className = 'hero-building-menu-nav ui-btn'
     this.backButton.textContent = '<'
     this.backButton.addEventListener('click', () => this.back())
 
     this.body = document.createElement('div')
-    this.body.className = 'arpg-building-menu-body'
+    this.body.className = 'hero-building-menu-body'
 
     this.info = document.createElement('div')
-    this.info.className = 'arpg-building-menu-info bottombar-info active'
+    this.info.className = 'hero-building-menu-info bottombar-info active'
 
     this.panel.appendChild(this.backButton)
     this.panel.appendChild(this.info)
@@ -72,6 +72,10 @@ export class ArpgBuildingMenuManager {
 
   open(building: BuildingEntity): boolean {
     if (!this.canOpenFor(building)) return false
+    if (this.opened && this.building === building) {
+      this.refresh()
+      return true
+    }
     if (this.opened) this.close()
     const items = this.menu.getActionMenuItems(building)
     this.building = building
@@ -83,7 +87,7 @@ export class ArpgBuildingMenuManager {
       content: this.panel,
       onClose: () => this.close(),
     })
-    this.modal._panel?.classList.add('arpg-building-menu-panel')
+    this.modal._panel?.classList.add('hero-building-menu-panel')
     this.render()
     return true
   }
@@ -184,11 +188,11 @@ export class ArpgBuildingMenuManager {
   createButton(building: BuildingEntity, button: MenuButtonSpec): HTMLButtonElement {
     const element = document.createElement('button')
     element.type = 'button'
-    element.className = 'arpg-building-menu-button'
-    element.id = button.id ? `arpg-${button.id}` : ''
+    element.className = 'hero-building-menu-button'
+    element.id = button.id ? `hero-${button.id}` : ''
 
     const icon = document.createElement('span')
-    icon.className = 'arpg-building-menu-icon'
+    icon.className = 'hero-building-menu-icon'
     let nestedPointerHandled = false
     if (button.onCreate) {
       button.onCreate(building, icon)
@@ -204,21 +208,21 @@ export class ArpgBuildingMenuManager {
     }
 
     const label = document.createElement('span')
-    label.className = 'arpg-building-menu-label'
+    label.className = 'hero-building-menu-label'
     label.textContent = buttonTitle(button)
 
     const meta = document.createElement('span')
-    meta.className = 'arpg-building-menu-meta'
+    meta.className = 'hero-building-menu-meta'
     meta.textContent = buttonMeta(button)
 
     const status = document.createElement('span')
-    status.className = 'arpg-building-menu-status'
+    status.className = 'hero-building-menu-status'
     const progress = document.createElement('span')
-    progress.className = 'arpg-building-menu-progress'
+    progress.className = 'hero-building-menu-progress'
     const progressFill = document.createElement('span')
-    progressFill.className = 'arpg-building-menu-progress-fill'
+    progressFill.className = 'hero-building-menu-progress-fill'
     const statusText = document.createElement('span')
-    statusText.className = 'arpg-building-menu-status-text'
+    statusText.className = 'hero-building-menu-status-text'
     progress.appendChild(progressFill)
     status.appendChild(progress)
     status.appendChild(statusText)
@@ -256,11 +260,11 @@ export class ArpgBuildingMenuManager {
   updateProgress(): void {
     const building = this.building
     if (!building) return
-    this.body.querySelectorAll<HTMLElement>('.arpg-building-menu-button').forEach(button => {
-      const id = button.id.replace(/^arpg-/, '')
-      const status = button.querySelector<HTMLElement>('.arpg-building-menu-status')
-      const fill = button.querySelector<HTMLElement>('.arpg-building-menu-progress-fill')
-      const text = button.querySelector<HTMLElement>('.arpg-building-menu-status-text')
+    this.body.querySelectorAll<HTMLElement>('.hero-building-menu-button').forEach(button => {
+      const id = button.id.replace(/^hero-/, '')
+      const status = button.querySelector<HTMLElement>('.hero-building-menu-status')
+      const fill = button.querySelector<HTMLElement>('.hero-building-menu-progress-fill')
+      const text = button.querySelector<HTMLElement>('.hero-building-menu-status-text')
       if (!status || !fill || !text) return
 
       const queued = building.queue?.filter(type => type === id).length ?? 0

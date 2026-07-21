@@ -56,6 +56,10 @@ export const FLYING_ALTITUDE = 20
 const LANDING_STEPS = 8
 const LANDING_STEP_MS = 40
 
+function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
+  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
+}
+
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
 }
@@ -188,6 +192,12 @@ export class Animal extends Instance implements AnimalEntity {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
+      if (controls.isHeroControlActive?.()) {
+        if (!isSecondaryPointerButton(evt)) return
+        controls.mouse.prevent = true
+        menu.openEntityInfoModal?.(this)
+        return
+      }
       if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true

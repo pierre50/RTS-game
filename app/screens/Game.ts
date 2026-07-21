@@ -276,7 +276,6 @@ export default class Game extends Container {
     if (config.instantMode) map.instantMode = true
     if (config.startingAge != null) map.startingAge = Number(config.startingAge)
     if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
-    map.arpgMode = true
     if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
     if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
     if (config.startingResources) map.startingResources = config.startingResources

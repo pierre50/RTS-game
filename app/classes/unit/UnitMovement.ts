@@ -29,7 +29,7 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
-import { isArpgHeroActionInRange } from '../../lib/arpg'
+import { isHeroActionInRange } from '../../lib/heroActionRange'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
@@ -184,7 +184,7 @@ function debugBlockedDirectMove(
   const now = performance.now()
   if (now - lastDirectMoveDebugAt < DIRECT_MOVE_DEBUG_THROTTLE_MS) return
   lastDirectMoveDebugAt = now
-  console.debug('[ARPG direct blocked]', {
+  console.debug('[hero direct blocked]', {
     reason,
     details,
     dir: { x: Number(dirX.toFixed(3)), y: Number(dirY.toFixed(3)) },
@@ -443,7 +443,7 @@ export class UnitMovement {
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!action || !dest) return false
-    if (isRuntimeEntity(dest) && isArpgHeroActionInRange(unit, action, dest)) return true
+    if (isRuntimeEntity(dest) && isHeroActionInRange(unit, action, dest)) return true
     const effectiveRange =
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
     if (

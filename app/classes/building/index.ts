@@ -63,6 +63,10 @@ const SHADOW_ALPHA = 0.42
 const SHADOW_SCALE_X = 1.02
 const SHADOW_SCALE_Y = -0.5
 
+function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
+  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
+}
+
 export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
   j: number
@@ -193,7 +197,6 @@ export class Building extends Instance implements BuildingEntity {
               ...units,
               ...technologies,
               ...(units.length ? [context.menu.getActionRallyPointButton()] : []),
-              context.menu.getActionDepositButton(this),
             ]
           : [],
     }
@@ -241,11 +244,19 @@ export class Building extends Instance implements BuildingEntity {
           controls.rallyPointController.handleMouseUpOnEntity(this)
           return
         }
-        if (controls.isArpgActive?.() && this.owner.isPlayed) {
+        if (controls.isHeroControlActive?.() && this.owner.isPlayed) {
+          if (!isSecondaryPointerButton(evt)) return
           controls.mouse.prevent = true
-          if (menu.openArpgBuildingMenu?.(this)) {
+          if (menu.openHeroBuildingMenu?.(this)) {
             this.selectForPlayedOwner()
+          } else {
+            menu.openEntityInfoModal?.(this)
           }
+          return
+        }
+        if (controls.isHeroControlActive?.() && isSecondaryPointerButton(evt)) {
+          controls.mouse.prevent = true
+          menu.openEntityInfoModal?.(this)
           return
         }
         if (!canUseRtsEntityPointer(controls)) return

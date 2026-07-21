@@ -201,7 +201,7 @@ test('attacking boats can target enemy land units', () => {
   assert.equal(getActionCondition(scoutShip, enemyArcher, 'attack'), true)
 })
 
-test('ARPG heroes do not use unit auto-detection attacks', () => {
+test('hero-controlled units do not use unit auto-detection attacks', () => {
   const calls = []
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
     '../../constants': constants,
@@ -236,7 +236,7 @@ test('ARPG heroes do not use unit auto-detection attacks', () => {
   assert.deepEqual(calls, [])
 })
 
-test('unit control policy disables automatic reactions for the active ARPG hero', () => {
+test('unit control policy disables automatic reactions for the active hero-controlled unit', () => {
   const hero = {}
   const {
     canAutoAcquireTarget,
@@ -253,7 +253,7 @@ test('unit control policy disables automatic reactions for the active ARPG hero'
     context: {
       controls: {
         heroUnit: hero,
-        isArpgActive: () => true,
+        isHeroControlActive: () => true,
       },
     },
   }
@@ -262,11 +262,11 @@ test('unit control policy disables automatic reactions for the active ARPG hero'
   assert.equal(isHeroControlled(hero), true)
   assert.equal(canAutoAcquireTarget(hero), false)
   assert.equal(canAutoReactToAttack(hero), false)
-  assert.equal(canUseRtsEntityPointer({ context: { map: { arpgMode: true } }, isArpgActive: () => false }), false)
-  assert.equal(canUseRtsSelection({ context: { map: { arpgMode: true } }, isArpgActive: () => false }), false)
+  assert.equal(canUseRtsEntityPointer({ isHeroControlActive: () => false }), false)
+  assert.equal(canUseRtsSelection({ isHeroControlActive: () => false }), false)
 
   const explicitHero = {}
-  setUnitControlMode(explicitHero, 'arpg')
+  setUnitControlMode(explicitHero, 'hero')
   assert.equal(isHeroControlled(explicitHero), true)
   assert.equal(canAutoAcquireTarget(explicitHero), false)
   assert.equal(hasRtsCommandableUnits([explicitHero]), false)

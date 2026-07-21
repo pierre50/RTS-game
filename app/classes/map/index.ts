@@ -53,7 +53,6 @@ export default class Map extends Container {
   ready: boolean
   grid: RuntimeCell[][]
   allTechnologies: boolean
-  arpgMode: boolean
   startingAge: number
   noAI: boolean
   instantMode: boolean
@@ -98,7 +97,6 @@ export default class Map extends Container {
     this.sortableChildren = true
 
     this.allTechnologies = false
-    this.arpgMode = false
     this.startingAge = 0
     this.noAI = false
 

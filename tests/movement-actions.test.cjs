@@ -47,9 +47,9 @@ function loadModule(relativePath, mocks) {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
-    if (request === '../../lib/arpg') {
+    if (request === '../../lib/heroActionRange') {
       return {
-        isArpgHeroActionInRange: () => false,
+        isHeroActionInRange: () => false,
       }
     }
     if (request === '../../lib/unitControl') {
@@ -224,21 +224,21 @@ test('sets an automatically selected destination before starting its action', ()
   ])
 })
 
-test('ARPG hero action range can satisfy destination checks before strict contact', () => {
+test('hero-controlled unit action range can satisfy destination checks before strict contact', () => {
   const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       instanceContactInstance: () => false,
       instancesDistance: () => 2.4,
     },
-    '../../lib/arpg': {
-      isArpgHeroActionInRange: (_unit, action, dest) =>
+    '../../lib/heroActionRange': {
+      isHeroActionInRange: (_unit, action, dest) =>
         action === constants.ACTION_TYPES.fishing && dest.category === 'Fish',
     },
   })
   const unit = {
     action: constants.ACTION_TYPES.fishing,
-    controlMode: 'arpg',
+    controlMode: 'hero',
     type: constants.UNIT_TYPES.villager,
   }
   const fish = {
@@ -1399,7 +1399,7 @@ test('a villager builds a town center then starts gathering any nearby compatibl
   assert.deepEqual(calls, [['sendToTree', 'tree-1', true]])
 })
 
-test('ARPG building health bar refreshes while construction progresses', () => {
+test('hero building health bar refreshes while construction progresses', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },

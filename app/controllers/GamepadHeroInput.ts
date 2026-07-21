@@ -15,6 +15,7 @@ const HERO_ACTION_BUTTONS: [number, ControlBindingAction][] = [
   [GAMEPAD_BUTTON.interact, 'heroInteract'],
   [GAMEPAD_BUTTON.inventory, 'inventory'],
 ]
+const HERO_INFO_BUTTON = 4 // L1 — inspect/select the hovered entity, mirroring right click.
 
 /**
  * Translates a connected gamepad into the same inputs keyboard/mouse already drive on
@@ -70,6 +71,7 @@ export class GamepadHeroInput {
     }
     this.dispatchButtonEdge(gamepad, GAMEPAD_BUTTON.toolPrev, () => hero.cycleTool(-1))
     this.dispatchButtonEdge(gamepad, GAMEPAD_BUTTON.toolNext, () => hero.cycleTool(1))
+    this.dispatchButtonEdge(gamepad, HERO_INFO_BUTTON, () => this.controls.openHeroEntityInteraction())
     this.dispatchButtonEdge(
       gamepad,
       GAMEPAD_BUTTON.action,

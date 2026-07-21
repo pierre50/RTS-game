@@ -6,7 +6,8 @@ import { MinimapInputController } from '../ui/MinimapInputController'
 import { MenuTooltip } from '../ui/MenuTooltip'
 import { InventoryManager } from '../ui/InventoryManager'
 import { NpcOrdersManager } from '../ui/NpcOrdersManager'
-import { ArpgBuildingMenuManager } from '../ui/ArpgBuildingMenuManager'
+import { HeroBuildingMenuManager } from '../ui/HeroBuildingMenuManager'
+import { EntityInfoModalManager } from '../ui/EntityInfoModalManager'
 import { HeroStatusHud } from '../ui/HeroStatusHud'
 import { MinimapView } from '../ui/MinimapView'
 import { ActionMenuRenderer } from '../ui/ActionMenuRenderer'
@@ -19,7 +20,7 @@ import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '
 import type { PlayerLike } from '../types/player'
 import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
 import type { ResourceAmount } from '../types/common'
-import type { HeroTool } from '../lib/heroTools'
+import type { HeroEquippedItem } from '../lib/heroTools'
 
 // Repeated triggers of the same blocked action (e.g. holding a key against a failing condition)
 // would otherwise re-show the same toast every frame — debounce so it only reappears once the
@@ -49,7 +50,8 @@ export default class Menu implements MenuLike {
   menuTooltip: MenuTooltip
   inventoryManager: InventoryManager
   npcOrdersManager: NpcOrdersManager
-  arpgBuildingMenuManager: ArpgBuildingMenuManager
+  heroBuildingMenuManager: HeroBuildingMenuManager
+  entityInfoModalManager: EntityInfoModalManager
   heroStatusHud: HeroStatusHud
   toggle?: HTMLButtonElement
   toggled: boolean
@@ -98,7 +100,8 @@ export default class Menu implements MenuLike {
     this.menuTooltip = new MenuTooltip()
     this.inventoryManager = new InventoryManager(this)
     this.npcOrdersManager = new NpcOrdersManager(this)
-    this.arpgBuildingMenuManager = new ArpgBuildingMenuManager(this)
+    this.heroBuildingMenuManager = new HeroBuildingMenuManager(this)
+    this.entityInfoModalManager = new EntityInfoModalManager(this)
     this.heroStatusHud = new HeroStatusHud(this)
     this.toggled = false
 
@@ -120,7 +123,8 @@ export default class Menu implements MenuLike {
     this.minimapInputController.destroy()
     this.inventoryManager.destroy()
     this.npcOrdersManager.destroy()
-    this.arpgBuildingMenuManager.destroy()
+    this.entityInfoModalManager.close()
+    this.heroBuildingMenuManager.destroy()
     this.heroStatusHud.destroy()
     this.minimapView.destroy()
     resetHeroCursor()
@@ -225,9 +229,6 @@ export default class Menu implements MenuLike {
   getActionRallyPointButton(): MenuButtonSpec {
     return this.actionSpecs.getActionRallyPointButton()
   }
-  getActionDepositButton(building: BuildingEntity): MenuButtonSpec {
-    return this.actionSpecs.getActionDepositButton(building)
-  }
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
   }
@@ -275,8 +276,11 @@ export default class Menu implements MenuLike {
   isInventoryOpen(): boolean {
     return this.inventoryManager.isOpen()
   }
-  setEquippedTool(tool: HeroTool | null): void {
-    return this.inventoryManager.render(tool)
+  setEquippedItem(item: HeroEquippedItem | null): void {
+    return this.inventoryManager.render(item)
+  }
+  setEquippedTool(tool: HeroEquippedItem | null): void {
+    return this.setEquippedItem(tool)
   }
   setHeroStatusTarget(hero: UnitEntity | null): void {
     return this.heroStatusHud.setHero(hero)
@@ -302,23 +306,26 @@ export default class Menu implements MenuLike {
     return this.npcOrdersManager.getTarget()
   }
 
-  // ARPG building menu delegates
-  openArpgBuildingMenu(building: BuildingEntity): boolean {
-    return this.arpgBuildingMenuManager.open(building)
+  // hero building menu delegates
+  openHeroBuildingMenu(building: BuildingEntity): boolean {
+    return this.heroBuildingMenuManager.open(building)
   }
-  isArpgBuildingMenuOpen(): boolean {
-    return this.arpgBuildingMenuManager.isOpen()
+  openEntityInfoModal(entity: RuntimeEntity): boolean {
+    return this.entityInfoModalManager.open(entity)
   }
-  closeArpgBuildingMenu(): void {
-    return this.arpgBuildingMenuManager.close()
+  isHeroBuildingMenuOpen(): boolean {
+    return this.heroBuildingMenuManager.isOpen()
   }
-  getArpgBuildingMenuTarget(): BuildingEntity | null {
-    return this.arpgBuildingMenuManager.getTarget()
+  closeHeroBuildingMenu(): void {
+    return this.heroBuildingMenuManager.close()
   }
-  refreshArpgBuildingMenu(): void {
-    return this.arpgBuildingMenuManager.refresh()
+  getHeroBuildingMenuTarget(): BuildingEntity | null {
+    return this.heroBuildingMenuManager.getTarget()
   }
-  closeArpgBuildingMenuIfInvalid(): void {
-    return this.arpgBuildingMenuManager.syncLiveState()
+  refreshHeroBuildingMenu(): void {
+    return this.heroBuildingMenuManager.refresh()
+  }
+  closeHeroBuildingMenuIfInvalid(): void {
+    return this.heroBuildingMenuManager.syncLiveState()
   }
 }

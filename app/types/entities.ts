@@ -8,9 +8,10 @@ import type { ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './conf
 import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
+import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
-export type UnitControlMode = 'rts' | 'arpg' | 'ai'
+export type UnitControlMode = 'rts' | 'hero' | 'ai'
 export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
@@ -168,6 +169,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   heroBowReleaseQueued?: boolean
   heroBowReleasePower?: number
   heroBowChargeVisualLocked?: boolean
+  contextAction?: HeroContextAction | null
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
@@ -204,6 +206,10 @@ export interface UnitEntity extends RuntimeEntityBase {
   gatheringRate?: Record<string, number>
   gatherAmount?: Record<string, number>
   loadingMax?: Record<string, number>
+  energy?: number
+  totalEnergy?: number
+  contextActionEnergyCosts?: Partial<Record<HeroContextAction, number>>
+  toolLevels?: Partial<Record<HeroCivilTool, number>>
   assets?: Record<string, string>
   allAssets?: Record<string, Record<string, string>>
   silentWorkSounds?: string[]

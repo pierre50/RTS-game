@@ -78,6 +78,10 @@ type UnitRestoreReferences = {
 }
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
+function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
+  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
+}
+
 type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
 }
@@ -205,6 +209,7 @@ export class Unit extends Instance implements UnitEntity {
   visibleCells!: NonNullable<UnitEntity['visibleCells']>
 
   actionLocked!: boolean
+  contextAction?: UnitEntity['contextAction']
   currentSheet!: NonNullable<UnitEntity['currentSheet']>
   currentFrame!: NonNullable<UnitEntity['currentFrame']>
   actionSheet?: UnitEntity['actionSheet']
@@ -224,6 +229,10 @@ export class Unit extends Instance implements UnitEntity {
 
   assets?: UnitEntity['assets']
   allAssets?: UnitEntity['allAssets']
+  energy?: UnitEntity['energy']
+  totalEnergy?: UnitEntity['totalEnergy']
+  contextActionEnergyCosts?: UnitEntity['contextActionEnergyCosts']
+  toolLevels?: UnitEntity['toolLevels']
   appearance?: UnitEntity['appearance']
   appearanceVariants?: UnitEntity['appearanceVariants']
 
@@ -475,6 +484,12 @@ export class Unit extends Instance implements UnitEntity {
         context: { controls, player, menu, editor },
       } = this
       if (editor?.handleEntityInteraction?.(this)) return
+      if (controls.isHeroControlActive?.()) {
+        if (!isSecondaryPointerButton(evt)) return
+        controls.mouse.prevent = true
+        menu.openEntityInfoModal?.(this)
+        return
+      }
       if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
@@ -1092,7 +1107,8 @@ export class Unit extends Instance implements UnitEntity {
       // the hunter bucket. Nothing else restores it afterward, so the hero would keep
       // showing that bucket's equipment (a bow) once idle. Snap back to whatever the
       // equipped tool actually implies.
-      applyToolAppearance(this, this.context?.controls?.equippedTool ?? 'unarmed')
+      this.contextAction = null
+      applyToolAppearance(this, this.context?.controls?.equippedTool ?? 'interact')
     } else if (!this.currentCell.has || this.currentCell.has === this || this.currentCell.has.isDestroyed) {
       this.currentCell.place(this)
       this.currentCell.solid = true

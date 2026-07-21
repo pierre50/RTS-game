@@ -140,7 +140,7 @@ function createController({ nearbyGroup = [], getInstanceDegree, heroToolsOverri
   }
 }
 
-test('primary ARPG click still attacks when communicable villagers are nearby', () => {
+test('primary hero click still attacks when communicable villagers are nearby', () => {
   const { calls, controller } = createController({ nearbyGroup: [{ label: 'villager' }] })
 
   controller.handlePrimaryPointerDown()

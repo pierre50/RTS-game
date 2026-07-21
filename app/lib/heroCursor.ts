@@ -1,27 +1,31 @@
 import { FAMILY_TYPES } from '../constants'
-import type { HeroTool } from './heroTools'
+import type { HeroEquippedItem } from './heroTools'
 import type { RuntimeEntity } from '../types/entities'
 
 type CursorState = 'default' | 'pointer' | 'resource' | 'combat' | 'bow' | 'move'
 
 const CURSOR_CLASSES: Partial<Record<CursorState, string>> = {
-  pointer: 'arpg-cursor-pointer',
-  resource: 'arpg-cursor-resource',
-  combat: 'arpg-cursor-combat',
-  bow: 'arpg-cursor-bow',
-  move: 'arpg-cursor-move',
+  pointer: 'hero-cursor-pointer',
+  resource: 'hero-cursor-resource',
+  combat: 'hero-cursor-combat',
+  bow: 'hero-cursor-bow',
+  move: 'hero-cursor-move',
 }
 
-const GAME_CURSOR_CLASS = 'arpg-game-cursor'
-const CURSOR_HIDDEN_CLASS = 'arpg-cursor-hidden'
-const VIRTUAL_CURSOR_ID = 'arpg-virtual-cursor'
+const GAME_CURSOR_CLASS = 'hero-game-cursor'
+const CURSOR_HIDDEN_CLASS = 'hero-cursor-hidden'
+const VIRTUAL_CURSOR_ID = 'hero-virtual-cursor'
 const VIRTUAL_CURSOR_VISIBLE_CLASS = 'is-visible'
 const ALL_CURSOR_CLASSES = Object.values(CURSOR_CLASSES).filter((value): value is string => Boolean(value))
 
 let lastState: CursorState | null = null
 let virtualCursorEl: HTMLDivElement | null = null
 
-function resolveCursorState(tool: HeroTool | null, hoverTarget: RuntimeEntity | null, isPicking: boolean): CursorState {
+function resolveCursorState(
+  tool: HeroEquippedItem | null,
+  hoverTarget: RuntimeEntity | null,
+  isPicking: boolean
+): CursorState {
   if (isPicking) {
     // "Go to" targeting: a resource still shows the gather hand (that's what will happen),
     // buildings share that hand feedback, combat targets show the attack cursor, anything else
@@ -45,9 +49,9 @@ function getVirtualCursorElement(): HTMLDivElement {
   return el
 }
 
-// Hover feedback is reserved for "Aller vers" target picking. Regular ARPG play keeps the
+// Hover feedback is reserved for "Aller vers" target picking. Regular hero play keeps the
 // base in-game cursor so simply passing over entities does not look like a communication order.
-export function updateHeroCursor(tool: HeroTool | null, hoverTarget: RuntimeEntity | null, isPicking = false): void {
+export function updateHeroCursor(tool: HeroEquippedItem | null, hoverTarget: RuntimeEntity | null, isPicking = false): void {
   const state = resolveCursorState(tool, hoverTarget, isPicking)
   if (state === lastState) return
   const body = document.body

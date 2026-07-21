@@ -3,20 +3,16 @@ import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import type Menu from '../classes/Menu'
-import { HERO_TOOL_ORDER, type HeroTool } from '../lib/heroTools'
+import { HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
 import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { MenuButtonSpec } from '../types/ui'
 
 type ActionMenuTab = 'tools' | 'minimap' | 'construction'
 
-const TOOL_LABEL_KEYS: Record<HeroTool, string> = {
-  unarmed: 'heroToolUnarmed',
-  axe: 'heroToolAxe',
-  pickaxe: 'heroToolPickaxe',
-  hammer: 'heroToolHammer',
+const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
+  interact: 'heroToolInteract',
   bow: 'heroToolBow',
-  fishingRod: 'heroToolFishingRod',
 }
 
 export class InventoryManager {
@@ -26,7 +22,7 @@ export class InventoryManager {
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
-  slots: Map<HeroTool, HTMLDivElement>
+  slots: Map<HeroEquippedItem, HTMLDivElement>
   modal?: Modal
   activeTab: ActionMenuTab
   opened: boolean
@@ -156,7 +152,7 @@ export class InventoryManager {
     this.menu.clearActionHotkeys()
     if (!selection) return
 
-    const usedKeys = new Set<string>(this.menu.context.map.arpgMode ? getReservedGameplayHotkeys() : [])
+    const usedKeys = new Set<string>(getReservedGameplayHotkeys())
     this.getConstructionButtons()
       .filter(button => !button.hide || !button.hide())
       .forEach((button, index) => {
@@ -182,13 +178,14 @@ export class InventoryManager {
       })
   }
 
-  selectTool(tool: HeroTool): void {
+  selectTool(tool: HeroEquippedItem): void {
     playUiSound(SOUND_CUES.ui.menuClick)
+    this.menu.context.controls.setEquippedItem?.(tool)
     this.menu.context.controls.setEquippedTool?.(tool)
     this.close()
   }
 
-  render(equippedTool: HeroTool | null): void {
+  render(equippedTool: HeroEquippedItem | null): void {
     for (const [tool, slot] of this.slots) {
       slot.classList.toggle('active', tool === equippedTool)
     }

@@ -107,7 +107,7 @@ export class BuildingPlacer {
     if (this.canPlaceMouseBuilding(cell)) {
       if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
         controls.removeMouseBuilding()
-        if (controls.isArpgActive?.()) {
+        if (controls.isHeroControlActive?.()) {
           menu.setBottombar(controls.heroUnit ?? null)
         } else if (menu.selection) {
           menu.setBottombar(menu.selection)
@@ -182,7 +182,7 @@ export class BuildingPlacer {
   }
 
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
-    const hero = this.controls.isArpgActive?.() ? this.controls.heroUnit : null
+    const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
     if (!hero || hero.isDead || hero.isDestroyed) return false
     const size = typeof building.size === 'number' ? building.size : 1
     const radius = getBuildingFootprintRadius(size)
@@ -209,7 +209,7 @@ export class BuildingPlacer {
   }
 
   isHeroOnCell(cell: RuntimeCell): boolean {
-    const hero = this.controls.isArpgActive?.() ? this.controls.heroUnit : null
+    const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
     return Boolean(hero && !hero.isDead && !hero.isDestroyed && hero.i === cell.i && hero.j === cell.j)
   }
 
@@ -266,7 +266,7 @@ export class BuildingPlacer {
 
     owner.isPlayed && menu.updateTopbar()
     controls.removeMouseBuilding()
-    if (controls.isArpgActive?.()) {
+    if (controls.isHeroControlActive?.()) {
       menu.setBottombar(controls.heroUnit ?? null)
     } else if (owner.selectedUnit) {
       menu.setBottombar(owner.selectedUnit)

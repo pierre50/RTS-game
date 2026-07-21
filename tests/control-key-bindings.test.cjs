@@ -40,7 +40,7 @@ function loadSettings() {
   }
 }
 
-test('hero tool slots follow the physical digit row across keyboard layouts', () => {
+test('hero equipped item slots follow the physical digit row across keyboard layouts', () => {
   const { settings, restore } = loadSettings()
   try {
     assert.equal(settings.getKeyBindings().heroTool1, 'Digit1')
