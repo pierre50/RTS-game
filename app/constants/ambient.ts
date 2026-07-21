@@ -35,6 +35,9 @@ export const WATER_SETS = ['environment/water/shore-set-1', 'environment/water/s
 export const WATER_SETS_DEEP = ['environment/water/deep-set-1', 'environment/water/deep-set-2']
 export const WATER_SET_DEEP_LAND_MIN_DIST = 3
 export const WATER_SET_CHANCE = 0//0.002
+// Per-cell chance of spawning a fish resource on a water cell. Kept independent from
+// GROUND_SET_CHANCE (rocks) so fish, a gameplay resource, doesn't die with ground clutter.
+export const FISH_SPAWN_CHANCE = 0.02
 
 // Bird ambience
 export const AMBIENT_BIRD_MAX_CONCURRENT = 3

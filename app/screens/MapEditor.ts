@@ -1119,7 +1119,7 @@ export default class MapEditor extends Container {
   }
 
   placeForest(cell: RuntimeCell): boolean {
-    if (!cell || cell.type === 'Water' || cell.waterBorder || cell.has) return false
+    if (!cell || cell.type === 'Water' || cell.waterBorder || cell.has || cell.inclined) return false
 
     const map = this._map
     const resource = new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.tree }, runtimeEditorContext(this.context))

@@ -27,6 +27,7 @@ import {
   WATER_SET_DEEP_LAND_MIN_DIST,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
+  FISH_SPAWN_CHANCE,
 } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import { MapBlueprintGeneration } from './MapBlueprintGeneration'
@@ -1410,7 +1411,7 @@ export class MapGeneration {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
           if (cell.category === 'Water') {
-            if (this.map.random() < this.map.chanceOfSets) {
+            if (this.map.random() < FISH_SPAWN_CHANCE) {
               const fishType = this.pickFishResourceType(i, j)
               this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
             } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
@@ -1468,7 +1469,7 @@ export class MapGeneration {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
         if (cell.category === 'Water') {
-          if (this.map.random() < this.map.chanceOfSets) {
+          if (this.map.random() < FISH_SPAWN_CHANCE) {
             const fishType = this.pickFishResourceType(i, j)
             this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
           } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {

@@ -77,7 +77,7 @@ export default class MapConfig {
     const leftCol = document.createElement('div')
     leftCol.className = 'lobby-col'
 
-    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers })
+    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers, simplified: true })
     leftCol.appendChild(this.playerSetupPanel.element)
 
     const rightCol = document.createElement('div')

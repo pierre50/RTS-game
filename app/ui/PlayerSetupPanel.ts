@@ -8,6 +8,7 @@ type PlayerSetupPanelOptions = {
   maxPlayers?: number
   onChange?: ((players: PlayerSetupConfig[]) => void) | null
   showAge?: boolean
+  simplified?: boolean
 }
 
 type PlayerSetupConfigWithAge = PlayerSetupConfig & {
@@ -46,16 +47,19 @@ const PLAYER_COLORS = [
 export class PlayerSetupPanel {
   onChange: ((players: PlayerSetupConfig[]) => void) | null
   showAge: boolean
+  simplified: boolean
   maxPlayers: number
   players: PlayerSetupConfigWithAge[]
   element: HTMLDivElement
-  playerTableEl: HTMLDivElement
-  playerCountRow: HTMLDivElement
+  playerTableEl!: HTMLDivElement
+  playerCountRow!: HTMLDivElement
   playerCountSelect!: HTMLSelectElement
+  humanControlsEl!: HTMLDivElement
 
-  constructor({ players, maxPlayers, onChange = null, showAge = false }: PlayerSetupPanelOptions) {
+  constructor({ players, maxPlayers, onChange = null, showAge = false, simplified = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
     this.showAge = showAge
+    this.simplified = simplified
     this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
     this.players = (players?.length ? players : this._createDefaultPlayers()).map(player =>
       this._normalizePlayer(player)
@@ -65,18 +69,26 @@ export class PlayerSetupPanel {
         player.age = Math.max(0, Math.min(Number(player.age) || 0, 3))
       })
     }
+    // Simplified lobby never exposes a count control - it always fills to the map's max.
+    if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
     this._clampPlayers()
 
     this.element = document.createElement('div')
     this.element.className = 'lobby-col'
-    this.playerTableEl = document.createElement('div')
-    this.playerTableEl.className = `player-table${this.showAge ? ' player-table--with-age' : ''}`
-    this.playerCountRow = this._createPlayerCountSelect()
 
-    this.element.appendChild(this.playerCountRow)
-    this.element.appendChild(this.playerTableEl)
-
-    this._refreshPlayerTable()
+    if (this.simplified) {
+      this.humanControlsEl = document.createElement('div')
+      this.humanControlsEl.className = 'config-form'
+      this.element.appendChild(this.humanControlsEl)
+      this._refreshHumanControls()
+    } else {
+      this.playerTableEl = document.createElement('div')
+      this.playerTableEl.className = `player-table${this.showAge ? ' player-table--with-age' : ''}`
+      this.playerCountRow = this._createPlayerCountSelect()
+      this.element.appendChild(this.playerCountRow)
+      this.element.appendChild(this.playerTableEl)
+      this._refreshPlayerTable()
+    }
   }
 
   _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
@@ -113,10 +125,19 @@ export class PlayerSetupPanel {
 
   setMaxPlayers(maxPlayers: number): void {
     this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
+    if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
     this._clampPlayers()
-    this._refreshPlayerCountSelect()
-    this._refreshPlayerTable()
+    this._refresh()
     this._emitChange()
+  }
+
+  _refresh(): void {
+    if (this.simplified) {
+      this._refreshHumanControls()
+    } else {
+      this._refreshPlayerCountSelect()
+      this._refreshPlayerTable()
+    }
   }
 
   _usedColors(): Set<string> {
@@ -172,19 +193,21 @@ export class PlayerSetupPanel {
     })
   }
 
-  _setPlayerCount(count: string | number): void {
-    const playerCount = Math.max(MIN_PLAYERS, Math.min(parseInt(String(count)), this.maxPlayers, MAX_PLAYERS))
-
-    while (this.players.length < playerCount) {
+  _growOrShrinkTo(count: number): void {
+    while (this.players.length < count) {
       this._addBot()
     }
 
-    while (this.players.length > playerCount) {
+    while (this.players.length > count) {
       const lastBotIndex = this.players.map(player => player.isHuman).lastIndexOf(false)
       if (lastBotIndex === -1) break
       this.players.splice(lastBotIndex, 1)
     }
+  }
 
+  _setPlayerCount(count: string | number): void {
+    const playerCount = Math.max(MIN_PLAYERS, Math.min(parseInt(String(count)), this.maxPlayers, MAX_PLAYERS))
+    this._growOrShrinkTo(playerCount)
     this._clampPlayers()
     this._refreshPlayerCountSelect()
     this._refreshPlayerTable()
@@ -193,14 +216,14 @@ export class PlayerSetupPanel {
 
   _cycleColor(playerIndex: number): void {
     this.players[playerIndex].color = this._nextAvailableColor(this.players[playerIndex].color)
-    this._refreshPlayerTable()
+    this._refresh()
     this._emitChange()
   }
 
   _cycleTeam(playerIndex: number): void {
     const current = this.players[playerIndex].team
     this.players[playerIndex].team = current === null || current >= 9 ? (current === null ? 1 : null) : current + 1
-    this._refreshPlayerTable()
+    this._refresh()
     this._emitChange()
   }
 
@@ -294,6 +317,51 @@ export class PlayerSetupPanel {
 
       this.playerTableEl.appendChild(row)
     })
+  }
+
+  // Simplified lobby: only the human's civ/color are editable, so bots can stay in the
+  // background and the whole thing works from a gamepad with two selects instead of a table.
+  _refreshHumanControls(): void {
+    this.humanControlsEl.innerHTML = ''
+    const human = this.players[0]
+
+    const civRow = document.createElement('div')
+    civRow.className = 'config-row'
+    const civLabel = document.createElement('label')
+    civLabel.textContent = t('colCiv')
+    civRow.appendChild(civLabel)
+    const civSelect = document.createElement('select')
+    civSelect.className = 'ui-select'
+    CIVS.forEach(civ => {
+      const opt = document.createElement('option')
+      opt.value = civ.value
+      opt.textContent = typeof civ.label === 'function' ? civ.label() : civ.label
+      if (civ.value === human.civ) opt.selected = true
+      civSelect.appendChild(opt)
+    })
+    civSelect.onchange = (evt: Event) => {
+      human.civ = (evt.target as HTMLSelectElement).value
+      this._emitChange()
+    }
+    civRow.appendChild(civSelect)
+    this.humanControlsEl.appendChild(civRow)
+
+    const colorRow = document.createElement('div')
+    colorRow.className = 'config-row'
+    const colorLabel = document.createElement('label')
+    colorLabel.textContent = t('colColor')
+    colorRow.appendChild(colorLabel)
+    const colorData = PLAYER_COLORS.find(color => color.name === human.color)
+    const swatch = document.createElement('button')
+    swatch.className = 'color-swatch ui-btn'
+    swatch.type = 'button'
+    swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
+    swatch.title = t('colorSwatch', { color: human.color })
+    swatch.setAttribute('aria-label', t('colorSwatch', { color: human.color }))
+    swatch.addEventListener('pointerdown', playClickSound)
+    swatch.addEventListener('click', () => this._cycleColor(0))
+    colorRow.appendChild(swatch)
+    this.humanControlsEl.appendChild(colorRow)
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

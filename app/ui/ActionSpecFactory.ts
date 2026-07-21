@@ -218,6 +218,7 @@ export class ActionSpecFactory {
         description: t('rallyPointDescription'),
       }),
       onClick: (selection: RuntimeEntity) => {
+        this.menu.closeArpgBuildingMenu()
         this.menu.context.controls.rallyPointController?.start(selection)
       },
     }

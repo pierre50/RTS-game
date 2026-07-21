@@ -230,14 +230,6 @@ export class Building extends Instance implements BuildingEntity {
           context: { controls, player, menu, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
-        if (controls.isArpgActive?.() && this.owner.isPlayed) {
-          controls.mouse.prevent = true
-          if (menu.openArpgBuildingMenu?.(this)) {
-            this.selectForPlayedOwner()
-          }
-          return
-        }
-        if (!canUseRtsEntityPointer(controls)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
           controls.mouse.prevent = true
           drawInstanceBlinkingSelection(this)
@@ -249,6 +241,14 @@ export class Building extends Instance implements BuildingEntity {
           controls.rallyPointController.handleMouseUpOnEntity(this)
           return
         }
+        if (controls.isArpgActive?.() && this.owner.isPlayed) {
+          controls.mouse.prevent = true
+          if (menu.openArpgBuildingMenu?.(this)) {
+            this.selectForPlayedOwner()
+          }
+          return
+        }
+        if (!canUseRtsEntityPointer(controls)) return
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }

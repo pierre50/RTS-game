@@ -6,6 +6,12 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
+// The resource generators yield with requestAnimationFrame between batches so the
+// browser stays responsive; Node has no such API, so give them an event-loop tick instead.
+if (typeof globalThis.requestAnimationFrame !== 'function') {
+  globalThis.requestAnimationFrame = callback => setImmediate(() => callback(0))
+}
+
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
@@ -270,11 +276,12 @@ const runtimeClassifyDeepWater = MapTerrain.prototype.classifyDeepWater
 const runtimeClampReliefAroundWaterLevels = MapTerrain.prototype.clampReliefAroundWaterLevels
 const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefStepContinuity
 const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
+const runtimeFormatCellsRelief = MapTerrain.prototype.formatCellsRelief
 const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
 const runtimeIlotAnchors = MapGeneration.prototype.getIlotSpawnAnchors
-const runtimePlayerResources = MapResources.prototype.generateResourcesAroundPlayers
-const runtimeNeutralResources = MapResources.prototype.generateNeutralResourceGroups
-const runtimeBiomeTrees = MapResources.prototype.generateBiomeTrees
+const runtimePlayerResources = MapResources.prototype.generateResourcesAroundPlayersAsync
+const runtimeNeutralResources = MapResources.prototype.generateNeutralResourceGroupsAsync
+const runtimeBiomeTrees = MapResources.prototype.generateBiomeTreesAsync
 const runtimeGenerateForestAroundPlayer = MapResources.prototype.generateForestAroundPlayer
 const runtimeFindNeutralResourceCenter = MapResources.prototype.findNeutralResourceCenter
 const runtimePlaceResourceGroup = MapResources.prototype.placeResourceGroup
@@ -341,6 +348,9 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
           this.waterBorderResourceName = resourceName
           this.waterBorderIndex = index
         },
+        setReliefBorder() {
+          this.inclined = true
+        },
       }
     }
   }
@@ -368,6 +378,9 @@ function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', po
   map.clampReliefAroundWaterLevels = () => runtimeClampReliefAroundWaterLevels.call({ map })
   map.enforceReliefStepContinuity = (...args) => runtimeEnforceReliefStepContinuity.apply({ map }, args)
   map.formatCellsWaterBorder = () => runtimeFormatCellsWaterBorder.call({ map })
+  // Mirrors MapTerrain#rebuildTerrainAppearance: sprite backfill is purely visual and
+  // has no headless equivalent, so it's stubbed out - only the border/inclined flags matter here.
+  map.formatCellsRelief = () => runtimeFormatCellsRelief.call({ map, rebuildTerrainBackfill() {} })
   map.addChild = instance => instance
   map.randomRange = (min, max) => Math.floor(map.random() * (max - min + 1) + min)
   map.randomItem = (items = []) => items[Math.floor(map.random() * items.length)]
@@ -545,7 +558,7 @@ function unsupportedReliefCells(map) {
   return cells
 }
 
-function blueprint(size, mapType, seed) {
+async function blueprint(size, mapType, seed) {
   const playerCount = maxPlayersForSize(size)
   const context = { map: { seed, positionsCount: playerCount } }
   const terrain = runtimeTerrain.call(context, size + 1, mapType, seed)
@@ -572,9 +585,19 @@ function blueprint(size, mapType, seed) {
       `  ! ${size}/${mapType} seed ${seed}: ${invalidReliefCells.length} atlas-unsupported relief cell(s) remain (first at [${first.i},${first.j}])`
     )
   }
-  runtimePlayerResources.call({ map }, spawns)
-  runtimeNeutralResources.call({ map }, spawns)
-  runtimeBiomeTrees.call({ map }, spawns)
+  // Resources must never spawn on relief border/slope tiles (frame index > 8). Relief is
+  // now final, so mark border cells before placement - MapResources' placement guards
+  // check cell.inclined, which only formatCellsRelief() ever sets.
+  map.formatCellsRelief()
+  await runtimePlayerResources.call({ map }, spawns)
+  await runtimeNeutralResources.call({ map }, spawns)
+  await runtimeBiomeTrees.call({ map }, spawns)
+  const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
+  if (resourcesOnReliefBorders.length) {
+    console.warn(
+      `  ! ${size}/${mapType} seed ${seed}: ${resourcesOnReliefBorders.length} resource(s) landed on relief border tiles`
+    )
+  }
   const flatTerrain = Uint8Array.from(map.grid.flat().map(cell => TERRAIN_INDEX.get(cell.type) ?? 0))
   const relief = Int8Array.from(map.grid.flat().map(cell => cell.z))
   const resources = [...map.resources].map(resource => ({
@@ -597,7 +620,7 @@ function blueprint(size, mapType, seed) {
   }
 }
 
-function main() {
+async function main() {
   let options
   try { options = argumentsFrom(process.argv.slice(2)) } catch (error) { usage(error.message); process.exitCode = 1; return }
   if (options.help) return usage()
@@ -609,7 +632,7 @@ function main() {
     let written = 0, attempts = 0
     while (written < options.count) {
       if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size}/${mapType} maps`)
-      const seed = Math.floor(random() * 0x7fffffff), map = blueprint(size, mapType, seed)
+      const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, mapType, seed)
       if (!map) continue
       const id = `${mapType}-${size}-${String(written + 1).padStart(3, '0')}`, relativePath = `${size}/${mapType}/${id}.rtsmap`
       fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
@@ -623,4 +646,7 @@ function main() {
   console.log(`Manifest: ${path.relative(ROOT, path.join(options.out, 'manifest.json'))}`)
 }
 
-main()
+main().catch(error => {
+  console.error(error)
+  process.exitCode = 1
+})
