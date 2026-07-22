@@ -52,6 +52,7 @@ import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { applyToolAppearance } from '../../lib/heroTools'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
+import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import {
   canAutoReactToAttack,
@@ -320,6 +321,7 @@ export class Unit extends Instance implements UnitEntity {
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     ensureUnitEnergy(this)
+    ensureUnitHealthRegen(this)
     if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
 
     this.currentCell = map.grid[this.i][this.j]
@@ -403,7 +405,7 @@ export class Unit extends Instance implements UnitEntity {
                         }
                         const unloaded = unloadTransport(selection)
                         if (unloaded && selection.owner?.isPlayed) {
-                          menu.setBottombar(selection)
+                          menu.setActionTarget(selection)
                           menu.updatePlayerMiniMapEvt?.(selection.owner)
                         }
                       },
@@ -553,7 +555,7 @@ export class Unit extends Instance implements UnitEntity {
         } else if (player.selectedUnit !== this) {
           this.owner.unselectAll()
           this.select()
-          menu.setBottombar(this)
+          menu.setActionTarget(this)
           player.selectedUnit = this
           player.selectedUnits = [this]
         }
@@ -583,7 +585,7 @@ export class Unit extends Instance implements UnitEntity {
         } else if ((player.selectedOther !== this && playerCanSeeInstance(this, player)) || map.revealEverything) {
           player.unselectAll()
           this.select()
-          menu.setBottombar(this)
+          menu.setActionTarget(this)
           player.selectedOther = this
           playSelectionSound(this)
         }
@@ -1074,6 +1076,7 @@ export class Unit extends Instance implements UnitEntity {
 
   override step(): void {
     updateUnitEnergy(this)
+    updateUnitHealthRegen(this)
     if (resumeEnergyWaitIfReady(this)) return
     super.step()
   }
@@ -1089,6 +1092,7 @@ export class Unit extends Instance implements UnitEntity {
     if (!instance || this.isDead) {
       return
     }
+    markUnitHealthDamaged(this)
     if (!canAutoReactToAttack(this)) {
       return
     }

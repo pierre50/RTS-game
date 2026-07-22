@@ -26,7 +26,7 @@ export class Human extends Player {
     if (!this.selectedUnits.length) {
       this.selectedUnit = null
       this.selectedUnits = []
-      menu.setBottombar()
+      menu.setActionTarget()
       return
     }
 
@@ -40,6 +40,6 @@ export class Human extends Player {
       }
     }
     this.selectedUnit = nextVillager || this.selectedUnits[0]
-    menu.setBottombar(this.selectedUnit)
+    menu.setActionTarget(this.selectedUnit)
   }
 }

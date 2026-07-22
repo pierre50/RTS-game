@@ -1,5 +1,6 @@
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
+import { showAlertFeedback } from '../../lib/combatFeedback'
 import { isAirborne } from './locomotion'
 import type { SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -81,6 +82,7 @@ export class AnimalBehavior {
 
     const threat = this.findNearbyThreat()
     if (threat && !animal.isFleeing && animal.strategy === 'runaway') {
+      showAlertFeedback(animal)
       animal.getReaction(threat)
       return
     }

@@ -32,6 +32,7 @@ function createBehavior({
   ambientWalkRange,
 } = {}) {
   const calls = []
+  const alertCalls = []
   const cells = [
     { i: 4, j: 5, solid: false },
     { i: 5, j: 4, solid: false },
@@ -81,17 +82,19 @@ function createBehavior({
   const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    '../../lib/combatFeedback': { showAlertFeedback: target => alertCalls.push(target) },
     './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
   })
-  return { behavior: new AnimalBehavior(animal), calls, randomRangeCalls, scheduler }
+  return { behavior: new AnimalBehavior(animal), calls, alertCalls, animal, randomRangeCalls, scheduler }
 }
 
 test('a nearby villager interrupts idle behavior immediately', () => {
   const villager = { label: 'villager-1', family: 'unit', type: 'Villager', distance: 2 }
-  const { behavior, calls } = createBehavior({ nearby: [villager] })
+  const { behavior, calls, alertCalls, animal } = createBehavior({ nearby: [villager] })
 
   behavior.update()
 
+  assert.deepEqual(alertCalls, [animal])
   assert.deepEqual(calls, [['reaction', 'villager-1']])
 })
 

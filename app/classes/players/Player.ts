@@ -3,6 +3,7 @@ import {
   canAfford,
   drawInstanceBlinkingSelection,
   payCost,
+  refundCost,
   uuidv4,
   capitalizeFirstLetter,
   getHexColor,
@@ -52,6 +53,7 @@ type NumericConfigOperation = ConfigOperation & {
 
 type PlayerTechnologyValue = ConfigValue | ConfigValue[]
 type PlayerTechnologyHandler = (value?: ConfigValue) => void
+type QueuedTechnology = { type: string; config: TechnologyConfig }
 
 function isNumericConfigOperation(operation: ConfigOperation): operation is NumericConfigOperation {
   return (
@@ -88,6 +90,9 @@ export class Player implements PlayerLike {
   buildings: BuildingEntity[]
   population: number
   technologies: string[]
+  researchTechnology: QueuedTechnology | null
+  researchLoading: number | null
+  researchIntervalId: number | null
   cellViewed: number
   age: number
   lastUnderAttackAlertAt: number
@@ -122,6 +127,9 @@ export class Player implements PlayerLike {
     this.buildings = []
     this.population = 0
     this.technologies = []
+    this.researchTechnology = null
+    this.researchLoading = null
+    this.researchIntervalId = null
     this.cellViewed = 0
     this.age = 0
     this.lastUnderAttackAlertAt = 0
@@ -140,6 +148,11 @@ export class Player implements PlayerLike {
     )
     this.config = config
     this.techs = techs
+    const restoredResearch = options.researchTechnology
+    if (restoredResearch?.type) {
+      this.researchLoading = options.researchLoading ?? 0
+      this.buyTechnology(restoredResearch.type, true, true)
+    }
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     this.views = new VisionGrid(
       map.size,
@@ -210,6 +223,87 @@ export class Player implements PlayerLike {
     if (!config) return false
 
     return (config.conditions || []).every((condition: Condition) => isValidCondition(condition, this))
+  }
+
+  canResearchAgeTechnology(type: string): boolean {
+    const config = this.techs?.[type]
+    if (!config || !AGE_UP_ENABLED || !AGE_TECHNOLOGIES.has(type)) return false
+    return (config.conditions || []).every((condition: Condition) => isValidCondition(condition, this))
+  }
+
+  isTechnologyInProgress(type: string): boolean {
+    return this.researchTechnology?.type === type
+  }
+
+  startResearchInterval(config: TechnologyConfig): void {
+    this.stopResearchInterval()
+    const interval = Math.max(1, ((config.researchTime ?? 0) * 1000) / 100)
+    this.researchIntervalId = this.context.scheduler.add(
+      () => {
+        const technology = this.researchTechnology
+        if (!technology) return
+        const { type } = technology
+        if ((this.researchLoading ?? 0) >= 100 || this.context.map.instantMode) {
+          this.stopResearchInterval()
+          this.researchLoading = null
+          this.researchTechnology = null
+          this.unlockTechnology(type)
+          if (this.isPlayed) {
+            this.context.menu.updateActionTarget()
+            this.context.menu.updateTopbar()
+            this.context.menu.syncTechnologyProgress?.()
+          }
+        } else {
+          this.researchLoading = (this.researchLoading ?? 0) + 1
+          if (this.isPlayed) this.context.menu.syncTechnologyProgress?.()
+        }
+      },
+      interval,
+      'player.research'
+    )
+  }
+
+  stopResearchInterval(): void {
+    if (this.researchIntervalId != null) {
+      this.context.scheduler.remove(this.researchIntervalId)
+      this.researchIntervalId = null
+    }
+  }
+
+  buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
+    const {
+      context: { menu },
+    } = this
+    const config = this.techs[type]
+    if (!config) return false
+    if (this.researchTechnology && !force) return false
+    if (this.technologies.includes(type)) return false
+    if (!force && !this.canResearchAgeTechnology(type) && !this.isTechnologyEligible(type)) return false
+    if (!alreadyPaid && !canAfford(this, config.cost)) return false
+
+    if (!alreadyPaid) payCost(this, config.cost)
+    this.researchLoading = force ? (this.researchLoading ?? 0) : 0
+    this.researchTechnology = { config, type }
+    if (this.isPlayed) {
+      menu.updateTopbar()
+      menu.syncTechnologyProgress?.()
+    }
+    this.startResearchInterval(config)
+    return true
+  }
+
+  cancelTechnology(): boolean {
+    const technology = this.researchTechnology
+    if (!technology) return false
+    this.stopResearchInterval()
+    refundCost(this, technology.config.cost)
+    this.researchTechnology = null
+    this.researchLoading = null
+    if (this.isPlayed) {
+      this.context.menu.updateTopbar()
+      this.context.menu.syncTechnologyProgress?.()
+    }
+    return true
   }
 
   unlockTechnology(type: string) {
@@ -289,7 +383,7 @@ export class Player implements PlayerLike {
     const refreshSelection = (selection: RuntimeEntity | null | undefined) => {
       if (!selection?.interface) return false
       if (selection.owner?.label !== this.label) return false
-      menu.setBottombar(selection)
+      menu.setActionTarget(selection)
       return true
     }
 
@@ -351,7 +445,7 @@ export class Player implements PlayerLike {
     }
     this.selectedUnit = null
     this.selectedUnits = []
-    menu.setBottombar()
+    menu.setActionTarget()
   }
 
   unselectAll() {

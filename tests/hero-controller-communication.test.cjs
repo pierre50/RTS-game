@@ -20,6 +20,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
           this.ellipses = []
           this.paths = []
           this.polys = []
+          this.position = { y: 0 }
         }
         clear() {}
         destroy() {}
@@ -60,6 +61,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
         layer.closePath()
       },
       getInstanceDegree,
+      getReliefOffset: instance => instance?.reliefLift ?? 0,
       getRoundedIsoShapePoints: ({ factor = 1 } = {}) => [
         { x: -32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
         { x: 32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
@@ -71,6 +73,12 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       updateHeroCursor: () => {},
     },
     '../lib/npcInteraction': npcInteraction,
+    '../lib/unitEnergy': {
+      updateUnitEnergy: () => {},
+    },
+    '../lib/unitHealth': {
+      updateUnitHealthRegen: () => {},
+    },
     '../lib/unitControl': {
       setUnitControlMode: () => {},
     },
@@ -219,6 +227,16 @@ test('communication charge indicator is drawn as a rounded isometric footprint',
   assert.deepEqual(controller.commIndicator.ellipses, [])
   assert.deepEqual(controller.commIndicator.circles, [])
   assert.deepEqual(controller.commIndicator.polys, [])
+})
+
+test('communication charge indicator follows hero relief lift', () => {
+  const { controller, hero } = createController()
+  hero.reliefLift = -24
+
+  controller.handleKeyDown('heroInteract')
+  controller.updateCommIndicator()
+
+  assert.equal(controller.commIndicator.position.y, -24)
 })
 
 test('held primary attack re-aims at the current cursor on the next swing', () => {

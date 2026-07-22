@@ -9,7 +9,7 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-import { showDamageFeedback } from '../../lib/combatFeedback'
+import { showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
@@ -47,6 +47,7 @@ export class AnimalCombat {
       // the animal's altitude mid-animation.
       !isAirborne(animal)
     ) {
+      showAlertFeedback(animal)
       this.getReaction(instance)
     }
   }

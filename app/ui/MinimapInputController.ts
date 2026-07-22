@@ -1,6 +1,4 @@
-import { isometricToCartesian } from '../lib'
-import { hasRtsCommandableUnits } from '../lib/unitControl'
-import { LONG_CLICK_DURATION, IS_MOBILE, MINIMAP_DRAG_THRESHOLD } from '../constants'
+import { LONG_CLICK_DURATION, MINIMAP_DRAG_THRESHOLD } from '../constants'
 import type { ControlsLike, MinimapHostLike } from '../types/context'
 
 type PointerSession = {
@@ -24,26 +22,17 @@ export class MinimapInputController {
   }
 
   getElement(): HTMLDivElement {
-    const element = this.menu.minimapMap ?? this.menu.bottombarMap
+    const element = this.menu.minimapMap ?? this.menu.editorPanelMap
     if (!element) throw new Error('Minimap host is missing a minimap element')
     return element
   }
 
   bind(): void {
-    const { menu } = this
     const minimap = this.getElement()
     minimap.addEventListener('pointerdown', this.onPointerDown)
     minimap.addEventListener('pointermove', this.onPointerMove)
     minimap.addEventListener('pointerup', this.onPointerUp)
     minimap.addEventListener('pointercancel', this.onPointerCancel)
-
-    menu.toggle = document.createElement('button')
-    menu.toggle.type = 'button'
-    menu.toggle.className = 'toggle hud-icon-btn ui-btn'
-    menu.toggle.setAttribute('aria-label', 'Toggle bottom bar')
-    this.updateToggleIcon()
-    menu.toggle.addEventListener('pointerdown', this.onTogglePointerDown)
-    if (IS_MOBILE) menu.gameHud.appendChild(menu.toggle)
   }
 
   onPointerDown = (evt: PointerEvent): void => {
@@ -90,7 +79,7 @@ export class MinimapInputController {
   onPointerUp = (evt: PointerEvent): void => {
     const {
       menu: {
-        context: { player, controls, map },
+        context: { controls },
       },
     } = this
     clearTimeout(this.mouseHoldTimeout ?? undefined)
@@ -111,35 +100,13 @@ export class MinimapInputController {
       return
     }
 
-    if (hasRtsCommandableUnits(player?.selectedUnits)) {
-      const pos = isometricToCartesian(x, y)
-      const i = Math.min(Math.max(pos[0], 0), map.size)
-      const j = Math.min(Math.max(pos[1], 0), map.size)
-      if (map.grid[i] && map.grid[i][j]) {
-        controls.sendUnits?.(map.grid[i][j])
-      }
-    } else {
-      controls.setCamera?.(x, y)
-    }
+    controls.setCamera?.(x, y)
   }
 
   onPointerCancel = (): void => {
     clearTimeout(this.mouseHoldTimeout ?? undefined)
     this.longClick = false
     this.pointerSession = null
-  }
-
-  onTogglePointerDown = (evt: Event): void => {
-    evt.preventDefault()
-    const { menu } = this
-    menu.toggled = !menu.toggled
-    this.updateToggleIcon()
-    menu.bottombar.classList.toggle('hidden', menu.toggled)
-    evt.stopPropagation()
-  }
-
-  updateToggleIcon(): void {
-    if (this.menu.toggle) this.menu.toggle.textContent = 'M'
   }
 
   getMinimapPointer(evt: PointerEvent): { x: number; y: number } {
@@ -158,12 +125,10 @@ export class MinimapInputController {
 
   destroy(): void {
     clearTimeout(this.mouseHoldTimeout ?? undefined)
-    const minimap = this.menu.minimapMap ?? this.menu.bottombarMap
+    const minimap = this.menu.minimapMap ?? this.menu.editorPanelMap
     minimap?.removeEventListener('pointerdown', this.onPointerDown)
     minimap?.removeEventListener('pointermove', this.onPointerMove)
     minimap?.removeEventListener('pointerup', this.onPointerUp)
     minimap?.removeEventListener('pointercancel', this.onPointerCancel)
-    this.menu.toggle?.removeEventListener('pointerdown', this.onTogglePointerDown)
-    this.menu.toggle?.remove()
   }
 }

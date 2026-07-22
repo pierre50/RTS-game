@@ -87,7 +87,7 @@ export class BuildingLifecycle {
         building.owner.hasBuilt.push(building.type)
       }
       if (building.owner.isPlayed && building.selected) {
-        menu.setBottombar(building)
+        menu.setActionTarget(building)
       }
       updateInstanceVisibility(building)
       if (!wasBuilt) building.scanForInitialTarget()
@@ -171,7 +171,7 @@ export class BuildingLifecycle {
       }
     }
     if (building.owner.isPlayed && building.selected) {
-      menu.setBottombar(building)
+      menu.setActionTarget(building)
     }
   }
 

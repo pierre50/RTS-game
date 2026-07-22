@@ -186,7 +186,7 @@ function createControls() {
       },
     },
     menu: {
-      updateBottombar() {},
+      updateActionTarget() {},
     },
   })
 
@@ -337,7 +337,7 @@ test('Escape closes hero menus even while the game is paused', () => {
       closeInventory: () => calls.push('closeInventory'),
       isNpcOrdersOpen: () => false,
       isHeroBuildingMenuOpen: () => false,
-      updateBottombar() {},
+      updateActionTarget() {},
     }
 
     controls.onKeyDown({
@@ -362,7 +362,7 @@ test('Escape cancels active building placement', () => {
       controls.mouseBuilding = null
     }
     controls.context.menu = {
-      updateBottombar: () => calls.push('updateBottombar'),
+      updateActionTarget: () => calls.push('updateActionTarget'),
     }
 
     controls.onKeyDown({
@@ -371,7 +371,7 @@ test('Escape cancels active building placement', () => {
       preventDefault: () => calls.push('preventDefault'),
     })
 
-    assert.deepEqual(calls, ['preventDefault', 'removeMouseBuilding', 'updateBottombar'])
+    assert.deepEqual(calls, ['preventDefault', 'removeMouseBuilding', 'updateActionTarget'])
     assert.equal(controls.mouseBuilding, null)
   } finally {
     restore()

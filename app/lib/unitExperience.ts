@@ -131,7 +131,7 @@ function syncExperienceInterface(unit: UnitEntity, category: string, leveledUp: 
   if (!owner?.isPlayed || !menu || owner.selectedUnit !== unit || !unit.selected) return
   if (leveledUp) {
     // A level can add a new row (first level in a category) — rebuild the panel.
-    menu.setBottombar(unit)
+    menu.setActionTarget(unit)
     return
   }
   menu.updateInfo(getXpInfoId(category), formatXpProgressText(unit, category))

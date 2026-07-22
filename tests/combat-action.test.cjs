@@ -236,6 +236,50 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
   assert.deepEqual(calls, [])
 })
 
+test('attacker units show alert feedback when detection starts an attack', () => {
+  const calls = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getHitPointsWithDamage: () => 0,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => false,
+      onSpriteLoopAtFrame: () => {},
+      playAudibleSoundCue: () => {},
+      SHOOT_RELEASE_FRAME: 5,
+      SLASH_IMPACT_FRAME: 3,
+      syncAnimationSpeedToRate: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/combatFeedback': {
+      showAlertFeedback: unit => calls.push(['alert', unit.label]),
+      showDamageFeedback: () => {},
+    },
+    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+  })
+  const target = { family: constants.FAMILY_TYPES.unit }
+  const unit = {
+    context: { editor: null },
+    dest: null,
+    getActionCondition: instance => instance === target,
+    label: 'guard-1',
+    path: [],
+    sendTo: instance => calls.push(['sendTo', instance]),
+    work: constants.WORK_TYPES.attacker,
+  }
+
+  new UnitCombat(unit).detect(target)
+
+  assert.deepEqual(calls, [
+    ['alert', 'guard-1'],
+    ['sendTo', target],
+  ])
+})
+
 test('unit control policy disables automatic reactions for the active hero-controlled unit', () => {
   const hero = {}
   const {

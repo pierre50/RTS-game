@@ -45,7 +45,7 @@ export class EntityInfoModalManager {
     }
 
     const content = document.createElement('div')
-    content.className = 'entity-info-modal bottombar-info active'
+    content.className = 'entity-info-modal selection-info active'
     entity.interface.info(content)
 
     this.entity = entity

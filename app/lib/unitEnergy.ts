@@ -27,6 +27,13 @@ const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   heroWhiff: 0.75,
 }
 
+function notifyHeroEnergyChanged(unit: UnitEntity): void {
+  const controls = unit.context?.controls
+  if (controls?.heroUnit === unit) {
+    unit.context?.menu?.updateHeroStatus?.(unit)
+  }
+}
+
 export function ensureUnitEnergy(unit: UnitEntity): void {
   const total = unit.totalEnergy ?? DEFAULT_UNIT_TOTAL_ENERGY
   unit.totalEnergy = Math.max(0, total)
@@ -62,6 +69,7 @@ export function spendEnergyAmount(unit: UnitEntity, amount: number): boolean {
   if ((unit.energy ?? 0) < cost) return false
   unit.energy = Math.max(0, (unit.energy ?? 0) - cost)
   unit.lastEnergySpentAt = unit.context?.scheduler?.elapsedMs ?? 0
+  notifyHeroEnergyChanged(unit)
   return true
 }
 
@@ -72,20 +80,25 @@ export function drainEnergyAmount(unit: UnitEntity, amount: number): boolean {
   const current = unit.energy ?? 0
   unit.energy = Math.max(0, current - cost)
   unit.lastEnergySpentAt = unit.context?.scheduler?.elapsedMs ?? 0
+  notifyHeroEnergyChanged(unit)
   return current >= cost
 }
 
 export function updateUnitEnergy(unit: UnitEntity, elapsedMs = STEP_TIME): void {
   ensureUnitEnergy(unit)
   if ((unit.energy ?? 0) >= (unit.totalEnergy ?? 0)) {
+    const previousEnergy = unit.energy
     unit.energy = unit.totalEnergy
+    if (unit.energy !== previousEnergy) notifyHeroEnergyChanged(unit)
     return
   }
   const now = unit.context?.scheduler?.elapsedMs ?? 0
   const spentAt = unit.lastEnergySpentAt ?? -Infinity
   if (now - spentAt < (unit.energyRegenDelay ?? 0)) return
   const regenPerMs = ((unit.energyRegenRate ?? 0) * (unit.energyRegenMultiplier ?? 1)) / 1000
-  unit.energy = Math.min(unit.totalEnergy ?? 0, (unit.energy ?? 0) + regenPerMs * elapsedMs)
+  const previousEnergy = unit.energy ?? 0
+  unit.energy = Math.min(unit.totalEnergy ?? 0, previousEnergy + regenPerMs * elapsedMs)
+  if (unit.energy !== previousEnergy) notifyHeroEnergyChanged(unit)
 }
 
 export function isUnitEnergyFull(unit: UnitEntity): boolean {
@@ -120,6 +133,7 @@ function retreatFromTarget(unit: UnitEntity, target: RuntimeEntity): void {
 export function waitForEnergy(unit: UnitEntity, action: string | null | undefined, target?: RuntimeEntity | null): false {
   ensureUnitEnergy(unit)
   if (isHeroControlled(unit)) {
+    showFatigueFeedback(unit)
     unit.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
     unit.actionLocked = false
     return false

@@ -39,6 +39,7 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { getTrainingTargetForUnit } from '../../lib/buildingTraining'
 import { canUseRtsEntityPointer } from '../../lib/unitControl'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
@@ -87,7 +88,6 @@ export class Building extends Instance implements BuildingEntity {
   isUsedBy: RuntimeEntity | null
   trainingUnit: UnitEntity | null
   trainingType: string | null
-  trainingExtra: UnitCreationExtra | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
   shadow: BuildingShadow | null
@@ -128,7 +128,6 @@ export class Building extends Instance implements BuildingEntity {
     this.isUsedBy = null
     this.trainingUnit = null
     this.trainingType = null
-    this.trainingExtra = null
     this.rallyPoint = null
     this.rallyPointFlag = null
     this.shadow = null
@@ -181,36 +180,21 @@ export class Building extends Instance implements BuildingEntity {
     this.sprite.position.y = this.reliefLift
     this.shadow = this.createShadow()
     const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key))
-    const technologies = context.editor
-      ? []
-      : (this.technologies || []).map((key: string) => context.menu.getActionTechnologyButton(key))
     this.interface = {
       info: (element: HTMLElement) => {
-        const displayType =
-          this.assetType ||
-          (isTower(this)
-            ? getTowerType(this.owner)
-            : this.type)
-        const assets = getBuildingAsset(
-          displayType,
-          getBuildingAssetOwner(this),
-          Assets
-        )
+        const displayType = this.assetType || (isTower(this) ? getTowerType(this.owner) : this.type)
+        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this), Assets)
         this.buildingInterface.renderInfo(element, assets as BuildingConfig)
       },
       menu:
         this.owner.isPlayed || map.instantMode
-          ? [
-              ...units,
-              ...technologies,
-              ...(units.length ? [context.menu.getActionRallyPointButton()] : []),
-            ]
+          ? [...units, ...(units.length ? [context.menu.getActionRallyPointButton()] : [])]
           : [],
     }
 
     // Set solid zone
     const dist = getBuildingFootprintRadius(this.size)
-    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, ((cell: RuntimeCell) => {
+    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, (cell: RuntimeCell) => {
       clearCellTerrainSet(cell)
       for (const corpse of cell.corpses) {
         typeof corpse.clear === 'function' && corpse.clear()
@@ -229,7 +213,7 @@ export class Building extends Instance implements BuildingEntity {
         cell.removeFog()
       }
       return true
-    }))
+    })
 
     if (this.sprite) {
       this.sprite.eventMode = 'static'
@@ -306,17 +290,11 @@ export class Building extends Instance implements BuildingEntity {
                   ? this.type === BUILDING_TYPES.dock
                   : this.type === BUILDING_TYPES.townCenter ||
                     (this.accept && this.accept.includes(unit.loadingType ?? ''))
-              if (
-                unit.type === UNIT_TYPES.villager &&
-                getActionCondition(unit, this, ACTION_TYPES.build)
-              ) {
+              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.build)) {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
-              } else if (
-                unit.type === UNIT_TYPES.villager &&
-                getActionCondition(unit, this, ACTION_TYPES.farm)
-              ) {
+              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.farm)) {
                 hasSentVillager = true
                 unit.sendToFarm(this)
               } else if (
@@ -328,6 +306,11 @@ export class Building extends Instance implements BuildingEntity {
                 hasSentVillager = true
                 unit.previousDest = null
                 unit.sendTo(this, ACTION_TYPES.delivery)
+              } else {
+                const trainingType = getTrainingTargetForUnit(this, unit)
+                if (trainingType && this.requestVillagerTraining(trainingType, undefined, unit)) {
+                  hasSentVillager = true
+                }
               }
             }
             if (hasSentVillager) {
@@ -343,16 +326,12 @@ export class Building extends Instance implements BuildingEntity {
           let hasSentAttacker = false
           for (let i = 0; i < player.selectedUnits.length; i++) {
             const playerUnit = player.selectedUnits[i]
-            if (
-              playerUnit.work === WORK_TYPES.healer &&
-              getActionCondition(playerUnit, this, ACTION_TYPES.convert)
-            ) {
+            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this, ACTION_TYPES.convert)) {
               hasSentConverter = true
               playerUnit.sendToConvert(this)
               continue
             }
-            if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack))
-              continue
+            if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack)) continue
             hasSentAttacker = true
             if (playerUnit.type === UNIT_TYPES.villager) {
               playerUnit.sendToAttack(this)
@@ -365,14 +344,14 @@ export class Building extends Instance implements BuildingEntity {
           } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
             player.unselectAll()
             this.select()
-            menu.setBottombar(this)
+            menu.setActionTarget(this)
             player.selectedOther = this
             playSelectionSound(this)
           }
         } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
           player.unselectAll()
           this.select()
-          menu.setBottombar(this)
+          menu.setActionTarget(this)
           player.selectedOther = this
           playSelectionSound(this)
         }
@@ -404,7 +383,7 @@ export class Building extends Instance implements BuildingEntity {
       this.select()
       this.owner.selectedBuilding = this
     }
-    this.context.menu.setBottombar(this)
+    this.context.menu.setActionTarget(this)
   }
 
   attackAction(target: RuntimeEntity): void {
@@ -467,7 +446,7 @@ export class Building extends Instance implements BuildingEntity {
     if (this.owner.isPlayed && this.sounds?.create) playSoundCue(this.sounds.create)
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
-    if (this.loading && this.owner.isPlayed) this.updateInterfaceLoading()
+    if (this.loading !== null && this.owner.isPlayed) this.updateInterfaceLoading()
     canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
   }
 

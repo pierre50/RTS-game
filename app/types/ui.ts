@@ -13,6 +13,7 @@ export interface MenuButtonSpec {
   icon?: string | (() => string)
   tooltip?: TooltipSource
   hide?: () => boolean
+  disabled?: () => boolean
   onClick?: (selection: RuntimeEntity, evt?: Event | null) => void
   onCreate?: (selection: RuntimeEntity, element: HTMLElement) => void
   children?: MenuButtonSpec[]

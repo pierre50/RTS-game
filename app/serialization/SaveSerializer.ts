@@ -161,6 +161,10 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'y',
       'z',
       'hitPoints',
+      'healthRegenRate',
+      'healthRegenDelay',
+      'healthRegenMultiplier',
+      'lastHealthDamagedAt',
       'energy',
       'totalEnergy',
       'lastEnergySpentAt',
@@ -244,6 +248,8 @@ function playerData(player: SerializablePlayer) {
       'population',
       'populationMax',
       'technologies',
+      'researchTechnology',
+      'researchLoading',
       'cellViewed',
       'isPlayed',
       'hasBuilt',
@@ -252,12 +258,11 @@ function playerData(player: SerializablePlayer) {
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
     views: player.views.toJSON(),
-    selectedUnitLabels:
-      !player.isPlayed
-        ? player.selectedUnits?.length
-          ? player.selectedUnits.map(unit => unit.label)
-          : undefined
-        : undefined,
+    selectedUnitLabels: !player.isPlayed
+      ? player.selectedUnits?.length
+        ? player.selectedUnits.map(unit => unit.label)
+        : undefined
+      : undefined,
     selectedUnitLabel: !player.isPlayed ? player.selectedUnit?.label : undefined,
     selectedBuildingLabel: !player.isPlayed ? player.selectedBuilding?.label : undefined,
     selectedOtherLabel: !player.isPlayed ? player.selectedOther?.label : undefined,

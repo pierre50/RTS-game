@@ -35,9 +35,9 @@ export interface MenuLike {
   infoIcons?: Record<string, string>
   handleHotkey?(key: string): void
   showMessage(message: string, type?: string): void
-  setBottombar(selection?: RuntimeEntity | null): void
+  setActionTarget(selection?: RuntimeEntity | null): void
   updateTopbar(): void
-  updateBottombar(): void
+  updateActionTarget(): void
   updateTerrainMiniMap?(i: number, j: number): void
   updateResourcesMiniMap(): void
   updateCameraMiniMap?(): void
@@ -48,6 +48,7 @@ export interface MenuLike {
   toggleQueuedActionCancel(id: string, enabled: boolean): void
   getActionUnitButton(type: string): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
+  getHeroTechnologyButtons?(): MenuButtonSpec[]
   getActionRallyPointButton(): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
@@ -55,6 +56,7 @@ export interface MenuLike {
   toggleInventory?(): void
   closeInventory?(): void
   isInventoryOpen?(): boolean
+  syncTechnologyProgress?(): void
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
   setHeroStatusTarget?(hero: UnitEntity | null): void
@@ -70,6 +72,7 @@ export interface MenuLike {
   closeHeroBuildingMenu?(): void
   getHeroBuildingMenuTarget?(): BuildingEntity | null
   refreshHeroBuildingMenu?(): void
+  syncHeroBuildingMenu?(): void
   closeHeroBuildingMenuIfInvalid?(): void
 }
 
@@ -84,8 +87,8 @@ interface MinimapManagerLike {
 export interface MinimapHostLike {
   context: GameContextLike
   gameHud: HTMLDivElement
-  bottombar: HTMLDivElement
-  bottombarMap?: HTMLDivElement
+  editorPanel?: HTMLDivElement
+  editorPanelMap?: HTMLDivElement
   minimapMap?: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   resourcesMinimap: HTMLCanvasElement

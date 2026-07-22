@@ -84,11 +84,11 @@ export class SelectionManager {
     if (countSelect) {
       if (selectVillager) {
         player.selectedUnit = selectVillager
-        menu.setBottombar(selectVillager)
+        menu.setActionTarget(selectVillager)
       } else {
         // TODO SELECT UNITS THAT HAVE THE MOST FREQUENCY
         player.selectedUnit = player.selectedUnits[0]
-        menu.setBottombar(player.selectedUnits[0])
+        menu.setActionTarget(player.selectedUnits[0])
       }
     }
     if (controls.mouseRectangle) {

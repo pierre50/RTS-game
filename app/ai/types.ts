@@ -193,6 +193,8 @@ export type AIStrategyPlayerLike = {
   population: number
   populationMax: number
   technologies: string[]
+  researchTechnology?: { type?: string } | null
+  researchLoading?: number | null
   difficultyConfig: AIDifficultyConfig
   nextAge: Partial<Record<1 | 2 | 3, string>>
   maxVillagerPerAge: Record<AIAge, number>
@@ -246,6 +248,8 @@ export type AIStrategyPlayerLike = {
   getNow(): number
   isEnemy(owner?: PlayerLike | null): boolean
   buyBuilding(i: number, j: number, type: string): boolean
+  buyTechnology?(type: string): boolean
+  cancelTechnology?(): boolean
   hasNotReachBuildingLimit(type: string, buildings?: AIBuildingLike[]): boolean
   isBuildingThreatened?(building: AIEntityLike): boolean
 }

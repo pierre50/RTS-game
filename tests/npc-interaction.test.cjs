@@ -26,6 +26,9 @@ function loadModule(relativePath, mocks) {
     './lang': {
       t: key => key,
     },
+    './unitUpgrades': {
+      getUnitUpgradeTargetForBuilding: () => null,
+    },
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
@@ -50,6 +53,9 @@ const constants = {
     resource: 'resource',
     unit: 'unit',
   },
+  BUILDING_TYPES: {
+    temple: 'Temple',
+  },
   COLOR_WHITE: 0xffffff,
   LABEL_TYPES: {
     commSelection: 'commSelection',
@@ -63,6 +69,7 @@ const constants = {
     villager: { command: 'villagerCommand' },
   },
   UNIT_TYPES: {
+    priest: 'Priest',
     villager: 'Villager',
   },
 }
@@ -70,6 +77,20 @@ const constants = {
 function loadNpcInteraction(target) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,
+    './buildingTraining': {
+      getTrainingTargetForUnit: (building, unit) => {
+        if (building.type === 'Barracks' && unit.type === 'Axeman') return 'ShortSwordsman'
+        if (building.type === constants.BUILDING_TYPES.temple && unit.type === constants.UNIT_TYPES.villager) {
+          return constants.UNIT_TYPES.priest
+        }
+        if (unit.type === constants.UNIT_TYPES.villager) return building.units?.[0] || null
+        return null
+      },
+    },
+    './unitUpgrades': {
+      getUnitUpgradeTargetForBuilding: (buildingType, unitType) =>
+        buildingType === 'Barracks' && unitType === 'Axeman' ? 'ShortSwordsman' : null,
+    },
     './grid/visibility': {
       findInstancesInSight: () => (target ? [target] : []),
     },
@@ -176,12 +197,52 @@ test('"aller vers" sends a communicated villager into a training building', () =
   assert.deepEqual(calls, [['train', 'Clubman', undefined, npc]])
 })
 
-test('"aller vers" rejects specialized units sent to a training building', () => {
+test('"aller vers" sends a communicated villager into a temple to train a priest', () => {
+  const owner = {
+    config: {
+      units: {
+        Priest: { category: 'Civilian' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: constants.BUILDING_TYPES.temple,
+    units: [constants.UNIT_TYPES.priest],
+    x: 100,
+    y: 100,
+    requestVillagerTraining(type, extra, villager) {
+      calls.push(['train', type, extra, villager])
+      return true
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: { map: { grid: [] } },
+    i: 1,
+    j: 1,
+    owner,
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['train', constants.UNIT_TYPES.priest, undefined, npc]])
+})
+
+test('"aller vers" sends upgradeable specialized units into a training building', () => {
   const calls = []
   const owner = {
     config: {
       units: {
-        Clubman: { category: 'Infantry' },
+        ShortSwordsman: { category: 'Infantry' },
       },
     },
   }
@@ -194,11 +255,12 @@ test('"aller vers" rejects specialized units sent to a training building', () =>
     j: 5,
     owner,
     type: 'Barracks',
-    units: ['Clubman'],
+    units: ['ShortSwordsman'],
     x: 100,
     y: 100,
-    requestVillagerTraining() {
-      throw new Error('specialized units must not enter training')
+    requestVillagerTraining(type, extra, unit) {
+      calls.push(['train', type, extra, unit])
+      return true
     },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target)
@@ -222,7 +284,82 @@ test('"aller vers" rejects specialized units sent to a training building', () =>
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['message', 'onlyVillagersCanTrain', 'warning']])
+  assert.deepEqual(calls, [['train', 'ShortSwordsman', undefined, npc]])
+})
+
+test('"aller vers" moves specialized units when no building upgrade is available', () => {
+  const calls = []
+  const owner = {
+    config: {
+      units: {
+        Clubman: { category: 'Infantry' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Barracks',
+    units: ['Clubman'],
+    x: 100,
+    y: 100,
+    requestVillagerTraining() {
+      throw new Error('non-upgradeable specialized units must not enter training')
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const npc = {
+    context: {
+      map: { grid: [] },
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+      },
+    },
+    i: 1,
+    j: 1,
+    owner,
+    sendTo(cell) {
+      calls.push(['move', cell.i, cell.j])
+    },
+    type: 'Clubman',
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['move', 5, 5]])
+})
+
+test('closing communication resumes a pending training order', () => {
+  const calls = []
+  const barracks = {
+    family: constants.FAMILY_TYPES.building,
+    isDestroyed: false,
+    type: 'Barracks',
+  }
+  const npc = {
+    lookingAtHero: true,
+    previousDest: barracks,
+    trainingTargetType: 'Axeman',
+    getChildByLabel: () => null,
+    sendTo(dest, action) {
+      calls.push(['sendTo', dest, action])
+    },
+  }
+  const { releaseIfStillLooking } = loadNpcInteraction(null)
+
+  releaseIfStillLooking([npc])
+
+  assert.equal(npc.lookingAtHero, false)
+  assert.equal(npc.previousDest, null)
+  assert.equal(npc.trainingTargetType, 'Axeman')
+  assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 
 test('"aller vers" cursor shows combat feedback over combat targets', () => {
@@ -335,6 +472,9 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
 function loadCommModule(instances, getInstanceDegree) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,
+    './buildingTraining': {
+      getTrainingTargetForUnit: () => null,
+    },
     './grid/visibility': {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
@@ -408,6 +548,9 @@ test('holding past the precision zone nets every eligible ally in the charged ra
 function loadNpcFollowModule(instances) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,
+    './buildingTraining': {
+      getTrainingTargetForUnit: () => null,
+    },
     './grid/visibility': {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },

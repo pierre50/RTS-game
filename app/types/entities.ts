@@ -200,6 +200,10 @@ export interface UnitEntity extends RuntimeEntityBase {
   rateOfFire?: number
   projectile?: string
   healing?: number
+  healthRegenRate?: number
+  healthRegenDelay?: number
+  healthRegenMultiplier?: number
+  lastHealthDamagedAt?: number
   conversionChants?: number
 
   // Experience — accumulated XP per skill category (see lib/unitExperience)
@@ -303,7 +307,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   isUsedBy?: RuntimeEntity | null
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
-  trainingExtra?: UnitCreationExtra | null
   addChild?: Container['addChild']
   setRallyPoint?: (cell: RuntimeCell, direction: number) => void
   clearRallyPoint?: () => void

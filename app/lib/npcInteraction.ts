@@ -3,8 +3,7 @@ import { findInstancesInSight } from './grid/visibility'
 import { createIsoSelectionMarker } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
-import { isValidCondition } from './combat'
-import { t } from './lang'
+import { getTrainingTargetForUnit } from './buildingTraining'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -46,18 +45,6 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Fish: (npc, target) => npc.sendToFish?.(target),
   ShoreFish: (npc, target) => npc.sendToFish?.(target),
   Salmon: (npc, target) => npc.sendToFish?.(target),
-}
-
-function getDefaultTrainingType(building: BuildingEntity): string | null {
-  const units = building.units || []
-  for (const type of units) {
-    const config = building.owner?.config.units[type]
-    if (!config || config.category === 'Civilian' || config.category === 'Boat') continue
-    if (!building.owner || (config.conditions || []).some(condition => !isValidCondition(condition, building.owner!)))
-      continue
-    return type
-  }
-  return null
 }
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -148,6 +135,11 @@ function releaseNpc(target: UnitEntity): void {
   target.lookingAtHero = false
   setCommSelected(target, false)
   const dest = target.previousDest
+  if (target.trainingTargetType && dest && isRuntimeEntityDest(dest)) {
+    target.previousDest = null
+    target.sendTo?.(dest, ACTION_TYPES.train)
+    return
+  }
   // goBackToPrevious() only knows how to resume a resource/building errand; a unit that was just
   // walking to empty ground (no entity dest) needs a plain move re-issued instead, or it'd just stop.
   if (dest && !isRuntimeEntityDest(dest)) {
@@ -194,11 +186,7 @@ export function isAnyNpcNear(hero: UnitEntity, npcs: UnitEntity[], range = NPC_M
 
 // All villagers eligible for the hold-to-charge "communication zone", within the given radius.
 export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
-  const candidates = findInstancesInSight<UnitEntity, UnitEntity>(
-    hero,
-    target => isCommEligible(hero, target),
-    radius
-  )
+  const candidates = findInstancesInSight<UnitEntity, UnitEntity>(hero, target => isCommEligible(hero, target), radius)
   return candidates.filter(target => cellDistance(hero, target) <= radius)
 }
 
@@ -270,7 +258,11 @@ function hasCombatOrder(target: RuntimeEntity): target is (UnitEntity | AnimalEn
   action?: string | null
   dest?: RuntimeCell | RuntimeEntity | null
 } {
-  return (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal) && 'action' in target && 'dest' in target
+  return (
+    (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal) &&
+    'action' in target &&
+    'dest' in target
+  )
 }
 
 // Something mid-swing against one of ours — an enemy soldier on a villager, a wild predator
@@ -385,7 +377,11 @@ function resolveClickTarget(hero: UnitEntity, worldPoint: Point, cell: RuntimeCe
 
 // What the hero's cursor is currently hovering — a resource, an animal, or an enemy — tolerant of
 // the same "sprite art is bigger than its grid cell" slop as resolveClickTarget.
-export function resolveHoverTarget(hero: UnitEntity, worldPoint: Point, cell: RuntimeCell | null): RuntimeEntity | null {
+export function resolveHoverTarget(
+  hero: UnitEntity,
+  worldPoint: Point,
+  cell: RuntimeCell | null
+): RuntimeEntity | null {
   return findNearestInteractable(
     hero,
     worldPoint,
@@ -415,13 +411,13 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (building.owner === npc.owner && building.isBuilt) {
-        const trainingType = getDefaultTrainingType(building)
-        if (trainingType && npc.type !== UNIT_TYPES.villager) {
-          npc.context?.menu?.showMessage(t('onlyVillagersCanTrain'), 'warning')
-          return
-        }
+        const trainingType = getTrainingTargetForUnit(building, npc)
         if (trainingType) {
           building.requestVillagerTraining?.(trainingType, undefined, npc)
+          return
+        }
+        if (npc.type !== UNIT_TYPES.villager) {
+          npc.sendTo?.(cell)
           return
         }
       }

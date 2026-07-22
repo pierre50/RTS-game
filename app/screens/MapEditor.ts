@@ -606,7 +606,7 @@ export default class MapEditor extends Container {
     if (!this.getPlacementOwners().some(owner => owner.label === this.editorState.placementOwnerLabel)) {
       this.clearPlacementSelection()
     }
-    this.context.hud?.setBottombar()
+    this.context.hud?.setActionTarget()
   }
 
   _syncOwnedEntities(previousPlayers: PlayerLike[], previousGaia: PlayerLike | null | undefined): void {
@@ -745,7 +745,7 @@ export default class MapEditor extends Container {
     this.context.player?.unselectAll?.()
     this._hardRemoveInstance(instance)
     adjacentWalls.forEach(wall => this._updateWallTexture(wall))
-    this.context.hud?.setBottombar()
+    this.context.hud?.setActionTarget()
     this.context.hud?.updateResourcesMiniMap()
     return true
   }
@@ -869,7 +869,7 @@ export default class MapEditor extends Container {
     this.clearPlacementSelection()
     player?.unselectAll?.()
     instance.select?.()
-    hud?.setBottombar(instance)
+    hud?.setActionTarget(instance)
     if (!player) return true
 
     switch (instance.family) {
@@ -902,7 +902,7 @@ export default class MapEditor extends Container {
     const selection = this.getPlacementSelection()
     if (!selection) {
       this.context.player?.unselectAll?.()
-      this.context.hud?.setBottombar()
+      this.context.hud?.setActionTarget()
       return false
     }
 

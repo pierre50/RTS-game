@@ -10,6 +10,7 @@ export class HeroStatusHud {
   title: HTMLDivElement
   value: HTMLDivElement
   fill: HTMLDivElement
+  energyBar: HTMLDivElement
   energyValue: HTMLDivElement
   energyFill: HTMLDivElement
   carry: HTMLDivElement
@@ -52,8 +53,8 @@ export class HeroStatusHud {
     this.energyValue = document.createElement('div')
     this.energyValue.className = 'hero-status-value'
 
-    const energyBar = document.createElement('div')
-    energyBar.className = 'hero-status-bar hero-status-energy-bar'
+    this.energyBar = document.createElement('div')
+    this.energyBar.className = 'hero-status-bar hero-status-energy-bar'
 
     this.energyFill = document.createElement('div')
     this.energyFill.className = 'hero-status-fill hero-status-energy-fill'
@@ -73,13 +74,13 @@ export class HeroStatusHud {
     bar.appendChild(this.fill)
     energyHeader.appendChild(energyTitle)
     energyHeader.appendChild(this.energyValue)
-    energyBar.appendChild(this.energyFill)
+    this.energyBar.appendChild(this.energyFill)
     this.carry.appendChild(this.carryIcon)
     this.carry.appendChild(this.carryValue)
     frame.appendChild(header)
     frame.appendChild(bar)
     frame.appendChild(energyHeader)
-    frame.appendChild(energyBar)
+    frame.appendChild(this.energyBar)
     frame.appendChild(this.carry)
     this.element.appendChild(frame)
     menu.gameHud.appendChild(this.element)
@@ -97,21 +98,25 @@ export class HeroStatusHud {
       return
     }
 
-    const current = Math.max(0, Math.ceil(hero.hitPoints ?? 0))
-    const max = Math.max(0, Math.ceil(hero.totalHitPoints ?? 0))
-    const ratio = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0
+    const rawHitPoints = Math.max(0, hero.hitPoints ?? 0)
+    const rawTotalHitPoints = Math.max(0, hero.totalHitPoints ?? 0)
+    const max = Math.ceil(rawTotalHitPoints)
+    const current = Math.min(max, Math.floor(rawHitPoints))
+    const ratio = rawTotalHitPoints > 0 ? Math.max(0, Math.min(1, rawHitPoints / rawTotalHitPoints)) : 0
 
     this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
     this.value.textContent = `${current}/${max}`
-    this.fill.style.width = `${Math.round(ratio * 100)}%`
+    this.fill.style.width = `${(ratio * 100).toFixed(2)}%`
 
     const rawEnergy = Math.max(0, hero.energy ?? hero.totalEnergy ?? 0)
     const rawTotalEnergy = Math.max(0, hero.totalEnergy ?? 0)
-    const energy = Math.ceil(rawEnergy)
     const totalEnergy = Math.ceil(rawTotalEnergy)
+    const energy = Math.min(totalEnergy, Math.floor(rawEnergy))
     const energyRatio = rawTotalEnergy > 0 ? Math.max(0, Math.min(1, rawEnergy / rawTotalEnergy)) : 0
+    const energyPercent = `${(energyRatio * 100).toFixed(2)}%`
     this.energyValue.textContent = `${energy}/${totalEnergy}`
-    this.energyFill.style.width = `${Math.round(energyRatio * 100)}%`
+    this.energyBar.style.setProperty('--hero-energy-percent', energyPercent)
+    this.energyFill.style.width = energyPercent
     this.element.classList.remove('hidden')
 
     const loading = hero.loading ?? 0

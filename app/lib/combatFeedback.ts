@@ -24,8 +24,10 @@ const FLOAT_STEP_MS = 35
 const FLOAT_STEPS = 14
 const FLOAT_RISE = 18
 const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
+const ALERT_FEEDBACK_COOLDOWN_MS = 1200
 const flashStates = new WeakMap<DamageSprite, FlashState>()
 const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
   return (
@@ -170,5 +172,21 @@ export function showFatigueFeedback(target: RuntimeEntity): void {
     fontSize: 18,
     yOffset: 18,
     taskLabel: 'unit.fatigueText',
+  })
+}
+
+export function showAlertFeedback(target: RuntimeEntity): void {
+  const scheduler = target.context?.scheduler
+  const now = scheduler?.elapsedMs ?? performance.now()
+  const previous = alertFeedbackTimes.get(target) ?? -Infinity
+  if (now - previous < ALERT_FEEDBACK_COOLDOWN_MS) return
+  alertFeedbackTimes.set(target, now)
+  showFloatingText(target, {
+    text: '!',
+    fill: 0xfff3a0,
+    stroke: 0x6b2500,
+    fontSize: 20,
+    yOffset: 20,
+    taskLabel: 'unit.alertText',
   })
 }

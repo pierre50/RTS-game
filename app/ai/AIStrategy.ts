@@ -193,6 +193,7 @@ export class AIStrategy {
   }
 
   isTechnologyInProgress(technologyType: string, buildingList: AIBuildingLike[] = []): boolean {
+    if (this.ai.researchTechnology?.type === technologyType) return true
     return buildingList.some(
       (building: AIBuildingLike) =>
         building && !building.isDead && !building.isDestroyed && building.technology?.type === technologyType
@@ -505,12 +506,7 @@ export class AIStrategy {
       for (let j = minJ; j <= maxJ; j++) {
         const cell = grid[i]?.[j]
         if (!cell?.waterBorder || cell.solid || cell.border) continue
-        const landNeighbors = [
-          grid[i - 1]?.[j],
-          grid[i + 1]?.[j],
-          grid[i]?.[j - 1],
-          grid[i]?.[j + 1],
-        ]
+        const landNeighbors = [grid[i - 1]?.[j], grid[i + 1]?.[j], grid[i]?.[j - 1], grid[i]?.[j + 1]]
         if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) return true
       }
     }
@@ -533,12 +529,7 @@ export class AIStrategy {
       for (let j = minJ; j <= maxJ; j++) {
         const cell = grid[i]?.[j]
         if (!cell?.waterBorder || cell.solid || cell.border) continue
-        const landNeighbors = [
-          grid[i - 1]?.[j],
-          grid[i + 1]?.[j],
-          grid[i]?.[j - 1],
-          grid[i]?.[j + 1],
-        ]
+        const landNeighbors = [grid[i - 1]?.[j], grid[i + 1]?.[j], grid[i]?.[j - 1], grid[i]?.[j + 1]]
         if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) landingCells.push(cell)
       }
     }
@@ -550,7 +541,10 @@ export class AIStrategy {
     return this.getPrimaryEnemyAnchor()
   }
 
-  hasUsableTransportDock(dock: AIGridPosition, target: AIGridPosition | null = this.getPrimaryTransportTarget()): boolean {
+  hasUsableTransportDock(
+    dock: AIGridPosition,
+    target: AIGridPosition | null = this.getPrimaryTransportTarget()
+  ): boolean {
     return !!target && this.isTransportDockUsable(dock, target)
   }
 
@@ -645,8 +639,7 @@ export class AIStrategy {
 
   getHealthyDocks(): AIBuildingLike[] {
     const docks = typeof this.ai.buildingsByTypes === 'function' ? this.ai.buildingsByTypes([BUILDING_TYPES.dock]) : []
-    return docks
-      .filter((building: AIBuildingLike) => building && !building.isDead && !building.isDestroyed)
+    return docks.filter((building: AIBuildingLike) => building && !building.isDead && !building.isDestroyed)
   }
 
   getNearestDockDistance(instance: AIGridPosition, docks: AIBuildingLike[] = this.getHealthyDocks()): number {
@@ -736,7 +729,11 @@ export class AIStrategy {
         : null
     }
 
-    if (opportunity.needsTransport && opportunity.dockPosition && this.hasUsableTransportDock(opportunity.dockPosition)) {
+    if (
+      opportunity.needsTransport &&
+      opportunity.dockPosition &&
+      this.hasUsableTransportDock(opportunity.dockPosition)
+    ) {
       return opportunity.dockPosition
     }
 
@@ -1060,8 +1057,10 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(this.hasReachedAge(2) && markets.some((m: AIBuildingLike) => m.isBuilt), BUILDING_TYPES.governmentCenter, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
+      buy(
+        this.hasReachedAge(2) && markets.some((m: AIBuildingLike) => m.isBuilt),
+        BUILDING_TYPES.governmentCenter,
+        () => getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++
@@ -1147,11 +1146,10 @@ export class AIStrategy {
   ): number {
     const cost = this.ai.techs[technologyType]?.cost || {}
     if (!this.canSpendWithReserve(cost, reserve)) return 0
-    for (const building of buildingList) {
-      if (building && building.buyTechnology?.(technologyType)) {
-        if (debug) console.log(`Buying ${technologyType} from ${building.type}`)
-        return 1
-      }
+    if (this.ai.buyTechnology?.(technologyType)) {
+      const source = buildingList.find(building => building && !building.isDead && !building.isDestroyed)
+      if (debug) console.log(`Buying ${technologyType}${source ? ` after building ${source.type}` : ''}`)
+      return 1
     }
     return 0
   }
@@ -1167,8 +1165,8 @@ export class AIStrategy {
       const buffer = (AGE_UP_BUFFERS as Record<number, AIResourceAmount>)[nextAgeKey] || {}
       const popReady = ai.population >= Math.floor(maxVillagers * 0.8)
       const resReady = resourceEntries(cost).every(([res, amount]) => ai[res] >= amount + (buffer[res] || 0))
-      if (popReady && resReady && !this.isTechnologyInProgress(ai.nextAge[nextAgeKey], towncenters)) {
-        actions += this.buyTechnology(towncenters, ai.nextAge[nextAgeKey], {}, debug)
+      if (popReady && resReady && !this.isTechnologyInProgress(ai.nextAge[nextAgeKey])) {
+        actions += this.buyTechnology([], ai.nextAge[nextAgeKey], {}, debug)
       }
     }
 
@@ -1182,7 +1180,6 @@ export class AIStrategy {
     const ageUpReserve = this.getAgeUpReserve()
     for (const [buildingType, techList] of Object.entries(ai.techPriorityByBuilding) as [string, string[]][]) {
       const buildings = buildingListByType[buildingType]
-      if (!buildings?.length) continue
       for (const tech of techList) {
         if (ai.technologies.includes(tech)) continue
         if (!this.canResearchTech(tech)) continue

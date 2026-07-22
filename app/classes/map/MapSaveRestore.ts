@@ -203,7 +203,7 @@ export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, c
   player.selectedUnit = null
   player.selectedBuilding = null
   player.selectedOther = null
-  context.context.menu?.setBottombar?.(heroUnit ?? null)
+  context.context.menu?.setActionTarget?.(heroUnit ?? null)
 }
 
 export function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {

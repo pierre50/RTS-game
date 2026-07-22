@@ -4,6 +4,7 @@ import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
+import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
@@ -17,8 +18,10 @@ function isBuildingEntity(selection: RuntimeEntity | null | undefined): selectio
   return selection?.family === FAMILY_TYPES.building
 }
 
-function requiresVillagerTraining(config: UnitConfig): boolean {
-  return config.category !== 'Civilian' && config.category !== 'Boat'
+function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolean {
+  return Boolean(
+    selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
+  )
 }
 
 export class ActionSpecFactory {
@@ -42,8 +45,10 @@ export class ActionSpecFactory {
 
   getMessage(cost: ResourceAmount): string {
     const { player } = this.menu.context
-    const resource = (Object.keys(cost) as (keyof ResourceAmount)[]).find(prop => player[prop] < (cost[prop] ?? 0))
-    return t('needMore', { resource: t(resource as string) })
+    const resource = getMissingResourceNames(player, cost)
+      .map(key => t(key))
+      .join(', ')
+    return t('needMore', { resource })
   }
 
   formatCost(cost?: ResourceAmount): string {
@@ -132,12 +137,16 @@ export class ActionSpecFactory {
       hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: (selection: RuntimeEntity) => {
         if (!isBuildingEntity(selection)) return
+        if (isTraineeTrainingType(selection, type)) {
+          selection.buyUnit?.(type)
+          return
+        }
         if (canAfford(player, unit.cost)) {
-          if (!requiresVillagerTraining(unit) && player.population >= player.populationMax) {
+          if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
             return
           }
-          if (!requiresVillagerTraining(unit)) menu.toggleQueuedActionCancel(type, true)
+          menu.toggleQueuedActionCancel(type, true)
           selection.buyUnit?.(type)
         } else {
           menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
@@ -147,26 +156,32 @@ export class ActionSpecFactory {
         if (!isBuildingEntity(selection)) return
         const unitSelection = selection
         const div = document.createElement('div')
-        div.className = 'bottombar-menu-column'
+        div.className = 'action-menu-column'
         const cancel = this.createActionIcon(getIconPath('003_50721'))
         cancel.id = `${type}-cancel`
-        if (requiresVillagerTraining(unit) || !unitSelection.queue?.some(q => q === type)) {
+        const hasReservedTraining = hasPendingTrainingUnit(unitSelection, type)
+        const hasQueuedTraining = unitSelection.queue?.some(q => q === type)
+        const showCancel = isTraineeTrainingType(unitSelection, type) ? hasReservedTraining : hasQueuedTraining
+        if (!showCancel) {
           cancel.classList.add('hidden')
         }
         cancel.addEventListener('pointerup', () => {
           this.playUiClick()
-          if (requiresVillagerTraining(unit)) return
           unitSelection.cancelUnits?.(type)
         })
         const img = this.createActionIcon(getIconPath(unit.icon))
         img.addEventListener('pointerup', () => {
           this.playUiClick()
+          if (isTraineeTrainingType(unitSelection, type)) {
+            unitSelection.buyUnit?.(type)
+            return
+          }
           if (canAfford(player, unit.cost)) {
-            if (!requiresVillagerTraining(unit) && player.population >= player.populationMax) {
+            if (player.population >= player.populationMax) {
               menu.showMessage(t('needHouses'), 'warning')
               return
             }
-            if (!requiresVillagerTraining(unit)) menu.toggleQueuedActionCancel(type, true)
+            menu.toggleQueuedActionCancel(type, true)
             unitSelection.buyUnit?.(type)
           } else {
             menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
@@ -245,14 +260,23 @@ export class ActionSpecFactory {
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (!AGE_UP_ENABLED && AGE_TECHNOLOGIES.has(type)) ||
-        (config.conditions || []).some(
-          condition => player.technologies.includes(type) || !isValidCondition(condition, player)
-        ),
-      onClick: (selection: RuntimeEntity) => {
-        if (!isBuildingEntity(selection)) return
+        player.technologies.includes(type) ||
+        this.hasHiddenTechnologyPrerequisite(type),
+      disabled: () =>
+        Boolean(player.researchTechnology) ||
+        (config.conditions || []).some(condition => !isValidCondition(condition, player)),
+      onClick: () => {
         controls.removeMouseBuilding()
+        if (player.researchTechnology) {
+          menu.showMessage(t('technologyAlreadyResearching'), 'warning')
+          return
+        }
+        if ((config.conditions || []).some(condition => !isValidCondition(condition, player))) {
+          menu.showMessage(t('technologyUnavailable'), 'warning')
+          return
+        }
         if (canAfford(player, config.cost)) {
-          selection.buyTechnology?.(type)
+          player.buyTechnology?.(type)
         } else {
           menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
         }
@@ -260,25 +284,26 @@ export class ActionSpecFactory {
     }
   }
 
+  hasHiddenTechnologyPrerequisite(type: string): boolean {
+    const { player } = this.menu.context
+    const config = player.techs[type]
+    if (!config) return true
+    return (config.conditions || []).some(
+      condition =>
+        condition.key === 'technologies' &&
+        condition.op === 'includes' &&
+        !player.technologies.includes(String(condition.value))
+    )
+  }
+
+  getHeroTechnologyButtons(): MenuButtonSpec[] {
+    return Object.keys(this.menu.context.player.techs).map(type => this.getActionTechnologyButton(type))
+  }
+
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     if (!selection.interface) return []
     if (!isBuildingEntity(selection)) return selection.interface.menu || []
     if (!selection.isBuilt) return []
-    if (selection.technology) {
-      return [
-        {
-          icon: getIconPath('003_50721'),
-          id: `${selection.technology}-cancel`,
-          tooltip: () => ({
-            title: t('cancel'),
-            description: t('cancelTechnologyDescription'),
-          }),
-          onClick: (target: RuntimeEntity) => {
-            if (isBuildingEntity(target)) target.cancelTechnology?.()
-          },
-        },
-      ]
-    }
     return selection.interface.menu || []
   }
 }

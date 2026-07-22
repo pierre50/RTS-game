@@ -295,7 +295,7 @@ export default class Controls extends Container implements ControlsLike {
     if (this.mouseBuilding) {
       evt.preventDefault()
       this.removeMouseBuilding()
-      this.context.menu?.updateBottombar?.()
+      this.context.menu?.updateActionTarget?.()
       return true
     }
     if (this.rallyPointController.active) {

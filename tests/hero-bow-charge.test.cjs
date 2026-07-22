@@ -98,6 +98,7 @@ function loadHeroTools(overrides = {}) {
     './unitEnergy': {
       hasEnergyForAction: (unit, action) => {
         const costs = {
+          attack: 2,
           chopwood: 1,
           minestone: 1,
           fishing: 1,
@@ -112,6 +113,7 @@ function loadHeroTools(overrides = {}) {
       },
       spendEnergyForAction: (unit, action) => {
         const costs = {
+          attack: 2,
           chopwood: 1,
           minestone: 1,
           fishing: 1,
@@ -303,6 +305,28 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
 
     assert.equal(projectiles.length, 1)
     assert.equal(projectiles[0].maxDistance, Math.hypot(64, 32) * 4 * 0.2)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('bow release drains energy up to the mouse-up instant', () => {
+  const { releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+  let now = 4000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    hero.energy = 10
+    hero.totalEnergy = 10
+
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 }), true)
+    now += 350
+    assert.equal(releaseHeroBowCharge(hero), true)
+
+    assert.equal(hero.energy, 9)
+    assert.equal(hero.heroBowReleasePower, 0.5)
   } finally {
     global.performance = originalPerformance
   }
@@ -542,6 +566,63 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
   assert.equal(hero.startedAction, undefined)
   assert.equal(hero.actionLocked, true)
   assert.equal(hero.currentSheet, 'actionSheet')
+})
+
+test('free-hand interact damages an aimed enemy unit on the slash impact frame', () => {
+  const enemy = {
+    family: 'unit',
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy',
+    totalHitPoints: 10,
+    x: 10,
+    y: 0,
+    isAttackedCalls: [],
+    isAttacked(attacker) {
+      this.isAttackedCalls.push(attacker.label)
+    },
+  }
+  const damageFeedback = []
+  const xp = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+      getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 3),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+    './unitExperience': {
+      getCombatXpBonus: () => 0,
+      grantUnitXp: (_unit, category, amount) => xp.push([category, amount]),
+      XP_CATEGORIES: { melee: 'melee' },
+      XP_KILL_BONUS: 0,
+    },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    isUnitAtDest: () => true,
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.energy, 8)
+  assert.equal(hero.action, 'attack')
+  assert.equal(hero.dest, enemy)
+  assert.equal(enemy.hitPoints, 10)
+
+  hero.sprite.currentFrame = 1
+  hero.sprite.onFrameChange(1)
+
+  assert.equal(enemy.hitPoints, 7)
+  assert.deepEqual(damageFeedback, [['enemy', 3]])
+  assert.deepEqual(xp, [['melee', 3]])
+  assert.deepEqual(enemy.isAttackedCalls, ['hero'])
 })
 
 test('free-hand interact does not whiff without energy', () => {

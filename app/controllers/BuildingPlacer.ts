@@ -108,9 +108,9 @@ export class BuildingPlacer {
       if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
         controls.removeMouseBuilding()
         if (controls.isHeroControlActive?.()) {
-          menu.setBottombar(controls.heroUnit ?? null)
+          menu.setActionTarget(controls.heroUnit ?? null)
         } else if (menu.selection) {
-          menu.setBottombar(menu.selection)
+          menu.setActionTarget(menu.selection)
         }
       }
     }
@@ -267,9 +267,9 @@ export class BuildingPlacer {
     owner.isPlayed && menu.updateTopbar()
     controls.removeMouseBuilding()
     if (controls.isHeroControlActive?.()) {
-      menu.setBottombar(controls.heroUnit ?? null)
+      menu.setActionTarget(controls.heroUnit ?? null)
     } else if (owner.selectedUnit) {
-      menu.setBottombar(owner.selectedUnit)
+      menu.setActionTarget(owner.selectedUnit)
     }
     return true
   }

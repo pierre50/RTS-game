@@ -243,7 +243,7 @@ export class Animal extends Instance implements AnimalEntity {
       } else if ((playerCanSeeInstance(this, player) || map.revealEverything) && this.quantity > 0) {
         player.unselectAll()
         this.select()
-        menu.setBottombar(this)
+        menu.setActionTarget(this)
         player.selectedOther = this
         playSelectionSound(this)
       }

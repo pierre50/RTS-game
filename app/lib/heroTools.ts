@@ -6,20 +6,23 @@ import {
   CELL_WIDTH,
   FAMILY_TYPES,
   LOADING_TYPES,
+  MENU_INFO_IDS,
   SHEET_TYPES,
   SOUND_CUES,
   WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
 import { isHeroActionInRange } from './heroActionRange'
-import { getActionCondition } from './combat'
+import { getActionCondition, getHitPointsWithDamage } from './combat'
+import { showDamageFeedback } from './combatFeedback'
 import { getWorkWithLoadingType } from './extra'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
-import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME } from './graphics'
+import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
 import { t } from './lang'
 import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
+import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from './unitExperience'
 import {
   drainEnergyAmount,
   ensureUnitEnergy,
@@ -387,10 +390,24 @@ function canBeArrowTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
   return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
 }
 
+function canBeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (target === hero || target.family !== FAMILY_TYPES.unit || target.isDead || target.isDestroyed) return false
+  return getActionCondition(hero, target, ACTION_TYPES.attack)
+}
+
 function findArrowTargetInAim(hero: UnitEntity): RuntimeEntity | null {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => canBeArrowTarget(hero, target),
+    CLICK_TARGET_SEARCH_RANGE
+  )
+  return getDirectionalTarget(hero, candidates)
+}
+
+function findEmptyHandMeleeTargetInAim(hero: UnitEntity): RuntimeEntity | null {
+  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
+    hero,
+    target => canBeEmptyHandMeleeTarget(hero, target),
     CLICK_TARGET_SEARCH_RANGE
   )
   return getDirectionalTarget(hero, candidates)
@@ -650,9 +667,10 @@ function beginHeroBowChargeAt(hero: UnitEntity, destination: Point, target?: Run
   return true
 }
 
-export function releaseHeroBowCharge(hero: UnitEntity): boolean {
+export function releaseHeroBowCharge(hero: UnitEntity, now = performance.now()): boolean {
   if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
-  hero.heroBowReleasePower = getHeroBowChargeRatio(hero)
+  drainHeroBowChargeEnergy(hero, now)
+  hero.heroBowReleasePower = getHeroBowChargeRatio(hero, now)
   hero.heroBowChargeRatio = hero.heroBowReleasePower
   hero.drawHeroPowerBar?.(hero.heroBowReleasePower)
   const sprite = hero.sprite
@@ -674,6 +692,43 @@ function playEmptyHandWhiff(hero: UnitEntity): boolean {
   return true
 }
 
+function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (!isHeroActionInRange(hero, ACTION_TYPES.attack, target) && !hero.isUnitAtDest?.(ACTION_TYPES.attack, target)) {
+    return false
+  }
+  if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return false
+  hero.action = ACTION_TYPES.attack
+  hero.setDest?.(target)
+  playHeroToolAnimation(
+    hero,
+    () => {
+      if (!getActionCondition(hero, target, ACTION_TYPES.attack)) {
+        if ((target.hitPoints ?? 0) <= 0) target.die?.()
+        return
+      }
+      const beforeHitPoints = target.hitPoints ?? 0
+      target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
+      const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
+      showDamageFeedback(target, damageDealt)
+      grantUnitXp(hero, XP_CATEGORIES.melee, damageDealt)
+      if (target.selected || target.shouldKeepHealthBarVisible?.()) {
+        target.drawHealthBar?.()
+        const player = hero.context?.player
+        if (player?.selectedUnit === target || player?.selectedBuilding === target || player?.selectedOther === target) {
+          hero.context?.menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)
+        }
+      }
+      target.isAttacked?.(hero)
+      if ((target.hitPoints ?? 0) <= 0) {
+        grantUnitXp(hero, XP_CATEGORIES.melee, XP_KILL_BONUS)
+        target.die?.()
+      }
+    },
+    SLASH_IMPACT_FRAME
+  )
+  return true
+}
+
 export function triggerEquippedItemActionAt(
   hero: UnitEntity,
   tool: HeroEquippedItem | null,
@@ -691,6 +746,8 @@ export function triggerEquippedItemActionAt(
   if (deliveryResult === 'blocked') return false
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
+  const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
+  if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
   if (actionResult === 'miss') {
     return playEmptyHandWhiff(hero)
   }

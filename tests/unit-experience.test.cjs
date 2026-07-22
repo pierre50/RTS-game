@@ -128,10 +128,10 @@ test('level-up shows gold feedback and refreshes the selected unit panel', () =>
   const feedbackCalls = []
   const { grantUnitXp } = loadExperience(feedbackCalls)
   const infoUpdates = []
-  const bottombarUpdates = []
+  const editorPanelUpdates = []
   const unit = makeUnit({ selected: true })
   const menu = {
-    setBottombar: selection => bottombarUpdates.push(selection),
+    setActionTarget: selection => editorPanelUpdates.push(selection),
     updateInfo: (id, value) => infoUpdates.push({ id, value }),
   }
   unit.owner = { isPlayed: true, selectedUnit: unit }
@@ -139,14 +139,14 @@ test('level-up shows gold feedback and refreshes the selected unit panel', () =>
 
   grantUnitXp(unit, 'mining', 49)
   assert.deepEqual(feedbackCalls, [])
-  assert.deepEqual(bottombarUpdates, [])
+  assert.deepEqual(editorPanelUpdates, [])
   assert.deepEqual(infoUpdates, [{ id: 'xp-mining-text', value: '0 (49/50)' }])
 
   grantUnitXp(unit, 'mining', 1)
   assert.equal(feedbackCalls.length, 1)
   assert.equal(feedbackCalls[0].target, unit)
   assert.equal(feedbackCalls[0].text, '★ levelShort 1')
-  assert.deepEqual(bottombarUpdates, [unit])
+  assert.deepEqual(editorPanelUpdates, [unit])
   assert.equal(infoUpdates.length, 1)
 })
 

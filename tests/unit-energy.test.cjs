@@ -113,7 +113,7 @@ test('npc waits for full energy before resuming an action', () => {
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'chopwood'])
 })
 
-test('hero does not auto-resume when energy is missing', () => {
+test('hero shows fatigue feedback but does not auto-resume when energy is missing', () => {
   const { __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
   const messages = []
   const calls = []
@@ -131,6 +131,32 @@ test('hero does not auto-resume when energy is missing', () => {
   assert.equal(waitForEnergy(unit, 'attack'), false)
   assert.equal(unit.waitingForEnergyAction, undefined)
   assert.deepEqual(calls, [])
-  assert.deepEqual(__fatigueFeedbackCalls, [])
+  assert.deepEqual(__fatigueFeedbackCalls, [unit])
   assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+})
+
+test('hero energy changes refresh the hero HUD immediately', () => {
+  const { spendEnergyForAction, updateUnitEnergy } = loadUnitEnergy()
+  const calls = []
+  const unit = {
+    energy: 10,
+    totalEnergy: 10,
+    energyRegenRate: 2,
+    energyRegenDelay: 0,
+    context: {
+      controls: {},
+      menu: { updateHeroStatus: hero => calls.push(hero.energy) },
+      scheduler: { elapsedMs: 1000 },
+    },
+  }
+  unit.context.controls.heroUnit = unit
+
+  assert.equal(spendEnergyForAction(unit, 'takemeat'), true)
+  assert.equal(unit.energy, 9.5)
+  assert.deepEqual(calls, [9.5])
+
+  unit.context.scheduler.elapsedMs = 1100
+  updateUnitEnergy(unit, 100)
+  assert.equal(unit.energy, 9.7)
+  assert.deepEqual(calls, [9.5, 9.7])
 })

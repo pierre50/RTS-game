@@ -58,7 +58,7 @@ type DevViewportRect = { visibleLeft: number; visibleTop: number; visibleWidth: 
 
 type DevMenuLike = {
   updateTopbar(): void
-  updateBottombar?(): void
+  updateActionTarget?(): void
   updateTerrainMiniMap?(i: number, j: number): void
   updatePlayerMiniMapEvt?(player: PlayerLike): void
   updateResourcesMiniMapEvt?(): void

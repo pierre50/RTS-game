@@ -1,13 +1,5 @@
 import { Assets } from 'pixi.js'
-import {
-  ACTION_TYPES,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  MENU_INFO_IDS,
-  PLAYER_TYPES,
-  POPULATION_MAX,
-  UNIT_TYPES,
-} from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
@@ -18,9 +10,12 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
+import { canUnitTrainInto, getMissingResourceNames, isTraineeTrainingType } from '../../lib/buildingTraining'
+import { t } from '../../lib/lang'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ConfigValue } from '../../types/config'
 import type { RuntimeCell } from '../../types/map'
+import type { ResourceAmount } from '../../types/common'
 import type { Building } from './index'
 
 type DynamicUnitCommand = (target: RuntimeEntity) => void
@@ -29,29 +24,30 @@ type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | 
 type TrainingBuilding = Building & {
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
-  trainingExtra?: UnitCreationExtra | null
-}
-
-const DIRECT_TRAINING_CATEGORIES = new Set(['Civilian', 'Boat'])
-
-function requiresVillagerTraining(building: Building, type: string): boolean {
-  const unit = building.owner.config.units[type]
-  return Boolean(unit && !DIRECT_TRAINING_CATEGORIES.has(String(unit.category ?? '')))
 }
 
 function getTrainingBuilding(building: Building): TrainingBuilding {
   return building as TrainingBuilding
 }
 
-function isAvailableVillager(unit: UnitEntity): boolean {
+function isAvailableTrainingUnit(unit: UnitEntity): boolean {
   return Boolean(
-    unit.type === UNIT_TYPES.villager &&
-      !unit.isDead &&
+    !unit.isDead &&
       !unit.isDestroyed &&
       !unit.loadedInTransport &&
       !unit.actionLocked &&
       unit.controlMode !== 'hero' &&
       !unit.trainingTargetType
+  )
+}
+
+function isExpectedTrainingUnit(unit: UnitEntity, type: string): boolean {
+  return Boolean(
+    unit.trainingTargetType === type &&
+      !unit.isDead &&
+      !unit.isDestroyed &&
+      !unit.loadedInTransport &&
+      unit.controlMode !== 'hero'
   )
 }
 
@@ -77,7 +73,18 @@ function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   }
   unit.sendTo(target)
 }
-import { t } from '../../lib/lang'
+
+function formatMissingResources(owner: Building['owner'], cost: ResourceAmount = {}): string {
+  const missing = getMissingResourceNames(owner, cost)
+  return missing.map(resource => t(resource)).join(', ')
+}
+
+function refreshOpenBuildingMenu(building: Building): void {
+  const menu = building.context.menu
+  if (menu.getHeroBuildingMenuTarget?.() === building) {
+    menu.refreshHeroBuildingMenu?.()
+  }
+}
 
 export class BuildingProduction {
   building: Building
@@ -89,7 +96,7 @@ export class BuildingProduction {
   placeUnit(type: string, extra?: UnitCreationExtra, options: { consumePopulationSlot?: boolean } = {}): boolean {
     const building = this.building
     const {
-      context: { map, menu },
+      context: { map },
     } = building
     let spawnCell
     const config = building.owner.config.units[type]
@@ -130,91 +137,116 @@ export class BuildingProduction {
       rallyTarget ? sendUnitToEntity(unit, rallyTarget) : unit.sendTo(rallyCell)
     }
 
-    if (
-      building.owner.isPlayed &&
-      building.owner.selectedBuilding &&
-      building.owner.selectedBuilding.displayPopulation
-    ) {
-      menu.updateInfo(
-        MENU_INFO_IDS.populationText,
-        building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
-      )
-    }
+    if (building.owner.isPlayed) refreshOpenBuildingMenu(building)
     return true
   }
 
-  removeVillagerForTraining(villager: UnitEntity): void {
-    const map = villager.context?.map
-    const owner = villager.owner
-    villager.stopInterval?.()
-    villager.stopTimeout?.()
-    villager.path = []
-    villager.dest = null
-    villager.realDest = null
-    villager.previousDest = null
-    villager.previousWork = null
-    villager.pendingOrder = null
-    villager.blockedGatherApproach = null
-    villager.inactif = false
-    villager.trainingTargetType = null
-    if (villager.selected && owner?.isPlayed) owner.unselectUnit?.(villager)
-    villager.unselect?.()
-    if (villager.currentCell?.has === villager) {
-      villager.currentCell.has = null
-      villager.currentCell.solid = false
+  removeTraineeForTraining(trainee: UnitEntity): void {
+    const map = trainee.context?.map
+    const owner = trainee.owner
+    trainee.stopInterval?.()
+    trainee.stopTimeout?.()
+    trainee.path = []
+    trainee.dest = null
+    trainee.realDest = null
+    trainee.previousDest = null
+    trainee.previousWork = null
+    trainee.pendingOrder = null
+    trainee.blockedGatherApproach = null
+    trainee.inactif = false
+    trainee.trainingTargetType = null
+    if (trainee.selected && owner?.isPlayed) owner.unselectUnit?.(trainee)
+    trainee.unselect?.()
+    if (trainee.currentCell?.has === trainee) {
+      trainee.currentCell.has = null
+      trainee.currentCell.solid = false
     }
-    map?.removeFromInstanceBucket?.(villager)
-    const index = owner?.units.indexOf(villager) ?? -1
+    map?.removeFromInstanceBucket?.(trainee)
+    const index = owner?.units.indexOf(trainee) ?? -1
     if (index >= 0) owner?.units.splice(index, 1)
-    map?.removeChild?.(villager)
-    villager.destroy?.({ children: true, texture: false })
+    map?.removeChild?.(trainee)
+    trainee.destroy?.({ children: true, texture: false })
   }
 
-  findTrainingVillager(): UnitEntity | null {
+  findTrainingUnit(type: string): UnitEntity | null {
     const { owner } = this.building
-    const selectedVillager = owner.selectedUnits?.find(isAvailableVillager)
-    if (selectedVillager) return selectedVillager
-    return (
-      owner.units.find(unit => isAvailableVillager(unit) && unit.inactif) ||
-      owner.units.find(isAvailableVillager) ||
-      null
-    )
+    const isEligible = (unit: UnitEntity) =>
+      isAvailableTrainingUnit(unit) && canUnitTrainInto(this.building, unit, type)
+    const selectedUnit = owner.selectedUnits?.find(isEligible)
+    if (selectedUnit) return selectedUnit
+    return owner.units.find(unit => isEligible(unit) && unit.inactif) || owner.units.find(isEligible) || null
   }
 
-  clearTrainingReservation(villager?: UnitEntity | null): void {
+  clearActiveTraining(trainee?: UnitEntity | null): void {
     const building = getTrainingBuilding(this.building)
-    if (villager && building.trainingUnit && building.trainingUnit !== villager) return
+    if (trainee && building.trainingUnit && building.trainingUnit !== trainee) return
     building.trainingUnit = null
     building.trainingType = null
-    building.trainingExtra = null
-    if (!villager || building.isUsedBy === villager) building.isUsedBy = null
+    if (!trainee || building.isUsedBy === trainee) building.isUsedBy = null
   }
 
   cancelTrainingForVillager(villager: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
-    if (building.trainingUnit !== villager || !building.trainingType) return false
-    const unit = building.owner.config.units[building.trainingType]
-    refundCost(building.owner, unit.cost)
+    const type = villager.trainingTargetType
+    if (!type || !canUnitTrainInto(building, villager, type)) return false
     villager.trainingTargetType = null
-    this.clearTrainingReservation(villager)
+    if (building.trainingUnit === villager) this.clearActiveTraining(villager)
+    if (building.owner.isPlayed) refreshOpenBuildingMenu(building)
+    return true
+  }
+
+  cancelPendingTraining(type?: string): boolean {
+    const building = getTrainingBuilding(this.building)
+    if (building.loading !== null || building.queue.length) return false
+    const candidates = building.owner.units.filter(
+      unit =>
+        unit.dest === building &&
+        !!unit.trainingTargetType &&
+        (!type || unit.trainingTargetType === type) &&
+        canUnitTrainInto(building, unit, unit.trainingTargetType)
+    )
+    if (!candidates.length) return false
+    for (const unit of candidates) {
+      unit.trainingTargetType = null
+      unit.affectNewDest?.()
+    }
     if (building.owner.isPlayed) {
-      building.context.menu.updateTopbar()
-      building.context.menu.updateBottombar()
+      const { menu } = building.context
+      if (type) {
+        menu.updateButtonContent(type, '')
+        menu.toggleQueuedActionCancel(type, false)
+      }
+      refreshOpenBuildingMenu(building)
     }
     return true
   }
 
   startTrainingWithVillager(villager: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
-    const type = building.trainingUnit === villager ? building.trainingType : villager.trainingTargetType
-    if (!type || !requiresVillagerTraining(building, type)) return false
-    if (building.trainingUnit && building.trainingUnit !== villager) return false
+    const type = villager.trainingTargetType
+    if (!type || !isTraineeTrainingType(building, type)) return false
     if (building.loading !== null || building.queue.length || building.technology) return false
+    if (!isExpectedTrainingUnit(villager, type) || !canUnitTrainInto(building, villager, type)) return false
+    const unit = building.owner.config.units[type]
+    if (!canAfford(building.owner, unit.cost)) {
+      if (building.owner.isPlayed) {
+        building.context.menu.showMessage(
+          t('needMore', { resource: formatMissingResources(building.owner, unit.cost) }),
+          'warning'
+        )
+        building.context.menu.updateTopbar()
+      }
+      villager.trainingTargetType = null
+      this.clearActiveTraining(villager)
+      return false
+    }
+    payCost(building.owner, unit.cost)
+    if (building.owner.isPlayed) building.context.menu.updateTopbar()
     building.trainingUnit = villager
     building.trainingType = type
     building.isUsedBy = villager
-    this.removeVillagerForTraining(villager)
-    return Boolean(this.buyUnit(type, true, false, building.trainingExtra || undefined, villager))
+    this.removeTraineeForTraining(villager)
+    return Boolean(this.buyUnit(type, true, false, undefined, villager))
   }
 
   requestVillagerTraining(type: string, extra?: UnitCreationExtra, villagerOverride?: UnitEntity | null): boolean {
@@ -225,36 +257,26 @@ export class BuildingProduction {
     const unit = building.owner.config.units[type]
     if (!unit || !building.units?.includes(type)) return false
     if (!building.isBuilt || building.isDead) return false
-    if (building.loading !== null || building.queue.length || building.technology || building.trainingUnit) {
+    if (building.loading !== null || building.queue.length || building.technology) {
       if (building.owner.isPlayed)
         menu.showMessage(t('buildingAlreadyTraining', { building: t(building.type) }), 'warning')
       return false
     }
-    if (!canAfford(building.owner, unit.cost)) {
-      if (building.owner.isPlayed) menu.showMessage(t('needMore', { resource: '' }), 'warning')
-      return false
-    }
-    const selectedUnits = building.owner.selectedUnits || []
-    if (!villagerOverride && selectedUnits.length && !selectedUnits.some(isAvailableVillager)) {
-      if (building.owner.isPlayed) menu.showMessage(t('onlyVillagersCanTrain'), 'warning')
-      return false
-    }
-    const villager = villagerOverride || this.findTrainingVillager()
+    const villager = villagerOverride || this.findTrainingUnit(type)
     if (!villager) {
       if (building.owner.isPlayed) menu.showMessage(t('noVillagerToTrain'), 'warning')
       return false
     }
-    if (!isAvailableVillager(villager)) {
+    if (!isAvailableTrainingUnit(villager) || !canUnitTrainInto(building, villager, type)) {
       if (building.owner.isPlayed) menu.showMessage(t('onlyVillagersCanTrain'), 'warning')
       return false
     }
-    payCost(building.owner, unit.cost)
-    building.trainingUnit = villager
-    building.trainingType = type
-    building.trainingExtra = extra || null
-    building.isUsedBy = villager
     villager.trainingTargetType = type
-    if (building.owner.isPlayed) menu.updateTopbar()
+    if (building.owner.isPlayed) {
+      menu.updateButtonContent(type, '')
+      menu.toggleQueuedActionCancel(type, true)
+      refreshOpenBuildingMenu(building)
+    }
     villager.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
     return true
   }
@@ -272,7 +294,7 @@ export class BuildingProduction {
     } = building
     let success = false
     const unit = building.owner.config.units[type]
-    const villagerTraining = requiresVillagerTraining(building, type)
+    const villagerTraining = isTraineeTrainingType(building, type)
     if (villagerTraining && !alreadyPaid && !force) {
       return this.requestVillagerTraining(type, extra)
     }
@@ -300,8 +322,8 @@ export class BuildingProduction {
       if ((building.loading === null && building.queue[0]) || force) {
         let hasShowedMessage = false
         building.loading = force ? building.loading : 0
-        if (building.selected && building.owner.isPlayed) {
-          building.updateInterfaceLoading()
+        if (building.owner.isPlayed) {
+          building.updateInterfaceLoading?.()
         }
         building.startInterval(
           () => {
@@ -312,40 +334,49 @@ export class BuildingProduction {
                 building.buyUnit(building.queue[0], true)
               }
               hasShowedMessage = false
-              if (building.selected && building.owner.isPlayed) {
+              if (building.owner.isPlayed) {
                 const still = building.queue.filter((q: string) => q === type).length
                 menu.updateButtonContent(type, still || '')
                 if (still === 0) menu.toggleQueuedActionCancel(type, false)
-                building.updateInterfaceLoading()
+                building.updateInterfaceLoading?.()
               }
             } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
               if (!this.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
-                if (trainee) this.clearTrainingReservation(trainee)
+                building.stopInterval()
+                building.loading = null
+                if (building.queue[0] === type) building.queue.shift()
+                if (trainee) this.clearActiveTraining(trainee)
+                if (building.owner.isPlayed) {
+                  const still = building.queue.filter((q: string) => q === type).length
+                  menu.updateButtonContent(type, still || '')
+                  if (still === 0) menu.toggleQueuedActionCancel(type, false)
+                  building.updateInterfaceLoading?.()
+                }
                 return
               }
               building.stopInterval()
               building.loading = null
               building.queue.shift()
-              if (trainee) this.clearTrainingReservation(trainee)
+              if (trainee) this.clearActiveTraining(trainee)
               if (building.queue.length) {
                 building.buyUnit(building.queue[0], true)
               }
               hasShowedMessage = false
-              if (building.selected && building.owner.isPlayed) {
+              if (building.owner.isPlayed) {
                 const still = building.queue.filter((q: string) => q === type).length
                 menu.updateButtonContent(type, still || '')
                 if (still === 0) menu.toggleQueuedActionCancel(type, false)
-                building.updateInterfaceLoading()
+                building.updateInterfaceLoading?.()
               }
             } else if ((building.loading ?? 0) < 100) {
-              if (building.owner.population < Math.min(POPULATION_MAX, building.owner.populationMax)) {
+              if (trainee || building.owner.population < Math.min(POPULATION_MAX, building.owner.populationMax)) {
                 building.loading = (building.loading ?? 0) + 1
               } else if (building.owner.isPlayed && !hasShowedMessage) {
                 menu.showMessage(t('needHouses'), 'warning')
                 hasShowedMessage = true
               }
-              if (building.selected && building.owner.isPlayed) {
-                building.updateInterfaceLoading()
+              if (building.owner.isPlayed) {
+                building.updateInterfaceLoading?.()
               }
             }
           },
@@ -361,7 +392,10 @@ export class BuildingProduction {
     const building = this.building
     const unit = building.owner.config.units[type]
     if (!unit) return false
-    if (requiresVillagerTraining(building, type) && getTrainingBuilding(building).trainingUnit) return false
+    if (isTraineeTrainingType(building, type)) {
+      if (building.loading !== null || building.queue.length) return false
+      return this.cancelPendingTraining(type)
+    }
 
     const cancelled = building.queue.filter((queuedType: string) => queuedType === type).length
     if (!cancelled) return false
@@ -390,8 +424,8 @@ export class BuildingProduction {
     building.technology = null
     building.loading = null
     if (building.owner.isPlayed) {
-      menu.updateBottombar()
       menu.updateTopbar()
+      refreshOpenBuildingMenu(building)
     }
     return true
   }
@@ -435,9 +469,7 @@ export class BuildingProduction {
       building.loading = force ? building.loading : 0
 
       building.technology = { config, type }
-      if (building.selected && building.owner.selectedBuilding === building) {
-        menu.setBottombar(building)
-      }
+      refreshOpenBuildingMenu(building)
       building.startInterval(
         () => {
           const technology = building.technology
@@ -449,13 +481,13 @@ export class BuildingProduction {
             building.technology = null
             building.owner.unlockTechnology?.(type)
             if (building.owner.isPlayed) {
-              menu.updateBottombar()
               menu.updateTopbar()
+              refreshOpenBuildingMenu(building)
             }
           } else if ((building.loading ?? 0) < 100) {
             building.loading = (building.loading ?? 0) + 1
-            if (building.owner.isPlayed && building.owner.selectedBuilding === building) {
-              building.updateInterfaceLoading()
+            if (building.owner.isPlayed) {
+              building.updateInterfaceLoading?.()
             }
           }
         },

@@ -50,10 +50,10 @@ export class MapEditorHud {
   icons: Record<string, string>
   infoIcons: Record<string, string>
   age: HTMLDivElement
-  bottombar: HTMLDivElement
-  bottombarInfo: HTMLDivElement
-  bottombarMenu: HTMLDivElement
-  bottombarMap: HTMLDivElement
+  editorPanel: HTMLDivElement
+  editorPanelInfo: HTMLDivElement
+  editorPanelMenu: HTMLDivElement
+  editorPanelMap: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
   resourcesMinimap: HTMLCanvasElement
@@ -134,21 +134,21 @@ export class MapEditorHud {
     this.topbar.appendChild(this.age)
     this.topbar.appendChild(options)
 
-    this.bottombar = document.createElement('div')
-    this.bottombar.className = 'bottombar bar'
+    this.editorPanel = document.createElement('div')
+    this.editorPanel.className = 'editor-panel bar'
 
-    this.bottombarInfo = document.createElement('div')
-    this.bottombarInfo.className = 'bottombar-info active map-editor-info'
+    this.editorPanelInfo = document.createElement('div')
+    this.editorPanelInfo.className = 'selection-info active map-editor-info'
 
-    this.bottombarMenu = document.createElement('div')
-    this.bottombarMenu.className = 'bottombar-menu map-editor-menu'
+    this.editorPanelMenu = document.createElement('div')
+    this.editorPanelMenu.className = 'action-menu-grid map-editor-menu'
 
-    const bottombarMapWrap = document.createElement('div')
-    bottombarMapWrap.className = 'bottombar-map-wrap'
+    const editorPanelMapWrap = document.createElement('div')
+    editorPanelMapWrap.className = 'editor-minimap-wrap'
 
-    this.bottombarMap = document.createElement('div')
-    this.bottombarMap.className = 'bottombar-map'
-    bottombarMapWrap.appendChild(this.bottombarMap)
+    this.editorPanelMap = document.createElement('div')
+    this.editorPanelMap.className = 'editor-minimap'
+    editorPanelMapWrap.appendChild(this.editorPanelMap)
 
     this.terrainMinimap = document.createElement('canvas')
     this.playersMinimap = []
@@ -156,16 +156,16 @@ export class MapEditorHud {
     this.cameraMinimap = document.createElement('canvas')
     this.cameraMinimap.classList.add('minimap-camera')
 
-    this.bottombarMap.appendChild(this.terrainMinimap)
-    this.bottombarMap.appendChild(this.resourcesMinimap)
-    this.bottombarMap.appendChild(this.cameraMinimap)
+    this.editorPanelMap.appendChild(this.terrainMinimap)
+    this.editorPanelMap.appendChild(this.resourcesMinimap)
+    this.editorPanelMap.appendChild(this.cameraMinimap)
 
-    this.bottombar.appendChild(this.bottombarInfo)
-    this.bottombar.appendChild(this.bottombarMenu)
-    this.bottombar.appendChild(bottombarMapWrap)
+    this.editorPanel.appendChild(this.editorPanelInfo)
+    this.editorPanel.appendChild(this.editorPanelMenu)
+    this.editorPanel.appendChild(editorPanelMapWrap)
 
     this.gameHud.appendChild(this.topbar)
-    this.gameHud.appendChild(this.bottombar)
+    this.gameHud.appendChild(this.editorPanel)
     document.body.appendChild(this.gameHud)
 
     this.toggled = false
@@ -217,7 +217,7 @@ export class MapEditorHud {
 
   _createIconActionBox(iconPath: string, onClick: (evt: Event) => void, label: string): HTMLDivElement {
     const box = document.createElement('div')
-    box.className = 'bottombar-menu-box'
+    box.className = 'action-menu-box'
     box.setAttribute('role', 'button')
     box.tabIndex = 0
     box.setAttribute('aria-label', label)
@@ -251,7 +251,7 @@ export class MapEditorHud {
 
   _renderToolMenu(): void {
     this.selection = null
-    this.bottombarMenu.textContent = ''
+    this.editorPanelMenu.textContent = ''
 
     const controlsPanel = document.createElement('div')
     controlsPanel.className = 'map-editor-panel map-editor-controls-panel'
@@ -303,11 +303,11 @@ export class MapEditorHud {
 
     controlsPanel.appendChild(columns)
 
-    this.bottombarMenu.appendChild(controlsPanel)
+    this.editorPanelMenu.appendChild(controlsPanel)
   }
 
   _renderUnitsMenu(): void {
-    this.bottombarMenu.textContent = ''
+    this.editorPanelMenu.textContent = ''
 
     const controlsPanel = document.createElement('div')
     controlsPanel.className = 'map-editor-panel map-editor-controls-panel'
@@ -382,7 +382,7 @@ export class MapEditorHud {
     columns.appendChild(unitsWrap)
 
     controlsPanel.appendChild(columns)
-    this.bottombarMenu.appendChild(controlsPanel)
+    this.editorPanelMenu.appendChild(controlsPanel)
 
     if (!this.selection) {
       const placement = this.context.editor.getPlacementSelection()
@@ -401,14 +401,14 @@ export class MapEditorHud {
     actionRow.className = 'map-editor-button-grid'
     const deselectButton = this._createListButton(t('editorDeselect'), () => {
       this.context.player?.unselectAll()
-      this.setBottombar()
+      this.setActionTarget()
     })
     const deleteButton = this._createListButton(t('editorDelete'), () => {
       if (this.selection) this.context.editor.removeEntity(this.selection)
     })
     actionRow.appendChild(deselectButton)
     actionRow.appendChild(deleteButton)
-    this.bottombarMenu.appendChild(actionRow)
+    this.editorPanelMenu.appendChild(actionRow)
   }
 
   _setTool(tool: string): void {
@@ -448,12 +448,12 @@ export class MapEditorHud {
   }
 
   _renderInfoLines(lines: string[]): void {
-    this.bottombarInfo.textContent = ''
+    this.editorPanelInfo.textContent = ''
     lines.forEach(text => {
       const line = document.createElement('div')
       line.className = 'map-editor-info-line'
       line.textContent = text
-      this.bottombarInfo.appendChild(line)
+      this.editorPanelInfo.appendChild(line)
     })
   }
 
@@ -471,7 +471,7 @@ export class MapEditorHud {
 
     const isTerrainMode = this.state.mode === 'terrain'
     const isMapBrush = this.state.brushType === 'map'
-    this.bottombarMenu.classList.toggle('is-hidden', !isTerrainMode && !this.selection)
+    this.editorPanelMenu.classList.toggle('is-hidden', !isTerrainMode && !this.selection)
     this.detailLabel.textContent = isMapBrush ? t('editorTerrain') : t('editorElevation')
     if (!isTerrainMode) return
     this._clearElement(this.detailList)
@@ -514,10 +514,10 @@ export class MapEditorHud {
     }
   }
 
-  setBottombar(selection: RuntimeEntity | null = null): void {
+  setActionTarget(selection: RuntimeEntity | null = null): void {
     this.selection = selection
-    this.bottombarMenu.textContent = ''
-    this.bottombarInfo.textContent = ''
+    this.editorPanelMenu.textContent = ''
+    this.editorPanelInfo.textContent = ''
 
     if (!selection?.interface?.info) {
       if (this.state.mode === 'terrain') {
@@ -527,11 +527,11 @@ export class MapEditorHud {
       return
     }
 
-    selection.interface.info(this.bottombarInfo)
+    selection.interface.info(this.editorPanelInfo)
     const wrapper = document.createElement('div')
     wrapper.className = 'map-editor-panel map-editor-controls-panel'
     const actionRow = document.createElement('div')
-    actionRow.className = 'bottombar-menu'
+    actionRow.className = 'action-menu-grid'
     actionRow.appendChild(
       this._createIconActionBox(
         getIconPath('003_50721'),
@@ -546,13 +546,13 @@ export class MapEditorHud {
         getIconPath('010_50721'),
         () => {
           this.context.player?.unselectAll()
-          this.setBottombar()
+          this.setActionTarget()
         },
         t('editorDeselect')
       )
     )
     wrapper.appendChild(actionRow)
-    this.bottombarMenu.appendChild(wrapper)
+    this.editorPanelMenu.appendChild(wrapper)
   }
 
   showMessage(): void {}
@@ -561,8 +561,8 @@ export class MapEditorHud {
     this.sync()
   }
 
-  updateBottombar(): void {
-    this.setBottombar(this.selection)
+  updateActionTarget(): void {
+    this.setActionTarget(this.selection)
   }
 
   updateInfo(): void {}

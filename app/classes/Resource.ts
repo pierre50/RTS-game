@@ -195,7 +195,7 @@ export class Resource extends Instance implements ResourceEntity {
         if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
           player.unselectAll()
           this.select()
-          menu.setBottombar(this)
+          menu.setActionTarget(this)
           player.selectedOther = this
           playSelectionSound(this)
         }

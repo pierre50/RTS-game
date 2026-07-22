@@ -2,6 +2,7 @@ import { Graphics } from 'pixi.js'
 import {
   drawRoundedIsoShape,
   getInstanceDegree,
+  getReliefOffset,
   getRoundedIsoShapePoints,
   updateInstanceRenderVisibility,
 } from '../lib'
@@ -29,6 +30,7 @@ import {
 import type { ControlBindingAction } from '../lib/settings'
 import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
+import { updateUnitHealthRegen } from '../lib/unitHealth'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
@@ -214,6 +216,7 @@ export class HeroController {
     const unit = this.heroUnit
     if (!unit) return
     updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
+    updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
@@ -371,6 +374,7 @@ export class HeroController {
   updateCommIndicator(): void {
     const indicator = this.commIndicator
     if (!indicator) return
+    indicator.position.y = getReliefOffset(this.heroUnit)
     const elapsed = performance.now() - this.commChargeStart
     const radius = getCommRadiusForHold(elapsed)
     indicator.clear()
@@ -457,7 +461,7 @@ export class HeroController {
     player.unselectAll?.()
     this.setEquippedTool('interact')
     this.controls.context.menu?.setHeroStatusTarget?.(this.heroUnit)
-    this.controls.context.menu?.setBottombar?.(this.heroUnit)
+    this.controls.context.menu?.setActionTarget?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)
     updateInstanceRenderVisibility(this.heroUnit)
     this.heroUnit.visible = true

@@ -147,7 +147,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
   if (config.key === 'age' && player.autoTechnologyByAge) {
     applyEligibleTechnologies(context)
   }
-  menu.updateBottombar?.()
+  menu.updateActionTarget?.()
   menu.updateTopbar()
   return { ok: true, message: `Unlocked ${type}` }
 }
@@ -162,7 +162,7 @@ export function setAge(context: DevConsoleContext, value: string): CommandResult
   if (player.autoTechnologyByAge) {
     applyEligibleTechnologies(context)
   }
-  context.menu.updateBottombar?.()
+  context.menu.updateActionTarget?.()
   context.menu.updateTopbar()
   return { ok: true, message: `Age set to ${age}` }
 }
@@ -173,7 +173,7 @@ export function setCiv(context: DevConsoleContext, value: string): CommandResult
   context.player.civ = civ
   void preloadBakedLpcUnitsForPlayers([context.player])
   ;(context.player as DevTechnologyPlayer).onAgeChange?.()
-  context.menu.updateBottombar?.()
+  context.menu.updateActionTarget?.()
   return { ok: true, message: `Civilization set to ${civ}` }
 }
 

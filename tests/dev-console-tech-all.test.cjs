@@ -58,7 +58,7 @@ function loadPlayerActions() {
 
 test('tech all unlocks only technologies available at the current age', () => {
   const { applyAllTechnologies } = loadPlayerActions()
-  let bottombarUpdates = 0
+  let editorPanelUpdates = 0
   let topbarUpdates = 0
   const player = {
     age: 1,
@@ -83,8 +83,8 @@ test('tech all unlocks only technologies available at the current age', () => {
   const context = {
     player,
     menu: {
-      updateBottombar: () => {
-        bottombarUpdates++
+      updateActionTarget: () => {
+        editorPanelUpdates++
       },
       updateTopbar: () => {
         topbarUpdates++
@@ -98,7 +98,7 @@ test('tech all unlocks only technologies available at the current age', () => {
   assert.equal(player.age, 1)
   assert.deepEqual(player.technologies, ['Wheel', 'Writing'])
   assert.equal(player.autoTechnologyByAge, true)
-  assert.equal(bottombarUpdates, 2)
+  assert.equal(editorPanelUpdates, 2)
   assert.equal(topbarUpdates, 2)
 })
 
@@ -135,7 +135,7 @@ test('tech all auto-unlocks the next age tier when age increases', () => {
   const context = {
     player,
     menu: {
-      updateBottombar: () => {},
+      updateActionTarget: () => {},
       updateTopbar: () => {},
     },
   }

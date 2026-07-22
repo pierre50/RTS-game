@@ -27,6 +27,10 @@ export type SaveEntityState = {
   totalEnergy?: number
   lastEnergySpentAt?: number
   hitPoints?: number
+  healthRegenRate?: number
+  healthRegenDelay?: number
+  healthRegenMultiplier?: number
+  lastHealthDamagedAt?: number
   i: number
   inactif?: boolean
   isBuilt?: boolean
@@ -109,6 +113,8 @@ export type SavePlayerState = PlayerSetupConfig & {
   label?: string
   population?: number
   populationMax?: number
+  researchTechnology?: SaveTechnologyState
+  researchLoading?: number | null
   selectedBuildingLabel?: string
   selectedOtherLabel?: string
   selectedUnitLabel?: string

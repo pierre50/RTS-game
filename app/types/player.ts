@@ -67,6 +67,8 @@ export interface PlayerLike {
   views: VisionGridLike
   config: PlayerConfigLike
   technologies: string[]
+  researchTechnology?: { type?: string; config?: TechnologyConfig } | null
+  researchLoading?: number | null
   techs: Record<string, TechnologyConfig>
   selectedUnits: UnitEntity[]
   selectedUnit?: UnitEntity | null
@@ -93,6 +95,9 @@ export interface PlayerLike {
   createAnimal?: (options: { i: number; j: number; type: string }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void
+  buyTechnology?: (type: string, alreadyPaid?: boolean, force?: boolean) => boolean
+  cancelTechnology?: () => boolean
+  isTechnologyEligible?: (type: string) => boolean
   spawnBuilding?: (
     options: Partial<BuildingConfig> & { i: number; j: number; type: string; isBuilt?: boolean }
   ) => BuildingEntity | undefined

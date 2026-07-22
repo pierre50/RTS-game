@@ -15,7 +15,7 @@ import {
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../../lib/unitExperience'
-import { showDamageFeedback } from '../../lib/combatFeedback'
+import { showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -109,6 +109,7 @@ export class UnitCombat {
       !unit.dest &&
       unit.getActionCondition?.(instance, ACTION_TYPES.attack)
     ) {
+      showAlertFeedback(unit)
       unit.sendTo?.(instance, ACTION_TYPES.attack)
     }
   }

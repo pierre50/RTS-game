@@ -306,10 +306,8 @@ export class UnitActions {
       t.finalTexture?.()
       if (t.interface) {
         const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getActionUnitButton?.(key)) : []
-        const technologies =
-          newOwner.isPlayed && menu ? (t.technologies || []).map(key => menu.getActionTechnologyButton?.(key)) : []
         t.interface.menu = newOwner.isPlayed
-          ? [...units, ...technologies, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
+          ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
               (item): item is NonNullable<typeof item> => Boolean(item)
             )
           : []
@@ -498,7 +496,7 @@ export class UnitActions {
       unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
     }
     if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-      menu?.setBottombar(unit)
+      menu?.setActionTarget(unit)
     }
   }
 
@@ -766,8 +764,17 @@ export class UnitActions {
         }
         const dest = isBuildingEntity(unit.dest) ? unit.dest : null
         if (!dest?.startTrainingWithVillager?.(unit)) {
-          if (unit.owner?.isPlayed)
-            menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
+          const buildingBusy = Boolean(
+            dest && (dest.loading !== null || dest.queue?.length || dest.technology || dest.trainingUnit)
+          )
+          if (buildingBusy) {
+            unit.trainingTargetType = null
+            if (unit.owner?.isPlayed) {
+              menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
+            }
+            unit.stop?.()
+            return
+          }
           unit.affectNewDest?.()
         }
         break
@@ -865,7 +872,7 @@ export class UnitActions {
           if (!transport) return
           boardTransport(unit, transport)
           if (transport.owner?.isPlayed && transport.selected) {
-            menu?.setBottombar(transport)
+            menu?.setActionTarget(transport)
           }
         }
         break

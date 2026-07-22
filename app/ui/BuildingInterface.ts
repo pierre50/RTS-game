@@ -40,17 +40,9 @@ export class BuildingInterface {
   updateLoading(): void {
     const building = this.building
     const menu = (building.context as { menu: MenuLike }).menu
-    if (building.owner?.isPlayed && building.owner.selectedBuilding === building) {
-      if (building.loading === 1) {
-        menu.updateInfo!(
-          MENU_INFO_IDS.loading,
-          (element: HTMLElement) => (element.innerHTML = this.getLoadingElement().innerHTML)
-        )
-      } else if (building.loading! > 1) {
-        menu.updateInfo!(MENU_INFO_IDS.loadingText, building.loading + '%')
-      } else {
-        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
-      }
+    if (!building.owner?.isPlayed) return
+    if (menu.getHeroBuildingMenuTarget?.() === building) {
+      menu.syncHeroBuildingMenu?.()
     }
   }
 
@@ -60,7 +52,7 @@ export class BuildingInterface {
     loadingDiv.className = 'building-loading'
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
 
-    if (building.loading && building.owner?.isPlayed) {
+    if (building.loading !== null && building.owner?.isPlayed) {
       loadingDiv.appendChild(createInfoImage('building-loading-icon', getIconPath('009_50731')))
       loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, building.loading + '%'))
     }

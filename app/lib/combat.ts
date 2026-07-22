@@ -1,4 +1,5 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { canUpgradeUnitAtBuilding } from './unitUpgrades'
 import type { ConfigValue } from '../types/config'
 import type { PlayerLike } from '../types/player'
 
@@ -220,7 +221,9 @@ export const getActionCondition = (
       ),
     train: props =>
       Boolean(
-        source.type === UNIT_TYPES.villager &&
+        target &&
+          (source.type === UNIT_TYPES.villager ||
+            canUpgradeUnitAtBuilding(target.type, source.type, props?.trainingType)) &&
           target.family === FAMILY_TYPES.building &&
           target.owner?.label === source.owner?.label &&
           target.isBuilt &&
@@ -228,8 +231,7 @@ export const getActionCondition = (
           !target.isDead &&
           Array.isArray(target.units) &&
           !!props?.trainingType &&
-          target.units.includes(props.trainingType) &&
-          (!target.trainingUnit || target.trainingUnit === source)
+          target.units.includes(props.trainingType)
       ),
     heal: () =>
       target &&

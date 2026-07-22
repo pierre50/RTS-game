@@ -1,5 +1,4 @@
 import { MinimapManager } from '../ui/MinimapManager'
-import { BottombarManager } from '../ui/BottombarManager'
 import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/MinimapInputController'
@@ -30,9 +29,6 @@ const MESSAGE_REPEAT_DEBOUNCE_MS = 3000
 export default class Menu implements MenuLike {
   context: GameContextLike
   gameHud: HTMLDivElement
-  bottombar: HTMLDivElement
-  bottombarInfo: HTMLDivElement
-  bottombarMenu: HTMLDivElement
   minimapView: MinimapView
   minimapWrap: HTMLDivElement
   minimapMap: HTMLDivElement
@@ -43,7 +39,6 @@ export default class Menu implements MenuLike {
   minimapManager: MinimapManager
   actionSpecs: ActionSpecFactory
   actionRenderer: ActionMenuRenderer
-  bottombarManager: BottombarManager
   pauseMenu: PauseMenu
   topbarView: TopbarView
   minimapInputController: MinimapInputController
@@ -72,12 +67,6 @@ export default class Menu implements MenuLike {
     this.context = context
     this.gameHud = document.createElement('div')
     this.gameHud.className = 'game-hud'
-    this.bottombar = document.createElement('div')
-    this.bottombar.className = 'bottombar bar bottombar--rts'
-    this.bottombarInfo = document.createElement('div')
-    this.bottombarInfo.className = 'bottombar-info'
-    this.bottombarMenu = document.createElement('div')
-    this.bottombarMenu.className = 'bottombar-menu'
     this.minimapView = new MinimapView(this)
     this.minimapWrap = this.minimapView.wrap
     this.minimapMap = this.minimapView.element
@@ -85,15 +74,11 @@ export default class Menu implements MenuLike {
     this.playersMinimap = this.minimapView.players
     this.resourcesMinimap = this.minimapView.resources
     this.cameraMinimap = this.minimapView.camera
-    this.bottombar.appendChild(this.bottombarInfo)
-    this.bottombar.appendChild(this.bottombarMenu)
-    this.gameHud.appendChild(this.bottombar)
     document.body.appendChild(this.gameHud)
 
     this.minimapManager = new MinimapManager(this)
     this.actionSpecs = new ActionSpecFactory(this)
     this.actionRenderer = new ActionMenuRenderer(this)
-    this.bottombarManager = new BottombarManager(this)
     this.pauseMenu = new PauseMenu(this)
     this.topbarView = new TopbarView(this)
     this.minimapInputController = new MinimapInputController(this)
@@ -198,27 +183,34 @@ export default class Menu implements MenuLike {
     return this.minimapManager.updateCameraMiniMapEvt()
   }
 
-  // Bottombar delegates
+  // Legacy selection target surface kept as no-op compatibility while gameplay is ARPG-only.
   resetInfo(): void {
-    return this.bottombarManager.resetInfo()
+    this._infoCache = null
+    this.actionRenderer.clearHotkeys()
   }
   generateInfo(selection: RuntimeEntity): void {
-    return this.bottombarManager.generateInfo(selection)
+    this.selection = selection
   }
   updateInfo(target: string, action: string | number | ((element: HTMLElement) => void)): void {
-    this.bottombarManager.updateInfo(target, action)
+    void target
+    void action
   }
   updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
-    this.bottombarManager.updateButtonContent(target, action)
+    void target
+    void action
   }
   toggleQueuedActionCancel(target: string, value: boolean): void {
-    return this.bottombarManager.toggleQueuedActionCancel(target, value)
+    void target
+    void value
   }
-  updateBottombar(): void {
-    return this.bottombarManager.updateBottombar()
+  updateActionTarget(): void {
+    const { controls, player } = this.context
+    this.selection = controls.heroUnit ?? player.selectedBuilding ?? player.selectedUnit ?? null
+    this.actionRenderer.clearHotkeys()
   }
-  setBottombar(selection?: RuntimeEntity | null): void {
-    return this.bottombarManager.setBottombar(selection)
+  setActionTarget(selection?: RuntimeEntity | null): void {
+    this.selection = selection ?? null
+    this.actionRenderer.clearHotkeys()
   }
   getMessage(cost: ResourceAmount): string {
     return this.actionSpecs.getMessage(cost)
@@ -234,6 +226,9 @@ export default class Menu implements MenuLike {
   }
   getActionTechnologyButton(type: string): MenuButtonSpec {
     return this.actionSpecs.getActionTechnologyButton(type)
+  }
+  getHeroTechnologyButtons(): MenuButtonSpec[] {
+    return this.actionSpecs.getHeroTechnologyButtons()
   }
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     return this.actionSpecs.getActionMenuItems(selection)
@@ -263,7 +258,7 @@ export default class Menu implements MenuLike {
     this.actionRenderer.activeHotkeys.set(key, action)
   }
   handleHotkey(key: string): void {
-    return this.bottombarManager.handleHotkey(key)
+    return this.actionRenderer.handleHotkey(key)
   }
 
   // Inventory delegates
@@ -278,6 +273,9 @@ export default class Menu implements MenuLike {
   }
   setEquippedItem(item: HeroEquippedItem | null): void {
     return this.inventoryManager.render(item)
+  }
+  syncTechnologyProgress(): void {
+    return this.inventoryManager.syncTechnologyProgress()
   }
   setEquippedTool(tool: HeroEquippedItem | null): void {
     return this.setEquippedItem(tool)
@@ -324,6 +322,9 @@ export default class Menu implements MenuLike {
   }
   refreshHeroBuildingMenu(): void {
     return this.heroBuildingMenuManager.refresh()
+  }
+  syncHeroBuildingMenu(): void {
+    return this.heroBuildingMenuManager.syncLiveState()
   }
   closeHeroBuildingMenuIfInvalid(): void {
     return this.heroBuildingMenuManager.syncLiveState()

@@ -20,6 +20,13 @@ function buttonMeta(button: MenuButtonSpec): string {
   return tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
 }
 
+function getPendingTrainingCount(building: BuildingEntity, type: string): number {
+  return (
+    building.owner?.units?.filter(unit => unit.dest === building && unit.trainingTargetType === type && !unit.isDead)
+      .length ?? 0
+  )
+}
+
 export class HeroBuildingMenuManager {
   menu: Menu
   panel: HTMLDivElement
@@ -52,7 +59,7 @@ export class HeroBuildingMenuManager {
     this.body.className = 'hero-building-menu-body'
 
     this.info = document.createElement('div')
-    this.info.className = 'hero-building-menu-info bottombar-info active'
+    this.info.className = 'hero-building-menu-info selection-info active'
 
     this.panel.appendChild(this.backButton)
     this.panel.appendChild(this.info)
@@ -158,6 +165,10 @@ export class HeroBuildingMenuManager {
     return [
       building.technology?.type || '',
       building.queue?.join(',') || '',
+      building.owner?.units
+        ?.filter(unit => unit.dest === building && unit.trainingTargetType)
+        .map(unit => unit.trainingTargetType)
+        .join(',') || '',
       level.map(item => item.id || '').join(','),
       level.map(item => (item.hide?.() ? '1' : '0')).join(','),
     ].join('|')
@@ -268,14 +279,23 @@ export class HeroBuildingMenuManager {
       if (!status || !fill || !text) return
 
       const queued = building.queue?.filter(type => type === id).length ?? 0
+      const reserved = getPendingTrainingCount(building, id)
       const activeUnit = building.queue?.[0] === id
       const activeTechnology = building.technology?.type === id || id === `${building.technology?.type}-cancel`
       const active = activeUnit || activeTechnology
       const progress = active ? Math.max(0, Math.min(100, Math.floor(building.loading ?? 0))) : 0
 
-      status.classList.toggle('is-visible', active || queued > 0)
+      status.classList.toggle('is-visible', active || queued > 0 || reserved > 0)
       fill.style.width = `${progress}%`
-      text.textContent = active ? `${progress}%${queued > 1 ? ` x${queued}` : ''}` : queued > 0 ? `x${queued}` : ''
+      text.textContent = active
+        ? `${progress}%${queued > 1 ? ` x${queued}` : ''}`
+        : queued > 0
+          ? `x${queued}`
+          : reserved
+            ? reserved > 1
+              ? `... x${reserved}`
+              : '...'
+            : ''
     })
   }
 
