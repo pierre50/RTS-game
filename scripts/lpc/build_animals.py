@@ -123,8 +123,8 @@ FOX_SHEETS: tuple[AnimalSheet, ...] = (
 )
 
 HORSE_SHEETS: tuple[AnimalSheet, ...] = (
-    AnimalSheet("horse_idle_recentered.png", "standing", 4, (1, 3, 0), animation_speed=0.04),
-    AnimalSheet("horse_walk_recentered.png", "walking", 6, (1, 3, 0)),
+    AnimalSheet("Horse_Idle-2x.png", "standing", 4, (1, 3, 0), animation_speed=0.04),
+    AnimalSheet("Horse_Walk-2x.png", "walking", 6, (1, 3, 0)),
 )
 
 

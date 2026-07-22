@@ -4,20 +4,20 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -26,22 +26,22 @@
     },
     "001.png": {
       "frame": {
-        "x": 101,
+        "x": 88,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -50,22 +50,22 @@
     },
     "002.png": {
       "frame": {
-        "x": 202,
+        "x": 176,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -74,22 +74,22 @@
     },
     "003.png": {
       "frame": {
-        "x": 303,
+        "x": 264,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -98,22 +98,22 @@
     },
     "004.png": {
       "frame": {
-        "x": 404,
+        "x": 352,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -122,22 +122,22 @@
     },
     "005.png": {
       "frame": {
-        "x": 505,
+        "x": 440,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -146,22 +146,22 @@
     },
     "006.png": {
       "frame": {
-        "x": 606,
+        "x": 528,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -170,22 +170,22 @@
     },
     "007.png": {
       "frame": {
-        "x": 707,
+        "x": 616,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -194,22 +194,22 @@
     },
     "008.png": {
       "frame": {
-        "x": 808,
+        "x": 704,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -218,22 +218,22 @@
     },
     "009.png": {
       "frame": {
-        "x": 909,
+        "x": 792,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -242,22 +242,22 @@
     },
     "010.png": {
       "frame": {
-        "x": 1010,
+        "x": 880,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
@@ -266,22 +266,22 @@
     },
     "011.png": {
       "frame": {
-        "x": 1111,
+        "x": 968,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "sourceSize": {
-        "w": 101,
-        "h": 85
+        "w": 88,
+        "h": 58
       },
       "anchor": {
         "x": 0.5,
