@@ -18,6 +18,8 @@ Exemples :
     python retro_palette.py hero.png --remove-bg
     python retro_palette.py hero.png --remove-bg --dither
     python retro_palette.py hero.png --palette custom.hex
+    python retro_palette.py hero.png --metric rgb          # distance RGB pure (meilleur pour sprites saturés)
+    python retro_palette.py hero.png --metric lab          # distance Lab perceptuelle (défaut historique)
     python retro_palette.py hero.png --colors 16 --method kmeans  # sans palette hex
 """
 
@@ -45,7 +47,6 @@ except ImportError:
 # ─────────────────────────────────────────────
 
 def find_hex_palette(image_path: Path) -> Path | None:
-    """Cherche un fichier .hex à la racine du dossier de l'image."""
     folder = image_path.parent
     hex_files = sorted(folder.glob("*.hex"))
     if not hex_files:
@@ -53,15 +54,11 @@ def find_hex_palette(image_path: Path) -> Path | None:
         return None
     if len(hex_files) > 1:
         names = ", ".join(f.name for f in hex_files)
-        print(f"   {len(hex_files)} .hex trouvés dans {folder.resolve()} ({names}) → utilisation de : {hex_files[0].name}")
+        print(f"   {len(hex_files)} .hex trouvés ({names}) → utilisation de : {hex_files[0].name}")
     return hex_files[0]
 
 
 def load_hex_palette(hex_path: Path) -> np.ndarray:
-    """
-    Charge une palette depuis un fichier .hex (format Lospec).
-    Retourne un array numpy (N, 3) de uint8.
-    """
     colors = []
     for line in hex_path.read_text().splitlines():
         line = line.strip().lstrip("#").strip()
@@ -74,31 +71,58 @@ def load_hex_palette(hex_path: Path) -> np.ndarray:
             colors.append((r, g, b))
         except ValueError:
             continue
-
     if not colors:
         print(f"Erreur : aucune couleur valide dans {hex_path}")
         sys.exit(1)
-
     palette = np.array(colors, dtype=np.uint8)
     print(f"   Palette .hex : {hex_path.resolve()}  ({len(palette)} couleurs)")
     return palette
 
 
+# ─────────────────────────────────────────────
+#  CONVERSION RGB → LAB
+# ─────────────────────────────────────────────
+
+def rgb_to_lab(rgb: np.ndarray) -> np.ndarray:
+    """Conversion RGB [0-255] → CIE Lab (approximation rapide sans scipy)."""
+    rgb_n = rgb / 255.0
+    mask = rgb_n > 0.04045
+    lin = np.where(mask, ((rgb_n + 0.055) / 1.055) ** 2.4, rgb_n / 12.92)
+    M = np.array([
+        [0.4124564, 0.3575761, 0.1804375],
+        [0.2126729, 0.7151522, 0.0721750],
+        [0.0193339, 0.1191920, 0.9503041],
+    ])
+    xyz = lin @ M.T
+    xyz /= np.array([0.95047, 1.00000, 1.08883])
+    eps = 0.008856
+    kappa = 903.3
+    fx = np.where(xyz > eps, xyz ** (1/3), (kappa * xyz + 16) / 116)
+    L = 116 * fx[:, 1] - 16
+    a = 500 * (fx[:, 0] - fx[:, 1])
+    b = 200 * (fx[:, 1] - fx[:, 2])
+    return np.stack([L, a, b], axis=-1)
+
+
+# ─────────────────────────────────────────────
+#  SNAP VERS PALETTE
+# ─────────────────────────────────────────────
+
 def snap_to_palette(img_rgb: Image.Image, palette: np.ndarray,
                     alpha_mask: np.ndarray | None = None,
                     dither: bool = False,
-                    lightness_weight: float = 1.0) -> Image.Image:
+                    lightness_weight: float = 1.0,
+                    metric: str = "rgb") -> Image.Image:
     """
     Remplace chaque pixel par la couleur la plus proche dans la palette.
-    Distance en espace Lab (perceptuel) pour un meilleur résultat visuel.
-    Si dither=True, applique Floyd-Steinberg avant le snap.
 
-    lightness_weight > 1 fait primer la luminosité (L) sur la teinte (a, b) :
-    utile quand la palette a un trou dans une teinte donnée (ex: pas de brun
-    foncé) et qu'on préfère garder la bonne luminosité plutôt que la bonne
-    teinte pour les tons foncés (contours, ombres).
+    metric="rgb"  : distance euclidienne RGB — meilleur pour sprites saturés,
+                    couleurs franches, pixel-art. Choix par défaut.
+    metric="lab"  : distance perceptuelle CIE Lab — meilleur pour photos ou
+                    dégradés complexes. lightness_weight s'applique uniquement ici.
+
+    Si dither=True, applique Floyd-Steinberg avant le snap.
     """
-    # ── Dithering via Pillow avant le snap (réduit les bandes)
     if dither:
         pil_pal = Image.new("P", (1, 1))
         flat = palette.flatten().tolist()
@@ -108,24 +132,24 @@ def snap_to_palette(img_rgb: Image.Image, palette: np.ndarray,
             palette=pil_pal, dither=Image.Dither.FLOYDSTEINBERG
         ).convert("RGB")
 
-    arr = np.array(img_rgb, dtype=np.float32)  # (H, W, 3)
+    arr = np.array(img_rgb, dtype=np.float32)
     H, W = arr.shape[:2]
-    pixels = arr.reshape(-1, 3)                 # (N, 3)
-
-    # ── Distance Lab perceptuelle
+    pixels = arr.reshape(-1, 3)
     pal_f = palette.astype(np.float32)
-    pixels_lab = rgb_to_lab(pixels)
-    pal_lab    = rgb_to_lab(pal_f)
 
-    # Nearest-neighbor : (N, 1, 3) - (1, P, 3) → (N, P)
-    diff = pixels_lab[:, np.newaxis, :] - pal_lab[np.newaxis, :, :]
-    weights = np.array([lightness_weight, 1.0, 1.0], dtype=np.float32)
-    dist = np.sum((diff ** 2) * weights, axis=2) # carré suffit pour argmin
-    nearest = np.argmin(dist, axis=1)           # (N,)
+    if metric == "lab":
+        pixels_space = rgb_to_lab(pixels)
+        pal_space    = rgb_to_lab(pal_f)
+        weights = np.array([lightness_weight, 1.0, 1.0], dtype=np.float32)
+        diff = pixels_space[:, np.newaxis, :] - pal_space[np.newaxis, :, :]
+        dist = np.sum((diff ** 2) * weights, axis=2)
+    else:  # rgb
+        diff = pixels[:, np.newaxis, :] - pal_f[np.newaxis, :, :]
+        dist = np.sum(diff ** 2, axis=2)
 
-    result = palette[nearest].reshape(H, W, 3)
+    nearest = np.argmin(dist, axis=1)
+    result  = palette[nearest].reshape(H, W, 3)
 
-    # ── Ignore les pixels transparents (on les laisse tels quels)
     if alpha_mask is not None:
         original = np.array(img_rgb)
         fg = (alpha_mask > 128)[:, :, np.newaxis]
@@ -134,42 +158,11 @@ def snap_to_palette(img_rgb: Image.Image, palette: np.ndarray,
     return Image.fromarray(result.astype(np.uint8), "RGB")
 
 
-def rgb_to_lab(rgb: np.ndarray) -> np.ndarray:
-    """Conversion RGB [0-255] → CIE Lab (approximation rapide sans scipy)."""
-    # Normalise
-    rgb_n = rgb / 255.0
-
-    # sRGB → linear
-    mask = rgb_n > 0.04045
-    lin = np.where(mask, ((rgb_n + 0.055) / 1.055) ** 2.4, rgb_n / 12.92)
-
-    # linear RGB → XYZ (D65)
-    M = np.array([
-        [0.4124564, 0.3575761, 0.1804375],
-        [0.2126729, 0.7151522, 0.0721750],
-        [0.0193339, 0.1191920, 0.9503041],
-    ])
-    xyz = lin @ M.T
-
-    # XYZ → Lab
-    xyz /= np.array([0.95047, 1.00000, 1.08883])
-    eps = 0.008856
-    kappa = 903.3
-    fx = np.where(xyz > eps, xyz ** (1/3), (kappa * xyz + 16) / 116)
-
-    L = 116 * fx[:, 1] - 16
-    a = 500 * (fx[:, 0] - fx[:, 1])
-    b = 200 * (fx[:, 1] - fx[:, 2])
-
-    return np.stack([L, a, b], axis=-1)
-
-
 # ─────────────────────────────────────────────
 #  DÉTECTION & SUPPRESSION DU BACKGROUND
 # ─────────────────────────────────────────────
 
 def detect_bg_color(img_rgb: Image.Image, sample_size: int = 5) -> tuple:
-    """Détecte la couleur dominante sur les bords (= fond)."""
     arr = np.array(img_rgb)
     s = sample_size
     border_pixels = np.vstack([
@@ -184,18 +177,14 @@ def detect_bg_color(img_rgb: Image.Image, sample_size: int = 5) -> tuple:
 
 def remove_background(img_rgb: Image.Image, bg_color: tuple,
                       tolerance: int = 30) -> Image.Image:
-    """Remplace la couleur de fond par de la transparence."""
     arr  = np.array(img_rgb, dtype=np.float32)
     bg   = np.array(bg_color, dtype=np.float32)
     dist = np.sqrt(np.sum((arr - bg) ** 2, axis=2))
-
     mask_bg   = dist <= tolerance
     near_edge = (dist > tolerance * 0.5) & (dist <= tolerance * 1.5)
     blend     = np.clip((dist - tolerance * 0.5) / tolerance, 0, 1)
-
     alpha = np.where(mask_bg, 0, 255).astype(np.uint8)
     alpha = np.where(near_edge & ~mask_bg, (blend * 255).astype(np.uint8), alpha)
-
     rgba = np.dstack([arr.astype(np.uint8), alpha])
     return Image.fromarray(rgba, "RGBA")
 
@@ -272,13 +261,8 @@ def print_palette_info(palette: np.ndarray):
 # ─────────────────────────────────────────────
 
 def bake_retro_style(image_path: Path, palette: np.ndarray, bg_tolerance: int = 30,
-                     lightness_weight: float = 1.0) -> None:
-    """Snap une sheet RGBA déjà transparente vers `palette` et réécrit le fichier sur place.
-
-    Reprend le chemin --remove-bg de main() pour une image qui a déjà un canal
-    alpha (cas de toutes les sheets bakées par build.py), pour matcher le résultat
-    validé manuellement via `retro_palette.py texture.png --remove-bg`.
-    """
+                     lightness_weight: float = 1.0, metric: str = "rgb") -> None:
+    """Snap une sheet RGBA déjà transparente vers `palette` et réécrit le fichier sur place."""
     img = Image.open(image_path)
     if img.mode not in ("RGBA", "LA", "PA"):
         img = img.convert("RGBA")
@@ -292,7 +276,7 @@ def bake_retro_style(image_path: Path, palette: np.ndarray, bg_tolerance: int = 
     alpha_mask = np.array(img_rgba)[:, :, 3]
 
     result_rgb = snap_to_palette(img_rgb, palette, alpha_mask=alpha_mask,
-                                 lightness_weight=lightness_weight)
+                                 lightness_weight=lightness_weight, metric=metric)
     result = Image.fromarray(
         np.dstack([np.array(result_rgb), alpha_mask]).astype(np.uint8), "RGBA"
     )
@@ -318,9 +302,11 @@ def parse_args():
                    help="Algo si pas de .hex (défaut: mediancut)")
     p.add_argument("-d", "--dither", action="store_true",
                    help="Dithering Floyd-Steinberg")
-    p.add_argument("--lightness-weight", type=float, default=4.0,
-                   help="Poids de la luminosité vs teinte dans le matching (défaut: 4.0, "
-                        "plus haut = priorise la luminosité, utile si la palette a un trou de teinte)")
+    p.add_argument("--metric", choices=["rgb", "lab"], default="rgb",
+                   help="Métrique de distance couleur : rgb (défaut, meilleur pour pixel-art/sprites saturés) "
+                        "ou lab (perceptuel, meilleur pour photos/dégradés complexes)")
+    p.add_argument("--lightness-weight", type=float, default=1.0,
+                   help="Poids de la luminosité en mode --metric lab (défaut: 1.0)")
     p.add_argument("-s", "--scale", type=int, default=1,
                    help="Facteur pixel-art ×N (défaut: 1)")
     p.add_argument("--scanlines", action="store_true", help="Effet scanlines CRT")
@@ -329,8 +315,7 @@ def parse_args():
     p.add_argument("--show-palette", action="store_true", help="Affiche la palette dans le terminal")
     p.add_argument("--compare", action="store_true", help="Image côte-à-côte original/rétro")
     p.add_argument("--remove-bg", action=argparse.BooleanOptionalAction, default=True,
-                   help="Supprime le fond et sort un PNG transparent (défaut: activé, "
-                        "désactiver avec --no-remove-bg)")
+                   help="Supprime le fond et sort un PNG transparent (défaut: activé)")
     p.add_argument("--bg-tolerance", type=int, default=30,
                    help="Tolérance détection fond (défaut: 30)")
     p.add_argument("--bg-color", default=None,
@@ -360,7 +345,6 @@ def main():
         print(f"Erreur : fichier introuvable → {input_path}")
         sys.exit(1)
 
-    # ── Chargement
     print(f"\n→ {input_path.name}")
     img = Image.open(input_path)
 
@@ -369,24 +353,20 @@ def main():
         if img.mode not in ("RGBA", "LA", "PA"):
             img = img.convert("RGBA")
         original_alpha = img.split()[-1]
-        # Colle sur magenta pour éviter la confusion avec pixels clairs du sprite
         bg_canvas = Image.new("RGB", img.size, (255, 0, 255))
         bg_canvas.paste(img, mask=original_alpha)
         img_rgb = bg_canvas
     else:
         original_alpha = None
         img_rgb = img.convert("RGB")
-        # Si fond blanc (pas d'alpha), on le remplace par magenta avant la détection
-        # → les cheveux/pixels clairs du sprite ne risquent plus d'être supprimés
         if args.remove_bg:
-            arr           = np.array(img_rgb, dtype=np.float32)
-            bg_detected   = np.array(detect_bg_color(img_rgb), dtype=np.float32)
-            dist          = np.sqrt(np.sum((arr - bg_detected) ** 2, axis=2))
+            arr         = np.array(img_rgb, dtype=np.float32)
+            bg_detected = np.array(detect_bg_color(img_rgb), dtype=np.float32)
+            dist        = np.sqrt(np.sum((arr - bg_detected) ** 2, axis=2))
             arr[dist <= args.bg_tolerance] = [255, 0, 255]
-            img_rgb       = Image.fromarray(arr.astype(np.uint8), "RGB")
+            img_rgb     = Image.fromarray(arr.astype(np.uint8), "RGB")
             print(f"   Fond remplacé par magenta (rgb{tuple(bg_detected.astype(int))} → #FF00FF)")
 
-    # ── Détection palette .hex
     hex_palette = None
     if args.no_palette:
         print("   Palette .hex ignorée (--no-palette)")
@@ -398,7 +378,6 @@ def main():
             print(f"Erreur : palette introuvable → {args.palette}")
             sys.exit(1)
 
-    # ── Suppression du background
     alpha_mask = None
     if args.remove_bg:
         if args.bg_color:
@@ -406,7 +385,6 @@ def main():
             bg_color = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
             print(f"   Fond forcé  : #{hex_c.upper()}")
         elif not has_alpha:
-            # On a déjà remplacé le fond par magenta, on cible directement ça
             bg_color = (255, 0, 255)
         else:
             bg_color = detect_bg_color(img_rgb)
@@ -418,7 +396,6 @@ def main():
         total      = img_rgb.width * img_rgb.height
         print(f"   Pixels supprimés : {removed:,} / {total:,}  ({removed/total:.0%})")
 
-    # ── Pixel scale
     if args.scale > 1:
         img_rgb = apply_pixel_scale(img_rgb, args.scale)
         if alpha_mask is not None:
@@ -426,12 +403,12 @@ def main():
                 Image.fromarray(alpha_mask).resize(img_rgb.size, Image.Resampling.NEAREST)
             )
 
-    # ── Quantization / snap palette
     if hex_palette is not None:
-        print(f"   Mode : snap vers palette .hex")
+        print(f"   Mode : snap vers palette .hex  (metric={args.metric})")
         result_rgb = snap_to_palette(img_rgb, hex_palette,
                                      alpha_mask=alpha_mask, dither=args.dither,
-                                     lightness_weight=args.lightness_weight)
+                                     lightness_weight=args.lightness_weight,
+                                     metric=args.metric)
     else:
         print(f"   Mode : quantization auto ({args.method}, {args.colors} couleurs)")
         quantize_fn = METHODS[args.method]
@@ -442,15 +419,12 @@ def main():
         else:
             result_rgb = quantize_fn(img_rgb, args.colors, args.dither)
 
-    # ── Scanlines
     if args.scanlines:
         result_rgb = apply_scanlines(result_rgb, args.scanline_strength)
 
-    # ── Affichage palette
     if args.show_palette and hex_palette is not None:
         print_palette_info(hex_palette)
 
-    # ── Recompose alpha
     if args.remove_bg:
         result_arr = np.array(result_rgb)
         result     = Image.fromarray(np.dstack([result_arr, alpha_mask]).astype(np.uint8), "RGBA")
@@ -460,24 +434,21 @@ def main():
     else:
         result = result_rgb
 
-    # ── Comparaison
     if args.compare:
-        orig_d    = img_rgb.resize(result_rgb.size, Image.Resampling.NEAREST)
-        mode      = "RGBA" if args.remove_bg else "RGB"
-        bg_fill   = (30, 30, 30, 255) if args.remove_bg else (30, 30, 30)
-        compare   = Image.new(mode, (result_rgb.width * 2 + 10, result_rgb.height), bg_fill)
+        orig_d  = img_rgb.resize(result_rgb.size, Image.Resampling.NEAREST)
+        mode    = "RGBA" if args.remove_bg else "RGB"
+        bg_fill = (30, 30, 30, 255) if args.remove_bg else (30, 30, 30)
+        compare = Image.new(mode, (result_rgb.width * 2 + 10, result_rgb.height), bg_fill)
         compare.paste(orig_d, (0, 0))
         compare.paste(result, (result_rgb.width + 10, 0),
                       mask=result if args.remove_bg else None)
-        cmp_path  = build_output_path(input_path, args)
-        cmp_path  = cmp_path.with_stem(cmp_path.stem + "_compare")
+        cmp_path = build_output_path(input_path, args).with_stem(
+                       build_output_path(input_path, args).stem + "_compare")
         compare.save(cmp_path, "PNG")
         print(f"   Compare : {cmp_path}")
 
-    # ── Sauvegarde
     output_path = build_output_path(input_path, args)
     result.save(output_path, "PNG")
-
     in_kb  = input_path.stat().st_size / 1024
     out_kb = output_path.stat().st_size / 1024
     print(f"✓ {output_path}  ({in_kb:.0f} Ko → {out_kb:.0f} Ko)\n")

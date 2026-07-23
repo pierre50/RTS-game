@@ -44,7 +44,6 @@ class AnimalSheet:
     clear_top: int = 0
     clear_top_rows: tuple[int, ...] | None = None
     row_y_shift: dict[int, int] | None = None
-    darken_border_factor: float | None = None
 
 
 # Source rows are 0=front(south/toward-camera), 1=back(north/away), 2=left,
@@ -111,7 +110,7 @@ FOX_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Fox_Idle.png", "standing", 4, (1, 2, 0), animation_speed=0.04),
     AnimalSheet("Fox_walk.png", "walking", 6, (1, 2, 0)),
     AnimalSheet("Fox_Run.png", "running", 6, (1, 3, 0)),
-    AnimalSheet("Fox_Death.png", "dying", 4, (0,), darken_border_factor=DARKEN_FACTOR),
+    AnimalSheet("Fox_Death.png", "dying", 4, (0,)),
     AnimalSheet(
         "Fox_Death.png",
         "corpse",
@@ -310,8 +309,6 @@ def build_animals(source_root: Path, output_root: Path, animal_keys: set[str] | 
             frames = crop_frames(source, sheet)
             sheet_output_dir = output_dir / sheet.output
             bake_sheet(sheet_output_dir, frames, sheet.animation_speed, retro_palette)
-            if sheet.darken_border_factor is not None:
-                apply_darken_border_to_atlas(sheet_output_dir, sheet.darken_border_factor)
             built += 1
 
     print(f"Generated {built} LPC animal sheets into {output_root.relative_to(PROJECT_ROOT)}")
