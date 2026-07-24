@@ -4,7 +4,7 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 60,
+        "w": 84,
         "h": 49
       },
       "rotated": false,
@@ -12,11 +12,11 @@
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 60,
+        "w": 84,
         "h": 49
       },
       "sourceSize": {
-        "w": 60,
+        "w": 84,
         "h": 49
       },
       "anchor": {
