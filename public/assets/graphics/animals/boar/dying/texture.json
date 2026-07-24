@@ -4,20 +4,20 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "sourceSize": {
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "anchor": {
         "x": 0.5,
@@ -26,22 +26,22 @@
     },
     "001.png": {
       "frame": {
-        "x": 65,
+        "x": 64,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "sourceSize": {
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "anchor": {
         "x": 0.5,
@@ -50,22 +50,22 @@
     },
     "002.png": {
       "frame": {
-        "x": 130,
+        "x": 128,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "sourceSize": {
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "anchor": {
         "x": 0.5,
@@ -74,22 +74,22 @@
     },
     "003.png": {
       "frame": {
-        "x": 195,
+        "x": 192,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "sourceSize": {
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "anchor": {
         "x": 0.5,

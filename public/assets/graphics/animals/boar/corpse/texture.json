@@ -4,20 +4,20 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "sourceSize": {
-        "w": 65,
-        "h": 49
+        "w": 64,
+        "h": 56
       },
       "anchor": {
         "x": 0.5,
