@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from config import CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, VARIANT_KEY, unit_look_for_civ
+from config import ANCHOR, CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, VARIANT_KEY, unit_look_for_civ
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
 
@@ -152,8 +152,8 @@ def sheet_outputs_exist(output_root: Path, relative_path: str) -> bool:
     return (output_dir / "texture.png").exists() and (output_dir / "texture.json").exists()
 
 
-def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_palette) -> None:
-    write_sheet(output_dir, frames, animation_speed)
+def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_palette, anchor_override: dict[str, float] | None = None) -> None:
+    write_sheet(output_dir, frames, animation_speed, anchor_override)
     process_sprite_file(
         output_dir / "texture.png",
         output_dir / "texture.png",
@@ -290,9 +290,15 @@ def build(
                     compose_frame(layers, frame_index, source_sheet.columns)
                     for frame_index in source_frames(source_sheet)
                 ]
+                anchor_override = None
                 if output_sheet == "riding":
+                    base_frame_height = frames[0].height
                     frames = compose_rider_frames(frames, Image.open(RIDER_LEGS_PATH).convert("RGBA"))
-                bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette)
+                    anchor_override = {
+                        "x": ANCHOR["x"],
+                        "y": ANCHOR["y"] * base_frame_height / frames[0].height,
+                    }
+                bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette, anchor_override)
                 rebuilt += 1
             print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")

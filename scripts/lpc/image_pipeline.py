@@ -290,7 +290,12 @@ def compose_frame(
     return frame.resize((output_size, output_size), Image.Resampling.NEAREST)
 
 
-def write_sheet(output_dir: Path, frames: list[Image.Image], animation_speed: float | None = None) -> None:
+def write_sheet(
+    output_dir: Path,
+    frames: list[Image.Image],
+    animation_speed: float | None = None,
+    anchor_override: dict[str, float] | None = None,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     frame_width, frame_height = frames[0].size
     atlas = Image.new("RGBA", (frame_width * len(frames), frame_height), (0, 0, 0, 0))
@@ -299,7 +304,7 @@ def write_sheet(output_dir: Path, frames: list[Image.Image], animation_speed: fl
         x = index * frame_width
         atlas.alpha_composite(frame, (x, 0))
         name = f"{index:03}.png"
-        anchor = ANCHORS_BY_OUTPUT_SIZE.get(frame_height, ANCHOR)
+        anchor = anchor_override or ANCHORS_BY_OUTPUT_SIZE.get(frame_height, ANCHOR)
         json_frames[name] = {
             "frame": {"x": x, "y": 0, "w": frame_width, "h": frame_height},
             "rotated": False,
